@@ -12,8 +12,8 @@ import {
   Textarea,
 } from '@goodboy/ui';
 import type { Skill, SkillFrontmatter, WorkspaceId } from '@goodboy/types';
-import { CardAction } from '../../../../shared/components/CardAction';
-import { CardActionSlot } from '../../../../shared/components/CardActionSlot';
+import { CardAction } from '@goodboy/ui';
+import { CardActionSlot } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { formatError } from '../../../../shared/lib/errors';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';

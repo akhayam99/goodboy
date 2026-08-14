@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FolderGit2, GitBranch } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { BitbucketIcon, GithubIcon, GitlabIcon } from '../../../../shared/components/brand-icons';
+import { BitbucketIcon, GithubIcon, GitlabIcon } from '@goodboy/ui';
 import { Segmented, type SegmentedOption } from '../Segmented';
 import { CodeHostForm, type CodeHost } from './CodeHostForm';
 

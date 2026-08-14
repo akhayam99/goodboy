@@ -1,6 +1,6 @@
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { NoteAvatar } from '../../../../shared/components/NoteAvatar';
-import { NoteHeader } from '../../../../shared/components/NoteHeader';
+import { Avatar } from '@goodboy/ui';
+import { NoteHeader } from '@goodboy/ui';
 import type { JiraComment } from '../client';
 
 type Props = {
@@ -13,7 +13,7 @@ export const IssueNoteHeader = ({ comment }: Props) => {
 
   return (
     <NoteHeader
-      avatar={<NoteAvatar url={comment.author?.avatarUrls?.['24x24'] ?? null} alt={name} />}
+      avatar={<Avatar url={comment.author?.avatarUrls?.['24x24'] ?? null} alt={name} />}
       author={name}
       timestamp={
         age !== '' && (

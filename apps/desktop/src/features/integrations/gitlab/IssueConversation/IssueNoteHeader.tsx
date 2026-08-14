@@ -1,6 +1,6 @@
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { NoteAvatar } from '../../../../shared/components/NoteAvatar';
-import { NoteHeader } from '../../../../shared/components/NoteHeader';
+import { Avatar } from '@goodboy/ui';
+import { NoteHeader } from '@goodboy/ui';
 import type { GitlabIssueNote } from '../client';
 
 type Props = {
@@ -13,7 +13,7 @@ export const IssueNoteHeader = ({ note }: Props) => {
 
   return (
     <NoteHeader
-      avatar={<NoteAvatar url={note.author?.avatarUrl ?? null} alt={name} />}
+      avatar={<Avatar url={note.author?.avatarUrl ?? null} alt={name} />}
       author={name}
       timestamp={
         age !== '' && (

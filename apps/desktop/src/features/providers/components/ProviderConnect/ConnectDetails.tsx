@@ -4,7 +4,7 @@ import { EscapeHatch } from '../ProviderConnectModal/EscapeHatch';
 import { GuidePanel } from '../ProviderConnectModal/GuidePanel';
 import type { ProviderGuide } from '../ProviderConnectModal/guides';
 import { InlineTerminal } from '../ProviderLifecycleTile/InlineTerminal';
-import { CommandPreview } from '../../../../shared/components/CommandPreview';
+import { CommandPreview } from '@goodboy/ui';
 
 type Props = {
   readonly providerId: ProviderId;

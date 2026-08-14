@@ -5,7 +5,7 @@
 [![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&label=ci)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/akhayam99/goodboy?label=release&color=06b6d4)](https://github.com/akhayam99/goodboy/releases/latest)
 [![stars](https://img.shields.io/github/stars/akhayam99/goodboy?label=stars&color=06b6d4)](https://github.com/akhayam99/goodboy/stargazers)
-[![providers](https://img.shields.io/badge/providers-Claude%20%C2%B7%20Cursor%20%C2%B7%20Codex%20%C2%B7%20Gemini%20%C2%B7%20OpenCode%20%C2%B7%20OpenRouter%20%C2%B7%20Moonshot-06b6d4)](#providers)
+[![providers](https://img.shields.io/badge/providers-Claude%20%C2%B7%20Cursor%20%C2%B7%20Codex%20%C2%B7%20Antigravity%20%C2%B7%20OpenCode%20%C2%B7%20OpenRouter%20%C2%B7%20Moonshot-06b6d4)](#providers)
 [![platform](https://img.shields.io/badge/macOS-Intel%20%26%20Apple%20Silicon-111111)](#install)
 [![platform](https://img.shields.io/badge/Linux-AppImage%20%C2%B7%20deb%20%C2%B7%20rpm%20%C2%B7%20x86__64-111111)](#install)
 [![license](https://img.shields.io/github/license/akhayam99/goodboy?color=06b6d4)](./LICENSE)
@@ -16,6 +16,8 @@
 
 </div>
 
+> **Read this when** you're new here, human or agent, and want the pitch, install steps, and feature tour. **Not for** working conventions once you're building. Go to `AGENTS.md`.
+
 <img width="4012" height="2256" alt="CleanShot 2026-08-06 at 02 58 41@2x" src="https://github.com/user-attachments/assets/49df6069-d9ca-4a2a-8bf2-e4c6f33a809a" />
 
 You have a repo. You have a goal. You also have several CLIs open in
@@ -25,123 +27,64 @@ next chat than actually building.
 
 Goodboy is a desktop app that holds the goal, the plan and the context once,
 then hands them to whichever agent you want to run next. Same brief, same
-memory, different model. Conversation, plans, decisions and PR state stay in
-a local SQLite on your machine. Your keys, your data, your bandwidth.
-
-## Why it exists
-
-Switching between `Claude`, `Codex`, `Cursor`, `Gemini`, `OpenCode` and
-`OpenRouter` ten times a day was eating my afternoons. Every new tab meant
-rebuilding the same mental scratchpad from scratch, then watching the next
-model run off in a slightly different direction. Eventually I got fed up and
-built this.
+memory, different model. Conversation, plans, decisions and PR state live in
+a local SQLite on your machine, scoped to Goodboy alone: a local reset clears
+that database without touching anything outside it. Your keys, your data,
+your bandwidth.
 
 Open source. Every feature included. No paywall, no telemetry, no account.
 
 ## What's inside
 
 **Shared context, not vendor sessions.** Goal, decisions, last summary, open
-questions. A summarizer keeps it fresh after every turn. Edit any field by
-hand when the agents get it wrong. The next agent shows up already briefed.
+questions, kept fresh by a summarizer after every turn and editable by hand.
+The next agent shows up already briefed.
 
 **Provider swap mid-task, without amnesia.** Each turn is rebuilt from the
 shared context, never resumed from a vendor's session blob. Drop Claude
-halfway, hand the same task to Cursor, Codex, Gemini, OpenCode, OpenRouter or
+halfway, hand the same task to Cursor, Codex, Antigravity, OpenCode, OpenRouter or
 Moonshot, watch it pick up clean.
 
-**Workflows for the multi-step stuff.** Refactor incoming? Line up a sequence:
-a cheap model to scout the area, a smart one to plan it, a mid one to
-implement, another to review, a cheap one to open the PR. Each step picks its
-own provider and model, so you're never paying Opus prices to run a grep.
+**Workflows for the multi-step stuff.** A cheap model to scout the area, a
+smart one to plan it, a mid one to implement, another to review. Each step
+picks its own provider and model, so you're never paying Opus prices to run a
+grep.
 
 **Plans as artifacts, not transcript scrollback.** Agents write the plan
-before they touch your code, and it stays put: something you can read, edit
-and hand to whichever model implements it. Not a message that scrolls away.
+before they touch your code, and it stays put: read it, edit it, hand it to
+whichever model implements it.
 
-**GitHub Studio.** Every pull request you're involved in, in one inbox,
-bucketed by state (draft, in review, approved, merged). Open one and you've
-got the body, the lifecycle controls and the unresolved comments in a single
-view. Reply yourself, or hand a comment to an agent to resolve.
+**GitHub, GitLab and Bitbucket studios.** Every pull request or merge request
+you're involved in, in one inbox, bucketed by state. Open one for the body,
+lifecycle controls and unresolved comments in a single view. Reply yourself,
+or hand a comment to an agent to resolve. Bitbucket Cloud connects with a
+workspace slug, your Atlassian email and an API token, merges with whatever
+strategy the repository is set to, and cannot reopen a declined request.
 
-**Linear Studio.** Every open issue assigned to you, bucketed by Linear
-state. Pick one and the goal is already written, the branch is named, the
-linked PR is recognized. Hit launch and a session is on it, with the issue
-tagged in the rail above. Already shipped a PR for that issue? Pick
-"Continue on PR" instead of "Start fresh" and the same branch comes back,
-ready for the next round.
-
-**GitLab and Sentry too.** GitLab merge requests and issues get the same
-studio treatment as GitHub. A Sentry error turns into a session with the
-stack trace already written into the goal and the branch named, ready to
-debug.
-
-**Jira, read and act.** Point Goodboy at a Jira Cloud site and one project
-key, and the project's issues get the same inbox: status, type, priority,
-assignee, labels, description and the comment thread, all readable in the app.
-From the same screen you comment, assign or unassign, move the issue through
-its real transitions, and edit the description. Launch a session from one and
-the key lands on the branch. Creating a new issue, sprints, boards and
-priority edits are not there yet, and Jira Server is unsupported.
-
-**Bitbucket, read, act and route.** Connect Bitbucket Cloud from the footer,
-from onboarding or from the integrations panel with a workspace slug, your
-Atlassian account email and an API token, all verified against the account and
-the workspace before anything is stored. The footer groups it with GitHub and
-GitLab under code hosts and opens the workspace's pull requests without a
-session, though that view is read-only: you browse a request and start a
-session from it, and the approve, comment and merge actions live inside a
-session. From there a session's pull request lens shows the Bitbucket request
-for its branch beside any GitHub or GitLab one, and the
-studio behind it lists the repository's pull requests with the description, the
-changed files, the build statuses read as plain language, and the review
-comments. From the same screen you approve or take your approval back, ask for
-changes or withdraw the ask, comment, reply on a thread, and merge or decline
-behind a confirmation. Merging uses whatever strategy the repository is set to,
-Goodboy does not pick one for you, and declining is closed to reopening from
-here. Bitbucket issues are out of scope, Atlassian points issue tracking at
-Jira and Goodboy follows that. A `bitbucket.org` git remote does not turn the
-integration on by itself either: the workspace integration is what enables
-Bitbucket, and the remote is read only to work out which repository the pull
-requests belong to.
+**Issues that become sessions.** Linear, Jira Cloud and Sentry each get the
+same inbox, and launching from an item pre-fills the goal and names the
+branch. Jira covers one project key at a time: comment, assign, move through
+real transitions, edit the description. Creating issues, sprints, boards and
+Jira Server are not there yet.
 
 **Slack, read the thread and reply.** Connect a workspace with a bot token
-(`xoxb-`), checked against the workspace before anything is stored and kept in
-your OS keychain; the connection needs five scopes: `channels:read`,
-`channels:history`, `users:read`, `chat:write` and `reactions:write`. Goodboy
-only sees the public channels the bot has joined, no private channels, no
-DMs. The Slack studio lists those channels, then their threads, then a thread
-rendered in the app with avatars, author names and Slack's markup translated
-for display. A session lens shows the thread linked to the current session,
-or link one by pasting its permalink. Launch a session from a thread and the
-goal is pre-filled from the conversation, the branch named after it. From
-inside Goodboy you can reply in the thread and add a reaction: replies post
-as the connected bot, not as you, the composer says so, and they go out as
-plain text. Each channel reads only its most recent 200 messages, so an old
-thread in a busy channel will not show up and there is no load more, and the
-channel list itself is capped. The connection is per workspace, not per
-company, and none of this has run against a live Slack workspace: every call
-is contract-tested against fixtures.
+(`xoxb-`) held in your OS keychain. Public channels the bot has joined only,
+no DMs, most recent 200 messages per channel. Launch a session from a thread
+and the goal pre-fills from it; replies post as the bot, as plain text.
+Follow-up: every call is contract-tested against fixtures, none has run
+against a live workspace yet.
 
 **Cost meter that taps your shoulder.** Every session shows what it's costing
-as it runs. Goodboy nudges you before you burn Opus on a one-liner.
+as it runs, and nudges you before you burn Opus on a one-liner.
 
 ## The board
 
-Home is a board, not a chat window. Open a workspace and every session is in
-front of you at once, grouped by where it stands: needs you, running, in
-review, building, done. Each card carries the goal, the live cost, the PR
-state and the agents on it, one click from the chat, the diff, the terminal or
-your editor.
-
-Open a session and an overview leads: what needs you, the workflow activity,
-the artifacts and a glance at files, agents, plans and the pull request. Chat,
-the diff, the studios and the terminal are lenses you navigate to, not a wall
-of scrollback. Click a workflow in the activity and it opens focused with the
-rest collapsed, or advance its next step without leaving the overview. The
-diff reads like an editor: syntax-highlighted for the common languages, neutral
-for the rest. The top bar rolls up what needs you, what's running and today's
-spend; the footer holds where you go next: integrations on the left, workflows,
-providers and settings on the right.
+Home is a board, not a chat window. Every session in the workspace is in front
+of you at once, grouped by where it stands: needs you, running, in review,
+building, done. Each card carries the goal, the live cost, the PR state and
+the agents on it, one click from the chat, the diff, the terminal or your
+editor. Open one and an overview leads; chat, the diff, the studios and the
+terminal are lenses you navigate to, not a wall of scrollback.
 
 ## Providers
 
@@ -165,19 +108,19 @@ One connected CLI is enough to start. Full guide:
 
 ## Install
 
-**macOS.** Intel and Apple Silicon in one universal build, signed and notarized
-by Apple, so it opens without the unidentified-developer warning.
+**macOS.** Intel and Apple Silicon in one universal build, signed and notarized,
+so it opens without the unidentified-developer warning.
 
 ```bash
 brew install --cask akhayam99/tap/goodboy
 ```
 
-Or grab the `.dmg` from the
-[latest release](https://github.com/akhayam99/goodboy/releases/latest) and drag
-Goodboy to Applications.
+Or drag the `.dmg` from the
+[latest release](https://github.com/akhayam99/goodboy/releases/latest) to
+Applications.
 
 **Linux.** x86_64 on glibc 2.39 or newer, so Ubuntu 24.04 and Debian 13 upward,
-as an AppImage, a `.deb` or an `.rpm`, all three attached to the same
+as an AppImage, a `.deb` or an `.rpm` on the same
 [release](https://github.com/akhayam99/goodboy/releases/latest).
 
 ```bash
@@ -188,74 +131,57 @@ chmod +x Goodboy_<version>_amd64.AppImage
 
 The `.deb` declares what it links against (`libc6 (>= 2.39)`,
 `libwebkit2gtk-4.1-0`, `libgtk-3-0`, `libsoup-3.0-0` and the rest of the GTK
-stack), read out of the binary with `dpkg-shlibdeps`, so apt resolves them for
-you. The `libc6` entry is the one that sets the distribution floor above, and
-the AppImage and the `.rpm` carry the same floor because all three come out of
+stack) via `dpkg-shlibdeps`, so apt resolves them for you. The `libc6` entry
+sets the floor above, and all three packages share it since they come out of
 one `ubuntu-latest` build. Credentials go to the freedesktop Secret Service,
-GNOME Keyring or KWallet, so a keyring daemon has to be running before you save
-a token. Windows is still a build from source.
+GNOME Keyring or KWallet, so a keyring daemon has to be running before you
+save a token. Windows is still a build from source. Security posture and the
+credential caveat: [SECURITY.md](./SECURITY.md).
 
-Follow-up: the three packages are built from the release tag on a GitHub
-`ubuntu-latest` runner, with the dependency list read out of that binary. On an
-older distribution the install stops on a declared dependency the distribution
-cannot satisfy, and apt or rpm says which one before anything is written. The
-credential path stands on the backend the `keyring` crate selects on Linux,
-though no token has been stored and read back on a Linux desktop yet. If the
-backend disagrees, its own error comes back where you saved the token, with the
-token not saved.
-
-**Updates.** On macOS they are automatic: when a new release ships, an update
-control appears in the footer, next to settings, and on the workspace launcher.
-One click downloads it and relaunches, and the footer's `More` control then
-carries a dot until you read the release notes; Homebrew users can also
-`brew upgrade --cask goodboy`. In-app updates stay macOS-only for now, so on
-Linux you take the new package from the release.
+**Updates.** Automatic on macOS: an update control appears in the footer and
+workspace launcher when a new release ships, and one click downloads and
+relaunches. Homebrew users can also `brew upgrade --cask goodboy`. On Linux,
+take the new package from the release.
 
 ## Run it
 
 ```bash
 pnpm install
-
-pnpm tauri:dev      # hot reload, fastest to iterate
-pnpm tauri:build    # produces an installable binary in apps/desktop/src-tauri/target/release/bundle/
+pnpm tauri:dev
 ```
 
-Needs **Node ≥ 20**, **pnpm ≥ 10** and a working **Rust** toolchain (Tauri
-shells out to `cargo`). Platform prereqs:
-<https://v2.tauri.app/start/prerequisites/>.
-
-Hacking on the app itself? The dev-loop notes live in
+Needs **Node ≥ 20**, **pnpm ≥ 10** and a working **Rust** toolchain. Platform
+prereqs: <https://v2.tauri.app/start/prerequisites/>. Dev-loop notes:
 [apps/desktop/README.md](./apps/desktop/README.md).
 
-## How it ships
-
-Goodboy ships Goodboy. Releases are decided, built, verified and drafted by
-an autonomous delivery loop made of agents, steered by the written vision and
-design docs, with a human reviewing after rather than before. Every PR is
-checked by a different agent than the one that wrote it, and anything never
-exercised against a live tenant is named in the release notes. The whole
-model, including what the loop is never allowed to do, is in
-[AUTONOMY.md](./AUTONOMY.md).
-
-## Help out
-
-Try it. If something breaks, feels weird or is missing, open an issue.
-Report it from inside the app (the bug control in the top right, Settings, or
-"Report an issue" in the command palette) or straight on GitHub. The in-app form
-sends five things: the version you are running, the type and the area you pick,
-your title and your notes. Nothing else.
-It can't attach screenshots yet. Drag one onto the issue once it opens on
-GitHub. Half-formed thoughts welcome. "This feels off" is a perfectly valid
-bug report.
-
-Issues are triaged every release cycle, so you get an answer even when the
-answer is "not yet". A request that clashes with the zero-data rule (tracking,
-analytics) will be declined, whoever asks.
-
-## Stack
+Website maintenance: `pnpm --dir website build:og` regenerates
+`website/public/og-image.png`. The hero headline and subtitle are duplicated
+inside `website/scripts/build-og.mjs`; update that copy with the hero, then
+regenerate the image.
 
 **Tauri 2 · React 19 · TypeScript · Tailwind v4 · Zustand · SQLite**, in a
 pnpm + Turborepo monorepo: `apps/desktop` plus `packages/{ui,core,db,types}`.
+
+## How it ships
+
+Goodboy ships Goodboy. Releases are decided, built, verified and drafted by an
+autonomous delivery loop of agents, with a human reviewing after rather than
+before. Every PR is checked by a different agent than the one that wrote it,
+and anything never exercised against a live tenant is named in the release
+notes. The loop runs against a written floor it cannot edit on its own
+authority: it never touches signing material or secrets, never force-pushes,
+never publishes without a human, and stops rather than guess.
+
+## Help out
+
+Try it. If something breaks, feels weird or is missing, open an issue: the bug
+control in the top right, Settings, "Report an issue" in the command palette,
+or straight on GitHub. The in-app form sends five things: version, type, area,
+title, notes. Nothing else, and no screenshots yet. Half-formed thoughts
+welcome, "this feels off" is a valid bug report. Issues are triaged every
+release cycle, so you get an answer even when it's "not yet". A request for
+anything the project refuses on principle, tracking above all, gets a written
+no rather than silence.
 
 ## Star history
 
@@ -268,8 +194,9 @@ pnpm + Turborepo monorepo: `apps/desktop` plus `packages/{ui,core,db,types}`.
 - [docs/tone-of-voice.md](./docs/tone-of-voice.md): how Goodboy talks
 - [VISION.md](./VISION.md): the why, at length
 - [DESIGN.md](./DESIGN.md): how it looks and behaves
-- [AUTONOMY.md](./AUTONOMY.md): how it ships itself
 - [CONVENTIONS.md](./CONVENTIONS.md) · [CLAUDE.md](./CLAUDE.md): contributor rules
+- Roadmap and the delivery organization live in a private repository. The app
+  never depends on it, and contributing never requires it.
 
 ## License
 

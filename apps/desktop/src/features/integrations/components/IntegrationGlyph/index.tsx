@@ -1,15 +1,9 @@
 import type { LucideIcon } from 'lucide-react';
-import { BrandGlyph } from '../../../../shared/components/BrandGlyph';
+import { BrandGlyph } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 export type IntegrationGlyphProvider =
-  | 'bitbucket'
-  | 'github'
-  | 'gitlab'
-  | 'jira'
-  | 'linear'
-  | 'sentry'
-  | 'slack';
+  'bitbucket' | 'github' | 'gitlab' | 'jira' | 'linear' | 'sentry' | 'slack';
 
 type IntegrationBrand = {
   readonly icon: LucideIcon;

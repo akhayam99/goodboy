@@ -1,6 +1,6 @@
 import { Button, EmptyState, Markdown, Skeleton, SkeletonText } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
+import { ErrorStrip } from '@goodboy/ui';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import type { ReleaseNote } from '../../changelog';

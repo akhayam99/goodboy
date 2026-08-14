@@ -6,7 +6,7 @@ import { readAttachment } from '../../turn';
 import { AttachmentChip } from '../../../attachments/components/AttachmentChip';
 import { useAttachmentThumbnail } from '../../../attachments/hooks/useAttachmentThumbnail';
 import { TranscriptShell } from '../TranscriptShell';
-import { CopyButton } from '../../../../shared/components/CopyButton';
+import { CopyButton } from '@goodboy/ui';
 
 const formatHHMM = (iso: string): string => {
   const d = new Date(iso);
@@ -88,6 +88,7 @@ export const UserText = ({ text, at, attachments, provider, model, workingDir = 
         />
         {text.length > 0 && (
           <CopyButton
+            presentation="icon"
             value={text}
             label="copy message"
             className="rounded-md p-0.5 text-foreground/60 transition-opacity hover:opacity-80 hover:text-foreground"

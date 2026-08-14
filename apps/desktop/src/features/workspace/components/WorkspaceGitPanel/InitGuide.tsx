@@ -1,7 +1,7 @@
 import { Eyebrow } from '@goodboy/ui';
 import type { WorkspaceGitState } from '@goodboy/types';
-import { CommandPreview } from '../../../../shared/components/CommandPreview';
-import { CopyButton } from '../../../../shared/components/CopyButton';
+import { CommandPreview } from '@goodboy/ui';
+import { CopyButton } from '@goodboy/ui';
 import { initCommands } from './initCommands';
 
 type Props = {
@@ -49,7 +49,11 @@ export const InitGuide = ({ rootPath, state }: Props) => {
                 <span className="min-w-0 flex-1 text-xs font-medium leading-5 text-foreground">
                   {step.title}
                 </span>
-                <CopyButton value={step.command} label={`copy command: ${step.title}`} />
+                <CopyButton
+                  presentation="icon"
+                  value={step.command}
+                  label={`copy command: ${step.title}`}
+                />
               </div>
               <p className="text-2xs leading-relaxed text-muted-foreground">{step.detail}</p>
               <CommandPreview command={step.command} />

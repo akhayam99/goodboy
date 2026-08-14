@@ -1,1 +1,1 @@
-export { CardAction as AgentCardAction } from '../../../../shared/components/CardAction';
+export { CardAction as AgentCardAction } from '@goodboy/ui';

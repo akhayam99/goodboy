@@ -1,5 +1,5 @@
 import { ScrollFade, Skeleton, SkeletonText, cn } from '@goodboy/ui';
-import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 const ACTIVITY_ROWS = [0, 1];
 const LINKED_WORK_ROWS = [0, 1];

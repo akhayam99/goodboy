@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
+import { LensEmptyState } from '@goodboy/ui';
 import { CreateAgentPopover } from '../CreateAgentPopover';
 import { StartRowContent } from './StartRowContent';
 

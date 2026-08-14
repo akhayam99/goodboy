@@ -43,7 +43,8 @@ vi.mock('../../../../../store', () => ({
   },
 }));
 
-vi.mock('@goodboy/ui', () => ({
+vi.mock('@goodboy/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/ui')>()),
   SectionHeader: ({ label, action }: { label: string; action?: unknown }) => (
     <div data-testid={`header-${label}`}>
       {label}

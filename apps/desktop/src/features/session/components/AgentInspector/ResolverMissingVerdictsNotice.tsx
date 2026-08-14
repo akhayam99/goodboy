@@ -1,4 +1,4 @@
-import { GhostActionButton } from '../../../../shared/components/GhostActionButton';
+import { GhostActionButton } from '@goodboy/ui';
 import { RESOLVER_ACTION_BUSY_LABEL } from '../../resolverActionBusyLabel';
 import { RESOLVER_ACTION_ICON } from '../../resolverActionIcon';
 import type { ResolverMissingVerdicts } from '../../resolverMissingVerdicts';

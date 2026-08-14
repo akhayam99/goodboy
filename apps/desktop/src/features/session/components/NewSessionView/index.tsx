@@ -37,7 +37,7 @@ import { NewSessionBlocked } from './NewSessionBlocked';
 import { NewSessionFooter } from './NewSessionFooter';
 import { NewSessionForm } from './NewSessionForm';
 import { polishGoal } from './polishGoal';
-import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
   onClose: () => void;

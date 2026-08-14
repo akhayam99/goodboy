@@ -1,7 +1,7 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { ArrowUpRight, Check } from 'lucide-react';
 import { StatusDot } from '@goodboy/ui';
-import { GhostActionButton } from '../../../../shared/components/GhostActionButton';
+import { GhostActionButton } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 
 type Props = {

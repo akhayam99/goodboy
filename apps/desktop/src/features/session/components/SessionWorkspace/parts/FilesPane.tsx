@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
+import { LensEmptyState } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { DiffViewerPane } from '../../../../permissions/components/DiffViewerDialog';
 import { DIFF_VIEWER_PANE_COPY } from '../../../../permissions/components/DiffViewerDialog/diffViewerPaneCopy';

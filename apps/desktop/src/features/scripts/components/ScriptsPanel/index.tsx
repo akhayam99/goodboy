@@ -4,7 +4,7 @@ import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from 
 import { Plus } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
+import { LensEmptyState } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
 import { NewScriptCard } from './NewScriptCard';

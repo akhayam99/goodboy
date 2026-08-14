@@ -1,5 +1,5 @@
 import { Divider, ScrollFade } from '@goodboy/ui';
-import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { classifyAgent } from '../../agent-kind';

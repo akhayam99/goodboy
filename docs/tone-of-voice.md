@@ -1,19 +1,20 @@
 # Tone of voice
 
-This is how Goodboy talks to people. README, website, release notes, in-app
-copy, error messages. If a string is going to be read by a human, it lives by
-these rules.
+> **Read this when** writing any user-facing string: README, website,
+> release notes, in-app copy, error messages. **Not for** repository language
+> outside product copy (see `CONVENTIONS.md`) or visual layout and typography
+> (see `DESIGN.md`).
+
+How Goodboy talks. README, website, release notes, in-app copy, error
+messages: if a human reads the string, it lives by these rules.
 
 ## The shape
 
-Write like a person who's been in the trenches with the reader, not a brand
-addressing a market. The user has four CLIs open and an unfinished refactor.
-They don't want to be sold to. They want to be understood, then helped.
+Write like someone who's been in the trenches with the reader, not a brand
+addressing a market. Two voices:
 
-Two voices in the codebase:
-
-- **Product voice** ("Goodboy does X"): direct, second person, concrete. README,
-  feature sections, in-app copy.
+- **Product voice** ("Goodboy does X"): direct, second person, concrete.
+  README, feature sections, in-app copy.
 - **Author voice** ("I built this because…"): first person, conversational,
   reserved for the founder note and release blog posts. Never bleeds into
   product copy.
@@ -22,122 +23,102 @@ Two voices in the codebase:
 
 ### Words to avoid
 
-- **"AI"**. Say `agent`, `model`, `Claude`, `Codex`, `Cursor`, `Gemini`, or
-  the specific behavior. "AI" is a marketing word; we don't need it.
-- **"powered by"**, **"intelligent"**, **"smart"**, **"seamless"**,
-  **"revolutionary"**, **"blazing fast"**, **"next-gen"**. Fluff. Cut.
-- **"simply"**, **"just"**, **"obviously"**, **"basically"**. Minimizers. If
-  the thing is simple, the reader can decide that. If it isn't, you're lying.
-- **"unlock"**, **"empower"**, **"leverage"**, **"streamline"**. Sales-deck
-  verbs. Use the actual verb.
-- **"enterprise-grade"**, **"world-class"**, **"best-in-class"**. Empty
-  superlatives. Be specific or stay quiet.
+- **"AI"**. Say `agent`, `model`, `Claude`, `Codex`, `Cursor`, `Antigravity`, or the
+  specific behavior.
+- Fluff: **"powered by"**, **"intelligent"**, **"smart"**, **"seamless"**,
+  **"revolutionary"**, **"blazing fast"**, **"next-gen"**.
+- Minimizers: **"simply"**, **"just"**, **"obviously"**, **"basically"**.
+- Sales-deck verbs: **"unlock"**, **"empower"**, **"leverage"**,
+  **"streamline"**. Use the actual verb.
+- Empty superlatives: **"enterprise-grade"**, **"world-class"**,
+  **"best-in-class"**. Be specific or stay quiet.
 
 ### Neutrality
 
-Goodboy is its own tool and routes across many providers. Copy must not bind
-the product to one provider or to the person who happened to write it.
-
-- **No single-provider assumption in chrome.** Launch screens, empty states,
-  headers, and other product surfaces don't address the user as a Claude
-  session or imply Claude is the runtime. Name a specific provider only where
-  the copy is genuinely about that provider (a Claude error, a Codex setup
-  step). The orchestrator itself stays neutral.
-- **No hardcoded user nickname.** Don't bake in a name or salutation. If a
-  greeting needs a name, read it from the user's own profile, never a constant.
-  In doubt, drop the greeting: the mascot plus the action is enough.
-- **Product copy is in English.** Goodboy ships in English: every label,
-  placeholder, empty state, tooltip, and button. The language a contributor
-  happens to chat in (with a teammate, in a PR, with a coding agent) never
-  becomes the product's language. If a new string is in any other language,
-  it's a bug. Translate it.
-- **Don't leak a contributor's assistant config.** How a coding agent is told
-  to address its operator (nicknames, casing, house style, conversational
-  language) belongs to that contributor's local setup, never to Goodboy's
-  product copy or code. If you see such a string in a mock or a PR, it's a
-  bug. Strip it.
+- **No single-provider assumption in chrome.** Launch screens, empty states and
+  headers never address the user as a Claude session or imply Claude is the
+  runtime. Name a provider only where the copy is genuinely about it (a Claude
+  error, a Codex setup step).
+- **No hardcoded user nickname.** A greeting that needs a name reads it from the
+  user's profile, never a constant. In doubt, drop the greeting.
+- **Product copy is in English.** Every label, placeholder, empty state, tooltip
+  and button. A new string in another language is a bug: translate it.
+- **Don't leak a contributor's assistant config.** Nicknames, casing, house
+  style and conversational language from a local setup are a bug in a mock or a
+  PR: strip them.
 
 ### Punctuation
 
-- **No em-dashes** (`—`). Use a period, comma, colon, or parens instead.
-  Em-dashes read as ChatGPT.
+- **No em dashes.** Period, comma, colon or parentheses instead.
 - **One sentence per idea.** Don't chain three clauses with semicolons.
-- **Sentence case** for headings. Not Title Case. Not ALL CAPS.
+- **Sentence case** for headings. Not Title Case. The tiny-eyebrow casing
+  exception is owned by [DESIGN.md](../DESIGN.md) in Voice & copy.
 - **No trailing period on titles, eyebrows, button labels, or list items.**
-  Body sentences keep theirs. A standalone hero line is the one exception: it
-  can keep its period for the spoken beat ("Stop re-explaining yourself.").
+  Body sentences keep theirs. A standalone hero line is the one exception, for
+  the spoken beat ("Stop re-explaining yourself.").
 - **Code identifiers in backticks**: `pnpm tauri:dev`, not "the pnpm tauri:dev
   command".
 
 ### Structure
 
 - **Show the problem, then the fix.** "You have four CLIs open, each holding a
-  different version of the same task. Goodboy holds the context once and hands
-  it to whichever one you run next." Not "Goodboy is an AI orchestration
+  different version of the same task. Goodboy holds the context once and
+  hands it to whichever one you run next." Not "Goodboy is an AI orchestration
   platform."
-- **Concrete over abstract.** "A cheap model to scout, a smart one to plan,
-  a mid one to implement" beats "intelligent multi-model routing".
+- **Concrete over abstract.** "A cheap model to scout, a smart one to plan, a
+  mid one to implement" beats "intelligent multi-model routing".
 - **Specific friction the reader has felt.** "Re-pasting the goal into a new
-  window." "Burning Opus on a one-liner." If the reader nods, you've earned
-  the next paragraph.
+  window." "Burning Opus on a one-liner."
 - **No feature inventory dumps.** Pick the few that matter, write them as
   scenarios, leave the rest in a short list with one line each.
-- **Don't echo the label in its own title.** The eyebrow already said "Workflow
-  Studio", so the title is "Build it once, reuse it forever", not "Build the
-  workflow once". The reader knows the topic. Spend the title on the payoff.
-- **Don't repeat a phrase across sections.** "In one place", then "in one rail",
-  then "all in one place" three sections running reads as a tic. Say the spatial
-  idea once, then vary it. The same goes for the headline's verbs and nouns.
-- **Don't leak internal names.** "Rail", "slice", "turn blob": clear in the
-  codebase, opaque on a landing page. Name what the reader sees on screen, not
-  what we call it in the source.
+- **Don't echo the label in its own title.** Eyebrow "Workflow Studio", title
+  "Build it once, reuse it forever", not "Build the workflow once".
+- **Don't repeat a phrase across sections.** "In one place", then "in one
+  rail", then "all in one place" reads as a tic. Say it once, then vary it.
+- **Don't leak internal names.** "Rail", "slice", "turn blob". Name what the
+  reader sees on screen, not what we call it in the source.
 - **Phrase titles to scale.** "Turn any issue into a session" outlives "Turn a
-  Linear issue into a session": when the next tracker lands, the headline still
-  holds. Pin the specific integration in the body, not the title.
+  Linear issue into a session". Pin the integration in the body, not the title.
+- **A generated reply's structure is the app's, not the model's.** In the
+  resolver the verdict and resolution lines are generated and the agent's block
+  supplies only the middle. A resolver opening with "Fixed in `abc1234`." makes
+  the reader read the outcome twice.
 - **Thread the headline through the page.** If the hero promises "stop
-  re-explaining yourself", let that line resurface where it pays off, the
-  shared-context section, the founder note. A callback rewards the reader who
-  got that far.
+  re-explaining yourself", let it resurface where it pays off.
 
 ### Layout
 
-- **Put the reassurance next to the action.** "Goodboy is free and open source"
-  belongs right above the Install button, not five lines up. The reader commits
-  at the click, so the proof has to sit where the cursor already is, not in a
-  paragraph they scrolled past.
+- **Put the reassurance next to the action.** "Goodboy is free and open
+  source" belongs right above the Install button, where the cursor already is.
 - **Keep the sharp word.** "You micromanage which model gets which task" lands
-  harder than "you babysit". Between two true words, take the one with the most
-  edge, never the one that softens it.
+  harder than "you babysit". Between two true words, take the one with edge.
 
 ### Release notes
 
-The changelog is the one place that gets to sell a little, and it earns that
-by being short. The release lead line is the pitch; everything under it is
-plain fact.
+The changelog is the one place that gets to sell a little, and earns that by
+being short. The lead line is the pitch; everything under it is plain fact.
 
 - **The heading names the capability, not a mood.** "Pull requests carry the
-  queued check state" not "The pull request tells the truth". Verb and object,
-  in the words a user would use to ask for the thing. Objects do not tell,
-  know, feel or remember.
+  queued check state" not "The pull request tells the truth". Objects do not
+  tell, know, feel or remember.
 - **Budget the length.** The headline feature gets a lead line plus at most
-  three short paragraphs. Every other feature gets one or two. A fix gets one
-  line. Cut any paragraph that explains why the old behavior existed: the
-  reader never saw it.
+  three short paragraphs. Every other feature one or two. A fix one line. Cut
+  any paragraph explaining why the old behavior existed.
 - **State a limit inside the sentence that promises the thing**, not in a
   paragraph of its own. "Public channels the bot has joined" beats four
   sentences of scope caveats.
-- **Work that has not been exercised against a live service is a follow-up,
-  never a confession.** Never write "not verified", "this has not run against
-  a live X", or "proves nothing". Write what the work stands on and what the
-  app does when reality disagrees:
+- **Work not yet exercised against a live service is a follow-up, never a
+  confession.** Never write "not verified", "this has not run against a live
+  X", or "proves nothing". Write what the work stands on and what the app does
+  when reality disagrees:
 
   > Follow-up: the mutation and its input come from Linear's published
   > schema, though no call has gone out to a live Linear workspace yet. If a
   > shape differs, Linear's own error comes back in the composer with the
   > draft still in it.
 
-  One line, at the end of the feature it belongs to, and one line covers
-  several features when they share the same follow-up.
+  One line at the end of the feature it belongs to, and one line can cover
+  several features sharing the same follow-up.
 
 ### Honesty
 
@@ -202,7 +183,7 @@ Bad:
 Good:
 
 > No waitlist, no email, no sign-up. Plug in the Claude, Cursor, Codex or
-> Gemini you already pay for and you'll be running on your own machine in a
+> Antigravity you already pay for and you'll be running on your own machine in a
 > minute.
 
 ### In-app micro-copy
@@ -217,5 +198,5 @@ Good:
 
 ## When in doubt
 
-Read it out loud. If it sounds like a press release, rewrite. If it sounds like
-something you'd say to a friend after the third coffee of the day, ship it.
+Read it out loud. Sounds like a press release: rewrite. Sounds like something
+you'd say to a friend after the third coffee of the day: ship it.

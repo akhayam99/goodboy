@@ -6,15 +6,15 @@ import type {
 } from '@goodboy/db';
 import { EmptyState, StatCard, formatTokens } from '@goodboy/ui';
 import { ArrowUpRight, Wallet } from 'lucide-react';
-import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
-import { PanelLoading } from '../../../../shared/components/PanelLoading';
+import { ErrorStrip } from '@goodboy/ui';
+import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { turnStats } from '../../utils/turnStats';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { TurnHistogram } from './TurnHistogram';
-import { StudioWidget } from '../../../../shared/components/StudioWidget';
+import { StudioWidget } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { Sparkline } from '../../../../shared/components/Sparkline';
+import { Sparkline } from '@goodboy/ui';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
 
 type Props = {

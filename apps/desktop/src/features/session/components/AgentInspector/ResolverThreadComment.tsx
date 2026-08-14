@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Markdown, SectionHeader, cn } from '@goodboy/ui';
-import { GhostActionButton } from '../../../../shared/components/GhostActionButton';
+import { GhostActionButton } from '@goodboy/ui';
 
 type Props = {
   readonly author: string | null;

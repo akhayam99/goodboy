@@ -22,10 +22,9 @@ import {
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
-import { CardAction } from '../../../../../shared/components/CardAction';
+import { CardAction, CardActionSlot } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { STAGE_TONE } from '../../../../session/session-stage';
-import { CardActionSlot } from '../../../../../shared/components/CardActionSlot';
 import { sessionCardShell } from '../../../../session/components/sessionCardShell';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import type { BoardNavigation } from '../useBoardNavigation';

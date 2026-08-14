@@ -1,10 +1,10 @@
 # Dependency policy
 
-The single source of truth for adding and vetting dependencies. AGENTS.md carries
-a one-line bar and CONVENTIONS.md points here; do not restate the policy
-elsewhere.
+> **Read this when** adding a new package or reviewing whether one is
+> justified. **Not for** workspace import boundaries (see that workspace's
+> `CONVENTIONS.md`).
 
-Every dependency is a liability. Add the minimum, vet each one, audit regularly.
+The single source of truth for adding and vetting dependencies. Every dependency is a liability. Add the minimum, vet each one, audit regularly.
 
 ## Before adding any dependency, verify
 
@@ -35,20 +35,16 @@ A version that just shipped is a version nobody has run in anger yet. Track the
 stable, widely adopted release, not the latest tag.
 
 - **Runtimes and their types move together, on LTS.** We ship on Node 24, so
-  `@types/node` is pinned to `^24`. Types ahead of the runtime make the
+  `@types/node` is pinned to `^24`: types ahead of the runtime make the
   typechecker accept APIs that do not exist at run time.
 - **Majors are never automatic.** A major bump is a migration: its own branch,
-  clean install, typecheck, full suite, and a real build. Merging one on a
-  dependabot rebase is how a green CI ships a broken app.
-- **Majors that share a toolchain land together.** Vite, its plugins, and vitest
-  are one migration, not three PRs.
+  clean install, typecheck, full suite, real build. Majors that share a
+  toolchain (Vite, its plugins, vitest) land together, not as separate PRs.
 - **A `0.x` minor is a major.** Cargo and npm both treat it as breaking.
 - **Minor and patch bumps are the routine path**, and still need install +
   typecheck + suite before merging, plus `cargo test --locked` when
   `Cargo.lock` moved.
 - **Close what we are not ready to migrate**, with the reason written in the PR.
-  An open PR nobody will act on is noise, and dependabot re-proposes the bump on
-  the next release anyway.
 
 ## Enforcement
 

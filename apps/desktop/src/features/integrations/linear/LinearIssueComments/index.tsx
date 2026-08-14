@@ -1,10 +1,10 @@
 import { EmptyState } from '@goodboy/ui';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { NoteCard } from '../../../../shared/components/NoteCard';
-import { NoteHeader } from '../../../../shared/components/NoteHeader';
+import { NoteCard } from '@goodboy/ui';
+import { NoteHeader } from '@goodboy/ui';
 import { NoteComposer } from '../../../../shared/components/NoteComposer';
-import { NoteListSkeleton } from '../../../../shared/components/NoteListSkeleton';
+import { NoteListSkeleton } from '@goodboy/ui';
 import type { LinearIssueComment } from '../client';
 
 type Props = {
@@ -16,7 +16,7 @@ type Props = {
 
 export const LinearIssueComments = ({ comments, isLoading, error, onPost }: Props) => {
   if (isLoading) {
-    return <NoteListSkeleton />;
+    return <NoteListSkeleton label="Loading comments" />;
   }
 
   if (error != null) {

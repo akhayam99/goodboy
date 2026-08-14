@@ -1,18 +1,10 @@
 # @goodboy/desktop
 
-Tauri 2 desktop app for Goodboy. React 19 + Vite + Tailwind v4 + Zustand.
+> **Read this when** you need the shape of the desktop app before wiring UI, routing, or Tauri commands. **Not for** the specific rules. See `CONVENTIONS.md`.
 
-The orchestrator UI: workspaces, providers, tasks, balance. Local-only, with no servers and no telemetry.
+The Goodboy desktop app: the orchestrator UI for workspaces, providers, tasks, balance. Local-only, no servers, no telemetry.
 
-## Dev
-
-```sh
-pnpm --filter @goodboy/desktop dev          # Vite dev server only
-pnpm --filter @goodboy/desktop tauri:dev    # Vite + Tauri shell
-pnpm --filter @goodboy/desktop tauri:build  # Production bundle
-pnpm --filter @goodboy/desktop typecheck
-pnpm --filter @goodboy/desktop test
-```
+Scripts in `package.json`.
 
 ## Conventions
 

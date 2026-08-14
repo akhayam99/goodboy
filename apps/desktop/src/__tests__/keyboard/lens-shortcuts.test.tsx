@@ -49,7 +49,10 @@ const { setActiveLens, sessionList, state } = vi.hoisted(() => {
   };
 });
 
-vi.mock('@goodboy/ui', () => ({ AppShell: () => null }));
+vi.mock('@goodboy/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/ui')>()),
+  AppShell: () => null,
+}));
 vi.mock('../../app/components/AppFooter', () => ({ AppFooter: () => null }));
 vi.mock('../../features/session/components/CommandPalette', () => ({ CommandPalette: () => null }));
 vi.mock('../../app/components/BootSplash', () => ({ BootSplash: () => null }));

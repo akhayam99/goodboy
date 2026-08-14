@@ -1,18 +1,14 @@
+import { StudioDetailLayout } from '../../../../../shared/components/StudioDetail';
 import { useEffect, useState } from 'react';
 import { Button, EmptyState, Markdown } from '@goodboy/ui';
 import { AlertTriangle, FileText, GitBranch, GitMerge, MessageSquare } from 'lucide-react';
 import type { GitlabWorkspaceIntegration, SessionId, WorkspaceId } from '@goodboy/types';
-import {
-  DetailSection,
-  HeaderBand,
-  StudioDetailLayout,
-  StudioDetailTabs,
-} from '../../../../../shared/components/StudioDetail';
+import { StudioWidget, HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { gitlabMergeRequestFields, resolveDetailFields } from '../../../../../shared/detail-fields';
-import { IssueStateBadge, type StateTone } from '../../../../../shared/components/IssueStateBadge';
-import { BranchPair } from '../../../../../shared/components/BranchPair';
+import { StateBadge, type StateTone } from '@goodboy/ui';
+import { BranchPair } from '@goodboy/ui';
 import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
-import { RefreshIconButton } from '../../../../../shared/components/RefreshIconButton';
+import { RefreshIconButton } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../app/components/Toast';
@@ -245,10 +241,10 @@ export const MrDetailPanel = ({
             <HeaderBand
               meta={
                 <>
-                  <IssueStateBadge tone={STATE_TONE[mr.state] ?? 'neutral'}>
+                  <StateBadge tone={STATE_TONE[mr.state] ?? 'neutral'}>
                     !{mr.iid} · {mr.state}
-                  </IssueStateBadge>
-                  {mr.draft ? <IssueStateBadge tone="warning">draft</IssueStateBadge> : null}
+                  </StateBadge>
+                  {mr.draft ? <StateBadge tone="warning">draft</StateBadge> : null}
                 </>
               }
               title={mr.title}
@@ -340,13 +336,13 @@ export const MrDetailPanel = ({
         ) : null}
 
         {section === 'overview' ? (
-          <DetailSection label="description" variant="frameless">
+          <StudioWidget presentation="section" label="description" variant="frameless">
             {mr.description != null && mr.description !== '' ? (
               <Markdown text={mr.description} className="text-sm leading-relaxed" />
             ) : (
               <p className="text-sm italic text-muted-foreground/60">No description.</p>
             )}
-          </DetailSection>
+          </StudioWidget>
         ) : (
           <MrConversation
             discussions={discussions.discussions}

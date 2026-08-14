@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cn, Divider, type Tone } from '@goodboy/ui';
 import type { LucideIcon } from 'lucide-react';
 import { useStudioOverlay } from '../../hooks/useStudioOverlay';
-import { OverlayHeader } from '../OverlayHeader';
+import { OverlayHeader } from '@goodboy/ui';
 
 type Props = {
   readonly icon?: LucideIcon;
@@ -42,6 +42,7 @@ export const StudioShell = ({
       )}
     >
       <OverlayHeader
+        heightClassName="h-[var(--chat-header-h)]"
         icon={Icon}
         {...(tone != null && { tone })}
         glyph={glyph}

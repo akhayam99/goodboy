@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { EmptyState } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
+import { StudioRailLayout } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { IntegrationDisconnect } from '../../components/IntegrationDisconnect';

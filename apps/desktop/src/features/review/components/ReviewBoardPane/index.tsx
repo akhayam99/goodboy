@@ -6,10 +6,10 @@ import type { PublishPrReviewVerdict } from '../../../../store/slices/review-dra
 import { useToast } from '../../../../app/components/Toast';
 import { formatError } from '../../../../shared/lib/errors';
 import { classifyAgent } from '../../../session/agent-kind';
-import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
+import { RefreshIconButton } from '@goodboy/ui';
 import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
-import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
-import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
+import { LensEmptyState } from '@goodboy/ui';
+import { ErrorStrip } from '@goodboy/ui';
 import { DraftsPanel } from './DraftsPanel';
 import { PublishBar } from './PublishBar';
 import { ReviewFileDiff, type ReviewLineTarget } from './ReviewFileDiff';
@@ -19,7 +19,7 @@ import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
 import { DiffLayoutToggle } from '../../../../shared/components/DiffLayoutToggle';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
   readonly session: Session;

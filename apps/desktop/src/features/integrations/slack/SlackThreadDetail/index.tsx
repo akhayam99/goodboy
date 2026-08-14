@@ -1,5 +1,6 @@
+import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useMemo, type ReactNode } from 'react';
-import { HeaderBand, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import { HeaderBand } from '@goodboy/ui';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { resolveDetailFields, slackThreadFields } from '../../../../shared/detail-fields';
 import type { SlackChannel, SlackMessage, SlackUser } from '../client';

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore } from '../../../../store';

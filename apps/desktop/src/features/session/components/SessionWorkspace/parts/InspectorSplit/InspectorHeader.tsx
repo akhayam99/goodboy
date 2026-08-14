@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Divider, cn } from '@goodboy/ui';
 import { X } from 'lucide-react';
-import { PANE_RHYTHM } from '../../../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
   readonly title: string;

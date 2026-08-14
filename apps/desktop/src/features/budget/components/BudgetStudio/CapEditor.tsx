@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button, Divider, InlineConfirm, Input, formatUsd } from '@goodboy/ui';
 import { parseCap } from '../../../../shared/lib/parse-cap';
-import { StudioWidget } from '../../../../shared/components/StudioWidget';
+import { StudioWidget } from '@goodboy/ui';
 
 type Threshold = {
   readonly pct: number;

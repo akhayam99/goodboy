@@ -1,7 +1,7 @@
 import type { MouseEvent } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { openUrl } from '../../lib/editor';
-import { CopyButton } from '../CopyButton';
+import { CopyButton } from '@goodboy/ui';
 
 type Props = {
   readonly url: string;
@@ -28,7 +28,7 @@ export const ExternalRefActions = ({ url, label, hostLabel }: Props) => {
       >
         <ExternalLink size={13} aria-hidden />
       </a>
-      <CopyButton value={url} label={`Copy ${label} link`} size={13} />
+      <CopyButton presentation="icon" value={url} label={`Copy ${label} link`} size={13} />
     </span>
   );
 };

@@ -22,7 +22,8 @@ vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
 }));
 
-vi.mock('../../../../shared/components/OverflowMenu', () => ({
+vi.mock('@goodboy/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/ui')>()),
   OverflowMenu: ({
     label,
     triggerClassName,

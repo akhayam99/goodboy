@@ -27,9 +27,9 @@ import { useWorkflowTitleRename } from '../../../../../features/workflows/hooks/
 import { WorkflowStepGraph } from '../../../../../features/workflows/components/WorkflowStepGraph';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { CostBadge } from '../../../../providers/components/CostBadge';
-import { CardAction } from '../../../../../shared/components/CardAction';
-import { CardActionSlot } from '../../../../../shared/components/CardActionSlot';
-import { GhostActionButton } from '../../../../../shared/components/GhostActionButton';
+import { CardAction } from '@goodboy/ui';
+import { CardActionSlot } from '@goodboy/ui';
+import { GhostActionButton } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import type { StartStepAgentParams } from './useAgentsSection';

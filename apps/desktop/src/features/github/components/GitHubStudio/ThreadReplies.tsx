@@ -4,7 +4,7 @@ import { Divider, cn } from '@goodboy/ui';
 import { ChevronRight } from 'lucide-react';
 import { isBot } from '../../comment-threads';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { NoteAvatar } from '../../../../shared/components/NoteAvatar';
+import { Avatar } from '@goodboy/ui';
 import { ThreadBody } from './ThreadBody';
 
 type Props = {
@@ -47,7 +47,7 @@ export const ThreadReplies = ({ replies }: Props) => {
             {replies.map((r) => (
               <li key={r.id} className="flex min-w-0 flex-col gap-1">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <NoteAvatar url={r.authorAvatarUrl} alt={r.author} />
+                  <Avatar url={r.authorAvatarUrl} alt={r.author} />
                   <span className="font-medium text-foreground">{r.author}</span>
                   <span className="opacity-50">·</span>
                   <span>{formatRelativeAge({ fromIso: r.createdAt })}</span>

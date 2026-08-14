@@ -1,9 +1,9 @@
 # Testing
 
-Owns what to test and how. For where test files sit on disk (co-location, folder
-vs flat pairs) see [file-system.md](file-system.md) → Test file placement.
+> **Read this when** writing or reviewing test coverage and assertion style.
+> **Not for** where test files live (`docs/file-system.md`).
 
-Framework: vitest + `@testing-library/react` + happy-dom (already configured).
+Owns what to test and how. Test file placement: [file-system.md](file-system.md).
 
 ## Content and rules
 
@@ -21,32 +21,25 @@ If a test fails because the component / store / hook does the wrong thing, **fix
 
 ## Reaching a state that only exists in memory
 
-Some run states live only in the store while an async call is in flight, so
-no database row reaches them and only a live provider run produces them. The
-orchestrator "stopping" state is one: it needs an operator stop on the run
-plus a decision still in flight, and the in-flight flag
-(`orchestratingWorkflowRuns`) is never persisted, because a decision does not
-survive the process that started it.
+The orchestrator "stopping" state lives only in the store while a decision is
+in flight (`orchestratingWorkflowRuns` is never persisted: a decision does not
+survive the process that started it), so no seeded database row reaches it.
 
-To see that state in a real build without spawning agents, name the run ids
-in `GOODBOY_QA_DECIDING_RUNS` when launching the binary:
+To see it in a real build without spawning agents, name the run ids in
+`GOODBOY_QA_DECIDING_RUNS` when launching the binary:
 
 ```
 GOODBOY_QA_DECIDING_RUNS=<run-id>[,<run-id>] \
   GOODBOY_DB_FILE=<path> .../Goodboy.app/Contents/MacOS/goodboy-desktop
 ```
 
-Boot marks those runs as deciding in memory only. Seed the operator stop
-itself as an ordinary row in `session_workflows`, keyed by
-`workflow_run_id`: a non-empty `orchestration_error` carries the message
-(an empty value means no stop exists at all, see `toStop` in
-`packages/db/src/queries/session-workflow.ts`) and `orchestration_stop_kind`
-must be `'operator'`. With that row and the run named in
-`GOODBOY_QA_DECIDING_RUNS`, the plain **Stopping** pill shows on the rail
-card and on the collapsed sidebar row. To see it on the richer orchestrator
-strip instead, the row also needs `execution_mode = 'dynamic'` and the
-sidebar row expanded: the strip only renders in that combination, and the
-plain pill hides itself in favor of it. Nothing is written back, so a
-relaunch without the variable reports **Stopped** again. Never persist the
-in-flight flag: a stored "deciding right now" is false the moment the app
-restarts.
+Boot marks those runs as deciding in memory only. Seed the operator stop as an
+ordinary `session_workflows` row keyed by `workflow_run_id`: a non-empty
+`orchestration_error` carries the message (empty means no stop at all, see
+`toStop` in `packages/db/src/queries/session-workflow.ts`) and
+`orchestration_stop_kind` must be `'operator'`. That shows the plain
+**Stopping** pill on the rail card and collapsed sidebar row. The richer
+orchestrator strip needs `execution_mode = 'dynamic'` plus the sidebar row
+expanded; the plain pill hides itself in favor of it. Nothing is written back:
+relaunching without the variable reports **Stopped** again. Never persist the
+in-flight flag.

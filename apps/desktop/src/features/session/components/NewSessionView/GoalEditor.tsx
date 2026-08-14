@@ -1,7 +1,7 @@
 import type { KeyboardEvent } from 'react';
 import { Button, Divider, ScrollFade, Skeleton, Textarea } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
   readonly draft: string;

@@ -1,13 +1,13 @@
 import type { AgentDurations, FlowHealth } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { EmptyState, StatCard } from '@goodboy/ui';
-import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
-import { PanelLoading } from '../../../../shared/components/PanelLoading';
+import { ErrorStrip } from '@goodboy/ui';
+import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { formatHours } from '../../utils/formatHours';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { SessionRows } from './SessionRows';
-import { StudioWidget } from '../../../../shared/components/StudioWidget';
+import { StudioWidget } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {

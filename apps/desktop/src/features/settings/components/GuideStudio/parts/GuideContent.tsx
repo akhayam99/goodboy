@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { ScrollFade, cn } from '@goodboy/ui';
-import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { AgentsSection } from './AgentsSection';
 import { findScrollParent } from './findScrollParent';
 import { LegendSection } from './LegendSection';
@@ -13,15 +13,7 @@ import { ToolsSection } from './ToolsSection';
 import { TurnsSection } from './TurnsSection';
 
 type Section =
-  | 'overview'
-  | 'board'
-  | 'session'
-  | 'turn'
-  | 'tools'
-  | 'tokens'
-  | 'agents'
-  | 'tips'
-  | 'legenda';
+  'overview' | 'board' | 'session' | 'turn' | 'tools' | 'tokens' | 'agents' | 'tips' | 'legenda';
 
 type Props = {
   readonly onJump: (s: Section) => void;

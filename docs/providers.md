@@ -1,16 +1,26 @@
-# Provider Integration Guide
+# Provider integration guide
 
-Goodboy orchestrates AI sessions through your locally installed CLI tools. This guide covers how to install, connect, and manage each supported provider.
+> **Read this when** installing, connecting or managing a provider CLI.
+> **Not for** how the picker groups and renders models (`docs/model-picker.md`).
 
----
+Install, connect and manage each supported CLI. Workspace defaults are at the
+bottom; how the picker renders models is [model-picker.md](model-picker.md).
 
 ## How Connect works
 
-One button. Clicking **Connect** chains install-if-missing then login in a PTY you never see. Exactly one thing opens your browser: Goodboy does, from the first auth URL it reads out of the CLI output. Cursor is spawned with `NO_OPEN_BROWSER=1` so it does not race us with its own tab. Success comes from the auth probe, never from the process exit code, because OAuth CLIs stay alive waiting for their callback.
+One button. **Connect** chains install-if-missing then login in a PTY you never
+see. Exactly one thing opens your browser: Goodboy, from the first auth URL it
+reads out of the CLI output. Cursor is spawned with `NO_OPEN_BROWSER=1` so it
+does not race us with its own tab. Success comes from the auth probe, never
+from the exit code, because OAuth CLIs stay alive waiting for their callback.
 
-The attempt lives in the store keyed by provider and survives the dialog closing, so you can leave the app to finish in the browser. If the CLI goes silent for 15s after login started, it is sitting on an interactive prompt: Goodboy surfaces the hidden terminal instead of hanging. After 30s in browser handoff it says so; after 120s it offers the external-terminal escape hatch.
+The attempt lives in the store keyed by provider and survives the dialog
+closing. Silence for 15s after login started means an interactive prompt, so
+Goodboy surfaces the hidden terminal instead of hanging. After 30s in browser
+handoff it says so; after 120s it offers the external-terminal escape hatch.
 
-What a provider supports is data, not UI branching: `PROVIDER_CONNECT_CAPABILITIES` in `packages/types/src/provider-connect.ts`.
+What a provider supports is data, not UI branching:
+`PROVIDER_CONNECT_CAPABILITIES` in `packages/types/src/provider-connect.ts`.
 
 | Provider                       | Tier        | Why                                                                                                               |
 | ------------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------- |
@@ -18,350 +28,174 @@ What a provider supports is data, not UI branching: `PROVIDER_CONNECT_CAPABILITI
 | opencode, openrouter, moonshot | `assisted`  | `opencode auth login` is menu-driven, so the terminal appears when it stalls; the probe still confirms the ending |
 | gemini                         | `manual`    | `agy` ships no auth subcommand, so there is nothing to drive                                                      |
 
----
+## Commands per provider
 
-## Anthropic (Claude)
+| Provider                         | Install                                                        | Connect                        | Disconnect                         | Probe                  | Subscription                                       |
+| -------------------------------- | -------------------------------------------------------------- | ------------------------------ | ---------------------------------- | ---------------------- | -------------------------------------------------- |
+| Anthropic (Claude)               | `npm install -g @anthropic-ai/claude-code`                     | `claude auth login --claudeai` | `claude auth logout`               | `claude auth status`   | Claude Max or Pro, not an API key                  |
+| Cursor                           | `curl https://cursor.com/install -fsS \| bash`                 | `cursor-agent login`           | `cursor-agent logout`              | `cursor-agent status`  | Cursor Pro                                         |
+| OpenAI (Codex)                   | `npm install -g @openai/codex`                                 | `codex login`                  | `codex logout`                     | `codex login status`   | ChatGPT Plus/Pro/Business/Edu, or `OPENAI_API_KEY` |
+| Google (Antigravity)             | `curl -fsSL https://antigravity.google/cli/install.sh \| bash` | none, see below                | `rm -rf ~/.gemini/antigravity-cli` | session dir, see below | Google AI Pro, or `GEMINI_API_KEY`                 |
+| opencode / OpenRouter / Moonshot | `npm install -g opencode-ai`                                   | `opencode auth login`          | `opencode auth logout`             | `opencode auth list`   | none for opencode, an API key for the other two    |
 
-### Install
+The table above is the user-facing copy. What a spawn actually runs is
+`PROVIDER_LIFECYCLE_COMMANDS` in `@goodboy/types`, and that constant wins.
 
-```bash
-npm install -g @anthropic-ai/claude-code
-```
+Docs: <https://docs.anthropic.com/en/docs/claude-code/getting-started>,
+<https://docs.cursor.com/en/cli/installation>,
+<https://developers.openai.com/codex/cli>, <https://antigravity.google/cli>.
 
-Docs: <https://docs.anthropic.com/en/docs/claude-code/getting-started>
+### Per-provider deltas
 
-Verify: `claude --version`
+**Anthropic.** `claude` has no top-level `login`: the surface is
+`claude auth login|logout|status`. `--claudeai` is the subscription flow (the
+default), `--console` switches to Console billing, `--sso` forces SSO. The probe
+returns JSON by default (`--text` for the human form); Goodboy parses `loggedIn`
+plus `email`/`username`.
 
-### Connect
+Every claude spawn passes `--setting-sources project,local`: turns
+(`apps/desktop/src-tauri/src/turn.rs`), planner (`planner.rs`), summarizer
+(`summarize.rs`). Your user-level config, `~/.claude/CLAUDE.md` and user
+`settings.json` (globally configured MCP servers, hooks, permission
+allowlists), does not load inside a Goodboy session. The repo's own `CLAUDE.md`
+and `.claude/` still do. `--bare` is not an alternative: it forces
+`ANTHROPIC_API_KEY` auth and breaks subscription and keychain users, so the arg
+builders assert it is never emitted.
 
-```bash
-claude auth login --claudeai
-```
+**Cursor.** Installs `cursor-agent` to `~/.local/bin/`. Goodboy invokes
+`cursor-agent`, not `cursor` (the IDE binary), and sets `NO_OPEN_BROWSER` so the
+CLI does not open its own tab.
 
-`claude` has no top-level `login`: the real surface is `claude auth login|logout|status`. `--claudeai` is the subscription flow (the default); `--console` switches to Anthropic Console billing and `--sso` forces the SSO flow. Goodboy runs the subscription flow in a hidden PTY and opens the printed URL itself.
-
-### Disconnect
-
-```bash
-claude auth logout
-```
-
-### Auth probe
-
-`claude auth status` (JSON by default, `--text` for the human form). Goodboy parses `loggedIn` plus `email`/`username` for the identity.
-
-### Subscription tier
-
-Requires **Claude Max** (or Claude Pro). Goodboy uses your subscription cap, not an API token. API-key-only accounts are not supported for orchestration turns.
-
-### Default models
-
-Per the compiled registry in `packages/core/src/providers/capabilities.ts`:
-
-- **Turn**: `claude-opus-5` (default), `claude-opus-4-8`, `claude-fable-5`, `claude-opus-4-7`, `claude-opus-4-6`, `claude-sonnet-5`, `claude-sonnet-4-6`, `claude-sonnet-4-5`.
-- **Cheap**: `claude-haiku-4-5`.
-
-Fable 5, Opus 5, Opus 4.8, Opus 4.7, Sonnet 5, and Sonnet 4.6 carry a 1M-token context window. Sonnet 4.5, Haiku 4.5, Opus 4.6, and older Opus models carry a 200k-token context window. Auxiliary operations (summaries, branch names, planning, agent titles) default to the cheap tier of the workspace default provider. See Defaults and task models below to pin a different model.
-
-### Setting sources
-
-Every claude spawn passes `--setting-sources project,local`: turns (`apps/desktop/src-tauri/src/turn.rs`), the planner (`planner.rs`), and the summarizer (`summarize.rs`). Your user-level claude config does not load inside a Goodboy session. That means `~/.claude/CLAUDE.md` and the user `settings.json`, which is where globally configured MCP servers, hooks and permission allowlists live. The repo's own `CLAUDE.md` and `.claude/` still load, so project skills, agents and settings behave as they do in a terminal.
-
-`--bare` is not an alternative here. It forces `ANTHROPIC_API_KEY` auth, which breaks subscription and keychain users, so the arg builders assert it is never emitted.
-
----
-
-## Cursor
-
-### Install
-
-```bash
-curl https://cursor.com/install -fsS | bash
-```
-
-Installs `cursor-agent` to `~/.local/bin/`. Goodboy invokes the CLI as `cursor-agent` (not `cursor`, which is the IDE binary).
-
-Docs: <https://docs.cursor.com/en/cli/installation>
-
-Verify: `cursor-agent --version`
-
-### Connect
-
-```bash
-cursor-agent login
-```
-
-`cursor-agent login` opens the browser itself and honors `NO_OPEN_BROWSER` to suppress that. Goodboy sets it, reads the URL off the PTY, and opens the tab, so there is exactly one browser handoff. The probe is `cursor-agent status`.
-
-### Disconnect
-
-```bash
-cursor-agent logout
-```
-
-### Subscription tier
-
-Requires **Cursor Pro**. Goodboy routes turns through Cursor's subscription-based model cap.
-
-### Default models
-
-Cursor surfaces 193 slugs via `cursor-agent --list-models`. Goodboy exposes a curated subset:
-
-- **Turn**: `composer-2.5`, `claude-fable-5-thinking-high`, `claude-opus-5-thinking-high`, `claude-opus-4-7-thinking-high`, `claude-4.6-sonnet-medium-thinking`, `claude-4.6-sonnet-medium`, `gpt-5.6-sol-high`, `gpt-5.5-high`, `gpt-5.5-medium`, `gpt-5.3-codex`.
-- **Cheap**: `auto` (default), `composer-2.5-fast`.
-- Every slug above is pinned against `cursor-agent --list-models` by `packages/core/src/providers/cursor/agent-model-ids.test.ts`. Cursor carries the effort level inside the slug, so it never receives an effort flag.
-
-Cursor is the one provider whose cheap pick is special-cased: `getCheapModel` returns `auto` rather than the first cheap-tier entry (`packages/core/src/providers/cli-defaults.ts`).
-
----
-
-## OpenAI (Codex)
-
-### Install
-
-```bash
-npm install -g @openai/codex
-```
-
-Docs: <https://developers.openai.com/codex/cli>
-
-Verify: `codex --version`
-
-### Connect
-
-```bash
-codex login
-```
-
-Goodboy runs this in a hidden PTY and opens the printed URL itself. No external terminal.
-
-### Disconnect
-
-```bash
-codex logout
-```
-
-### Subscription tier
-
-Requires **ChatGPT Plus/Pro/Business/Edu/Enterprise** (preferred) or an `OPENAI_API_KEY` env var. Goodboy uses whichever auth the local `codex` CLI is configured with.
-
-### Default models
-
-Per `packages/core/src/providers/codex/catalog.ts`:
-
-- **Turn**: `gpt-5.6` (default), `gpt-5.5`, `gpt-5.4`.
-- **Cheap**: `gpt-5.4-mini`.
-
-`gpt-5.2`, `gpt-5.3-codex` and `gpt-5.3-codex-spark` are retired ids: a session created on one of them still resolves through `parseLegacyId.ts`, which remaps `gpt-5.2` and `gpt-5.3-codex` to `gpt-5.4` and `gpt-5.3-codex-spark` to `gpt-5.4-mini`.
-
-### Turn spawn args
-
-Goodboy spawns codex non-interactively:
+**Codex.** Spawned non-interactively:
 
 ```
 codex exec --json --skip-git-repo-check --model <ID> --cd <DIR> -s workspace-write -- <PROMPT>
 ```
 
-In `bypassPermissions` mode `-s workspace-write` is replaced with `--dangerously-bypass-approvals-and-sandbox`. The TUI you see when running `codex "..."` from a shell is a different mode. Goodboy uses `exec` for headless JSONL streaming.
+In `bypassPermissions` mode `-s workspace-write` becomes
+`--dangerously-bypass-approvals-and-sandbox`.
 
-### Non-TTY auth quirk
-
-codex CLI v0.130 writes `codex login status` output to **stderr** when no TTY is attached. Tauri-spawned children never have a TTY, so Goodboy explicitly reads both streams in the auth check (`AuthCommandOutput::primary_text()` in `apps/desktop/src-tauri/src/providers.rs`). If you see "installed, not logged in" in the providers panel even though terminal `codex login status` returns `Logged in using ChatGPT`, your build predates this fix: rebuild from `feat/providers-overhaul`.
-
-### Debugging
-
-```bash
-GOODBOY_DEBUG_CODEX=1 pnpm tauri dev
-```
-
-The terminal prints `[codex-debug] auth cmd: …`, the raw stdout/stderr from the auth subprocess, and for every codex turn it prints the full spawn args + exit code + stderr tail. Use this when the providers panel says one thing and the terminal says another.
-
-### Smoke test
-
-Confirm end-to-end auth + spawn work against the real binary:
+codex CLI v0.130 writes `codex login status` output to **stderr** with no TTY
+attached, and Tauri-spawned children never have one, so the auth check reads
+both streams (`AuthCommandOutput::primary_text()` in
+`apps/desktop/src-tauri/src/providers.rs`). Debug with
+`GOODBOY_DEBUG_CODEX=1 pnpm tauri dev`. Real-binary smoke test, skipped by
+default:
 
 ```bash
 GOODBOY_TEST_REAL_CODEX=1 cargo test --lib -- --ignored codex_real
 ```
 
-Skipped by default; opt in when you want to verify a fresh install.
+**Google (Antigravity).** Google deprecated the Gemini CLI's login-with-Google
+flow on 2026-06-18; `agy` is the successor.
 
----
-
-## Google (Antigravity)
-
-Google deprecated the Gemini CLI consumer "login with Google" flow on 2026-06-18. Antigravity (`agy`) is its official successor: a single Go binary installed via curl.
-
-### Install
-
-```bash
-curl -fsSL https://antigravity.google/cli/install.sh | bash
-```
-
-Docs: <https://antigravity.google/cli>
-
-Verify: `agy --version`
-
-### Connect
-
-**Antigravity authenticates outside the CLI, and Goodboy cannot drive it.** `agy` (v1.1.9) has no auth surface at all: `agy help login` answers `Error: unknown subcommand: login`, and the full subcommand list is `agent, agents, changelog, help, install, models, plugin, plugins, update`. There is no `auth`, no `logout`, no `status`. Earlier revisions of this file, and `PROVIDER_LIFECYCLE_COMMANDS`, declared `agy login`: that command has never existed and would fail on click, so gemini ships no Connect button.
-
-Sign in from the Antigravity app itself, which writes the session to `~/.gemini/antigravity-cli/`, or set a Gemini API key via `GEMINI_API_KEY`, which `agy` honors with no browser round-trip.
-
-### Disconnect
-
-```bash
-rm -rf ~/.gemini/antigravity-cli
-```
-
-Goodboy wires the disconnect button to remove the session directory directly.
-
-### Subscription tier
-
-Requires **Google AI Pro** (or the free tier with rate caps). Goodboy uses the local CLI's authenticated Google account, or a `GEMINI_API_KEY` credential when set.
-
-### Default models
-
-Per Google's Gemini 3.x lineup:
-
-- **Turn**: `gemini-3.1-pro`.
-- **Cheap**: `gemini-3.5-flash` (default).
-
-Both support a 1M-token context window.
-
-### Turn spawn args
-
-Goodboy spawns `agy` non-interactively:
+**Antigravity authenticates outside the CLI, and Goodboy cannot drive it.** `agy`
+(v1.1.9) has no auth surface: the subcommand list is `agent, agents, changelog,
+help, install, models, plugin, plugins, update`. `agy login` has never existed,
+so the provider ships no Connect button. Sign in from the Antigravity app, which
+writes the session to `~/.gemini/antigravity-cli/`, or set `GEMINI_API_KEY`.
+Goodboy reads that directory as ground truth: an email claim in a session file
+populates the identity, any session file marks the provider connected, and
+API-key auth is surfaced by the credential layer instead. Turn spawn:
 
 ```
 agy -p <PROMPT> --model <MODEL> --sandbox
 ```
 
-`--sandbox` is replaced by `--dangerously-skip-permissions` under bypass permission mode. The working directory is set on the spawned process. `agy` has no stable structured JSON output, so the parser treats each stdout line as an `assistant_text` delta; per-turn token usage is unavailable in headless mode, so cost is estimated from per-token pricing.
+`--sandbox` becomes `--dangerously-skip-permissions` under bypass permission
+mode. `agy` has no stable structured JSON output, so the parser treats each
+stdout line as an `assistant_text` delta; per-turn token usage is unavailable in
+headless mode, so cost is estimated from per-token pricing.
 
-### Auth detection
+**opencode, OpenRouter, Moonshot.** All three ride the same `opencode` binary,
+each addressing its own account. `opencode auth login` is menu-driven
+(`-p <provider>` and `-m <method>` skip the pickers). `opencode auth list`
+prints a boxed report terminated by a `N credentials` row; Goodboy parses the
+names out of that section (each row is `<name>` followed by an ANSI-dimmed
+method, so the name ends at the first escape sequence), and no rows means
+disconnected. The `Environment` block below it is deliberately ignored:
+env-var credentials belong to Goodboy's credential layer.
 
-`agy` has no stable `auth status` subcommand. Goodboy reads `~/.gemini/antigravity-cli/` directly as ground truth: an email claim in a session file populates the identity, and any session file marks the provider connected. API-key auth leaves no session directory and is surfaced as connected by the credential layer. If the providers panel shows "not logged in" after a successful login, click **refresh** so the file check runs again.
+opencode resolves providers live against models.dev, so the model id carries the
+provider: OpenRouter models are stored pre-slugged
+(`openrouter/anthropic/claude-sonnet-4.5`) and Moonshot addresses Moonshot
+directly (`moonshotai/kimi-k3`). Both already contain a `/`, so neither gets an
+`OPENCODE_ROUTING` prefix. The Moonshot key lives under `MOONSHOT_API_KEY` and
+is validated against `https://api.moonshot.ai/v1/models` before storage.
 
----
+## Models and effort
 
-## opencode, OpenRouter and Moonshot AI (beta)
+Which models exist, their context window, cost tier and effort ladder are all
+compiled, never listed here: `packages/core/src/providers/capabilities.ts` and
+the per-provider `catalog.ts` under `packages/core/src/providers/`. The
+directory is named after the CLI, not the provider id, so the anthropic catalog
+is `providers/claude/catalog.ts`.
 
-All three ride the same `opencode` binary. OpenRouter and Moonshot AI are the API-key providers routed through it, each addressing its own account rather than brokering through the other.
+What the catalogs do not tell you:
 
-### Install
-
-```bash
-npm install -g opencode-ai
-```
-
-### Connect
-
-```bash
-opencode auth login
-```
-
-The flow is menu-driven (`-p <provider>` and `-m <method>` skip the pickers). Goodboy runs it hidden and reveals the terminal when it stalls, which for a menu is immediate.
-
-### Disconnect
-
-```bash
-opencode auth logout
-```
-
-### Auth probe
-
-```bash
-opencode auth list
-```
-
-Prints a boxed report of stored credentials, terminated by a `N credentials` row. Goodboy parses the credential names out of that section (each row is `<name>` followed by an ANSI-dimmed method, so the name is everything before the first escape sequence). No rows means disconnected. OpenRouter is connected when one of those rows names it, Moonshot when one names Moonshot. The `Environment` block below it lists providers reachable through env vars and is deliberately ignored: env-var credentials belong to Goodboy's own credential layer.
-
-### Model addressing
-
-opencode resolves providers live against models.dev, so the model id carries the provider. OpenRouter models are stored pre-slugged (`openrouter/anthropic/claude-sonnet-4.5`) and Moonshot models address Moonshot directly (`moonshotai/kimi-k3`). Because both already contain a `/`, neither gets an `OPENCODE_ROUTING` prefix.
-
-### Moonshot AI models
-
-- **Turn**: `kimi-k3` (`moonshotai/kimi-k3`), 1,048,576-token input context, 131,072-token output. Listed at $3.00/M input and $15.00/M output, the same bracket as Sonnet 4.5, so it carries `costTier: 'mid'`.
-- No cheap tier: Moonshot ships a single model, so auxiliary operations resolve to `kimi-k3` as well.
-- The API key lives under `MOONSHOT_API_KEY` and is validated against `https://api.moonshot.ai/v1/models` before the credential is stored.
-
----
-
-## Effort
-
-Effort is the third axis of every model picker, next to provider and model. How the picker renders it is owned by [model-picker.md](model-picker.md); this section owns which levels each provider actually accepts. Ladders are declared per model in the provider catalogs under `packages/core/src/providers/<provider>/catalog.ts`:
-
-- **Claude Opus and Fable**: `low`, `medium`, `high`, `extra-high`, `max`.
-- **Claude Sonnet**: `low`, `medium`, `high`.
-- **Codex turn models**: `low`, `medium`, `high`, `xhigh`; `gpt-5.6` additionally accepts `max`.
-- **`gpt-5.4-mini`**: `low`, `medium`, `high`, `xhigh`, the same ladder as `gpt-5.5` and `gpt-5.4`.
-
-Cursor is the exception to the ladder shape: effort is baked into the model slug, so each catalog entry lists the combos it has and the reachable levels depend on the Thinking and Fast toggles. `claude-haiku-4-5` and every Gemini model have no ladder at all and emit no effort arg. Picking a level a model does not support clamps to the top of what it supports (`clampEffort` in `packages/core/src/providers/clampEffort.ts`).
-
-The UI label and the emitted value diverge in exactly one place: `extra-high` reads **Very high** in the picker and goes out as `xhigh` on the wire. Every other level is emitted verbatim. claude takes `--effort <level>`, codex takes `-c model_reasoning_effort="<level>"`, both built in `apps/desktop/src-tauri/src/turn.rs`.
-
-There is no `ultracode` level. `claude --help` lists exactly `low, medium, high, xhigh, max` for `--effort` and the registry matches it. Run that check before extending the union.
-
----
+- Cursor surfaces 193 slugs via `cursor-agent --list-models`; the curated subset
+  is pinned against that list by
+  `packages/core/src/providers/cursor/agent-model-ids.test.ts`. Cursor bakes
+  effort into the slug, so it never receives an effort flag and its reachable
+  levels depend on the Thinking and Fast toggles, and it is the one provider
+  whose `getCheapModel` returns `auto` rather than the first cheap-tier entry
+  (`packages/core/src/providers/cli-defaults.ts`).
+- Retired codex ids still resolve through `parseLegacyId.ts`, so an id absent
+  from the catalog is not necessarily dead.
+- An unsupported effort level clamps to the top of what the model supports
+  (`clampEffort`), it does not fail.
+- Label and wire value diverge in exactly one place: the `xhigh` level reads
+  **Very high** in the picker. claude takes `--effort <level>`, codex takes
+  `-c model_reasoning_effort="<level>"`, both built in
+  `apps/desktop/src-tauri/src/turn.rs`.
+- There is no `ultracode` level. `claude --help` lists exactly
+  `low, medium, high, xhigh, max`. Run that check before extending the union.
 
 ## Defaults and task models
 
-Provider Studio has a **Defaults** entry (Configuration section of the rail) that owns workspace-level provider configuration:
+Provider Studio → **Defaults** owns workspace-level configuration.
 
-- **Default provider**: the provider new sessions start on. Only connected providers are selectable.
-- **Task models**: which provider and model run each auxiliary operation (summaries, branch names, planning, agent titles, PR and MR drafts). Each row defaults to **Auto** (the cheapest model of the default provider, shown with a recommended tag); picking a concrete provider + model pins that operation to it. Preferences persist per workspace (`workspaces.task_models`) and resolve through `resolveTaskModel` in `@goodboy/core`. A task-model pin carries no effort.
-- **Agent roles**: which provider, model and effort every agent spawned in a given role starts on. There are seven roles, the union `AgentRole` in `@goodboy/types`: scout, investigator, planner, implementer, reviewer, tester, custom. A pin on the agent itself or on a workflow step still wins over the role. Overrides persist per workspace (`workspaces.role_models`) and resolve through `resolveRoleRouting` in `@goodboy/core`. Validation is lenient: an unknown provider or a model absent from the registry drops the whole override and the compiled role default applies, while an effort outside the chosen model's ladder is normalized (to the role's default effort when that is on the ladder, otherwise to the top of it) rather than rejected.
-- **Role fallback**: a pinned role takes a second, optional pick under its primary one, the model that role moves to when its first choice fails mid-turn. Left on **Automatic** the key is simply absent from the stored preference (never a sentinel string, because `auto` is a real Cursor model id) and nothing changes: the built-in heuristic in `planTurnFallback` keeps choosing on its own. Set, it is tried first on the first retry of any classified failure, and the heuristic stays the backstop for the second one. `MAX_ATTEMPTS` stays at 2 either way, and the failure classification is untouched. The fallback carries no effort of its own: it inherits the role's, through the same ladder normalization the pin gets. It is validated as leniently as the pin but independently of it, so a fallback pointing at a provider outside the registry, at a model the catalogue does not know, at a provider that is not connected, or at the pair that just failed is dropped in favour of the heuristic rather than failing the turn. A rejected fallback never drags the pin down with it. There is no chain: one entry, then the heuristic.
-
-Task models never touch chat turns: per-agent model overrides and the session default keep governing conversation turns.
+- **Default provider**: what new sessions start on. Connected providers only.
+- **Task models**: which provider and model run each auxiliary operation
+  (summaries, branch names, planning, agent titles, PR and MR drafts). Each row
+  defaults to **Auto**, the cheapest model of the default provider. Persists in
+  `workspaces.task_models`, resolves through `resolveTaskModel` in
+  `@goodboy/core`. A pin carries no effort, and task models never touch chat
+  turns.
+- **Agent roles**: provider, model and effort per role, the roles being the
+  union `AgentRole` in `@goodboy/types`. A pin on the agent or on a workflow
+  step wins over the role. Persists in `workspaces.role_models`, resolves through
+  `resolveRoleRouting`. Validation is lenient: an unknown provider or an
+  unregistered model drops the whole override back to the compiled default,
+  while an effort off the ladder is normalized (to the role's default effort
+  when that is on the ladder, otherwise to the top of it).
+- **Role fallback**: the optional second pick a pinned role moves to when its
+  first choice fails mid-turn. On **Automatic** the key is absent from the
+  stored preference, never a sentinel string, because `auto` is a real Cursor
+  model id. Set, it is tried first on the first retry of any classified failure,
+  with the `planTurnFallback` heuristic as the backstop for the second.
+  `MAX_ATTEMPTS` stays 2 and the classification is untouched. It inherits the
+  role's effort, is validated independently of the pin, and drops back to the
+  heuristic when it names an unknown provider or model, a disconnected
+  provider, or the pair that just failed. One entry, then the heuristic.
 
 ## Multi-account
 
-A common setup: Claude Pro on `personal@example.com` and Claude Team on `work@example.com`. Each session in Goodboy targets one active identity per provider.
-
-**Provider Studio** (footer → Providers) shows the currently authenticated identity (email or username) for each connected CLI. Verify this before starting a session: the displayed identity is the account that will be billed for every turn.
-
-### How to switch accounts
-
-1. Open **Provider Studio** from the footer.
-2. Click **disconnect** next to the provider you want to switch.
-3. Complete the logout in the terminal that opens.
-4. Click **connect** for the same provider.
-5. Log in with the desired account in the terminal / browser.
-6. Click **refresh** in the providers panel. The identity display updates to the new account.
-
----
+Each session targets one active identity per provider. Provider Studio (footer →
+Providers) shows the authenticated identity per connected CLI, and that is the
+account billed for every turn. To switch: **disconnect**, complete the logout,
+**connect**, log in with the other account, then **refresh**.
 
 ## Troubleshooting
 
-### CLI not detected (PATH issue)
-
-Goodboy detects provider binaries via `$PATH`. If a CLI is installed but the providers panel shows it as missing:
-
-1. Find the install path, e.g. `which claude` or `npm root -g`.
-2. Add the directory to your shell profile (`~/.zshrc`, `~/.bashrc`, etc.):
-   ```bash
-   export PATH="/path/to/bin:$PATH"
-   ```
-3. Restart your shell, then relaunch Goodboy.
-
-### OAuth callback failure
-
-The login flow runs in a hidden PTY and Goodboy opens the browser from the URL the CLI prints. If the browser does not open or the callback hangs:
-
-1. Open **Show details** on the connect card and use **Open the link again**, or read the command and run it yourself.
-2. After 120s of waiting Goodboy offers **Run in my terminal**, which hands the same command to your system terminal.
-3. Complete the flow there. The auth probe keeps polling for 60s after the CLI exits, so Goodboy picks the result up on its own.
-
-### Subscription rate-limit errors
-
-Goodboy uses the subscription cap of your CLI. When the cap is hit, the CLI returns an error and the session stalls. Wait for the cap to reset, typically 5 hours for Claude Max. Note: the summarizer runs once per session compaction, so each compaction counts against your cap alongside the primary turn.
-
-### Wrong account connected
-
-If the identity shown in the providers panel is not the account you want:
-
-1. Follow the **switch accounts** steps above.
-2. Confirm the updated identity in the providers panel before starting or resuming a session.
+- **CLI not detected.** Detection is via `$PATH`. Find the install path
+  (`which claude`, `npm root -g`), export it in your shell profile, restart the
+  shell, relaunch Goodboy.
+- **OAuth callback failure.** Use **Show details** → **Open the link again** on
+  the connect card, or after 120s **Run in my terminal**, which hands the same
+  command to your system terminal. The probe keeps polling for 60s after the CLI
+  exits, so Goodboy picks the result up on its own.
+- **Rate-limit errors.** Goodboy uses your subscription cap. Wait for the reset,
+  typically 5 hours for Claude Max. The summarizer runs once per session
+  compaction and counts against the same cap.
+- **Wrong account.** Switch as above, then confirm the identity before resuming.

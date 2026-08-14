@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { NoteHeader } from './index';
+import { NoteHeader } from '@goodboy/ui';
 
 afterEach(cleanup);
 

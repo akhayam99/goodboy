@@ -3,8 +3,8 @@ import { EmptyState, StatCard, formatTokens, formatUsd, formatUsdPrecise } from 
 import type { BudgetAlert, SessionId } from '@goodboy/types';
 import type { ProviderSpendEntry } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
-import { PanelLoading } from '../../../../shared/components/PanelLoading';
+import { ErrorStrip } from '@goodboy/ui';
+import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { AlertBanner } from './AlertBanner';
@@ -12,8 +12,8 @@ import { ModelTable } from './ModelTable';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { SpendBar } from './SpendBar';
 import { TurnsTable } from './TurnsTable';
-import { StudioWidget } from '../../../../shared/components/StudioWidget';
-import { Sparkline } from '../../../../shared/components/Sparkline';
+import { StudioWidget } from '@goodboy/ui';
+import { Sparkline } from '@goodboy/ui';
 import {
   buildModelBreakdown,
   chronologicalTurnCosts,

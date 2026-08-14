@@ -7,17 +7,17 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { CountToggle, InlineConfirm, cn } from '@goodboy/ui';
-import { LensEmptyState } from '../../../../../../shared/components/LensEmptyState';
+import { LensEmptyState } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { formatError } from '../../../../../../shared/lib/errors';
 import { ConnectIntegrationEmptyState } from '../../../../../integrations/ConnectIntegrationEmptyState';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
-import { GhostActionButton } from '../../../../../../shared/components/GhostActionButton';
+import { GhostActionButton } from '@goodboy/ui';
 import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { FocusedPane } from '../../../../../../shared/components/PaneShell/FocusedPane';
-import { PANE_RHYTHM } from '../../../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { useSessionRepo } from '../../../../../../store/slices/worktrees/useSessionRepo';
 import { branchRequests } from '../../../../branchRequests';
 import { buildWorkItems } from '../../../../workItems';

@@ -1,5 +1,5 @@
 import { GitBranch } from 'lucide-react';
-import { CopyButton } from '../CopyButton';
+import { CopyButton } from '@goodboy/ui';
 
 const COMMANDS = ['git branch -M main', 'git push -u origin main'] as const;
 
@@ -30,6 +30,7 @@ export const BaseBranchGuide = () => {
           </div>
         ))}
         <CopyButton
+          presentation="icon"
           value={COMMANDS.join('\n')}
           label="Copy commands"
           className="absolute right-2 top-2 flex items-center gap-1 rounded-md border border-border-soft bg-background px-2 py-1 text-2xs text-muted-foreground transition-colors hover:text-foreground"

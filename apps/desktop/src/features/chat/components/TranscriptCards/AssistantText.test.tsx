@@ -13,7 +13,8 @@ vi.mock('@goodboy/core', () => ({
   stripControlMarkers: (text: string) => text,
 }));
 
-vi.mock('@goodboy/ui', () => ({
+vi.mock('@goodboy/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/ui')>()),
   CopyButton: () => <button type="button">copy</button>,
   Markdown: ({ text }: { text: string }) => <div>{text}</div>,
 }));

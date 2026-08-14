@@ -10,7 +10,8 @@ type AgentsSectionMockProps = {
   readonly showWorkflowAttach: boolean;
 };
 
-vi.mock('@goodboy/ui', () => ({
+vi.mock('@goodboy/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/ui')>()),
   ScrollFade: ({ children }: { readonly children: React.ReactNode }) => <div>{children}</div>,
   cn: (...parts: ReadonlyArray<unknown>) => parts.filter(Boolean).join(' '),
 }));

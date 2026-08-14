@@ -1,545 +1,244 @@
 # Navigation and information architecture
 
-Covers the breadcrumb model, app-chrome header, sidebar visibility, and studio
-taxonomy. For the file locations of every component named here see
-[file-system.md](file-system.md). For visual layout rules see
-[styling.md](styling.md).
+> **Read this when** deciding what surface exists and where it lives: lens,
+> pane, strip, footer, breadcrumb. **Not for** spacing/scroll/overlay
+> mechanics (`docs/styling.md`) or design intent and tone (`DESIGN.md`).
 
-## One layout
+## The model
 
-`AppShell` from `@goodboy/ui` is the single app layout. It is mounted once, in
-`apps/desktop/src/App.tsx`, and owns the top bar, left column, content column
-and footer slots for every surface: board, session, and studios. Surfaces fill
-the slots, they do not define their own shell. A new surface that needs a
-different frame changes `AppShell` or its props, never forks a second layout.
+- **The board is home; chat is a destination.** With a workspace open and no
+  session selected, main is a cross-session stage board (needs you / running /
+  in review / building / done). Chat, diff, terminal and open-in-IDE are
+  reached from cards, never landed in; every capability stays one navigation
+  away.
+- **Four surfaces, four jobs, no competition.** Top bar is chrome ("where am I
+  and what is it costing"), footer is access ("where do I go"), sidebar is
+  presence ("what else is going on"), the ⌘K palette is transit ("where do I
+  want to be").
+- **The top bar carries state and identity, never destinations.** It never
+  edits a record in place; anything that opens a destination belongs to the
+  footer.
+- **One home per thing.** If a thing must exist in state A and can exist in
+  state B, it lives where it must and B gets no second copy. Worked example:
+  there is no sessions column on the board, so anything reachable from the
+  board cannot live in the sidebar; workspace identity lives in the top bar and
+  the sidebar renders no workspace name.
+- **Pin the structure, flex the density.** A control's position is fixed so it
+  can be learned. No control appears or disappears at a count threshold, though
+  counts themselves may: a chip reading zero is noise, not structure. Two
+  exceptions. Integration groups sit in a row, so connecting one shifts
+  controls to its right: position is fixed in order, not in absolute terms. The
+  update control comes and goes with a pending update, earning that by being an
+  event rather than a count.
+- **Hidden is not gone.** Anything the user can put away must come back without
+  hunting for it. A hidden sessions column peeks back from a deliberate anchor
+  or the pointer resting at the window edge, and peek floats the one sidebar
+  rather than laying it out.
+- **Navigation chrome is neutral at rest.** Selection reads as a muted fill,
+  never an inversion: the app has no inverted navigation control. One
+  exception, "Back to board" is tinted `primary`, the single sidebar action
+  that leaves the session.
+- **Settings match the scope they edit.** Application settings is a full-page
+  studio, workspace settings a scoped pane. Changes save instantly: no
+  Save/Cancel footer, no stacking one settings surface on another.
+- **One overlay slot.** Workspace-scoped editors share a single overlay over
+  main so the sessions column stays visible; one at a time, by strict
+  precedence, never stacked. Scope decides the pattern: session-scoped editors
+  layer over the session pane, app-level studios are full-page, and what became
+  a lens stays a lens.
 
-## Breadcrumb derivation
+A second entry point reuses the mount, never builds a parallel one: the palette
+dispatches an event the owning component listens for, and the keyboard path
+calls the same hook method as the button.
 
-`buildBreadcrumb(input)` is a pure function in
-`apps/desktop/src/app/components/AppBreadcrumb/buildBreadcrumb.ts`.
-It is rendered by `AppBreadcrumb` (same folder) inside `WorkspaceLinkDialog`
-(the workspace-create dialog). No router, no nav store: the crumb is derived
-from the existing store (`currentWorkspaceId`, `currentSessionId`,
-`workspaces`, `sessions`) plus the studio open-state flags forwarded from
-`App.tsx`.
+## Surfaces
 
-`AppBreadcrumb` is NOT rendered in `AppTopBar`. Navigation context is surfaced
-differently depending on where the user is:
+**Shell layout.** One strip of chrome above, one footer below, and between them
+one sidebar plus main. **There is one app layout and every surface fills its
+slots**: board, session and studios do not define their own frames, and a
+surface needing a different frame changes the shared one rather than forking a
+second. **Two flanking columns at once is not the IA**: a session draws one
+full-width pane and its navigation lives in that single left sidebar, so
+nothing has to reach for a second column and there is no second width to
+persist. The sidebar carries presence, appearing when
+there is something else going on to be present about, and inside a session it
+follows a persisted preference toggled from one control or ⌘B, which peek never
+touches.
 
-- Inside a session: `SessionNavSidebar` opens with `SidebarHeader`, which carries
-  the workspace identity and the hide control, then "Board" in both modes, bound
-  to ⌘⇧H and showing that glyph on hover. In lens mode a second row below it
-  holds the session title and steps back to the sessions list; sessions mode has
-  no second row.
-- Inside a session lens: `buildSessionBreadcrumb`
-  (`features/session/components/SessionWorkspace/sessionBreadcrumb.ts`) is read
-  by `useSessionCrumbs` and rendered by `SessionCrumbBar`, a bar in the page
-  above the lens rather than a region of the top bar. The bar renders the trail
-  exactly as returned and starts at `Overview`: the session name is not repeated
-  as a crumb because the sidebar already carries it. At most three crumbs
-  deep. Shapes: `Overview > {LensName}`,
-  `Overview > Workflows > {WorkflowName}`, `Overview > Plans > {PlanTitle}`,
-  and for the session studios `Overview > Workflows > Create`,
-  `Overview > GitHub > PR #{n}`, `Overview > GitLab > Merge request`.
-  Every integration lens uses the tool name that its sidebar row uses (GitHub,
-  GitLab, Jira, Linear, Sentry, Slack) and sits at the same depth, so a studio
-  hangs off its own tool rather than off another tool's lens. A list view never
-  pre-populates a crumb for an item the user has not opened yet.
-  The last crumb is the current location and is never clickable. With an agent
-  open this trail is replaced entirely by the agent-overlay breadcrumb (see
-  below), never nested inside it.
+A window is a strip, a set of columns, and a pane. Each owns one thing.
 
-### In-session crumb precedence
+**The strip** is one row closed by a `<Divider />`, rendered **outside** the
+grid, so no column resize, no hide animation and no overlay can move it.
 
-With an agent open, `AgentOverlay` replaces the lens content (transcript plus
-inspector, no separate agent-list column) and its own header renders
-`AgentBreadcrumb` (`SessionWorkspace/parts/AgentBreadcrumb.tsx`, crumbs built by
-`agentOverlayCrumbs.ts`) instead of the `Overview > ...` trail above. Shape:
-`{HomeLensName} > {AgentName}`, e.g. `Agents > {AgentName}`; never rooted at
-`Overview`, at most two crumbs. The overlay used to carry a dedicated
-agent-list column with its own back button (`ChatHeaderBack.tsx`) and a
-persisted width (`STORAGE_KEYS.agentOverlayListWidth`); both are gone, and
-`AgentBreadcrumb` is the sole navigation control in the header now.
+**The columns** are one grid at persisted widths, clamped on read.
 
-The first crumb is that agent's home lens, resolved by `resolveOverlayHome`
-(same folder). If the active lens is one that hosts an agent list (`agents`,
-`resolve`, `workflows`), the active lens wins; otherwise the selected agent's
-own home lens is used, falling back to `agents`. Standing in Agents with a
-workflow-step agent selected therefore keeps the crumb on Agents: before this
-rule, an auto-advancing workflow step renamed the crumb while the user was
-standing in another lens.
+- **A column has one reduced state, and it is never a narrower copy of
+  itself.** Hiding zeroes the column and its handle and marks the aside
+  `inert`, because a zero-width column that still takes focus is a keyboard
+  trap. Narrowing to a rail is legal only where the content survives at rail
+  width; where peek already answers "let me glance at it", a rail would be a
+  second copy of the same list and is not added. The shell primitive can lay
+  out more reduced states than the product uses: which one a column gets is
+  this decision, not an availability question.
+- **The overlay slots sit inside the grid, not above it.** A floating overlay
+  spans the full row so a peek can hover over main without taking layout; a
+  full-surface overlay spans the work area and stops short of the sessions
+  column, so an editor never hides where the user is.
 
-The last crumb is plain text when the agent has no sibling agent sharing the
-same home lens; otherwise it is a button that opens a popover listing those
-siblings (avatar, name, status) to switch the open agent in place, via
-`selectAgent`.
+**The pane** is the work: the only surface that scrolls its own body, mounts
+editors and takes a title.
 
-The workflow case swaps the whole control instead of dropping the crumb: when
-the home lens is Workflows, `ChatWorkflowHeader` renders `WorkflowBreadcrumb`
-(same folder) in place of `AgentBreadcrumb`. The trail starts with
-`{HomeLabel} > {StepName}`, where the home label is the workflow's kind name
-(falling back to "Workflows") and the step crumb is a popover switching step via
-`selectAgent` on that step's root agent. When the step root has implementer
-cluster children, a third crumb appears. It shows `{AgentName}` when a child is
-selected and `{CompletedCount}/{ClusterCount} clusters` when the root is
-selected. Completed and skipped children both count as done. There is no
-separate step strip and no "Part of {WorkflowName}" line.
+**Peek is a display of the sidebar, not a second sidebar.** The overlay renders
+the same sidebar component; there is one sessions list in the codebase. It is
+wider than the pinned column, applied at read time so widening the peek never
+moves the column, and it opens faster from the strip toggle than from the screen
+edge, because a deliberate anchor is not a graze.
 
-### Crumb trails
+**The session overview is the reference page.** It carries the whole surface
+grammar on one screen; read it before designing a new one. Its rhythm: section
+eyebrow, at most one action in a section header and one primary
+button per section, a `<Divider />` between sections and never a border on one.
+An empty section renders an inline empty state rather than hiding, since a
+section that vanishes teaches nothing, and finished work collapses into one
+summary row per category. Urgency is carried by the surface, never by a badge
+parked beside it.
 
-The table below shows the conceptual IA that `buildBreadcrumb` implements.
-It is currently rendered only inside `WorkspaceLinkDialog` for the
-`Overview > Workspace > Create` trail; the other rows describe the logical
-model the function supports.
+## Breadcrumbs
 
-| Trail                                               | When shown                                                                                                    |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Overview                                            | No workspace is active (empty state only)                                                                     |
-| Overview > Workspace > {WorkspaceName}              | Active workspace board (normal board state)                                                                   |
-| Overview > Workspace > {WorkspaceName} > {StepName} | Open session work surface; {StepName} is the session label (session.goal, falling back to "untitled session") |
-| Overview > Workspace                                | Workspace launcher / switcher                                                                                 |
-| Overview > Workspace > Create                       | Workspace creation dialog                                                                                     |
-| Overview > Resolve [> {ResolveName}]                | Resolve surface                                                                                               |
-| Overview > PullRequest > Comments                   | GitHub Studio PR comments                                                                                     |
+- **The trail belongs to the page, not to the chrome.** It sits above the lens
+  in the work area, never in the top bar, because the top bar is workspace
+  chrome and a session trail is page context.
+- **The trail starts at `Overview`, and the session name is not a crumb.** The
+  sidebar already carries the session identity, so repeating it in the trail
+  spends a crumb on something the user is already looking at.
+- At most three crumbs. The last is the current location and is never
+  clickable. A list view never pre-populates a crumb for an item the user has
+  not opened yet.
+- **An integration trail hangs off its own tool**, named as the sidebar names
+  it (GitHub, GitLab, Jira, Linear, Sentry, Slack), at the same depth as any
+  other lens: a studio belongs under its tool, never under another tool's lens.
+- **With an agent open the trail is replaced, never nested**:
+  `{HomeLens} > {Agent}`, at most two crumbs, never rooted at `Overview`.
+- **The home lens is resolved, not inherited.** If the active lens hosts an
+  agent list (`agents`, `resolve`, `workflows`) it wins; otherwise the agent's
+  own home lens, falling back to `agents`. Standing in Agents with a
+  workflow-step agent selected keeps the crumb on Agents, so an auto-advancing
+  step cannot rename it out from under the user.
+- **A crumb with siblings is a switcher**: plain text when the agent is alone
+  in its home lens, otherwise a popover that switches the open agent in place.
+- **The workflow case swaps the whole control**: `{WorkflowKind} > {Step}`,
+  plus a third crumb for implementer clusters (the child's name, or
+  `{done}/{total} clusters` when the root is selected). No separate step strip,
+  no "Part of {Workflow}" line.
 
-"Step" is the requester term for a session; the rendered crumb uses the real
-session label, not the word "step".
+## Top bar
 
-The bare `Overview` row appears only when no workspace is active. The normal
-board renders `Overview > Workspace > {WorkspaceName}`.
+Identity and state on the left, workspace-wide signals and set-once preferences
+on the right.
 
-The last crumb is always the current location and is non-clickable. Clickable
-crumbs navigate via `toOverview` / `toWorkspaceLauncher` / `toWorkspaceBoard`.
+- Workspace identity opens an anchored popover that switches and creates
+  workspaces; ⌘O and the palette open that same popover, never a second one.
+  Workspace settings has its own control next to identity: buried inside the
+  switcher, a common per-workspace preference was easy to never discover.
+- **Identity is mounted once.** It sits in the top bar on the board and moves
+  into the sidebar header inside a session, so exactly one switcher is live at
+  a time and the shortcut resolves to a single popover rather than racing two.
+- Theme is the one set-once preference kept here, flipped often enough to earn
+  the slot. The guide and pair-device live in the settings studio and palette.
+- **The report control is the one carve-out from "the top bar never edits".**
+  Its popover drafts a bug report, which is not a record until filed; the draft
+  survives closing the popover, and the primary action opens the full form
+  rather than sending. Precedent: VS Code's top-level issue reporter.
 
-### Chrome states
+## Footer
 
-`BreadcrumbChrome` is the visual wrapper applied to the breadcrumb row. States:
+Left: integration tools in three groups, code hosts, trackers and conversation
+tools. Every shipped integration belongs to exactly one group, enforced at
+compile time, so none is unreachable. A group shows its connected members and
+ends with one add control listing every member with its connection state.
 
-| State                | Trigger                                                                                                                                                         |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `none`               | Default                                                                                                                                                         |
-| `workspace-launcher` | `switcherOpen`                                                                                                                                                  |
-| `workspace-create`   | `addWorkspaceOpen`                                                                                                                                              |
-| `pull-request`       | `githubStudioOpen`                                                                                                                                              |
-| `resolve`            | Supported by the builder; not yet wired to a global flag. The live resolve surface is the session's Resolve lens (`ResolverAgentsLane`), not a sidebar cluster. |
+- The add control never leaves its position: once every member is connected it
+  stays mounted and disabled, with the reason in both its tooltip and its
+  accessible name.
+- A group with nothing connected labels its add control with the category noun,
+  so a first-run workspace reads what each group offers instead of hovering
+  anonymous glyphs. The label goes once a member connects; the slot does not.
+- A workspace with no repository swaps the code-host group whole for `Add a
+repo` and drops the integrations that need a repository to read.
 
-## App-chrome header
+Right: the launchers reached by name, the update control while an update is
+pending, and a `More` popover for the rest.
 
-`AppTopBar` is the single app-chrome row, 36px tall. Left to right: the mascot,
-then the workspace identity and its switcher popover on the board only
-(`showWorkspaceIdentity`). Inside a session the identity moves into the sidebar,
-so exactly one mount of `WorkspaceIdentityRow` is live at a time and the ⌘
-switcher shortcut resolves to a single popover. The remaining left-side space is
-a neutral spacer; no breadcrumb is rendered in `AppTopBar` (see line 18).
+- **The release dot answers "have you read the notes for what you're
+  running"**, not "has a new release been published". It answers offline, never
+  lights up for a version the user cannot install, and a fresh install shows
+  one dot, not one per release.
+- Exactly one control per group carries the active fill, on the open
+  integration or on its group's add control when that integration is
+  unconnected, so no group hides where the user is. Opening any studio closes
+  the others.
 
-Right side: workspace rollup (attention count and today's spend), a divider,
-then running scripts, the report control, notifications, the theme toggle and
-onboarding. The report control (`ReportIssuePopover`) opens a popover holding an
-issue type and a description, both kept in the `bugReportDraft` store slice, so
-closing the popover keeps what was typed and a `Reset` empties it. Its primary
-action dispatches `goodboy:open-report-issue`, which opens the full form on the
-same draft. Theme is
-the one set-once preference kept here, because it is flipped often enough to
-earn the slot; the guide and pair-device left this row and live in the settings
-studio and the command palette. Settings and the update control left it too,
-downwards: both open a destination, and destinations belong to the footer.
+## Shortcuts
 
-Controls dispatch the same `goodboy:*` events and callbacks as before.
-
-`SessionNavSidebar` carries session navigation, the lens rail or the
-sessions/agents list, plus the two workspace-scoped controls in `SidebarHeader`:
-the workspace switcher and Preferences. Every other global control lives in the
-top bar or the footer.
-
-## App footer
-
-`AppFooter` is a persistent bottom bar rendered via the `AppShell` `footer`
-slot. Always visible on the board and inside a session.
-
-Layout:
-
-- Left: integration tools in three groups, separated by a vertical `<Divider>`:
-  code hosts (GitHub, GitLab, Bitbucket), trackers (Linear, Jira, Sentry),
-  conversation tools (Slack). `FOOTER_CATEGORIES` in `AppFooter/categories.ts`
-  owns the model, and it derives its members from one record keyed by
-  `IntegrationGlyphProvider`, so a new integration cannot compile until it names
-  a category. A group is a `role="group"` with an `aria-label`, renders its
-  connected members as glyph-only buttons, and ends with one add control
-  (`IntegrationAddPopover`) listing every member of the category with its
-  connection state. Any row there opens that integration's studio, which renders
-  the connect form when the integration is not connected yet. The add control
-  stays mounted once every member is connected and turns `aria-disabled`, with
-  the reason in both its tooltip and its accessible name, so no control leaves
-  its position.
-- Left, density: a group with nothing connected labels its add control with the
-  category noun (`Code host`, `Tracker`, `Conversation tool`), so a workspace on
-  its first run reads what each group offers instead of hovering three
-  anonymous glyphs. The label goes away as soon as that category has one
-  connected member, and the control keeps its slot either way.
-- Left, simple workspace: the code-host group is swapped whole for the
-  `Add a repo` conversion action, which has no add control, and Sentry drops out
-  of the trackers group. A simple workspace has no repository for either to
-  read.
-- Right: the launchers reached by name (workflows, providers, settings), the
-  update control while an update is pending, and a `More` popover
-  (`MoreStudiosPopover`) holding budget, impact and changelog. `MORE_STUDIOS` in
-  `AppFooter/moreStudios.ts` owns that list. The popover follows the app-global
-  anchoring recipe in [design.md](./design.md) section 6, not
-  `shared/components/OverflowMenu`, because it opens upward into the area a
-  fullscreen studio covers and needs the `z-popover` tokens to clear `z-50`.
-- Right, the release dot: the `More` control carries a dot when the running
-  version's release notes have not been opened. `useUnseenRelease` compares the
-  installed version from `getVersion()` against `changelogSeenVersion`, which
-  the changelog slice hydrates from the `settings` table at boot
-  (`changelog.lastSeenVersion`) and rewrites when `ChangelogStudio` mounts. The
-  question is "have you read the notes for what you are running", not "has a new
-  release been published", so it answers offline, it never lights up for a
-  version the user cannot install, and a fresh install shows one dot rather than
-  one per historical release.
-
-Navigation chrome stays muted while inactive across footer launchers, session
-lens rows, and the back-to-board action in the workspace sidebar.
-
-The active navigation item takes a muted fill (`bg-muted text-foreground`)
-across those surfaces. Settings was the last control to invert instead; in the
-footer it takes the same muted fill as its neighbours, so no navigation control
-in the app inverts any more.
-In the footer's integration groups that fill lands on the glyph of the open
-integration, or on the group's add control when the open integration is not
-connected and therefore has no glyph, so exactly one control per group carries
-it and no group hides where the user is. Lens rows keep `aria-current="page"`
-on the active row. Opening any studio closes the others (`closeAllStudios` in
-`App.tsx`).
-
-Every lens row is bound on the ⌘⌥ plane and reveals its glyph on hover, in
-place of the row badge, so the rail teaches the binding without widening.
-`LENS_SHORTCUTS` in `LensNav/groups.ts` maps each `LensKind` to a registry
-id and never to a literal combo.
-
-## Board-only Overview and animated sidebar
-
-`AppShell` has an additive `leftHidden` prop. When `true`, the left column
-animates to zero width via `grid-template-columns` transition; the cell fades
-and slides (`opacity` + `transform`). The resize handle is suppressed while
-hidden.
-
-`App.tsx` keeps Overview board-only and applies the user preference in session:
-
-- Overview (no session active): board-only, sidebar hidden.
-- Session entered: `SessionNavSidebar` follows the persisted column preference.
-
-In a session, users hide or show the nav column from `SidebarHeader`'s control or
-with ⌘B, whose glyph the control itself spells out in its tooltip and label. The
-toggle writes a persisted preference, while Overview still forces `leftHidden`.
-Collapsed, the column becomes `CollapsedRail`, a 44px rail holding the expand
-control, `WorkspaceRailBadge` (the switcher in collapsed form), board, new
-session, and the lens glyphs. The column also comes back on hover as a temporary
-overlay (`features/workspace/components/SidebarPeekOverlay`); the peek never
-touches the persisted preference, and its header control pins the column
-(`collapseAction="pin"`) rather than hiding it, so a peek is escapable without
-the keyboard. The peek header omits the workspace identity, since the rail
-underneath already owns the switcher while collapsed.
+One registry, three modifier planes: bare ⌘ for the app, ⌘⇧ for the session,
+⌘⌥ for the lens rail. A combo string is never written by hand outside the
+registry, so no two surfaces can claim the same chord and no shortcut can exist
+undocumented. **A shortcut is taught where it is used**: a
+control that has one shows it, as a pill on hover in dense rows and a
+parenthesised glyph in tooltips; where the row is too tight, the tooltip is the
+mount.
 
 ## Studios
 
-### Utility studios
+Utility studios are fullscreen overlays rendered between the top bar and the
+footer, so both bars stay visible and interactive. They are not part of the
+breadcrumb IA, exit on close or Esc, and only one is open at a time.
 
-Settings, budget, providers, impact, changelog, notifications, Linear, Jira,
-Slack, Sentry, GitLab, Bitbucket, workflow, guide, report an issue are modal
-overlays, all built on `StudioShell`'s fullscreen variant. They are not part
-of the breadcrumb IA and are exited via their close button or Esc.
+- **Not every studio earns a footer entry.** Notifications opens only from the
+  bell popover, since the bell already carries the unread count. Report an
+  issue opens from the top bar, Settings' App scope panel and the palette: it
+  is settings-adjacent, not a peer of the named launchers.
+- **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
+  beside a detail panel is fine; "no left panel and right panel at once" is
+  about two sidebars flanking content, which the app does not do.
+- **Disconnecting is scoped.** A connected integration studio can disconnect
+  from its own header, and that clears the workspace credential, never a
+  system-level session: a workspace running on the system `gh` CLI has nothing
+  workspace-scoped to clear, so it offers no disconnect and points at
+  `gh auth logout`. The control is gated on credential state alone, not on the
+  git remote, so a leftover scoped token on a non-GitHub workspace can still be
+  cleared.
+- **A code-host studio mounted outside a session is browse-and-launch only.**
+  The write verbs (approve, request changes, comment, merge, decline) are keyed
+  to a session and stay disabled; a composite workspace has no single
+  repository, so that mount stops at an empty state.
 
-Bitbucket has two mounts. The footer opens `BitbucketWorkspaceStudio`, which
-resolves the repository from the workspace root path and its git remote and
-lists that repository's pull requests. That surface is browse and launch:
-reading a pull request and starting a session from it work, while the write
-verbs (approve, request changes, comment, merge, decline) stay disabled because
-they are keyed to a session. The `pr` lens opens the session variant as
-`SessionStudio { kind: 'bitbucket' }` in `StudioShell`'s slot variant, which
-knows the session's repository and carries the full action bar. A composite
-workspace has no single repository and no active mount outside a session, so
-the footer variant stops at an empty state and points back at a session.
+## Lenses
 
-Most utility studios have a footer entry, three of them (budget, impact,
-changelog) behind the `More` popover rather than on the row. The notifications
-studio does not:
-its only entrance is the `Show more` row at the bottom of the bell popover in
-the top bar, which dispatches `goodboy:open-notifications-studio`. There is no
-footer button, no shortcut, and no command palette entry for it, because the
-bell already carries the unread count that makes the page worth opening.
+- **One level at a time, never a rail plus a detail at once.** Selecting a card
+  swaps the list for the detail, and the list is the only way back. Completed
+  and discarded groups sit behind header toggles that self-hide at zero, so a
+  session whose runs are all done shows an empty state instead of opening the
+  last completed one.
+- **A step chat is one explicit click**, never an automatic redirect.
+- **A lens-wide toggle is its own row**, never inside an empty state's action
+  slot.
+- **A sibling detail is a split, not a rail**: a resizable column owned by the
+  pane it opens in, so it dies with that pane. There is one implementation of
+  that split; reuse it rather than growing a rail.
+- **The lens rail is navigation.** Rows only select a destination; counts and
+  dots are read-only signals attached to one. Session lifecycle actions are not
+  navigation and do not belong in the rail.
+- **The activity bar shows ALL sessions grouped by stage**, never filtered to
+  running only.
+- **A blocked action is re-routed, never hidden.** A blocked workflow advance
+  states the reason on the CTA and opens an inline confirm before anything
+  spawns. With auto-run off nothing advances without a click.
 
-Report an issue has no footer entry either. It opens from the top bar's report
-control, from Settings' App scope panel (a `FieldRow` button dispatching
-`goodboy:open-report-issue`, next to "Config backup") and from the command
-palette. All three land on the same form, and the form sends the draft the
-popover holds. It does not belong on the
-footer's studio row or inside the `More` popover: it is not something you
-reach for by workspace or by session, and adding a slot there would grow
-`MORE_STUDIOS` for a surface that is genuinely settings-adjacent, not a peer
-of budget, impact and changelog.
+## Creating a session
 
-Every integration studio (GitHub, GitLab, Bitbucket, Linear, Jira, Sentry,
-Slack) carries a disconnect control in `StudioShell`'s `headerAccessory` slot,
-next to the refresh action, once that integration is actually connected. It
-follows the `InlineConfirm` canon: the icon button swaps for the confirm in an
-anchored popover so the header never grows, and confirming clears the
-workspace credential (keychain entry, database row, and any in-memory cache)
-without leaving the studio. This is the only way to disconnect an integration
-short of Settings' "Run setup again", which re-opens the onboarding wizard and
-does not cover Slack. GitHub only renders that Disconnect control when the workspace is
-authenticated via its own PAT (`status.mode === 'pat'` in
-`apps/desktop/src/features/github/components/Panel/index.tsx`). A workspace
-falling back to the system `gh` CLI has nothing workspace-scoped to clear, so
-the panel shows no Disconnect button there; instead it tells the user to run
-`gh auth logout` in a terminal, and offers a field to connect a PAT instead.
-Either way, disconnecting through the GitHub studio only clears the
-workspace-scoped credential (`gh_clear_token` in
-`apps/desktop/src-tauri/src/github.rs:368-372`, which removes the keychain
-entry for that workspace); it never touches the system `gh` session. The
-GitHub control is gated on that credential state alone, not on whether the
-workspace's git remote is GitHub, so a mixed workspace (a GitLab or
-Bitbucket remote that still carries a leftover scoped GitHub token) still
-shows a way to clear it even though the pull request and issue browsing
-panes stay hidden.
-
-### Workspace creation
-
-`WorkspaceLinkDialog` renders the `Overview > Workspace > Create` breadcrumb
-(via `AppBreadcrumb`) inside its header. After creation it lands on the new
-workspace board. The first-run onboarding wizard continues if `isWizardDone`
-is false.
-
-### Master-detail studios
-
-GitHubStudio, LinearStudio, and similar surfaces use a narrow list rail
-alongside a detail panel. This is an intentional master-detail pattern, not
-the dual-sidebar anti-pattern. The rule "no surface shows a left panel and a
-right panel at once" refers to two sidebars flanking content, which the app
-does not do.
-
-### The workflows lens has three levels
-
-The lens reads like the Agents lens, one level at a time, never a rail plus a
-detail at once. `WorkflowsPane` lists the attached runs; the completed and
-discarded toggles live in its header and hide their sections by default, so a
-session whose runs are all done shows an empty state instead of silently opening
-the last completed run. Selecting a card writes `focusedWorkflowRunId` and swaps
-the list for `WorkflowRunDetail`, which hosts the run through `AgentsSection`
-(`workflowVariant="detail"`). Selecting a step in the strip opens
-`WorkflowStepInspector` in an `InspectorSplit` beside the run, and the step chat
-is one explicit click from there, never an automatic redirect. The trail back is
-the breadcrumb `Overview > Workflows > {WorkflowName}`.
-
-### The plans lens has two levels
-
-`PlanStudio` reads like the Workflows and Agents lenses, one level at a time,
-never a rail plus a detail at once. The list shows the active plans, then an
-unconditional "Consumed" `CountToggle` row (it self-hides at a zero count,
-same as the Workflows and Resolve lenses), then the revealed consumed plans
-when the toggle is on. A plan with no active siblings still shows the
-"Nothing active" empty state, with the toggle as its own row underneath it,
-never inside the empty state's action slot: the toggle is a lens-wide control,
-not an action scoped to that one empty state. Selecting a card writes
-`focusedPlanId` and swaps the list for the plan body in a `FocusedPane`, which
-takes no back action of its own there. The focused plan is exited via the
-`Overview > Plans > {PlanTitle}` crumb (`toPlansList` in `useSessionCrumbs`).
-There is no sibling "other plans" panel: the crumb is the only way back.
-
-### Sibling panels inside a lens
-
-Four surfaces open their detail to the right of the content instead of taking a
-studio rail: `AgentInspector` (from an agent row's "Details" action in the Agents
-lens and from a resolver row's "Details" action in the Resolve lens, since it is
-one component for both: it adds `ResolverSections` when the agent classifies as a
-resolver), `SlotHistoryPanel` in `SlotPane` (the history trigger in the pane
-header of the Goal, Decisions, and Session summary lenses, rendered only when
-that slot has history), and `ScriptDetail`/`ScriptEditor` in `ScriptsPanel`
-(clicking a script row opens `ScriptDetail`, whose Edit button swaps the same
-panel to `ScriptEditor`; that is the only route to the editor).
-
-`WorkflowStepInspector` in `WorkflowRunDetail` is the fourth.
-
-`AgentInspector`, `SlotHistoryPanel`, and `ScriptDetail`/`ScriptEditor` share one
-primitive, `InspectorSplit`
-(`SessionWorkspace/parts/InspectorSplit/`): the pane is a flex row, the panel is
-a sibling column resizable via a `ResizeHandle` (width persisted at
-`STORAGE_KEYS.inspectorPanelWidth`), open state is local to the pane, the panel
-loads or refreshes its data when it opens, and it closes from its own header.
-Reuse `InspectorSplit` for the next detail surface rather than adding a rail.
-
-`ScriptsPanel` is the one consumer that nests the split _inside_ its
-`PaneShell` rather than wrapping it, because the same component also mounts in
-Workspace settings where there is no `PaneShell`. Its lens therefore inherits
-`PaneShell`'s `max-w-5xl` reading column so the list and the editor each keep a
-usable width.
-
-## New session form
-
-The new-session creation form (`features/session/components/NewSessionView`)
-renders centered on the plain background with no card chrome and no close (X)
-button. Cancel dismisses it. If an attachment image preview is open, ESC closes
-only the preview, not the form.
-
-Sections, top to bottom: issue source (conditional), goal, attachments, branch.
-The issue-source section is derived from the workspace's connected integrations
-via `resolveIssueSources` (Linear, GitHub, GitLab, Jira, Sentry, Slack) and the
-whole section is a hand-curated allowlist, not the provider union: Bitbucket is
-a code host in Goodboy and has no issue picker, so it is deliberately absent. The section
-is hidden when none of them is connected. Picking an issue fills the goal from
-the issue and the branch slug from its identifier, and counts as a manual slug
-edit, so later goal typing no longer re-slugs it.
-
-Creating a session always lands on Overview; there is no workflow-setup toggle
-in the footer. The operator decides whether to start a workflow from there.
-
-## Sessions list: archived toggle
-
-The archived sessions toggle sits in the sessions header row, next to the
-sessions filter. It is not a separate bottom row.
-
-## Questions lens: answered history
-
-Below the open-questions empty state, the questions lens shows an
-answered-questions history. Entries are grouped into clusters by the agent that
-spawned them. Each cluster header is space-between: agent name on the left,
-asked-at timestamp on the right. Clusters are ordered most-recent-first.
-Clicking an agent name navigates to that agent.
-
-## Resolve lens: one source for the resolver actions
-
-`resolverActions` (`features/session/resolverActions.ts`) is a pure function that
-turns a resolver plus its state into the ordered list of actions, each with a
-label, a role and its confirm copy. `ResolverActions`
-(`features/session/components/ResolverActions`) renders that list and owns the
-store calls, in two densities: `compact` on the resolver card in the Resolve
-lens, `full` in the resolver Actions section of `AgentInspector`. Card and
-inspector cannot diverge, because neither decides what to offer.
-
-| Action              | Effect                                                                                                                                        | Offered when                                                                                       |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `push`              | Pushes the branch, posts the resolution and resolves the thread. Labelled `Push now` when the thread is already queued for a batch push       | The resolver committed and a commit sha is known                                                   |
-| `queue` / `dequeue` | Adds the thread to the batch push, or takes it out again                                                                                      | The resolver committed and the session has a pull request                                          |
-| `proceed`           | Sends the proceed prompt so the resolver implements the fix it only analyzed                                                                  | The resolver analyzed the comment without committing                                               |
-| `explain`           | Publishes the explanation and closes the thread without a fix. The explanation is mandatory                                                   | The resolver analyzed the comment or declared it wontfix                                           |
-| `continue`          | Selects the resolver and focuses the composer                                                                                                 | The resolver is awaiting input                                                                     |
-| `run`               | Activates the next queued resolver                                                                                                            | The resolver is queued                                                                             |
-| `forceClose`        | Cancels the running turn, stamps the agent `skipped`, marks it stopped, then activates the next queued resolver. Does not touch the code host | The resolver or its agent is running                                                               |
-| `forceResolve`      | Resolves the thread on the code host (optional note) and refreshes the PR detail. Never cancels a turn, and the resolver keeps its state      | The resolver has a source thread, no turn is running, and it is awaiting, failed, done, or stopped |
-
-Every destructive action arms an `InlineConfirm` on first click and acts on the
-second, so none of them fires by accident.
-
-## From a review comment to its commit
-
-`resolverCommitSha` (`features/session/resolverCommitSha.ts`) is the one answer to
-"which commit belongs to this thread": the sha queued for the batch push wins,
-then the sha attributed on the branch, then the sha the resolver reported in its
-outcome. `ResolverActions` uses it to decide whether a push is possible, and
-`ResolverSections` uses it to make the resolver Changes section navigable.
-
-In that section every reported commit opens the session diff lens at that commit,
-and every file the resolver edited opens the same lens scrolled to that file. Both
-call `setDiffFocus(sessionId, { sha, path })` and then `setActiveLens(sessionId,
-'files')`, the same pair the workflows lens uses with `setFocusedWorkflowRun`.
-`FilesPane` reads `diffFocus` off the store and hands it to the diff pane, which
-switches its `DiffView` to `{ kind: 'commit', sha }` and scrolls to the file.
-`setActiveLens` drops the focus on any lens other than `files`, so it never
-survives into an unrelated surface. File rows stay inert while no commit is known,
-since there would be nothing to filter, and file paths render relative to the
-session worktree with the absolute path kept as the `title`.
-
-A sha reported but absent from the branch is still clickable: the lens loads
-`git show` for it and surfaces the git error when the worktree does not carry it.
-That is the honest answer, since nothing else in the app can resolve a commit the
-branch never received.
-
-## One answer per review thread
-
-A resolver writes the answer a reviewer will read in a keyed block,
-`<<comment-reply id="PRRT_...">>body<</comment-reply>>`. Both the single-comment
-and the combined prompt inject the real thread ids and ask for one block per
-thread. `extractAllCommentReplies` (`packages/core/src/context/marker-parsing.ts`)
-returns one `(threadId, body)` pair per thread, keeps the last block when an id
-repeats, and drops blocks with an unknown id or an empty body. Since replies are
-keyed by thread id, one answer can never be cross-posted on several threads.
-
-`completeResolvedAgent` attaches each body to the outcome of the thread it names,
-so a reply for a thread with no resolution, wontfix, or analysis marker is
-discarded. On publish, `markThreadResolvedNoPush` reads it through
-`resolverReplyForThread` and `buildResolutionReplyBody` wraps it in the posted
-structure. Without a block the body degrades to the verdict and resolution lines
-alone, which still tell the reviewer the outcome.
-
-The structure is the app's, not the model's. `buildResolutionReplyBody` opens the
-first paragraph with a verdict label the marker already implies, `**Valid.**` for
-a `<<comment-resolved>>` with a sha and `**Not applying.**` for a
-`<<comment-wontfix>>`, then appends a `**Resolution.**` paragraph naming the
-linked commit or the closing reason. The agent's block supplies only the middle:
-why the comment was right, or why the change is not the one to make. The reply
-contract in `spawn-from-comment.ts` tells it so explicitly, since a resolver that
-opens with "Fixed in `abc1234`." makes the reader read the outcome twice. A reply
-with no sha and no reason is posted unwrapped, because there is no outcome to
-label.
-
-## Rewriting local history before the push
-
-The resolver inspector has a "What you can still rewrite" section listing the
-commits attributed to that resolver, newest first. A commit already on the remote
-is listed but inert, labelled "already pushed", since rewriting it would need a
-force push. The newest local commit can be reworded, any older local one can be
-squashed together with everything above it into a single commit.
-
-Both actions go through the store (`amendSessionCommit`, `squashSessionCommits` in
-the worktrees slice) to `worktree_amend_commit` and `worktree_squash_commits`.
-Eligibility is decided in Rust, never in the UI: the commit must be inside
-`@{u}..HEAD`, or inside the whole history when the branch has no upstream. A
-commit outside that set fails with an explicit error, and no code path in this
-feature ever passes `--force` or `--force-with-lease`. Amend refuses anything but
-HEAD, squash refuses the first commit of the repository, and both refuse to run
-while something is staged. The squash is a `reset --soft` to the parent followed
-by one commit, so a rejected commit (a pre-commit hook, for instance) restores
-the original HEAD and never leaves a rebase in progress.
-
-Each command returns the new head plus the shas it replaced, and
-`repointRewrittenCommits` moves every `resolverThreadOutcomes` entry and every
-queued row in `sessionPendingResolutions` from a replaced sha onto the new one.
-Without that step a later publish would post a link to a commit that no longer
-exists.
-
-## Workflow advance from the chat
-
-`ChatWorkflowAdvance` (`SessionWorkspace/parts/ChatWorkflowAdvance.tsx`) renders
-under the stepper strip in the chat header of a workflow-step agent and hosts
-`WorkflowNextStepCta`. `resolveWorkflowAdvance` (`features/workflows/advanceGate.ts`)
-decides its state: complete (nothing renders), ready, or blocked with a reason.
-The four block reasons are open questions on the run, a running summarizer, a
-failed step in the chain, and a step turn still running.
-
-Blocked never hides the action, it re-routes it: the CTA states the reason and
-the click opens an inline confirm ("start anyway", or "skip and continue" for a
-failed step) before anything spawns. A step starts on its own only when the run
-has auto-run enabled; with auto-run off nothing advances without a click.
-
-## Agent-kind picker
-
-The `AGENT_KIND` role picker is `CreateAgentPopover`'s agent-kind grid
-(`AgentKindGrid`), embedded in `StandaloneAgentsLane` and shared by
-`AgentsSection` (sidebar) and the Agents lens pane, so it lives wherever agents
-are listed. The grid hides kinds flagged `visible: false` (today `resolver`,
-which only the resolve UI spawns). New-session creation does not include an
-agent-kind picker: agents are spawned after the session exists. It does carry
-the "Set up workflow next" toggle described above, but no workflow or step is
-chosen in the form; the workflow is built after creation.
-
-## Session activity bar
-
-The session activity bar (sessions list in `SessionNavSidebar`) shows ALL
-sessions grouped by stage: building, running, needs-you/attention, in-review,
-done. It is not filtered to running sessions only. The board also surfaces
-every stage.
-
-## Full-page studios
-
-Studios using `StudioShell` (fullscreen variant) render between the top bar
-and the footer (`top-9 bottom-9`). Both bars stay visible and interactive
-while any studio is open. Only one studio is open at a time.
+The new session form lands on Overview, always, and offers no agent-kind picker
+before the session exists: the kind is a choice inside a session, not a
+precondition for having one. Its issue sources are a curated allowlist, not the
+union of connected providers, because a connected code host does not imply an
+issue picker; the section hides when none of the allowed sources is connected.

@@ -2,14 +2,14 @@ import type { ImpactOverview, PullRequestOutcomes, ReviewOutcomes } from '@goodb
 import type { SessionId } from '@goodboy/types';
 import { EmptyState, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
-import { PanelLoading } from '../../../../shared/components/PanelLoading';
+import { ErrorStrip } from '@goodboy/ui';
+import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { formatHours } from '../../utils/formatHours';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { SessionRows } from './SessionRows';
 import { TrendStatCard } from './TrendStatCard';
-import { StudioWidget } from '../../../../shared/components/StudioWidget';
+import { StudioWidget } from '@goodboy/ui';
 
 type Props = {
   readonly overview: QueryResult<ImpactOverview>;

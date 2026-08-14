@@ -1,7 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
-import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
-import { PanelLoading } from '../../../../shared/components/PanelLoading';
+import { ErrorStrip } from '@goodboy/ui';
+import { PanelLoading } from '@goodboy/ui';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import type { WorkspaceTurn } from './lib';

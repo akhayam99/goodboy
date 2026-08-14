@@ -1,54 +1,57 @@
-import { useState } from 'react';
-import { Button } from './Button';
+import type { ReactNode } from 'react';
+import { Check, Copy, X } from 'lucide-react';
+import { cn } from '../cn';
+import { useCopyLink } from '../useCopyLink';
 
 export type CopyButtonProps = {
   value: string;
   label?: string;
+  size?: number;
+  className?: string;
+  children?: ReactNode;
+  presentation?: 'text' | 'icon';
 };
 
-function fallbackCopy(text: string): void {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.focus();
-  ta.select();
-  document.execCommand('copy');
-  document.body.removeChild(ta);
-}
+const GLYPH = { idle: Copy, copied: Check, failed: X } as const;
 
-export const CopyButton = ({ value, label = 'text' }: CopyButtonProps) => {
-  const [state, setState] = useState<'idle' | 'copied' | 'error'>('idle');
-
-  const onCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(value);
-      setState('copied');
-    } catch {
-      try {
-        fallbackCopy(value);
-        setState('copied');
-      } catch {
-        setState('error');
-      }
-    }
-    window.setTimeout(() => setState('idle'), 1200);
-  };
-
-  const buttonText = (() => {
-    if (state === 'copied') {
-      return `copied: ${label}`;
-    }
-    if (state === 'error') {
-      return 'copy failed';
-    }
-    return 'copy';
-  })();
+export const CopyButton = ({
+  value,
+  label = 'Copy',
+  size = 11,
+  className,
+  children,
+  presentation = 'text',
+}: CopyButtonProps) => {
+  const { copied, failed, copy } = useCopyLink();
+  const state = failed ? 'failed' : copied ? 'copied' : 'idle';
+  const Glyph = GLYPH[state];
 
   return (
-    <Button variant="ghost" size="sm" onClick={() => void onCopy()} aria-label={`copy ${label}`}>
-      {buttonText}
-    </Button>
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        void copy(value);
+      }}
+      title={state === 'idle' ? label : state === 'copied' ? 'copied' : 'copy failed'}
+      aria-label={presentation === 'text' ? `copy ${label === 'Copy' ? 'text' : label}` : label}
+      className={cn(
+        'inline-flex shrink-0 items-center rounded-md p-1 transition-colors',
+        state === 'idle' && 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+        state === 'copied' && 'text-success',
+        state === 'failed' && 'text-danger',
+        className,
+      )}
+    >
+      {presentation === 'icon' ? <Glyph size={size} aria-hidden /> : null}
+      {presentation === 'text'
+        ? state === 'copied'
+          ? `copied: ${label === 'Copy' ? 'text' : label}`
+          : state === 'failed'
+            ? 'copy failed'
+            : 'copy'
+        : null}
+      {presentation === 'icon' && children != null && (state === 'copied' ? 'Copied' : children)}
+    </button>
   );
 };

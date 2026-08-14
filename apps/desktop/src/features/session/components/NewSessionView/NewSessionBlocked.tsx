@@ -1,9 +1,9 @@
 import { GitBranch } from 'lucide-react';
 import { Button, Divider, ScrollFade } from '@goodboy/ui';
 import type { WorkspaceGitStatus } from '@goodboy/types';
-import { OverlayHeader } from '../../../../shared/components/OverlayHeader';
+import { OverlayHeader } from '@goodboy/ui';
 import { WorkspaceGitPanel } from '../../../workspace/components/WorkspaceGitPanel';
-import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
   readonly rootPath: string;
@@ -16,6 +16,7 @@ export const NewSessionBlocked = ({ rootPath, status, onClose }: Props) => {
     <div className="flex h-full w-full items-center justify-center bg-background py-6 motion-safe:animate-studio-in">
       <div className="flex h-full max-h-full w-full max-w-2xl flex-col overflow-hidden">
         <OverlayHeader
+          heightClassName="h-[var(--chat-header-h)]"
           icon={GitBranch}
           title="A session needs a repository first"
           subtitle={rootPath}

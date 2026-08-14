@@ -13,7 +13,7 @@ import { ImageLightbox } from '../../../chat/components/ImageLightbox';
 import { type ExploreContent, type ExploreEntry } from '../../explore';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { InspectorHeader } from '../../../session/components/SessionWorkspace/parts/InspectorSplit/InspectorHeader';
 
 type PreviewState =

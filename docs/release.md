@@ -1,7 +1,13 @@
 # Release runbook
 
-Canonical guide for cutting a Goodboy release. **If you are asked to "do a
-release", "ship vX.Y.Z", or "cut a release", follow this file end to end.**
+> **Read this when** you need the technical detail of a release: signing,
+> notarization, updater, homebrew. **Not for** the step order an agent
+> executes (`docs/release-command.md`).
+
+Reference for what a Goodboy release is made of. The step order an agent
+executes lives in [release-command.md](release-command.md) and is the only
+place that says what to run and in what order; this file says what the pieces
+are and why they behave as they do.
 
 Targets, both attached to the same draft release:
 
@@ -15,29 +21,26 @@ Targets, both attached to the same draft release:
 
 - Pushing a tag `v*` triggers `.github/workflows/release.yml`, which builds the
   universal `.dmg` via `tauri-action` and creates a **draft** GitHub Release.
-- Signing + notarization run automatically because the six `APPLE_*` secrets are
-  set on the repo (see "Signing" below). If those secrets were ever removed, the
-  build still succeeds but produces an unsigned `.dmg`.
-- The Linux job attaches three more assets to that same draft:
-  `Goodboy_<version>_amd64.AppImage`, `Goodboy_<version>_amd64.deb` and
-  `Goodboy-<version>-1.x86_64.rpm`. The deb's dependency list is derived from
-  the binary by `dpkg-shlibdeps` at package time, so it tracks whatever the
-  build actually links against. That list includes `libc6 (>= 2.39)`, which is
-  what pins the deb to Ubuntu 24.04 or newer and Debian 13 or newer. Moving the
-  runner to an older Ubuntu is what lowers that floor.
+  Signing and notarization run automatically from the six `APPLE_*` secrets; if
+  those were ever removed, the build still succeeds and produces an unsigned
+  `.dmg`.
+- The Linux job attaches `Goodboy_<version>_amd64.AppImage`,
+  `Goodboy_<version>_amd64.deb` and `Goodboy-<version>-1.x86_64.rpm` to the same
+  draft. The deb's dependency list is derived from the binary by
+  `dpkg-shlibdeps` at package time and includes `libc6 (>= 2.39)`, which is what
+  pins the floor above. Moving the runner to an older Ubuntu is what lowers it.
 - The Linux job publishes **no `latest.json` and no `.sig`**, so in-app updates
-  stay macOS-only. Only the AppImage could ever self-update and that is not
-  wired: a Linux user takes the next package from the release page.
-- Publishing the draft release triggers `.github/workflows/homebrew.yml`, which
-  bumps the cask in the Homebrew tap. The cask is the macOS `.dmg` only.
+  stay macOS-only. A Linux user takes the next package from the release page.
+- Publishing the draft triggers `.github/workflows/homebrew.yml`, which bumps
+  the cask in the tap.
 
-The git tag is the source of truth for the release name. The version baked into
+The git tag is the source of truth for the release name; the version baked into
 the build comes from `tauri.conf.json`, so the two must match.
 
-## Step 1: bump the version and write the notes
+## The version bump
 
-Set the same version in all six places (they must match the tag, minus the `v`,
-except the website which keeps it):
+Six places carry the version. They must all match the tag, minus the `v`,
+except the website which keeps it:
 
 - `package.json`
 - `apps/desktop/package.json`
@@ -45,62 +48,29 @@ except the website which keeps it):
 - `apps/desktop/src-tauri/Cargo.toml` (`package.version`)
 - `apps/desktop/src-tauri/Cargo.lock` (the `goodboy-desktop` package entry;
   `rust.yml` runs `cargo test --locked`, so a stale lock is red CI)
-- `website/src/site.ts` (`SITE.version`, the badge in the landing page nav; this
-  one keeps the leading `v`, so `v0.1.74`). Nothing breaks if it is stale, which
-  is exactly why it gets forgotten: the site just advertises an old version.
+- `website/src/site.ts` (`SITE.version`, keeping the leading `v`, so `v0.1.74`).
+  Nothing breaks if it is stale, which is why it gets forgotten: the site just
+  advertises an old version.
 
-Add a `## Goodboy vX` section to `CHANGELOG.md` above the previous release (see
-`docs/release-command.md` → "Release notes" for the format and sourcing rules).
-The release build reads its body from this section and fails if it's missing.
+The release build reads its notes from the `## Goodboy vX` section of
+`CHANGELOG.md` and fails if that section is missing, which is why the notes are
+written before the tag exists.
 
-Land the bump on `main` via PR.
+## Why the release candidate exists
 
-## Step 2: dry-run with a release candidate
+A tag is what triggers the build, so a build failure on the real tag burns the
+official version: the rc dry-run exists to fail in a disposable place instead.
+Rc tags and their draft pre-releases are the one deletable release artifact.
 
-Never tag the real version first. Validate the pipeline with a throwaway rc, so
-a build failure does not burn the official tag.
-
-```bash
-git tag v0.1.0-rc.1
-git push origin v0.1.0-rc.1
-```
-
-This builds the universal `.dmg` and creates a draft pre-release. Then verify:
-
-```bash
-# after copying Goodboy.app out of the mounted dmg
-spctl -a -vv /Applications/Goodboy.app
-# expect: accepted, source=Notarized Developer ID
-codesign -dv --verbose=4 /Applications/Goodboy.app  # confirms the signing identity
-```
-
-Open the app from a normal double-click: no Gatekeeper warning means signing +
-notarization worked. When satisfied, delete the rc:
-
-```bash
-gh release delete v0.1.0-rc.1 --repo akhayam99/goodboy --yes
-git push origin :refs/tags/v0.1.0-rc.1
-git tag -d v0.1.0-rc.1
-```
-
-## Step 3: cut the real release
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-The draft release the workflow creates already has its notes filled in from
-`CHANGELOG.md`. Review the draft, then **publish**. Publishing fires the
-Homebrew cask bump.
+A verified rc means Gatekeeper accepts the app from a normal double-click and
+`spctl` reports `accepted, source=Notarized Developer ID`. What to run and
+when is [release-command.md](release-command.md) step 4.
 
 ## Signing and notarization
 
-Goodboy is signed under the maintainer's **personal Apple Developer
-Individual** team.
+Signed under the maintainer's **personal Apple Developer Individual** team.
 
-- Team ID: **M3R9H4QX65**. Any other team id in `codesign` output is a
-  failure.
+- Team ID: **M3R9H4QX65**. Any other team id in `codesign` output is a failure.
 - Signing identity: `Developer ID Application: Amin Khayam (M3R9H4QX65)`.
 
 Repo secrets on `akhayam99/goodboy` (already set):
@@ -122,68 +92,57 @@ and update `APPLE_CERTIFICATE_PASSWORD`.
 
 ## Auto-update
 
-The app self-updates via `tauri-plugin-updater`. On launch (packaged builds
-only) it checks `releases/latest/download/latest.json`; when a newer version is
-found, a "Restart to update" control shows in the status bar and next to the
-sidebar logo, and clicking it downloads, installs, and relaunches.
+On launch, packaged builds check
+`releases/latest/download/latest.json` via `tauri-plugin-updater`; a newer
+version surfaces a "Restart to update" control in the status bar and next to the
+sidebar logo. macOS only: the Linux job emits no `latest.json` and no `.sig`, so
+nothing tells a Linux build a newer version exists. Adding that means signing
+the AppImage with the updater keypair and pointing the plugin at a Linux target.
 
-This is the macOS path. The Linux job emits no `latest.json` and no `.sig`, so
-nothing on the release page tells a Linux build that a newer version exists.
-Adding one means signing the AppImage with the updater keypair and pointing the
-plugin at a Linux target, which has not been done.
-
-Update artifacts are signed with a dedicated **updater keypair** (separate from
-Apple code-signing). The public key lives in `tauri.conf.json`
-(`plugins.updater.pubkey`); the private key + password are repo secrets
+Update artifacts are signed with a dedicated **updater keypair**, separate from
+Apple code-signing. The public key lives in `tauri.conf.json`
+(`plugins.updater.pubkey`); the private key and password are the repo secrets
 `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
-`tauri-action` uses them to sign the `.app.tar.gz` and emit `latest.json`,
-which it attaches to the release. `latest.json`'s `notes` field is the same
-`CHANGELOG.md` section used for the release body (see "Step 1" above), so the
-updater shows the same notes as the GitHub release.
+`latest.json`'s `notes` field is the same `CHANGELOG.md` section as the release
+body.
 
-Because `latest.json` points at `releases/latest`, only a **published**
-(non-draft) release is visible to clients. The updater config must ship inside a
-release for older versions to update to it: never remove the pubkey or the
-plugin without a migration plan, or installed apps lose the ability to update.
+Because `latest.json` points at `releases/latest`, only a **published** release
+is visible to clients. Never remove the pubkey or the plugin without a migration
+plan, or installed apps lose the ability to update.
 
 ## Homebrew tap
 
-Public install channel: `brew install --cask akhayam99/tap/goodboy`. For an
-unsigned build this would still matter (Homebrew strips the quarantine attribute
-on cask install); with notarization it is just the convenient path.
-
-How it is wired (all set up and live):
+Public install channel: `brew install --cask akhayam99/tap/goodboy`. Homebrew
+strips the quarantine attribute on cask install.
 
 1. The public repo `akhayam99/homebrew-tap` holds the cask (the `homebrew-`
    prefix is required; users type `akhayam99/tap`).
 2. On publish, the `homebrew` workflow renders the cask from
    `packaging/goodboy.rb` and pushes it to `Casks/goodboy.rb` in the tap.
-3. It authenticates with the `HOMEBREW_TAP_TOKEN` secret on
-   `akhayam99/goodboy` (fine-grained PAT, `contents: write` on the tap repo).
+3. It authenticates with the `HOMEBREW_TAP_TOKEN` secret on `akhayam99/goodboy`
+   (fine-grained PAT, `contents: write` on the tap repo).
 
 A `homebrew.yml` failure after publishing is a real failure, not an expected
-skip: check the run, fix, and re-run before calling the release done. If the
-token expired, that is an owner escalation (rotating secrets is not
-authorized for agents).
+skip: check the run, fix, re-run before calling the release done. An expired
+token is an owner escalation, since rotating secrets is not authorized for
+agents.
 
 ## Troubleshooting
 
-- **Build fails in the universal step**: most likely the monorepo workspace deps
-  were not built before `tauri build`. The workflow runs
-  `pnpm turbo run build --filter=@goodboy/desktop^...` first; if a new workspace
-  package was added, confirm it is a dependency of `@goodboy/desktop`.
-- **"The specified item could not be found in the keychain" / signing fails**:
+- **Build fails in the universal step**: most likely the workspace deps were not
+  built before `tauri build`. The workflow runs
+  `pnpm turbo run build --filter=@goodboy/desktop^...` first; a new workspace
+  package must be a dependency of `@goodboy/desktop`.
+- **"The specified item could not be found in the keychain"**:
   `APPLE_SIGNING_IDENTITY` must match the cert in `APPLE_CERTIFICATE` exactly,
   including the team ID in parentheses.
-- **Notarization fails with an auth error**: `APPLE_PASSWORD` must be an
-  app-specific password (appleid.apple.com), not the Apple ID login password,
-  and `APPLE_ID` / `APPLE_TEAM_ID` must belong to the same Individual team.
+- **Notarization auth error**: `APPLE_PASSWORD` must be an app-specific password
+  (appleid.apple.com), and `APPLE_ID` / `APPLE_TEAM_ID` must belong to the same
+  Individual team.
 - **macOS Keychain `.p12` uses legacy RC2-40**: reading it locally with OpenSSL 3
-  needs `openssl pkcs12 ... -legacy`. The CI runner uses `security import`, which
-  handles it natively, so this only affects local verification.
-- **Local manual build** to reproduce CI: `pnpm tauri:build`. For the macOS
-  universal artifact:
-  `pnpm --filter @goodboy/desktop tauri build --target universal-apple-darwin`.
-  On an x86_64 Linux host the same `pnpm tauri:build` drops the AppImage, deb
-  and rpm under `apps/desktop/src-tauri/target/release/bundle/`. There is no
-  cross-build from macOS: the Linux packages come from a Linux runner.
+  needs `openssl pkcs12 ... -legacy`. CI uses `security import`, which handles it
+  natively.
+- **Local reproduction**: `pnpm tauri:build`, or
+  `pnpm --filter @goodboy/desktop tauri build --target universal-apple-darwin`
+  for the macOS universal artifact. On an x86_64 Linux host `pnpm tauri:build`
+  drops the AppImage, deb and rpm. There is no cross-build from macOS.

@@ -1,15 +1,12 @@
+import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useState, type ReactNode } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import type { SegmentedTabOption } from '@goodboy/ui';
-import {
-  HeaderBand,
-  StudioDetailLayout,
-  StudioDetailTabs,
-} from '../../../../shared/components/StudioDetail';
+import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { gitlabIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
-import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
+import { StateBadge } from '@goodboy/ui';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { issueIdentifier, type GitlabIssue } from '../client';
 import { useGitlabIssueDescription } from '../useGitlabIssueDescription';
@@ -46,7 +43,7 @@ export const GitlabIssueDetail = ({ issue, workspaceId, headerActions, fit = 'fi
               <span className="font-mono text-2xs tabular-nums text-muted-foreground">
                 {issueIdentifier(issue)}
               </span>
-              <IssueStateBadge>{issue.state}</IssueStateBadge>
+              <StateBadge>{issue.state}</StateBadge>
             </>
           }
           title={issue.title}

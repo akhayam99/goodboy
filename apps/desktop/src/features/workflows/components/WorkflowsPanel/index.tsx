@@ -12,7 +12,7 @@ import type {
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
+import { StudioRailLayout } from '@goodboy/ui';
 import type { WorkflowUpsertArgs, WorkflowStepUpsertArgs } from '../../workflows';
 import type { DefinitionForm, TemplateForm } from '../../form';
 import { defFromLibraryStep, emptyDefinition, emptyForm, templateToForm } from '../../form';

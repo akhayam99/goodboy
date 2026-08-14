@@ -1,6 +1,6 @@
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { NoteAvatar } from '../../../../shared/components/NoteAvatar';
-import { NoteHeader } from '../../../../shared/components/NoteHeader';
+import { Avatar } from '@goodboy/ui';
+import { NoteHeader } from '@goodboy/ui';
 import type { SlackMessage, SlackUser } from '../client';
 
 type Props = {
@@ -14,7 +14,7 @@ export const ThreadNoteHeader = ({ message, author }: Props) => {
 
   return (
     <NoteHeader
-      avatar={<NoteAvatar url={author?.avatarUrl ?? null} alt={name} />}
+      avatar={<Avatar url={author?.avatarUrl ?? null} alt={name} />}
       author={name}
       timestamp={
         age !== '' && (

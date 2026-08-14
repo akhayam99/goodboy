@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { ChevronRight, CornerLeftUp, GitBranch } from 'lucide-react';
 import type { Agent, AgentId, Session, Workflow, WorkspaceId } from '@goodboy/types';
 import { Divider, cn } from '@goodboy/ui';
-import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import {
   AGENT_KIND_META,

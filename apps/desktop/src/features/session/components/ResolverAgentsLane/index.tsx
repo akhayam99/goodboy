@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import type { AgentId, Session } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
+import { LensEmptyState } from '@goodboy/ui';
 import { AgentLane } from '../AgentLane';
 import { ResolveCommentsAction } from './ResolveCommentsAction';
 import { ResolverLaneToolbar } from './ResolverLaneToolbar';

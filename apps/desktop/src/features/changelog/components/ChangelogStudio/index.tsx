@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ScrollFade } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
+import { StudioRailLayout } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore } from '../../../../store';
 import { isInstalledRelease } from '../../isInstalledRelease';

@@ -1,6 +1,6 @@
 import { PanelLeftClose, Pin } from 'lucide-react';
 import { IconButton, cn } from '@goodboy/ui';
-import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { WorkspaceIdentityRow } from '../../../../workspace/components/WorkspaceIdentityRow';
 import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 

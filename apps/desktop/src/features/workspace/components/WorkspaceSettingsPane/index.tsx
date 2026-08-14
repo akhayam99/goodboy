@@ -3,7 +3,7 @@ import { Settings2 } from 'lucide-react';
 import { Divider } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { WorkspaceScopePanel } from '../../../settings/components/SettingsStudio/WorkspaceScopePanel';
-import { OverlayHeader } from '../../../../shared/components/OverlayHeader';
+import { OverlayHeader } from '@goodboy/ui';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -33,6 +33,7 @@ export const WorkspaceSettingsPane = ({
   return (
     <div className="flex h-full w-full flex-col bg-background motion-safe:animate-studio-in">
       <OverlayHeader
+        heightClassName="h-[var(--chat-header-h)]"
         icon={Settings2}
         title="Workspace settings"
         subtitle={workspaceName}

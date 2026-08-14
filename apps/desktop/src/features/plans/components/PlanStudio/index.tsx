@@ -16,12 +16,12 @@ import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { FocusedPane } from '../../../../shared/components/PaneShell/FocusedPane';
-import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { planStatusBadge } from './planStatusBadge';
 import { PlanProvenance } from './PlanProvenance';
 import { PlanRailCard } from './PlanRailCard';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
+import { LensEmptyState } from '@goodboy/ui';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 
 type Props = {

@@ -1,4 +1,4 @@
-import type { StateTone } from '../../../shared/components/IssueStateBadge';
+import type { StateTone } from '@goodboy/ui';
 import type { JiraStatusCategoryKey } from './client';
 
 type Params = {

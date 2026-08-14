@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CircleStop, Zap, ZapOff } from 'lucide-react';
 import { InlineConfirm, cn } from '@goodboy/ui';
-import { CardAction } from '../../../../shared/components/CardAction';
+import { CardAction } from '@goodboy/ui';
 
 type Props = {
   readonly isOn: boolean;

@@ -8,7 +8,7 @@ import {
   OpenAIIcon,
   OpencodeIcon,
   OpenrouterIcon,
-} from '../../../shared/components/brand-icons';
+} from '@goodboy/ui';
 
 export type ProviderBrand = {
   readonly icon: LucideIcon;

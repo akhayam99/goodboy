@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { PANE_RHYTHM } from './paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { PaneShell } from './PaneShell';
 import { FocusedPane } from './PaneShell/FocusedPane';
 import { StudioPanel } from './StudioPanel';

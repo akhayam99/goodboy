@@ -9,7 +9,7 @@ import {
   AgentMetrics,
   type AgentAggregate,
 } from '../../../../../features/session/components/AgentMetrics';
-import { GhostActionButton } from '../../../../../shared/components/GhostActionButton';
+import { GhostActionButton } from '@goodboy/ui';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 import { WorkflowStepPlanBadge } from './WorkflowStepPlanBadge';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';

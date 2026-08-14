@@ -14,10 +14,10 @@ import {
 import type { ReviewablePr, ReviewablePrProvider, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
-import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
+import { RefreshIconButton } from '@goodboy/ui';
 import { workspaceMountName } from '../../../../shared/utils/workspaceMountName';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
-import { NoteAvatar } from '../../../../shared/components/NoteAvatar';
+import { Avatar } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { buildReviewInboxRows, type ReviewInboxScope } from './buildReviewInboxRows';
 
@@ -154,7 +154,7 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
                       <span className="min-w-0 flex-1 truncate text-xs">{pr.title}</span>
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <NoteAvatar
+                      <Avatar
                         url={pr.authorAvatarUrl}
                         alt=""
                         initialsSource={pr.author}

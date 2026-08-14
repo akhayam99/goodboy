@@ -45,7 +45,7 @@ import {
   LinearIcon,
   SentryIcon,
   SlackIcon,
-} from './brand-icons';
+} from '@goodboy/ui';
 
 export const CONCEPT_ICONS = {
   agents: Bot,

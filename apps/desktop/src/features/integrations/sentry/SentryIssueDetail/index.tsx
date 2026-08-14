@@ -1,15 +1,11 @@
+import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useState, type ReactNode } from 'react';
 import { Skeleton, type SegmentedTabOption } from '@goodboy/ui';
 import { Footprints, ListTree } from 'lucide-react';
 import type { SentryIssueDetail as Detail } from '../client';
-import {
-  DetailSection,
-  HeaderBand,
-  StudioDetailLayout,
-  StudioDetailTabs,
-} from '../../../../shared/components/StudioDetail';
+import { StudioWidget, HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { resolveDetailFields, sentryIssueFields } from '../../../../shared/detail-fields';
-import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
+import { ErrorStrip } from '@goodboy/ui';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { SentryBreadcrumbs } from '../SentryBreadcrumbs';
 import { SentryLevelBadge } from '../SentryLevelBadge';
@@ -144,13 +140,13 @@ export const SentryIssueDetail = ({
         />
       ) : null}
       {activeSection === 'stack' ? (
-        <DetailSection label="stack trace">
+        <StudioWidget presentation="section" label="stack trace">
           <SentryStackTrace frames={view.frames} isLoading={isLoading} error={error} />
-        </DetailSection>
+        </StudioWidget>
       ) : (
-        <DetailSection label="breadcrumbs">
+        <StudioWidget presentation="section" label="breadcrumbs">
           <SentryBreadcrumbs breadcrumbs={view.breadcrumbs} isLoading={isLoading} error={error} />
-        </DetailSection>
+        </StudioWidget>
       )}
     </StudioDetailLayout>
   );

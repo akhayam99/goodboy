@@ -1,4 +1,4 @@
-import { NoteCard } from '../../../../shared/components/NoteCard';
+import { NoteCard } from '@goodboy/ui';
 import type { SlackMessage, SlackUser } from '../client';
 import { slackMrkdwnToMarkdown } from '../slackMrkdwnToMarkdown';
 import type { SlackReactionPick } from '../useSlackThreadActions';

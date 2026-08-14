@@ -1,4 +1,4 @@
-import { NoteCard } from '../../../../shared/components/NoteCard';
+import { NoteCard } from '@goodboy/ui';
 import type { JiraComment } from '../client';
 import { IssueNoteHeader } from './IssueNoteHeader';
 
