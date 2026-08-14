@@ -10,7 +10,6 @@ const input = {
   modelMenu: [],
   roleDefaults: [],
   stepsUsed: 0,
-  stepBudget: 8,
 };
 
 describe('OrchestratorClient provider errors', () => {

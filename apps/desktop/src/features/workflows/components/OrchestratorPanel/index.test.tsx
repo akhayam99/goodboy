@@ -123,8 +123,12 @@ beforeEach(() => {
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
     setWorkflowRunAutoRun: vi.fn(async () => undefined),
     stopWorkflowRunNow: vi.fn(async () => undefined),
+    setWorkflowRunSpendLimit: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
     sessionOpenQuestions: {},
+    sessionTelemetry: {},
+    sessionPhaseRuns: {},
+    agentRunHistory: {},
     sessions: [],
     workspaceOverrides: {},
     providers: [
@@ -239,14 +243,11 @@ describe('OrchestratorPanel state ladder', () => {
       }),
     });
 
-    expect(sentence()).toContain('Paused · session budget cap reached');
+    expect(sentence()).toContain('Paused · budget cap reached');
     expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
-    const opened = vi.fn();
-    window.addEventListener('goodboy:open-budget-studio', opened);
-    fireEvent.click(screen.getByTestId('orchestrator-review-budget'));
-    window.removeEventListener('goodboy:open-budget-studio', opened);
+    fireEvent.click(screen.getByTestId('run-spend-limit-trigger'));
 
-    expect(opened).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('dialog', { name: 'Spend limit for this run' })).toBeDefined();
   });
 
   it('reads a budget pause worded differently as a pause all the same', () => {
@@ -254,8 +255,10 @@ describe('OrchestratorPanel state ladder', () => {
       runOverride: run({ orchestrationStop: { kind: 'budget', message: 'any other wording' } }),
     });
 
-    expect(sentence()).toContain('Paused · session budget cap reached');
-    expect(screen.getByTestId('orchestrator-review-budget')).toBeDefined();
+    expect(sentence()).toContain('Paused · budget cap reached');
+    expect(screen.getByTestId('run-spend-limit-trigger').textContent).toContain(
+      'Raise the spend limit',
+    );
   });
 
   it('reads a question stop as a question to answer, with no retry on offer', () => {
@@ -523,13 +526,37 @@ describe('OrchestratorPanel strip', () => {
     expect(opened).toHaveBeenCalledTimes(1);
   });
 
-  it('drops the budget shortcut while a budget pause already owns the primary action', () => {
+  it('leaves one spend limit control on a budget pause, with the session budget still reachable', () => {
     renderPanel({
       runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
     });
 
-    expect(screen.queryByTestId('orchestrator-budget')).toBeNull();
-    expect(screen.getByTestId('orchestrator-review-budget')).toBeDefined();
+    expect(screen.getAllByTestId('run-spend-limit-trigger')).toHaveLength(1);
+    expect(screen.getByTestId('orchestrator-budget')).toBeDefined();
+  });
+
+  it('says what the run is allowed to spend and what happens at the limit', () => {
+    renderPanel({ runOverride: run({ spendLimitUsd: 12, spendLimitMode: 'notify' }) });
+
+    expect(screen.getByTestId('orchestrator-spend-limit').textContent).toContain(
+      'Spend limit $12.00 · notify',
+    );
+  });
+
+  it('saves a spend limit for the run from the strip', () => {
+    renderPanel();
+
+    fireEvent.click(screen.getByTestId('run-spend-limit-trigger'));
+    fireEvent.change(screen.getByTestId('spend-limit-amount'), { target: { value: '8' } });
+    fireEvent.click(screen.getByRole('tab', { name: /notify/i }));
+    fireEvent.click(screen.getByTestId('run-spend-limit-save'));
+
+    expect(storeState['setWorkflowRunSpendLimit']).toHaveBeenCalledWith(
+      SESSION_ID,
+      RUN_ID,
+      8,
+      'notify',
+    );
   });
 
   it('folds the decisions into the strip behind a count', () => {

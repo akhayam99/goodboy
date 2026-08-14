@@ -1,3 +1,0 @@
-export const ORCHESTRATOR_STEP_BUDGET = 8;
-
-export const ORCHESTRATOR_STEP_HARD_CAP = 12;

@@ -21,10 +21,12 @@ const storeMocks = vi.hoisted(() => ({
   renameWorkflow: vi.fn(async () => undefined),
   stopWorkflowRunNow: vi.fn(async () => undefined),
   orchestratingWorkflowRuns: {} as Record<string, boolean>,
+  runSpendUsd: 0,
 }));
 
 vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
+  useRunSpendUsd: () => storeMocks.runSpendUsd,
   useAppStore: <T,>(selector: (state: unknown) => T) =>
     selector({
       renameWorkflow: storeMocks.renameWorkflow,
@@ -211,6 +213,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   storeMocks.orchestratingWorkflowRuns = {};
+  storeMocks.runSpendUsd = 0;
 });
 
 describe('WorkflowRow detail dashboard', () => {
@@ -575,6 +578,31 @@ describe('WorkflowRow dynamic runs', () => {
 
     expect(screen.queryByTestId('workflow-orchestrator-failed')).toBeNull();
     expect(screen.getByTestId('orchestrator-state').textContent).toContain('Last decision failed');
+  });
+
+  it('counts the steps a dynamic run took instead of promising a total it never had', () => {
+    renderDetail({ runOverride: dynamicRun, agentsOverride: doneAgents, actionableStepId: null });
+
+    expect(screen.getByText('2 steps')).toBeDefined();
+    expect(screen.queryByText(/step 2 of 2/i)).toBeNull();
+  });
+
+  it('bills a dynamic run on the spend enforcement reads, not on the step aggregates', () => {
+    storeMocks.runSpendUsd = 3.5;
+    renderDetail({ runOverride: dynamicRun, agentsOverride: doneAgents, actionableStepId: null });
+
+    expect(screen.getByTitle('$3.5000 for this run')).toBeDefined();
+  });
+
+  it('offers the spend limit next to what the dynamic run has cost', () => {
+    renderDetail({
+      runOverride: { ...dynamicRun, spendLimitUsd: 20 },
+      agentsOverride: doneAgents,
+      actionableStepId: null,
+    });
+
+    const [trigger] = screen.getAllByTestId('run-spend-limit-trigger');
+    expect(trigger?.textContent).toContain('Spend limit $20.00');
   });
 
   it('marks the dynamic run completed only on a persisted done outcome', () => {

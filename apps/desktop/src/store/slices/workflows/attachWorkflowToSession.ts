@@ -8,6 +8,7 @@ import type {
   WorkflowExecutionMode,
   WorkflowRun,
   WorkflowRunId,
+  WorkflowSpendLimitMode,
   WorkflowTriggerMode,
 } from '@goodboy/types';
 import { attachWorkflowToSession as attachWorkflowToSessionInDb } from '@goodboy/db';
@@ -25,6 +26,8 @@ type Options = {
   chainAfterId?: WorkflowRunId;
   attachmentInputs?: ReadonlyArray<AttachmentInput>;
   executionMode?: WorkflowExecutionMode;
+  spendLimitUsd?: number;
+  spendLimitMode?: WorkflowSpendLimitMode;
   navigate?: boolean;
 };
 
@@ -46,6 +49,11 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     const executionMode = options?.executionMode ?? 'static';
     const goal = options?.goal?.trim() || undefined;
     const chainAfterId = options?.chainAfterId;
+    const spendLimitUsd =
+      options?.spendLimitUsd != null && options.spendLimitUsd > 0
+        ? options.spendLimitUsd
+        : undefined;
+    const spendLimitMode = options?.spendLimitMode ?? 'pause';
     let triggerMode: WorkflowTriggerMode = options?.triggerMode ?? 'immediate';
     if (triggerMode === 'after_run' && chainAfterId) {
       const predecessor = session.workflowRuns.find((r) => r.id === chainAfterId);
@@ -68,18 +76,20 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     }
     const ordinal = session.workflowRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
     const now = new Date().toISOString() as IsoDateTime;
-    await attachWorkflowToSessionInDb(
-      tauriDatabase,
+    await attachWorkflowToSessionInDb({
+      db: tauriDatabase,
       sessionId,
       workflowRunId,
       workflowId,
       autoRun,
-      now,
-      goal,
+      updatedAt: now,
+      ...(goal && { goal }),
       triggerMode,
-      chainAfterId,
+      ...(chainAfterId && { chainAfterRunId: chainAfterId }),
       executionMode,
-    );
+      ...(spendLimitUsd != null && { spendLimitUsd }),
+      spendLimitMode,
+    });
 
     const existingRuns = get().sessionPhaseRuns[sessionId] ?? [];
     const baseOrdinal = existingRuns.reduce((max, r) => Math.max(max, r.ordinal), -1);
@@ -116,6 +126,8 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       createdAt: now,
       ...(chainAfterId && { chainAfterId }),
       ...(goal && { goal }),
+      ...(spendLimitUsd != null && { spendLimitUsd }),
+      spendLimitMode,
     };
 
     const transcriptEntries: Record<string, ReadonlyArray<never>> = {};

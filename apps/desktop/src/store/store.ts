@@ -34,6 +34,7 @@ import type {
   WorkflowRunId,
   WorkflowTriggerMode,
   WorkflowExecutionMode,
+  WorkflowSpendLimitMode,
   ProviderId,
   ProviderCredential,
   CredentialId,
@@ -377,6 +378,12 @@ export type AppActions = {
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
     routing: OrchestratorRouting | null,
+  ): Promise<void>;
+  setWorkflowRunSpendLimit(
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+    limitUsd: number | null,
+    mode: WorkflowSpendLimitMode,
   ): Promise<void>;
   reprocessGoalForWorkflow(sessionId: SessionId): Promise<void>;
   loadTranscript(agentId: AgentId, sessionId: SessionId): Promise<void>;
@@ -818,6 +825,7 @@ export const initialState: AppState = {
   sessionPhaseRuns: {},
   orchestratingWorkflowRuns: {},
   announcedWorkflowBlocks: {},
+  announcedRunBudget: {},
   selectedAgentId: {},
   agentRunHistory: {},
   agentTurnState: {},

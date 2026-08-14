@@ -54,5 +54,6 @@ export type OrchestratorInput = {
   readonly modelMenu: ReadonlyArray<OrchestratorModelOption>;
   readonly roleDefaults: ReadonlyArray<OrchestratorRoleDefault>;
   readonly stepsUsed: number;
-  readonly stepBudget: number;
+  readonly spendLimitUsd?: number;
+  readonly spentUsd?: number;
 };

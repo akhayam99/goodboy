@@ -33,6 +33,7 @@ vi.mock('../../../../../store', () => ({
   useSessionLoading: () => ({ agents: false, transcript: false }),
   useSessionOpenQuestions: () => [],
   useSessionPlans: () => [],
+  useRunSpendUsd: () => 0,
   EMPTY_ARRAY: [] as never[],
   agentHasUnread: (agent: Agent, isCurrentlyViewed: boolean): boolean => {
     if (isCurrentlyViewed || agent.status === 'skipped' || !agent.lastFinishedAt) {

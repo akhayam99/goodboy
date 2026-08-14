@@ -28,6 +28,7 @@ import { saveStepDef } from './saveStepDef';
 import { advanceScoutTree } from './scoutTree';
 import { skipStuckStepAndAdvance } from './skipStuckStepAndAdvance';
 import { setWorkflowRunAutoRun } from './setWorkflowRunAutoRun';
+import { setWorkflowRunSpendLimit } from './setWorkflowRunSpendLimit';
 import { startWorkflowRun } from './startWorkflowRun';
 import { stopWorkflowRunNow } from './stopWorkflowRunNow';
 import type { GetFn, SetFn } from './types';
@@ -51,6 +52,7 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     restoreWorkflow: restoreWorkflow(set, get),
     reorderSessionWorkflows: reorderSessionWorkflows(set, get),
     setWorkflowRunAutoRun: setWorkflowRunAutoRun(set, get),
+    setWorkflowRunSpendLimit: setWorkflowRunSpendLimit(set, get),
     startWorkflowRun: startWorkflowRun(set, get),
     stopWorkflowRunNow: stopWorkflowRunNow(set, get),
     reprocessGoalForWorkflow: reprocessGoalForWorkflow(set, get),

@@ -4,9 +4,11 @@ import type {
   AgentId,
   AgentStatus,
   IsoDateTime,
+  ProviderRunId,
   Session,
   SessionId,
   StepId,
+  TelemetryRecord,
   Workflow,
   WorkflowId,
   WorkflowRun,
@@ -100,6 +102,10 @@ const baseState = (stepIds: ReadonlyArray<string>, agents: ReadonlyArray<Agent>)
   summarizerStatus: {},
   budgetAlerts: [],
   announcedWorkflowBlocks: {},
+  announcedRunBudget: {},
+  sessionTelemetry: {},
+  agentRunHistory: {},
+  loadSessionTelemetry: vi.fn(async () => undefined),
   startWorkflowRun: vi.fn(async () => undefined),
   activateWorkflowAgent: vi.fn(async () => undefined),
   orchestrateNextStep: vi.fn(async () => undefined),
@@ -426,6 +432,52 @@ describe('maybeAutoAdvanceWorkflow', () => {
     await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
 
     expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
+  });
+
+  it('pauses the run past its spend limit without holding back its sibling', async () => {
+    const SECOND_ID = 'run-2' as WorkflowRunId;
+    const cappedAgent: Agent = {
+      ...makeAgent('s0', 'pending', 0),
+      runId: 'pr-1' as ProviderRunId,
+    };
+    const siblingAgent: Agent = {
+      id: `${SECOND_ID}-s0` as AgentId,
+      sessionId: SESSION_ID,
+      stepId: 's0' as StepId,
+      workflowRunId: SECOND_ID,
+      ordinal: 0,
+      name: 's0',
+      status: 'pending',
+    };
+    const session = makeSession();
+    const state = baseState(['s0'], [cappedAgent, siblingAgent]);
+    state['sessions'] = [
+      {
+        ...session,
+        workflowRuns: [
+          { ...session.workflowRuns[0]!, spendLimitUsd: 1, spendLimitMode: 'pause' as const },
+          { ...session.workflowRuns[0]!, id: SECOND_ID, ordinal: 1 },
+        ],
+      },
+    ];
+    state['sessionTelemetry'] = {
+      [SESSION_ID]: [
+        { runId: 'pr-1', kind: 'turn', estimatedCostUsd: 4 } as unknown as TelemetryRecord,
+      ],
+    };
+    const { set, get } = harness(state);
+
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+
+    expect(updateOrchestrationStopSpy).toHaveBeenCalledWith({}, RUN_ID, {
+      kind: 'budget',
+      message: expect.stringContaining('spend limit'),
+    });
+    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: `${SECOND_ID}-s0`,
+      focus: 'announce',
+    });
   });
 
   it('records the budget stop once while the cap stays reached', async () => {

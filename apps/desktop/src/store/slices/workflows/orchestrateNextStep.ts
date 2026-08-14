@@ -18,8 +18,6 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import {
-  ORCHESTRATOR_STEP_BUDGET,
-  ORCHESTRATOR_STEP_HARD_CAP,
   OrchestratorClient,
   OrchestratorProviderError,
   ROLE_DEFAULTS,
@@ -39,7 +37,13 @@ import {
 } from '@goodboy/db';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { BUDGET_BLOCK_MESSAGE, isBudgetBlocked } from './budgetBlock';
+import {
+  BUDGET_BLOCK_MESSAGE,
+  isBudgetBlocked,
+  resolveSpendLimitStop,
+  type SpendLimitStop,
+} from './budgetBlock';
+import { runSpendUsd } from './runSpendUsd';
 import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
@@ -145,6 +149,39 @@ const emitDecision = ({
   };
   get().appendTurnEvent(agentId, sessionId, event);
   return agentId;
+};
+
+type AnnounceBudgetParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId;
+  readonly stop: SpendLimitStop;
+};
+
+const announceRunBudget = ({
+  set,
+  get,
+  sessionId,
+  workflowRunId,
+  stop,
+}: AnnounceBudgetParams): void => {
+  if (get().announcedRunBudget[workflowRunId] === stop.limitUsd) {
+    return;
+  }
+  set((state) => ({
+    announcedRunBudget: { ...state.announcedRunBudget, [workflowRunId]: stop.limitUsd },
+  }));
+  void get().emitNotification(
+    'budget-cap',
+    'warning',
+    'workflow run over its spend limit',
+    stop.message,
+    {
+      sessionId,
+      action: { kind: 'open-budget', sessionId },
+    },
+  );
 };
 
 type PersistOutcomeParams = {
@@ -419,6 +456,19 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         });
         return;
       }
+      const spendStop = await resolveSpendLimitStop({ get, sessionId, run });
+      if (spendStop?.kind === 'pause') {
+        await persistOrchestrationStop({
+          set,
+          sessionId,
+          workflowRunId,
+          stop: { kind: 'budget', message: spendStop.message },
+        });
+        return;
+      }
+      if (spendStop != null) {
+        announceRunBudget({ set, get, sessionId, workflowRunId, stop: spendStop });
+      }
       if (options?.bypassGate !== true) {
         const blocked = await findWorkflowActivationBlock({ sessionId, workflowRunId });
         if (blocked !== null) {
@@ -430,25 +480,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           });
           return;
         }
-      }
-      if (workflow.steps.length >= ORCHESTRATOR_STEP_HARD_CAP) {
-        const reason = `the run reached the hard cap of ${ORCHESTRATOR_STEP_HARD_CAP} steps without closing. Review what the steps produced and start a new run for what is left.`;
-        await persistOrchestrationOutcome({
-          set,
-          sessionId,
-          workflowRunId,
-          outcome: 'blocked',
-          reason,
-        });
-        emitDecision({ get, sessionId, workflowRunId, action: 'blocked', reason, operatorNote });
-        void get().emitNotification(
-          'error',
-          'warning',
-          'dynamic workflow hit the step cap',
-          reason,
-          { sessionId },
-        );
-        return;
       }
       setDeciding({ set, workflowRunId, isDeciding: true });
       if (options?.bypassGate !== true) {
@@ -507,7 +538,15 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           modelMenu,
           roleDefaults,
           stepsUsed: workflow.steps.length,
-          stepBudget: ORCHESTRATOR_STEP_BUDGET,
+          ...(run.spendLimitUsd != null && {
+            spendLimitUsd: run.spendLimitUsd,
+            spentUsd: runSpendUsd({
+              records: get().sessionTelemetry[sessionId] ?? [],
+              agents: get().sessionPhaseRuns[sessionId] ?? [],
+              agentRunHistory: get().agentRunHistory,
+              workflowRunId,
+            }),
+          }),
         });
       } catch (error) {
         if (hasOperatorStop({ get, sessionId, workflowRunId })) {

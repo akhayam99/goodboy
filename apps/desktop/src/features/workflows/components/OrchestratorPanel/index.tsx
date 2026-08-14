@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CircleHelp, Eraser, PenLine, Play, RotateCcw, SkipForward, Wallet } from 'lucide-react';
-import { Eyebrow, Markdown, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { Eyebrow, Markdown, StatusDot, cn, formatUsd, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { Agent, OpenQuestion, SessionId, Step, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
@@ -8,6 +8,7 @@ import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate'
 import { openBudgetStudio } from '../../../budget/openBudgetStudio';
 import { WorkflowAutorunToggle } from '../WorkflowAutorunToggle';
 import { WorkflowOrchestratorTldr } from '../WorkflowOrchestratorTldr';
+import { RunSpendLimitPopover } from '../RunSpendLimitPopover';
 import { OrchestratorAction } from './OrchestratorAction';
 import { OrchestratorDrawer } from './OrchestratorDrawer';
 import { OrchestratorRoutingRow } from './OrchestratorRoutingRow';
@@ -110,16 +111,7 @@ export const OrchestratorPanel = ({
           />
         );
       case 'paused-budget':
-        return (
-          <OrchestratorAction
-            icon={Wallet}
-            label="Review budget"
-            variant="primary"
-            tone="warning"
-            testId="orchestrator-review-budget"
-            onClick={() => openBudgetStudio({ scope: { kind: 'session', sessionId } })}
-          />
-        );
+        return <RunSpendLimitPopover sessionId={sessionId} run={run} variant="primary" />;
       case 'step-failed':
         return (
           <OrchestratorAction
@@ -226,6 +218,14 @@ export const OrchestratorPanel = ({
             {savedHints === '' ? null : (
               <span className="font-normal text-muted-foreground">· Standing hints on</span>
             )}
+            {run.spendLimitUsd == null ? null : (
+              <span
+                data-testid="orchestrator-spend-limit"
+                className="font-normal text-muted-foreground"
+              >
+                · Spend limit {formatUsd(run.spendLimitUsd)} · {run.spendLimitMode ?? 'pause'}
+              </span>
+            )}
           </p>
 
           {state.detail != null && state.detail !== '' ? (
@@ -256,15 +256,16 @@ export const OrchestratorPanel = ({
             onClick={() => toggleDrawer('hints')}
           />
           {state.phase === 'paused-budget' ? null : (
-            <OrchestratorAction
-              icon={Wallet}
-              label="Budget"
-              variant="ghost"
-              testId="orchestrator-budget"
-              title="Open the budget for this session"
-              onClick={() => openBudgetStudio({ scope: { kind: 'session', sessionId } })}
-            />
+            <RunSpendLimitPopover sessionId={sessionId} run={run} variant="ghost" />
           )}
+          <OrchestratorAction
+            icon={Wallet}
+            label="Budget"
+            variant="ghost"
+            testId="orchestrator-budget"
+            title="Open the budget for this session"
+            onClick={() => openBudgetStudio({ scope: { kind: 'session', sessionId } })}
+          />
         </div>
       </div>
 

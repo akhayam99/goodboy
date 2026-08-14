@@ -22,6 +22,7 @@ import type {
   SessionStageInfo,
   SessionViewPrefs,
   TelemetryRecord,
+  WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
 import type { Workspace } from '@goodboy/types';
@@ -40,10 +41,12 @@ import { agentHasUnread } from './slices/agents/agentHasUnread';
 import { sessionPrFetchState } from './slices/github/sessionPrFetchState';
 import { isSessionPrFetchable } from './slices/github/resolveSessionPrFetch';
 import { resolveSessionRepo } from './slices/worktrees/resolveSessionRepo';
+import { runSpendUsd } from './slices/workflows/runSpendUsd';
 export { agentHasUnread } from './slices/agents/agentHasUnread';
 
 const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
 const EMPTY_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
+const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
 const EMPTY_TERMINAL_TABS: ReadonlyArray<TerminalTab> = [];
 
 export const sumSessionCost = (records: readonly TelemetryRecord[]): number => {
@@ -61,6 +64,16 @@ export const useSessionCost = (sessionId: SessionId): number => {
   const records = useAppStore((state) => state.sessionTelemetry[sessionId] ?? EMPTY_TELEMETRY);
   return useMemo(() => sumSessionCost(records), [records]);
 };
+
+export const useRunSpendUsd = (sessionId: SessionId, workflowRunId: WorkflowRunId): number =>
+  useAppStore((state) =>
+    runSpendUsd({
+      records: state.sessionTelemetry[sessionId] ?? EMPTY_TELEMETRY,
+      agents: state.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS,
+      agentRunHistory: state.agentRunHistory,
+      workflowRunId,
+    }),
+  );
 
 export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionViewPrefs => {
   const prefs = useAppStore((s) =>
@@ -564,8 +577,6 @@ export const useFilesTouched = (
 
   return state;
 };
-
-const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
 
 const useSessionAgentKindOverrides = (sessionId: SessionId): Readonly<Record<string, AgentKind>> =>
   useAppStore(

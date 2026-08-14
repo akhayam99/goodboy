@@ -49,8 +49,8 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
   budget: {
     phase: 'paused-budget',
     tone: 'warning',
-    sentence: 'Paused · session budget cap reached',
-    showsMessage: false,
+    sentence: 'Paused · budget cap reached',
+    showsMessage: true,
   },
   failure: {
     phase: 'failed',

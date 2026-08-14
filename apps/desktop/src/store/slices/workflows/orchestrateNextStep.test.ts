@@ -13,6 +13,7 @@ import type {
   Workflow,
   WorkflowId,
   WorkflowRunId,
+  WorkflowSpendLimitMode,
   WorkspaceId,
 } from '@goodboy/types';
 
@@ -76,12 +77,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: invokeAgentInsertSpy,
 }));
 
-import {
-  ORCHESTRATOR_STEP_BUDGET,
-  ORCHESTRATOR_STEP_HARD_CAP,
-  OrchestratorClient,
-  ROLE_DEFAULTS,
-} from '@goodboy/core';
+import { OrchestratorClient, ROLE_DEFAULTS } from '@goodboy/core';
 import { orchestrateNextStep, persistOrchestrationStop } from './orchestrateNextStep';
 import { continueWorkflowRun } from './continueWorkflowRun';
 
@@ -203,10 +199,38 @@ const baseState = (): State => {
     agentKindOverride: {},
     agentProviderOverride: {},
     agentEffortOverride: {},
+    announcedRunBudget: {},
+    loadSessionTelemetry: vi.fn(async () => undefined),
     appendTurnEvent: vi.fn(),
     activateWorkflowAgent: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
   };
+};
+
+type SpendParams = {
+  readonly limitUsd: number;
+  readonly spentUsd: number;
+  readonly mode?: WorkflowSpendLimitMode;
+};
+
+const spendState = ({ limitUsd, spentUsd, mode = 'pause' }: SpendParams): State => {
+  const state = baseState();
+  const base = session();
+  state['sessions'] = [
+    {
+      ...base,
+      workflowRuns: [{ ...base.workflowRuns[0]!, spendLimitUsd: limitUsd, spendLimitMode: mode }],
+    },
+  ];
+  state['sessionPhaseRuns'] = {
+    [SESSION_ID]: [{ ...completedAgent(), runId: 'pr-1' as ProviderRunId }],
+  };
+  state['sessionTelemetry'] = {
+    [SESSION_ID]: [
+      { runId: 'pr-1', kind: 'turn', estimatedCostUsd: spentUsd } as unknown as TelemetryRecord,
+    ],
+  };
+  return state;
 };
 
 const OPERATOR_STOP = {
@@ -1070,37 +1094,6 @@ describe('orchestrateNextStep', () => {
     );
   });
 
-  it('records the note on the hard cap block, not only in the prompt', async () => {
-    const state = baseState();
-    const template = state['phaseTemplates'] as Record<string, ReadonlyArray<Workflow>>;
-    const base = template[WORKSPACE_ID]![0]!;
-    const capped: Workflow = {
-      ...base,
-      steps: Array.from({ length: ORCHESTRATOR_STEP_HARD_CAP }, (_, index) => ({
-        ...base.steps[0]!,
-        id: `step-${index}` as StepId,
-        ordinal: index,
-        name: `Step ${index}`,
-      })),
-    };
-    state['phaseTemplates'] = { [WORKSPACE_ID]: [capped] };
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
-      extraHints: 'watch for the hard cap',
-    });
-
-    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
-      AGENT_ID,
-      SESSION_ID,
-      expect.objectContaining({
-        kind: 'orchestrator_decision',
-        action: 'blocked',
-        operatorNote: 'watch for the hard cap',
-      }),
-    );
-  });
-
   it('records the note on a provider failure block, not only in the prompt', async () => {
     decideSpy.mockRejectedValueOnce(new Error('orchestrator decision timed out'));
     const state = baseState();
@@ -1202,36 +1195,89 @@ describe('orchestrateNextStep', () => {
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
+    expect(decideSpy).toHaveBeenCalledWith(expect.objectContaining({ stepsUsed: 1 }));
+  });
+
+  it('tells the orchestrator what the run spent against the limit the operator set', async () => {
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'all set' },
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = spendState({ limitUsd: 20, spentUsd: 3 });
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
     expect(decideSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ stepsUsed: 1, stepBudget: ORCHESTRATOR_STEP_BUDGET }),
+      expect.objectContaining({ spendLimitUsd: 20, spentUsd: 3 }),
     );
   });
 
-  it('blocks the run once it reaches the hard step cap instead of asking for more', async () => {
-    const state = baseState();
-    const template = state['phaseTemplates'] as Record<string, ReadonlyArray<Workflow>>;
-    const base = template[WORKSPACE_ID]![0]!;
-    const capped: Workflow = {
-      ...base,
-      steps: Array.from({ length: ORCHESTRATOR_STEP_HARD_CAP }, (_, index) => ({
-        ...base.steps[0]!,
-        id: `step-${index}` as StepId,
-        ordinal: index,
-        name: `Step ${index}`,
-      })),
-    };
-    state['phaseTemplates'] = { [WORKSPACE_ID]: [capped] };
+  it('pauses the run once it spends past the limit', async () => {
+    const state = spendState({ limitUsd: 5, spentUsd: 6 });
     const { set, get } = harness(state);
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
     expect(decideSpy).not.toHaveBeenCalled();
-    expect(updateOutcomeSpy).toHaveBeenCalledWith(
-      {},
-      WORKFLOW_RUN_ID,
-      'blocked',
-      expect.stringContaining('hard cap'),
+    expect(updateStopSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, {
+      kind: 'budget',
+      message: expect.stringContaining('spend limit'),
+    });
+  });
+
+  it('keeps deciding past the limit when the operator only asked to be notified', async () => {
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'all set' },
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = spendState({ limitUsd: 5, spentUsd: 6, mode: 'notify' });
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(decideSpy).toHaveBeenCalledTimes(1);
+    expect(state['emitNotification']).toHaveBeenCalledWith(
+      'budget-cap',
+      'warning',
+      expect.stringContaining('spend limit'),
+      expect.stringContaining('spend limit'),
+      expect.objectContaining({ sessionId: SESSION_ID }),
     );
+  });
+
+  it('announces the same limit once, and again once the operator raises it', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
+      decision: {
+        action: 'next',
+        reason: 'keep going',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the mapped change.',
+          expectedOutput: 'A tested implementation.',
+        },
+      },
+    });
+    const state = spendState({ limitUsd: 5, spentUsd: 6, mode: 'notify' });
+    const { set, get } = harness(state);
+    const budgetCalls = () =>
+      (state['emitNotification'] as ReturnType<typeof vi.fn>).mock.calls.filter(
+        (call) => call[0] === 'budget-cap',
+      ).length;
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+    expect(budgetCalls()).toBe(1);
+
+    state['sessions'] = spendState({ limitUsd: 6, spentUsd: 6, mode: 'notify' })['sessions'];
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(budgetCalls()).toBe(2);
   });
 
   it('refuses to start a step while the budget cap is reached', async () => {

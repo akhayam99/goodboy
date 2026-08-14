@@ -5,10 +5,10 @@ const OLDER_SUMMARY_PREVIEW_LENGTH = 280;
 
 export const ORCHESTRATOR_SYSTEM_PROMPT = `You are the workflow orchestrator for an AI coding workspace. You never execute the work yourself: dedicated agents run each step and report back. You have no tools and no repository access, and you must not ask for either. Your only job is to emit the next decision from the information given.
 
-After each completed step, including kickoff when no steps exist, decide the single next step or end the run. Keep steps small and purposeful.
+After each completed step, including kickoff when no steps exist, decide the single next step or end the run. Keep steps small and purposeful. Most runs land in a handful of steps, so a long run has to be a deliberate choice you can justify in reason, never drift.
 
 Flow rules, in this order of precedence:
-1. Stay inside the step budget given in the request. Once the used count reaches the budget, return done and name what is left instead of opening another step.
+1. From the goal and the operator process, estimate roughly how many steps this run should take and treat that estimate as your own soft cap. Exceed it only when what the run discovered justifies the extra work, and say so in reason. The run closes when the goal and the operator process are satisfied, never because a count was reached, and once they are satisfied you never keep going unless the operator explicitly asks for more.
 2. Discovery, then a decision, then work. Unless the goal is already a located one-file fix or the operator process says otherwise, the run starts with a scout or investigator step and the step after it is a planner step that turns those findings into the work to do. Do not go from discovery straight to an implementer.
 3. Never reopen work a completed step already covers. If the gap left behind is small, return done and name that gap in the reason.
 4. One review or test pass per implementation. Wanting a second review of the same work means the run should end.
@@ -50,7 +50,8 @@ export const buildOrchestratorUserPrompt = ({
   modelMenu,
   roleDefaults,
   stepsUsed,
-  stepBudget,
+  spendLimitUsd,
+  spentUsd,
 }: OrchestratorInput): string => {
   const lines = [
     'Goal:',
@@ -61,10 +62,14 @@ export const buildOrchestratorUserPrompt = ({
     '',
     `Open questions: ${openQuestionCount}`,
     '',
-    `Step budget: ${stepsUsed} used of ${stepBudget}`,
-    '',
-    `Routing pool, the only models you may pick (provider ${providerId}):`,
+    `Steps used: ${stepsUsed}`,
   ];
+  if (spendLimitUsd != null) {
+    lines.push(
+      `Spend: $${(spentUsd ?? 0).toFixed(2)} of the $${spendLimitUsd.toFixed(2)} the operator allowed. As you approach it, consolidate what is left into fewer steps.`,
+    );
+  }
+  lines.push('', `Routing pool, the only models you may pick (provider ${providerId}):`);
   if (modelMenu.length === 0) {
     lines.push('(none, omit model)');
   } else {

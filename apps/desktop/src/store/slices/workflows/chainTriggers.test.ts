@@ -157,6 +157,9 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+const attachArgs = (): Record<string, unknown> | undefined =>
+  attachInDbSpy.mock.calls[0]?.[0] as Record<string, unknown> | undefined;
+
 describe('maybeAutoAdvanceWorkflow chain detection', () => {
   function baseState(workflowRuns: ReadonlyArray<WorkflowRun>, agents: ReadonlyArray<Agent>) {
     return {
@@ -573,7 +576,7 @@ describe('attachWorkflowToSession trigger modes', () => {
     const state = baseState([], []);
     const { set, get } = harness(state);
     await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, { autoRun: false });
-    expect(attachInDbSpy.mock.calls[0]?.[7]).toBe('immediate');
+    expect(attachArgs()?.['triggerMode']).toBe('immediate');
     expect(state['activateWorkflowAgent']).toHaveBeenCalled();
   });
 
@@ -584,7 +587,7 @@ describe('attachWorkflowToSession trigger modes', () => {
       autoRun: false,
       triggerMode: 'manual',
     });
-    expect(attachInDbSpy.mock.calls[0]?.[7]).toBe('manual');
+    expect(attachArgs()?.['triggerMode']).toBe('manual');
     expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
     expect(state['maybeAutoAdvanceWorkflow']).not.toHaveBeenCalled();
   });
@@ -598,8 +601,8 @@ describe('attachWorkflowToSession trigger modes', () => {
       triggerMode: 'after_run',
       chainAfterId: 'pred' as WorkflowRunId,
     });
-    expect(attachInDbSpy.mock.calls[0]?.[7]).toBe('after_run');
-    expect(attachInDbSpy.mock.calls[0]?.[8]).toBe('pred');
+    expect(attachArgs()?.['triggerMode']).toBe('after_run');
+    expect(attachArgs()?.['chainAfterRunId']).toBe('pred');
     expect(state['maybeAutoAdvanceWorkflow']).not.toHaveBeenCalled();
   });
 
@@ -612,7 +615,7 @@ describe('attachWorkflowToSession trigger modes', () => {
       triggerMode: 'after_run',
       chainAfterId: 'pred' as WorkflowRunId,
     });
-    expect(attachInDbSpy.mock.calls[0]?.[7]).toBe('immediate');
+    expect(attachArgs()?.['triggerMode']).toBe('immediate');
     expect(state['maybeAutoAdvanceWorkflow']).toHaveBeenCalledWith(SESSION_ID);
   });
 
@@ -625,7 +628,7 @@ describe('attachWorkflowToSession trigger modes', () => {
       triggerMode: 'after_run',
       chainAfterId: 'pred' as WorkflowRunId,
     });
-    expect(attachInDbSpy.mock.calls[0]?.[7]).toBe('after_run');
+    expect(attachArgs()?.['triggerMode']).toBe('after_run');
     expect(state['maybeAutoAdvanceWorkflow']).not.toHaveBeenCalled();
   });
 
@@ -637,7 +640,7 @@ describe('attachWorkflowToSession trigger modes', () => {
       triggerMode: 'after_run',
       chainAfterId: 'ghost' as WorkflowRunId,
     });
-    expect(attachInDbSpy.mock.calls[0]?.[7]).toBe('after_run');
+    expect(attachArgs()?.['triggerMode']).toBe('after_run');
     expect(state['maybeAutoAdvanceWorkflow']).not.toHaveBeenCalled();
   });
 
@@ -659,7 +662,7 @@ describe('attachWorkflowToSession trigger modes', () => {
     const state = baseState([], []);
     const { set, get } = harness(state);
     await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, { autoRun: true });
-    expect(attachInDbSpy.mock.calls[0]?.[7]).toBe('immediate');
+    expect(attachArgs()?.['triggerMode']).toBe('immediate');
     expect(state['maybeAutoAdvanceWorkflow']).toHaveBeenCalledWith(SESSION_ID);
     expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
   });
@@ -697,7 +700,7 @@ describe('attachWorkflowToSession trigger modes', () => {
       executionMode: 'dynamic',
     });
 
-    expect(attachInDbSpy.mock.calls[0]?.[9]).toBe('dynamic');
+    expect(attachArgs()?.['executionMode']).toBe('dynamic');
     expect(invokeAgentInsertSpy).not.toHaveBeenCalled();
     const added = (state.sessions[0] as Session).workflowRuns[0]!;
     expect(added.executionMode).toBe('dynamic');
@@ -716,7 +719,7 @@ describe('attachWorkflowToSession trigger modes', () => {
       triggerMode: 'after_run',
       chainAfterId: 'pred' as WorkflowRunId,
     });
-    expect(attachInDbSpy.mock.calls[0]?.[7]).toBe('immediate');
+    expect(attachArgs()?.['triggerMode']).toBe('immediate');
   });
 
   it('after_run stays queued behind a dynamic predecessor without a persisted outcome', async () => {
@@ -728,6 +731,6 @@ describe('attachWorkflowToSession trigger modes', () => {
       triggerMode: 'after_run',
       chainAfterId: 'pred' as WorkflowRunId,
     });
-    expect(attachInDbSpy.mock.calls[0]?.[7]).toBe('after_run');
+    expect(attachArgs()?.['triggerMode']).toBe('after_run');
   });
 });
