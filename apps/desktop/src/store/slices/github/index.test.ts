@@ -104,6 +104,7 @@ vi.mock('@goodboy/db', () => ({
   listAgentsForSessions: vi.fn(async () => new Map()),
   deleteWorktreesForSession: vi.fn(async () => undefined),
   updateSessionWorktreeBranch: vi.fn(async () => undefined),
+  updateSessionWorktreeRepoSlug: vi.fn(async () => undefined),
   listAllSessionWorktrees: vi.fn(async () => []),
   renameSession: vi.fn(async () => undefined),
   deleteSession: vi.fn(async () => undefined),
@@ -645,6 +646,52 @@ describe('store contract', () => {
       expect(store.getState().sessionGithub[SESSION_ID]?.pr?.number).toBe(canonicalPr.number);
       expect(store.getState().sessionSelectedPrNumber[SESSION_ID]).toBe(selectedPr.number);
       expect(listPrsForBranchSpy).toHaveBeenCalledOnce();
+    });
+
+    it('caches the canonical pull request under its repository slug', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const canonicalPr = {
+        number: 42,
+        title: 'Ship the impact panel',
+        url: 'https://github.com/acme/goodboy/pull/42',
+        state: 'open',
+        mergeable: true,
+        checks: 'success',
+        baseBranch: 'main',
+        headBranch: 'goodboy/topic',
+        isDraft: false,
+        reviewDecision: null,
+        body: 'a body nobody should cache',
+        updatedAt: '2026-07-30T10:00:00Z',
+      } as PullRequestState;
+      detectRepoSlugSpy.mockResolvedValueOnce('acme/goodboy');
+      listPrsForBranchSpy.mockResolvedValueOnce([canonicalPr]);
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/topic'] },
+      });
+
+      await store.getState().refreshSessionPr(SESSION_ID, { force: true });
+
+      expect(vi.mocked(db.updateSessionWorktreeRepoSlug)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sessionId: SESSION_ID,
+          worktreePath: '/tmp/repo/.wt/topic',
+          repoSlug: 'acme/goodboy',
+        }),
+      );
+      const entry = vi.mocked(db.upsertGithubPrCache).mock.calls[0]?.[1];
+      expect(entry).toMatchObject({ branch: 'goodboy/topic', repoSlug: 'acme/goodboy' });
+      expect(Object.keys(entry?.pr ?? {}).sort()).toEqual([
+        'number',
+        'state',
+        'title',
+        'updatedAt',
+        'url',
+      ]);
     });
 
     it('keeps the previous pr list and selection when listing fails', async () => {

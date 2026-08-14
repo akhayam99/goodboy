@@ -1090,6 +1090,58 @@ describe('store contract', () => {
     });
   });
 
+  describe('createSession repository slug', () => {
+    it('stamps the detected slug on the new worktree row', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const core = await import('@goodboy/core');
+      vi.mocked(db.listWorkspaces).mockResolvedValueOnce([buildWorkspace()]);
+      createWorktreeSpy.mockResolvedValueOnce({
+        worktreePath: '/tmp/repo/wt-slug',
+        branchName: 'ak/slug',
+        slug: 'slug',
+        reused: false,
+      });
+      vi.mocked(core.detectRepoSlug).mockResolvedValueOnce('acme/goodboy');
+      store.setState({ currentWorkspaceId: WS_ID });
+
+      const { session } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'Slug it' });
+
+      await vi.waitFor(() => {
+        expect(vi.mocked(db.updateSessionWorktreeRepoSlug)).toHaveBeenCalledWith({
+          db: expect.anything(),
+          sessionId: session.id,
+          worktreePath: '/tmp/repo/wt-slug',
+          repoSlug: 'acme/goodboy',
+        });
+      });
+    });
+
+    it('creates the session anyway when the slug cannot be detected', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const core = await import('@goodboy/core');
+      vi.mocked(db.listWorkspaces).mockResolvedValueOnce([buildWorkspace()]);
+      createWorktreeSpy.mockResolvedValueOnce({
+        worktreePath: '/tmp/repo/wt-offline',
+        branchName: 'ak/offline',
+        slug: 'offline',
+        reused: false,
+      });
+      vi.mocked(core.detectRepoSlug).mockResolvedValueOnce(null);
+      store.setState({ currentWorkspaceId: WS_ID });
+
+      const { session } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'Offline' });
+
+      expect(session.id).toBeDefined();
+      expect(vi.mocked(db.updateSessionWorktreeRepoSlug)).not.toHaveBeenCalled();
+    });
+  });
+
   describe('createSession external task', () => {
     const GITLAB_TASK = {
       provider: 'gitlab' as const,
