@@ -1,93 +1,29 @@
 # Conventions: @goodboy/core
 
-Pure TypeScript business logic. **No React. No Tauri APIs. No DOM.** This package must be runnable in Node, browsers, and tests without changes.
+> **Read this when** you're writing code inside `@goodboy/core` and need its boundaries and architecture rules. **Not for** repo-wide process rules (`CONVENTIONS.md`) or TypeScript style (`docs/typescript/`).
 
-## Scope
+Pure TypeScript business logic. **No React. No Tauri APIs. No DOM.** Must run in Node, browsers, and tests without changes.
 
-- Provider adapters (Anthropic, OpenAI, Cursor, etc.).
-- Routing & balance logic (priority, threshold, fallback).
-- Session orchestration (macro session lifecycle, task state transitions).
-- Skill registry & execution.
-- Validation schemas, type guards, refinement functions.
-- Pure utilities (parsing, formatting, calculations).
+## Boundaries
 
-## What does NOT belong here
+Here: provider adapters, routing and balance logic, session orchestration, skill registry, validation and type guards, pure utilities. Not here: React components (`@goodboy/ui`), SQLite queries (`@goodboy/db`), Tauri bindings (`apps/desktop`), any side effect bound to a runtime.
 
-- React components → `@goodboy/ui`.
-- SQLite queries → `@goodboy/db`.
-- Tauri command bindings → `apps/desktop`.
-- Side effects bound to a runtime (file system, processes, native APIs).
+## Architecture rules
 
-## Architecture
-
-### Provider adapter pattern
-
-Every AI provider implements a common interface:
-
-```ts
-export interface ProviderAdapter {
-  readonly id: ProviderId;
-  readonly name: string;
-  readonly capabilities: ProviderCapabilities;
-  send(request: ProviderRequest): Promise<ProviderResponse>;
-  estimateCost(request: ProviderRequest): number;
-  getUsage(): Promise<ProviderUsage>;
-}
-```
-
-- Adapters are stateless. Configuration is injected.
-- Adapters never read environment variables or files. The host provides credentials.
-- Errors are typed (`Result<T, ProviderError>` pattern), no thrown exceptions for expected failures.
-
-### Routing
-
-The `Router` selects the active provider based on:
-
-1. User-defined priority order.
-2. Current usage vs. configured threshold.
-3. Task-type to model mapping.
-
-Pure function: `route(request, providers, config) → ProviderId`.
-
-### Sessions
-
-Macro sessions and tasks are immutable data structures with state transition functions. No instance methods that mutate. All transitions return new objects.
+- Adapters are stateless. Configuration is injected. Adapters never read environment variables or files; the host provides credentials.
+- Errors are typed (`Result<T, E>` pattern), no thrown exceptions for expected failures.
+- Routing is a pure function over priority order, usage vs threshold, and task-type mapping.
+- Sessions and tasks are immutable data: transitions return new objects, no mutating instance methods.
 
 ## Code rules
 
 - Pure functions wherever possible. Side effects pushed to the boundary.
 - No singletons. Pass dependencies explicitly.
-- No `console.*` for production code paths. Use a logger interface injected by the host.
+- No `console.*` in production code paths. Use a logger interface injected by the host.
 - No `Date.now()` or `Math.random()` in business logic. Inject clock and RNG.
-- Async functions return `Promise<Result<T, E>>` for fallible operations.
+- Async fallible operations return `Promise<Result<T, E>>`.
 - No null returns for "not found". Use discriminated unions or `Option<T>`-style wrappers.
 
 ## Testing
 
-- Vitest. Every public function has tests.
-- No mocking of internal modules. Mock only at the boundary (provider adapters, fetch).
-- Test data via factories, not fixtures.
-- Naming: `<module>.test.ts` colocated with source.
-
-## Folder structure
-
-```
-src/
-├── index.ts              # public API (re-exports only)
-├── providers/
-│   ├── adapter.ts        # ProviderAdapter interface
-│   ├── anthropic.ts
-│   ├── openai.ts
-│   └── registry.ts
-├── routing/
-│   ├── router.ts
-│   └── balance.ts
-├── sessions/
-│   ├── workspace.ts
-│   └── task.ts
-├── skills/
-│   └── registry.ts
-└── shared/
-    ├── result.ts         # Result<T, E> helpers
-    └── id.ts             # ID generation
-```
+Rules in [docs/testing.md](../../docs/testing.md). Package-specific: no mocking of internal modules, mock only at the boundary (provider adapters, fetch); test data via factories, not fixtures.
