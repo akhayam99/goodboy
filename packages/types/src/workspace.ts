@@ -93,6 +93,8 @@ export type WorkflowOrchestrationStop = Readonly<{
   message: string;
 }>;
 
+export type WorkflowSpendLimitMode = 'notify' | 'pause';
+
 export type OrchestratorRouting = Readonly<{
   providerId: ProviderId;
   model: string;
@@ -113,6 +115,8 @@ export type WorkflowRun = Readonly<{
   orchestratorHints?: string;
   orchestratorSummary?: string;
   orchestratorRouting?: OrchestratorRouting;
+  spendLimitUsd?: number;
+  spendLimitMode?: WorkflowSpendLimitMode;
   chainAfterId?: WorkflowRunId;
   goal?: string;
   discardedAt?: IsoDateTime;

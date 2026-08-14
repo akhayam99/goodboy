@@ -56,6 +56,7 @@ import type {
   Workflow,
   WorkflowId,
   WorkflowRunId,
+  WorkflowSpendLimitMode,
   WorkflowTriggerMode,
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace, useSessionSlots } from '../../../../store';
@@ -71,6 +72,10 @@ import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { type EffortLevel, clampEffort } from '../../../chat/utils/chat-constants';
 import { useWorkflowDrag } from '../../../workflows/hooks/useWorkflowDrag';
 import { StepFlowConnector } from '../../../workflows/components/WorkflowStudio/StepFlowConnector';
+import {
+  SpendLimitFields,
+  parseSpendLimit,
+} from '../../../workflows/components/RunSpendLimitPopover/SpendLimitFields';
 import { DragGhost } from '../../../workflows/components/WorkflowStudio/DragGhost';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
@@ -245,6 +250,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const [autoRun, setAutoRun] = useState(initialDraft?.autoRun ?? false);
   const [triggerMode, setTriggerMode] = useState<WorkflowTriggerMode>('immediate');
   const [chainAfterId, setChainAfterId] = useState<WorkflowRunId | null>(null);
+  const [spendLimitDraft, setSpendLimitDraft] = useState('');
+  const [spendLimitMode, setSpendLimitMode] = useState<WorkflowSpendLimitMode>('pause');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<WorkflowId | null>(null);
@@ -566,6 +573,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const attachOptions = () => {
     const goal = goalText.trim();
     const after = triggerMode === 'after_run' ? resolvedChainId : null;
+    const spendLimitUsd = mode === 'dynamic' ? parseSpendLimit(spendLimitDraft) : null;
     return {
       autoRun,
       navigate: true,
@@ -574,6 +582,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       ...(triggerMode === 'after_run' && after && { chainAfterId: after }),
       ...(attachments.length > 0 && { attachmentInputs: attachments.map(toAttachmentInput) }),
       ...(mode === 'dynamic' && { executionMode: 'dynamic' as const }),
+      ...(spendLimitUsd != null && { spendLimitUsd, spendLimitMode }),
     };
   };
 
@@ -726,7 +735,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       : mode === 'dynamic'
         ? processText.trim().length === 0
         : steps.length === 0;
-  const startDisabled = blocked || goalMissing || approachMissing;
+  const spendLimitInvalid =
+    mode === 'dynamic' && spendLimitDraft.trim() !== '' && parseSpendLimit(spendLimitDraft) == null;
+  const startDisabled = blocked || goalMissing || approachMissing || spendLimitInvalid;
   const startHint = goalMissing
     ? 'Set a goal to start'
     : approachMissing
@@ -1162,6 +1173,27 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         <p className="text-2xs leading-relaxed text-muted-foreground">
                           Each step runs on the model configured for its role.
                         </p>
+                        <div className="mt-1 flex flex-col gap-1.5 border-t border-border-soft pt-3">
+                          <label
+                            htmlFor="builder-spend-limit-amount"
+                            className="text-2xs font-medium text-foreground"
+                          >
+                            Spend limit
+                          </label>
+                          <SpendLimitFields
+                            amount={spendLimitDraft}
+                            mode={spendLimitMode}
+                            inputId="builder-spend-limit-amount"
+                            invalid={spendLimitInvalid}
+                            onAmount={setSpendLimitDraft}
+                            onMode={setSpendLimitMode}
+                          />
+                          <p className="text-2xs leading-relaxed text-muted-foreground">
+                            {spendLimitInvalid
+                              ? 'Enter an amount above zero, or clear the field for no limit.'
+                              : 'Leave it empty and the run spends whatever it needs.'}
+                          </p>
+                        </div>
                       </div>
                     ) : showSteps ? (
                       <div className="flex flex-col gap-3">

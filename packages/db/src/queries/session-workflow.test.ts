@@ -19,6 +19,7 @@ import {
   updateWorkflowRunOrchestrationOutcome,
   updateWorkflowRunOrchestrationStop,
   updateWorkflowRunOrchestratorRouting,
+  updateWorkflowRunSpendLimit,
 } from './session-workflow';
 import { listSessionsForWorkspace } from './session';
 
@@ -60,7 +61,14 @@ describe('session_workflows trigger-mode queries', () => {
 
   describe('attachWorkflowToSession + toWorkflowRun mapping', () => {
     it('defaults trigger_mode to immediate and omits chainAfterId when none given', async () => {
-      await attachWorkflowToSession(db, sessionId, 'run-1' as WorkflowRunId, workflowId, true, NOW);
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs).toHaveLength(1);
       expect(runs[0]!.triggerMode).toBe('immediate');
@@ -69,51 +77,54 @@ describe('session_workflows trigger-mode queries', () => {
     });
 
     it('persists manual trigger mode', async () => {
-      await attachWorkflowToSession(
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'run-1' as WorkflowRunId,
+        workflowRunId: 'run-1' as WorkflowRunId,
         workflowId,
-        false,
-        NOW,
-        undefined,
-        'manual',
-      );
+        autoRun: false,
+        updatedAt: NOW,
+        triggerMode: 'manual',
+      });
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs[0]!.triggerMode).toBe('manual');
       expect(runs[0]!.autoRun).toBe(false);
     });
 
     it('persists dynamic execution mode', async () => {
-      await attachWorkflowToSession(
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'run-1' as WorkflowRunId,
+        workflowRunId: 'run-1' as WorkflowRunId,
         workflowId,
-        true,
-        NOW,
-        undefined,
-        'immediate',
-        undefined,
-        'dynamic',
-      );
+        autoRun: true,
+        updatedAt: NOW,
+        triggerMode: 'immediate',
+        executionMode: 'dynamic',
+      });
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs[0]!.executionMode).toBe('dynamic');
     });
 
     it('persists after_run mode with chain_after_run_id round-trip', async () => {
-      await attachWorkflowToSession(db, sessionId, 'pred' as WorkflowRunId, workflowId, true, NOW);
-      await attachWorkflowToSession(
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'chained' as WorkflowRunId,
-        workflowId2,
-        true,
-        NOW,
-        undefined,
-        'after_run',
-        'pred' as WorkflowRunId,
-      );
+        workflowRunId: 'pred' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'chained' as WorkflowRunId,
+        workflowId: workflowId2,
+        autoRun: true,
+        updatedAt: NOW,
+        triggerMode: 'after_run',
+        chainAfterRunId: 'pred' as WorkflowRunId,
+      });
       const runs = await listWorkflowsForSession(db, sessionId);
       const chained = runs.find((r) => r.id === ('chained' as WorkflowRunId));
       expect(chained!.triggerMode).toBe('after_run');
@@ -121,8 +132,22 @@ describe('session_workflows trigger-mode queries', () => {
     });
 
     it('auto-increments ordinal across attaches', async () => {
-      await attachWorkflowToSession(db, sessionId, 'r0' as WorkflowRunId, workflowId, true, NOW);
-      await attachWorkflowToSession(db, sessionId, 'r1' as WorkflowRunId, workflowId2, true, NOW);
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'r0' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'r1' as WorkflowRunId,
+        workflowId: workflowId2,
+        autoRun: true,
+        updatedAt: NOW,
+      });
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs.map((r) => [r.id, r.ordinal])).toEqual([
         ['r1', 1],
@@ -147,7 +172,14 @@ describe('session_workflows trigger-mode queries', () => {
     });
 
     it('reads the SQLite datetime text as UTC, not as host local time', async () => {
-      await attachWorkflowToSession(db, sessionId, 'r0' as WorkflowRunId, workflowId, true, NOW);
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'r0' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
       await db.execute('UPDATE session_workflows SET created_at = ? WHERE workflow_run_id = ?', [
         '2026-08-05 09:14:22',
         'r0',
@@ -157,7 +189,14 @@ describe('session_workflows trigger-mode queries', () => {
     });
 
     it('omits createdAt when the column is empty', async () => {
-      await attachWorkflowToSession(db, sessionId, 'r0' as WorkflowRunId, workflowId, true, NOW);
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'r0' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
       await db.execute('UPDATE session_workflows SET created_at = ? WHERE workflow_run_id = ?', [
         '',
         'r0',
@@ -167,8 +206,22 @@ describe('session_workflows trigger-mode queries', () => {
     });
 
     it('keeps the attach timestamp across a reorder', async () => {
-      await attachWorkflowToSession(db, sessionId, 'r0' as WorkflowRunId, workflowId, true, NOW);
-      await attachWorkflowToSession(db, sessionId, 'r1' as WorkflowRunId, workflowId2, true, NOW);
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'r0' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'r1' as WorkflowRunId,
+        workflowId: workflowId2,
+        autoRun: true,
+        updatedAt: NOW,
+      });
       await db.execute('UPDATE session_workflows SET created_at = ? WHERE workflow_run_id = ?', [
         '2026-08-05 09:14:22',
         'r0',
@@ -183,8 +236,22 @@ describe('session_workflows trigger-mode queries', () => {
 
   describe('listWorkflowsForSession ordering', () => {
     it('returns runs newest first, by ordinal descending', async () => {
-      await attachWorkflowToSession(db, sessionId, 'r0' as WorkflowRunId, workflowId, true, NOW);
-      await attachWorkflowToSession(db, sessionId, 'r1' as WorkflowRunId, workflowId2, true, NOW);
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'r0' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'r1' as WorkflowRunId,
+        workflowId: workflowId2,
+        autoRun: true,
+        updatedAt: NOW,
+      });
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs.map((r) => r.id)).toEqual(['r1', 'r0']);
     });
@@ -197,17 +264,16 @@ describe('session_workflows trigger-mode queries', () => {
 
   describe('updateSessionWorkflowTriggerMode', () => {
     it('flips an after_run run to immediate', async () => {
-      await attachWorkflowToSession(
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'run-1' as WorkflowRunId,
+        workflowRunId: 'run-1' as WorkflowRunId,
         workflowId,
-        true,
-        NOW,
-        undefined,
-        'after_run',
-        'pred' as WorkflowRunId,
-      );
+        autoRun: true,
+        updatedAt: NOW,
+        triggerMode: 'after_run',
+        chainAfterRunId: 'pred' as WorkflowRunId,
+      });
       await updateSessionWorkflowTriggerMode(
         db,
         sessionId,
@@ -220,17 +286,16 @@ describe('session_workflows trigger-mode queries', () => {
     });
 
     it('flips a chained run to manual without clearing chain_after_run_id', async () => {
-      await attachWorkflowToSession(
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'run-1' as WorkflowRunId,
+        workflowRunId: 'run-1' as WorkflowRunId,
         workflowId,
-        true,
-        NOW,
-        undefined,
-        'after_run',
-        'pred' as WorkflowRunId,
-      );
+        autoRun: true,
+        updatedAt: NOW,
+        triggerMode: 'after_run',
+        chainAfterRunId: 'pred' as WorkflowRunId,
+      });
       await updateSessionWorkflowTriggerMode(
         db,
         sessionId,
@@ -246,18 +311,24 @@ describe('session_workflows trigger-mode queries', () => {
 
   describe('updateWorkflowOrder preserves chain metadata', () => {
     it('keeps trigger_mode and chain_after_run_id after reorder', async () => {
-      await attachWorkflowToSession(db, sessionId, 'pred' as WorkflowRunId, workflowId, true, NOW);
-      await attachWorkflowToSession(
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'chained' as WorkflowRunId,
-        workflowId2,
-        false,
-        NOW,
-        undefined,
-        'after_run',
-        'pred' as WorkflowRunId,
-      );
+        workflowRunId: 'pred' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'chained' as WorkflowRunId,
+        workflowId: workflowId2,
+        autoRun: false,
+        updatedAt: NOW,
+        triggerMode: 'after_run',
+        chainAfterRunId: 'pred' as WorkflowRunId,
+      });
       await updateWorkflowOrder(
         db,
         sessionId,
@@ -276,53 +347,120 @@ describe('session_workflows trigger-mode queries', () => {
     });
   });
 
-  describe('per-run goal', () => {
-    it('round-trips the goal typed in the builder', async () => {
-      await attachWorkflowToSession(
+  describe('per-run spend limit', () => {
+    it('leaves a fresh run uncapped and pausing', async () => {
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'run-1' as WorkflowRunId,
+        workflowRunId: 'run-1' as WorkflowRunId,
         workflowId,
-        false,
+        autoRun: true,
+        updatedAt: NOW,
+      });
+      const run = (await listWorkflowsForSession(db, sessionId))[0]!;
+      expect(run.spendLimitUsd).toBeUndefined();
+      expect(run.spendLimitMode).toBe('pause');
+    });
+
+    it('round-trips the limit set on the run and clears it', async () => {
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
+      await updateWorkflowRunSpendLimit(db, 'run-1' as WorkflowRunId, 7.5, 'notify');
+      const capped = (await listWorkflowsForSession(db, sessionId))[0]!;
+      expect(capped.spendLimitUsd).toBe(7.5);
+      expect(capped.spendLimitMode).toBe('notify');
+
+      await updateWorkflowRunSpendLimit(db, 'run-1' as WorkflowRunId, null, 'pause');
+      const uncapped = (await listWorkflowsForSession(db, sessionId))[0]!;
+      expect(uncapped.spendLimitUsd).toBeUndefined();
+      expect(uncapped.spendLimitMode).toBe('pause');
+    });
+
+    it('keeps the limit when runs are reordered', async () => {
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-2' as WorkflowRunId,
+        workflowId: workflowId2,
+        autoRun: true,
+        updatedAt: NOW,
+      });
+      await updateWorkflowRunSpendLimit(db, 'run-1' as WorkflowRunId, 12.5, 'notify');
+      await updateWorkflowOrder(
+        db,
+        sessionId,
+        ['run-2' as WorkflowRunId, 'run-1' as WorkflowRunId],
         NOW,
-        'just the auth module',
       );
+      const run = (await listWorkflowsForSession(db, sessionId)).find(
+        (candidate) => candidate.id === ('run-1' as WorkflowRunId),
+      )!;
+      expect(run.spendLimitUsd).toBe(12.5);
+      expect(run.spendLimitMode).toBe('notify');
+    });
+  });
+
+  describe('per-run goal', () => {
+    it('round-trips the goal typed in the builder', async () => {
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        workflowId,
+        autoRun: false,
+        updatedAt: NOW,
+        goal: 'just the auth module',
+      });
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs[0]!.goal).toBe('just the auth module');
     });
 
     it('omits the goal when none was typed', async () => {
-      await attachWorkflowToSession(
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'run-1' as WorkflowRunId,
+        workflowRunId: 'run-1' as WorkflowRunId,
         workflowId,
-        false,
-        NOW,
-      );
+        autoRun: false,
+        updatedAt: NOW,
+      });
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs[0]!.goal).toBeUndefined();
     });
 
     it('keeps the goal when runs are reordered', async () => {
-      await attachWorkflowToSession(
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'run-1' as WorkflowRunId,
+        workflowRunId: 'run-1' as WorkflowRunId,
         workflowId,
-        false,
-        NOW,
-        'first goal',
-      );
-      await attachWorkflowToSession(
+        autoRun: false,
+        updatedAt: NOW,
+        goal: 'first goal',
+      });
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'run-2' as WorkflowRunId,
-        workflowId2,
-        false,
-        NOW,
-        'second goal',
-      );
+        workflowRunId: 'run-2' as WorkflowRunId,
+        workflowId: workflowId2,
+        autoRun: false,
+        updatedAt: NOW,
+        goal: 'second goal',
+      });
       await updateWorkflowOrder(
         db,
         sessionId,
@@ -339,35 +477,31 @@ describe('session_workflows trigger-mode queries', () => {
 
   describe('updateWorkflowRunOrchestrationOutcome', () => {
     it('attaches with a null outcome by default', async () => {
-      await attachWorkflowToSession(
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'run-1' as WorkflowRunId,
+        workflowRunId: 'run-1' as WorkflowRunId,
         workflowId,
-        true,
-        NOW,
-        undefined,
-        'immediate',
-        undefined,
-        'dynamic',
-      );
+        autoRun: true,
+        updatedAt: NOW,
+        triggerMode: 'immediate',
+        executionMode: 'dynamic',
+      });
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs[0]!.orchestrationOutcome).toBeUndefined();
     });
 
     it('round-trips done and blocked outcomes', async () => {
-      await attachWorkflowToSession(
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'run-1' as WorkflowRunId,
+        workflowRunId: 'run-1' as WorkflowRunId,
         workflowId,
-        true,
-        NOW,
-        undefined,
-        'immediate',
-        undefined,
-        'dynamic',
-      );
+        autoRun: true,
+        updatedAt: NOW,
+        triggerMode: 'immediate',
+        executionMode: 'dynamic',
+      });
       await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, 'done');
       expect((await listWorkflowsForSession(db, sessionId))[0]!.orchestrationOutcome).toBe('done');
       await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, 'blocked');
@@ -381,26 +515,24 @@ describe('session_workflows trigger-mode queries', () => {
     });
 
     it('keeps the outcome when runs are reordered', async () => {
-      await attachWorkflowToSession(
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'run-1' as WorkflowRunId,
+        workflowRunId: 'run-1' as WorkflowRunId,
         workflowId,
-        true,
-        NOW,
-        undefined,
-        'immediate',
-        undefined,
-        'dynamic',
-      );
-      await attachWorkflowToSession(
+        autoRun: true,
+        updatedAt: NOW,
+        triggerMode: 'immediate',
+        executionMode: 'dynamic',
+      });
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'run-2' as WorkflowRunId,
-        workflowId2,
-        true,
-        NOW,
-      );
+        workflowRunId: 'run-2' as WorkflowRunId,
+        workflowId: workflowId2,
+        autoRun: true,
+        updatedAt: NOW,
+      });
       await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, 'done');
       await updateWorkflowOrder(
         db,
@@ -416,18 +548,16 @@ describe('session_workflows trigger-mode queries', () => {
 
   describe('updateWorkflowRunOrchestrationStop', () => {
     const attachRun = async (runId: string) =>
-      attachWorkflowToSession(
+      attachWorkflowToSession({
         db,
         sessionId,
-        runId as WorkflowRunId,
+        workflowRunId: runId as WorkflowRunId,
         workflowId,
-        true,
-        NOW,
-        undefined,
-        'immediate',
-        undefined,
-        'dynamic',
-      );
+        autoRun: true,
+        updatedAt: NOW,
+        triggerMode: 'immediate',
+        executionMode: 'dynamic',
+      });
 
     it('round-trips why the run stopped, not only the sentence', async () => {
       await attachRun('run-1');
@@ -455,14 +585,14 @@ describe('session_workflows trigger-mode queries', () => {
 
     it('keeps the budget stop a budget stop when runs are reordered', async () => {
       await attachRun('run-1');
-      await attachWorkflowToSession(
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'run-2' as WorkflowRunId,
-        workflowId2,
-        true,
-        NOW,
-      );
+        workflowRunId: 'run-2' as WorkflowRunId,
+        workflowId: workflowId2,
+        autoRun: true,
+        updatedAt: NOW,
+      });
       await updateWorkflowRunOrchestrationStop(db, 'run-1' as WorkflowRunId, {
         kind: 'budget',
         message: 'the budget cap is reached, raise it in Budget to keep this run going',
@@ -482,18 +612,16 @@ describe('session_workflows trigger-mode queries', () => {
 
   describe('orchestrator reason and routing', () => {
     const attachDynamic = async () =>
-      attachWorkflowToSession(
+      attachWorkflowToSession({
         db,
         sessionId,
-        'run-1' as WorkflowRunId,
+        workflowRunId: 'run-1' as WorkflowRunId,
         workflowId,
-        true,
-        NOW,
-        undefined,
-        'immediate',
-        undefined,
-        'dynamic',
-      );
+        autoRun: true,
+        updatedAt: NOW,
+        triggerMode: 'immediate',
+        executionMode: 'dynamic',
+      });
 
     it('keeps the reason the orchestrator gave for ending the run', async () => {
       await attachDynamic();
@@ -549,14 +677,14 @@ describe('session_workflows trigger-mode queries', () => {
 
     it('carries the reason and the routing through a reorder', async () => {
       await attachDynamic();
-      await attachWorkflowToSession(
+      await attachWorkflowToSession({
         db,
         sessionId,
-        'run-2' as WorkflowRunId,
-        workflowId2,
-        true,
-        NOW,
-      );
+        workflowRunId: 'run-2' as WorkflowRunId,
+        workflowId: workflowId2,
+        autoRun: true,
+        updatedAt: NOW,
+      });
       await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, 'done', 'all set');
       await updateWorkflowRunOrchestratorRouting(db, 'run-1' as WorkflowRunId, {
         providerId: 'codex',
@@ -578,7 +706,14 @@ describe('session_workflows trigger-mode queries', () => {
 
   describe('discardWorkflowInSession', () => {
     it('sets discarded_at and maps it through', async () => {
-      await attachWorkflowToSession(db, sessionId, 'run-1' as WorkflowRunId, workflowId, true, NOW);
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
       await discardWorkflowInSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs[0]!.discardedAt).toBe(NOW);
@@ -587,7 +722,14 @@ describe('session_workflows trigger-mode queries', () => {
 
   describe('restoreWorkflowInSession', () => {
     it('clears discarded_at again', async () => {
-      await attachWorkflowToSession(db, sessionId, 'run-1' as WorkflowRunId, workflowId, true, NOW);
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
       await discardWorkflowInSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
       await restoreWorkflowInSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
       const runs = await listWorkflowsForSession(db, sessionId);
@@ -616,18 +758,16 @@ describe('session hydration carries the orchestrator state', () => {
   });
 
   it('reads the reason and the routing on the path the app boots from', async () => {
-    await attachWorkflowToSession(
+    await attachWorkflowToSession({
       db,
       sessionId,
-      'run-1' as WorkflowRunId,
+      workflowRunId: 'run-1' as WorkflowRunId,
       workflowId,
-      true,
-      NOW,
-      undefined,
-      'immediate',
-      undefined,
-      'dynamic',
-    );
+      autoRun: true,
+      updatedAt: NOW,
+      triggerMode: 'immediate',
+      executionMode: 'dynamic',
+    });
     await updateWorkflowRunOrchestrationOutcome(
       db,
       'run-1' as WorkflowRunId,

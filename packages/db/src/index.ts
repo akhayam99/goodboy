@@ -67,6 +67,7 @@ export {
   updateWorkflowRunOrchestratorHints,
   updateWorkflowRunOrchestratorRouting,
   updateWorkflowRunOrchestratorSummary,
+  updateWorkflowRunSpendLimit,
 } from './queries/session-workflow';
 export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';
 export {

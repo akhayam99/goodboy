@@ -1,13 +1,22 @@
 import { useState } from 'react';
 import { CircleHelp, Eraser, PenLine, Play, RotateCcw, SkipForward, Wallet } from 'lucide-react';
-import { Eyebrow, Markdown, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { Eyebrow, Markdown, StatusDot, cn, formatUsd, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import type { Agent, OpenQuestion, SessionId, Step, WorkflowRun } from '@goodboy/types';
+import type {
+  Agent,
+  BudgetAlert,
+  OpenQuestion,
+  SessionId,
+  Step,
+  WorkflowRun,
+} from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
 import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
 import { openBudgetStudio } from '../../../budget/openBudgetStudio';
+import { isBudgetBlocked } from '../../../../store/slices/workflows/budgetBlock';
 import { WorkflowAutorunToggle } from '../WorkflowAutorunToggle';
 import { WorkflowOrchestratorTldr } from '../WorkflowOrchestratorTldr';
+import { RunSpendLimitPopover } from '../RunSpendLimitPopover';
 import { OrchestratorAction } from './OrchestratorAction';
 import { OrchestratorDrawer } from './OrchestratorDrawer';
 import { OrchestratorRoutingRow } from './OrchestratorRoutingRow';
@@ -24,6 +33,7 @@ type Props = {
 };
 
 const EMPTY_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
+const EMPTY_ALERTS: ReadonlyArray<BudgetAlert> = [];
 
 export const OrchestratorPanel = ({
   sessionId,
@@ -43,6 +53,9 @@ export const OrchestratorPanel = ({
   const setActiveLens = useAppStore((state) => state.setActiveLens);
   const openQuestions = useAppStore(
     (state) => state.sessionOpenQuestions[sessionId] ?? EMPTY_QUESTIONS,
+  );
+  const sessionBudgetBlocked = useAppStore((state) =>
+    isBudgetBlocked({ alerts: state.budgetAlerts ?? EMPTY_ALERTS, sessionId }),
   );
   const [openDrawer, setOpenDrawer] = useState<'none' | 'continue' | 'hints'>('none');
   const [hintsDraft, setHintsDraft] = useState(run.orchestratorHints ?? '');
@@ -110,15 +123,18 @@ export const OrchestratorPanel = ({
           />
         );
       case 'paused-budget':
-        return (
+        return sessionBudgetBlocked ? (
           <OrchestratorAction
             icon={Wallet}
             label="Review budget"
             variant="primary"
             tone="warning"
             testId="orchestrator-review-budget"
+            title="The session budget cap is what stopped this run"
             onClick={() => openBudgetStudio({ scope: { kind: 'session', sessionId } })}
           />
+        ) : (
+          <RunSpendLimitPopover sessionId={sessionId} run={run} variant="primary" />
         );
       case 'step-failed':
         return (
@@ -226,6 +242,15 @@ export const OrchestratorPanel = ({
             {savedHints === '' ? null : (
               <span className="font-normal text-muted-foreground">· Standing hints on</span>
             )}
+            {run.spendLimitUsd == null ? null : (
+              <span
+                data-testid="orchestrator-spend-limit"
+                className="font-normal text-muted-foreground"
+              >
+                · Spend limit {formatUsd(run.spendLimitUsd)} ·{' '}
+                {run.spendLimitMode === 'notify' ? 'notifies at the limit' : 'pauses at the limit'}
+              </span>
+            )}
           </p>
 
           {state.detail != null && state.detail !== '' ? (
@@ -256,15 +281,16 @@ export const OrchestratorPanel = ({
             onClick={() => toggleDrawer('hints')}
           />
           {state.phase === 'paused-budget' ? null : (
-            <OrchestratorAction
-              icon={Wallet}
-              label="Budget"
-              variant="ghost"
-              testId="orchestrator-budget"
-              title="Open the budget for this session"
-              onClick={() => openBudgetStudio({ scope: { kind: 'session', sessionId } })}
-            />
+            <RunSpendLimitPopover sessionId={sessionId} run={run} variant="ghost" />
           )}
+          <OrchestratorAction
+            icon={Wallet}
+            label="Budget"
+            variant="ghost"
+            testId="orchestrator-budget"
+            title="Open the budget for this session"
+            onClick={() => openBudgetStudio({ scope: { kind: 'session', sessionId } })}
+          />
         </div>
       </div>
 

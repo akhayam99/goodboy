@@ -128,7 +128,7 @@ describe('resolveOrchestratorState', () => {
 
   it('maps every stop kind to its presentation', () => {
     const kinds: ReadonlyArray<[WorkflowOrchestrationStop['kind'], string, boolean]> = [
-      ['budget', 'paused-budget', false],
+      ['budget', 'paused-budget', true],
       ['failure', 'failed', true],
       ['questions', 'needs-answer', false],
       ['operator', 'stopped', true],

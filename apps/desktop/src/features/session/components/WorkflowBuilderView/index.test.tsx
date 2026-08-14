@@ -478,6 +478,46 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     );
   });
 
+  it('caps what the run may spend, from the form that creates it', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+    fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
+      target: { value: 'Inspect each result and stop after tests pass.' },
+    });
+    fireEvent.change(screen.getByTestId('spend-limit-amount'), { target: { value: '15' } });
+    fireEvent.click(screen.getByRole('tab', { name: /notify/i }));
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    expect(mockAttach).toHaveBeenCalledWith('sess-1', expect.any(String), {
+      autoRun: true,
+      navigate: true,
+      goal: 'test goal',
+      executionMode: 'dynamic',
+      spendLimitUsd: 15,
+      spendLimitMode: 'notify',
+    });
+  });
+
+  it('leaves the run uncapped when the spend limit is left empty', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+    fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
+      target: { value: 'Inspect each result and stop after tests pass.' },
+    });
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    expect(mockAttach).toHaveBeenCalledWith('sess-1', expect.any(String), {
+      autoRun: true,
+      navigate: true,
+      goal: 'test goal',
+      executionMode: 'dynamic',
+    });
+  });
+
   it('starts and closes even when title generation never resolves', async () => {
     mockGenerateWorkflowTitle.mockImplementationOnce(() => new Promise(() => {}));
     const onClose = vi.fn();

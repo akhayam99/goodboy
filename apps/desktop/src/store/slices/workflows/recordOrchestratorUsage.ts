@@ -1,4 +1,4 @@
-import type { OrchestratorUsage } from '@goodboy/core';
+import { runsForWorkflowRun, type OrchestratorUsage } from '@goodboy/core';
 import {
   insertProviderRun,
   insertTelemetry,
@@ -14,6 +14,7 @@ import type {
   SessionId,
   TelemetryRecord,
   TelemetryRecordId,
+  WorkflowRunId,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
@@ -23,9 +24,21 @@ type Params = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly agentId: AgentId | null;
+  readonly workflowRunId: WorkflowRunId;
   readonly provider: ProviderId;
   readonly model: string;
   readonly usage: OrchestratorUsage;
+};
+
+type FallbackParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId;
+};
+
+const latestRunAgentId = ({ get, sessionId, workflowRunId }: FallbackParams): AgentId | null => {
+  const runAgents = runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId);
+  return [...runAgents].sort((left, right) => right.ordinal - left.ordinal)[0]?.id ?? null;
 };
 
 type HistoryParams = {
@@ -50,6 +63,7 @@ export const recordOrchestratorUsage = async ({
   get,
   sessionId,
   agentId,
+  workflowRunId,
   provider,
   model,
   usage,
@@ -57,6 +71,7 @@ export const recordOrchestratorUsage = async ({
   if (usage.inputTokens + usage.outputTokens === 0) {
     return;
   }
+  const attributedAgentId = agentId ?? latestRunAgentId({ get, sessionId, workflowRunId });
   const runId = crypto.randomUUID() as ProviderRunId;
   const startedAt = new Date().toISOString() as IsoDateTime;
   await insertProviderRun(tauriDatabase, {
@@ -89,10 +104,13 @@ export const recordOrchestratorUsage = async ({
       ...state.sessionTelemetry,
       [sessionId]: [...(state.sessionTelemetry[sessionId] ?? []), record],
     },
-    ...(agentId != null && {
+    ...(attributedAgentId != null && {
       agentRunHistory: {
         ...state.agentRunHistory,
-        [agentId]: [...knownRunIds({ get, sessionId, agentId }), runId],
+        [attributedAgentId]: [
+          ...knownRunIds({ get, sessionId, agentId: attributedAgentId }),
+          runId,
+        ],
       },
     }),
   }));

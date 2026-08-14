@@ -107,6 +107,7 @@ import { m106MoonshotProviderRuns } from './m106-moonshot-provider-runs';
 import { m107IntegrationBitbucketProvider } from './m107-integration-bitbucket-provider';
 import { m108IntegrationSlackProvider } from './m108-integration-slack-provider';
 import { m109WorkflowRunSummary } from './m109-workflow-run-summary';
+import { m110WorkflowRunSpendLimit } from './m110-workflow-run-spend-limit';
 
 export type Migration = {
   readonly version: number;
@@ -223,4 +224,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 107, sql: m107IntegrationBitbucketProvider },
   { version: 108, sql: m108IntegrationSlackProvider },
   { version: 109, sql: m109WorkflowRunSummary },
+  { version: 110, sql: m110WorkflowRunSpendLimit },
 ];

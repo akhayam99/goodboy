@@ -15,6 +15,7 @@ export {
   useNonResolverStandaloneAgents,
   useSessionOpenQuestions,
   useSessionPlans,
+  useRunSpendUsd,
   useSessionPrFetchState,
   useSessionSlots,
   useSessionStageInfo,

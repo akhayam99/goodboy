@@ -8,7 +8,12 @@ import {
 } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
-import { BUDGET_BLOCK_MESSAGE, isBudgetBlocked } from './budgetBlock';
+import {
+  BUDGET_BLOCK_MESSAGE,
+  isBudgetBlocked,
+  loadSpendLimitTelemetry,
+  resolveSpendLimitStop,
+} from './budgetBlock';
 import { persistOrchestrationStop } from './orchestrateNextStep';
 import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
 import type { GetFn, SetFn } from './types';
@@ -72,18 +77,33 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   if (state.summarizerStatus[sessionId]?.status === 'running') {
     return;
   }
-  if (isBudgetBlocked({ alerts: state.budgetAlerts, sessionId })) {
-    for (const run of activeRuns) {
-      if (run.orchestrationStop?.kind === 'budget') {
-        continue;
-      }
-      await persistOrchestrationStop({
-        set,
-        sessionId,
-        workflowRunId: run.id,
-        stop: { kind: 'budget', message: BUDGET_BLOCK_MESSAGE },
-      });
+  const sessionBlocked = isBudgetBlocked({ alerts: state.budgetAlerts, sessionId });
+  if (!sessionBlocked) {
+    await loadSpendLimitTelemetry({ get, sessionId, runs: activeRuns });
+  }
+  const runnableRuns: typeof activeRuns = [];
+  for (const run of activeRuns) {
+    const spendStop = sessionBlocked ? null : resolveSpendLimitStop({ get, sessionId, run });
+    const blockMessage = sessionBlocked
+      ? BUDGET_BLOCK_MESSAGE
+      : spendStop?.kind === 'pause'
+        ? spendStop.message
+        : null;
+    if (blockMessage == null) {
+      runnableRuns.push(run);
+      continue;
     }
+    if (run.orchestrationStop?.kind === 'budget') {
+      continue;
+    }
+    await persistOrchestrationStop({
+      set,
+      sessionId,
+      workflowRunId: run.id,
+      stop: { kind: 'budget', message: blockMessage },
+    });
+  }
+  if (runnableRuns.length === 0) {
     return;
   }
   const templates = state.phaseTemplates[session.workspaceId] ?? [];
@@ -91,7 +111,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   const openQuestions = await listOpenQuestionsForSession(tauriDatabase, sessionId, 'open');
   let dynamicRunId = null as (typeof activeRuns)[number]['id'] | null;
   const nextPendingAgent = (() => {
-    for (const run of activeRuns) {
+    for (const run of runnableRuns) {
       if (workflowRunHasOpenQuestions(openQuestions, run.id)) {
         continue;
       }
@@ -134,7 +154,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   if (nextPendingAgent == null) {
     const announced = get().announcedWorkflowBlocks ?? {};
     const fresh: Record<WorkflowRunId, string> = {};
-    for (const run of activeRuns) {
+    for (const run of runnableRuns) {
       const template = templates.find((t) => t.id === run.workflowId);
       if (template == null) {
         continue;

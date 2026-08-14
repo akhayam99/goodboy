@@ -361,8 +361,6 @@ export {
   buildOrchestratorUserPrompt,
   enforceOrchestratorModelPool,
   orchestratorModelPool,
-  ORCHESTRATOR_STEP_BUDGET,
-  ORCHESTRATOR_STEP_HARD_CAP,
   ORCHESTRATOR_SYSTEM_PROMPT,
   OrchestratorClient,
   OrchestratorClientSpawnError,

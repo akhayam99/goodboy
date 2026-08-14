@@ -11,7 +11,7 @@ import type {
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { EMPTY_ARRAY, useAppStore, useRunSpendUsd } from '../../../../../store';
 import type { AppStore } from '../../../../../store/store';
 import { inferAgentKindFromName, type AgentKind } from '../../../../../features/session/agent-kind';
 import { agentRoutingOverrides } from '../../../../../features/workflows/agentRoutingOverrides';
@@ -20,6 +20,7 @@ import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRole
 import type { AgentAggregate } from '../../../../../features/session/components/AgentMetrics';
 import { WorkflowNextStepCta } from '../../../../../features/workflows/components/WorkflowNextStepCta';
 import { OrchestratorPanel } from '../../../../../features/workflows/components/OrchestratorPanel';
+import { RunSpendLimitPopover } from '../../../../../features/workflows/components/RunSpendLimitPopover';
 import { WorkflowRunSummary } from '../../../../../features/workflows/components/WorkflowRunSummary';
 import { WorkflowAutorunToggle } from '../../../../../features/workflows/components/WorkflowAutorunToggle';
 import { useWorkflowTitleRename } from '../../../../../features/workflows/hooks/useWorkflowTitleRename';
@@ -169,6 +170,8 @@ export const WorkflowRow = ({
     (total, agent) => total + (aggregatesByAgentId.get(agent.id)?.estimatedCostUsd ?? 0),
     0,
   );
+  const runSpendUsd = useRunSpendUsd(task.id, run.id);
+  const costUsd = isDynamic ? runSpendUsd : runCostUsd;
   const stepById = new Map(workflow.steps.map((step) => [step.id, step]));
   const hasOrchestratorStrip = isDynamic && !isDiscarded && expanded;
   const ctaAgent =
@@ -247,13 +250,15 @@ export const WorkflowRow = ({
                 items={[
                   total > 0 ? (
                     <span className="tabular-nums">
-                      Step {Math.min(done + 1, total)} of {total}
+                      {isDynamic
+                        ? `${total} ${total === 1 ? 'step' : 'steps'}`
+                        : `Step ${Math.min(done + 1, total)} of ${total}`}
                     </span>
                   ) : null,
-                  <CostBadge
-                    value={runCostUsd}
-                    title={`${formatUsdPrecise(runCostUsd)} for this run`}
-                  />,
+                  <CostBadge value={costUsd} title={`${formatUsdPrecise(costUsd)} for this run`} />,
+                  isDynamic && !isDiscarded ? (
+                    <RunSpendLimitPopover sessionId={task.id} run={run} variant="meta" />
+                  ) : null,
                 ]}
               />
             </div>
@@ -292,7 +297,7 @@ export const WorkflowRow = ({
             />
             {total > 0 ? (
               <span className="shrink-0 font-mono text-2xs text-muted-foreground/50">
-                {done}/{total}
+                {isDynamic ? `${total} ${total === 1 ? 'step' : 'steps'}` : `${done}/${total}`}
               </span>
             ) : null}
           </button>
@@ -439,7 +444,7 @@ export const WorkflowRow = ({
                   run={run}
                   agents={wfAgents}
                   steps={workflow.steps}
-                  costUsd={runCostUsd}
+                  costUsd={costUsd}
                   isOrchestrating={isOrchestrating}
                 />
               ) : null}

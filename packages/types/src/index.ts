@@ -54,6 +54,7 @@ export type {
   WorkflowOrchestrationOutcome,
   WorkflowOrchestrationStop,
   WorkflowOrchestrationStopKind,
+  WorkflowSpendLimitMode,
   WorkflowTriggerMode,
   WorkspaceIntegration,
   WorkspaceIntegrationConfig,
