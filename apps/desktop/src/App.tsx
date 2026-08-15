@@ -965,7 +965,11 @@ export const App = () => {
         />
       ) : null}
       {addWorkspaceOpen ? (
-        <WorkspaceLinkDialog open onClose={() => setAddWorkspaceOpen(false)} />
+        <WorkspaceLinkDialog
+          open
+          onClose={() => setAddWorkspaceOpen(false)}
+          onOfferRepo={() => setConvertWorkspaceOpen(true)}
+        />
       ) : null}
       {currentWorkspace ? (
         <ConvertWorkspaceDialog

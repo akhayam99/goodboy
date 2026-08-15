@@ -143,7 +143,7 @@ describe('WorkspaceLinkForm', () => {
     expect(validateMock).toHaveBeenCalledWith('/some/repo');
   });
 
-  it('accepts a folder with no repository and says sessions wait for git', async () => {
+  it('accepts a folder with no repository and promises the offer instead of a dead end', async () => {
     validateMock.mockResolvedValue({
       isRepo: false,
       rootPath: null,
@@ -163,13 +163,17 @@ describe('WorkspaceLinkForm', () => {
       target: { value: '/some/fresh-idea' },
     });
 
-    await waitFor(() => screen.getByText(/no git repository here yet/i), { timeout: 2000 });
+    await waitFor(
+      () => screen.getByText(/goodboy adds the folder as it is and offers to create or link one/i),
+      { timeout: 2000 },
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Add workspace' }));
 
     await waitFor(() =>
       expect(state.addWorkspace).toHaveBeenCalledWith({ rootPath: '/some/fresh-idea' }),
     );
     expect(onComplete).toHaveBeenCalledOnce();
+    expect(screen.queryByText(/sessions stay unavailable/i)).toBeNull();
   });
 
   it('keeps the submit action blocked while the path does not exist', async () => {
