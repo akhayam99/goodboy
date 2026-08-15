@@ -102,14 +102,14 @@ pub struct ExecResult {
     pub rows_affected: i64,
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn db_exec(state: State<'_, Db>, sql: String) -> Result<(), DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     conn.execute_batch(&sql)?;
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn db_execute(
     state: State<'_, Db>,
     sql: String,
@@ -123,7 +123,7 @@ pub fn db_execute(
     Ok(ExecResult { rows_affected })
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn db_wipe(state: State<'_, Db>) -> Result<(), DbError> {
     // Drop every user table + schema_version so the next runDbMigrations call
     // replays the chain from m001. Done in-place via SQL so the TS side
@@ -146,7 +146,7 @@ pub fn db_wipe(state: State<'_, Db>) -> Result<(), DbError> {
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn db_select(
     state: State<'_, Db>,
     sql: String,
