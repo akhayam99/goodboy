@@ -19,6 +19,25 @@ Owns what to test and how. Test file placement: [file-system.md](file-system.md)
 
 If a test fails because the component / store / hook does the wrong thing, **fix the code, not the test**. Never weaken a test to make it pass.
 
+## Manual release gate: the window must appear
+
+`tauri.conf.json` ships the main window with `"visible": false`, and the only
+thing that ever reveals it is the loop over `app.webview_windows()` inside
+`.setup()` in `apps/desktop/src-tauri/src/lib.rs`. That loop has no in-process
+seam: it needs a real Tauri runtime, so no unit test stands in for it, and a
+test that greps the source for the call asserts a shape rather than the
+behavior. Every release runs this step by hand and records the result.
+
+1. Build the bundle from the commit under judgment: `pnpm tauri:build`.
+2. Launch the binary directly, never through `open`, so the database override
+   applies:
+   `GOODBOY_DB_FILE=<path that does not exist yet> apps/desktop/src-tauri/target/release/bundle/macos/Goodboy.app/Contents/MacOS/goodboy-desktop`
+3. A window must appear and paint the boot splash. No window on screen is a
+   release blocker regardless of how green the suites are.
+4. Confirm the run left a `webview-attached` line in the breadcrumb sink at
+   `.goodboy/boot-breadcrumbs.log` under the home directory. A missing line
+   with a visible window means the breadcrumb path broke, not the reveal.
+
 ## Reaching a state that only exists in memory
 
 The orchestrator "stopping" state lives only in the store while a decision is
