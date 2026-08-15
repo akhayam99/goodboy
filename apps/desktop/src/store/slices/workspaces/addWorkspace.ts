@@ -57,7 +57,7 @@ export const addWorkspace = (set: SetFn, get: GetFn) => {
       id: crypto.randomUUID() as WorkspaceId,
       name: inferredName,
       rootPath: resolvedRoot,
-      kind: 'repo',
+      kind: gitRoot ? 'repo' : 'simple',
       createdAt: now,
       updatedAt: now,
       lastAccessedAt: now,

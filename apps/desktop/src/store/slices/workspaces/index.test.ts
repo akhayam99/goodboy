@@ -618,7 +618,7 @@ describe('store contract', () => {
       expect(wsList[0]?.rootPath).toBe('/tmp/repo');
     });
 
-    it('addWorkspace registers a dev workspace on a folder that has no git repository', async () => {
+    it('addWorkspace registers a folder with no git repository as a simple workspace', async () => {
       const store = await getStore();
       const repo = await import('../../../shared/lib/repo');
       resetRepoMocks(repo);
@@ -631,9 +631,25 @@ describe('store contract', () => {
 
       const created = await store.getState().addWorkspace({ rootPath: '/tmp/fresh-idea' });
 
-      expect(created).toMatchObject({ kind: 'repo', rootPath: '/private/tmp/fresh-idea' });
-      expect(store.getState().workspaces[0]?.kind).toBe('repo');
+      expect(created).toMatchObject({ kind: 'simple', rootPath: '/private/tmp/fresh-idea' });
+      expect(store.getState().workspaces[0]?.kind).toBe('simple');
       expect(repo.initRepoWithRemote).not.toHaveBeenCalled();
+    });
+
+    it('addWorkspace still registers a git-backed folder as a repo workspace', async () => {
+      const store = await getStore();
+      const repo = await import('../../../shared/lib/repo');
+      resetRepoMocks(repo);
+      vi.mocked(repo.validateGitRepo).mockResolvedValueOnce({
+        isRepo: true,
+        rootPath: '/private/tmp/tracked',
+        resolvedPath: '/private/tmp/tracked',
+        error: null,
+      });
+
+      const created = await store.getState().addWorkspace({ rootPath: '/tmp/tracked' });
+
+      expect(created).toMatchObject({ kind: 'repo', rootPath: '/private/tmp/tracked' });
     });
 
     it('addWorkspace still refuses a path that does not exist on disk', async () => {
