@@ -143,27 +143,49 @@ describe('SessionNavFooter', () => {
   it('escape disarms the armed archive confirm without archiving', () => {
     render(<SessionNavFooter session={session()} />);
     fireEvent.click(screen.getByRole('button', { name: /archive session/i }));
+    expect(screen.queryByText('Open')).toBeNull();
+
     fireEvent.keyDown(window, { key: 'Escape' });
 
     expect(state.archiveTask).not.toHaveBeenCalled();
+    expect(screen.getByText('Open')).toBeDefined();
     expect(screen.getByRole('button', { name: /archive session/i })).toBeDefined();
   });
 
   it('escape disarms the armed delete confirm without deleting', () => {
     render(<SessionNavFooter session={session()} />);
     fireEvent.click(screen.getByRole('button', { name: /delete session/i }));
+    expect(screen.queryByText('Branch')).toBeNull();
+
     fireEvent.keyDown(window, { key: 'Escape' });
 
     expect(state.deleteTask).not.toHaveBeenCalled();
+    expect(screen.getByText('Branch')).toBeDefined();
     expect(screen.getByRole('button', { name: /delete session/i })).toBeDefined();
   });
 
-  it('disables both confirm controls while the archive request is in flight', () => {
+  it('marks the delete confirm destructive and leaves the archive confirm plain', () => {
+    render(<SessionNavFooter session={session()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /delete session/i }));
+    expect(screen.getByRole('button', { name: /^delete session$/i }).className).toMatch(/danger/);
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.click(screen.getByRole('button', { name: /archive session/i }));
+
+    expect(screen.getByRole('button', { name: /^archive session$/i }).className).not.toMatch(
+      /danger/,
+    );
+  });
+
+  it('disables both confirm controls while the archive request is in flight', async () => {
     state.archiveTask.mockImplementationOnce(() => new Promise<undefined>(() => undefined));
     render(<SessionNavFooter session={session()} />);
 
     fireEvent.click(screen.getByRole('button', { name: /archive session/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^archive session$/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^archive session$/i }));
+    });
 
     expect(
       (screen.getByRole('button', { name: /^archive session$/i }) as HTMLButtonElement).disabled,
