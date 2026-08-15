@@ -46,6 +46,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 
 const listWorkspacesSpy = vi.fn(async () => [] as ReadonlyArray<Workspace>);
+const runDbMigrationsSpy = vi.fn(async () => undefined);
 const dbSetSettingSpy = vi.fn(async () => undefined);
 const dbGetSettingSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<string | null>>(
   async () => null,
@@ -157,7 +158,7 @@ vi.mock('@goodboy/db', () => ({
 }));
 
 vi.mock('../../../shared/lib/db', () => ({
-  runDbMigrations: vi.fn(async () => undefined),
+  runDbMigrations: runDbMigrationsSpy,
   wipeDb: vi.fn(async () => undefined),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
@@ -554,6 +555,81 @@ describe('store contract', () => {
       const s = store.getState();
       expect(s.hydrated).toBe(true);
       expect(s.bootPhase).toBe('ready');
+    });
+
+    it('joins the in-flight hydration instead of starting a second run on retry', async () => {
+      const store = await getStore();
+      let releaseFirst: () => void = () => undefined;
+      listWorkspacesSpy.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            releaseFirst = () => resolve([]);
+          }),
+      );
+
+      void store.getState().hydrate();
+      await vi.waitFor(() => {
+        expect(listWorkspacesSpy).toHaveBeenCalledOnce();
+      });
+
+      const retry = store.getState().retryHydrate();
+      releaseFirst();
+      await retry;
+
+      expect(listWorkspacesSpy).toHaveBeenCalledOnce();
+      expect(runDbMigrationsSpy).toHaveBeenCalledOnce();
+      expect(store.getState().bootPhase).toBe('ready');
+    });
+
+    it('still restarts hydration when retry runs after a failed attempt', async () => {
+      const store = await getStore();
+      listWorkspacesSpy.mockRejectedValueOnce(new Error('boom'));
+
+      await store.getState().hydrate();
+      expect(store.getState().bootPhase).toBe('error');
+
+      await store.getState().retryHydrate();
+
+      expect(store.getState().bootPhase).toBe('ready');
+      expect(runDbMigrationsSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('survives a boot breadcrumb command that throws synchronously', async () => {
+      const store = await getStore();
+      invokeSpy.mockImplementation(((command: unknown) => {
+        if (command === 'boot_breadcrumb') {
+          throw new Error('breadcrumb sink exploded');
+        }
+        return Promise.resolve(null);
+      }) as never);
+
+      await store.getState().hydrate();
+
+      expect(store.getState().bootPhase).toBe('ready');
+      expect(store.getState().error).toBeNull();
+    });
+
+    it('never leaves the breadcrumb rejection unhandled', async () => {
+      const store = await getStore();
+      const unhandled = vi.fn();
+      process.on('unhandledRejection', unhandled);
+      invokeSpy.mockImplementation(((command: unknown) => {
+        if (command === 'boot_breadcrumb') {
+          return {
+            then: (_onFulfilled: unknown, onRejected: (reason: unknown) => void) => {
+              onRejected(new Error('breadcrumb sink exploded'));
+            },
+          };
+        }
+        return Promise.resolve(null);
+      }) as never);
+
+      await store.getState().hydrate();
+      await new Promise((resolve) => setImmediate(resolve));
+      process.off('unhandledRejection', unhandled);
+
+      expect(unhandled).not.toHaveBeenCalled();
+      expect(store.getState().bootPhase).toBe('ready');
     });
 
     it('loads notifications at boot without waiting for the bell to mount', async () => {

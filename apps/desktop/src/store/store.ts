@@ -190,6 +190,7 @@ export type {
 
 export type AppActions = {
   hydrate(): Promise<void>;
+  retryHydrate(): Promise<void>;
   checkForUpdates(): Promise<void>;
   installUpdate(): Promise<void>;
   loadChangelog(): Promise<void>;

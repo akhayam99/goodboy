@@ -2,9 +2,12 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { BootPhase } from '../../../store/types';
 import { openUrl } from '../../../shared/lib/editor';
 import { DogMascot } from '../../../shared/components/DogMascot';
+import { BootSlowNotice } from './BootSlowNotice';
+import { useElapsedSincePhase } from './useElapsedSincePhase';
 
 const GITHUB_NEW_ISSUE_URL =
   'https://github.com/akhayam99/goodboy/issues/new?template=bug_report.md&labels=bug%2Cboot&title=Boot+failure';
+const BOOT_SLOW_AFTER_MS = 10_000;
 
 const BOOT_PHASE_LABEL: Record<BootPhase, string> = {
   pending: 'starting up',
@@ -27,6 +30,12 @@ type BootSplashProps = {
 export const BootSplash = ({ phase, error, onRetry, onFinished }: BootSplashProps) => {
   const hasError = error != null;
   const finishedRef = useRef(false);
+  const elapsedMs = useElapsedSincePhase({ phase });
+  const isSlow = phase !== 'error' && phase !== 'ready' && elapsedMs >= BOOT_SLOW_AFTER_MS;
+
+  useEffect(() => {
+    document.getElementById('boot-shell')?.remove();
+  }, []);
 
   useEffect(() => {
     if (finishedRef.current || hasError) {
@@ -54,9 +63,12 @@ export const BootSplash = ({ phase, error, onRetry, onFinished }: BootSplashProp
       aria-label="Loading Goodboy"
     >
       <BootBrand />
-      <span className="text-2xs tracking-tight text-muted-foreground/50 motion-safe:animate-pulse">
-        {BOOT_PHASE_LABEL[phase]}
-      </span>
+      <div className="flex flex-col items-center gap-3">
+        <span className="text-2xs tracking-tight text-muted-foreground/50 motion-safe:animate-pulse">
+          {BOOT_PHASE_LABEL[phase]}
+        </span>
+        {isSlow ? <BootSlowNotice elapsedMs={elapsedMs} onRetry={onRetry} /> : null}
+      </div>
     </div>
   );
 };
@@ -89,7 +101,7 @@ function BootErrorRecovery({
   onRetry?: () => void;
 }) {
   const openIssue = useCallback(() => {
-    const url = `${GITHUB_NEW_ISSUE_URL}&body=${encodeURIComponent(`**phase:** ${phase}\n\n**error:**\n\`\`\`\n${error}\n\`\`\``)}`;
+    const url = `${GITHUB_NEW_ISSUE_URL}&body=${encodeURIComponent(`**phase:** ${phase}\n\n**error:**\n\`\`\`\n${error}\n\`\`\`\n\nBoot timings for this launch are in \`~/.goodboy/boot-breadcrumbs.log\` (phase and timing only, no paths or credentials). Paste the last few lines if you can.`)}`;
     void openUrl(url);
   }, [error, phase]);
 

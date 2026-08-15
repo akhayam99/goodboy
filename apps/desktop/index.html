@@ -13,6 +13,44 @@
         background: oklch(0.915 0.006 250);
         color-scheme: light;
       }
+      #boot-shell {
+        align-items: center;
+        color: #e6e8ec;
+        display: flex;
+        flex-direction: column;
+        font-family: system-ui, sans-serif;
+        gap: 0.5rem;
+        inset: 0;
+        justify-content: center;
+        pointer-events: none;
+        position: fixed;
+      }
+      #boot-shell strong {
+        font-size: 1.125rem;
+      }
+      #boot-shell span {
+        font-size: 0.75rem;
+      }
+      #boot-shell small {
+        color: #92969e;
+        font-size: 0.625rem;
+      }
+      html[data-theme='light'] #boot-shell {
+        color: #303238;
+      }
+      html[data-theme='light'] #boot-shell small {
+        color: #666a72;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        #boot-shell small {
+          animation: boot-shell-pulse 2s ease-in-out infinite;
+        }
+      }
+      @keyframes boot-shell-pulse {
+        50% {
+          opacity: 0.45;
+        }
+      }
     </style>
     <script>
       (function () {
@@ -25,6 +63,11 @@
     </script>
   </head>
   <body class="bg-background text-foreground antialiased">
+    <div id="boot-shell">
+      <strong>Goodboy</strong>
+      <span>workspace orchestrator for coding agents</span>
+      <small>starting up</small>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

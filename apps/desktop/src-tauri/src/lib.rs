@@ -1,6 +1,7 @@
 mod attachment;
 mod aux_spawn;
 mod bitbucket;
+mod boot_breadcrumb;
 mod bridge;
 mod budget;
 mod config_export;
@@ -69,6 +70,7 @@ fn drain_child_processes(app: &tauri::AppHandle) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    boot_breadcrumb::record("process-start", Some("start"));
     #[cfg(target_os = "macos")]
     suppress_webkit_media_remote();
     let database = db::open().expect("failed to open Goodboy database");
@@ -137,6 +139,7 @@ pub fn run() {
         .manage(bitbucket_token_cache)
         .manage(slack_token_cache)
         .setup(move |app| {
+            use tauri::Manager;
             providers::spawn_startup_detection(app.handle().clone(), detection_opener);
             #[cfg(desktop)]
             app.handle()
@@ -147,6 +150,14 @@ pub fn run() {
                         .level(log::LevelFilter::Info)
                         .build(),
                 )?;
+            }
+            let windows = app.webview_windows();
+            if !windows.is_empty() {
+                boot_breadcrumb::record("window-created", Some("ok"));
+                for window in windows.values() {
+                    let _ = window.show();
+                }
+                boot_breadcrumb::record("webview-attached", Some("ok"));
             }
             Ok(())
         })
@@ -162,6 +173,7 @@ pub fn run() {
             explore::explore_list,
             explore::explore_read,
             explore::explore_open,
+            boot_breadcrumb::boot_breadcrumb,
             db::db_exec,
             db::db_execute,
             db::db_select,

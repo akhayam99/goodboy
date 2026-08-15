@@ -83,6 +83,7 @@ const KEEP_ALIVE_CAP = 5;
 
 export const App = () => {
   const hydrate = useAppStore((s) => s.hydrate);
+  const retryHydrate = useAppStore((s) => s.retryHydrate);
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
   const bootPhase = useAppStore((s) => s.bootPhase);
@@ -748,7 +749,7 @@ export const App = () => {
       <BootSplash
         phase={bootPhase}
         error={error}
-        onRetry={() => void hydrate()}
+        onRetry={retryHydrate}
         onFinished={() => setSplashFinished(true)}
       />
     );
