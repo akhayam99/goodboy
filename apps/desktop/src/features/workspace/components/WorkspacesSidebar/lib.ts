@@ -2,14 +2,14 @@ import type { Agent, Workflow } from '@goodboy/types';
 import { WORKFLOW_LIBRARY } from '@goodboy/core';
 import { agentThreadIds } from '../../../session/agentThreadIds';
 
-export function workflowKindName(workflow: Workflow): string {
+export const workflowKindName = (workflow: Workflow): string => {
   const raw = workflow.name.trim();
   if (!raw) {
     return 'custom';
   }
   const match = WORKFLOW_LIBRARY.find((entry) => entry.name.toLowerCase() === raw.toLowerCase());
   return match ? match.name.toLowerCase() : raw;
-}
+};
 
 export const pluralize = (count: number, singular: string) =>
   `${count} ${singular}${count === 1 ? '' : 's'}`;

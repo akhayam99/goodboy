@@ -1,10 +1,10 @@
 import { useState, type ReactNode } from 'react';
 
-export function SuggestionStack({
+export const SuggestionStack = ({
   items,
 }: {
   items: ReadonlyArray<{ readonly key: string; readonly node: ReactNode }>;
-}) {
+}) => {
   const [expanded, setExpanded] = useState(false);
 
   if (items.length === 0) {
@@ -32,4 +32,4 @@ export function SuggestionStack({
       )}
     </div>
   );
-}
+};

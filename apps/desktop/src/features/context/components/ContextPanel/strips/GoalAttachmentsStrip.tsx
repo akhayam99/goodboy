@@ -7,7 +7,7 @@ import { AttachmentChip } from '../../../../attachments/components/AttachmentChi
 import { useAttachmentThumbnail } from '../../../../attachments/hooks/useAttachmentThumbnail';
 import { ATTACHMENT_KIND_ROUTING } from '../../../../providers/attachment-routing';
 
-export function GoalAttachmentsStrip({ owner }: { readonly owner: GoalAttachmentOwner }) {
+export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachmentOwner }) => {
   const loadGoalAttachments = useAppStore((s) => s.loadGoalAttachments);
   const removeGoalAttachment = useAppStore((s) => s.removeGoalAttachment);
   const attachments = useAppStore((s) =>
@@ -48,7 +48,7 @@ export function GoalAttachmentsStrip({ owner }: { readonly owner: GoalAttachment
       </div>
     </div>
   );
-}
+};
 
 const GoalAttachmentChip = ({
   attachment,

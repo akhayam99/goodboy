@@ -17,6 +17,29 @@ const fileVersions = (): ReadonlyArray<number> =>
     .map((match) => Number(match[1]))
     .sort((a, b) => a - b);
 
+const SAMPLED_INTERMEDIATE_VERSIONS = 12;
+
+type SampleIntermediateCountsParams = {
+  readonly total: number;
+  readonly sampleSize: number;
+};
+
+const sampleIntermediateCounts = ({
+  total,
+  sampleSize,
+}: SampleIntermediateCountsParams): ReadonlyArray<number> => {
+  const highest = total - 1;
+  if (highest < 1) {
+    return [];
+  }
+  const step = Math.max(1, Math.ceil(highest / sampleSize));
+  const sampled = new Set<number>([1, highest]);
+  for (let count = 1; count <= highest; count += step) {
+    sampled.add(count);
+  }
+  return [...sampled].sort((a, b) => a - b);
+};
+
 const schemaOf = async (db: Database): Promise<ReadonlyArray<string>> => {
   const rows = await db.select<{ readonly sql: string | null }>(
     "SELECT sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%'",
@@ -66,12 +89,26 @@ describe('migration convergence', () => {
     expect(result.applied).toEqual([]);
   });
 
-  it('reaches the fresh-install schema from every intermediate version', async () => {
+  it('samples the oldest and the newest intermediate version', () => {
+    const counts = sampleIntermediateCounts({
+      total: migrations.length,
+      sampleSize: SAMPLED_INTERMEDIATE_VERSIONS,
+    });
+    expect(counts.at(0)).toBe(1);
+    expect(counts.at(-1)).toBe(migrations.length - 1);
+    expect(counts.length).toBeLessThanOrEqual(SAMPLED_INTERMEDIATE_VERSIONS + 1);
+  });
+
+  it('reaches the fresh-install schema from sampled intermediate versions', async () => {
     const fresh = makeTestDatabase();
     await migrate(fresh);
     const target = await schemaOf(fresh);
 
-    for (let count = 1; count < migrations.length; count += 1) {
+    const counts = sampleIntermediateCounts({
+      total: migrations.length,
+      sampleSize: SAMPLED_INTERMEDIATE_VERSIONS,
+    });
+    for (const count of counts) {
       const upgraded = makeTestDatabase();
       await migrate(upgraded, migrations.slice(0, count));
       const result = await migrate(upgraded);

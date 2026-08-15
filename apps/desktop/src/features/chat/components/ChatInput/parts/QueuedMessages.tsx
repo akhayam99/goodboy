@@ -4,7 +4,7 @@ import type { QueuedTurn } from '../lib';
 
 type QueuedItem = Pick<QueuedTurn, 'id' | 'content' | 'attachments' | 'override'>;
 
-export function QueuedMessages({
+export const QueuedMessages = ({
   items,
   canEdit,
   onEdit,
@@ -14,7 +14,7 @@ export function QueuedMessages({
   readonly canEdit: boolean;
   readonly onEdit: (id: string) => void;
   readonly onRemove: (id: string) => void;
-}) {
+}) => {
   if (items.length === 0) {
     return null;
   }
@@ -81,4 +81,4 @@ export function QueuedMessages({
       })}
     </div>
   );
-}
+};

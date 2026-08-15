@@ -41,18 +41,18 @@ export type QueuedTurn = {
   readonly override: TurnProviderOverride | undefined;
 };
 
-export function extFromMime(mimeType: string): string {
+export const extFromMime = (mimeType: string): string => {
   const slash = mimeType.indexOf('/');
   const ext = slash >= 0 ? mimeType.slice(slash + 1) : '';
   return ext.length > 0 && ext.length <= 5 ? ext : 'png';
-}
+};
 
-export function dataUrlToBase64(dataUrl: string): string {
+export const dataUrlToBase64 = (dataUrl: string): string => {
   const comma = dataUrl.indexOf(',');
   return comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
-}
+};
 
-export function readFileAsDataUrl(file: File): Promise<string> {
+export const readFileAsDataUrl = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -65,21 +65,21 @@ export function readFileAsDataUrl(file: File): Promise<string> {
     reader.onerror = () => reject(reader.error ?? new Error('file read failed'));
     reader.readAsDataURL(file);
   });
-}
+};
 
-export function toAttachmentInput(a: PendingAttachment): AttachmentInput {
+export const toAttachmentInput = (a: PendingAttachment): AttachmentInput => {
   return {
     id: a.id,
     fileName: a.fileName,
     mimeType: a.mimeType,
     dataBase64: dataUrlToBase64(a.dataUrl),
   };
-}
+};
 
-export function asEffortLevel(v: string | undefined | null): EffortLevel | null {
+export const asEffortLevel = (v: string | undefined | null): EffortLevel | null => {
   return v && EFFORT_LEVELS.includes(v as EffortLevel) ? (v as EffortLevel) : null;
-}
+};
 
-export function asProvider(v: string | undefined | null): ProviderId | null {
+export const asProvider = (v: string | undefined | null): ProviderId | null => {
   return v && VALID_PROVIDERS.includes(v as ProviderId) ? (v as ProviderId) : null;
-}
+};

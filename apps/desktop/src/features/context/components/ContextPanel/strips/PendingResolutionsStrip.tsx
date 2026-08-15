@@ -4,7 +4,7 @@ import { cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 
-export function PendingResolutionsStrip({ sessionId }: { sessionId: SessionId }) {
+export const PendingResolutionsStrip = ({ sessionId }: { sessionId: SessionId }) => {
   const pending = useAppStore((s) => s.sessionPendingResolutions[sessionId] ?? EMPTY_ARRAY);
   const loadPendingResolutions = useAppStore((s) => s.loadPendingResolutions);
   const pushAllResolutions = useAppStore((s) => s.pushAllResolutions);
@@ -47,4 +47,4 @@ export function PendingResolutionsStrip({ sessionId }: { sessionId: SessionId })
       <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-70" />
     </button>
   );
-}
+};

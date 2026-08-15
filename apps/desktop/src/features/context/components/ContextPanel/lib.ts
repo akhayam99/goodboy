@@ -7,7 +7,7 @@ export type FilesTouchedShape = {
   readonly deletions: number;
 };
 
-export function normalizeFilesSlot(slot: ContextSlot, workingDir: string | null): ContextSlot {
+export const normalizeFilesSlot = (slot: ContextSlot, workingDir: string | null): ContextSlot => {
   if (!workingDir || slot.value.length === 0) return slot;
   const root = workingDir.endsWith('/') ? workingDir : `${workingDir}/`;
   const normalized = slot.value
@@ -15,4 +15,4 @@ export function normalizeFilesSlot(slot: ContextSlot, workingDir: string | null)
     .map((p) => (p.startsWith(root) ? p.slice(root.length) : p))
     .join('\n');
   return normalized === slot.value ? slot : { ...slot, value: normalized };
-}
+};

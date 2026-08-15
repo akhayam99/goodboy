@@ -15,13 +15,13 @@ type Params = {
   readonly showToast: (kind: ToastKind, message: string) => void;
 };
 
-export function useAttachments({
+export const useAttachments = ({
   sessionId,
   selectedAgentId,
   sessionWorktree,
   providerDisconnected,
   showToast,
-}: Params) {
+}: Params) => {
   const setAgentAttachments = useAppStore((s) => s.setAgentAttachments);
 
   const sessionWorktreeRef = useRef(sessionWorktree);
@@ -156,4 +156,4 @@ export function useAttachments({
     removeAttachment,
     cleanupSentAttachments,
   };
-}
+};

@@ -27,14 +27,14 @@ type Params = {
   readonly wrapperRef: RefObject<HTMLDivElement | null>;
 };
 
-export function useChatPrefix({
+export const useChatPrefix = ({
   session,
   value,
   setValue,
   sessionWorktree,
   showToast,
   wrapperRef,
-}: Params) {
+}: Params) => {
   const workspaceSkills = useAppStore(
     useShallow((s) => s.skills[session.workspaceId] ?? EMPTY_ARRAY),
   );
@@ -188,4 +188,4 @@ export function useChatPrefix({
     onQuickActionSelect,
     dismissPopover,
   };
-}
+};

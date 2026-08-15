@@ -22,7 +22,7 @@ type UseAgentSwitchSyncArgs = {
   readonly setScopeNudgeEventId: (v: null) => void;
 };
 
-export function useAgentSwitchSync({
+export const useAgentSwitchSync = ({
   session,
   selectedAgentId,
   currentProviderRef,
@@ -37,7 +37,7 @@ export function useAgentSwitchSync({
   setRightSizeDismissed,
   setScopePending,
   setScopeNudgeEventId,
-}: UseAgentSwitchSyncArgs) {
+}: UseAgentSwitchSyncArgs) => {
   const storeSetAgentConfig = useAppStore((s) => s.setAgentConfig);
   const workspaceDefaultVerbosity = useAppStore(
     (s) => s.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? null,
@@ -88,4 +88,4 @@ export function useAgentSwitchSync({
     setScopePending(null);
     setScopeNudgeEventId(null);
   }, [selectedAgentId]);
-}
+};
