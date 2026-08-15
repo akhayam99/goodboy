@@ -122,6 +122,18 @@ being short. The lead line is the pitch; everything under it is plain fact.
 
 ### Honesty
 
+- **Scope a promise to the thing it is true of.** "No telemetry" is true of the
+  app and false of the project, whose website measures its own traffic. Name
+  the app, the website or the project inside the sentence that makes the
+  promise, and say what the other one does. A promise that grows to cover
+  something it was never checked against is a new false claim, not a stronger
+  pitch.
+- **Read a provider or integration list from the code, and say which list you
+  read.** `PROVIDER_IDS` in `packages/types/src/provider-registry.ts` is the
+  agents. The integration union in `packages/types/src/workspace.ts` is the
+  rest, and it excludes GitHub because GitHub is the default code host rather
+  than an added connection. Two counts are therefore both correct, so the copy
+  states which one it means instead of printing a bare number.
 - **Don't oversell the roadmap.** "A proper Linear Studio is on the way" not
   "Full Linear integration".
 - **Name the limits.** "Needs a Rust toolchain. Prebuilt binaries for Linux
