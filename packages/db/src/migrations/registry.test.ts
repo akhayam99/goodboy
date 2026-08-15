@@ -34,8 +34,6 @@ const sampleIntermediateCounts = ({
     return [];
   }
   const step = Math.max(1, Math.ceil(highest / sampleSize));
-  // Seeded from `total` so the interior points sampled shift release over
-  // release instead of always landing on the same versions.
   const offset = 1 + (total % step);
   const sampled = new Set<number>([1, highest]);
   for (let count = offset; count <= highest; count += step) {
@@ -53,12 +51,6 @@ const schemaOf = async (db: Database): Promise<ReadonlyArray<string>> => {
     .sort((a, b) => a.localeCompare(b));
 };
 
-// Shipped migration SQL is immutable once merged: the sampled convergence
-// suite below only exercises a handful of intermediate versions, so a hand
-// edit to an already-shipped migration body can slip past it. This manifest
-// pins every version's SQL by hash, independent of sample size, so any edit
-// to a shipped migration fails loudly. Adding a new migration adds one line
-// here; existing lines never change.
 const SHIPPED_MIGRATION_SQL_SHA256: Readonly<Record<number, string>> = {
   1: 'b97d6ff342d2f9287015ff20d3c4b1fb6b0a1c2f08008912c3ca884dc503f2d2',
   2: '72113f777b7e174446048c326ad1b6df15723b759996a92b1b4a92aa2775a21e',
@@ -173,6 +165,14 @@ const SHIPPED_MIGRATION_SQL_SHA256: Readonly<Record<number, string>> = {
   111: '3046e49cc0182365392cdfae06f6718a19ab7ecba5178b8db06ff331eba4f299',
 };
 
+const MIN_CONVERGENCE_SAMPLE_POINTS = 10;
+const manifestVersions = Object.keys(SHIPPED_MIGRATION_SQL_SHA256)
+  .map(Number)
+  .sort((a, b) => a - b);
+const manifestHead = manifestVersions[manifestVersions.length - 1] ?? 0;
+const sqlSha256 = ({ sql }: { readonly sql: string }): string =>
+  createHash('sha256').update(sql).digest('hex');
+
 describe('migration registry', () => {
   it('registers every version exactly once', () => {
     const duplicates = versions.filter((version, index) => versions.indexOf(version) !== index);
@@ -197,14 +197,37 @@ describe('migration registry', () => {
     expect(new Set(statements).size).toBe(statements.length);
   });
 
-  it('matches the checked-in sql hash for every shipped version', () => {
-    const actual = Object.fromEntries(
-      migrations.map((migration) => [
-        migration.version,
-        createHash('sha256').update(migration.sql).digest('hex'),
-      ]),
+  it('keeps every manifest version byte-identical to its shipped sql', () => {
+    for (const version of manifestVersions) {
+      const migration = migrations.find((candidate) => candidate.version === version);
+      expect(
+        migration,
+        `manifest pins version ${version} but the registry no longer has it`,
+      ).toBeDefined();
+      expect(
+        sqlSha256({ sql: migration?.sql ?? '' }),
+        `shipped migration ${version} changed; migration bodies are immutable after release, add a new migration instead`,
+      ).toBe(SHIPPED_MIGRATION_SQL_SHA256[version]);
+    }
+  });
+
+  it('pins every registered migration, new ones only above the manifest head', () => {
+    const unpinned = migrations.filter(
+      (migration) => SHIPPED_MIGRATION_SQL_SHA256[migration.version] === undefined,
     );
-    expect(actual).toEqual(SHIPPED_MIGRATION_SQL_SHA256);
+    for (const migration of unpinned) {
+      expect(
+        migration.version,
+        `migration ${migration.version} is missing from SHIPPED_MIGRATION_SQL_SHA256 and sits at or below the manifest head ${manifestHead}; a shipped version may not be renumbered or reinserted`,
+      ).toBeGreaterThan(manifestHead);
+    }
+    const lines = unpinned
+      .map((migration) => `  ${migration.version}: '${sqlSha256({ sql: migration.sql })}',`)
+      .join('\n');
+    expect(
+      unpinned.length,
+      `new migration(s) not yet pinned; paste into SHIPPED_MIGRATION_SQL_SHA256:\n${lines}`,
+    ).toBe(0);
   });
 });
 
@@ -250,32 +273,18 @@ describe('migration convergence', () => {
       expect(await schemaOf(upgraded)).toEqual(target);
     }
   }, 30_000);
-});
 
-describe('migration convergence sampling gap', () => {
-  it('pins todays sampled counts at sampleSize=12, migrations.length=111', () => {
-    expect(migrations.length).toBe(111);
+  it('samples at least the floor of intermediate versions, strictly increasing', () => {
     const counts = sampleIntermediateCounts({
       total: migrations.length,
       sampleSize: SAMPLED_INTERMEDIATE_VERSIONS,
     });
-    expect(counts).toEqual([1, 2, 12, 22, 32, 42, 52, 62, 72, 82, 92, 102, 110]);
+    const isStrictlyIncreasing = counts.every(
+      (count, index) => index === 0 || count > (counts[index - 1] ?? 0),
+    );
+    expect(counts.length).toBeGreaterThanOrEqual(MIN_CONVERGENCE_SAMPLE_POINTS);
+    expect(isStrictlyIncreasing).toBe(true);
+    expect(counts).toContain(1);
+    expect(counts).toContain(migrations.length - 1);
   });
-
-  it('a gutted sampleSize=1 still passes convergence: sampling breadth is not enforced by a floor', async () => {
-    const fresh = makeTestDatabase();
-    await migrate(fresh);
-    const target = await schemaOf(fresh);
-
-    const counts = sampleIntermediateCounts({ total: migrations.length, sampleSize: 1 });
-    expect(counts.length).toBeLessThanOrEqual(3);
-
-    for (const count of counts) {
-      const upgraded = makeTestDatabase();
-      await migrate(upgraded, migrations.slice(0, count));
-      const result = await migrate(upgraded);
-      expect(result.applied).toEqual(versions.slice(count));
-      expect(await schemaOf(upgraded)).toEqual(target);
-    }
-  }, 30_000);
 });
