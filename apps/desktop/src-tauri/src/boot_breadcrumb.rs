@@ -160,6 +160,23 @@ mod tests {
         ))
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn the_sink_file_is_owner_only() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = temp_path("permissions");
+        fs::create_dir_all(&directory).expect("create temp directory");
+        let path = directory.join(BREADCRUMB_FILE);
+        write_line_to(&path, "0 launch process-start start\n").expect("append breadcrumb");
+        let mode = fs::metadata(&path)
+            .expect("read breadcrumb metadata")
+            .permissions()
+            .mode();
+        assert_eq!(mode & 0o777, 0o600);
+        fs::remove_dir_all(directory).expect("remove temp directory");
+    }
+
     #[test]
     fn allowlisted_phase_passes() {
         assert!(validate_phase("process-start").is_ok());
