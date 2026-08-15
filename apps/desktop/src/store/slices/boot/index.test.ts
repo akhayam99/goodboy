@@ -556,21 +556,99 @@ describe('store contract', () => {
       expect(s.bootPhase).toBe('ready');
     });
 
-    it('starts a fresh hydration after the memo is reset', async () => {
+    it('restarts hydration when retry runs while the first attempt is in flight', async () => {
       const store = await getStore();
-      const { resetHydrateMemo } = await import('./hydrate');
-      listWorkspacesSpy.mockImplementationOnce(() => new Promise(() => {}));
+      let releaseFirst: () => void = () => undefined;
+      listWorkspacesSpy.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            releaseFirst = () => resolve([]);
+          }),
+      );
 
       void store.getState().hydrate();
       await vi.waitFor(() => {
         expect(listWorkspacesSpy).toHaveBeenCalledOnce();
       });
 
-      resetHydrateMemo();
-      await store.getState().hydrate();
+      const retry = store.getState().retryHydrate();
+      await vi.waitFor(() => {
+        expect(listWorkspacesSpy).toHaveBeenCalledTimes(2);
+      });
+
+      releaseFirst();
+      await retry;
+
+      expect(store.getState().bootPhase).toBe('ready');
+    });
+
+    it('keeps the retry hydration memoized when the first attempt settles late', async () => {
+      const store = await getStore();
+      let releaseFirst: () => void = () => undefined;
+      let releaseSecond: () => void = () => undefined;
+      listWorkspacesSpy.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            releaseFirst = () => resolve([]);
+          }),
+      );
+      listWorkspacesSpy.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            releaseSecond = () => resolve([]);
+          }),
+      );
+
+      void store.getState().hydrate();
+      await vi.waitFor(() => {
+        expect(listWorkspacesSpy).toHaveBeenCalledOnce();
+      });
+
+      const retry = store.getState().retryHydrate();
+      await vi.waitFor(() => {
+        expect(listWorkspacesSpy).toHaveBeenCalledTimes(2);
+      });
+
+      releaseFirst();
+      await vi.waitFor(() => {
+        expect(store.getState().bootPhase).toBe('ready');
+      });
+
+      const joined = store.getState().hydrate();
+      releaseSecond();
+      await Promise.all([retry, joined]);
 
       expect(listWorkspacesSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('survives a boot breadcrumb command that throws synchronously', async () => {
+      const store = await getStore();
+      invokeSpy.mockImplementation(((command: unknown) => {
+        if (command === 'boot_breadcrumb') {
+          throw new Error('breadcrumb sink exploded');
+        }
+        return Promise.resolve(null);
+      }) as never);
+
+      await store.getState().hydrate();
+
       expect(store.getState().bootPhase).toBe('ready');
+      expect(store.getState().error).toBeNull();
+    });
+
+    it('survives a boot breadcrumb command that rejects', async () => {
+      const store = await getStore();
+      invokeSpy.mockImplementation(((command: unknown) => {
+        if (command === 'boot_breadcrumb') {
+          return Promise.reject(new Error('breadcrumb sink exploded'));
+        }
+        return Promise.resolve(null);
+      }) as never);
+
+      await store.getState().hydrate();
+
+      expect(store.getState().bootPhase).toBe('ready');
+      expect(store.getState().error).toBeNull();
     });
 
     it('loads notifications at boot without waiting for the bell to mount', async () => {

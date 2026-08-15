@@ -47,7 +47,7 @@ const recordBootBreadcrumb = ({ phase, detail }: RecordBootBreadcrumbParams): vo
 
 let hydratePromise: Promise<void> | null = null;
 
-export const resetHydrateMemo = (): void => {
+const resetHydrateMemo = (): void => {
   hydratePromise = null;
 };
 
@@ -309,5 +309,12 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         hydratePromise = null;
       }
     }
+  };
+};
+
+export const retryHydrate = (get: GetFn) => {
+  return async (): Promise<void> => {
+    resetHydrateMemo();
+    await get().hydrate();
   };
 };
