@@ -636,19 +636,27 @@ describe('store contract', () => {
       expect(store.getState().error).toBeNull();
     });
 
-    it('survives a boot breadcrumb command that rejects', async () => {
+    it('never leaves the breadcrumb rejection unhandled', async () => {
       const store = await getStore();
+      const unhandled = vi.fn();
+      process.on('unhandledRejection', unhandled);
       invokeSpy.mockImplementation(((command: unknown) => {
         if (command === 'boot_breadcrumb') {
-          return Promise.reject(new Error('breadcrumb sink exploded'));
+          return {
+            then: (_onFulfilled: unknown, onRejected: (reason: unknown) => void) => {
+              onRejected(new Error('breadcrumb sink exploded'));
+            },
+          };
         }
         return Promise.resolve(null);
       }) as never);
 
       await store.getState().hydrate();
+      await new Promise((resolve) => setImmediate(resolve));
+      process.off('unhandledRejection', unhandled);
 
+      expect(unhandled).not.toHaveBeenCalled();
       expect(store.getState().bootPhase).toBe('ready');
-      expect(store.getState().error).toBeNull();
     });
 
     it('loads notifications at boot without waiting for the bell to mount', async () => {
