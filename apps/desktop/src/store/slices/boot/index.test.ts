@@ -556,6 +556,23 @@ describe('store contract', () => {
       expect(s.bootPhase).toBe('ready');
     });
 
+    it('starts a fresh hydration after the memo is reset', async () => {
+      const store = await getStore();
+      const { resetHydrateMemo } = await import('./hydrate');
+      listWorkspacesSpy.mockImplementationOnce(() => new Promise(() => {}));
+
+      void store.getState().hydrate();
+      await vi.waitFor(() => {
+        expect(listWorkspacesSpy).toHaveBeenCalledOnce();
+      });
+
+      resetHydrateMemo();
+      await store.getState().hydrate();
+
+      expect(listWorkspacesSpy).toHaveBeenCalledTimes(2);
+      expect(store.getState().bootPhase).toBe('ready');
+    });
+
     it('loads notifications at boot without waiting for the bell to mount', async () => {
       const store = await getStore();
       await store.getState().hydrate();

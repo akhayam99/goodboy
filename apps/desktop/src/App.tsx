@@ -78,6 +78,7 @@ import { useGithubConnection } from './features/integrations/github/useGithubCon
 import { resolveSessionRepo } from './store/slices/worktrees/resolveSessionRepo';
 import { resolveOpenDiffViewerEvent } from './store/slices/session-view/openDiffViewerEvent';
 import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
+import { resetHydrateMemo } from './store/slices/boot/hydrate';
 
 const KEEP_ALIVE_CAP = 5;
 
@@ -748,7 +749,10 @@ export const App = () => {
       <BootSplash
         phase={bootPhase}
         error={error}
-        onRetry={() => void hydrate()}
+        onRetry={() => {
+          resetHydrateMemo();
+          void hydrate();
+        }}
         onFinished={() => setSplashFinished(true)}
       />
     );

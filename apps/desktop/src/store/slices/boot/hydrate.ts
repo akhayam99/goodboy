@@ -1,6 +1,7 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { getSetting, listWorkspaces } from '@goodboy/db';
+import { invoke } from '@tauri-apps/api/core';
 import { runDbMigrations, tauriDatabase } from '../../../shared/lib/db';
 import { migrateLsToDb } from '../../../shared/lib/ls-to-db-migration';
 import { hydrateOnboardingFromDb } from '../../../features/onboarding/onboarding-store';
@@ -29,8 +30,26 @@ import { recoverStagedFileVersions } from '../file-versions/recoverStagedFileVer
 import { applyQaDecidingPreview } from '../workflows/applyQaDecidingPreview';
 import { drainAuditRetryQueue } from './auditRetryQueue';
 import type { GetFn, SetFn } from './types';
+import type { BootPhase } from '../../types';
+
+type RecordBootBreadcrumbParams = {
+  phase: BootPhase;
+  detail?: string;
+};
+
+const recordBootBreadcrumb = ({ phase, detail }: RecordBootBreadcrumbParams): void => {
+  try {
+    void Promise.resolve(invoke('boot_breadcrumb', { phase, detail })).catch(() => undefined);
+  } catch {
+    return;
+  }
+};
 
 let hydratePromise: Promise<void> | null = null;
+
+export const resetHydrateMemo = (): void => {
+  hydratePromise = null;
+};
 
 export const hydrate = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {
@@ -38,8 +57,17 @@ export const hydrate = (set: SetFn, get: GetFn) => {
       return hydratePromise;
     }
     hydratePromise = (async () => {
+      const bootStartedAt = Date.now();
+      let previousTransitionAt = bootStartedAt;
       try {
+        recordBootBreadcrumb({ phase: 'pending', detail: 'start' });
+        const migratingAt = Date.now();
         set({ bootPhase: 'migrating', error: null });
+        recordBootBreadcrumb({
+          phase: 'migrating',
+          detail: `ms=${migratingAt - previousTransitionAt}`,
+        });
+        previousTransitionAt = migratingAt;
         await runDbMigrations();
         await migrateLsToDb();
         await hydrateOnboardingFromDb();
@@ -48,7 +76,13 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           .loadNotifications()
           .catch(() => {});
 
+        const loadingSettingsAt = Date.now();
         set({ bootPhase: 'loading-settings' });
+        recordBootBreadcrumb({
+          phase: 'loading-settings',
+          detail: `ms=${loadingSettingsAt - previousTransitionAt}`,
+        });
+        previousTransitionAt = loadingSettingsAt;
         const [editorBinary, lastWorkspaceRaw, lastSessionRaw, reopenLastRaw] = await Promise.all([
           getSetting(tauriDatabase, SETTING_EDITOR_BINARY),
           getSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID),
@@ -72,7 +106,13 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           return { settings: next };
         });
 
+        const detectingCliAt = Date.now();
         set({ bootPhase: 'detecting-cli' });
+        recordBootBreadcrumb({
+          phase: 'detecting-cli',
+          detail: `ms=${detectingCliAt - previousTransitionAt}`,
+        });
+        previousTransitionAt = detectingCliAt;
         const [
           providerStatus,
           cursorStatus,
@@ -135,7 +175,13 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         };
         set({ authResults, providers: buildProviderList(statuses, authResults) });
 
+        const loadingWorkspacesAt = Date.now();
         set({ bootPhase: 'loading-workspaces' });
+        recordBootBreadcrumb({
+          phase: 'loading-workspaces',
+          detail: `ms=${loadingWorkspacesAt - previousTransitionAt}`,
+        });
+        previousTransitionAt = loadingWorkspacesAt;
         await get()
           .loadCredentials()
           .catch(() => {});
@@ -177,7 +223,13 @@ export const hydrate = (set: SetFn, get: GetFn) => {
 
         await applyQaDecidingPreview({ set }).catch(() => {});
 
+        const restoringSessionAt = Date.now();
         set({ bootPhase: 'restoring-session' });
+        recordBootBreadcrumb({
+          phase: 'restoring-session',
+          detail: `ms=${restoringSessionAt - previousTransitionAt}`,
+        });
+        previousTransitionAt = restoringSessionAt;
         const reloadIntent = consumeReloadIntent();
         if (reloadIntent?.mode === 'restore') {
           const snapWorkspace = workspaces.find((w) => w.id === reloadIntent.workspaceId) ?? null;
@@ -228,6 +280,10 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         }
 
         set({ bootPhase: 'ready', hydrated: true });
+        recordBootBreadcrumb({
+          phase: 'ready',
+          detail: `ms=${Date.now() - bootStartedAt},ok`,
+        });
 
         void drainAuditRetryQueue(set);
 
@@ -237,6 +293,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
 
         void get().refreshGithubStatus();
       } catch (err) {
+        recordBootBreadcrumb({ phase: 'error', detail: 'error' });
         set({
           bootPhase: 'error',
           error: formatError(err),
@@ -244,10 +301,13 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         });
       }
     })();
+    const ownPromise = hydratePromise;
     try {
-      await hydratePromise;
+      await ownPromise;
     } finally {
-      hydratePromise = null;
+      if (hydratePromise === ownPromise) {
+        hydratePromise = null;
+      }
     }
   };
 };
