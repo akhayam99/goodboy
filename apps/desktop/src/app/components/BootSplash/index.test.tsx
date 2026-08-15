@@ -28,10 +28,10 @@ describe('BootSplash slow boot recovery', () => {
     });
 
     expect(screen.queryByText('this is taking longer than usual')).toBeNull();
-    expect(screen.queryByRole('button', { name: /retry/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /restart/i })).toBeNull();
   });
 
-  it('offers retry after the phase takes longer than usual', () => {
+  it('offers restart after the phase takes longer than usual', () => {
     const onRetry = vi.fn();
     render(<BootSplash phase="detecting-cli" error={null} onRetry={onRetry} />);
 
@@ -40,9 +40,21 @@ describe('BootSplash slow boot recovery', () => {
     });
 
     expect(screen.getByText('this is taking longer than usual')).toBeDefined();
-    expect(screen.getByText('10s')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /retry/i }));
+    expect(screen.getByText('10s in this step')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: /restart/i }));
     expect(onRetry).toHaveBeenCalledOnce();
+  });
+
+  it('acknowledges the restart press instead of leaving the button dead', () => {
+    render(<BootSplash phase="detecting-cli" error={null} onRetry={vi.fn()} />);
+
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+    fireEvent.click(screen.getByRole('button', { name: /restart/i }));
+
+    expect(screen.getByText('still working, give it a moment')).toBeDefined();
+    expect(screen.queryByRole('button', { name: /restart/i })).toBeNull();
   });
 
   it('resets the escalation when the phase changes', () => {
@@ -56,7 +68,7 @@ describe('BootSplash slow boot recovery', () => {
     rerender(<BootSplash phase="detecting-cli" error={null} onRetry={vi.fn()} />);
 
     expect(screen.queryByText('this is taking longer than usual')).toBeNull();
-    expect(screen.queryByRole('button', { name: /retry/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /restart/i })).toBeNull();
   });
 });
 

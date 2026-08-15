@@ -101,7 +101,7 @@ function BootErrorRecovery({
   onRetry?: () => void;
 }) {
   const openIssue = useCallback(() => {
-    const url = `${GITHUB_NEW_ISSUE_URL}&body=${encodeURIComponent(`**phase:** ${phase}\n\n**error:**\n\`\`\`\n${error}\n\`\`\``)}`;
+    const url = `${GITHUB_NEW_ISSUE_URL}&body=${encodeURIComponent(`**phase:** ${phase}\n\n**error:**\n\`\`\`\n${error}\n\`\`\`\n\nBoot timings for this launch are in \`~/.goodboy/boot-breadcrumbs.log\` (phase and timing only, no paths or credentials). Paste the last few lines if you can.`)}`;
     void openUrl(url);
   }, [error, phase]);
 

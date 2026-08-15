@@ -47,10 +47,6 @@ const recordBootBreadcrumb = ({ phase, detail }: RecordBootBreadcrumbParams): vo
 
 let hydratePromise: Promise<void> | null = null;
 
-const resetHydrateMemo = (): void => {
-  hydratePromise = null;
-};
-
 export const hydrate = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {
     if (hydratePromise) {
@@ -314,7 +310,11 @@ export const hydrate = (set: SetFn, get: GetFn) => {
 
 export const retryHydrate = (get: GetFn) => {
   return async (): Promise<void> => {
-    resetHydrateMemo();
+    const inFlight = hydratePromise;
+    if (inFlight !== null) {
+      await inFlight;
+      return;
+    }
     await get().hydrate();
   };
 };

@@ -46,6 +46,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 
 const listWorkspacesSpy = vi.fn(async () => [] as ReadonlyArray<Workspace>);
+const runDbMigrationsSpy = vi.fn(async () => undefined);
 const dbSetSettingSpy = vi.fn(async () => undefined);
 const dbGetSettingSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<string | null>>(
   async () => null,
@@ -157,7 +158,7 @@ vi.mock('@goodboy/db', () => ({
 }));
 
 vi.mock('../../../shared/lib/db', () => ({
-  runDbMigrations: vi.fn(async () => undefined),
+  runDbMigrations: runDbMigrationsSpy,
   wipeDb: vi.fn(async () => undefined),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
@@ -556,7 +557,7 @@ describe('store contract', () => {
       expect(s.bootPhase).toBe('ready');
     });
 
-    it('restarts hydration when retry runs while the first attempt is in flight', async () => {
+    it('joins the in-flight hydration instead of starting a second run on retry', async () => {
       const store = await getStore();
       let releaseFirst: () => void = () => undefined;
       listWorkspacesSpy.mockImplementationOnce(
@@ -572,53 +573,25 @@ describe('store contract', () => {
       });
 
       const retry = store.getState().retryHydrate();
-      await vi.waitFor(() => {
-        expect(listWorkspacesSpy).toHaveBeenCalledTimes(2);
-      });
-
       releaseFirst();
       await retry;
 
+      expect(listWorkspacesSpy).toHaveBeenCalledOnce();
+      expect(runDbMigrationsSpy).toHaveBeenCalledOnce();
       expect(store.getState().bootPhase).toBe('ready');
     });
 
-    it('keeps the retry hydration memoized when the first attempt settles late', async () => {
+    it('still restarts hydration when retry runs after a failed attempt', async () => {
       const store = await getStore();
-      let releaseFirst: () => void = () => undefined;
-      let releaseSecond: () => void = () => undefined;
-      listWorkspacesSpy.mockImplementationOnce(
-        () =>
-          new Promise((resolve) => {
-            releaseFirst = () => resolve([]);
-          }),
-      );
-      listWorkspacesSpy.mockImplementationOnce(
-        () =>
-          new Promise((resolve) => {
-            releaseSecond = () => resolve([]);
-          }),
-      );
+      listWorkspacesSpy.mockRejectedValueOnce(new Error('boom'));
 
-      void store.getState().hydrate();
-      await vi.waitFor(() => {
-        expect(listWorkspacesSpy).toHaveBeenCalledOnce();
-      });
+      await store.getState().hydrate();
+      expect(store.getState().bootPhase).toBe('error');
 
-      const retry = store.getState().retryHydrate();
-      await vi.waitFor(() => {
-        expect(listWorkspacesSpy).toHaveBeenCalledTimes(2);
-      });
+      await store.getState().retryHydrate();
 
-      releaseFirst();
-      await vi.waitFor(() => {
-        expect(store.getState().bootPhase).toBe('ready');
-      });
-
-      const joined = store.getState().hydrate();
-      releaseSecond();
-      await Promise.all([retry, joined]);
-
-      expect(listWorkspacesSpy).toHaveBeenCalledTimes(2);
+      expect(store.getState().bootPhase).toBe('ready');
+      expect(runDbMigrationsSpy).toHaveBeenCalledTimes(2);
     });
 
     it('survives a boot breadcrumb command that throws synchronously', async () => {
