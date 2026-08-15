@@ -1,0 +1,111 @@
+# Brand
+
+> **Read this when** you are drawing the mascot, the lockup, an app icon, a
+> social image or anything else that carries Goodboy's identity. **Not for**
+> in-product color, spacing and component rules (see [DESIGN.md](../DESIGN.md))
+> or the words inside any of it (see [tone-of-voice.md](./tone-of-voice.md)).
+
+Owns the identity: the mascot, the lockup, and how both survive contact with
+surfaces nobody here controls. `DESIGN.md` owns how the product looks while
+you use it. This file owns how it is recognised before you have used it.
+
+## The mascot
+
+The canonical asset is a **white-on-transparent PNG**, kept identical in two
+places:
+
+- `apps/desktop/src/assets/mascot.png`
+- `website/src/assets/mascot.png`
+
+It is never drawn as a coloured image. It is a **mask**, filled by the
+surface underneath, which is what `DogMascot` does with a CSS mask and what
+`website/public/og-image.svg` does with an SVG luminance mask. Everything
+downstream is one asset and one fill.
+
+That single rule is what keeps the dog the same dog in the app, on the site,
+in an avatar and in a favicon. It also means a colour change is a token
+change, never a new file.
+
+- **Never recolour by exporting a new PNG.** Change the fill.
+- **Never rotate, skew, add a shadow, outline or gradient to it.** The mask
+  has no room for any of that at 24 px, which is where it lives most often.
+- **Never place the glyph beside the wordmark when the mascot is already
+  present** in the same frame, as a watermark or as the adjacent avatar. Once
+  is identity, twice is clip art.
+
+## The lockup
+
+`website/src/components/Logo.tsx` is the lockup: the mask at the accent
+colour, then the word `Goodboy`. No tagline inside it, no registered mark, no
+second line.
+
+The word is always **Goodboy**, one word, capital G, never `GoodBoy`,
+`goodboy` in running text, or an abbreviation. `GB` is not a short form of
+anything here.
+
+## Colour
+
+The identity colour is the **accent teal**. The exact value differs by
+surface and is owned by tokens, not by this file: `--accent` in
+`website/src/styles.css`, the accent ramp in `apps/desktop/src/styles.css`.
+Read them, do not retype them.
+
+The ground is white on the site and charcoal in the app, and both are
+correct. An asset made for one is not automatically valid on the other, so a
+social image states which ground it was built on.
+
+## Provider and integration marks
+
+When an asset shows what Goodboy works with, the marks come from the code and
+not from a designer's memory: `PROVIDER_IDS` in
+`packages/types/src/provider-registry.ts` for the agents, and the integration
+union in `packages/types/src/workspace.ts` for the rest. The glyphs
+themselves are in `packages/ui/src/components/brandIcons.tsx` and the colours
+in the `--color-provider-*` tokens.
+
+Two rules keep a logo row from turning into a partner page:
+
+- **Show a category completely or not at all.** Four of seven providers is a
+  claim about which four matter.
+- **Label the rows.** `Agents` and `Your work` turn a grid of logos into a
+  sentence. Unlabelled, the same marks read as integrations we were approved
+  to display.
+
+An asset with such a row carries a date, because the lists move. When a
+provider is added, the asset is stale until it is regenerated.
+
+## Social formats
+
+Sizes are what the platform actually renders, not what its help page
+suggests. Every one of these is generated, never hand-cropped.
+
+| Surface                     | Size                     | Keep clear                                                                                 |
+| --------------------------- | ------------------------ | ------------------------------------------------------------------------------------------ |
+| X avatar                    | 1024x1024                | Circle crop, so nothing in the corners                                                     |
+| X header                    | 1500x500                 | Bottom left, where the avatar overlaps, and the top and bottom edges, which crop on mobile |
+| LinkedIn company cover      | 1128x191, rendered at 2x | Bottom left, under the company logo                                                        |
+| LinkedIn profile background | 1584x396                 | The left third, under the profile photo                                                    |
+| og-image                    | 1200x630                 | Nothing, but crawlers need the PNG as well as the SVG                                      |
+
+A banner is displayed far smaller than it is authored: 1500 px wide becomes
+roughly 600 on desktop and 440 on mobile. Anything under about 40 px in the
+source is illegible where it is actually seen, which is why the thin
+LinkedIn cover carries no marks at all.
+
+## Rendering
+
+Assets are rendered with **system Chrome headless**, from an HTML card that
+uses the real tokens and the real mask. There is no puppeteer, imagemagick or
+rsvg in this project and none is being added for this.
+
+```
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new --disable-gpu --no-sandbox --hide-scrollbars \
+  --allow-file-access-from-files --force-device-scale-factor=1 \
+  --window-size=WxH --screenshot=out.png file:///path/card.html
+```
+
+Chrome renders `oklch()` and CSS masks exactly, so the card is the same
+colour space the product ships in. Rendering at `--force-device-scale-factor=2`
+and letting the platform downscale is the fix for any surface that compresses
+hard, which on current evidence is every LinkedIn cover.

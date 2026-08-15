@@ -37,6 +37,8 @@ is here, and an autonomous release cycle is its one reader.
   it lives: lens, pane, strip, footer, or breadcrumb.
 - [tone-of-voice.md](tone-of-voice.md): when writing any user-facing string:
   README, website, release notes, in-app copy, or error messages.
+- [brand.md](brand.md): when drawing the mascot, the lockup, an app icon or a
+  social image.
 - [providers.md](providers.md): when installing, connecting, or managing a
   provider CLI.
 - [testing.md](testing.md): when writing or reviewing test coverage and
