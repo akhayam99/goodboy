@@ -60,12 +60,14 @@ pub fn boot_breadcrumb(phase: String, detail: Option<String>) -> Result<(), Brea
     record_result(&phase, detail.as_deref())
 }
 
-fn record_result(phase: &str, detail: Option<&str>) -> Result<(), BreadcrumbError> {
+fn record_to(path: &Path, phase: &str, detail: Option<&str>) -> Result<(), BreadcrumbError> {
     validate_phase(phase)?;
-    let path = resolve_path()?;
-    let line = format_line(phase, sanitize_detail(detail));
-    write_line_to(&path, &line)?;
+    write_line_to(path, &format_line(phase, sanitize_detail(detail)))?;
     Ok(())
+}
+
+fn record_result(phase: &str, detail: Option<&str>) -> Result<(), BreadcrumbError> {
+    record_to(&resolve_path()?, phase, detail)
 }
 
 fn validate_phase(phase: &str) -> Result<(), BreadcrumbError> {
@@ -174,6 +176,40 @@ mod tests {
             .permissions()
             .mode();
         assert_eq!(mode & 0o777, 0o600);
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o644))
+            .expect("relax breadcrumb permissions");
+        write_line_to(&path, "0 launch ready ok\n").expect("append second breadcrumb");
+        let mode = fs::metadata(&path)
+            .expect("read updated breadcrumb metadata")
+            .permissions()
+            .mode();
+        assert_eq!(mode & 0o777, 0o600);
+        fs::remove_dir_all(directory).expect("remove temp directory");
+    }
+
+    #[test]
+    fn record_to_writes_one_composed_line() {
+        let directory = temp_path("record");
+        fs::create_dir_all(&directory).expect("create temp directory");
+        let path = directory.join(BREADCRUMB_FILE);
+        record_to(&path, "migrating", Some("ms=12,ok")).expect("record breadcrumb");
+        let contents = fs::read_to_string(&path).expect("read breadcrumb");
+        let lines: Vec<&str> = contents.lines().collect();
+        assert_eq!(lines.len(), 1);
+        assert_eq!(lines[0].split_whitespace().nth(3), Some("ms=12,ok"));
+        fs::remove_dir_all(directory).expect("remove temp directory");
+    }
+
+    #[test]
+    fn record_to_rejects_a_phase_outside_the_allowlist() {
+        let directory = temp_path("record-rejected");
+        fs::create_dir_all(&directory).expect("create temp directory");
+        let path = directory.join(BREADCRUMB_FILE);
+        assert!(matches!(
+            record_to(&path, "secret", None),
+            Err(BreadcrumbError::Phase)
+        ));
+        assert!(!path.exists());
         fs::remove_dir_all(directory).expect("remove temp directory");
     }
 
@@ -209,12 +245,17 @@ mod tests {
         fs::create_dir_all(&directory).expect("create temp directory");
         let path = directory.join(BREADCRUMB_FILE);
         fs::write(&path, vec![b'x'; MAX_FILE_SIZE as usize + 1]).expect("write oversized file");
+        let rotated = PathBuf::from(format!("{}.1", path.display()));
+        fs::write(&rotated, "stale\n").expect("write stale rotated file");
         write_line_to(&path, "new line\n").expect("append breadcrumb");
         assert_eq!(
             fs::read_to_string(&path).expect("read breadcrumb"),
             "new line\n"
         );
-        assert!(PathBuf::from(format!("{}.1", path.display())).exists());
+        assert!(rotated.exists());
+        let rotated_contents = fs::read(&rotated).expect("read rotated breadcrumb");
+        assert_ne!(rotated_contents, b"stale\n");
+        assert_eq!(rotated_contents.len(), MAX_FILE_SIZE as usize + 1);
         fs::remove_dir_all(directory).expect("remove temp directory");
     }
 }
