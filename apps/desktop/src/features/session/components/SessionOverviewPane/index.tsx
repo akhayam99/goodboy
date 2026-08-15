@@ -253,7 +253,10 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   };
 
   return (
-    <PaneShell header={<HeaderBand session={session} stage={stage} />}>
+    <PaneShell
+      header={<HeaderBand session={session} stage={stage} />}
+      animationClassName="animate-fade-in"
+    >
       <Divider />
       <section aria-label="Next up" className="flex flex-col gap-2">
         <Eyebrow label="Next up" muted className="px-0.5 font-medium" />

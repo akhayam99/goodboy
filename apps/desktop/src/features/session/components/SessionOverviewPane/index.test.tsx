@@ -734,6 +734,16 @@ describe('SessionOverviewPane block order', () => {
   });
 });
 
+describe('SessionOverviewPane mount animation', () => {
+  it('keeps the pre-PaneShell fade-in rise instead of the PaneShell studio-in zoom', () => {
+    const { container } = renderPane();
+    const root = container.querySelector('.mx-auto.w-full');
+    expect(root).not.toBeNull();
+    expect(root!.className).toContain('animate-fade-in');
+    expect(root!.className).not.toContain('animate-studio-in');
+  });
+});
+
 describe('SessionOverviewPane pipeline lane next-step badge', () => {
   const STEP_ID = 'step-1';
   const RUN_ID = 'run-1';

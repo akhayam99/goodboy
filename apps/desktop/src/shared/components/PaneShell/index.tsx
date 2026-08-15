@@ -4,6 +4,7 @@ import { PANE_RHYTHM } from '@goodboy/ui';
 
 type BaseProps = {
   readonly measure?: keyof typeof PANE_RHYTHM.measure;
+  readonly animationClassName?: string;
   readonly children: ReactNode;
 };
 
@@ -26,13 +27,18 @@ type CustomHeaderProps = {
 type Props = BaseProps & (TitleHeaderProps | CustomHeaderProps);
 
 export const PaneShell = (props: Props) => {
-  const { measure = 'pane', children } = props;
+  const {
+    measure = 'pane',
+    animationClassName = 'motion-safe:animate-studio-in',
+    children,
+  } = props;
 
   return (
     <ScrollFade className="h-full" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
       <div
         className={cn(
-          'flex flex-col motion-safe:animate-studio-in',
+          'flex flex-col',
+          animationClassName,
           PANE_RHYTHM.column,
           PANE_RHYTHM.stack,
           PANE_RHYTHM.measure[measure],
