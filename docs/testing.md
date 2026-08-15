@@ -15,6 +15,10 @@ Owns what to test and how. Test file placement: [file-system.md](file-system.md)
 - For hooks: `renderHook` from `@testing-library/react`.
 - A suite whose per-test hook dynamically `import()`s a large module graph warms that import once in `beforeAll`, with a timeout that fits it (60s for the store, see `apps/desktop/src/store/slices/sessions/index.test.ts`). Never in `beforeEach`: the import cost then lands on whichever test happens to run first and blows vitest's default 10s hook timeout on a loaded runner.
 
+## Migration convergence sampling
+
+`packages/db/src/migrations/registry.test.ts` samples intermediate versions instead of testing all of them for speed; that sampling is not a substitute for the checked-in per-version sql hash manifest in the same file, which is what actually guards shipped migration bodies against being edited after release. The sample carries a standalone floor on how many intermediate points it must reach, so gutting the sample size fails instead of quietly narrowing the suite to its two endpoints. No test pins the sampled versions themselves or the migration total: both move every release, and a test that goes red for that reason teaches people to edit expectations, which is exactly how a hash manifest gets regenerated blindly.
+
 ## The golden rule
 
 If a test fails because the component / store / hook does the wrong thing, **fix the code, not the test**. Never weaken a test to make it pass.
