@@ -1,5 +1,5 @@
 import { Check, X } from 'lucide-react';
-import { cn } from '../cn';
+import { cn } from '@goodboy/ui';
 
 type Props = {
   readonly label: string;
