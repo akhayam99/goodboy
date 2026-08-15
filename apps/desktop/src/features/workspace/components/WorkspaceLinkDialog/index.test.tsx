@@ -70,15 +70,17 @@ afterEach(cleanup);
 
 describe('WorkspaceLinkDialog', () => {
   it('mounts the shared form only while open', () => {
-    const { rerender } = render(<WorkspaceLinkDialog open={false} onClose={vi.fn()} />);
+    const { rerender } = render(
+      <WorkspaceLinkDialog open={false} onClose={vi.fn()} onOfferRepo={vi.fn()} />,
+    );
     expect(screen.queryByRole('tab', { name: 'Single project' })).toBeNull();
 
-    rerender(<WorkspaceLinkDialog open onClose={vi.fn()} />);
+    rerender(<WorkspaceLinkDialog open onClose={vi.fn()} onOfferRepo={vi.fn()} />);
     expect(screen.getByRole('tab', { name: 'Single project' })).toBeDefined();
   });
 
   it('pins the form actions in the dialog footer instead of the scrolling body', () => {
-    render(<WorkspaceLinkDialog open onClose={vi.fn()} />);
+    render(<WorkspaceLinkDialog open onClose={vi.fn()} onOfferRepo={vi.fn()} />);
 
     const submit = screen.getByRole('button', { name: 'Add workspace' });
     const form = screen.getByRole('tab', { name: 'Single project' }).closest('form');
@@ -91,7 +93,7 @@ describe('WorkspaceLinkDialog', () => {
 
   it('submits the form from the footer action and closes on success', async () => {
     const onClose = vi.fn();
-    render(<WorkspaceLinkDialog open onClose={onClose} />);
+    render(<WorkspaceLinkDialog open onClose={onClose} onOfferRepo={vi.fn()} />);
 
     fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
       target: { value: '/some/repo' },
@@ -106,9 +108,39 @@ describe('WorkspaceLinkDialog', () => {
     expect(onboarding.reopenWizard).not.toHaveBeenCalled();
   });
 
+  it('offers a repository right after a folder with no git lands as a simple workspace', async () => {
+    state.addWorkspace = vi.fn(async () => ({ id: 'ws-new', kind: 'simple' }));
+    validateMock.mockResolvedValue({ isRepo: false, resolvedPath: '/some/fresh-idea' });
+    const onOfferRepo = vi.fn();
+    render(<WorkspaceLinkDialog open onClose={vi.fn()} onOfferRepo={onOfferRepo} />);
+
+    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
+      target: { value: '/some/fresh-idea' },
+    });
+    await waitFor(() => screen.getByText(/no git repository here yet/i), { timeout: 2000 });
+    fireEvent.click(screen.getByRole('button', { name: 'Add workspace' }));
+
+    await waitFor(() => expect(onOfferRepo).toHaveBeenCalledOnce());
+  });
+
+  it('leaves a git-backed folder alone instead of offering it a repository', async () => {
+    state.addWorkspace = vi.fn(async () => ({ id: 'ws-new', kind: 'repo' }));
+    const onOfferRepo = vi.fn();
+    render(<WorkspaceLinkDialog open onClose={vi.fn()} onOfferRepo={onOfferRepo} />);
+
+    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
+      target: { value: '/some/repo' },
+    });
+    await waitFor(() => screen.getByText(/valid git repository/i), { timeout: 2000 });
+    fireEvent.click(screen.getByRole('button', { name: 'Add workspace' }));
+
+    await waitFor(() => expect(state.addWorkspace).toHaveBeenCalled());
+    expect(onOfferRepo).not.toHaveBeenCalled();
+  });
+
   it('resumes an unfinished setup wizard once the workspace exists', async () => {
     onboarding.wizardDone = false;
-    render(<WorkspaceLinkDialog open onClose={vi.fn()} />);
+    render(<WorkspaceLinkDialog open onClose={vi.fn()} onOfferRepo={vi.fn()} />);
 
     fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
       target: { value: '/some/repo' },

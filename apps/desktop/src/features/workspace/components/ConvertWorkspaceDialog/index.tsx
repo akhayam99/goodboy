@@ -1,10 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Dialog, formatError, Input, SegmentedTabs, Select, StatusDot } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
-import { listOwnedRepos, type GithubRepoRef, type OwnedReposResult } from '@goodboy/core';
+import {
+  createGithubRepo,
+  listOwnedRepos,
+  validateGithubRepoName,
+  type GithubRepoRef,
+  type GithubRepoVisibility,
+  type OwnedReposResult,
+} from '@goodboy/core';
 import { Check, GitBranch } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { tauriGhRunner } from '../../../github/github';
+import { lastPathSegment } from '../WorkspaceLinkForm/lastPathSegment';
 
 type Props = {
   readonly open: boolean;
@@ -14,12 +22,24 @@ type Props = {
 
 type Host = 'github' | 'gitlab';
 
+type Action = 'create' | 'link';
+
 type ReposState = OwnedReposResult | { readonly kind: 'idle' } | { readonly kind: 'loading' };
 
 const HOST_NAME: Record<Host, string> = {
   github: 'GitHub',
   gitlab: 'GitLab',
 };
+
+const ACTION_OPTIONS = [
+  { value: 'create', label: 'Create new' },
+  { value: 'link', label: 'Link existing' },
+] as const;
+
+const VISIBILITY_OPTIONS = [
+  { value: 'public', label: 'Public' },
+  { value: 'private', label: 'Private' },
+] as const;
 
 const HOST_STUDIO_EVENT: Record<Host, string> = {
   github: 'goodboy:open-github-studio',
@@ -35,6 +55,14 @@ const MANUAL_REPO = '__manual__';
 
 const NO_REPOS: ReadonlyArray<GithubRepoRef> = [];
 
+const repoDestination = ({
+  owner,
+  name,
+}: {
+  readonly owner: string | null;
+  readonly name: string;
+}): string => (owner === null ? name : `${owner}/${name}`);
+
 export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
   const convertWorkspaceToRepo = useAppStore((s) => s.convertWorkspaceToRepo);
   const isGithubCliAvailable = useAppStore((s) => s.githubStatus?.available === true);
@@ -43,11 +71,15 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
       (integration) => integration.provider === 'gitlab',
     ),
   );
+  const githubOwner = useAppStore((s) => s.githubStatus?.user ?? null);
 
+  const [action, setAction] = useState<Action>('create');
   const [host, setHost] = useState<Host>('github');
   const [reposState, setReposState] = useState<ReposState>({ kind: 'idle' });
   const [selectedRepo, setSelectedRepo] = useState(MANUAL_REPO);
   const [manualUrl, setManualUrl] = useState('');
+  const [repoName, setRepoName] = useState('');
+  const [visibility, setVisibility] = useState<GithubRepoVisibility | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isConverted, setIsConverted] = useState(false);
@@ -57,6 +89,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
   const areReposLoading = reposState.kind === 'loading';
   const isGithubConnected = isGithubCliAvailable && reposState.kind !== 'unauthenticated';
   const isConnected = host === 'github' ? isGithubConnected : isGitlabConnected;
+  const nameCheck = useMemo(() => validateGithubRepoName({ name: repoName }), [repoName]);
 
   useEffect(() => {
     if (!open) {
@@ -66,14 +99,17 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
       keepDraftRef.current = false;
       return;
     }
+    setAction('create');
     setHost('github');
     setReposState({ kind: 'idle' });
     setSelectedRepo(MANUAL_REPO);
     setManualUrl('');
+    setRepoName(lastPathSegment({ path: workspace.rootPath }));
+    setVisibility(null);
     setIsBusy(false);
     setError(null);
     setIsConverted(false);
-  }, [open]);
+  }, [open, workspace.rootPath]);
 
   useEffect(() => {
     if (!open || host !== 'github' || !isGithubCliAvailable) {
@@ -109,6 +145,12 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
     setError(null);
   }, []);
 
+  const onActionChange = useCallback((next: Action) => {
+    setAction(next);
+    setHost('github');
+    setError(null);
+  }, []);
+
   const onConnect = useCallback(() => {
     keepDraftRef.current = true;
     onClose();
@@ -127,6 +169,43 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
       setIsBusy(false);
     }
   }, [convertWorkspaceToRepo, remoteUrl, workspace.id]);
+
+  const onCreate = useCallback(async () => {
+    if (nameCheck.kind !== 'ok' || visibility === null) {
+      return;
+    }
+    setIsBusy(true);
+    setError(null);
+    try {
+      const result = await createGithubRepo({
+        runner: tauriGhRunner,
+        name: nameCheck.name,
+        visibility,
+      });
+      if (result.kind === 'invalid-name') {
+        setError(result.reason);
+        return;
+      }
+      if (result.kind === 'unauthenticated') {
+        setError('GitHub turned the request down. Sign in with `gh auth login`, then try again.');
+        return;
+      }
+      if (result.kind === 'failed') {
+        setError(result.message);
+        return;
+      }
+      await convertWorkspaceToRepo({ workspaceId: workspace.id, remoteUrl: result.repo.url });
+      setIsConverted(true);
+    } catch (err) {
+      setError(formatError(err));
+    } finally {
+      setIsBusy(false);
+    }
+  }, [convertWorkspaceToRepo, nameCheck, visibility, workspace.id]);
+
+  const isCreating = action === 'create';
+  const canCreate = isConnected && nameCheck.kind === 'ok' && visibility !== null;
+  const primaryDisabled = isBusy || (isCreating ? !canCreate : !isConnected || remoteUrl === '');
 
   return (
     <Dialog
@@ -149,12 +228,12 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
               Cancel
             </Button>
             <Button
-              onClick={() => void onConvert()}
-              disabled={isBusy || !isConnected || remoteUrl === ''}
+              onClick={() => void (isCreating ? onCreate() : onConvert())}
+              disabled={primaryDisabled}
               aria-busy={isBusy}
               className={isBusy ? 'animate-border-pulse' : undefined}
             >
-              Convert to dev project
+              {isCreating ? 'Create repository' : 'Convert to dev project'}
             </Button>
           </>
         )
@@ -175,15 +254,30 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
       ) : (
         <div className="flex flex-col gap-4">
           <SegmentedTabs
-            ariaLabel="Repository host"
-            options={[
-              { value: 'github', label: 'GitHub' },
-              { value: 'gitlab', label: 'GitLab' },
-            ]}
-            value={host}
-            onChange={onHostChange}
+            ariaLabel="Repository setup"
+            options={ACTION_OPTIONS}
+            value={action}
+            onChange={onActionChange}
             fill
           />
+
+          {isCreating ? (
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Goodboy creates the repository on GitHub. A GitLab project is linked from Link
+              existing instead.
+            </p>
+          ) : (
+            <SegmentedTabs
+              ariaLabel="Repository host"
+              options={[
+                { value: 'github', label: 'GitHub' },
+                { value: 'gitlab', label: 'GitLab' },
+              ]}
+              value={host}
+              onChange={onHostChange}
+              fill
+            />
+          )}
 
           {isConnected ? (
             <span className="flex items-center gap-1.5 text-xs text-success">
@@ -204,7 +298,58 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
             </div>
           )}
 
-          {host === 'github' && isConnected && (
+          {isCreating && isConnected && (
+            <>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-semibold text-foreground">repository name</span>
+                <Input
+                  value={repoName}
+                  placeholder={lastPathSegment({ path: workspace.rootPath })}
+                  onChange={(event) => setRepoName(event.target.value)}
+                  disabled={isBusy}
+                  aria-label="Repository name"
+                  aria-invalid={nameCheck.kind === 'invalid'}
+                />
+                {nameCheck.kind === 'invalid' && repoName.trim() !== '' && (
+                  <span role="alert" className="text-xs text-danger">
+                    {nameCheck.reason}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-semibold text-foreground">visibility</span>
+                <div role="radiogroup" aria-label="Visibility" className="flex gap-2">
+                  {VISIBILITY_OPTIONS.map((option) => (
+                    <Button
+                      key={option.value}
+                      role="radio"
+                      aria-checked={visibility === option.value}
+                      variant={visibility === option.value ? 'primary' : 'secondary'}
+                      onClick={() => setVisibility(option.value)}
+                      disabled={isBusy}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
+                {visibility === null && (
+                  <span className="text-xs text-muted-foreground">
+                    Pick who can see the repository. Goodboy does not choose for you.
+                  </span>
+                )}
+              </div>
+
+              {nameCheck.kind === 'ok' && visibility !== null && (
+                <p className="text-xs leading-relaxed text-foreground">
+                  Create {repoDestination({ owner: githubOwner, name: nameCheck.name })} as a{' '}
+                  {visibility} repository and set it as this folder&apos;s origin remote.
+                </p>
+              )}
+            </>
+          )}
+
+          {!isCreating && host === 'github' && isConnected && (
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-semibold text-foreground">repository</span>
               <Select
@@ -236,7 +381,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
             </div>
           )}
 
-          {(host === 'gitlab' || selectedRepo === MANUAL_REPO) && (
+          {!isCreating && (host === 'gitlab' || selectedRepo === MANUAL_REPO) && (
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-semibold text-foreground">remote url</span>
               <Input
@@ -261,7 +406,11 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
               <li>the first commit holds a .gitignore and nothing else</li>
               <li>your files stay untracked until you add them yourself</li>
               <li>your session folders and .goodboy stay out of version control</li>
-              <li>the repository you picked becomes the origin remote</li>
+              <li>
+                {isCreating
+                  ? 'the repository Goodboy creates becomes the origin remote'
+                  : 'the repository you picked becomes the origin remote'}
+              </li>
             </ul>
           </div>
         </div>

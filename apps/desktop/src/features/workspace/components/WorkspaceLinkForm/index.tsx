@@ -36,7 +36,10 @@ import { lastPathSegment } from './lastPathSegment';
 export type WorkspaceLinkMode = 'single' | 'multi' | 'simple';
 
 type Props = {
-  readonly onComplete: (params: { readonly mode: WorkspaceLinkMode }) => void;
+  readonly onComplete: (params: {
+    readonly mode: WorkspaceLinkMode;
+    readonly workspace: Workspace;
+  }) => void;
   readonly onCancel: () => void;
   readonly cancelLabel?: string;
   readonly showBreadcrumb: boolean;
@@ -501,7 +504,7 @@ export const WorkspaceLinkForm = ({
       setPath('');
       setSingleName('');
       setProbe(null);
-      onComplete({ mode: 'single' });
+      onComplete({ mode: 'single', workspace });
     } catch (error) {
       setSubmitError(formatError(error));
     } finally {
@@ -526,7 +529,7 @@ export const WorkspaceLinkForm = ({
       });
       await setCurrentWorkspace(workspace.id);
       clearPersistedDraft();
-      onComplete({ mode: 'multi' });
+      onComplete({ mode: 'multi', workspace });
     } catch (error) {
       setSubmitError(formatError(error));
     } finally {
@@ -553,7 +556,7 @@ export const WorkspaceLinkForm = ({
       });
       await setCurrentWorkspace(workspace.id);
       clearPersistedDraft();
-      onComplete({ mode: 'simple' });
+      onComplete({ mode: 'simple', workspace });
     } catch (error) {
       setSubmitError(formatError(error));
     } finally {
@@ -709,10 +712,10 @@ export const WorkspaceLinkForm = ({
                   </span>
                 )}
                 {!validating && probe?.kind === 'folder' && (
-                  <span className="flex items-start gap-1 text-xs leading-relaxed text-warning">
-                    <AlertTriangle size={11} aria-hidden className="shrink-0" />
-                    No git repository here yet. Goodboy will show you the commands to create one,
-                    and sessions stay unavailable until you have.
+                  <span className="flex items-start gap-1 text-xs leading-relaxed text-muted-foreground">
+                    <Folder size={11} aria-hidden className="mt-0.5 shrink-0" />
+                    No git repository here yet. Goodboy adds the folder as it is and offers to
+                    create or link one next, and you can start sessions either way.
                   </span>
                 )}
                 {!validating && probe?.kind === 'invalid' && path.length > 0 && (
