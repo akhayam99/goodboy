@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -289,8 +290,8 @@ const createHtmlFor = ({ format, accent, mascotBase64, providerBrands, date }) =
 const renderFormat = ({ format, html }) => {
   const outputPath = outputPathFor(format.surface);
   const temporaryPath = resolve(
-    SCRIPT_DIRECTORY,
-    `.tmp-${format.surface.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.html`,
+    tmpdir(),
+    `goodboy-brand-${format.surface.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${process.pid}.html`,
   );
   mkdirSync(dirname(outputPath), { recursive: true });
   try {
@@ -298,9 +299,7 @@ const renderFormat = ({ format, html }) => {
     execFileSync(CHROME, [
       '--headless=new',
       '--disable-gpu',
-      '--no-sandbox',
       '--hide-scrollbars',
-      '--allow-file-access-from-files',
       `--force-device-scale-factor=${format.scale}`,
       `--window-size=${format.width},${format.height}`,
       `--screenshot=${outputPath}`,
