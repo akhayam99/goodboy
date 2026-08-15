@@ -155,10 +155,11 @@ Needs **Node ≥ 20**, **pnpm ≥ 10** and a working **Rust** toolchain. Platfor
 prereqs: <https://v2.tauri.app/start/prerequisites/>. Dev-loop notes:
 [apps/desktop/README.md](./apps/desktop/README.md).
 
-Website maintenance: `pnpm --dir website build:og` regenerates
-`website/public/og-image.png`. The hero headline and subtitle are duplicated
-inside `website/scripts/build-og.mjs`; update that copy with the hero, then
-regenerate the image.
+Website maintenance: `pnpm --dir website build:brand` regenerates
+`website/public/og-image.png` and the four `website/public/brand/*.png`
+social formats. The hero headline and subtitle are duplicated inside
+`website/scripts/build-brand-assets.mjs`; update that copy with the hero,
+then regenerate the images.
 
 **Tauri 2 · React 19 · TypeScript · Tailwind v4 · Zustand · SQLite**, in a
 pnpm + Turborepo monorepo: `apps/desktop` plus `packages/{ui,core,db,types}`.

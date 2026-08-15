@@ -21,6 +21,14 @@ Goodboy runs entirely on your machine, no backend:
 - Conversations and code flow only between you and the providers you
   connected, over their official CLIs or APIs.
 - Local persistence is a SQLite file (`~/.goodboy/data.db`) you own.
+- Every launch appends boot diagnostics to `~/.goodboy/boot-breadcrumbs.log`: a
+  timestamp, a launch id (launch time plus process id), the boot phase, and an
+  outcome word, the milliseconds that phase took, or both. Nothing else reaches
+  the file, because the phase and the detail are both matched against a fixed
+  set of allowed values before the line is written: no arguments, environment
+  values, paths, response bodies or credentials. On macOS and Linux the file is
+  owner-only (`0600`). Past 64 KiB it is renamed to `boot-breadcrumbs.log.1`
+  and a fresh file starts, so at most two are kept.
 - No telemetry, of any kind, ever. Adding it is refused whoever asks.
 
 Caveat: a token you paste for an integration (GitHub, GitLab, Jira,
