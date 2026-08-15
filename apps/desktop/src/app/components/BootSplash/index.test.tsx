@@ -59,3 +59,22 @@ describe('BootSplash slow boot recovery', () => {
     expect(screen.queryByRole('button', { name: /retry/i })).toBeNull();
   });
 });
+
+describe('BootSplash boot handoff', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('removes the static boot shell once react takes over', () => {
+    document.body.insertAdjacentHTML('afterbegin', '<div id="boot-shell"></div>');
+    render(<BootSplash phase="migrating" error={null} />);
+    expect(document.getElementById('boot-shell')).toBeNull();
+  });
+
+  it('offers retry on the error screen', () => {
+    const onRetry = vi.fn();
+    render(<BootSplash phase="migrating" error="boom" onRetry={onRetry} />);
+    fireEvent.click(screen.getByRole('button', { name: /retry/i }));
+    expect(onRetry).toHaveBeenCalledOnce();
+  });
+});
