@@ -14,7 +14,12 @@ type UseMessageQueueArgs = {
 
 const EMPTY: ReadonlyArray<QueuedTurn> = [];
 
-export function useMessageQueue({ agentId, isRunning, dispatchTurn, onEdit }: UseMessageQueueArgs) {
+export const useMessageQueue = ({
+  agentId,
+  isRunning,
+  dispatchTurn,
+  onEdit,
+}: UseMessageQueueArgs) => {
   const queue = useAppStore((s) =>
     agentId ? ((s.agentQueue[agentId] as ReadonlyArray<QueuedTurn> | undefined) ?? EMPTY) : EMPTY,
   );
@@ -89,4 +94,4 @@ export function useMessageQueue({ agentId, isRunning, dispatchTurn, onEdit }: Us
   }, [agentId, setAgentQueue]);
 
   return { queue, enqueue, removeQueued, editQueued, clearQueue };
-}
+};

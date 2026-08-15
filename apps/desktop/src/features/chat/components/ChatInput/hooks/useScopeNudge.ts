@@ -18,7 +18,7 @@ type UseScopeNudgeArgs = {
   readonly isRunning: boolean;
 };
 
-export function useScopeNudge({ session, activeAgentKind, isRunning }: UseScopeNudgeArgs) {
+export const useScopeNudge = ({ session, activeAgentKind, isRunning }: UseScopeNudgeArgs) => {
   const [scopePending, setScopePending] = useState<ScopePending | null>(null);
   const [scopeNudgeEventId, setScopeNudgeEventId] = useState<string | null>(null);
 
@@ -31,9 +31,7 @@ export function useScopeNudge({ session, activeAgentKind, isRunning }: UseScopeN
         outcome,
         new Date().toISOString() as IsoDateTime,
       );
-    } catch {
-      // best-effort
-    }
+    } catch {}
     setScopeNudgeEventId(null);
   };
 
@@ -67,9 +65,7 @@ export function useScopeNudge({ session, activeAgentKind, isRunning }: UseScopeN
         outcome: null,
         outcomeTs: null,
       });
-    } catch {
-      // telemetry is best-effort
-    }
+    } catch {}
     setScopeNudgeEventId(id);
     setScopePending({ content, attachments: atts, mismatch });
     return true;
@@ -83,4 +79,4 @@ export function useScopeNudge({ session, activeAgentKind, isRunning }: UseScopeN
     recordScopeOutcome,
     checkAndInterceptScope,
   };
-}
+};

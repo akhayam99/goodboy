@@ -7,7 +7,7 @@ type KeepAliveWorkSurfaceProps = {
   readonly isActive: boolean;
 };
 
-export function KeepAliveWorkSurface({ sessionId, isActive }: KeepAliveWorkSurfaceProps) {
+export const KeepAliveWorkSurface = ({ sessionId, isActive }: KeepAliveWorkSurfaceProps) => {
   const session = useSessionById(sessionId);
   if (!session) {
     return null;
@@ -17,4 +17,4 @@ export function KeepAliveWorkSurface({ sessionId, isActive }: KeepAliveWorkSurfa
       <SessionWorkspace session={session} isActive={isActive} />
     </div>
   );
-}
+};

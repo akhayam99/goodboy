@@ -90,7 +90,7 @@ const toStop = ({ message, kind }: StopColumns): WorkflowOrchestrationStop | nul
   return { kind: kind as WorkflowOrchestrationStopKind, message };
 };
 
-export function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
+export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
   const orchestrationStop = toStop({
     message: row.orchestration_error,
     kind: row.orchestration_stop_kind,
@@ -129,7 +129,7 @@ export function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
     ...(row.discarded_at != null && { discardedAt: row.discarded_at as IsoDateTime }),
     ...(createdAt != null && { createdAt }),
   };
-}
+};
 
 export const listWorkflowsForSession = async (
   db: Database,

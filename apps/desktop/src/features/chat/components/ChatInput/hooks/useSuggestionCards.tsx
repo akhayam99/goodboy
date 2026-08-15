@@ -29,7 +29,7 @@ type UseSuggestionCardsArgs = {
   readonly acceptSessionNudgeHandoff: (sessionId: SessionId) => Promise<void>;
 };
 
-export function useSuggestionCards({
+export const useSuggestionCards = ({
   session,
   sessionNudge,
   activeAgentKind,
@@ -45,7 +45,7 @@ export function useSuggestionCards({
   onChangeModel,
   dismissSessionNudge,
   acceptSessionNudgeHandoff,
-}: UseSuggestionCardsArgs): { readonly key: string; readonly node: ReactNode }[] {
+}: UseSuggestionCardsArgs): { readonly key: string; readonly node: ReactNode }[] => {
   const suggestions: { readonly key: string; readonly node: ReactNode }[] = [];
 
   if (sessionNudge?.kind === 'plan-ready' && session.workflowRuns.length === 0) {
@@ -139,4 +139,4 @@ export function useSuggestionCards({
   }
 
   return suggestions;
-}
+};

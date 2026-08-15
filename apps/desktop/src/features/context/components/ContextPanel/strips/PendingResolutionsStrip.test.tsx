@@ -7,7 +7,7 @@ import { PendingResolutionsStrip } from './PendingResolutionsStrip';
 const SESSION_ID = 'session-1' as SessionId;
 
 const loadPendingResolutions = vi.fn(async () => undefined);
-const pushAllResolutions = vi.fn(async () => undefined);
+const pushAllResolutions = vi.fn(async () => ({ pushed: true, resolved: 0, failed: 0 }));
 
 const seed = (count: number) => {
   const pending = Array.from(
