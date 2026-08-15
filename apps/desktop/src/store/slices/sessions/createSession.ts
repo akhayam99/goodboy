@@ -408,9 +408,10 @@ export const createSession = (set: SetFn, get: GetFn) => {
         state.currentWorkspaceId === workspaceId ? [session, ...state.sessions] : state.sessions,
       currentSessionId: session.id,
       sessionSummary: null,
-      sessionExternalTasks: externalTaskRow
-        ? { ...state.sessionExternalTasks, [session.id]: [externalTaskRow] }
-        : state.sessionExternalTasks,
+      sessionExternalTasks: {
+        ...state.sessionExternalTasks,
+        [session.id]: externalTaskRow ? [externalTaskRow] : [],
+      },
       sessionWorktrees: {
         ...state.sessionWorktrees,
         [session.id]: [
@@ -431,16 +432,17 @@ export const createSession = (set: SetFn, get: GetFn) => {
         [session.id]: goalText.length > 0 ? [{ key: 'goal', value: goalText, enabled: true }] : [],
       },
       sessionPhaseRuns: { ...state.sessionPhaseRuns, [session.id]: prespawnedRuns },
-      sessionWorkflows: workflowId
-        ? {
-            ...state.sessionWorkflows,
-            [session.id]: (() => {
-              const templates = state.phaseTemplates[workspaceId] ?? [];
-              const tpl = templates.find((t) => t.id === workflowId);
-              return tpl ? [tpl] : [];
-            })(),
+      sessionWorkflows: {
+        ...state.sessionWorkflows,
+        [session.id]: (() => {
+          if (workflowId == null) {
+            return [];
           }
-        : state.sessionWorkflows,
+          const templates = state.phaseTemplates[workspaceId] ?? [];
+          const tpl = templates.find((t) => t.id === workflowId);
+          return tpl ? [tpl] : [];
+        })(),
+      },
       ...workSurfaceFocus({
         sessionId: session.id,
         focus: {
@@ -455,6 +457,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       transcripts: { ...state.transcripts, ...transcriptEntries },
       messages: { ...state.messages, [session.id]: [] },
       sessionOpenQuestions: { ...state.sessionOpenQuestions, [session.id]: [] },
+      sessionPlans: { ...state.sessionPlans, [session.id]: [] },
       agentTurnState: { ...state.agentTurnState, ...turnStateEntries },
       agentModelOverride: { ...get().agentModelOverride, ...agentModelOverrides },
       agentKindOverride: { ...get().agentKindOverride, ...agentKindOverrides },

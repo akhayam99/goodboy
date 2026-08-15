@@ -401,6 +401,59 @@ const NO_LOADING: SessionLoadingFlags = {
 export const useSessionLoading = (sessionId: SessionId | null): SessionLoadingFlags =>
   useAppStore((s) => (sessionId ? (s.sessionLoading[sessionId] ?? NO_LOADING) : NO_LOADING));
 
+type SessionCollection =
+  | 'agents'
+  | 'plans'
+  | 'workflows'
+  | 'reviewDrafts'
+  | 'externalTasks'
+  | 'openQuestions'
+  | 'fileVersions';
+
+type SessionCollectionParams = {
+  readonly state: AppState;
+  readonly sessionId: SessionId;
+  readonly collection: SessionCollection;
+};
+
+const isSessionCollectionLoaded = ({
+  state,
+  sessionId,
+  collection,
+}: SessionCollectionParams): boolean => {
+  switch (collection) {
+    case 'agents':
+      return state.sessionPhaseRuns[sessionId] !== undefined;
+    case 'plans':
+      return state.sessionPlans[sessionId] !== undefined;
+    case 'workflows':
+      return state.sessionWorkflows[sessionId] !== undefined;
+    case 'reviewDrafts':
+      return state.reviewDrafts[sessionId] !== undefined;
+    case 'externalTasks':
+      return state.sessionExternalTasks[sessionId] !== undefined;
+    case 'openQuestions':
+      return state.sessionOpenQuestions[sessionId] !== undefined;
+    case 'fileVersions':
+      return state.sessionFileVersions[sessionId] !== undefined;
+    default: {
+      const exhaustive: never = collection;
+      return exhaustive;
+    }
+  }
+};
+
+type UseSessionCollectionParams = {
+  readonly sessionId: SessionId;
+  readonly collection: SessionCollection;
+};
+
+export const useIsSessionCollectionLoaded = ({
+  sessionId,
+  collection,
+}: UseSessionCollectionParams): boolean =>
+  useAppStore((state) => isSessionCollectionLoaded({ state, sessionId, collection }));
+
 const selectWorkspaces = (state: AppState): ReadonlyArray<Workspace> => state.workspaces;
 const selectCurrentWorkspace = (state: AppState): Workspace | null =>
   state.workspaces.find((w) => w.id === state.currentWorkspaceId) ?? null;

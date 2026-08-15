@@ -12,6 +12,7 @@ export {
   useSessionById,
   useSessionCost,
   useSessionLoading,
+  useIsSessionCollectionLoaded,
   useNonResolverStandaloneAgents,
   useSessionOpenQuestions,
   useSessionPlans,

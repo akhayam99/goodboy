@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
 const { hooks, remote, store } = vi.hoisted(() => {
@@ -31,21 +31,24 @@ const { hooks, remote, store } = vi.hoisted(() => {
       activeLens: {} as Record<string, string | null>,
       setActiveLens: vi.fn(),
       sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionPlans: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
       reviewDrafts: {} as Record<string, ReadonlyArray<unknown>>,
       scriptRuns: {},
       terminalSessions: {},
       sessionGithub: {},
       sessionGitlabMr: {},
       sessionPendingResolutions: {},
-      sessionExternalTasks: {},
+      sessionExternalTasks: {} as Record<string, ReadonlyArray<unknown>>,
       workspaceIntegrations: {},
       sessionLoading: {
         'session-1': { agents: false, plans: false },
       },
       sessionOpenQuestions,
-      sessionFileVersions: {},
+      sessionFileVersions: {} as Record<string, ReadonlyArray<unknown>>,
       sessionFileVersionsLoading: {},
       loadSessionFileVersions: vi.fn(async () => undefined),
+      loadReviewDrafts: vi.fn(async () => undefined),
       archiveTask: vi.fn(async () => undefined),
       deleteTask: vi.fn(async () => undefined),
       unarchiveTask: vi.fn(async () => undefined),
@@ -56,6 +59,24 @@ const { hooks, remote, store } = vi.hoisted(() => {
 vi.mock('../../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
+  useIsSessionCollectionLoaded: ({
+    sessionId,
+    collection,
+  }: {
+    readonly sessionId: string;
+    readonly collection: string;
+  }) => {
+    const records: Record<string, Record<string, ReadonlyArray<unknown>>> = {
+      agents: store.sessionPhaseRuns,
+      plans: store.sessionPlans,
+      workflows: store.sessionWorkflows,
+      reviewDrafts: store.reviewDrafts,
+      externalTasks: store.sessionExternalTasks,
+      openQuestions: store.sessionOpenQuestions,
+      fileVersions: store.sessionFileVersions,
+    };
+    return records[collection]?.[sessionId] !== undefined;
+  },
   useNonResolverStandaloneAgents: () => [
     ...Array.from({ length: hooks.agentCount }, (_, index) => ({
       id: `agent-${index}`,
@@ -143,10 +164,12 @@ beforeEach(() => {
   hooks.summarizerStatus = 'idle';
   hooks.attachedRuns = [];
   hooks.resolverLinks = [];
-  store.sessionPhaseRuns = {};
-  store.reviewDrafts = {};
+  store.sessionPhaseRuns = { 'session-1': [] };
+  store.sessionPlans = { 'session-1': [] };
+  store.sessionWorkflows = { 'session-1': [] };
+  store.reviewDrafts = { 'session-1': [] };
   store.sessionGithub = {};
-  store.sessionExternalTasks = {};
+  store.sessionExternalTasks = { 'session-1': [] };
   store.workspaceIntegrations = {
     'workspace-1': [{ provider: 'linear' }, { provider: 'sentry' }],
   };
@@ -155,6 +178,7 @@ beforeEach(() => {
   store.sessionFileVersions = {};
   store.sessionFileVersionsLoading = {};
   store.loadSessionFileVersions.mockClear();
+  store.loadReviewDrafts.mockClear();
   store.archiveTask.mockClear();
   store.deleteTask.mockClear();
   store.unarchiveTask.mockClear();
@@ -344,7 +368,7 @@ describe('LensNav', () => {
 
     render(<LensNav session={SESSION} filesCount={0} />);
 
-    expect(screen.getByRole('button', { name: 'Agents 3' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Agents Running 3' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Plans 2' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Questions 1' })).toBeDefined();
     expect(screen.queryByTestId('lens-count-loading-agents')).toBeNull();
@@ -372,7 +396,7 @@ describe('LensNav', () => {
 
     render(<LensNav session={SESSION} filesCount={0} />);
 
-    expect(screen.getByRole('button', { name: 'Agents 2' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Agents Running 2' })).toBeDefined();
   });
 
   it('keeps the question badge loading until questions resolve', () => {
@@ -513,7 +537,7 @@ describe('LensNav', () => {
     hooks.liveTerminals = 2;
     render(<LensNav session={SESSION} filesCount={0} />);
 
-    const live = screen.getByRole('button', { name: 'Terminal 2' });
+    const live = screen.getByRole('button', { name: 'Terminal Running 2' });
     expect(live.querySelector('[class*="animate-pulse"]')).not.toBeNull();
   });
 
@@ -532,7 +556,9 @@ describe('LensNav', () => {
 
     for (const label of ['Goal', 'Decisions', 'Session summary']) {
       expect(
-        screen.getByRole('button', { name: label }).querySelector('[class*="animate-pulse"]'),
+        screen
+          .getByRole('button', { name: `${label} Running` })
+          .querySelector('[class*="animate-pulse"]'),
       ).not.toBeNull();
     }
   });
@@ -542,11 +568,63 @@ describe('LensNav', () => {
     const { container } = render(<LensNav session={SESSION} filesCount={0} />);
 
     for (const label of ['Goal', 'Decisions', 'Session summary']) {
-      const row = screen.getByRole('button', { name: label });
+      const row = screen.getByRole('button', { name: `${label} Needs attention` });
       expect(row.querySelector('[class*="bg-warning"]')).not.toBeNull();
       expect(row.querySelector('[class*="animate-pulse"]')).toBeNull();
     }
     expect(container.querySelectorAll('[class*="animate-pulse"]')).toHaveLength(0);
+  });
+
+  it('shimmers a never-loaded count instead of claiming zero', () => {
+    store.sessionWorkflows = {};
+    store.sessionExternalTasks = {};
+
+    render(<LensNav session={SESSION} filesCount={0} />);
+
+    expect(screen.getByTestId('lens-count-loading-workflows')).toBeDefined();
+    expect(screen.getByTestId('lens-count-loading-pr')).toBeDefined();
+    expect(screen.getByTestId('lens-count-loading-linear')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Workflows' }).textContent).not.toContain('0');
+  });
+
+  it('keeps every row mounted and countless when its collection is loaded and empty', () => {
+    render(<LensNav session={SESSION} filesCount={0} />);
+
+    expect(screen.queryByTestId('lens-count-loading-workflows')).toBeNull();
+    expect(screen.queryByTestId('lens-count-loading-pr')).toBeNull();
+    const workflows = screen.getByRole('button', { name: 'Workflows' });
+    expect(workflows).toBeDefined();
+    expect(workflows.textContent).not.toContain('0');
+  });
+
+  it('stops shimmering once the settle window elapses without ever printing a zero', () => {
+    vi.useFakeTimers();
+    store.sessionWorkflows = {};
+
+    render(<LensNav session={SESSION} filesCount={0} />);
+
+    expect(screen.getByTestId('lens-count-loading-workflows')).toBeDefined();
+
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+
+    expect(screen.queryByTestId('lens-count-loading-workflows')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Workflows' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Workflows' }).textContent).not.toContain('0');
+    vi.useRealTimers();
+  });
+
+  it('fetches review drafts for a PR review session whose drafts were never loaded', () => {
+    store.sessionPhaseRuns = {
+      'session-1': [{ id: 'agent-1', name: 'pr review', kind: 'pr-reviewer' }],
+    };
+    store.reviewDrafts = {};
+
+    render(<LensNav session={SESSION} filesCount={0} />);
+
+    expect(store.loadReviewDrafts).toHaveBeenCalledWith('session-1');
+    expect(screen.getByTestId('lens-count-loading-review')).toBeDefined();
   });
 
   it('keeps the pending-push dot on the Resolve row even with zero active resolvers', () => {
@@ -554,7 +632,7 @@ describe('LensNav', () => {
     store.sessionPendingResolutions = { 'session-1': [{}] };
     render(<LensNav session={SESSION} filesCount={0} />);
 
-    const resolveRow = screen.getByRole('button', { name: 'Resolve' });
+    const resolveRow = screen.getByRole('button', { name: 'Resolve Resolutions queued to push' });
     expect(resolveRow.querySelector('[class*="bg-accent"]')).not.toBeNull();
   });
 });

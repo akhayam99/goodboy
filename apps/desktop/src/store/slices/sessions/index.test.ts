@@ -1182,7 +1182,7 @@ describe('store contract', () => {
       expect(cached?.[0]?.sessionId).toBe(session.id);
     });
 
-    it('still creates the session but caches no task when persistence fails', async () => {
+    it('still creates the session and keys an empty task list when persistence fails', async () => {
       const store = await getStore();
       store.setState({ currentWorkspaceId: WS_ID });
       await primeWorktree();
@@ -1196,7 +1196,7 @@ describe('store contract', () => {
         .createSession({ workspaceId: WS_ID, goal: 'do gitlab work', externalTask: GITLAB_TASK });
 
       expect(session.id).toBeDefined();
-      expect(store.getState().sessionExternalTasks[session.id]).toBeUndefined();
+      expect(store.getState().sessionExternalTasks[session.id]).toEqual([]);
     });
   });
 
@@ -1242,6 +1242,28 @@ describe('store contract', () => {
         .createSession({ workspaceId: WS_ID, goal: 'ship it' });
 
       expect(store.getState().sessionOpenQuestions[session.id]).toEqual([]);
+    });
+
+    it('keys both overview collections so the pane never claims a load it never ran', async () => {
+      const store = await getStore();
+      store.setState({ currentWorkspaceId: WS_ID });
+      const { listWorkspaces } = await import('@goodboy/db');
+      (listWorkspaces as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+        buildWorkspace(),
+      ]);
+      createWorktreeSpy.mockResolvedValueOnce({
+        worktreePath: '/tmp/repo/wt',
+        branchName: 'kay/setup-workflow',
+        slug: 'setup-workflow',
+        reused: false,
+      });
+
+      const { session } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'ship it' });
+
+      expect(store.getState().sessionPlans[session.id]).toEqual([]);
+      expect(store.getState().sessionPhaseRuns[session.id]).toBeDefined();
     });
   });
 

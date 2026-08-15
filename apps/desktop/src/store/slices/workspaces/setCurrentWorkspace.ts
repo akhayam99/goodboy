@@ -199,6 +199,9 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       for (const task of externalTasks) {
         externalTasksMap[task.sessionId] = [...(externalTasksMap[task.sessionId] ?? []), task];
       }
+      for (const s of sessions) {
+        externalTasksMap[s.id] = externalTasksMap[s.id] ?? [];
+      }
       set((state) => ({
         sessions: sessionsWithValidActiveMounts,
         sessionWorktrees,
@@ -258,9 +261,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           const attached = [...new Set(s.workflowRuns.map((r) => r.workflowId))]
             .map((wid) => resolveById.get(wid) ?? null)
             .filter((w): w is Workflow => w !== null);
-          if (attached.length > 0) {
-            sessionWorkflows[s.id] = attached;
-          }
+          sessionWorkflows[s.id] = attached;
         }
         const mergedTemplates = [...phaseTemplates, ...extraById.values()];
         set((state) => ({
