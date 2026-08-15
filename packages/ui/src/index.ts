@@ -91,7 +91,6 @@ export type { FieldRowProps } from './components/FieldRow';
 export type { GhostActionButtonProps } from './components/GhostActionButton';
 export { IconButton } from './components/IconButton';
 export type { IconButtonProps } from './components/IconButton';
-export { ConfirmPill } from './components/ConfirmPill';
 export { InlineConfirm } from './components/InlineConfirm';
 export type { ConfirmAltAction, ConfirmRole } from './components/InlineConfirm';
 export { Input } from './components/Input';

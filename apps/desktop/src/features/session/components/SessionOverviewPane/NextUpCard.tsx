@@ -1,13 +1,4 @@
-import {
-  AlertCircle,
-  AlertTriangle,
-  Bot,
-  CircleHelp,
-  GitPullRequest,
-  MessageSquareReply,
-  Upload,
-  XCircle,
-} from 'lucide-react';
+import { AlertCircle, AlertTriangle, Bot, GitPullRequest, Upload, XCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button, Chip, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -19,13 +10,13 @@ type Props = {
 };
 
 const SIGNAL_ICON: Record<NextUpSignal, LucideIcon> = {
-  question: CircleHelp,
+  question: CONCEPT_ICONS.questions,
   review: GitPullRequest,
   checks: XCircle,
   resume: Bot,
   stalled: AlertTriangle,
   errored: AlertCircle,
-  resolve: MessageSquareReply,
+  resolve: CONCEPT_ICONS.resolve,
 };
 
 const SIGNAL_LABEL: Record<NextUpSignal, string> = {
@@ -39,11 +30,11 @@ const SIGNAL_LABEL: Record<NextUpSignal, string> = {
 };
 
 const ITEM_ICON: Record<NextUpItem['id'], LucideIcon> = {
-  question: CircleHelp,
+  question: CONCEPT_ICONS.questions,
   review: GitPullRequest,
   checks: XCircle,
   resume: Bot,
-  resolve: MessageSquareReply,
+  resolve: CONCEPT_ICONS.resolve,
   'pending-push': Upload,
   stalled: CONCEPT_ICONS.workflows,
   errored: AlertCircle,

@@ -76,6 +76,48 @@ describe('PaneShell', () => {
     }) as HTMLElement;
     expect(column.className).toContain(PANE_RHYTHM.measure.full);
   });
+
+  it('renders a custom header in place of the title block when given one', () => {
+    render(
+      <PaneShell header={<h1>Custom header</h1>}>
+        <p>Body copy</p>
+      </PaneShell>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Custom header' })).toBeDefined();
+    expect(screen.getAllByRole('heading')).toHaveLength(1);
+    expect(screen.getByText('Body copy')).toBeDefined();
+  });
+
+  it('mounts with the studio-in animation by default', () => {
+    render(
+      <PaneShell title="Linear">
+        <p>Body copy</p>
+      </PaneShell>,
+    );
+
+    const column = closestWith({
+      node: screen.getByText('Body copy'),
+      pattern: /^max-w-/,
+    }) as HTMLElement;
+    expect(column.className).toContain('motion-safe:animate-studio-in');
+    expect(column.className).not.toContain('animate-fade-in');
+  });
+
+  it('lets a consumer override the mount animation without touching the default', () => {
+    render(
+      <PaneShell header={<h1>Custom header</h1>} animationClassName="animate-fade-in">
+        <p>Body copy</p>
+      </PaneShell>,
+    );
+
+    const column = closestWith({
+      node: screen.getByText('Body copy'),
+      pattern: /^max-w-/,
+    }) as HTMLElement;
+    expect(column.className).toContain('animate-fade-in');
+    expect(column.className).not.toContain('motion-safe:animate-studio-in');
+  });
 });
 
 describe('FocusedPane', () => {
