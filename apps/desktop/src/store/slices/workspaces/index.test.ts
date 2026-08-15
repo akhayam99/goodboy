@@ -814,6 +814,46 @@ describe('store contract', () => {
       expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual(tasks);
     });
 
+    it('keys every loaded session so an absent key can only mean a missing load', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      vi.mocked(db.listSessionsForWorkspace).mockResolvedValueOnce([
+        buildSession(),
+        buildSession({ id: SESSION_ID_2 }),
+      ]);
+      vi.mocked(db.listExternalTasksForWorkspace).mockResolvedValueOnce([]);
+      store.setState({ workspaces: [buildWorkspace()] });
+
+      await store.getState().setCurrentWorkspace(WS_ID);
+
+      const state = store.getState();
+      expect(Object.keys(state.sessionExternalTasks).sort()).toEqual(
+        [SESSION_ID, SESSION_ID_2].sort(),
+      );
+      expect(state.sessionExternalTasks[SESSION_ID]).toEqual([]);
+      expect(state.sessionExternalTasks[SESSION_ID_2]).toEqual([]);
+    });
+
+    it('keys every session in the deferred workflow pass, empty attachments included', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      vi.mocked(db.listSessionsForWorkspace).mockResolvedValueOnce([
+        buildSession(),
+        buildSession({ id: SESSION_ID_2 }),
+      ]);
+      store.setState({ workspaces: [buildWorkspace()] });
+
+      await store.getState().setCurrentWorkspace(WS_ID);
+
+      await vi.waitFor(() => {
+        expect(Object.keys(store.getState().sessionWorkflows).sort()).toEqual(
+          [SESSION_ID, SESSION_ID_2].sort(),
+        );
+      });
+      expect(store.getState().sessionWorkflows[SESSION_ID]).toEqual([]);
+      expect(store.getState().sessionWorkflows[SESSION_ID_2]).toEqual([]);
+    });
+
     it('renames a workspace without touching its path on disk', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');
