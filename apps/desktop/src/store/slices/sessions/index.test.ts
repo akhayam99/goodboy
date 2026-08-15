@@ -1243,6 +1243,28 @@ describe('store contract', () => {
 
       expect(store.getState().sessionOpenQuestions[session.id]).toEqual([]);
     });
+
+    it('keys both overview collections so the pane never claims a load it never ran', async () => {
+      const store = await getStore();
+      store.setState({ currentWorkspaceId: WS_ID });
+      const { listWorkspaces } = await import('@goodboy/db');
+      (listWorkspaces as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+        buildWorkspace(),
+      ]);
+      createWorktreeSpy.mockResolvedValueOnce({
+        worktreePath: '/tmp/repo/wt',
+        branchName: 'kay/setup-workflow',
+        slug: 'setup-workflow',
+        reused: false,
+      });
+
+      const { session } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'ship it' });
+
+      expect(store.getState().sessionPlans[session.id]).toEqual([]);
+      expect(store.getState().sessionPhaseRuns[session.id]).toBeDefined();
+    });
   });
 
   describe('session external task links', () => {

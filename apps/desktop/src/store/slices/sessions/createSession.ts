@@ -457,6 +457,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       transcripts: { ...state.transcripts, ...transcriptEntries },
       messages: { ...state.messages, [session.id]: [] },
       sessionOpenQuestions: { ...state.sessionOpenQuestions, [session.id]: [] },
+      sessionPlans: { ...state.sessionPlans, [session.id]: [] },
       agentTurnState: { ...state.agentTurnState, ...turnStateEntries },
       agentModelOverride: { ...get().agentModelOverride, ...agentModelOverrides },
       agentKindOverride: { ...get().agentKindOverride, ...agentKindOverrides },
