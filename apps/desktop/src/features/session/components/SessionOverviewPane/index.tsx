@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Divider, Eyebrow, ScrollFade, cn } from '@goodboy/ui';
+import { Divider, Eyebrow } from '@goodboy/ui';
 import { classifyWorkflowChain, runsForWorkflowRun, upcomingSteps } from '@goodboy/core';
 import type { Agent, AgentId, Session, SessionId, Workflow } from '@goodboy/types';
 import {
@@ -21,6 +21,7 @@ import {
   type AgentHomeLens,
 } from '../../agent-kind';
 import { useActiveResolverCount } from '../../hooks/useActiveResolverCount';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { selectOpenQuestions } from './lib';
 import {
   selectNextUp,
@@ -36,7 +37,6 @@ import { LinkedWorkSection } from './LinkedWorkSection';
 import { NextUpCard } from './NextUpCard';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
-import { PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
   readonly session: Session;
@@ -253,44 +253,34 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   };
 
   return (
-    <ScrollFade className="h-full" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-      <div
-        className={cn(
-          'animate-fade-in flex flex-col',
-          PANE_RHYTHM.column,
-          PANE_RHYTHM.stack,
-          PANE_RHYTHM.measure.pane,
+    <PaneShell header={<HeaderBand session={session} stage={stage} />}>
+      <Divider />
+      <section aria-label="Next up" className="flex flex-col gap-2">
+        <Eyebrow label="Next up" muted className="px-0.5 font-medium" />
+        {nextUp !== null ? (
+          <NextUpCard item={nextUp} onAct={() => actOnNextUp({ item: nextUp })} />
+        ) : (
+          <LensEmptyState
+            icon={CONCEPT_ICONS.nextUp}
+            tone={CONCEPT_TONE.nextUp}
+            title="Nothing needs you right now"
+            description="Every agent, question, and review on this session is settled. Start work from the activity below."
+          />
         )}
-      >
-        <HeaderBand session={session} stage={stage} />
-        <Divider />
-        <section aria-label="Next up" className="flex flex-col gap-2">
-          <Eyebrow label="Next up" muted className="px-0.5 font-medium" />
-          {nextUp !== null ? (
-            <NextUpCard item={nextUp} onAct={() => actOnNextUp({ item: nextUp })} />
-          ) : (
-            <LensEmptyState
-              icon={CONCEPT_ICONS.nextUp}
-              tone={CONCEPT_TONE.nextUp}
-              title="Nothing needs you right now"
-              description="Every agent, question, and review on this session is settled. Start work from the activity below."
-            />
-          )}
-        </section>
-        <Divider />
-        <LinkedWorkSection sessionId={sessionId} onSelectLens={onSelectLens} />
-        <Divider />
-        <ActivitySection
-          session={session}
-          workspaceId={workspace?.id ?? null}
-          runs={runs}
-          isFresh={isFresh}
-          resolveCount={resolveCount}
-          onOpenWorkflowBuilder={openWorkflowBuilder}
-          onFocusCompletedRun={(runId) => setFocusedWorkflowRun(sessionId, runId)}
-          onSelectLens={onSelectLens}
-        />
-      </div>
-    </ScrollFade>
+      </section>
+      <Divider />
+      <LinkedWorkSection sessionId={sessionId} onSelectLens={onSelectLens} />
+      <Divider />
+      <ActivitySection
+        session={session}
+        workspaceId={workspace?.id ?? null}
+        runs={runs}
+        isFresh={isFresh}
+        resolveCount={resolveCount}
+        onOpenWorkflowBuilder={openWorkflowBuilder}
+        onFocusCompletedRun={(runId) => setFocusedWorkflowRun(sessionId, runId)}
+        onSelectLens={onSelectLens}
+      />
+    </PaneShell>
   );
 };

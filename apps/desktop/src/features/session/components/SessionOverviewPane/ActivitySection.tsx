@@ -1,4 +1,5 @@
 import { Button, Eyebrow } from '@goodboy/ui';
+import type { Tone } from '@goodboy/ui';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -20,6 +21,13 @@ type Props = {
   readonly onFocusCompletedRun: (runId: string) => void;
   readonly onSelectLens: (lens: LensKind) => void;
 };
+
+const ACTIVITY_STATE_TONE_OVERRIDE = {
+  blockedWorkflows: 'danger',
+  activeResolvers: 'neutral',
+  completedWorkflows: 'neutral',
+  completedAgents: 'neutral',
+} satisfies Record<string, Tone>;
 
 export const ActivitySection = ({
   session,
@@ -84,7 +92,7 @@ export const ActivitySection = ({
           {blockedLanes.length > 0 ? (
             <SummaryRow
               icon={CONCEPT_ICONS.workflows}
-              tone="danger"
+              tone={ACTIVITY_STATE_TONE_OVERRIDE.blockedWorkflows}
               label={
                 blockedLanes.length === 1
                   ? '1 blocked workflow'
@@ -96,7 +104,7 @@ export const ActivitySection = ({
           {resolveCount > 0 ? (
             <SummaryRow
               icon={CONCEPT_ICONS.resolve}
-              tone="neutral"
+              tone={ACTIVITY_STATE_TONE_OVERRIDE.activeResolvers}
               label={resolveCount === 1 ? '1 active resolver' : `${resolveCount} active resolvers`}
               onClick={() => onSelectLens('resolve')}
             />
@@ -104,7 +112,7 @@ export const ActivitySection = ({
           {completedLanes.length > 0 ? (
             <SummaryRow
               icon={CONCEPT_ICONS.decisions}
-              tone="neutral"
+              tone={ACTIVITY_STATE_TONE_OVERRIDE.completedWorkflows}
               label={
                 completedLanes.length === 1
                   ? '1 completed workflow'
@@ -116,7 +124,7 @@ export const ActivitySection = ({
           {completedAgents.length > 0 ? (
             <SummaryRow
               icon={CONCEPT_ICONS.agents}
-              tone="neutral"
+              tone={ACTIVITY_STATE_TONE_OVERRIDE.completedAgents}
               label={
                 completedAgents.length === 1
                   ? '1 completed agent'

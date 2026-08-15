@@ -76,6 +76,18 @@ describe('PaneShell', () => {
     }) as HTMLElement;
     expect(column.className).toContain(PANE_RHYTHM.measure.full);
   });
+
+  it('renders a custom header in place of the title block when given one', () => {
+    render(
+      <PaneShell header={<h1>Custom header</h1>}>
+        <p>Body copy</p>
+      </PaneShell>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Custom header' })).toBeDefined();
+    expect(screen.getAllByRole('heading')).toHaveLength(1);
+    expect(screen.getByText('Body copy')).toBeDefined();
+  });
 });
 
 describe('FocusedPane', () => {
