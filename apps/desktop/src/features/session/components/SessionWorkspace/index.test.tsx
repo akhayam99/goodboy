@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import type { Agent, Session } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
 
@@ -14,6 +14,7 @@ type Store = {
   sessionActiveMount: Record<string, string>;
   sessionStudio: Record<string, null>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
+  sessionPlans: Record<string, ReadonlyArray<unknown>>;
   sessionTelemetry: Record<string, ReadonlyArray<never>>;
   messages: Record<string, ReadonlyArray<never>>;
   agentRunHistory: Record<string, ReadonlyArray<never>>;
@@ -36,6 +37,8 @@ type Store = {
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
   setFocusedPlanId: ReturnType<typeof vi.fn>;
   reconcileSessionBranch: ReturnType<typeof vi.fn>;
+  loadPhaseRunsForSession: ReturnType<typeof vi.fn>;
+  loadSessionPlans: ReturnType<typeof vi.fn>;
 };
 
 type PaneShellMockProps = {
@@ -56,6 +59,7 @@ const { store, hooks } = vi.hoisted(() => ({
     sessionActiveMount: {},
     sessionStudio: {},
     sessionPhaseRuns: {},
+    sessionPlans: {},
     sessionTelemetry: {},
     messages: {},
     agentRunHistory: {},
@@ -78,6 +82,8 @@ const { store, hooks } = vi.hoisted(() => ({
     setFocusedWorkflowRun: vi.fn(),
     setFocusedPlanId: vi.fn(),
     reconcileSessionBranch: vi.fn(async () => undefined),
+    loadPhaseRunsForSession: vi.fn(async () => undefined),
+    loadSessionPlans: vi.fn(async () => undefined),
   } as Store,
   hooks: {
     agentHome: 'workflows' as LensKind,
@@ -94,6 +100,21 @@ vi.mock('../../../../store', () => ({
     (agent.lastViewedAt == null || agent.lastFinishedAt > agent.lastViewedAt),
   readPersistedLens: () => null,
   useAppStore: <T,>(selector: (state: Store) => T) => selector(store),
+  useIsSessionCollectionLoaded: ({
+    sessionId,
+    collection,
+  }: {
+    readonly sessionId: string;
+    readonly collection: string;
+  }) => {
+    const records: Record<string, Record<string, ReadonlyArray<unknown>>> = {
+      agents: store.sessionPhaseRuns,
+      plans: store.sessionPlans,
+      workflows: store.sessionWorkflows,
+      externalTasks: store.sessionExternalTasks,
+    };
+    return records[collection]?.[sessionId] !== undefined;
+  },
   useFilesTouched: () => ({ paths: [], count: 0, additions: 0, deletions: 0 }),
   useSessionPlans: () => [],
   useSessionOpenQuestions: () => hooks.openQuestions,
@@ -247,6 +268,7 @@ beforeEach(() => {
   store.sessionActiveMount = {};
   store.sessionStudio = { [SESSION_ID]: null };
   store.sessionPhaseRuns = { [SESSION_ID]: [selectedAgent] };
+  store.sessionPlans = { [SESSION_ID]: [] };
   store.focusedWorkflowRunId = {};
   store.phaseTemplates = {};
   store.sessionWorkflows = {};
@@ -261,6 +283,8 @@ beforeEach(() => {
   store.agentKindOverride = {};
   store.sessionLoading = {};
   store.setActiveLens.mockReset();
+  store.loadPhaseRunsForSession.mockClear();
+  store.loadSessionPlans.mockClear();
   hooks.agentHome = 'workflows';
   hooks.openQuestions = [];
 });
@@ -789,10 +813,10 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 });
 
 describe('SessionWorkspace overview', () => {
-  it('renders the overview skeleton while key session data is loading', () => {
+  it('renders the overview skeleton while agents have never loaded', () => {
     store.activeLens = { [SESSION_ID]: null };
     store.selectedAgentId = {};
-    store.sessionLoading = { [SESSION_ID]: { agents: true, plans: false } };
+    store.sessionPhaseRuns = {};
 
     render(<SessionWorkspace session={session} isActive />);
 
@@ -800,10 +824,10 @@ describe('SessionWorkspace overview', () => {
     expect(screen.queryByRole('region', { name: 'Session overview' })).toBeNull();
   });
 
-  it('keeps the overview skeleton visible while plans are loading', () => {
+  it('keeps the overview skeleton visible while plans have never loaded', () => {
     store.activeLens = { [SESSION_ID]: null };
     store.selectedAgentId = {};
-    store.sessionLoading = { [SESSION_ID]: { agents: false, plans: true } };
+    store.sessionPlans = {};
 
     render(<SessionWorkspace session={session} isActive />);
 
@@ -811,7 +835,20 @@ describe('SessionWorkspace overview', () => {
     expect(screen.queryByRole('region', { name: 'Session overview' })).toBeNull();
   });
 
-  it('renders cached overview content immediately when key loads are done', () => {
+  it('skeletons a never-started load rather than claiming an empty overview', () => {
+    store.activeLens = { [SESSION_ID]: null };
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = {};
+    store.sessionPlans = {};
+    store.sessionLoading = { [SESSION_ID]: { agents: false, plans: false } };
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByRole('status', { name: 'Loading session overview' })).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Session overview' })).toBeNull();
+  });
+
+  it('renders cached overview content immediately when both collections are keyed', () => {
     store.activeLens = { [SESSION_ID]: null };
     store.selectedAgentId = {};
     store.sessionLoading = { [SESSION_ID]: { agents: false, plans: false } };
@@ -820,6 +857,30 @@ describe('SessionWorkspace overview', () => {
 
     expect(screen.getByRole('region', { name: 'Session overview' })).toBeDefined();
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
+  });
+
+  it('turns a stalled skeleton into a retryable failure instead of shimmering forever', () => {
+    vi.useFakeTimers();
+    store.activeLens = { [SESSION_ID]: null };
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = {};
+    store.sessionPlans = {};
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByRole('status', { name: 'Loading session overview' })).toBeDefined();
+
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+
+    expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
+    expect(screen.getByText('This session did not finish loading')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: /retry/i }));
+    expect(store.loadPhaseRunsForSession).toHaveBeenCalledWith(SESSION_ID);
+    expect(store.loadSessionPlans).toHaveBeenCalledWith(SESSION_ID);
+    vi.useRealTimers();
   });
 });
 

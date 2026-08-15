@@ -10,6 +10,7 @@ import {
   agentHasUnread,
   readPersistedLens,
   useAppStore,
+  useIsSessionCollectionLoaded,
   useSessionOpenQuestions,
 } from '../../../../store';
 import type { LensKind } from '../../../../store';
@@ -36,7 +37,7 @@ import { LinkTicketPopover } from './parts/IntegrationPane/LinkTicketPopover';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { isStandaloneAgent, resolveRootAgent } from '../../agent-kind';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
-import { SessionOverviewSkeleton } from './parts/SessionOverviewSkeleton';
+import { SessionOverviewLoading } from './parts/SessionOverviewLoading';
 import { ReviewBoardPane } from '../../../review/components/ReviewBoardPane';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
@@ -85,7 +86,10 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId[sessionId] ?? null);
   const attachedWorkflowRuns = useAttachedWorkflowRuns({ session });
   const openQuestions = useSessionOpenQuestions(sessionId);
-  const sessionLoading = useAppStore((s) => s.sessionLoading[sessionId]);
+  const areAgentsLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'agents' });
+  const arePlansLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'plans' });
+  const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
+  const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
 
   useEffect(() => {
     if (activeLens === undefined) {
@@ -94,8 +98,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   }, [activeLens, sessionId, setActiveLens]);
 
   const lens: LensKind | null = activeLens ?? null;
-  const isOverviewLoading = sessionLoading?.agents === true || sessionLoading?.plans === true;
+  const isOverviewLoaded = areAgentsLoaded && arePlansLoaded;
   const isFreshOverviewLayout = session.workflowRuns.every((run) => run.discardedAt != null);
+  const onRetryOverview = () => {
+    void loadPhaseRunsForSession(sessionId);
+    void loadSessionPlans(sessionId);
+  };
   const onSelectLens = (next: LensKind) => {
     setActiveLens(sessionId, next);
   };
@@ -261,10 +269,13 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
         {showLens ? (
           <div className="absolute inset-0 z-0">
             {lens === null ? (
-              isOverviewLoading ? (
-                <SessionOverviewSkeleton isFreshLayout={isFreshOverviewLayout} />
-              ) : (
+              isOverviewLoaded ? (
                 <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
+              ) : (
+                <SessionOverviewLoading
+                  isFreshLayout={isFreshOverviewLayout}
+                  onRetry={onRetryOverview}
+                />
               )
             ) : null}
             {lens === 'questions' ? <QuestionsPane session={session} /> : null}

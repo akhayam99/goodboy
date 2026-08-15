@@ -134,7 +134,7 @@ vi.mock('../../routing', () => ({
 }));
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
+import { act, cleanup, render } from '@testing-library/react';
 import type { AppStore } from '../../store/store';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../store';
@@ -179,6 +179,7 @@ import { DeleteSessionConfirm } from '../../features/session/components/DeleteSe
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';
 import { TranscriptCard } from '../../features/chat/components/TranscriptCards';
+import { SessionOverviewLoading } from '../../features/session/components/SessionWorkspace/parts/SessionOverviewLoading';
 import { ToastProvider } from '../../app/components/Toast';
 
 afterEach(cleanup);
@@ -295,6 +296,27 @@ describe('snapshot, error states', () => {
   it('BootSplash: boot-error phase', () => {
     const { container } = render(<BootSplash phase="error" error="detecting-cli failed" />);
     expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('SessionOverviewLoading: silent skeleton before the settle window', () => {
+    vi.useFakeTimers();
+    const { container } = render(
+      <SessionOverviewLoading isFreshLayout={false} onRetry={vi.fn()} />,
+    );
+    expect(container.firstChild).toMatchSnapshot();
+    vi.useRealTimers();
+  });
+
+  it('SessionOverviewLoading: retryable failure after the settle window', () => {
+    vi.useFakeTimers();
+    const { container } = render(
+      <SessionOverviewLoading isFreshLayout={false} onRetry={vi.fn()} />,
+    );
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+    expect(container.firstChild).toMatchSnapshot();
+    vi.useRealTimers();
   });
 
   it('TranscriptCard: turn error item', () => {

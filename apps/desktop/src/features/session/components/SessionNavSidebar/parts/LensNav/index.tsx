@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { LayoutDashboard, Unplug } from 'lucide-react';
 import { Divider, KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
@@ -9,6 +9,7 @@ import { isPrReviewSession } from '../../../../../../store/slices/session-view';
 import {
   EMPTY_ARRAY,
   useAppStore,
+  useIsSessionCollectionLoaded,
   useLiveTerminalCount,
   useNonResolverStandaloneAgents,
   useSessionOpenQuestions,
@@ -31,6 +32,8 @@ import type { LensDot, LensRow } from './groups';
 import { CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { SIMPLE_LENSES } from '../../../../lens-labels';
 import { shortcutGlyphs } from '../../../../../../shared/keyboard/registry';
+
+const LENS_COUNT_SETTLE_MS = 10_000;
 
 type Props = {
   readonly session: Session;
@@ -69,9 +72,32 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
   const loading = useAppStore((s) => s.sessionLoading[sessionId]);
   const fileVersions = useAppStore((s) => s.sessionFileVersions[sessionId] ?? EMPTY_ARRAY);
   const loadSessionFileVersions = useAppStore((s) => s.loadSessionFileVersions);
+  const loadReviewDrafts = useAppStore((s) => s.loadReviewDrafts);
   const areAgentsLoading = loading?.agents === true;
   const arePlansLoading = loading?.plans === true;
-  const areQuestionsLoading = useAppStore((s) => s.sessionOpenQuestions[sessionId] === undefined);
+  const areQuestionsKeyed = useAppStore((s) => s.sessionOpenQuestions[sessionId] !== undefined);
+  const [hasSettleElapsed, setHasSettleElapsed] = useState(false);
+  const areWorkflowsLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'workflows' });
+  const areReviewDraftsLoaded = useIsSessionCollectionLoaded({
+    sessionId,
+    collection: 'reviewDrafts',
+  });
+  const areExternalTasksLoaded = useIsSessionCollectionLoaded({
+    sessionId,
+    collection: 'externalTasks',
+  });
+  const areFileVersionsLoaded = useIsSessionCollectionLoaded({
+    sessionId,
+    collection: 'fileVersions',
+  });
+  const isCountUnknown = (isLoaded: boolean): boolean => !isLoaded && !hasSettleElapsed;
+  const areQuestionsLoading = isCountUnknown(areQuestionsKeyed);
+
+  useEffect(() => {
+    setHasSettleElapsed(false);
+    const timer = window.setTimeout(() => setHasSettleElapsed(true), LENS_COUNT_SETTLE_MS);
+    return () => window.clearTimeout(timer);
+  }, [sessionId]);
   const openCount = selectOpenQuestions(useSessionOpenQuestions(sessionId)).length;
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
@@ -146,6 +172,12 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
     (s) => (s.sessionPendingResolutions[sessionId]?.length ?? 0) > 0,
   );
   const isPrReview = useMemo(() => isPrReviewSession({ agents: phaseRuns }), [phaseRuns]);
+  useEffect(() => {
+    if (!isPrReview || areReviewDraftsLoaded) {
+      return;
+    }
+    void loadReviewDrafts(sessionId);
+  }, [isPrReview, areReviewDraftsLoaded, loadReviewDrafts, sessionId]);
   const reviewDraftCount = useAppStore(
     (s) =>
       (s.reviewDrafts[sessionId] ?? EMPTY_ARRAY).filter((draft) => draft.status === 'draft').length,
@@ -201,7 +233,9 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
       glyph: 'github',
       tone: CONCEPT_TONE.pr,
       count: githubCount,
+      isCountLoading: isCountUnknown(areExternalTasksLoaded),
       secondaryDot: hasGithubPr,
+      secondaryDotLabel: 'Pull request linked',
       isConnected: githubConnection.isConnected,
     },
     {
@@ -210,7 +244,9 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
       glyph: 'gitlab',
       tone: CONCEPT_TONE.gitlab,
       count: gitlabCount,
+      isCountLoading: isCountUnknown(areExternalTasksLoaded),
       secondaryDot: hasGitlabMr,
+      secondaryDotLabel: 'Merge request linked',
       isConnected: gitlabConnection.isConnected,
     },
     {
@@ -219,6 +255,7 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
       glyph: 'jira',
       tone: CONCEPT_TONE.jira,
       count: jiraCount,
+      isCountLoading: isCountUnknown(areExternalTasksLoaded),
       isConnected: jiraConnection.isConnected,
     },
     {
@@ -227,6 +264,7 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
       glyph: 'linear',
       tone: CONCEPT_TONE.linear,
       count: linearCount,
+      isCountLoading: isCountUnknown(areExternalTasksLoaded),
       isConnected: linearConnection.isConnected,
     },
     {
@@ -235,6 +273,7 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
       glyph: 'sentry',
       tone: CONCEPT_TONE.sentry,
       count: sentryCount,
+      isCountLoading: isCountUnknown(areExternalTasksLoaded),
       isConnected: sentryConnection.isConnected,
     },
     {
@@ -243,6 +282,7 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
       glyph: 'slack',
       tone: CONCEPT_TONE.slack,
       count: slackCount,
+      isCountLoading: isCountUnknown(areExternalTasksLoaded),
       isConnected: slackConnection.isConnected,
     },
   ];
@@ -274,6 +314,9 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
     diffstat: isBranchless ? undefined : diffstat,
     activePlans,
     arePlansLoading,
+    areWorkflowsLoading: isCountUnknown(areWorkflowsLoaded),
+    areReviewDraftsLoading: isCountUnknown(areReviewDraftsLoaded),
+    areFilesLoading: isBranchless && isCountUnknown(areFileVersionsLoaded),
     runningScripts,
     summarizerDot,
     liveTerminals,
@@ -347,7 +390,9 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
                     row.secondaryDot === true ||
                     row.isConnected === false;
                   const glyphRowLabel =
-                    row.count != null && row.count > 0 ? `${row.label} ${row.count}` : row.label;
+                    row.isCountLoading !== true && row.count != null && row.count > 0
+                      ? `${row.label} ${row.count}`
+                      : row.label;
                   const iconEmphasis = cn(
                     active && 'opacity-100',
                     !active && rowWantsAttention ? 'opacity-90' : null,
@@ -424,9 +469,15 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
                                 </span>
                               ) : row.count != null && row.count > 0 ? (
                                 <span className="flex shrink-0 items-center gap-1.5">
-                                  {row.secondaryDot ? <StatusDot tone="accent" size="sm" /> : null}
+                                  {row.secondaryDot ? (
+                                    <StatusDot
+                                      tone="accent"
+                                      size="sm"
+                                      ariaLabel={row.secondaryDotLabel ?? row.label}
+                                    />
+                                  ) : null}
                                   {row.dot === 'running' ? (
-                                    <StatusDot tone="info" size="sm" pulsing />
+                                    <StatusDot tone="info" size="sm" pulsing ariaLabel="Running" />
                                   ) : null}
                                   <span
                                     className={cn(
@@ -444,9 +495,16 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
                                   tone={row.dot === 'attention' ? 'warning' : 'info'}
                                   size="sm"
                                   pulsing={row.dot === 'running'}
+                                  ariaLabel={
+                                    row.dot === 'attention' ? 'Needs attention' : 'Running'
+                                  }
                                 />
                               ) : row.secondaryDot ? (
-                                <StatusDot tone="accent" size="sm" />
+                                <StatusDot
+                                  tone="accent"
+                                  size="sm"
+                                  ariaLabel={row.secondaryDotLabel ?? row.label}
+                                />
                               ) : null}
                               {row.isConnected === false ? (
                                 <span

@@ -21,6 +21,7 @@ export type LensRow = {
   readonly isCountLoading?: boolean;
   readonly dot?: LensDot;
   readonly secondaryDot?: boolean;
+  readonly secondaryDotLabel?: string;
   readonly isConnected?: boolean;
   readonly repoOnly?: boolean;
 };
@@ -52,6 +53,9 @@ type Params = {
   };
   readonly activePlans: number;
   readonly arePlansLoading: boolean;
+  readonly areWorkflowsLoading: boolean;
+  readonly areReviewDraftsLoading: boolean;
+  readonly areFilesLoading: boolean;
   readonly runningScripts: number;
   readonly summarizerDot?: LensDot;
   readonly liveTerminals: number;
@@ -99,6 +103,9 @@ export const buildLensGroups = ({
   diffstat,
   activePlans,
   arePlansLoading,
+  areWorkflowsLoading,
+  areReviewDraftsLoading,
+  areFilesLoading,
   runningScripts,
   summarizerDot,
   liveTerminals,
@@ -146,6 +153,7 @@ export const buildLensGroups = ({
                 icon: CONCEPT_ICONS.review,
                 tone: CONCEPT_TONE.review,
                 count: reviewDraftCount,
+                isCountLoading: areReviewDraftsLoading,
                 repoOnly: true,
               } satisfies LensRow,
             ]
@@ -156,6 +164,7 @@ export const buildLensGroups = ({
           icon: CONCEPT_ICONS.workflows,
           tone: CONCEPT_TONE.workflows,
           count: activeWorkflows,
+          isCountLoading: areWorkflowsLoading,
           ...flags('workflows'),
         },
         {
@@ -176,6 +185,7 @@ export const buildLensGroups = ({
           isCountLoading: areAgentsLoading,
           ...flags('resolve'),
           secondaryDot: hasPendingBatch,
+          secondaryDotLabel: 'Resolutions queued to push',
           repoOnly: true,
         },
         {
@@ -200,6 +210,7 @@ export const buildLensGroups = ({
                 icon: CONCEPT_ICONS.diff,
                 tone: CONCEPT_TONE.diff,
                 count: filesCount,
+                isCountLoading: areFilesLoading,
               } satisfies LensRow,
             ]
           : [
@@ -254,7 +265,7 @@ export const buildLensGroups = ({
   ];
 
   if (!isBranchless) {
-    return groups.filter((group) => group.rows.length > 0 || group.label === 'Integrations');
+    return groups;
   }
 
   return groups

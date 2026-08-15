@@ -1182,7 +1182,7 @@ describe('store contract', () => {
       expect(cached?.[0]?.sessionId).toBe(session.id);
     });
 
-    it('still creates the session but caches no task when persistence fails', async () => {
+    it('still creates the session and keys an empty task list when persistence fails', async () => {
       const store = await getStore();
       store.setState({ currentWorkspaceId: WS_ID });
       await primeWorktree();
@@ -1196,7 +1196,7 @@ describe('store contract', () => {
         .createSession({ workspaceId: WS_ID, goal: 'do gitlab work', externalTask: GITLAB_TASK });
 
       expect(session.id).toBeDefined();
-      expect(store.getState().sessionExternalTasks[session.id]).toBeUndefined();
+      expect(store.getState().sessionExternalTasks[session.id]).toEqual([]);
     });
   });
 
