@@ -9,39 +9,35 @@ if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
 ## Goodboy v0.1.79
 
-The resolver becomes a dashboard, a run gets a spending limit, and the surfaces that report on finished work stop under-reporting it.
+The resolver becomes a dashboard, a run gets a spending limit you set yourself, and two counts that disagreed about your session become one.
 
 ### [#1386] Every resolver thread offers a next action
 
 Resolver detail opens on a dashboard instead of a transcript: a run recap card on top, a lead and contextual actions per thread, and the transcript demoted to a tab.
 
-Every thread state now offers a next action. The hint-collection actions that went missing on `fix` and `rework` are back, and every lock, whether the agent is queued, running or resolved, or the thread is batched or busy, runs through one gate. A locked action shows as a disabled button with the reason, rather than disappearing.
+Every thread state now offers a next action. Hints can be attached to the fix-anyway and rework actions rather than only to redo, and every lock, whether the agent is queued, running or resolved, or the thread is batched or busy, runs through one gate. A locked action shows as a disabled button with the reason. Before this, a busy or locked thread could offer nothing at all.
 
 Run summaries go through a single codec. The orchestrator emits its done and remaining counts as JSON, and the desktop summary falls back to the older markdown when the shared parser returns nothing.
 
 ### [#1382] Set what a run is allowed to spend
 
-A run's step ceiling was a fixed number in the code. It is now a spending limit in dollars that you set per run, from a popover on the run's meta row, in the orchestrator panel and in the workflow creation form. It defaults to unlimited, and you choose whether hitting it notifies you or pauses the run.
+A run's step ceiling was a fixed number in the code. It is now a spending limit in dollars that you set per run, from a popover on the run's meta row, in the orchestrator panel and in the workflow creation form, and you choose whether hitting it notifies you or pauses the run. The fixed ceiling is gone with it, and the limit defaults to unlimited, so a dynamic run has no automatic stop until you set one.
 
 The orchestrator sizes its own step count from the goal and the process rather than against a fixed ceiling, and consolidates the work that is left as it approaches the limit.
 
-### [#1390] The overview and the sidebar agree on what is left to resolve
+### [#1390] One count of active resolvers feeds the overview and the sidebar
 
 The session overview counted five different things and called the total comments to resolve, while the Resolve row in the sidebar counted something else. The two numbers came from separate code and could disagree, so the overview could say nothing needs you while the sidebar showed work.
 
-Both now read one count of active resolvers, and the overview says `N active resolvers` rather than describing them as comments. Queued replies that have not been pushed yet get their own line, `N resolutions ready to push`, and the Resolve row keeps a dot when there is nothing active but something still queued.
-
-A count attached to a sidebar row is now a promise about what that row opens: pull request comments with no resolver behind them no longer inflate it. An unanswered comment that blocks a review still surfaces, through the pull request lens where the comment lives.
+Both now read one count of active resolvers: the overview says `N active resolvers` rather than describing them as comments, queued replies not yet pushed get their own line, `N resolutions ready to push`, and the Resolve row keeps a dot when something is queued but nothing is active. Pull request comments with no resolver behind them no longer inflate that count, and an unanswered comment that blocks a review still surfaces, through the pull request lens where it lives.
 
 ### [#1389] Impact Studio starts recording shipped pull requests
 
 Nothing ever wrote the pull request cache, so the shipped pull requests panel in Impact Studio has been empty for every user since the table was added. Refreshing a session's pull request now writes to it.
 
-Sessions record which repository they belong to, so two repositories in one workspace that share a branch name no longer have each other's pull requests and spend counted against them. Only the number, title, url, state and update time are stored, never the description.
+Sessions record which repository they belong to, so two repositories in one workspace that share a branch name no longer have each other's pull requests and spend counted against them, and only the number, title, url, state and update time are stored, never the description. Rows are written when a pull request refreshes, so the panel fills from the first sweep after updating rather than from the archive. The paired phone still matches on branch alone, which can still misattribute a pull request when two repositories share one.
 
-The panel fills going forward rather than backwards: a row appears the first time a session's pull request refreshes after updating, so sessions that finished before this release stay absent. The paired phone still matches on branch alone and can still attribute a pull request to the wrong repository when two of them share a branch name.
-
-### [#1388] A commit that fails says so
+### [#1388] A failed commit surfaces as a visible error on the turn
 
 An agent's `git commit` fails when an editor is holding the repository's index lock, and that failure arrived as text buried in the transcript. It now surfaces as a visible error on the turn, with the cause named and the turn marked retryable, for every provider that reports tool failures back to Goodboy. Gemini does not report them, so a commit blocked this way still passes quietly there.
 
@@ -49,9 +45,9 @@ An agent's `git commit` fails when an editor is holding the repository's index l
 
 - Dynamic workflow runs no longer show a "Step X of Y" subtitle, which counted against a total that does not exist for runs whose steps are spawned as they go. They show the number of steps actually spawned [#1382].
 - A run stopped by its budget always surfaces the stop message, and says it in neutral wording rather than session-level copy [#1382].
-- Duplicate desktop components were folded into the shared component package: the card and ghost action buttons, the icon-only copy button and its link hook, and the issue state badge, which is now the shared chip. Behavior is unchanged [#1381].
+- Duplicate desktop components were folded into the shared component package: the card and ghost action buttons, the icon-only copy button and its link hook, and the issue state badge, which is now the shared chip. Four hand-rolled dropdown backdrops in the Jira assignee picker, the transition menu, the pull request verdict action and the pull request switcher now go through the shared dropdown, the switcher and reviewer picker drop their re-implemented popovers, and the layering values behind floating surfaces became named tokens [#1381].
 - The session overview uses the shared pane frame, two duplicated icon entries in the next-up card now come from the shared concept map, and the confirmation pill moved next to its only caller. Nothing moves on screen [#1391].
-- The migration test suite stopped rebuilding a database for every intermediate version, which took six seconds and grew with every release shipped. It samples instead, and still rejects a duplicate version, a gap and a filename that disagrees with its number [#1392].
+- The migration test suite stopped rebuilding a database for every intermediate version, which took six seconds and grew with every release shipped. It samples instead, still rejects a duplicate version, a gap and a filename that disagrees with its number, and gives up one detection route that started from a mid-history version [#1392].
 
 ## Goodboy v0.1.78
 
