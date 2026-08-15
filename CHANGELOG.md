@@ -7,6 +7,58 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.80
+
+Goodboy opens. Every launch reaches a painted window, a folder without a git
+repository is now a folder you can work in, and a lens that has not loaded shows
+a skeleton instead of a zero.
+
+### [#1397] The window paints on every launch
+
+Five of seven launches used to show a window with a title bar and nothing in it,
+and the splash never appeared even though it was wired to every boot phase. The
+cause was not a slow bundle. Every database call the boot makes ran on the macOS
+UI thread, so a slow query parked the thread that paints.
+
+Those calls now run off it. The window declares its own background colour and
+stays hidden until Rust shows it, so the first thing you see is Goodboy's
+charcoal rather than a black rectangle, and the window appears whether or not the
+web view ever runs.
+
+When a phase takes longer than usual the splash says so and offers to restart.
+If the boot fails outright, the error screen offers a retry that genuinely re-runs
+it. Every launch also appends its phases and their timings to
+`~/.goodboy/boot-breadcrumbs.log`, owner-only, phase and timing only, no paths and
+no credentials, so a boot you cannot reproduce is still a boot you can report.
+
+### [#1401] Create or link a repository when a folder has no git
+
+Opening a folder without a git repository used to leave you with instructions and
+no sessions. That folder is now a workspace you can use as it is, with a way to
+link a code host whenever you want one. Create a new GitHub repository from inside
+the app, pick public or private yourself with nothing preselected, and the app
+tells you exactly what it is about to make before it makes it. Declining costs
+nothing and the offer stays.
+
+Follow-up: repository creation goes through the `gh` CLI and its flags come from
+gh's published surface, though no create has gone out to a live GitHub account
+yet. If a call is refused, gh's own message comes back in the dialog and the
+folder stays usable.
+
+### [#1402] A lens shows a skeleton until it has loaded
+
+A lens with no rows and a lens that had not loaded looked identical, so an empty
+state could be a claim the app had no evidence for. Collections that have not
+loaded now show a skeleton, and an empty state means the app looked and found
+nothing.
+
+### Fixes
+
+- Status dots in the session rail carry labels for screen readers [#1402]
+- The README no longer describes screens that are not there, and says what the
+  website measures and what the app does not [#1399]
+- Shipped database migrations are guarded against edits after release [#1395]
+
 ## Goodboy v0.1.79
 
 The resolver becomes a dashboard, a run gets a spending limit you set yourself, and two counts that disagreed about your session become one.
