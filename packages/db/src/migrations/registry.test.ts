@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -33,8 +34,11 @@ const sampleIntermediateCounts = ({
     return [];
   }
   const step = Math.max(1, Math.ceil(highest / sampleSize));
+  // Seeded from `total` so the interior points sampled shift release over
+  // release instead of always landing on the same versions.
+  const offset = 1 + (total % step);
   const sampled = new Set<number>([1, highest]);
-  for (let count = 1; count <= highest; count += step) {
+  for (let count = offset; count <= highest; count += step) {
     sampled.add(count);
   }
   return [...sampled].sort((a, b) => a - b);
@@ -47,6 +51,126 @@ const schemaOf = async (db: Database): Promise<ReadonlyArray<string>> => {
   return rows
     .map((row) => (row.sql ?? '').replace(/\s+/g, ' ').trim())
     .sort((a, b) => a.localeCompare(b));
+};
+
+// Shipped migration SQL is immutable once merged: the sampled convergence
+// suite below only exercises a handful of intermediate versions, so a hand
+// edit to an already-shipped migration body can slip past it. This manifest
+// pins every version's SQL by hash, independent of sample size, so any edit
+// to a shipped migration fails loudly. Adding a new migration adds one line
+// here; existing lines never change.
+const SHIPPED_MIGRATION_SQL_SHA256: Readonly<Record<number, string>> = {
+  1: 'b97d6ff342d2f9287015ff20d3c4b1fb6b0a1c2f08008912c3ca884dc503f2d2',
+  2: '72113f777b7e174446048c326ad1b6df15723b759996a92b1b4a92aa2775a21e',
+  3: 'dd1f8a67d535cdbc8033a4c1a3168a3991a9cd7fcaf713fba51510fd073ebc0a',
+  4: '3329cc5fc5e781d62d623750b006580f5e3ba76c9487883196fcc441e9c9de41',
+  5: 'abd7b84a4120771a494eed5e1fc74e96533f32f6adad572e292aca242e708db6',
+  6: '200d42382c788cd346125f94183a296f035a3f2964ace81884438742d7514cc0',
+  7: '57c0806eab4846aacd775df76610bb60989a2c718b102e1aeba20544a3d24039',
+  8: 'd70f5ab4348f8538920d4f46c6bf24076b38017fba63b314a7cd4b5152e8f809',
+  9: '4b879ab59d1243e49265f2c518524ea139557e4d7e8af8360f418718d90686f2',
+  10: '0f85495a685663ef59a87f4e30782c90cd10a275560adfc2544e2782ee74d4a4',
+  11: '99e50f05d995300c34dd02f8a6ada7db4c2d3ce9aa0f261e5cf70b6fba40937d',
+  12: 'bf99bee5c278cb0314e334f93c709683b9d3aa477f3d1af9f65e9e1174bc1ffe',
+  13: '1709f64f344e06cbbd7b29caa70bc18c5e8ff69245fe381dd3175525131c1f19',
+  14: '6b307937051c2bf51ee239ebb5df37baee21b72c435deadbd15c0e2f83ea5bbd',
+  15: '8ab179b0e50a8604200f47432faa09a74ac9433a21be271da47817ebd0d9724e',
+  16: '56a4827f894ec9374ebe2ec7c120635c68e5277445505fe56e4e8aa7ea2efd06',
+  17: 'a98cbf762a84c1e89f53dd6b164799611c718315ce1b32bafd5066ca4bd185e6',
+  18: '6fe6f740f02080db977dd4b6694da87ba9de383ffcd0f3e883a681d1c44d3cad',
+  19: '56dc35c406088c26f45c6432319b29094987fbc0ad4597c16f97592f7ab49345',
+  20: 'fcaec8142a7972c012329e361df9e782ccea832709e4a9dd07828452e09e8ec9',
+  21: 'c7300c6710c08ee057df532925d9e099ba3e83e96eba64769d81ae673d00dc58',
+  22: 'c920f1980b571f07fc17fb5db294194704b3626eb14ab8fdacfe5fe854928f6b',
+  23: '2325baac2b7a763d57b70787804bf6a7790b626da246dcdcc75ca5322b3b7806',
+  24: 'baef5b3f09c39ef3abb1b344e91fc5c3e47a2390c44e23ccfb5ff7f22ee171a0',
+  25: 'f0ec87d2b7af989eac02cd257fec4d2504026f6748a728e8fe81f793cc12f889',
+  26: 'f7c5e607906005345015afaaea73db59a4f4e13d5a4bb9e6a24848a386ffd64f',
+  27: 'a1785f430070e64b2b74e4a6d4def05da3b1b1208b8c5d677a00f3847d8a8b04',
+  28: '4c0f078a359638b6c9c75609bd3ab66ccf10f5f1e7c7ae06f33c58faec52ea69',
+  29: 'c04be6cb1fd607fba57b51c30a8df31cdc4962887468981e7a7c2184f27d16aa',
+  30: '587f59cc9c0b89948725d358ef54a2098769d82de57a6e1f9e12b97767230e5b',
+  31: '05c0845b8cb713da0ce213ab8976b412ae7ca9829ff0a86669d1c50e898b10fe',
+  32: '985de15731c6dbd5d5d91b7e3f8a04bec903125951e887ca30ce64c50086f55f',
+  33: '4cd3f3ef108f3134153838a9eb6cd58738becff8e36498f2fcab69354d0153a3',
+  34: '0640f8a93ef2787c7769d8ae0e3ad2cb894de2932b7e311aa26b1ed697aef169',
+  35: '5355860bbe6fdd2f6891521b02253f8ec53ecc780627bde5498bad192c7ad861',
+  36: '33c0c6e3087c7d6d9661f9f0282c217beeb525a1f97aa638563364ed63d32298',
+  37: '3f0400e73e278ee5b3b74c64f943cec376f7b21b71a9f85c2a3575c6ab0c45c4',
+  38: 'fe61a8c12be223499d87b9a74ce570425e2f0b0642dccb96de4bf3741159caf5',
+  39: '74ee82b338f5a7699eae643f1526c5031482ea43d55eb44383fd5c35857f841d',
+  40: '3d5a8370aa6a4a4a8fbb463138d282f7de641ba31ec551670d5be98085f0d6c5',
+  41: '43a2a55e8ed755b94193770ed80cb5f744910c07de4f9bff8807c4cd11d77e8d',
+  42: '2184b73ea2690098bab63e6ee2e6f108b28a0f68325d17f7f03c53f9323f192f',
+  43: 'fbdf3e66e0576f2c1d32a907d5ac015321a059a54ed25d5e7cedc7b722fb2206',
+  44: 'c58f16154ae8c52e022b646a3c0b31eb32ddce1cd0af742ef3376ef91e9a6adc',
+  45: 'c185035214e6b1456c7fa28d189d114efdffefcccf87a5b563a4b2f6401ed105',
+  46: '6b282bf18df9f21f0f5ce23a4ff6104cfb596c7162a7821959cd0dca984d4e44',
+  47: 'fddc0a2ad79670b85d5209fceb7dbb2ff13d15265f183a113edb714e8555bcf8',
+  48: 'c180ee93c4c45cd0610a3c52cced59851660baab395444696ce19b43e1fac5ea',
+  49: 'ef0deb4f40cfade0404c51a53934a2a07e75a2b2c017da0a410cf7aaa5a97606',
+  50: '00608c3c12cab832001cbe023e99ab1a5b958521ef870cd4eed3b3030ab8c157',
+  51: 'bb88addbbae07a70b1727e14f69c04b98bf9ab8ea4a965f497fe0d6002238ffd',
+  52: 'c73aed3c96e3a6fcfa6fdf7eeb585bcdcf7c78e026fb46e4c10df9dafd01ccd4',
+  53: '5ead1f1eaa2b0f1e305e85d77b4a511604d9358b92a7f8ac2bf9122603a7ba42',
+  54: 'd0a22c92ddaeeced2a1894376acd7dd46d1a27e7f57481f84c319eb2e43ed10e',
+  55: '0351722ed0a837370b4a9013ccca364937e3c2070133a5012c680914e155bdf5',
+  56: 'b83b1a91edd7093cea1dd59f648aa5500b225c3b2dca13049353c3c8c35c984b',
+  57: '3111ed3ebec96cddae17f2448adbffaf733a8e3d2a6a42de6c9fc9eb2611f1cd',
+  58: '8a89ce345374761c31ec20be9593c91fc0e1f8a9fd559d884a5ec8e28ce02ee8',
+  59: '5f60060b0e31add6332091f45fc9ba45a7674f960b874ee4238e363faa22a605',
+  60: '44972dec9c75b019584f68be609075056dceca76fe6685f15779a52d1955e78f',
+  61: 'e6c7164b99ef6b8f00757b3df124ea8ca6ad3a280e592d06c0c07b1f0091ea58',
+  62: '0083702b6161fa26c67a6e35e2fe43bf1e3d36a44b14cc472edb63602720d641',
+  63: '2458288ffaa2dc5402b800446c5137edcc698d5aa914d77a828b82b6b724a312',
+  64: '781cc9c9356a37e88f930bab44164f7b267219372966a43cc834233c052f1a78',
+  65: 'feff78083b083c86d319ac01c8fff7fba0ddbb38837b9d6ef7e9ea5089145c16',
+  66: '7821d094dae843905a1db518d528d508ac8cf5530a7c17d947152a42db21c50d',
+  67: '690635434edd0377fdc2cfb57ca4b23a461bae78bde48177547d06805ba9891f',
+  68: '72847095c9417ef29eb299c75ef3b8c4425258b84890a279c892ebb6ebd9748b',
+  69: 'aab3d5a107218207527b611676b5ed94ea7bee4b1800061c8db455d6bf8f97a4',
+  70: 'efa138a81627e793b100015b793d61b99e39eff01a37a7e277f689d03c208e2f',
+  71: '2ce5ac1b32f9750fc8a44faae32bb871777229ccffbff9d2d40e6d793a54fa1b',
+  72: '41b7e5c8d00f0c3cc1a9ff0612fb5f28d7847c9cdb22b5d826628118a9714441',
+  73: '91e126b62aff6f9943e60cc059fd8838715f458760efc0310a097dac04d91e2f',
+  74: 'af0e17e7dcb13960d428a3a4bddd071fb1c18dfac258dbb93e8cf56589c99b38',
+  75: '8f99cba82d2155a0863a79ffff2b616a4686e016fdbf522ed3d8229932d4da50',
+  76: 'c2076e2b275442d74998e084a9cc72b71c5b8ca2bd65de7a2f1b3483ecf4f880',
+  77: '2a7d2708bb80d8a136bd4e04c3abee35cf068731d684517d6228850ee1332e42',
+  78: '36b4edbd30fa2530c507967c4f1a2088ef7d5b8906a40f1b11229518ab3b1f99',
+  79: '0f12ce1618f7fa196a135a2a206eb6e45f3ce7975a8988ed6f8d1f618035b3ad',
+  80: '69c2b25ec1ba68b19b9bf633130fafdffd35bc8c1bcecad6038b5cb41c4520e3',
+  81: '09a60f5ba7dbb5520bd6769b24f047a8b2d409e1f3c7ef7118149a88cd86b792',
+  82: 'de552e0b2f78b67ad261493f845e594a9325c82949d09575ab347d364a54b524',
+  83: '3f49cbe247ca5b5b3460729a194293e2a318166c217d85409e3815cca7dd6f4a',
+  84: '2b1f96a4e612de8101c365170ffe03e697c719270dd50532c8d912c178aa7f80',
+  85: '256302435bbf3df4399630480ad3ed7c537997da5643d4f31be7d1732951235b',
+  86: 'f6e963cb715387e9118f79e72eafff359d227956dc40364bcf9e729795378b32',
+  87: '3e0421d84e16f8d4ec46cf95468ce8a136e8aafc9e551c4dcda8ae742d31f4a8',
+  88: '8150bf958102dc1e25cd433c45bc67b227a05a6a7c893f23eb55fbf6cc0614a7',
+  89: '9c31ebcb749e2849b34171a41e202b09fdde61f4ac888f712d26d1017eedb222',
+  90: 'c2f5970933976b61203f834ccbe9038e906212b6f0862262a9f6cbb2d608c8e5',
+  91: '5319d7a91772734e42ee8371bd2ffb079d806ed834895fbd2ba8f5cf4a979e3a',
+  92: '14199cab677a94cd018c9205b375590f5f185eec47c2cbd34c0fd93e65db8ea4',
+  93: 'd27651f3ce29dd1c562a8e645ae32b58814d306ab14451942993d21a807f9a4a',
+  94: '5d45394d639f9b9ca07e3839c0404495de01c8832eebb9cae27da687e5924516',
+  95: '3d8f1c65bb6d9cd315e1b1f40cd927912e8ad91c40448819cb06cbd80f03aef4',
+  96: '764a96d7c1a9759de21da5290209dabddbd350958596b3d2cc9098e1e98d5b91',
+  97: '3b497a034003da6f9962728cb0dde02a7e4d308256f29152c66854758f14ba4e',
+  98: 'b39d674261dae53cdfa1cdd50ac323910c49c8201e186ee2c1954f5e4f8a3856',
+  99: '020f354937828d233a0c223490455a3c2b57eb685d7896b30e0e04600490abc9',
+  100: 'fa8fc0a389a22532cc1e68cd861cb121956cd9bbb62e2abd647ab496ea27d7b1',
+  101: '1c69088d2ad17725ed6207bbd7b5c8a95ef75d47ae0ef28f872b4dfcdad87cbc',
+  102: '340560ce07a609ddc8735ae9f1b0dd24b5d556ffef9818a5cf22c4066a6c6955',
+  103: '8f40c6674a9ed5f9f7244d68e5c08ba5c3a0e681a093916de36e65f7bf7156e4',
+  104: '58e331b4884a6d9574c4d27e0dc6f203f22e791763b71e2b138f64df584b81c9',
+  105: '960f3ee8bc40a70c1314ad6966389ad9ee5661199ce3e9a299a3c8241c7ba94d',
+  106: '53dc69b33b361028d09fd1c8700da3f70844e3cf399c93f9b3f333e71f1674bb',
+  107: '8ade6c99fa4a1ed80b069a8021835f7bc2013519216fb26d7ced468cd93d8c11',
+  108: '8f1dd54cac660cd990cc5957fb539640519f5ae39a2c344d1c30411e11de6437',
+  109: 'cf0dd049b97412b010176840cdd159965e4f0188c7ad49acf26703e5660d81a1',
+  110: '1ed3a391843edc5423e22a0fa7d054b9d965fc95187e5eee13027a8dff7ab22d',
+  111: '3046e49cc0182365392cdfae06f6718a19ab7ecba5178b8db06ff331eba4f299',
 };
 
 describe('migration registry', () => {
@@ -71,6 +195,16 @@ describe('migration registry', () => {
   it('carries distinct sql per version', () => {
     const statements = migrations.map((migration) => migration.sql);
     expect(new Set(statements).size).toBe(statements.length);
+  });
+
+  it('matches the checked-in sql hash for every shipped version', () => {
+    const actual = Object.fromEntries(
+      migrations.map((migration) => [
+        migration.version,
+        createHash('sha256').update(migration.sql).digest('hex'),
+      ]),
+    );
+    expect(actual).toEqual(SHIPPED_MIGRATION_SQL_SHA256);
   });
 });
 
@@ -108,6 +242,34 @@ describe('migration convergence', () => {
       total: migrations.length,
       sampleSize: SAMPLED_INTERMEDIATE_VERSIONS,
     });
+    for (const count of counts) {
+      const upgraded = makeTestDatabase();
+      await migrate(upgraded, migrations.slice(0, count));
+      const result = await migrate(upgraded);
+      expect(result.applied).toEqual(versions.slice(count));
+      expect(await schemaOf(upgraded)).toEqual(target);
+    }
+  }, 30_000);
+});
+
+describe('migration convergence sampling gap', () => {
+  it('pins todays sampled counts at sampleSize=12, migrations.length=111', () => {
+    expect(migrations.length).toBe(111);
+    const counts = sampleIntermediateCounts({
+      total: migrations.length,
+      sampleSize: SAMPLED_INTERMEDIATE_VERSIONS,
+    });
+    expect(counts).toEqual([1, 2, 12, 22, 32, 42, 52, 62, 72, 82, 92, 102, 110]);
+  });
+
+  it('a gutted sampleSize=1 still passes convergence: sampling breadth is not enforced by a floor', async () => {
+    const fresh = makeTestDatabase();
+    await migrate(fresh);
+    const target = await schemaOf(fresh);
+
+    const counts = sampleIntermediateCounts({ total: migrations.length, sampleSize: 1 });
+    expect(counts.length).toBeLessThanOrEqual(3);
+
     for (const count of counts) {
       const upgraded = makeTestDatabase();
       await migrate(upgraded, migrations.slice(0, count));
