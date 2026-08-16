@@ -62,13 +62,34 @@ type Harness = {
   readonly errorTail: () => string | null;
 };
 
-const harness = ({ missing }: { readonly missing?: ProviderId } = {}): Harness => {
+const providerConnection = ({
+  id,
+  missing,
+  undetected,
+}: {
+  readonly id: ProviderId;
+  readonly missing?: ProviderId;
+  readonly undetected?: ProviderId;
+}) => {
+  if (id === missing) {
+    return 'missing';
+  }
+  if (id === undetected) {
+    return 'unknown';
+  }
+  return 'installed_disconnected';
+};
+
+const harness = ({
+  missing,
+  undetected,
+}: { readonly missing?: ProviderId; readonly undetected?: ProviderId } = {}): Harness => {
   let state: Record<string, unknown> = {
     providerConnect: { ...INITIAL_CONNECT_MAP },
     providerLifecycle: { ...INITIAL_LIFECYCLE_MAP },
     providers: PROVIDER_IDS.map((id) => ({
       id,
-      connection: id === missing ? 'missing' : 'installed_disconnected',
+      connection: providerConnection({ id, missing, undetected }),
     })),
     refreshProviders: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
@@ -219,6 +240,15 @@ describe('connectProvider', () => {
     void h.connect('anthropic');
     await vi.advanceTimersByTimeAsync(60_000);
     expect(h.phase()).toBe('working');
+    expect(mocks.invokeProviderLifecycleRun).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'install' }),
+    );
+  });
+
+  it('installs an undetected provider before login rather than assuming it is present', async () => {
+    const h = harness({ undetected: 'anthropic' });
+    void h.connect('anthropic');
+    await vi.advanceTimersByTimeAsync(60_000);
     expect(mocks.invokeProviderLifecycleRun).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'install' }),
     );

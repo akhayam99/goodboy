@@ -17,7 +17,8 @@ export const ApiProviderDetail = ({ info }: Props) => {
   const color = brandColor(info.id);
   const refreshProviders = useAppStore((state) => state.refreshProviders);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const isRuntimeReady = info.connection !== 'missing' && info.connection !== 'error';
+  const isRuntimeReady =
+    info.connection !== 'missing' && info.connection !== 'error' && info.connection !== 'unknown';
 
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);

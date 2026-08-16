@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAppStore } from '../../../store/store';
 import { ACTIVE_CONNECT_PHASES } from '../../../store/slices/providers/types';
 
@@ -12,10 +12,11 @@ type ScheduleParams = {
 
 export const useProviderRefreshOnFocus = (): void => {
   const refreshProviders = useAppStore((s) => s.refreshProviders);
+  const bootPhase = useAppStore((s) => s.bootPhase);
+  const lastRunAtRef = useRef(0);
 
   useEffect(() => {
     let timer: number | null = null;
-    let lastRunAt = 0;
 
     const schedule = ({ delayMs = DEBOUNCE_MS }: ScheduleParams): void => {
       if (timer !== null) {
@@ -23,7 +24,7 @@ export const useProviderRefreshOnFocus = (): void => {
       }
       timer = window.setTimeout(() => {
         timer = null;
-        const elapsed = Date.now() - lastRunAt;
+        const elapsed = Date.now() - lastRunAtRef.current;
         if (elapsed < REFRESH_TTL_MS) {
           schedule({ delayMs: REFRESH_TTL_MS - elapsed });
           return;
@@ -40,7 +41,7 @@ export const useProviderRefreshOnFocus = (): void => {
           return;
         }
 
-        lastRunAt = Date.now();
+        lastRunAtRef.current = Date.now();
         void refreshProviders();
       }, delayMs);
     };
@@ -54,6 +55,9 @@ export const useProviderRefreshOnFocus = (): void => {
 
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onVisibility);
+    if (bootPhase === 'ready') {
+      schedule({});
+    }
     return () => {
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibility);
@@ -61,5 +65,5 @@ export const useProviderRefreshOnFocus = (): void => {
         window.clearTimeout(timer);
       }
     };
-  }, [refreshProviders]);
+  }, [bootPhase, refreshProviders]);
 };

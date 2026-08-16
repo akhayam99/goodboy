@@ -20,7 +20,8 @@ const statusFor = ({ providers, id }: StatusParams): ProviderStatus | null => {
   return {
     id,
     binary: info.binary,
-    available: info.connection !== 'missing' && info.connection !== 'error',
+    available:
+      info.connection !== 'missing' && info.connection !== 'error' && info.connection !== 'unknown',
     version: info.version,
     error: info.error,
   };

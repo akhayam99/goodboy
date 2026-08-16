@@ -144,7 +144,7 @@ function Detail({
         )}
       </section>
 
-      {info.connection !== 'missing' && (
+      {info.connection !== 'missing' && info.connection !== 'unknown' && (
         <>
           <ProviderCredentialsSection providerId={id} />
           <ProviderBindingsSection providerId={id} cliIdentity={info.identity} />

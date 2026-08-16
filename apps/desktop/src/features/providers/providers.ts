@@ -120,7 +120,10 @@ export const connectionForApiProvider = ({
   status,
   hasCredential,
 }: ApiConnectionParams): ProviderConnectionState => {
-  if (status?.available !== true) {
+  if (status === null) {
+    return 'unknown';
+  }
+  if (status.available !== true) {
     return 'missing';
   }
   return hasCredential ? 'connected' : 'installed_disconnected';
@@ -158,7 +161,7 @@ function providerInfoFromStatus(
   };
   if (id === 'anthropic') {
     if (!status) {
-      return { ...base, connection: 'missing', version: null, error: null };
+      return { ...base, connection: 'unknown', version: null, error: null };
     }
     const connection = connectionFromDetectionAndAuth(status.available, status.error, auth);
     return {
@@ -168,8 +171,11 @@ function providerInfoFromStatus(
       error: status.available ? null : status.error,
     };
   }
-  if (!status || !status.available) {
-    return { ...base, connection: 'missing', version: null, error: status?.error ?? null };
+  if (status === null) {
+    return { ...base, connection: 'unknown', version: null, error: null };
+  }
+  if (!status.available) {
+    return { ...base, connection: 'missing', version: null, error: status.error ?? null };
   }
   const connection = connectionFromDetectionAndAuth(status.available, status.error, auth);
   return { ...base, connection, version: status.version, error: null };
