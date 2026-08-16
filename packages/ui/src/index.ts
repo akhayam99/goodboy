@@ -27,6 +27,7 @@ export { CommandPreview } from './components/CommandPreview';
 export { DiffLayoutToggle } from './components/DiffLayoutToggle';
 export type { DiffLayoutMode } from './components/DiffLayoutToggle';
 export { ErrorBoundary } from './components/ErrorBoundary';
+export type { ErrorReportOutcome, ErrorReportRequest } from './components/ErrorBoundary';
 export { ErrorStrip } from './components/ErrorStrip';
 export { GhostActionButton } from './components/GhostActionButton';
 export { HeaderBand } from './components/HeaderBand';
