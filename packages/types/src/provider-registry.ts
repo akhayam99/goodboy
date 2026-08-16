@@ -16,7 +16,8 @@ type ProviderIdsAreTotal =
   Exclude<ProviderId, (typeof PROVIDER_IDS)[number]> extends never ? true : false;
 type _ProviderIdsTotalCheck = Expect<ProviderIdsAreTotal>;
 
-export type ProviderConnectionState = 'connected' | 'installed_disconnected' | 'missing' | 'error';
+export type ProviderConnectionState =
+  'connected' | 'installed_disconnected' | 'missing' | 'error' | 'unknown';
 
 export type ModelFamily =
   'claude' | 'gpt' | 'codex' | 'gemini' | 'composer' | 'cursor-auto' | 'other';

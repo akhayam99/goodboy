@@ -11,8 +11,9 @@ import type { GetFn, SetFn } from './types';
 
 export const refreshProviders = (set: SetFn, get: GetFn) => {
   return async () => {
-    const previousCursorIdentity = get().authResults?.cursor?.identity ?? null;
-    const previousCursorState = get().authResults?.cursor?.state ?? null;
+    const previousAuthResults = get().authResults;
+    const previousCursorIdentity = previousAuthResults?.cursor?.identity ?? null;
+    const previousCursorState = previousAuthResults?.cursor?.state ?? null;
     const [providerStatus, cursorStatus, codexStatus, geminiStatus, opencodeStatus] =
       await Promise.all([
         refreshProviderDetection({ id: 'anthropic' }),
@@ -59,8 +60,10 @@ export const refreshProviders = (set: SetFn, get: GetFn) => {
       moonshot: moonshotAuth,
     };
     if (
-      previousCursorIdentity !== cursorAuth.identity ||
-      (cursorAuth.state === 'connected' && previousCursorState !== 'connected')
+      previousAuthResults !== null &&
+      previousAuthResults !== undefined &&
+      (previousCursorIdentity !== cursorAuth.identity ||
+        (cursorAuth.state === 'connected' && previousCursorState !== 'connected'))
     ) {
       cursorMaxModeAdvisory.clearAll({});
     }

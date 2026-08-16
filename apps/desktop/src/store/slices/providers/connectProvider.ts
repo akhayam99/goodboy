@@ -436,7 +436,7 @@ const isInstalled = ({ get, providerId }: InstalledParams): boolean => {
   if (info === undefined) {
     return false;
   }
-  return info.connection !== 'missing';
+  return info.connection !== 'missing' && info.connection !== 'unknown';
 };
 
 export const connectProvider = (set: SetFn, get: GetFn) => {
