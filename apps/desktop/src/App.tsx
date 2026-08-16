@@ -367,6 +367,21 @@ export const App = () => {
   }, [closeAllStudios]);
 
   useEffect(() => {
+    if (!archiveOpen && !deleteOpen) {
+      return;
+    }
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+      setArchiveOpen(false);
+      setDeleteOpen(false);
+    };
+    window.addEventListener('keydown', onEscape);
+    return () => window.removeEventListener('keydown', onEscape);
+  }, [archiveOpen, deleteOpen]);
+
+  useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent<{ section?: string }>).detail;
       if (workspaceSettingsOpen && detail?.section === undefined) {

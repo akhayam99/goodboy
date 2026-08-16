@@ -597,6 +597,28 @@ describe('LensNav', () => {
     vi.useRealTimers();
   });
 
+  it('re-arms the settle timer on a session switch instead of freezing the shimmer off', () => {
+    vi.useFakeTimers();
+    store.sessionWorkflows = {};
+
+    const { rerender } = render(<LensNav session={SESSION} filesCount={0} />);
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+    expect(screen.queryByTestId('lens-count-loading-workflows')).toBeNull();
+
+    const SESSION_2 = {
+      id: 'session-2',
+      workspaceId: 'workspace-1',
+      workflowRuns: [],
+    } as unknown as Session;
+
+    rerender(<LensNav session={SESSION_2} filesCount={0} />);
+
+    expect(screen.getByTestId('lens-count-loading-workflows')).toBeDefined();
+    vi.useRealTimers();
+  });
+
   it('fetches review drafts for a PR review session whose drafts were never loaded', () => {
     store.sessionPhaseRuns = {
       'session-1': [{ id: 'agent-1', name: 'pr review', kind: 'pr-reviewer' }],

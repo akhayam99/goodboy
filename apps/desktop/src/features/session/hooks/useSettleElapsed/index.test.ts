@@ -62,4 +62,30 @@ describe('useSettleElapsed', () => {
     });
     expect(result.current).toBe(true);
   });
+
+  it('re-arms after it has already elapsed once the resetKey changes', () => {
+    vi.useFakeTimers();
+    const { result, rerender } = renderHook(
+      ({ resetKey }: { resetKey: string }) => useSettleElapsed({ ms: 10_000, resetKey }),
+      { initialProps: { resetKey: 'session-1' } },
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+    expect(result.current).toBe(true);
+
+    rerender({ resetKey: 'session-2' });
+    expect(result.current).toBe(false);
+
+    act(() => {
+      vi.advanceTimersByTime(9_999);
+    });
+    expect(result.current).toBe(false);
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(result.current).toBe(true);
+  });
 });
