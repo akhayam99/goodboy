@@ -1,13 +1,14 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { WorkspaceGitStatus } from '@goodboy/types';
+import type { IsoDateTime, Workspace, WorkspaceGitStatus, WorkspaceId } from '@goodboy/types';
 
-const { openInEditorSpy, writeTextSpy, invokeSpy } = vi.hoisted(() => ({
+const { openInEditorSpy, writeTextSpy, invokeSpy, fastForwardSpy } = vi.hoisted(() => ({
   openInEditorSpy: vi.fn(async () => undefined),
   writeTextSpy: vi.fn(async () => undefined),
   invokeSpy: vi.fn(async () => undefined),
+  fastForwardSpy: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../shared/lib/editor', () => ({
@@ -16,9 +17,21 @@ vi.mock('../../../../shared/lib/editor', () => ({
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeSpy }));
 
+import { useAppStore } from '../../../../store';
 import { WorkspaceGitPanel } from './index';
 
 const ROOT = '/tmp/fresh-idea';
+
+const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+
+const workspace: Workspace = {
+  id: WORKSPACE_ID,
+  name: 'fresh-idea',
+  rootPath: ROOT,
+  kind: 'repo',
+  createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+  updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+};
 
 const status = (overrides: Partial<WorkspaceGitStatus>): WorkspaceGitStatus => ({
   state: 'ready',
@@ -29,6 +42,14 @@ const status = (overrides: Partial<WorkspaceGitStatus>): WorkspaceGitStatus => (
   upstream: 'origin/main',
   inProgress: null,
   ...overrides,
+});
+
+beforeEach(() => {
+  useAppStore.setState({
+    workspaces: [workspace],
+    workspaceCheckoutPulling: {},
+    fastForwardWorkspaceCheckout: fastForwardSpy,
+  });
 });
 
 afterEach(() => {
@@ -180,5 +201,84 @@ describe('WorkspaceGitPanel main status', () => {
     expect(
       screen.getByRole('button', { name: /Fast-forward ak\/feature to origin\/ak\/feature/ }),
     ).toBeDefined();
+  });
+
+  it('enables the fast-forward on a clean checkout behind its upstream and pulls the workspace', () => {
+    render(
+      <WorkspaceGitPanel
+        rootPath={ROOT}
+        status={status({ upstreamDistance: { kind: 'known', ahead: 0, behind: 2 } })}
+      />,
+    );
+
+    const control = screen.getByRole('button', { name: /Fast-forward main to origin\/main/ });
+    expect(control.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.click(control);
+
+    expect(fastForwardSpy).toHaveBeenCalledTimes(1);
+    expect(fastForwardSpy).toHaveBeenCalledWith({ workspaceId: WORKSPACE_ID });
+  });
+
+  it('refuses the fast-forward when the working tree is unreadable even if the distance is known', () => {
+    render(
+      <WorkspaceGitPanel
+        rootPath={ROOT}
+        status={status({
+          upstreamDistance: { kind: 'known', ahead: 0, behind: 2 },
+          workingTree: { kind: 'unknown', reason: 'status-read-failed' },
+        })}
+      />,
+    );
+
+    const control = screen.getByRole('button', { name: /Fast-forward main to origin\/main/ });
+
+    expect(control.hasAttribute('disabled')).toBe(true);
+    expect(control.getAttribute('title')).toBe('git status could not be read');
+
+    fireEvent.click(control);
+
+    expect(fastForwardSpy).not.toHaveBeenCalled();
+  });
+
+  it('refuses the fast-forward when the distance is unknown even if the tree is clean', () => {
+    render(
+      <WorkspaceGitPanel
+        rootPath={ROOT}
+        status={status({ upstreamDistance: { kind: 'unknown', reason: 'rev-list-failed' } })}
+      />,
+    );
+
+    const control = screen.getByRole('button', { name: /Fast-forward main to origin\/main/ });
+
+    expect(control.hasAttribute('disabled')).toBe(true);
+    expect(control.getAttribute('title')).toBe(
+      'git could not compare this branch with its upstream',
+    );
+
+    fireEvent.click(control);
+
+    expect(fastForwardSpy).not.toHaveBeenCalled();
+  });
+
+  it('refuses the fast-forward while an operation is in progress', () => {
+    render(
+      <WorkspaceGitPanel
+        rootPath={ROOT}
+        status={status({
+          inProgress: 'rebase',
+          upstreamDistance: { kind: 'known', ahead: 0, behind: 2 },
+        })}
+      />,
+    );
+
+    const control = screen.getByRole('button', { name: /Fast-forward main to origin\/main/ });
+
+    expect(control.hasAttribute('disabled')).toBe(true);
+    expect(control.getAttribute('title')).toBe('finish the rebase in progress first');
+
+    fireEvent.click(control);
+
+    expect(fastForwardSpy).not.toHaveBeenCalled();
   });
 });

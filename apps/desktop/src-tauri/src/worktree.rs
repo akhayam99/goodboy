@@ -1184,6 +1184,12 @@ const FF_SAFETY_FLAGS: [&str; 6] = [
     "merge.autoStash=false",
 ];
 
+fn ff_merge_args(upstream: &str) -> Vec<&str> {
+    let mut args: Vec<&str> = FF_SAFETY_FLAGS.to_vec();
+    args.extend_from_slice(&["merge", "--ff-only", upstream]);
+    args
+}
+
 #[tauri::command]
 pub fn checkout_fast_forward(checkout_path: String) -> Result<FastForwardResult, WorktreeError> {
     let p = Path::new(&checkout_path);
@@ -1253,9 +1259,7 @@ pub fn checkout_fast_forward(checkout_path: String) -> Result<FastForwardResult,
             });
         }
     };
-    let mut merge_args: Vec<&str> = FF_SAFETY_FLAGS.to_vec();
-    merge_args.extend_from_slice(&["merge", "--ff-only", &upstream]);
-    git(p, &merge_args)?;
+    git(p, &ff_merge_args(&upstream))?;
     Ok(FastForwardResult {
         branch,
         upstream,
@@ -1941,6 +1945,40 @@ mod rewrite_tests {
         assert!(merge.is_err());
         assert!(format!("{refusal}").contains("merge in progress"));
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn fast_forward_refuses_when_the_working_tree_cannot_be_read() {
+        let root = init_repo("fast-forward-unreadable-status");
+        commit(&root, "base.txt", "base", "base");
+        push_to_new_remote(&root);
+        let before = git_ok(&root, &["rev-parse", "HEAD"]);
+        std::fs::write(root.join(".git").join("index"), "not an index").unwrap();
+
+        let refusal =
+            super::checkout_fast_forward(root.to_string_lossy().into_owned()).unwrap_err();
+
+        assert!(format!("{refusal}").contains("git status could not be read"));
+        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), before);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn the_fast_forward_merge_carries_the_flags_that_forbid_a_rebase_or_an_autostash() {
+        assert_eq!(
+            super::ff_merge_args("origin/main"),
+            vec![
+                "-c",
+                "pull.rebase=false",
+                "-c",
+                "rebase.autoStash=false",
+                "-c",
+                "merge.autoStash=false",
+                "merge",
+                "--ff-only",
+                "origin/main",
+            ]
+        );
     }
 
     #[test]
