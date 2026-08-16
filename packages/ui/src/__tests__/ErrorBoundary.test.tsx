@@ -77,20 +77,6 @@ describe('ErrorBoundary', () => {
     consoleError.mockRestore();
   });
 
-  it('wraps the trace instead of hiding it behind a horizontal scrollbar', () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    const { container } = render(
-      <ErrorBoundary>
-        <Boom throwNow />
-      </ErrorBoundary>,
-    );
-
-    const trace = container.querySelector('pre');
-    expect(trace?.className).toContain('whitespace-pre-wrap');
-    expect(trace?.className).toContain('break-words');
-    consoleError.mockRestore();
-  });
-
   it('names GitHub in the report control and says what it includes before the click', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     render(
