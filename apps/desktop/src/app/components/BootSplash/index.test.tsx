@@ -8,7 +8,8 @@ vi.mock('../../../shared/lib/editor', () => ({
 
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BootSplash } from './index';
+import { BootSplash, bootErrorCategory } from './index';
+import { DATABASE_UNAVAILABLE_MESSAGE } from '../../../shared/lib/db';
 
 describe('BootSplash slow boot recovery', () => {
   beforeEach(() => {
@@ -88,5 +89,31 @@ describe('BootSplash boot handoff', () => {
     render(<BootSplash phase="migrating" error="boom" onRetry={onRetry} />);
     fireEvent.click(screen.getByRole('button', { name: /retry/i }));
     expect(onRetry).toHaveBeenCalledOnce();
+  });
+
+  it('puts an unopenable database in front of a window, named and categorised', () => {
+    render(<BootSplash phase="error" error={DATABASE_UNAVAILABLE_MESSAGE} onRetry={vi.fn()} />);
+
+    expect(screen.getByRole('alert')).toBeDefined();
+    expect(screen.getByText('✗ database failed')).toBeDefined();
+    expect(screen.getByText(/~\/\.goodboy\/data\.db is moved aside/)).toBeDefined();
+  });
+
+  it('offers no retry for a database that cannot be reopened', () => {
+    render(<BootSplash phase="error" error={DATABASE_UNAVAILABLE_MESSAGE} onRetry={vi.fn()} />);
+
+    expect(screen.queryByRole('button', { name: /retry/i })).toBeNull();
+    expect(screen.getByRole('button', { name: /report on github/i })).toBeDefined();
+  });
+});
+
+describe('bootErrorCategory', () => {
+  it('names the database ahead of whichever phase was running', () => {
+    expect(bootErrorCategory({ phase: 'migrating', isDatabaseFailure: true })).toBe('database');
+  });
+
+  it('keeps the phase category when the database opened fine', () => {
+    expect(bootErrorCategory({ phase: 'migrating', isDatabaseFailure: false })).toBe('migration');
+    expect(bootErrorCategory({ phase: 'error', isDatabaseFailure: false })).toBe('init');
   });
 });
