@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  buildFallbackIssue,
-  buildIssueBody,
-  isOpenableUrl,
-  REPORT_ISSUE_REPO,
-} from './issuePayload';
+import { REPORT_ISSUE_REPO } from '../../issueUrl';
+import { buildFallbackIssue, buildIssueBody, isOpenableUrl } from './issuePayload';
 
 const MAX_URL = 4096;
 

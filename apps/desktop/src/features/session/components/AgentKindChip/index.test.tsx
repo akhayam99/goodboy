@@ -3,8 +3,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { AgentKindChip } from '.';
+import type { AgentKind } from '../../agent-kind';
 
 afterEach(cleanup);
+
+const persistedKind = (value: string): AgentKind => JSON.parse(JSON.stringify(value));
 
 describe('AgentKindChip', () => {
   it('renders the palette label for the given kind', () => {
@@ -14,7 +17,17 @@ describe('AgentKindChip', () => {
 
   it('renders a different label for a different kind', () => {
     render(<AgentKindChip kind="implementer" />);
-    expect(screen.getByText('imple')).toBeDefined();
+    expect(screen.getByText('implement')).toBeDefined();
+  });
+
+  it('degrades to the stored value instead of crashing on a kind the app does not know', () => {
+    render(<AgentKindChip kind={persistedKind('orchestrator')} />);
+    expect(screen.getByText('orchestr…')).toBeDefined();
+  });
+
+  it('still paints a background for an unknown kind', () => {
+    const { container } = render(<AgentKindChip kind={persistedKind('gremlin')} />);
+    expect(container.querySelector('[class*="bg-"]')).not.toBeNull();
   });
 
   it('renders GEN for the generalist role, uppercased by the chip styling', () => {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Tooltip, cn } from '@goodboy/ui';
 import { Check, GripVertical, Pencil, Trash2, X } from 'lucide-react';
 import type { StepDef } from '@goodboy/types';
-import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind';
+import { agentKindPalette, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 
 type Props = {
@@ -39,7 +39,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
       <div className="flex min-w-0 flex-1 flex-col gap-0.5 pr-14">
         <div className="flex items-baseline gap-2">
           <span className="truncate text-xs font-medium text-foreground">{def.name}</span>
-          <span className={cn('shrink-0 text-2xs font-medium', AGENT_KIND_PALETTE[kind].fg)}>
+          <span className={cn('shrink-0 text-2xs font-medium', agentKindPalette({ kind }).fg)}>
             {ROLE_LABEL[def.role]}
           </span>
         </div>

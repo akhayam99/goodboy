@@ -131,7 +131,13 @@ export const AGENT_KIND_META: Record<AgentKind, { label: string; hint: string; p
     },
   };
 
-export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; label: string }> = {
+export type AgentKindPaletteEntry = {
+  readonly bg: string;
+  readonly fg: string;
+  readonly label: string;
+};
+
+export const AGENT_KIND_PALETTE: Record<AgentKind, AgentKindPaletteEntry> = {
   scout: {
     bg: 'bg-sky-400',
     fg: 'text-sky-400',
@@ -145,7 +151,7 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; lab
   implementer: {
     bg: 'bg-emerald-400',
     fg: 'text-emerald-400',
-    label: 'imple',
+    label: 'implement',
   },
   debugger: {
     bg: 'bg-amber-400',
@@ -182,6 +188,47 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; lab
     fg: 'text-rose-400',
     label: 'gen',
   },
+};
+
+const UNKNOWN_KIND_LABEL_LENGTH = 9;
+
+const UNKNOWN_KIND_STYLE = {
+  bg: 'bg-muted-foreground/50',
+  fg: 'text-muted-foreground',
+} satisfies Pick<AgentKindPaletteEntry, 'bg' | 'fg'>;
+
+const PALETTE_BY_KIND: ReadonlyMap<string, AgentKindPaletteEntry> = new Map(
+  Object.entries(AGENT_KIND_PALETTE),
+);
+
+type UnknownKindLabelParams = {
+  readonly kind: string;
+};
+
+const unknownKindLabel = ({ kind }: UnknownKindLabelParams): string => {
+  const trimmed = kind.trim();
+  if (trimmed === '') {
+    return '?';
+  }
+
+  if (trimmed.length <= UNKNOWN_KIND_LABEL_LENGTH) {
+    return trimmed;
+  }
+
+  return `${trimmed.slice(0, UNKNOWN_KIND_LABEL_LENGTH - 1)}…`;
+};
+
+type AgentKindPaletteParams = {
+  readonly kind: string;
+};
+
+export const agentKindPalette = ({ kind }: AgentKindPaletteParams): AgentKindPaletteEntry => {
+  const known = PALETTE_BY_KIND.get(kind);
+  if (known != null) {
+    return known;
+  }
+
+  return { ...UNKNOWN_KIND_STYLE, label: unknownKindLabel({ kind }) };
 };
 
 export const AGENT_ROLES: ReadonlyArray<AgentRole> = [

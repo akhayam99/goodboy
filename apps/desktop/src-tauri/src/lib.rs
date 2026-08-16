@@ -73,7 +73,14 @@ pub fn run() {
     boot_breadcrumb::record("process-start", Some("start"));
     #[cfg(target_os = "macos")]
     suppress_webkit_media_remote();
-    let database = db::open().expect("failed to open Goodboy database");
+    let database = match db::open() {
+        Ok(database) => Some(database),
+        Err(error) => {
+            boot_breadcrumb::record("error", Some("error"));
+            eprintln!("[goodboy] the local database could not be opened: {error}");
+            None
+        }
+    };
     let bridge_state = bridge::BridgeState::new().expect("failed to init companion bridge");
     let (detection_gate, detection_opener) = providers::detection_gate();
     let provider_state =
@@ -101,7 +108,7 @@ pub fn run() {
     let bitbucket_token_cache = bitbucket::BitbucketTokenCache::new();
     let slack_token_cache = slack::SlackTokenCache::new();
 
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .on_window_event(|window, event| {
             use tauri::Manager;
             if !matches!(event, tauri::WindowEvent::Destroyed) {
@@ -118,8 +125,14 @@ pub fn run() {
             }
         })
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_process::init())
-        .manage(database)
+        .plugin(tauri_plugin_process::init());
+
+    let builder = match database {
+        Some(database) => builder.manage(database),
+        None => builder,
+    };
+
+    builder
         .manage(bridge_state)
         .manage(provider_state)
         .manage(cursor_state)

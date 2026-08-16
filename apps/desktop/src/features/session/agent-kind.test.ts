@@ -8,6 +8,7 @@ import {
   AGENT_KIND_PALETTE,
   type AgentKind,
   agentHomeLens,
+  agentKindPalette,
   classifyAgent,
   inferAgentKindFromName,
   inferAgentKindFromStep,
@@ -259,6 +260,47 @@ describe('AGENT_KIND_PALETTE', () => {
 
   it('renders the generalist role as the GEN badge', () => {
     expect(AGENT_KIND_PALETTE.generic.label).toBe('gen');
+  });
+
+  it('spells every badge as a word, never a truncated fragment', () => {
+    expect(AGENT_KIND_PALETTE.implementer.label).toBe('implement');
+  });
+});
+
+describe('agentKindPalette', () => {
+  it('returns the authored entry for every known kind', () => {
+    for (const kind of ALL_KINDS) {
+      expect(agentKindPalette({ kind })).toBe(AGENT_KIND_PALETTE[kind]);
+    }
+  });
+
+  it('never returns undefined for a kind outside the union', () => {
+    for (const kind of [
+      '',
+      'Implementer',
+      'orchestrator',
+      'null',
+      '  ',
+      'constructor',
+      '__proto__',
+      'toString',
+    ]) {
+      const entry = agentKindPalette({ kind });
+      expect(entry.bg.length).toBeGreaterThan(0);
+      expect(entry.fg.length).toBeGreaterThan(0);
+      expect(entry.label.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('shows the unrecognised value so the row stays diagnosable', () => {
+    expect(agentKindPalette({ kind: 'gremlin' }).label).toBe('gremlin');
+  });
+
+  it('truncates a long unrecognised value and says it truncated', () => {
+    const label = agentKindPalette({ kind: 'a-very-long-persisted-kind' }).label;
+
+    expect(label).toBe('a-very-l…');
+    expect(label.endsWith('…')).toBe(true);
   });
 });
 

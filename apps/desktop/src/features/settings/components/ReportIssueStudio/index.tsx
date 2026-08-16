@@ -22,14 +22,10 @@ import { tauriGhRunner } from '../../../github/github';
 import { useInstalledVersion } from '../../../changelog/hooks/useInstalledVersion';
 import { ISSUE_TYPE_OPTIONS, issueTypeLabel, type IssueTypeValue } from '../../reportIssueTypes';
 import { useBugReportImages } from '../../hooks/useBugReportImages';
+import { REPORT_ISSUE_REPO } from '../../issueUrl';
 import { BugReportImages } from '../BugReportImages';
 import { AREA_OPTIONS, type AreaValue } from './areas';
-import {
-  buildFallbackIssue,
-  buildIssueBody,
-  isOpenableUrl,
-  REPORT_ISSUE_REPO,
-} from './issuePayload';
+import { buildFallbackIssue, buildIssueBody, isOpenableUrl } from './issuePayload';
 import { parseIssueCreateResult } from './parseIssueCreateResult';
 import { previewHint } from './previewHint';
 import { stageBugReportImages } from './stageImages';

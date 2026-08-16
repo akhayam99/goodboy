@@ -559,7 +559,7 @@ describe('store contract', () => {
       expect(s.bootPhase).toBe('ready');
     });
 
-    it('reports the elapsed time of the phase named by every boot breadcrumb', async () => {
+    it('reports the elapsed time of every boot breadcrumb that awaits work', async () => {
       type BreadcrumbDetailParams = { phase: string };
 
       const store = await getStore();
@@ -576,6 +576,10 @@ describe('store contract', () => {
       });
       listProviderCredentialsSpy.mockImplementationOnce(async () => {
         clock = 1_040;
+        return [];
+      });
+      listWorkspacesSpy.mockImplementationOnce(async () => {
+        clock = 1_105;
         return [];
       });
 
@@ -612,9 +616,8 @@ describe('store contract', () => {
       expect(breadcrumbDetail({ phase: 'migrating' })).toBe('ms=10');
       expect(breadcrumbDetail({ phase: 'loading-settings' })).toBe('ms=1000');
       expect(breadcrumbDetail({ phase: 'detecting-cli' })).toBe('ms=30');
-      expect(breadcrumbDetail({ phase: 'loading-workspaces' })).toBe('ms=0');
-      expect(breadcrumbDetail({ phase: 'restoring-session' })).toBe('ms=0');
-      expect(breadcrumbDetail({ phase: 'ready' })).toBe('ms=1040,ok');
+      expect(breadcrumbDetail({ phase: 'loading-workspaces' })).toBe('ms=65');
+      expect(breadcrumbDetail({ phase: 'ready' })).toBe('ms=1105,ok');
     });
 
     it('joins the in-flight hydration instead of starting a second run on retry', async () => {

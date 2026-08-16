@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { BootPhase } from '../../../store/types';
 import { openUrl } from '../../../shared/lib/editor';
+import { DATABASE_UNAVAILABLE_MESSAGE } from '../../../shared/lib/db';
 import { DogMascot } from '../../../shared/components/DogMascot';
 import { BootSlowNotice } from './BootSlowNotice';
 import { useElapsedSincePhase } from './useElapsedSincePhase';
@@ -48,10 +49,15 @@ export const BootSplash = ({ phase, error, onRetry, onFinished }: BootSplashProp
   }, [phase, hasError, onFinished]);
 
   if (hasError) {
+    const isDatabaseFailure = error === DATABASE_UNAVAILABLE_MESSAGE;
     return (
       <div className="relative flex h-screen flex-col items-center justify-center gap-10 bg-background text-foreground">
         <BootBrand />
-        <BootErrorRecovery error={error} phase={phase} onRetry={onRetry} />
+        <BootErrorRecovery
+          error={error}
+          category={bootErrorCategory({ phase, isDatabaseFailure })}
+          onRetry={isDatabaseFailure ? undefined : onRetry}
+        />
       </div>
     );
   }
@@ -91,32 +97,45 @@ function BootBrand() {
   );
 }
 
+type BootErrorCategoryParams = {
+  readonly phase: BootPhase;
+  readonly isDatabaseFailure: boolean;
+};
+
+export const bootErrorCategory = ({
+  phase,
+  isDatabaseFailure,
+}: BootErrorCategoryParams): string => {
+  if (isDatabaseFailure) {
+    return 'database';
+  }
+
+  return phase === 'migrating'
+    ? 'migration'
+    : phase === 'loading-settings'
+      ? 'settings'
+      : phase === 'detecting-cli'
+        ? 'cli detection'
+        : phase === 'loading-workspaces'
+          ? 'workspace load'
+          : phase === 'restoring-session'
+            ? 'session restore'
+            : 'init';
+};
+
 function BootErrorRecovery({
   error,
-  phase,
+  category,
   onRetry,
 }: {
   error: string;
-  phase: BootPhase;
+  category: string;
   onRetry?: () => void;
 }) {
   const openIssue = useCallback(() => {
-    const url = `${GITHUB_NEW_ISSUE_URL}&body=${encodeURIComponent(`**phase:** ${phase}\n\n**error:**\n\`\`\`\n${error}\n\`\`\`\n\nBoot timings for this launch are in \`~/.goodboy/boot-breadcrumbs.log\` (phase and timing only, no paths or credentials). Paste the last few lines if you can.`)}`;
+    const url = `${GITHUB_NEW_ISSUE_URL}&body=${encodeURIComponent(`**category:** ${category}\n\n**error:**\n\`\`\`\n${error}\n\`\`\`\n\nBoot timings for this launch are in \`~/.goodboy/boot-breadcrumbs.log\` (phase and timing only, no paths or credentials). Paste the last few lines if you can.`)}`;
     void openUrl(url);
-  }, [error, phase]);
-
-  const category =
-    phase === 'migrating'
-      ? 'migration'
-      : phase === 'loading-settings'
-        ? 'settings'
-        : phase === 'detecting-cli'
-          ? 'cli detection'
-          : phase === 'loading-workspaces'
-            ? 'workspace load'
-            : phase === 'restoring-session'
-              ? 'session restore'
-              : 'init';
+  }, [error, category]);
 
   return (
     <div

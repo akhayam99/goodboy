@@ -2,7 +2,7 @@ import { type ReactNode, useRef } from 'react';
 import { GripVertical, Trash2 } from 'lucide-react';
 import { Input, Textarea, cn } from '@goodboy/ui';
 import type { AgentRole, ProviderId } from '@goodboy/types';
-import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND, type AgentKind } from '../../agent-kind';
+import { agentKindPalette, ROLE_LABEL, ROLE_TO_KIND, type AgentKind } from '../../agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { type VerbosityLevel } from '../../../settings/verbosity';
 import { type EffortLevel } from '../../../chat/utils/chat-constants';
@@ -91,7 +91,7 @@ export const WorkflowStepCard = ({
   verbosity,
   onVerbosity,
 }: Props) => {
-  const pal = AGENT_KIND_PALETTE[kind];
+  const pal = agentKindPalette({ kind });
   const displayName = name.trim() || ROLE_LABEL[role];
   const liRef = useRef<HTMLLIElement>(null);
   useClickOutside(liRef, () => {
