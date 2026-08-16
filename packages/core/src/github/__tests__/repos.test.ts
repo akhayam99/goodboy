@@ -34,14 +34,6 @@ describe('the repos module surface', () => {
     expect(reposSource).not.toContain("'api'");
     expect(reposSource).not.toContain('-X');
   });
-
-  it('keeps the visibility flag inside the closed record', () => {
-    const flags = Array.from(reposSource.matchAll(/'--(public|private)'/g)).map(
-      (match) => match[0],
-    );
-
-    expect(flags).toEqual(["'--public'", "'--private'"]);
-  });
 });
 
 describe('listOwnedRepos', () => {
@@ -113,7 +105,7 @@ describe('validateGithubRepoName', () => {
 
 describe('createGithubRepo', () => {
   it('creates the repository with the visibility flag and reads it back', async () => {
-    const run = vi
+    const privateRun = vi
       .fn()
       .mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 })
       .mockResolvedValueOnce({
@@ -123,14 +115,32 @@ describe('createGithubRepo', () => {
       });
 
     const result = await createGithubRepo({
-      runner: { run },
+      runner: { run: privateRun },
       name: 'widgets',
       owner: 'acme',
       visibility: 'private',
     });
 
     expect(result).toEqual({ kind: 'ok', repo: repo('acme/widgets', true) });
-    expect(run).toHaveBeenNthCalledWith(1, ['repo', 'create', 'widgets', '--private'], {});
+    expect(privateRun).toHaveBeenNthCalledWith(1, ['repo', 'create', 'widgets', '--private'], {});
+
+    const publicRun = vi
+      .fn()
+      .mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify(repo('acme/widgets')),
+        stderr: '',
+        exitCode: 0,
+      });
+
+    await createGithubRepo({
+      runner: { run: publicRun },
+      name: 'widgets',
+      owner: 'acme',
+      visibility: 'public',
+    });
+
+    expect(publicRun).toHaveBeenNthCalledWith(1, ['repo', 'create', 'widgets', '--public'], {});
   });
 
   it('never lets a rejected name reach gh argv', async () => {
@@ -227,6 +237,33 @@ describe('createGithubRepo', () => {
 
     expect(result.kind).toBe('ok');
     expect(run.mock.calls[1]?.[0]?.[2]).toBe('acme/widgets');
+  });
+
+  it('reads back the account the create reported, not a stale session login', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce({
+        stdout: 'Created repository ada/widgets on GitHub\nhttps://github.com/ada/widgets\n',
+        stderr: '',
+        exitCode: 0,
+      })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify(repo('ada/widgets')),
+        stderr: '',
+        exitCode: 0,
+      });
+
+    const result = await createGithubRepo({
+      runner: { run },
+      name: 'widgets',
+      owner: 'acme',
+      visibility: 'public',
+    });
+
+    expect(run.mock.calls[1]?.[0]?.[2]).toBe('ada/widgets');
+    expect(result.kind).toBe('mismatch');
+    expect(result.kind === 'mismatch' && result.expected.nameWithOwner).toBe('acme/widgets');
+    expect(result.kind === 'mismatch' && result.actual.nameWithOwner).toBe('ada/widgets');
   });
 
   it('refuses to guess an owner and discloses the repository it left behind', async () => {

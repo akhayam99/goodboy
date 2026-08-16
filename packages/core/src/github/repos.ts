@@ -168,10 +168,9 @@ export const createGithubRepo = async ({
   }
 
   const trimmedOwner = owner === null ? '' : owner.trim();
-  const pinnedOwner =
-    trimmedOwner !== ''
-      ? trimmedOwner
-      : ownerFromCreateOutput({ stdout: created.stdout, name: checked.name });
+  const sessionOwner = trimmedOwner !== '' ? trimmedOwner : null;
+  const createdOwner = ownerFromCreateOutput({ stdout: created.stdout, name: checked.name });
+  const pinnedOwner = createdOwner ?? sessionOwner;
   if (pinnedOwner === null) {
     return {
       kind: 'unverified',
@@ -181,7 +180,10 @@ export const createGithubRepo = async ({
   }
 
   const pinnedSlug = `${pinnedOwner}/${checked.name}`;
-  const expected: ExpectedRepo = { nameWithOwner: pinnedSlug, isPrivate: visibility === 'private' };
+  const expected: ExpectedRepo = {
+    nameWithOwner: `${sessionOwner ?? pinnedOwner}/${checked.name}`,
+    isPrivate: visibility === 'private',
+  };
 
   let repo: GithubRepoRef;
   try {
