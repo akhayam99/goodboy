@@ -536,6 +536,16 @@ describe('OrchestratorPanel strip', () => {
     expect(screen.getByTestId('orchestrator-budget')).toBeDefined();
   });
 
+  it('renders one budget control when the session budget pauses the run', () => {
+    storeState['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
+    renderPanel({
+      runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
+    });
+
+    expect(screen.getByTestId('orchestrator-review-budget')).toBeDefined();
+    expect(screen.queryByTestId('orchestrator-budget')).toBeNull();
+  });
+
   it('says what the run is allowed to spend and what happens at the limit', () => {
     renderPanel({ runOverride: run({ spendLimitUsd: 12, spendLimitMode: 'notify' }) });
 
@@ -556,6 +566,7 @@ describe('OrchestratorPanel strip', () => {
 
     expect(opened).toHaveBeenCalledTimes(1);
     expect(screen.queryByTestId('run-spend-limit-trigger')).toBeNull();
+    expect(screen.queryByTestId('orchestrator-budget')).toBeNull();
   });
 
   it('saves a spend limit for the run from the strip', () => {
