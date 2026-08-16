@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildCrashReport, collapseHomePaths, CRASH_TRACE_BUDGET } from './buildCrashReport';
+import { isOpenableUrl } from './components/ReportIssueStudio/issuePayload';
+import { MAX_ISSUE_URL_BYTES } from './issueUrl';
 
 const errorWith = (message: string): Error => new Error(message);
 
@@ -60,6 +62,7 @@ describe('buildCrashReport', () => {
     });
 
     expect(report.body).toContain('240 more characters were not included');
+    expect(report.body).not.toContain('x'.repeat(CRASH_TRACE_BUDGET + 1));
   });
 
   it('keeps a stack that fits whole', () => {
@@ -81,5 +84,48 @@ describe('buildCrashReport', () => {
     });
 
     expect(report.body).toContain('Version: unknown');
+  });
+
+  it('keeps the whole report link inside the length the shell will open', () => {
+    const report = buildCrashReport({
+      error: errorWith('b'.repeat(20000)),
+      componentStack: 'x'.repeat(CRASH_TRACE_BUDGET + 5000),
+      version: '0.1.81',
+    });
+
+    expect(report.url.length).toBeLessThanOrEqual(MAX_ISSUE_URL_BYTES);
+    expect(report.body).toContain('did not fit the report link');
+  });
+
+  it('caps a runaway title instead of letting it fill the link', () => {
+    const report = buildCrashReport({
+      error: errorWith('t'.repeat(20000)),
+      componentStack: null,
+      version: '0.1.81',
+    });
+
+    expect(report.url.length).toBeLessThanOrEqual(MAX_ISSUE_URL_BYTES);
+    expect(report.title.endsWith('…')).toBe(true);
+  });
+
+  it('cuts the stack further when the capped stack alone overflows the link', () => {
+    const report = buildCrashReport({
+      error: errorWith('boom'),
+      componentStack: `a${'\n'.repeat(1600)}b`,
+      version: '0.1.81',
+    });
+
+    expect(report.url.length).toBeLessThanOrEqual(MAX_ISSUE_URL_BYTES);
+    expect(report.body).toContain('the rest of the stack did not fit the report link');
+  });
+
+  it('builds an openable link from a message carrying a lone surrogate', () => {
+    const report = buildCrashReport({
+      error: errorWith('boom \uD800 end'),
+      componentStack: null,
+      version: '0.1.81',
+    });
+
+    expect(isOpenableUrl(report.url)).toBe(true);
   });
 });
