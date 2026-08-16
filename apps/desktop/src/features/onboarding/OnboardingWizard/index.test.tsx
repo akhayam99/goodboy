@@ -10,6 +10,10 @@ const { hookState, finishWizard } = vi.hoisted(() => ({
   finishWizard: vi.fn(),
 }));
 
+vi.mock('../hooks/useOnboardingProgress', () => ({
+  useOnboardingProgress: () => ({ completed: new Set() }),
+}));
+
 vi.mock('./useOnboardingWizard', () => ({
   useOnboardingWizard: () => hookState,
 }));
@@ -19,8 +23,8 @@ vi.mock('../onboarding-store', () => ({
 }));
 
 vi.mock('./Stepper', () => ({
-  Stepper: ({ current, total }: { current: number; total: number }) => (
-    <div data-testid="stepper">{`${current}/${total}`}</div>
+  Stepper: ({ current, steps }: { current: number; steps: ReadonlyArray<number> }) => (
+    <div data-testid="stepper">{`${current}/${steps.join(',')}`}</div>
   ),
 }));
 

@@ -1,12 +1,13 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { OnboardingStepId } from '../onboarding-store';
 
 const { finishMock, progress } = vi.hoisted(() => ({
   finishMock: vi.fn(),
   progress: {
     completedCount: 0,
     totalCount: 2,
-    completed: new Set(),
+    completed: new Set<OnboardingStepId>(),
     collapsed: true,
     finished: false,
     isDone: false,
@@ -58,6 +59,15 @@ describe('OnboardingCard', () => {
 });
 
 describe('OnboardingChip', () => {
+  it('fills the completed checklist ids instead of leading positions', () => {
+    progress.completedCount = 1;
+    progress.completed = new Set(['session']);
+    const { container } = render(<OnboardingChip />);
+    const dots = container.querySelectorAll('[aria-hidden="true"]');
+    expect(dots[0]?.className).toContain('bg-border');
+    expect(dots[1]?.className).toContain('bg-primary');
+  });
+
   it('finishes onboarding from the skip button', () => {
     render(<OnboardingChip />);
     fireEvent.click(screen.getByRole('button', { name: 'Skip tutorial' }));

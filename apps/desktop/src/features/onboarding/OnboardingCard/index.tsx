@@ -158,13 +158,13 @@ export const OnboardingChip = () => {
         aria-label="Open onboarding checklist"
         className="inline-flex items-center gap-1"
       >
-        {visibleSteps.map((step, i) => (
+        {visibleSteps.map((step) => (
           <span
             key={step.id}
             aria-hidden
             className={cn(
               'size-1.5 rounded-full motion-safe:transition-colors',
-              i < progress.completedCount ? 'bg-primary' : 'bg-border',
+              progress.completed.has(step.id) ? 'bg-primary' : 'bg-border',
             )}
           />
         ))}

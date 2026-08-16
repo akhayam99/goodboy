@@ -134,14 +134,47 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     currentSession,
   ]);
 
+  const completed = useMemo(() => {
+    const liveCompleted = new Set(persistedCompleted);
+    if (workspaces.length > 0) {
+      liveCompleted.add('workspace');
+    }
+    if (!isSimple && (gitlabConnected || bitbucketConnected || githubScoped)) {
+      liveCompleted.add('codeHost');
+    }
+    if (hasTools) {
+      liveCompleted.add('tools');
+    }
+    if (sessionCount > 0) {
+      liveCompleted.add('session');
+    }
+    if (anyAgent) {
+      liveCompleted.add('agent');
+    }
+    if (anyPlan) {
+      liveCompleted.add('plan');
+    }
+    return liveCompleted;
+  }, [
+    persistedCompleted,
+    workspaces.length,
+    isSimple,
+    gitlabConnected,
+    bitbucketConnected,
+    githubScoped,
+    hasTools,
+    sessionCount,
+    anyAgent,
+    anyPlan,
+  ]);
   const visibleSteps = visibleOnboardingSteps({ isSimple });
   const totalCount = visibleSteps.length;
-  const completedCount = visibleSteps.filter((step) => persistedCompleted.has(step.id)).length;
+  const completedCount = visibleSteps.filter((step) => completed.has(step.id)).length;
 
   return {
     completedCount,
     totalCount,
-    completed: persistedCompleted,
+    completed,
     collapsed,
     finished,
     isDone: completedCount >= totalCount,

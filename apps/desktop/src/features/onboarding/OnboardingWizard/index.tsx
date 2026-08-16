@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, ScrollFade, cn, type ButtonVariant } from '@goodboy/ui';
 import { finishWizard } from '../onboarding-store';
+import { useOnboardingProgress } from '../hooks/useOnboardingProgress';
 import { useOnboardingWizard } from './useOnboardingWizard';
 import { Stepper } from './Stepper';
 import { WelcomeStep } from './steps/WelcomeStep';
@@ -77,6 +78,7 @@ type Cta = {
 };
 
 export const OnboardingWizard = () => {
+  const progress = useOnboardingProgress();
   const {
     open,
     mode,
@@ -259,7 +261,7 @@ export const OnboardingWizard = () => {
         <span aria-hidden />
         <div className="flex justify-center">
           {step > minStep && (
-            <Stepper current={steps.indexOf(step)} total={Math.max(steps.length - 1, 0)} />
+            <Stepper current={step} steps={steps} completed={progress.completed} />
           )}
         </div>
         <div className="flex justify-end">
