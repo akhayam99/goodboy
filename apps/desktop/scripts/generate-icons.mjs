@@ -56,6 +56,35 @@ const renderIconSource = ({ html, outputPath }) => {
   }
 };
 
+const canonicalizeIcnsChunkOrder = ({ filePath }) => {
+  const fileBytes = readFileSync(filePath);
+  if (fileBytes.toString('ascii', 0, 4) !== 'icns') {
+    throw new Error(`${filePath} is not an ICNS file`);
+  }
+  const totalSize = fileBytes.readUInt32BE(4);
+  const chunks = [];
+  let offset = 8;
+  while (offset < totalSize) {
+    const tag = fileBytes.toString('ascii', offset, offset + 4);
+    const chunkSize = fileBytes.readUInt32BE(offset + 4);
+    chunks.push({ tag, bytes: fileBytes.subarray(offset, offset + chunkSize) });
+    offset += chunkSize;
+  }
+  chunks.sort((left, right) => {
+    if (left.tag < right.tag) {
+      return -1;
+    }
+    if (left.tag > right.tag) {
+      return 1;
+    }
+    return 0;
+  });
+  writeFileSync(
+    filePath,
+    Buffer.concat([fileBytes.subarray(0, 8), ...chunks.map(({ bytes }) => bytes)]),
+  );
+};
+
 const fanOutIcons = ({ sourcePath }) => {
   const existingFilenames = readdirSync(ICONS_DIRECTORY).filter(
     (name) => !name.startsWith('.'),
@@ -71,6 +100,9 @@ const fanOutIcons = ({ sourcePath }) => {
         throw new Error(`tauri icon did not produce ${filename}`);
       }
       copyFileSync(generatedPath, join(ICONS_DIRECTORY, filename));
+      if (filename === 'icon.icns') {
+        canonicalizeIcnsChunkOrder({ filePath: join(ICONS_DIRECTORY, filename) });
+      }
       console.log('updated', join(ICONS_DIRECTORY, filename));
     });
   } finally {
