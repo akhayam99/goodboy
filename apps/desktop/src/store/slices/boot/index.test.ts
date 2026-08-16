@@ -612,6 +612,9 @@ describe('store contract', () => {
       expect(breadcrumbDetail({ phase: 'migrating' })).toBe('ms=10');
       expect(breadcrumbDetail({ phase: 'loading-settings' })).toBe('ms=1000');
       expect(breadcrumbDetail({ phase: 'detecting-cli' })).toBe('ms=30');
+      expect(breadcrumbDetail({ phase: 'loading-workspaces' })).toBe('ms=0');
+      expect(breadcrumbDetail({ phase: 'restoring-session' })).toBe('ms=0');
+      expect(breadcrumbDetail({ phase: 'ready' })).toBe('ms=1040,ok');
     });
 
     it('joins the in-flight hydration instead of starting a second run on retry', async () => {
