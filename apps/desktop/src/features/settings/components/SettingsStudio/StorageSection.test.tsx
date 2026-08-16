@@ -88,14 +88,10 @@ describe('StorageSection', () => {
     const toLocaleString = Number.prototype.toLocaleString;
     const italian = vi.spyOn(Number.prototype, 'toLocaleString').mockImplementation(function (
       this: number,
-      locales?: unknown,
-      options?: unknown,
+      locales?: Intl.LocalesArgument,
+      options?: Intl.NumberFormatOptions,
     ) {
-      return toLocaleString.call(
-        this,
-        locales ?? 'it-IT',
-        options as Intl.NumberFormatOptions | undefined,
-      );
+      return toLocaleString.call(this, locales ?? 'it-IT', options);
     });
 
     render(<StorageSection />);

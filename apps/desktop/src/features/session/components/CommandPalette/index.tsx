@@ -11,7 +11,7 @@ import {
 } from '../../../../store';
 import {
   AGENT_KIND_META,
-  AGENT_KIND_PALETTE,
+  agentKindPalette,
   inferAgentKindFromName,
   type AgentKind,
 } from '../../agent-kind';
@@ -156,7 +156,7 @@ export const CommandPalette = ({
           label: a.name,
           sublabel: AGENT_KIND_META[kind].label,
           group: 'agent',
-          accent: AGENT_KIND_PALETTE[kind].bg,
+          accent: agentKindPalette({ kind }).bg,
           onSelect: () => void selectAgent(currentSession.id, a.id as AgentId),
         });
       }

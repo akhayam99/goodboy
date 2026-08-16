@@ -6,7 +6,7 @@ import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { modelLabel } from '../../../../../features/chat/utils/chat-constants';
 import { agentHasUnread } from '../../../../../store';
 import { formatCost } from '../../../../../features/session/agent-row-format';
-import { AGENT_KIND_PALETTE, type AgentKind } from '../../../../../features/session/agent-kind';
+import { agentKindPalette, type AgentKind } from '../../../../../features/session/agent-kind';
 import { AgentKindChip } from '../../../../../features/session/components/AgentKindChip';
 import { AgentCard } from '../../../../../features/session/components/AgentCard';
 import { AgentCardAction } from '../../../../../features/session/components/AgentCard/AgentCardAction';
@@ -185,7 +185,7 @@ export const AgentRow = ({
       status={
         <AgentKindChip
           kind={kind}
-          title={`Agent ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
+          title={`Agent ${run.ordinal + 1}: ${agentKindPalette({ kind }).label}`}
         />
       }
       meta={

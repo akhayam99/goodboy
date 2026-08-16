@@ -3,7 +3,7 @@ import { Button, Dialog, Textarea, cn } from '@goodboy/ui';
 import type { FormattedWorkflow } from '@goodboy/core';
 import type { AgentRole } from '@goodboy/types';
 import { Lightbulb } from 'lucide-react';
-import { AGENT_KIND_PALETTE, ROLE_TO_KIND } from '../../../../session/agent-kind';
+import { agentKindPalette, ROLE_TO_KIND } from '../../../../session/agent-kind';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -126,10 +126,10 @@ export const WorkflowFormatPreview = ({
                       <span
                         className={cn(
                           'rounded-md px-1.5 py-px text-2xs font-semibold uppercase tracking-eyebrow',
-                          AGENT_KIND_PALETTE[kind].fg,
+                          agentKindPalette({ kind }).fg,
                         )}
                       >
-                        {AGENT_KIND_PALETTE[kind].label}
+                        {agentKindPalette({ kind }).label}
                       </span>
                     </div>
                     {step.promptPrefix ? (
