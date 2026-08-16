@@ -676,13 +676,17 @@ describe('store contract', () => {
         state: 'absent',
         branch: null,
         headSubject: null,
-        ahead: 0,
-        behind: 0,
-        staged: 0,
-        unstaged: 0,
-        untracked: 3,
-        changed: 3,
-        hasUpstream: false,
+        upstreamDistance: { kind: 'unknown', reason: 'no-upstream' },
+        workingTree: {
+          kind: 'known',
+          staged: 0,
+          unstaged: 0,
+          untracked: 3,
+          unmerged: 0,
+          changed: 3,
+        },
+        upstream: null,
+        inProgress: null,
       });
       store.setState({ workspaces: [buildWorkspace({ rootPath: '/tmp/fresh-idea' })] });
 

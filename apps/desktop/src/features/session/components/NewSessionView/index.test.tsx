@@ -581,13 +581,10 @@ const gitStatus = (state: WorkspaceGitStatus['state']): WorkspaceGitStatus => ({
   state,
   branch: null,
   headSubject: null,
-  ahead: 0,
-  behind: 0,
-  staged: 0,
-  unstaged: 0,
-  untracked: 0,
-  changed: 0,
-  hasUpstream: false,
+  upstreamDistance: { kind: 'unknown', reason: 'no-upstream' },
+  workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+  upstream: null,
+  inProgress: null,
 });
 
 describe('NewSessionView git gate', () => {

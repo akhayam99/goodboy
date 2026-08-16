@@ -184,7 +184,17 @@ export type {
   VerbosityLevel,
 } from './settings';
 export { TASKS } from './settings';
-export type { BranchCommit, DiffView, WorktreeDiffScope, WorktreeStatus } from './worktree';
+export type {
+  BranchCommit,
+  DiffView,
+  FastForwardResult,
+  GitDistance,
+  GitOperation,
+  GitUnknownReason,
+  GitWorkingTree,
+  WorktreeDiffScope,
+  WorktreeStatus,
+} from './worktree';
 export type {
   ConfigBundle,
   ConfigBundleBudgetRule,

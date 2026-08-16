@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { WorkspaceGitStatus } from '@goodboy/types';
+import type { FastForwardResult, WorkspaceGitStatus } from '@goodboy/types';
 
 export type GitRepoCheck = {
   readonly isRepo: boolean;
@@ -20,6 +20,16 @@ export const workspaceGitStatus = async ({
   workspacePath,
 }: WorkspaceGitStatusParams): Promise<WorkspaceGitStatus> => {
   return invoke<WorkspaceGitStatus>('workspace_git_status', { workspacePath });
+};
+
+type CheckoutFastForwardParams = {
+  readonly checkoutPath: string;
+};
+
+export const checkoutFastForward = async ({
+  checkoutPath,
+}: CheckoutFastForwardParams): Promise<FastForwardResult> => {
+  return invoke<FastForwardResult>('checkout_fast_forward', { checkoutPath });
 };
 
 export type InitializedRepo = {

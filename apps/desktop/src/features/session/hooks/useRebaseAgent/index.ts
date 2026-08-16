@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { AgentId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import type { SessionCreationId } from '../../../../store/slices/session-view';
 import { useToast } from '../../../../app/components/Toast';
 import { taskModelAgentSpawnConfig } from '../../components/AgentSpawnConfig/taskModelAgentSpawnConfig';
@@ -77,7 +78,8 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
         (agent.status === 'pending' || agent.status === 'running'),
     ) === true;
   const isRunning = isStarting || isAgentRunning;
-  const canRebase = sessionId != null && status != null && status.commitsBehindMain > 0;
+  const behindMain = status != null ? distanceBehind({ distance: status.mainDistance }) : null;
+  const canRebase = sessionId != null && behindMain != null && behindMain > 0;
 
   useEffect(() => {
     pendingRef.current = pending;

@@ -1,6 +1,7 @@
 import { Check, GitBranch, RefreshCw, X } from 'lucide-react';
 import { Chip, cn, Divider } from '@goodboy/ui';
 import type { WorktreeStatus } from '@goodboy/types';
+import { distanceAhead, distanceBehind } from '../../../../shared/lib/gitStatus';
 import { TOOLBAR_ICON_BTN } from './lib';
 
 type Props = {
@@ -35,9 +36,10 @@ export const DiffToolbar = ({
   presentation = 'bar',
 }: Props) => {
   const titleText = title ?? (prNumber !== undefined ? `PR #${prNumber} diff` : 'Diff');
-  const ahead = status?.ahead ?? 0;
-  const behind = status?.behind ?? 0;
-  const hasAheadBehind = status?.hasUpstream === true && (ahead > 0 || behind > 0);
+  const distance = status?.upstreamDistance ?? null;
+  const ahead = distance != null ? (distanceAhead({ distance }) ?? 0) : 0;
+  const behind = distance != null ? (distanceBehind({ distance }) ?? 0) : 0;
+  const hasAheadBehind = status?.upstream != null && (ahead > 0 || behind > 0);
   return (
     <>
       <div

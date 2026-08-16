@@ -59,7 +59,7 @@ const sessionId = 'session-1' as SessionId;
 
 const status = (commitsBehindMain: number): WorktreeStatus =>
   ({
-    commitsBehindMain,
+    mainDistance: { kind: 'known', ahead: 0, behind: commitsBehindMain },
   }) as WorktreeStatus;
 
 beforeEach(() => {

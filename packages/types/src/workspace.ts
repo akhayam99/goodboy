@@ -11,6 +11,7 @@ import type {
 import type { SessionProviderPreference } from './provider-preference';
 import type { ModelEffort, ProviderId } from './provider-registry';
 import type { ClaudePermissionMode } from './permission';
+import type { GitDistance, GitOperation, GitWorkingTree } from './worktree';
 
 export type WorkspaceKind = 'repo' | 'composite' | 'simple';
 
@@ -20,13 +21,10 @@ export type WorkspaceGitStatus = Readonly<{
   state: WorkspaceGitState;
   branch: string | null;
   headSubject: string | null;
-  ahead: number;
-  behind: number;
-  staged: number;
-  unstaged: number;
-  untracked: number;
-  changed: number;
-  hasUpstream: boolean;
+  upstreamDistance: GitDistance;
+  workingTree: GitWorkingTree;
+  upstream: string | null;
+  inProgress: GitOperation | null;
 }>;
 
 export type WorkspaceMember = Readonly<{

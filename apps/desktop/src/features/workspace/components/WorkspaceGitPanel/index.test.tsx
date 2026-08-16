@@ -24,13 +24,10 @@ const status = (overrides: Partial<WorkspaceGitStatus>): WorkspaceGitStatus => (
   state: 'ready',
   branch: 'main',
   headSubject: 'base',
-  ahead: 0,
-  behind: 0,
-  staged: 0,
-  unstaged: 0,
-  untracked: 0,
-  changed: 0,
-  hasUpstream: true,
+  upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+  workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+  upstream: 'origin/main',
+  inProgress: null,
   ...overrides,
 });
 
@@ -77,7 +74,18 @@ describe('WorkspaceGitPanel main status', () => {
     render(
       <WorkspaceGitPanel
         rootPath={ROOT}
-        status={status({ branch: 'main', ahead: 2, behind: 3, changed: 4, unstaged: 4 })}
+        status={status({
+          branch: 'main',
+          upstreamDistance: { kind: 'known', ahead: 2, behind: 3 },
+          workingTree: {
+            kind: 'known',
+            staged: 0,
+            unstaged: 4,
+            untracked: 0,
+            unmerged: 0,
+            changed: 4,
+          },
+        })}
       />,
     );
 
@@ -95,14 +103,82 @@ describe('WorkspaceGitPanel main status', () => {
     expect(screen.queryByText(/to pull/)).toBeNull();
   });
 
-  it('cannot tell a failed read apart from a genuinely clean checkout', () => {
-    const genuinelyClean = status({});
-    const everyReadFailed = status({});
+  it('never claims a checkout is in sync when the read failed', () => {
+    render(
+      <WorkspaceGitPanel
+        rootPath={ROOT}
+        status={status({
+          upstreamDistance: { kind: 'unknown', reason: 'rev-list-failed' },
+          workingTree: { kind: 'unknown', reason: 'status-read-failed' },
+        })}
+      />,
+    );
 
-    expect(everyReadFailed).toEqual(genuinelyClean);
+    expect(screen.queryByText('In sync and clean')).toBeNull();
+    expect(screen.getByText('Goodboy cannot read this checkout')).toBeDefined();
+    expect(screen.getByText('git status could not be read')).toBeDefined();
+  });
 
-    render(<WorkspaceGitPanel rootPath={ROOT} status={everyReadFailed} />);
+  it('counts a conflicted file as conflicted, never as staged and unstaged', () => {
+    render(
+      <WorkspaceGitPanel
+        rootPath={ROOT}
+        status={status({
+          inProgress: 'merge',
+          workingTree: {
+            kind: 'known',
+            staged: 0,
+            unstaged: 0,
+            untracked: 0,
+            unmerged: 1,
+            changed: 1,
+          },
+        })}
+      />,
+    );
 
-    expect(screen.getByText('In sync and clean')).toBeDefined();
+    expect(screen.getByText('1 conflicted')).toBeDefined();
+    expect(screen.getByText('a merge is in progress')).toBeDefined();
+  });
+
+  it('keeps the fast-forward control visible and disabled with a reason on a dirty tree', () => {
+    render(
+      <WorkspaceGitPanel
+        rootPath={ROOT}
+        status={status({
+          upstreamDistance: { kind: 'known', ahead: 0, behind: 2 },
+          workingTree: {
+            kind: 'known',
+            staged: 0,
+            unstaged: 1,
+            untracked: 0,
+            unmerged: 0,
+            changed: 1,
+          },
+        })}
+      />,
+    );
+
+    const control = screen.getByRole('button', { name: /Fast-forward main to origin\/main/ });
+
+    expect(control.hasAttribute('disabled')).toBe(true);
+    expect(screen.getByText('commit or stash the uncommitted changes first')).toBeDefined();
+  });
+
+  it('names the branch and upstream it will fast-forward, never main by default', () => {
+    render(
+      <WorkspaceGitPanel
+        rootPath={ROOT}
+        status={status({
+          branch: 'ak/feature',
+          upstream: 'origin/ak/feature',
+          upstreamDistance: { kind: 'known', ahead: 0, behind: 3 },
+        })}
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: /Fast-forward ak\/feature to origin\/ak\/feature/ }),
+    ).toBeDefined();
   });
 });

@@ -233,6 +233,7 @@ export type AppActions = {
   renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;
   deleteWorkspace(id: WorkspaceId): Promise<void>;
   loadWorkspaceGitStatus(input: { workspaceId: WorkspaceId }): Promise<void>;
+  fastForwardWorkspaceCheckout(input: { workspaceId: WorkspaceId }): Promise<void>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
   connectLinear(workspaceId: WorkspaceId, token: string): Promise<LinearViewer>;
   disconnectLinear(workspaceId: WorkspaceId): Promise<void>;
@@ -771,6 +772,7 @@ export const initialState: AppState = {
   workspaces: [],
   workspaceIntegrations: {},
   workspaceGitStatus: {},
+  workspaceCheckoutPulling: {},
   sessionExternalTasks: {},
   currentWorkspaceId: null,
   windowPresence: {},

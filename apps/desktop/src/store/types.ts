@@ -176,6 +176,7 @@ export type AppState = AppSliceState & {
     Record<WorkspaceId, ReadonlyArray<WorkspaceIntegration>>
   >;
   readonly workspaceGitStatus: Readonly<Record<WorkspaceId, WorkspaceGitStatus>>;
+  readonly workspaceCheckoutPulling: Readonly<Record<WorkspaceId, boolean>>;
   readonly sessionExternalTasks: Readonly<Record<SessionId, ReadonlyArray<SessionExternalTask>>>;
   readonly currentWorkspaceId: WorkspaceId | null;
   readonly windowPresence: Readonly<Record<string, WorkspaceId | null>>;
