@@ -7,6 +7,7 @@ import type { DiffView, SessionId } from '@goodboy/types';
 type DiffViewSelectorMockProps = {
   view: DiffView;
   onChange: (view: DiffView) => void;
+  filesCount: number | null;
 };
 
 type ToastAction = { readonly label: string; readonly onClick: () => void };
@@ -43,6 +44,7 @@ const { showToast, state, fixtures } = vi.hoisted(() => ({
   fixtures: {
     files: [] as ReadonlyArray<unknown>,
     comments: [] as ReadonlyArray<unknown>,
+    diffFailure: null as string | null,
     status: {
       head: null,
       headSubject: null,
@@ -78,17 +80,27 @@ vi.mock('../../../../app/components/Toast', () => ({
 
 vi.mock('../../../../features/worktree/worktree', () => ({
   listBranchCommits: vi.fn(async () => []),
-  worktreeDiff: vi.fn(async () => ''),
+  worktreeDiff: vi.fn(async () => {
+    if (fixtures.diffFailure !== null) {
+      throw new Error(fixtures.diffFailure);
+    }
+    return '';
+  }),
   worktreeDiffCommit: vi.fn(async () => ''),
   worktreeDiffWorking: vi.fn(async () => ''),
   worktreeStatus: vi.fn(async () => fixtures.status),
 }));
 
 vi.mock('../DiffViewSelector', () => ({
-  DiffViewSelector: ({ view, onChange }: DiffViewSelectorMockProps) => (
-    <button type="button" onClick={() => onChange({ kind: 'working', scope: 'staged' })}>
-      {view.kind === 'branch' ? 'branch vs main' : 'staged only'}
-    </button>
+  DiffViewSelector: ({ view, onChange, filesCount }: DiffViewSelectorMockProps) => (
+    <>
+      <button type="button" onClick={() => onChange({ kind: 'working', scope: 'staged' })}>
+        {view.kind === 'branch' ? 'branch vs main' : 'staged only'}
+      </button>
+      <span data-testid="selector-count">
+        {filesCount === null ? 'no count' : `${filesCount} counted`}
+      </span>
+    </>
   ),
 }));
 
@@ -114,6 +126,7 @@ beforeEach(() => {
   showToast.mockClear();
   fixtures.files = [];
   fixtures.comments = [];
+  fixtures.diffFailure = null;
   fixtures.status.hasUpstream = false;
   fixtures.status.branch = null;
   fixtures.status.ahead = 0;
@@ -265,6 +278,25 @@ describe('DiffViewerPane', () => {
     expect(screen.getByTitle('Unpushed commits')).toBeDefined();
     expect(screen.getByTitle('Behind upstream')).toBeDefined();
     expect(screen.queryByText('1 file')).toBeNull();
+  });
+
+  it('stops asserting a file count once the diff failed to load', async () => {
+    fixtures.diffFailure = 'repository not found';
+    render(<DiffViewerPane worktreePath="/tmp/worktree" onClose={vi.fn()} />);
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('repository not found');
+    for (const counter of screen.getAllByTestId('selector-count')) {
+      expect(counter.textContent).toBe('no count');
+    }
+  });
+
+  it('reports the file count once the diff actually loaded', async () => {
+    fixtures.files = fileFixture();
+    render(<DiffViewerPane worktreePath="/tmp/worktree" onClose={vi.fn()} />);
+
+    await screen.findByText(/alpha/);
+    expect(screen.getAllByTestId('selector-count')[0]?.textContent).toBe('1 counted');
   });
 
   it('keeps the diff on screen when the rebase starts and opens the agent only on request', async () => {

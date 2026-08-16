@@ -756,6 +756,7 @@ export const DiffViewerContent = ({
   }, []);
 
   const isEmpty = !loading && !error && files.length === 0;
+  const verifiedFilesCount = !loading && error === null ? files.length : null;
   const isPane = presentation === 'pane';
   const isDefaultView = view.kind === 'branch';
   const commitsAheadOfMain = status?.commitsAheadOfMain ?? 0;
@@ -845,7 +846,7 @@ export const DiffViewerContent = ({
                       onChange={setView}
                       commits={commits}
                       status={status}
-                      filesCount={loading ? null : files.length}
+                      filesCount={verifiedFilesCount}
                       loading={loading}
                     />
                   ) : null
@@ -890,7 +891,7 @@ export const DiffViewerContent = ({
                       onChange={setView}
                       commits={commits}
                       status={status}
-                      filesCount={loading ? null : files.length}
+                      filesCount={verifiedFilesCount}
                       loading={loading}
                     />
                   </div>
@@ -944,7 +945,7 @@ export const DiffViewerContent = ({
                     onChange={setView}
                     commits={commits}
                     status={status}
-                    filesCount={loading ? null : files.length}
+                    filesCount={verifiedFilesCount}
                     loading={loading}
                   />
                 ) : null
