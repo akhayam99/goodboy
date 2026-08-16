@@ -27,6 +27,13 @@ function connectionSpec(connection: ProviderConnectionState): PillSpec {
       };
     case 'error':
       return { label: 'Error', tone: 'danger', labelClass: 'text-danger' };
+    case 'unknown':
+      return {
+        label: 'Checking',
+        tone: 'neutral',
+        dotClassName: 'bg-muted-foreground/40',
+        labelClass: 'text-muted-foreground',
+      };
   }
 }
 

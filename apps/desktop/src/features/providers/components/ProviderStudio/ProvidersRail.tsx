@@ -16,6 +16,7 @@ const STATUS_TONE: Record<ProviderConnectionState, Tone> = {
   installed_disconnected: 'warning',
   missing: 'neutral',
   error: 'danger',
+  unknown: 'neutral',
 };
 
 const STATUS_LABEL: Record<ProviderConnectionState, string> = {
@@ -23,6 +24,7 @@ const STATUS_LABEL: Record<ProviderConnectionState, string> = {
   installed_disconnected: 'installed',
   missing: 'not installed',
   error: 'error',
+  unknown: 'checking',
 };
 
 export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults }: Props) => {

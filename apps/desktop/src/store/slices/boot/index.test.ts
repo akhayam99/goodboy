@@ -581,6 +581,15 @@ describe('store contract', () => {
       expect(store.getState().bootPhase).toBe('ready');
     });
 
+    it('runs the database migrations once when two hydrations start concurrently', async () => {
+      const store = await getStore();
+
+      await Promise.all([store.getState().hydrate(), store.getState().hydrate()]);
+
+      expect(runDbMigrationsSpy).toHaveBeenCalledOnce();
+      expect(store.getState().bootPhase).toBe('ready');
+    });
+
     it('still restarts hydration when retry runs after a failed attempt', async () => {
       const store = await getStore();
       listWorkspacesSpy.mockRejectedValueOnce(new Error('boom'));

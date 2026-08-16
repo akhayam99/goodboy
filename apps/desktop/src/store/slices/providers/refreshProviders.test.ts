@@ -1,4 +1,8 @@
+// @vitest-environment happy-dom
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
+import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
 import { refreshProviders } from './refreshProviders';
 import { IDLE_CONNECT, INITIAL_CONNECT_MAP } from './types';
 
@@ -15,7 +19,10 @@ const providerMocks = vi.hoisted(() => {
     buildProviderList: vi.fn(
       (_statuses: unknown, _authResults: unknown, _credentialProviderIds: unknown) => [],
     ),
-    checkProviderAuth: vi.fn(async () => ({ state: 'unknown', identity: null })),
+    checkProviderAuth: vi.fn(async (): Promise<{ state: string; identity: string | null }> => ({
+      state: 'unknown',
+      identity: null,
+    })),
     refreshProviderDetection: vi.fn(async () => status),
   };
 });
@@ -24,6 +31,7 @@ vi.mock('../../../features/providers/providers', () => providerMocks);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
 });
 
 describe('refreshProviders', () => {
@@ -80,5 +88,51 @@ describe('refreshProviders', () => {
     await refreshProviders(set as never, get as never)();
     const patch = set.mock.calls[0]?.[0] as { providerConnect: typeof INITIAL_CONNECT_MAP };
     expect(patch.providerConnect.cursor).toEqual(connected);
+  });
+
+  it('keeps every cursor max mode key on the first refresh after a cold start', async () => {
+    const key = STORAGE_PREFIXES.cursorMaxMode + 'someone%40example.com:composer-1';
+    localStorage.setItem(key, '1');
+    const clearAll = vi.spyOn(cursorMaxModeAdvisory, 'clearAll');
+    providerMocks.checkProviderAuth.mockResolvedValue({
+      state: 'connected',
+      identity: 'someone@example.com',
+    });
+    const get = vi.fn(() => ({
+      authResults: null,
+      providerCredentials: [],
+      providerConnect: INITIAL_CONNECT_MAP,
+    }));
+    const set = vi.fn();
+
+    await refreshProviders(set as never, get as never)();
+
+    expect(clearAll).not.toHaveBeenCalled();
+    expect(localStorage.getItem(key)).toBe('1');
+    clearAll.mockRestore();
+  });
+
+  it('still clears the cursor max mode keys when a known identity changes', async () => {
+    const key = STORAGE_PREFIXES.cursorMaxMode + 'someone%40example.com:composer-1';
+    localStorage.setItem(key, '1');
+    const clearAll = vi.spyOn(cursorMaxModeAdvisory, 'clearAll');
+    providerMocks.checkProviderAuth.mockResolvedValue({
+      state: 'connected',
+      identity: 'someone@example.com',
+    });
+    const get = vi.fn(() => ({
+      authResults: {
+        cursor: { state: 'connected', identity: 'previous@example.com' },
+      },
+      providerCredentials: [],
+      providerConnect: INITIAL_CONNECT_MAP,
+    }));
+    const set = vi.fn();
+
+    await refreshProviders(set as never, get as never)();
+
+    expect(clearAll).toHaveBeenCalledOnce();
+    expect(localStorage.getItem(key)).toBeNull();
+    clearAll.mockRestore();
   });
 });

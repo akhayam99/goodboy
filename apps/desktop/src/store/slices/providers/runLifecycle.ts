@@ -99,7 +99,8 @@ const storedStatus = ({ providerId, providers }: StoredStatusParams): ProviderSt
   return {
     id: providerId,
     binary: info.binary,
-    available: info.connection !== 'missing' && info.connection !== 'error',
+    available:
+      info.connection !== 'missing' && info.connection !== 'error' && info.connection !== 'unknown',
     version: info.version,
     error: info.error,
   };
