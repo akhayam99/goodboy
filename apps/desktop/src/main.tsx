@@ -16,7 +16,7 @@ import './styles.css';
 
 bootstrapTheme();
 
-const REPORT_SUMMARY = `The report carries the error message above and where it broke in the app, with home folders shortened to ~ and that part cut at ${CRASH_TRACE_BUDGET} characters. It only fills in a GitHub issue form: nothing leaves this computer until you submit it yourself.`;
+const REPORT_SUMMARY = `The report carries the error message above and where it broke in the app, with home folders shortened to ~ and that part cut to at most ${CRASH_TRACE_BUDGET} characters. Reporting opens a prefilled GitHub issue form in your browser, so the text reaches GitHub as the page loads. Nothing is posted until you submit it there.`;
 
 const reportCrash = async ({
   error,

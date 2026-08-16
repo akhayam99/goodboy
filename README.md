@@ -140,12 +140,15 @@ pnpm + Turborepo monorepo: `apps/desktop` plus `packages/{ui,core,db,types}`.
 ## What stays on your machine
 
 Goodboy is an orchestration layer. There is no backend, there are no accounts,
-and what you write reaches only the services you connected yourself. Two things
-sit outside that sentence and are listed below with the rest: a local
-diagnostics file, and the check for a new version.
+and what you write reaches only the services you connected yourself. Three
+things sit outside that sentence and are listed below with the rest: a local
+diagnostics file, the check for a new version, and a crash report you choose to
+send.
 
-- **The app carries no telemetry.** No usage pings, no crash reports, no
-  opt-in switch to find later.
+- **The app carries no telemetry.** No usage pings, no opt-in switch to find
+  later, nothing sent in the background. When a crash takes the screen down,
+  Goodboy can fill in a GitHub issue with the error, and only your click opens
+  it.
 - **The website is not the app.** `goodboy-ai.dev` runs Google Tag Manager and
   Vercel's analytics and speed tools to see how the page itself is doing.
   Reading about Goodboy is measured. Running it is not.
@@ -169,10 +172,19 @@ diagnostics file, and the check for a new version.
   again when that window regains focus or becomes visible, and once an hour
   while it stays visible. Only those later checks are spaced half an hour apart,
   the one at open is not, so launching and clicking into the app sends two
-  requests. That is the only reason Goodboy touches the network with nothing
-  connected at all. It carries no data about you, and an update it finds is
-  verified against the signing key shipped in the app before anything is
+  requests. That is the only network request Goodboy makes on its own with
+  nothing connected at all. It carries no data about you, and an update it finds
+  is verified against the signing key shipped in the app before anything is
   installed.
+- **Reporting a crash opens a prefilled GitHub issue in your browser.** When the
+  app stops rendering it offers a Report button, and nothing leaves until you
+  press it. The link carries the app version, the error message, and at most
+  1,500 characters of the part that says where in the app it broke, with home
+  folders shortened to `~` while project and file paths stay as they are. GitHub
+  receives that text as the prefilled page loads, not when you submit it, and
+  the whole link is capped at 4,096 bytes so a long report is trimmed further to
+  fit. Submitting the form is what turns it into a public issue. Close the tab
+  and nothing is filed.
 
 If Goodboy disappeared tomorrow, your data would be untouched, because it was
 never ours.
