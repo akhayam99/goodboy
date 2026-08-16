@@ -37,6 +37,8 @@ vi.mock('../../../../app/components/Toast', () => ({
 import { StorageSection } from './StorageSection';
 
 beforeEach(() => {
+  state.storageStats.archivedSessionCount = 3;
+  state.storageStats.archivedTranscriptRows = 12_481;
   state.loadStorageStats.mockClear();
   state.pruneArchivedTranscripts.mockClear();
   state.removeArchivedWorktrees.mockClear();
@@ -80,5 +82,36 @@ describe('StorageSection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove archived worktrees' }));
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
     await waitFor(() => expect(state.removeArchivedWorktrees).toHaveBeenCalledTimes(1));
+  });
+
+  it('groups every count under the app locale, never the operating system one', () => {
+    const toLocaleString = Number.prototype.toLocaleString;
+    const italian = vi.spyOn(Number.prototype, 'toLocaleString').mockImplementation(function (
+      this: number,
+      locales?: unknown,
+      options?: unknown,
+    ) {
+      return toLocaleString.call(
+        this,
+        locales ?? 'it-IT',
+        options as Intl.NumberFormatOptions | undefined,
+      );
+    });
+
+    render(<StorageSection />);
+
+    expect(screen.getByText('12,481 rows')).toBeDefined();
+    italian.mockRestore();
+  });
+
+  it('says row, session and folder in the singular when the count is one', () => {
+    state.storageStats.archivedSessionCount = 1;
+    state.storageStats.archivedTranscriptRows = 1;
+
+    render(<StorageSection />);
+
+    expect(screen.getByText('1 row')).toBeDefined();
+    expect(screen.getByText('1 folder')).toBeDefined();
+    expect(screen.getByText(/Streamed events of 1 archived session\./)).toBeDefined();
   });
 });

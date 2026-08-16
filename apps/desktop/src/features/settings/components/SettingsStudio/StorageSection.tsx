@@ -10,6 +10,7 @@ import {
   Skeleton,
 } from '@goodboy/ui';
 import { useToast } from '../../../../app/components/Toast';
+import { formatInteger } from '../../../../shared/utils/formatInteger';
 import { useAppStore } from '../../../../store';
 import { formatBytes } from './formatBytes';
 
@@ -32,6 +33,8 @@ export const StorageSection = () => {
 
   const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget | null>(null);
   const [busyTarget, setBusyTarget] = useState<ConfirmTarget | null>(null);
+  const archivedSessionCount = stats?.archivedSessionCount ?? 0;
+  const archivedTranscriptRows = stats?.archivedTranscriptRows ?? 0;
 
   useEffect(() => {
     void loadStorageStats().catch((err: unknown) => showToast('error', formatError(err)));
@@ -42,7 +45,10 @@ export const StorageSection = () => {
     try {
       const deleted = await pruneArchivedTranscripts();
       setConfirmTarget(null);
-      showToast('success', `pruned ${deleted.toLocaleString()} transcript events`);
+      showToast(
+        'success',
+        `pruned ${formatInteger(deleted)} transcript event${deleted === 1 ? '' : 's'}`,
+      );
     } catch (err) {
       showToast('error', formatError(err));
     } finally {
@@ -56,10 +62,16 @@ export const StorageSection = () => {
       const result = await removeArchivedWorktrees();
       setConfirmTarget(null);
       if (result.failed > 0) {
-        showToast('error', `removed ${result.removed} worktrees, ${result.failed} failed`);
+        showToast(
+          'error',
+          `removed ${formatInteger(result.removed)} worktree${result.removed === 1 ? '' : 's'}, ${formatInteger(result.failed)} failed`,
+        );
         return;
       }
-      showToast('success', `removed ${result.removed} worktrees`);
+      showToast(
+        'success',
+        `removed ${formatInteger(result.removed)} worktree${result.removed === 1 ? '' : 's'}`,
+      );
     } catch (err) {
       showToast('error', formatError(err));
     } finally {
@@ -89,7 +101,7 @@ export const StorageSection = () => {
 
         <FieldRow
           label="Archived transcripts"
-          help={`Streamed events of ${(stats?.archivedSessionCount ?? 0).toLocaleString()} archived sessions.`}
+          help={`Streamed events of ${formatInteger(archivedSessionCount)} archived session${archivedSessionCount === 1 ? '' : 's'}.`}
         >
           {showSkeleton ? (
             <Skeleton className="h-7 w-56" />
@@ -108,7 +120,8 @@ export const StorageSection = () => {
           ) : (
             <span className="flex items-center gap-3">
               <span className="text-xs tabular-nums text-muted-foreground">
-                {(stats?.archivedTranscriptRows ?? 0).toLocaleString()} rows
+                {formatInteger(archivedTranscriptRows)} row
+                {archivedTranscriptRows === 1 ? '' : 's'}
               </span>
               <span className="text-xs tabular-nums text-foreground">
                 {formatBytes({ bytes: stats?.archivedTranscriptBytes ?? 0 })}
@@ -117,7 +130,7 @@ export const StorageSection = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setConfirmTarget('transcripts')}
-                disabled={(stats?.archivedTranscriptRows ?? 0) === 0}
+                disabled={archivedTranscriptRows === 0}
                 className="text-danger hover:bg-danger/10 hover:text-danger"
               >
                 {PRUNE_LABEL}
@@ -147,7 +160,7 @@ export const StorageSection = () => {
           ) : (
             <span className="flex items-center gap-3">
               <span className="text-xs tabular-nums text-foreground">
-                {worktrees.length.toLocaleString()} folders
+                {formatInteger(worktrees.length)} folder{worktrees.length === 1 ? '' : 's'}
               </span>
               <Button
                 variant="ghost"
