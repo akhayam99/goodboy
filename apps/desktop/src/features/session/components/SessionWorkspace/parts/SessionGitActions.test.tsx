@@ -31,7 +31,10 @@ const h = vi.hoisted(() => ({
   },
   worktreeStatus: vi.fn(
     async (): Promise<WorktreeStatus> =>
-      ({ ahead: 1, commitsBehindMain: 2 }) as unknown as WorktreeStatus,
+      ({
+        upstreamDistance: { kind: 'known', ahead: 1, behind: 0 },
+        mainDistance: { kind: 'known', ahead: 0, behind: 2 },
+      }) as unknown as WorktreeStatus,
   ),
 }));
 

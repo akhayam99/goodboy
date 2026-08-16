@@ -48,16 +48,19 @@ const { showToast, state, fixtures } = vi.hoisted(() => ({
     status: {
       head: null,
       headSubject: null,
-      unstaged: 0,
-      staged: 0,
-      untracked: 0,
-      hasUpstream: false,
+      workingTree: {
+        kind: 'known',
+        staged: 0,
+        unstaged: 0,
+        untracked: 0,
+        unmerged: 0,
+        changed: 0,
+      },
+      upstream: null as string | null,
+      inProgress: null,
       branch: null,
-      ahead: 0,
-      behind: 0,
-      commitsAheadOfMain: 2,
-      commitsBehindMain: 3,
-      changed: 0,
+      upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+      mainDistance: { kind: 'known', ahead: 2, behind: 3 },
     },
   },
 }));
@@ -127,12 +130,10 @@ beforeEach(() => {
   fixtures.files = [];
   fixtures.comments = [];
   fixtures.diffFailure = null;
-  fixtures.status.hasUpstream = false;
+  fixtures.status.upstream = null;
   fixtures.status.branch = null;
-  fixtures.status.ahead = 0;
-  fixtures.status.behind = 0;
-  fixtures.status.commitsAheadOfMain = 2;
-  fixtures.status.commitsBehindMain = 3;
+  fixtures.status.upstreamDistance = { kind: 'known', ahead: 0, behind: 0 };
+  fixtures.status.mainDistance = { kind: 'known', ahead: 2, behind: 3 };
   if (typeof localStorage !== 'undefined') {
     localStorage.clear();
   }
@@ -265,10 +266,9 @@ describe('DiffViewerPane', () => {
 
   it('shows selector controls and main-relative commit metadata for a non-empty diff', async () => {
     fixtures.files = fileFixture();
-    fixtures.status.hasUpstream = true;
+    fixtures.status.upstream = 'origin/feature';
     Object.assign(fixtures.status, { branch: 'feature' });
-    fixtures.status.ahead = 2;
-    fixtures.status.behind = 1;
+    fixtures.status.upstreamDistance = { kind: 'known', ahead: 2, behind: 1 };
     render(<DiffViewerPane worktreePath="/tmp/worktree" onClose={vi.fn()} />);
     expect(await screen.findByText(/alpha/)).toBeDefined();
     expect(screen.getByRole('button', { name: 'branch vs main' })).toBeDefined();
@@ -350,7 +350,7 @@ describe('DiffViewerPane', () => {
 
   it('does not show the rebase action when the branch is not behind main', async () => {
     fixtures.files = fileFixture();
-    fixtures.status.commitsBehindMain = 0;
+    fixtures.status.mainDistance = { kind: 'known', ahead: 2, behind: 0 };
     render(<DiffViewerPane sessionId={SID} worktreePath="/tmp/worktree" onClose={vi.fn()} />);
 
     expect(await screen.findByText('2 commits')).toBeDefined();

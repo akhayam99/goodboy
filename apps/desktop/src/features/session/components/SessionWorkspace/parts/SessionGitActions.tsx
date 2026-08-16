@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { GitBranch, Upload } from 'lucide-react';
 import type { Session, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import { distanceAhead } from '../../../../../shared/lib/gitStatus';
 import { worktreeStatus } from '../../../../worktree/worktree';
 import { resolveSessionRepo } from '../../../../../store/slices/worktrees/resolveSessionRepo';
 import { useRebaseAgent } from '../../../hooks/useRebaseAgent';
@@ -78,7 +79,8 @@ export const SessionGitActions = ({ session, density = 'full' }: Props) => {
     return null;
   }
 
-  const canPush = status != null && status.ahead > 0;
+  const ahead = status != null ? distanceAhead({ distance: status.upstreamDistance }) : null;
+  const canPush = ahead != null && ahead > 0;
   const triggerClassName = density === 'compact' ? COMPACT_TRIGGER_BUTTON : FULL_TRIGGER_BUTTON;
   const triggerLabel = mountName == null ? 'Branch' : `${mountName} branch`;
   const items: ReadonlyArray<OverflowMenuItem> = [
