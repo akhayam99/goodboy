@@ -8,7 +8,7 @@ const CHECKLIST_ID_BY_WIZARD_STEP: Readonly<Record<number, OnboardingStepId | nu
   3: null,
   4: 'codeHost',
   5: 'tools',
-  6: null,
+  6: 'tools',
   7: null,
 };
 
