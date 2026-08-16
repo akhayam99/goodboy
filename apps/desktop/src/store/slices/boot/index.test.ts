@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SETTING_EDITOR_BINARY } from '../../../features/settings/settings';
 import { SETTING_CHANGELOG_SEEN } from '../changelog/state';
 import type {
   Agent,
@@ -46,6 +47,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 
 const listWorkspacesSpy = vi.fn(async () => [] as ReadonlyArray<Workspace>);
+const listProviderCredentialsSpy = vi.fn(async () => []);
 const runDbMigrationsSpy = vi.fn(async () => undefined);
 const dbSetSettingSpy = vi.fn(async () => undefined);
 const dbGetSettingSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<string | null>>(
@@ -154,7 +156,7 @@ vi.mock('@goodboy/db', () => ({
   getGithubPrCache: vi.fn(async () => null),
   upsertGithubPrCache: vi.fn(async () => undefined),
   deleteGithubPrCache: vi.fn(async () => undefined),
-  listProviderCredentials: vi.fn(async () => []),
+  listProviderCredentials: listProviderCredentialsSpy,
 }));
 
 vi.mock('../../../shared/lib/db', () => ({
@@ -555,6 +557,61 @@ describe('store contract', () => {
       const s = store.getState();
       expect(s.hydrated).toBe(true);
       expect(s.bootPhase).toBe('ready');
+    });
+
+    it('reports the elapsed time of the phase named by every boot breadcrumb', async () => {
+      type BreadcrumbDetailParams = { phase: string };
+
+      const store = await getStore();
+      let clock = 0;
+      const nowSpy = vi.spyOn(Date, 'now').mockImplementation(() => clock);
+      runDbMigrationsSpy.mockImplementationOnce(async () => {
+        clock = 10;
+      });
+      dbGetSettingSpy.mockImplementation(async (_db: unknown, key: string) => {
+        if (key === SETTING_EDITOR_BINARY) {
+          clock = 1_010;
+        }
+        return null;
+      });
+      listProviderCredentialsSpy.mockImplementationOnce(async () => {
+        clock = 1_040;
+        return [];
+      });
+
+      await store.getState().hydrate();
+      nowSpy.mockRestore();
+
+      const calls = invokeSpy.mock.calls as unknown as ReadonlyArray<ReadonlyArray<unknown>>;
+      const breadcrumbDetail = ({ phase }: BreadcrumbDetailParams): unknown => {
+        const call = calls.find(([command, payload]) => {
+          if (command !== 'boot_breadcrumb') {
+            return false;
+          }
+          if (typeof payload !== 'object' || payload === null) {
+            return false;
+          }
+          if (!('phase' in payload)) {
+            return false;
+          }
+          return payload.phase === phase;
+        });
+        if (call === undefined) {
+          return undefined;
+        }
+        const payload = call[1];
+        if (typeof payload !== 'object' || payload === null) {
+          return undefined;
+        }
+        if (!('detail' in payload)) {
+          return undefined;
+        }
+        return payload.detail;
+      };
+
+      expect(breadcrumbDetail({ phase: 'migrating' })).toBe('ms=10');
+      expect(breadcrumbDetail({ phase: 'loading-settings' })).toBe('ms=1000');
+      expect(breadcrumbDetail({ phase: 'detecting-cli' })).toBe('ms=30');
     });
 
     it('joins the in-flight hydration instead of starting a second run on retry', async () => {

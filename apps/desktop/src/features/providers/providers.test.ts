@@ -75,3 +75,37 @@ describe('Moonshot provider connection', () => {
     expect(openrouter?.connection).toBe('installed_disconnected');
   });
 });
+
+describe('undetected providers', () => {
+  it('reports an unknown API provider connection regardless of credentials', () => {
+    expect(connectionForApiProvider({ status: null, hasCredential: true })).toBe('unknown');
+    expect(connectionForApiProvider({ status: null, hasCredential: false })).toBe('unknown');
+  });
+
+  it('reports unknown connections across undetected provider types', () => {
+    const providers = buildProviderList({
+      anthropic: null,
+      cursor: null,
+      codex: null,
+      gemini: null,
+      opencode: null,
+      openrouter: null,
+      moonshot: null,
+    });
+    const anthropic = providers.find((provider) => provider.id === 'anthropic');
+    const cursor = providers.find((provider) => provider.id === 'cursor');
+    const openrouter = providers.find((provider) => provider.id === 'openrouter');
+    expect(anthropic?.connection).toBe('unknown');
+    expect(cursor?.connection).toBe('unknown');
+    expect(openrouter?.connection).toBe('unknown');
+  });
+
+  it('reports a detected unavailable runtime provider as missing', () => {
+    const providers = buildProviderList({
+      ...statusesFor({ available: true }),
+      cursor: { ...runtimeStatus({ available: false }), id: 'cursor' },
+    });
+    const cursor = providers.find((provider) => provider.id === 'cursor');
+    expect(cursor?.connection).toBe('missing');
+  });
+});

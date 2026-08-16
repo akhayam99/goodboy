@@ -46,4 +46,18 @@ describe('useProviderRefreshOnFocus', () => {
     await vi.advanceTimersByTimeAsync(1000);
     expect(state.refreshProviders).toHaveBeenCalledOnce();
   });
+
+  it('does not repeat a focus during boot when the ready kick runs', async () => {
+    state.bootPhase = 'loading-workspaces';
+    const view = renderHook(() => useProviderRefreshOnFocus());
+
+    window.dispatchEvent(new Event('focus'));
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(state.refreshProviders).toHaveBeenCalledOnce();
+
+    state.bootPhase = 'ready';
+    view.rerender();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(state.refreshProviders).toHaveBeenCalledOnce();
+  });
 });
