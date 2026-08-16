@@ -165,10 +165,14 @@ diagnostics file, and the check for a new version.
   file never leaves your machine. [SECURITY.md](./SECURITY.md) has the
   allowlist, the file mode and the rotation.
 - **A release build asks GitHub whether a newer version exists.** It requests
-  the update manifest published with the releases, on window focus and once an
-  hour, and that is the one request Goodboy makes with nothing connected at
-  all. It carries no data about you, and an update it finds is verified against
-  the signing key shipped in the app before anything is installed.
+  the update manifest published with the releases: once as a window opens, then
+  again when that window regains focus or becomes visible, and once an hour
+  while it stays visible. Only those later checks are spaced half an hour apart,
+  the one at open is not, so launching and clicking into the app sends two
+  requests. That is the only reason Goodboy touches the network with nothing
+  connected at all. It carries no data about you, and an update it finds is
+  verified against the signing key shipped in the app before anything is
+  installed.
 
 If Goodboy disappeared tomorrow, your data would be untouched, because it was
 never ours.

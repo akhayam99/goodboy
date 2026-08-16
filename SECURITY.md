@@ -29,13 +29,16 @@ Goodboy runs entirely on your machine, no backend:
   values, paths, response bodies or credentials. On macOS and Linux the file is
   owner-only (`0600`). Past 64 KiB it is renamed to `boot-breadcrumbs.log.1`
   and a fresh file starts, so at most two are kept.
-- A release build checks for its own updates, and this is the one request
-  Goodboy makes with no provider connected: it fetches the update manifest
-  `latest.json` published with the GitHub releases, on window focus and hourly,
-  at most once every 30 minutes, and never in a development build. The request
-  carries no data about you or your machine, and any update it finds is
-  verified against the public key in `apps/desktop/src-tauri/tauri.conf.json`
-  before it is installed.
+- A release build checks for its own updates, and that is the only reason
+  Goodboy touches the network with no provider connected: it fetches the update
+  manifest `latest.json` published with the GitHub releases. Each window checks
+  once as it opens, and after that when it regains focus, when it becomes
+  visible again, and hourly while it stays visible. Only those later checks are
+  spaced, at least 30 minutes apart and counted per window; the check at open is
+  not, so an ordinary launch followed by a click into the app sends two requests
+  seconds apart. A development build never checks. The request carries no data
+  about you or your machine, and any update it finds is verified against the
+  public key in `apps/desktop/src-tauri/tauri.conf.json` before it is installed.
 - No telemetry, of any kind, ever. Adding it is refused whoever asks.
 
 Caveat: a token you paste for an integration (GitHub, GitLab, Jira,
