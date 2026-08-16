@@ -1879,6 +1879,7 @@ mod rewrite_tests {
             ],
         );
         let copy = clone_root.join("copy");
+        git_ok(&copy, &["checkout", "-B", "main", "--track", "origin/main"]);
         commit(&root, "next.txt", "next", "next");
         git_ok(&root, &["push", "origin", "main"]);
 
