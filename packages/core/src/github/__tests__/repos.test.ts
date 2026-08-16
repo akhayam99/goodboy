@@ -1,16 +1,47 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import type { GhRunner } from '../gh';
 import { createGithubRepo, listOwnedRepos, validateGithubRepoName } from '../repos';
+
+const reposSource = readFileSync(fileURLToPath(new URL('../repos.ts', import.meta.url)), 'utf8');
 
 const makeRunner = (result: { stdout: string; stderr: string; exitCode: number }): GhRunner => ({
   run: vi.fn().mockResolvedValue(result),
 });
 
-const repo = (nameWithOwner: string) => ({
+const repo = (nameWithOwner: string, isPrivate = false) => ({
   nameWithOwner,
   url: `https://github.com/${nameWithOwner}`,
   sshUrl: `git@github.com:${nameWithOwner}.git`,
-  isPrivate: false,
+  isPrivate,
+});
+
+describe('the repos module surface', () => {
+  it('carries no gh subcommand beyond repo create, repo view and repo list', () => {
+    const subcommands = Array.from(reposSource.matchAll(/'repo',\s*'([a-z-]+)'/g)).map(
+      (match) => match[1],
+    );
+
+    expect(subcommands.length).toBeGreaterThan(0);
+    for (const subcommand of subcommands) {
+      expect(['create', 'view', 'list']).toContain(subcommand);
+    }
+  });
+
+  it('never reaches for a destructive gh call', () => {
+    expect(reposSource).not.toContain('delete');
+    expect(reposSource).not.toContain("'api'");
+    expect(reposSource).not.toContain('-X');
+  });
+
+  it('keeps the visibility flag inside the closed record', () => {
+    const flags = Array.from(reposSource.matchAll(/'--(public|private)'/g)).map(
+      (match) => match[0],
+    );
+
+    expect(flags).toEqual(["'--public'", "'--private'"]);
+  });
 });
 
 describe('listOwnedRepos', () => {
@@ -86,7 +117,7 @@ describe('createGithubRepo', () => {
       .fn()
       .mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 })
       .mockResolvedValueOnce({
-        stdout: JSON.stringify(repo('acme/widgets')),
+        stdout: JSON.stringify(repo('acme/widgets', true)),
         stderr: '',
         exitCode: 0,
       });
@@ -94,10 +125,11 @@ describe('createGithubRepo', () => {
     const result = await createGithubRepo({
       runner: { run },
       name: 'widgets',
+      owner: 'acme',
       visibility: 'private',
     });
 
-    expect(result).toEqual({ kind: 'ok', repo: repo('acme/widgets') });
+    expect(result).toEqual({ kind: 'ok', repo: repo('acme/widgets', true) });
     expect(run).toHaveBeenNthCalledWith(1, ['repo', 'create', 'widgets', '--private'], {});
   });
 
@@ -107,6 +139,7 @@ describe('createGithubRepo', () => {
     const result = await createGithubRepo({
       runner: { run },
       name: '--public',
+      owner: 'acme',
       visibility: 'public',
     });
 
@@ -130,10 +163,165 @@ describe('createGithubRepo', () => {
     });
 
     expect(
-      await createGithubRepo({ runner: signedOut, name: 'widgets', visibility: 'public' }),
+      await createGithubRepo({
+        runner: signedOut,
+        name: 'widgets',
+        owner: 'acme',
+        visibility: 'public',
+      }),
     ).toEqual({ kind: 'unauthenticated' });
     expect(
-      await createGithubRepo({ runner: taken, name: 'widgets', visibility: 'public' }),
+      await createGithubRepo({
+        runner: taken,
+        name: 'widgets',
+        owner: 'acme',
+        visibility: 'public',
+      }),
     ).toEqual({ kind: 'failed', message: 'GraphQL: Name already exists on this account' });
+  });
+
+  it('never asks gh to view a bare name', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify(repo('acme/widgets')),
+        stderr: '',
+        exitCode: 0,
+      });
+
+    await createGithubRepo({
+      runner: { run },
+      name: 'widgets',
+      owner: 'acme',
+      visibility: 'public',
+    });
+
+    const viewArgs: ReadonlyArray<string> = run.mock.calls[1]?.[0] ?? [];
+    expect(viewArgs[0]).toBe('repo');
+    expect(viewArgs[1]).toBe('view');
+    expect(viewArgs[2]).toBe('acme/widgets');
+    expect(viewArgs[2]?.includes('/')).toBe(true);
+  });
+
+  it('pins the owner from the create output when the session does not carry one', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce({
+        stdout: 'Created repository acme/widgets on GitHub\nhttps://github.com/acme/widgets\n',
+        stderr: '',
+        exitCode: 0,
+      })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify(repo('acme/widgets')),
+        stderr: '',
+        exitCode: 0,
+      });
+
+    const result = await createGithubRepo({
+      runner: { run },
+      name: 'widgets',
+      owner: null,
+      visibility: 'public',
+    });
+
+    expect(result.kind).toBe('ok');
+    expect(run.mock.calls[1]?.[0]?.[2]).toBe('acme/widgets');
+  });
+
+  it('refuses to guess an owner and discloses the repository it left behind', async () => {
+    const run = vi.fn().mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 });
+
+    const result = await createGithubRepo({
+      runner: { run },
+      name: 'widgets',
+      owner: null,
+      visibility: 'public',
+    });
+
+    expect(result.kind).toBe('unverified');
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(result.kind === 'unverified' && result.message).toContain('was not removed');
+  });
+
+  it('reports a repository that came back under a different owner as a mismatch', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify(repo('someone-else/widgets')),
+        stderr: '',
+        exitCode: 0,
+      });
+
+    const result = await createGithubRepo({
+      runner: { run },
+      name: 'widgets',
+      owner: 'acme',
+      visibility: 'public',
+    });
+
+    expect(result.kind).toBe('mismatch');
+    expect(result.kind === 'mismatch' && result.expected.nameWithOwner).toBe('acme/widgets');
+    expect(result.kind === 'mismatch' && result.actual.nameWithOwner).toBe('someone-else/widgets');
+  });
+
+  it('reports a public repository created for a private request as a mismatch', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify(repo('acme/widgets', false)),
+        stderr: '',
+        exitCode: 0,
+      });
+
+    const result = await createGithubRepo({
+      runner: { run },
+      name: 'widgets',
+      owner: 'acme',
+      visibility: 'private',
+    });
+
+    expect(result.kind).toBe('mismatch');
+    expect(result.kind === 'mismatch' && result.expected.isPrivate).toBe(true);
+    expect(result.kind === 'mismatch' && result.actual.isPrivate).toBe(false);
+  });
+
+  it('discloses the repository it left behind when the read back fails', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 })
+      .mockResolvedValueOnce({ stdout: '', stderr: 'HTTP 502', exitCode: 1 });
+
+    const result = await createGithubRepo({
+      runner: { run },
+      name: 'widgets',
+      owner: 'acme',
+      visibility: 'public',
+    });
+
+    expect(result.kind).toBe('unverified');
+    expect(result.kind === 'unverified' && result.nameWithOwner).toBe('acme/widgets');
+    expect(result.kind === 'unverified' && result.message).toContain('was not removed');
+  });
+
+  it('never deletes anything and never reaches past the gh allowlist', async () => {
+    const run = vi.fn().mockResolvedValue({ stdout: '', stderr: 'HTTP 502', exitCode: 1 });
+
+    await createGithubRepo({
+      runner: { run },
+      name: 'widgets',
+      owner: 'acme',
+      visibility: 'public',
+    });
+
+    for (const call of run.mock.calls) {
+      const args: ReadonlyArray<string> = call[0] ?? [];
+      expect(args[0]).toBe('repo');
+      expect(['create', 'view', 'list']).toContain(args[1]);
+      expect(args).not.toContain('delete');
+      expect(args).not.toContain('-X');
+    }
   });
 });

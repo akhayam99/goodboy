@@ -63,6 +63,14 @@ const repoDestination = ({
   readonly name: string;
 }): string => (owner === null ? name : `${owner}/${name}`);
 
+const visibilityWord = ({ isPrivate }: { readonly isPrivate: boolean }): string =>
+  isPrivate ? 'private' : 'public';
+
+type Orphan = {
+  readonly nameWithOwner: string;
+  readonly url: string;
+};
+
 export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
   const convertWorkspaceToRepo = useAppStore((s) => s.convertWorkspaceToRepo);
   const isGithubCliAvailable = useAppStore((s) => s.githubStatus?.available === true);
@@ -82,6 +90,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
   const [visibility, setVisibility] = useState<GithubRepoVisibility | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [orphan, setOrphan] = useState<Orphan | null>(null);
   const [isConverted, setIsConverted] = useState(false);
   const keepDraftRef = useRef(false);
 
@@ -108,6 +117,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
     setVisibility(null);
     setIsBusy(false);
     setError(null);
+    setOrphan(null);
     setIsConverted(false);
   }, [open, workspace.rootPath]);
 
@@ -176,10 +186,12 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
     }
     setIsBusy(true);
     setError(null);
+    setOrphan(null);
     try {
       const result = await createGithubRepo({
         runner: tauriGhRunner,
         name: nameCheck.name,
+        owner: githubOwner,
         visibility,
       });
       if (result.kind === 'invalid-name') {
@@ -194,14 +206,31 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
         setError(result.message);
         return;
       }
-      await convertWorkspaceToRepo({ workspaceId: workspace.id, remoteUrl: result.repo.url });
+      if (result.kind === 'unverified') {
+        setError(result.message);
+        return;
+      }
+      if (result.kind === 'mismatch') {
+        setError(
+          `GitHub returned ${result.actual.nameWithOwner}, a ${visibilityWord({ isPrivate: result.actual.isPrivate })} repository, and you asked for ${result.expected.nameWithOwner} as ${visibilityWord({ isPrivate: result.expected.isPrivate })}. Nothing was linked and no remote was set. It exists on GitHub at ${result.actual.url} and was not removed.`,
+        );
+        return;
+      }
+
+      try {
+        await convertWorkspaceToRepo({ workspaceId: workspace.id, remoteUrl: result.repo.url });
+      } catch (err) {
+        setOrphan({ nameWithOwner: result.repo.nameWithOwner, url: result.repo.url });
+        setError(formatError(err));
+        return;
+      }
       setIsConverted(true);
     } catch (err) {
       setError(formatError(err));
     } finally {
       setIsBusy(false);
     }
-  }, [convertWorkspaceToRepo, nameCheck, visibility, workspace.id]);
+  }, [convertWorkspaceToRepo, githubOwner, nameCheck, visibility, workspace.id]);
 
   const isCreating = action === 'create';
   const canCreate = isConnected && nameCheck.kind === 'ok' && visibility !== null;
@@ -253,6 +282,14 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
         </div>
       ) : (
         <div className="flex flex-col gap-4">
+          {orphan != null && (
+            <p role="status" className="text-xs leading-relaxed text-warning">
+              {orphan.nameWithOwner} was created on GitHub before this failed. It exists on GitHub
+              at {orphan.url} and was not removed. Delete it yourself if you do not want it, or pick
+              it from Link existing.
+            </p>
+          )}
+
           <SegmentedTabs
             ariaLabel="Repository setup"
             options={ACTION_OPTIONS}

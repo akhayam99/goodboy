@@ -32,10 +32,25 @@ export type RepoNameCheck =
   | { readonly kind: 'ok'; readonly name: string }
   | { readonly kind: 'invalid'; readonly reason: string };
 
+export type ExpectedRepo = {
+  readonly nameWithOwner: string;
+  readonly isPrivate: boolean;
+};
+
 export type CreateRepoResult =
   | { readonly kind: 'ok'; readonly repo: GithubRepoRef }
   | { readonly kind: 'invalid-name'; readonly reason: string }
   | { readonly kind: 'unauthenticated' }
+  | {
+      readonly kind: 'mismatch';
+      readonly expected: ExpectedRepo;
+      readonly actual: GithubRepoRef;
+    }
+  | {
+      readonly kind: 'unverified';
+      readonly nameWithOwner: string | null;
+      readonly message: string;
+    }
   | { readonly kind: 'failed'; readonly message: string };
 
 export const listOwnedRepos = async (
@@ -96,17 +111,42 @@ const failureFrom = ({ err }: { readonly err: unknown }): CreateRepoResult => {
   return { kind: 'failed', message: err instanceof Error ? err.message : String(err) };
 };
 
+const CREATED_SLUG_PATTERN = /https?:\/\/[^/\s]+\/([A-Za-z0-9._-]+)\/([A-Za-z0-9._-]+)/;
+
+type OwnerFromCreateOutputParams = {
+  readonly stdout: string;
+  readonly name: string;
+};
+
+const ownerFromCreateOutput = ({ stdout, name }: OwnerFromCreateOutputParams): string | null => {
+  const matched = CREATED_SLUG_PATTERN.exec(stdout);
+  if (matched === null) {
+    return null;
+  }
+
+  const [, owner, created] = matched;
+  if (owner == null || created !== name) {
+    return null;
+  }
+
+  return owner;
+};
+
+type CreateGithubRepoParams = {
+  readonly runner: GhRunner;
+  readonly name: string;
+  readonly owner: string | null;
+  readonly visibility: GithubRepoVisibility;
+  readonly options?: GhRunOptions;
+};
+
 export const createGithubRepo = async ({
   runner,
   name,
+  owner,
   visibility,
   options = {},
-}: {
-  readonly runner: GhRunner;
-  readonly name: string;
-  readonly visibility: GithubRepoVisibility;
-  readonly options?: GhRunOptions;
-}): Promise<CreateRepoResult> => {
+}: CreateGithubRepoParams): Promise<CreateRepoResult> => {
   const checked = validateGithubRepoName({ name });
   if (checked.kind !== 'ok') {
     return { kind: 'invalid-name', reason: checked.reason };
@@ -127,14 +167,41 @@ export const createGithubRepo = async ({
     };
   }
 
+  const trimmedOwner = owner === null ? '' : owner.trim();
+  const pinnedOwner =
+    trimmedOwner !== ''
+      ? trimmedOwner
+      : ownerFromCreateOutput({ stdout: created.stdout, name: checked.name });
+  if (pinnedOwner === null) {
+    return {
+      kind: 'unverified',
+      nameWithOwner: null,
+      message: `Goodboy created ${checked.name} on GitHub but could not tell which account it landed on, so it did not read the repository back. It exists on GitHub and was not removed.`,
+    };
+  }
+
+  const pinnedSlug = `${pinnedOwner}/${checked.name}`;
+  const expected: ExpectedRepo = { nameWithOwner: pinnedSlug, isPrivate: visibility === 'private' };
+
+  let repo: GithubRepoRef;
   try {
-    const repo = await runJson<GithubRepoRef>(
+    repo = await runJson<GithubRepoRef>(
       runner,
-      ['repo', 'view', checked.name, '--json', REPO_FIELDS.join(',')],
+      ['repo', 'view', pinnedSlug, '--json', REPO_FIELDS.join(',')],
       options,
     );
-    return { kind: 'ok', repo };
   } catch (err) {
-    return failureFrom({ err });
+    const failure = failureFrom({ err });
+    return {
+      kind: 'unverified',
+      nameWithOwner: pinnedSlug,
+      message: `Goodboy created ${pinnedSlug} on GitHub but could not read it back: ${failure.kind === 'failed' ? failure.message : 'gh repo view failed'}. It exists on GitHub and was not removed.`,
+    };
   }
+
+  if (repo.nameWithOwner !== expected.nameWithOwner || repo.isPrivate !== expected.isPrivate) {
+    return { kind: 'mismatch', expected, actual: repo };
+  }
+
+  return { kind: 'ok', repo };
 };

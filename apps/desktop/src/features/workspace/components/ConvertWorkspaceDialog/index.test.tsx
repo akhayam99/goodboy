@@ -216,6 +216,7 @@ describe('ConvertWorkspaceDialog', () => {
       expect(createGithubRepo).toHaveBeenCalledWith({
         runner: {},
         name: 'study-space',
+        owner: 'acme',
         visibility: 'private',
       }),
     );
@@ -257,6 +258,71 @@ describe('ConvertWorkspaceDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create repository' }));
 
     await waitFor(() => screen.getByText('GraphQL: Name already exists on this account'));
+    expect(state.convertWorkspaceToRepo).not.toHaveBeenCalled();
+  });
+
+  it('never chooses a visibility for the user', () => {
+    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+
+    expect(screen.getByRole('radio', { name: 'Public' }).getAttribute('aria-checked')).toBe(
+      'false',
+    );
+    expect(screen.getByRole('radio', { name: 'Private' }).getAttribute('aria-checked')).toBe(
+      'false',
+    );
+    expect(screen.getByRole('button', { name: 'Create repository' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+  });
+
+  it('sets no remote when what GitHub returned is not what was asked for', async () => {
+    createGithubRepo.mockResolvedValue({
+      kind: 'mismatch',
+      expected: { nameWithOwner: 'acme/study-space', isPrivate: true },
+      actual: {
+        nameWithOwner: 'acme/study-space',
+        url: 'https://github.com/acme/study-space',
+        sshUrl: 'git@github.com:acme/study-space.git',
+        isPrivate: false,
+      },
+    });
+    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Private' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create repository' }));
+
+    await waitFor(() => screen.getByText(/GitHub returned acme\/study-space, a public repository/));
+    expect(screen.getByText(/was not removed/)).toBeDefined();
+    expect(state.convertWorkspaceToRepo).not.toHaveBeenCalled();
+  });
+
+  it('discloses the repository left on the account when the local half fails', async () => {
+    state.convertWorkspaceToRepo.mockRejectedValue(new Error('git init refused'));
+    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Private' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create repository' }));
+
+    const disclosure = await screen.findByRole('status');
+    expect(disclosure.textContent).toContain('acme/study-space');
+    expect(disclosure.textContent).toContain('https://github.com/acme/study-space');
+    expect(disclosure.textContent).toContain('was not removed');
+    expect(screen.getByText('git init refused')).toBeDefined();
+  });
+
+  it('reports an unverified creation without pretending it succeeded', async () => {
+    createGithubRepo.mockResolvedValue({
+      kind: 'unverified',
+      nameWithOwner: 'acme/study-space',
+      message:
+        'Goodboy created acme/study-space on GitHub but could not read it back: HTTP 502. It exists on GitHub and was not removed.',
+    });
+    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Public' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create repository' }));
+
+    await waitFor(() => screen.getByText(/could not read it back/));
     expect(state.convertWorkspaceToRepo).not.toHaveBeenCalled();
   });
 });
