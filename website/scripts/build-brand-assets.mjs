@@ -341,13 +341,18 @@ const renderFavicon = ({ accent, mascotBase64 }) => {
     ]);
     const glyphBase64 = readFileSync(temporaryPngPath).toString('base64');
     const svgSource = readFileSync(outputPath, 'utf8');
-    const updatedSvg = svgSource.replace(
-      /(href="data:image\/png;base64,)[^"]+(")/,
-      `$1${glyphBase64}$2`,
-    );
-    if (updatedSvg === svgSource) {
+    const match = svgSource.match(/(href="data:image\/png;base64,)([^"]+)(")/);
+    if (match === null) {
       throw new Error('Could not find the embedded PNG in favicon.svg');
     }
+    if (match[2] === glyphBase64) {
+      console.log('favicon.svg glyph already matches the live accent token, no change needed');
+      return;
+    }
+    const matchIndex = match.index ?? 0;
+    const updatedSvg = `${svgSource.slice(0, matchIndex)}${match[1]}${glyphBase64}${match[3]}${svgSource.slice(
+      matchIndex + match[0].length,
+    )}`;
     writeFileSync(outputPath, updatedSvg);
     console.log('rendered', outputPath);
   } finally {
