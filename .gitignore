@@ -39,6 +39,7 @@ coverage/
 *.timestamp-*.mjs
 
 # misc
+.tmp-*.html
 *.tsbuildinfo
 .claude/launch.json
 .claude/scheduled_tasks.lock

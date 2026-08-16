@@ -244,6 +244,16 @@ const createAvatarHtml = ({ format, accent, mascotBase64 }) => createBaseHtml({
   `,
 });
 
+const createFaviconGlyphHtml = ({ accent, mascotBase64 }) => `<!doctype html>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box }
+  html, body { width: 160px; height: 160px; background: transparent; overflow: hidden }
+  body { display: grid; place-items: center; padding: 18% }
+  .mascot { width: 60vh; height: 60vh; background: ${accent}; -webkit-mask: url(data:image/png;base64,${mascotBase64}) no-repeat center / contain }
+</style>
+<body><i class="mascot"></i></body>`;
+
 const createBannerHtml = ({ format, accent, mascotBase64, variant }) => {
   const isXHeader = variant === 'x-header';
   const tagline = isXHeader ? 'Your agents, in the right order.' : '';
@@ -313,6 +323,43 @@ const renderFormat = ({ format, html }) => {
   }
 };
 
+const renderFavicon = ({ accent, mascotBase64 }) => {
+  const outputPath = resolve(WEBSITE_DIRECTORY, 'public/favicon.svg');
+  const temporaryHtmlPath = resolve(tmpdir(), `goodboy-favicon-glyph-${process.pid}.html`);
+  const temporaryPngPath = resolve(tmpdir(), `goodboy-favicon-glyph-${process.pid}.png`);
+  try {
+    writeFileSync(temporaryHtmlPath, createFaviconGlyphHtml({ accent, mascotBase64 }));
+    execFileSync(CHROME, [
+      '--headless=new',
+      '--disable-gpu',
+      '--hide-scrollbars',
+      '--default-background-color=00000000',
+      '--force-device-scale-factor=1',
+      '--window-size=160,160',
+      `--screenshot=${temporaryPngPath}`,
+      pathToFileURL(temporaryHtmlPath).href,
+    ]);
+    const glyphBase64 = readFileSync(temporaryPngPath).toString('base64');
+    const svgSource = readFileSync(outputPath, 'utf8');
+    const updatedSvg = svgSource.replace(
+      /(href="data:image\/png;base64,)[^"]+(")/,
+      `$1${glyphBase64}$2`,
+    );
+    if (updatedSvg === svgSource) {
+      throw new Error('Could not find the embedded PNG in favicon.svg');
+    }
+    writeFileSync(outputPath, updatedSvg);
+    console.log('rendered', outputPath);
+  } finally {
+    if (existsSync(temporaryHtmlPath)) {
+      unlinkSync(temporaryHtmlPath);
+    }
+    if (existsSync(temporaryPngPath)) {
+      unlinkSync(temporaryPngPath);
+    }
+  }
+};
+
 const brandSource = readSource('docs/brand.md');
 const providerRegistrySource = readSource('packages/types/src/provider-registry.ts');
 const providerBrandSource = readSource(
@@ -344,3 +391,5 @@ formats.forEach((format) => {
   const html = createHtmlFor({ format, accent, mascotBase64, providerBrands, date });
   renderFormat({ format, html });
 });
+
+renderFavicon({ accent, mascotBase64 });
