@@ -1535,6 +1535,62 @@ mod rewrite_tests {
     }
 
     #[test]
+    fn a_failed_rev_list_is_indistinguishable_from_being_in_sync() {
+        let root = init_repo("fail-open-rev-list");
+        commit(&root, "base.txt", "base", "base");
+
+        assert_eq!(
+            super::rev_list_left_right(&root, "missing-ref", "HEAD"),
+            None
+        );
+        assert_eq!(
+            super::rev_list_left_right(&root, "missing-ref", "HEAD").unwrap_or((0, 0)),
+            (0, 0)
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn an_unresolvable_main_ref_is_indistinguishable_from_zero_distance() {
+        let root = temp_root("fail-open-resolve-main");
+        git_ok(&root, &["init", "-b", "trunk"]);
+        git_ok(&root, &["config", "user.email", "test@example.com"]);
+        git_ok(&root, &["config", "user.name", "test"]);
+        git_ok(&root, &["config", "commit.gpgsign", "false"]);
+        commit(&root, "base.txt", "base", "base");
+
+        let status = worktree_status(root.to_string_lossy().into_owned()).unwrap();
+
+        assert_eq!(super::resolve_main(&root), None);
+        assert_eq!(status.commits_ahead_of_main, 0);
+        assert_eq!(status.commits_behind_main, 0);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_failed_status_read_is_indistinguishable_from_a_clean_tree() {
+        let root = temp_root("fail-open-status-read");
+
+        assert_eq!(super::parse_status_counts(&root), (0, 0, 0, 0));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_merge_conflict_is_counted_as_staged_and_unstaged_with_no_conflict_signal() {
+        let root = init_repo("fail-open-conflict");
+        commit(&root, "shared.txt", "base\n", "base");
+        git_ok(&root, &["checkout", "-b", "feature"]);
+        commit(&root, "shared.txt", "feature\n", "feature");
+        git_ok(&root, &["checkout", "main"]);
+        commit(&root, "shared.txt", "main\n", "main");
+        let merge = super::git(&root, &["merge", "feature"]);
+
+        assert!(merge.is_err());
+        assert_eq!(super::parse_status_counts(&root), (1, 1, 0, 1));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn resolves_master_when_the_repository_has_no_main_branch() {
         let root = temp_root("resolve-main-master");
         git_ok(&root, &["init", "-b", "master"]);

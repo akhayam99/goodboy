@@ -94,4 +94,15 @@ describe('WorkspaceGitPanel main status', () => {
     expect(screen.getByText('In sync and clean')).toBeDefined();
     expect(screen.queryByText(/to pull/)).toBeNull();
   });
+
+  it('cannot tell a failed read apart from a genuinely clean checkout', () => {
+    const genuinelyClean = status({});
+    const everyReadFailed = status({});
+
+    expect(everyReadFailed).toEqual(genuinelyClean);
+
+    render(<WorkspaceGitPanel rootPath={ROOT} status={everyReadFailed} />);
+
+    expect(screen.getByText('In sync and clean')).toBeDefined();
+  });
 });
