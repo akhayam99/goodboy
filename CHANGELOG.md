@@ -15,11 +15,11 @@ on it.
 
 ### [#1405] The board appears without waiting on provider detection
 
-Launch used to run fourteen provider checks before the board appeared, and they
-cost between one and seven and a half seconds a launch. They are off the boot
-path now, so the board comes up first and detection catches up behind it. A
-provider Goodboy has not checked yet counts as not connected everywhere that
-matters, so nothing runs on a guess.
+Launch used to wait on provider detection before the board appeared, and that
+cost between one and seven and a half seconds a launch. It is off the boot path
+now, so the board comes up first and detection catches up behind it. A provider
+Goodboy has not checked yet counts as not connected everywhere that matters, so
+nothing runs on a guess.
 
 The launch log at `~/.goodboy/boot-breadcrumbs.log` records each phase against
 its own time. A log written by v0.1.80 or earlier reads shifted by one line.
@@ -29,9 +29,9 @@ its own time. A log written by v0.1.80 or earlier reads shifted by one line.
 The crash screen leads with Try again, wraps the error instead of clipping it,
 and offers Report, which opens a prefilled GitHub issue in your browser carrying
 the error, the app version, and where in the app it broke, with home folders
-shortened to `~`. That text reaches GitHub as the page loads, and it becomes an
-issue only once you submit the form there. The boot error screen has a report
-link of its own, and that one still sends the error unshortened. `README.md` and
+shortened to `~` on the crash screen, though the boot error screen's own report
+link does not shorten them yet. That text reaches GitHub as the page loads, and
+it becomes an issue only once you submit the form there. `README.md` and
 `SECURITY.md` now count the crash report alongside the boot log and the update
 check.
 
