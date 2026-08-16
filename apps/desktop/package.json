@@ -11,7 +11,8 @@
     "tauri:build": "tauri build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "test:a11y": "vitest run --passWithNoTests src/__tests__/a11y"
+    "test:a11y": "vitest run --passWithNoTests src/__tests__/a11y",
+    "build:icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "@goodboy/core": "workspace:*",
