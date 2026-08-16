@@ -15,33 +15,34 @@ on it.
 
 ### [#1405] The board appears without waiting on provider detection
 
-Launch used to spend between one and seven seconds running fourteen provider
-checks before the board appeared. They are off the boot path now, so the board
-comes up first and detection catches up behind it. A provider Goodboy has not
-checked yet counts as not connected everywhere that matters, so nothing runs on
-a guess, and the first check rides the same refresh that already runs when a
-window takes focus.
+Launch used to run fourteen provider checks before the board appeared, and they
+cost between one and seven and a half seconds a launch. They are off the boot
+path now, so the board comes up first and detection catches up behind it. A
+provider Goodboy has not checked yet counts as not connected everywhere that
+matters, so nothing runs on a guess.
 
 The launch log at `~/.goodboy/boot-breadcrumbs.log` records each phase against
 its own time. A log written by v0.1.80 or earlier reads shifted by one line.
 
-### [#1407] Failures keep the window up and name what to do next
+### [#1407] A failure keeps the window up and shows the next step
 
 The crash screen leads with Try again, wraps the error instead of clipping it,
 and offers Report, which opens a prefilled GitHub issue in your browser carrying
 the error, the app version, and where in the app it broke, with home folders
 shortened to `~`. That text reaches GitHub as the page loads, and it becomes an
-issue only once you submit the form there. `README.md` and `SECURITY.md` now
-count the crash report alongside the boot log and the update check.
+issue only once you submit the form there. The boot error screen has a report
+link of its own, and that one still sends the error unshortened. `README.md` and
+`SECURITY.md` now count the crash report alongside the boot log and the update
+check.
 
 A database Goodboy cannot open used to end the process before any window
 appeared. The window now opens on a recovery screen that names
 `~/.goodboy/data.db` and tells you to move that file aside, so the next launch
 creates a fresh one.
 
-Follow-up: creating a GitHub repository is built on GitHub's published API, and
-no call has gone out to a live account yet. If a response differs, the error
-comes back on the screen with your input still in it.
+Follow-up: creating a GitHub repository runs through GitHub's own CLI, and no
+call has gone out to a live account yet. If a response differs, the error comes
+back on the screen with your input still in it.
 
 ### Fixes
 
@@ -54,9 +55,8 @@ comes back on the screen with your input still in it.
   failure is named with its URL [#1407]
 - Settings counts storage in the app's own language instead of the operating
   system's [#1407]
-- Launching no longer clears stored max mode keys [#1405]
-- The app icon and the favicon carry the accent colour the app uses, not a teal
-  left behind by an older theme [#1406]
+- The app icon carries the accent colour the app uses and the favicon the one
+  the site uses, instead of a teal neither of them has [#1406]
 
 ## Goodboy v0.1.80
 
