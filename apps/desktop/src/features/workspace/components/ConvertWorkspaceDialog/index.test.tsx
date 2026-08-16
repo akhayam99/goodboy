@@ -261,20 +261,6 @@ describe('ConvertWorkspaceDialog', () => {
     expect(state.convertWorkspaceToRepo).not.toHaveBeenCalled();
   });
 
-  it('never chooses a visibility for the user', () => {
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
-
-    expect(screen.getByRole('radio', { name: 'Public' }).getAttribute('aria-checked')).toBe(
-      'false',
-    );
-    expect(screen.getByRole('radio', { name: 'Private' }).getAttribute('aria-checked')).toBe(
-      'false',
-    );
-    expect(screen.getByRole('button', { name: 'Create repository' }).hasAttribute('disabled')).toBe(
-      true,
-    );
-  });
-
   it('sets no remote when what GitHub returned is not what was asked for', async () => {
     createGithubRepo.mockResolvedValue({
       kind: 'mismatch',

@@ -275,7 +275,16 @@ describe('agentKindPalette', () => {
   });
 
   it('never returns undefined for a kind outside the union', () => {
-    for (const kind of ['', 'Implementer', 'orchestrator', 'null', '  ']) {
+    for (const kind of [
+      '',
+      'Implementer',
+      'orchestrator',
+      'null',
+      '  ',
+      'constructor',
+      '__proto__',
+      'toString',
+    ]) {
       const entry = agentKindPalette({ kind });
       expect(entry.bg.length).toBeGreaterThan(0);
       expect(entry.fg.length).toBeGreaterThan(0);
