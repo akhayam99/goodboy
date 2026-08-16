@@ -31,6 +31,8 @@ vi.mock('../hooks/useOnboardingProgress', () => ({
 
 beforeEach(() => {
   progress.collapsed = true;
+  progress.completedCount = 0;
+  progress.completed = new Set<OnboardingStepId>();
 });
 
 afterEach(() => {
