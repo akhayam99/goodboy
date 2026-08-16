@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { LayoutDashboard, Unplug } from 'lucide-react';
-import { Divider, KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { classifyAgent, isStandaloneAgent } from '../../../../agent-kind';
@@ -23,7 +23,6 @@ import { resolveIntegrationConnection } from '../../../../../integrations/connec
 import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
 import { resolveAttentionLens, selectOpenQuestions } from '../../../SessionOverviewPane/lib';
-import { SessionNavFooter } from '../SessionNavFooter';
 import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
 import { splitWorkflowRuns } from '../../../../../workflows/activeWorkflowRuns';
 import { useActiveResolverCount } from '../../../../hooks/useActiveResolverCount';
@@ -32,6 +31,7 @@ import type { LensDot, LensRow } from './groups';
 import { CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { SIMPLE_LENSES } from '../../../../lens-labels';
 import { shortcutGlyphs } from '../../../../../../shared/keyboard/registry';
+import { useSettleElapsed } from '../../../../hooks/useSettleElapsed';
 
 const LENS_COUNT_SETTLE_MS = 10_000;
 
@@ -76,7 +76,7 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
   const areAgentsLoading = loading?.agents === true;
   const arePlansLoading = loading?.plans === true;
   const areQuestionsKeyed = useAppStore((s) => s.sessionOpenQuestions[sessionId] !== undefined);
-  const [hasSettleElapsed, setHasSettleElapsed] = useState(false);
+  const hasSettleElapsed = useSettleElapsed({ ms: LENS_COUNT_SETTLE_MS, resetKey: sessionId });
   const areWorkflowsLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'workflows' });
   const areReviewDraftsLoaded = useIsSessionCollectionLoaded({
     sessionId,
@@ -92,12 +92,6 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
   });
   const isCountUnknown = (isLoaded: boolean): boolean => !isLoaded && !hasSettleElapsed;
   const areQuestionsLoading = isCountUnknown(areQuestionsKeyed);
-
-  useEffect(() => {
-    setHasSettleElapsed(false);
-    const timer = window.setTimeout(() => setHasSettleElapsed(true), LENS_COUNT_SETTLE_MS);
-    return () => window.clearTimeout(timer);
-  }, [sessionId]);
   const openCount = selectOpenQuestions(useSessionOpenQuestions(sessionId)).length;
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
@@ -533,8 +527,6 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
           ))}
         </nav>
       </ScrollFade>
-      <Divider />
-      <SessionNavFooter session={session} />
     </div>
   );
 };

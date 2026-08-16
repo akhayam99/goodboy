@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
 import { RotateCcw, TriangleAlert } from 'lucide-react';
 import { Button, EmptyState } from '@goodboy/ui';
+import { useSettleElapsed } from '../../../hooks/useSettleElapsed';
 import { SessionOverviewSkeleton } from './SessionOverviewSkeleton';
 
 const OVERVIEW_SETTLE_MS = 10_000;
@@ -11,12 +11,7 @@ type Props = {
 };
 
 export const SessionOverviewLoading = ({ isFreshLayout, onRetry }: Props) => {
-  const [hasSettleElapsed, setHasSettleElapsed] = useState(false);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setHasSettleElapsed(true), OVERVIEW_SETTLE_MS);
-    return () => window.clearTimeout(timer);
-  }, []);
+  const hasSettleElapsed = useSettleElapsed({ ms: OVERVIEW_SETTLE_MS });
 
   if (!hasSettleElapsed) {
     return <SessionOverviewSkeleton isFreshLayout={isFreshLayout} />;

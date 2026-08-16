@@ -49,9 +49,6 @@ const { hooks, remote, store } = vi.hoisted(() => {
       sessionFileVersionsLoading: {},
       loadSessionFileVersions: vi.fn(async () => undefined),
       loadReviewDrafts: vi.fn(async () => undefined),
-      archiveTask: vi.fn(async () => undefined),
-      deleteTask: vi.fn(async () => undefined),
-      unarchiveTask: vi.fn(async () => undefined),
     },
   };
 });
@@ -132,18 +129,6 @@ vi.mock('../../../../../integrations/github/useGithubConnection', () => ({
   }),
 }));
 
-vi.mock('../../../../../../app/components/Toast', () => ({
-  useToast: () => ({ showToast: vi.fn() }),
-}));
-
-vi.mock('../../../SessionOverviewPane/EditorMenu', () => ({
-  EditorMenu: () => <button type="button">open worktree</button>,
-}));
-
-vi.mock('../../../SessionWorkspace/parts/SessionGitActions', () => ({
-  SessionGitActions: () => <button type="button">branch actions</button>,
-}));
-
 import { LensNav } from './index';
 import { shortcutGlyphs } from '../../../../../../shared/keyboard/registry';
 
@@ -179,9 +164,6 @@ beforeEach(() => {
   store.sessionFileVersionsLoading = {};
   store.loadSessionFileVersions.mockClear();
   store.loadReviewDrafts.mockClear();
-  store.archiveTask.mockClear();
-  store.deleteTask.mockClear();
-  store.unarchiveTask.mockClear();
   store.activeLens = {};
   store.setActiveLens.mockClear();
 });
@@ -634,33 +616,5 @@ describe('LensNav', () => {
 
     const resolveRow = screen.getByRole('button', { name: 'Resolve Resolutions queued to push' });
     expect(resolveRow.querySelector('[class*="bg-accent"]')).not.toBeNull();
-  });
-});
-
-describe('LensNav footer', () => {
-  it('renders editor, archive, and delete after lens navigation, confirming before archiving', () => {
-    render(<LensNav session={SESSION} filesCount={0} />);
-
-    const nav = screen.getByRole('navigation');
-    const editorButton = screen.getByRole('button', { name: /open worktree/i });
-    const archiveButton = screen.getByRole('button', { name: /archive session/i });
-    const deleteButton = screen.getByRole('button', { name: /delete session/i });
-    expect(nav.compareDocumentPosition(editorButton) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(
-      0,
-    );
-    expect(
-      editorButton.compareDocumentPosition(archiveButton) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).not.toBe(0);
-    expect(nav.compareDocumentPosition(archiveButton) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(
-      0,
-    );
-    expect(nav.compareDocumentPosition(deleteButton) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(
-      0,
-    );
-
-    fireEvent.click(archiveButton);
-    expect(store.archiveTask).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: /^archive session$/i }));
-    expect(store.archiveTask).toHaveBeenCalledWith('session-1');
   });
 });

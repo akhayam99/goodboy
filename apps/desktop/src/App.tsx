@@ -323,6 +323,8 @@ export const App = () => {
       closeAllStudios();
       setNotificationsStudioOpen(true);
     };
+    const onOpenArchiveSession = () => setArchiveOpen(true);
+    const onOpenDeleteSession = () => setDeleteOpen(true);
 
     window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, onOpenNotificationsStudio);
     window.addEventListener('goodboy:open-settings', onOpenSettings);
@@ -340,6 +342,8 @@ export const App = () => {
     window.addEventListener('goodboy:reveal-chat', onRevealChat);
     window.addEventListener('goodboy:add-workspace', onAddWorkspace);
     window.addEventListener('goodboy:open-pair-device', onPairDevice);
+    window.addEventListener('goodboy:open-archive-session', onOpenArchiveSession);
+    window.addEventListener('goodboy:open-delete-session', onOpenDeleteSession);
     return () => {
       window.removeEventListener(NOTIFICATIONS_STUDIO_EVENT, onOpenNotificationsStudio);
       window.removeEventListener('goodboy:open-settings', onOpenSettings);
@@ -357,6 +361,8 @@ export const App = () => {
       window.removeEventListener('goodboy:reveal-chat', onRevealChat);
       window.removeEventListener('goodboy:add-workspace', onAddWorkspace);
       window.removeEventListener('goodboy:open-pair-device', onPairDevice);
+      window.removeEventListener('goodboy:open-archive-session', onOpenArchiveSession);
+      window.removeEventListener('goodboy:open-delete-session', onOpenDeleteSession);
     };
   }, [closeAllStudios]);
 

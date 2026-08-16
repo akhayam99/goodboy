@@ -169,6 +169,18 @@ vi.mock('./SessionCostChip', () => ({
   SessionCostChip: () => <span data-testid="cost-chip" />,
 }));
 
+vi.mock('./EditorMenu', () => ({
+  EditorMenu: () => <button type="button" aria-label="open worktree" />,
+}));
+
+vi.mock('../SessionWorkspace/parts/SessionGitActions', () => ({
+  SessionGitActions: () => <button type="button" aria-label="branch actions" />,
+}));
+
+vi.mock('./SessionDestructiveActions', () => ({
+  SessionDestructiveActions: () => <button type="button" aria-label="archive session" />,
+}));
+
 import { SessionOverviewPane } from './index';
 
 const standaloneAgent = (status = 'running', over: Record<string, unknown> = {}) => ({
