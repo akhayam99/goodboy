@@ -140,8 +140,9 @@ pnpm + Turborepo monorepo: `apps/desktop` plus `packages/{ui,core,db,types}`.
 ## What stays on your machine
 
 Goodboy is an orchestration layer. There is no backend, there are no accounts,
-and nothing is stored, logged or transmitted anywhere except to the services
-you connected yourself.
+and what you write reaches only the services you connected yourself. Two things
+sit outside that sentence and are listed below with the rest: a local
+diagnostics file, and the check for a new version.
 
 - **The app carries no telemetry.** No usage pings, no crash reports, no
   opt-in switch to find later.
@@ -157,6 +158,17 @@ you connected yourself.
 - Local persistence is one SQLite file, `~/.goodboy/data.db`: workspaces,
   sessions, agents, messages, context, plans, local usage records, skills,
   settings. Cleared when you ask, and not before.
+- **Every launch appends a few lines to `~/.goodboy/boot-breadcrumbs.log`.** A
+  timestamp, a launch id, the boot phase and how long that phase took. The
+  phase and the detail are matched against a fixed set of allowed values before
+  the line is written, so no path, argument or credential can reach it, and the
+  file never leaves your machine. [SECURITY.md](./SECURITY.md) has the
+  allowlist, the file mode and the rotation.
+- **A release build asks GitHub whether a newer version exists.** It requests
+  the update manifest published with the releases, on window focus and once an
+  hour, and that is the one request Goodboy makes with nothing connected at
+  all. It carries no data about you, and an update it finds is verified against
+  the signing key shipped in the app before anything is installed.
 
 If Goodboy disappeared tomorrow, your data would be untouched, because it was
 never ours.
