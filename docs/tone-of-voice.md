@@ -75,8 +75,9 @@ addressing a market. Two voices:
   "Build it once, reuse it forever", not "Build the workflow once".
 - **Don't repeat a phrase across sections.** "In one place", then "in one
   rail", then "all in one place" reads as a tic. Say it once, then vary it.
-- **Don't leak internal names.** "Rail", "slice", "turn blob". Name what the
-  reader sees on screen, not what we call it in the source.
+- **Don't leak internals.** Not the names ("rail", "slice", "turn blob"), not
+  the mechanism (which thread, function or table, why it broke in the code).
+  Name what the reader sees on screen and what changed for them.
 - **Phrase titles to scale.** "Turn any issue into a session" outlives "Turn a
   Linear issue into a session". Pin the integration in the body, not the title.
 - **A generated reply's structure is the app's, not the model's.** In the
@@ -104,6 +105,12 @@ being short. The lead line is the pitch; everything under it is plain fact.
 - **Budget the length.** The headline feature gets a lead line plus at most
   three short paragraphs. Every other feature one or two. A fix one line. Cut
   any paragraph explaining why the old behavior existed.
+- **Never explain the mechanism.** A fix says what the reader saw before and
+  what they see now, then stops. No thread names, no function, variable, table
+  or module names, no "the cause was X", no account of how the bug happened or
+  how the fix works inside. The internals are the PR description and the commit
+  message, and nobody outside the team reads a changelog to learn them. The
+  announcement post lives by this rule too.
 - **State a limit inside the sentence that promises the thing**, not in a
   paragraph of its own. "Public channels the bot has joined" beats four
   sentences of scope caveats.
@@ -122,18 +129,6 @@ being short. The lead line is the pitch; everything under it is plain fact.
 
 ### Honesty
 
-- **Scope a promise to the thing it is true of.** "No telemetry" is true of the
-  app and false of the project, whose website measures its own traffic. Name
-  the app, the website or the project inside the sentence that makes the
-  promise, and say what the other one does. A promise that grows to cover
-  something it was never checked against is a new false claim, not a stronger
-  pitch.
-- **Read a provider or integration list from the code, and say which list you
-  read.** `PROVIDER_IDS` in `packages/types/src/provider-registry.ts` is the
-  agents. The integration union in `packages/types/src/workspace.ts` is the
-  rest, and it excludes GitHub because GitHub is the default code host rather
-  than an added connection. Two counts are therefore both correct, so the copy
-  states which one it means instead of printing a bare number.
 - **Don't oversell the roadmap.** "A proper Linear Studio is on the way" not
   "Full Linear integration".
 - **Name the limits.** "Needs a Rust toolchain. Prebuilt binaries for Linux
@@ -197,6 +192,19 @@ Good:
 > No waitlist, no email, no sign-up. Plug in the Claude, Cursor, Codex or
 > Antigravity you already pay for and you'll be running on your own machine in a
 > minute.
+
+### Fix line
+
+Bad:
+
+> Five of seven launches used to show a window with a title bar and nothing in
+> it. Every database call the boot makes ran on the thread that paints, so a
+> slow query parked the thread. Those calls now run off it.
+
+Good:
+
+> Goodboy used to open with a blank window five times out of seven. It now
+> paints on every launch.
 
 ### In-app micro-copy
 
