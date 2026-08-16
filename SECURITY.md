@@ -39,16 +39,25 @@ Goodboy runs entirely on your machine, no backend:
   seconds apart. A development build never checks. The request carries no data
   about you or your machine, and any update it finds is verified against the
   public key in `apps/desktop/src-tauri/tauri.conf.json` before it is installed.
-- The crash screen's Report button is the second and last way Goodboy reaches
-  the network with no provider connected, and unlike the update check it never
-  happens on its own: only your click starts it. It opens a prefilled
-  `github.com` issue page in your browser carrying the app version, the error
-  message, and at most 1,500 characters of the component stack, with home
-  folders collapsed to `~` while project and file paths are left intact. Title
-  and body travel in the query string, so GitHub receives them as the page
-  loads, not when you submit; the whole link is capped at 4,096 bytes, so a long
-  message or stack is cut further to fit. Submitting the form is what turns the
-  report into a public issue, and closing the tab files nothing.
+- The crash screen's Report button also reaches the network with no provider
+  connected, and unlike the update check it never happens on its own: only your
+  click starts it. It opens a prefilled `github.com` issue page in your browser
+  carrying the app version, the error message, and at most 1,500 characters of
+  the component stack, with home folders collapsed to `~` while project and file
+  paths are left intact. Title and body travel in the query string, so GitHub
+  receives them as the page loads, not when you submit; the whole link is capped
+  at 4,096 bytes, so a long message or stack is cut further to fit. Submitting
+  the form is what turns the report into a public issue, and closing the tab
+  files nothing.
+- Everything else Goodboy sends with nothing connected, it sends because you
+  asked for it, and each one waits for the click that starts it. Opening the
+  Changelog fetches the published release list from `api.github.com`. An image inside
+  rendered Markdown is fetched only after you press Load image, and it goes to
+  whatever host that image names. The boot error screen's report link opens a
+  `github.com` issue page the same way the crash screen's does, except that it
+  carries the boot error as it is, with none of the shortening or the cap
+  described above. None of these run on their own, and none of them run unless
+  you act.
 - No telemetry, of any kind, ever. Adding it is refused whoever asks.
 
 Caveat: a token you paste for an integration (GitHub, GitLab, Jira,

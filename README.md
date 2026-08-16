@@ -140,10 +140,10 @@ pnpm + Turborepo monorepo: `apps/desktop` plus `packages/{ui,core,db,types}`.
 ## What stays on your machine
 
 Goodboy is an orchestration layer. There is no backend, there are no accounts,
-and what you write reaches only the services you connected yourself. Three
+and what you write reaches only the services you connected yourself. A few
 things sit outside that sentence and are listed below with the rest: a local
 diagnostics file, the check for a new version, and a crash report you choose to
-send.
+send. `SECURITY.md` carries the full list.
 
 - **The app carries no telemetry.** No usage pings, no opt-in switch to find
   later, nothing sent in the background. When a crash takes the screen down,
