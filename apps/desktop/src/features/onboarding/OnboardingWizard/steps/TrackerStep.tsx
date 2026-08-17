@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { FolderGit2, ListChecks } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, JiraIcon, LinearIcon, SlackIcon } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { JiraIcon, LinearIcon, SlackIcon } from '@goodboy/ui';
 import { JiraFormBody } from '../../../integrations/jira/JiraFormBody';
 import { LinearFormBody } from '../../../integrations/linear/LinearFormBody';
 import { SlackFormBody } from '../../../integrations/slack/SlackFormBody';
 import { Segmented, type SegmentedOption } from '../Segmented';
 
-type Tracker = 'linear' | 'jira' | 'slack';
+type Tool = 'linear' | 'jira' | 'slack';
 
 type Props = {
   readonly workspaceId: WorkspaceId | null;
@@ -23,9 +22,9 @@ export const TrackerStep = ({
   jiraConnected,
   slackConnected,
 }: Props) => {
-  const [tracker, setTracker] = useState<Tracker>('linear');
+  const [tool, setTool] = useState<Tool>('linear');
 
-  const options: ReadonlyArray<SegmentedOption<Tracker>> = [
+  const options: ReadonlyArray<SegmentedOption<Tool>> = [
     {
       value: 'linear',
       label: 'Linear',
@@ -83,11 +82,11 @@ export const TrackerStep = ({
         </div>
       ) : (
         <div className="flex w-full flex-col gap-4 text-left">
-          <Segmented ariaLabel="Tools" options={options} value={tracker} onChange={setTracker} />
+          <Segmented ariaLabel="Tools" options={options} value={tool} onChange={setTool} />
           <div className="rounded-lg border border-border-soft/40 bg-subtle/20 p-4">
-            {tracker === 'linear' ? (
+            {tool === 'linear' ? (
               <LinearFormBody workspaceId={workspaceId} />
-            ) : tracker === 'jira' ? (
+            ) : tool === 'jira' ? (
               <JiraFormBody workspaceId={workspaceId} />
             ) : (
               <SlackFormBody workspaceId={workspaceId} />

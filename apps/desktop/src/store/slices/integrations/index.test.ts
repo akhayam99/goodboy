@@ -917,6 +917,24 @@ describe('store contract', () => {
       expect(cached?.credentialKey).toBe(`goodboy.workspace.${WS_ID}.slack`);
     });
 
+    it('connectSlack writes the database row before the keychain, so a failure between them never orphans a live token', async () => {
+      const store = await getStore();
+      slackValidateConnectionSpy.mockResolvedValueOnce({
+        teamId: 'T01',
+        teamName: 'Acme',
+        botUserId: 'U09',
+        botUserName: 'goodboy',
+      });
+
+      await store.getState().connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-secret' });
+
+      const dbCallOrder = upsertWorkspaceIntegrationSpy.mock.invocationCallOrder[0];
+      const keychainCallOrder = slackConnectSpy.mock.invocationCallOrder[0];
+      expect(dbCallOrder).toBeDefined();
+      expect(keychainCallOrder).toBeDefined();
+      expect(dbCallOrder as number).toBeLessThan(keychainCallOrder as number);
+    });
+
     it('connectSlack never stores a token the probe rejected', async () => {
       const store = await getStore();
       slackValidateConnectionSpy.mockRejectedValueOnce(new Error('invalid_auth'));
