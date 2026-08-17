@@ -70,7 +70,7 @@ export const TrackerStep = ({
             <FolderGit2 size={18} aria-hidden />
           </span>
           <p className="text-xs leading-relaxed text-muted-foreground">
-            Add a workspace first to connect your tracker.
+            Add a workspace first to connect your tools.
           </p>
           <Button
             variant="secondary"

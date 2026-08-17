@@ -32,7 +32,7 @@ export const ONBOARDING_STEPS: ReadonlyArray<{
   {
     id: 'tools',
     title: 'Connect your tools',
-    why: 'Wire Linear or Sentry to pull issues and errors into context.',
+    why: 'Wire a tracker or a conversation tool so agents can pull issue context and post where you work.',
     group: 'setup',
   },
   {

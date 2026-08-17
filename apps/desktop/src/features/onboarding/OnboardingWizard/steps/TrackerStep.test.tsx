@@ -96,7 +96,7 @@ describe('TrackerStep', () => {
     });
 
     it('shows the add-workspace empty state instead of the form', () => {
-      expect(screen.getByText(/Add a workspace first to connect your tracker/i)).toBeDefined();
+      expect(screen.getByText(/Add a workspace first to connect your tools/i)).toBeDefined();
       expect(screen.queryByTestId('linear-form')).toBeNull();
     });
 
