@@ -3,34 +3,36 @@ import { AlertTriangle } from 'lucide-react';
 import {
   Button,
   cn,
+  Collapsible,
   Divider,
   FieldRow,
   formatError,
   Input,
+  PANE_RHYTHM,
   ScrollFade,
-  SectionHeader,
   SegmentedTabs,
   Select,
   Skeleton,
   Textarea,
 } from '@goodboy/ui';
+import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { openUrl } from '../../../../shared/lib/editor';
 import { useAppStore } from '../../../../store';
-import { tauriGhRunner } from '../../../github/github';
 import { useInstalledVersion } from '../../../changelog/hooks/useInstalledVersion';
-import { ISSUE_TYPE_OPTIONS, issueTypeLabel, type IssueTypeValue } from '../../reportIssueTypes';
+import { tauriGhRunner } from '../../../github/github';
 import { useBugReportImages } from '../../hooks/useBugReportImages';
 import { REPORT_ISSUE_REPO } from '../../issueUrl';
+import { ISSUE_TYPE_OPTIONS, issueTypeLabel, type IssueTypeValue } from '../../reportIssueTypes';
 import { BugReportImages } from '../BugReportImages';
 import { AREA_OPTIONS, type AreaValue } from './areas';
+import { guessArea } from './guessArea';
 import { buildFallbackIssue, buildIssueBody, isOpenableUrl } from './issuePayload';
 import { parseIssueCreateResult } from './parseIssueCreateResult';
 import { previewHint } from './previewHint';
-import { stageBugReportImages } from './stageImages';
+import { revealBugReportImages, stageBugReportImages } from './stageImages';
 import { truncationNotice } from './truncationNotice';
-import { PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
   readonly onClose: () => void;
@@ -42,6 +44,18 @@ type Params = {
 
 type SendState = 'idle' | 'sending' | 'error';
 
+const TITLE_PLACEHOLDERS = {
+  bug: "What's wrong, in one line",
+  idea: "What you'd change, in one line",
+  question: "What you're stuck on, in one line",
+} satisfies Record<IssueTypeValue, string>;
+
+const NOTES_PLACEHOLDERS = {
+  bug: 'Steps to reproduce, what you expected, what happened instead',
+  idea: "What it does today, what you'd want instead",
+  question: 'What you tried, and where it stopped making sense',
+} satisfies Record<IssueTypeValue, string>;
+
 export const ReportIssueStudio = ({ onClose }: Props) => {
   const version = useInstalledVersion();
   const status = useAppStore((s) => s.githubStatus);
@@ -49,11 +63,11 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
   const draft = useAppStore((s) => s.bugReportDraft);
   const setBugReportDraft = useAppStore((s) => s.setBugReportDraft);
   const clearBugReportDraft = useAppStore((s) => s.clearBugReportDraft);
-
+  const { showToast } = useToast();
   const imageControl = useBugReportImages();
-
-  const [area, setArea] = useState<AreaValue | ''>('');
-  const [title, setTitle] = useState('');
+  const [selectedArea, setSelectedArea] = useState<AreaValue | ''>('');
+  const [isAreaTouched, setIsAreaTouched] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [sendState, setSendState] = useState<SendState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -65,20 +79,23 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
 
   const mode = status?.mode ?? null;
   const sendsDirectly = mode === 'gh-cli' || mode === 'pat';
-
-  const trimmedTitle = title.trim();
+  const guessedArea = useMemo(
+    () => guessArea({ text: `${draft.title}\n${draft.description}` }),
+    [draft.title, draft.description],
+  );
+  const area = isAreaTouched ? selectedArea : (guessedArea ?? '');
+  const isAreaGuessed = !isAreaTouched && guessedArea != null;
+  const trimmedTitle = draft.title.trim();
   const trimmedNotes = draft.description.trim();
   const areaLabel = useMemo(
     () => AREA_OPTIONS.find((option) => option.value === area)?.label ?? '',
     [area],
   );
   const typeLabel = issueTypeLabel({ issueType: draft.issueType });
-
   const imageNames = useMemo(
     () => imageControl.images.map((image) => image.fileName),
     [imageControl.images],
   );
-
   const directBody = useMemo(
     () =>
       buildIssueBody({
@@ -102,7 +119,6 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
       }),
     [trimmedTitle, typeLabel, version, areaLabel, trimmedNotes, imageNames],
   );
-
   const previewBody = sendsDirectly ? directBody : fallback.body;
   const previewTitle = sendsDirectly ? trimmedTitle : fallback.title;
   const previewTruncation = sendsDirectly
@@ -111,7 +127,6 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
         titleTruncated: fallback.titleTruncated,
         notesTruncated: fallback.notesTruncated,
       });
-
   const canSend =
     version != null &&
     area !== '' &&
@@ -126,8 +141,9 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
     setSendState('sending');
     setErrorMessage(null);
 
+    let stagedImagesDir: string | null;
     try {
-      await stageBugReportImages({ images: imageControl.images });
+      stagedImagesDir = await stageBugReportImages({ images: imageControl.images });
     } catch (err) {
       setSendState('error');
       setErrorMessage(`Could not prepare the images to attach. ${formatError(err)}`);
@@ -136,7 +152,7 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
 
     if (sendsDirectly) {
       try {
-        const res = await tauriGhRunner.run(
+        const result = await tauriGhRunner.run(
           [
             'issue',
             'create',
@@ -149,17 +165,43 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
           ],
           {},
         );
-        const parsed = parseIssueCreateResult(res);
+        const parsed = parseIssueCreateResult(result);
         if (!parsed.ok) {
           setSendState('error');
           setErrorMessage(parsed.message);
           return;
         }
-        if (parsed.url != null) {
-          await openUrl(parsed.url);
-        }
+        const issueUrl = parsed.url;
         clearBugReportDraft();
         requestClose();
+        if (stagedImagesDir == null) {
+          showToast('success', 'Filed on GitHub, under your account.', {
+            title: 'Issue sent',
+            action:
+              issueUrl == null
+                ? undefined
+                : { label: 'View issue', onClick: () => void openUrl(issueUrl) },
+          });
+          return;
+        }
+        const action =
+          issueUrl == null
+            ? {
+                label: 'Open images folder',
+                onClick: () => void revealBugReportImages({ dir: stagedImagesDir }),
+              }
+            : {
+                label: 'Open issue and images',
+                onClick: () => {
+                  void openUrl(issueUrl);
+                  void revealBugReportImages({ dir: stagedImagesDir });
+                },
+              };
+        showToast(
+          'success',
+          "Your images aren't on it yet. GitHub only takes them by drag and drop.",
+          { title: 'Issue sent', persist: true, action },
+        );
       } catch (err) {
         setSendState('error');
         setErrorMessage(formatError(err));
@@ -176,6 +218,9 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
     }
     try {
       await openUrl(fallback.url);
+      if (stagedImagesDir != null) {
+        await revealBugReportImages({ dir: stagedImagesDir });
+      }
       clearBugReportDraft();
       requestClose();
     } catch (err) {
@@ -197,92 +242,96 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
         <div className="flex min-h-0 flex-1 flex-col">
           <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
             <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-              <section className="flex flex-col">
-                <SectionHeader
-                  icon={<CONCEPT_ICONS.reportIssue size={12} aria-hidden />}
-                  label="Report details"
-                  hint="What you type here is the whole report. Nothing else is read from the app."
+              <div className="flex flex-col gap-4">
+                <SegmentedTabs
+                  size="md"
+                  fill
+                  ariaLabel="Issue type"
+                  options={ISSUE_TYPE_OPTIONS}
+                  value={draft.issueType}
+                  onChange={(issueType: IssueTypeValue) => setBugReportDraft({ issueType })}
                 />
-                <FieldRow label="Version" help="The version running right now.">
-                  {version != null ? (
-                    <span className="text-sm text-foreground">{version}</span>
-                  ) : (
-                    <Skeleton className="h-4 w-14" />
-                  )}
-                </FieldRow>
-                <FieldRow label="Type" help="What kind of report this is.">
-                  <SegmentedTabs
-                    size="sm"
-                    ariaLabel="Issue type"
-                    options={ISSUE_TYPE_OPTIONS}
-                    value={draft.issueType}
-                    onChange={(issueType: IssueTypeValue) => setBugReportDraft({ issueType })}
-                  />
-                </FieldRow>
-                <FieldRow label="Area" help="Which part of the app this is about.">
-                  <Select
-                    size="sm"
-                    value={area}
-                    onChange={(e) => setArea(e.target.value as AreaValue | '')}
-                    required
-                  >
-                    <option value="" disabled hidden>
-                      Choose an area
-                    </option>
-                    {AREA_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </Select>
-                </FieldRow>
-                <FieldRow label="Title" help="A short summary.">
-                  <Input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="What's wrong, in one line"
-                    className="w-full sm:w-80"
-                  />
-                </FieldRow>
-                <FieldRow
-                  label="Notes"
-                  help="What happened, what you expected, steps to reproduce."
-                  layout="stacked"
-                >
-                  <Textarea
-                    autoGrow
-                    minRows={4}
-                    maxRows={12}
-                    value={draft.description}
-                    onChange={(e) => setBugReportDraft({ description: e.target.value })}
-                    onPaste={imageControl.onPaste}
-                    placeholder="Steps to reproduce, what you expected, what happened instead"
-                  />
-                </FieldRow>
+                <Input
+                  aria-label="Title"
+                  value={draft.title}
+                  onChange={(e) => setBugReportDraft({ title: e.target.value })}
+                  placeholder={TITLE_PLACEHOLDERS[draft.issueType]}
+                  className="w-full"
+                />
+                <Textarea
+                  autoGrow
+                  minRows={4}
+                  maxRows={12}
+                  aria-label="Notes"
+                  value={draft.description}
+                  onChange={(e) => setBugReportDraft({ description: e.target.value })}
+                  onPaste={imageControl.onPaste}
+                  placeholder={NOTES_PLACEHOLDERS[draft.issueType]}
+                />
                 <FieldRow
                   label="Images"
-                  help="Screenshots that show the problem. Their folder opens on send, so you can drag them into the issue."
+                  help="GitHub only takes images by hand. After you send, one click opens the issue and the folder, so you can drag them in."
                   layout="stacked"
                 >
                   <BugReportImages control={imageControl} />
                 </FieldRow>
-              </section>
+                <FieldRow label="Area">
+                  <div className="flex flex-col gap-2">
+                    <Select
+                      aria-label="Area"
+                      size="sm"
+                      value={area}
+                      onChange={(e) => {
+                        const nextArea = AREA_OPTIONS.find(
+                          (option) => option.value === e.target.value,
+                        )?.value;
+                        setSelectedArea(nextArea ?? '');
+                        setIsAreaTouched(true);
+                      }}
+                      required
+                    >
+                      <option value="" disabled hidden>
+                        Choose an area
+                      </option>
+                      {AREA_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Select>
+                    {isAreaGuessed ? (
+                      <p className="text-2xs leading-relaxed text-info">
+                        Guessed from your words. Change it if it's off.
+                      </p>
+                    ) : null}
+                  </div>
+                </FieldRow>
+              </div>
 
               <Divider />
 
-              <section className="flex flex-col gap-3">
-                <SectionHeader label="Preview" hint={previewHint({ mode })} />
-                <div className="flex max-w-prose flex-col gap-2 text-sm leading-relaxed text-foreground">
-                  <p className="font-medium">{previewTitle === '' ? 'Untitled' : previewTitle}</p>
-                  <p className="whitespace-pre-wrap text-foreground/85">{previewBody}</p>
+              <Collapsible
+                open={isPreviewOpen || previewTruncation != null}
+                onOpenChange={setIsPreviewOpen}
+                trigger={
+                  <span className="flex flex-col gap-1">
+                    <span>Preview</span>
+                    <span className="text-2xs font-normal leading-relaxed text-muted-foreground">
+                      {previewHint({ mode })}
+                    </span>
+                  </span>
+                }
+              >
+                <div className="flex flex-col gap-3">
+                  <div className="flex max-w-prose flex-col gap-2 text-sm leading-relaxed text-foreground">
+                    <p className="font-medium">{previewTitle === '' ? 'Untitled' : previewTitle}</p>
+                    <p className="whitespace-pre-wrap text-foreground/85">{previewBody}</p>
+                  </div>
+                  {previewTruncation != null ? (
+                    <p className="text-2xs leading-relaxed text-warning">{previewTruncation}</p>
+                  ) : null}
                 </div>
-                {previewTruncation != null && (
-                  <p className="text-2xs leading-relaxed text-warning">{previewTruncation}</p>
-                )}
-                <p className="text-2xs leading-relaxed text-muted-foreground">
-                  This posts publicly on GitHub, under your own account.
-                </p>
-              </section>
+              </Collapsible>
             </div>
           </ScrollFade>
           <Divider />
@@ -293,7 +342,13 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                   <AlertTriangle size={12} aria-hidden />
                   {errorMessage}
                 </span>
-              ) : null}
+              ) : version != null ? (
+                <span className="text-2xs text-muted-foreground">
+                  v{version} · Posts publicly on GitHub, under your account
+                </span>
+              ) : (
+                <Skeleton className="h-4 w-14" />
+              )}
             </div>
             <Button variant="ghost" onClick={requestClose}>
               Cancel

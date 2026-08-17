@@ -3,6 +3,8 @@ import { Eyebrow, MetaRow, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Notification } from '@goodboy/db';
 import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { NOTIFICATION_SEVERITY } from '../../severity';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { sendNotificationToDevelopers } from '../../../settings/sendNotificationToDevelopers';
 
 type Props = {
   readonly notification: Notification;
@@ -23,6 +25,8 @@ export const NotificationCard = ({
   const SeverityIcon = severity.icon;
   const tint = tintClasses(severity.tone);
   const hasBody = notification.body != null && notification.body !== '';
+  const canSendToDevelopers =
+    notification.severity === 'warning' || notification.severity === 'error';
 
   return (
     <li
@@ -76,6 +80,16 @@ export const NotificationCard = ({
             {actionLabel}
           </button>
         )}
+        {canSendToDevelopers ? (
+          <button
+            type="button"
+            onClick={() => sendNotificationToDevelopers({ notification })}
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <CONCEPT_ICONS.reportIssue size={11} aria-hidden />
+            Send to developers
+          </button>
+        ) : null}
         <div className="ml-auto flex items-center gap-1.5">
           {!notification.read && (
             <button

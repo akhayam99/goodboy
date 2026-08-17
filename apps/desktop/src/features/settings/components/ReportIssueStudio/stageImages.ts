@@ -21,3 +21,11 @@ export const stageBugReportImages = async ({ images }: Params): Promise<string |
     })),
   });
 };
+
+type RevealParams = {
+  readonly dir: string;
+};
+
+export const revealBugReportImages = async ({ dir }: RevealParams): Promise<void> => {
+  await invoke('bug_report_reveal_images', { dir });
+};

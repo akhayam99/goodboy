@@ -162,4 +162,12 @@ describe('ReportIssuePopover', () => {
 
     expect(screen.queryByTestId('report-issue-draft-dot')).toBeNull();
   });
+
+  it('shows the draft dot when only the studio title is waiting', () => {
+    useAppStore.getState().setBugReportDraft({ title: 'Terminal loses focus' });
+
+    render(<ReportIssuePopover />);
+
+    expect(screen.getByTestId('report-issue-draft-dot')).toBeDefined();
+  });
 });

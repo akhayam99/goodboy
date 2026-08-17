@@ -26,6 +26,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { NOTIFICATION_SEVERITY } from '../../severity';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
+import { sendNotificationToDevelopers } from '../../../settings/sendNotificationToDevelopers';
 
 const DROPDOWN_WIDTH = 384;
 const LIST_MAX_HEIGHT = 400;
@@ -241,6 +242,7 @@ const NotificationItem = ({ notification: n, onNavigated }: NotificationItemProp
   const [pickerOpen, setPickerOpen] = useState(false);
   const sessionId = n.sessionId;
   const agentId = n.action?.kind === 'retry-step-summary' ? n.action.agentId : null;
+  const canSendToDevelopers = n.severity === 'warning' || n.severity === 'error';
 
   const severity = NOTIFICATION_SEVERITY[n.severity];
   const SeverityIcon = severity.icon;
@@ -306,15 +308,17 @@ const NotificationItem = ({ notification: n, onNavigated }: NotificationItemProp
           {body}
         </button>
       )}
-      {action != null ? (
+      {action != null || canSendToDevelopers ? (
         <div className="flex items-center gap-1.5 pl-5">
-          <button
-            type="button"
-            className="rounded px-1.5 py-0.5 text-2xs font-medium text-foreground/80 ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
-            onClick={action.onClick}
-          >
-            {action.label}
-          </button>
+          {action != null ? (
+            <button
+              type="button"
+              className="rounded px-1.5 py-0.5 text-2xs font-medium text-foreground/80 ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
+              onClick={action.onClick}
+            >
+              {action.label}
+            </button>
+          ) : null}
           {retryAction != null && (
             <button
               type="button"
@@ -324,6 +328,19 @@ const NotificationItem = ({ notification: n, onNavigated }: NotificationItemProp
               Retry with…
             </button>
           )}
+          {canSendToDevelopers ? (
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-muted hover:text-foreground"
+              onClick={() => {
+                sendNotificationToDevelopers({ notification: n });
+                onNavigated();
+              }}
+            >
+              <CONCEPT_ICONS.reportIssue size={11} aria-hidden />
+              Send to developers
+            </button>
+          ) : null}
         </div>
       ) : null}
       {action != null && pickerOpen && retryAction != null ? (

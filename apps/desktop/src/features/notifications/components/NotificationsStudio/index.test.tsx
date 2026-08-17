@@ -17,6 +17,13 @@ const { state } = vi.hoisted(() => ({
     retrySummarizer: vi.fn(),
     retryStepSummary: vi.fn(async () => undefined),
     summarizerStatus: {} as Record<string, unknown>,
+    bugReportDraft: {
+      issueType: 'idea',
+      title: 'Existing draft',
+      description: 'Earlier notes',
+      images: [],
+    },
+    setBugReportDraft: vi.fn(),
   },
 }));
 
@@ -67,6 +74,13 @@ beforeEach(() => {
   state.clearNotifications = vi.fn(async () => undefined);
   state.retrySummarizer = vi.fn();
   state.summarizerStatus = {};
+  state.bugReportDraft = {
+    issueType: 'idea',
+    title: 'Existing draft',
+    description: 'Earlier notes',
+    images: [],
+  };
+  state.setBugReportDraft = vi.fn();
 });
 
 afterEach(cleanup);
@@ -83,6 +97,32 @@ describe('NotificationsStudio', () => {
     expect(body.textContent).toBe(LONG_BODY);
     expect(body.className).not.toContain('line-clamp');
     expect(body.className).toContain('whitespace-pre-wrap');
+    expect(screen.getByRole('button', { name: 'Send to developers' })).toBeDefined();
+  });
+
+  it('does not offer an informational notification to developers', () => {
+    seedNotifications([buildNotification({ severity: 'info' })]);
+    renderStudio();
+
+    expect(screen.queryByRole('button', { name: 'Send to developers' })).toBeNull();
+  });
+
+  it('merges a warning into the existing draft before opening the report studio', () => {
+    const onOpenStudio = vi.fn();
+    window.addEventListener('goodboy:open-report-issue', onOpenStudio);
+    seedNotifications([buildNotification({ severity: 'warning' })]);
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send to developers' }));
+
+    expect(state.setBugReportDraft).toHaveBeenCalledWith({
+      issueType: 'bug',
+      title: 'Existing draft',
+      description: `Earlier notes\n\nsummarizer failed\n\n${LONG_BODY}`,
+    });
+    expect(state.markNotificationRead).not.toHaveBeenCalled();
+    expect(onOpenStudio).toHaveBeenCalledOnce();
+    window.removeEventListener('goodboy:open-report-issue', onOpenStudio);
   });
 
   it('fires the mapped handler behind a notification CTA', async () => {

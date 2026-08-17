@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   invoke: vi.fn<(cmd: string, args: Record<string, unknown>) => Promise<unknown>>(
     async () => '/tmp/goodboy-report-1',
   ),
+  showToast: vi.fn(),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -44,6 +45,10 @@ vi.mock('../../../github/github', () => ({
 
 vi.mock('../../../../shared/lib/editor', () => ({
   openUrl: mocks.openUrl,
+}));
+
+vi.mock('../../../../app/components/Toast', () => ({
+  useToast: () => ({ showToast: mocks.showToast }),
 }));
 
 import { ReportIssueStudio } from './index';
@@ -79,6 +84,7 @@ beforeEach(() => {
   mocks.openUrl.mockImplementation(async () => undefined);
   mocks.invoke.mockReset();
   mocks.invoke.mockImplementation(async () => '/tmp/goodboy-report-1');
+  mocks.showToast.mockReset();
 });
 afterEach(cleanup);
 
@@ -90,11 +96,29 @@ describe('ReportIssueStudio', () => {
     const send = () => screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement;
     expect(send().disabled).toBe(true);
 
-    fillReport({ title: 'Board freezes' });
+    fillReport({ title: 'Unexpected behavior' });
     expect(send().disabled).toBe(true);
 
     fillReport({ area: 'board-sessions' });
     expect(send().disabled).toBe(false);
+  });
+
+  it('guesses the area from drafted words until the reporter changes it', () => {
+    setGithubStatus({ available: true, mode: 'gh-cli' });
+    useAppStore.getState().setBugReportDraft({
+      title: 'Budget warning is stale',
+      description: 'The cost cap changed yesterday.',
+    });
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    expect(screen.getByLabelText<HTMLSelectElement>('Area').value).toBe('budget-spend');
+    expect(screen.getByText("Guessed from your words. Change it if it's off.")).toBeDefined();
+
+    fireEvent.change(screen.getByLabelText('Area'), { target: { value: 'notifications' } });
+    fireEvent.change(screen.getByLabelText('Notes'), { target: { value: 'provider model issue' } });
+
+    expect(screen.getByLabelText<HTMLSelectElement>('Area').value).toBe('notifications');
+    expect(screen.queryByText("Guessed from your words. Change it if it's off.")).toBeNull();
   });
 
   it('shows exactly the version, area label, title and notes in the preview, nothing else', () => {
@@ -106,6 +130,8 @@ describe('ReportIssueStudio', () => {
       title: 'Agent reply is cut off',
       notes: 'The reply stops mid-sentence after a tool call.',
     });
+
+    fireEvent.click(screen.getByRole('button', { name: /Preview/ }));
 
     expect(screen.getByText('Agent reply is cut off')).toBeDefined();
     expect(
@@ -172,6 +198,32 @@ describe('ReportIssueStudio', () => {
     });
   });
 
+  it('keeps an image reminder until its action reveals the staged folder', async () => {
+    setGithubStatus({ available: true, mode: 'gh-cli' });
+    attachOneImage();
+    mocks.run.mockImplementation(async () => ({
+      stdout: 'https://github.com/akhayam99/goodboy/issues/99\n',
+      stderr: '',
+      exitCode: 0,
+    }));
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'Freezes on archive.' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    });
+
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      'success',
+      "Your images aren't on it yet. GitHub only takes them by drag and drop.",
+      expect.objectContaining({
+        title: 'Issue sent',
+        persist: true,
+        action: expect.objectContaining({ label: 'Open issue and images' }),
+      }),
+    );
+  });
+
   it('stages the images on the fallback path too, where the link cannot carry them', async () => {
     setGithubStatus({ available: false, mode: 'absent' });
     attachOneImage();
@@ -223,7 +275,7 @@ describe('ReportIssueStudio', () => {
     expect(mocks.invoke).not.toHaveBeenCalled();
   });
 
-  it('sends directly through gh when connected, and opens the created issue', async () => {
+  it('sends directly through gh and offers the created issue without opening it', async () => {
     setGithubStatus({ available: true, mode: 'gh-cli' });
     mocks.run.mockImplementation(async () => ({
       stdout: 'https://github.com/akhayam99/goodboy/issues/99\n',
@@ -250,7 +302,12 @@ describe('ReportIssueStudio', () => {
       ],
       {},
     );
-    expect(mocks.openUrl).toHaveBeenCalledWith('https://github.com/akhayam99/goodboy/issues/99');
+    expect(mocks.openUrl).not.toHaveBeenCalled();
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      'success',
+      'Filed on GitHub, under your account.',
+      expect.objectContaining({ title: 'Issue sent' }),
+    );
   });
 
   it('empties the draft and leaves the form once the issue is filed', async () => {
@@ -444,7 +501,7 @@ describe('ReportIssueStudio', () => {
     render(<ReportIssueStudio onClose={vi.fn()} />);
 
     expect(
-      screen.getByText('This posts publicly on GitHub, under your own account.'),
+      screen.getByText('v0.1.69 · Posts publicly on GitHub, under your account'),
     ).toBeDefined();
   });
 });
