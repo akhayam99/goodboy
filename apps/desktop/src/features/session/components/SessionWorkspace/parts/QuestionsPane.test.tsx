@@ -475,7 +475,7 @@ describe('QuestionsPane', () => {
 
       render(<QuestionsPane session={BASE_SESSION} />);
 
-      const submitButtons = screen.getAllByText('send answer');
+      const submitButtons = screen.getAllByRole('button', { name: 'Send' });
       expect(submitButtons.length).toBeGreaterThanOrEqual(1);
 
       fireEvent.click(submitButtons[submitButtons.length - 1]!);
@@ -490,11 +490,10 @@ describe('QuestionsPane', () => {
     it('does not render submit button when no drafts pending', () => {
       setupStore({ openQuestions: [mkQuestion('q1')] });
       render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.queryByText('send answer')).toBeNull();
-      expect(screen.queryByText(/send \d+ answers/)).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     });
 
-    it('shows "send N answers" when multiple drafts pending in a cluster', () => {
+    it('shows a counter alongside Send when several answers are ready in a cluster', () => {
       const scout = mkAgent('agent_scout', undefined, 'scout');
 
       setupStore({
@@ -503,6 +502,7 @@ describe('QuestionsPane', () => {
         openQuestions: [
           mkQuestion('q1', { createdByAgentId: scout.id }),
           mkQuestion('q2', { createdByAgentId: scout.id }),
+          mkQuestion('q3', { createdByAgentId: scout.id }),
         ],
         drafts: {
           q1: { selectedSuggestions: ['option a'], customAnswer: '', showCustomField: false },
@@ -511,7 +511,20 @@ describe('QuestionsPane', () => {
       });
 
       render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.getByText('send 2 answers')).toBeDefined();
+      expect(screen.getByText('2 of 3 answered')).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Send' })).toBeDefined();
+    });
+
+    it('shows the singular ready label when the cluster holds a single question', () => {
+      setupStore({
+        openQuestions: [mkQuestion('q1')],
+        drafts: {
+          q1: { selectedSuggestions: ['ok'], customAnswer: '', showCustomField: false },
+        },
+      });
+
+      render(<QuestionsPane session={BASE_SESSION} />);
+      expect(screen.getByText('ready to send')).toBeDefined();
     });
 
     it('submit with null ownerAgentId for orphan cluster', () => {
@@ -523,7 +536,7 @@ describe('QuestionsPane', () => {
       });
 
       render(<QuestionsPane session={BASE_SESSION} />);
-      fireEvent.click(screen.getByText('send answer'));
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
       expect(mockAnswerOpenQuestions).toHaveBeenCalledWith(
         SESSION_ID,
@@ -541,7 +554,7 @@ describe('QuestionsPane', () => {
       });
 
       render(<QuestionsPane session={BASE_SESSION} />);
-      fireEvent.click(screen.getByText('send answer'));
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
       expect(mockFlashAnswered).toHaveBeenCalledWith(['q1']);
       expect(mockAnswerOpenQuestions).toHaveBeenCalled();
@@ -556,7 +569,7 @@ describe('QuestionsPane', () => {
       });
 
       render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.queryByText('send answer')).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     });
   });
 

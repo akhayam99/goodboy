@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, MessageCircleQuestion, X } from 'lucide-react';
 import { cn, Markdown, tintClasses } from '@goodboy/ui';
-import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
+import type { OpenQuestion, OpenQuestionId, OpenQuestionSelectMode } from '@goodboy/types';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { TranscriptShell } from '../../../../chat/components/TranscriptShell';
 import { SuggestionChip } from '../SuggestionChip';
@@ -16,7 +16,11 @@ type Props = {
   customAnswer: string;
   showCustomField: boolean;
   justAnswered: boolean;
-  onToggleSuggestion: (questionId: OpenQuestionId, suggestion: string) => void;
+  onToggleSuggestion: (
+    questionId: OpenQuestionId,
+    suggestion: string,
+    mode: OpenQuestionSelectMode,
+  ) => void;
   onSetCustomAnswer: (questionId: OpenQuestionId, text: string) => void;
   onToggleCustomField: (questionId: OpenQuestionId) => void;
   onDismiss: (id: OpenQuestionId) => void;
@@ -59,6 +63,10 @@ export const QuestionCard = ({
     recommended.length > 0 && !baseSuggestions.includes(recommended)
       ? [recommended, ...baseSuggestions]
       : baseSuggestions;
+
+  const mode: OpenQuestionSelectMode = question.selectMode ?? 'one';
+  const groupRole = mode === 'many' ? 'group' : 'radiogroup';
+  const groupLabel = mode === 'many' ? 'Pick one or more answers' : 'Pick one answer';
 
   return (
     <TranscriptShell
@@ -112,14 +120,19 @@ export const QuestionCard = ({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5 pl-6">
+      <div
+        role={groupRole}
+        aria-label={groupLabel}
+        className="flex flex-wrap items-center gap-1.5 pl-6"
+      >
         {suggestions.map((suggestion) => (
           <SuggestionChip
             key={suggestion}
             label={suggestion}
+            mode={mode}
             selected={selectedSuggestions.includes(suggestion)}
             recommended={recommended.length > 0 && suggestion === recommended}
-            onToggle={() => onToggleSuggestion(question.id, suggestion)}
+            onToggle={() => onToggleSuggestion(question.id, suggestion, mode)}
           />
         ))}
         <CustomAnswerField

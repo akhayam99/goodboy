@@ -1,22 +1,32 @@
 import { Check } from 'lucide-react';
 import { cn } from '@goodboy/ui';
+import type { OpenQuestionSelectMode } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   label: string;
   selected: boolean;
   recommended?: boolean;
+  mode?: OpenQuestionSelectMode;
   onToggle: () => void;
 };
 
 const isCodeLike = (label: string) => /^\S+$/.test(label) && /[_().:[\]/]/.test(label);
 
-export const SuggestionChip = ({ label, selected, recommended = false, onToggle }: Props) => {
+export const SuggestionChip = ({
+  label,
+  selected,
+  recommended = false,
+  mode = 'one',
+  onToggle,
+}: Props) => {
+  const role = mode === 'many' ? 'checkbox' : 'radio';
   return (
     <button
       type="button"
+      role={role}
+      aria-checked={selected}
       onClick={onToggle}
-      aria-pressed={selected}
       title={recommended ? `${label} (suggested)` : label}
       className={cn(
         'group inline-flex min-w-0 max-w-40 items-center gap-1 rounded-md border text-xs font-medium transition-[color,background-color,border-color,box-shadow,transform] duration-150',

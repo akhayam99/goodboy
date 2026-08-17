@@ -13,7 +13,7 @@ import { estimateTokens } from '../shared/utils/estimate-tokens';
 const CONTEXT_MARKER_HINT =
   '## context handoff protocol (parsed into the shared context above, seen by every agent, never repeat what is already there)\n' +
   '`<<ctx-decision>>durable decision<</ctx-decision>>`. `<<ctx-resolved>>original question text, quoted closely<</ctx-resolved>>` once an open question above is answered, one per question.\n' +
-  '`<<ctx-question suggestions="a | b | c" recommended="a">>question<</ctx-question>>` when the user must answer first: self-contained, what and why in one sentence; `suggestions` = 2 to 4 pipe-separated options when bounded; `recommended` always set, verbatim from suggestions when present.';
+  '`<<ctx-question suggestions="a | b | c" recommended="a" select="one">>question<</ctx-question>>` when the user must answer first: self-contained, what and why in one sentence; `suggestions` = 2 to 4 pipe-separated options when bounded; `recommended` always set, verbatim from suggestions when present; `select="one"` (default, radio) when exactly one option applies, `select="many"` (checkbox) when the user can combine several. A free-text answer stays available in both modes.';
 
 export const buildContextPreamble = (
   sharedSlots: ReadonlyArray<ContextSlot>,

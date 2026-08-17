@@ -9,6 +9,8 @@ import type {
 
 export type OpenQuestionStatus = 'open' | 'answered' | 'dismissed';
 
+export type OpenQuestionSelectMode = 'one' | 'many';
+
 export type OpenQuestion = Readonly<{
   id: OpenQuestionId;
   sessionId: SessionId;
@@ -20,6 +22,7 @@ export type OpenQuestion = Readonly<{
   text: string;
   suggestedAnswers: ReadonlyArray<string>;
   recommendedAnswer?: string;
+  selectMode?: OpenQuestionSelectMode;
   userAnswer: string | null;
   turnOrdinal?: number;
   status: OpenQuestionStatus;
