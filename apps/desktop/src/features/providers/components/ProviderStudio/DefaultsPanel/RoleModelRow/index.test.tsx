@@ -43,8 +43,13 @@ const openFallback = () =>
 const pickProvider = (label: string) =>
   fireEvent.click(screen.getByRole('button', { name: label }));
 
-const pickChip = (label: string) =>
-  fireEvent.click(screen.getAllByRole('button', { name: label })[0]);
+const pickChip = (label: string) => {
+  const [first] = screen.getAllByRole('button', { name: label });
+  if (first === undefined) {
+    throw new Error(`no chip labelled ${label}`);
+  }
+  fireEvent.click(first);
+};
 
 afterEach(() => {
   cleanup();
