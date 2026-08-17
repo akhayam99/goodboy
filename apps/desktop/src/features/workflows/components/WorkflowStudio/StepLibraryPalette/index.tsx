@@ -12,6 +12,7 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly onStartDrag: (def: StepDef, e: React.PointerEvent) => void;
+  readonly onAdd: (def: StepDef) => void;
   readonly onSaveDef: (args: StepDefUpsertArgs) => void;
   readonly onDeleteDef: (id: StepDefId) => void;
 };
@@ -21,6 +22,7 @@ export const StepLibraryPalette = ({
   workspaceId,
   connectedProviders,
   onStartDrag,
+  onAdd,
   onSaveDef,
   onDeleteDef,
 }: Props) => {
@@ -50,8 +52,6 @@ export const StepLibraryPalette = ({
           connectedProviders={connectedProviders}
           onCommit={(args) => {
             onSaveDef(args);
-            // A new step persists on its first valid commit; close so repeated
-            // blurs don't insert duplicates. It reappears in the list to re-edit.
             setEditing(null);
           }}
           onClose={() => setEditing(null)}
@@ -92,6 +92,7 @@ export const StepLibraryPalette = ({
                 def={def}
                 dragDisabled={false}
                 onStartDrag={onStartDrag}
+                onAdd={() => onAdd(def)}
                 onEdit={() => setEditing(def.id)}
                 onDelete={() => onDeleteDef(def.id)}
               />
