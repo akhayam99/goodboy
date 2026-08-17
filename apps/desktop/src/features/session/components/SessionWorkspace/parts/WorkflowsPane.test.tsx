@@ -279,8 +279,6 @@ describe('WorkflowsPane', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Completed (1)' }));
-
     expect(screen.getByText('2 of 2 steps run')).toBeDefined();
     expect(screen.getByText('3m')).toBeDefined();
     expect(screen.getByText('Last: Second')).toBeDefined();
@@ -313,8 +311,6 @@ describe('WorkflowsPane', () => {
         })}
       />,
     );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Completed (1)' }));
 
     expect(screen.getByText('1 step run')).toBeDefined();
     expect(screen.queryByText('1 of 2 steps run')).toBeNull();
@@ -371,7 +367,7 @@ describe('WorkflowsPane', () => {
     expect(screen.getByText('Second workflow')).toBeDefined();
   });
 
-  it('shows the empty state when every run is completed and none is revealed', () => {
+  it('keeps the active empty state above always-visible completed runs', () => {
     render(
       <WorkflowsPane
         session={buildSession({
@@ -385,17 +381,15 @@ describe('WorkflowsPane', () => {
     );
 
     expect(screen.getByTestId('workflow-empty').textContent).toContain('Nothing running');
-    expect(screen.queryByText('First workflow')).toBeNull();
+    expect(screen.getByText('First workflow')).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Attach another workflow' })).toHaveLength(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Completed (2)' }));
-
     expect(screen.getByTestId('workflow-empty').textContent).toContain('Nothing running');
-    expect(screen.getByText('First workflow')).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Finished history' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Attach another workflow' })).toHaveLength(1);
   });
 
-  it('files a discarded run under its own toggle instead of the active list', () => {
+  it('shows a discarded run below the active list with its true state', () => {
     render(
       <WorkflowsPane
         session={buildSession({
@@ -405,12 +399,9 @@ describe('WorkflowsPane', () => {
       />,
     );
 
-    expect(screen.queryByText('First workflow')).toBeNull();
-    expect(screen.getByText('Second workflow')).toBeDefined();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Discarded (1)' }));
-
     expect(screen.getByText('First workflow')).toBeDefined();
+    expect(screen.getByText('Second workflow')).toBeDefined();
+    expect(screen.getByText('Discarded')).toBeDefined();
   });
 
   it('keeps the attach action when a revealed bucket is empty', () => {
@@ -425,7 +416,6 @@ describe('WorkflowsPane', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Completed (1)' }));
     rerender(
       <WorkflowsPane
         session={buildSession({
@@ -449,7 +439,6 @@ describe('WorkflowsPane', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Discarded (1)' }));
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
 
     expect(store.restoreWorkflow).toHaveBeenCalledWith(SESSION_ID, 'run-1');
@@ -494,7 +483,7 @@ describe('WorkflowsPane', () => {
     expect(screen.queryByText('Stopping')).toBeNull();
   });
 
-  it('files a completed dynamic run under the completed toggle', () => {
+  it('shows a completed dynamic run below active work without interaction', () => {
     render(
       <WorkflowsPane
         session={buildSession({
@@ -506,10 +495,7 @@ describe('WorkflowsPane', () => {
       />,
     );
 
-    expect(screen.queryByText('First workflow')).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Completed (1)' }));
-
     expect(screen.getByText('First workflow')).toBeDefined();
+    expect(screen.getByText('Completed')).toBeDefined();
   });
 });

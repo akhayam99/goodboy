@@ -56,8 +56,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const sessionId = session.id as SessionId;
   const [inspectedResolverId, setInspectedResolverId] = useState<AgentId | null>(null);
   const [inspectedAgentId, setInspectedAgentId] = useState<AgentId | null>(null);
-  const [showCompletedAgents, setShowCompletedAgents] = useState(false);
-  const [showCompletedResolvers, setShowCompletedResolvers] = useState(false);
   const hasInitializedResolverInspector = useRef(false);
   const hasInitializedAgentInspector = useRef(false);
   const storedActiveLens = useAppStore((s) => s.activeLens[sessionId]);
@@ -289,8 +287,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 meta={resolveMeta}
                 inspectedResolverId={inspectedResolverId}
                 onInspectResolver={setInspectedResolverId}
-                showCompleted={showCompletedResolvers}
-                onShowCompletedChange={setShowCompletedResolvers}
               />
             ) : null}
             {lens === 'scripts' ? (
@@ -403,8 +399,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 meta={agentsMeta}
                 inspectedAgentId={inspectedAgentId}
                 onInspectAgent={setInspectedAgentId}
-                showCompleted={showCompletedAgents}
-                onShowCompletedChange={setShowCompletedAgents}
               />
             </Pane>
           </div>

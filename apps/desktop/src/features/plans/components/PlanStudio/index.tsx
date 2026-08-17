@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { ArchiveRestore, CircleCheck, Eye, Pencil, Play, RotateCw, Trash2 } from 'lucide-react';
 import {
   Button,
-  CountToggle,
   Divider,
   InlineConfirm,
   Markdown,
@@ -24,6 +23,7 @@ import { PlanRailCard } from './PlanRailCard';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
+import { FinishedRegister } from '../../../../shared/components/FinishedRegister';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -46,7 +46,6 @@ export const PlanStudio = ({ sessionId }: Props) => {
   const { showToast } = useToast();
   const announceAgentStarted = useAgentStartedToast();
 
-  const [showConsumed, setShowConsumed] = useState(false);
   const [mode, setMode] = useState<'preview' | 'edit'>('preview');
   const [draft, setDraft] = useState('');
   const [spawning, setSpawning] = useState(false);
@@ -305,6 +304,8 @@ export const PlanStudio = ({ sessionId }: Props) => {
 
   const active = plans.filter((plan) => plan.status === 'active');
   const consumed = plans.filter((plan) => plan.status !== 'active');
+  const visibleConsumed = consumed.slice(0, 30);
+  const earlierConsumed = consumed.slice(30);
 
   return (
     <PaneShell
@@ -325,7 +326,7 @@ export const PlanStudio = ({ sessionId }: Props) => {
           tone={CONCEPT_TONE.plans}
           icon={CONCEPT_ICONS.plans}
           title="Nothing active"
-          description="Every plan here already ran or was discarded. Show the consumed ones to reread them."
+          description="Every plan here already ran or was discarded. Finished plans remain below for reference."
         />
       ) : null}
       {active.length > 0 ? (
@@ -337,25 +338,29 @@ export const PlanStudio = ({ sessionId }: Props) => {
           ))}
         </ul>
       ) : null}
-      <div className="flex justify-center">
-        <CountToggle
-          label="Consumed"
-          itemsLabel="plans"
-          count={consumed.length}
-          isShown={showConsumed}
-          icon={CircleCheck}
-          onChange={setShowConsumed}
-        />
-      </div>
-      {showConsumed && consumed.length > 0 ? (
-        <ul className="flex flex-col gap-2">
-          {consumed.map((plan) => (
-            <li key={plan.id}>
-              <PlanRailCard plan={plan} onSelect={() => setFocusedPlanId(sessionId, plan.id)} />
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      <FinishedRegister
+        label="Finished"
+        count={consumed.length}
+        visible={
+          <ul className="flex flex-col gap-2">
+            {visibleConsumed.map((plan) => (
+              <li key={plan.id}>
+                <PlanRailCard plan={plan} onSelect={() => setFocusedPlanId(sessionId, plan.id)} />
+              </li>
+            ))}
+          </ul>
+        }
+        earlierCount={earlierConsumed.length}
+        earlier={
+          <ul className="flex flex-col gap-2">
+            {earlierConsumed.map((plan) => (
+              <li key={plan.id}>
+                <PlanRailCard plan={plan} onSelect={() => setFocusedPlanId(sessionId, plan.id)} />
+              </li>
+            ))}
+          </ul>
+        }
+      />
     </PaneShell>
   );
 };

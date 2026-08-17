@@ -10,6 +10,9 @@ import { CreateAgentPopover } from '../CreateAgentPopover';
 import { AgentListSkeleton } from './AgentListSkeleton';
 import { useStandaloneAgentsLane } from './useStandaloneAgentsLane';
 import { visibleLaneAgents } from './visibleLaneAgents';
+import { FinishedRegister } from '../../../../shared/components/FinishedRegister';
+
+const VISIBLE_FINISHED_COUNT = 30;
 
 const NO_AGENTS_DESCRIPTION =
   'Spawn an agent to start working on this session, or kick off a workflow to run a sequence of agents toward the goal.';
@@ -127,9 +130,15 @@ export const StandaloneAgentsLane = ({
         <div className="flex flex-col gap-5">
           {lane.activeAgents.length > 0 ? renderList(lane.activeAgents, false) : null}
           {filedToggle}
-          {showCompleted && lane.completedAgents.length > 0
-            ? renderList(lane.completedAgents, true)
-            : null}
+          {showCompleted ? (
+            <FinishedRegister
+              label="Completed"
+              count={lane.completedAgents.length}
+              visible={renderList(lane.completedAgents.slice(0, VISIBLE_FINISHED_COUNT), true)}
+              earlierCount={Math.max(0, lane.completedAgents.length - VISIBLE_FINISHED_COUNT)}
+              earlier={renderList(lane.completedAgents.slice(VISIBLE_FINISHED_COUNT), true)}
+            />
+          ) : null}
         </div>
       ) : null}
     </AgentLane>

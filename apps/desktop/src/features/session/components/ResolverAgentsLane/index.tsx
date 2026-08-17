@@ -8,6 +8,9 @@ import { ResolveCommentsAction } from './ResolveCommentsAction';
 import { ResolverLaneToolbar } from './ResolverLaneToolbar';
 import { ResolverRows } from './ResolverRows';
 import { useResolverAgentsLane } from './useResolverAgentsLane';
+import { FinishedRegister } from '../../../../shared/components/FinishedRegister';
+
+const VISIBLE_FINISHED_COUNT = 30;
 
 const NOTHING_TO_RESOLVE_DESCRIPTION =
   'Spawn a resolver from a pull request comment or a diff selection and it will show up here.';
@@ -94,26 +97,55 @@ export const ResolverAgentsLane = ({
             />
           ) : null}
           {filedToggle}
-          {showCompleted && lane.completedEntries.length > 0 ? (
-            <ResolverRows
-              entries={lane.completedEntries}
-              activeIds={lane.activeIds}
-              canOpenDiff={lane.canOpenDiff}
-              isQueueStalled={lane.isStalled}
-              isTaskActive={lane.isTaskActive}
-              isTranscriptLoading={lane.isTranscriptLoading}
-              isMuted
-              selectedAgentId={lane.selectedAgentId}
-              inspectedAgentId={inspectedResolverId}
-              commentByThreadId={lane.commentByThreadId}
-              diffCommentByAgentId={lane.diffCommentByAgentId}
-              metrics={lane.metrics}
-              reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
-              diffTargetByAgentId={lane.diffTargetByAgentId}
-              onOpenChat={lane.onOpenChat}
-              onInspect={onInspectResolver}
-              onJump={lane.onJump}
-              onOpenDiff={lane.onOpenDiff}
+          {showCompleted ? (
+            <FinishedRegister
+              label="Completed"
+              count={lane.completedEntries.length}
+              visible={
+                <ResolverRows
+                  entries={lane.completedEntries.slice(0, VISIBLE_FINISHED_COUNT)}
+                  activeIds={lane.activeIds}
+                  canOpenDiff={lane.canOpenDiff}
+                  isQueueStalled={lane.isStalled}
+                  isTaskActive={lane.isTaskActive}
+                  isTranscriptLoading={lane.isTranscriptLoading}
+                  isMuted
+                  selectedAgentId={lane.selectedAgentId}
+                  inspectedAgentId={inspectedResolverId}
+                  commentByThreadId={lane.commentByThreadId}
+                  diffCommentByAgentId={lane.diffCommentByAgentId}
+                  metrics={lane.metrics}
+                  reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
+                  diffTargetByAgentId={lane.diffTargetByAgentId}
+                  onOpenChat={lane.onOpenChat}
+                  onInspect={onInspectResolver}
+                  onJump={lane.onJump}
+                  onOpenDiff={lane.onOpenDiff}
+                />
+              }
+              earlierCount={Math.max(0, lane.completedEntries.length - VISIBLE_FINISHED_COUNT)}
+              earlier={
+                <ResolverRows
+                  entries={lane.completedEntries.slice(VISIBLE_FINISHED_COUNT)}
+                  activeIds={lane.activeIds}
+                  canOpenDiff={lane.canOpenDiff}
+                  isQueueStalled={lane.isStalled}
+                  isTaskActive={lane.isTaskActive}
+                  isTranscriptLoading={lane.isTranscriptLoading}
+                  isMuted
+                  selectedAgentId={lane.selectedAgentId}
+                  inspectedAgentId={inspectedResolverId}
+                  commentByThreadId={lane.commentByThreadId}
+                  diffCommentByAgentId={lane.diffCommentByAgentId}
+                  metrics={lane.metrics}
+                  reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
+                  diffTargetByAgentId={lane.diffTargetByAgentId}
+                  onOpenChat={lane.onOpenChat}
+                  onInspect={onInspectResolver}
+                  onJump={lane.onJump}
+                  onOpenDiff={lane.onOpenDiff}
+                />
+              }
             />
           ) : null}
         </div>

@@ -119,6 +119,7 @@ describe('StandaloneAgentsLane', () => {
     expect(screen.getAllByTestId('agent-row').map((row) => row.getAttribute('data-muted'))).toEqual(
       ['false', 'false', 'true', 'true'],
     );
+    expect(screen.getByRole('region', { name: 'Completed history' })).toBeDefined();
   });
 
   it('shows the active empty state when its last agent is marked done', () => {

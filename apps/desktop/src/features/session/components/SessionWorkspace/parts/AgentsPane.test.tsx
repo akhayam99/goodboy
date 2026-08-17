@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
 vi.mock('@goodboy/ui', async (importOriginal) => ({
@@ -83,8 +83,6 @@ describe('AgentsPane', () => {
         meta={undefined}
         inspectedAgentId={null}
         onInspectAgent={vi.fn()}
-        showCompleted={false}
-        onShowCompletedChange={vi.fn()}
       />,
     );
 
@@ -103,8 +101,6 @@ describe('AgentsPane', () => {
         meta={undefined}
         inspectedAgentId={'agent-7' as never}
         onInspectAgent={vi.fn()}
-        showCompleted={false}
-        onShowCompletedChange={vi.fn()}
       />,
     );
 
@@ -113,27 +109,18 @@ describe('AgentsPane', () => {
     expect(lane.getAttribute('data-inspected')).toBe('agent-7');
   });
 
-  it('places the completed toggle after the list, not in the header, and forwards its state', () => {
-    const onShowCompletedChange = vi.fn();
+  it('shows completed agents in the lane without interaction', () => {
     render(
       <AgentsPane
         session={SESSION}
         meta={undefined}
         inspectedAgentId={null}
         onInspectAgent={vi.fn()}
-        showCompleted={false}
-        onShowCompletedChange={onShowCompletedChange}
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Report completed agents' }));
-    const toggle = screen.getByRole('button', { name: 'Completed (2)' });
-    const create = screen.getByTestId('header-spawn');
     const lane = screen.getByTestId('agents-lane');
-    expect(create.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(lane.contains(toggle)).toBe(true);
-    fireEvent.click(toggle);
-    expect(onShowCompletedChange).toHaveBeenCalledWith(true);
-    expect(screen.getByTestId('agents-lane').getAttribute('data-show-completed')).toBe('false');
+    expect(lane.getAttribute('data-show-completed')).toBe('true');
+    expect(screen.queryByRole('button', { name: /Completed/ })).toBeNull();
   });
 });
