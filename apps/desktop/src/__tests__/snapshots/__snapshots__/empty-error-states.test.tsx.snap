@@ -252,7 +252,7 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
               </div>
             </div>
             <div
-              class="flex w-full flex-col gap-2 rounded-lg border border-dashed p-3 motion-safe:transition-colors border-border-soft"
+              class="flex w-full flex-col gap-2 rounded-lg border border-dashed p-2 motion-safe:transition-colors border-border-soft"
               data-drop-composer="true"
             >
               <input
@@ -262,7 +262,7 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
                 type="file"
               />
               <button
-                class="inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs motion-safe:transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+                class="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-md px-3 text-xs motion-safe:transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
                 type="button"
               >
                 <svg
@@ -282,7 +282,7 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
                     d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"
                   />
                 </svg>
-                Add files
+                Add files or drag
               </button>
             </div>
           </section>
@@ -1133,7 +1133,7 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
               </div>
             </div>
             <div
-              class="flex w-full flex-col gap-2 rounded-lg border border-dashed p-3 motion-safe:transition-colors border-border-soft"
+              class="flex w-full flex-col gap-2 rounded-lg border border-dashed p-2 motion-safe:transition-colors border-border-soft"
               data-drop-composer="true"
             >
               <input
@@ -1143,7 +1143,7 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
                 type="file"
               />
               <button
-                class="inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs motion-safe:transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+                class="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-md px-3 text-xs motion-safe:transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
                 type="button"
               >
                 <svg
@@ -1163,7 +1163,7 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
                     d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"
                   />
                 </svg>
-                Add files
+                Add files or drag
               </button>
             </div>
           </section>

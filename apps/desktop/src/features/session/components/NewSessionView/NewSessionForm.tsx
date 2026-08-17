@@ -1,6 +1,7 @@
 import type { ChangeEventHandler, ReactNode, RefObject } from 'react';
 import {
   Divider,
+  FileDropZone,
   IconButton,
   Input,
   PANE_RHYTHM,
@@ -218,13 +219,14 @@ export const NewSessionForm = ({
             {goalEditorDirty ? <span className="text-2xs text-warning">Unsaved edits</span> : null}
           </div>
         </div>
-        <div
+        <FileDropZone
           ref={composerRef}
           data-drop-composer
-          className={cn(
-            'flex w-full flex-col gap-2 rounded-lg border border-dashed p-3 motion-safe:transition-colors',
-            isDragging ? 'border-primary bg-primary/5' : 'border-border-soft',
-          )}
+          actionIcon={<Paperclip size={13} aria-hidden />}
+          actionLabel="Add files or drag"
+          isDisabled={busy}
+          isDragging={isDragging}
+          onSelect={() => fileInputRef.current?.click()}
         >
           <input
             ref={fileInputRef}
@@ -245,21 +247,7 @@ export const NewSessionForm = ({
               ))}
             </div>
           ) : null}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={busy}
-            className={cn(
-              'inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs motion-safe:transition-colors',
-              busy
-                ? 'cursor-not-allowed text-muted-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-            )}
-          >
-            <Paperclip size={13} aria-hidden />
-            Add files
-          </button>
-        </div>
+        </FileDropZone>
       </section>
 
       <Divider />

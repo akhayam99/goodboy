@@ -127,7 +127,9 @@ The fixed chrome row uses one flexible context region followed by one shrink-saf
 
 The focused object's primary action uses the same fixed header action region. A creation or edit flow instead lands its commit in one action row that sits in the scrolling flow immediately after the last section, with supporting error copy at the start and cancel plus exactly one primary action at the end. Alternates and reset controls join the same row as ghost or secondary buttons. A section-scoped action uses `SectionHeader.action`; a field control uses `FieldRow`; neither promotes itself into global chrome. A surface that genuinely needs a dock argues for one at review; docking is no longer the default for any composition.
 
-`InlineConfirm` stays attached to a destructive trigger in its action region. A detached confirmation in the body is not another zone.
+That row also shares the measure of the content it commits, never stretched across a shell or container that also holds unrelated content.
+
+`InlineConfirm` stays attached to a destructive trigger in its action region. A detached confirmation in the body or a destructive footer dock is not another zone.
 
 ## Section rhythm
 
