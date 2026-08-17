@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { FolderGit2, GitBranch } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, EmptyState } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { BitbucketIcon, GithubIcon, GitlabIcon } from '@goodboy/ui';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { Segmented, type SegmentedOption } from '../Segmented';
 import { CodeHostForm, type CodeHost } from './CodeHostForm';
 
@@ -83,21 +84,21 @@ export const CodeHostStep = ({
       </div>
 
       {workspaceId === null ? (
-        <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-lg border border-border-soft/40 bg-subtle/20 px-4 py-6 text-center">
-          <span className="flex size-10 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 text-muted-foreground">
-            <FolderGit2 size={18} aria-hidden />
-          </span>
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            Add a workspace first to connect a code host.
-          </p>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => window.dispatchEvent(new CustomEvent('goodboy:add-workspace'))}
-          >
-            <FolderGit2 size={14} aria-hidden /> Add workspace
-          </Button>
-        </div>
+        <EmptyState
+          bordered
+          icon={CONCEPT_ICONS.workspace}
+          tone={CONCEPT_TONE.workspace}
+          title="Add a workspace first to connect a code host."
+          action={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => window.dispatchEvent(new CustomEvent('goodboy:add-workspace'))}
+            >
+              <FolderGit2 size={14} aria-hidden /> Add workspace
+            </Button>
+          }
+        />
       ) : (
         <div className="flex w-full flex-col gap-4 text-left">
           <Segmented ariaLabel="Code host" options={options} value={host} onChange={setHost} />
