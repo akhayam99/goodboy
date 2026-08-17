@@ -3,9 +3,7 @@ import type { AgentId, OpenQuestion, ProviderRunId, SessionId } from '@goodboy/t
 import type { TranscriptRow } from '../../utils/cluster-operations';
 import type { ThinkingContext } from '../../utils/thinking-context';
 import type { TranscriptItem } from '../../utils/transcript-items';
-import type { SpawnedChild } from '../../../../shared/utils/spawnedChildren';
 import { OperationsCluster } from '../OperationsCluster';
-import { SpawnedChildrenCard } from '../SpawnedChildrenCard';
 import { ThinkingIndicator } from '../ThinkingIndicator';
 import { TranscriptCard } from '../TranscriptCards';
 import { OpenQuestionCluster } from './OpenQuestionCluster';
@@ -24,9 +22,6 @@ type Props = {
   thinkingContext: ThinkingContext;
   onRetryError: (item: Extract<TranscriptItem, { kind: 'error' }>) => void;
   retryingErrorRunId: ProviderRunId | null;
-  spawned: ReadonlyArray<SpawnedChild>;
-  spawnAnchorKey: string | null;
-  onAdvanceSpawn?: ((childAgentId: AgentId) => void) | undefined;
 };
 
 export const TranscriptRows = ({
@@ -41,9 +36,6 @@ export const TranscriptRows = ({
   thinkingContext,
   onRetryError,
   retryingErrorRunId,
-  spawned,
-  spawnAnchorKey,
-  onAdvanceSpawn,
 }: Props) => {
   const out: ReactNode[] = [];
   let lastDay: string | null = null;
@@ -84,27 +76,7 @@ export const TranscriptRows = ({
     );
   };
 
-  const spawnAnchorIndex =
-    spawnAnchorKey === null ? -1 : rows.findIndex((row) => row.key === spawnAnchorKey);
-  let spawnEmitted = spawned.length === 0;
-
-  const emitSpawn = () => {
-    if (spawnEmitted) {
-      return;
-    }
-    spawnEmitted = true;
-    flushRailGroup();
-    out.push(
-      <li key="spawned-children">
-        <SpawnedChildrenCard spawned={spawned} onAdvance={onAdvanceSpawn} />
-      </li>,
-    );
-  };
-
   rows.forEach((row, idx) => {
-    if (idx === spawnAnchorIndex + 1) {
-      emitSpawn();
-    }
     if (row.kind === 'item' && row.item.kind === 'done') {
       return;
     }
@@ -177,7 +149,6 @@ export const TranscriptRows = ({
     );
   });
 
-  emitSpawn();
   flushOrdinal(userTurnOrdinal);
   const remainingOrdinals = [...oqByTurnOrdinal.keys()]
     .filter((ordinal): ordinal is number => ordinal !== null && ordinal > userTurnOrdinal)

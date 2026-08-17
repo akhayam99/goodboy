@@ -9,7 +9,7 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
-import { pluralize, resolverStatus, workflowKindName } from './lib';
+import { resolverStatus, workflowKindName } from './lib';
 
 const NOW = '2026-05-15T00:00:00.000Z' as IsoDateTime;
 const SESSION = 'sess_1' as SessionId;
@@ -49,20 +49,6 @@ describe('workflowKindName', () => {
 
   it('returns the trimmed raw name for an unknown workflow', () => {
     expect(workflowKindName(makeWorkflow('  MyCustomFlow  '))).toBe('MyCustomFlow');
-  });
-});
-
-describe('pluralize', () => {
-  it('keeps the singular for a count of one', () => {
-    expect(pluralize(1, 'agent')).toBe('1 agent');
-  });
-
-  it('pluralizes zero', () => {
-    expect(pluralize(0, 'agent')).toBe('0 agents');
-  });
-
-  it('pluralizes counts above one', () => {
-    expect(pluralize(3, 'agent')).toBe('3 agents');
   });
 });
 

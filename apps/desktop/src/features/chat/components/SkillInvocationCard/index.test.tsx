@@ -29,6 +29,6 @@ describe('SkillInvocationCard', () => {
     const header = screen.getByText('skill').closest('div')!;
     expect(header.className).not.toContain('border-l-2');
     expect(header.parentElement?.className).toContain('border-l-2');
-    expect(header.parentElement?.className).toContain('border-primary/20');
+    expect(header.parentElement?.className).toContain('border-border-soft');
   });
 });

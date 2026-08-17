@@ -7,6 +7,7 @@ import {
   useSessionOpenQuestions,
   useSessionSlots,
   useSlotHistory,
+  useSlotHistoryCount,
   useSummarizerStatus,
 } from '../../../../../../store';
 import { PaneShell } from '../../../../../../shared/components/PaneShell';
@@ -14,28 +15,26 @@ import { InspectorSplit } from '../InspectorSplit';
 import { SlotHistoryPanel } from '../SlotHistoryPanel';
 import { ContextRegion, type ContextRegionKey } from './ContextRegion';
 
-const REGION_ORDER = [
-  'goal',
-  'decisions',
-  'last_output_summary',
-] satisfies ReadonlyArray<ContextRegionKey>;
+const REGION_ORDER = ['last_output_summary', 'decisions'] satisfies ReadonlyArray<ContextRegionKey>;
+
+type RegionKey = (typeof REGION_ORDER)[number];
 
 const REGION_TITLE: Record<ContextRegionKey, string> = {
-  goal: 'Goal',
   decisions: 'Decisions',
   last_output_summary: 'Session summary',
+  goal: 'Goal',
 };
 
 const REGION_DESCRIPTION: Record<ContextRegionKey, string> = {
-  goal: 'What this session is meant to achieve.',
   decisions: 'Choices already settled along the way.',
   last_output_summary: 'What the session has amounted to so far.',
+  goal: 'What this session is meant to achieve.',
 };
 
 const REGION_EMPTY: Record<ContextRegionKey, string> = {
-  goal: 'No goal yet',
   decisions: 'No decisions yet',
   last_output_summary: 'No session summary yet',
+  goal: 'No goal yet',
 };
 
 type Props = {
@@ -60,19 +59,15 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
   const summarizer = useSummarizerStatus(sessionId);
-  const goalHistory = useSlotHistory(sessionId, 'goal');
-  const decisionsHistory = useSlotHistory(sessionId, 'decisions');
-  const summaryHistory = useSlotHistory(sessionId, 'last_output_summary');
+  const decisionsCount = useSlotHistoryCount(sessionId, 'decisions');
+  const summaryCount = useSlotHistoryCount(sessionId, 'last_output_summary');
   const [historyKey, setHistoryKey] = useState<ContextRegionKey | null>(null);
+  const openHistory = useSlotHistory(sessionId, historyKey ?? '');
 
-  const histories = useMemo(
-    () => ({
-      goal: goalHistory,
-      decisions: decisionsHistory,
-      last_output_summary: summaryHistory,
-    }),
-    [decisionsHistory, goalHistory, summaryHistory],
-  );
+  const historyCounts: Record<RegionKey, number> = {
+    decisions: decisionsCount,
+    last_output_summary: summaryCount,
+  };
 
   useEffect(() => {
     void loadSessionOpenQuestions(sessionId);
@@ -108,8 +103,6 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
     return parts.join('\n\n');
   }, [openQuestions, slots]);
 
-  const activeHistory = historyKey == null ? [] : histories[historyKey];
-
   return (
     <InspectorSplit
       open={historyKey != null}
@@ -118,7 +111,7 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
           <SlotHistoryPanel
             label={REGION_TITLE[historyKey]}
             renderAsMarkdown={historyKey !== 'goal'}
-            entries={activeHistory}
+            entries={openHistory}
             onRestore={(entry) => {
               void upsertSessionSlot(sessionId, historyKey, entry.value);
               setHistoryKey(null);
@@ -130,11 +123,11 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
     >
       <PaneShell
         title="Context"
-        description="The goal, settled decisions, and current session summary."
+        description="The current session summary and the decisions settled along the way."
         measure="reading"
       >
         {REGION_ORDER.map((slotKey, index) => (
-          <div key={slotKey} className="flex flex-col gap-6">
+          <div key={slotKey} className="contents">
             {index > 0 ? <Divider /> : null}
             <ContextRegion
               sessionId={sessionId}
@@ -146,7 +139,7 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
               copyValue={
                 slotKey === 'last_output_summary' ? shareableSummary : valueFor({ slots, slotKey })
               }
-              history={histories[slotKey]}
+              historyCount={historyCounts[slotKey]}
               isLoading={slots.some((slot) => slot.key === slotKey) === false && loading.slots}
               isSummarizing={summarizer.status === 'running'}
               onOpenHistory={() => {

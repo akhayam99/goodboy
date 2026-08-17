@@ -1,6 +1,6 @@
-import { Fragment } from 'react';
-import { Button, Divider, Input, SectionHeader, ScrollFade } from '@goodboy/ui';
-import { Check, Copy, Plus, RotateCcw, Trash2, X } from 'lucide-react';
+import { Fragment, useState } from 'react';
+import { Divider, Input, SectionHeader, ScrollFade } from '@goodboy/ui';
+import { Library, Plus, X } from 'lucide-react';
 import { recommendedModelForRole } from '@goodboy/core';
 import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
 import type { StepDefUpsertArgs } from '../../../workflows';
@@ -11,7 +11,7 @@ import { WorkflowStepCard } from '../../../../session/components/WorkflowStepCar
 import { StepFlowConnector } from '../StepFlowConnector';
 import { StepLibraryPalette } from '../StepLibraryPalette';
 import { useAppStore } from '../../../../../store';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { WorkflowHeaderActions } from './WorkflowHeaderActions';
 
 type Props = {
   readonly form: TemplateForm;
@@ -23,10 +23,9 @@ type Props = {
   readonly error: string | null;
   readonly dragging: boolean;
   readonly dropIndex: number | null;
-  readonly confirmingReset: boolean;
+  readonly isNew: boolean;
   readonly generating: boolean;
   readonly canGenerate: boolean;
-  readonly onConfirmingReset: (value: boolean) => void;
   readonly onChangeMeta: (
     patch: Partial<Pick<TemplateForm, 'name' | 'description' | 'goal'>>,
   ) => void;
@@ -37,6 +36,7 @@ type Props = {
   readonly onMoveStep: (idx: number, dir: -1 | 1) => void;
   readonly draggingStepIdx: number | null;
   readonly onStartDrag: (def: StepDef, e: React.PointerEvent) => void;
+  readonly onAddLibraryStep: (def: StepDef) => void;
   readonly onStartStepDrag: (fromIndex: number, label: string, e: React.PointerEvent) => void;
   readonly onSaveDef: (args: StepDefUpsertArgs) => void;
   readonly onDeleteDef: (id: StepDefId) => void;
@@ -57,10 +57,9 @@ export const WorkflowComposer = ({
   error,
   dragging,
   dropIndex,
-  confirmingReset,
+  isNew,
   generating,
   canGenerate,
-  onConfirmingReset,
   onChangeMeta,
   onAddBlank,
   onToggleExpand,
@@ -69,6 +68,7 @@ export const WorkflowComposer = ({
   onMoveStep,
   draggingStepIdx,
   onStartDrag,
+  onAddLibraryStep,
   onStartStepDrag,
   onSaveDef,
   onDeleteDef,
@@ -80,7 +80,7 @@ export const WorkflowComposer = ({
 }: Props) => {
   const roleModels = useAppStore((s) => s.workspaceOverrides?.[workspaceId]?.roleModels ?? null);
   const stepCount = form.steps.length;
-  const savedHint = saving ? 'Saving…' : 'Saved';
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
   const defaultProvider: ProviderId =
     connectedProviders.length > 0 ? (connectedProviders[0] as ProviderId) : 'anthropic';
@@ -119,68 +119,24 @@ export const WorkflowComposer = ({
               aria-label="Workflow description"
               className="border-transparent bg-transparent px-0 text-xs text-muted-foreground shadow-none hover:border-border-soft focus:border-border"
             />
+            <span className="text-2xs text-muted-foreground/60">Changes save automatically</span>
             {error !== null ? (
-              <span className="text-2xs font-medium text-danger">{error}</span>
+              <span className="text-2xs font-medium text-danger" role="alert">
+                {error}
+              </span>
             ) : null}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <span
-              className="text-2xs text-muted-foreground/60 tabular-nums"
-              aria-live="polite"
-              role="status"
-            >
-              {savedHint}
-            </span>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={onGenerate}
-              disabled={saving || generating || !canGenerate}
-            >
-              <CONCEPT_ICONS.enhance size={13} aria-hidden />
-              {generating ? 'Working on your workflow' : 'Rewrite with agent'}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={onDuplicate} disabled={saving}>
-              <Copy size={13} aria-hidden /> Duplicate
-            </Button>
-            <Button variant="ghost" size="sm" onClick={onDelete} disabled={saving}>
-              <Trash2 size={13} aria-hidden /> Delete
-            </Button>
-            {confirmingReset ? (
-              <div className="flex items-center gap-2 rounded-md bg-warning/5 px-2 py-1">
-                <span className="text-2xs text-muted-foreground">Discard local changes?</span>
-                <button
-                  type="button"
-                  aria-label="Confirm reset workflow"
-                  onClick={onReset}
-                  className="rounded-md p-1 text-warning focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-                >
-                  <Check size={12} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Cancel reset workflow"
-                  onClick={() => onConfirmingReset(false)}
-                  className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-                >
-                  <X size={12} aria-hidden />
-                </button>
-              </div>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onConfirmingReset(true)}
-                disabled={saving}
-              >
-                <RotateCcw size={13} aria-hidden /> Reset
-              </Button>
-            )}
-            <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close workflow editor">
-              <X size={13} aria-hidden />
-              Close
-            </Button>
-          </div>
+          <WorkflowHeaderActions
+            isNew={isNew}
+            saving={saving}
+            generating={generating}
+            canGenerate={canGenerate}
+            onDuplicate={onDuplicate}
+            onDelete={onDelete}
+            onGenerate={onGenerate}
+            onReset={onReset}
+            onBack={onClose}
+          />
         </div>
 
         <Divider />
@@ -203,13 +159,28 @@ export const WorkflowComposer = ({
                   : 'Runs top to bottom, in order. Add a blank step or drag one in from the library.'
               }
               action={
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
-                  onClick={onAddBlank}
-                >
-                  <Plus size={11} aria-hidden /> blank step
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    aria-expanded={isLibraryOpen}
+                    onClick={() => setIsLibraryOpen((current) => !current)}
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/40 hover:text-foreground"
+                  >
+                    {isLibraryOpen ? (
+                      <X size={11} aria-hidden />
+                    ) : (
+                      <Library size={11} aria-hidden />
+                    )}
+                    {isLibraryOpen ? 'Close library' : 'Step library'}
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
+                    onClick={onAddBlank}
+                  >
+                    <Plus size={11} aria-hidden /> Add blank step
+                  </button>
+                </div>
               }
             />
           </div>
@@ -283,20 +254,23 @@ export const WorkflowComposer = ({
         </div>
       </section>
 
-      <Divider orientation="vertical" />
+      {isLibraryOpen ? <Divider orientation="vertical" /> : null}
 
-      <aside className="flex w-64 shrink-0 flex-col">
-        <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-4" fadeSize={24}>
-          <StepLibraryPalette
-            library={library}
-            workspaceId={workspaceId}
-            connectedProviders={connectedProviders}
-            onStartDrag={onStartDrag}
-            onSaveDef={onSaveDef}
-            onDeleteDef={onDeleteDef}
-          />
-        </ScrollFade>
-      </aside>
+      {isLibraryOpen ? (
+        <aside className="flex w-72 shrink-0 flex-col">
+          <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-4" fadeSize={24}>
+            <StepLibraryPalette
+              library={library}
+              workspaceId={workspaceId}
+              connectedProviders={connectedProviders}
+              onStartDrag={onStartDrag}
+              onAdd={onAddLibraryStep}
+              onSaveDef={onSaveDef}
+              onDeleteDef={onDeleteDef}
+            />
+          </ScrollFade>
+        </aside>
+      ) : null}
     </div>
   );
 };

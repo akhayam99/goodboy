@@ -77,59 +77,71 @@ export const kindConsumesPlan = (kind: AgentKind): boolean => {
   return PLAN_CONSUMING_KINDS.has(kind);
 };
 
-export const AGENT_KIND_META: Record<AgentKind, { label: string; hint: string; persona: string }> =
-  {
-    generic: {
-      label: 'Generalist',
-      hint: 'Plans, investigates, edits, and verifies without a narrow role',
-      persona: 'max',
-    },
-    scout: {
-      label: 'Scout',
-      hint: 'Reads and searches codebase. Never edits files',
-      persona: 'scout',
-    },
-    planner: {
-      label: 'Plan',
-      hint: 'Analyzes goals, produces a plan. No code, no edits',
-      persona: 'drafty',
-    },
-    implementer: {
-      label: 'Implement',
-      hint: 'Writes code based on active plan. No re-planning',
-      persona: 'hammer',
-    },
-    debugger: {
-      label: 'Debug',
-      hint: 'Reproduces and fixes bugs. No refactoring, no planning',
-      persona: 'sherlock',
-    },
-    tester: {
-      label: 'Test',
-      hint: 'Writes tests. No production code changes',
-      persona: 'beaker',
-    },
-    reviewer: {
-      label: 'Review',
-      hint: 'Reviews diffs, suggests fixes. Read-only',
-      persona: 'specs',
-    },
-    'pr-reviewer': {
-      label: 'PR reviewer',
-      hint: 'Reviews an external pull request checked out locally. Read-only',
-      persona: 'monocle',
-    },
-    docs: {
-      label: 'Docs',
-      hint: 'Writes documentation. No production logic',
-      persona: 'scribble',
-    },
-    resolver: {
-      label: 'Resolve',
-      hint: 'Addresses one comment with a local commit. Spawned by the resolve UI',
-      persona: 'patches',
-    },
-  };
+export const AGENT_KIND_META: Record<
+  AgentKind,
+  { label: string; hint: string; persona: string; expectedOutput: string | null }
+> = {
+  generic: {
+    label: 'Generalist',
+    hint: 'Plans, investigates, edits, and verifies without a narrow role',
+    persona: 'max',
+    expectedOutput: null,
+  },
+  scout: {
+    label: 'Scout',
+    hint: 'Reads and searches codebase. Never edits files',
+    persona: 'scout',
+    expectedOutput: 'a findings summary carried forward',
+  },
+  planner: {
+    label: 'Plan',
+    hint: 'Analyzes goals, produces a plan. No code, no edits',
+    persona: 'drafty',
+    expectedOutput: 'a plan artifact, ready to consume',
+  },
+  implementer: {
+    label: 'Implement',
+    hint: 'Writes code based on active plan. No re-planning',
+    persona: 'hammer',
+    expectedOutput: 'commits on the session branch',
+  },
+  debugger: {
+    label: 'Debug',
+    hint: 'Reproduces and fixes bugs. No refactoring, no planning',
+    persona: 'sherlock',
+    expectedOutput: 'a diagnosis and the fix, committed',
+  },
+  tester: {
+    label: 'Test',
+    hint: 'Writes tests. No production code changes',
+    persona: 'beaker',
+    expectedOutput: 'a test run outcome',
+  },
+  reviewer: {
+    label: 'Review',
+    hint: 'Reviews diffs, suggests fixes. Read-only',
+    persona: 'specs',
+    expectedOutput: 'review findings',
+  },
+  'pr-reviewer': {
+    label: 'PR reviewer',
+    hint: 'Reviews an external pull request checked out locally. Read-only',
+    persona: 'monocle',
+    expectedOutput: 'a verdict per review thread',
+  },
+  docs: {
+    label: 'Docs',
+    hint: 'Writes documentation. No production logic',
+    persona: 'scribble',
+    expectedOutput: 'documentation changes, committed',
+  },
+  resolver: {
+    label: 'Resolve',
+    hint: 'Addresses one comment with a local commit. Spawned by the resolve UI',
+    persona: 'patches',
+    expectedOutput: 'one local commit answering the comment',
+  },
+};
 
 export type AgentKindPaletteEntry = {
   readonly bg: string;

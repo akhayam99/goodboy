@@ -15,6 +15,13 @@ export const loadSlotHistory = (set: SetFn) => {
           [key]: entries,
         },
       },
+      slotHistoryCounts: {
+        ...state.slotHistoryCounts,
+        [sessionId]: {
+          ...(state.slotHistoryCounts[sessionId] ?? {}),
+          [key]: entries.length,
+        },
+      },
     }));
   };
 };

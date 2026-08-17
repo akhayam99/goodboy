@@ -32,6 +32,11 @@ export type LensGroup = {
   readonly repoOnly?: boolean;
 };
 
+export type LensNavigation = {
+  readonly primaryRows: ReadonlyArray<LensRow>;
+  readonly groups: ReadonlyArray<LensGroup>;
+};
+
 type Params = {
   readonly isBranchless: boolean;
   readonly isPrReview: boolean;
@@ -86,7 +91,7 @@ export const LENS_SHORTCUTS = {
   slack_threads: 'lens.slack_threads',
 } satisfies Readonly<Record<LensKind, ShortcutId>>;
 
-export const buildLensGroups = ({
+export const buildLensNavigation = ({
   isBranchless,
   isPrReview,
   reviewDraftCount,
@@ -111,24 +116,22 @@ export const buildLensGroups = ({
   summarizerDot,
   liveTerminals,
   integrationRows,
-}: Params): ReadonlyArray<LensGroup> => {
+}: Params): LensNavigation => {
   const flags = (kind: LensKind): Pick<LensRow, 'dot'> => ({
     dot: attentionLens === kind || unreadLens === kind ? 'attention' : undefined,
   });
 
-  const groups: ReadonlyArray<LensGroup> = [
+  const primaryRows: ReadonlyArray<LensRow> = [
     {
+      kind: 'context',
       label: 'Context',
-      rows: [
-        {
-          kind: 'context',
-          label: 'Context',
-          icon: CONCEPT_ICONS.sessionSummary,
-          tone: CONCEPT_TONE.sessionSummary,
-          dot: summarizerDot,
-        },
-      ],
+      icon: CONCEPT_ICONS.sessionSummary,
+      tone: CONCEPT_TONE.sessionSummary,
+      dot: summarizerDot,
     },
+  ];
+
+  const groups: ReadonlyArray<LensGroup> = [
     {
       label: 'Work',
       rows: [
@@ -252,11 +255,14 @@ export const buildLensGroups = ({
   ];
 
   if (!isBranchless) {
-    return groups;
+    return { primaryRows, groups };
   }
 
-  return groups
-    .filter((group) => group.repoOnly !== true)
-    .map((group) => ({ ...group, rows: group.rows.filter((row) => row.repoOnly !== true) }))
-    .filter((group) => group.rows.length > 0);
+  return {
+    primaryRows: primaryRows.filter((row) => row.repoOnly !== true),
+    groups: groups
+      .filter((group) => group.repoOnly !== true)
+      .map((group) => ({ ...group, rows: group.rows.filter((row) => row.repoOnly !== true) }))
+      .filter((group) => group.rows.length > 0),
+  };
 };

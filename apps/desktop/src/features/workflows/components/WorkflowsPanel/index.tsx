@@ -93,11 +93,13 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmDefaults, setConfirmDefaults] = useState(false);
-  const [confirmEditorReset, setConfirmEditorReset] = useState(false);
   const [resetting, setResetting] = useState(false);
   const editingIdRef = useRef<WorkflowId | null>(restoredWorkflow?.id ?? null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const formRef = useRef(form);
+  const savedFormRef = useRef(
+    restoredWorkflow === null ? null : JSON.stringify(templateToForm(restoredWorkflow)),
+  );
   formRef.current = form;
 
   useEffect(() => {
@@ -115,7 +117,9 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     }
     setEditing(workflow);
     editingIdRef.current = workflow.id;
-    setForm(templateToForm(workflow));
+    const nextForm = templateToForm(workflow);
+    setForm(nextForm);
+    savedFormRef.current = JSON.stringify(nextForm);
     setAgentPrompt('');
     consumeWorkflowGeneration({ workspaceId });
   }, [consumeWorkflowGeneration, generation, templates, workspaceId]);
@@ -159,8 +163,10 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     try {
       const saved = await savePhaseTemplate(args);
       editingIdRef.current = saved.id;
-      setEditing(saved);
-      setForm(templateToForm(saved));
+      savedFormRef.current = JSON.stringify(snapshot);
+      if (editing === 'new') {
+        setEditing(saved);
+      }
       clearWorkflowStudioDraft({ workspaceId });
       return true;
     } catch (error) {
@@ -173,6 +179,9 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
 
   useEffect(() => {
     if (editing === null) {
+      return;
+    }
+    if (JSON.stringify(form) === savedFormRef.current) {
       return;
     }
     if (saveTimer.current !== null) {
@@ -199,6 +208,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     setEditing(null);
     editingIdRef.current = null;
     setForm(emptyForm());
+    savedFormRef.current = null;
     setAgentPrompt('');
     setFormError(null);
     clearWorkflowStudioDraft({ workspaceId });
@@ -209,6 +219,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     setEditing('new');
     editingIdRef.current = null;
     setForm(nextForm);
+    savedFormRef.current = null;
     setExpandedIdx(0);
     setFormError(null);
   };
@@ -216,7 +227,9 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const openEdit = (workflow: Workflow) => {
     setEditing(workflow);
     editingIdRef.current = workflow.id;
-    setForm(templateToForm(workflow));
+    const nextForm = templateToForm(workflow);
+    setForm(nextForm);
+    savedFormRef.current = JSON.stringify(nextForm);
     setAgentPrompt('');
     setExpandedIdx(null);
     setFormError(null);
@@ -253,9 +266,10 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
       openStarter();
       return;
     }
-    setForm(templateToForm(editing));
+    const nextForm = templateToForm(editing);
+    setForm(nextForm);
+    savedFormRef.current = JSON.stringify(nextForm);
     clearWorkflowStudioDraft({ workspaceId });
-    setConfirmEditorReset(false);
   };
 
   const createWithAgent = async () => {
@@ -336,8 +350,6 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
             setConfirmReset={setConfirmDefaults}
             onSelect={openEdit}
             onNew={openStarter}
-            onDuplicate={(workflow) => void duplicate(workflow)}
-            onDelete={(workflow) => void deleteWorkflow(workflow.id, workspaceId)}
             onReset={() => {
               setResetting(true);
               void resetWorkflows(workspaceId).finally(() => {
@@ -371,14 +383,13 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
               library={stepLibrary}
               expandedIdx={expandedIdx}
               saving={saving}
+              isNew={editing === 'new'}
               error={formError}
               dragging={drag !== null}
               dropIndex={dropIndex}
               draggingStepIdx={drag?.kind === 'step' ? drag.fromIndex : null}
-              confirmingReset={confirmEditorReset}
               generating={generation?.status === 'running'}
               canGenerate={connectedProviders.length > 0}
-              onConfirmingReset={setConfirmEditorReset}
               onChangeMeta={(patch) => setForm((current) => ({ ...current, ...patch }))}
               onAddBlank={() => {
                 insertStep({ definition: emptyDefinition(), atIndex: form.steps.length });
@@ -403,6 +414,13 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
                 moveStepTo({ from: idx, to: idx + direction + (direction > 0 ? 1 : 0) })
               }
               onStartDrag={startLibraryDrag}
+              onAddLibraryStep={(definition) => {
+                insertStep({
+                  definition: defFromLibraryStep(definition),
+                  atIndex: form.steps.length,
+                });
+                setExpandedIdx(form.steps.length);
+              }}
               onStartStepDrag={startStepDrag}
               onSaveDef={(args) => void saveStepDef(args, workspaceId)}
               onDeleteDef={(id) => void deleteStepDef(id, workspaceId)}

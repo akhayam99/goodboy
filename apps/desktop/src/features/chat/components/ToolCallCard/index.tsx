@@ -14,7 +14,7 @@ type Props = {
 
 const dangerTint = tintClasses('danger');
 const successTint = tintClasses('success');
-const runningTint = tintClasses('warning');
+const runningTint = tintClasses('info');
 
 const Section = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className="flex min-w-0 flex-col gap-1">

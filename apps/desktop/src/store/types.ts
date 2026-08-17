@@ -213,6 +213,7 @@ export type AppState = AppSliceState & {
   readonly slotHistory: Readonly<
     Record<string, Readonly<Record<string, ReadonlyArray<ContextSlotHistoryEntry>>>>
   >;
+  readonly slotHistoryCounts: Readonly<Record<string, Readonly<Record<string, number>>>>;
   readonly summarizerStatus: Readonly<Record<string, SummarizerSessionStatus>>;
   readonly storageStats: StorageStats | null;
   readonly storageStatsLoading: boolean;
