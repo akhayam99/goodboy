@@ -81,6 +81,7 @@ type QuestionParams = {
   readonly createdByAgentId?: string;
   readonly workflowRunId?: WorkflowRunId;
   readonly createdByStepOrdinal?: number;
+  readonly answeredAt?: string;
 };
 
 const question = ({
@@ -88,6 +89,7 @@ const question = ({
   createdByAgentId,
   workflowRunId,
   createdByStepOrdinal,
+  answeredAt,
 }: QuestionParams): OpenQuestion => ({
   id: typedString<OpenQuestionId>({ value: id }),
   sessionId: SESSION_ID,
@@ -101,6 +103,7 @@ const question = ({
   userAnswer: null,
   status: 'answered',
   createdAt: typedString<IsoDateTime>({ value: '2026-08-17T09:00:00Z' }),
+  ...(answeredAt != null ? { answeredAt: typedString<IsoDateTime>({ value: answeredAt }) } : {}),
 });
 
 type BuildParams = {
@@ -191,6 +194,46 @@ describe('buildTimelineGroups', () => {
     expect(child?.kind === 'agent' ? child.terminalQuestions.map((item) => item.id) : []).toEqual([
       'direct',
       'inferred',
+    ]);
+  });
+
+  it('promotes an answered question into a child row under its parent agent', () => {
+    const model = build({
+      agents: [agent({ id: 'first', startedAt: '2026-08-17T09:00:00Z' })],
+      questions: [
+        question({
+          id: 'direct',
+          createdByAgentId: 'first',
+          answeredAt: '2026-08-17T09:10:00Z',
+        }),
+      ],
+    });
+    const agentEntry = model.entries.find((entry) => entry.kind === 'agent');
+
+    expect(agentEntry?.kind === 'agent' ? agentEntry.answers.map((item) => item.id) : []).toEqual([
+      'answer:agent:first:direct',
+    ]);
+  });
+
+  it('adds an answered question as a run child so it renders next to its asker', () => {
+    const model = build({
+      workflows: [attachedWorkflow()],
+      agents: [
+        agent({ id: 'first', startedAt: '2026-08-17T09:00:00Z', workflowRunId: WORKFLOW_RUN_ID }),
+      ],
+      questions: [
+        question({
+          id: 'direct',
+          createdByAgentId: 'first',
+          answeredAt: '2026-08-17T09:15:00Z',
+        }),
+      ],
+    });
+    const run = model.entries.find((entry) => entry.kind === 'run');
+
+    expect(run?.kind === 'run' ? run.children.map((child) => child.kind) : []).toEqual([
+      'agent',
+      'answer',
     ]);
   });
 });

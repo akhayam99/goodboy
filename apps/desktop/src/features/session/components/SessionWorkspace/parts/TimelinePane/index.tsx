@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Archive } from 'lucide-react';
 import { CountToggle, StatusDot } from '@goodboy/ui';
-import type { DiffComment, Session, SessionId } from '@goodboy/types';
+import type { AgentId, DiffComment, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../../../store';
 import { notifyWorkflowGateBlock } from '../../../../../../store/slices/workflows/notifyWorkflowGateBlock';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
@@ -11,7 +11,6 @@ import {
   resolveWorkflowAdvance,
   type WorkflowAdvanceState,
 } from '../../../../../workflows/advanceGate';
-import { useAgentMetrics } from '../../../../hooks/useAgentMetrics';
 import {
   buildTimelineGroups,
   type TimelineTopLevelEntry,
@@ -97,6 +96,8 @@ const advanceDetail = ({ state }: AdvanceDetailParams): string => {
   return 'waiting for running work';
 };
 
+const RAIL_GRID = 'grid min-h-9 grid-cols-[44px_minmax(0,1fr)]';
+
 export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: Props) => {
   const sessionId: SessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
@@ -114,6 +115,7 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
   const emitNotification = useAppStore((s) => s.emitNotification);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const markAgentSeen = useAppStore((s) => s.markAgentSeen);
   const isSummarizerRunning = useAppStore(
     (s) => s.summarizerStatus?.[sessionId]?.status === 'running',
   );
@@ -125,7 +127,6 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
   );
   const questions = useSessionOpenQuestions(sessionId);
   const workflows = useAttachedWorkflowRuns({ session });
-  const metrics = useAgentMetrics({ sessionId });
   const [isEarlierShown, setIsEarlierShown] = useState(false);
 
   useEffect(() => {
@@ -197,6 +198,10 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
     }
   };
 
+  const markSeen = (agentId: AgentId) => {
+    void markAgentSeen(sessionId, agentId);
+  };
+
   const renderEntry = ({ entry }: RenderEntryParams) => {
     const timeLabel = formatCardTime(entry.at);
     if (entry.kind === 'run') {
@@ -206,7 +211,6 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
           key={entry.id}
           entry={entry}
           sessionId={sessionId}
-          aggregatesByAgentId={metrics.aggregatesByAgentId}
           timeLabel={timeLabel}
           advanceState={advanceState}
           onAdvance={({ agentId }) => void advanceAgent({ agentId })}
@@ -215,17 +219,15 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
       );
     }
     if (entry.kind === 'agent') {
-      const aggregate = metrics.aggregatesByAgentId.get(entry.agent.id) ?? null;
       return (
         <TimelineAgentRow
           key={entry.id}
           entry={entry}
           sessionId={sessionId}
-          estimatedCostUsd={
-            aggregate != null && aggregate.turns > 0 ? aggregate.estimatedCostUsd : null
-          }
           timeLabel={timeLabel}
           diffComment={diffCommentByAgentId.get(entry.agent.id) ?? null}
+          onSeen={() => markSeen(entry.agent.id)}
+          hasRoleColumn
         />
       );
     }
@@ -235,37 +237,44 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
         entry={entry}
         sessionId={sessionId}
         timeLabel={timeLabel}
+        hasRoleColumn
       />
     );
   };
 
   return (
     <section aria-label="Timeline" className="flex flex-col">
-      <div className="grid min-h-9 grid-cols-[44px_24px_minmax(0,1fr)]">
+      <div className={RAIL_GRID}>
         <span />
-        <div className="relative flex items-center justify-center">
-          <span className="absolute inset-y-1/2 bottom-0 left-1/2 w-px -translate-x-1/2 bg-border" />
-          <span className="relative z-10 flex size-4 items-center justify-center rounded-full bg-elevated ring-1 ring-border">
-            {agents.some((agent) => agent.status === 'running') ? (
-              <StatusDot tone="info" size="sm" pulsing ariaLabel="Work running" />
-            ) : (
-              <span className="size-2 rounded-full ring-1 ring-border" aria-label="Now" />
-            )}
+        <div className="flex min-w-0 items-stretch">
+          <div className="relative flex w-6 shrink-0 items-center justify-center">
+            <span className="absolute inset-y-1/2 bottom-0 left-1/2 w-px -translate-x-1/2 bg-border" />
+            <span className="relative z-10 flex size-4 items-center justify-center rounded-full bg-elevated ring-1 ring-border">
+              {agents.some((agent) => agent.status === 'running') ? (
+                <StatusDot tone="info" size="sm" pulsing ariaLabel="Work running" />
+              ) : (
+                <span className="size-2 rounded-full ring-1 ring-border" aria-label="Now" />
+              )}
+            </span>
+          </div>
+          <span className="flex flex-1 items-center pl-2 text-2xs font-medium uppercase text-muted-foreground">
+            Now
           </span>
         </div>
-        <span className="self-center text-2xs font-medium uppercase text-muted-foreground">
-          Now
-        </span>
       </div>
       {!suppressOpenQuestions
         ? model.now
             .filter((item) => item.kind === 'question')
             .map((item) =>
               item.kind === 'question' ? (
-                <div key={item.id} className="grid grid-cols-[44px_24px_minmax(0,1fr)]">
+                <div key={item.id} className={RAIL_GRID}>
                   <span />
-                  <span className="border-l border-border" />
-                  <TimelineQuestionInset question={item.question} sessionId={sessionId} />
+                  <div className="flex min-w-0 items-stretch">
+                    <span className="relative w-6 shrink-0">
+                      <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border" />
+                    </span>
+                    <TimelineQuestionInset question={item.question} sessionId={sessionId} />
+                  </div>
                 </div>
               ) : null,
             )
@@ -276,6 +285,7 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
           tone="info"
           label={sessionCreationLabel({ creation })}
           isRunning
+          hasRoleColumn
         />
       ))}
       {workflows.map((attached) => {
@@ -295,6 +305,7 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
               useAppStore.getState().setFocusedWorkflowRun(sessionId, attached.run.id);
               setActiveLens(sessionId, 'workflows');
             }}
+            hasRoleColumn
           />
         );
       })}
@@ -314,6 +325,7 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
                   useAppStore.getState().setFocusedWorkflowRun(sessionId, lane.runId);
                   setActiveLens(sessionId, 'workflows');
                 }}
+                hasRoleColumn
               />
             )),
       )}
@@ -329,6 +341,7 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
               detail="created, not started"
               action="Open chat"
               onClick={() => void selectAgent(sessionId, item.agent.id)}
+              hasRoleColumn
             />
           ) : null,
         )}
@@ -343,6 +356,7 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
           }
           action="Open resolve"
           onClick={() => setActiveLens(sessionId, 'resolve')}
+          hasRoleColumn
         />
       ) : null}
       {openDiffComments.length > 0 ? (
@@ -356,6 +370,7 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
           }
           action="Open diff"
           onClick={() => setActiveLens(sessionId, 'files')}
+          hasRoleColumn
         />
       ) : null}
       {visibleEntries.map((entry) => {
@@ -370,21 +385,29 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
         return (
           <div key={entry.id} className="flex flex-col">
             {quietDays > 2 ? (
-              <div className="grid min-h-7 grid-cols-[44px_24px_minmax(0,1fr)]">
+              <div className={RAIL_GRID}>
                 <span />
-                <span className="border-l border-dashed border-border" />
-                <span className="self-center text-3xs text-muted-foreground">
-                  {quietDays} quiet days
-                </span>
+                <div className="flex min-w-0 items-stretch">
+                  <span className="relative w-6 shrink-0">
+                    <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 border-l border-dashed border-border" />
+                  </span>
+                  <span className="self-center pl-2 text-3xs text-muted-foreground">
+                    {quietDays} quiet days
+                  </span>
+                </div>
               </div>
             ) : null}
             {showsDay ? (
-              <div className="grid min-h-7 grid-cols-[44px_24px_minmax(0,1fr)] bg-canvas">
+              <div className={`${RAIL_GRID} bg-canvas`}>
                 <span />
-                <span className="border-l border-border" />
-                <span className="self-center text-2xs font-medium uppercase text-muted-foreground">
-                  {dayLabel({ at: entry.at })}
-                </span>
+                <div className="flex min-w-0 items-stretch">
+                  <span className="relative w-6 shrink-0">
+                    <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border" />
+                  </span>
+                  <span className="self-center pl-2 text-2xs font-medium uppercase text-muted-foreground">
+                    {dayLabel({ at: entry.at })}
+                  </span>
+                </div>
               </div>
             ) : null}
             {renderEntry({ entry })}
