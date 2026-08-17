@@ -193,6 +193,9 @@ type PlanConsumptionRow = {
   plan_id: string;
   agent_id: string;
   agent_name: string | null;
+  step_name: string | null;
+  workflow_name: string | null;
+  workflow_run_ordinal: number | null;
   consumed_at: number;
 };
 
@@ -202,6 +205,9 @@ function toConsumption(row: PlanConsumptionRow): PlanConsumption {
     planId: row.plan_id as PlanId,
     agentId: row.agent_id as AgentId,
     agentName: row.agent_name,
+    stepName: row.step_name,
+    workflowName: row.workflow_name,
+    workflowRunOrdinal: row.workflow_run_ordinal,
     consumedAt: new Date(row.consumed_at).toISOString() as IsoDateTime,
   };
 }
@@ -233,6 +239,9 @@ export const addPlanConsumption = async (
     planId: input.planId,
     agentId: input.agentId as AgentId,
     agentName: rows[0]?.name ?? null,
+    stepName: null,
+    workflowName: null,
+    workflowRunOrdinal: null,
     consumedAt: new Date(now).toISOString() as IsoDateTime,
   };
 };
@@ -242,9 +251,13 @@ export const listConsumptionsForPlan = async (
   planId: PlanId,
 ): Promise<ReadonlyArray<PlanConsumption>> => {
   const rows = await db.select<PlanConsumptionRow>(
-    `SELECT c.id, c.plan_id, c.agent_id, c.consumed_at, a.name AS agent_name
+    `SELECT c.id, c.plan_id, c.agent_id, c.consumed_at, a.name AS agent_name,
+            s.name AS step_name, w.name AS workflow_name, sw.ordinal AS workflow_run_ordinal
      FROM plan_consumptions c
      LEFT JOIN agents a ON a.id = c.agent_id
+     LEFT JOIN steps s ON s.id = a.step_id
+     LEFT JOIN workflows w ON w.id = s.workflow_id
+     LEFT JOIN session_workflows sw ON sw.workflow_run_id = a.workflow_run_id
      WHERE c.plan_id = ?
      ORDER BY c.consumed_at DESC`,
     [planId],

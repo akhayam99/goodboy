@@ -31,5 +31,8 @@ export type PlanConsumption = Readonly<{
   planId: PlanId;
   agentId: AgentId;
   agentName: string | null;
+  stepName?: string | null;
+  workflowName?: string | null;
+  workflowRunOrdinal?: number | null;
   consumedAt: IsoDateTime;
 }>;
