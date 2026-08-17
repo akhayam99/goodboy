@@ -251,6 +251,7 @@ vi.mock('../store', () => {
     useAppStore,
     useCurrentSession: () => null,
     useCurrentWorkspace: () => workspace,
+    useSessionById: () => null,
     useSessions: () => state.sessions,
     useWorkspaces: () => state.workspaces,
   };

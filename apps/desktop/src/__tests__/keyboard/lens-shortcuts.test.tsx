@@ -139,6 +139,8 @@ vi.mock('../../store', () => {
     useAppStore,
     useCurrentSession: () => state.sessions.find((s) => s.id === state.currentSessionId) ?? null,
     useCurrentWorkspace: () => null,
+    useSessionById: (sessionId: string | null) =>
+      sessionList.current.find((s) => s.id === sessionId) ?? null,
     useSessions: () => sessionList.current,
     useWorkspaces: () => state.workspaces,
   };

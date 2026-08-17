@@ -56,6 +56,31 @@ vi.mock('./SessionCostChip', () => ({
   SessionCostChip: () => <span data-testid="cost-chip" />,
 }));
 
+const editorMenuCalls: Array<{ sessionId: string; density?: string }> = [];
+const sessionGitActionsCalls: Array<{ sessionId: string; density?: string }> = [];
+const sessionDestructiveActionsCalls: Array<{ sessionId: string }> = [];
+
+vi.mock('./EditorMenu', () => ({
+  EditorMenu: ({ sessionId, density }: { sessionId: string; density?: string }) => {
+    editorMenuCalls.push({ sessionId, density });
+    return <button type="button" aria-label="open worktree" />;
+  },
+}));
+
+vi.mock('../SessionWorkspace/parts/SessionGitActions', () => ({
+  SessionGitActions: ({ session, density }: { session: { id: string }; density?: string }) => {
+    sessionGitActionsCalls.push({ sessionId: session.id, density });
+    return <button type="button" aria-label="branch actions" />;
+  },
+}));
+
+vi.mock('./SessionDestructiveActions', () => ({
+  SessionDestructiveActions: ({ session }: { session: { id: string } }) => {
+    sessionDestructiveActionsCalls.push({ sessionId: session.id });
+    return <button type="button" aria-label="session actions" />;
+  },
+}));
+
 vi.mock('@goodboy/ui', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/ui')>();
   return {
@@ -93,6 +118,9 @@ beforeEach(() => {
   store.sessionPhaseRuns = {};
   store.markAllAgentsSeen.mockReset();
   store.renameTask.mockReset();
+  editorMenuCalls.length = 0;
+  sessionGitActionsCalls.length = 0;
+  sessionDestructiveActionsCalls.length = 0;
 });
 afterEach(cleanup);
 
@@ -109,5 +137,13 @@ describe('HeaderBand', () => {
     render(<HeaderBand session={baseSession()} stage={stage} />);
     expect(screen.queryByText('', { selector: '[data-tooltip]' })).toBeNull();
     expect(document.querySelector('[data-tooltip]')).toBeNull();
+  });
+
+  it('mounts the editor menu, git actions and destructive actions at compact density for this session', () => {
+    const stage: SessionStageInfo = { stage: 'building', reason: '' };
+    render(<HeaderBand session={baseSession()} stage={stage} />);
+    expect(editorMenuCalls).toEqual([{ sessionId: SESSION_ID, density: 'compact' }]);
+    expect(sessionGitActionsCalls).toEqual([{ sessionId: SESSION_ID, density: 'compact' }]);
+    expect(sessionDestructiveActionsCalls).toEqual([{ sessionId: SESSION_ID }]);
   });
 });

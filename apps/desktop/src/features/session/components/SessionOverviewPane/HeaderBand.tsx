@@ -9,6 +9,9 @@ import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { SummarizerBadge } from '../SummarizerBadge';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
+import { EditorMenu } from './EditorMenu';
+import { SessionGitActions } from '../SessionWorkspace/parts/SessionGitActions';
+import { SessionDestructiveActions } from './SessionDestructiveActions';
 import { BranchChip } from './BranchChip';
 import { SessionCostChip } from './SessionCostChip';
 import { PrStatusLine } from './PrStatusLine';
@@ -77,6 +80,9 @@ export const HeaderBand = ({ session, stage }: Props) => {
               Mark all seen
             </Button>
           )}
+          <EditorMenu sessionId={sessionId} density="compact" />
+          <SessionGitActions session={session} density="compact" />
+          <SessionDestructiveActions session={session} />
           <SessionCostChip sessionId={sessionId} />
         </div>
       </div>
