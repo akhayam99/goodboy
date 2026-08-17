@@ -7,6 +7,7 @@ import type {
   SessionId,
   TelemetryRecord,
   TelemetryRecordId,
+  ProviderRunId,
   WorkspaceId,
 } from '@goodboy/types';
 
@@ -366,7 +367,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
   it('keeps telemetry recorded while the summarizer refresh is in flight', async () => {
     const staleRecord = {
       id: 'telemetry-old' as TelemetryRecordId,
-      runId: 'run-old',
+      runId: 'run-old' as ProviderRunId,
       sessionId: SESSION_ID,
       kind: 'turn',
       provider: 'anthropic',
@@ -381,7 +382,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     const currentRecord = {
       ...staleRecord,
       id: 'telemetry-current' as TelemetryRecordId,
-      runId: 'run-current',
+      runId: 'run-current' as ProviderRunId,
       inputTokens: 200,
     } satisfies TelemetryRecord;
     listTelemetryForSessionSpy.mockImplementationOnce(
