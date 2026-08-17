@@ -32,6 +32,7 @@ describe('bug report draft slice', () => {
   it('starts on the bug type with nothing written', () => {
     expect(harnessed.getState().bugReportDraft).toEqual({
       issueType: 'bug',
+      title: '',
       description: '',
       images: [],
     });
@@ -43,6 +44,7 @@ describe('bug report draft slice', () => {
 
     expect(harnessed.getState().bugReportDraft).toEqual({
       issueType: 'idea',
+      title: '',
       description: 'The board keeps the old goal',
       images: [],
     });

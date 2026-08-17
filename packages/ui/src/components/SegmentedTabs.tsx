@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
+import { tintClasses, type Tone } from '../tint';
 
 export type SegmentedTabOption<T extends string = string> = {
   readonly value: T;
@@ -11,6 +12,7 @@ export type SegmentedTabOption<T extends string = string> = {
   readonly badge?: ReactNode;
   readonly disabled?: boolean;
   readonly accent?: string;
+  readonly tone?: Tone;
 };
 
 export type Props<T extends string = string> = {
@@ -93,6 +95,7 @@ export const SegmentedTabs = <T extends string>({
       {options.map((option, index) => {
         const isActive = option.value === value;
         const Icon = option.icon;
+        const tone = option.tone != null ? tintClasses(option.tone) : null;
         const activeStyle: CSSProperties | undefined =
           isActive && option.accent != null
             ? { color: option.accent, borderColor: option.accent }
@@ -105,7 +108,7 @@ export const SegmentedTabs = <T extends string>({
             aria-selected={isActive}
             tabIndex={isActive ? 0 : -1}
             disabled={option.disabled}
-            title={option.hint}
+            title={isMedium ? option.hint : undefined}
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => onKeyDown({ event, index })}
             style={activeStyle}
@@ -113,7 +116,10 @@ export const SegmentedTabs = <T extends string>({
               'relative flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
               isMedium ? 'px-3 py-2 text-sm font-semibold' : 'px-2.5 py-1 text-xs',
               isActive
-                ? 'bg-elevated font-semibold text-foreground ring-1 ring-inset ring-border'
+                ? cn(
+                    'bg-elevated font-semibold text-foreground ring-1 ring-inset',
+                    option.accent != null || tone == null ? 'ring-border' : tone.ring,
+                  )
                 : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
               option.disabled === true &&
                 'cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground',
@@ -121,20 +127,31 @@ export const SegmentedTabs = <T extends string>({
           >
             {Icon != null ? (
               isMedium ? (
-                <Icon size={15} aria-hidden className="shrink-0" />
+                <Icon
+                  size={15}
+                  aria-hidden
+                  className={cn(
+                    'shrink-0',
+                    isActive && option.accent == null && tone != null && tone.icon,
+                  )}
+                />
               ) : (
-                <Icon size={13} aria-hidden className="shrink-0" />
+                <Icon
+                  size={13}
+                  aria-hidden
+                  className={cn(
+                    'shrink-0',
+                    isActive && option.accent == null && tone != null && tone.icon,
+                  )}
+                />
               )
             ) : null}
-            <span className={cn('min-w-0', option.hint != null && 'flex flex-col gap-0.5')}>
+            <span
+              className={cn('min-w-0', isMedium && option.hint != null && 'flex flex-col gap-0.5')}
+            >
               <span className="block truncate">{option.label}</span>
-              {option.hint != null ? (
-                <span
-                  className={cn(
-                    'block truncate font-normal text-muted-foreground',
-                    isMedium ? 'text-2xs' : 'text-3xs',
-                  )}
-                >
+              {isMedium && option.hint != null ? (
+                <span className="block truncate text-2xs font-normal text-muted-foreground">
                   {option.hint}
                 </span>
               ) : null}

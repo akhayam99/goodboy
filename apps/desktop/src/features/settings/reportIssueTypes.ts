@@ -2,13 +2,27 @@ import { Bug, CircleQuestionMark, Lightbulb } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export const ISSUE_TYPE_OPTIONS = [
-  { value: 'bug', label: 'Bug', icon: Bug },
-  { value: 'idea', label: 'Idea', icon: Lightbulb },
-  { value: 'question', label: 'Question', icon: CircleQuestionMark },
+  { value: 'bug', label: 'Bug', icon: Bug, hint: 'Something broke', tone: 'danger' },
+  {
+    value: 'idea',
+    label: 'Idea',
+    icon: Lightbulb,
+    hint: 'Something could be better',
+    tone: 'success',
+  },
+  {
+    value: 'question',
+    label: 'Question',
+    icon: CircleQuestionMark,
+    hint: 'Something is unclear',
+    tone: 'warning',
+  },
 ] as const satisfies ReadonlyArray<{
   readonly value: string;
   readonly label: string;
   readonly icon: LucideIcon;
+  readonly hint: string;
+  readonly tone: 'danger' | 'success' | 'warning';
 }>;
 
 export type IssueTypeValue = (typeof ISSUE_TYPE_OPTIONS)[number]['value'];

@@ -13,12 +13,14 @@ export type BugReportImage = {
 
 export type BugReportDraft = {
   readonly issueType: IssueTypeValue;
+  readonly title: string;
   readonly description: string;
   readonly images: ReadonlyArray<BugReportImage>;
 };
 
 export const emptyBugReportDraft: BugReportDraft = {
   issueType: DEFAULT_ISSUE_TYPE,
+  title: '',
   description: '',
   images: [],
 };

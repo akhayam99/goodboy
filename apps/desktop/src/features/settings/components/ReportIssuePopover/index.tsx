@@ -44,6 +44,7 @@ export const ReportIssuePopover = () => {
   const imageControl = useBugReportImages();
 
   const hasDraft =
+    draft.title !== '' ||
     draft.description !== '' ||
     draft.issueType !== emptyBugReportDraft.issueType ||
     draft.images.length > 0;
@@ -114,7 +115,7 @@ export const ReportIssuePopover = () => {
               />
               <BugReportImages control={imageControl} />
               <p className="text-2xs leading-relaxed text-muted-foreground">
-                Kept as a draft until you send it from the report form.
+                Kept as a draft until you send it.
               </p>
             </div>
             <Divider />
