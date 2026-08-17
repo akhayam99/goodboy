@@ -175,7 +175,9 @@ export const DiffViewSelector = ({
             {
               kind: 'placeholder',
               label:
-                status?.hasUpstream === false ? 'branch not pushed yet' : 'no commits pushed yet',
+                status != null && status.upstream == null
+                  ? 'branch not pushed yet'
+                  : 'no commits pushed yet',
             },
           ]
         : filteredPushedCommits.length === 0
@@ -215,7 +217,7 @@ export const DiffViewSelector = ({
         rows: [{ kind: 'option', view: { kind: 'branch' }, label: 'branch vs main' }],
       },
     ];
-  }, [filterMatch, localCommits, pushedCommits, status?.hasUpstream]);
+  }, [filterMatch, localCommits, pushedCommits, status?.upstream]);
 
   const options = useMemo(
     () =>

@@ -59,8 +59,12 @@ const sessionId = 'session-1' as SessionId;
 
 const status = (commitsBehindMain: number): WorktreeStatus =>
   ({
-    commitsBehindMain,
+    mainDistance: { kind: 'known', ahead: 0, behind: commitsBehindMain },
   }) as WorktreeStatus;
+
+const unreadableStatus: WorktreeStatus = {
+  mainDistance: { kind: 'unknown', reason: 'main-ref-unresolved' },
+} as WorktreeStatus;
 
 beforeEach(() => {
   state.sessionPhaseRuns = {};
@@ -87,6 +91,27 @@ describe('useRebaseAgent', () => {
     expect(result.current.canRebase).toBe(false);
     rerender({ worktreeStatus: status(2) });
     expect(result.current.canRebase).toBe(true);
+  });
+
+  it('refuses the rebase when the distance from main could not be read', async () => {
+    const { result } = renderHook(() => useRebaseAgent({ sessionId, status: unreadableStatus }));
+
+    expect(result.current.canRebase).toBe(false);
+
+    await act(() => result.current.run());
+
+    expect(state.spawnAgent).not.toHaveBeenCalled();
+    expect(state.beginSessionCreation).not.toHaveBeenCalled();
+  });
+
+  it('refuses the rebase before the first status read lands', async () => {
+    const { result } = renderHook(() => useRebaseAgent({ sessionId, status: null }));
+
+    expect(result.current.canRebase).toBe(false);
+
+    await act(() => result.current.run());
+
+    expect(state.spawnAgent).not.toHaveBeenCalled();
   });
 
   it('spawns the rebase agent with the resolved task model without selecting it', async () => {

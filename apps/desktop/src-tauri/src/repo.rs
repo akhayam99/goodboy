@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use crate::worktree::{GitDistance, GitOperation, GitUnknownReason, GitWorkingTree};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -29,14 +30,14 @@ pub struct WorkspaceGitStatus {
     pub branch: Option<String>,
     #[serde(rename = "headSubject")]
     pub head_subject: Option<String>,
-    pub ahead: u32,
-    pub behind: u32,
-    pub staged: u32,
-    pub unstaged: u32,
-    pub untracked: u32,
-    pub changed: u32,
-    #[serde(rename = "hasUpstream")]
-    pub has_upstream: bool,
+    #[serde(rename = "upstreamDistance")]
+    pub upstream_distance: GitDistance,
+    #[serde(rename = "workingTree")]
+    pub working_tree: GitWorkingTree,
+    #[serde(rename = "upstream")]
+    pub upstream: Option<String>,
+    #[serde(rename = "inProgress")]
+    pub in_progress: Option<GitOperation>,
 }
 
 #[derive(Debug, Error)]
@@ -167,29 +168,24 @@ pub fn workspace_git_status(workspace_path: String) -> WorkspaceGitStatus {
     if !is_repo_root(root) {
         return blank_status("absent");
     }
-    let (staged, unstaged, untracked, changed) = crate::worktree::parse_status_counts(root);
+    let working_tree = crate::worktree::read_working_tree(root);
     let branch = crate::worktree::current_branch_name(root);
     if !has_commit(root) {
         return WorkspaceGitStatus {
             state: "unborn",
             branch,
             head_subject: None,
-            ahead: 0,
-            behind: 0,
-            staged,
-            unstaged,
-            untracked,
-            changed,
-            has_upstream: false,
+            upstream_distance: GitDistance::Unknown {
+                reason: GitUnknownReason::NoUpstream,
+            },
+            working_tree,
+            upstream: None,
+            in_progress: crate::worktree::in_progress_operation(root),
         };
     }
     let upstream = crate::worktree::resolve_upstream(root);
-    let (ahead, behind) = match upstream.as_ref() {
-        Some(reference) => {
-            crate::worktree::rev_list_left_right(root, reference, "HEAD").unwrap_or((0, 0))
-        }
-        None => (0, 0),
-    };
+    let upstream_distance =
+        crate::worktree::distance_from_upstream(root, branch.as_ref(), upstream.as_ref());
     WorkspaceGitStatus {
         state: "ready",
         branch,
@@ -197,13 +193,10 @@ pub fn workspace_git_status(workspace_path: String) -> WorkspaceGitStatus {
             .ok()
             .map(|found| found.trim().to_string())
             .filter(|found| !found.is_empty()),
-        ahead,
-        behind,
-        staged,
-        unstaged,
-        untracked,
-        changed,
-        has_upstream: upstream.is_some(),
+        upstream_distance,
+        working_tree,
+        upstream,
+        in_progress: crate::worktree::in_progress_operation(root),
     }
 }
 
@@ -212,13 +205,14 @@ fn blank_status(state: &'static str) -> WorkspaceGitStatus {
         state,
         branch: None,
         head_subject: None,
-        ahead: 0,
-        behind: 0,
-        staged: 0,
-        unstaged: 0,
-        untracked: 0,
-        changed: 0,
-        has_upstream: false,
+        upstream_distance: GitDistance::Unknown {
+            reason: GitUnknownReason::NoUpstream,
+        },
+        working_tree: GitWorkingTree::Unknown {
+            reason: GitUnknownReason::StatusReadFailed,
+        },
+        upstream: None,
+        in_progress: None,
     }
 }
 
@@ -526,6 +520,7 @@ mod tests {
         is_supported_remote_url, repo_init_with_remote, workspace_git_status, RepoInitArgs,
         RepoInitError,
     };
+    use crate::worktree::{GitDistance, GitWorkingTree};
 
     fn test_root(name: &str) -> std::path::PathBuf {
         let root = std::env::temp_dir().join(format!(
@@ -753,7 +748,16 @@ mod tests {
 
         assert_eq!(unborn.state, "unborn");
         assert_eq!(unborn.branch.as_deref(), Some("main"));
-        assert_eq!(unborn.untracked, 1);
+        assert_eq!(
+            unborn.working_tree,
+            GitWorkingTree::Known {
+                staged: 0,
+                unstaged: 0,
+                untracked: 1,
+                unmerged: 0,
+                changed: 1
+            }
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -784,9 +788,24 @@ mod tests {
         assert_eq!(ready.state, "ready");
         assert_eq!(ready.branch.as_deref(), Some("main"));
         assert_eq!(ready.head_subject.as_deref(), Some("next"));
-        assert_eq!((ready.ahead, ready.behind), (1, 0));
-        assert!(ready.has_upstream);
-        assert_eq!(ready.untracked, 1);
+        assert_eq!(
+            ready.upstream_distance,
+            GitDistance::Known {
+                ahead: 1,
+                behind: 0
+            }
+        );
+        assert_eq!(ready.upstream.as_deref(), Some("origin/main"));
+        assert_eq!(
+            ready.working_tree,
+            GitWorkingTree::Known {
+                staged: 0,
+                unstaged: 0,
+                untracked: 1,
+                unmerged: 0,
+                changed: 1
+            }
+        );
         std::fs::remove_dir_all(root).unwrap();
         std::fs::remove_dir_all(remote.parent().unwrap()).unwrap();
     }

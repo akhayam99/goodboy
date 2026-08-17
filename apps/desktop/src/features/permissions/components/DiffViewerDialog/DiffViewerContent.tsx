@@ -15,6 +15,7 @@ import type {
 } from '@goodboy/types';
 import { ghPrDiff } from '../../../../features/github/github';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
+import { distanceAhead, distanceBehind } from '../../../../shared/lib/gitStatus';
 import { ErrorStrip } from '@goodboy/ui';
 import {
   DEFAULT_EDITOR_BINARY,
@@ -759,10 +760,15 @@ export const DiffViewerContent = ({
   const verifiedFilesCount = !loading && error === null ? files.length : null;
   const isPane = presentation === 'pane';
   const isDefaultView = view.kind === 'branch';
-  const commitsAheadOfMain = status?.commitsAheadOfMain ?? 0;
-  const commitCountLabel = `${commitsAheadOfMain} ${
-    commitsAheadOfMain === 1 ? 'commit' : 'commits'
-  }`;
+  const mainDistance = status?.mainDistance ?? null;
+  const commitsAheadOfMain =
+    mainDistance != null ? distanceAhead({ distance: mainDistance }) : null;
+  const commitsBehindMain =
+    mainDistance != null ? distanceBehind({ distance: mainDistance }) : null;
+  const commitCountLabel =
+    commitsAheadOfMain != null
+      ? `${commitsAheadOfMain} ${commitsAheadOfMain === 1 ? 'commit' : 'commits'}`
+      : 'commit count unknown';
 
   return (
     <div
@@ -787,12 +793,12 @@ export const DiffViewerContent = ({
               {!loading && error === null && !isEmpty ? (
                 <span className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
                   {isGitAware ? <span>{commitCountLabel}</span> : null}
-                  {status != null && status.commitsBehindMain > 0 ? (
+                  {commitsBehindMain != null && commitsBehindMain > 0 ? (
                     <span
                       className="text-muted-foreground/70"
                       title="Commits on main not in this branch"
                     >
-                      behind main by {status.commitsBehindMain}
+                      behind main by {commitsBehindMain}
                     </span>
                   ) : null}
                   {rebase.canRebase ? (

@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -804,26 +805,63 @@ pub struct BranchCommit {
     pub parent_sha: Option<String>,
 }
 
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum GitUnknownReason {
+    NoUpstream,
+    DetachedHead,
+    RevListFailed,
+    MainRefUnresolved,
+    StatusReadFailed,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum GitDistance {
+    Known { ahead: u32, behind: u32 },
+    Unknown { reason: GitUnknownReason },
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum GitWorkingTree {
+    Known {
+        staged: u32,
+        unstaged: u32,
+        untracked: u32,
+        unmerged: u32,
+        changed: u32,
+    },
+    Unknown {
+        reason: GitUnknownReason,
+    },
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum GitOperation {
+    Merge,
+    Rebase,
+    CherryPick,
+    Bisect,
+}
+
 #[derive(Debug, Serialize)]
 pub struct WorktreeStatus {
     pub branch: Option<String>,
     pub head: Option<String>,
     #[serde(rename = "headSubject")]
     pub head_subject: Option<String>,
-    pub ahead: u32,
-    pub behind: u32,
-    #[serde(rename = "commitsAheadOfMain")]
-    pub commits_ahead_of_main: u32,
-    #[serde(rename = "commitsBehindMain")]
-    pub commits_behind_main: u32,
-    pub staged: u32,
-    pub unstaged: u32,
-    pub untracked: u32,
-    /// Distinct file count from `git status --porcelain`. Use for chip counters;
-    /// avoids double-counting files that appear both staged and unstaged.
-    pub changed: u32,
-    #[serde(rename = "hasUpstream")]
-    pub has_upstream: bool,
+    #[serde(rename = "upstreamDistance")]
+    pub upstream_distance: GitDistance,
+    #[serde(rename = "mainDistance")]
+    pub main_distance: GitDistance,
+    #[serde(rename = "workingTree")]
+    pub working_tree: GitWorkingTree,
+    #[serde(rename = "upstream")]
+    pub upstream: Option<String>,
+    #[serde(rename = "inProgress")]
+    pub in_progress: Option<GitOperation>,
 }
 
 const COMMIT_LIMIT: usize = 100;
@@ -1026,7 +1064,14 @@ fn ensure_unpushed(cwd: &Path, shas: &[String]) -> Result<(), WorktreeError> {
 }
 
 fn ensure_nothing_staged(cwd: &Path) -> Result<(), WorktreeError> {
-    let (staged, _, _, _) = parse_status_counts(cwd);
+    let staged = match read_working_tree(cwd) {
+        GitWorkingTree::Known { staged, .. } => staged,
+        GitWorkingTree::Unknown { .. } => {
+            return Err(WorktreeError::Git {
+                message: "cannot verify staged changes because git status failed".to_string(),
+            });
+        }
+    };
     if staged > 0 {
         return Err(WorktreeError::Git {
             message: format!(
@@ -1103,29 +1148,131 @@ pub fn worktree_status(worktree_path: String) -> Result<WorktreeStatus, Worktree
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
     let upstream = resolve_upstream(p);
-    let (ahead, behind) = if let Some(ref u) = upstream {
-        rev_list_left_right(p, u, "HEAD").unwrap_or((0, 0))
-    } else {
-        (0, 0)
+    let upstream_distance = distance_from_upstream(p, branch.as_ref(), upstream.as_ref());
+    let main_distance = match resolve_main(p) {
+        Some((main_ref, _)) => distance_between(p, main_ref, "HEAD"),
+        None => GitDistance::Unknown {
+            reason: GitUnknownReason::MainRefUnresolved,
+        },
     };
-    let (commits_ahead_of_main, commits_behind_main) = resolve_main(p)
-        .and_then(|(main_ref, _)| rev_list_left_right(p, main_ref, "HEAD"))
-        .unwrap_or((0, 0));
-    let (staged, unstaged, untracked, changed) = parse_status_counts(p);
     Ok(WorktreeStatus {
         branch,
         head,
         head_subject,
-        ahead,
-        behind,
-        commits_ahead_of_main,
-        commits_behind_main,
-        staged,
-        unstaged,
-        untracked,
-        changed,
-        has_upstream: upstream.is_some(),
+        upstream_distance,
+        main_distance,
+        working_tree: read_working_tree(p),
+        upstream,
+        in_progress: in_progress_operation(p),
     })
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+pub struct FastForwardResult {
+    pub branch: String,
+    pub upstream: String,
+    #[serde(rename = "commitsPulled")]
+    pub commits_pulled: u32,
+}
+
+const FF_SAFETY_FLAGS: [&str; 6] = [
+    "-c",
+    "pull.rebase=false",
+    "-c",
+    "rebase.autoStash=false",
+    "-c",
+    "merge.autoStash=false",
+];
+
+fn ff_merge_args(upstream: &str) -> Vec<&str> {
+    let mut args: Vec<&str> = FF_SAFETY_FLAGS.to_vec();
+    args.extend_from_slice(&["merge", "--ff-only", upstream]);
+    args
+}
+
+#[tauri::command]
+pub fn checkout_fast_forward(checkout_path: String) -> Result<FastForwardResult, WorktreeError> {
+    let p = Path::new(&checkout_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(checkout_path));
+    }
+    let Some(branch) = current_branch_name(p) else {
+        return Err(WorktreeError::Git {
+            message: "this checkout isn't on a branch, so there's no branch to update".to_string(),
+        });
+    };
+    let Some(upstream) = resolve_upstream(p) else {
+        return Err(WorktreeError::Git {
+            message: format!("{branch} tracks no upstream branch yet"),
+        });
+    };
+    if git(
+        p,
+        &[
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            &format!("refs/remotes/{upstream}"),
+        ],
+    )
+    .is_err()
+    {
+        return Err(WorktreeError::Git {
+            message: format!("git doesn't recognize {upstream} as a branch on the remote"),
+        });
+    }
+    if let Some(operation) = in_progress_operation(p) {
+        return Err(WorktreeError::Git {
+            message: format!(
+                "finish the {} in progress first",
+                operation_label(operation)
+            ),
+        });
+    }
+    match read_working_tree(p) {
+        GitWorkingTree::Unknown { .. } => {
+            return Err(WorktreeError::Git {
+                message: "git status could not be read, so this checkout cannot be updated safely"
+                    .to_string(),
+            });
+        }
+        GitWorkingTree::Known { changed, .. } if changed > 0 => {
+            return Err(WorktreeError::Git {
+                message: "this checkout has uncommitted changes. commit or stash them first"
+                    .to_string(),
+            });
+        }
+        GitWorkingTree::Known { .. } => {}
+    }
+    let Some((remote, _)) = upstream.split_once('/') else {
+        return Err(WorktreeError::Git {
+            message: format!("cannot tell which remote {upstream} belongs to"),
+        });
+    };
+    git(p, &["fetch", "--no-tags", remote])?;
+    let behind = match distance_between(p, &upstream, "HEAD") {
+        GitDistance::Known { behind, .. } => behind,
+        GitDistance::Unknown { .. } => {
+            return Err(WorktreeError::Git {
+                message: format!("cannot tell how far {branch} is behind {upstream}"),
+            });
+        }
+    };
+    git(p, &ff_merge_args(&upstream))?;
+    Ok(FastForwardResult {
+        branch,
+        upstream,
+        commits_pulled: behind,
+    })
+}
+
+fn operation_label(operation: GitOperation) -> &'static str {
+    match operation {
+        GitOperation::Merge => "merge",
+        GitOperation::Rebase => "rebase",
+        GitOperation::CherryPick => "cherry-pick",
+        GitOperation::Bisect => "bisect",
+    }
 }
 
 fn resolve_branch_range(cwd: &Path) -> String {
@@ -1134,7 +1281,7 @@ fn resolve_branch_range(cwd: &Path) -> String {
         .unwrap_or_else(|| "HEAD".to_string())
 }
 
-fn resolve_main(cwd: &Path) -> Option<(&'static str, String)> {
+pub(crate) fn resolve_main(cwd: &Path) -> Option<(&'static str, String)> {
     for main_ref in ["origin/main", "origin/master", "main", "master"] {
         let merge_base = git(cwd, &["merge-base", "HEAD", main_ref])
             .ok()
@@ -1196,14 +1343,46 @@ pub(crate) fn rev_list_left_right(cwd: &Path, left: &str, right: &str) -> Option
     Some((ahead, behind))
 }
 
-pub(crate) fn parse_status_counts(cwd: &Path) -> (u32, u32, u32, u32) {
+pub(crate) fn distance_between(cwd: &Path, left: &str, right: &str) -> GitDistance {
+    match rev_list_left_right(cwd, left, right) {
+        Some((ahead, behind)) => GitDistance::Known { ahead, behind },
+        None => GitDistance::Unknown {
+            reason: GitUnknownReason::RevListFailed,
+        },
+    }
+}
+
+pub(crate) fn distance_from_upstream(
+    cwd: &Path,
+    branch: Option<&String>,
+    upstream: Option<&String>,
+) -> GitDistance {
+    if branch.is_none() {
+        return GitDistance::Unknown {
+            reason: GitUnknownReason::DetachedHead,
+        };
+    }
+    let Some(reference) = upstream else {
+        return GitDistance::Unknown {
+            reason: GitUnknownReason::NoUpstream,
+        };
+    };
+    distance_between(cwd, reference, "HEAD")
+}
+
+pub(crate) fn read_working_tree(cwd: &Path) -> GitWorkingTree {
     let raw = match git(cwd, &["status", "--porcelain=v1"]) {
         Ok(s) => s,
-        Err(_) => return (0, 0, 0, 0),
+        Err(_) => {
+            return GitWorkingTree::Unknown {
+                reason: GitUnknownReason::StatusReadFailed,
+            };
+        }
     };
     let mut staged = 0u32;
     let mut unstaged = 0u32;
     let mut untracked = 0u32;
+    let mut unmerged = 0u32;
     let mut changed = 0u32;
     for line in raw.lines() {
         let bytes = line.as_bytes();
@@ -1217,6 +1396,10 @@ pub(crate) fn parse_status_counts(cwd: &Path) -> (u32, u32, u32, u32) {
             untracked += 1;
             continue;
         }
+        if x == 'U' || y == 'U' || (x == 'A' && y == 'A') || (x == 'D' && y == 'D') {
+            unmerged += 1;
+            continue;
+        }
         if x != ' ' && x != '?' {
             staged += 1;
         }
@@ -1224,7 +1407,35 @@ pub(crate) fn parse_status_counts(cwd: &Path) -> (u32, u32, u32, u32) {
             unstaged += 1;
         }
     }
-    (staged, unstaged, untracked, changed)
+    GitWorkingTree::Known {
+        staged,
+        unstaged,
+        untracked,
+        unmerged,
+        changed,
+    }
+}
+
+pub(crate) fn in_progress_operation(cwd: &Path) -> Option<GitOperation> {
+    let git_dir = git(cwd, &["rev-parse", "--absolute-git-dir"])
+        .ok()
+        .map(|found| PathBuf::from(found.trim()))?;
+    if git_dir.join("MERGE_HEAD").is_file() {
+        return Some(GitOperation::Merge);
+    }
+    if git_dir.join("REBASE_HEAD").is_file()
+        || git_dir.join("rebase-merge").is_dir()
+        || git_dir.join("rebase-apply").is_dir()
+    {
+        return Some(GitOperation::Rebase);
+    }
+    if git_dir.join("CHERRY_PICK_HEAD").is_file() {
+        return Some(GitOperation::CherryPick);
+    }
+    if git_dir.join("BISECT_LOG").is_file() {
+        return Some(GitOperation::Bisect);
+    }
+    None
 }
 
 fn git_strs(cwd: &Path, args: &[String]) -> Result<String, WorktreeError> {
@@ -1389,7 +1600,43 @@ fn untracked_new_file_diff_for(p: &Path, rel: &str) -> String {
     out
 }
 
+static CREDENTIAL_IN_URL: OnceLock<Regex> = OnceLock::new();
+
+pub(crate) fn redact_credentials(raw: &str) -> String {
+    let pattern = CREDENTIAL_IN_URL.get_or_init(|| {
+        Regex::new(r"([A-Za-z][A-Za-z0-9+.\-]*://)[^/@\s]+@").expect("credential pattern compiles")
+    });
+    pattern.replace_all(raw, "$1***@").into_owned()
+}
+
+#[cfg(test)]
+pub(crate) mod git_argv_log {
+    use std::cell::RefCell;
+
+    thread_local! {
+        static RECORDED: RefCell<Vec<Vec<String>>> = const { RefCell::new(Vec::new()) };
+    }
+
+    pub(crate) fn record(args: &[&str]) {
+        RECORDED.with(|log| {
+            log.borrow_mut()
+                .push(args.iter().map(|arg| (*arg).to_string()).collect())
+        });
+    }
+
+    pub(crate) fn reset() {
+        RECORDED.with(|log| log.borrow_mut().clear());
+    }
+
+    pub(crate) fn recorded() -> Vec<Vec<String>> {
+        RECORDED.with(|log| log.borrow().clone())
+    }
+}
+
 pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
+    #[cfg(test)]
+    git_argv_log::record(args);
+
     let output = crate::path_env::command("git")
         .args(args)
         .current_dir(cwd)
@@ -1400,8 +1647,9 @@ pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
         .output()?;
     if !output.status.success() {
         let stderr = String::from_utf8(output.stderr).unwrap_or_default();
+        let redacted = redact_credentials(&stderr);
         return Err(WorktreeError::Git {
-            message: format!("git {} failed: {stderr}", args.join(" "))
+            message: format!("git {} failed: {redacted}", args.join(" "))
                 .trim()
                 .to_string(),
         });
@@ -1453,7 +1701,7 @@ fn parse_porcelain(stdout: &str) -> Vec<WorktreeInfo> {
 mod rewrite_tests {
     use super::{
         worktree_amend_commit, worktree_create, worktree_squash_commits, worktree_status,
-        CreateArgs, RewriteArgs,
+        CreateArgs, GitDistance, GitUnknownReason, GitWorkingTree, RewriteArgs,
     };
     use std::path::{Path, PathBuf};
 
@@ -1530,8 +1778,93 @@ mod rewrite_tests {
 
         let status = worktree_status(root.to_string_lossy().into_owned()).unwrap();
 
-        assert_eq!(status.commits_ahead_of_main, 2);
-        assert_eq!(status.commits_behind_main, 1);
+        assert_eq!(
+            status.main_distance,
+            GitDistance::Known {
+                ahead: 2,
+                behind: 1
+            }
+        );
+    }
+
+    #[test]
+    fn a_failed_rev_list_is_reported_as_unknown_rather_than_in_sync() {
+        let root = init_repo("fail-closed-rev-list");
+        commit(&root, "base.txt", "base", "base");
+
+        assert_eq!(
+            super::rev_list_left_right(&root, "missing-ref", "HEAD"),
+            None
+        );
+        assert_eq!(
+            super::distance_between(&root, "missing-ref", "HEAD"),
+            GitDistance::Unknown {
+                reason: GitUnknownReason::RevListFailed
+            }
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn an_unresolvable_main_ref_is_reported_as_unknown_rather_than_zero_distance() {
+        let root = temp_root("fail-closed-resolve-main");
+        git_ok(&root, &["init", "-b", "trunk"]);
+        git_ok(&root, &["config", "user.email", "test@example.com"]);
+        git_ok(&root, &["config", "user.name", "test"]);
+        git_ok(&root, &["config", "commit.gpgsign", "false"]);
+        commit(&root, "base.txt", "base", "base");
+
+        let status = worktree_status(root.to_string_lossy().into_owned()).unwrap();
+
+        assert_eq!(super::resolve_main(&root), None);
+        assert_eq!(
+            status.main_distance,
+            GitDistance::Unknown {
+                reason: GitUnknownReason::MainRefUnresolved
+            }
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_failed_status_read_is_reported_as_unknown_rather_than_a_clean_tree() {
+        let root = temp_root("fail-closed-status-read");
+
+        assert_eq!(
+            super::read_working_tree(&root),
+            GitWorkingTree::Unknown {
+                reason: GitUnknownReason::StatusReadFailed
+            }
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_merge_conflict_is_counted_as_unmerged_and_never_as_staged_or_unstaged() {
+        let root = init_repo("fail-closed-conflict");
+        commit(&root, "shared.txt", "base\n", "base");
+        git_ok(&root, &["checkout", "-b", "feature"]);
+        commit(&root, "shared.txt", "feature\n", "feature");
+        git_ok(&root, &["checkout", "main"]);
+        commit(&root, "shared.txt", "main\n", "main");
+        let merge = super::git(&root, &["merge", "feature"]);
+
+        assert!(merge.is_err());
+        assert_eq!(
+            super::read_working_tree(&root),
+            GitWorkingTree::Known {
+                staged: 0,
+                unstaged: 0,
+                untracked: 0,
+                unmerged: 1,
+                changed: 1
+            }
+        );
+        assert_eq!(
+            super::in_progress_operation(&root),
+            Some(super::GitOperation::Merge)
+        );
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -1552,10 +1885,162 @@ mod rewrite_tests {
         assert_eq!(
             worktree_status(root.to_string_lossy().into_owned())
                 .unwrap()
-                .commits_ahead_of_main,
-            1
+                .main_distance,
+            GitDistance::Known {
+                ahead: 1,
+                behind: 0
+            }
         );
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn fast_forward_advances_the_branch_to_its_upstream() {
+        let root = init_repo("fast-forward-clean");
+        commit(&root, "base.txt", "base", "base");
+        push_to_new_remote(&root);
+        let clone_root = temp_root("fast-forward-clone");
+        git_ok(
+            &clone_root,
+            &[
+                "clone",
+                root.join("remote.git").to_str().unwrap(),
+                clone_root.join("copy").to_str().unwrap(),
+            ],
+        );
+        let copy = clone_root.join("copy");
+        git_ok(&copy, &["checkout", "-B", "main", "--track", "origin/main"]);
+        commit(&root, "next.txt", "next", "next");
+        git_ok(&root, &["push", "origin", "main"]);
+
+        super::git_argv_log::reset();
+        let pulled = super::checkout_fast_forward(copy.to_string_lossy().into_owned()).unwrap();
+        let merge_invocations: Vec<Vec<String>> = super::git_argv_log::recorded()
+            .into_iter()
+            .filter(|argv| argv.iter().any(|arg| arg == "merge"))
+            .collect();
+
+        assert_eq!(pulled.upstream, "origin/main");
+        assert_eq!(pulled.commits_pulled, 1);
+        assert!(copy.join("next.txt").is_file());
+        assert_eq!(
+            merge_invocations,
+            vec![vec![
+                "-c".to_string(),
+                "pull.rebase=false".to_string(),
+                "-c".to_string(),
+                "rebase.autoStash=false".to_string(),
+                "-c".to_string(),
+                "merge.autoStash=false".to_string(),
+                "merge".to_string(),
+                "--ff-only".to_string(),
+                "origin/main".to_string(),
+            ]]
+        );
+        std::fs::remove_dir_all(root).unwrap();
+        std::fs::remove_dir_all(clone_root).unwrap();
+    }
+
+    #[test]
+    fn fast_forward_refuses_a_dirty_checkout_and_leaves_it_untouched() {
+        let root = init_repo("fast-forward-dirty");
+        commit(&root, "base.txt", "base", "base");
+        push_to_new_remote(&root);
+        std::fs::write(root.join("scratch.txt"), "work in progress").unwrap();
+        let before = git_ok(&root, &["rev-parse", "HEAD"]);
+
+        let refusal =
+            super::checkout_fast_forward(root.to_string_lossy().into_owned()).unwrap_err();
+
+        assert!(format!("{refusal}").contains("uncommitted changes"));
+        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), before);
+        assert_eq!(
+            std::fs::read_to_string(root.join("scratch.txt")).unwrap(),
+            "work in progress"
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn fast_forward_refuses_a_branch_without_an_upstream() {
+        let root = init_repo("fast-forward-no-upstream");
+        commit(&root, "base.txt", "base", "base");
+
+        let refusal =
+            super::checkout_fast_forward(root.to_string_lossy().into_owned()).unwrap_err();
+
+        assert!(format!("{refusal}").contains("no upstream"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn fast_forward_refuses_while_a_merge_is_in_progress() {
+        let root = init_repo("fast-forward-mid-merge");
+        commit(&root, "shared.txt", "base\n", "base");
+        push_to_new_remote(&root);
+        git_ok(&root, &["checkout", "-b", "feature"]);
+        commit(&root, "shared.txt", "feature\n", "feature");
+        git_ok(&root, &["checkout", "main"]);
+        commit(&root, "shared.txt", "main\n", "main");
+        let merge = super::git(&root, &["merge", "feature"]);
+
+        let refusal =
+            super::checkout_fast_forward(root.to_string_lossy().into_owned()).unwrap_err();
+
+        assert!(merge.is_err());
+        assert!(format!("{refusal}").contains("merge in progress"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn fast_forward_refuses_when_the_working_tree_cannot_be_read() {
+        let root = init_repo("fast-forward-unreadable-status");
+        commit(&root, "base.txt", "base", "base");
+        push_to_new_remote(&root);
+        let before = git_ok(&root, &["rev-parse", "HEAD"]);
+        std::fs::write(root.join(".git").join("index"), "not an index").unwrap();
+
+        let refusal =
+            super::checkout_fast_forward(root.to_string_lossy().into_owned()).unwrap_err();
+
+        assert!(format!("{refusal}").contains("git status could not be read"));
+        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), before);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn ff_merge_args_builds_the_flags_that_forbid_a_rebase_or_an_autostash() {
+        assert_eq!(
+            super::ff_merge_args("origin/main"),
+            vec![
+                "-c",
+                "pull.rebase=false",
+                "-c",
+                "rebase.autoStash=false",
+                "-c",
+                "merge.autoStash=false",
+                "merge",
+                "--ff-only",
+                "origin/main",
+            ]
+        );
+    }
+
+    #[test]
+    fn a_remote_url_carrying_a_token_is_redacted_before_it_reaches_the_user() {
+        let leaky = "fatal: unable to access 'https://someone:ghp_secretvalue@github.com/acme/widgets.git/': the remote hung up";
+
+        let safe = super::redact_credentials(leaky);
+
+        assert!(!safe.contains("ghp_secretvalue"));
+        assert!(!safe.contains("someone"));
+        assert!(safe.contains("https://***@github.com/acme/widgets.git/"));
+        assert_eq!(
+            super::redact_credentials(
+                "fatal: repository 'https://github.com/acme/widgets' not found"
+            ),
+            "fatal: repository 'https://github.com/acme/widgets' not found"
+        );
     }
 
     #[test]

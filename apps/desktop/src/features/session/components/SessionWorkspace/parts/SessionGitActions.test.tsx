@@ -31,7 +31,10 @@ const h = vi.hoisted(() => ({
   },
   worktreeStatus: vi.fn(
     async (): Promise<WorktreeStatus> =>
-      ({ ahead: 1, commitsBehindMain: 2 }) as unknown as WorktreeStatus,
+      ({
+        upstreamDistance: { kind: 'known', ahead: 1, behind: 0 },
+        mainDistance: { kind: 'known', ahead: 0, behind: 2 },
+      }) as unknown as WorktreeStatus,
   ),
 }));
 
@@ -142,5 +145,49 @@ describe('SessionGitActions', () => {
     expect(await screen.findByText('Push done')).toBeDefined();
     expect(h.state.pushSessionBranch).toHaveBeenCalledWith(SESSION_ID);
     expect(h.state.selectAgent).not.toHaveBeenCalled();
+  });
+
+  it('never offers a push when the distance from the upstream could not be read', async () => {
+    h.worktreeStatus.mockResolvedValueOnce({
+      upstreamDistance: { kind: 'unknown', reason: 'rev-list-failed' },
+      mainDistance: { kind: 'known', ahead: 0, behind: 2 },
+    } as unknown as WorktreeStatus);
+    renderActions();
+    openMenu();
+
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('menuitem', { name: 'Rebase on main' }) as HTMLButtonElement).disabled,
+      ).toBe(false),
+    );
+    expect(
+      (screen.getByRole('menuitem', { name: 'Push branch' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Push branch' }));
+
+    expect(h.state.pushSessionBranch).not.toHaveBeenCalled();
+  });
+
+  it('never offers a rebase when the distance from main could not be read', async () => {
+    h.worktreeStatus.mockResolvedValueOnce({
+      upstreamDistance: { kind: 'known', ahead: 1, behind: 0 },
+      mainDistance: { kind: 'unknown', reason: 'main-ref-unresolved' },
+    } as unknown as WorktreeStatus);
+    renderActions();
+    openMenu();
+
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('menuitem', { name: 'Push branch' }) as HTMLButtonElement).disabled,
+      ).toBe(false),
+    );
+    expect(
+      (screen.getByRole('menuitem', { name: 'Rebase on main' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Rebase on main' }));
+
+    expect(h.state.spawnAgent).not.toHaveBeenCalled();
   });
 });

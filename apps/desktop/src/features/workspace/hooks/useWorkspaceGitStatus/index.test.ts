@@ -24,13 +24,10 @@ const ready: WorkspaceGitStatus = {
   state: 'ready',
   branch: 'main',
   headSubject: 'base',
-  ahead: 0,
-  behind: 0,
-  staged: 0,
-  unstaged: 0,
-  untracked: 0,
-  changed: 0,
-  hasUpstream: true,
+  upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+  workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+  upstream: 'origin/main',
+  inProgress: null,
 };
 
 const workspace = (kind: Workspace['kind']): Workspace =>

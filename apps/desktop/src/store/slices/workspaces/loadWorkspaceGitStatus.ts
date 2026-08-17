@@ -10,13 +10,10 @@ const UNREACHABLE: WorkspaceGitStatus = {
   state: 'missing',
   branch: null,
   headSubject: null,
-  ahead: 0,
-  behind: 0,
-  staged: 0,
-  unstaged: 0,
-  untracked: 0,
-  changed: 0,
-  hasUpstream: false,
+  upstreamDistance: { kind: 'unknown', reason: 'rev-list-failed' },
+  workingTree: { kind: 'unknown', reason: 'status-read-failed' },
+  upstream: null,
+  inProgress: null,
 };
 
 export const loadWorkspaceGitStatus = (set: SetFn, get: GetFn) => {
