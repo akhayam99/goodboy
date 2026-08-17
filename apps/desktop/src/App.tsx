@@ -68,6 +68,7 @@ import {
   useAppStore,
   useCurrentSession,
   useCurrentWorkspace,
+  useSessionById,
   useSessions,
   useWorkspaces,
   type LensKind,
@@ -137,7 +138,11 @@ export const App = () => {
     undefined,
   );
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteSessionId, setDeleteSessionId] = useState<SessionId | null>(null);
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiveSessionId, setArchiveSessionId] = useState<SessionId | null>(null);
+  const deleteTargetSession = useSessionById(deleteSessionId);
+  const archiveTargetSession = useSessionById(archiveSessionId);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [palettePrefix, setPalettePrefix] = useState('');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
@@ -323,8 +328,22 @@ export const App = () => {
       closeAllStudios();
       setNotificationsStudioOpen(true);
     };
-    const onOpenArchiveSession = () => setArchiveOpen(true);
-    const onOpenDeleteSession = () => setDeleteOpen(true);
+    const onOpenArchiveSession = (event: Event) => {
+      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
+      if (!detail?.sessionId) {
+        return;
+      }
+      setArchiveSessionId(detail.sessionId);
+      setArchiveOpen(true);
+    };
+    const onOpenDeleteSession = (event: Event) => {
+      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
+      if (!detail?.sessionId) {
+        return;
+      }
+      setDeleteSessionId(detail.sessionId);
+      setDeleteOpen(true);
+    };
 
     window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, onOpenNotificationsStudio);
     window.addEventListener('goodboy:open-settings', onOpenSettings);
@@ -571,11 +590,13 @@ export const App = () => {
   }, [closeAllStudios]);
   const openDeleteSession = useCallback(() => {
     if (currentSession) {
+      setDeleteSessionId(currentSession.id);
       setDeleteOpen(true);
     }
   }, [currentSession]);
   const openArchiveSession = useCallback(() => {
     if (currentSession) {
+      setArchiveSessionId(currentSession.id);
       setArchiveOpen(true);
     }
   }, [currentSession]);
@@ -1111,14 +1132,26 @@ export const App = () => {
           loader={commitDiffLoader}
         />
       ) : null}
-      {currentSession && deleteOpen ? (
+      {deleteTargetSession && deleteOpen ? (
         <div className="fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-background shadow-lg">
-          <DeleteSessionConfirm session={currentSession} onClose={() => setDeleteOpen(false)} />
+          <DeleteSessionConfirm
+            session={deleteTargetSession}
+            onClose={() => {
+              setDeleteOpen(false);
+              setDeleteSessionId(null);
+            }}
+          />
         </div>
       ) : null}
-      {currentSession && archiveOpen ? (
+      {archiveTargetSession && archiveOpen ? (
         <div className="fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-background shadow-lg">
-          <ArchiveSessionConfirm session={currentSession} onClose={() => setArchiveOpen(false)} />
+          <ArchiveSessionConfirm
+            session={archiveTargetSession}
+            onClose={() => {
+              setArchiveOpen(false);
+              setArchiveSessionId(null);
+            }}
+          />
         </div>
       ) : null}
 

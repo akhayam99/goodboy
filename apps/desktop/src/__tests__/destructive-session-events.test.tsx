@@ -144,6 +144,8 @@ vi.mock('../store', () => {
     useAppStore,
     useCurrentSession: () => state.sessions.find((s) => s.id === state.currentSessionId) ?? null,
     useCurrentWorkspace: () => state.workspaces[0],
+    useSessionById: (sessionId: string | null) =>
+      state.sessions.find((session) => session.id === sessionId) ?? null,
     useSessions: () => state.sessions,
     useWorkspaces: () => state.workspaces,
   };
@@ -155,13 +157,21 @@ import { App } from '../App';
 
 const openArchive = (): void => {
   act(() => {
-    window.dispatchEvent(new CustomEvent('goodboy:open-archive-session'));
+    window.dispatchEvent(
+      new CustomEvent('goodboy:open-archive-session', {
+        detail: { sessionId: state.currentSessionId },
+      }),
+    );
   });
 };
 
 const openDelete = (): void => {
   act(() => {
-    window.dispatchEvent(new CustomEvent('goodboy:open-delete-session'));
+    window.dispatchEvent(
+      new CustomEvent('goodboy:open-delete-session', {
+        detail: { sessionId: state.currentSessionId },
+      }),
+    );
   });
 };
 
@@ -173,6 +183,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  state.sessions = state.sessions.slice(0, 1);
 });
 
 describe('archive/delete session open events', () => {
@@ -252,5 +263,61 @@ describe('archive/delete session open events', () => {
     });
 
     expect(container.querySelector('[data-testid="delete-confirm"]')).toBeNull();
+  });
+});
+
+describe('wrong-target session repair', () => {
+  it('targets the session named in the event detail, not the current session', () => {
+    state.sessions.push({ id: 'session-2', workspaceId: 'workspace-1' });
+    const { container } = render(<App />);
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('goodboy:open-delete-session', {
+          detail: { sessionId: 'session-2' },
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-testid="delete-confirm"]')).not.toBeNull();
+    expect(deleteConfirmCalls).toEqual([{ sessionId: 'session-2' }]);
+  });
+
+  it('does not open when the current session is used instead of the event detail', () => {
+    state.sessions.push({ id: 'session-2', workspaceId: 'workspace-1' });
+    render(<App />);
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('goodboy:open-delete-session', {
+          detail: { sessionId: 'session-2' },
+        }),
+      );
+    });
+
+    expect(deleteConfirmCalls).not.toEqual([{ sessionId: 'session-1' }]);
+    expect(deleteConfirmCalls[0]?.sessionId).toBe('session-2');
+  });
+
+  it('opens nothing when the event detail has no resolvable session id', () => {
+    const { container } = render(<App />);
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('goodboy:open-delete-session', {
+          detail: { sessionId: 'does-not-exist' },
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-testid="delete-confirm"]')).toBeNull();
+    expect(deleteConfirmCalls).toEqual([]);
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent('goodboy:open-archive-session'));
+    });
+
+    expect(container.querySelector('[data-testid="archive-confirm"]')).toBeNull();
+    expect(archiveConfirmCalls).toEqual([]);
   });
 });

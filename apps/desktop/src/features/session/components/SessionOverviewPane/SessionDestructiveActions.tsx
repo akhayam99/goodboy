@@ -22,11 +22,13 @@ export const SessionDestructiveActions = ({ session }: Props) => {
   };
 
   const openArchiveConfirm = () => {
-    window.dispatchEvent(new CustomEvent('goodboy:open-archive-session'));
+    window.dispatchEvent(
+      new CustomEvent('goodboy:open-archive-session', { detail: { sessionId } }),
+    );
   };
 
   const openDeleteConfirm = () => {
-    window.dispatchEvent(new CustomEvent('goodboy:open-delete-session'));
+    window.dispatchEvent(new CustomEvent('goodboy:open-delete-session', { detail: { sessionId } }));
   };
 
   const archiveItem: OverflowMenuItem = archived
