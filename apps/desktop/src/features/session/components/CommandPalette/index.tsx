@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
-import type { Agent, AgentId, WorkspaceScript } from '@goodboy/types';
+import type { Agent, AgentId, SessionId, WorkspaceScript } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -103,6 +103,7 @@ export const CommandPalette = ({
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const scripts = useAppStore((s) =>
     currentWorkspace ? (s.workspaceScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<WorkspaceScript>;
@@ -160,6 +161,35 @@ export const CommandPalette = ({
           onSelect: () => void selectAgent(currentSession.id, a.id as AgentId),
         });
       }
+      const sessionId = currentSession.id as SessionId;
+      out.push({
+        id: 'action:context',
+        label: 'Open context',
+        sublabel: shortcutGlyphs('lens.context'),
+        group: 'action',
+        onSelect: () => setActiveLens(sessionId, 'context'),
+      });
+      out.push({
+        id: 'action:context-goal',
+        label: 'Open context: Goal',
+        sublabel: shortcutGlyphs('lens.goal'),
+        group: 'action',
+        onSelect: () => setActiveLens(sessionId, 'goal'),
+      });
+      out.push({
+        id: 'action:context-decisions',
+        label: 'Open context: Decisions',
+        sublabel: shortcutGlyphs('lens.decisions'),
+        group: 'action',
+        onSelect: () => setActiveLens(sessionId, 'decisions'),
+      });
+      out.push({
+        id: 'action:context-summary',
+        label: 'Open context: Session summary',
+        sublabel: shortcutGlyphs('lens.summary'),
+        group: 'action',
+        onSelect: () => setActiveLens(sessionId, 'last_output_summary'),
+      });
     }
 
     for (const sc of scripts) {
@@ -259,6 +289,7 @@ export const CommandPalette = ({
     openWorkspace,
     setCurrentSession,
     selectAgent,
+    setActiveLens,
     onOpenSettings,
     onNewSession,
     onOpenProviders,

@@ -44,9 +44,10 @@ export const SHORTCUTS = {
   'session.board': { combo: 'cmd+shift+KeyH', label: 'Back to board', plane: 'session' },
 
   'lens.overview': { combo: 'cmd+alt+KeyO', label: 'Overview', plane: 'lens' },
-  'lens.goal': { combo: 'cmd+alt+KeyG', label: 'Goal', plane: 'lens' },
-  'lens.decisions': { combo: 'cmd+alt+KeyE', label: 'Decisions', plane: 'lens' },
-  'lens.summary': { combo: 'cmd+alt+KeyU', label: 'Session summary', plane: 'lens' },
+  'lens.context': { combo: 'cmd+alt+KeyC', label: 'Context', plane: 'lens' },
+  'lens.goal': { combo: 'cmd+alt+KeyG', label: 'Context: Goal', plane: 'lens' },
+  'lens.decisions': { combo: 'cmd+alt+KeyE', label: 'Context: Decisions', plane: 'lens' },
+  'lens.summary': { combo: 'cmd+alt+KeyU', label: 'Context: Session summary', plane: 'lens' },
   'lens.workflows': { combo: 'cmd+alt+KeyW', label: 'Workflows', plane: 'lens' },
   'lens.agents': { combo: 'cmd+alt+KeyA', label: 'Agents', plane: 'lens' },
   'lens.resolve': { combo: 'cmd+alt+KeyR', label: 'Resolve', plane: 'lens' },

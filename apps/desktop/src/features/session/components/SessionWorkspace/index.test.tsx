@@ -194,7 +194,11 @@ vi.mock('../SessionCrumbBar', () => ({
 vi.mock('./parts/SessionStudioLayer', () => ({ SessionStudioLayer: () => null }));
 vi.mock('./parts/SessionTopBar', () => ({ SessionTopBar: () => null }));
 vi.mock('./parts/QuestionsPane', () => ({ QuestionsPane: () => null }));
-vi.mock('./parts/SlotPane', () => ({ SlotPane: () => null }));
+vi.mock('./parts/ContextPane', () => ({
+  ContextPane: ({ initialRegion }: { initialRegion?: string }) => (
+    <div data-testid="context-pane" data-region={initialRegion ?? 'context'} />
+  ),
+}));
 vi.mock('./parts/PrPane', () => ({ PrPane: () => null }));
 vi.mock('./parts/FilesPane', () => ({ FilesPane: () => null }));
 vi.mock('./parts/IntegrationPane', () => ({
@@ -972,5 +976,21 @@ describe('SessionWorkspace integration lenses', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('integration-pane').textContent).toBe(provider);
+  });
+});
+
+describe('SessionWorkspace context routing', () => {
+  it.each([
+    ['context', 'context'],
+    ['goal', 'goal'],
+    ['decisions', 'decisions'],
+    ['last_output_summary', 'last_output_summary'],
+  ] as const)('routes %s to the Context pane at %s', (lens, region) => {
+    store.activeLens = { [SESSION_ID]: lens };
+    store.selectedAgentId = {};
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('context-pane').dataset.region).toBe(region);
   });
 });

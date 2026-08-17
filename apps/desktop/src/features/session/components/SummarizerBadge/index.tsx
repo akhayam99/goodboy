@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, RotateCw } from 'lucide-react';
-import { StatusDot, cn, formatUsd } from '@goodboy/ui';
+import { cn, formatUsd } from '@goodboy/ui';
 import type { SessionId, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSummarizerStatus } from '../../../../store';
+import { SummarizerWorkingIndicator } from '../SummarizerWorkingIndicator';
 
 export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
   const { status, lastUpdate, error, lastAttempt } = useSummarizerStatus(sessionId);
@@ -49,7 +50,7 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
   if (status === 'running') {
     return (
       <span className="flex items-center gap-1">
-        <StatusDot tone="info" size="sm" pulsing />
+        <SummarizerWorkingIndicator />
         {costPill}
       </span>
     );

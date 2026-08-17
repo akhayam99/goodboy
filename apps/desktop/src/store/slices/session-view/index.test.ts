@@ -587,12 +587,12 @@ describe('store contract', () => {
       expect(readPersistedLens(SESSION_ID)).toBeNull();
     });
 
-    it('migrates a legacy "context" persisted value to null (Overview)', async () => {
+    it('restores the shared Context surface', async () => {
       globalThis.localStorage.setItem(
         `${STORAGE_PREFIXES.workSurfaceView}${SESSION_ID}`,
         'context',
       );
-      expect(readPersistedLens(SESSION_ID)).toBeNull();
+      expect(readPersistedLens(SESSION_ID)).toBe('context');
     });
 
     it('degrades an unknown persisted lens to Overview', async () => {

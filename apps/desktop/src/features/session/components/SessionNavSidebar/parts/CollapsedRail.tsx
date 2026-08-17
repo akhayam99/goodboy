@@ -104,7 +104,12 @@ export const CollapsedRail = ({ session, onExpand }: Props) => {
       <ScrollFade className="min-h-0 flex-1">
         <nav aria-label="Session lenses" className="flex flex-col items-center gap-1">
           {rows.map((row) => {
-            const isActive = activeLens === row.kind;
+            const isActive =
+              activeLens === row.kind ||
+              (row.kind === 'context' &&
+                (activeLens === 'goal' ||
+                  activeLens === 'decisions' ||
+                  activeLens === 'last_output_summary'));
             const label = `${row.label} (${shortcutGlyphs(LENS_SHORTCUTS[row.kind])})`;
             return (
               <Tooltip key={row.kind} content={label} side="right">
