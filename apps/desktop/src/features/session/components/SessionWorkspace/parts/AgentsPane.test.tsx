@@ -32,13 +32,11 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
 vi.mock('../../StandaloneAgentsLane', () => ({
   StandaloneAgentsLane: ({
     variant,
-    inspectedAgentId,
     showCompleted,
     onCompletedCountChange,
     filedToggle,
   }: {
     readonly variant?: string;
-    readonly inspectedAgentId?: string | null;
     readonly showCompleted?: boolean;
     readonly onCompletedCountChange?: (completedCount: number) => void;
     readonly filedToggle?: React.ReactNode;
@@ -47,7 +45,6 @@ vi.mock('../../StandaloneAgentsLane', () => ({
       <div
         data-testid="agents-lane"
         data-variant={variant}
-        data-inspected={String(inspectedAgentId)}
         data-show-completed={String(showCompleted)}
       >
         {filedToggle}
@@ -67,8 +64,6 @@ vi.mock('../../CreateAgentPopover', () => ({
   ),
 }));
 
-vi.mock('../../AgentInspector', () => ({ AgentInspector: () => null }));
-
 import { AgentsPane } from './AgentsPane';
 
 const SESSION = { id: 'sess-1', workspaceId: 'ws-1' } as unknown as Session;
@@ -77,14 +72,7 @@ afterEach(cleanup);
 
 describe('AgentsPane', () => {
   it('hosts a single compact create-agent trigger in the pane header', () => {
-    render(
-      <AgentsPane
-        session={SESSION}
-        meta={undefined}
-        inspectedAgentId={null}
-        onInspectAgent={vi.fn()}
-      />,
-    );
+    render(<AgentsPane session={SESSION} meta={undefined} />);
 
     const heading = screen.getByRole('heading', { name: 'Agents' });
     const header = heading.parentElement?.parentElement?.parentElement;
@@ -94,33 +82,24 @@ describe('AgentsPane', () => {
     expect(screen.getAllByTestId('header-spawn')).toHaveLength(1);
   });
 
-  it('renders the shared agents lane and forwards the inspected agent', () => {
-    render(
-      <AgentsPane
-        session={SESSION}
-        meta={undefined}
-        inspectedAgentId={'agent-7' as never}
-        onInspectAgent={vi.fn()}
-      />,
-    );
+  it('renders the shared agents lane', () => {
+    render(<AgentsPane session={SESSION} meta={undefined} />);
 
     const lane = screen.getByTestId('agents-lane');
     expect(lane.getAttribute('data-variant')).toBe('lens');
-    expect(lane.getAttribute('data-inspected')).toBe('agent-7');
   });
 
   it('shows completed agents in the lane without interaction', () => {
-    render(
-      <AgentsPane
-        session={SESSION}
-        meta={undefined}
-        inspectedAgentId={null}
-        onInspectAgent={vi.fn()}
-      />,
-    );
+    render(<AgentsPane session={SESSION} meta={undefined} />);
 
     const lane = screen.getByTestId('agents-lane');
     expect(lane.getAttribute('data-show-completed')).toBe('true');
     expect(screen.queryByRole('button', { name: /Completed/ })).toBeNull();
+  });
+
+  it('does not mount an inspector rail beside the list', () => {
+    render(<AgentsPane session={SESSION} meta={undefined} />);
+
+    expect(screen.queryByRole('separator', { name: 'Resize inspector panel' })).toBeNull();
   });
 });

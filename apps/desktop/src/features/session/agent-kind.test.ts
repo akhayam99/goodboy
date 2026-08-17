@@ -336,19 +336,22 @@ describe('AGENT_KIND_DEFAULTS', () => {
     expect(AGENT_KIND_DEFAULTS.resolver.visible).toBe(false);
   });
 
-  it('only resolver is marked hidden today', () => {
-    const allKinds: ReadonlyArray<AgentKind> = [
+  it('pr-reviewer is hidden from the manual spawn menu, only the PR review flow seeds it', () => {
+    expect(AGENT_KIND_DEFAULTS['pr-reviewer'].visible).toBe(false);
+  });
+
+  it('every other kind is available in the manual spawn menu', () => {
+    const manualKinds: ReadonlyArray<AgentKind> = [
       'scout',
       'planner',
       'implementer',
       'debugger',
       'tester',
       'reviewer',
-      'pr-reviewer',
       'docs',
       'generic',
     ];
-    for (const kind of allKinds) {
+    for (const kind of manualKinds) {
       expect(AGENT_KIND_DEFAULTS[kind].visible).not.toBe(false);
     }
   });
@@ -635,7 +638,6 @@ describe('visibility by workspace kind', () => {
       'generic',
       'implementer',
       'planner',
-      'pr-reviewer',
       'reviewer',
       'scout',
       'tester',
