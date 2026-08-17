@@ -23,6 +23,11 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
   const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
   const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId[sessionId] ?? null);
   const focusedPlanId = useAppStore((s) => s.focusedPlanId[sessionId] ?? null);
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
+  const selectedChildLabel = useAppStore(
+    (s) =>
+      s.sessionPhaseRuns[sessionId]?.find((agent) => agent.id === selectedAgentId)?.name ?? null,
+  );
   const attachedWorkflowRuns = useAttachedWorkflowRuns({ session });
   const plans = useSessionPlans(sessionId);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
@@ -46,6 +51,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
         studio,
         focusedWorkflowName,
         focusedPlanTitle,
+        selectedChildLabel,
         lensLabel: (kind: LensKind) => lensLabelFor({ lens: kind, isBranchless }),
         handlers: {
           toOverview: () => setActiveLens(sessionId, null),
@@ -65,6 +71,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       studio,
       focusedWorkflowName,
       focusedPlanTitle,
+      selectedChildLabel,
       isBranchless,
       sessionId,
       setActiveLens,

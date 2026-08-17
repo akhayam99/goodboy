@@ -13,6 +13,7 @@ export type SessionBreadcrumbInput = {
   studio: SessionStudio | null;
   focusedWorkflowName: string | null;
   focusedPlanTitle: string | null;
+  selectedChildLabel: string | null;
   lensLabel: (lens: LensKind) => string;
   handlers: SessionBreadcrumbHandlers;
 };
@@ -25,7 +26,15 @@ const sealLast = (crumbs: BreadcrumbCrumb[]): BreadcrumbCrumb[] => {
 };
 
 export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): BreadcrumbCrumb[] => {
-  const { lens, studio, focusedWorkflowName, focusedPlanTitle, lensLabel, handlers } = input;
+  const {
+    lens,
+    studio,
+    focusedWorkflowName,
+    focusedPlanTitle,
+    selectedChildLabel,
+    lensLabel,
+    handlers,
+  } = input;
 
   const overview: BreadcrumbCrumb = {
     id: 'overview',
@@ -81,6 +90,14 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
 
   if (lens === 'plans' && focusedPlanTitle != null) {
     return sealLast([overview, plansList, { id: 'plan', label: focusedPlanTitle }]);
+  }
+
+  if (lens != null && selectedChildLabel != null) {
+    return sealLast([
+      overview,
+      { id: `lens-${lens}`, label: lensLabel(lens), onClick: () => handlers.toLens(lens) },
+      { id: 'selected-child', label: selectedChildLabel },
+    ]);
   }
 
   if (lens != null) {

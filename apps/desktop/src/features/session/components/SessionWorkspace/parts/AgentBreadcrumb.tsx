@@ -21,6 +21,7 @@ type Props = {
   readonly selectedAgentId: AgentId | null;
   readonly overlayHome: AgentHomeLens;
   readonly homeLabel: string;
+  readonly onOverview: () => void;
   readonly onHome: () => void;
 };
 
@@ -29,6 +30,7 @@ export const AgentBreadcrumb = ({
   selectedAgentId,
   overlayHome,
   homeLabel,
+  onOverview,
   onHome,
 }: Props) => {
   const { open, close, toggle, containerRef, popupClassName } = useDropdown({
@@ -76,10 +78,12 @@ export const AgentBreadcrumb = ({
   const crumbs = agentOverlayCrumbs({
     homeLabel,
     agentName: selectedAgent?.name ?? null,
+    onOverview,
     onHome,
   });
-  const homeCrumb = crumbs[0]!;
-  const agentCrumb = crumbs[1] ?? null;
+  const overviewCrumb = crumbs[0]!;
+  const homeCrumb = crumbs[1]!;
+  const agentCrumb = crumbs[2] ?? null;
   const canSwitch = siblings.length > 1;
 
   const renderSiblingRow = (agent: Agent) => (
@@ -108,6 +112,15 @@ export const AgentBreadcrumb = ({
 
   return (
     <nav aria-label="Agent breadcrumb" className="flex min-w-0 items-center gap-1">
+      <button
+        type="button"
+        onClick={overviewCrumb.onClick}
+        title={overviewCrumb.label}
+        className={cn(CRUMB_CLASS, 'max-w-40 shrink-0')}
+      >
+        {overviewCrumb.label}
+      </button>
+      <ChevronRight size={11} aria-hidden className="shrink-0 text-muted-foreground/40" />
       <button
         type="button"
         onClick={homeCrumb.onClick}

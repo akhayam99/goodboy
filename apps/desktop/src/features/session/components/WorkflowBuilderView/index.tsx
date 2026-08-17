@@ -683,7 +683,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         mode === 'custom'
           ? (plan?.workflowName ?? 'Custom workflow')
           : mode === 'dynamic'
-            ? 'Orchestrated workflow'
+            ? 'Untitled orchestrated workflow'
             : (selectedPreset?.name ?? basePreset?.name ?? 'Custom workflow'),
         phaseTemplates,
       );
@@ -763,7 +763,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     mode === 'custom'
       ? (plan?.workflowName ?? 'Custom workflow')
       : mode === 'dynamic'
-        ? 'Orchestrated workflow'
+        ? 'Untitled orchestrated workflow'
         : (selectedPreset?.name ?? basePreset?.name ?? 'Workflow');
 
   return (

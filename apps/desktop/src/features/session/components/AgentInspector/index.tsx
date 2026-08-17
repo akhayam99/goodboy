@@ -5,7 +5,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { classifyAgent } from '../../agent-kind';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import { InspectorHeader } from '../SessionWorkspace/parts/InspectorSplit/InspectorHeader';
-import { AgentActionsFooter } from './AgentActionsFooter';
+import { AgentHeaderActions } from './AgentHeaderActions';
 import { CostsSection } from './CostsSection';
 import { IdentitySection } from './IdentitySection';
 
@@ -43,7 +43,19 @@ export const AgentInspector = ({ sessionId, agentId, onClose }: Props) => {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <InspectorHeader title={agent.name} closeLabel="close agent inspector" onClose={onClose} />
+      <InspectorHeader
+        title={agent.name}
+        closeLabel="close agent inspector"
+        actions={
+          <AgentHeaderActions
+            agent={agent}
+            sessionId={sessionId}
+            allowInterrupt
+            onDeleted={onClose}
+          />
+        }
+        onClose={onClose}
+      />
       <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.rail.body}>
         <div className="flex flex-col gap-4">
           <IdentitySection
@@ -61,8 +73,6 @@ export const AgentInspector = ({ sessionId, agentId, onClose }: Props) => {
           />
         </div>
       </ScrollFade>
-      <Divider />
-      <AgentActionsFooter agent={agent} sessionId={sessionId} allowInterrupt onDeleted={onClose} />
     </div>
   );
 };

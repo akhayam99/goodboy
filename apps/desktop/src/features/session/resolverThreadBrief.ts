@@ -1,5 +1,6 @@
 import { resolverReplySummary } from './resolverReplySummary';
 import { resolverThreadDecisions } from './resolverThreadDecisions';
+import { markdownPreview } from '../../shared/utils/markdownPreview';
 import type {
   ResolverThreadSettlement,
   ResolverThreadSettlementKind,
@@ -31,7 +32,7 @@ export const resolverThreadBrief = ({
   prNumber,
   isBusy,
 }: Params): ResolverThreadBrief => {
-  const detail = resolverReplySummary({ text: settlement.reason ?? settlement.reply ?? '' });
+  const detail = markdownPreview({ text: settlement.reason ?? settlement.reply ?? '' });
   const lead = VERDICT_LEAD[settlement.kind];
 
   return {
