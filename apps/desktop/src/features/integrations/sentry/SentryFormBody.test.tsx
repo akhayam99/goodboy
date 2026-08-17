@@ -44,6 +44,15 @@ afterEach(cleanup);
 import { SentryFormBody } from './SentryFormBody';
 
 describe('SentryFormBody', () => {
+  it('offers the token link before the token field', () => {
+    render(<SentryFormBody workspaceId={WS_ID} />);
+
+    const link = screen.getByRole('link', { name: /create a token/i });
+    const field = screen.getByLabelText(/auth token/i);
+
+    expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   describe('connect form (happy path)', () => {
     it('keeps Connect disabled until token, org and project are all filled', () => {
       render(<SentryFormBody workspaceId={WS_ID} />);

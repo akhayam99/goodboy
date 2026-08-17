@@ -53,6 +53,17 @@ afterEach(cleanup);
 
 import { JiraFormBody } from './JiraFormBody';
 
+describe('JiraFormBody credential link', () => {
+  it('offers the token link before the token field', () => {
+    render(<JiraFormBody workspaceId={WS_ID} />);
+
+    const link = screen.getByRole('link', { name: /create a token/i });
+    const field = screen.getByLabelText(/api token/i);
+
+    expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+});
+
 describe('JiraFormBody', () => {
   it('keeps Connect disabled until every field is filled', () => {
     render(<JiraFormBody workspaceId={WS_ID} />);

@@ -92,6 +92,14 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
             <label htmlFor="linear-pat" className="text-xs font-semibold text-foreground">
               Personal access token
             </label>
+            <a
+              href="https://linear.app/settings/account/security"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
+            >
+              Create a token in Linear settings <ExternalLink size={10} aria-hidden />
+            </a>
             <Input
               id="linear-pat"
               type="password"
@@ -101,14 +109,6 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               onChange={(e) => setToken(e.target.value)}
               disabled={busy}
             />
-            <a
-              href="https://linear.app/settings/account/security"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
-            >
-              Create a token in Linear settings <ExternalLink size={10} aria-hidden />
-            </a>
           </div>
           <p className="text-2xs leading-relaxed text-muted-foreground">
             Read-only scope is enough. The token is stored encrypted in your operating system

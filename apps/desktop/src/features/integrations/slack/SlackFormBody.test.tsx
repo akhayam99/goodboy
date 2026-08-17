@@ -43,6 +43,15 @@ afterEach(cleanup);
 import { SlackFormBody } from './SlackFormBody';
 
 describe('SlackFormBody', () => {
+  it('offers the app link before the token field', () => {
+    render(<SlackFormBody workspaceId={WS_ID} />);
+
+    const link = screen.getByRole('link', { name: /create a Slack app/i });
+    const field = screen.getByLabelText(/bot token/i);
+
+    expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it('keeps Connect disabled until a token is pasted', () => {
     render(<SlackFormBody workspaceId={WS_ID} />);
     const connect = screen.getByRole('button', { name: /^connect$/i }) as HTMLButtonElement;

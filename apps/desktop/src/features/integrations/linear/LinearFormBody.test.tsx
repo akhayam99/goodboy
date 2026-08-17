@@ -38,6 +38,15 @@ afterEach(cleanup);
 import { LinearFormBody } from './LinearFormBody';
 
 describe('LinearFormBody', () => {
+  it('offers the token link before the token field', () => {
+    render(<LinearFormBody workspaceId={WS_ID} />);
+
+    const link = screen.getByRole('link', { name: /create a token/i });
+    const field = screen.getByLabelText(/personal access token/i);
+
+    expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   describe('connect form (happy path)', () => {
     it('disables Connect until a non-empty token is entered', () => {
       render(<LinearFormBody workspaceId={WS_ID} />);

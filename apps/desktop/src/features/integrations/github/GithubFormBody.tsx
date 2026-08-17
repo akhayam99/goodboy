@@ -105,6 +105,7 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               : 'Connect a personal access token so Goodboy can resolve PRs for this workspace.'}
           </p>
           <div className="flex flex-col gap-2">
+            <CreateTokenLink />
             <Input
               type="password"
               autoFocus={shouldAutoFocus}
@@ -114,7 +115,6 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               disabled={busy}
               aria-label="GitHub personal access token"
             />
-            <CreateTokenLink />
           </div>
           <p className="text-2xs leading-relaxed text-muted-foreground">
             The token is stored encrypted in your operating system keychain. Goodboy sends it

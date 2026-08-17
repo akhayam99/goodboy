@@ -47,6 +47,15 @@ afterEach(cleanup);
 import { GitlabFormBody } from './GitlabFormBody';
 
 describe('GitlabFormBody', () => {
+  it('offers the token link before the token field', () => {
+    render(<GitlabFormBody workspaceId={WS_ID} />);
+
+    const link = screen.getByRole('link', { name: /create a token/i });
+    const field = screen.getByLabelText(/personal access token/i);
+
+    expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   describe('connect form (happy path)', () => {
     it('disables Connect until a non-empty token is entered', async () => {
       render(<GitlabFormBody workspaceId={WS_ID} />);
