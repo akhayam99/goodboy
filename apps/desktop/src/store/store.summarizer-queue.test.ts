@@ -1,6 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SlotKey } from '@goodboy/core';
-import type { ContextSlot, IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  ContextSlot,
+  IsoDateTime,
+  Session,
+  SessionId,
+  TelemetryRecord,
+  TelemetryRecordId,
+  ProviderRunId,
+  WorkspaceId,
+} from '@goodboy/types';
 
 vi.mock('../features/chat/turn', () => ({
   runTurn: vi.fn(),
@@ -119,6 +128,8 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 });
 
 let dbSlots: ReadonlyArray<ContextSlot> = [];
+let resolveTelemetryList: ((records: ReadonlyArray<TelemetryRecord>) => void) | null = null;
+const listTelemetryForSessionSpy = vi.fn(async () => [] as ReadonlyArray<TelemetryRecord>);
 const upsertContextSlotSpy = vi.fn(
   async (_database: unknown, _sessionId: SessionId, slot: ContextSlot, _author: string) => {
     dbSlots = [...dbSlots.filter((existing) => existing.key !== slot.key), slot];
@@ -138,7 +149,7 @@ vi.mock('@goodboy/db', () => ({
   listContextSlotsForSession: vi.fn(async () => dbSlots),
   listMessagesForSession: vi.fn(async () => []),
   listSessionsForWorkspace: vi.fn(async () => []),
-  listTelemetryForSession: vi.fn(async () => []),
+  listTelemetryForSession: listTelemetryForSessionSpy,
   listWorkspaces: vi.fn(async () => []),
   listWorktreesForTask: vi.fn(async () => []),
   deleteWorktreesForSession: vi.fn(),
@@ -213,6 +224,9 @@ describe('summarizer queue, coalescing and no-stack', () => {
     summarizerUpsertSequence = [];
     summarizerConstructorCalls = [];
     dbSlots = [];
+    resolveTelemetryList = null;
+    listTelemetryForSessionSpy.mockReset();
+    listTelemetryForSessionSpy.mockResolvedValue([]);
     upsertContextSlotSpy.mockClear();
     summarizeSpy.mockResolvedValue(undefined);
   });
@@ -348,6 +362,65 @@ describe('summarizer queue, coalescing and no-stack', () => {
     expect(queue.inFlight).toBe(false);
 
     sq.delete(SESSION_ID);
+  });
+
+  it('keeps telemetry recorded while the summarizer refresh is in flight', async () => {
+    const staleRecord = {
+      id: 'telemetry-old' as TelemetryRecordId,
+      runId: 'run-old' as ProviderRunId,
+      sessionId: SESSION_ID,
+      kind: 'turn',
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-5',
+      inputTokens: 100,
+      outputTokens: 10,
+      cachedInputTokens: 0,
+      cacheCreationInputTokens: 0,
+      estimatedCostUsd: 0.01,
+      recordedAt: NOW,
+    } satisfies TelemetryRecord;
+    const currentRecord = {
+      ...staleRecord,
+      id: 'telemetry-current' as TelemetryRecordId,
+      runId: 'run-current' as ProviderRunId,
+      inputTokens: 200,
+    } satisfies TelemetryRecord;
+    listTelemetryForSessionSpy.mockImplementationOnce(
+      () =>
+        new Promise<ReadonlyArray<TelemetryRecord>>((resolve) => {
+          resolveTelemetryList = resolve;
+        }),
+    );
+
+    const { useAppStore } = await import('./store');
+    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    queues.clear();
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionSlots: { [SESSION_ID]: [] },
+      sessionTelemetry: { [SESSION_ID]: [staleRecord] },
+      summarizerStatus: {},
+      workspaces: [
+        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+      ],
+    });
+
+    enqueueSummarizer(
+      useAppStore.setState,
+      useAppStore.getState,
+      SESSION_ID,
+      'turn input',
+      'turn output',
+    );
+    await vi.waitFor(() => expect(listTelemetryForSessionSpy).toHaveBeenCalledTimes(1));
+    useAppStore.setState({ sessionTelemetry: { [SESSION_ID]: [staleRecord, currentRecord] } });
+    resolveTelemetryList?.([staleRecord]);
+
+    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    expect(useAppStore.getState().sessionTelemetry[SESSION_ID]).toEqual([
+      staleRecord,
+      currentRecord,
+    ]);
   });
 
   it('in-flight + multiple queued coalesces to one pending entry', async () => {

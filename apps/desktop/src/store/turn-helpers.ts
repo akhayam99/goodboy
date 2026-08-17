@@ -121,6 +121,25 @@ type Params = {
   readonly entry: SummarizerQueueEntry;
 };
 
+type MergeTelemetryParams = {
+  readonly refreshed: ReadonlyArray<TelemetryRecord>;
+  readonly current: ReadonlyArray<TelemetryRecord>;
+};
+
+const mergeTelemetry = ({
+  refreshed,
+  current,
+}: MergeTelemetryParams): ReadonlyArray<TelemetryRecord> => {
+  const recordsById = new Map(refreshed.map((record) => [record.id, record]));
+  for (const record of current) {
+    if (recordsById.has(record.id)) {
+      continue;
+    }
+    recordsById.set(record.id, record);
+  }
+  return [...recordsById.values()];
+};
+
 function scheduleIdle(fn: () => void): void {
   if (typeof requestIdleCallback === 'function') {
     requestIdleCallback(() => fn());
@@ -373,7 +392,13 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       },
       sessionSummary,
       workspaceSummary,
-      sessionTelemetry: { ...state.sessionTelemetry, [sessionId]: telemetry },
+      sessionTelemetry: {
+        ...state.sessionTelemetry,
+        [sessionId]: mergeTelemetry({
+          refreshed: telemetry,
+          current: state.sessionTelemetry[sessionId] ?? [],
+        }),
+      },
       summarizerStatus: {
         ...state.summarizerStatus,
         [sessionId]: {
