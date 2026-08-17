@@ -8,12 +8,16 @@ type Props = {
   readonly sessionId: SessionId;
 };
 
+type AnswerParams = {
+  readonly answer: string;
+};
+
 export const TimelineQuestionInset = ({ question, sessionId }: Props) => {
   const answerOpenQuestions = useAppStore((s) => s.answerOpenQuestions);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const requestOpenQuestionScroll = useAppStore((s) => s.requestOpenQuestionScroll);
   const QuestionIcon = CONCEPT_ICONS.questions;
-  const onAnswer = ({ answer }: { readonly answer: string }) => {
+  const onAnswer = ({ answer }: AnswerParams) => {
     void answerOpenQuestions(
       sessionId,
       [{ id: question.id, text: question.text, answer }],

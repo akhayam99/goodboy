@@ -41,7 +41,7 @@ describe('ToolCallCard', () => {
     render(<ToolCallCard item={tool({ ended: false, output: null })} />);
     const icon = screen.getByTestId('tool-state-icon');
     expect(icon.getAttribute('class')).toContain('animate-pulse');
-    expect(icon.getAttribute('class')).toContain('text-warning');
+    expect(icon.getAttribute('class')).toContain('text-info');
   });
 
   it('colors the state icon green once it succeeded', () => {

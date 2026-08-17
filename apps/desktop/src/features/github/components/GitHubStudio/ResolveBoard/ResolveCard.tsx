@@ -1,5 +1,5 @@
 import type { AgentId, ProviderId } from '@goodboy/types';
-import { Button, Checkbox, Chip, cn } from '@goodboy/ui';
+import { Button, Checkbox, Chip, ClampedProse, cn } from '@goodboy/ui';
 import { ArrowUpRight, ChevronDown, ExternalLink, RotateCcw } from 'lucide-react';
 import { modelEffortLevels } from '../../../../chat/utils/chat-constants';
 import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
@@ -58,7 +58,7 @@ export const ResolveCard = ({
           ariaLabel={`Include comment by ${head.author}`}
           className="mt-0.5"
         />
-        <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">{head.author}</span>
             <span className="opacity-50">·</span>
@@ -71,7 +71,7 @@ export const ResolveCard = ({
                 title="This comment is anchored to code that later commits changed"
               />
             ) : null}
-            <div className="ml-auto flex shrink-0 items-center gap-1.5">
+            <div className="flex shrink-0 items-center gap-1.5">
               {link ? <ResolverStateBadge state={resolverBadgeState(link.status)} /> : null}
               {onOpenThread ? (
                 <button
@@ -86,24 +86,28 @@ export const ResolveCard = ({
               ) : null}
             </div>
           </div>
-          <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-sm leading-snug text-foreground [overflow-wrap:anywhere]">
-            {head.body.trim() || '(empty)'}
-          </p>
+          <ClampedProse
+            text={head.body.trim() || '(empty)'}
+            lines={3}
+            className="text-sm leading-snug text-foreground [overflow-wrap:anywhere]"
+          />
 
           {replies.length > 0 && (
-            <div className="mt-2 flex flex-col gap-1.5 border-l border-border-soft pl-2.5">
+            <div className="flex flex-col gap-2 rounded-md bg-subtle px-2.5 py-2">
               {replies.map((r) => (
-                <div key={r.id} className="flex flex-col gap-0.5">
+                <div key={r.id} className="flex flex-col gap-1">
                   <span className="text-2xs font-medium text-muted-foreground">{r.author}</span>
-                  <p className="line-clamp-2 whitespace-pre-wrap text-xs leading-snug text-muted-foreground/80 [overflow-wrap:anywhere]">
-                    {r.body.trim() || '(empty)'}
-                  </p>
+                  <ClampedProse
+                    text={r.body.trim() || '(empty)'}
+                    lines={2}
+                    className="text-xs leading-snug text-muted-foreground/80 [overflow-wrap:anywhere]"
+                  />
                 </div>
               ))}
             </div>
           )}
 
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {claimed && link ? (
               <Button
                 variant="info"

@@ -4,29 +4,37 @@ import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatShortDayMonth } from '../../../../shared/utils/formatShortDayMonth';
 
-function nextMonthlyResetLabel(now = new Date()): string {
+type ResetLabelParams = {
+  readonly now?: Date;
+};
+
+const nextMonthlyResetLabel = ({ now = new Date() }: ResetLabelParams): string => {
   const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   return formatShortDayMonth({ iso: next.getTime() }).toLowerCase();
-}
+};
 
-export const ProviderUsagePill = ({ provider }: { provider: ProviderId }) => {
+type Props = {
+  readonly provider: ProviderId;
+};
+
+export const ProviderUsagePill = ({ provider }: Props) => {
   const breakdown = useAppStore((s) => s.providerSpendBreakdown);
   const entry = breakdown.find((e) => e.provider === provider);
-  if (!entry || entry.capUsd === null || entry.capUsd <= 0) {
+  if (entry == null || entry.capUsd === null || entry.capUsd <= 0) {
     return null;
   }
   const pctUsed = Math.max(0, Math.min(1, entry.pct));
   const pctRemaining = Math.round((1 - pctUsed) * 100);
+  if (pctRemaining > 50) {
+    return null;
+  }
   const tone = (() => {
-    if (pctRemaining > 50) {
-      return 'text-success';
-    }
     if (pctRemaining > 20) {
       return 'text-warning';
     }
     return 'text-danger';
   })();
-  const reset = nextMonthlyResetLabel();
+  const reset = nextMonthlyResetLabel({});
   const tooltip = `${provider}: ${formatUsd(entry.spentUsd)} / ${formatUsd(entry.capUsd)} used (${Math.round(pctUsed * 100)}%) · resets ${reset}`;
   return (
     <span

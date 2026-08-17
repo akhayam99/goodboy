@@ -32,10 +32,10 @@ const runningTool = (
   return null;
 };
 
-const operationsTint = tintClasses('operations');
+const operationsTint = tintClasses('neutral');
 const dangerTint = tintClasses('danger');
 const successTint = tintClasses('success');
-const runningTint = tintClasses('warning');
+const runningTint = tintClasses('info');
 
 export const OperationsCluster = ({
   items,
@@ -82,13 +82,13 @@ export const OperationsCluster = ({
 
   return (
     <TranscriptDisclosure
-      tone="operations"
+      tone="neutral"
       open={open}
       bodyClassName="gap-0.5"
       header={
         <TranscriptRowHeader
           grouped
-          tone="operations"
+          tone="neutral"
           icon={
             <Layers
               size={12}

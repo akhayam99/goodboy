@@ -11,7 +11,7 @@ import { WorkflowStartButton } from './WorkflowStartButton';
 import { CollapsedSummary } from './CollapsedSummary';
 import { WorkflowRow } from './WorkflowRow';
 import { useAgentsSection } from './useAgentsSection';
-import { pluralize } from '../lib';
+import { pluralize } from '../../../../../shared/utils/pluralize';
 
 const FIRST_HEADER_CLASS = 'pb-1.5';
 const SUBSEQUENT_HEADER_CLASS = 'mt-6 pb-1.5';

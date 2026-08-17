@@ -1,6 +1,6 @@
 import { Markdown, MetaRow } from '@goodboy/ui';
 import type { MessageAttachment, ProviderId } from '@goodboy/types';
-import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
+import { PROVIDER_BRAND } from '../../../providers/components/provider-brand';
 import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
 import { readAttachment } from '../../turn';
 import { AttachmentChip } from '../../../attachments/components/AttachmentChip';
@@ -60,9 +60,9 @@ export const UserText = ({ text, at, attachments, provider, model, workingDir = 
   const atts = attachments ?? [];
   return (
     <TranscriptShell
-      tone="info"
+      tone="neutral"
       variant="boxed"
-      className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5"
+      className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 bg-elevated ring-1 ring-border-soft"
     >
       {atts.length > 0 && (
         <div className="flex flex-wrap justify-end gap-1.5">
@@ -112,7 +112,7 @@ const ProviderFootnote = ({ provider, model }: ProviderFootnoteProps) => {
       className="inline-flex items-center gap-1"
       title={`Sent to ${label}${model ? ` · ${modelLabel(model)}` : ''}`}
     >
-      <Icon size={11} aria-hidden style={{ color: brandColor(provider) }} />
+      <Icon size={11} className="text-muted-foreground" aria-hidden />
       <span>{label}</span>
     </span>
   );

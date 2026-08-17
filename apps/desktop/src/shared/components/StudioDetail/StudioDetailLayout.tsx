@@ -51,13 +51,11 @@ export const StudioDetailLayout = ({
         <Divider />
       </div>
       <div className={cn('flex min-w-0 flex-col', isFlow ? 'gap-4' : 'min-h-0 flex-1')}>
-        {isFlow ? <div className={cn('flex flex-col', PANE_RHYTHM.stack)}>{children}</div> : null}
+        {isFlow ? <div className={PANE_RHYTHM.stack}>{children}</div> : null}
         {fit === 'bleed' ? <div className="flex min-h-0 flex-1 flex-col">{children}</div> : null}
         {fit === 'fill' ? (
           <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-            <div className={cn('flex flex-col', PANE_RHYTHM.column, PANE_RHYTHM.stack, measure)}>
-              {children}
-            </div>
+            <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.stack, measure)}>{children}</div>
           </ScrollFade>
         ) : null}
         {dock != null ? <Divider /> : null}

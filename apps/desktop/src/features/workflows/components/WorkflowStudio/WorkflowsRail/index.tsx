@@ -12,8 +12,6 @@ type Props = {
   readonly setConfirmReset: (value: boolean) => void;
   readonly onSelect: (t: Workflow) => void;
   readonly onNew: () => void;
-  readonly onDuplicate: (t: Workflow) => void;
-  readonly onDelete: (t: Workflow) => void;
   readonly onReset: () => void;
 };
 
@@ -25,8 +23,6 @@ export const WorkflowsRail = ({
   setConfirmReset,
   onSelect,
   onNew,
-  onDuplicate,
-  onDelete,
   onReset,
 }: Props) => {
   return (
@@ -65,8 +61,6 @@ export const WorkflowsRail = ({
                 template={t}
                 active={t.id === activeId}
                 onSelect={() => onSelect(t)}
-                onDuplicate={() => onDuplicate(t)}
-                onDelete={() => onDelete(t)}
               />
             ))}
           </ul>

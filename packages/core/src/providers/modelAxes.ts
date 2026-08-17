@@ -9,6 +9,7 @@ import type {
   ToggleAxis,
   VariantAxis,
 } from '@goodboy/types';
+import { MODEL_CATALOGS } from './catalogs';
 import { ANTHROPIC_CATALOG } from './claude/catalog';
 import { resolveCursorCombo } from './cursorCombo';
 import { EFFORT_ORDER } from './effortOrder';
@@ -37,6 +38,10 @@ type EffortParams = {
   readonly efforts: ReadonlyArray<EffortLevel>;
 };
 
+type SelectionAxesParams = {
+  readonly model: CatalogModel;
+};
+
 type CursorParams = {
   readonly model: CursorModel;
   readonly selection: ModelSelection;
@@ -51,6 +56,47 @@ const effortAxis = ({ label, efforts }: EffortParams): EffortAxis => {
   return {
     label,
     levels: efforts.map((level) => ({ level, available: true })),
+  };
+};
+
+const unavailableEffortAxis = (): EffortAxis => ({ label: 'Effort', levels: [] });
+
+const selectionAxes = ({ model }: SelectionAxesParams) => {
+  const catalog = [...MODEL_CATALOGS[model.provider]].sort(
+    (left, right) => left.presentation.order - right.presentation.order,
+  );
+  const groupModels = new Map<string, CatalogModel>();
+  for (const candidate of catalog) {
+    const group = candidate.presentation.group ?? candidate.presentation.version;
+    if (groupModels.has(group) === false) {
+      groupModels.set(group, candidate);
+    }
+  }
+  const activeGroup = model.presentation.group ?? model.presentation.version;
+  return {
+    model: {
+      label: 'Model',
+      options: [...groupModels.entries()].map(([label, candidate]) => ({
+        id: label,
+        label,
+        modelKey: candidate.key,
+      })),
+      activeId: activeGroup,
+    },
+    version: {
+      label: 'Model Version',
+      options: catalog
+        .filter(
+          (candidate) =>
+            (candidate.presentation.group ?? candidate.presentation.version) === activeGroup,
+        )
+        .map((candidate) => ({
+          id: candidate.key,
+          label: candidate.presentation.version,
+          modelKey: candidate.key,
+        })),
+      activeId: model.key,
+    },
   };
 };
 
@@ -97,8 +143,9 @@ const cursorAxes = ({ model, selection }: CursorParams): ModelAxes => {
       }
     : null;
   return {
-    effort,
-    variant: null,
+    ...selectionAxes({ model }),
+    effort: effort ?? unavailableEffortAxis(),
+    variant: { label: 'Variant', options: [], activeId: null },
     toggles: cursorToggles({ model, selection, thinking, fast }),
     requiresMaxMode: resolveCursorCombo({ model, selection }).maxMode,
   };
@@ -109,14 +156,14 @@ type VariantParams = {
   readonly selection: ModelSelection;
 };
 
-const variantAxis = ({ model, selection }: VariantParams): VariantAxis | null => {
+const variantAxis = ({ model, selection }: VariantParams): VariantAxis => {
   if (model.variants.length <= 1) {
-    return null;
+    return { label: 'Variant', options: [], activeId: null };
   }
   const active =
     model.variants.find((variant) => variant.id === selection.variant) ?? model.variants[0];
   if (active == null) {
-    return null;
+    return { label: 'Variant', options: [], activeId: null };
   }
   return {
     label: 'Variant',
@@ -126,9 +173,11 @@ const variantAxis = ({ model, selection }: VariantParams): VariantAxis | null =>
 };
 
 export const modelAxes = ({ model, selection }: Params): ModelAxes => {
+  const selections = selectionAxes({ model });
   switch (model.provider) {
     case 'anthropic':
       return {
+        ...selections,
         effort:
           model.efforts.length > 0
             ? {
@@ -138,13 +187,14 @@ export const modelAxes = ({ model, selection }: Params): ModelAxes => {
                   available: model.efforts.includes(level),
                 })),
               }
-            : null,
-        variant: null,
+            : unavailableEffortAxis(),
+        variant: { label: 'Variant', options: [], activeId: null },
         toggles: [],
         requiresMaxMode: false,
       };
     case 'codex':
       return {
+        ...selections,
         effort: effortAxis({ label: 'Effort', efforts: model.efforts }),
         variant: variantAxis({ model, selection }),
         toggles: [],
@@ -157,8 +207,9 @@ export const modelAxes = ({ model, selection }: Params): ModelAxes => {
     case 'openrouter':
     case 'moonshot':
       return {
+        ...selections,
         effort: effortAxis({ label: 'Effort', efforts: model.efforts }),
-        variant: null,
+        variant: { label: 'Variant', options: [], activeId: null },
         toggles: [],
         requiresMaxMode: false,
       };

@@ -1475,7 +1475,7 @@ exports[`snapshot, error states > SessionOverviewLoading: silent skeleton before
   >
     <div
       aria-label="Loading session overview"
-      class="flex flex-col mx-auto w-full gap-5 max-w-5xl"
+      class="mx-auto w-full flex flex-col gap-5 max-w-5xl"
       role="status"
     >
       <div
@@ -1648,11 +1648,15 @@ exports[`snapshot, error states > TranscriptCard: turn error item 1`] = `
   <div
     class="flex min-w-0 flex-1 flex-col gap-1"
   >
-    <p
-      class="min-w-0 break-words leading-relaxed text-danger"
+    <div
+      class="flex flex-col gap-1 min-w-0 break-words text-xs leading-relaxed text-danger"
     >
-      provider failed to respond
-    </p>
+      <p
+        class="leading-relaxed wrap-anywhere"
+      >
+        provider failed to respond
+      </p>
+    </div>
   </div>
 </div>
 `;

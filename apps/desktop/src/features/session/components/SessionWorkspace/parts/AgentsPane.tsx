@@ -1,6 +1,3 @@
-import { useState } from 'react';
-import { CircleCheck } from 'lucide-react';
-import { CountToggle } from '@goodboy/ui';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { AgentInspector } from '../../AgentInspector';
 import { CreateAgentPopover } from '../../CreateAgentPopover';
@@ -13,20 +10,10 @@ type Props = {
   readonly meta: string | undefined;
   readonly inspectedAgentId: AgentId | null;
   readonly onInspectAgent: (agentId: AgentId | null) => void;
-  readonly showCompleted: boolean;
-  readonly onShowCompletedChange: (showCompleted: boolean) => void;
 };
 
-export const AgentsPane = ({
-  session,
-  meta,
-  inspectedAgentId,
-  onInspectAgent,
-  showCompleted,
-  onShowCompletedChange,
-}: Props) => {
+export const AgentsPane = ({ session, meta, inspectedAgentId, onInspectAgent }: Props) => {
   const sessionId = session.id as SessionId;
-  const [completedCount, setCompletedCount] = useState(0);
 
   return (
     <InspectorSplit
@@ -52,20 +39,7 @@ export const AgentsPane = ({
           variant="lens"
           inspectedAgentId={inspectedAgentId}
           onInspectAgent={(agentId) => onInspectAgent(agentId)}
-          showCompleted={showCompleted}
-          onCompletedCountChange={setCompletedCount}
-          filedToggle={
-            <div className="flex justify-center">
-              <CountToggle
-                label="Completed"
-                itemsLabel="agents"
-                count={completedCount}
-                isShown={showCompleted}
-                icon={CircleCheck}
-                onChange={onShowCompletedChange}
-              />
-            </div>
-          }
+          showCompleted
         />
       </PaneShell>
     </InspectorSplit>
