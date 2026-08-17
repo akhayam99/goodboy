@@ -11,6 +11,12 @@ below has been "fixed" at least once and had to be put back.
 
 ## Deliberate dead ends
 
+- Claude and Cursor report a turn's cumulative billing usage on the final
+  `result`, but the live context size comes from the last `assistant` message.
+  A tool-heavy turn emits several assistant messages, so using the first one or
+  the final billing totals makes the context bar increasingly wrong as the turn
+  continues. `parseAnthropicEnvelopeLine` deliberately retains the last
+  assistant usage and attaches that value to the result event.
 - `fetchIssueCandidates` returns `[]` for Bitbucket, and `issueSources.ts`
   has no Bitbucket entry. Goodboy deliberately does not expose Bitbucket
   issues, because Atlassian points issues at Jira. Adding the source entry

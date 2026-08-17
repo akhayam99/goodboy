@@ -333,9 +333,26 @@ export const invokeStepDefDelete = async (id: StepDefId): Promise<void> => {
   return invoke<void>('step_def_delete', { id });
 };
 
+const agentListRequestTails = new Map<SessionId, Promise<void>>();
+
 export const invokeAgentList = async (sessionId: SessionId): Promise<Agent[]> => {
-  const rows = await invoke<RawAgentRow[]>('agent_list_for_session', { sessionId });
-  return rows.map(rowToAgent);
+  const previous = agentListRequestTails.get(sessionId) ?? Promise.resolve();
+  const request = previous.then(async () => {
+    const rows = await invoke<RawAgentRow[]>('agent_list_for_session', { sessionId });
+    return rows.map(rowToAgent);
+  });
+  const tail = request.then(
+    () => undefined,
+    () => undefined,
+  );
+  agentListRequestTails.set(sessionId, tail);
+  try {
+    return await request;
+  } finally {
+    if (agentListRequestTails.get(sessionId) === tail) {
+      agentListRequestTails.delete(sessionId);
+    }
+  }
 };
 
 export type AgentInsertArgs = {
