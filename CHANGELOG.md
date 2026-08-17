@@ -7,6 +7,82 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.82
+
+Goodboy fast-forwards your checkout without a terminal, tells you when it cannot
+read your repository instead of calling it in sync, and the first-run checklist
+finally agrees with the app around it.
+
+### [#1419] Repository status says when it cannot read your checkout, and offers a fast-forward
+
+Goodboy used to report "In sync and clean" whenever it could not work out the
+state of your repository, so a failed read looked exactly like a healthy one. It
+now says it cannot read the checkout and names what went wrong: git could not
+compare this branch with its upstream, git could not resolve a main branch to
+compare against, or git status could not be read.
+
+A file in conflict used to count twice, once as staged and once as unstaged. It
+counts once now, as conflicted, and a merge, rebase, cherry-pick or bisect left
+in progress shows in the panel now, where nothing read it before.
+
+When your branch is behind its upstream and the tree is clean, the checkout
+panel offers a fast-forward that names the branch and the upstream it will move.
+It never rebases and never stashes. When it cannot run, the control stays
+visible and disabled with the reason on it: uncommitted changes, no upstream, an
+operation in progress, a status Goodboy could not read, or a branch already up
+to date. A checkout Goodboy cannot read disables it exactly like a dirty one.
+
+Follow-up: the fast-forward is pinned by tests that run it against real clones,
+though no pull has been run from a packaged build yet. If git refuses, its own
+message comes back in the checkout panel.
+
+### [#1416] The first-run checklist matches the app it opens beside
+
+The setup checklist used to open at "0 of 7 steps done" with "Connect a
+workspace" unticked, next to a header naming the workspace you had just created.
+It now counts what the app already has the moment it opens, so a workspace, a
+code host, a connected tool, a session, an agent and a plan tick as soon as they
+exist, and a step that has ticked stays ticked even if you later delete the
+thing that earned it.
+
+The wizard's progress dots mark where you are, distinct from what is done and
+what is still ahead, one dot per screen you will actually see and no fraction
+anywhere. Two of those screens, the tools step and the Sentry step, count toward
+the same checklist entry, so connecting any one tool ticks both.
+
+### [#1418] Archive and delete move to the session header
+
+Archive, unarchive and delete used to sit at the bottom of the session rail
+behind their own inline confirm and a single flat warning. They now live in a
+Session actions menu in the session header, beside the editor and git actions,
+and they route through the same confirm the keyboard shortcuts use, whose
+warning differs for a session with a branch and one without. Two clicks to
+confirm and Escape to dismiss, both unchanged.
+
+A failed archive or delete reports inside the confirm now instead of as a toast.
+
+### [#1422] Connect Slack while setting up
+
+The first-run tools step offers Slack beside Linear and Jira, and connecting it
+completes the setup step the same way a tracker does. That step is now called
+Connect your tools, since it no longer covers trackers alone.
+
+A connect that failed partway used to leave a Slack token in your keychain that
+no screen in the app could remove. A failed connect now leaves nothing behind in
+the keychain and puts the previous connection's record back, so you can
+reconnect or disconnect it.
+
+### Smaller fixes
+
+- A run paused by the session budget offered two controls that opened the same
+  budget screen, and now offers one [#1417]
+- The first-run screens with no workspace to show use the same empty state as
+  the rest of the app [#1420]
+- Push and rebase are offered only when Goodboy knows how far ahead or behind
+  the branch is [#1419]
+- A remote address carrying a token no longer appears in git error text [#1419]
+- `docs/concepts.md` and `docs/traps.md` now match the app that shipped [#1421]
+
 ## Goodboy v0.1.81
 
 Goodboy reaches the board without waiting on provider detection, and the
