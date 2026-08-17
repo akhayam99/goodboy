@@ -227,7 +227,9 @@ describe('RoutingPicker', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const providerRow = screen.getByRole('button', { name: 'Cursor' }).parentElement;
-    expect(providerRow?.querySelectorAll('svg')).toHaveLength(baseProps.connectedProviders.length);
+    expect(providerRow?.querySelectorAll('svg')).toHaveLength(
+      baseProps.connectedProviders.length + 1,
+    );
   });
 
   it('reports the picked model and keeps the popover open', () => {
@@ -291,7 +293,7 @@ describe('RoutingPicker', () => {
     expect(within(modes).getByRole('button', { name: 'Fast' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
-    expect(modes.className).toContain('justify-center');
+    expect(modes.className).toContain('justify-end');
   });
 
   it('reports the picked effort and keeps the popover open', () => {
@@ -386,18 +388,27 @@ describe('RoutingPicker', () => {
     ).toEqual(['Low', 'High']);
   });
 
-  it('keeps unavailable variant and effort levels visible and disabled for Haiku', () => {
+  it('omits variant and effort rows that Haiku does not have', () => {
     render(<RoutingPicker {...baseProps} model="haiku-4.5" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const modelOptions = screen.getByRole('region', { name: 'Model options' });
-    const effort = within(modelOptions).getByRole('group', { name: 'Effort' });
-    const variant = within(modelOptions).getByRole('group', { name: 'Variant' });
-    expect(
-      within(effort).getByRole('button', { name: 'Not available' }).hasAttribute('disabled'),
-    ).toBe(true);
-    expect(
-      within(variant).getByRole('button', { name: 'Not available' }).hasAttribute('disabled'),
-    ).toBe(true);
+    expect(within(modelOptions).queryByRole('group', { name: 'Effort' })).toBeNull();
+    expect(within(modelOptions).queryByRole('group', { name: 'Variant' })).toBeNull();
+  });
+
+  it('omits the Variant row for Opus 5 while keeping its Effort row', () => {
+    render(<RoutingPicker {...baseProps} />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const modelOptions = screen.getByRole('region', { name: 'Model options' });
+    expect(within(modelOptions).queryByRole('group', { name: 'Variant' })).toBeNull();
+    expect(within(modelOptions).getByRole('group', { name: 'Effort' })).toBeDefined();
+  });
+
+  it('omits the version row for a model without a version axis', () => {
+    render(<RoutingPicker {...baseProps} provider="cursor" model="auto" />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const modelOptions = screen.getByRole('region', { name: 'Model options' });
+    expect(within(modelOptions).queryByRole('group', { name: 'Model Version' })).toBeNull();
   });
 
   it('shows a Max Mode advisory after failure and clears it after success', () => {
@@ -481,15 +492,21 @@ describe('RoutingPicker', () => {
     expect(within(models).getByRole('button', { name: 'Auto' })).toBeDefined();
   });
 
-  it('centers variant and effort controls inside the tuning control area', () => {
+  it('aligns every model axis to the end of its row', () => {
     render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-terra" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const model = screen.getByRole('group', { name: 'Model' });
+    const version = screen.getByRole('group', { name: 'Model Version' });
     const variant = screen.getByRole('button', { name: 'Terra' }).parentElement;
     const effort = screen.getByRole('group', { name: 'Effort' });
-    expect(variant?.className).toContain('justify-center');
-    expect(variant?.parentElement?.className).toContain('justify-center');
-    expect(effort.className).toContain('justify-center');
-    expect(effort.parentElement?.className).toContain('justify-center');
+    expect(
+      [model, version, variant, effort].every((group) => group?.className.includes('justify-end')),
+    ).toBe(true);
+    expect(
+      [model, version, variant, effort].every((group) =>
+        group?.parentElement?.className.includes('justify-end'),
+      ),
+    ).toBe(true);
   });
 
   it('offers verbosity only when the caller wires it', () => {
@@ -506,6 +523,18 @@ describe('RoutingPicker', () => {
     expect(screen.getByRole('button', { name: 'Claude' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Codex' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Cursor' })).toBeNull();
+  });
+
+  it('links the connected provider row to the in-app Providers surface', () => {
+    render(<RoutingPicker {...baseProps} connectedProviders={['anthropic']} />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const addProvider = screen.getByRole('button', { name: 'Add provider' });
+    const onOpenProviderStudio = vi.fn();
+    window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
+    fireEvent.click(addProvider);
+    window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
+    expect(onOpenProviderStudio).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog', { name: 'routing' })).toBeNull();
   });
 
   it('keeps a disconnected selection visible and marked', () => {
