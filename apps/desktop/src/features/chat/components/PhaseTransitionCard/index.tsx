@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, Milestone } from 'lucide-react';
-import { Markdown, tintClasses } from '@goodboy/ui';
+import { Button, Markdown, tintClasses } from '@goodboy/ui';
+import { useAppStore } from '../../../../store';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
 import { formatDuration } from '../../utils/format-duration';
@@ -15,10 +16,26 @@ type Props = {
 };
 
 export const PhaseTransitionCard = ({ item }: Props) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(item.degraded === true);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const retryStepSummary = useAppStore((state) => state.retryStepSummary);
   const timestamp = formatCardTime(item.at);
   const context = stripWorkflowHandoffHeading({ context: item.carryForwardContext });
   const hasContext = context.trim().length > 0;
+  const canRetry = item.sessionId != null && item.fromAgentId != null;
+  const retry = async () => {
+    const sessionId = item.sessionId;
+    const agentId = item.fromAgentId;
+    if (sessionId == null || agentId == null || isRetrying) {
+      return;
+    }
+    setIsRetrying(true);
+    try {
+      await retryStepSummary({ sessionId, agentId });
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   return (
     <TranscriptDisclosure
@@ -64,6 +81,25 @@ export const PhaseTransitionCard = ({ item }: Props) => {
         />
       }
     >
+      {item.degraded === true ? (
+        <div className={`flex flex-col gap-2 rounded-md p-3 text-xs ${warningTint.bg}`}>
+          <span className={warningTint.text}>
+            The summary failed, so this step received a deterministic copy of the previous output.
+            Long output omits its middle. A retry repairs the summary for later steps, but cannot
+            replace context already sent to this step.
+          </span>
+          <Button
+            variant="warning"
+            emphasis="outline"
+            size="sm"
+            disabled={!canRetry || isRetrying}
+            onClick={() => void retry()}
+            className="self-start"
+          >
+            {isRetrying ? 'Retrying summary' : 'Retry summary'}
+          </Button>
+        </div>
+      ) : null}
       <span className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
         carried forward
       </span>

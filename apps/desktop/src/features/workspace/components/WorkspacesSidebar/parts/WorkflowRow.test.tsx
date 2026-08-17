@@ -202,6 +202,7 @@ const renderDetail = ({
       onResolveFirstForRun={vi.fn()}
       toggleClusterExpand={vi.fn()}
       skipStuckStepAndAdvance={vi.fn(async () => undefined)}
+      recoverStuckStep={vi.fn(async () => undefined)}
     />,
   );
 

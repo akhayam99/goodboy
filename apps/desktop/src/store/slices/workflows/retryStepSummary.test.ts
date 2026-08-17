@@ -66,6 +66,7 @@ type State = {
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   transcripts: Record<string, ReadonlyArray<{ kind: string; delta?: string }>>;
   workspaceOverrides: Record<string, unknown>;
+  emitNotification: ReturnType<typeof vi.fn>;
 };
 
 const buildHarness = (stateOverrides: Partial<State> = {}) => {
@@ -84,6 +85,7 @@ const buildHarness = (stateOverrides: Partial<State> = {}) => {
       ],
     },
     workspaceOverrides: {},
+    emitNotification: vi.fn(async () => undefined),
     ...stateOverrides,
   };
   const set = vi.fn();
@@ -133,6 +135,7 @@ describe('retryStepSummary', () => {
       sessionPhaseRuns: { [SESSION_ID]: [agent] },
       transcripts: { [AGENT_ID]: [{ kind: 'assistant_text', delta: 'output' }] },
       workspaceOverrides: {},
+      emitNotification: vi.fn(async () => undefined),
     };
     const get = (() => state) as unknown as Parameters<typeof retryStepSummary>[1];
     const retry = retryStepSummary(set as unknown as Parameters<typeof retryStepSummary>[0], get);

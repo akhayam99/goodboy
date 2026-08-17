@@ -26,6 +26,7 @@ type Store = {
   agentEffortOverride: Record<string, string>;
   activateWorkflowAgent: ReturnType<typeof vi.fn>;
   skipStuckStepAndAdvance: ReturnType<typeof vi.fn>;
+  recoverStuckStep: ReturnType<typeof vi.fn>;
   emitNotification: ReturnType<typeof vi.fn>;
 };
 
@@ -39,6 +40,7 @@ const { store, gate } = vi.hoisted(() => ({
     agentEffortOverride: {},
     activateWorkflowAgent: vi.fn(async () => undefined),
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
+    recoverStuckStep: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
   } as Store,
   gate: { hasOpenQuestions: false },
@@ -116,6 +118,8 @@ beforeEach(() => {
   store.activateWorkflowAgent.mockReset();
   store.activateWorkflowAgent.mockResolvedValue(undefined);
   store.skipStuckStepAndAdvance.mockReset();
+  store.recoverStuckStep.mockReset();
+  store.recoverStuckStep.mockResolvedValue(undefined);
   store.emitNotification.mockReset();
   store.emitNotification.mockResolvedValue(undefined);
   gate.hasOpenQuestions = false;
@@ -178,6 +182,19 @@ describe('ChatWorkflowAdvance', () => {
     expect(store.skipStuckStepAndAdvance).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
       onlyWhenBlocked: true,
     });
+  });
+
+  it('asks the failed agent to check completion without skipping its output', () => {
+    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'failed'), agent(1, 'pending')] };
+    renderStrip();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Check completion' }));
+
+    expect(store.recoverStuckStep).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+    });
+    expect(store.skipStuckStepAndAdvance).not.toHaveBeenCalled();
   });
 
   it('renders nothing at all while autorun drives the run, controls live on the run card', () => {

@@ -58,6 +58,16 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
       ...(worktreePath != null && { workingDir: worktreePath }),
       ...(expectedOutput !== '' && { expectedOutput }),
     });
+    if (result.degraded) {
+      void get().emitNotification(
+        'summarizer-degraded',
+        'warning',
+        'step summary retry failed',
+        result.error ?? 'summarization failed',
+        { sessionId, action: { kind: 'retry-step-summary', sessionId, agentId } },
+      );
+      return;
+    }
     await invokeAgentUpdateStatus(agentId, { status: 'completed', outputSummary: result.summary });
 
     set((state) => ({
@@ -68,5 +78,12 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
         ),
       },
     }));
+    void get().emitNotification(
+      'summarizer-success',
+      'success',
+      'step summary repaired',
+      'later workflow steps will use the repaired handoff.',
+      { sessionId },
+    );
   };
 };

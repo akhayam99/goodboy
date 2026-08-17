@@ -85,6 +85,7 @@ type Props = {
   readonly onResolveFirstForRun: (run: WorkflowRun) => void;
   readonly toggleClusterExpand: (id: string) => void;
   readonly skipStuckStepAndAdvance: AppStore['skipStuckStepAndAdvance'];
+  readonly recoverStuckStep: AppStore['recoverStuckStep'];
 };
 
 const isRunning = (agent: Agent): boolean => agent.status === 'running';
@@ -130,6 +131,7 @@ export const WorkflowRow = ({
   onResolveFirstForRun,
   toggleClusterExpand,
   skipStuckStepAndAdvance,
+  recoverStuckStep,
 }: Props) => {
   const roleModels = useSessionRoleModels({ sessionId: task.id });
   const isOrchestrating = useAppStore((s) => s.orchestratingWorkflowRuns?.[run.id] ?? false);
@@ -428,6 +430,7 @@ export const WorkflowRow = ({
                 onForceAdvance={() =>
                   void skipStuckStepAndAdvance(task.id, run.id, { onlyWhenBlocked: true })
                 }
+                onRecover={() => recoverStuckStep({ sessionId: task.id, workflowRunId: run.id })}
               />
             </div>
           ) : null}

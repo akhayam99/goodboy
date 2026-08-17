@@ -34,6 +34,7 @@ export const ChatWorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
   const roleModels = useSessionRoleModels({ sessionId });
   const activateWorkflowAgent = useAppStore((state) => state.activateWorkflowAgent);
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
+  const recoverStuckStep = useAppStore((state) => state.recoverStuckStep);
   const emitNotification = useAppStore((state) => state.emitNotification);
 
   const stepAgents = useMemo(
@@ -114,6 +115,7 @@ export const ChatWorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
       onForceAdvance={() =>
         void skipStuckStepAndAdvance(sessionId, workflowRunId, { onlyWhenBlocked: true })
       }
+      onRecover={() => recoverStuckStep({ sessionId, workflowRunId })}
       className="ml-auto shrink-0"
     />
   );

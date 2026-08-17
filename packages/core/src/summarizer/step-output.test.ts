@@ -89,6 +89,35 @@ describe('summarizeStepOutput', () => {
     expect(systemPrompt).toContain('File paths touched');
   });
 
+  it('bounds long output before invoking the summarizer and preserves its end', async () => {
+    let request: Record<string, unknown> | undefined;
+    const invokeFn: SummarizerDeps['invokeFn'] = async <T>(
+      _cmd: string,
+      args?: Record<string, unknown>,
+    ): Promise<T> => {
+      request = args;
+      return { stdout: 'Bounded the handoff input.', stderr: '', exitCode: 0 } as T;
+    };
+    const output = `${'h'.repeat(130_000)}TAIL_BLOCKER`;
+
+    await summarizeStepOutput({
+      providerId: 'cursor',
+      model: 'composer-2-fast',
+      invokeFn,
+      output,
+    });
+    const args = request?.['args'];
+    const userMessage =
+      typeof args === 'object' && args !== null && 'userMessage' in args
+        ? String(args.userMessage)
+        : '';
+
+    expect(userMessage.length).toBe(120_000);
+    expect(userMessage.startsWith('h'.repeat(100_000))).toBe(true);
+    expect(userMessage).toContain('middle output omitted to fit the summarizer input budget');
+    expect(userMessage.endsWith('TAIL_BLOCKER')).toBe(true);
+  });
+
   it('parses the anthropic result envelope', async () => {
     const invokeFn: SummarizerDeps['invokeFn'] = async <T>(): Promise<T> => {
       return {
