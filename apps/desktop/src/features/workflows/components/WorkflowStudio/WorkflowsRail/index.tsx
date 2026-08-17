@@ -7,12 +7,12 @@ import { PresetCard } from '../../PresetCard';
 type Props = {
   readonly presets: ReadonlyArray<Workflow>;
   readonly activeId: WorkflowId | null;
-  readonly editing: Workflow | null | 'new';
   readonly resetting: boolean;
   readonly confirmReset: boolean;
   readonly setConfirmReset: (value: boolean) => void;
   readonly onSelect: (t: Workflow) => void;
   readonly onNew: () => void;
+  readonly onDuplicate: (t: Workflow) => void;
   readonly onDelete: (t: Workflow) => void;
   readonly onReset: () => void;
 };
@@ -20,12 +20,12 @@ type Props = {
 export const WorkflowsRail = ({
   presets,
   activeId,
-  editing,
   resetting,
   confirmReset,
   setConfirmReset,
   onSelect,
   onNew,
+  onDuplicate,
   onDelete,
   onReset,
 }: Props) => {
@@ -35,20 +35,14 @@ export const WorkflowsRail = ({
         <SectionHeader
           label={`Presets (${presets.length})`}
           action={
-            presets.length > 0 && editing != null ? (
-              <button
-                type="button"
-                onClick={onNew}
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-2xs font-medium transition-colors',
-                  editing === 'new'
-                    ? 'border-primary/30 bg-primary/10 text-foreground'
-                    : 'border-border-soft text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground',
-                )}
-              >
-                <Plus size={11} aria-hidden /> New
-              </button>
-            ) : null
+            <button
+              type="button"
+              onClick={onNew}
+              aria-label="New workflow"
+              className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
+            >
+              <Plus size={11} aria-hidden /> New
+            </button>
           }
         />
       </div>
@@ -70,8 +64,8 @@ export const WorkflowsRail = ({
                 key={t.id}
                 template={t}
                 active={t.id === activeId}
-                approved={t.isPreset !== false}
                 onSelect={() => onSelect(t)}
+                onDuplicate={() => onDuplicate(t)}
                 onDelete={() => onDelete(t)}
               />
             ))}

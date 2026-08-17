@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
-import { Button, Divider, FieldRow, Input, SectionHeader, ScrollFade, cn } from '@goodboy/ui';
-import { Check, Plus, X } from 'lucide-react';
+import { Button, Divider, Input, SectionHeader, ScrollFade } from '@goodboy/ui';
+import { Check, Copy, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { recommendedModelForRole } from '@goodboy/core';
 import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
 import type { StepDefUpsertArgs } from '../../../workflows';
@@ -10,16 +10,10 @@ import { ROLE_TO_KIND } from '../../../../session/agent-kind';
 import { WorkflowStepCard } from '../../../../session/components/WorkflowStepCard';
 import { StepFlowConnector } from '../StepFlowConnector';
 import { StepLibraryPalette } from '../StepLibraryPalette';
-import { EmptyGuide } from '../EmptyGuide';
 import { useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
-  readonly open: boolean;
-  readonly isNew: boolean;
-  readonly approved: boolean;
-  readonly onToggleApproved: (next: boolean) => void;
-  readonly hasPresets: boolean;
   readonly form: TemplateForm;
   readonly workspaceId: WorkspaceId;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
@@ -27,12 +21,12 @@ type Props = {
   readonly expandedIdx: number | null;
   readonly saving: boolean;
   readonly error: string | null;
-  readonly formatting: boolean;
-  readonly canFormat: boolean;
-  readonly onOpenFormat: () => void;
   readonly dragging: boolean;
   readonly dropIndex: number | null;
-  readonly onNew: () => void;
+  readonly confirmingReset: boolean;
+  readonly generating: boolean;
+  readonly canGenerate: boolean;
+  readonly onConfirmingReset: (value: boolean) => void;
   readonly onChangeMeta: (
     patch: Partial<Pick<TemplateForm, 'name' | 'description' | 'goal'>>,
   ) => void;
@@ -46,15 +40,14 @@ type Props = {
   readonly onStartStepDrag: (fromIndex: number, label: string, e: React.PointerEvent) => void;
   readonly onSaveDef: (args: StepDefUpsertArgs) => void;
   readonly onDeleteDef: (id: StepDefId) => void;
+  readonly onDuplicate: () => void;
+  readonly onDelete: () => void;
+  readonly onGenerate: () => void;
+  readonly onReset: () => void;
   readonly onClose: () => void;
 };
 
 export const WorkflowComposer = ({
-  open,
-  isNew,
-  approved,
-  onToggleApproved,
-  hasPresets,
   form,
   workspaceId,
   connectedProviders,
@@ -62,12 +55,12 @@ export const WorkflowComposer = ({
   expandedIdx,
   saving,
   error,
-  formatting,
-  canFormat,
-  onOpenFormat,
   dragging,
   dropIndex,
-  onNew,
+  confirmingReset,
+  generating,
+  canGenerate,
+  onConfirmingReset,
   onChangeMeta,
   onAddBlank,
   onToggleExpand,
@@ -79,22 +72,14 @@ export const WorkflowComposer = ({
   onStartStepDrag,
   onSaveDef,
   onDeleteDef,
+  onDuplicate,
+  onDelete,
+  onGenerate,
+  onReset,
   onClose,
 }: Props) => {
   const roleModels = useAppStore((s) => s.workspaceOverrides?.[workspaceId]?.roleModels ?? null);
-  if (!open) {
-    return (
-      <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
-        <EmptyGuide onNew={onNew} hasPresets={hasPresets} />
-      </section>
-    );
-  }
-
   const stepCount = form.steps.length;
-  const title = form.name.trim() || (isNew ? 'New workflow' : 'Untitled workflow');
-  const subtitle = [`${stepCount} ${stepCount === 1 ? 'step' : 'steps'}`, form.description.trim()]
-    .filter(Boolean)
-    .join('  ·  ');
   const savedHint = saving ? 'Saving…' : 'Saved';
 
   const defaultProvider: ProviderId =
@@ -118,24 +103,27 @@ export const WorkflowComposer = ({
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1">
       <section className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className="mx-auto flex w-full max-w-2xl shrink-0 items-center gap-4 px-6 py-4">
-          <div className="flex min-w-0 flex-col">
-            <span className="flex items-center gap-2 truncate text-base font-semibold text-foreground">
-              {title}
-              <span
-                className={cn(
-                  'shrink-0 rounded-md px-1.5 py-px text-2xs font-semibold uppercase leading-none tracking-eyebrow',
-                  approved ? 'bg-success/15 text-success' : 'bg-warning/15 text-warning',
-                )}
-              >
-                {approved ? 'approved' : 'draft'}
-              </span>
-            </span>
-            <span className="truncate text-2xs text-muted-foreground">
-              {error ? <span className="font-medium text-danger">{error}</span> : subtitle}
-            </span>
+        <div className="flex w-full shrink-0 items-start gap-4 px-6 py-4">
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <Input
+              value={form.name}
+              onChange={(event) => onChangeMeta({ name: event.target.value })}
+              placeholder="Untitled workflow"
+              aria-label="Workflow name"
+              className="border-transparent bg-transparent px-0 text-base font-semibold shadow-none hover:border-border-soft focus:border-border"
+            />
+            <Input
+              value={form.description}
+              onChange={(event) => onChangeMeta({ description: event.target.value })}
+              placeholder="Add a short description"
+              aria-label="Workflow description"
+              className="border-transparent bg-transparent px-0 text-xs text-muted-foreground shadow-none hover:border-border-soft focus:border-border"
+            />
+            {error !== null ? (
+              <span className="text-2xs font-medium text-danger">{error}</span>
+            ) : null}
           </div>
-          <div className="ml-auto flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <span
               className="text-2xs text-muted-foreground/60 tabular-nums"
               aria-live="polite"
@@ -143,26 +131,51 @@ export const WorkflowComposer = ({
             >
               {savedHint}
             </span>
-            {canFormat ? (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onGenerate}
+              disabled={saving || generating || !canGenerate}
+            >
+              <CONCEPT_ICONS.enhance size={13} aria-hidden />
+              {generating ? 'Working on your workflow' : 'Rewrite with agent'}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onDuplicate} disabled={saving}>
+              <Copy size={13} aria-hidden /> Duplicate
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onDelete} disabled={saving}>
+              <Trash2 size={13} aria-hidden /> Delete
+            </Button>
+            {confirmingReset ? (
+              <div className="flex items-center gap-2 rounded-md bg-warning/5 px-2 py-1">
+                <span className="text-2xs text-muted-foreground">Discard local changes?</span>
+                <button
+                  type="button"
+                  aria-label="Confirm reset workflow"
+                  onClick={onReset}
+                  className="rounded-md p-1 text-warning focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                >
+                  <Check size={12} aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Cancel reset workflow"
+                  onClick={() => onConfirmingReset(false)}
+                  className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                >
+                  <X size={12} aria-hidden />
+                </button>
+              </div>
+            ) : (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={onOpenFormat}
-                disabled={saving || formatting}
+                onClick={() => onConfirmingReset(true)}
+                disabled={saving}
               >
-                <CONCEPT_ICONS.enhance size={13} aria-hidden />
-                {formatting ? 'Formatting…' : 'Format'}
+                <RotateCcw size={13} aria-hidden /> Reset
               </Button>
-            ) : null}
-            <Button
-              variant={approved ? 'ghost' : 'secondary'}
-              size="sm"
-              onClick={() => onToggleApproved(!approved)}
-              disabled={saving}
-            >
-              <Check size={13} aria-hidden />
-              {approved ? 'Move to draft' : 'Approve'}
-            </Button>
+            )}
             <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close workflow editor">
               <X size={13} aria-hidden />
               Close
@@ -174,27 +187,13 @@ export const WorkflowComposer = ({
 
         <div className="flex shrink-0 flex-col gap-5 py-5">
           <div className="mx-auto w-full max-w-2xl px-6">
-            <div className="flex flex-col gap-4">
-              <FieldRow label="Name">
-                <Input
-                  value={form.name}
-                  onChange={(e) => onChangeMeta({ name: e.target.value })}
-                  placeholder="e.g. plan-implement-review"
-                  className="sm:w-80"
-                />
-              </FieldRow>
-              <Divider />
-              <FieldRow label="Description" help="What this workflow is for.">
-                <Input
-                  value={form.description}
-                  onChange={(e) => onChangeMeta({ description: e.target.value })}
-                  placeholder="short summary"
-                  className="sm:w-80"
-                />
-              </FieldRow>
-            </div>
+            <Input
+              value={form.goal}
+              onChange={(event) => onChangeMeta({ goal: event.target.value })}
+              placeholder="Optional goal shared with every step"
+              aria-label="Workflow goal"
+            />
           </div>
-
           <div className="mx-auto w-full max-w-2xl px-6">
             <SectionHeader
               label={`Steps (${stepCount})`}
