@@ -213,6 +213,63 @@ describe('WorkflowsPanel', () => {
     expect(screen.getByRole('heading', { name: 'Build a workflow' })).toBeDefined();
   });
 
+  it('flushes a restored draft with unsaved edits without a further edit', async () => {
+    const original = makeWorkflow({
+      name: 'Plan and build',
+      steps: [
+        {
+          id: 'step-1',
+          role: 'planner',
+          ordinal: 0,
+          name: 'Plan',
+          promptPrefix: 'Write the plan',
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+    state.phaseTemplates = { 'ws-1': [original] };
+    state.workflowStudioDrafts = {
+      'ws-1': {
+        workflowId: 'wf-1',
+        agentPrompt: '',
+        form: {
+          name: 'Plan and build, revised',
+          description: '',
+          goal: '',
+          steps: [
+            {
+              uid: 'draft-step',
+              id: 'step-1',
+              role: 'planner',
+              name: 'Plan',
+              promptPrefix: 'Write the plan',
+              expectedOutput: '',
+              providerOverride: '',
+              modelOverride: '',
+              effort: 'medium',
+              verbosity: 'normal',
+            },
+          ],
+        },
+      },
+    };
+    state.savePhaseTemplate = vi.fn(async (input: unknown) => ({
+      ...original,
+      ...(input as Record<string, unknown>),
+    }));
+    renderPanel();
+
+    const name = screen.getByRole('textbox', { name: 'Workflow name' }) as HTMLInputElement;
+    expect(name.value).toBe('Plan and build, revised');
+
+    await waitFor(() => expect(state.savePhaseTemplate).toHaveBeenCalledOnce(), {
+      timeout: 2_000,
+    });
+    const input = state.savePhaseTemplate.mock.calls[0]?.[0];
+    expect(input).toMatchObject({ name: 'Plan and build, revised' });
+  });
+
   it('never reports saved while an autosave write is outstanding', async () => {
     let finishSave: (workflow: unknown) => void = vi.fn();
     state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };

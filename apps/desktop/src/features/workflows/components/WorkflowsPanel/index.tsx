@@ -97,7 +97,9 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const editingIdRef = useRef<WorkflowId | null>(restoredWorkflow?.id ?? null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const formRef = useRef(form);
-  const savedFormRef = useRef(restoredWorkflow === null ? null : JSON.stringify(form));
+  const savedFormRef = useRef(
+    restoredWorkflow === null ? null : JSON.stringify(templateToForm(restoredWorkflow)),
+  );
   formRef.current = form;
 
   useEffect(() => {

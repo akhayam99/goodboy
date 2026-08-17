@@ -69,7 +69,10 @@ export const WorkflowHeaderActions = ({
           title="Discard local changes?"
           description="Restores the last saved version of this workflow."
           confirmLabel="Reset"
-          onConfirm={onReset}
+          onConfirm={() => {
+            setConfirmation(null);
+            onReset();
+          }}
           onCancel={() => setConfirmation(null)}
         />
       ) : null}
@@ -84,7 +87,10 @@ export const WorkflowHeaderActions = ({
               : 'Removes this workflow from the preset list.'
           }
           confirmLabel={isNew ? 'Discard' : 'Delete'}
-          onConfirm={onDelete}
+          onConfirm={() => {
+            setConfirmation(null);
+            onDelete();
+          }}
           onCancel={() => setConfirmation(null)}
         />
       ) : null}
