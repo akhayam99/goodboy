@@ -211,10 +211,10 @@ describe('LensNav', () => {
 
     expect(
       screen
-        .getAllByText(/^(Work|Context|Integrations|Infra)$/)
+        .getAllByText(/^(Work|Integrations|Infra)$/)
         .filter((heading) => heading.className.includes('uppercase'))
         .map((heading) => heading.textContent),
-    ).toEqual(['Context', 'Work', 'Infra', 'Integrations']);
+    ).toEqual(['Work', 'Infra', 'Integrations']);
     expect(
       within(screen.getByRole('navigation'))
         .getAllByRole('button')
@@ -251,10 +251,10 @@ describe('LensNav', () => {
 
     expect(
       screen
-        .getAllByText(/^(Work|Context)$/)
+        .getAllByText(/^Work$/)
         .filter((heading) => heading.className.includes('uppercase'))
         .map((heading) => heading.textContent),
-    ).toEqual(['Context', 'Work']);
+    ).toEqual(['Work']);
     expect(
       within(screen.getByRole('navigation'))
         .getAllByRole('button')

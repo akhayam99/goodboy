@@ -14,28 +14,24 @@ import { InspectorSplit } from '../InspectorSplit';
 import { SlotHistoryPanel } from '../SlotHistoryPanel';
 import { ContextRegion, type ContextRegionKey } from './ContextRegion';
 
-const REGION_ORDER = [
-  'goal',
-  'decisions',
-  'last_output_summary',
-] satisfies ReadonlyArray<ContextRegionKey>;
+const REGION_ORDER = ['last_output_summary', 'decisions'] satisfies ReadonlyArray<ContextRegionKey>;
 
 const REGION_TITLE: Record<ContextRegionKey, string> = {
-  goal: 'Goal',
   decisions: 'Decisions',
   last_output_summary: 'Session summary',
+  goal: 'Goal',
 };
 
 const REGION_DESCRIPTION: Record<ContextRegionKey, string> = {
-  goal: 'What this session is meant to achieve.',
   decisions: 'Choices already settled along the way.',
   last_output_summary: 'What the session has amounted to so far.',
+  goal: 'What this session is meant to achieve.',
 };
 
 const REGION_EMPTY: Record<ContextRegionKey, string> = {
-  goal: 'No goal yet',
   decisions: 'No decisions yet',
   last_output_summary: 'No session summary yet',
+  goal: 'No goal yet',
 };
 
 type Props = {
@@ -77,6 +73,12 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
   useEffect(() => {
     void loadSessionOpenQuestions(sessionId);
   }, [loadSessionOpenQuestions, sessionId]);
+
+  useEffect(() => {
+    for (const slotKey of REGION_ORDER) {
+      void loadSlotHistory(sessionId, slotKey);
+    }
+  }, [loadSlotHistory, sessionId]);
 
   useEffect(() => {
     if (initialRegion == null) {
@@ -130,11 +132,11 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
     >
       <PaneShell
         title="Context"
-        description="The goal, settled decisions, and current session summary."
+        description="The current session summary and the decisions settled along the way."
         measure="reading"
       >
         {REGION_ORDER.map((slotKey, index) => (
-          <div key={slotKey} className="flex flex-col gap-6">
+          <div key={slotKey} className="contents">
             {index > 0 ? <Divider /> : null}
             <ContextRegion
               sessionId={sessionId}

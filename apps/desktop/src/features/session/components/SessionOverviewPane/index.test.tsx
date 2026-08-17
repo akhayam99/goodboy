@@ -49,6 +49,11 @@ type Store = {
     string,
     ReadonlyArray<{ id: string; kind: string; label: string | null; startedAt: string }>
   >;
+  sessionSlots: Record<string, ReadonlyArray<{ key: string; value: string; enabled: boolean }>>;
+  slotHistory: Record<string, Record<string, ReadonlyArray<unknown>>>;
+  sessionLoading: Record<string, { slots: boolean }>;
+  loadSlotHistory: ReturnType<typeof vi.fn>;
+  upsertSessionSlot: ReturnType<typeof vi.fn>;
 };
 
 type Runs = {
@@ -94,6 +99,11 @@ const { store, hooks, runs } = vi.hoisted(() => ({
       string,
       ReadonlyArray<{ id: string; kind: string; label: string | null; startedAt: string }>
     >,
+    sessionSlots: {},
+    slotHistory: {},
+    sessionLoading: {},
+    loadSlotHistory: vi.fn(async () => undefined),
+    upsertSessionSlot: vi.fn(async () => undefined),
   } as Store,
   hooks: {
     workspace: { id: 'ws-1', name: 'My workspace' } as Workspace | null,
@@ -139,6 +149,11 @@ vi.mock('../../../../store', () => ({
   useSessionOpenQuestions: () => hooks.openQuestions,
   useSessionStageInfo: () => hooks.stage,
   useSessionUnreadLens: () => hooks.unreadLens,
+  useSessionSlots: (sessionId: string) => store.sessionSlots[sessionId] ?? [],
+  useSlotHistory: (sessionId: string, key: string) => store.slotHistory[sessionId]?.[key] ?? [],
+  useSessionLoading: (sessionId: string) => store.sessionLoading[sessionId] ?? { slots: false },
+  useSummarizerStatus: (sessionId: string) =>
+    store.summarizerStatus[sessionId] ?? { status: 'idle' },
 }));
 
 vi.mock('../../../orchestration/hooks/useWorkspaceRuns', () => ({
@@ -159,6 +174,10 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
 
 vi.mock('../SummarizerBadge', () => ({
   SummarizerBadge: () => <span data-testid="summarizer-badge" />,
+}));
+
+vi.mock('../../../context/components/ContextPanel/strips/GoalAttachmentsStrip', () => ({
+  GoalAttachmentsStrip: () => <span data-testid="goal-attachments" />,
 }));
 
 vi.mock('./BranchChip', () => ({
@@ -301,6 +320,13 @@ beforeEach(() => {
   store.agentKindOverride = {};
   store.messages = {};
   store.sessionCreations = {};
+  store.sessionSlots = {
+    'sess-1': [{ key: 'goal', value: 'ship the shared context goal', enabled: true }],
+  };
+  store.slotHistory = {};
+  store.sessionLoading = { 'sess-1': { slots: false } };
+  store.loadSlotHistory.mockClear();
+  store.upsertSessionSlot.mockClear();
   hooks.workspace = { id: 'ws-1', name: 'My workspace' } as Workspace;
   hooks.openQuestions = [];
   hooks.stage = { stage: 'building', reason: '' } as SessionStageInfo;
@@ -320,6 +346,35 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SessionOverviewPane header band', () => {
+  it('renders the shared goal in Overview and discloses long prose', () => {
+    store.sessionSlots = {
+      'sess-1': [{ key: 'goal', value: 'goal '.repeat(90), enabled: true }],
+    };
+
+    renderPane();
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Goal' })).toBeDefined();
+    const disclosure = screen.getByRole('button', { name: 'Show more' });
+    fireEvent.click(disclosure);
+    expect(screen.getByRole('button', { name: 'Show less' })).toBeDefined();
+    expect(screen.getByTestId('goal-attachments')).toBeDefined();
+  });
+
+  it('keeps the shared goal editor in its new home', () => {
+    renderPane();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    const editor = screen.getByDisplayValue('ship the shared context goal');
+    fireEvent.change(editor, { target: { value: 'ship the complete context goal' } });
+    fireEvent.blur(editor);
+
+    expect(store.upsertSessionSlot).toHaveBeenCalledWith(
+      'sess-1',
+      'goal',
+      'ship the complete context goal',
+    );
+  });
+
   it('renders the goal and stage without duplicated workspace or shortcut controls', () => {
     hooks.stage = { stage: 'building', reason: 'agents are working' } as SessionStageInfo;
     renderPane();

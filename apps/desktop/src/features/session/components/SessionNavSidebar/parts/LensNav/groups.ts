@@ -119,7 +119,7 @@ export const buildLensGroups = ({
 
   const groups: ReadonlyArray<LensGroup> = [
     {
-      label: 'Context',
+      label: '',
       rows: [
         {
           kind: 'context',

@@ -30,12 +30,7 @@ describe('buildLensGroups', () => {
   it('keeps every group mounted when every count is zero', () => {
     const groups = buildLensGroups(BASE);
 
-    expect(groups.map((group) => group.label)).toEqual([
-      'Context',
-      'Work',
-      'Infra',
-      'Integrations',
-    ]);
+    expect(groups.map((group) => group.label)).toEqual(['', 'Work', 'Infra', 'Integrations']);
   });
 
   it('keeps the Integrations group without relying on its label', () => {
@@ -49,7 +44,7 @@ describe('buildLensGroups', () => {
   it('drops repo-only destinations on a branchless session as a capability, not a count', () => {
     const groups = buildLensGroups({ ...BASE, isBranchless: true });
 
-    expect(groups.map((group) => group.label)).toEqual(['Context', 'Work']);
+    expect(groups.map((group) => group.label)).toEqual(['', 'Work']);
     expect(groups.flatMap((group) => group.rows).some((row) => row.repoOnly === true)).toBe(false);
     expect(groups.flatMap((group) => group.rows).map((row) => row.kind)).toContain('explore');
   });

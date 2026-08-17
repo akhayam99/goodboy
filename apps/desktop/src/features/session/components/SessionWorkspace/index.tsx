@@ -276,7 +276,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
           className={cn('absolute inset-0 z-0', !showLens && 'invisible pointer-events-none')}
           inert={!showLens}
         >
-          {lens === null ? (
+          {lens === null || lens === 'goal' ? (
             isOverviewLoaded ? (
               <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
             ) : (
@@ -313,10 +313,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               />
             </PaneShell>
           ) : null}
-          {lens === 'context' ||
-          lens === 'goal' ||
-          lens === 'decisions' ||
-          lens === 'last_output_summary' ? (
+          {lens === 'context' || lens === 'decisions' || lens === 'last_output_summary' ? (
             <ContextPane session={session} initialRegion={lens === 'context' ? undefined : lens} />
           ) : null}
           {lens === 'pr' ? <PrPane session={session} onSelectLens={onSelectLens} /> : null}

@@ -187,43 +187,27 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('ContextPane', () => {
-  it('renders goal, decisions, and session summary in one ordered surface', () => {
+  it('renders session summary and decisions as two ordered regions', () => {
     render(<ContextPane session={SESSION} />);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Context' })).toBeDefined();
     expect(
       screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
-    ).toEqual(['Goal', 'Decisions', 'Session summary']);
+    ).toEqual(['Session summary', 'Decisions']);
   });
 
   it('shows a normal empty state for each empty region', () => {
     store.sessionSlots['session-1'] = [];
     render(<ContextPane session={SESSION} />);
 
-    expect(screen.getByText('No goal yet')).toBeDefined();
     expect(screen.getByText('No decisions yet')).toBeDefined();
     expect(screen.getByText('No session summary yet')).toBeDefined();
-  });
-
-  it('keeps goal editing on the merged surface', () => {
-    render(<ContextPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'ship the feature' }));
-    const editor = screen.getByDisplayValue('ship the feature');
-    fireEvent.change(editor, { target: { value: 'ship the complete feature' } });
-    fireEvent.blur(editor);
-
-    expect(store.upsertSessionSlot).toHaveBeenCalledWith(
-      'session-1',
-      'goal',
-      'ship the complete feature',
-    );
   });
 
   it('opens the corresponding history inside the shared surface', () => {
     render(<ContextPane session={SESSION} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'View history for Session summary' }));
+    fireEvent.click(screen.getByRole('button', { name: /previous version.*Session summary/ }));
 
     expect(store.loadSlotHistory).toHaveBeenCalledWith('session-1', 'last_output_summary');
     expect(screen.getByText('History: Session summary')).toBeDefined();

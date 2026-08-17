@@ -357,17 +357,19 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
           </div>
           {visibleGroups.map((group) => (
             <div key={group.label} className="flex flex-col gap-0.5">
-              <span
-                className={cn(
-                  'pb-1 text-3xs font-medium uppercase tracking-[0.12em] transition-colors',
-                  PANE_RHYTHM.navRail.inset,
-                  groupWantsAttention({ rows: group.rows })
-                    ? 'text-foreground/80'
-                    : 'text-muted-foreground/60',
-                )}
-              >
-                {group.label}
-              </span>
+              {group.label !== '' ? (
+                <span
+                  className={cn(
+                    'pb-1 text-3xs font-medium uppercase tracking-[0.12em] transition-colors',
+                    PANE_RHYTHM.navRail.inset,
+                    groupWantsAttention({ rows: group.rows })
+                      ? 'text-foreground/80'
+                      : 'text-muted-foreground/60',
+                  )}
+                >
+                  {group.label}
+                </span>
+              ) : null}
               {group.rows.length === 0 ? (
                 <></>
               ) : (
