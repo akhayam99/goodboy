@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -162,7 +162,8 @@ describe('WorkflowsPanel', () => {
     }));
     renderPanel();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Duplicate Plan and build' }));
+    fireEvent.click(screen.getByRole('button', { name: /Plan and build/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Duplicate' }));
 
     await waitFor(() => expect(state.savePhaseTemplate).toHaveBeenCalledOnce());
     const input = state.savePhaseTemplate.mock.calls[0]?.[0];
@@ -202,9 +203,52 @@ describe('WorkflowsPanel', () => {
     }) as HTMLInputElement;
     expect(description.value).toBe('Half typed description');
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm reset workflow' }));
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Discard local changes?' })).getByRole('button', {
+        name: 'Reset',
+      }),
+    );
 
     expect(state.clearWorkflowStudioDraft).toHaveBeenCalledWith({ workspaceId: 'ws-1' });
     expect(screen.getByRole('heading', { name: 'Build a workflow' })).toBeDefined();
+  });
+
+  it('never reports saved while an autosave write is outstanding', async () => {
+    let finishSave: (workflow: unknown) => void = vi.fn();
+    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
+    state.savePhaseTemplate = vi.fn(
+      async () =>
+        await new Promise<unknown>((resolve) => {
+          finishSave = resolve;
+        }),
+    );
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: /Plan and build/ }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Workflow name' }), {
+      target: { value: 'Plan, build, review' },
+    });
+
+    await waitFor(() => expect(state.savePhaseTemplate).toHaveBeenCalledOnce(), { timeout: 2_000 });
+    expect(screen.queryByText('Saved')).toBeNull();
+    expect(screen.getByText('Changes save automatically')).toBeDefined();
+
+    finishSave(makeWorkflow({ name: 'Plan, build, review' }));
+  });
+
+  it('keeps an autosave failure visible in the editor header', async () => {
+    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
+    state.savePhaseTemplate = vi.fn(async () => {
+      throw new Error('disk is read-only');
+    });
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: /Plan and build/ }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Workflow name' }), {
+      target: { value: 'Plan, build, review' },
+    });
+
+    const alert = await screen.findByRole('alert', {}, { timeout: 2_000 });
+    expect(alert.textContent).toContain('disk is read-only');
   });
 });

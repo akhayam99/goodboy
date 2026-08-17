@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Tooltip, cn } from '@goodboy/ui';
-import { Check, GripVertical, Pencil, Trash2, X } from 'lucide-react';
+import { Check, GripVertical, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { StepDef } from '@goodboy/types';
 import { agentKindPalette, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
@@ -9,11 +9,12 @@ type Props = {
   readonly def: StepDef;
   readonly dragDisabled: boolean;
   readonly onStartDrag: (def: StepDef, e: React.PointerEvent) => void;
+  readonly onAdd: () => void;
   readonly onEdit: () => void;
   readonly onDelete: () => void;
 };
 
-export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }: Props) => {
+export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onDelete }: Props) => {
   const [confirming, setConfirming] = useState(false);
   const kind = ROLE_TO_KIND[def.role] ?? 'generic';
   const isGlobal = def.workspaceId === null;
@@ -36,7 +37,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
         aria-hidden
       />
       <AgentAvatar kind={kind} size="sm" />
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5 pr-14">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5 pr-20">
         <div className="flex items-baseline gap-2">
           <span className="truncate text-xs font-medium text-foreground">{def.name}</span>
           <span className={cn('shrink-0 text-2xs font-medium', agentKindPalette({ kind }).fg)}>
@@ -56,6 +57,17 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
             global
           </span>
         ) : null}
+        <Tooltip content="add to workflow">
+          <button
+            type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={onAdd}
+            aria-label={`Add ${def.name} to workflow`}
+            className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
+          >
+            <Plus size={12} aria-hidden />
+          </button>
+        </Tooltip>
         {confirming ? (
           <div
             className="flex items-center gap-0.5 rounded-md border border-border bg-background/95 px-1 py-0.5 shadow-sm"
