@@ -64,9 +64,13 @@ export const AgentBrief = ({ session, agent }: Props) => {
     }
     return '';
   }, [transcript]);
-  const summary =
-    agent.outputSummary?.trim() ??
-    (lastAssistantText === '' ? '' : fallbackStepOutputSummary({ output: lastAssistantText }));
+  const trimmedOutputSummary = agent.outputSummary?.trim() ?? '';
+  const hasOutputSummary = trimmedOutputSummary !== '';
+  const summary = hasOutputSummary
+    ? trimmedOutputSummary
+    : lastAssistantText === ''
+      ? ''
+      : fallbackStepOutputSummary({ output: lastAssistantText });
   const expectedOutput = step?.expectedOutput?.trim() ?? AGENT_KIND_META[kind].expectedOutput;
   const isTerminal =
     agent.status === 'completed' || agent.status === 'failed' || agent.status === 'skipped';
@@ -85,11 +89,11 @@ export const AgentBrief = ({ session, agent }: Props) => {
       ) : null}
       {summary !== '' ? (
         <section className="flex flex-col gap-2">
-          <SectionHeader label={agent.outputSummary == null ? 'Latest' : 'Outcome'} />
+          <SectionHeader label={hasOutputSummary ? 'Outcome' : 'Latest'} />
           <div className="text-sm text-foreground">
             <Markdown text={stripControlMarkers(summary)} />
           </div>
-          {agent.outputSummary == null ? (
+          {!hasOutputSummary ? (
             <span className="text-2xs text-muted-foreground">from the last reply</span>
           ) : null}
         </section>

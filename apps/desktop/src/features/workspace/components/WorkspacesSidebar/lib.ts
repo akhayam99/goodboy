@@ -11,9 +11,6 @@ export const workflowKindName = (workflow: Workflow): string => {
   return match ? match.name.toLowerCase() : raw;
 };
 
-export const pluralize = (count: number, singular: string) =>
-  `${count} ${singular}${count === 1 ? '' : 's'}`;
-
 export type ResolverState = 'awaiting' | 'committed' | 'wontfix' | 'analyzed' | 'stopped';
 export type ResolverStatus =
   | 'running'

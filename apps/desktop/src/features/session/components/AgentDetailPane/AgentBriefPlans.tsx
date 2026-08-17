@@ -1,5 +1,6 @@
 import { SectionHeader } from '@goodboy/ui';
 import type { PlanWithCount, SessionId } from '@goodboy/types';
+import { pluralize } from '../../../../shared/utils/pluralize';
 
 type Props = {
   readonly plans: ReadonlyArray<PlanWithCount>;
@@ -29,7 +30,7 @@ export const AgentBriefPlans = ({ plans, sessionId }: Props) => {
           >
             <span className="min-w-0 truncate text-foreground">{plan.title}</span>
             <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
-              {plan.status} · {plan.consumptionCount} uses
+              {plan.status} · {pluralize(plan.consumptionCount, 'use')}
             </span>
           </button>
         ))}
