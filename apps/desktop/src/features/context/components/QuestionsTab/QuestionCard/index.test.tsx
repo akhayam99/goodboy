@@ -30,12 +30,12 @@ const baseProps = {
 };
 
 describe('QuestionCard', () => {
-  it('reads as a filled demands-you surface', () => {
+  it('reads as a quiet workflow surface', () => {
     const { container } = render(<QuestionCard {...baseProps} />);
     const root = container.firstElementChild!;
-    expect(root.className).toContain('rounded-lg');
+    expect(root.className).toContain('border-l-2');
     expect(root.className).toContain('border-warning/40');
-    expect(root.className).toContain('bg-warning/10');
+    expect(root.className).not.toContain('rounded-lg');
   });
 
   it('renders the question text with one button per suggestion', () => {

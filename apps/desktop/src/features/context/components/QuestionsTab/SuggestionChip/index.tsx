@@ -19,7 +19,7 @@ export const SuggestionChip = ({ label, selected, recommended = false, onToggle 
       aria-pressed={selected}
       title={recommended ? `${label} (suggested)` : label}
       className={cn(
-        'group inline-flex max-w-full items-center gap-1 rounded-full border text-xs font-medium transition-[color,background-color,border-color,box-shadow,transform] duration-150',
+        'group inline-flex min-w-0 max-w-40 items-center gap-1 rounded-md border text-xs font-medium transition-[color,background-color,border-color,box-shadow,transform] duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
         isCodeLike(label) && 'font-mono text-2xs',
         selected
@@ -41,7 +41,7 @@ export const SuggestionChip = ({ label, selected, recommended = false, onToggle 
       {recommended && !selected && (
         <CONCEPT_ICONS.suggestion size={11} aria-hidden className="shrink-0 text-info" />
       )}
-      <span className="min-w-0 break-words text-left">{label}</span>
+      <span className="min-w-0 truncate text-left">{label}</span>
     </button>
   );
 };
