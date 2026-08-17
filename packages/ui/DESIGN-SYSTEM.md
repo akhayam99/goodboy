@@ -127,7 +127,7 @@ The fixed chrome row uses one flexible context region followed by one shrink-saf
 
 The focused object's primary action uses the same fixed header action region. The one exception is a creation or edit flow: its commit action uses one fixed footer, with supporting error copy at the start and cancel plus exactly one primary action at the end. A section-scoped action uses `SectionHeader.action`; a field control uses `FieldRow`; neither promotes itself into global chrome.
 
-Every footer action row belongs to the content it acts on. It shares that content's measure and sits at its edge, never stretched across a shell or container that also holds unrelated content.
+Every footer action row belongs to the content it acts on. It shares that content's measure and sits at its edge, never stretched across a shell or container that also holds unrelated content. Edge means both axes: the row follows the last piece of content it commits, inside the same scrolling flow, rather than docking to the bottom of a pane and leaving empty space between itself and the thing it acts on. A pane whose content routinely overflows may still dock its commit action, and then the dock is the exception it argues for, not the default.
 
 `InlineConfirm` stays attached to a destructive trigger in its action region. A detached confirmation in the body or a destructive footer dock is not another zone.
 

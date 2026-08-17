@@ -194,15 +194,17 @@ describe('ReportIssueStudio', () => {
     expect(screen.getByAltText('dropped.png')).toBeDefined();
   });
 
-  it('keeps the fixed actions in the same bounded measure as the expanded preview', () => {
+  it('puts the actions at the end of the content rather than docking them to the pane', () => {
     setGithubStatus({ available: true, mode: 'gh-cli' });
     render(<ReportIssueStudio onClose={vi.fn()} />);
 
     const preview = screen.getByRole('region', { name: 'Preview' });
     const footer = screen.getByRole('button', { name: 'Send' }).closest('footer');
+    const measure = preview.closest('.max-w-2xl');
 
-    expect(preview.closest('.max-w-2xl')).not.toBeNull();
-    expect(footer?.firstElementChild?.className).toContain('max-w-2xl');
+    expect(measure).not.toBeNull();
+    expect(measure?.contains(footer as Node)).toBe(true);
+    expect(preview.nextElementSibling).toBe(footer);
   });
 
   const attachOneImage = () => {

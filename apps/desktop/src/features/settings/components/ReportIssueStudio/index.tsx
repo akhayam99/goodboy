@@ -330,43 +330,44 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                   ) : null}
                 </div>
               </section>
+
+              <footer className="flex items-center gap-3">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  {errorMessage != null ? (
+                    <span
+                      role="alert"
+                      className="inline-flex items-center gap-1 text-xs text-danger"
+                    >
+                      <AlertTriangle size={12} aria-hidden />
+                      {errorMessage}
+                    </span>
+                  ) : version != null ? (
+                    <span className="text-2xs text-muted-foreground">
+                      v{version} · Posts publicly on GitHub, under your account
+                    </span>
+                  ) : (
+                    <Skeleton className="h-4 w-14" />
+                  )}
+                </div>
+                <Button variant="ghost" onClick={requestClose}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => void onSend({ requestClose })}
+                  disabled={!canSend}
+                  className={cn(sendState === 'sending' && 'animate-border-pulse')}
+                >
+                  {sendState === 'sending'
+                    ? sendsDirectly
+                      ? 'Sending…'
+                      : 'Opening…'
+                    : sendsDirectly
+                      ? 'Send'
+                      : 'Open on GitHub'}
+                </Button>
+              </footer>
             </div>
           </ScrollFade>
-          <Divider />
-          <footer className="shrink-0 px-6 py-3">
-            <div className="mx-auto flex w-full max-w-2xl items-center gap-3">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                {errorMessage != null ? (
-                  <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
-                    <AlertTriangle size={12} aria-hidden />
-                    {errorMessage}
-                  </span>
-                ) : version != null ? (
-                  <span className="text-2xs text-muted-foreground">
-                    v{version} · Posts publicly on GitHub, under your account
-                  </span>
-                ) : (
-                  <Skeleton className="h-4 w-14" />
-                )}
-              </div>
-              <Button variant="ghost" onClick={requestClose}>
-                Cancel
-              </Button>
-              <Button
-                onClick={() => void onSend({ requestClose })}
-                disabled={!canSend}
-                className={cn(sendState === 'sending' && 'animate-border-pulse')}
-              >
-                {sendState === 'sending'
-                  ? sendsDirectly
-                    ? 'Sending…'
-                    : 'Opening…'
-                  : sendsDirectly
-                    ? 'Send'
-                    : 'Open on GitHub'}
-              </Button>
-            </div>
-          </footer>
         </div>
       )}
     </StudioShell>
