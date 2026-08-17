@@ -4,20 +4,24 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
 
+type FormBodyMockProps = {
+  readonly workspaceId: WorkspaceId;
+};
+
 vi.mock('../../../integrations/linear/LinearFormBody', () => ({
-  LinearFormBody: ({ workspaceId }: { workspaceId: WorkspaceId }) => (
+  LinearFormBody: ({ workspaceId }: FormBodyMockProps) => (
     <div data-testid="linear-form">{workspaceId}</div>
   ),
 }));
 
 vi.mock('../../../integrations/jira/JiraFormBody', () => ({
-  JiraFormBody: ({ workspaceId }: { workspaceId: WorkspaceId }) => (
+  JiraFormBody: ({ workspaceId }: FormBodyMockProps) => (
     <div data-testid="jira-form">{workspaceId}</div>
   ),
 }));
 
 vi.mock('../../../integrations/slack/SlackFormBody', () => ({
-  SlackFormBody: ({ workspaceId }: { workspaceId: WorkspaceId }) => (
+  SlackFormBody: ({ workspaceId }: FormBodyMockProps) => (
     <div data-testid="slack-form">{workspaceId}</div>
   ),
 }));
