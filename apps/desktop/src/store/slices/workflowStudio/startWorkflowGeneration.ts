@@ -57,7 +57,7 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
           expectedOutput: step.expectedOutput,
         })),
         isPreset: true,
-        origin: 'orchestrated',
+        origin: 'custom',
       };
       const saved = await get().savePhaseTemplate(args);
       get().clearWorkflowStudioDraft({ workspaceId });

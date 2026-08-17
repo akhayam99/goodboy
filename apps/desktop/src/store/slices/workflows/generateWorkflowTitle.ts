@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { getDefaultBinary, resolveTaskModel, runAuxOneShot } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import type { SessionId, TaskModelPreference, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { parseGeneratedTitle } from '../turn/applyHeuristicTitle/parseGeneratedTitle';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
@@ -93,7 +94,7 @@ export const generateWorkflowTitle = (set: SetFn, get: GetFn) => {
       });
       const title = clampWorkflowTitle(generated);
       if (title.length === 0) {
-        return;
+        throw new Error('the model returned an empty workflow title');
       }
       if (isWorkflowTitleUserEdited(workflowId)) {
         return;
@@ -116,6 +117,22 @@ export const generateWorkflowTitle = (set: SetFn, get: GetFn) => {
       });
 
       if (isWorkflowTitleUserEdited(workflowId)) {
+        const renamed = (get().phaseTemplates[workspaceId] ?? []).find(
+          (workflow) => workflow.id === workflowId,
+        );
+        if (renamed != null && renamed.name !== saved.name) {
+          await invokeWorkflowUpsert({
+            id: renamed.id,
+            workspaceId: renamed.workspaceId,
+            name: renamed.name,
+            description: renamed.description,
+            ...(renamed.goal != null && { goal: renamed.goal }),
+            ...(renamed.processText != null && { processText: renamed.processText }),
+            steps: renamed.steps,
+            ...(renamed.isPreset != null && { isPreset: renamed.isPreset }),
+            ...(renamed.origin != null && { origin: renamed.origin }),
+          });
+        }
         return;
       }
       set((state) => ({
@@ -126,6 +143,14 @@ export const generateWorkflowTitle = (set: SetFn, get: GetFn) => {
           ),
         },
       }));
-    } catch {}
+    } catch (error) {
+      void get().emitNotification(
+        'title-generation',
+        'info',
+        'workflow name needs your input',
+        `The generated name failed: ${formatError(error)}. Rename the untitled workflow from its details.`,
+        { sessionId, workspaceId },
+      );
+    }
   };
 };
