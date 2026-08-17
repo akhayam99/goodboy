@@ -49,7 +49,7 @@ describe('gitStatus readers', () => {
       'this branch tracks no upstream yet',
     );
     expect(unknownReasonLabel({ reason: 'detached-head' })).toBe(
-      'this checkout is on a detached HEAD',
+      "this checkout isn't on a branch, so there's no branch to update",
     );
     expect(unknownReasonLabel({ reason: 'rev-list-failed' })).toBe(
       'git could not compare this branch with its upstream',

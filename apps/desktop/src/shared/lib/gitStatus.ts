@@ -41,7 +41,7 @@ export const unknownReasonLabel = ({ reason }: ReasonParams): string => {
     case 'no-upstream':
       return 'this branch tracks no upstream yet';
     case 'detached-head':
-      return 'this checkout is on a detached HEAD';
+      return "this checkout isn't on a branch, so there's no branch to update";
     case 'rev-list-failed':
       return 'git could not compare this branch with its upstream';
     case 'main-ref-unresolved':

@@ -1198,8 +1198,7 @@ pub fn checkout_fast_forward(checkout_path: String) -> Result<FastForwardResult,
     }
     let Some(branch) = current_branch_name(p) else {
         return Err(WorktreeError::Git {
-            message: "this checkout is on a detached HEAD, so there is no branch to update"
-                .to_string(),
+            message: "this checkout isn't on a branch, so there's no branch to update".to_string(),
         });
     };
     let Some(upstream) = resolve_upstream(p) else {
@@ -1219,7 +1218,7 @@ pub fn checkout_fast_forward(checkout_path: String) -> Result<FastForwardResult,
     .is_err()
     {
         return Err(WorktreeError::Git {
-            message: format!("{upstream} is not a remote-tracking branch"),
+            message: format!("git doesn't recognize {upstream} as a branch on the remote"),
         });
     }
     if let Some(operation) = in_progress_operation(p) {
@@ -1610,7 +1609,34 @@ pub(crate) fn redact_credentials(raw: &str) -> String {
     pattern.replace_all(raw, "$1***@").into_owned()
 }
 
+#[cfg(test)]
+pub(crate) mod git_argv_log {
+    use std::cell::RefCell;
+
+    thread_local! {
+        static RECORDED: RefCell<Vec<Vec<String>>> = const { RefCell::new(Vec::new()) };
+    }
+
+    pub(crate) fn record(args: &[&str]) {
+        RECORDED.with(|log| {
+            log.borrow_mut()
+                .push(args.iter().map(|arg| (*arg).to_string()).collect())
+        });
+    }
+
+    pub(crate) fn reset() {
+        RECORDED.with(|log| log.borrow_mut().clear());
+    }
+
+    pub(crate) fn recorded() -> Vec<Vec<String>> {
+        RECORDED.with(|log| log.borrow().clone())
+    }
+}
+
 pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
+    #[cfg(test)]
+    git_argv_log::record(args);
+
     let output = crate::path_env::command("git")
         .args(args)
         .current_dir(cwd)
@@ -1887,11 +1913,30 @@ mod rewrite_tests {
         commit(&root, "next.txt", "next", "next");
         git_ok(&root, &["push", "origin", "main"]);
 
+        super::git_argv_log::reset();
         let pulled = super::checkout_fast_forward(copy.to_string_lossy().into_owned()).unwrap();
+        let merge_invocations: Vec<Vec<String>> = super::git_argv_log::recorded()
+            .into_iter()
+            .filter(|argv| argv.iter().any(|arg| arg == "merge"))
+            .collect();
 
         assert_eq!(pulled.upstream, "origin/main");
         assert_eq!(pulled.commits_pulled, 1);
         assert!(copy.join("next.txt").is_file());
+        assert_eq!(
+            merge_invocations,
+            vec![vec![
+                "-c".to_string(),
+                "pull.rebase=false".to_string(),
+                "-c".to_string(),
+                "rebase.autoStash=false".to_string(),
+                "-c".to_string(),
+                "merge.autoStash=false".to_string(),
+                "merge".to_string(),
+                "--ff-only".to_string(),
+                "origin/main".to_string(),
+            ]]
+        );
         std::fs::remove_dir_all(root).unwrap();
         std::fs::remove_dir_all(clone_root).unwrap();
     }
@@ -1964,7 +2009,7 @@ mod rewrite_tests {
     }
 
     #[test]
-    fn the_fast_forward_merge_carries_the_flags_that_forbid_a_rebase_or_an_autostash() {
+    fn ff_merge_args_builds_the_flags_that_forbid_a_rebase_or_an_autostash() {
         assert_eq!(
             super::ff_merge_args("origin/main"),
             vec![
