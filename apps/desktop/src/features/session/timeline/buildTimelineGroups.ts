@@ -54,8 +54,8 @@ export type TimelineRunEntry = {
   readonly run: WorkflowRun;
   readonly workflow: Workflow;
   readonly children: ReadonlyArray<TimelineChildEntry>;
+  readonly pendingAgents: ReadonlyArray<Agent>;
   readonly producedPlan: PlanWithCount | null;
-  readonly linkedTask: SessionExternalTask | null;
   readonly depth: 0;
 };
 
@@ -191,15 +191,19 @@ export const buildTimelineGroups = ({
           .sort((first, second) => first.ordinal - second.ordinal)
           .findIndex((sibling) => sibling.id === agent.id) + 1
       : null;
-    const attachedQuestions = (
-      questionsByAgentId.get(agent.id) ??
-      questions.filter(
-        (question) =>
-          question.createdByAgentId == null &&
-          question.workflowRunId === agent.workflowRunId &&
-          question.createdByStepOrdinal === agent.ordinal,
-      )
-    ).filter((question) => question.status !== 'open');
+    const inferredQuestions =
+      agent.workflowRunId == null
+        ? []
+        : questions.filter(
+            (question) =>
+              question.createdByAgentId == null &&
+              question.workflowRunId === agent.workflowRunId &&
+              question.createdByStepOrdinal === agent.ordinal,
+          );
+    const attachedQuestions = [
+      ...(questionsByAgentId.get(agent.id) ?? []),
+      ...inferredQuestions,
+    ].filter((question) => question.status !== 'open');
     return [
       {
         kind: 'agent',
@@ -223,7 +227,16 @@ export const buildTimelineGroups = ({
     const children = [...runAgents, ...runPlans].sort((first, second) =>
       compareAscending({ first, second }),
     );
-    if (children.length === 0 && run.createdAt == null) {
+    const pendingAgents = agents
+      .filter(
+        (candidate) =>
+          candidate.deletedAt == null &&
+          candidate.workflowRunId === run.id &&
+          candidate.parentAgentId == null &&
+          placementForAgent({ agent: candidate }).at == null,
+      )
+      .sort((first, second) => first.ordinal - second.ordinal);
+    if (children.length === 0 && pendingAgents.length === 0 && run.createdAt == null) {
       return [];
     }
     const latestChildAt = children.reduce<string | null>(
@@ -250,8 +263,8 @@ export const buildTimelineGroups = ({
         run,
         workflow,
         children,
+        pendingAgents,
         producedPlan,
-        linkedTask: externalTasks[0] ?? null,
         depth: 0,
       },
     ];

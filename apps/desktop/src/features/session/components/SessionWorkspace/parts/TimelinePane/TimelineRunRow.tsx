@@ -46,12 +46,6 @@ const runTitle = ({ entry }: RunTitleParams): RunTitle => {
   if (entry.producedPlan != null) {
     return { label: entry.producedPlan.title, tooltip: 'Auto-titled from its plan' };
   }
-  if (entry.linkedTask != null) {
-    return {
-      label: `${entry.linkedTask.identifier}: ${entry.linkedTask.title}`,
-      tooltip: 'Not yet named',
-    };
-  }
   return { label: 'Unnamed workflow', tooltip: 'Not yet named' };
 };
 
@@ -65,41 +59,29 @@ export const TimelineRunRow = ({
   diffCommentByAgentId,
 }: Props) => {
   const agentChildren = entry.children.filter((child) => child.kind === 'agent');
-  const isRunning = agentChildren.some((child) => child.agent.status === 'running');
-  const isFailed = agentChildren.some((child) => child.agent.status === 'failed');
+  const runAgents = [...agentChildren.map((child) => child.agent), ...entry.pendingAgents];
+  const isRunning = runAgents.some((agent) => agent.status === 'running');
+  const isFailed = runAgents.some((agent) => agent.status === 'failed');
   const isComplete =
-    agentChildren.length > 0 &&
-    agentChildren.every(
-      (child) => child.agent.status === 'completed' || child.agent.status === 'skipped',
-    );
+    runAgents.length > 0 &&
+    runAgents.every((agent) => agent.status === 'completed' || agent.status === 'skipped');
   const [isOpen, setIsOpen] = useState(!isComplete && entry.run.discardedAt == null);
-  const chain = classifyWorkflowChain(
-    entry.workflow,
-    agentChildren.map((child) => child.agent),
-  );
+  const chain = classifyWorkflowChain(entry.workflow, runAgents);
   const ghostStep = chain.kind === 'step' ? chain.step : null;
   const ghostAgent =
-    ghostStep == null
-      ? null
-      : (agentChildren.find((child) => child.agent.stepId === ghostStep.id)?.agent ?? null);
-  const remaining = Math.max(
-    0,
-    upcomingSteps(
-      entry.workflow,
-      agentChildren.map((child) => child.agent),
-    ).length - 1,
-  );
+    ghostStep == null ? null : (runAgents.find((agent) => agent.stepId === ghostStep.id) ?? null);
+  const remaining = Math.max(0, upcomingSteps(entry.workflow, runAgents).length - 1);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const title = runTitle({ entry });
-  const done = agentChildren.filter(
-    (child) => child.agent.status === 'completed' || child.agent.status === 'skipped',
+  const done = runAgents.filter(
+    (agent) => agent.status === 'completed' || agent.status === 'skipped',
   ).length;
-  const cost = agentChildren.reduce((total, child) => {
-    const aggregate = aggregatesByAgentId.get(child.agent.id);
+  const cost = runAgents.reduce((total, agent) => {
+    const aggregate = aggregatesByAgentId.get(agent.id);
     return aggregate != null && aggregate.turns > 0 ? total + aggregate.estimatedCostUsd : total;
   }, 0);
-  const meta = `${done}/${agentChildren.length}${cost > 0 ? ` · $${cost.toFixed(2)}` : ''}`;
+  const meta = `${done}/${runAgents.length}${cost > 0 ? ` · $${cost.toFixed(2)}` : ''}`;
   const titleNode = (
     <span className="truncate text-sm font-medium text-foreground">{title.label}</span>
   );
@@ -125,6 +107,8 @@ export const TimelineRunRow = ({
         <div className="group flex min-w-0 items-center gap-2 py-1.5">
           <button
             type="button"
+            aria-expanded={isOpen}
+            aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${title.label}`}
             onClick={() => setIsOpen((current) => !current)}
             className="flex min-w-0 items-center gap-2 text-left"
           >

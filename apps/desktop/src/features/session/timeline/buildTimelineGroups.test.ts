@@ -3,6 +3,8 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  OpenQuestion,
+  OpenQuestionId,
   SessionId,
   StepId,
   Workflow,
@@ -74,18 +76,46 @@ const attachedWorkflow = (): { readonly run: WorkflowRun; readonly workflow: Wor
   };
 };
 
+type QuestionParams = {
+  readonly id: string;
+  readonly createdByAgentId?: string;
+  readonly workflowRunId?: WorkflowRunId;
+  readonly createdByStepOrdinal?: number;
+};
+
+const question = ({
+  id,
+  createdByAgentId,
+  workflowRunId,
+  createdByStepOrdinal,
+}: QuestionParams): OpenQuestion => ({
+  id: typedString<OpenQuestionId>({ value: id }),
+  sessionId: SESSION_ID,
+  ...(createdByAgentId != null
+    ? { createdByAgentId: typedString<AgentId>({ value: createdByAgentId }) }
+    : {}),
+  ...(workflowRunId != null ? { workflowRunId } : {}),
+  ...(createdByStepOrdinal != null ? { createdByStepOrdinal } : {}),
+  text: id,
+  suggestedAnswers: [],
+  userAnswer: null,
+  status: 'answered',
+  createdAt: typedString<IsoDateTime>({ value: '2026-08-17T09:00:00Z' }),
+});
+
 type BuildParams = {
   readonly agents: ReadonlyArray<Agent>;
   readonly workflows?: ReadonlyArray<ReturnType<typeof attachedWorkflow>>;
+  readonly questions?: ReadonlyArray<OpenQuestion>;
 };
 
-const build = ({ agents, workflows = [] }: BuildParams) =>
+const build = ({ agents, workflows = [], questions = [] }: BuildParams) =>
   buildTimelineGroups({
     agents,
     workflows,
     plans: [],
     externalTasks: [],
-    questions: [],
+    questions,
     worktrees: [],
     agentKindOverride: {},
   });
@@ -124,6 +154,43 @@ describe('buildTimelineGroups', () => {
     expect(run?.kind === 'run' ? run.children.map((entry) => entry.id) : []).toEqual([
       'agent:first',
       'agent:second',
+    ]);
+  });
+
+  it('keeps a run whose steps are all pending, with those steps on the run', () => {
+    const model = build({
+      workflows: [attachedWorkflow()],
+      agents: [
+        agent({ id: 'first', status: 'pending', workflowRunId: WORKFLOW_RUN_ID }),
+        agent({ id: 'second', status: 'pending', workflowRunId: WORKFLOW_RUN_ID }),
+      ],
+    });
+    const run = model.entries.find((entry) => entry.kind === 'run');
+
+    expect(run?.kind === 'run' ? run.children : []).toEqual([]);
+    expect(run?.kind === 'run' ? run.pendingAgents.map((item) => item.id) : []).toEqual([
+      'first',
+      'second',
+    ]);
+  });
+
+  it('keeps terminal questions from both the agent link and the step ordinal', () => {
+    const model = build({
+      workflows: [attachedWorkflow()],
+      agents: [
+        agent({ id: 'first', startedAt: '2026-08-17T09:00:00Z', workflowRunId: WORKFLOW_RUN_ID }),
+      ],
+      questions: [
+        question({ id: 'direct', createdByAgentId: 'first' }),
+        question({ id: 'inferred', workflowRunId: WORKFLOW_RUN_ID, createdByStepOrdinal: 0 }),
+      ],
+    });
+    const run = model.entries.find((entry) => entry.kind === 'run');
+    const child = run?.kind === 'run' ? run.children[0] : null;
+
+    expect(child?.kind === 'agent' ? child.terminalQuestions.map((item) => item.id) : []).toEqual([
+      'direct',
+      'inferred',
     ]);
   });
 });

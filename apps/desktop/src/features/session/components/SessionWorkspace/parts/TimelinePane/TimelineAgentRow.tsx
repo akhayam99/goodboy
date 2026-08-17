@@ -98,6 +98,10 @@ export const TimelineAgentRow = ({
           <button
             type="button"
             disabled={!hasBody}
+            aria-expanded={hasBody ? isExpanded : undefined}
+            aria-label={
+              hasBody ? `${isExpanded ? 'Collapse' : 'Expand'} ${entry.agent.name}` : undefined
+            }
             onClick={() => setIsExpanded((current) => !current)}
             className={cn(
               'min-w-0 truncate text-left text-sm text-foreground',
