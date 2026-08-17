@@ -89,6 +89,7 @@ import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/
 import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
 import { ChainAfterSelect } from './parts/ChainAfterSelect';
 import { LaunchToggleRow } from './parts/LaunchToggleRow';
+import { WorkflowAutorunToggle } from '../../../workflows/components/WorkflowAutorunToggle';
 import { TriggerButton } from './parts/TriggerButton';
 
 type Props = {
@@ -1373,13 +1374,19 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 } completes.`}
                         </p>
                       </div>
-                      <LaunchToggleRow
-                        title="Autorun"
-                        description="Each step runs as soon as the previous finishes. No manual hand-off."
-                        checked={autoRun}
-                        onChange={setAutoRun}
-                        disabled={busy}
-                      />
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 flex-col gap-1">
+                          <span className="text-2xs font-medium text-foreground">Autorun</span>
+                          <span className="text-2xs leading-relaxed text-muted-foreground/60">
+                            Run each step automatically after the previous step finishes
+                          </span>
+                        </div>
+                        <WorkflowAutorunToggle
+                          isOn={autoRun}
+                          isStepInFlight={false}
+                          onToggle={() => setAutoRun((current) => !current)}
+                        />
+                      </div>
                       {mode === 'custom' || presetDirty ? (
                         <LaunchToggleRow
                           title="Save as preset"
