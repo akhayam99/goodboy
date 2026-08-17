@@ -182,16 +182,23 @@ describe('NewSessionView issue sources', () => {
     );
   });
 
-  it('keeps the create action at the edge of the code location region', () => {
+  it('docks the create action at the pane footer, never inside a form section', () => {
     render(
       <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
     );
 
-    expect(
-      within(screen.getByRole('region', { name: 'Code location' })).getByRole('button', {
-        name: 'Create session',
-      }),
-    ).toBeDefined();
+    const createButton = screen.getByRole('button', { name: 'Create session' });
+    const footer = createButton.closest('footer');
+    expect(footer).not.toBeNull();
+    expect(footer?.closest('section')).toBeNull();
+    const goalTextarea = screen.getByLabelText('Goal');
+    const goalSection = goalTextarea.closest('section');
+    expect(goalSection).not.toBeNull();
+    expect(within(goalSection!).queryByRole('button', { name: 'Create session' })).toBeNull();
+    const branchInput = screen.getByLabelText('Branch slug');
+    const branchSection = branchInput.closest('section');
+    expect(branchSection).not.toBeNull();
+    expect(within(branchSection!).queryByRole('button', { name: 'Create session' })).toBeNull();
   });
 
   it('validates the required decisions before creating a repository session', async () => {
