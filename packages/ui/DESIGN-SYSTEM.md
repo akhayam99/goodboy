@@ -121,6 +121,26 @@ where an uncapped paragraph runs past a comfortable measure.
 applied conditionally: the workbench goes full width, its empty state stays in
 the reading column, so an empty pane never presents a 2000px-wide dashed box.
 
+## Action zones
+
+The fixed chrome row uses one flexible context region followed by one shrink-safe action region. `StudioShell` exposes that region as `headerAccessory`, `HeaderBand` exposes it as `actions`, and inspector headers use the same `actions` slot. Generic object, lifecycle and destructive controls go there. The action region is pushed to the far end and never enters the content scroller.
+
+The focused object's primary action uses the same fixed header action region. The one exception is a creation or edit flow: its commit action uses one fixed footer, with supporting error copy at the start and cancel plus exactly one primary action at the end. A section-scoped action uses `SectionHeader.action`; a field control uses `FieldRow`; neither promotes itself into global chrome.
+
+`InlineConfirm` stays attached to a destructive trigger in its action region. A detached confirmation in the body or a destructive footer dock is not another zone.
+
+## Section rhythm
+
+`PANE_RHYTHM.stack` separates peer sections and `Divider` separates regions whose boundary matters. Section children do not add margins. `SectionHeader` is the canonical section heading and optional description: its default eyebrow size is for compact and scan surfaces, while `size="page"` is for a reading-surface section that needs an `h2`. Description copy comes only through `hint`, so its size and muted tone remain paired with the heading grade.
+
+`Eyebrow` is a label primitive for metadata, statistics and small internal groups. It does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment; it does not title a section. When these roles overlap, `SectionHeader` wins for the section, then `FieldRow` labels the controls inside it. `Divider` is a sibling between regions, never decoration after every heading or field.
+
+## Prose disclosure
+
+`ClampedProse` is the only multi-line prose clamp. It accepts one to six lines, renders the text as preview markdown and reveals the complete text in place through Show more and Show less. Do not apply `line-clamp-*` directly to prose or slice a display string. Single-line identity labels may use `truncate` when their full value is available from the focused object or an accessible disclosure.
+
+Artifacts exempted by `DESIGN.md`, including the text of an open question, never use `ClampedProse`.
+
 ## Card action grammar and creation grammar
 
 **One card action grammar.** Two stable slots: navigation top right, always

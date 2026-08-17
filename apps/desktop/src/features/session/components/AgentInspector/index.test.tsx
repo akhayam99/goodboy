@@ -125,6 +125,11 @@ describe('AgentInspector', () => {
 
     expect(h.setAgentDone).toHaveBeenCalledWith(SESSION_ID, AGENT_ID);
     expect(h.cancelCurrentTurn).toHaveBeenCalledWith(SESSION_ID, AGENT_ID);
+    expect(
+      screen
+        .getByRole('button', { name: 'Mark done' })
+        .compareDocumentPosition(screen.getByText('Identity')),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it('reopens a done agent and hides interrupt when idle', () => {

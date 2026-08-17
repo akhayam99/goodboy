@@ -17,7 +17,7 @@ import { resolverCommitSha } from '../../resolverCommitSha';
 import { resolverThreadCommitShas } from '../../resolverThreadCommitShas';
 import { resolverTallySentence } from '../../resolverTallySentence';
 import { agentThreadIds } from '../../agentThreadIds';
-import { AgentActionsFooter } from '../AgentInspector/AgentActionsFooter';
+import { AgentHeaderActions } from '../AgentInspector/AgentHeaderActions';
 import { ChangesSection } from '../AgentInspector/ChangesSection';
 import {
   ResolverCommentSection,
@@ -217,23 +217,33 @@ export const ResolverDetailPane = ({ session, agent, isChatActive, onBack }: Pro
             )
           }
           actions={
-            <ResolverOverflowMenu
-              agent={agent}
-              actions={actions}
-              commits={localCommits}
-              headSha={changes.headSha}
-              onAmend={async (sha, message) => {
-                await amendSessionCommit(sessionId, { sha, message });
-                changes.reload();
-              }}
-              onSquash={async (sha, message) => {
-                await squashSessionCommits(sessionId, { sha, message });
-                changes.reload();
-              }}
-            />
+            <div className="flex items-start gap-2">
+              <AgentHeaderActions
+                agent={agent}
+                sessionId={sessionId}
+                deleteTitle="Delete this resolver?"
+                deleteDescription="Removes the agent and its transcript from the session."
+                onDeleted={onBack}
+              />
+              <ResolverOverflowMenu
+                agent={agent}
+                actions={actions}
+                commits={localCommits}
+                headSha={changes.headSha}
+                onAmend={async (sha, message) => {
+                  await amendSessionCommit(sessionId, { sha, message });
+                  changes.reload();
+                }}
+                onSquash={async (sha, message) => {
+                  await squashSessionCommits(sessionId, { sha, message });
+                  changes.reload();
+                }}
+              />
+            </div>
           }
         />
       }
+      rail={<ResolverRunRecap tally={actions.tally} blockedBy={blockedBy} actions={actions} />}
       tabs={
         <StudioDetailTabs
           ariaLabel="Resolver sections"
@@ -242,21 +252,11 @@ export const ResolverDetailPane = ({ session, agent, isChatActive, onBack }: Pro
           onChange={setTab}
         />
       }
-      dock={
-        <AgentActionsFooter
-          agent={agent}
-          sessionId={sessionId}
-          deleteTitle="Delete this resolver?"
-          deleteDescription="Removes the agent and its transcript from the session."
-          onDeleted={onBack}
-        />
-      }
     >
       {tab === 'transcript' ? (
         <ChatView session={session} isActive={isChatActive} header={null} />
       ) : (
         <>
-          <ResolverRunRecap tally={actions.tally} blockedBy={blockedBy} actions={actions} />
           <ResolverMetaLine
             agent={agent}
             model={

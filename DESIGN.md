@@ -176,6 +176,16 @@ in Status & signals.
 
 ## Components & interaction
 
+### Action zones
+
+Actions follow the object they affect and remain visible while its content scrolls.
+
+- The context row is the fixed breadcrumb or object-title row. Generic object actions such as open folder, archive, restore and delete sit at its far end. Lifecycle actions such as mark done and reopen join them because they change the object, not the current section. Destructive actions use the same zone and open `InlineConfirm` beside their trigger.
+- The primary action for the focused object sits in the fixed detail header. It answers what takes the object forward. A creation or edit flow instead commits through its single fixed footer primary action, with cancel and errors in that same footer.
+- Section actions affect only one section and use `SectionHeader`'s action slot. Row and card actions follow the card action grammar.
+
+An action row must not scroll away with content. Generic object actions do not belong at the bottom of a transcript, detail body or long form. A footer is not a second home for object actions.
+
 - **Tabs when you return, accordion when you'd forget.** Studio detail panels
   are tabs.
 - **Read inline, edit on a focused surface.** The transcript is for reading.
