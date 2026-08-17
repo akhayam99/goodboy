@@ -2,6 +2,7 @@ import type { ChangeEventHandler, RefObject } from 'react';
 import {
   Divider,
   FieldRow,
+  FileDropZone,
   IconButton,
   Input,
   SectionHeader,
@@ -206,13 +207,15 @@ export const NewSessionForm = ({
           label="Attachments"
           help="Images and files the agents can read on demand when they need more context."
         >
-          <div
+          <FileDropZone
             ref={composerRef}
             data-drop-composer
-            className={cn(
-              'flex w-full flex-col gap-2 rounded-lg border border-dashed p-3 motion-safe:transition-colors sm:w-96',
-              isDragging ? 'border-primary bg-primary/5' : 'border-border-soft',
-            )}
+            actionIcon={<Paperclip size={13} aria-hidden />}
+            actionLabel="Add files or drag"
+            isDisabled={busy}
+            isDragging={isDragging}
+            onSelect={() => fileInputRef.current?.click()}
+            className="sm:w-96"
           >
             <input
               ref={fileInputRef}
@@ -233,21 +236,7 @@ export const NewSessionForm = ({
                 ))}
               </div>
             ) : null}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={busy}
-              className={cn(
-                'inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs motion-safe:transition-colors',
-                busy
-                  ? 'cursor-not-allowed text-muted-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              )}
-            >
-              <Paperclip size={13} aria-hidden />
-              Add files
-            </button>
-          </div>
+          </FileDropZone>
         </FieldRow>
       </section>
 

@@ -228,50 +228,52 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
 
       <Divider />
 
-      <footer className="flex shrink-0 items-center gap-3 px-6 py-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          {error != null ? (
-            <span
-              role="alert"
-              className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-danger"
-              title={error}
+      <footer className="shrink-0 px-6 py-3">
+        <div className="mx-auto flex w-full max-w-2xl items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            {error != null ? (
+              <span
+                role="alert"
+                className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-danger"
+                title={error}
+              >
+                <AlertTriangle size={12} aria-hidden className="shrink-0" />
+                {error}
+              </span>
+            ) : null}
+          </div>
+          {mode === 'manual' ? (
+            <Button
+              onClick={() => void onCreate()}
+              disabled={busy !== null || title.trim().length === 0 || branch == null}
+              className={busy === 'create' ? 'animate-border-pulse' : undefined}
             >
-              <AlertTriangle size={12} aria-hidden className="shrink-0" />
-              {error}
-            </span>
-          ) : null}
+              {busy === 'create' ? (
+                'Creating…'
+              ) : (
+                <>
+                  Create MR
+                  <ArrowRight size={13} aria-hidden />
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => void onCreateWithAgent()}
+              disabled={busy !== null || branch == null}
+              className={busy === 'agent' ? 'animate-border-pulse' : undefined}
+            >
+              {busy === 'agent' ? (
+                'Drafting…'
+              ) : (
+                <>
+                  <CONCEPT_ICONS.agents size={13} aria-hidden />
+                  Draft with agent
+                </>
+              )}
+            </Button>
+          )}
         </div>
-        {mode === 'manual' ? (
-          <Button
-            onClick={() => void onCreate()}
-            disabled={busy !== null || title.trim().length === 0 || branch == null}
-            className={busy === 'create' ? 'animate-border-pulse' : undefined}
-          >
-            {busy === 'create' ? (
-              'Creating…'
-            ) : (
-              <>
-                Create MR
-                <ArrowRight size={13} aria-hidden />
-              </>
-            )}
-          </Button>
-        ) : (
-          <Button
-            onClick={() => void onCreateWithAgent()}
-            disabled={busy !== null || branch == null}
-            className={busy === 'agent' ? 'animate-border-pulse' : undefined}
-          >
-            {busy === 'agent' ? (
-              'Drafting…'
-            ) : (
-              <>
-                <CONCEPT_ICONS.agents size={13} aria-hidden />
-                Draft with agent
-              </>
-            )}
-          </Button>
-        )}
       </footer>
     </div>
   );

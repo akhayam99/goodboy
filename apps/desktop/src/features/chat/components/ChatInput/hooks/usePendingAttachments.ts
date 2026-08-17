@@ -1,16 +1,14 @@
 import {
   useCallback,
-  useEffect,
   useRef,
   useState,
   type ChangeEvent as ReactChangeEvent,
   type ClipboardEvent as ReactClipboardEvent,
 } from 'react';
-import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { isAllowedAttachment, resolveAttachmentMime } from '../../../attachment-kinds';
-import { readDroppedAttachment } from '../../../turn';
-import { resolveDropTarget } from './resolveDropTarget';
 import type { ToastKind } from '../../../../../app/components/Toast';
+import { useFileDropTarget } from '../../../../../shared/hooks/useFileDropTarget';
+import { readDroppedAttachment } from '../../../../../shared/lib/readDroppedAttachment';
 import {
   ATTACHMENT_LIMIT,
   MAX_ATTACHMENT_BYTES,
@@ -31,9 +29,15 @@ type Params = {
   readonly persistToDisk?: (att: PersistArgs) => Promise<string | null>;
 };
 
+type DroppedPaths = {
+  readonly paths: ReadonlyArray<string>;
+};
+
+const droppedFileName = ({ path }: { readonly path: string }): string =>
+  path.split('/').pop() ?? path;
+
 export const usePendingAttachments = ({ showToast, enabled = true, persistToDisk }: Params) => {
   const [attachments, setAttachments] = useState<ReadonlyArray<PendingAttachment>>([]);
-  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
 
@@ -118,136 +122,73 @@ export const usePendingAttachments = ({ showToast, enabled = true, persistToDisk
     event.target.value = '';
   };
 
-  const enabledRef = useRef(enabled);
-  enabledRef.current = enabled;
-  const showToastRef = useRef(showToast);
-  showToastRef.current = showToast;
-  const persistRef = useRef(persist);
-  persistRef.current = persist;
-
-  useEffect(() => {
-    let cancelled = false;
-    let unlisten: (() => void) | null = null;
-
-    const basename = (path: string): string => path.split('/').pop() ?? path;
-
-    const ingestDroppedPaths = async (paths: ReadonlyArray<string>) => {
-      const supported = paths.filter((p) => isAllowedAttachment({ name: basename(p), type: '' }));
-      const unsupported = paths.length - supported.length;
-      if (unsupported > 0) {
-        showToastRef.current(
-          'warning',
-          `${unsupported} file${unsupported === 1 ? '' : 's'} skipped, unsupported type`,
-        );
-      }
-      const dropped: PendingAttachment[] = [];
-      const rejected: string[] = [];
-      for (const path of supported) {
-        const name = basename(path);
-        try {
-          const r = await readDroppedAttachment(path);
-          const id = crypto.randomUUID();
-          const dataUrl = `data:${r.mimeType};base64,${r.dataBase64}`;
-          const relPath = await persistRef.current({
-            id,
-            fileName: r.fileName,
-            dataUrl,
-          });
-          dropped.push({
-            id,
-            fileName: r.fileName,
-            mimeType: r.mimeType,
-            dataUrl,
-            relPath,
-          });
-        } catch {
-          rejected.push(name);
-        }
-      }
-      if (rejected.length > 0) {
-        const label =
-          rejected.length === 1
-            ? `could not attach ${rejected[0]}, it may be over 15MB`
-            : `${rejected.length} files could not be read`;
-        showToastRef.current('error', label);
-      }
-      if (dropped.length === 0) {
-        return;
-      }
-      setAttachments((prev) => {
-        const room = ATTACHMENT_LIMIT - prev.length;
-        if (room <= 0) {
-          showToastRef.current('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
-          return prev;
-        }
-        if (dropped.length > room) {
-          showToastRef.current('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
-        }
-        return [...prev, ...dropped.slice(0, room)];
-      });
-    };
-
-    void (async () => {
+  const ingestDroppedPaths = async ({ paths }: DroppedPaths) => {
+    const supported = paths.filter((path) =>
+      isAllowedAttachment({ name: droppedFileName({ path }), type: '' }),
+    );
+    const unsupported = paths.length - supported.length;
+    if (unsupported > 0) {
+      showToast(
+        'warning',
+        `${unsupported} file${unsupported === 1 ? '' : 's'} skipped, unsupported type`,
+      );
+    }
+    const dropped: PendingAttachment[] = [];
+    const rejected: string[] = [];
+    for (const path of supported) {
+      const name = droppedFileName({ path });
       try {
-        const off = await getCurrentWebview().onDragDropEvent((event) => {
-          const p = event.payload;
-          switch (p.type) {
-            case 'leave':
-              setIsDragging(false);
-              break;
-            case 'enter':
-            case 'over': {
-              const composer = composerRef.current;
-              if (!composer) {
-                setIsDragging(false);
-                break;
-              }
-              const { hit } = resolveDropTarget({ px: p.position.x, py: p.position.y, composer });
-              setIsDragging(enabledRef.current && hit);
-              break;
-            }
-            case 'drop': {
-              setIsDragging(false);
-              const composer = composerRef.current;
-              if (!composer) {
-                return;
-              }
-              const { hit, ambiguousMiss } = resolveDropTarget({
-                px: p.position.x,
-                py: p.position.y,
-                composer,
-              });
-              if (!hit) {
-                if (ambiguousMiss) {
-                  showToastRef.current('warning', 'drop the file on a message box to attach it');
-                }
-                return;
-              }
-              if (!enabledRef.current) {
-                showToastRef.current('warning', 'connect the provider before attaching files');
-                return;
-              }
-              void ingestDroppedPaths(p.paths);
-              break;
-            }
-          }
+        const result = await readDroppedAttachment({ absolutePath: path });
+        const id = crypto.randomUUID();
+        const dataUrl = `data:${result.mimeType};base64,${result.dataBase64}`;
+        const relPath = await persist({
+          id,
+          fileName: result.fileName,
+          dataUrl,
         });
-        if (cancelled) {
-          off();
-        } else {
-          unlisten = off;
-        }
-      } catch (err) {
-        console.warn('drag-drop listener registration failed:', err);
-        showToastRef.current('warning', 'file drop is unavailable, use the paperclip instead');
+        dropped.push({
+          id,
+          fileName: result.fileName,
+          mimeType: result.mimeType,
+          dataUrl,
+          relPath,
+        });
+      } catch {
+        rejected.push(name);
       }
-    })();
+    }
+    if (rejected.length > 0) {
+      const label =
+        rejected.length === 1
+          ? `could not attach ${rejected[0]}, it may be over 15MB`
+          : `${rejected.length} files could not be read`;
+      showToast('error', label);
+    }
+    if (dropped.length === 0) {
+      return;
+    }
+    setAttachments((previous) => {
+      const room = ATTACHMENT_LIMIT - previous.length;
+      if (room <= 0) {
+        showToast('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
+        return previous;
+      }
+      if (dropped.length > room) {
+        showToast('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
+      }
+      return [...previous, ...dropped.slice(0, room)];
+    });
+  };
 
-    return () => {
-      cancelled = true;
-      unlisten?.();
-    };
-  }, []);
+  const { isDragging } = useFileDropTarget({
+    targetRef: composerRef,
+    isEnabled: enabled,
+    onDropPaths: ({ paths }) => void ingestDroppedPaths({ paths }),
+    onAmbiguousDrop: () => showToast('warning', 'drop the file on a message box to attach it'),
+    onDisabledDrop: () => showToast('warning', 'connect the provider before attaching files'),
+    onUnavailable: () =>
+      showToast('warning', 'file drop is unavailable, use the paperclip instead'),
+  });
 
   return {
     attachments,

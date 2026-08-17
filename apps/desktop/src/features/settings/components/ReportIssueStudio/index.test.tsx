@@ -5,6 +5,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { GhTokenStatus } from '@goodboy/types';
 
 type GhRunResult = { stdout: string; stderr: string; exitCode: number };
+type DragHandler = (event: { payload: unknown }) => void;
 
 const mocks = vi.hoisted(() => ({
   run: vi.fn<
@@ -15,10 +16,22 @@ const mocks = vi.hoisted(() => ({
     async () => '/tmp/goodboy-report-1',
   ),
   showToast: vi.fn(),
+  dragHandlers: Array<DragHandler>(),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: mocks.invoke,
+}));
+
+vi.mock('@tauri-apps/api/webview', () => ({
+  getCurrentWebview: () => ({
+    onDragDropEvent: async (handler: DragHandler) => {
+      mocks.dragHandlers.push(handler);
+      return () => {
+        mocks.dragHandlers = mocks.dragHandlers.filter((candidate) => candidate !== handler);
+      };
+    },
+  }),
 }));
 
 vi.mock('../../../../store', async () => {
@@ -85,6 +98,7 @@ beforeEach(() => {
   mocks.invoke.mockReset();
   mocks.invoke.mockImplementation(async () => '/tmp/goodboy-report-1');
   mocks.showToast.mockReset();
+  mocks.dragHandlers = [];
 });
 afterEach(cleanup);
 
@@ -131,8 +145,7 @@ describe('ReportIssueStudio', () => {
       notes: 'The reply stops mid-sentence after a tool call.',
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Preview/ }));
-
+    expect(screen.queryByRole('button', { name: /Preview/ })).toBeNull();
     expect(screen.getByText('Agent reply is cut off')).toBeDefined();
     expect(
       screen.getByText(
@@ -140,6 +153,56 @@ describe('ReportIssueStudio', () => {
         { normalizer: (text) => text },
       ),
     ).toBeDefined();
+  });
+
+  it('renders the compact file drop action across the available width', () => {
+    setGithubStatus({ available: true, mode: 'gh-cli' });
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    const addFiles = screen.getByRole('button', { name: 'Add files or drag' });
+
+    expect(addFiles.className).toContain('w-full');
+    expect(addFiles.className).toContain('justify-center');
+    expect(addFiles.className).toContain('h-8');
+  });
+
+  it('adds an image dropped on the report image area', async () => {
+    setGithubStatus({ available: true, mode: 'gh-cli' });
+    mocks.invoke.mockImplementation(async (command) =>
+      command === 'attachment_read_dropped'
+        ? {
+            fileName: 'dropped.png',
+            mimeType: 'image/png',
+            dataBase64: 'aGk=',
+          }
+        : '/tmp/goodboy-report-1',
+    );
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    await act(async () => {
+      mocks.dragHandlers.forEach((handler) => {
+        handler({
+          payload: {
+            type: 'drop',
+            position: { x: 100, y: 100 },
+            paths: ['/tmp/dropped.png'],
+          },
+        });
+      });
+    });
+
+    expect(screen.getByAltText('dropped.png')).toBeDefined();
+  });
+
+  it('keeps the fixed actions in the same bounded measure as the expanded preview', () => {
+    setGithubStatus({ available: true, mode: 'gh-cli' });
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    const preview = screen.getByRole('region', { name: 'Preview' });
+    const footer = screen.getByRole('button', { name: 'Send' }).closest('footer');
+
+    expect(preview.closest('.max-w-2xl')).not.toBeNull();
+    expect(footer?.firstElementChild?.className).toContain('max-w-2xl');
   });
 
   const attachOneImage = () => {
