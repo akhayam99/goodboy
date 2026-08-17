@@ -1,4 +1,4 @@
-import type { ChangeEventHandler, RefObject } from 'react';
+import type { ChangeEventHandler, ReactNode, RefObject } from 'react';
 import {
   Divider,
   IconButton,
@@ -10,7 +10,7 @@ import {
   cn,
   tintClasses,
 } from '@goodboy/ui';
-import { AlertTriangle, Expand, Folder, Paperclip } from 'lucide-react';
+import { AlertTriangle, Expand, Paperclip } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
 import {
@@ -28,13 +28,20 @@ import { PROVIDER_ORDER } from '../../../providers/components/ProviderStudio/pro
 import { BranchModeToggle } from './BranchModeToggle';
 import { IssueSourceField } from './IssueSourceField';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import type { Tone } from '@goodboy/ui';
+
+const sectionGlyph = ({
+  Icon,
+  tone,
+}: {
+  readonly Icon: (typeof CONCEPT_ICONS)[keyof typeof CONCEPT_ICONS];
+  readonly tone: Tone;
+}): ReactNode => <Icon size={16} aria-hidden className={tintClasses(tone).icon} />;
 
 type BranchMode = 'new' | 'existing';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly workspaceName: string;
-  readonly workspacePath: string;
   readonly isSimple: boolean;
   readonly noProviderConnected: boolean;
   readonly onOpenSettings: () => void;
@@ -76,8 +83,6 @@ type Props = {
 
 export const NewSessionForm = ({
   workspaceId,
-  workspaceName,
-  workspacePath,
   isSimple,
   noProviderConnected,
   onOpenSettings,
@@ -116,22 +121,14 @@ export const NewSessionForm = ({
   conflictWorktreePath,
   busy,
 }: Props) => {
-  const sessionTint = tintClasses(CONCEPT_TONE.sessions);
   const locationLabel = isSimple ? 'Folder' : 'Branch';
+  const locationGlyph = isSimple
+    ? sectionGlyph({ Icon: CONCEPT_ICONS.explore, tone: CONCEPT_TONE.explore })
+    : sectionGlyph({ Icon: CONCEPT_ICONS.branch, tone: CONCEPT_TONE.branch });
 
   return (
     <div className={cn('flex w-full flex-col', PANE_RHYTHM.stack)}>
-      <header className="flex items-center gap-3">
-        <span
-          className={cn(
-            'flex size-10 shrink-0 items-center justify-center rounded-lg border',
-            sessionTint.bgSoft,
-            sessionTint.borderSoft,
-            sessionTint.icon,
-          )}
-        >
-          <CONCEPT_ICONS.sessions size={18} aria-hidden />
-        </span>
+      <header className="flex items-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">Create session</h1>
       </header>
 
@@ -166,7 +163,14 @@ export const NewSessionForm = ({
         <>
           <Divider />
           <section className="flex flex-col gap-3">
-            <SectionHeader size="page" label="Start from an issue" />
+            <SectionHeader
+              size="page"
+              label="Start from an issue"
+              icon={sectionGlyph({
+                Icon: CONCEPT_ICONS.integrations,
+                tone: CONCEPT_TONE.integrations,
+              })}
+            />
             <IssueSourceField
               workspaceId={workspaceId}
               sources={issueSources}
@@ -181,7 +185,11 @@ export const NewSessionForm = ({
 
       <Divider />
       <section className="flex flex-col gap-3">
-        <SectionHeader size="page" label="Goal" />
+        <SectionHeader
+          size="page"
+          label="Goal"
+          icon={sectionGlyph({ Icon: CONCEPT_ICONS.goal, tone: CONCEPT_TONE.goal })}
+        />
         <div className="flex w-full items-start gap-2">
           <Textarea
             value={goal}
@@ -256,16 +264,7 @@ export const NewSessionForm = ({
 
       <Divider />
       <section className="flex flex-col gap-3">
-        <SectionHeader size="page" label={locationLabel} />
-        <div className="flex w-full items-center gap-2 rounded-lg bg-subtle p-3">
-          <Folder size={14} aria-hidden className="shrink-0 text-muted-foreground" />
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="truncate text-xs font-medium text-foreground">{workspaceName}</span>
-            <span className="truncate font-mono text-2xs text-muted-foreground">
-              {workspacePath}
-            </span>
-          </div>
-        </div>
+        <SectionHeader size="page" label={locationLabel} icon={locationGlyph} />
         {isSimple ? (
           <div className="flex w-full flex-col gap-1.5">
             <div className="flex w-full items-center gap-1.5">

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { SegmentedTabs } from '@goodboy/ui';
 import type { SessionExternalTaskProvider, WorkspaceId } from '@goodboy/types';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
+import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import { IssuePicker } from '../../../integrations/components/IssuePicker';
 import { useIssueCandidates } from '../../../integrations/hooks/useIssueCandidates';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
@@ -42,6 +43,7 @@ export const IssueSourceField = ({
           options={sources.map((source) => ({
             value: source.provider,
             label: source.label,
+            glyph: <IntegrationGlyph provider={source.provider} size="xs" />,
             disabled,
           }))}
           value={provider}

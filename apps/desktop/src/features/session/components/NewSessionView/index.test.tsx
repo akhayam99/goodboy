@@ -182,23 +182,79 @@ describe('NewSessionView issue sources', () => {
     );
   });
 
-  it('docks the create action at the pane footer, never inside a form section', () => {
+  it('lands the action row inline after the last section, reading reset then cancel then create', () => {
     render(
       <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
     );
 
+    const resetButton = screen.getByRole('button', { name: /^Reset/ });
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
     const createButton = screen.getByRole('button', { name: 'Create session' });
-    const footer = createButton.closest('footer');
-    expect(footer).not.toBeNull();
-    expect(footer?.closest('section')).toBeNull();
-    const goalTextarea = screen.getByLabelText('Goal');
-    const goalSection = goalTextarea.closest('section');
-    expect(goalSection).not.toBeNull();
-    expect(within(goalSection!).queryByRole('button', { name: 'Create session' })).toBeNull();
+
+    expect(createButton.closest('footer')).toBeNull();
+    expect(createButton.closest('section')).toBeNull();
+
+    const resetOrder = resetButton.compareDocumentPosition(cancelButton);
+    expect(resetOrder & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const cancelOrder = cancelButton.compareDocumentPosition(createButton);
+    expect(cancelOrder & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
     const branchInput = screen.getByLabelText('Branch slug');
     const branchSection = branchInput.closest('section');
     expect(branchSection).not.toBeNull();
-    expect(within(branchSection!).queryByRole('button', { name: 'Create session' })).toBeNull();
+    const sectionAfter = branchSection!.compareDocumentPosition(createButton);
+    expect(sectionAfter & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('never repeats the workspace name or path under the branch controls', () => {
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    expect(screen.queryByText('/repo')).toBeNull();
+    expect(screen.queryByText('workspace-1')).toBeNull();
+  });
+
+  it('surfaces the provider glyph next to each issue source tab', () => {
+    h.store.workspaceIntegrations = {
+      [WORKSPACE_ID]: [integration('linear'), integration('sentry')],
+    };
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    const linearTab = screen.getByRole('tab', { name: /Linear/ });
+    expect(within(linearTab).getByRole('img', { name: 'Linear' })).toBeDefined();
+    const githubTab = screen.getByRole('tab', { name: /GitHub/ });
+    expect(within(githubTab).getByRole('img', { name: 'GitHub' })).toBeDefined();
+    const sentryTab = screen.getByRole('tab', { name: /Sentry/ });
+    expect(within(sentryTab).getByRole('img', { name: 'Sentry' })).toBeDefined();
+  });
+
+  it('resets the draft only through the confirm attached to its trigger', () => {
+    const view = render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    expect(screen.getByRole('button', { name: /^Reset/ }).hasAttribute('disabled')).toBe(true);
+
+    fireEvent.change(screen.getByLabelText('Goal'), {
+      target: { value: 'A goal that survives leaving' },
+    });
+    view.rerender(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    const resetTrigger = screen.getByRole('button', { name: /^Reset/ });
+    expect(resetTrigger.hasAttribute('disabled')).toBe(false);
+    fireEvent.click(resetTrigger);
+
+    const confirmGroup = screen.getByRole('group', { name: 'Reset this session draft?' });
+    expect(confirmGroup).toBeDefined();
+    fireEvent.click(within(confirmGroup).getByRole('button', { name: 'Reset' }));
+
+    expect(h.store.clearNewSessionDraft).toHaveBeenCalledWith({ workspaceId: WORKSPACE_ID });
+    expect(h.store.newSessionDrafts[WORKSPACE_ID]).toBeUndefined();
   });
 
   it('validates the required decisions before creating a repository session', async () => {
@@ -473,7 +529,7 @@ describe('NewSessionView issue sources', () => {
     expect(editor.value).toBe('Keep this wording');
   });
 
-  it('keeps the draft when the view unmounts and restores it when remounted', () => {
+  it('keeps the draft through unmount, remount and Cancel, and lets a fresh mount see it', () => {
     const view = render(
       <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
     );
@@ -495,7 +551,8 @@ describe('NewSessionView issue sources', () => {
     expect(remountedGoal.value).toBe('Draft a resilient session');
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(h.store.newSessionDrafts[WORKSPACE_ID]).toBeUndefined();
+    expect(h.store.clearNewSessionDraft).not.toHaveBeenCalled();
+    expect(h.store.newSessionDrafts[WORKSPACE_ID]?.goal).toBe('Draft a resilient session');
   });
 
   it('offers every connected source and hides the ones that are not', () => {
