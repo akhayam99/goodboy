@@ -276,6 +276,19 @@ describe('CreateAgentPopover', () => {
     expect(screen.queryByRole('button', { name: 'Codex' })).toBeNull();
   });
 
+  it('links an empty provider state to the in-app Providers surface', () => {
+    h.providers = [];
+    renderControl();
+    openPopover();
+    const openProviders = screen.getByRole('button', { name: 'Open providers' });
+    const onOpenProviderStudio = vi.fn();
+    window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
+    fireEvent.click(openProviders);
+    window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
+    expect(onOpenProviderStudio).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog', { name: 'Create agent' })).toBeNull();
+  });
+
   it('drops the type section entirely in a simple workspace', () => {
     h.workspaceKind = 'simple';
     renderControl();

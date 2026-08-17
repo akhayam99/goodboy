@@ -28,6 +28,7 @@ describe('ProviderPicker', () => {
     expect(screen.getByText('Provider')).toBeDefined();
     expect(screen.queryByText('Models')).toBeNull();
     expect(screen.queryByText('Tuning')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add provider' })).toBeNull();
   });
 
   it('selects a connected provider and closes the picker', () => {
