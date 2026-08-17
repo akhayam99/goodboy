@@ -38,11 +38,11 @@ describe('ProviderUsagePill', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders a pct-left label when the cap is set', () => {
+  it('hides a healthy budget', () => {
     state.providerSpendBreakdown = [
       { provider: 'anthropic', spentUsd: 25, capUsd: 100, pct: 0.25 },
     ];
     render(<ProviderUsagePill provider="anthropic" />);
-    expect(screen.getByText(/75% left/i)).toBeDefined();
+    expect(screen.queryByText(/75% left/i)).toBeNull();
   });
 });

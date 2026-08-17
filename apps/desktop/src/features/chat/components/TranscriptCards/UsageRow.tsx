@@ -22,7 +22,7 @@ type Props = {
 
 export const UsageRow = ({ usage }: Props) => {
   return (
-    <TranscriptShell tone="neutral" variant="boxed" className="flex w-fit">
+    <TranscriptShell tone="neutral" variant="leftBorder" className="flex w-fit">
       <MetaRow
         items={[
           <UsageStat key="in" value={formatTokens(usage.inputTokens)} label="in" />,

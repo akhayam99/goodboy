@@ -22,13 +22,13 @@ export const WorkflowKickoffCard = ({ item }: Props) => {
 
   return (
     <TranscriptDisclosure
-      tone="primary"
+      tone="neutral"
       open={open && hasBody}
       bodyClassName="gap-2"
       header={
         <TranscriptRowHeader
           grouped
-          tone="primary"
+          tone="neutral"
           icon={<Rocket size={12} aria-hidden />}
           eyebrow="workflow start"
           preview={hasGoal ? goal : undefined}

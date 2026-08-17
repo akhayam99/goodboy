@@ -4,9 +4,9 @@ import { extractPlanFromMarker } from '@goodboy/core';
 import { useSessionPlans } from '../../../../store';
 import { TranscriptShell } from '../TranscriptShell';
 import { tintClasses } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
-const accent = tintClasses('primary');
+const accent = tintClasses(CONCEPT_TONE.plans);
 
 type Props = {
   readonly assistantText: string;
@@ -37,7 +37,7 @@ export const PlanChip = ({ assistantText, sessionId }: Props) => {
       type="button"
       onClick={onClick}
       data-testid="plan-chip"
-      tone="primary"
+      tone="neutral"
       variant="pill"
       className={`inline-flex w-fit items-center gap-1.5 text-xs font-medium transition-opacity hover:opacity-80 ${accent.text}`}
     >

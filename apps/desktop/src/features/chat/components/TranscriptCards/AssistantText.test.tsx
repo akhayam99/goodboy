@@ -19,7 +19,6 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
   Markdown: ({ text }: { text: string }) => <div>{text}</div>,
 }));
 
-vi.mock('../ClustersCard', () => ({ ClustersCard: () => null }));
 vi.mock('../HandoffChip', () => ({ HandoffChip: () => null }));
 vi.mock('../PlanChip', () => ({ PlanChip: () => null }));
 vi.mock('../ResolverThreadsCard', () => ({ ResolverThreadsCard: () => null }));

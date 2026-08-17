@@ -1,6 +1,5 @@
 import type { ModelCostTier, ModelEffort, ModelFamily, ProviderId } from '@goodboy/types';
 import { getModelDescriptor, getModelPrice } from '@goodboy/core';
-import type { VerbosityLevel } from '../../settings/verbosity';
 
 export const PROVIDER_LABEL: Record<ProviderId, string> = {
   anthropic: 'Claude',
@@ -66,24 +65,6 @@ export const EFFORT_LABEL: Record<EffortLevel, string> = {
   max: 'Max',
 };
 
-export const EFFORT_DOT: Record<EffortLevel, string> = {
-  minimal: 'bg-muted-foreground',
-  low: 'bg-success',
-  medium: 'bg-info',
-  high: 'bg-warning',
-  xhigh: 'bg-danger/80',
-  max: 'bg-danger',
-};
-
-export const EFFORT_TEXT: Record<EffortLevel, string> = {
-  minimal: 'text-muted-foreground',
-  low: 'text-success',
-  medium: 'text-info',
-  high: 'text-warning',
-  xhigh: 'text-danger/85',
-  max: 'text-danger',
-};
-
 export type CostTier = ModelCostTier;
 
 const FALLBACK_WEIGHT = 10;
@@ -92,12 +73,6 @@ export const TIER_TEXT: Record<CostTier, string> = {
   cheap: 'text-success',
   mid: 'text-warning',
   expensive: 'text-danger',
-};
-
-export const VERBOSITY_TEXT: Record<VerbosityLevel, string> = {
-  brief: 'text-success',
-  normal: 'text-info',
-  verbose: 'text-danger',
 };
 
 const FAMILY_LABEL: Record<ModelFamily, string> = {
