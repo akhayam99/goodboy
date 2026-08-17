@@ -12,7 +12,7 @@ export const WorkflowRunDetail = ({ session, workflowRunId }: Props) => (
   <ScrollFade className="h-full min-w-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
     <div
       className={cn(
-        'flex flex-col motion-safe:animate-studio-in',
+        'motion-safe:animate-studio-in',
         PANE_RHYTHM.column,
         PANE_RHYTHM.stack,
         PANE_RHYTHM.measure.pane,

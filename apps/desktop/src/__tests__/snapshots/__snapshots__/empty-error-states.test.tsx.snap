@@ -1571,7 +1571,7 @@ exports[`snapshot, error states > SessionOverviewLoading: silent skeleton before
   >
     <div
       aria-label="Loading session overview"
-      class="flex flex-col mx-auto w-full gap-5 max-w-5xl"
+      class="mx-auto w-full flex flex-col gap-5 max-w-5xl"
       role="status"
     >
       <div
