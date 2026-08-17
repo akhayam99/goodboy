@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { getDefaultTurnModel } from '@goodboy/core';
-import { Button, cn, Divider, DropdownPortal, Popover, useDropdown } from '@goodboy/ui';
+import {
+  Button,
+  cn,
+  Divider,
+  DropdownPortal,
+  Popover,
+  PopoverBody,
+  PopoverFooter,
+  useDropdown,
+} from '@goodboy/ui';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore, useCurrentWorkspace } from '../../../../store';
 import { clampEffort } from '../../../chat/utils/chat-constants';
@@ -117,61 +126,63 @@ export const CreateAgentPopover = ({
             className={cn(popupClassName, 'flex max-h-[calc(100vh-1rem)] flex-col bg-subtle')}
             style={popupStyle}
           >
-            {agentKinds.length > 1 && (
-              <>
-                <PickerSection label="Agent type" hint="What this agent is allowed to do">
-                  <AgentKindGrid kinds={agentKinds} value={selectedKind} onChange={setKind} />
-                </PickerSection>
-                <Divider />
-              </>
-            )}
-            <SpawnRoutingSummary
-              kind={selectedKind}
-              effective={effective}
-              fallback={spawnDefault}
-              isPinned={routing != null}
-              onReset={() => {
-                setRouting(null);
-                setViewProvider(spawnDefault.provider);
-              }}
-            />
-            <Divider />
-            {connectProvider != null ? (
-              <ProviderInlineConnect
-                providerId={connectProvider}
-                onDone={() => setConnectProvider(null)}
-                onInFlightChange={setIsProviderConnectionInFlight}
-              />
-            ) : (
-              <AgentRoutingSections
-                connectedProviders={connectedProviders}
+            <PopoverBody>
+              {agentKinds.length > 1 && (
+                <>
+                  <PickerSection label="Agent type" hint="What this agent is allowed to do">
+                    <AgentKindGrid kinds={agentKinds} value={selectedKind} onChange={setKind} />
+                  </PickerSection>
+                  <Divider />
+                </>
+              )}
+              <SpawnRoutingSummary
+                kind={selectedKind}
                 effective={effective}
-                viewProvider={viewProvider}
-                onViewProvider={setViewProvider}
-                onPickProvider={(provider) => {
-                  const model = getDefaultTurnModel({ id: provider });
-                  setRouting({
-                    provider,
-                    model,
-                    effort: clampEffort(model, effective.effort),
-                  });
+                fallback={spawnDefault}
+                isPinned={routing != null}
+                onReset={() => {
+                  setRouting(null);
+                  setViewProvider(spawnDefault.provider);
                 }}
-                onPickModel={(model, effort) => {
-                  setRouting({
-                    provider: viewProvider,
-                    model,
-                    effort,
-                  });
-                }}
-                onConnectProvider={setConnectProvider}
               />
-            )}
+              <Divider />
+              {connectProvider != null ? (
+                <ProviderInlineConnect
+                  providerId={connectProvider}
+                  onDone={() => setConnectProvider(null)}
+                  onInFlightChange={setIsProviderConnectionInFlight}
+                />
+              ) : (
+                <AgentRoutingSections
+                  connectedProviders={connectedProviders}
+                  effective={effective}
+                  viewProvider={viewProvider}
+                  onViewProvider={setViewProvider}
+                  onPickProvider={(provider) => {
+                    const model = getDefaultTurnModel({ id: provider });
+                    setRouting({
+                      provider,
+                      model,
+                      effort: clampEffort(model, effective.effort),
+                    });
+                  }}
+                  onPickModel={(model, effort) => {
+                    setRouting({
+                      provider: viewProvider,
+                      model,
+                      effort,
+                    });
+                  }}
+                  onConnectProvider={setConnectProvider}
+                />
+              )}
+            </PopoverBody>
             <Divider />
-            <div className="flex items-center justify-end px-2.5 py-2">
+            <PopoverFooter className="flex items-center justify-end px-2.5 py-2">
               <Button size="sm" onClick={() => void onCreate()}>
                 Spawn {AGENT_KIND_META[selectedKind].label}
               </Button>
-            </div>
+            </PopoverFooter>
           </Popover>
         )}
       </DropdownPortal>

@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { CircleDollarSign } from 'lucide-react';
-import { Button, cn, Divider, formatUsd, Popover, useDropdown } from '@goodboy/ui';
+import {
+  Button,
+  cn,
+  Divider,
+  formatUsd,
+  Popover,
+  PopoverBody,
+  PopoverFooter,
+  useDropdown,
+} from '@goodboy/ui';
 import type { SessionId, WorkflowRun, WorkflowSpendLimitMode } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
 import { useRunSpendUsd } from '../../../../store/selectors';
@@ -94,27 +103,29 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
           className={cn(popupClassName, 'flex flex-col bg-subtle')}
           style={popupStyle}
         >
-          <header className="px-3 py-2 text-xs font-semibold text-foreground">
-            Spend limit for this run
-          </header>
+          <PopoverBody>
+            <header className="px-3 py-2 text-xs font-semibold text-foreground">
+              Spend limit for this run
+            </header>
+            <Divider />
+            <div className="flex flex-col gap-2 px-3 py-3">
+              <SpendLimitFields
+                amount={amount}
+                mode={mode}
+                inputId="run-spend-limit-amount"
+                invalid={isInvalid}
+                onAmount={setAmount}
+                onMode={setMode}
+              />
+              <p className="text-2xs leading-relaxed text-muted-foreground">
+                {isInvalid
+                  ? 'Enter an amount above zero, or clear the field for no limit.'
+                  : `${formatUsd(spentUsd)} spent so far. Leave it empty for no limit.`}
+              </p>
+            </div>
+          </PopoverBody>
           <Divider />
-          <div className="flex flex-col gap-2 px-3 py-3">
-            <SpendLimitFields
-              amount={amount}
-              mode={mode}
-              inputId="run-spend-limit-amount"
-              invalid={isInvalid}
-              onAmount={setAmount}
-              onMode={setMode}
-            />
-            <p className="text-2xs leading-relaxed text-muted-foreground">
-              {isInvalid
-                ? 'Enter an amount above zero, or clear the field for no limit.'
-                : `${formatUsd(spentUsd)} spent so far. Leave it empty for no limit.`}
-            </p>
-          </div>
-          <Divider />
-          <footer className="flex items-center justify-end gap-2 px-3 py-2">
+          <PopoverFooter className="flex items-center justify-end gap-2 px-3 py-2">
             {limitUsd == null ? null : (
               <Button
                 variant="ghost"
@@ -134,7 +145,7 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
             >
               Save
             </Button>
-          </footer>
+          </PopoverFooter>
         </Popover>
       ) : null}
     </div>
