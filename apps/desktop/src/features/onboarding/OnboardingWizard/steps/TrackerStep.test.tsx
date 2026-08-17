@@ -62,6 +62,10 @@ describe('TrackerStep', () => {
       expect(screen.queryByText(/Add a workspace first/i)).toBeNull();
     });
 
+    it('labels the segmented control as Tools, not just Issue tracker', () => {
+      expect(screen.getByRole('tablist', { name: 'Tools' })).toBeDefined();
+    });
+
     it('swaps in the Jira form when the Jira segment is picked', () => {
       const jira = screen.getByRole('tab', { name: /jira/i });
       expect(jira.hasAttribute('disabled')).toBe(false);

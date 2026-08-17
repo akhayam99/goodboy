@@ -1,4 +1,8 @@
-import { deleteWorkspaceIntegration, upsertWorkspaceIntegration } from '@goodboy/db';
+import {
+  deleteWorkspaceIntegration,
+  getWorkspaceIntegration,
+  upsertWorkspaceIntegration,
+} from '@goodboy/db';
 import type {
   IsoDateTime,
   SlackWorkspaceIntegration,
@@ -36,9 +40,8 @@ export const connectSlack = (set: SetFn, get: GetFn) => {
   return async ({ workspaceId, botToken }: ConnectParams): Promise<SlackConnection> => {
     const connection = await slackValidateConnection({ botToken });
     const now = new Date().toISOString() as IsoDateTime;
-    const existing = get().workspaceIntegrations[workspaceId]?.find(
-      (integration): integration is SlackWorkspaceIntegration => integration.provider === 'slack',
-    );
+    const existingIntegration = await getWorkspaceIntegration(tauriDatabase, workspaceId, 'slack');
+    const existing = existingIntegration?.provider === 'slack' ? existingIntegration : undefined;
     const integration: SlackWorkspaceIntegration = {
       id: (existing?.id ?? crypto.randomUUID()) as WorkspaceIntegrationId,
       workspaceId,
@@ -52,8 +55,11 @@ export const connectSlack = (set: SetFn, get: GetFn) => {
     try {
       await slackStoreToken({ workspaceId, botToken });
     } catch (storeError) {
-      await rollbackSlackRow({ workspaceId, existing });
-      throw storeError;
+      try {
+        await rollbackSlackRow({ workspaceId, existing });
+      } finally {
+        throw storeError;
+      }
     }
     set((state) => {
       const current = state.workspaceIntegrations[workspaceId] ?? [];

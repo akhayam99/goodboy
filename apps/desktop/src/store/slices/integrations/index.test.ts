@@ -54,6 +54,7 @@ const reopenDiffCommentDbSpy = vi.fn(async () => undefined);
 const consumeDiffCommentsDbSpy = vi.fn(async () => undefined);
 const deleteDiffCommentDbSpy = vi.fn(async () => undefined);
 const upsertWorkspaceIntegrationSpy = vi.fn(async () => undefined);
+const getWorkspaceIntegrationSpy = vi.fn(async () => null as WorkspaceIntegration | null);
 const listIntegrationsForWorkspaceSpy = vi.fn(
   async () => [] as ReadonlyArray<WorkspaceIntegration>,
 );
@@ -135,6 +136,7 @@ vi.mock('@goodboy/db', () => ({
   consumeDiffComments: consumeDiffCommentsDbSpy,
   deleteDiffComment: deleteDiffCommentDbSpy,
   listIntegrationsForWorkspace: listIntegrationsForWorkspaceSpy,
+  getWorkspaceIntegration: getWorkspaceIntegrationSpy,
   upsertWorkspaceIntegration: upsertWorkspaceIntegrationSpy,
   deleteWorkspaceIntegration: deleteWorkspaceIntegrationSpy,
   insertOpenQuestion: vi.fn(async () => undefined),
@@ -472,6 +474,7 @@ describe('store contract', () => {
     invokeWorkspacesWithUnreadSpy.mockResolvedValue([]);
     listWorkspaceScriptsSpy.mockResolvedValue([]);
     listIntegrationsForWorkspaceSpy.mockResolvedValue([]);
+    getWorkspaceIntegrationSpy.mockResolvedValue(null);
     listDiffCommentsSpy.mockResolvedValue([]);
     dbGetSettingSpy.mockResolvedValue(null);
     ghStatusSpy.mockResolvedValue({ available: true, mode: 'gh-cli', scopes: [] });
@@ -954,6 +957,50 @@ describe('store contract', () => {
       expect(store.getState().workspaceIntegrations[WS_ID] ?? []).toEqual([]);
     });
 
+    it('connectSlack restores the database row when the in-memory store is stale', async () => {
+      const store = await getStore();
+      const existing: WorkspaceIntegration = {
+        id: 'sl-db-existing' as WorkspaceIntegrationId,
+        workspaceId: WS_ID,
+        provider: 'slack',
+        config: { teamId: 'T00', teamName: 'Old', botUserId: 'U00' },
+        credentialKey: `goodboy.workspace.${WS_ID}.slack`,
+        createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      };
+      getWorkspaceIntegrationSpy.mockResolvedValueOnce(existing);
+      slackValidateConnectionSpy.mockResolvedValueOnce({
+        teamId: 'T01',
+        teamName: 'NewTeam',
+        botUserId: 'U09',
+        botUserName: 'goodboy',
+      });
+      slackConnectSpy.mockRejectedValueOnce(new Error('keychain unavailable'));
+
+      await expect(
+        store.getState().connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-new' }),
+      ).rejects.toThrow(/keychain unavailable/);
+
+      expect(deleteWorkspaceIntegrationSpy).not.toHaveBeenCalled();
+      expect(upsertWorkspaceIntegrationSpy).toHaveBeenLastCalledWith(expect.anything(), existing);
+    });
+
+    it('connectSlack preserves the keychain error when database rollback fails', async () => {
+      const store = await getStore();
+      slackValidateConnectionSpy.mockResolvedValueOnce({
+        teamId: 'T01',
+        teamName: 'Acme',
+        botUserId: 'U09',
+        botUserName: 'goodboy',
+      });
+      slackConnectSpy.mockRejectedValueOnce(new Error('keychain unavailable'));
+      deleteWorkspaceIntegrationSpy.mockRejectedValueOnce(new Error('rollback failed'));
+
+      await expect(
+        store.getState().connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-secret' }),
+      ).rejects.toThrow(/keychain unavailable/);
+    });
+
     it('connectSlack restores the prior row when a reconnect fails the keychain write', async () => {
       const store = await getStore();
       const existing: WorkspaceIntegration = {
@@ -965,6 +1012,7 @@ describe('store contract', () => {
         createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
         updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
       };
+      getWorkspaceIntegrationSpy.mockResolvedValueOnce(existing);
       store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
       slackValidateConnectionSpy.mockResolvedValueOnce({
         teamId: 'T01',
@@ -1010,6 +1058,7 @@ describe('store contract', () => {
         createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
         updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
       };
+      getWorkspaceIntegrationSpy.mockResolvedValueOnce(existing);
       store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
       slackValidateConnectionSpy.mockResolvedValueOnce({
         teamId: 'T01',
