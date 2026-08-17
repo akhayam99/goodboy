@@ -828,6 +828,7 @@ export const initialState: AppState = {
   workspaceSummary: null,
   sessionSlots: {},
   slotHistory: {},
+  slotHistoryCounts: {},
   summarizerStatus: {},
   storageStats: null,
   storageStatsLoading: false,

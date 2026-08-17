@@ -95,15 +95,31 @@ export const listContextSlotHistory = async (
   db: Database,
   sessionId: SessionId,
   key: string,
+  limit: number = HISTORY_CAP,
 ): Promise<ReadonlyArray<ContextSlotHistoryEntry>> => {
   const rows = await db.select<ContextSlotHistoryRow>(
     `SELECT id, key, value, author, created_at
      FROM context_slot_history
      WHERE session_id = ? AND key = ?
-     ORDER BY created_at DESC`,
-    [sessionId, key],
+     ORDER BY created_at DESC
+     LIMIT ?`,
+    [sessionId, key, limit],
   );
   return rows.map(toHistoryDomain);
+};
+
+export const countContextSlotHistoryForSession = async (
+  db: Database,
+  sessionId: SessionId,
+): Promise<Readonly<Record<string, number>>> => {
+  const rows = await db.select<{ key: string; total: number }>(
+    `SELECT key, COUNT(*) AS total
+     FROM context_slot_history
+     WHERE session_id = ?
+     GROUP BY key`,
+    [sessionId],
+  );
+  return Object.fromEntries(rows.map((row) => [row.key, row.total]));
 };
 
 export const listContextSlotsForSession = async (

@@ -44,6 +44,7 @@ import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { ExplorePane } from '../../../explore/components/ExplorePane';
 import { LENS_LABEL, SIMPLE_LENSES } from '../../lens-labels';
+import { contextRegionFor, resolveLensSurface } from '../../lens-surface';
 import { LensEmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
@@ -97,6 +98,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   }, [activeLens, sessionId, setActiveLens]);
 
   const lens: LensKind | null = activeLens ?? null;
+  const surface = resolveLensSurface({ lens });
   const isOverviewLoaded = areAgentsLoaded && arePlansLoaded;
   const isFreshOverviewLayout = session.workflowRuns.every((run) => run.discardedAt != null);
   const onRetryOverview = () => {
@@ -274,7 +276,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
           className={cn('absolute inset-0 z-0', !showLens && 'invisible pointer-events-none')}
           inert={!showLens}
         >
-          {lens === null ? (
+          {surface === 'overview' ? (
             isOverviewLoaded ? (
               <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
             ) : (
@@ -309,11 +311,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               />
             </PaneShell>
           ) : null}
-          {lens === 'context' ||
-          lens === 'goal' ||
-          lens === 'decisions' ||
-          lens === 'last_output_summary' ? (
-            <ContextPane session={session} initialRegion={lens === 'context' ? undefined : lens} />
+          {surface === 'context' ? (
+            <ContextPane session={session} initialRegion={contextRegionFor({ lens })} />
           ) : null}
           {lens === 'pr' ? <PrPane session={session} onSelectLens={onSelectLens} /> : null}
           {lens === 'review' ? <ReviewBoardPane session={session} /> : null}

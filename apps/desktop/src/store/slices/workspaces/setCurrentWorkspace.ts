@@ -64,6 +64,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       sessionTelemetry: {},
       sessionSlots: {},
       slotHistory: {},
+      slotHistoryCounts: {},
       sessionWorktrees: {},
       sessionMounts: {},
       sessionActiveMount: {},

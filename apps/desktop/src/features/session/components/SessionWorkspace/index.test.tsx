@@ -1014,7 +1014,6 @@ describe('SessionWorkspace integration lenses', () => {
 describe('SessionWorkspace context routing', () => {
   it.each([
     ['context', 'context'],
-    ['goal', 'goal'],
     ['decisions', 'decisions'],
     ['last_output_summary', 'last_output_summary'],
   ] as const)('routes %s to the Context pane at %s', (lens, region) => {
@@ -1024,5 +1023,15 @@ describe('SessionWorkspace context routing', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('context-pane').dataset.region).toBe(region);
+  });
+
+  it('routes goal to the Overview', () => {
+    store.activeLens = { [SESSION_ID]: 'goal' };
+    store.selectedAgentId = {};
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByRole('region', { name: 'Session overview' })).toBeDefined();
+    expect(screen.queryByTestId('context-pane')).toBeNull();
   });
 });

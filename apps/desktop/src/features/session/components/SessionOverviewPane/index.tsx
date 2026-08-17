@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Divider, Eyebrow } from '@goodboy/ui';
 import { classifyWorkflowChain, runsForWorkflowRun, upcomingSteps } from '@goodboy/core';
 import type { Agent, AgentId, Session, SessionId, Workflow } from '@goodboy/types';
@@ -10,6 +10,11 @@ import {
   useNonResolverStandaloneAgents,
   useSessionOpenQuestions,
   useSessionStageInfo,
+  useSessionLoading,
+  useSessionSlots,
+  useSlotHistory,
+  useSlotHistoryCount,
+  useSummarizerStatus,
 } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
@@ -37,6 +42,9 @@ import { LinkedWorkSection } from './LinkedWorkSection';
 import { NextUpCard } from './NextUpCard';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
+import { InspectorSplit } from '../SessionWorkspace/parts/InspectorSplit';
+import { SlotHistoryPanel } from '../SessionWorkspace/parts/SlotHistoryPanel';
+import { GoalOverviewRegion } from './GoalOverviewRegion';
 
 type Props = {
   readonly session: Session;
@@ -45,6 +53,15 @@ type Props = {
 
 export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const sessionId = session.id as SessionId;
+  const slots = useSessionSlots(sessionId);
+  const slotLoading = useSessionLoading(sessionId);
+  const goalHistory = useSlotHistory(sessionId, 'goal');
+  const goalHistoryCount = useSlotHistoryCount(sessionId, 'goal');
+  const summarizer = useSummarizerStatus(sessionId);
+  const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
+  const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
+  const [isGoalHistoryOpen, setIsGoalHistoryOpen] = useState(false);
+  const goalSlot = slots.find((slot) => slot.key === 'goal');
   const stage = useSessionStageInfo(session);
   const workspace = useCurrentWorkspace();
   const sessionList = useMemo(() => [session], [session]);
@@ -253,37 +270,67 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   };
 
   return (
-    <PaneShell
-      header={<HeaderBand session={session} stage={stage} />}
-      animationClassName="animate-fade-in"
-    >
-      <Divider />
-      <section aria-label="Next up" className="flex flex-col gap-2">
-        <Eyebrow label="Next up" muted className="px-0.5 font-medium" />
-        {nextUp !== null ? (
-          <NextUpCard item={nextUp} onAct={() => actOnNextUp({ item: nextUp })} />
-        ) : (
-          <LensEmptyState
-            icon={CONCEPT_ICONS.nextUp}
-            tone={CONCEPT_TONE.nextUp}
-            title="Nothing needs you right now"
-            description="Every agent, question, and review on this session is settled. Start work from the activity below."
+    <InspectorSplit
+      open={isGoalHistoryOpen}
+      panel={
+        isGoalHistoryOpen ? (
+          <SlotHistoryPanel
+            label="Goal"
+            renderAsMarkdown={false}
+            entries={goalHistory}
+            onRestore={(entry) => {
+              void upsertSessionSlot(sessionId, 'goal', entry.value);
+              setIsGoalHistoryOpen(false);
+            }}
+            onClose={() => setIsGoalHistoryOpen(false)}
           />
-        )}
-      </section>
-      <Divider />
-      <LinkedWorkSection sessionId={sessionId} onSelectLens={onSelectLens} />
-      <Divider />
-      <ActivitySection
-        session={session}
-        workspaceId={workspace?.id ?? null}
-        runs={runs}
-        isFresh={isFresh}
-        resolveCount={resolveCount}
-        onOpenWorkflowBuilder={openWorkflowBuilder}
-        onFocusCompletedRun={(runId) => setFocusedWorkflowRun(sessionId, runId)}
-        onSelectLens={onSelectLens}
-      />
-    </PaneShell>
+        ) : null
+      }
+    >
+      <PaneShell
+        header={<HeaderBand session={session} stage={stage} />}
+        animationClassName="animate-fade-in"
+      >
+        <Divider />
+        <GoalOverviewRegion
+          sessionId={sessionId}
+          value={goalSlot?.value ?? ''}
+          historyCount={goalHistoryCount}
+          isLoading={goalSlot == null && slotLoading.slots}
+          isSummarizing={summarizer.status === 'running'}
+          onOpenHistory={() => {
+            void loadSlotHistory(sessionId, 'goal');
+            setIsGoalHistoryOpen(true);
+          }}
+        />
+        <Divider />
+        <section aria-label="Next up" className="flex flex-col gap-2">
+          <Eyebrow label="Next up" muted className="px-0.5 font-medium" />
+          {nextUp !== null ? (
+            <NextUpCard item={nextUp} onAct={() => actOnNextUp({ item: nextUp })} />
+          ) : (
+            <LensEmptyState
+              icon={CONCEPT_ICONS.nextUp}
+              tone={CONCEPT_TONE.nextUp}
+              title="Nothing needs you right now"
+              description="Every agent, question, and review on this session is settled. Start work from the activity below."
+            />
+          )}
+        </section>
+        <Divider />
+        <LinkedWorkSection sessionId={sessionId} onSelectLens={onSelectLens} />
+        <Divider />
+        <ActivitySection
+          session={session}
+          workspaceId={workspace?.id ?? null}
+          runs={runs}
+          isFresh={isFresh}
+          resolveCount={resolveCount}
+          onOpenWorkflowBuilder={openWorkflowBuilder}
+          onFocusCompletedRun={(runId) => setFocusedWorkflowRun(sessionId, runId)}
+          onSelectLens={onSelectLens}
+        />
+      </PaneShell>
+    </InspectorSplit>
   );
 };
