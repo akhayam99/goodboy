@@ -35,10 +35,10 @@ to date. An unknown state disables it exactly like a dirty one.
 
 The setup checklist used to open at "0 of 7 steps done" with "Connect a
 workspace" unticked, next to a header naming the workspace you had just created.
-It now reads the app's own state on the first paint, so a workspace, a code
-host, a connected tool, a session, a run and a plan tick as soon as they exist,
-and a step that has ticked stays ticked even if you later delete the thing that
-earned it.
+It now counts what the app already has the moment it opens, so a workspace, a
+code host, a connected tool, a session, a run and a plan tick as soon as they
+exist, and a step that has ticked stays ticked even if you later delete the
+thing that earned it.
 
 The wizard's progress dots mark where you are, distinct from what is done and
 what is still ahead, one dot per screen you will actually see and no fraction
@@ -65,8 +65,8 @@ completes the setup step the same way a tracker does. That step is called
 Connect your tools now, since it no longer covers trackers alone.
 
 A connect that failed partway used to leave a Slack token in your keychain that
-no screen in the app could remove. The credential is written last now, and a
-failure restores the integration you already had.
+no screen in the app could remove. A failed connect now leaves nothing behind in
+the keychain and puts back the integration you already had.
 
 ### Smaller fixes
 
