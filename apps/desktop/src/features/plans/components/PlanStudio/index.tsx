@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ArchiveRestore, CircleCheck, Eye, Pencil, Play, RotateCw, Trash2 } from 'lucide-react';
+import { ArchiveRestore, Eye, Pencil, Play, RotateCw, Trash2 } from 'lucide-react';
 import {
   Button,
   Divider,

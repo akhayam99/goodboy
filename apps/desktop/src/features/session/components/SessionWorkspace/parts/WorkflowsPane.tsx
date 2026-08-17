@@ -48,6 +48,8 @@ export const WorkflowsPane = ({ session }: Props) => {
   const hasActiveRuns = active.length > 0;
   const shouldShowHeaderAttach = hasRuns && (focusedRun != null || hasActiveRuns);
   const shouldShowEmptyCard = hasRuns && focusedRun == null && !hasActiveRuns;
+  const finishedRunIds = new Set([...completed, ...discarded].map(({ run }) => run.id));
+  const finished = attachedRuns.filter(({ run }) => finishedRunIds.has(run.id));
 
   const renderCard = ({ run, workflow }: { run: WorkflowRun; workflow: Workflow }) => {
     const agents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
@@ -120,27 +122,23 @@ export const WorkflowsPane = ({ session }: Props) => {
           tone={CONCEPT_TONE.workflows}
           icon={CONCEPT_ICONS.workflows}
           title="Nothing running"
-          description={
-            completed.length > 0
-              ? 'Every attached workflow is done. Reveal the completed ones to reread them, or attach another.'
-              : 'No live workflow on this session. Attach one to start.'
-          }
+          description="Every attached workflow is done. Finished workflows remain below for reference."
           action={<WorkflowAttachButton sessionId={sessionId} placement="header" />}
         />
       ) : null}
       {active.length > 0 ? <ul className="flex flex-col gap-2">{active.map(renderCard)}</ul> : null}
       <FinishedRegister
         label="Finished"
-        count={completed.length + discarded.length}
+        count={finished.length}
         visible={
           <ul className="flex flex-col gap-2">
-            {[...completed, ...discarded].slice(0, VISIBLE_FINISHED_COUNT).map(renderCard)}
+            {finished.slice(0, VISIBLE_FINISHED_COUNT).map(renderCard)}
           </ul>
         }
-        earlierCount={Math.max(0, completed.length + discarded.length - VISIBLE_FINISHED_COUNT)}
+        earlierCount={Math.max(0, finished.length - VISIBLE_FINISHED_COUNT)}
         earlier={
           <ul className="flex flex-col gap-2">
-            {[...completed, ...discarded].slice(VISIBLE_FINISHED_COUNT).map(renderCard)}
+            {finished.slice(VISIBLE_FINISHED_COUNT).map(renderCard)}
           </ul>
         }
       />

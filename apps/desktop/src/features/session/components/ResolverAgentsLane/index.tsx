@@ -1,6 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
 import type { AgentId, Session } from '@goodboy/types';
-import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
 import { AgentLane } from '../AgentLane';
@@ -15,7 +14,7 @@ const VISIBLE_FINISHED_COUNT = 30;
 const NOTHING_TO_RESOLVE_DESCRIPTION =
   'Spawn a resolver from a pull request comment or a diff selection and it will show up here.';
 const ALL_RESOLVED_DESCRIPTION =
-  'Every resolver here has finished. Show completed resolvers to review what they did.';
+  'Every resolver here has finished. Completed resolvers remain below for reference.';
 
 type Props = {
   readonly session: Session;

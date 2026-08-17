@@ -404,6 +404,25 @@ describe('WorkflowsPane', () => {
     expect(screen.getByText('Discarded')).toBeDefined();
   });
 
+  it('keeps the finished list in ordinal order across completed and discarded runs', () => {
+    render(
+      <WorkflowsPane
+        session={buildSession({
+          runIds: ['run-1', 'run-2'],
+          runOverrides: {
+            'run-1': { executionMode: 'dynamic', orchestrationOutcome: 'done' },
+            'run-2': { discardedAt: '2026-07-21T10:00:00.000Z' },
+          },
+        })}
+      />,
+    );
+
+    const finishedList = screen.getByRole('region', { name: 'Finished history' });
+    const text = finishedList.textContent ?? '';
+
+    expect(text.indexOf('Second workflow')).toBeLessThan(text.indexOf('First workflow'));
+  });
+
   it('keeps the attach action when a revealed bucket is empty', () => {
     const { rerender } = render(
       <WorkflowsPane
