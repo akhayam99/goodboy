@@ -68,6 +68,7 @@ const baseState: OnboardingWizardState = {
   hasCodeHost: false,
   hasLinear: false,
   hasJira: false,
+  hasSlack: false,
   hasSentry: false,
   refreshGithubStatus: vi.fn(),
 };

@@ -22,7 +22,6 @@ type ConnectParams = {
 export const connectSlack = (set: SetFn, get: GetFn) => {
   return async ({ workspaceId, botToken }: ConnectParams): Promise<SlackConnection> => {
     const connection = await slackValidateConnection({ botToken });
-    await slackStoreToken({ workspaceId, botToken });
     const now = new Date().toISOString() as IsoDateTime;
     const existing = get().workspaceIntegrations[workspaceId]?.find(
       (integration): integration is SlackWorkspaceIntegration => integration.provider === 'slack',
@@ -37,6 +36,7 @@ export const connectSlack = (set: SetFn, get: GetFn) => {
       updatedAt: now,
     };
     await upsertWorkspaceIntegration(tauriDatabase, integration);
+    await slackStoreToken({ workspaceId, botToken });
     set((state) => {
       const current = state.workspaceIntegrations[workspaceId] ?? [];
       const rest = current.filter((candidate) => candidate.provider !== 'slack');

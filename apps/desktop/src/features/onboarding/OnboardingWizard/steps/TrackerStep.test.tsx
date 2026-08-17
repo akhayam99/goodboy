@@ -16,6 +16,12 @@ vi.mock('../../../integrations/jira/JiraFormBody', () => ({
   ),
 }));
 
+vi.mock('../../../integrations/slack/SlackFormBody', () => ({
+  SlackFormBody: ({ workspaceId }: { workspaceId: WorkspaceId }) => (
+    <div data-testid="slack-form">{workspaceId}</div>
+  ),
+}));
+
 const WS_ID = 'ws-1' as WorkspaceId;
 
 afterEach(cleanup);
@@ -24,13 +30,27 @@ import { TrackerStep } from './TrackerStep';
 
 describe('TrackerStep', () => {
   it('renders the heading', () => {
-    render(<TrackerStep workspaceId={WS_ID} linearConnected={false} jiraConnected={false} />);
-    expect(screen.getByRole('heading', { name: /connect your issue tracker/i })).toBeDefined();
+    render(
+      <TrackerStep
+        workspaceId={WS_ID}
+        linearConnected={false}
+        jiraConnected={false}
+        slackConnected={false}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: /connect your tools/i })).toBeDefined();
   });
 
   describe('with a workspace', () => {
     beforeEach(() => {
-      render(<TrackerStep workspaceId={WS_ID} linearConnected={false} jiraConnected={false} />);
+      render(
+        <TrackerStep
+          workspaceId={WS_ID}
+          linearConnected={false}
+          jiraConnected={false}
+          slackConnected={false}
+        />,
+      );
     });
 
     it('renders the Linear form scoped to the workspace', () => {
@@ -45,11 +65,26 @@ describe('TrackerStep', () => {
       expect(screen.getByTestId('jira-form').textContent).toBe(WS_ID);
       expect(screen.queryByTestId('linear-form')).toBeNull();
     });
+
+    it('swaps in the Slack form when the Slack segment is picked', () => {
+      const slack = screen.getByRole('tab', { name: /slack/i });
+      expect(slack.hasAttribute('disabled')).toBe(false);
+      fireEvent.click(slack);
+      expect(screen.getByTestId('slack-form').textContent).toBe(WS_ID);
+      expect(screen.queryByTestId('linear-form')).toBeNull();
+    });
   });
 
   describe('without a workspace', () => {
     beforeEach(() => {
-      render(<TrackerStep workspaceId={null} linearConnected={false} jiraConnected={false} />);
+      render(
+        <TrackerStep
+          workspaceId={null}
+          linearConnected={false}
+          jiraConnected={false}
+          slackConnected={false}
+        />,
+      );
     });
 
     it('shows the add-workspace empty state instead of the form', () => {

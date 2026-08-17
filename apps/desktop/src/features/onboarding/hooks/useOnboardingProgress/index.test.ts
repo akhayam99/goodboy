@@ -116,6 +116,13 @@ describe('useOnboardingProgress auto-mark', () => {
     expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
   });
 
+  it('marks tools when Slack is connected for the workspace', () => {
+    workspaces.push({ id: 'w1' });
+    workspaceIntegrations = { w1: [{ provider: 'slack' }] };
+    renderHook(() => useOnboardingProgress());
+    expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
+  });
+
   it('does not mark codeHost or tools when no workspace exists', () => {
     workspaceIntegrations = { w1: [{ provider: 'gitlab' }, { provider: 'linear' }] };
     renderHook(() => useOnboardingProgress());
