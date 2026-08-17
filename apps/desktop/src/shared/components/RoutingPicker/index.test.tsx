@@ -503,7 +503,9 @@ describe('RoutingPicker', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('button', { name: 'Codex, disconnected' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Codex' }).getAttribute('title')).toBe(
+      'Codex is not connected',
+    );
     expect(screen.getByText('Codex is not connected')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Cursor' })).toBeNull();
   });

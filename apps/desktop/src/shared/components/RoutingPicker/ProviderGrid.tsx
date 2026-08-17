@@ -9,6 +9,7 @@ type Props = {
   readonly activeProvider: ProviderId | null;
   readonly secondaryProvider?: ProviderId | null;
   readonly disableDisconnected?: boolean;
+  readonly showDisconnected?: boolean;
   readonly onSelect: (provider: ProviderId) => void;
 };
 
@@ -17,13 +18,17 @@ export const ProviderGrid = ({
   activeProvider,
   secondaryProvider = null,
   disableDisconnected = false,
+  showDisconnected = false,
   onSelect,
 }: Props) => (
   <div className={ROUTING_PICKER_CONSTANTS.providerChipGroupClassName}>
     {ROUTING_PICKER_CONSTANTS.providers
       .filter(
         (id) =>
-          connectedProviders.includes(id) || id === activeProvider || id === secondaryProvider,
+          showDisconnected ||
+          connectedProviders.includes(id) ||
+          id === activeProvider ||
+          id === secondaryProvider,
       )
       .map((id) => {
         const isConnected = connectedProviders.includes(id);
@@ -35,7 +40,7 @@ export const ProviderGrid = ({
             key={id}
             type="button"
             title={isConnected ? PROVIDER_LABEL[id] : `${PROVIDER_LABEL[id]} is not connected`}
-            aria-label={isConnected ? PROVIDER_LABEL[id] : `${PROVIDER_LABEL[id]}, disconnected`}
+            aria-label={PROVIDER_LABEL[id]}
             aria-pressed={isActive}
             disabled={isDisabled}
             onClick={() => onSelect(id)}
