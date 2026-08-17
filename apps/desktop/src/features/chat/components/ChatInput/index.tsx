@@ -483,8 +483,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               }
               disabled={providerDisconnected}
               autoGrow
+              rows={1}
               maxRows={12}
-              className="min-h-20 resize-none border-0 bg-transparent px-4 pt-3 pb-2 pr-12 text-sm leading-relaxed text-info shadow-none placeholder:text-muted-foreground/60 focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
+              className="resize-none border-0 bg-transparent px-3 py-2 pr-12 text-sm text-foreground shadow-none placeholder:text-muted-foreground/60 focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
             />
             {isRunning && value.trim().length === 0 && attachments.length === 0 ? (
               <button
@@ -492,7 +493,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 onClick={() => void cancelCurrentTurn(session.id)}
                 title="Cancel turn"
                 aria-label="Cancel turn"
-                className="absolute bottom-2.5 right-2.5 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-danger/10 text-danger transition-colors hover:bg-danger/20"
+                className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg bg-danger/10 text-danger transition-colors hover:bg-danger/20"
               >
                 <Square size={14} aria-hidden fill="currentColor" />
               </button>
@@ -503,14 +504,14 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 disabled={!canSend}
                 title={sendDisabledTitle ?? (isRunning ? 'Queue message (enter)' : 'Send (enter)')}
                 aria-label={isRunning ? 'Queue message' : 'Send message'}
-                className="absolute bottom-2.5 right-2.5 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
+                className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
               >
                 <Send size={14} aria-hidden className="-translate-x-px" />
               </button>
             )}
           </div>
           <Divider />
-          <div className="flex items-center justify-between gap-2 px-2.5 py-2">
+          <div className="flex h-9 items-center justify-between gap-2 px-2.5">
             <div className="flex items-center gap-2">
               <PermissionModePicker session={session} activeProvider={routing.effectiveProvider} />
               <button

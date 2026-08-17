@@ -1,7 +1,6 @@
 import { CopyButton, Markdown } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { extractAllCommentResolved, isReviewThreadId, stripControlMarkers } from '@goodboy/core';
-import { ClustersCard } from '../ClustersCard';
 import { HandoffChip } from '../HandoffChip';
 import { PlanChip } from '../PlanChip';
 import { ResolverThreadsCard } from '../ResolverThreadsCard';
@@ -28,7 +27,6 @@ export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
       {sessionId ? (
         <div className="flex flex-col items-start gap-2 empty:hidden">
           <PlanChip assistantText={text} sessionId={sessionId} />
-          <ClustersCard assistantText={text} sessionId={sessionId} />
           <HandoffChip assistantText={text} sessionId={sessionId} />
           <ResolverThreadsCard assistantText={text} sessionId={sessionId} agentId={agentId} />
         </div>

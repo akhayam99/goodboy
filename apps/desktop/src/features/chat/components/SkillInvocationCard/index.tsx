@@ -10,12 +10,12 @@ type Props = {
 export const SkillInvocationCard = ({ item }: Props) => {
   return (
     <TranscriptDisclosure
-      tone="operations"
+      tone="neutral"
       open={false}
       header={
         <TranscriptRowHeader
           grouped
-          tone="operations"
+          tone="neutral"
           icon={<CONCEPT_ICONS.skills size={12} aria-hidden />}
           eyebrow="skill"
           preview={

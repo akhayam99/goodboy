@@ -147,14 +147,14 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
 
   return (
     <TranscriptDisclosure
-      tone="success"
+      tone="neutral"
       open={open}
       bodyClassName="gap-1"
       data-testid="resolver-threads-card"
       header={
         <TranscriptRowHeader
           grouped
-          tone="success"
+          tone="neutral"
           icon={<Icon size={12} aria-hidden />}
           eyebrow="resolver findings"
           preview={tallySentence({ verdicts })}

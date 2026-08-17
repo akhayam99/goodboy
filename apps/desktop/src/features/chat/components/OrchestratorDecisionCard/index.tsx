@@ -22,13 +22,13 @@ export const OrchestratorDecisionCard = ({ item }: Props) => {
 
   return (
     <TranscriptDisclosure
-      tone="primary"
+      tone="neutral"
       open={open}
       bodyClassName="gap-2 text-xs text-foreground/80"
       header={
         <TranscriptRowHeader
           grouped
-          tone="primary"
+          tone="neutral"
           icon={<Route size={12} aria-hidden />}
           eyebrow="orchestrator"
           badge={

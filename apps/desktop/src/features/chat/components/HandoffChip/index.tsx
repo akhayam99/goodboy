@@ -8,7 +8,7 @@ import { TranscriptShell } from '../TranscriptShell';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 import { tintClasses } from '@goodboy/ui';
 
-const accent = tintClasses('info');
+const accent = tintClasses('neutral');
 
 type Props = {
   readonly assistantText: string;
@@ -57,7 +57,7 @@ export const HandoffChip = ({ assistantText, sessionId }: Props) => {
       type="button"
       onClick={onClick}
       data-testid="handoff-chip"
-      tone="info"
+      tone="neutral"
       variant="pill"
       className={`inline-flex w-fit items-center gap-1.5 text-xs font-medium transition-opacity hover:opacity-80 ${accent.text}`}
     >
