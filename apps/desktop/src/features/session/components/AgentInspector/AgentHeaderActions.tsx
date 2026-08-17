@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { CircleCheck, CircleDot, OctagonX, Trash2 } from 'lucide-react';
-import { InlineConfirm, cn } from '@goodboy/ui';
+import { InlineConfirm } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { GhostActionButton } from '@goodboy/ui';
-import { PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
   readonly agent: Agent;
@@ -15,7 +14,7 @@ type Props = {
   readonly onDeleted?: () => void;
 };
 
-export const AgentActionsFooter = ({
+export const AgentHeaderActions = ({
   agent,
   sessionId,
   allowInterrupt = false,
@@ -37,7 +36,7 @@ export const AgentActionsFooter = ({
   };
 
   return (
-    <div className={cn('flex shrink-0 flex-col gap-2', PANE_RHYTHM.rail.dock)}>
+    <div className="flex shrink-0 flex-col items-end gap-2">
       <div className="flex flex-wrap items-center gap-1.5">
         {agent.doneAt == null ? (
           <GhostActionButton

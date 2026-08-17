@@ -422,6 +422,24 @@ describe('ResolverDetailPane (resolver)', () => {
     expect(screen.queryByLabelText('Reply for thread 1')).toBeNull();
   });
 
+  it('reveals a long verdict in place', () => {
+    const reason = 'This verdict explains the unchanged path in enough detail to wrap. '.repeat(8);
+    reset({
+      resolverState: { [SETTLED_ID]: 'wontfix' },
+      outcomes: {
+        [SETTLED_ID]: {
+          PRRT_3: { kind: 'wontfix', reason, reply: 'Already guarded' },
+        },
+      },
+    });
+    renderPane(SETTLED_ID);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+
+    expect(screen.getByRole('button', { name: 'Show less' })).toBeDefined();
+    expect(screen.getByText(`No change needed: ${reason.trim()}`)).toBeDefined();
+  });
+
   it('gives every owned thread its own outcome, its own reply and its own action', () => {
     reset({
       settledThreadIds: ['PRRT_3', 'PRRT_4'],
@@ -735,15 +753,16 @@ describe('ResolverDetailPane (resolver)', () => {
     expect(screen.queryByRole('menuitem', { name: 'Mark done' })).toBeNull();
   });
 
-  it('puts mark done, reopen and delete in the footer at the bottom of the panel, not the header', () => {
+  it('puts mark done, reopen and delete in the fixed header', () => {
     renderPane(RUNNING_ID);
 
     expect(screen.getByRole('button', { name: 'Mark done' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Delete' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Reopen' })).toBeNull();
+    expect(screen.queryByTestId('detail-dock')).toBeNull();
   });
 
-  it('marks a resolver done from the footer and deletes it after confirming', async () => {
+  it('marks a resolver done from the header and deletes it after confirming', async () => {
     renderPane(RUNNING_ID);
 
     fireEvent.click(screen.getByRole('button', { name: 'Mark done' }));
