@@ -284,10 +284,10 @@ describe('RoutingPicker', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    const tuning = screen.getByRole('region', { name: 'Tuning' });
-    const modes = within(tuning).getByRole('group', { name: 'Modes' });
-    expect(within(tuning).getAllByText('Modes')).toHaveLength(1);
-    expect(within(tuning).getAllByText('Fast')).toHaveLength(1);
+    const modelOptions = screen.getByRole('region', { name: 'Model options' });
+    const modes = within(modelOptions).getByRole('group', { name: 'Modes' });
+    expect(within(modelOptions).getAllByText('Modes')).toHaveLength(1);
+    expect(within(modelOptions).getAllByText('Fast')).toHaveLength(1);
     expect(within(modes).getByRole('button', { name: 'Fast' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
@@ -389,9 +389,9 @@ describe('RoutingPicker', () => {
   it('keeps unavailable variant and effort levels visible and disabled for Haiku', () => {
     render(<RoutingPicker {...baseProps} model="haiku-4.5" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    const tuning = screen.getByRole('region', { name: 'Tuning' });
-    const effort = within(tuning).getByRole('group', { name: 'Effort' });
-    const variant = within(tuning).getByRole('group', { name: 'Variant' });
+    const modelOptions = screen.getByRole('region', { name: 'Model options' });
+    const effort = within(modelOptions).getByRole('group', { name: 'Effort' });
+    const variant = within(modelOptions).getByRole('group', { name: 'Variant' });
     expect(
       within(effort).getByRole('button', { name: 'Not available' }).hasAttribute('disabled'),
     ).toBe(true);

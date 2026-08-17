@@ -1,4 +1,4 @@
-import type { EffortLevel, ModelAxes } from '@goodboy/types';
+import type { EffortLevel, ModelAxes, ModelKey } from '@goodboy/types';
 import { EFFORT_LABEL } from '../../../features/chat/utils/chat-constants';
 import { toggleTone } from './chipTone';
 import { AxisRow } from './AxisRow';
@@ -15,7 +15,7 @@ type Props = {
   };
   readonly hasMaxModeAdvisory: boolean;
   readonly onEffort: (level: EffortLevel) => void;
-  readonly onModel: (modelKey: string) => void;
+  readonly onModel: (modelKey: ModelKey) => void;
   readonly onVariant: (id: string) => void;
   readonly onToggle: (id: 'thinking' | 'fast') => void;
 };
@@ -33,7 +33,7 @@ export const AxesSection = ({
 }: Props) => {
   const toggleRowLabel = 'Modes';
   return (
-    <section aria-label="Tuning" className="flex flex-col gap-2.5 p-3">
+    <section aria-label="Model options" className="flex flex-col gap-2.5 p-3">
       {[axes.model, axes.version].map((axis) => (
         <AxisRow key={axis.label} label={axis.label}>
           <div
