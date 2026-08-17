@@ -1,12 +1,11 @@
 import { useEffect, useMemo } from 'react';
-import { Divider, Eyebrow } from '@goodboy/ui';
+import { Eyebrow } from '@goodboy/ui';
 import { classifyWorkflowChain, runsForWorkflowRun, upcomingSteps } from '@goodboy/core';
 import type { Agent, AgentId, Session, SessionId, Workflow } from '@goodboy/types';
 import {
   agentHasUnread,
   EMPTY_ARRAY,
   useAppStore,
-  useCurrentWorkspace,
   useNonResolverStandaloneAgents,
   useSessionOpenQuestions,
   useSessionStageInfo,
@@ -31,22 +30,32 @@ import {
   type UpcomingStep,
   type WaitingAgent,
 } from './selectNextUp';
-import { ActivitySection } from './ActivitySection';
 import { HeaderBand } from './HeaderBand';
 import { LinkedWorkSection } from './LinkedWorkSection';
 import { NextUpCard } from './NextUpCard';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CreateAgentPopover } from '../CreateAgentPopover';
+import { StartRowContent } from './StartRowContent';
+import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';
+import { OverviewActions } from './OverviewActions';
 
 type Props = {
   readonly session: Session;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
+const EMPTY_WORKFLOWS: ReadonlyArray<Workflow> = [];
+
+type AgentIdFromStringParams = {
+  readonly value: string;
+};
+
+const agentIdFromString = ({ value }: AgentIdFromStringParams): AgentId =>
+  JSON.parse(JSON.stringify(value));
+
 export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
-  const sessionId = session.id as SessionId;
+  const sessionId: SessionId = session.id;
   const stage = useSessionStageInfo(session);
-  const workspace = useCurrentWorkspace();
   const sessionList = useMemo(() => [session], [session]);
   const runs = useWorkspaceRuns(session.workspaceId, sessionList);
   const pullRequest = useAppStore((s) => s.sessionGithub[sessionId]?.pr ?? null);
@@ -60,11 +69,9 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     (s) => s.sessionPendingResolutions[sessionId]?.length ?? 0,
   );
   const phaseTemplates = useAppStore(
-    (s) => s.phaseTemplates?.[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
+    (s) => s.phaseTemplates?.[session.workspaceId] ?? EMPTY_WORKFLOWS,
   );
-  const sessionWorkflows = useAppStore(
-    (s) => s.sessionWorkflows?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
-  );
+  const sessionWorkflows = useAppStore((s) => s.sessionWorkflows?.[sessionId] ?? EMPTY_WORKFLOWS);
   const workflowById = useMemo(() => {
     const map = new Map<string, Workflow>();
     for (const workflow of phaseTemplates) {
@@ -123,7 +130,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     if (newest == null) {
       return null;
     }
-    return resolveRootAgent({ agents: sessionAgents, agentId: newest.id as AgentId });
+    return resolveRootAgent({ agents: sessionAgents, agentId: newest.id });
   }, [sessionAgents]);
 
   const waitingItemId = ({ lens }: { readonly lens: AgentHomeLens }): string | null => {
@@ -178,8 +185,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       return null;
     }
     const latest = running.reduce((best, agent) => (agent.ordinal > best.ordinal ? agent : best));
-    const root =
-      resolveRootAgent({ agents: sessionAgents, agentId: latest.id as AgentId }) ?? latest;
+    const root = resolveRootAgent({ agents: sessionAgents, agentId: latest.id }) ?? latest;
     const lens = agentHomeLens(root, classifyAgent(root, agentKindOverride[root.id] ?? null));
     if (lens === 'workflows') {
       return { lens, itemId: root.workflowRunId ?? null };
@@ -246,7 +252,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     }
     if (item.itemId != null && (item.lens === 'agents' || item.lens === 'resolve')) {
       onSelectLens(item.lens);
-      void selectAgent(sessionId, item.itemId as AgentId);
+      void selectAgent(sessionId, agentIdFromString({ value: item.itemId }));
       return;
     }
     onSelectLens(item.lens);
@@ -256,33 +262,50 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     <PaneShell
       header={<HeaderBand session={session} stage={stage} />}
       animationClassName="animate-fade-in"
+      measure="chat"
     >
-      <Divider />
-      <section aria-label="Next up" className="flex flex-col gap-2">
-        <Eyebrow label="Next up" muted className="px-0.5 font-medium" />
-        {nextUp !== null ? (
-          <NextUpCard item={nextUp} onAct={() => actOnNextUp({ item: nextUp })} />
-        ) : (
-          <LensEmptyState
-            icon={CONCEPT_ICONS.nextUp}
-            tone={CONCEPT_TONE.nextUp}
-            title="Nothing needs you right now"
-            description="Every agent, question, and review on this session is settled. Start work from the activity below."
-          />
-        )}
-      </section>
-      <Divider />
       <LinkedWorkSection sessionId={sessionId} onSelectLens={onSelectLens} />
-      <Divider />
-      <ActivitySection
+      <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
+        <Eyebrow label="Overview" muted className="min-w-0 truncate font-medium" />
+        {!isFresh ? (
+          <OverviewActions sessionId={sessionId} onOpenWorkflowBuilder={openWorkflowBuilder} />
+        ) : null}
+      </div>
+      {isFresh ? (
+        <section aria-label="Start work" className="flex flex-col gap-2">
+          <p className="text-sm text-muted-foreground">
+            Choose a workflow for a sequence, or one agent for a single task.
+          </p>
+          <button
+            type="button"
+            onClick={openWorkflowBuilder}
+            className="flex w-full items-center gap-3 rounded-lg border border-border-soft bg-elevated px-3 py-3 text-left"
+          >
+            <StartRowContent
+              icon={CONCEPT_ICONS.workflows}
+              tone="accent"
+              label="Workflow"
+              description="Runs a multi-step task from plan through review."
+            />
+          </button>
+          <CreateAgentPopover
+            sessionId={sessionId}
+            className="flex w-full items-center gap-3 rounded-lg border border-border-soft bg-elevated px-3 py-3 text-left"
+            description="Spawns one agent on a single task with the session context."
+          />
+        </section>
+      ) : null}
+      {nextUp !== null ? (
+        <section aria-label="Next up" className="grid grid-cols-[44px_24px_minmax(0,1fr)]">
+          <span />
+          <span className="border-l border-border" />
+          <NextUpCard item={nextUp} onAct={() => actOnNextUp({ item: nextUp })} />
+        </section>
+      ) : null}
+      <TimelinePane
         session={session}
-        workspaceId={workspace?.id ?? null}
+        suppressOpenQuestions={nextUp?.id === 'question'}
         runs={runs}
-        isFresh={isFresh}
-        resolveCount={resolveCount}
-        onOpenWorkflowBuilder={openWorkflowBuilder}
-        onFocusCompletedRun={(runId) => setFocusedWorkflowRun(sessionId, runId)}
-        onSelectLens={onSelectLens}
       />
     </PaneShell>
   );
