@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ShieldAlert } from 'lucide-react';
-import { tintClasses } from '@goodboy/ui';
+import { ClampedProse, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';
 import { PermissionScopePicker } from '../PermissionScopePicker';
@@ -49,9 +49,11 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
         or deny.
       </span>
       {inputPreview !== null && (
-        <pre className="min-w-0 whitespace-pre-wrap break-words rounded-md bg-background/60 px-2 py-1 font-mono text-2xs text-muted-foreground">
-          {inputPreview}
-        </pre>
+        <ClampedProse
+          text={inputPreview}
+          lines={4}
+          className="min-w-0 break-words rounded-md bg-background/60 px-2 py-1 font-mono text-2xs text-muted-foreground"
+        />
       )}
       {showPicker ? (
         <PermissionScopePicker

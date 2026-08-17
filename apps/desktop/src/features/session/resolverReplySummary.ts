@@ -4,8 +4,6 @@ type Params = {
   readonly text: string;
 };
 
-const MAX_LENGTH = 120;
-
 const SENTENCE_END = /(?<=[.!?])\s/;
 
 export const resolverReplySummary = ({ text }: Params): string => {
@@ -13,9 +11,5 @@ export const resolverReplySummary = ({ text }: Params): string => {
   if (flat === '') {
     return '';
   }
-  const first = flat.split(SENTENCE_END)[0] ?? flat;
-  if (first.length <= MAX_LENGTH) {
-    return first;
-  }
-  return `${first.slice(0, MAX_LENGTH).trimEnd()}...`;
+  return flat.split(SENTENCE_END)[0] ?? flat;
 };

@@ -1,6 +1,6 @@
 import { type ReactNode, useRef } from 'react';
 import { GripVertical, Trash2 } from 'lucide-react';
-import { Input, Textarea, cn } from '@goodboy/ui';
+import { ClampedProse, Input, Textarea, cn } from '@goodboy/ui';
 import type { AgentRole, ProviderId } from '@goodboy/types';
 import { agentKindPalette, ROLE_LABEL, ROLE_TO_KIND, type AgentKind } from '../../agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
@@ -189,31 +189,32 @@ export const WorkflowStepCard = ({
       {!expanded ? (
         <div className="flex items-stretch">
           {grip}
-          <button
-            type="button"
-            onClick={onExpand}
-            aria-label={`Step ${ordinal + 1}: ${displayName}`}
-            title="Open this step to edit it"
-            className="flex min-w-0 flex-1 flex-col gap-1 py-2 pl-1 pr-8 text-left"
-          >
-            {headerRow(
-              <RoutingBadge
-                className="shrink-0"
-                glyphPlacement="trailing"
-                provider={provider}
-                model={resolvedModel}
-                effort={effort}
-              />,
-            )}
-            <span
-              className={cn(
-                'line-clamp-1 pl-[1.625rem] text-2xs leading-relaxed',
-                promptPrefix.trim() ? 'text-muted-foreground' : 'italic text-muted-foreground',
-              )}
+          <div className="flex min-w-0 flex-1 flex-col gap-1 py-2 pl-1 pr-8">
+            <button
+              type="button"
+              onClick={onExpand}
+              aria-label={`Step ${ordinal + 1}: ${displayName}`}
+              title="Open this step to edit it"
+              className="min-w-0 text-left"
             >
-              {promptPrefix.trim() || 'Click to add instructions'}
-            </span>
-          </button>
+              {headerRow(
+                <RoutingBadge
+                  className="shrink-0"
+                  glyphPlacement="trailing"
+                  provider={provider}
+                  model={resolvedModel}
+                  effort={effort}
+                />,
+              )}
+            </button>
+            <div className={cn('pl-[1.625rem]', promptPrefix.trim().length === 0 && 'italic')}>
+              <ClampedProse
+                text={promptPrefix.trim() || 'Click to add instructions'}
+                lines={2}
+                className="text-2xs leading-relaxed text-muted-foreground"
+              />
+            </div>
+          </div>
         </div>
       ) : null}
 
