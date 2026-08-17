@@ -14,11 +14,17 @@ Four nested things, and everything else hangs off them.
 
 - A **workspace** is the detail view of a project plus the integrations
   specific to it. It aggregates every piece of work on that project, not just
-  the sessions you opened today. Workspaces have three kinds: a **repo** owns
-  one project directory and gives each session a git worktree, a **composite**
-  links repo workspaces so one session can span them, and a **simple**
-  workspace is a standalone non-developer folder whose sessions use plain
-  directories without git.
+  the sessions you opened today. `WorkspaceKind` has the values `'repo'`,
+  `'composite'`, and `'simple'`. The workspace form (`WorkspaceLinkForm`)
+  presents those kinds as **Single project**, **Multi project**, and
+  **Standalone**. The onboarding wizard's connected-workspace chip instead
+  labels them **Repository**, **Composite**, and **Standalone**, and the same
+  wizard's earlier audience step asks the question a fourth way, as **I write
+  code** versus **I do not write code** (the second answer only ever offers
+  Standalone). A repo owns one project directory and
+  gives each session a git worktree, a composite links repo workspaces so one
+  session can span them, and a simple workspace is a standalone folder whose
+  sessions use plain directories without git.
 - A **session** is a container for a goal: its own git worktree, branch,
   budget and shared context. Its stage (attention / running / review /
   building / done) is derived from what the session actually holds, never set
@@ -91,10 +97,13 @@ same. They are not.
 
 ### Agent kinds
 
-Ten role labels that shape how an agent works: **planner**, **scout**,
-**implementer**, **debugger**, **tester**, **reviewer**, **pr-reviewer**,
-**docs**, **resolver**, **generic** (displayed as "Generalist", badge `GEN`).
-Each kind carries default model, effort, and optional system prompt settings.
+Ten agent kinds shape how an agent works. Every kind has a display label:
+`planner` is **Plan**, `scout` is **Scout**, `implementer` is **Implement**,
+`debugger` is **Debug**, `tester` is **Test**, `reviewer` is **Review**,
+`pr-reviewer` is **PR reviewer**, `docs` is **Docs**, `resolver` is
+**Resolve**, and `generic` is **Generalist**. Their compact badge labels are
+separate, for example `generic` uses `gen`. Each kind carries default model,
+effort, and optional system prompt settings.
 Kind is inferred automatically from the agent's name or first user message, or
 chosen explicitly when the agent is spawned. Nine are pickable in the spawn
 menu; **resolver** is spawned only by the resolve UI.
@@ -161,10 +170,12 @@ denied headless call blocks the turn; approval is explicit and retryable.
 
 ### Provider routing & balance
 
-Register your AI providers (Anthropic, Cursor, Codex, Antigravity, OpenCode,
-OpenRouter, Moonshot). Set priorities. Set budgets. Enable or disable
-providers per session. Goodboy routes work to the right provider
-automatically.
+Register your AI providers. `ProviderId` contains `anthropic`, `cursor`,
+`codex`, `gemini`, `opencode`, `openrouter`, and `moonshot`; the provider
+picker displays them as **Claude**, **Cursor**, **Codex**, **Gemini**,
+**OpenCode**, **OpenRouter**, and **Moonshot**, respectively. Set priorities.
+Set budgets. Enable or disable providers per session. Goodboy routes work to
+the right provider automatically.
 
 - Provider 1 passes its budget threshold, work moves to provider 2. You pick the
   threshold; it defaults to 80% of the cap.
@@ -173,9 +184,14 @@ automatically.
   explicit pin overrides the auto choice.
 - You see the spend in real time. No surprises at end of month.
 
-Routing is a fact about the work, so it reads like one. A model is shown as
-its provider mark, its authored name, and its effort, in that order, never as
-a raw catalog id.
+Routing is a fact about the work, so it reads like one, except in the agent
+spawn menu itself. `CreateAgentPopover` and `AgentSpawnConfig` both render
+`RoutingPicker`'s `CatalogGrid`, which groups each model's catalog entry by
+`presentation.group` (**Haiku**, **Sonnet**, **Opus**, **Fable**, and the
+equivalent per-provider groups) as a row label, then renders each model as a
+bare `presentation.version` chip (**4.5**, **4.6**, **4.7**, **4.8**, **5**).
+Neither the row label nor the chip carries a provider mark or an effort
+value; effort is a separate control elsewhere in the picker.
 
 ### Cost awareness
 
