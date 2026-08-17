@@ -149,6 +149,7 @@ export const ResolverCard = ({
       status={
         <>
           <Chip tone="neutral" size="sm" label={origin.label} />
+          {isMuted ? <Chip tone="success" size="xs" bordered={false} label="completed" /> : null}
           <ResolverCardTally agent={agent} sessionId={agent.sessionId} />
         </>
       }

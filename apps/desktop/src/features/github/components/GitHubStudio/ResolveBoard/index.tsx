@@ -100,7 +100,7 @@ export const ResolveBoard = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded-md border border-border-soft bg-background/95 px-2.5 py-2 backdrop-blur">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-end gap-2 rounded-md bg-background/95 px-2.5 py-2 backdrop-blur">
         <Checkbox
           checked={allSelected}
           indeterminate={!allSelected && selected.length > 0}
@@ -108,7 +108,7 @@ export const ResolveBoard = ({
           label={<span className="font-medium">{selected.length} selected</span>}
         />
 
-        <div className="ml-auto">
+        <div>
           <ResolveConfigPopover
             ariaLabel="Configure batch resolvers"
             config={defaults}

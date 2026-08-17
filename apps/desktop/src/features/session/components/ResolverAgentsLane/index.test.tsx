@@ -241,6 +241,7 @@ describe('ResolverAgentsLane', () => {
     expect(
       screen.getAllByTestId('resolver-row').map((row) => row.getAttribute('data-muted')),
     ).toEqual(['false', 'false', 'true', 'true']);
+    expect(screen.getByRole('region', { name: 'Completed history' })).toBeDefined();
   });
 
   it('keeps a resolver active while its thread is still open', () => {

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Eyebrow } from '@goodboy/ui';
+import { SectionHeader } from '@goodboy/ui';
 
 type Props = {
   readonly label: string;
@@ -8,7 +8,7 @@ type Props = {
 
 export const ResolverPanelSection = ({ label, children }: Props) => (
   <section className="flex flex-col gap-2">
-    <Eyebrow label={label} muted />
+    <SectionHeader label={label} />
     {children}
   </section>
 );
