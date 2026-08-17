@@ -9,41 +9,46 @@ if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
 ## Goodboy v0.1.82
 
-A repository Goodboy could not read no longer reads as in sync, the first-run
-checklist agrees with the app around it, and archive and delete move out of the
-session rail.
+Goodboy fast-forwards your checkout without a terminal, tells you when it cannot
+read your repository instead of calling it in sync, and the first-run checklist
+finally agrees with the app around it.
 
-### [#1419] Repository status shows unknown instead of in sync, and offers a fast-forward
+### [#1419] Repository status says when it cannot read your checkout, and offers a fast-forward
 
 Goodboy used to report "In sync and clean" whenever it could not work out the
 state of your repository, so a failed read looked exactly like a healthy one. It
-now shows that state as unknown and names what it could not resolve: no upstream
-branch, a checkout that is not on a branch, a status it could not read.
+now says it cannot read the checkout and names what went wrong: git could not
+compare this branch with its upstream, git could not resolve a main branch to
+compare against, or git status could not be read.
 
 A file in conflict used to count twice, once as staged and once as unstaged. It
 counts once now, as conflicted, and a merge, rebase, cherry-pick or bisect left
-in progress shows in the panel instead of hiding inside the change count.
+in progress shows in the panel now, where nothing read it before.
 
 When your branch is behind its upstream and the tree is clean, the checkout
 panel offers a fast-forward that names the branch and the upstream it will move.
 It never rebases and never stashes. When it cannot run, the control stays
 visible and disabled with the reason on it: uncommitted changes, no upstream, an
 operation in progress, a status Goodboy could not read, or a branch already up
-to date. An unknown state disables it exactly like a dirty one.
+to date. A checkout Goodboy cannot read disables it exactly like a dirty one.
+
+Follow-up: the fast-forward is pinned by tests that run it against real clones,
+though no pull has been run from a packaged build yet. If git refuses, its own
+message comes back in the checkout panel.
 
 ### [#1416] The first-run checklist matches the app it opens beside
 
 The setup checklist used to open at "0 of 7 steps done" with "Connect a
 workspace" unticked, next to a header naming the workspace you had just created.
 It now counts what the app already has the moment it opens, so a workspace, a
-code host, a connected tool, a session, a run and a plan tick as soon as they
+code host, a connected tool, a session, an agent and a plan tick as soon as they
 exist, and a step that has ticked stays ticked even if you later delete the
 thing that earned it.
 
 The wizard's progress dots mark where you are, distinct from what is done and
 what is still ahead, one dot per screen you will actually see and no fraction
-anywhere. Two of those screens, Tracker and Sentry, count toward the same
-checklist entry, so connecting a tracker ticks both.
+anywhere. Two of those screens, the tools step and the Sentry step, count toward
+the same checklist entry, so connecting any one tool ticks both.
 
 ### [#1418] Archive and delete move to the session header
 
@@ -54,19 +59,18 @@ and they route through the same confirm the keyboard shortcuts use, whose
 warning differs for a session with a branch and one without. Two clicks to
 confirm and Escape to dismiss, both unchanged.
 
-The confirm acts on the session whose menu you opened, even if you switch
-sessions with the keyboard before you confirm. A failed archive or delete
-reports inside the confirm now instead of as a toast.
+A failed archive or delete reports inside the confirm now instead of as a toast.
 
 ### [#1422] Connect Slack while setting up
 
 The first-run tools step offers Slack beside Linear and Jira, and connecting it
-completes the setup step the same way a tracker does. That step is called
-Connect your tools now, since it no longer covers trackers alone.
+completes the setup step the same way a tracker does. That step is now called
+Connect your tools, since it no longer covers trackers alone.
 
 A connect that failed partway used to leave a Slack token in your keychain that
 no screen in the app could remove. A failed connect now leaves nothing behind in
-the keychain and puts back the integration you already had.
+the keychain and puts the previous connection's record back, so you can
+reconnect or disconnect it.
 
 ### Smaller fixes
 
@@ -77,8 +81,7 @@ the keychain and puts back the integration you already had.
 - Push and rebase are offered only when Goodboy knows how far ahead or behind
   the branch is [#1419]
 - A remote address carrying a token no longer appears in git error text [#1419]
-- A checkout that is not on a branch is explained in plain words instead of
-  git's own vocabulary [#1419]
+- `docs/concepts.md` and `docs/traps.md` now match the app that shipped [#1421]
 
 ## Goodboy v0.1.81
 
