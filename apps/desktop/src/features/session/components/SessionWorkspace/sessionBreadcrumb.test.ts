@@ -20,6 +20,7 @@ const base = (
   studio: null,
   focusedWorkflowName: null,
   focusedPlanTitle: null,
+  selectedChildLabel: null,
   lensLabel,
   handlers,
   ...overrides,
@@ -43,6 +44,18 @@ describe('buildSessionBreadcrumb', () => {
     expect(labels(crumbs)).toEqual(['Overview', 'questions']);
     crumbs[0]!.onClick!();
     expect(h.toOverview).toHaveBeenCalledOnce();
+    expect(last(crumbs)?.onClick).toBeUndefined();
+  });
+
+  it('extends the lens trail without dropping an ancestor when a child opens', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base({ lens: 'agents', selectedChildLabel: 'Selected agent' }, h),
+    );
+
+    expect(labels(crumbs)).toEqual(['Overview', 'agents', 'Selected agent']);
+    crumbs[1]!.onClick!();
+    expect(h.toLens).toHaveBeenCalledWith('agents');
     expect(last(crumbs)?.onClick).toBeUndefined();
   });
 

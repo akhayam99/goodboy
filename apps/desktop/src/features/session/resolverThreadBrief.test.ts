@@ -23,7 +23,7 @@ describe('resolverThreadBrief', () => {
     });
 
     expect(brief.ask).toBe('Add a guard clause here.');
-    expect(brief.verdict).toBe('No change needed: The branch is unreachable.');
+    expect(brief.verdict).toBe('No change needed: The branch is unreachable. Details.');
     expect(brief.next).toContain('not worth a change');
   });
 

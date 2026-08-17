@@ -472,7 +472,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
       'ws-1',
       saved.id,
       'sess-1',
-      'Orchestrated workflow',
+      'Untitled orchestrated workflow',
       'test goal',
       'Inspect each result and stop after tests pass.',
     );

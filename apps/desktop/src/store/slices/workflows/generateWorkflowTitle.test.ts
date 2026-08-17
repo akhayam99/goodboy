@@ -29,7 +29,7 @@ const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const WORKFLOW_ID = 'wf-1' as WorkflowId;
 const NOW = '2026-07-23T00:00:00.000Z' as IsoDateTime;
-const FALLBACK_NAME = 'Orchestrated workflow';
+const FALLBACK_NAME = 'Untitled orchestrated workflow';
 
 const session = {
   id: SESSION_ID,
@@ -57,6 +57,7 @@ type State = {
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   workspaceOverrides: Record<string, unknown>;
   phaseTemplates: Record<WorkspaceId, ReadonlyArray<Workflow>>;
+  emitNotification: ReturnType<typeof vi.fn>;
 };
 
 const buildHarness = (stateOverrides: Partial<State> = {}) => {
@@ -65,6 +66,7 @@ const buildHarness = (stateOverrides: Partial<State> = {}) => {
     sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
     workspaceOverrides: {},
     phaseTemplates: { [WORKSPACE_ID]: [workflow] },
+    emitNotification: vi.fn(async () => undefined),
     ...stateOverrides,
   };
   const set = vi.fn((updater: (s: State) => Partial<State>) => {
@@ -110,7 +112,7 @@ describe('generateWorkflowTitle', () => {
     expect(state.phaseTemplates[WORKSPACE_ID]?.[0]?.name).toBe('Ship the auth rework');
   });
 
-  it('leaves the fallback name when generation fails, without blocking', async () => {
+  it('leaves a visibly provisional name and reports generation failure', async () => {
     invokeMock.mockRejectedValue(new Error('provider unavailable'));
     const { generate, state } = buildHarness();
 
@@ -120,6 +122,13 @@ describe('generateWorkflowTitle', () => {
 
     expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
     expect(state.phaseTemplates[WORKSPACE_ID]?.[0]?.name).toBe(FALLBACK_NAME);
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      'title-generation',
+      'info',
+      'workflow name needs your input',
+      expect.stringContaining('Rename the untitled workflow from its details.'),
+      { sessionId: SESSION_ID, workspaceId: WORKSPACE_ID },
+    );
   });
 
   it('never overwrites a title the user already renamed', async () => {
@@ -144,6 +153,41 @@ describe('generateWorkflowTitle', () => {
     expect(state.phaseTemplates[WORKSPACE_ID]?.[0]?.name).toBe(FALLBACK_NAME);
   });
 
+  it('restores a user rename that lands while the generated title is saving', async () => {
+    invokeMock.mockResolvedValue({
+      stdout: okStdout('Ship the auth rework'),
+      stderr: '',
+      exitCode: 0,
+    });
+    const finishGeneratedSave = vi.fn<(workflow: Workflow) => void>();
+    const generatedSave = new Promise<Workflow>((resolve) => {
+      finishGeneratedSave.mockImplementation(resolve);
+    });
+    invokeWorkflowUpsertSpy
+      .mockImplementationOnce(() => generatedSave)
+      .mockResolvedValueOnce({ ...workflow, name: 'My chosen workflow' });
+    const { generate, state } = buildHarness();
+
+    const generation = generate(
+      WORKSPACE_ID,
+      WORKFLOW_ID,
+      SESSION_ID,
+      FALLBACK_NAME,
+      'ship the thing',
+      'read the code, then ship it',
+    );
+    await vi.waitFor(() => expect(invokeWorkflowUpsertSpy).toHaveBeenCalledOnce());
+    markWorkflowTitleUserEdited(WORKFLOW_ID);
+    state.phaseTemplates[WORKSPACE_ID] = [{ ...workflow, name: 'My chosen workflow' }];
+    finishGeneratedSave({ ...workflow, name: 'Ship the auth rework' });
+    await generation;
+
+    expect(invokeWorkflowUpsertSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: WORKFLOW_ID, name: 'My chosen workflow' }),
+    );
+    expect(state.phaseTemplates[WORKSPACE_ID]?.[0]?.name).toBe('My chosen workflow');
+  });
+
   it('skips the write when the name no longer matches the fallback it was assigned', async () => {
     invokeMock.mockResolvedValue({
       stdout: okStdout('Ship the auth rework'),
@@ -151,7 +195,9 @@ describe('generateWorkflowTitle', () => {
       exitCode: 0,
     });
     const { generate, state } = buildHarness({
-      phaseTemplates: { [WORKSPACE_ID]: [{ ...workflow, name: 'Orchestrated workflow 2' }] },
+      phaseTemplates: {
+        [WORKSPACE_ID]: [{ ...workflow, name: 'Untitled orchestrated workflow 2' }],
+      },
     });
 
     await generate(
@@ -164,6 +210,6 @@ describe('generateWorkflowTitle', () => {
     );
 
     expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
-    expect(state.phaseTemplates[WORKSPACE_ID]?.[0]?.name).toBe('Orchestrated workflow 2');
+    expect(state.phaseTemplates[WORKSPACE_ID]?.[0]?.name).toBe('Untitled orchestrated workflow 2');
   });
 });

@@ -263,150 +263,153 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
 
   return (
     <div className="relative flex h-full w-full min-w-0 flex-col">
-      {showLens ? <SessionCrumbBar /> : null}
-      {showLens ? <RepoScopeBar sessionId={sessionId} /> : null}
+      <div
+        className={cn(!showLens && 'pointer-events-none invisible absolute inset-x-0 top-0')}
+        inert={!showLens}
+      >
+        <SessionCrumbBar />
+        <RepoScopeBar sessionId={sessionId} />
+      </div>
       <div className="relative min-h-0 flex-1">
-        {showLens ? (
-          <div className="absolute inset-0 z-0">
-            {lens === null ? (
-              isOverviewLoaded ? (
-                <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
-              ) : (
-                <SessionOverviewLoading
-                  isFreshLayout={isFreshOverviewLayout}
-                  onRetry={onRetryOverview}
-                />
-              )
-            ) : null}
-            {lens === 'questions' ? <QuestionsPane session={session} /> : null}
-            {lens === 'plans' ? <PlanStudio sessionId={sessionId} /> : null}
-            {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
-            {lens === 'resolve' ? (
-              <ResolvePane
-                session={session}
-                meta={resolveMeta}
-                inspectedResolverId={inspectedResolverId}
-                onInspectResolver={setInspectedResolverId}
-                showCompleted={showCompletedResolvers}
-                onShowCompletedChange={setShowCompletedResolvers}
+        <div
+          className={cn('absolute inset-0 z-0', !showLens && 'invisible pointer-events-none')}
+          inert={!showLens}
+        >
+          {lens === null ? (
+            isOverviewLoaded ? (
+              <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
+            ) : (
+              <SessionOverviewLoading
+                isFreshLayout={isFreshOverviewLayout}
+                onRetry={onRetryOverview}
               />
-            ) : null}
-            {lens === 'scripts' ? (
+            )
+          ) : null}
+          {lens === 'questions' ? <QuestionsPane session={session} /> : null}
+          {lens === 'plans' ? <PlanStudio sessionId={sessionId} /> : null}
+          {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
+          {lens === 'resolve' ? (
+            <ResolvePane
+              session={session}
+              meta={resolveMeta}
+              inspectedResolverId={inspectedResolverId}
+              onInspectResolver={setInspectedResolverId}
+              showCompleted={showCompletedResolvers}
+              onShowCompletedChange={setShowCompletedResolvers}
+            />
+          ) : null}
+          {lens === 'scripts' ? (
+            <PaneShell
+              title="Scripts"
+              description="Shell commands you run by hand from this session, no agent involved."
+            >
+              <ScriptsPanel
+                workspaceId={session.workspaceId}
+                sessionId={sessionId}
+                worktreePath={workingDir}
+                hasHostHeading
+              />
+            </PaneShell>
+          ) : null}
+          {lens === 'context' ||
+          lens === 'goal' ||
+          lens === 'decisions' ||
+          lens === 'last_output_summary' ? (
+            <ContextPane session={session} initialRegion={lens === 'context' ? undefined : lens} />
+          ) : null}
+          {lens === 'pr' ? <PrPane session={session} onSelectLens={onSelectLens} /> : null}
+          {lens === 'review' ? <ReviewBoardPane session={session} /> : null}
+          {lens === 'linear' ? (
+            <IntegrationPane
+              sessionId={sessionId}
+              workspaceId={session.workspaceId}
+              provider="linear"
+            />
+          ) : null}
+          {lens === 'sentry' ? (
+            <IntegrationPane
+              sessionId={sessionId}
+              workspaceId={session.workspaceId}
+              provider="sentry"
+            />
+          ) : null}
+          {lens === 'gitlab_issues' ? (
+            <IntegrationPane
+              sessionId={sessionId}
+              workspaceId={session.workspaceId}
+              provider="gitlab"
+            />
+          ) : null}
+          {lens === 'jira_issues' ? (
+            <IntegrationPane
+              sessionId={sessionId}
+              workspaceId={session.workspaceId}
+              provider="jira"
+            />
+          ) : null}
+          {lens === 'slack_threads' ? (
+            <IntegrationPane
+              sessionId={sessionId}
+              workspaceId={session.workspaceId}
+              provider="slack"
+            />
+          ) : null}
+          {lens === 'github_issue' ? (
+            githubIssueNumber != null ? (
+              <GithubTaskDetail
+                workspaceId={session.workspaceId}
+                rootPath={projectWorktreePath}
+                {...(githubTask != null && { task: githubTask })}
+                issueNumber={githubIssueNumber}
+              />
+            ) : (
               <PaneShell
-                title="Scripts"
-                description="Shell commands you run by hand from this session, no agent involved."
+                title="GitHub issue"
+                description="The GitHub issue linked to this session."
               >
-                <ScriptsPanel
-                  workspaceId={session.workspaceId}
-                  sessionId={sessionId}
-                  worktreePath={workingDir}
-                  hasHostHeading
+                <LensEmptyState
+                  icon={CONCEPT_ICONS.github}
+                  tone={CONCEPT_TONE.github}
+                  title="No GitHub issue linked"
+                  description="Link a GitHub issue to this session to see it here."
+                  action={
+                    <LinkTicketPopover
+                      sessionId={sessionId}
+                      workspaceId={session.workspaceId}
+                      provider="github"
+                      providerLabel="GitHub"
+                      noun="issue"
+                      nounPhrase="an issue"
+                      nounPlural="issues"
+                    />
+                  }
                 />
               </PaneShell>
-            ) : null}
-            {lens === 'context' ||
-            lens === 'goal' ||
-            lens === 'decisions' ||
-            lens === 'last_output_summary' ? (
-              <ContextPane
-                session={session}
-                initialRegion={lens === 'context' ? undefined : lens}
-              />
-            ) : null}
-            {lens === 'pr' ? <PrPane session={session} onSelectLens={onSelectLens} /> : null}
-            {lens === 'review' ? <ReviewBoardPane session={session} /> : null}
-            {lens === 'linear' ? (
-              <IntegrationPane
-                sessionId={sessionId}
-                workspaceId={session.workspaceId}
-                provider="linear"
-              />
-            ) : null}
-            {lens === 'sentry' ? (
-              <IntegrationPane
-                sessionId={sessionId}
-                workspaceId={session.workspaceId}
-                provider="sentry"
-              />
-            ) : null}
-            {lens === 'gitlab_issues' ? (
-              <IntegrationPane
-                sessionId={sessionId}
-                workspaceId={session.workspaceId}
-                provider="gitlab"
-              />
-            ) : null}
-            {lens === 'jira_issues' ? (
-              <IntegrationPane
-                sessionId={sessionId}
-                workspaceId={session.workspaceId}
-                provider="jira"
-              />
-            ) : null}
-            {lens === 'slack_threads' ? (
-              <IntegrationPane
-                sessionId={sessionId}
-                workspaceId={session.workspaceId}
-                provider="slack"
-              />
-            ) : null}
-            {lens === 'github_issue' ? (
-              githubIssueNumber != null ? (
-                <GithubTaskDetail
-                  workspaceId={session.workspaceId}
-                  rootPath={projectWorktreePath}
-                  {...(githubTask != null && { task: githubTask })}
-                  issueNumber={githubIssueNumber}
-                />
-              ) : (
-                <PaneShell
-                  title="GitHub issue"
-                  description="The GitHub issue linked to this session."
-                >
-                  <LensEmptyState
-                    icon={CONCEPT_ICONS.github}
-                    tone={CONCEPT_TONE.github}
-                    title="No GitHub issue linked"
-                    description="Link a GitHub issue to this session to see it here."
-                    action={
-                      <LinkTicketPopover
-                        sessionId={sessionId}
-                        workspaceId={session.workspaceId}
-                        provider="github"
-                        providerLabel="GitHub"
-                        noun="issue"
-                        nounPhrase="an issue"
-                        nounPlural="issues"
-                      />
-                    }
-                  />
-                </PaneShell>
-              )
-            ) : null}
-            {lens === 'files' ? (
-              <FilesPane
-                sessionId={sessionId}
-                sessionDir={workingDir}
-                worktreePath={projectWorktreePath}
-                isBranchless={isBranchless}
-                onClose={onSelectOverview}
-              />
-            ) : null}
-            {lens === 'explore' ? (
-              <ExplorePane sessionId={sessionId} sessionDir={workingDir} />
-            ) : null}
-            <Pane visible={lens === 'agents'}>
-              <AgentsPane
-                session={session}
-                meta={agentsMeta}
-                inspectedAgentId={inspectedAgentId}
-                onInspectAgent={setInspectedAgentId}
-                showCompleted={showCompletedAgents}
-                onShowCompletedChange={setShowCompletedAgents}
-              />
-            </Pane>
-          </div>
-        ) : null}
+            )
+          ) : null}
+          {lens === 'files' ? (
+            <FilesPane
+              sessionId={sessionId}
+              sessionDir={workingDir}
+              worktreePath={projectWorktreePath}
+              isBranchless={isBranchless}
+              onClose={onSelectOverview}
+            />
+          ) : null}
+          {lens === 'explore' ? (
+            <ExplorePane sessionId={sessionId} sessionDir={workingDir} />
+          ) : null}
+          <Pane visible={lens === 'agents'}>
+            <AgentsPane
+              session={session}
+              meta={agentsMeta}
+              inspectedAgentId={inspectedAgentId}
+              onInspectAgent={setInspectedAgentId}
+              showCompleted={showCompletedAgents}
+              onShowCompletedChange={setShowCompletedAgents}
+            />
+          </Pane>
+        </div>
 
         {showAgentOverlay ? (
           <AgentOverlay
@@ -417,6 +420,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             overlayHome={overlayHome}
             overlayHomeLabel={LENS_LABEL[overlayHome]}
             showWorkflowStrip={showWorkflowStrip}
+            onOverview={onSelectOverview}
             onBack={() => setActiveLens(sessionId, overlayHome)}
             onOpenWorkflow={() => {
               if (selectedWorkflowRunId == null) {

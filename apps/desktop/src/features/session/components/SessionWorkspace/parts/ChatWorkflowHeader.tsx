@@ -13,6 +13,7 @@ type Props = {
   readonly sessionId: SessionId;
   readonly session: Session;
   readonly selectedAgentId: AgentId;
+  readonly onOverview: () => void;
   readonly onOpenWorkflow: () => void;
 };
 
@@ -20,6 +21,7 @@ export const ChatWorkflowHeader = ({
   sessionId,
   session,
   selectedAgentId,
+  onOverview,
   onOpenWorkflow,
 }: Props) => {
   const phaseRuns = useAppStore(
@@ -44,6 +46,7 @@ export const ChatWorkflowHeader = ({
           sessionId={sessionId}
           session={session}
           selectedAgentId={selectedAgentId}
+          onOverview={onOverview}
           homeLabel={attached == null ? 'Workflows' : workflowKindName(attached.workflow)}
           onHome={onOpenWorkflow}
         />
