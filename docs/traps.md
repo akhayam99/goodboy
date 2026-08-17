@@ -23,9 +23,28 @@ below has been "fixed" at least once and had to be put back.
   `PullRequestProvider`, which already carries `'bitbucket'`, so Bitbucket
   pull requests do not need a `RemoteHostKind` member to work.
 - `pending_resolutions` is a durable SQLite queue (migration `m052`), not the
-  canonical verdict history. Rows survive a restart and are deleted once
-  consumed, so do not read a row's absence as a verdict. The canonical source
-  is message replay through `hydrateResolverOutcomes`.
+  canonical verdict history. Later migrations add the reply, outcome, and
+  reply-posted state needed to retry delivery. Rows survive a restart and are
+  deleted once consumed, so do not read a row's absence as a verdict.
+  `hydrateResolverOutcomes` rebuilds in-memory verdicts by replaying persisted
+  assistant messages for top-level resolver agents and parsing their outcome
+  markers.
+- `RoutingPicker.onModel(model)` carries only the model string, not the
+  provider selected in the picker. A consumer that rebuilds a provider-model
+  pair from values captured by an earlier render can therefore commit the old
+  provider with the new model. There are 11 production mounts across 10 files:
+  `ChatInput`, `NotificationCenter`, `DiffViewerContent`, `RoleModelRow`
+  (twice), `TaskModelRow`, `AgentSpawnConfig`, `WorkflowBuilderView`,
+  `WorkflowStepCard`, `LibraryStepForm`, and `OrchestratorRoutingRow`. Keep the
+  provider in current state or a ref when handling `onModel`. The contract
+  itself has never been widened to close this: the same stale-pairing bug was
+  fixed at the call site instead, independently, at least twice over
+  (`RoleModelRow`/`TaskModelRow`, then `LibraryStepForm`/
+  `OrchestratorRoutingRow` in #1307), each time by tracking the provider in a
+  ref rather than by adding a provider parameter to `onModel`. This matters for
+  more than transient UI: `LibraryStepForm` commits through
+  `step_def_upsert`, whose Tauri command inserts or updates the SQLite
+  `step_library` table.
 - `LinkedPrChip` and `NewSessionView` read `[data-studio-overlay]` out of the
   DOM to tell whether a fullscreen studio is open, which decides in-session
   navigation in one and Escape handling in the other. The sniff exists

@@ -98,9 +98,10 @@ Six rules, phrased so a diff can be checked against them directly.
   with a count, or a collapsed disclosure row.
 - **One visible action per row**, plus the chevron. Everything else is revealed
   on hover and focus, or lives in the focused view.
-- **Empty sections collapse.** Inside a composite page, a section with nothing
-  to show renders its header at most, never a placeholder card. Only a full
-  pane may show an `EmptyState`.
+- **Empty sections collapse.** A surface that is the whole body of what the
+  user navigated to (a pane, or a wizard step) shows an `EmptyState`. A
+  section inside a composite page shows its header at most, never a
+  placeholder card.
 - **No off-scale type.** The type scale lives in
   [packages/ui/DESIGN-SYSTEM.md](./packages/ui/DESIGN-SYSTEM.md).
 
