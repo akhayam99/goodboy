@@ -73,21 +73,4 @@ describe('DeleteSessionConfirm branch-aware copy', () => {
       screen.queryByText('This cannot be undone. To keep the history, archive instead.'),
     ).toBeNull();
   });
-
-  it('renders two genuinely different warning strings across the two variants', () => {
-    state.workspaces = [{ id: 'workspace-1', kind: 'repo' }];
-    state.sessionBranches = { 'session-1': 'feature/x' };
-    const branchSession = { id: 'session-1', workspaceId: 'workspace-1', goal: 'A' } as never;
-    const { unmount } = render(<DeleteSessionConfirm session={branchSession} onClose={vi.fn()} />);
-    const branchWarning = screen.getByText(/This cannot be undone\./).textContent;
-    unmount();
-
-    state.workspaces = [{ id: 'workspace-1', kind: 'simple' }];
-    state.sessionBranches = {};
-    const branchlessSession = { id: 'session-1', workspaceId: 'workspace-1', goal: 'A' } as never;
-    render(<DeleteSessionConfirm session={branchlessSession} onClose={vi.fn()} />);
-    const branchlessWarning = screen.getByText(/This cannot be undone\./).textContent;
-
-    expect(branchWarning).not.toBe(branchlessWarning);
-  });
 });

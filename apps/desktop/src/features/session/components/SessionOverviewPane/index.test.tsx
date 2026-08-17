@@ -169,16 +169,29 @@ vi.mock('./SessionCostChip', () => ({
   SessionCostChip: () => <span data-testid="cost-chip" />,
 }));
 
+const editorMenuCalls: Array<{ sessionId: string; density?: string }> = [];
+const sessionGitActionsCalls: Array<{ sessionId: string; density?: string }> = [];
+const sessionDestructiveActionsCalls: Array<{ sessionId: string }> = [];
+
 vi.mock('./EditorMenu', () => ({
-  EditorMenu: () => <button type="button" aria-label="open worktree" />,
+  EditorMenu: ({ sessionId, density }: { sessionId: string; density?: string }) => {
+    editorMenuCalls.push({ sessionId, density });
+    return <button type="button" aria-label="open worktree" />;
+  },
 }));
 
 vi.mock('../SessionWorkspace/parts/SessionGitActions', () => ({
-  SessionGitActions: () => <button type="button" aria-label="branch actions" />,
+  SessionGitActions: ({ session, density }: { session: { id: string }; density?: string }) => {
+    sessionGitActionsCalls.push({ sessionId: session.id, density });
+    return <button type="button" aria-label="branch actions" />;
+  },
 }));
 
 vi.mock('./SessionDestructiveActions', () => ({
-  SessionDestructiveActions: () => <button type="button" aria-label="archive session" />,
+  SessionDestructiveActions: ({ session }: { session: { id: string } }) => {
+    sessionDestructiveActionsCalls.push({ sessionId: session.id });
+    return <button type="button" aria-label="session actions" />;
+  },
 }));
 
 import { SessionOverviewPane } from './index';
@@ -300,6 +313,9 @@ beforeEach(() => {
   runs.completedLanes = [];
   runs.completedFreeAgents = [];
   runs.completedResolveQueue = [];
+  editorMenuCalls.length = 0;
+  sessionGitActionsCalls.length = 0;
+  sessionDestructiveActionsCalls.length = 0;
 });
 afterEach(cleanup);
 
@@ -313,6 +329,13 @@ describe('SessionOverviewPane header band', () => {
     expect(screen.queryByText('My workspace')).toBeNull();
     expect(screen.queryByText('Shortcuts')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Rebase on main' })).toBeNull();
+  });
+
+  it('mounts the destructive actions menu for the rendered session, not a stale one', () => {
+    renderPane();
+    expect(sessionDestructiveActionsCalls).toEqual([{ sessionId: 'sess-1' }]);
+    expect(editorMenuCalls).toEqual([{ sessionId: 'sess-1', density: 'compact' }]);
+    expect(sessionGitActionsCalls).toEqual([{ sessionId: 'sess-1', density: 'compact' }]);
   });
 
   it('falls back to Untitled session when the goal is blank', () => {
