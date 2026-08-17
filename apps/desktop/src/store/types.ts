@@ -81,6 +81,7 @@ import type {
 import type { PanelSection } from './slices/sidebar/types';
 import type { UpdaterState } from './slices/updater/state';
 import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
+import type { WorkflowGeneration, WorkflowStudioDraft } from './slices/workflowStudio/types';
 import type { NewSessionDraft } from './slices/newSessionDrafts/types';
 
 export type ResolverThreadOutcome =
@@ -271,6 +272,9 @@ export type AppState = AppSliceState & {
   readonly agentDraft: Readonly<Record<AgentId, string>>;
   readonly newSessionDrafts: Readonly<Record<WorkspaceId, NewSessionDraft | undefined>>;
   readonly workflowDrafts: Readonly<Record<SessionId, WorkflowBuilderDraft | undefined>>;
+  readonly workflowStudioDrafts: Readonly<Record<WorkspaceId, WorkflowStudioDraft | undefined>>;
+  readonly workflowGenerations: Readonly<Record<WorkspaceId, WorkflowGeneration | undefined>>;
+  readonly visibleWorkflowStudioWorkspaceId: WorkspaceId | null;
   readonly agentAttachments: Readonly<Record<AgentId, ReadonlyArray<DraftAttachment>>>;
   readonly agentQueue: Readonly<Record<AgentId, ReadonlyArray<AgentQueuedTurn>>>;
   readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;

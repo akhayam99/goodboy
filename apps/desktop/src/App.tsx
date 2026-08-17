@@ -401,6 +401,15 @@ export const App = () => {
   }, [archiveOpen, deleteOpen]);
 
   useEffect(() => {
+    const handler = () => {
+      closeAllStudios();
+      setWorkflowStudioOpen(true);
+    };
+    window.addEventListener('goodboy:open-workflow-studio', handler);
+    return () => window.removeEventListener('goodboy:open-workflow-studio', handler);
+  }, [closeAllStudios]);
+
+  useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent<{ section?: string }>).detail;
       if (workspaceSettingsOpen && detail?.section === undefined) {

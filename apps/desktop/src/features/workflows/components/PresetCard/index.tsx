@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SelectableRow } from '@goodboy/ui';
-import { Check, Trash2, X } from 'lucide-react';
+import { Check, Copy, Trash2, X } from 'lucide-react';
 import type { Workflow } from '@goodboy/types';
 import { inferAgentKindFromName, ROLE_TO_KIND } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
@@ -9,12 +9,12 @@ import { WorkflowOriginTag } from '../WorkflowOriginTag';
 type Props = {
   readonly template: Workflow;
   readonly active: boolean;
-  readonly approved: boolean;
   readonly onSelect: () => void;
+  readonly onDuplicate: () => void;
   readonly onDelete: () => void;
 };
 
-export const PresetCard = ({ template, active, approved, onSelect, onDelete }: Props) => {
+export const PresetCard = ({ template, active, onSelect, onDuplicate, onDelete }: Props) => {
   const [confirming, setConfirming] = useState(false);
   const steps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
   const description = template.description?.trim();
@@ -28,11 +28,6 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
       >
         <div className="flex items-center gap-2">
           <span className="truncate text-xs font-medium text-foreground">{template.name}</span>
-          {!approved ? (
-            <span className="shrink-0 rounded-md bg-warning/15 px-1 py-px text-2xs font-semibold uppercase leading-none tracking-eyebrow text-warning">
-              draft
-            </span>
-          ) : null}
           <span className="ml-auto flex shrink-0 items-center gap-1.5">
             {template.origin != null ? <WorkflowOriginTag origin={template.origin} /> : null}
             <span className="text-2xs tabular-nums text-muted-foreground/50">
@@ -82,18 +77,30 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
           </button>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setConfirming(true);
-          }}
-          title="Delete workflow"
-          aria-label={`Delete ${template.name}`}
-          className="absolute right-1.5 top-1.5 rounded-md p-1 text-muted-foreground/0 focus-visible:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10 group-focus-within:text-muted-foreground group-hover:text-muted-foreground hover:!text-danger"
-        >
-          <Trash2 size={12} aria-hidden />
-        </button>
+        <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5 text-muted-foreground/0 group-focus-within:text-muted-foreground group-hover:text-muted-foreground">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDuplicate();
+            }}
+            aria-label={`Duplicate ${template.name}`}
+            className="rounded-md p-1 focus-visible:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:!text-foreground"
+          >
+            <Copy size={12} aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setConfirming(true);
+            }}
+            aria-label={`Delete ${template.name}`}
+            className="rounded-md p-1 focus-visible:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10 hover:!text-danger"
+          >
+            <Trash2 size={12} aria-hidden />
+          </button>
+        </div>
       )}
     </li>
   );
