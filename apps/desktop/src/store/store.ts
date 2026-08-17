@@ -820,6 +820,7 @@ export const initialState: AppState = {
   transcripts: {},
   messages: {},
   sessionWorktrees: {},
+  sessionWorktreeRecords: {},
   orphanWorktrees: {},
   sessionMounts: {},
   sessionActiveMount: {},

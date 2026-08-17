@@ -1,22 +1,26 @@
 import { useState } from 'react';
-import { Check, ChevronDown, ChevronRight } from 'lucide-react';
-import { Button, Chip, Markdown, ScrollFade, StatusDot, cn } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { Button, Chip, Markdown, ScrollFade, cn } from '@goodboy/ui';
+import type { DiffComment, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
-import { formatCardTime } from '../../../../../chat/utils/format-card-time';
 import { formatDuration } from '../../../../../chat/utils/format-duration';
 import { agentKindPalette } from '../../../../agent-kind';
-import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineEntries';
-import { TimelineQuestionInset } from './TimelineQuestionInset';
-import { TimelineRail } from './TimelineRail';
+import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
+import { TimelineNode } from './TimelineNode';
 
 type Props = {
   readonly entry: TimelineAgentEntry;
   readonly sessionId: SessionId;
   readonly estimatedCostUsd: number | null;
+  readonly timeLabel: string | null;
+  readonly diffComment?: DiffComment | null;
 };
 
-const kindLabel = ({ entry }: Pick<Props, 'entry'>): string => {
+type KindLabelParams = {
+  readonly entry: TimelineAgentEntry;
+};
+
+const kindLabel = ({ entry }: KindLabelParams): string => {
   const palette = agentKindPalette({ kind: entry.agentKind });
   if (entry.clusterIndex != null) {
     return `${palette.label} ${entry.clusterIndex}`;
@@ -24,13 +28,19 @@ const kindLabel = ({ entry }: Pick<Props, 'entry'>): string => {
   return palette.label;
 };
 
-export const TimelineAgentRow = ({ entry, sessionId, estimatedCostUsd }: Props) => {
+export const TimelineAgentRow = ({
+  entry,
+  sessionId,
+  estimatedCostUsd,
+  timeLabel,
+  diffComment = null,
+}: Props) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const isResolver = entry.agentKind === 'resolver';
   const isRunning = entry.agent.status === 'running';
   const duration =
-    entry.agent.completedAt != null
+    entry.hasDuration && entry.agent.completedAt != null
       ? formatDuration({
           durationMs: Math.max(
             0,
@@ -38,117 +48,134 @@ export const TimelineAgentRow = ({ entry, sessionId, estimatedCostUsd }: Props) 
           ),
         })
       : null;
-  const sourceLabel = isResolver
-    ? 'resolve'
-    : entry.workflowNumber != null
-      ? `W${entry.workflowNumber}`
-      : 'agent';
-  const sourceTone = isResolver ? 'success' : entry.workflowNumber != null ? 'accent' : 'primary';
   const palette = agentKindPalette({ kind: entry.agentKind });
   const hasBody =
     entry.agent.outputSummary != null ||
     entry.terminalQuestions.length > 0 ||
-    entry.agent.status === 'failed';
+    entry.agent.status === 'failed' ||
+    diffComment != null;
+  const meta = [
+    duration,
+    estimatedCostUsd != null ? `$${estimatedCostUsd.toFixed(2)}` : null,
+    entry.agent.status === 'failed' ? 'failed' : null,
+  ].filter((value): value is string => value != null);
 
   return (
     <div
       className={cn(
-        'flex flex-col rounded-md',
-        isExpanded && 'bg-muted/60',
-        entry.depth === 1 && 'pl-4',
+        'relative grid grid-cols-[44px_24px_minmax(0,1fr)]',
+        isExpanded && 'rounded-md bg-muted/60',
       )}
     >
-      <div className="group flex min-h-9 items-center gap-2 px-2 py-1.5">
-        <button
-          type="button"
-          aria-label={isExpanded ? 'Collapse entry' : 'Expand entry'}
-          aria-expanded={isExpanded}
-          disabled={!hasBody}
-          onClick={() => setIsExpanded((current) => !current)}
-          className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground disabled:opacity-30"
-        >
-          {isExpanded ? (
-            <ChevronDown size={13} aria-hidden />
-          ) : (
-            <ChevronRight size={13} aria-hidden />
-          )}
-        </button>
-        <TimelineRail joinsPrevious={entry.joinsPrevious} joinsNext={entry.joinsNext} />
-        <Chip
-          tone={sourceTone}
-          label={sourceLabel}
-          title={entry.workflowName ?? undefined}
-          shape="badge"
-          size="xs"
-          width="sm"
-          uppercase
-        />
-        {isResolver ? (
-          <span className="inline-block min-w-16" />
-        ) : (
-          <Chip
-            tone="neutral"
-            label={kindLabel({ entry })}
-            shape="badge"
-            size="xs"
-            width="sm"
-            uppercase
-            className={palette.fg}
-          />
-        )}
-        <span className={cn('min-w-0 flex-1 truncate text-sm', isRunning && 'font-medium')}>
-          {entry.agent.name}
-        </span>
-        <span className="flex shrink-0 items-center gap-2 text-2xs text-muted-foreground tabular-nums">
-          {duration != null ? <span>{duration}</span> : null}
-          {estimatedCostUsd != null ? <span>${estimatedCostUsd.toFixed(2)}</span> : null}
-          {isRunning ? (
-            <StatusDot tone="info" size="sm" pulsing ariaLabel="Running" />
-          ) : entry.agent.status === 'completed' ? (
-            <Check size={13} aria-label="Completed" className="text-success" />
-          ) : (
-            <span className={entry.agent.status === 'failed' ? 'text-danger' : ''}>
-              {entry.agent.status}
-            </span>
-          )}
-          <span>{formatCardTime(entry.at)}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => void selectAgent(sessionId, entry.agent.id)}
-          >
-            {isResolver ? 'Open resolve' : 'Open chat'}
-          </Button>
+      <span className="self-start py-2 text-right text-3xs tabular-nums text-muted-foreground">
+        {timeLabel}
+      </span>
+      <div className="relative flex min-h-9 items-center justify-center">
+        <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border" />
+        <span className="relative z-10 flex size-4 items-center justify-center bg-canvas">
+          <TimelineNode status={entry.agent.status} size={entry.depth === 0 ? 'main' : 'child'} />
         </span>
       </div>
-      {isExpanded ? (
-        <div className="flex flex-col gap-4 px-10 pb-3 pt-1">
-          {entry.agent.outputSummary != null ? (
-            <section className="flex flex-col gap-2">
-              <span className="text-2xs uppercase text-muted-foreground">Outcome</span>
-              <ScrollFade className="max-h-48">
-                <Markdown text={entry.agent.outputSummary} />
-              </ScrollFade>
-            </section>
+      <div
+        className={cn(
+          'group flex min-w-0 flex-col',
+          entry.depth === 1 && 'pl-5',
+          entry.depth === 2 && 'pl-10',
+        )}
+      >
+        <div className="flex min-h-9 min-w-0 items-center gap-2 py-1.5">
+          {!isResolver ? (
+            <Chip
+              tone="neutral"
+              label={kindLabel({ entry })}
+              shape="badge"
+              size="xs"
+              width="sm"
+              uppercase
+              className={palette.fg}
+            />
           ) : null}
-          {entry.terminalQuestions.length > 0 ? (
-            <section className="flex flex-col gap-2">
-              <span className="text-2xs uppercase text-muted-foreground">Questions</span>
-              {entry.terminalQuestions.map((question) => (
-                <div key={question.id} className="flex flex-col gap-1 text-xs">
-                  <span>{question.text}</span>
-                  <span className="text-muted-foreground">
-                    {question.userAnswer ?? question.status}
-                  </span>
-                </div>
-              ))}
-            </section>
+          <button
+            type="button"
+            disabled={!hasBody}
+            aria-expanded={hasBody ? isExpanded : undefined}
+            aria-label={
+              hasBody ? `${isExpanded ? 'Collapse' : 'Expand'} ${entry.agent.name}` : undefined
+            }
+            onClick={() => setIsExpanded((current) => !current)}
+            className={cn(
+              'min-w-0 truncate text-left text-sm text-foreground',
+              isRunning && 'font-medium',
+            )}
+          >
+            {entry.agent.name}
+          </button>
+          {meta.length > 0 ? (
+            <span
+              className={cn(
+                'shrink-0 text-2xs tabular-nums text-muted-foreground',
+                entry.agent.status === 'failed' && 'text-danger',
+              )}
+            >
+              {meta.join(' · ')}
+            </span>
           ) : null}
+          <span className="flex flex-1 justify-end gap-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void selectAgent(sessionId, entry.agent.id)}
+            >
+              {isResolver ? 'Open resolve' : 'Open chat'}
+            </Button>
+            {hasBody ? (
+              isExpanded ? (
+                <ChevronDown size={13} aria-hidden />
+              ) : (
+                <ChevronRight size={13} aria-hidden />
+              )
+            ) : null}
+          </span>
         </div>
-      ) : null}
-      {entry.openQuestions.map((question) => (
-        <TimelineQuestionInset key={question.id} question={question} sessionId={sessionId} />
-      ))}
+        {isExpanded ? (
+          <div className="flex flex-col gap-4 pb-3 pr-3">
+            {entry.agent.outputSummary != null ? (
+              <section className="flex flex-col gap-2">
+                <span className="text-2xs uppercase text-muted-foreground">Outcome</span>
+                <ScrollFade className="max-h-48">
+                  <Markdown text={entry.agent.outputSummary} />
+                </ScrollFade>
+              </section>
+            ) : null}
+            {entry.terminalQuestions.length > 0 ? (
+              <section className="flex flex-col gap-2">
+                <span className="text-2xs uppercase text-muted-foreground">Questions</span>
+                {entry.terminalQuestions.map((question) => (
+                  <div key={question.id} className="flex flex-col gap-1 text-xs">
+                    <span>{question.text}</span>
+                    <span className="text-muted-foreground">
+                      {question.userAnswer ?? question.status}
+                    </span>
+                  </div>
+                ))}
+              </section>
+            ) : null}
+            {diffComment != null ? (
+              <section className="flex flex-col gap-2">
+                <span className="text-2xs uppercase text-muted-foreground">Origin</span>
+                <span className="text-xs text-foreground">{diffComment.body}</span>
+                <span className="text-2xs text-muted-foreground">
+                  {diffComment.resolvedAt != null
+                    ? 'resolved'
+                    : diffComment.consumedAt != null
+                      ? 'consumed'
+                      : 'open'}
+                </span>
+              </section>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 };

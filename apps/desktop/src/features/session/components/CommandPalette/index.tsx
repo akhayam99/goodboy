@@ -170,13 +170,6 @@ export const CommandPalette = ({
         onSelect: () => setActiveLens(sessionId, 'context'),
       });
       out.push({
-        id: 'action:timeline',
-        label: 'Open timeline',
-        sublabel: shortcutGlyphs('lens.timeline'),
-        group: 'action',
-        onSelect: () => setActiveLens(sessionId, 'timeline'),
-      });
-      out.push({
         id: 'action:context-goal',
         label: 'Open context: Goal',
         sublabel: shortcutGlyphs('lens.goal'),
