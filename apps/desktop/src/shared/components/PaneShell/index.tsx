@@ -37,7 +37,6 @@ export const PaneShell = (props: Props) => {
     <ScrollFade className="h-full" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
       <div
         className={cn(
-          'flex flex-col',
           animationClassName,
           PANE_RHYTHM.column,
           PANE_RHYTHM.stack,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CircleCheck, PanelRight, RotateCcw, Trash2 } from 'lucide-react';
-import { InlineConfirm } from '@goodboy/ui';
+import { Chip, InlineConfirm } from '@goodboy/ui';
 import { contextTokensForUsage } from '@goodboy/core';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { modelLabel } from '../../../../../features/chat/utils/chat-constants';
@@ -183,10 +183,13 @@ export const AgentRow = ({
         </>
       }
       status={
-        <AgentKindChip
-          kind={kind}
-          title={`Agent ${run.ordinal + 1}: ${agentKindPalette({ kind }).label}`}
-        />
+        <>
+          <AgentKindChip
+            kind={kind}
+            title={`Agent ${run.ordinal + 1}: ${agentKindPalette({ kind }).label}`}
+          />
+          {isMuted ? <Chip tone="success" size="xs" bordered={false} label="completed" /> : null}
+        </>
       }
       meta={
         <AgentMetrics

@@ -14,6 +14,7 @@ type Props = {
   readonly sessionId: SessionId;
   readonly session: Session;
   readonly selectedAgentId: AgentId;
+  readonly onOverview: () => void;
   readonly homeLabel: string;
   readonly onHome: () => void;
 };
@@ -22,6 +23,7 @@ export const WorkflowBreadcrumb = ({
   sessionId,
   session,
   selectedAgentId,
+  onOverview,
   homeLabel,
   onHome,
 }: Props) => {
@@ -101,6 +103,15 @@ export const WorkflowBreadcrumb = ({
 
   return (
     <nav aria-label="Workflow breadcrumb" className="flex min-w-0 items-center gap-1">
+      <button
+        type="button"
+        onClick={onOverview}
+        title="Overview"
+        className={cn(CRUMB_CLASS, 'max-w-40 shrink-0 text-muted-foreground hover:text-foreground')}
+      >
+        <span className="truncate">Overview</span>
+      </button>
+      <ChevronRight size={11} aria-hidden className="shrink-0 text-muted-foreground/40" />
       <button
         type="button"
         onClick={onHome}

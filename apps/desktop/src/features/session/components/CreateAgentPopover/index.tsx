@@ -26,7 +26,6 @@ import { resolveSpawnRouting } from '../../spawn-routing';
 import { AgentKindGrid } from './AgentKindGrid';
 import { AgentRoutingSections } from './AgentRoutingSections';
 import { CreateAgentTrigger, type CreateAgentTriggerVariant } from './CreateAgentTrigger';
-import { SpawnRoutingSummary } from './SpawnRoutingSummary';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -54,7 +53,7 @@ export const CreateAgentPopover = ({
     portal,
     portalTarget,
   } = useDropdown({
-    align: 'end',
+    align: 'center',
     expectedHeight: 460,
     expectedWidth: 384,
     width: 'w-96 max-w-[calc(100vw-2rem)]',
@@ -122,23 +121,12 @@ export const CreateAgentPopover = ({
             <PopoverBody>
               {agentKinds.length > 1 && (
                 <>
-                  <PickerSection label="Agent type" hint="What this agent is allowed to do">
+                  <PickerSection label="Agent type">
                     <AgentKindGrid kinds={agentKinds} value={selectedKind} onChange={setKind} />
                   </PickerSection>
                   <Divider />
                 </>
               )}
-              <SpawnRoutingSummary
-                kind={selectedKind}
-                effective={effective}
-                fallback={spawnDefault}
-                isPinned={routing != null}
-                onReset={() => {
-                  setRouting(null);
-                  setViewProvider(spawnDefault.provider);
-                }}
-              />
-              <Divider />
               <AgentRoutingSections
                 connectedProviders={connectedProviders}
                 effective={effective}

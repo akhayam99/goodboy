@@ -156,7 +156,7 @@ describe('PlanStudio', () => {
     expect(state.setActiveLens).toHaveBeenCalledWith('sess-1', 'agents');
   });
 
-  it('renders the consumed toggle as a row beneath Nothing active, not inside the empty state card', () => {
+  it('renders a consumed plan beneath the active empty state without interaction', () => {
     state.plans = [
       {
         id: 'plan-1',
@@ -172,16 +172,14 @@ describe('PlanStudio', () => {
     render(<PlanStudio sessionId={'sess-1' as never} />);
 
     expect(screen.getByText('Nothing active')).toBeDefined();
-    const toggle = screen.getByRole('button', { name: /consumed/i });
     const emptyCard = screen.getByText('Nothing active').closest('.border-dashed');
     expect(emptyCard).not.toBeNull();
-    expect(emptyCard?.contains(toggle)).toBe(false);
-
-    fireEvent.click(toggle);
     expect(screen.getByText('Implement auth module')).toBeDefined();
+    expect(screen.getByText('consumed')).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Finished history' })).toBeDefined();
   });
 
-  it('shows the consumed toggle alongside active plans too', () => {
+  it('shows consumed plans alongside active plans too', () => {
     state.plans = [
       {
         id: 'plan-1',
@@ -207,7 +205,7 @@ describe('PlanStudio', () => {
     render(<PlanStudio sessionId={'sess-1' as never} />);
 
     expect(screen.queryByText('Nothing active')).toBeNull();
-    expect(screen.getByRole('button', { name: /consumed/i })).toBeDefined();
+    expect(screen.getByText('Old plan')).toBeDefined();
   });
 
   it('selects a plan from the list, focusing it', () => {

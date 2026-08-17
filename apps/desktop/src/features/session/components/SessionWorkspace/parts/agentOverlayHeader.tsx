@@ -13,6 +13,7 @@ type Params = {
   readonly overlayHome: AgentHomeLens;
   readonly overlayHomeLabel: string;
   readonly showWorkflowStrip: boolean;
+  readonly onOverview: () => void;
   readonly onBack: () => void;
   readonly onOpenWorkflow: () => void;
 };
@@ -24,6 +25,7 @@ export const agentOverlayHeader = ({
   overlayHome,
   overlayHomeLabel,
   showWorkflowStrip,
+  onOverview,
   onBack,
   onOpenWorkflow,
 }: Params): ReactNode | undefined => {
@@ -33,6 +35,7 @@ export const agentOverlayHeader = ({
         sessionId={sessionId}
         session={session}
         selectedAgentId={selectedAgentId}
+        onOverview={onOverview}
         onOpenWorkflow={onOpenWorkflow}
       />
     );
@@ -50,6 +53,7 @@ export const agentOverlayHeader = ({
           selectedAgentId={selectedAgentId}
           overlayHome={overlayHome}
           homeLabel={overlayHomeLabel}
+          onOverview={onOverview}
           onHome={onBack}
         />
       </div>

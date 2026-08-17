@@ -683,7 +683,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         mode === 'custom'
           ? (plan?.workflowName ?? 'Custom workflow')
           : mode === 'dynamic'
-            ? 'Orchestrated workflow'
+            ? 'Untitled orchestrated workflow'
             : (selectedPreset?.name ?? basePreset?.name ?? 'Custom workflow'),
         phaseTemplates,
       );
@@ -763,7 +763,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     mode === 'custom'
       ? (plan?.workflowName ?? 'Custom workflow')
       : mode === 'dynamic'
-        ? 'Orchestrated workflow'
+        ? 'Untitled orchestrated workflow'
         : (selectedPreset?.name ?? basePreset?.name ?? 'Workflow');
 
   return (
@@ -779,12 +779,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         <div className="flex min-h-0 w-full flex-1 flex-col">
           <ScrollFade className="min-h-0 flex-1">
             <div
-              className={cn(
-                'flex max-w-2xl flex-col',
-                PANE_RHYTHM.column,
-                PANE_RHYTHM.stack,
-                PANE_RHYTHM.body,
-              )}
+              className={cn('max-w-2xl', PANE_RHYTHM.column, PANE_RHYTHM.stack, PANE_RHYTHM.body)}
             >
               <section className="flex flex-col gap-2">
                 <SectionHeader

@@ -36,11 +36,7 @@ export const StudioPanel = ({
       <Divider />
       <div className="min-h-0 flex-1">
         <ScrollFade className="h-full" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-          <div
-            className={cn('flex flex-col', PANE_RHYTHM.column, PANE_RHYTHM.stack, maxWidthClass)}
-          >
-            {children}
-          </div>
+          <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.stack, maxWidthClass)}>{children}</div>
         </ScrollFade>
       </div>
     </div>

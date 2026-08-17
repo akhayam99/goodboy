@@ -66,6 +66,7 @@ const renderCrumb = (selectedAgentId: AgentId) =>
       sessionId={SESSION_ID}
       session={session}
       selectedAgentId={selectedAgentId}
+      onOverview={vi.fn()}
       homeLabel="Workflows"
       onHome={vi.fn()}
     />,

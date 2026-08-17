@@ -1,3 +1,4 @@
+import { ClampedProse } from '@goodboy/ui';
 import type { ResolverThreadBrief } from '../../resolverThreadBrief';
 
 type Props = {
@@ -13,12 +14,16 @@ export const ResolverThreadLead = ({ brief }: Props) => (
     {brief.ask !== '' && (
       <div className="flex min-w-0 gap-2">
         <dt className={ROW_LABEL_CLASS}>Ask</dt>
-        <dd className={ROW_VALUE_CLASS}>{brief.ask}</dd>
+        <dd className={ROW_VALUE_CLASS}>
+          <ClampedProse text={brief.ask} lines={3} className="text-xs leading-relaxed" />
+        </dd>
       </div>
     )}
     <div className="flex min-w-0 gap-2">
       <dt className={ROW_LABEL_CLASS}>Verdict</dt>
-      <dd className={ROW_VALUE_CLASS}>{brief.verdict}</dd>
+      <dd className={ROW_VALUE_CLASS}>
+        <ClampedProse text={brief.verdict} lines={3} className="text-xs leading-relaxed" />
+      </dd>
     </div>
     <div className="flex min-w-0 gap-2">
       <dt className={ROW_LABEL_CLASS}>Next</dt>

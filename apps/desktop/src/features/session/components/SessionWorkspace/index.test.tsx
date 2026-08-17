@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
+import { useEffect } from 'react';
 import type { Agent, Session } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
 
@@ -88,6 +89,8 @@ const { store, hooks } = vi.hoisted(() => ({
   hooks: {
     agentHome: 'workflows' as LensKind,
     openQuestions: [] as ReadonlyArray<{ readonly createdByAgentId?: string }>,
+    agentsLaneMounts: 0,
+    agentsLaneUnmounts: 0,
   },
 }));
 
@@ -165,18 +168,26 @@ vi.mock('../StandaloneAgentsLane', () => ({
   }: {
     session: Session;
     onInspectAgent?: (agentId: string) => void;
-  }) => (
-    <div data-testid="agents-lane">
-      {(store.sessionPhaseRuns[session.id] ?? []).map((agent) => (
-        <button
-          key={agent.id}
-          type="button"
-          onClick={() => onInspectAgent?.(agent.id)}
-          aria-label={`inspect ${agent.id}`}
-        />
-      ))}
-    </div>
-  ),
+  }) => {
+    useEffect(() => {
+      hooks.agentsLaneMounts += 1;
+      return () => {
+        hooks.agentsLaneUnmounts += 1;
+      };
+    }, []);
+    return (
+      <div data-testid="agents-lane">
+        {(store.sessionPhaseRuns[session.id] ?? []).map((agent) => (
+          <button
+            key={agent.id}
+            type="button"
+            onClick={() => onInspectAgent?.(agent.id)}
+            aria-label={`inspect ${agent.id}`}
+          />
+        ))}
+      </div>
+    );
+  },
 }));
 vi.mock('../CreateAgentPopover', () => ({
   CreateAgentPopover: () => (
@@ -291,6 +302,8 @@ beforeEach(() => {
   store.loadSessionPlans.mockClear();
   hooks.agentHome = 'workflows';
   hooks.openQuestions = [];
+  hooks.agentsLaneMounts = 0;
+  hooks.agentsLaneUnmounts = 0;
 });
 
 afterEach(cleanup);
@@ -304,7 +317,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(
       screen.getByTestId('chat-view').contains(screen.getByTestId('workflow-breadcrumb')),
     ).toBe(true);
-    expect(screen.queryByTestId('agents-lane')).toBeNull();
+    expect(screen.getByTestId('agents-lane')).toBeDefined();
     expect(screen.queryByTestId('agents-section')).toBeNull();
     expect(screen.queryByRole('separator', { name: 'Resize agent inspector' })).toBeNull();
   });
@@ -419,9 +432,9 @@ describe('SessionWorkspace agent overlay', () => {
     render(<SessionWorkspace session={session} isActive />);
     expect(screen.queryByTestId('workflow-breadcrumb')).toBeNull();
     expect(screen.queryByRole('separator', { name: 'resize agent list' })).toBeNull();
-    expect(screen.queryByTestId('agents-lane')).toBeNull();
+    expect(screen.getByTestId('agents-lane')).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Agents' })).toHaveLength(1);
-    expect(screen.getByTestId('agent-inspector').textContent).toBe(standaloneAgent.id);
+    expect(screen.getAllByTestId('agent-inspector')).toHaveLength(2);
     expect(screen.getByRole('separator', { name: 'Resize agent inspector' })).toBeDefined();
   });
 
@@ -702,14 +715,28 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
   });
 
-  it('drops the crumb bar once an agent overlay owns the surface', () => {
+  it('keeps the crumb bar mounted once an agent overlay owns the surface', () => {
     store.activeLens = { [SESSION_ID]: 'agents' };
     store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [selectedAgent] };
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.queryByTestId('session-crumb-bar')).toBeNull();
+    expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
+  });
+
+  it('does not unmount the ancestor lens when a child is selected', () => {
+    store.selectedAgentId = {};
+    const view = render(<SessionWorkspace session={session} isActive />);
+
+    expect(hooks.agentsLaneMounts).toBe(1);
+
+    store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+
+    expect(hooks.agentsLaneMounts).toBe(1);
+    expect(hooks.agentsLaneUnmounts).toBe(0);
+    expect(screen.getByTestId('chat-view')).toBeDefined();
   });
 
   it('moves the workflow run name into the chat header while an agent is open', () => {

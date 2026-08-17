@@ -1,4 +1,4 @@
-import { SelectableRow } from '@goodboy/ui';
+import { ClampedProse, SelectableRow } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
 import { inferAgentKindFromName, ROLE_TO_KIND } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
@@ -30,9 +30,6 @@ export const PresetCard = ({ template, active, onSelect }: Props) => {
             </span>
           </span>
         </div>
-        {description ? (
-          <span className="line-clamp-1 text-2xs text-muted-foreground/70">{description}</span>
-        ) : null}
         {steps.length > 0 ? (
           <span className="flex flex-wrap items-center gap-2 pr-8">
             {steps.map((step) => {
@@ -42,6 +39,15 @@ export const PresetCard = ({ template, active, onSelect }: Props) => {
           </span>
         ) : null}
       </SelectableRow>
+      {description ? (
+        <div className="px-2.5 py-1">
+          <ClampedProse
+            text={description}
+            lines={2}
+            className="text-2xs text-muted-foreground/70"
+          />
+        </div>
+      ) : null}
     </li>
   );
 };

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Tooltip, cn } from '@goodboy/ui';
+import { ClampedProse, Tooltip, cn } from '@goodboy/ui';
 import { Check, GripVertical, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { StepDef } from '@goodboy/types';
 import { agentKindPalette, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind';
@@ -45,9 +45,11 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
           </span>
         </div>
         {def.promptPrefix ? (
-          <span className="line-clamp-1 text-2xs leading-relaxed text-muted-foreground/60">
-            {def.promptPrefix}
-          </span>
+          <ClampedProse
+            text={def.promptPrefix}
+            lines={2}
+            className="text-2xs leading-relaxed text-muted-foreground/60"
+          />
         ) : null}
       </div>
 

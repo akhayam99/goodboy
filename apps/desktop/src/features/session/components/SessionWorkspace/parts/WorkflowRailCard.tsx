@@ -1,5 +1,5 @@
 import type { Agent, Workflow, WorkflowOrigin, WorkflowRun } from '@goodboy/types';
-import { MetaRow, formatUsdPrecise } from '@goodboy/ui';
+import { ClampedProse, MetaRow, formatUsdPrecise } from '@goodboy/ui';
 import { classifyWorkflowChain } from '@goodboy/core';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { WorkflowRunStatus } from '../../../../workspace/components/WorkspacesSidebar/parts/WorkflowRunStatus';
@@ -84,9 +84,6 @@ export const WorkflowRailCard = ({
               predecessorName={predecessorName}
               isOrchestrating={isOrchestrating}
             />
-            {stepLine != null ? (
-              <span className="line-clamp-1 text-2xs text-muted-foreground">{stepLine}</span>
-            ) : null}
           </>
         }
         meta={
@@ -124,6 +121,11 @@ export const WorkflowRailCard = ({
         className={isDiscarded ? 'pr-16' : undefined}
         onSelect={onSelect}
       />
+      {stepLine != null ? (
+        <div className="px-3 py-1">
+          <ClampedProse text={stepLine} lines={2} className="text-2xs text-muted-foreground" />
+        </div>
+      ) : null}
       {isDiscarded ? (
         <button
           type="button"
