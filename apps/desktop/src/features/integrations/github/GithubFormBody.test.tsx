@@ -48,6 +48,15 @@ afterEach(cleanup);
 import { GithubFormBody } from './GithubFormBody';
 
 describe('GithubFormBody', () => {
+  it('offers the token link before the token field', async () => {
+    render(<GithubFormBody workspaceId={WS_ID} />);
+
+    const link = await screen.findByRole('link', { name: /create a token/i });
+    const field = screen.getByLabelText(/GitHub personal access token/i);
+
+    expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   describe('token form (happy path)', () => {
     it('only focuses the token field when the containing surface opts in', async () => {
       const view = render(<GithubFormBody workspaceId={WS_ID} />);

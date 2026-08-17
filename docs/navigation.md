@@ -152,19 +152,16 @@ on the right.
 
 ## Footer
 
-Left: integration tools in three groups, code hosts, trackers and conversation
-tools. Every shipped integration belongs to exactly one group, enforced at
-compile time, so none is unreachable. A group shows its connected members and
-ends with one add control listing every member with its connection state.
+Left: the integrations connected to this workspace, followed by one **Link
+integration** action. Each connected integration is a named glyph that opens
+its studio. The action lists every available integration and its connection
+state, so connected and disconnected tools stay reachable through one flow.
 
-- The add control never leaves its position: once every member is connected it
-  stays mounted and disabled, with the reason in both its tooltip and its
-  accessible name.
-- A group with nothing connected labels its add control with the category noun,
-  so a first-run workspace reads what each group offers instead of hovering
-  anonymous glyphs. The label goes once a member connects; the slot does not.
-- A workspace with no repository swaps the code-host group whole for `Add a
-repo` and drops the integrations that need a repository to read.
+- With nothing connected, the action explicitly invites the first connection.
+- The glyph strip scrolls horizontally inside its region. The link action stays
+  fixed, so many connections never displace the rest of the footer.
+- A workspace with no repository keeps `Add a repo` before the integration
+  strip and drops the integrations that need a repository to read.
 
 Right: the launchers reached by name, the update control while an update is
 pending, and a `More` popover for the rest.
@@ -173,10 +170,9 @@ pending, and a `More` popover for the rest.
   running"**, not "has a new release been published". It answers offline, never
   lights up for a version the user cannot install, and a fresh install shows
   one dot, not one per release.
-- Exactly one control per group carries the active fill, on the open
-  integration or on its group's add control when that integration is
-  unconnected, so no group hides where the user is. Opening any studio closes
-  the others.
+- Exactly one integration control carries the active fill, on the open glyph or
+  on the link action when that integration is disconnected. Opening any studio
+  closes the others.
 
 ## Shortcuts
 
