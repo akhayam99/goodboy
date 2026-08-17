@@ -283,14 +283,16 @@ export const OrchestratorPanel = ({
           {state.phase === 'paused-budget' ? null : (
             <RunSpendLimitPopover sessionId={sessionId} run={run} variant="ghost" />
           )}
-          <OrchestratorAction
-            icon={Wallet}
-            label="Budget"
-            variant="ghost"
-            testId="orchestrator-budget"
-            title="Open the budget for this session"
-            onClick={() => openBudgetStudio({ scope: { kind: 'session', sessionId } })}
-          />
+          {state.phase === 'paused-budget' && sessionBudgetBlocked ? null : (
+            <OrchestratorAction
+              icon={Wallet}
+              label="Budget"
+              variant="ghost"
+              testId="orchestrator-budget"
+              title="Open the budget for this session"
+              onClick={() => openBudgetStudio({ scope: { kind: 'session', sessionId } })}
+            />
+          )}
         </div>
       </div>
 
