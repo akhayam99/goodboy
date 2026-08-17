@@ -83,7 +83,7 @@ export const AGENT_KIND_META: Record<
 > = {
   generic: {
     label: 'Generalist',
-    hint: 'Can do whatever you want, no restrictions',
+    hint: 'Plans, investigates, edits, and verifies without a narrow role',
     persona: 'max',
     expectedOutput: null,
   },

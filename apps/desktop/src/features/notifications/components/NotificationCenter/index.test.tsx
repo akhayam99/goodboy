@@ -305,7 +305,7 @@ describe('NotificationCenter', () => {
       fireEvent.click(screen.getByRole('button', { name: /retry routing/i }));
     });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Opus 5' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
     });
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'High' }));
@@ -316,7 +316,7 @@ describe('NotificationCenter', () => {
 
     expect(state.retrySummarizer).toHaveBeenCalledWith('session-2', {
       providerId: 'anthropic',
-      model: 'claude-opus-5',
+      model: 'claude-opus-4-6',
       effort: 'high',
     });
   });

@@ -118,7 +118,19 @@ export type VariantAxisOption = {
 export type VariantAxis = {
   readonly label: string;
   readonly options: ReadonlyArray<VariantAxisOption>;
-  readonly activeId: string;
+  readonly activeId: string | null;
+};
+
+export type ModelAxisOption = {
+  readonly id: string;
+  readonly label: string;
+  readonly modelKey: ModelKey;
+};
+
+export type ModelAxis = {
+  readonly label: string;
+  readonly options: ReadonlyArray<ModelAxisOption>;
+  readonly activeId: string | null;
 };
 
 export type ToggleAxis = {
@@ -129,8 +141,10 @@ export type ToggleAxis = {
 };
 
 export type ModelAxes = {
-  readonly effort: EffortAxis | null;
-  readonly variant: VariantAxis | null;
+  readonly model: ModelAxis;
+  readonly version: ModelAxis;
+  readonly effort: EffortAxis;
+  readonly variant: VariantAxis;
   readonly toggles: ReadonlyArray<ToggleAxis>;
   readonly requiresMaxMode: boolean;
 };
