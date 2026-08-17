@@ -63,6 +63,7 @@ type Params = {
 };
 
 export const LENS_SHORTCUTS = {
+  timeline: 'lens.timeline',
   questions: 'lens.questions',
   agents: 'lens.agents',
   workflows: 'lens.workflows',
@@ -126,6 +127,12 @@ export const buildLensGroups = ({
           icon: CONCEPT_ICONS.sessionSummary,
           tone: CONCEPT_TONE.sessionSummary,
           dot: summarizerDot,
+        },
+        {
+          kind: 'timeline',
+          label: 'Timeline',
+          icon: CONCEPT_ICONS.timeline,
+          tone: CONCEPT_TONE.timeline,
         },
       ],
     },

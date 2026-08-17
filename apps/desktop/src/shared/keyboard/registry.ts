@@ -45,6 +45,7 @@ export const SHORTCUTS = {
 
   'lens.overview': { combo: 'cmd+alt+KeyO', label: 'Overview', plane: 'lens' },
   'lens.context': { combo: 'cmd+alt+KeyC', label: 'Context', plane: 'lens' },
+  'lens.timeline': { combo: 'cmd+alt+KeyY', label: 'Timeline', plane: 'lens' },
   'lens.goal': { combo: 'cmd+alt+KeyG', label: 'Context: Goal', plane: 'lens' },
   'lens.decisions': { combo: 'cmd+alt+KeyE', label: 'Context: Decisions', plane: 'lens' },
   'lens.summary': { combo: 'cmd+alt+KeyU', label: 'Context: Session summary', plane: 'lens' },
