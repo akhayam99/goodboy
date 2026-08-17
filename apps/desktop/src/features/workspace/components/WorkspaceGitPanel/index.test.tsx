@@ -261,6 +261,66 @@ describe('WorkspaceGitPanel main status', () => {
     expect(fastForwardSpy).not.toHaveBeenCalled();
   });
 
+  it('gives the detached-head reason on a detached checkout, never the no-upstream reason', () => {
+    render(
+      <WorkspaceGitPanel
+        rootPath={ROOT}
+        status={status({
+          branch: null,
+          upstream: null,
+          upstreamDistance: { kind: 'unknown', reason: 'detached-head' },
+        })}
+      />,
+    );
+
+    const control = screen.getByRole('button', { name: /Fast-forward detached HEAD/ });
+
+    expect(control.hasAttribute('disabled')).toBe(true);
+    expect(control.getAttribute('title')).toBe(
+      "this checkout isn't on a branch, so there's no branch to update",
+    );
+    expect(control.getAttribute('title')).not.toBe('this branch tracks no upstream yet');
+
+    fireEvent.click(control);
+
+    expect(fastForwardSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not warn about an unreadable checkout when it is merely mid-merge and otherwise clean', () => {
+    render(
+      <WorkspaceGitPanel
+        rootPath={ROOT}
+        status={status({
+          inProgress: 'merge',
+          workingTree: {
+            kind: 'known',
+            staged: 0,
+            unstaged: 0,
+            untracked: 0,
+            unmerged: 0,
+            changed: 0,
+          },
+        })}
+      />,
+    );
+
+    expect(screen.queryByText('Goodboy cannot read this checkout')).toBeNull();
+    expect(screen.getByText('a merge is in progress')).toBeDefined();
+  });
+
+  it('still warns about an unreadable checkout when the working tree read actually failed', () => {
+    render(
+      <WorkspaceGitPanel
+        rootPath={ROOT}
+        status={status({
+          workingTree: { kind: 'unknown', reason: 'status-read-failed' },
+        })}
+      />,
+    );
+
+    expect(screen.getByText('Goodboy cannot read this checkout')).toBeDefined();
+  });
+
   it('refuses the fast-forward while an operation is in progress', () => {
     render(
       <WorkspaceGitPanel

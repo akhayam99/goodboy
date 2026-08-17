@@ -10,7 +10,7 @@ import {
   Pencil,
 } from 'lucide-react';
 import { Button, Chip, Eyebrow, formatError } from '@goodboy/ui';
-import type { WorkspaceGitStatus } from '@goodboy/types';
+import type { GitUnknownReason, WorkspaceGitStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openInEditor } from '../../../../shared/lib/editor';
 import {
@@ -55,6 +55,32 @@ const signalsOf = ({ status }: { readonly status: WorkspaceGitStatus }): Readonl
   return signals;
 };
 
+const isReadFailureReason = ({ reason }: { readonly reason: GitUnknownReason }): boolean => {
+  switch (reason) {
+    case 'no-upstream':
+    case 'detached-head':
+      return false;
+    case 'rev-list-failed':
+    case 'main-ref-unresolved':
+    case 'status-read-failed':
+      return true;
+    default: {
+      const exhaustive: never = reason;
+      return exhaustive;
+    }
+  }
+};
+
+const hasReadFailure = ({ status }: { readonly status: WorkspaceGitStatus }): boolean => {
+  const upstreamFailure =
+    status.upstreamDistance.kind === 'unknown' &&
+    isReadFailureReason({ reason: status.upstreamDistance.reason });
+  const workingTreeFailure =
+    status.workingTree.kind === 'unknown' &&
+    isReadFailureReason({ reason: status.workingTree.reason });
+  return upstreamFailure || workingTreeFailure;
+};
+
 const unknownNotesOf = ({
   status,
 }: {
@@ -77,6 +103,9 @@ const unknownNotesOf = ({
 };
 
 const blockedReasonOf = ({ status }: { readonly status: WorkspaceGitStatus }): string | null => {
+  if (status.branch == null) {
+    return unknownReasonLabel({ reason: 'detached-head' });
+  }
   if (status.upstream == null) {
     return 'this branch tracks no upstream yet';
   }
@@ -110,6 +139,7 @@ export const MainStatus = ({ rootPath, status }: Props) => {
   const fastForwardWorkspaceCheckout = useAppStore((s) => s.fastForwardWorkspaceCheckout);
   const signals = signalsOf({ status });
   const notes = unknownNotesOf({ status });
+  const readFailure = hasReadFailure({ status });
   const branch = status.branch ?? 'detached HEAD';
   const blockedReason = blockedReasonOf({ status });
   const canPull = blockedReason == null && workspaceId != null && !pulling;
@@ -163,7 +193,7 @@ export const MainStatus = ({ rootPath, status }: Props) => {
             />
           ))
         )}
-        {notes.length > 0 ? (
+        {readFailure ? (
           <span className="flex items-center gap-1 text-2xs text-warning">
             <AlertTriangle size={11} aria-hidden />
             Goodboy cannot read this checkout
