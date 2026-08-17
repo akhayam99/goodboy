@@ -57,6 +57,8 @@ describe('RunSpendLimitPopover', () => {
     expect(field.value).toBe('');
     expect(field.getAttribute('placeholder')).toBe('no limit');
     expect(screen.queryByTestId('run-spend-limit-remove')).toBeNull();
+    expect(screen.queryByRole('tab', { name: /notify/i })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /pause/i })).toBeNull();
   });
 
   it('saves the amount with the mode that says what happens at the limit', async () => {

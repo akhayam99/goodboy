@@ -104,6 +104,21 @@ type RoleDefaultsParams = {
   readonly roleModels: RoleModelPreferences | null;
 };
 
+type MergeRoleModelsParams = {
+  readonly workspace: RoleModelPreferences | null;
+  readonly run: RoleModelPreferences | undefined;
+};
+
+const mergeRoleModels = ({
+  workspace,
+  run,
+}: MergeRoleModelsParams): RoleModelPreferences | null => {
+  if (workspace == null && run == null) {
+    return null;
+  }
+  return { ...(workspace ?? {}), ...(run ?? {}) };
+};
+
 const roleDefaultsFor = ({
   provider,
   roleModels,
@@ -335,6 +350,7 @@ type AppendParams = {
   readonly sessionId: SessionId;
   readonly workflowRunId: WorkflowRunId;
   readonly workflow: Workflow;
+  readonly roleModels: RoleModelPreferences | null;
   readonly step: Omit<Step, 'id' | 'workflowId' | 'ordinal' | 'name'> & {
     readonly name: string;
   };
@@ -346,6 +362,7 @@ const appendStep = async ({
   sessionId,
   workflowRunId,
   workflow,
+  roleModels,
   step,
 }: AppendParams): Promise<Agent> => {
   const ordinal = workflow.steps.reduce((max, current) => Math.max(max, current.ordinal), -1) + 1;
@@ -357,6 +374,7 @@ const appendStep = async ({
     role: step.role,
     promptPrefix: step.promptPrefix,
     expectedOutput: step.expectedOutput,
+    ...(step.providerOverride != null && { providerOverride: step.providerOverride }),
     ...(step.modelOverride != null && { modelOverride: step.modelOverride }),
     ...(step.effort != null && { effort: step.effort }),
     ...(step.orchestratorReason != null && { orchestratorReason: step.orchestratorReason }),
@@ -385,7 +403,7 @@ const appendStep = async ({
     baseOrdinal,
     defaultProvider: (session.providerOverride ??
       session.providerPreference.defaultProvider) as ProviderId,
-    roleModels: roleModelsForSession({ state: get(), sessionId }),
+    roleModels,
   });
   const agent = spawned.agents[0];
   if (agent == null) {
@@ -511,7 +529,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const openQuestions = await listOpenQuestionsForSession(tauriDatabase, sessionId, 'open');
       const defaultProvider = (session.providerOverride ??
         session.providerPreference.defaultProvider) as ProviderId;
-      const roleModels = roleModelsForSession({ state: get(), sessionId });
+      const workspaceRoleModels = roleModelsForSession({ state: get(), sessionId });
+      const roleModels = mergeRoleModels({
+        workspace: workspaceRoleModels,
+        run: run.roleModelOverrides,
+      });
       const taskModel = resolveTaskModel(
         'workflow_orchestrator',
         get().workspaceOverrides?.[session.workspaceId]?.taskModels,
@@ -523,7 +545,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         .filter((entry) => entry !== '')
         .join('\n');
       const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
-      const roleDefaults = roleDefaultsFor({ provider: defaultProvider, roleModels });
+      const roleDefaults = roleDefaultsFor({
+        provider: defaultProvider,
+        roleModels: workspaceRoleModels,
+      });
       const modelMenu = orchestratorModelPool({ provider: defaultProvider, roleDefaults });
       const client = new OrchestratorClient({
         ...routing,
@@ -637,6 +662,12 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           pool: modelMenu,
           roleDefaults,
         });
+        const runRoleOverride = resolveRoleRouting({
+          role: enforced.step.role,
+          prefs: run.roleModelOverrides,
+        });
+        const model = runRoleOverride.isOverride ? runRoleOverride.model : enforced.step.model;
+        const effort = runRoleOverride.isOverride ? runRoleOverride.effort : enforced.step.effort;
         const reason = [decision.reason.trim(), enforced.rejection?.note ?? '']
           .filter((entry) => entry !== '')
           .join('\n\n');
@@ -646,6 +677,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           sessionId,
           workflowRunId,
           workflow,
+          roleModels,
           step: {
             name: enforced.step.name,
             role: enforced.step.role,
@@ -653,8 +685,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
             ...(enforced.step.expectedOutput != null && {
               expectedOutput: enforced.step.expectedOutput,
             }),
-            ...(enforced.step.model != null && { modelOverride: enforced.step.model }),
-            ...(enforced.step.effort != null && { effort: enforced.step.effort }),
+            ...(runRoleOverride.isOverride && { providerOverride: runRoleOverride.provider }),
+            ...(model != null && { modelOverride: model }),
+            ...(effort != null && { effort }),
             ...(reason !== '' && { orchestratorReason: reason }),
           },
         });

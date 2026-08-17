@@ -396,6 +396,55 @@ describe('orchestrateNextStep', () => {
     );
   });
 
+  it('applies the run role override after the orchestrator chooses a role', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'Implement with the pinned route.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          model: 'opus-5',
+          effort: 'max',
+        },
+      },
+    });
+    const state = baseState();
+    const currentSession = session();
+    state['sessions'] = [
+      {
+        ...currentSession,
+        workflowRuns: [
+          {
+            ...currentSession.workflowRuns[0]!,
+            roleModelOverrides: {
+              implementer: {
+                providerId: 'codex',
+                model: 'gpt-5.6-sol',
+                effort: 'high',
+              },
+            },
+          },
+        ],
+      },
+    ];
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerOverride: 'codex',
+        modelOverride: 'gpt-5.6',
+        effort: 'high',
+      }),
+    );
+    const menu = decideSpy.mock.calls[0]![0].modelMenu as ReadonlyArray<{ id: string }>;
+    expect(menu.map((option) => option.id)).toEqual(['opus-5', 'sonnet-5', 'haiku-4.5']);
+  });
+
   it('offers the orchestrator the routing pool instead of the whole provider catalog', async () => {
     decideSpy.mockResolvedValue({
       usage: NO_USAGE,

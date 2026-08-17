@@ -216,7 +216,7 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
   );
   for (const run of session.workflowRuns) {
     await db.execute(
-      'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, execution_mode, orchestration_outcome) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, execution_mode, orchestration_outcome, role_model_overrides) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         run.id,
         session.id,
@@ -228,6 +228,9 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
         run.discardedAt ?? null,
         run.executionMode,
         run.orchestrationOutcome ?? null,
+        run.roleModelOverrides != null && Object.keys(run.roleModelOverrides).length > 0
+          ? JSON.stringify(run.roleModelOverrides)
+          : null,
       ],
     );
   }
