@@ -146,6 +146,7 @@ vi.mock('@goodboy/db', () => ({
   insertWorkspace: vi.fn(),
   insertContextSlotHistory: vi.fn(async () => undefined),
   listContextSlotHistory: vi.fn(async () => []),
+  countContextSlotHistoryForSession: vi.fn(async () => ({})),
   listContextSlotsForSession: vi.fn(async () => dbSlots),
   listMessagesForSession: vi.fn(async () => []),
   listSessionsForWorkspace: vi.fn(async () => []),

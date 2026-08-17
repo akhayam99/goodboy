@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
-import { LayoutDashboard, Unplug } from 'lucide-react';
-import { KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { LayoutDashboard } from 'lucide-react';
+import { KbdPill, ScrollFade, cn } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { classifyAgent, isStandaloneAgent } from '../../../../agent-kind';
@@ -20,19 +20,20 @@ import {
 } from '../../../../../../store';
 import type { LensKind } from '../../../../../../store';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
-import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
 import { resolveAttentionLens, selectOpenQuestions } from '../../../SessionOverviewPane/lib';
 import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
 import { splitWorkflowRuns } from '../../../../../workflows/activeWorkflowRuns';
 import { useActiveResolverCount } from '../../../../hooks/useActiveResolverCount';
-import { LENS_SHORTCUTS, buildLensGroups } from './groups';
+import { buildLensNavigation } from './groups';
 import type { LensDot, LensRow } from './groups';
+import { rowsWantAttention } from './attention';
+import { LensNavRow } from './LensNavRow';
+import { resolveLensSurface } from '../../../../lens-surface';
 import { CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { SIMPLE_LENSES } from '../../../../lens-labels';
 import { shortcutGlyphs } from '../../../../../../shared/keyboard/registry';
 import { useSettleElapsed } from '../../../../hooks/useSettleElapsed';
-import { SummarizerWorkingIndicator } from '../../../SummarizerWorkingIndicator';
 
 const LENS_COUNT_SETTLE_MS = 10_000;
 
@@ -44,22 +45,6 @@ type Props = {
     readonly deletions: number;
   };
   readonly isBranchless?: boolean;
-};
-
-type AttentionParams = {
-  readonly rows: ReadonlyArray<LensRow>;
-};
-
-const groupWantsAttention = ({ rows }: AttentionParams): boolean => {
-  return rows.some((row) => {
-    if (row.dot != null || row.secondaryDot === true) {
-      return true;
-    }
-    if (row.count == null || row.count === 0) {
-      return false;
-    }
-    return row.tone === 'warning' || row.tone === 'danger';
-  });
 };
 
 export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }: Props) => {
@@ -291,7 +276,7 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
     return 0;
   });
 
-  const visibleGroups = buildLensGroups({
+  const { primaryRows, groups } = buildLensNavigation({
     isBranchless,
     isPrReview,
     reviewDraftCount,
@@ -318,20 +303,23 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
     integrationRows: sortedIntegrationRows,
   });
 
+  const activeSurface = resolveLensSurface({ lens: activeLens });
+  const isOverviewActive = activeSurface === 'overview';
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ScrollFade className="min-h-0 flex-1">
         <nav className={cn('flex flex-col gap-4', PANE_RHYTHM.navRail.body)}>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-col gap-0.5">
             <button
               type="button"
               onClick={() => setActiveLens(sessionId, null)}
-              aria-current={activeLens === null ? 'page' : undefined}
+              aria-current={isOverviewActive ? 'page' : undefined}
               className={cn(
-                'group relative flex flex-1 items-center gap-2.5 rounded-md text-left transition-colors',
+                'group relative flex items-center gap-2.5 rounded-md text-left transition-colors',
                 PANE_RHYTHM.navRail.row,
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-                activeLens === null
+                isOverviewActive
                   ? 'bg-muted text-foreground'
                   : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
               )}
@@ -342,7 +330,7 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
               <span
                 className={cn(
                   'min-w-0 flex-1 truncate pr-12 text-sm',
-                  activeLens === null && 'font-medium',
+                  isOverviewActive && 'font-medium',
                 )}
               >
                 Overview
@@ -354,185 +342,36 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
                 {shortcutGlyphs('lens.overview')}
               </KbdPill>
             </button>
+            {primaryRows.map((row) => (
+              <LensNavRow
+                key={row.kind}
+                row={row}
+                isActive={activeSurface === row.kind}
+                onSelect={() => setActiveLens(sessionId, row.kind)}
+              />
+            ))}
           </div>
-          {visibleGroups.map((group) => (
+          {groups.map((group) => (
             <div key={group.label} className="flex flex-col gap-0.5">
-              {group.label !== '' ? (
-                <span
-                  className={cn(
-                    'pb-1 text-3xs font-medium uppercase tracking-[0.12em] transition-colors',
-                    PANE_RHYTHM.navRail.inset,
-                    groupWantsAttention({ rows: group.rows })
-                      ? 'text-foreground/80'
-                      : 'text-muted-foreground/60',
-                  )}
-                >
-                  {group.label}
-                </span>
-              ) : null}
-              {group.rows.length === 0 ? (
-                <></>
-              ) : (
-                group.rows.map((row) => {
-                  const active =
-                    activeLens === row.kind ||
-                    (row.kind === 'context' &&
-                      (activeLens === 'goal' ||
-                        activeLens === 'decisions' ||
-                        activeLens === 'last_output_summary'));
-                  const rowWantsAttention = groupWantsAttention({ rows: [row] });
-                  const shortcut = shortcutGlyphs(LENS_SHORTCUTS[row.kind]);
-                  const hasDiffstat =
-                    row.diffstat != null && row.diffstat.additions + row.diffstat.deletions > 0;
-                  const hasBadge =
-                    row.isCountLoading === true ||
-                    hasDiffstat ||
-                    (row.count != null && row.count > 0) ||
-                    row.dot != null ||
-                    row.secondaryDot === true ||
-                    row.isConnected === false;
-                  const glyphRowLabel =
-                    row.isCountLoading !== true && row.count != null && row.count > 0
-                      ? `${row.label} ${row.count}`
-                      : row.label;
-                  const iconEmphasis = cn(
-                    active && 'opacity-100',
-                    !active && rowWantsAttention ? 'opacity-90' : null,
-                    !active && !rowWantsAttention ? 'opacity-55 group-hover:opacity-80' : null,
-                  );
-                  return (
-                    <button
-                      key={row.kind}
-                      type="button"
-                      onClick={() => setActiveLens(sessionId, row.kind)}
-                      aria-label={row.glyph != null ? glyphRowLabel : undefined}
-                      aria-current={active ? 'page' : undefined}
-                      className={cn(
-                        'group relative flex items-center gap-2.5 rounded-md text-left transition-colors',
-                        PANE_RHYTHM.navRail.row,
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-                        active
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-                        row.isConnected === false && 'opacity-40 hover:opacity-70',
-                      )}
-                    >
-                      {row.glyph != null ? (
-                        <span
-                          className={cn(
-                            'flex w-5 flex-none items-center justify-center transition-[color,opacity]',
-                            iconEmphasis,
-                          )}
-                        >
-                          <IntegrationGlyph
-                            provider={row.glyph}
-                            size={14}
-                            useBrandColor={row.isConnected !== false}
-                          />
-                        </span>
-                      ) : null}
-                      {row.glyph == null && row.icon != null ? (
-                        <span
-                          className={cn(
-                            'flex w-5 flex-none items-center justify-center transition-[color,opacity]',
-                            tintClasses(row.tone ?? 'neutral').icon,
-                            iconEmphasis,
-                          )}
-                        >
-                          <row.icon size={14} aria-hidden />
-                        </span>
-                      ) : null}
-                      <span
-                        className={cn(
-                          'min-w-0 flex-1 truncate text-sm',
-                          !hasBadge && 'pr-12',
-                          active && 'font-medium',
-                        )}
-                      >
-                        {row.label}
-                      </span>
-                      {hasBadge ? (
-                        <span
-                          className={cn(
-                            'flex min-w-10 shrink-0 items-center justify-end gap-1.5 transition-opacity',
-                            'group-hover:opacity-0 group-focus-visible:opacity-0',
-                          )}
-                        >
-                          {row.isCountLoading === true ? (
-                            <span data-testid={`lens-count-loading-${row.kind}`}>
-                              <Skeleton className="h-4 w-6 rounded-full" />
-                            </span>
-                          ) : (
-                            <>
-                              {hasDiffstat && row.diffstat != null ? (
-                                <span className="inline-flex shrink-0 items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-2xs font-medium tabular-nums">
-                                  <span className="text-success">+{row.diffstat.additions}</span>
-                                  <span className="text-danger">-{row.diffstat.deletions}</span>
-                                </span>
-                              ) : row.count != null && row.count > 0 ? (
-                                <span className="flex shrink-0 items-center gap-1.5">
-                                  {row.secondaryDot ? (
-                                    <StatusDot
-                                      tone="accent"
-                                      size="sm"
-                                      ariaLabel={row.secondaryDotLabel ?? row.label}
-                                    />
-                                  ) : null}
-                                  {row.dot === 'running' ? (
-                                    <StatusDot tone="info" size="sm" pulsing ariaLabel="Running" />
-                                  ) : null}
-                                  <span
-                                    className={cn(
-                                      'rounded px-1.5 py-0.5 text-2xs font-medium tabular-nums',
-                                      row.dot === 'attention'
-                                        ? 'bg-warning/15 text-warning'
-                                        : 'bg-muted text-muted-foreground',
-                                    )}
-                                  >
-                                    {row.count}
-                                  </span>
-                                </span>
-                              ) : row.kind === 'context' && row.dot === 'running' ? (
-                                <SummarizerWorkingIndicator />
-                              ) : row.dot ? (
-                                <StatusDot
-                                  tone={row.dot === 'attention' ? 'warning' : 'info'}
-                                  size="sm"
-                                  pulsing={row.dot === 'running'}
-                                  ariaLabel={
-                                    row.dot === 'attention' ? 'Needs attention' : 'Running'
-                                  }
-                                />
-                              ) : row.secondaryDot ? (
-                                <StatusDot
-                                  tone="accent"
-                                  size="sm"
-                                  ariaLabel={row.secondaryDotLabel ?? row.label}
-                                />
-                              ) : null}
-                              {row.isConnected === false ? (
-                                <span
-                                  aria-hidden
-                                  title={`${row.label} disconnected`}
-                                  className="flex shrink-0 items-center text-muted-foreground"
-                                >
-                                  <Unplug size={12} />
-                                </span>
-                              ) : null}
-                            </>
-                          )}
-                        </span>
-                      ) : null}
-                      <KbdPill
-                        aria-hidden
-                        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-3xs opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
-                      >
-                        {shortcut}
-                      </KbdPill>
-                    </button>
-                  );
-                })
-              )}
+              <span
+                className={cn(
+                  'pb-1 text-3xs font-medium uppercase tracking-[0.12em] transition-colors',
+                  PANE_RHYTHM.navRail.inset,
+                  rowsWantAttention({ rows: group.rows })
+                    ? 'text-foreground/80'
+                    : 'text-muted-foreground/60',
+                )}
+              >
+                {group.label}
+              </span>
+              {group.rows.map((row) => (
+                <LensNavRow
+                  key={row.kind}
+                  row={row}
+                  isActive={activeSurface === row.kind}
+                  onSelect={() => setActiveLens(sessionId, row.kind)}
+                />
+              ))}
             </div>
           ))}
         </nav>

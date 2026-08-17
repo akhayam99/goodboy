@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { History } from 'lucide-react';
 import { Button, ClampedProse, CopyButton, Markdown, Textarea, cn } from '@goodboy/ui';
-import type { ContextSlotHistoryEntry, SessionId } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
 import { GoalAttachmentsStrip } from '../../../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
 
@@ -15,7 +15,7 @@ type Props = {
   readonly emptyLabel: string;
   readonly value: string;
   readonly copyValue: string;
-  readonly history: ReadonlyArray<ContextSlotHistoryEntry>;
+  readonly historyCount: number;
   readonly isLoading: boolean;
   readonly isSummarizing: boolean;
   readonly onOpenHistory: () => void;
@@ -30,7 +30,7 @@ export const ContextRegion = ({
   emptyLabel,
   value,
   copyValue,
-  history,
+  historyCount,
   isLoading,
   isSummarizing,
   onOpenHistory,
@@ -95,17 +95,17 @@ export const ContextRegion = ({
               className="rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
             />
           ) : null}
-          {history.length > 0 ? (
+          {historyCount > 0 ? (
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={onOpenHistory}
-              aria-label={`View ${history.length} previous ${history.length === 1 ? 'version' : 'versions'} of ${title}`}
+              aria-label={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of ${title}`}
               className="h-7 gap-1.5 px-2 text-xs text-muted-foreground"
             >
               <History size={13} aria-hidden />
-              {history.length} {history.length === 1 ? 'version' : 'versions'}
+              {historyCount} {historyCount === 1 ? 'version' : 'versions'}
             </Button>
           ) : null}
         </div>

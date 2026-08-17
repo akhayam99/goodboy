@@ -142,6 +142,8 @@ vi.mock('../../../../../store', () => ({
       lastAttempt: null,
     },
   useSlotHistory: (sessionId: string, key: string) => store.slotHistory[sessionId]?.[key] ?? [],
+  useSlotHistoryCount: (sessionId: string, key: string) =>
+    store.slotHistory[sessionId]?.[key]?.length ?? 0,
   useSessionOpenQuestions: (sessionId: string) => store.sessionOpenQuestions[sessionId] ?? [],
 }));
 
@@ -202,6 +204,13 @@ describe('ContextPane', () => {
 
     expect(screen.getByText('No decisions yet')).toBeDefined();
     expect(screen.getByText('No session summary yet')).toBeDefined();
+  });
+
+  it('does not pull slot history on mount, only the counts already in the store', () => {
+    render(<ContextPane session={SESSION} />);
+
+    expect(store.loadSlotHistory).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /previous version.*Session summary/ })).toBeDefined();
   });
 
   it('opens the corresponding history inside the shared surface', () => {

@@ -23,6 +23,7 @@ export {
   useSessionUnreadLens,
   useSessionViewPrefs,
   useSlotHistory,
+  useSlotHistoryCount,
   useSessions,
   useSortedGroupedSessions,
   useStageGroupedSessions,

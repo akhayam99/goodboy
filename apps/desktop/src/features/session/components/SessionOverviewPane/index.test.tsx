@@ -151,6 +151,8 @@ vi.mock('../../../../store', () => ({
   useSessionUnreadLens: () => hooks.unreadLens,
   useSessionSlots: (sessionId: string) => store.sessionSlots[sessionId] ?? [],
   useSlotHistory: (sessionId: string, key: string) => store.slotHistory[sessionId]?.[key] ?? [],
+  useSlotHistoryCount: (sessionId: string, key: string) =>
+    store.slotHistory[sessionId]?.[key]?.length ?? 0,
   useSessionLoading: (sessionId: string) => store.sessionLoading[sessionId] ?? { slots: false },
   useSummarizerStatus: (sessionId: string) =>
     store.summarizerStatus[sessionId] ?? { status: 'idle' },
@@ -358,6 +360,12 @@ describe('SessionOverviewPane header band', () => {
     fireEvent.click(disclosure);
     expect(screen.getByRole('button', { name: 'Show less' })).toBeDefined();
     expect(screen.getByTestId('goal-attachments')).toBeDefined();
+  });
+
+  it('does not pull goal history on the most common navigation path', () => {
+    renderPane();
+
+    expect(store.loadSlotHistory).not.toHaveBeenCalled();
   });
 
   it('keeps the shared goal editor in its new home', () => {

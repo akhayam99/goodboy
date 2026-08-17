@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from '../migrations/runner';
-import { listContextSlotHistory, upsertContextSlot } from './context-slot';
+import {
+  countContextSlotHistoryForSession,
+  listContextSlotHistory,
+  upsertContextSlot,
+} from './context-slot';
 
 const workspaceId = 'w1' as WorkspaceId;
 const sessionId = 's1' as SessionId;
@@ -71,5 +75,38 @@ describe('upsertContextSlot history', () => {
 
     const history = await listContextSlotHistory(db, sessionId, 'goal');
     expect(history).toHaveLength(20);
+  });
+
+  it('reads no more rows than a caller asks for', async () => {
+    const db = await seed();
+    for (let i = 0; i < 5; i += 1) {
+      await upsertContextSlot(db, sessionId, { key: 'goal', value: `v${i}`, enabled: true });
+    }
+
+    expect(await listContextSlotHistory(db, sessionId, 'goal', 2)).toHaveLength(2);
+    expect(await listContextSlotHistory(db, sessionId, 'goal')).toHaveLength(4);
+  });
+});
+
+describe('countContextSlotHistoryForSession', () => {
+  it('counts every key in one pass without reading any value', async () => {
+    const db = await seed();
+    await upsertContextSlot(db, sessionId, { key: 'goal', value: 'a', enabled: true });
+    await upsertContextSlot(db, sessionId, { key: 'goal', value: 'b', enabled: true });
+    await upsertContextSlot(db, sessionId, { key: 'decisions', value: 'x', enabled: true });
+    await upsertContextSlot(db, sessionId, { key: 'decisions', value: 'y', enabled: true });
+    await upsertContextSlot(db, sessionId, { key: 'decisions', value: 'z', enabled: true });
+
+    expect(await countContextSlotHistoryForSession(db, sessionId)).toEqual({
+      goal: 1,
+      decisions: 2,
+    });
+  });
+
+  it('reports nothing for a session that never revised a slot', async () => {
+    const db = await seed();
+    await upsertContextSlot(db, sessionId, { key: 'goal', value: 'only', enabled: true });
+
+    expect(await countContextSlotHistoryForSession(db, sessionId)).toEqual({});
   });
 });

@@ -1,10 +1,10 @@
-import type { ContextSlotHistoryEntry, SessionId } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import { ContextRegion } from '../SessionWorkspace/parts/ContextPane/ContextRegion';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly value: string;
-  readonly history: ReadonlyArray<ContextSlotHistoryEntry>;
+  readonly historyCount: number;
   readonly isLoading: boolean;
   readonly isSummarizing: boolean;
   readonly onOpenHistory: () => void;
@@ -13,7 +13,7 @@ type Props = {
 export const GoalOverviewRegion = ({
   sessionId,
   value,
-  history,
+  historyCount,
   isLoading,
   isSummarizing,
   onOpenHistory,
@@ -26,7 +26,7 @@ export const GoalOverviewRegion = ({
     emptyLabel="No goal yet"
     value={value}
     copyValue={value}
-    history={history}
+    historyCount={historyCount}
     isLoading={isLoading}
     isSummarizing={isSummarizing}
     onOpenHistory={onOpenHistory}

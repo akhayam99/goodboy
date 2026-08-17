@@ -56,6 +56,7 @@ export const deleteWorkspace = (set: SetFn, get: GetFn) => {
               sessionTelemetry: {},
               sessionSlots: {},
               slotHistory: {},
+              slotHistoryCounts: {},
               sessionWorktrees: {},
               sessionMounts: {},
               sessionActiveMount: {},

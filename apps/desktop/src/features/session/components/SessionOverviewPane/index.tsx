@@ -13,6 +13,7 @@ import {
   useSessionLoading,
   useSessionSlots,
   useSlotHistory,
+  useSlotHistoryCount,
   useSummarizerStatus,
 } from '../../../../store';
 import type { LensKind } from '../../../../store';
@@ -55,6 +56,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const slots = useSessionSlots(sessionId);
   const slotLoading = useSessionLoading(sessionId);
   const goalHistory = useSlotHistory(sessionId, 'goal');
+  const goalHistoryCount = useSlotHistoryCount(sessionId, 'goal');
   const summarizer = useSummarizerStatus(sessionId);
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
@@ -97,10 +99,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   useEffect(() => {
     void loadPendingResolutions(sessionId);
   }, [sessionId, loadPendingResolutions]);
-
-  useEffect(() => {
-    void loadSlotHistory(sessionId, 'goal');
-  }, [loadSlotHistory, sessionId]);
 
   const activeRuns = useMemo(
     () => session.workflowRuns.filter((run) => run.discardedAt == null),
@@ -297,7 +295,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         <GoalOverviewRegion
           sessionId={sessionId}
           value={goalSlot?.value ?? ''}
-          history={goalHistory}
+          historyCount={goalHistoryCount}
           isLoading={goalSlot == null && slotLoading.slots}
           isSummarizing={summarizer.status === 'running'}
           onOpenHistory={() => {

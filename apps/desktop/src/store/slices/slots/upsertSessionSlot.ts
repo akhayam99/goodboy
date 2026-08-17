@@ -1,6 +1,10 @@
-import type { ContextSlot, SessionId } from '@goodboy/types';
+import type { ContextSlot, ContextSlotHistoryEntry, SessionId } from '@goodboy/types';
 import type { SlotKey } from '@goodboy/core';
-import { listContextSlotHistory, upsertContextSlot } from '@goodboy/db';
+import {
+  countContextSlotHistoryForSession,
+  listContextSlotHistory,
+  upsertContextSlot,
+} from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { mergeSlots, type GetFn, type SetFn } from './types';
 
@@ -10,19 +14,29 @@ export const upsertSessionSlot = (set: SetFn, get: GetFn) => {
     const prev = existing.find((s) => s.key === key);
     const next: ContextSlot = { key, value, enabled: prev?.enabled ?? true };
     await upsertContextSlot(tauriDatabase, sessionId, next, 'user');
-    const refreshedHistory = await listContextSlotHistory(tauriDatabase, sessionId, key);
+    const wasHistoryLoaded = get().slotHistory[sessionId]?.[key] !== undefined;
+    const [counts, refreshedHistory] = await Promise.all([
+      countContextSlotHistoryForSession(tauriDatabase, sessionId),
+      wasHistoryLoaded
+        ? listContextSlotHistory(tauriDatabase, sessionId, key)
+        : Promise.resolve<ReadonlyArray<ContextSlotHistoryEntry> | null>(null),
+    ]);
     set((state) => ({
       sessionSlots: {
         ...state.sessionSlots,
         [sessionId]: mergeSlots(state.sessionSlots[sessionId] ?? [], next),
       },
-      slotHistory: {
-        ...state.slotHistory,
-        [sessionId]: {
-          ...(state.slotHistory[sessionId] ?? {}),
-          [key]: refreshedHistory,
-        },
-      },
+      slotHistory:
+        refreshedHistory === null
+          ? state.slotHistory
+          : {
+              ...state.slotHistory,
+              [sessionId]: {
+                ...(state.slotHistory[sessionId] ?? {}),
+                [key]: refreshedHistory,
+              },
+            },
+      slotHistoryCounts: { ...state.slotHistoryCounts, [sessionId]: counts },
     }));
   };
 };
