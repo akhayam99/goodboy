@@ -75,6 +75,26 @@ describe('StudioDetailLayout', () => {
     expect(screen.getByText('Tabs slot')).toBeDefined();
   });
 
+  it('keeps the header measure constant across fit modes', () => {
+    const { unmount } = render(
+      <StudioDetailLayout header={<span>Header slot</span>} fit="fill">
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+    const fillHeaderMeasure = screen.getByTestId('detail-header-band').querySelector('.max-w-3xl');
+    expect(fillHeaderMeasure).not.toBeNull();
+    unmount();
+
+    render(
+      <StudioDetailLayout header={<span>Header slot</span>} fit="bleed">
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+    const bleedHeaderMeasure = screen.getByTestId('detail-header-band').querySelector('.max-w-3xl');
+    expect(bleedHeaderMeasure).not.toBeNull();
+    expect(screen.getByTestId('detail-header-band').querySelector('.max-w-none')).toBeNull();
+  });
+
   it('drops the rail and the scroll region for a full-bleed body', () => {
     render(
       <StudioDetailLayout

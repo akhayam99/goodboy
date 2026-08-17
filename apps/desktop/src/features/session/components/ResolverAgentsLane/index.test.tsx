@@ -59,6 +59,7 @@ vi.mock('./ResolverRows', () => ({
     reportedCommitShaByAgentId,
     diffTargetByAgentId,
     onOpenDiff,
+    onOpenChat,
   }: {
     entries: ReadonlyArray<{ agent: Agent }>;
     isMuted: boolean;
@@ -69,6 +70,7 @@ vi.mock('./ResolverRows', () => ({
       { kind: 'unknown' } | { kind: 'commit'; sha: string } | { kind: 'working' }
     >;
     onOpenDiff: (agentId: AgentId) => void;
+    onOpenChat: (agentId: AgentId) => void;
   }) => (
     <ul data-muted={String(isMuted)}>
       {entries.map(({ agent }) => {
@@ -82,7 +84,13 @@ vi.mock('./ResolverRows', () => ({
             data-diff-kind={target.kind}
             data-diff-sha={target.kind === 'commit' ? target.sha : ''}
           >
-            {agent.name}
+            <button
+              type="button"
+              aria-label={`open chat ${agent.name}`}
+              onClick={() => onOpenChat(agent.id)}
+            >
+              {agent.name}
+            </button>
             {canOpenDiff && (
               <button
                 type="button"
@@ -124,18 +132,24 @@ const setResolvers = (agents: ReadonlyArray<Agent>) => {
 };
 
 type RenderLaneParams = {
-  readonly showCompleted?: boolean;
+  readonly mode?: 'active' | 'finished';
   readonly onCompletedCountChange?: (completedCount: number) => void;
+  readonly onActiveCountChange?: (activeCount: number) => void;
 };
 
-const renderLane = ({ showCompleted = false, onCompletedCountChange }: RenderLaneParams = {}) =>
+const renderLane = ({
+  mode = 'active',
+  onCompletedCountChange,
+  onActiveCountChange,
+}: RenderLaneParams = {}) =>
   render(
     <ResolverAgentsLane
       session={session}
+      mode={mode}
       inspectedResolverId={null}
       onInspectResolver={() => undefined}
-      showCompleted={showCompleted}
       onCompletedCountChange={onCompletedCountChange}
+      onActiveCountChange={onActiveCountChange}
     />,
   );
 
@@ -177,41 +191,30 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('ResolverAgentsLane', () => {
-  it('reports its completed count without rendering status tabs', () => {
-    const onCompletedCountChange = vi.fn();
+  it('renders nothing in active mode with no active resolvers', () => {
     setResolvers([]);
-    renderLane({ onCompletedCountChange });
+    const { container } = renderLane();
 
-    expect(onCompletedCountChange).toHaveBeenCalledWith(0);
-    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(screen.queryByTestId('resolver-row')).toBeNull();
+    expect(container.textContent).toBe('');
   });
 
-  it('offers a single resolve action from the active empty state', () => {
-    setResolvers([]);
-    renderLane();
+  it('renders nothing in finished mode with no completed resolvers', () => {
+    setResolvers([buildResolver({ id: 'active' as AgentId, name: 'active one' })]);
+    const { container } = renderLane({ mode: 'finished' });
 
-    expect(screen.getByText('Nothing to resolve')).toBeTruthy();
-    expect(screen.getAllByRole('button', { name: /Resolve comments/ })).toHaveLength(1);
+    expect(screen.queryByTestId('resolver-row')).toBeNull();
+    expect(container.textContent).toBe('');
   });
 
-  it('never offers an open pull request control', () => {
-    h.state.sessionGithub = { [SESSION_ID]: { pr: { number: 42 } } };
-    setResolvers([]);
-    renderLane();
-
-    expect(screen.queryByRole('button', { name: /open the pull request/i })).toBeNull();
-    expect(screen.queryByText('Open PR')).toBeNull();
-  });
-
-  it('keeps the resolve action in the footer once resolvers are listed', () => {
+  it('never offers a resolve-comments link in the lane footer', () => {
     setResolvers([buildResolver({ id: 'solo' as AgentId, name: 'solo resolver' })]);
     renderLane();
 
-    expect(screen.getAllByRole('button', { name: /Resolve comments/ })).toHaveLength(1);
-    expect(screen.getByTestId('resolver-row')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Resolve comments/ })).toBeNull();
   });
 
-  it('adds completed resolvers below active resolvers and mutes them', () => {
+  it('lists finished resolvers muted in finished mode', () => {
     setResolvers([
       buildResolver({ id: 'active-old' as AgentId, name: 'active old', ordinal: 0 }),
       buildResolver({
@@ -230,18 +233,24 @@ describe('ResolverAgentsLane', () => {
         doneAt: DONE_AT,
       }),
     ]);
-    renderLane({ showCompleted: true });
 
-    expect(screen.getAllByTestId('resolver-row').map((row) => row.textContent)).toEqual([
-      'active new',
-      'active old',
-      'done new',
-      'done old',
-    ]);
+    const { rerender } = renderLane();
     expect(
       screen.getAllByTestId('resolver-row').map((row) => row.getAttribute('data-muted')),
-    ).toEqual(['false', 'false', 'true', 'true']);
-    expect(screen.getByRole('region', { name: 'Completed history' })).toBeDefined();
+    ).toEqual(['false', 'false']);
+
+    rerender(
+      <ResolverAgentsLane
+        session={session}
+        mode="finished"
+        inspectedResolverId={null}
+        onInspectResolver={() => undefined}
+      />,
+    );
+
+    expect(
+      screen.getAllByTestId('resolver-row').map((row) => row.getAttribute('data-muted')),
+    ).toEqual(['true', 'true']);
   });
 
   it('keeps a resolver active while its thread is still open', () => {
@@ -254,33 +263,7 @@ describe('ResolverAgentsLane', () => {
     ]);
     renderLane();
 
-    expect(screen.getByTestId('resolver-row').textContent).toBe('explained resolver');
-    expect(screen.queryByText('No active resolvers')).toBeNull();
-  });
-
-  it('shows the active empty state once its last resolver is marked done', () => {
-    setResolvers([buildResolver({ id: 'solo' as AgentId, name: 'solo resolver' })]);
-    const view = renderLane();
-
-    expect(screen.getByTestId('resolver-row').textContent).toBe('solo resolver');
-
-    setResolvers([
-      buildResolver({
-        id: 'solo' as AgentId,
-        name: 'solo resolver',
-        status: 'completed',
-        doneAt: DONE_AT,
-      }),
-    ]);
-    view.rerender(
-      <ResolverAgentsLane
-        session={session}
-        inspectedResolverId={null}
-        onInspectResolver={() => undefined}
-      />,
-    );
-
-    expect(screen.getByText('No active resolvers')).toBeTruthy();
+    expect(screen.getByTestId('resolver-row')).toBeTruthy();
   });
 
   it('settles a resolver on a thread this session closed, before github echoes it', () => {
@@ -296,21 +279,25 @@ describe('ResolverAgentsLane', () => {
     renderLane();
 
     expect(screen.queryByTestId('resolver-row')).toBeNull();
-    expect(screen.getByText('No active resolvers')).toBeTruthy();
   });
 
-  it('hides completed resolvers by default', () => {
+  it('reports active and completed counts to the parent', () => {
+    const onActiveCountChange = vi.fn();
+    const onCompletedCountChange = vi.fn();
     setResolvers([
+      buildResolver({ id: 'a' as AgentId, name: 'a' }),
       buildResolver({
-        id: 'done' as AgentId,
-        name: 'done resolver',
+        id: 'b' as AgentId,
+        name: 'b',
+        ordinal: 1,
         status: 'completed',
         doneAt: DONE_AT,
       }),
     ]);
-    renderLane();
+    renderLane({ onActiveCountChange, onCompletedCountChange });
 
-    expect(screen.queryByTestId('resolver-row')).toBeNull();
+    expect(onActiveCountChange).toHaveBeenLastCalledWith(1);
+    expect(onCompletedCountChange).toHaveBeenLastCalledWith(1);
   });
 
   it('recovers each card reported sha from the session event read', async () => {
@@ -443,5 +430,51 @@ describe('ResolverAgentsLane', () => {
     renderLane();
 
     expect(screen.queryByRole('button', { name: 'open diff first' })).toBeNull();
+  });
+
+  it('does not reveal the chat when clicking a pending resolver', () => {
+    const dispatched: Array<string> = [];
+    const original = window.dispatchEvent.bind(window);
+    window.dispatchEvent = (event: Event) => {
+      dispatched.push(event.type);
+      return original(event);
+    };
+
+    setResolvers([
+      buildResolver({
+        id: 'queued' as AgentId,
+        name: 'queued resolver',
+        status: 'pending',
+      }),
+    ]);
+    renderLane();
+
+    fireEvent.click(screen.getByRole('button', { name: 'open chat queued resolver' }));
+
+    expect(dispatched).not.toContain('goodboy:reveal-chat');
+    window.dispatchEvent = original;
+  });
+
+  it('reveals the chat when clicking a running resolver', () => {
+    const dispatched: Array<string> = [];
+    const original = window.dispatchEvent.bind(window);
+    window.dispatchEvent = (event: Event) => {
+      dispatched.push(event.type);
+      return original(event);
+    };
+
+    setResolvers([
+      buildResolver({
+        id: 'live' as AgentId,
+        name: 'live resolver',
+        status: 'running',
+      }),
+    ]);
+    renderLane();
+
+    fireEvent.click(screen.getByRole('button', { name: 'open chat live resolver' }));
+
+    expect(dispatched).toContain('goodboy:reveal-chat');
+    window.dispatchEvent = original;
   });
 });

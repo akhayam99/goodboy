@@ -1,154 +1,98 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect } from 'react';
 import type { AgentId, Session } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '@goodboy/ui';
-import { AgentLane } from '../AgentLane';
-import { ResolveCommentsAction } from './ResolveCommentsAction';
 import { ResolverLaneToolbar } from './ResolverLaneToolbar';
 import { ResolverRows } from './ResolverRows';
 import { useResolverAgentsLane } from './useResolverAgentsLane';
-import { FinishedRegister } from '../../../../shared/components/FinishedRegister';
 
-const VISIBLE_FINISHED_COUNT = 30;
-
-const NOTHING_TO_RESOLVE_DESCRIPTION =
-  'Spawn a resolver from a pull request comment or a diff selection and it will show up here.';
-const ALL_RESOLVED_DESCRIPTION =
-  'Every resolver here has finished. Completed resolvers remain below for reference.';
+type Mode = 'active' | 'finished';
 
 type Props = {
   readonly session: Session;
+  readonly mode?: Mode;
   readonly inspectedResolverId: AgentId | null;
   readonly onInspectResolver: (agentId: AgentId) => void;
-  readonly showCompleted?: boolean;
   readonly onCompletedCountChange?: (completedCount: number) => void;
-  readonly filedToggle?: ReactNode;
+  readonly onActiveCountChange?: (activeCount: number) => void;
 };
 
 export const ResolverAgentsLane = ({
   session,
+  mode = 'active',
   inspectedResolverId,
   onInspectResolver,
-  showCompleted = false,
   onCompletedCountChange,
-  filedToggle,
+  onActiveCountChange,
 }: Props) => {
   const lane = useResolverAgentsLane({ session });
-  const hasNoResolvers = lane.totalCount === 0;
-  const hasActiveEntries = lane.activeEntries.length > 0;
-  const hasVisibleEntries = hasActiveEntries || (showCompleted && lane.completedEntries.length > 0);
 
   useEffect(() => {
-    if (onCompletedCountChange == null) {
-      return;
-    }
-    onCompletedCountChange(lane.completedEntries.length);
+    onCompletedCountChange?.(lane.completedEntries.length);
   }, [lane.completedEntries.length, onCompletedCountChange]);
 
+  useEffect(() => {
+    onActiveCountChange?.(lane.activeEntries.length);
+  }, [lane.activeEntries.length, onActiveCountChange]);
+
+  if (mode === 'finished') {
+    if (lane.completedEntries.length === 0) {
+      return null;
+    }
+    return (
+      <ResolverRows
+        entries={lane.completedEntries}
+        activeIds={lane.activeIds}
+        canOpenDiff={lane.canOpenDiff}
+        isQueueStalled={lane.isStalled}
+        isTaskActive={lane.isTaskActive}
+        isTranscriptLoading={lane.isTranscriptLoading}
+        isMuted
+        selectedAgentId={lane.selectedAgentId}
+        inspectedAgentId={inspectedResolverId}
+        commentByThreadId={lane.commentByThreadId}
+        diffCommentByAgentId={lane.diffCommentByAgentId}
+        metrics={lane.metrics}
+        reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
+        diffTargetByAgentId={lane.diffTargetByAgentId}
+        onOpenChat={lane.onOpenChat}
+        onOpenBrief={onInspectResolver}
+        onJump={lane.onJump}
+        onOpenDiff={lane.onOpenDiff}
+      />
+    );
+  }
+
+  if (lane.activeEntries.length === 0) {
+    return null;
+  }
+
   return (
-    <AgentLane
-      toolbar={
-        <ResolverLaneToolbar
-          sessionId={lane.sessionId}
-          queuedCount={lane.queuedCount}
-          isStalled={lane.isStalled}
-          onForceNext={lane.onForceNext}
-        />
-      }
-      isEmpty={!hasActiveEntries}
-      empty={
-        <LensEmptyState
-          tone={CONCEPT_TONE.resolve}
-          icon={CONCEPT_ICONS.resolve}
-          title={hasNoResolvers ? 'Nothing to resolve' : 'No active resolvers'}
-          description={hasNoResolvers ? NOTHING_TO_RESOLVE_DESCRIPTION : ALL_RESOLVED_DESCRIPTION}
-          action={<ResolveCommentsAction variant="tile" onOpen={lane.onOpenResolveBoard} />}
-        />
-      }
-      footer={
-        hasVisibleEntries ? (
-          <ResolveCommentsAction variant="link" onOpen={lane.onOpenResolveBoard} />
-        ) : null
-      }
-    >
-      {hasVisibleEntries || filedToggle != null ? (
-        <div className="flex flex-col gap-5">
-          {hasActiveEntries ? (
-            <ResolverRows
-              entries={lane.activeEntries}
-              activeIds={lane.activeIds}
-              canOpenDiff={lane.canOpenDiff}
-              isQueueStalled={lane.isStalled}
-              isTaskActive={lane.isTaskActive}
-              isTranscriptLoading={lane.isTranscriptLoading}
-              isMuted={false}
-              selectedAgentId={lane.selectedAgentId}
-              inspectedAgentId={inspectedResolverId}
-              commentByThreadId={lane.commentByThreadId}
-              diffCommentByAgentId={lane.diffCommentByAgentId}
-              metrics={lane.metrics}
-              reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
-              diffTargetByAgentId={lane.diffTargetByAgentId}
-              onOpenChat={lane.onOpenChat}
-              onInspect={onInspectResolver}
-              onJump={lane.onJump}
-              onOpenDiff={lane.onOpenDiff}
-            />
-          ) : null}
-          {filedToggle}
-          {showCompleted ? (
-            <FinishedRegister
-              label="Completed"
-              count={lane.completedEntries.length}
-              visible={
-                <ResolverRows
-                  entries={lane.completedEntries.slice(0, VISIBLE_FINISHED_COUNT)}
-                  activeIds={lane.activeIds}
-                  canOpenDiff={lane.canOpenDiff}
-                  isQueueStalled={lane.isStalled}
-                  isTaskActive={lane.isTaskActive}
-                  isTranscriptLoading={lane.isTranscriptLoading}
-                  isMuted
-                  selectedAgentId={lane.selectedAgentId}
-                  inspectedAgentId={inspectedResolverId}
-                  commentByThreadId={lane.commentByThreadId}
-                  diffCommentByAgentId={lane.diffCommentByAgentId}
-                  metrics={lane.metrics}
-                  reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
-                  diffTargetByAgentId={lane.diffTargetByAgentId}
-                  onOpenChat={lane.onOpenChat}
-                  onInspect={onInspectResolver}
-                  onJump={lane.onJump}
-                  onOpenDiff={lane.onOpenDiff}
-                />
-              }
-              earlierCount={Math.max(0, lane.completedEntries.length - VISIBLE_FINISHED_COUNT)}
-              earlier={
-                <ResolverRows
-                  entries={lane.completedEntries.slice(VISIBLE_FINISHED_COUNT)}
-                  activeIds={lane.activeIds}
-                  canOpenDiff={lane.canOpenDiff}
-                  isQueueStalled={lane.isStalled}
-                  isTaskActive={lane.isTaskActive}
-                  isTranscriptLoading={lane.isTranscriptLoading}
-                  isMuted
-                  selectedAgentId={lane.selectedAgentId}
-                  inspectedAgentId={inspectedResolverId}
-                  commentByThreadId={lane.commentByThreadId}
-                  diffCommentByAgentId={lane.diffCommentByAgentId}
-                  metrics={lane.metrics}
-                  reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
-                  diffTargetByAgentId={lane.diffTargetByAgentId}
-                  onOpenChat={lane.onOpenChat}
-                  onInspect={onInspectResolver}
-                  onJump={lane.onJump}
-                  onOpenDiff={lane.onOpenDiff}
-                />
-              }
-            />
-          ) : null}
-        </div>
-      ) : null}
-    </AgentLane>
+    <div className="flex flex-col gap-3">
+      <ResolverLaneToolbar
+        sessionId={lane.sessionId}
+        queuedCount={lane.queuedCount}
+        isStalled={lane.isStalled}
+        onForceNext={lane.onForceNext}
+      />
+      <ResolverRows
+        entries={lane.activeEntries}
+        activeIds={lane.activeIds}
+        canOpenDiff={lane.canOpenDiff}
+        isQueueStalled={lane.isStalled}
+        isTaskActive={lane.isTaskActive}
+        isTranscriptLoading={lane.isTranscriptLoading}
+        isMuted={false}
+        selectedAgentId={lane.selectedAgentId}
+        inspectedAgentId={inspectedResolverId}
+        commentByThreadId={lane.commentByThreadId}
+        diffCommentByAgentId={lane.diffCommentByAgentId}
+        metrics={lane.metrics}
+        reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
+        diffTargetByAgentId={lane.diffTargetByAgentId}
+        onOpenChat={lane.onOpenChat}
+        onOpenBrief={onInspectResolver}
+        onJump={lane.onJump}
+        onOpenDiff={lane.onOpenDiff}
+      />
+    </div>
   );
 };
