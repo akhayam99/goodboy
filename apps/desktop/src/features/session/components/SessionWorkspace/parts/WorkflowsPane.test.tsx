@@ -408,7 +408,7 @@ describe('WorkflowsPane', () => {
     expect(screen.queryByText('First workflow')).toBeNull();
     expect(screen.getByText('Second workflow')).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Completed (1)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Discarded (1)' }));
 
     expect(screen.getByText('First workflow')).toBeDefined();
   });
@@ -449,7 +449,7 @@ describe('WorkflowsPane', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Completed (1)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Discarded (1)' }));
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
 
     expect(store.restoreWorkflow).toHaveBeenCalledWith(SESSION_ID, 'run-1');

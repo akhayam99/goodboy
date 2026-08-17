@@ -8,7 +8,7 @@ type Props = {
   readonly isStepInFlight: boolean;
   readonly variant?: 'sidebar' | 'detail';
   readonly onToggle: () => void;
-  readonly onStopNow: () => void;
+  readonly onStopNow?: () => void;
 };
 
 export const WorkflowAutorunToggle = ({
@@ -70,7 +70,7 @@ export const WorkflowAutorunToggle = ({
             confirmLabel="Stop the run"
             onConfirm={() => {
               setIsArmed(false);
-              onStopNow();
+              onStopNow?.();
             }}
             onCancel={() => setIsArmed(false)}
           />
