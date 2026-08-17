@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { MODEL_CATALOGS, modelAxes, modelIdForSelection } from '@goodboy/core';
-import { Divider, ScrollFade } from '@goodboy/ui';
+import { Divider } from '@goodboy/ui';
 import type { ModelSelection, ProviderId } from '@goodboy/types';
 import { AxesSection } from '../../../../shared/components/RoutingPicker/AxesSection';
-import { CatalogGrid } from '../../../../shared/components/RoutingPicker/CatalogGrid';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { ProviderGrid } from '../../../../shared/components/RoutingPicker/ProviderGrid';
 import { ROUTING_PICKER_CONSTANTS } from '../../../../shared/components/RoutingPicker/constants';
@@ -62,13 +61,11 @@ export const AgentRoutingSections = ({
   const axes = modelAxes({ model: viewedModel, selection: viewedRouting.selection });
   const cursorModels = MODEL_CATALOGS.cursor.map((entry) => entry.key);
   const maxModeModels = useCursorMaxModeModels({ models: cursorModels });
-  const advisoryKeys =
-    viewProvider === 'cursor' ? maxModeModels : ROUTING_PICKER_CONSTANTS.emptyModelKeys;
   const hasMaxModeAdvisory = viewProvider === 'cursor' && maxModeModels.has(viewedModel.key);
 
   return (
     <>
-      <PickerSection label="Provider" hint="Which CLI agent runs the turn">
+      <PickerSection label="Provider">
         {connectedProviders.length === 0 ? (
           <p className="px-2.5 py-2 text-xs text-muted-foreground">No providers connected</p>
         ) : (
@@ -84,28 +81,13 @@ export const AgentRoutingSections = ({
         )}
       </PickerSection>
       <Divider />
-      <PickerSection label="Model" hint="Color shows the cost tier">
+      <div>
         {!isProviderConnected && (
           <p className="px-2.5 py-1 text-xs text-muted-foreground">
             Selected provider is not connected
           </p>
         )}
-        {isProviderConnected && (
-          <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[15rem]">
-            <CatalogGrid
-              catalog={viewedRouting.catalog}
-              selectedKey={viewedRouting.model}
-              recommendedKey={undefined}
-              advisoryKeys={advisoryKeys}
-              onSelect={(model) =>
-                onPickSelection({
-                  selection: selectionForModel({ model, effort: viewedRouting.effort }),
-                })
-              }
-            />
-          </ScrollFade>
-        )}
-      </PickerSection>
+      </div>
       {isProviderConnected && (
         <>
           <Divider />
@@ -115,6 +97,15 @@ export const AgentRoutingSections = ({
             canEditEffort
             notice={clampNotice}
             hasMaxModeAdvisory={hasMaxModeAdvisory}
+            onModel={(modelKey) => {
+              const model = viewedRouting.catalog.find((candidate) => candidate.key === modelKey);
+              if (model == null) {
+                return;
+              }
+              onPickSelection({
+                selection: selectionForModel({ model, effort: viewedRouting.effort }),
+              });
+            }}
             onEffort={(level) =>
               onPickSelection({
                 selection: { ...viewedRouting.selection, effort: level },

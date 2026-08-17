@@ -43,7 +43,8 @@ const openFallback = () =>
 const pickProvider = (label: string) =>
   fireEvent.click(screen.getByRole('button', { name: label }));
 
-const pickChip = (label: string) => fireEvent.click(screen.getByRole('button', { name: label }));
+const pickChip = (label: string) =>
+  fireEvent.click(screen.getAllByRole('button', { name: label })[0]);
 
 afterEach(() => {
   cleanup();

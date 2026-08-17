@@ -15,6 +15,7 @@ type Props = {
   };
   readonly hasMaxModeAdvisory: boolean;
   readonly onEffort: (level: EffortLevel) => void;
+  readonly onModel: (modelKey: string) => void;
   readonly onVariant: (id: string) => void;
   readonly onToggle: (id: 'thinking' | 'fast') => void;
 };
@@ -26,40 +27,71 @@ export const AxesSection = ({
   notice,
   hasMaxModeAdvisory,
   onEffort,
+  onModel,
   onVariant,
   onToggle,
 }: Props) => {
-  const hasNoAxes = axes.effort == null && axes.variant == null && axes.toggles.length === 0;
   const toggleRowLabel = 'Modes';
   return (
     <section aria-label="Tuning" className="flex flex-col gap-2.5 p-3">
-      {hasNoAxes && (
-        <p className="text-xs text-muted-foreground">No tuning options for this provider</p>
-      )}
-      {axes.variant != null && (
-        <AxisRow label={axes.variant.label}>
-          <div className="grid grid-cols-3 justify-center gap-1 rounded-lg bg-background/40 p-1">
-            {axes.variant.options.map((option) => (
+      {[axes.model, axes.version].map((axis) => (
+        <AxisRow key={axis.label} label={axis.label}>
+          <div
+            role="group"
+            aria-label={axis.label}
+            className="flex flex-wrap justify-center gap-1 rounded-lg bg-background/40 p-1"
+          >
+            {axis.options.map((option) => (
               <PickerChip
                 key={option.id}
                 label={option.label}
-                active={option.id === axes.variant?.activeId}
-                onSelect={() => onVariant(option.id)}
+                active={option.id === axis.activeId}
+                onSelect={() => onModel(option.modelKey)}
               />
             ))}
           </div>
         </AxisRow>
-      )}
-      {axes.effort != null && (
-        <AxisRow label={axes.effort.label}>
+      ))}
+      <AxisRow label={axes.variant.label}>
+        <div
+          role="group"
+          aria-label={axes.variant.label}
+          className="flex flex-wrap justify-center gap-1 rounded-lg bg-background/40 p-1"
+        >
+          {axes.variant.options.length === 0 ? (
+            <PickerChip label="Not available" active={false} disabled onSelect={() => undefined} />
+          ) : (
+            axes.variant.options.map((option) => {
+              return (
+                <PickerChip
+                  key={option.id}
+                  label={option.label}
+                  active={option.id === axes.variant.activeId}
+                  onSelect={() => onVariant(option.id)}
+                />
+              );
+            })
+          )}
+        </div>
+      </AxisRow>
+      <AxisRow label={axes.effort.label}>
+        {axes.effort.levels.length === 0 ? (
+          <div
+            role="group"
+            aria-label={axes.effort.label}
+            className="flex rounded-lg bg-background/40 p-1"
+          >
+            <PickerChip label="Not available" active={false} disabled onSelect={() => undefined} />
+          </div>
+        ) : (
           <EffortChips
             axis={axes.effort}
             value={effortValue}
             canEdit={canEditEffort}
             onPick={onEffort}
           />
-        </AxisRow>
-      )}
+        )}
+      </AxisRow>
       {axes.toggles.length > 0 && (
         <AxisRow label={toggleRowLabel}>
           <div

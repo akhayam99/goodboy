@@ -623,7 +623,7 @@ describe('SessionOverviewPane activity', () => {
   it('spawns the selected kind from the empty state agent control', () => {
     renderPane();
     fireEvent.click(screen.getByRole('button', { name: /^Create agent/ }));
-    fireEvent.click(screen.getByRole('button', { name: /^Scout / }));
+    fireEvent.click(screen.getByRole('button', { name: 'Scout' }));
     fireEvent.click(screen.getByRole('button', { name: 'Spawn Scout' }));
     expect(store.spawnAgent).toHaveBeenCalledWith(
       'sess-1',

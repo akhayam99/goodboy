@@ -105,7 +105,10 @@ describe('RoutingPicker', () => {
     const trigger = screen.getByRole('button', { name: /routing/i });
     expect(trigger.textContent).toContain('Sonnet 4.6');
     fireEvent.click(trigger);
-    expect(screen.getByRole('button', { name: 'Sonnet 4.6, Recommended' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Sonnet' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('button', { name: '4.6' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('dialog').textContent).not.toContain('auto');
   });
 
@@ -182,7 +185,8 @@ describe('RoutingPicker', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const row = screen.getByRole('button', { name: 'Recommended Claude · Sonnet 4.6' });
-    fireEvent.click(screen.getByRole('button', { name: 'Opus 5' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
+    fireEvent.click(screen.getByRole('button', { name: '5' }));
     expect(row.getAttribute('aria-pressed')).toBe('false');
     expect(screen.getByRole('button', { name: 'Claude' }).getAttribute('aria-pressed')).toBe(
       'true',
@@ -194,7 +198,10 @@ describe('RoutingPicker', () => {
       <RoutingPicker {...baseProps} model="" recommendation={{ model: 'claude-sonnet-4-6' }} />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('button', { name: 'Sonnet 4.6, Recommended' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Sonnet' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('button', { name: '4.6' }).getAttribute('aria-pressed')).toBe('true');
   });
 
   it('suppresses the model grid recommendation chip when the recommendation names a provider', () => {
@@ -227,7 +234,8 @@ describe('RoutingPicker', () => {
     const onModel = vi.fn();
     render(<RoutingPicker {...baseProps} onModel={onModel} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'Sonnet 4.6' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sonnet' }));
+    fireEvent.click(screen.getByRole('button', { name: '4.6' }));
     expect(onModel).toHaveBeenCalledWith('claude-sonnet-4-6');
     expect(screen.getByRole('dialog')).toBeDefined();
   });
@@ -378,12 +386,18 @@ describe('RoutingPicker', () => {
     ).toEqual(['Low', 'High']);
   });
 
-  it('shows the no-option message without an effort row for Haiku', () => {
+  it('keeps unavailable variant and effort levels visible and disabled for Haiku', () => {
     render(<RoutingPicker {...baseProps} model="haiku-4.5" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const tuning = screen.getByRole('region', { name: 'Tuning' });
-    expect(within(tuning).queryByRole('group', { name: 'Effort' })).toBeNull();
-    expect(tuning.textContent).toContain('No tuning options for this provider');
+    const effort = within(tuning).getByRole('group', { name: 'Effort' });
+    const variant = within(tuning).getByRole('group', { name: 'Variant' });
+    expect(
+      within(effort).getByRole('button', { name: 'Not available' }).hasAttribute('disabled'),
+    ).toBe(true);
+    expect(
+      within(variant).getByRole('button', { name: 'Not available' }).hasAttribute('disabled'),
+    ).toBe(true);
   });
 
   it('shows a Max Mode advisory after failure and clears it after success', () => {
@@ -400,15 +414,12 @@ describe('RoutingPicker', () => {
     expect(screen.getByRole('status', { name: 'Max Mode rejected' }).textContent).toBe(
       'Cursor rejected Max Mode for this model. Check that Max Mode is available on your account, then retry.',
     );
-    const chip = screen.getByRole('button', { name: 'Sonnet 4.6' });
-    expect(within(chip).getByTitle('Cursor rejected Max Mode for this model')).toBeDefined();
 
     act(() => {
       cursorMaxModeAdvisory.clear({ accountId: 'unknown', model: 'sonnet-4.6' });
     });
 
     expect(screen.queryByRole('status', { name: 'Max Mode rejected' })).toBeNull();
-    expect(within(chip).queryByTitle('Cursor rejected Max Mode for this model')).toBeNull();
   });
 
   it('shows a static Max Mode requirement from the selected Cursor combination', () => {
@@ -425,29 +436,33 @@ describe('RoutingPicker', () => {
       'Runs in Max Mode. Cursor bills Max Mode requests at a higher rate.',
     );
     expect(screen.queryByRole('status', { name: 'Max Mode rejected' })).toBeNull();
-    const chip = screen.getByRole('button', { name: 'GPT-5.5' });
-    expect(within(chip).queryByTitle('Cursor rejected Max Mode for this model')).toBeNull();
+    expect(screen.getByRole('button', { name: 'GPT' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: '5.5' }).getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('renders every anthropic catalog model as a version chip', () => {
+  it('renders authored model families and versions as separate chip levels', () => {
     render(<RoutingPicker {...baseProps} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    const models = screen.getByRole('region', { name: 'Models' });
-    for (const entry of MODEL_CATALOGS.anthropic) {
-      expect(within(models).getByRole('button', { name: entry.label }).textContent).toBe(
-        entry.presentation.version,
-      );
-    }
+    const models = screen.getByRole('group', { name: 'Model' });
+    expect(
+      within(models)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['Haiku', 'Sonnet', 'Opus', 'Fable']);
+    fireEvent.click(within(models).getByRole('button', { name: 'Opus' }));
+    expect(
+      within(screen.getByRole('group', { name: 'Model Version' }))
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['4.6', '4.7', '4.8', '5']);
   });
 
-  it('groups anthropic versions under authored family rows', () => {
+  it('selects an authored version without parsing the model id', () => {
     render(<RoutingPicker {...baseProps} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    const models = screen.getByRole('region', { name: 'Models' });
-    expect(within(models).getByText('Opus')).toBeDefined();
-    expect(within(models).getByText('Haiku')).toBeDefined();
-    expect(within(models).getByRole('button', { name: 'Opus 4.8' }).textContent).toBe('4.8');
-    expect(within(models).getByRole('button', { name: 'Opus 5' }).textContent).toBe('5');
+    fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
+    fireEvent.click(screen.getByRole('button', { name: '4.8' }));
+    expect(screen.getByRole('button', { name: '4.8' }).getAttribute('aria-pressed')).toBe('true');
   });
 
   it('renders multi-family catalogs without provider or family bands', () => {
@@ -460,9 +475,9 @@ describe('RoutingPicker', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    const models = screen.getByRole('region', { name: 'Models' });
+    const models = screen.getByRole('group', { name: 'Model' });
     expect(within(models).queryByText('Claude')).toBeNull();
-    expect(within(models).getByText('Opus')).toBeDefined();
+    expect(within(models).getByRole('button', { name: 'Opus' })).toBeDefined();
     expect(within(models).getByRole('button', { name: 'Auto' })).toBeDefined();
   });
 
@@ -529,7 +544,7 @@ describe('RoutingPicker', () => {
   it('focuses the selected model chip when the popover opens', () => {
     render(<RoutingPicker {...baseProps} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('button', { name: 'Opus 5' })).toBe(document.activeElement);
+    expect(screen.getByRole('button', { name: 'Opus' })).toBe(document.activeElement);
   });
 
   it('portals the popup and keeps inside pointer events open', () => {
@@ -539,7 +554,7 @@ describe('RoutingPicker', () => {
     const portal = dialog.closest('[data-dropdown-portal]');
     expect(portal?.parentElement).toBe(document.body);
     expect(dialog.className).toContain('fixed');
-    fireEvent.mouseDown(screen.getByRole('button', { name: 'Opus 5' }));
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'Opus' }));
     expect(screen.getByRole('dialog')).toBe(dialog);
   });
 

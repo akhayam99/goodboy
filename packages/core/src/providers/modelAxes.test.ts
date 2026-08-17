@@ -84,13 +84,13 @@ describe('modelAxes', () => {
     ]);
   });
 
-  it('omits the effort axis for anthropic models without authored efforts', () => {
+  it('keeps an unreachable effort axis empty instead of hiding it', () => {
     const model = ANTHROPIC_CATALOG.find((candidate) => candidate.key === 'haiku-4.5');
     if (model == null) {
       throw new Error('missing anthropic haiku-4.5');
     }
     const axes = modelAxes({ model, selection: { key: model.key } });
-    expect(axes.effort).toBeNull();
+    expect(axes.effort).toEqual({ label: 'Effort', levels: [] });
   });
 
   it('uses Effort as the effort axis label across providers', () => {
