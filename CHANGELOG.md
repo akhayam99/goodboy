@@ -7,6 +7,79 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.82
+
+A repository Goodboy could not read no longer reads as in sync, the first-run
+checklist agrees with the app around it, and archive and delete move out of the
+session rail.
+
+### [#1419] Repository status shows unknown instead of in sync, and offers a fast-forward
+
+Goodboy used to report "In sync and clean" whenever it could not work out the
+state of your repository, so a failed read looked exactly like a healthy one. It
+now shows that state as unknown and names what it could not resolve: no upstream
+branch, a checkout that is not on a branch, a status it could not read.
+
+A file in conflict used to count twice, once as staged and once as unstaged. It
+counts once now, as conflicted, and a merge, rebase, cherry-pick or bisect left
+in progress shows in the panel instead of hiding inside the change count.
+
+When your branch is behind its upstream and the tree is clean, the checkout
+panel offers a fast-forward that names the branch and the upstream it will move.
+It never rebases and never stashes. When it cannot run, the control stays
+visible and disabled with the reason on it: uncommitted changes, no upstream, an
+operation in progress, a status Goodboy could not read, or a branch already up
+to date. An unknown state disables it exactly like a dirty one.
+
+### [#1416] The first-run checklist matches the app it opens beside
+
+The setup checklist used to open at "0 of 7 steps done" with "Connect a
+workspace" unticked, next to a header naming the workspace you had just created.
+It now reads the app's own state on the first paint, so a workspace, a code
+host, a connected tool, a session, a run and a plan tick as soon as they exist,
+and a step that has ticked stays ticked even if you later delete the thing that
+earned it.
+
+The wizard's progress dots mark where you are, distinct from what is done and
+what is still ahead, one dot per screen you will actually see and no fraction
+anywhere. Two of those screens, Tracker and Sentry, count toward the same
+checklist entry, so connecting a tracker ticks both.
+
+### [#1418] Archive and delete move to the session header
+
+Archive, unarchive and delete used to sit at the bottom of the session rail
+behind their own inline confirm and a single flat warning. They now live in a
+Session actions menu in the session header, beside the editor and git actions,
+and they route through the same confirm the keyboard shortcuts use, whose
+warning differs for a session with a branch and one without. Two clicks to
+confirm and Escape to dismiss, both unchanged.
+
+The confirm acts on the session whose menu you opened, even if you switch
+sessions with the keyboard before you confirm. A failed archive or delete
+reports inside the confirm now instead of as a toast.
+
+### [#1422] Connect Slack while setting up
+
+The first-run tools step offers Slack beside Linear and Jira, and connecting it
+completes the setup step the same way a tracker does. That step is called
+Connect your tools now, since it no longer covers trackers alone.
+
+A connect that failed partway used to leave a Slack token in your keychain that
+no screen in the app could remove. The credential is written last now, and a
+failure restores the integration you already had.
+
+### Smaller fixes
+
+- A run paused by the session budget offered two controls that opened the same
+  budget screen, and now offers one [#1417]
+- The first-run screens with no workspace to show use the same empty state as
+  the rest of the app [#1420]
+- Push and rebase are offered only when Goodboy knows how far ahead or behind
+  the branch is [#1419]
+- A remote address carrying a token no longer appears in git error text [#1419]
+- A checkout that is not on a branch is explained in plain words instead of
+  git's own vocabulary [#1419]
+
 ## Goodboy v0.1.81
 
 Goodboy reaches the board without waiting on provider detection, and the
