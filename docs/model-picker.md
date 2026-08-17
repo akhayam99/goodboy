@@ -44,6 +44,19 @@ single shape, and every surface renders that shape.
 - A tuning concept that is not a ladder, a variant list or a toggle is added to
   the axes shape and renders for everyone, never special-cased in a mount.
 
+The picker renders one stable ladder in this order: Provider, Model, Model
+Version, Variant and Effort. Model names and versions come directly from the
+catalog entry's authored `presentation.group` and `presentation.version`.
+`modelAxes` turns those entries into separate model and version axes alongside
+variant and effort, so mounts never regroup catalog entries themselves.
+
+Every level remains mounted. When Variant does not apply, its row contains one
+disabled `Not available` chip. Effort follows the same rule when the selected
+model has no effort choices. A partially reachable effort ladder keeps every
+authored level visible and disables only the unavailable chips. This keeps the
+ladder's height, reading order and keyboard order stable as higher levels
+change.
+
 ## Selection to spawn
 
 The picker owns and persists a selection: a catalog key plus its tuning. One

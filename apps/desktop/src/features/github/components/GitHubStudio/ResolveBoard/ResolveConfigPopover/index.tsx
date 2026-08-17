@@ -58,7 +58,7 @@ export const ResolveConfigPopover = ({
     portal,
     portalTarget,
   } = useDropdown({
-    align: 'end',
+    align: 'center',
     expectedHeight: 520,
     expectedWidth: 384,
     width: 'w-96 max-w-[calc(100vw-2rem)]',
