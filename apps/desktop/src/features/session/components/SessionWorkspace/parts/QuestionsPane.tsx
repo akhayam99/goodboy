@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Bot, Check } from 'lucide-react';
-import { CountToggle, Skeleton } from '@goodboy/ui';
+import { useCallback, useEffect, useMemo } from 'react';
+import { Bot } from 'lucide-react';
+import { Skeleton } from '@goodboy/ui';
 import { LensEmptyState } from '@goodboy/ui';
 import type {
   Agent,
@@ -33,6 +33,7 @@ import {
 import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import { FinishedRegister } from '../../../../../shared/components/FinishedRegister';
 
 type AnswerPair = { id: OpenQuestionId; text: string; answer: string };
 
@@ -253,7 +254,6 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   const answerOpenQuestions = useAppStore((s) => s.answerOpenQuestions);
   const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
   const restoreDismissedOpenQuestion = useAppStore((s) => s.restoreDismissedOpenQuestion);
-  const [showAnswered, setShowAnswered] = useState(false);
 
   useEffect(() => {
     void loadSessionOpenQuestions(sessionId);
@@ -349,27 +349,17 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   if (open.length === 0 && pendingUndoQuestion === null) {
     return (
       <PaneShell title="Questions" description="Decisions agents need from you to keep going.">
-        {showAnswered ? null : (
-          <LensEmptyState
-            tone={CONCEPT_TONE.questions}
-            icon={CONCEPT_ICONS.questions}
-            title="Nothing needs you right now"
-            description={`Every question on this session is answered. Reveal the ${answered.length} answered ${answered.length === 1 ? 'one' : 'ones'} to reread them.`}
-          />
-        )}
-        <div className="flex justify-center">
-          <CountToggle
-            label="Answered"
-            itemsLabel="questions"
-            count={answered.length}
-            isShown={showAnswered}
-            icon={Check}
-            onChange={setShowAnswered}
-          />
-        </div>
-        {showAnswered ? (
-          <AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />
-        ) : null}
+        <LensEmptyState
+          tone={CONCEPT_TONE.questions}
+          icon={CONCEPT_ICONS.questions}
+          title="Nothing needs you right now"
+          description="Every question on this session is answered. Answered questions remain below for reference."
+        />
+        <FinishedRegister
+          label="Answered"
+          count={answered.length}
+          visible={<AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />}
+        />
       </PaneShell>
     );
   }
@@ -402,19 +392,11 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
             onSubmit={(pairs, ownerAgentId) => void handleSubmit(pairs, ownerAgentId)}
           />
         ))}
-        <div className="flex justify-center">
-          <CountToggle
-            label="Answered"
-            itemsLabel="questions"
-            count={answered.length}
-            isShown={showAnswered}
-            icon={Check}
-            onChange={setShowAnswered}
-          />
-        </div>
-        {showAnswered ? (
-          <AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />
-        ) : null}
+        <FinishedRegister
+          label="Answered"
+          count={answered.length}
+          visible={<AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />}
+        />
       </div>
     </PaneShell>
   );
