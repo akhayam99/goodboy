@@ -545,6 +545,9 @@ export const useSlotHistory = (
     sessionId ? (s.slotHistory[sessionId]?.[key] ?? EMPTY_HISTORY) : EMPTY_HISTORY,
   );
 
+export const useSlotHistoryCount = (sessionId: SessionId | null, key: string): number =>
+  useAppStore((s) => (sessionId ? (s.slotHistoryCounts[sessionId]?.[key] ?? 0) : 0));
+
 const EMPTY_COMMENTS: ReadonlyArray<DiffComment> = [];
 
 export const useDiffComments = (sessionId: SessionId | null): ReadonlyArray<DiffComment> =>

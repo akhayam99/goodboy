@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { History } from 'lucide-react';
-import { Button, CopyButton, Markdown, Textarea, cn } from '@goodboy/ui';
-import type { ContextSlotHistoryEntry, SessionId } from '@goodboy/types';
+import { Button, ClampedProse, CopyButton, Markdown, Textarea, cn } from '@goodboy/ui';
+import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
 import { GoalAttachmentsStrip } from '../../../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
 
@@ -15,10 +15,11 @@ type Props = {
   readonly emptyLabel: string;
   readonly value: string;
   readonly copyValue: string;
-  readonly history: ReadonlyArray<ContextSlotHistoryEntry>;
+  readonly historyCount: number;
   readonly isLoading: boolean;
   readonly isSummarizing: boolean;
   readonly onOpenHistory: () => void;
+  readonly clampLines?: 1 | 2 | 3 | 4 | 5 | 6;
 };
 
 export const ContextRegion = ({
@@ -29,10 +30,11 @@ export const ContextRegion = ({
   emptyLabel,
   value,
   copyValue,
-  history,
+  historyCount,
   isLoading,
   isSummarizing,
   onOpenHistory,
+  clampLines,
 }: Props) => {
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
   const [isEditing, setIsEditing] = useState(false);
@@ -75,6 +77,11 @@ export const ContextRegion = ({
           <p className="text-xs text-muted-foreground">{description}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          {hasValue && clampLines != null ? (
+            <Button size="sm" variant="ghost" onClick={startEditing} disabled={isSummarizing}>
+              Edit
+            </Button>
+          ) : null}
           {hasValue ? (
             <CopyButton
               presentation="icon"
@@ -88,15 +95,18 @@ export const ContextRegion = ({
               className="rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
             />
           ) : null}
-          {history.length > 0 ? (
-            <button
+          {historyCount > 0 ? (
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={onOpenHistory}
-              aria-label={`View history for ${title}`}
-              className="rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
+              aria-label={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of ${title}`}
+              className="h-7 gap-1.5 px-2 text-xs text-muted-foreground"
             >
-              <History size={15} aria-hidden />
-            </button>
+              <History size={13} aria-hidden />
+              {historyCount} {historyCount === 1 ? 'version' : 'versions'}
+            </Button>
           ) : null}
         </div>
       </div>
@@ -134,6 +144,10 @@ export const ContextRegion = ({
             Add
           </Button>
         </div>
+      ) : clampLines != null ? (
+        <div className="max-w-2xl">
+          <ClampedProse text={value} lines={clampLines} className="text-base leading-relaxed" />
+        </div>
       ) : rendersMarkdown ? (
         <div
           role={isSummarizing ? undefined : 'button'}
@@ -149,7 +163,7 @@ export const ContextRegion = ({
             }
           }}
           className={cn(
-            'rounded-lg leading-relaxed transition-colors [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/15 [&_pre]:whitespace-pre-wrap',
+            'max-w-2xl rounded-lg text-base leading-relaxed transition-colors [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/15 [&_pre]:whitespace-pre-wrap',
             isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-foreground/[0.02]',
           )}
         >

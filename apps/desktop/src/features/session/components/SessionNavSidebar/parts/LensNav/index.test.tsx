@@ -180,6 +180,28 @@ describe('LensNav', () => {
     expect(store.setActiveLens).toHaveBeenCalledWith('session-1', null);
   });
 
+  it('highlights Overview, not Context, when the goal lens renders the Overview', () => {
+    store.activeLens = { 'session-1': 'goal' };
+    render(<LensNav session={SESSION} filesCount={0} />);
+
+    expect(screen.getByRole('button', { name: 'Overview' }).getAttribute('aria-current')).toBe(
+      'page',
+    );
+    expect(screen.getByRole('button', { name: 'Context' }).getAttribute('aria-current')).toBeNull();
+  });
+
+  it('highlights Context for a region that the Context surface renders', () => {
+    store.activeLens = { 'session-1': 'decisions' };
+    render(<LensNav session={SESSION} filesCount={0} />);
+
+    expect(screen.getByRole('button', { name: 'Context' }).getAttribute('aria-current')).toBe(
+      'page',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Overview' }).getAttribute('aria-current'),
+    ).toBeNull();
+  });
+
   it('uses a subtle active style and softens the tone of inactive rows', () => {
     store.activeLens = { 'session-1': 'agents' };
     render(<LensNav session={SESSION} filesCount={0} />);
@@ -211,10 +233,10 @@ describe('LensNav', () => {
 
     expect(
       screen
-        .getAllByText(/^(Work|Context|Integrations|Infra)$/)
+        .getAllByText(/^(Work|Integrations|Infra)$/)
         .filter((heading) => heading.className.includes('uppercase'))
         .map((heading) => heading.textContent),
-    ).toEqual(['Context', 'Work', 'Infra', 'Integrations']);
+    ).toEqual(['Work', 'Infra', 'Integrations']);
     expect(
       within(screen.getByRole('navigation'))
         .getAllByRole('button')
@@ -227,7 +249,6 @@ describe('LensNav', () => {
     ).toEqual([
       'Overview',
       'Context',
-      'Timeline',
       'Workflows',
       'Agents',
       'Resolve',
@@ -251,10 +272,10 @@ describe('LensNav', () => {
 
     expect(
       screen
-        .getAllByText(/^(Work|Context)$/)
+        .getAllByText(/^Work$/)
         .filter((heading) => heading.className.includes('uppercase'))
         .map((heading) => heading.textContent),
-    ).toEqual(['Context', 'Work']);
+    ).toEqual(['Work']);
     expect(
       within(screen.getByRole('navigation'))
         .getAllByRole('button')
@@ -267,7 +288,6 @@ describe('LensNav', () => {
     ).toEqual([
       'Overview',
       'Context',
-      'Timeline',
       'Workflows',
       'Agents',
       'Questions',

@@ -274,7 +274,7 @@ describe('ExplorePane', () => {
       },
     );
     fireEvent.click(screen.getByRole('button', { name: /^Agent settings:/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Opus 5' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
     fireEvent.click(screen.getByRole('button', { name: 'Spawn agent' }));
 
     await waitFor(() => expect(h.spawnAgent).toHaveBeenCalled());
@@ -282,7 +282,7 @@ describe('ExplorePane', () => {
       | { readonly model: string; readonly initialPrompt: string; readonly focus: string }
       | undefined;
     expect(spawnArgs?.focus).toBe('none');
-    expect(spawnArgs?.model).toBe('claude-opus-5');
+    expect(spawnArgs?.model).toBe('claude-opus-4-6');
     expect(spawnArgs?.initialPrompt).toContain('Analyze this spreadsheet and summarize trends.');
     expect(spawnArgs?.initialPrompt).toContain('- budget.xlsx');
     expect(

@@ -3,17 +3,12 @@ import type { ProviderId } from '@goodboy/types';
 import { getModelProvider } from '@goodboy/core';
 import { PROVIDER_BRAND, brandColor } from '../../../features/providers/components/provider-brand';
 import {
-  EFFORT_DOT,
   EFFORT_LABEL,
-  EFFORT_TEXT,
   PROVIDER_LABEL,
-  TIER_TEXT,
   clampEffort,
   modelLabel,
-  modelTier,
   type EffortLevel,
 } from '../../../features/chat/utils/chat-constants';
-import { MODEL_COST_DOT, modelCostTier } from '../../../features/session/components/dropdown-utils';
 
 type Props = {
   readonly provider?: string | null;
@@ -63,21 +58,11 @@ export const RoutingBadge = ({
         </span>
         {model != null && (
           <span className={cn(CHIP_CLASS, 'min-w-0 font-mono')} title={model}>
-            <span
-              className={cn('size-1.5 shrink-0 rounded-full', MODEL_COST_DOT[modelCostTier(model)])}
-              aria-hidden
-            />
             <span className="truncate">{modelLabel(model)}</span>
           </span>
         )}
         {resolvedEffort != null && (
-          <span className={CHIP_CLASS}>
-            <span
-              className={cn('size-1.5 shrink-0 rounded-full', EFFORT_DOT[resolvedEffort])}
-              aria-hidden
-            />
-            {EFFORT_LABEL[resolvedEffort]}
-          </span>
+          <span className={CHIP_CLASS}>{EFFORT_LABEL[resolvedEffort]}</span>
         )}
       </span>
     );
@@ -104,7 +89,7 @@ export const RoutingBadge = ({
       {glyphPlacement === 'leading' ? glyph : null}
       {model != null ? (
         <span
-          className={cn('min-w-0 truncate font-medium', TIER_TEXT[modelTier(model)])}
+          className="min-w-0 truncate font-mono font-medium text-foreground"
           title={`Model: ${model}`}
         >
           {modelLabel(model)}
@@ -113,7 +98,7 @@ export const RoutingBadge = ({
         <span className="text-muted-foreground/50">{missingLabel}</span>
       )}
       {model != null && resolvedEffort != null && (
-        <span className={cn('shrink-0', EFFORT_TEXT[resolvedEffort])} title="Effort">
+        <span className="shrink-0 text-muted-foreground" title="Effort">
           {EFFORT_LABEL[resolvedEffort]}
         </span>
       )}

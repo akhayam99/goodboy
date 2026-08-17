@@ -94,6 +94,7 @@ export {
   listContextSlotsForSession,
   insertContextSlotHistory,
   listContextSlotHistory,
+  countContextSlotHistoryForSession,
 } from './queries/context-slot';
 export {
   insertFileVersion,

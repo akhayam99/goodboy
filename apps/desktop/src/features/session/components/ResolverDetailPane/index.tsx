@@ -46,10 +46,10 @@ type Props = {
   readonly onBack: () => void;
 };
 
-type Tab = 'resolve' | 'transcript';
+type Tab = 'brief' | 'transcript';
 
 const TABS = [
-  { value: 'resolve', label: 'Resolve' },
+  { value: 'brief', label: 'Brief' },
   { value: 'transcript', label: 'Transcript' },
 ] satisfies ReadonlyArray<{ readonly value: Tab; readonly label: string }>;
 
@@ -59,7 +59,7 @@ const EMPTY_OUTCOMES: Readonly<Record<string, ResolverThreadOutcome>> = {};
 export const ResolverDetailPane = ({ session, agent, isChatActive, onBack }: Props) => {
   const sessionId = session.id as SessionId;
   const agentId = agent.id;
-  const [tab, setTab] = useState<Tab>('resolve');
+  const [tab, setTab] = useState<Tab>('brief');
   const resolverIndex = useResolverIndex(sessionId);
   const diffComments = useDiffComments(sessionId);
   const prComments = useAppStore(
@@ -79,13 +79,17 @@ export const ResolverDetailPane = ({ session, agent, isChatActive, onBack }: Pro
   const squashSessionCommits = useAppStore((s) => s.squashSessionCommits);
 
   useEffect(() => {
-    setTab('resolve');
+    setTab('brief');
   }, [agentId]);
 
   useEffect(() => {
     const onFocusComposer = () => setTab('transcript');
     window.addEventListener('goodboy:focus-composer', onFocusComposer);
-    return () => window.removeEventListener('goodboy:focus-composer', onFocusComposer);
+    window.addEventListener('goodboy:reveal-chat', onFocusComposer);
+    return () => {
+      window.removeEventListener('goodboy:focus-composer', onFocusComposer);
+      window.removeEventListener('goodboy:reveal-chat', onFocusComposer);
+    };
   }, []);
 
   const position = resolverIndex.links.findIndex((link) => link.agent.id === agentId);

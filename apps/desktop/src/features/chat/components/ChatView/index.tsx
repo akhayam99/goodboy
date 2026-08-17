@@ -9,7 +9,6 @@ import {
   useState,
 } from 'react';
 import type { ReactNode } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import { ArrowDown } from 'lucide-react';
 import type {
   AgentId,
@@ -21,7 +20,6 @@ import type {
   Session,
   TurnEvent,
   TurnProviderOverride,
-  TurnState,
 } from '@goodboy/types';
 import { Button, Divider, ScrollFade, cn } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
@@ -50,9 +48,6 @@ import { DiffViewerDialog } from '../../../../features/permissions/components/Di
 import { worktreeDiff } from '../../../../features/worktree/worktree';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { ChatEmptyState } from './ChatEmptyState';
-import { selectSpawnRecord } from './spawnRecord';
-import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
-import { selectClustersPlan } from '../../../../store/slices/workflows/clusterImplementation';
 import { ParallelColumn } from './ParallelColumn';
 import { TranscriptRows } from './TranscriptRows';
 import { useScrollPin } from './useScrollPin';
@@ -166,7 +161,6 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
     selectedAgentId ? s.transcripts[selectedAgentId] !== undefined : true,
   );
   const selectAgent = useAppStore((s) => s.selectAgent);
-  const advanceClusterImplementation = useAppStore((s) => s.advanceClusterImplementation);
   const markAgentViewed = useAppStore((s) => s.markAgentViewed);
   const selectedAgentLastFinishedAt = useAppStore((s) =>
     selectedAgentId
@@ -247,44 +241,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   );
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
-  const sessionPlans = useAppStore((s) => s.sessionPlans[session.id] ?? EMPTY_ARRAY);
-  const agentTurnState = useAppStore(
-    useShallow((s) => {
-      const out: Record<string, TurnState> = {};
-      for (const run of phaseRuns) {
-        const turn = s.agentTurnState[run.id];
-        if (turn === undefined) {
-          continue;
-        }
-        out[run.id] = turn;
-      }
-      return out;
-    }),
-  );
   const sessionWorkflows = useAppStore((s) => s.sessionWorkflows[session.id] ?? EMPTY_ARRAY);
-
-  const selectedRun = useMemo(
-    () => phaseRuns.find((run) => run.id === selectedAgentId) ?? null,
-    [phaseRuns, selectedAgentId],
-  );
-  const clustersPlan = useMemo(
-    () => selectClustersPlan(sessionPlans, selectedRun?.workflowRunId),
-    [sessionPlans, selectedRun],
-  );
-  const spawnRecord = useMemo(
-    () => selectSpawnRecord({ items: deferredItems, plan: clustersPlan }),
-    [deferredItems, clustersPlan],
-  );
-  const spawnedChildren = useMemo(
-    () =>
-      selectSpawnedChildren({
-        runs: phaseRuns,
-        parentAgentId: selectedAgentId,
-        turnStates: agentTurnState,
-        assignments: spawnRecord.assignments,
-      }),
-    [phaseRuns, selectedAgentId, agentTurnState, spawnRecord],
-  );
   const rawMergeConflicts = useAppStore((s) => s.sessionMergeConflicts[session.id] ?? EMPTY_ARRAY);
   const resolveMergeConflicts = useAppStore((s) => s.resolveMergeConflicts);
 
@@ -603,9 +560,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
                 />
               </div>
             </div>
-          ) : deferredItems.length === 0 &&
-            oqByTurnOrdinal.size === 0 &&
-            spawnedChildren.length === 0 ? (
+          ) : deferredItems.length === 0 && oqByTurnOrdinal.size === 0 ? (
             <div className="flex h-full items-center justify-center">
               <ChatEmptyState
                 sessionId={session.id}
@@ -632,13 +587,6 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
                 thinkingContext={thinkingContext}
                 onRetryError={(item) => void handleRetryError({ item })}
                 retryingErrorRunId={retryingErrorRunId}
-                spawned={spawnedChildren}
-                spawnAnchorKey={spawnRecord.anchorKey}
-                onAdvanceSpawn={
-                  clustersPlan != null
-                    ? (id) => void advanceClusterImplementation(session.id, id, '', { force: true })
-                    : undefined
-                }
               />
             </ul>
           )}

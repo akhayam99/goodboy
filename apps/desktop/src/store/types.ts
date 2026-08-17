@@ -49,6 +49,7 @@ import type {
   WorkspaceScript,
   WorkspaceScriptId,
 } from '@goodboy/types';
+import type { SessionWorktree } from '@goodboy/db';
 import type { AgentKind } from '../features/session/agent-kind';
 import type { ResolverState } from '../features/workspace/components/WorkspacesSidebar/lib';
 import type { GitlabMergeRequest } from '../features/integrations/gitlab/client';
@@ -201,6 +202,7 @@ export type AppState = AppSliceState & {
   readonly transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   readonly messages: Readonly<Record<string, ReadonlyArray<Message>>>;
   readonly sessionWorktrees: Readonly<Record<string, ReadonlyArray<string>>>;
+  readonly sessionWorktreeRecords?: Readonly<Record<string, ReadonlyArray<SessionWorktree>>>;
   readonly orphanWorktrees: Readonly<Record<string, ReadonlyArray<OrphanWorktree>>>;
   readonly sessionMounts: Readonly<Record<string, ReadonlyArray<SessionMount>>>;
   readonly sessionActiveMount: Readonly<Record<string, WorkspaceId>>;
@@ -211,6 +213,7 @@ export type AppState = AppSliceState & {
   readonly slotHistory: Readonly<
     Record<string, Readonly<Record<string, ReadonlyArray<ContextSlotHistoryEntry>>>>
   >;
+  readonly slotHistoryCounts: Readonly<Record<string, Readonly<Record<string, number>>>>;
   readonly summarizerStatus: Readonly<Record<string, SummarizerSessionStatus>>;
   readonly storageStats: StorageStats | null;
   readonly storageStatsLoading: boolean;

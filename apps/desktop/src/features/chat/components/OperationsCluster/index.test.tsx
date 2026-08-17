@@ -101,7 +101,7 @@ describe('OperationsCluster', () => {
     );
     const rail = screen.getByRole('button').parentElement!;
     expect(rail.className).toContain('border-l-2');
-    expect(rail.className).toContain('border-primary/20');
+    expect(rail.className).toContain('border-border-soft');
     expect(screen.getByRole('button').className).not.toContain('border-l-2');
     expect(container.querySelectorAll('[class*="border-danger"]')).toHaveLength(0);
     expect(container.querySelectorAll('[class*="border-success"]')).toHaveLength(0);
@@ -138,7 +138,7 @@ describe('OperationsCluster', () => {
   it('pulses the state icon while a tool runs', () => {
     render(<OperationsCluster items={[tool('a'), tool('b', false)]} />);
     const icon = screen.getByTestId('operations-state-icon');
-    expect(icon.getAttribute('class')).toContain('text-warning');
+    expect(icon.getAttribute('class')).toContain('text-info');
     expect(icon.getAttribute('class')).toContain('animate-pulse');
   });
 

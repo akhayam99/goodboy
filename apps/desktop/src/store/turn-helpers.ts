@@ -18,6 +18,7 @@ import {
   insertNudgeEvent,
   insertProviderRun,
   insertTelemetry,
+  countContextSlotHistoryForSession,
   listContextSlotHistory,
   listContextSlotsForSession,
   listTelemetryForSession,
@@ -334,7 +335,8 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       telemetry,
       providerSummaries,
       budgetRules,
-      changedHistory,
+      slotHistoryCounts,
+      openHistory,
     ] = await Promise.all([
       listContextSlotsForSession(tauriDatabase, sessionId),
       insertProviderRun(tauriDatabase, {
@@ -373,11 +375,14 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       listTelemetryForSession(tauriDatabase, sessionId),
       summarizeWorkspaceProviderTelemetry(tauriDatabase, session.workspaceId),
       invokeBudgetRuleList(),
+      countContextSlotHistoryForSession(tauriDatabase, sessionId),
       Promise.all(
-        changedKeys.map(
-          async (key) =>
-            [key, await listContextSlotHistory(tauriDatabase, sessionId, key)] as const,
-        ),
+        changedKeys
+          .filter((key) => get().slotHistory[sessionId]?.[key] !== undefined)
+          .map(
+            async (key) =>
+              [key, await listContextSlotHistory(tauriDatabase, sessionId, key)] as const,
+          ),
       ),
     ]);
 
@@ -387,9 +392,10 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
         ...state.slotHistory,
         [sessionId]: {
           ...(state.slotHistory[sessionId] ?? {}),
-          ...Object.fromEntries(changedHistory),
+          ...Object.fromEntries(openHistory),
         },
       },
+      slotHistoryCounts: { ...state.slotHistoryCounts, [sessionId]: slotHistoryCounts },
       sessionSummary,
       workspaceSummary,
       sessionTelemetry: {

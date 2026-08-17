@@ -9,6 +9,7 @@ import {
   useSessionOpenQuestions,
   useSessionSlots,
   useSlotHistory,
+  useSlotHistoryCount,
   useSummarizerStatus,
 } from '../../../../../store';
 import { GoalAttachmentsStrip } from '../../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
@@ -70,6 +71,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
   const loadSessionOpenQuestions = useAppStore((s) => s.loadSessionOpenQuestions);
   const history = useSlotHistory(sessionId, slotKey);
+  const historyCount = useSlotHistoryCount(sessionId, slotKey);
   const openQuestions = useSessionOpenQuestions(sessionId);
 
   const slot = useMemo(() => slots.find((s) => s.key === slotKey), [slots, slotKey]);
@@ -176,7 +178,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
                 className="rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
               />
             ) : null}
-            {history.length > 0 ? (
+            {historyCount > 0 ? (
               <button
                 type="button"
                 onClick={toggleHistory}

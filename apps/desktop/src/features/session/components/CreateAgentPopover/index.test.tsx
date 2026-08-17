@@ -98,6 +98,7 @@ afterEach(() => {
   h.providers = [{ id: 'anthropic' as ProviderId, connection: 'connected' }];
   h.workspaceKind = 'repo';
   h.sessions = [makeSession()];
+  Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
 });
 
 h.sessions = [makeSession()];
@@ -117,15 +118,22 @@ describe('CreateAgentPopover', () => {
     expect(dialog.className).toContain('fixed');
   });
 
-  it('offers every visible kind with its hint and spawns the picked one', () => {
+  it('shows only the selected kind description and spawns the picked one', () => {
     renderControl();
     openPopover();
 
-    const scout = screen.getByRole('button', { name: /^Scout / });
-    expect(scout.getAttribute('title')).toBe('Reads and searches codebase. Never edits files');
+    const scout = screen.getByRole('button', { name: 'Scout' });
+    expect(
+      screen.getByText('Plans, investigates, edits, and verifies without a narrow role'),
+    ).toBeTruthy();
+    expect(screen.queryByText('Reads and searches codebase. Never edits files')).toBeNull();
     expect(scout.parentElement?.className).toContain('grid-cols-3');
 
-    fireEvent.click(screen.getByRole('button', { name: /^Docs / }));
+    fireEvent.click(screen.getByRole('button', { name: 'Docs' }));
+    expect(screen.getByText('Writes documentation. No production logic')).toBeTruthy();
+    expect(
+      screen.queryByText('Plans, investigates, edits, and verifies without a narrow role'),
+    ).toBeNull();
     confirm();
 
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
@@ -137,7 +145,7 @@ describe('CreateAgentPopover', () => {
     });
   });
 
-  it('gives a generic agent the model the chat is on and says where it comes from', () => {
+  it('gives a generic agent the model the chat is on without a summary row', () => {
     h.sessions = [
       makeSession({
         providerOverride: 'anthropic',
@@ -148,8 +156,7 @@ describe('CreateAgentPopover', () => {
     renderControl();
     openPopover();
 
-    expect(screen.getByText('Claude · Opus 5, high effort')).toBeTruthy();
-    expect(screen.getByText('from this chat')).toBeTruthy();
+    expect(screen.queryByText('Claude · Opus 5, high effort')).toBeNull();
 
     confirm();
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
@@ -171,11 +178,9 @@ describe('CreateAgentPopover', () => {
     ];
     renderControl();
     openPopover();
-    fireEvent.click(screen.getByRole('button', { name: /^Scout / }));
+    fireEvent.click(screen.getByRole('button', { name: 'Scout' }));
 
-    expect(screen.getByText('Claude · Haiku 4.5')).toBeTruthy();
-    expect(screen.getByText('recommended')).toBeTruthy();
-    expect(screen.getByText('Scouts default to a smaller model, they only read code')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Haiku' }).getAttribute('aria-pressed')).toBe('true');
 
     confirm();
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
@@ -187,25 +192,20 @@ describe('CreateAgentPopover', () => {
     });
   });
 
-  it('swaps the tag for a reset that names the model it would go back to', () => {
+  it('selects a model family and version as separate ladder levels', () => {
     renderControl();
     openPopover();
-    fireEvent.click(screen.getByRole('button', { name: 'Opus 5' }));
-
-    expect(screen.queryByText('recommended')).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Use recommended: Haiku 4.5' }));
-
-    expect(screen.getByText('Claude · Haiku 4.5')).toBeTruthy();
-    expect(screen.getByText('recommended')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
+    fireEvent.click(screen.getByRole('button', { name: '5' }));
+    expect(screen.getByRole('button', { name: 'Opus' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: '5' }).getAttribute('aria-pressed')).toBe('true');
   });
 
   it('spawns exactly the pinned model the picker shows', () => {
     renderControl();
     openPopover();
-    fireEvent.click(screen.getByRole('button', { name: 'Opus 5' }));
-
-    expect(screen.getByText('Claude · Opus 5, low effort')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
+    fireEvent.click(screen.getByRole('button', { name: '5' }));
 
     confirm();
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
@@ -298,5 +298,15 @@ describe('CreateAgentPopover', () => {
 
     expect(trigger.className).toContain('h-7');
     expect(trigger.parentElement?.className).not.toContain('pl-2');
+  });
+
+  it('keeps the spawn action in the fixed footer at a short window height', () => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 220 });
+    renderControl();
+    openPopover();
+    const action = screen.getByRole('button', { name: 'Spawn Generalist' });
+    const footer = action.closest('footer');
+    expect(footer?.className).toContain('shrink-0');
+    expect(footer?.previousElementSibling?.getAttribute('role')).toBe('separator');
   });
 });

@@ -39,13 +39,13 @@ export const PhaseTransitionCard = ({ item }: Props) => {
 
   return (
     <TranscriptDisclosure
-      tone="primary"
+      tone="neutral"
       open={open && hasContext}
       bodyClassName="gap-2"
       header={
         <TranscriptRowHeader
           grouped
-          tone="primary"
+          tone="neutral"
           icon={<Milestone size={12} aria-hidden />}
           eyebrow="step"
           open={open}

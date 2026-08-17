@@ -2,10 +2,9 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import type { TranscriptRow } from '../../utils/cluster-operations';
-import type { SpawnedChild } from '../../../../shared/utils/spawnedChildren';
 
 vi.mock('../TranscriptCards', () => ({
   TranscriptCard: ({ item }: { item: TranscriptItem }) => <div data-testid="card">{item.kind}</div>,
@@ -38,25 +37,9 @@ const userText = (key: string, at: Date): TranscriptItem => ({
   at: at.toISOString() as IsoDateTime,
 });
 
-const spawnedChild = (name: string, ordinal: number): SpawnedChild => ({
-  agent: {
-    id: `${name}-id` as AgentId,
-    sessionId: 's1',
-    ordinal,
-    name,
-    status: 'running',
-  } as Agent,
-  index: ordinal,
-  total: 2,
-  status: 'running',
-  assignment: `look at ${name}`,
-});
-
 const renderRows = (
   rows: ReadonlyArray<TranscriptRow>,
   oqByTurnOrdinal: ReadonlyMap<number | null, ReadonlyArray<never>> = new Map(),
-  spawned: ReadonlyArray<SpawnedChild> = [],
-  spawnAnchorKey: string | null = null,
 ) =>
   render(
     <ul>
@@ -72,8 +55,6 @@ const renderRows = (
         thinkingContext="think"
         onRetryError={retryErrorSpy}
         retryingErrorRunId={null}
-        spawned={spawned}
-        spawnAnchorKey={spawnAnchorKey}
       />
     </ul>,
   );
@@ -147,33 +128,6 @@ describe('TranscriptRows', () => {
     ]);
     expect(screen.getAllByTestId('card')).toHaveLength(2);
     expect(container.querySelectorAll('li')).toHaveLength(4);
-  });
-
-  it('keeps the spawned-children record in the transcript once turns exist', () => {
-    const { container } = renderRows(
-      [
-        itemRow(userText('u1', new Date(2026, 4, 15, 9, 0, 0))),
-        itemRow({ kind: 'assistant_text', key: 'a1', text: 'splitting' }),
-        itemRow({ kind: 'assistant_text', key: 'a2', text: 'later turn' }),
-      ],
-      new Map(),
-      [spawnedChild('auth', 0), spawnedChild('routing', 1)],
-      'a1',
-    );
-    expect(screen.getByTestId('spawned-children-card')).toBeTruthy();
-    expect(screen.getByText('look at auth')).toBeTruthy();
-    const listItems = [...container.querySelectorAll(':scope > ul > li')];
-    const cardIndex = listItems.findIndex(
-      (node) => node.querySelector('[data-testid="spawned-children-card"]') !== null,
-    );
-    expect(cardIndex).toBe(3);
-    expect(listItems).toHaveLength(5);
-  });
-
-  it('renders the spawned-children record on its own when the transcript is empty', () => {
-    renderRows([], new Map(), [spawnedChild('auth', 0)], null);
-    expect(screen.getByTestId('spawned-children-card')).toBeTruthy();
-    expect(screen.getByText('look at auth')).toBeTruthy();
   });
 
   it('renders future and null ordinal question buckets at the transcript tail', () => {

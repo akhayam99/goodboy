@@ -599,7 +599,7 @@ describe('QuestionsPane', () => {
       expect(screen.queryByTestId(/^answered-card-/)).toBeNull();
     });
 
-    it('hides answered cards behind the Answered toggle by default', () => {
+    it('shows answered cards without interaction', () => {
       const scout = mkAgent('agent_scout', undefined, 'scout');
       setupStore({
         openQuestions: [],
@@ -615,11 +615,11 @@ describe('QuestionsPane', () => {
       });
 
       render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.queryByTestId('answered-card-aq1')).toBeNull();
-      expect(screen.getByRole('button', { name: /answered/i })).toBeDefined();
+      expect(screen.getByTestId('answered-card-aq1')).toBeDefined();
+      expect(screen.getByRole('region', { name: 'Answered history' })).toBeDefined();
     });
 
-    it('renders answered cards grouped by creator agent once the toggle is opened', () => {
+    it('renders answered cards grouped by creator agent', () => {
       const scout = mkAgent('agent_scout', undefined, 'scout');
       setupStore({
         openQuestions: [],
@@ -641,7 +641,6 @@ describe('QuestionsPane', () => {
       });
 
       render(<QuestionsPane session={BASE_SESSION} />);
-      fireEvent.click(screen.getByRole('button', { name: /answered/i }));
       expect(screen.getByTestId('answered-card-aq1')).toBeDefined();
       expect(screen.getByTestId('answered-card-aq2')).toBeDefined();
       expect(screen.getByText('scout')).toBeDefined();
@@ -682,7 +681,6 @@ describe('QuestionsPane', () => {
       });
 
       render(<QuestionsPane session={BASE_SESSION} />);
-      fireEvent.click(screen.getByRole('button', { name: /answered/i }));
       expect(screen.getByText('scout')).toBeDefined();
       expect(screen.getByText('fixer')).toBeDefined();
       expect(screen.getByTestId('answered-card-aq1')).toBeDefined();
@@ -712,7 +710,6 @@ describe('QuestionsPane', () => {
       });
 
       render(<QuestionsPane session={BASE_SESSION} />);
-      fireEvent.click(screen.getByRole('button', { name: /answered/i }));
       const agentLabels = screen.getAllByText(/.*-agent$/);
       expect(agentLabels[0]!.textContent).toBe('newer-agent');
       expect(agentLabels[1]!.textContent).toBe('older-agent');
@@ -734,12 +731,11 @@ describe('QuestionsPane', () => {
       });
 
       render(<QuestionsPane session={BASE_SESSION} />);
-      fireEvent.click(screen.getByRole('button', { name: /answered/i }));
       fireEvent.click(screen.getByText('scout'));
       expect(mockSelectAgent).toHaveBeenCalledWith(SESSION_ID, scout.id);
     });
 
-    it('renders answered section below open questions when the toggle is opened', () => {
+    it('renders answered section below open questions', () => {
       const scout = mkAgent('agent_scout', undefined, 'scout');
       setupStore({
         openQuestions: [mkQuestion('open1', { createdByAgentId: scout.id })],
@@ -756,9 +752,6 @@ describe('QuestionsPane', () => {
 
       render(<QuestionsPane session={BASE_SESSION} />);
       expect(screen.getByTestId('question-card-open1')).toBeDefined();
-      expect(screen.queryByTestId('answered-card-aq1')).toBeNull();
-
-      fireEvent.click(screen.getByRole('button', { name: /answered/i }));
       expect(screen.getByTestId('answered-card-aq1')).toBeDefined();
     });
   });

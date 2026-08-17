@@ -23,7 +23,6 @@ import {
 } from '../../../features/settings/verbosity';
 import { AxesSection } from './AxesSection';
 import { verbosityTone } from './chipTone';
-import { CatalogGrid } from './CatalogGrid';
 import { PickerChip } from './PickerChip';
 import { PickerSection } from './PickerSection';
 import { ProviderGrid } from './ProviderGrid';
@@ -215,7 +214,9 @@ export const RoutingPicker = ({
       return;
     }
     popupRef.current
-      ?.querySelector<HTMLButtonElement>('section[aria-label="Models"] button[aria-pressed="true"]')
+      ?.querySelector<HTMLButtonElement>(
+        '[role="group"][aria-label="Model"] button[aria-pressed="true"]',
+      )
       ?.focus();
   }, [isViewProviderConnected, open, popupRef]);
 
@@ -376,7 +377,7 @@ export const RoutingPicker = ({
                 <Divider />
               </>
             )}
-            <PickerSection label="Provider" hint="Which CLI agent runs the turn">
+            <PickerSection label="Provider">
               {connectedProviders.length === 0 && availability === 'run' ? (
                 <NoConnectedProviders onNavigate={close} />
               ) : (
@@ -431,17 +432,6 @@ export const RoutingPicker = ({
                 </section>
               )}
             {isViewProviderConnected && connectProvider == null && (
-              <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[15rem]">
-                <CatalogGrid
-                  catalog={viewedRouting.catalog}
-                  selectedKey={viewedRouting.model}
-                  recommendedKey={viewedRecommendedSelection?.key}
-                  advisoryKeys={advisoryKeys}
-                  onSelect={onPickModel}
-                />
-              </ScrollFade>
-            )}
-            {isViewProviderConnected && connectProvider == null && (
               <>
                 <Divider />
                 <AxesSection
@@ -450,6 +440,15 @@ export const RoutingPicker = ({
                   canEditEffort={editableEffort != null}
                   notice={clampNotice}
                   hasMaxModeAdvisory={hasMaxModeAdvisory}
+                  onModel={(modelKey) => {
+                    const nextModel = viewedRouting.catalog.find(
+                      (candidate) => candidate.key === modelKey,
+                    );
+                    if (nextModel == null) {
+                      return;
+                    }
+                    onPickModel(nextModel);
+                  }}
                   onEffort={(level) =>
                     onPickSelection({
                       next: { ...viewedRouting.selection, effort: level },

@@ -1,6 +1,4 @@
-import { useState } from 'react';
-import { Archive, BookmarkPlus, Check } from 'lucide-react';
-import { CountToggle } from '@goodboy/ui';
+import { BookmarkPlus } from 'lucide-react';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
@@ -16,6 +14,9 @@ import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { FocusedPane } from '../../../../../shared/components/PaneShell/FocusedPane';
 import { GhostActionButton } from '@goodboy/ui';
+import { FinishedRegister } from '../../../../../shared/components/FinishedRegister';
+
+const VISIBLE_FINISHED_COUNT = 30;
 
 type Props = {
   readonly session: Session;
@@ -35,7 +36,6 @@ export const WorkflowsPane = ({ session }: Props) => {
   const orchestratingWorkflowRuns = useAppStore((state) => state.orchestratingWorkflowRuns);
   const setFocusedWorkflowRun = useAppStore((state) => state.setFocusedWorkflowRun);
   const restoreWorkflow = useAppStore((state) => state.restoreWorkflow);
-  const [showFiled, setShowFiled] = useState(false);
   const { agentsByRunId, discarded, completed, active } = splitWorkflowRuns({
     attachedRuns,
     agents: phaseRuns,
@@ -48,6 +48,8 @@ export const WorkflowsPane = ({ session }: Props) => {
   const hasActiveRuns = active.length > 0;
   const shouldShowHeaderAttach = hasRuns && (focusedRun != null || hasActiveRuns);
   const shouldShowEmptyCard = hasRuns && focusedRun == null && !hasActiveRuns;
+  const finishedRunIds = new Set([...completed, ...discarded].map(({ run }) => run.id));
+  const finished = attachedRuns.filter(({ run }) => finishedRunIds.has(run.id));
 
   const renderCard = ({ run, workflow }: { run: WorkflowRun; workflow: Workflow }) => {
     const agents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
@@ -120,41 +122,26 @@ export const WorkflowsPane = ({ session }: Props) => {
           tone={CONCEPT_TONE.workflows}
           icon={CONCEPT_ICONS.workflows}
           title="Nothing running"
-          description={
-            completed.length > 0
-              ? 'Every attached workflow is done. Reveal the completed ones to reread them, or attach another.'
-              : 'No live workflow on this session. Attach one to start.'
-          }
+          description="Every attached workflow is done. Finished workflows remain below for reference."
           action={<WorkflowAttachButton sessionId={sessionId} placement="header" />}
         />
       ) : null}
       {active.length > 0 ? <ul className="flex flex-col gap-2">{active.map(renderCard)}</ul> : null}
-      <div className="flex justify-center">
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <CountToggle
-            label="Completed"
-            itemsLabel="workflows"
-            count={completed.length}
-            isShown={showFiled}
-            icon={Check}
-            onChange={setShowFiled}
-          />
-          <CountToggle
-            label="Discarded"
-            itemsLabel="workflows"
-            count={discarded.length}
-            isShown={showFiled}
-            icon={Archive}
-            onChange={setShowFiled}
-          />
-        </div>
-      </div>
-      {showFiled && completed.length > 0 ? (
-        <ul className="flex flex-col gap-2">{completed.map(renderCard)}</ul>
-      ) : null}
-      {showFiled && discarded.length > 0 ? (
-        <ul className="flex flex-col gap-2">{discarded.map(renderCard)}</ul>
-      ) : null}
+      <FinishedRegister
+        label="Finished"
+        count={finished.length}
+        visible={
+          <ul className="flex flex-col gap-2">
+            {finished.slice(0, VISIBLE_FINISHED_COUNT).map(renderCard)}
+          </ul>
+        }
+        earlierCount={Math.max(0, finished.length - VISIBLE_FINISHED_COUNT)}
+        earlier={
+          <ul className="flex flex-col gap-2">
+            {finished.slice(VISIBLE_FINISHED_COUNT).map(renderCard)}
+          </ul>
+        }
+      />
     </PaneShell>
   );
 };

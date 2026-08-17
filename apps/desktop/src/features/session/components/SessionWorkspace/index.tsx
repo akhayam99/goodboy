@@ -24,7 +24,6 @@ import { Pane } from './parts/Pane';
 import { SessionStudioLayer } from './parts/SessionStudioLayer';
 import { QuestionsPane } from './parts/QuestionsPane';
 import { ContextPane } from './parts/ContextPane';
-import { TimelinePane } from './parts/TimelinePane';
 import { ResolvePane } from './parts/ResolvePane';
 import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
@@ -44,6 +43,7 @@ import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { ExplorePane } from '../../../explore/components/ExplorePane';
 import { LENS_LABEL, SIMPLE_LENSES } from '../../lens-labels';
+import { contextRegionFor, resolveLensSurface } from '../../lens-surface';
 import { LensEmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
@@ -56,8 +56,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const sessionId = session.id as SessionId;
   const [inspectedResolverId, setInspectedResolverId] = useState<AgentId | null>(null);
   const [inspectedAgentId, setInspectedAgentId] = useState<AgentId | null>(null);
-  const [showCompletedAgents, setShowCompletedAgents] = useState(false);
-  const [showCompletedResolvers, setShowCompletedResolvers] = useState(false);
   const hasInitializedResolverInspector = useRef(false);
   const hasInitializedAgentInspector = useRef(false);
   const storedActiveLens = useAppStore((s) => s.activeLens[sessionId]);
@@ -99,6 +97,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   }, [activeLens, sessionId, setActiveLens]);
 
   const lens: LensKind | null = activeLens ?? null;
+  const surface = resolveLensSurface({ lens });
   const isOverviewLoaded = areAgentsLoaded && arePlansLoaded;
   const isFreshOverviewLayout = session.workflowRuns.every((run) => run.discardedAt != null);
   const onRetryOverview = () => {
@@ -276,7 +275,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
           className={cn('absolute inset-0 z-0', !showLens && 'invisible pointer-events-none')}
           inert={!showLens}
         >
-          {lens === null ? (
+          {surface === 'overview' ? (
             isOverviewLoaded ? (
               <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
             ) : (
@@ -287,7 +286,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             )
           ) : null}
           {lens === 'questions' ? <QuestionsPane session={session} /> : null}
-          {lens === 'timeline' ? <TimelinePane session={session} /> : null}
           {lens === 'plans' ? <PlanStudio sessionId={sessionId} /> : null}
           {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
           {lens === 'resolve' ? (
@@ -296,8 +294,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               meta={resolveMeta}
               inspectedResolverId={inspectedResolverId}
               onInspectResolver={setInspectedResolverId}
-              showCompleted={showCompletedResolvers}
-              onShowCompletedChange={setShowCompletedResolvers}
             />
           ) : null}
           {lens === 'scripts' ? (
@@ -313,11 +309,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               />
             </PaneShell>
           ) : null}
-          {lens === 'context' ||
-          lens === 'goal' ||
-          lens === 'decisions' ||
-          lens === 'last_output_summary' ? (
-            <ContextPane session={session} initialRegion={lens === 'context' ? undefined : lens} />
+          {surface === 'context' ? (
+            <ContextPane session={session} initialRegion={contextRegionFor({ lens })} />
           ) : null}
           {lens === 'pr' ? <PrPane session={session} onSelectLens={onSelectLens} /> : null}
           {lens === 'review' ? <ReviewBoardPane session={session} /> : null}
@@ -407,8 +400,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               meta={agentsMeta}
               inspectedAgentId={inspectedAgentId}
               onInspectAgent={setInspectedAgentId}
-              showCompleted={showCompletedAgents}
-              onShowCompletedChange={setShowCompletedAgents}
             />
           </Pane>
         </div>

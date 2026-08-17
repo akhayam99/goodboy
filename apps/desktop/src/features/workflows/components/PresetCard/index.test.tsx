@@ -23,34 +23,23 @@ const workflow = (over: Partial<Workflow> = {}): Workflow => ({
 const renderCard = (template: Workflow) =>
   render(
     <ul>
-      <PresetCard
-        template={template}
-        active={false}
-        onSelect={vi.fn()}
-        onDuplicate={vi.fn()}
-        onDelete={vi.fn()}
-      />
+      <PresetCard template={template} active={false} onSelect={vi.fn()} />
     </ul>,
   );
 
 describe('PresetCard', () => {
-  it('duplicates from the row action', () => {
-    const onDuplicate = vi.fn();
+  it('uses the row only to open a workflow', () => {
+    const onSelect = vi.fn();
     render(
       <ul>
-        <PresetCard
-          template={workflow()}
-          active={false}
-          onSelect={vi.fn()}
-          onDuplicate={onDuplicate}
-          onDelete={vi.fn()}
-        />
+        <PresetCard template={workflow()} active={false} onSelect={onSelect} />
       </ul>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Duplicate Refactor' }));
+    fireEvent.click(screen.getByRole('button', { name: /Refactor/ }));
 
-    expect(onDuplicate).toHaveBeenCalledOnce();
+    expect(onSelect).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Duplicate Refactor' })).toBeNull();
   });
 
   it('names the origin of the workflow', () => {

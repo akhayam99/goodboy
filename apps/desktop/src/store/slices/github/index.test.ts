@@ -90,6 +90,7 @@ vi.mock('@goodboy/db', () => ({
   listContextSlotsForSession: vi.fn(async () => []),
   insertContextSlotHistory: vi.fn(async () => undefined),
   listContextSlotHistory: vi.fn(async () => []),
+  countContextSlotHistoryForSession: vi.fn(async () => ({})),
   listMessagesForAgent: vi.fn(async () => []),
   listMessagesForSession: vi.fn(async () => []),
   listTurnEventsForAgent: vi.fn(async () => []),
