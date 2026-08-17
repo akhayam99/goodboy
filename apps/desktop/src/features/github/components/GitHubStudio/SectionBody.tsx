@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { PrDetail } from '@goodboy/types';
-import { Skeleton } from '@goodboy/ui';
+import { ClampedProse, PANE_RHYTHM, Skeleton } from '@goodboy/ui';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 type Props = {
@@ -13,13 +13,13 @@ type Props = {
 
 export const SectionBody = ({ detail, detailLoading, detailError, onRetry, children }: Props) => {
   return (
-    <div className="flex w-full flex-col gap-3">
+    <div className={PANE_RHYTHM.stack}>
       {detailError != null ? (
         <div className="flex items-center gap-1.5 text-xs text-danger">
           <AlertCircle size={13} aria-hidden />
-          <span className="min-w-0 flex-1 truncate" title={detailError}>
-            {detailError}
-          </span>
+          <div className="min-w-0 flex-1">
+            <ClampedProse text={detailError} lines={2} className="text-xs text-danger" />
+          </div>
           <button
             type="button"
             onClick={onRetry}

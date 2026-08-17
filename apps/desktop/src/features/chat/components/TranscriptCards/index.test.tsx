@@ -57,7 +57,7 @@ describe('TranscriptCard', () => {
     expect(screen.queryByRole('button', { name: 'retry' })).toBeNull();
   });
 
-  it('truncates long transcript errors and reveals full text on demand', async () => {
+  it('discloses long transcript errors in place', async () => {
     const user = userEvent.setup();
     const longMessage =
       'provider stderr: ' +
@@ -74,8 +74,10 @@ describe('TranscriptCard', () => {
         }}
       />,
     );
-    expect(screen.queryByText(longMessage)).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'show full error' }));
+    const disclosure = screen.getByRole('button', { name: 'Show more' });
+    expect(disclosure.getAttribute('aria-expanded')).toBe('false');
+    await user.click(disclosure);
+    expect(disclosure.getAttribute('aria-expanded')).toBe('true');
     expect(screen.getByText(longMessage)).toBeTruthy();
   });
 });

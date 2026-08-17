@@ -57,7 +57,7 @@ export const AgentInspector = ({ sessionId, agentId, onClose }: Props) => {
         onClose={onClose}
       />
       <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.rail.body}>
-        <div className="flex flex-col gap-4">
+        <div className={PANE_RHYTHM.stack}>
           <IdentitySection
             agent={agent}
             kind={kind}

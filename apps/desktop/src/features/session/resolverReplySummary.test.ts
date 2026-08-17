@@ -18,11 +18,10 @@ describe('resolverReplySummary', () => {
     expect(resolverReplySummary({ text })).toBe('Use the translated label instead.');
   });
 
-  it('truncates a long first sentence at the character cap with an ellipsis', () => {
+  it('preserves a long first sentence for rendering through a disclosure', () => {
     const longSentence = `${'word '.repeat(30).trim()}.`;
     const result = resolverReplySummary({ text: longSentence });
-    expect(result.endsWith('...')).toBe(true);
-    expect(result.length).toBeLessThanOrEqual(123);
+    expect(result).toBe(longSentence);
   });
 
   it('returns an empty string for blank text', () => {
