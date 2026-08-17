@@ -54,6 +54,7 @@ const renderCrumb = (
       selectedAgentId={selectedAgentId}
       overlayHome={overlayHome}
       homeLabel="Agents"
+      onOverview={vi.fn()}
       onHome={onHome}
     />,
   );

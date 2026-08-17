@@ -19,6 +19,7 @@ type Props = {
   readonly overlayHome: AgentHomeLens;
   readonly overlayHomeLabel: string;
   readonly showWorkflowStrip: boolean;
+  readonly onOverview: () => void;
   readonly onBack: () => void;
   readonly onOpenWorkflow: () => void;
 };
@@ -31,6 +32,7 @@ export const AgentOverlay = ({
   overlayHome,
   overlayHomeLabel,
   showWorkflowStrip,
+  onOverview,
   onBack,
   onOpenWorkflow,
 }: Props) => {
@@ -57,6 +59,7 @@ export const AgentOverlay = ({
     overlayHome,
     overlayHomeLabel,
     showWorkflowStrip,
+    onOverview,
     onBack,
     onOpenWorkflow,
   });

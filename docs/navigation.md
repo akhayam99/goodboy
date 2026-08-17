@@ -111,14 +111,14 @@ parked beside it.
 - **The trail starts at `Overview`, and the session name is not a crumb.** The
   sidebar already carries the session identity, so repeating it in the trail
   spends a crumb on something the user is already looking at.
-- At most three crumbs. The last is the current location and is never
-  clickable. A list view never pre-populates a crumb for an item the user has
-  not opened yet.
+- The last crumb is the current location and is never clickable. A list view
+  never pre-populates a crumb for an item the user has not opened yet.
 - **An integration trail hangs off its own tool**, named as the sidebar names
   it (GitHub, GitLab, Jira, Linear, Sentry, Slack), at the same depth as any
   other lens: a studio belongs under its tool, never under another tool's lens.
-- **With an agent open the trail is replaced, never nested**:
-  `{HomeLens} > {Agent}`, at most two crumbs, never rooted at `Overview`.
+- **Opening a child extends the trail and preserves every ancestor**:
+  `Overview > {HomeLens} > {Agent}`. Selecting a sibling changes only the last
+  crumb and the child region. The lens shell remains mounted beneath it.
 - **The home lens is resolved, not inherited.** If the active lens hosts an
   agent list (`agents`, `resolve`, `workflows`) it wins; otherwise the agent's
   own home lens, falling back to `agents`. Standing in Agents with a
@@ -126,10 +126,10 @@ parked beside it.
   step cannot rename it out from under the user.
 - **A crumb with siblings is a switcher**: plain text when the agent is alone
   in its home lens, otherwise a popover that switches the open agent in place.
-- **The workflow case swaps the whole control**: `{WorkflowKind} > {Step}`,
-  plus a third crumb for implementer clusters (the child's name, or
-  `{done}/{total} clusters` when the root is selected). No separate step strip,
-  no "Part of {Workflow}" line.
+- **The workflow case extends the same control**:
+  `Overview > {WorkflowKind} > {Step}`, plus a fourth crumb for implementer
+  clusters (the child's name, or `{done}/{total} clusters` when the root is
+  selected). No separate step strip, no "Part of {Workflow}" line.
 
 ## Top bar
 
