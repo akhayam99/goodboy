@@ -86,6 +86,7 @@ export const ProviderPicker = ({
                 connectedProviders={connectedProviders}
                 activeProvider={provider}
                 disableDisconnected
+                showDisconnected
                 onSelect={(nextProvider) => {
                   onProvider(nextProvider);
                   close();

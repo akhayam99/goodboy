@@ -35,6 +35,7 @@ import { resolvePickerSelection } from './resolvePickerSelection';
 import { resolveRouting, type Recommendation } from './resolveRouting';
 import { selectionForModel } from './selectionForModel';
 import { useCursorMaxModeModels } from './useCursorMaxModeModels';
+import { NoConnectedProviders } from './NoConnectedProviders';
 import { ProviderInlineConnect } from '../../../features/providers/components/ProviderInlineConnect';
 
 const CHIP_GROUP_CLASS_NAME = 'flex flex-wrap gap-1 bg-subtle px-2.5';
@@ -76,6 +77,7 @@ export type Props = {
   readonly disabledTitle?: string;
   readonly ariaLabel?: string;
   readonly openEvent?: string;
+  readonly availability?: 'run' | 'setup';
 };
 
 export const RoutingPicker = ({
@@ -97,6 +99,7 @@ export const RoutingPicker = ({
   disabledTitle,
   ariaLabel,
   openEvent,
+  availability = 'run',
 }: Props) => {
   const [isProviderConnectionInFlight, setIsProviderConnectionInFlight] = useState(false);
   const {
@@ -374,31 +377,36 @@ export const RoutingPicker = ({
               </>
             )}
             <PickerSection label="Provider" hint="Which CLI agent runs the turn">
-              <ProviderGrid
-                connectedProviders={connectedProviders}
-                activeProvider={isViewingAuto ? null : viewProvider}
-                secondaryProvider={isViewingAuto ? (recommendedProvider ?? null) : null}
-                onSelect={(id) => {
-                  const isConnected = connectedProviders.includes(id);
-                  setViewProvider(id);
-                  setIsViewingAuto(false);
-                  setConnectProvider(null);
-                  if (!isConnected) {
-                    const preview = remapModelSelection({
-                      sourceProvider: viewProvider,
-                      targetProvider: id,
-                      selection: viewedRouting.selection,
-                    });
-                    setDraftSelection(
-                      id === 'gemini'
-                        ? { ...preview.selection, effort: viewedRouting.effort }
-                        : preview.selection,
-                    );
-                    return;
-                  }
-                  onPickProvider({ next: id, viewedProvider: id });
-                }}
-              />
+              {connectedProviders.length === 0 && availability === 'run' ? (
+                <NoConnectedProviders onNavigate={close} />
+              ) : (
+                <ProviderGrid
+                  connectedProviders={connectedProviders}
+                  activeProvider={isViewingAuto ? null : viewProvider}
+                  secondaryProvider={isViewingAuto ? (recommendedProvider ?? null) : null}
+                  showDisconnected={availability === 'setup'}
+                  onSelect={(id) => {
+                    const isConnected = connectedProviders.includes(id);
+                    setViewProvider(id);
+                    setIsViewingAuto(false);
+                    setConnectProvider(null);
+                    if (isConnected === false) {
+                      const preview = remapModelSelection({
+                        sourceProvider: viewProvider,
+                        targetProvider: id,
+                        selection: viewedRouting.selection,
+                      });
+                      setDraftSelection(
+                        id === 'gemini'
+                          ? { ...preview.selection, effort: viewedRouting.effort }
+                          : preview.selection,
+                      );
+                      return;
+                    }
+                    onPickProvider({ next: id, viewedProvider: id });
+                  }}
+                />
+              )}
             </PickerSection>
             <Divider />
             {connectProvider != null ? (
@@ -410,16 +418,18 @@ export const RoutingPicker = ({
                 />
               </section>
             ) : null}
-            {!isViewProviderConnected && connectProvider == null && (
-              <section aria-label="Models" className="flex items-center gap-2 p-3">
-                <p className="flex-1 text-xs text-muted-foreground">
-                  {PROVIDER_LABEL[viewProvider]} is not connected
-                </p>
-                <Button size="sm" onClick={() => setConnectProvider(viewProvider)}>
-                  Connect {PROVIDER_LABEL[viewProvider]}
-                </Button>
-              </section>
-            )}
+            {connectedProviders.length > 0 &&
+              !isViewProviderConnected &&
+              connectProvider == null && (
+                <section aria-label="Models" className="flex items-center gap-2 p-3">
+                  <p className="flex-1 text-xs text-muted-foreground">
+                    {PROVIDER_LABEL[viewProvider]} is not connected
+                  </p>
+                  <Button size="sm" onClick={() => setConnectProvider(viewProvider)}>
+                    Connect {PROVIDER_LABEL[viewProvider]}
+                  </Button>
+                </section>
+              )}
             {isViewProviderConnected && connectProvider == null && (
               <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[15rem]">
                 <CatalogGrid

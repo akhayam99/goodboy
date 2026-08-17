@@ -53,6 +53,9 @@ beforeEach(() => {
     setAgentConfig,
     workspaceOverrides: {},
     sessionPhaseRuns: {},
+    agentProviderOverride: {},
+    agentModelOverride: {},
+    agentEffortOverride: {},
   });
 });
 
@@ -101,6 +104,24 @@ describe('useAgentSwitchSync', () => {
     expect(spies.setRightSizeDismissed).toHaveBeenCalledWith(false);
     expect(spies.setScopePending).toHaveBeenCalledWith(null);
     expect(spies.setScopeNudgeEventId).toHaveBeenCalledWith(null);
+  });
+
+  it('restores a live workflow routing override before the original agent routing', () => {
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [SESSION.id]: [
+          { id: AGENT_B, providerOverride: 'anthropic', modelOverride: 'claude-haiku-4-5' },
+        ],
+      },
+      agentProviderOverride: { [AGENT_B]: 'anthropic' },
+      agentModelOverride: { [AGENT_B]: 'claude-opus-5' },
+      agentEffortOverride: { [AGENT_B]: 'high' },
+    } as never);
+    const { rerender } = mount({ provider: null, model: null, effort: 'low' as EffortLevel });
+    rerender({ selectedAgentId: AGENT_B });
+    expect(spies.setSelectedProviderState).toHaveBeenCalledWith('anthropic');
+    expect(spies.setSelectedModelState).toHaveBeenCalledWith('claude-opus-5');
+    expect(spies.setEffortState).toHaveBeenCalledWith('high');
   });
 
   it('clears the routing when the incoming agent has none', () => {

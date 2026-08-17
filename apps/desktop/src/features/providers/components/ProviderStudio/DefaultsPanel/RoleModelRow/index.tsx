@@ -189,6 +189,7 @@ export const RoleModelRow = ({
         />
         <div className="flex w-80 flex-col gap-1">
           <RoutingPicker
+            availability="setup"
             ariaLabel={`${label} routing`}
             connectedProviders={availableProviderIds}
             provider={providerId}
@@ -242,6 +243,7 @@ export const RoleModelRow = ({
               <span className="text-2xs text-muted-foreground">Fallback</span>
               {isFallbackPickerVisible ? (
                 <RoutingPicker
+                  availability="setup"
                   variant="pill"
                   align="end"
                   ariaLabel={`${label} fallback routing`}

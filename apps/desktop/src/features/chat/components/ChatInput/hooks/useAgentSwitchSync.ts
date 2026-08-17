@@ -67,9 +67,21 @@ export const useAgentSwitchSync = ({
             (r) => r.id === selectedAgentId,
           )
         : null;
-    const restoredProvider = asProvider(restoredAgent?.providerOverride);
-    const restoredModel = restoredAgent?.modelOverride ?? null;
-    const restoredEffort = asEffortLevel(restoredAgent?.effort);
+    const state = useAppStore.getState();
+    const restoredProvider = asProvider(
+      selectedAgentId !== null
+        ? (state.agentProviderOverride[selectedAgentId] ?? restoredAgent?.providerOverride)
+        : null,
+    );
+    const restoredModel =
+      selectedAgentId !== null
+        ? (state.agentModelOverride[selectedAgentId] ?? restoredAgent?.modelOverride ?? null)
+        : null;
+    const restoredEffort = asEffortLevel(
+      selectedAgentId !== null
+        ? (state.agentEffortOverride[selectedAgentId] ?? restoredAgent?.effort)
+        : null,
+    );
     const restoredVerbosity =
       (restoredAgent?.verbosity as VerbosityLevel | undefined) ?? workspaceDefaultVerbosity ?? null;
 

@@ -220,7 +220,7 @@ describe('RoutingPicker', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const providerRow = screen.getByRole('button', { name: 'Cursor' }).parentElement;
-    expect(providerRow?.querySelectorAll('svg')).toHaveLength(providers.length);
+    expect(providerRow?.querySelectorAll('svg')).toHaveLength(baseProps.connectedProviders.length);
   });
 
   it('reports the picked model and keeps the popover open', () => {
@@ -485,16 +485,32 @@ describe('RoutingPicker', () => {
     expect(screen.getByRole('dialog').textContent).toContain('Replies');
   });
 
-  it('shows every registry provider when only one is connected', () => {
+  it('offers only connected providers', () => {
     render(<RoutingPicker {...baseProps} connectedProviders={['anthropic']} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    for (const id of providers) {
-      expect(screen.getByRole('button', { name: PROVIDER_LABEL[id] })).toBeDefined();
-    }
+    expect(screen.getByRole('button', { name: 'Claude' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Codex' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Cursor' })).toBeNull();
   });
 
-  it('connects an unconnected provider inside the picker without selecting it', () => {
-    const onProvider = vi.fn();
+  it('keeps a disconnected selection visible and marked', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        connectedProviders={['anthropic']}
+        provider="codex"
+        model="gpt-5.6"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    expect(screen.getByRole('button', { name: 'Codex' }).getAttribute('title')).toBe(
+      'Codex is not connected',
+    );
+    expect(screen.getByText('Codex is not connected')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Cursor' })).toBeNull();
+  });
+
+  it('links the empty provider state to the providers studio', () => {
     const events: CustomEvent[] = [];
     const onOpenProviderStudio = (event: Event) => {
       if (event instanceof CustomEvent) {
@@ -502,17 +518,11 @@ describe('RoutingPicker', () => {
       }
     };
     window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
-    render(
-      <RoutingPicker {...baseProps} connectedProviders={['anthropic']} onProvider={onProvider} />,
-    );
+    render(<RoutingPicker {...baseProps} connectedProviders={[]} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'Codex' }));
-    expect(onProvider).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Connect Codex' }));
-    expect(screen.getByRole('dialog')).toBeDefined();
-    expect(screen.getByRole('region', { name: 'Connect provider' })).toBeDefined();
-    expect(screen.getByText(/Connect codex/i)).toBeDefined();
-    expect(events).toHaveLength(0);
+    expect(screen.getByText('No providers connected')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Open providers' }));
+    expect(events).toHaveLength(1);
     window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
   });
 

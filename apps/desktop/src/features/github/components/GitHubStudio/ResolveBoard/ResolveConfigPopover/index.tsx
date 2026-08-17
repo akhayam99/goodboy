@@ -124,14 +124,6 @@ export const ResolveConfigPopover = ({
                 onPickModel={(model, effort) =>
                   onChange({ ...config, provider: viewProvider, model, effort })
                 }
-                onConnectProvider={(provider) => {
-                  window.dispatchEvent(
-                    new CustomEvent('goodboy:open-provider-studio', {
-                      detail: { providerId: provider },
-                    }),
-                  );
-                  close();
-                }}
               />
               <Divider />
             </PopoverBody>
