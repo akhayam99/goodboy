@@ -28,12 +28,12 @@
     "prepare": "lefthook install"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.2.1",
-    "@commitlint/config-conventional": "^21.2.0",
-    "knip": "^6.29.0",
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "knip": "^6.32.2",
     "lefthook": "^2.1.10",
     "prettier": "^3.9.6",
-    "turbo": "^2.10.7",
+    "turbo": "^2.10.10",
     "typescript": "^5.6.3"
   },
   "pnpm": {
