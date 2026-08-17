@@ -277,6 +277,15 @@ describe('useOnboardingWizard', () => {
       expect(result.current.hasLinear).toBe(false);
       expect(result.current.hasSentry).toBe(false);
     });
+
+    it('flags Slack independently of Linear and Sentry', () => {
+      workspaces.push({ id: 'w1' });
+      workspaceIntegrations = { w1: [{ provider: 'slack' }] };
+      const { result } = renderHook(() => useOnboardingWizard());
+      expect(result.current.hasSlack).toBe(true);
+      expect(result.current.hasLinear).toBe(false);
+      expect(result.current.hasSentry).toBe(false);
+    });
   });
 
   describe('refreshGithubStatus', () => {

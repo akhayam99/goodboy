@@ -93,6 +93,7 @@ export const OnboardingWizard = () => {
     hasCodeHost,
     hasLinear,
     hasJira,
+    hasSlack,
     hasSentry,
     refreshGithubStatus,
   } = useOnboardingWizard();
@@ -210,10 +211,15 @@ export const OnboardingWizard = () => {
       : { label: 'Skip for now', onClick: goNext, variant: 'secondary' };
   } else if (step === 5) {
     body = (
-      <TrackerStep workspaceId={workspaceId} linearConnected={hasLinear} jiraConnected={hasJira} />
+      <TrackerStep
+        workspaceId={workspaceId}
+        linearConnected={hasLinear}
+        jiraConnected={hasJira}
+        slackConnected={hasSlack}
+      />
     );
     cta =
-      hasLinear || hasJira
+      hasLinear || hasJira || hasSlack
         ? { label: 'Continue', onClick: goNext, variant: 'primary' }
         : { label: 'Skip for now', onClick: goNext, variant: 'secondary' };
   } else if (step === 6) {

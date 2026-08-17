@@ -4,15 +4,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
 
+type FormBodyMockProps = {
+  readonly workspaceId: WorkspaceId;
+};
+
 vi.mock('../../../integrations/linear/LinearFormBody', () => ({
-  LinearFormBody: ({ workspaceId }: { workspaceId: WorkspaceId }) => (
+  LinearFormBody: ({ workspaceId }: FormBodyMockProps) => (
     <div data-testid="linear-form">{workspaceId}</div>
   ),
 }));
 
 vi.mock('../../../integrations/jira/JiraFormBody', () => ({
-  JiraFormBody: ({ workspaceId }: { workspaceId: WorkspaceId }) => (
+  JiraFormBody: ({ workspaceId }: FormBodyMockProps) => (
     <div data-testid="jira-form">{workspaceId}</div>
+  ),
+}));
+
+vi.mock('../../../integrations/slack/SlackFormBody', () => ({
+  SlackFormBody: ({ workspaceId }: FormBodyMockProps) => (
+    <div data-testid="slack-form">{workspaceId}</div>
   ),
 }));
 
@@ -24,18 +34,36 @@ import { TrackerStep } from './TrackerStep';
 
 describe('TrackerStep', () => {
   it('renders the heading', () => {
-    render(<TrackerStep workspaceId={WS_ID} linearConnected={false} jiraConnected={false} />);
-    expect(screen.getByRole('heading', { name: /connect your issue tracker/i })).toBeDefined();
+    render(
+      <TrackerStep
+        workspaceId={WS_ID}
+        linearConnected={false}
+        jiraConnected={false}
+        slackConnected={false}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: /connect your tools/i })).toBeDefined();
   });
 
   describe('with a workspace', () => {
     beforeEach(() => {
-      render(<TrackerStep workspaceId={WS_ID} linearConnected={false} jiraConnected={false} />);
+      render(
+        <TrackerStep
+          workspaceId={WS_ID}
+          linearConnected={false}
+          jiraConnected={false}
+          slackConnected={false}
+        />,
+      );
     });
 
     it('renders the Linear form scoped to the workspace', () => {
       expect(screen.getByTestId('linear-form').textContent).toBe(WS_ID);
       expect(screen.queryByText(/Add a workspace first/i)).toBeNull();
+    });
+
+    it('labels the segmented control as Tools, not just Issue tracker', () => {
+      expect(screen.getByRole('tablist', { name: 'Tools' })).toBeDefined();
     });
 
     it('swaps in the Jira form when the Jira segment is picked', () => {
@@ -45,15 +73,30 @@ describe('TrackerStep', () => {
       expect(screen.getByTestId('jira-form').textContent).toBe(WS_ID);
       expect(screen.queryByTestId('linear-form')).toBeNull();
     });
+
+    it('swaps in the Slack form when the Slack segment is picked', () => {
+      const slack = screen.getByRole('tab', { name: /slack/i });
+      expect(slack.hasAttribute('disabled')).toBe(false);
+      fireEvent.click(slack);
+      expect(screen.getByTestId('slack-form').textContent).toBe(WS_ID);
+      expect(screen.queryByTestId('linear-form')).toBeNull();
+    });
   });
 
   describe('without a workspace', () => {
     beforeEach(() => {
-      render(<TrackerStep workspaceId={null} linearConnected={false} jiraConnected={false} />);
+      render(
+        <TrackerStep
+          workspaceId={null}
+          linearConnected={false}
+          jiraConnected={false}
+          slackConnected={false}
+        />,
+      );
     });
 
     it('shows the add-workspace empty state instead of the form', () => {
-      expect(screen.getByText(/Add a workspace first to connect your tracker/i)).toBeDefined();
+      expect(screen.getByText(/Add a workspace first to connect your tools/i)).toBeDefined();
       expect(screen.queryByTestId('linear-form')).toBeNull();
     });
 

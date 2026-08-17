@@ -68,6 +68,7 @@ const baseState: OnboardingWizardState = {
   hasCodeHost: false,
   hasLinear: false,
   hasJira: false,
+  hasSlack: false,
   hasSentry: false,
   refreshGithubStatus: vi.fn(),
 };
@@ -173,6 +174,23 @@ describe('OnboardingWizard', () => {
       advance(/continue/i, 3);
       expect(screen.getByTestId('CodeHostStep')).toBeDefined();
       expect(screen.getByRole('button', { name: /continue/i })).toBeDefined();
+    });
+
+    it('offers Continue on the tracker step for a Slack-only connect', () => {
+      setHook({
+        providersConnected: 1,
+        hasWorkspace: true,
+        hasCodeHost: true,
+        hasLinear: false,
+        hasJira: false,
+        hasSlack: true,
+      });
+      render(<OnboardingWizard />);
+      advance(/get started/i, 1);
+      advance(/continue/i, 4);
+      expect(screen.getByTestId('TrackerStep')).toBeDefined();
+      expect(screen.getByRole('button', { name: /^continue$/i })).toBeDefined();
+      expect(screen.queryByRole('button', { name: /skip for now/i })).toBeNull();
     });
 
     it('announces when changing workspace removes setup steps and moves to the next valid step', () => {

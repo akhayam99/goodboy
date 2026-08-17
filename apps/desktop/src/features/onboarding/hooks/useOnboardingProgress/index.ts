@@ -79,7 +79,11 @@ export const useOnboardingProgress = (): OnboardingProgress => {
   const hasTools = useAppStore((s) =>
     workspaceId
       ? (s.workspaceIntegrations[workspaceId] ?? []).some(
-          (i) => i.provider === 'linear' || i.provider === 'jira' || i.provider === 'sentry',
+          (i) =>
+            i.provider === 'linear' ||
+            i.provider === 'jira' ||
+            i.provider === 'sentry' ||
+            i.provider === 'slack',
         )
       : false,
   );

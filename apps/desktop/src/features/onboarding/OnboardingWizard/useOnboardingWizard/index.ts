@@ -18,6 +18,7 @@ export type OnboardingWizardState = {
   readonly hasCodeHost: boolean;
   readonly hasLinear: boolean;
   readonly hasJira: boolean;
+  readonly hasSlack: boolean;
   readonly hasSentry: boolean;
   readonly refreshGithubStatus: () => void;
 };
@@ -53,6 +54,11 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
   const hasJira = useAppStore((s) =>
     workspaceId
       ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'jira')
+      : false,
+  );
+  const hasSlack = useAppStore((s) =>
+    workspaceId
+      ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'slack')
       : false,
   );
   const hasSentry = useAppStore((s) =>
@@ -134,6 +140,7 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
     hasCodeHost,
     hasLinear,
     hasJira,
+    hasSlack,
     hasSentry,
     refreshGithubStatus,
   };
