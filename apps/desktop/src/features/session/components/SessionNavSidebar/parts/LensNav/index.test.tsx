@@ -186,7 +186,7 @@ describe('LensNav', () => {
 
     const agents = screen.getByRole('button', { name: 'Agents' });
     const workflows = screen.getByRole('button', { name: 'Workflows' });
-    const decisions = screen.getByRole('button', { name: 'Decisions' });
+    const context = screen.getByRole('button', { name: 'Context' });
 
     expect(agents.getAttribute('aria-current')).toBe('page');
     expect(agents.className).toContain('bg-muted text-foreground');
@@ -194,7 +194,7 @@ describe('LensNav', () => {
     expect(workflows.className).toContain('text-muted-foreground');
     expect(workflows.className).not.toContain('bg-muted text-foreground');
     const activeIcon = agents.querySelector('span');
-    const inactiveIcon = decisions.querySelector('span');
+    const inactiveIcon = context.querySelector('span');
     expect(activeIcon?.className).toContain('opacity-100');
     expect(inactiveIcon?.className).toContain('opacity-55');
   });
@@ -212,6 +212,7 @@ describe('LensNav', () => {
     expect(
       screen
         .getAllByText(/^(Work|Context|Integrations|Infra)$/)
+        .filter((heading) => heading.className.includes('uppercase'))
         .map((heading) => heading.textContent),
     ).toEqual(['Context', 'Work', 'Infra', 'Integrations']);
     expect(
@@ -225,9 +226,7 @@ describe('LensNav', () => {
         }),
     ).toEqual([
       'Overview',
-      'Goal',
-      'Decisions',
-      'Session summary',
+      'Context',
       'Workflows',
       'Agents',
       'Resolve',
@@ -249,10 +248,12 @@ describe('LensNav', () => {
   it('renders only shared-context lenses for a branchless session', () => {
     render(<LensNav session={SESSION} filesCount={3} isBranchless />);
 
-    expect(screen.getAllByText(/^(Work|Context)$/).map((heading) => heading.textContent)).toEqual([
-      'Context',
-      'Work',
-    ]);
+    expect(
+      screen
+        .getAllByText(/^(Work|Context)$/)
+        .filter((heading) => heading.className.includes('uppercase'))
+        .map((heading) => heading.textContent),
+    ).toEqual(['Context', 'Work']);
     expect(
       within(screen.getByRole('navigation'))
         .getAllByRole('button')
@@ -264,9 +265,7 @@ describe('LensNav', () => {
         }),
     ).toEqual([
       'Overview',
-      'Goal',
-      'Decisions',
-      'Session summary',
+      'Context',
       'Workflows',
       'Agents',
       'Questions',
@@ -523,37 +522,29 @@ describe('LensNav', () => {
     expect(live.querySelector('[class*="animate-pulse"]')).not.toBeNull();
   });
 
-  it('pulses every context row while the summarizer runs', () => {
+  it('uses a spinner instead of a pulsing dot while the summarizer runs', () => {
     render(<LensNav session={SESSION} filesCount={0} />);
 
-    for (const label of ['Goal', 'Decisions', 'Session summary']) {
-      expect(
-        screen.getByRole('button', { name: label }).querySelector('[class*="animate-pulse"]'),
-      ).toBeNull();
-    }
+    expect(screen.queryByRole('status', { name: 'Summarizing context' })).toBeNull();
 
     cleanup();
     hooks.summarizerStatus = 'running';
     render(<LensNav session={SESSION} filesCount={0} />);
 
-    for (const label of ['Goal', 'Decisions', 'Session summary']) {
-      expect(
-        screen
-          .getByRole('button', { name: `${label} Running` })
-          .querySelector('[class*="animate-pulse"]'),
-      ).not.toBeNull();
-    }
+    const indicator = screen.getByRole('status', { name: 'Summarizing context' });
+    expect(indicator.className).toContain('spin-border');
+    expect(
+      screen.getByRole('button', { name: /Context/ }).querySelector('[class*="animate-pulse"]'),
+    ).toBeNull();
   });
 
-  it('marks every context row for attention when the summarizer failed', () => {
+  it('marks Context for attention when the summarizer failed', () => {
     hooks.summarizerStatus = 'error';
     const { container } = render(<LensNav session={SESSION} filesCount={0} />);
 
-    for (const label of ['Goal', 'Decisions', 'Session summary']) {
-      const row = screen.getByRole('button', { name: `${label} Needs attention` });
-      expect(row.querySelector('[class*="bg-warning"]')).not.toBeNull();
-      expect(row.querySelector('[class*="animate-pulse"]')).toBeNull();
-    }
+    const row = screen.getByRole('button', { name: 'Context Needs attention' });
+    expect(row.querySelector('[class*="bg-warning"]')).not.toBeNull();
+    expect(row.querySelector('[class*="animate-pulse"]')).toBeNull();
     expect(container.querySelectorAll('[class*="animate-pulse"]')).toHaveLength(0);
   });
 

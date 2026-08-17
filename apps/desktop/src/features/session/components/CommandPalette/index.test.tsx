@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
-const { state, toastMock } = vi.hoisted(() => ({
+const { state, hooks, toastMock } = vi.hoisted(() => ({
   state: {
     skills: {} as Record<string, ReadonlyArray<unknown>>,
     phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
@@ -14,8 +14,10 @@ const { state, toastMock } = vi.hoisted(() => ({
     openWorkspace: vi.fn(async () => undefined),
     setCurrentSession: vi.fn(async () => undefined),
     selectAgent: vi.fn(async () => undefined),
+    setActiveLens: vi.fn(),
     runScript: vi.fn(async () => ({ exitCode: 0 })),
   },
+  hooks: { currentSession: null as { readonly id: string } | null },
   toastMock: vi.fn(),
 }));
 
@@ -25,7 +27,7 @@ vi.mock('../../../../store', () => ({
   useWorkspaces: () => [],
   useSessions: () => [],
   useCurrentWorkspace: () => null,
-  useCurrentSession: () => null,
+  useCurrentSession: () => hooks.currentSession,
 }));
 
 vi.mock('../../../../app/components/Toast', () => ({
@@ -42,6 +44,8 @@ beforeEach(() => {
   state.sessionPhaseRuns = {};
   state.sessionWorktrees = {};
   state.agentKindOverride = {};
+  state.setActiveLens.mockReset();
+  hooks.currentSession = null;
   toastMock.mockReset();
 });
 afterEach(cleanup);
@@ -81,5 +85,19 @@ describe('CommandPalette', () => {
 
     expect(listener).toHaveBeenCalledOnce();
     window.removeEventListener(REPORT_ISSUE_STUDIO_EVENT, listener);
+  });
+
+  it.each([
+    ['Open context', 'context'],
+    ['Open context: Goal', 'goal'],
+    ['Open context: Decisions', 'decisions'],
+    ['Open context: Session summary', 'last_output_summary'],
+  ] as const)('routes %s to the shared Context surface', (label, lens) => {
+    hooks.currentSession = { id: 'session-1' };
+    render(<CommandPalette onClose={vi.fn()} initialQuery={label} />);
+
+    fireEvent.mouseDown(screen.getByText(label));
+
+    expect(state.setActiveLens).toHaveBeenCalledWith('session-1', lens);
   });
 });

@@ -136,10 +136,10 @@ goal, overridable per run.
 Agents inside the same session do **not** share their conversation history.
 What they share is the **lens column**, a left rail that lists every view onto
 the session, grouped Context / Work / Infra / Integrations above a session
-Overview. Context holds the synthetic slots (goal, decisions, session summary)
-that the LLM auto-populates after every turn; you can also edit them by hand.
-Work holds what the session produces (workflows, agents, resolve, questions,
-diff, plans).
+Overview. Context opens one surface with three ordered regions: goal, decisions,
+and session summary. The LLM auto-populates them after every turn; you can also
+edit them by hand. Work holds what the session produces (workflows, agents,
+resolve, questions, diff, plans).
 
 Each lens opens as the main view, rendered as markdown where it is prose, and
 slots maintain history. Chat is one destination among the lenses, not the

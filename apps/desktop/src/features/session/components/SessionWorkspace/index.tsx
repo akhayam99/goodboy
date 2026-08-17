@@ -23,7 +23,7 @@ import { AgentsPane } from './parts/AgentsPane';
 import { Pane } from './parts/Pane';
 import { SessionStudioLayer } from './parts/SessionStudioLayer';
 import { QuestionsPane } from './parts/QuestionsPane';
-import { SlotPane } from './parts/SlotPane';
+import { ContextPane } from './parts/ContextPane';
 import { ResolvePane } from './parts/ResolvePane';
 import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
@@ -304,8 +304,14 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 />
               </PaneShell>
             ) : null}
-            {lens === 'goal' || lens === 'decisions' || lens === 'last_output_summary' ? (
-              <SlotPane session={session} slotKey={lens} />
+            {lens === 'context' ||
+            lens === 'goal' ||
+            lens === 'decisions' ||
+            lens === 'last_output_summary' ? (
+              <ContextPane
+                session={session}
+                initialRegion={lens === 'context' ? undefined : lens}
+              />
             ) : null}
             {lens === 'pr' ? <PrPane session={session} onSelectLens={onSelectLens} /> : null}
             {lens === 'review' ? <ReviewBoardPane session={session} /> : null}

@@ -259,17 +259,17 @@ describe('App lens shortcuts on darwin', () => {
     expect(setActiveLens).toHaveBeenCalledWith('session-1', null);
   });
 
-  it('reaches the overview, code host, decisions, and summary lenses', () => {
+  it('reaches Context and every legacy Context region shortcut', () => {
     render(<App />);
 
-    press({ code: 'KeyO', key: 'o', metaKey: true, altKey: true });
-    press({ code: 'Digit1', key: '1', metaKey: true, altKey: true });
+    press({ code: 'KeyC', key: 'c', metaKey: true, altKey: true });
+    press({ code: 'KeyG', key: 'g', metaKey: true, altKey: true });
     press({ code: 'KeyE', key: 'e', metaKey: true, altKey: true });
     press({ code: 'KeyU', key: 'u', metaKey: true, altKey: true });
 
     expect(setActiveLens.mock.calls).toEqual([
-      ['session-1', null],
-      ['session-1', 'pr'],
+      ['session-1', 'context'],
+      ['session-1', 'goal'],
       ['session-1', 'decisions'],
       ['session-1', 'last_output_summary'],
     ]);

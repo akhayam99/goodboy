@@ -71,6 +71,7 @@ export const LENS_SHORTCUTS = {
   plans: 'lens.plans',
   scripts: 'lens.scripts',
   terminal: 'lens.terminal',
+  context: 'lens.context',
   goal: 'lens.goal',
   decisions: 'lens.decisions',
   last_output_summary: 'lens.summary',
@@ -120,22 +121,8 @@ export const buildLensGroups = ({
       label: 'Context',
       rows: [
         {
-          kind: 'goal',
-          label: 'Goal',
-          icon: CONCEPT_ICONS.goal,
-          tone: CONCEPT_TONE.goal,
-          dot: summarizerDot,
-        },
-        {
-          kind: 'decisions',
-          label: 'Decisions',
-          icon: CONCEPT_ICONS.decisions,
-          tone: CONCEPT_TONE.decisions,
-          dot: summarizerDot,
-        },
-        {
-          kind: 'last_output_summary',
-          label: 'Session summary',
+          kind: 'context',
+          label: 'Context',
           icon: CONCEPT_ICONS.sessionSummary,
           tone: CONCEPT_TONE.sessionSummary,
           dot: summarizerDot,

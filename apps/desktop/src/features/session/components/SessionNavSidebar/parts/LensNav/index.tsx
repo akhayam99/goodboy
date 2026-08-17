@@ -32,6 +32,7 @@ import { CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { SIMPLE_LENSES } from '../../../../lens-labels';
 import { shortcutGlyphs } from '../../../../../../shared/keyboard/registry';
 import { useSettleElapsed } from '../../../../hooks/useSettleElapsed';
+import { SummarizerWorkingIndicator } from '../../../SummarizerWorkingIndicator';
 
 const LENS_COUNT_SETTLE_MS = 10_000;
 
@@ -371,7 +372,12 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
                 <></>
               ) : (
                 group.rows.map((row) => {
-                  const active = activeLens === row.kind;
+                  const active =
+                    activeLens === row.kind ||
+                    (row.kind === 'context' &&
+                      (activeLens === 'goal' ||
+                        activeLens === 'decisions' ||
+                        activeLens === 'last_output_summary'));
                   const rowWantsAttention = groupWantsAttention({ rows: [row] });
                   const shortcut = shortcutGlyphs(LENS_SHORTCUTS[row.kind]);
                   const hasDiffstat =
@@ -484,6 +490,8 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
                                     {row.count}
                                   </span>
                                 </span>
+                              ) : row.kind === 'context' && row.dot === 'running' ? (
+                                <SummarizerWorkingIndicator />
                               ) : row.dot ? (
                                 <StatusDot
                                   tone={row.dot === 'attention' ? 'warning' : 'info'}
