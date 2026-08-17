@@ -17,6 +17,7 @@ import type {
 export type { SetFn, GetFn } from '../../slice-types';
 
 export type LensKind =
+  | 'timeline'
   | 'questions'
   | 'agents'
   | 'workflows'
@@ -40,6 +41,7 @@ export type LensKind =
   | 'slack_threads';
 
 export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
+  'timeline',
   'questions',
   'agents',
   'workflows',

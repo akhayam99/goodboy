@@ -227,6 +227,7 @@ describe('LensNav', () => {
     ).toEqual([
       'Overview',
       'Context',
+      'Timeline',
       'Workflows',
       'Agents',
       'Resolve',
@@ -266,6 +267,7 @@ describe('LensNav', () => {
     ).toEqual([
       'Overview',
       'Context',
+      'Timeline',
       'Workflows',
       'Agents',
       'Questions',

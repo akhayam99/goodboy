@@ -1,6 +1,7 @@
 import type { LensKind } from '../../store';
 
 export const LENS_LABEL: Record<LensKind, string> = {
+  timeline: 'Timeline',
   questions: 'Questions',
   agents: 'Agents',
   workflows: 'Workflows',
@@ -25,6 +26,7 @@ export const LENS_LABEL: Record<LensKind, string> = {
 };
 
 export const SIMPLE_LENSES = new Set<LensKind>([
+  'timeline',
   'workflows',
   'agents',
   'questions',
