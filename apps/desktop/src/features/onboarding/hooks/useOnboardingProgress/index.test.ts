@@ -7,6 +7,8 @@ const workspaces: Array<{ id: string; kind?: 'repo' | 'simple' }> = [];
 let currentWorkspaceId: string | null = null;
 let workspaceIntegrations: Record<string, Array<{ provider: string }>> = {};
 let sessions: Array<unknown> = [];
+let sessionPhaseRuns: Record<string, unknown[]> = {};
+let sessionPlans: Record<string, unknown[]> = {};
 
 const { markStepCompleteMock, ghStatusMock } = vi.hoisted(() => ({
   markStepCompleteMock: vi.fn(),
@@ -51,8 +53,8 @@ vi.mock('../../../../store', () => ({
   ) =>
     selector({
       sessions,
-      sessionPhaseRuns: {},
-      sessionPlans: {},
+      sessionPhaseRuns,
+      sessionPlans,
       currentWorkspaceId,
       workspaceIntegrations,
     }),
@@ -66,6 +68,8 @@ function reset() {
   currentWorkspaceId = null;
   workspaceIntegrations = {};
   sessions = [];
+  sessionPhaseRuns = {};
+  sessionPlans = {};
   markStepCompleteMock.mockReset();
   ghStatusMock.mockReset();
   ghStatusMock.mockResolvedValue({ scoped: false });
@@ -134,6 +138,32 @@ describe('useOnboardingProgress auto-mark', () => {
     expect(result.current.completedCount).toBe(2);
     expect(result.current.totalCount).toBe(7);
     expect(result.current.isDone).toBe(false);
+  });
+
+  it('unions live completion over persisted completion on the first render', () => {
+    completed = ['palette'];
+    workspaces.push({ id: 'w1' });
+    workspaceIntegrations = { w1: [{ provider: 'gitlab' }, { provider: 'linear' }] };
+    sessions = [{}];
+    sessionPhaseRuns = { s1: [{}] };
+    sessionPlans = { s1: [{}] };
+    const { result } = renderHook(() => useOnboardingProgress());
+    expect([...result.current.completed]).toEqual([
+      'palette',
+      'workspace',
+      'codeHost',
+      'tools',
+      'session',
+      'agent',
+      'plan',
+    ]);
+    expect(result.current.completedCount).toBe(7);
+    expect(result.current.isDone).toBe(true);
+  });
+
+  it('keeps palette purely persisted', () => {
+    const { result } = renderHook(() => useOnboardingProgress());
+    expect(result.current.completed.has('palette')).toBe(false);
   });
 
   it('removes the code host step but keeps the tracker step for a simple workspace', () => {

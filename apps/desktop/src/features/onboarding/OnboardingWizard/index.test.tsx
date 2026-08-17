@@ -5,9 +5,14 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
 import type { OnboardingWizardState } from './useOnboardingWizard';
 
-const { hookState, finishWizard } = vi.hoisted(() => ({
+const { hookState, progressState, finishWizard } = vi.hoisted(() => ({
   hookState: {} as OnboardingWizardState,
+  progressState: { completed: new Set<string>() },
   finishWizard: vi.fn(),
+}));
+
+vi.mock('../hooks/useOnboardingProgress', () => ({
+  useOnboardingProgress: () => progressState,
 }));
 
 vi.mock('./useOnboardingWizard', () => ({
@@ -19,8 +24,16 @@ vi.mock('../onboarding-store', () => ({
 }));
 
 vi.mock('./Stepper', () => ({
-  Stepper: ({ current, total }: { current: number; total: number }) => (
-    <div data-testid="stepper">{`${current}/${total}`}</div>
+  Stepper: ({
+    current,
+    steps,
+    completed,
+  }: {
+    current: number;
+    steps: ReadonlyArray<number>;
+    completed: ReadonlySet<string>;
+  }) => (
+    <div data-testid="stepper">{`${current}/${steps.join(',')}/${[...completed].join(',')}`}</div>
   ),
 }));
 
@@ -72,6 +85,7 @@ const setHook = (partial: Partial<OnboardingWizardState>) =>
 
 beforeEach(() => {
   finishWizard.mockClear();
+  progressState.completed = new Set();
   Object.assign(hookState, baseState);
 });
 afterEach(cleanup);
@@ -210,6 +224,14 @@ describe('OnboardingWizard', () => {
       expect(screen.getByTestId('ReadyStep')).toBeDefined();
       expect(screen.queryByTestId('CodeHostStep')).toBeNull();
       expect(screen.queryByTestId('SentryStep')).toBeNull();
+    });
+
+    it('passes the current step, filtered steps, and completed progress to the stepper', () => {
+      progressState.completed = new Set(['workspace']);
+      setHook({ mode: 'setup', hasWorkspace: true, workspaceKind: 'simple' });
+      render(<OnboardingWizard />);
+      fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+      expect(screen.getByTestId('stepper').textContent).toBe('5/3,5,7/workspace');
     });
   });
 
