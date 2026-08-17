@@ -58,6 +58,7 @@ import { OnboardingWizard } from './features/onboarding/OnboardingWizard';
 import { CompanionStudio } from './features/companion/CompanionStudio';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { markStepComplete } from './features/onboarding/onboarding-store';
+import { OPEN_COMMAND_PALETTE_EVENT } from './features/onboarding/openCommandPaletteEvent';
 import { useShortcut } from './shared/keyboard/useShortcut';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
 import { useZoomShortcuts } from './shared/hooks/useZoomShortcuts';
@@ -610,6 +611,12 @@ export const App = () => {
     setPaletteOpen(true);
     markStepComplete('palette');
   }, []);
+
+  useEffect(() => {
+    const handler = () => openPalette();
+    window.addEventListener(OPEN_COMMAND_PALETTE_EVENT, handler);
+    return () => window.removeEventListener(OPEN_COMMAND_PALETTE_EVENT, handler);
+  }, [openPalette]);
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const lensGo = useAppStore((s) => s.lensGo);

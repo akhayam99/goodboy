@@ -29,11 +29,10 @@ describe('goalFromIssue', () => {
     expect(goalFromIssue(makeIssue({ description: '   ' }))).toBe('[SER-123] Add user signup');
   });
 
-  it('trims trailing whitespace and overlong descriptions', () => {
+  it('keeps overlong descriptions intact after trimming whitespace', () => {
     const long = 'x'.repeat(2000);
     const goal = goalFromIssue(makeIssue({ description: long }));
-    expect(goal.endsWith('…')).toBe(true);
-    expect(goal.length).toBeLessThanOrEqual(1300);
+    expect(goal).toBe(`[SER-123] Add user signup\n\n${long}`);
   });
 
   it('strips title whitespace', () => {
