@@ -48,7 +48,7 @@ describe('ProviderPicker', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('keeps disconnected providers visible and unavailable', () => {
+  it('hides disconnected providers that are not selected', () => {
     render(
       <ProviderPicker
         connectedProviders={connectedProviders}
@@ -60,8 +60,23 @@ describe('ProviderPicker', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Default provider: Claude' }));
-    const codex = screen.getByRole('button', { name: 'Codex' });
-    expect(codex.hasAttribute('disabled')).toBe(true);
-    expect(codex.getAttribute('title')).toBe('Codex is not connected');
+    expect(screen.queryByRole('button', { name: 'Codex' })).toBeNull();
+  });
+
+  it('keeps a disconnected current provider visible and marked', () => {
+    render(
+      <ProviderPicker
+        connectedProviders={['cursor']}
+        provider="anthropic"
+        disabled={false}
+        onProvider={vi.fn()}
+        ariaLabel="Default provider"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Default provider: Claude' }));
+    const claude = screen.getByRole('button', { name: 'Claude, disconnected' });
+    expect(claude.hasAttribute('disabled')).toBe(true);
+    expect(claude.getAttribute('title')).toBe('Claude is not connected');
   });
 });

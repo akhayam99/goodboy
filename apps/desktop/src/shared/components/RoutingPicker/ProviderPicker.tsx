@@ -5,6 +5,7 @@ import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
 import { PickerSection } from './PickerSection';
 import { ProviderGlyph } from './ProviderGlyph';
 import { ProviderGrid } from './ProviderGrid';
+import { NoConnectedProviders } from './NoConnectedProviders';
 
 type Props = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
@@ -82,15 +83,19 @@ export const ProviderPicker = ({
             style={popupStyle}
           >
             <PickerSection label="Provider" hint="Which CLI agent starts new sessions">
-              <ProviderGrid
-                connectedProviders={connectedProviders}
-                activeProvider={provider}
-                disableDisconnected
-                onSelect={(nextProvider) => {
-                  onProvider(nextProvider);
-                  close();
-                }}
-              />
+              {connectedProviders.length === 0 ? (
+                <NoConnectedProviders onNavigate={close} />
+              ) : (
+                <ProviderGrid
+                  connectedProviders={connectedProviders}
+                  activeProvider={provider}
+                  disableDisconnected
+                  onSelect={(nextProvider) => {
+                    onProvider(nextProvider);
+                    close();
+                  }}
+                />
+              )}
             </PickerSection>
           </Popover>
         ) : null}

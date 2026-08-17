@@ -265,25 +265,15 @@ describe('CreateAgentPopover', () => {
     expect(screen.getByText('Effort adjusted from Low to High.')).toBeTruthy();
   });
 
-  it('connects a provider inside the popover without opening its studio', () => {
+  it('does not offer a disconnected provider', () => {
     h.providers = [
       { id: 'anthropic' as ProviderId, connection: 'connected' },
       { id: 'codex' as ProviderId, connection: 'missing' },
     ];
-    const studioListener = vi.fn();
-    window.addEventListener('goodboy:open-provider-studio', studioListener);
-
     renderControl();
     openPopover();
-    fireEvent.click(screen.getByRole('button', { name: 'Codex' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Connect Codex' }));
-
-    expect(screen.getByRole('dialog', { name: 'Create agent' })).toBeDefined();
-    expect(screen.getByText(/Connect codex/i)).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect' })).toBeDefined();
-    expect(studioListener).not.toHaveBeenCalled();
-
-    window.removeEventListener('goodboy:open-provider-studio', studioListener);
+    expect(screen.getByRole('button', { name: 'Claude' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Codex' })).toBeNull();
   });
 
   it('drops the type section entirely in a simple workspace', () => {
