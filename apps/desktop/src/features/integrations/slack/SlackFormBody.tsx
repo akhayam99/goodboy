@@ -105,6 +105,14 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
             <label htmlFor="slack-token" className="text-xs font-semibold text-foreground">
               Bot token
             </label>
+            <a
+              href={APP_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
+            >
+              Create a Slack app and copy its bot token <ExternalLink size={10} aria-hidden />
+            </a>
             <Input
               id="slack-token"
               type="password"
@@ -117,14 +125,6 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
               autoCorrect="off"
               spellCheck={false}
             />
-            <a
-              href={APP_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
-            >
-              Create a Slack app and copy its bot token <ExternalLink size={10} aria-hidden />
-            </a>
           </div>
           <div className="flex flex-col gap-2">
             <p className="text-2xs leading-relaxed text-muted-foreground">

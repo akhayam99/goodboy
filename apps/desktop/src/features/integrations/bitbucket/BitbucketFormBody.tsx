@@ -149,14 +149,6 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
             <label htmlFor="bitbucket-token" className="text-xs font-semibold text-foreground">
               API token
             </label>
-            <Input
-              id="bitbucket-token"
-              type="password"
-              placeholder="ATATT…"
-              value={apiToken}
-              onChange={(event) => setApiToken(event.target.value)}
-              disabled={isBusy}
-            />
             <a
               href={TOKEN_URL}
               target="_blank"
@@ -165,6 +157,14 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
             >
               Create a token in your Atlassian account <ExternalLink size={10} aria-hidden />
             </a>
+            <Input
+              id="bitbucket-token"
+              type="password"
+              placeholder="ATATT…"
+              value={apiToken}
+              onChange={(event) => setApiToken(event.target.value)}
+              disabled={isBusy}
+            />
           </div>
           <p className="text-2xs leading-relaxed text-muted-foreground">
             Bitbucket Cloud only, Data Center and Server are not supported. An older Bitbucket app

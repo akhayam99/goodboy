@@ -63,16 +63,15 @@ export const QuestionCard = ({
   return (
     <TranscriptShell
       tone="warning"
-      variant="boxed"
-      emphasis
+      variant="leftBorder"
       className={cn(
-        'group flex flex-col gap-2 transition-[background-color,transform] duration-200',
+        'group flex flex-col gap-1.5 transition-[background-color,transform] duration-200',
         animate
           ? 'motion-safe:animate-answer-lock motion-reduce:bg-success/5'
           : 'motion-safe:animate-fade-in',
       )}
     >
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
         <div className="flex min-w-0 items-start gap-2">
           <MessageCircleQuestion
             size={14}
@@ -98,6 +97,19 @@ export const QuestionCard = ({
         >
           {animate ? <Check size={12} className="text-success" /> : <X size={12} />}
         </button>
+        <div className="flex items-center gap-2 text-2xs text-muted-foreground">
+          <span>{formatRelativeAge({ fromIso: question.createdAt })}</span>
+          {question.ownedByStepOrdinal != null && (
+            <span className="rounded-md bg-muted px-1 py-0.5 font-mono text-2xs text-muted-foreground">
+              step {question.ownedByStepOrdinal}
+            </span>
+          )}
+          {question.workflowId && question.ownedByStepOrdinal != null && (
+            <span className="rounded-md bg-muted px-1 py-0.5 text-2xs text-muted-foreground">
+              workflow
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5 pl-6">
@@ -116,20 +128,6 @@ export const QuestionCard = ({
           onToggle={() => onToggleCustomField(question.id)}
           onChange={(text) => onSetCustomAnswer(question.id, text)}
         />
-      </div>
-
-      <div className="flex items-center gap-2 pl-6 text-2xs text-muted-foreground">
-        <span>{formatRelativeAge({ fromIso: question.createdAt })}</span>
-        {question.ownedByStepOrdinal != null && (
-          <span className="rounded-md bg-muted px-1 py-0.5 font-mono text-2xs text-muted-foreground">
-            step {question.ownedByStepOrdinal}
-          </span>
-        )}
-        {question.workflowId && question.ownedByStepOrdinal != null && (
-          <span className="rounded-md bg-muted px-1 py-0.5 text-2xs text-muted-foreground">
-            workflow
-          </span>
-        )}
       </div>
     </TranscriptShell>
   );

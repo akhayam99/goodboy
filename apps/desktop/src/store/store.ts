@@ -135,6 +135,12 @@ import type { DraftAttachment } from './slices/agents/setAgentAttachments';
 import type { AgentQueuedTurn } from './slices/agents/setAgentQueue';
 import { createWorkflowDraftsSlice } from './slices/workflowDrafts';
 import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
+import { createWorkflowStudioSlice } from './slices/workflowStudio';
+import { initialWorkflowStudioState } from './slices/workflowStudio/state';
+import type {
+  StartWorkflowGenerationParams,
+  WorkflowStudioDraft,
+} from './slices/workflowStudio/types';
 import { createNewSessionDraftsSlice } from './slices/newSessionDrafts';
 import type {
   ClearNewSessionDraftParams,
@@ -496,6 +502,12 @@ export type AppActions = {
   clearNewSessionDraft(params: ClearNewSessionDraftParams): void;
   setWorkflowDraft(sessionId: SessionId, draft: WorkflowBuilderDraft): void;
   clearWorkflowDraft(sessionId: SessionId): void;
+  setWorkflowStudioDraft(params: { workspaceId: WorkspaceId; draft: WorkflowStudioDraft }): void;
+  clearWorkflowStudioDraft(params: { workspaceId: WorkspaceId }): void;
+  setWorkflowStudioVisible(params: { workspaceId: WorkspaceId | null }): void;
+  startWorkflowGeneration(params: StartWorkflowGenerationParams): Promise<boolean>;
+  consumeWorkflowGeneration(params: { workspaceId: WorkspaceId }): void;
+  undoWorkflowGeneration(params: { workspaceId: WorkspaceId }): Promise<void>;
   setAgentAttachments(agentId: AgentId, attachments: ReadonlyArray<DraftAttachment>): void;
   clearAgentAttachments(agentId: AgentId): void;
   setAgentQueue(agentId: AgentId, queue: ReadonlyArray<AgentQueuedTurn>): void;
@@ -866,6 +878,7 @@ export const initialState: AppState = {
   agentDraft: {},
   newSessionDrafts: {},
   workflowDrafts: {},
+  ...initialWorkflowStudioState,
   agentAttachments: {},
   agentQueue: {},
   diffComments: {},
@@ -920,6 +933,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createAgentsSlice(set, get),
   ...createNewSessionDraftsSlice({ set }),
   ...createWorkflowDraftsSlice(set, get),
+  ...createWorkflowStudioSlice(set, get),
   ...createSlotsSlice(set, get),
   ...createOverridesSlice(set, get),
   ...createCredentialsSlice(set, get),

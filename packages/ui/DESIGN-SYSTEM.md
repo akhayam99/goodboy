@@ -142,6 +142,11 @@ use `inline`, always; only a surface's own main empty state gets the large
 size and an `h2`, and an empty lens leaves `headingLevel` unset so it adds
 nothing to the document outline.
 
+Inline empty states belong to a lens or compact collection surface. A filled,
+borderless inline empty state belongs to a surface's own body and uses
+`FilledEmptyState`, which owns its inset and fill. Do not hand-roll either
+shape with `EmptyState size="inline"`.
+
 **Inline beats the centred hero** because the pane already has a title and a
 rhythm: a hero restates the title in bigger type and pretends the lens is a
 landing page when it is one of a rail full of destinations.

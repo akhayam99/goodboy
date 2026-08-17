@@ -1,8 +1,11 @@
 import type { ComponentProps } from 'react';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
-import { FOOTER_CATEGORIES, FOOTER_INTEGRATION_PROVIDERS } from './categories';
+import {
+  integrationLabel,
+  type IntegrationGlyphProvider,
+} from '../../../features/integrations/components/IntegrationGlyph';
+import { FOOTER_INTEGRATIONS } from './categories';
 
 const { flags, storeState } = vi.hoisted(() => ({
   flags: { unseenRelease: false },
@@ -120,7 +123,7 @@ type ExpectRoutedParams = {
 };
 
 const expectRoutedOnlyTo = ({ spies, provider }: ExpectRoutedParams) => {
-  FOOTER_INTEGRATION_PROVIDERS.forEach((candidate) => {
+  FOOTER_INTEGRATIONS.forEach(({ provider: candidate }) => {
     expect(
       spies[candidate].mock.calls.length,
       `${candidate} opener while ${provider} was picked`,
@@ -302,18 +305,14 @@ describe('AppFooter', () => {
     expect(settings.className).not.toContain('bg-foreground text-background');
   });
 
-  it('splits the integrations into code hosts, trackers and conversation tools', () => {
+  it('invites the first connection when the workspace has none', () => {
     render(<AppFooter {...footerProps()} />);
 
-    expect(screen.getByRole('group', { name: 'Code hosts' })).toBeDefined();
-    expect(screen.getByRole('group', { name: 'Trackers' })).toBeDefined();
-    expect(screen.getByRole('group', { name: 'Conversation tools' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect a code host' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect a tracker' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect a conversation tool' })).toBeDefined();
+    expect(screen.getByRole('group', { name: 'Connected integrations' }).children.length).toBe(0);
+    expect(screen.getByRole('button', { name: 'Link your first integration' })).toBeDefined();
   });
 
-  it('renders only connected integrations in the row, as glyphs with no text label', () => {
+  it('renders a few connected integrations as named glyphs that open their studios', () => {
     const onOpenGithub = vi.fn();
     render(
       <AppFooter
@@ -321,142 +320,93 @@ describe('AppFooter', () => {
       />,
     );
 
-    const codeHosts = screen.getByRole('group', { name: 'Code hosts' });
-    const github = within(codeHosts).getByRole('button', {
-      name: 'Review and act on pull requests across this workspace',
-    });
+    const connected = screen.getByRole('group', { name: 'Connected integrations' });
+    const github = within(connected).getByRole('button', { name: 'GitHub' });
 
     expect(github.textContent).toBe('');
-    expect(within(codeHosts).getAllByRole('button').length).toBe(2);
-    expect(
-      within(screen.getByRole('group', { name: 'Trackers' })).getAllByRole('button').length,
-    ).toBe(2);
+    expect(within(connected).getByRole('button', { name: 'Linear' })).toBeDefined();
+    expect(within(connected).getAllByRole('button').length).toBe(2);
 
     fireEvent.click(github);
     expect(onOpenGithub).toHaveBeenCalledOnce();
   });
 
-  it('reaches a disconnected integration through the add popover of its category', () => {
+  it('reaches every integration through the single link popover', () => {
     const onOpenGitlab = vi.fn();
     render(<AppFooter {...footerProps({ overrides: { githubEnabled: true, onOpenGitlab } })} />);
 
     expect(screen.queryByRole('button', { name: 'Connect GitLab' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Connect a code host' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Link integration' }));
 
-    const panel = screen.getByRole('dialog', { name: 'Code hosts' });
+    const panel = screen.getByRole('dialog', { name: 'Integrations' });
     expect(within(panel).getByRole('button', { name: 'Open GitHub' })).toBeDefined();
     expect(within(panel).getByRole('button', { name: 'Connect Bitbucket' })).toBeDefined();
 
     fireEvent.click(within(panel).getByRole('button', { name: 'Connect GitLab' }));
 
     expect(onOpenGitlab).toHaveBeenCalledOnce();
-    expect(screen.queryByRole('dialog', { name: 'Code hosts' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Integrations' })).toBeNull();
   });
 
   it('names the connection state of every member in the popover', () => {
     render(<AppFooter {...footerProps({ overrides: { linearEnabled: true } })} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Connect a tracker' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Link integration' }));
 
-    const panel = screen.getByRole('dialog', { name: 'Trackers' });
-    expect(within(panel).getAllByRole('listitem').length).toBe(3);
-    expect(within(panel).getAllByText('Not connected').length).toBe(2);
+    const panel = screen.getByRole('dialog', { name: 'Integrations' });
+    expect(within(panel).getAllByRole('listitem').length).toBe(7);
+    expect(within(panel).getAllByText('Not connected').length).toBe(6);
     expect(within(panel).getByText('Connected')).toBeDefined();
   });
 
   it('closes the popover on escape', () => {
     render(<AppFooter {...footerProps()} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Connect a tracker' }));
-    expect(screen.getByRole('dialog', { name: 'Trackers' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Link your first integration' }));
+    expect(screen.getByRole('dialog', { name: 'Integrations' })).toBeDefined();
 
     fireEvent.keyDown(window, { key: 'Escape' });
 
-    expect(screen.queryByRole('dialog', { name: 'Trackers' })).toBeNull();
-  });
-
-  it('disables the add control once every member of a category is connected and names the reason', () => {
-    render(<AppFooter {...footerProps({ overrides: { slackEnabled: true } })} />);
-
-    const add = screen.getByRole('button', { name: 'Every conversation tool is connected' });
-    expect(add.getAttribute('aria-disabled')).toBe('true');
-    expect(screen.queryByRole('button', { name: 'Connect a conversation tool' })).toBeNull();
-
-    fireEvent.click(add);
-
-    expect(screen.queryByRole('dialog', { name: 'Conversation tools' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Integrations' })).toBeNull();
   });
 
   it('sends every connected glyph to its own studio and to no other', () => {
-    FOOTER_CATEGORIES.forEach((category) => {
-      category.members.forEach((member) => {
-        const spies = openerSpies();
-        render(<AppFooter {...routingProps({ spies, connected: true })} />);
+    FOOTER_INTEGRATIONS.forEach((member) => {
+      const spies = openerSpies();
+      render(<AppFooter {...routingProps({ spies, connected: true })} />);
 
-        fireEvent.click(screen.getByRole('button', { name: member.connectedLabel }));
+      fireEvent.click(
+        screen.getByRole('button', { name: integrationLabel({ provider: member.provider }) }),
+      );
 
-        expectRoutedOnlyTo({ spies, provider: member.provider });
-        cleanup();
-      });
+      expectRoutedOnlyTo({ spies, provider: member.provider });
+      cleanup();
     });
   });
 
   it('sends every popover row to its own studio and to no other', () => {
-    FOOTER_CATEGORIES.forEach((category) => {
-      category.members.forEach((member) => {
-        const spies = openerSpies();
-        render(<AppFooter {...routingProps({ spies, connected: false })} />);
+    FOOTER_INTEGRATIONS.forEach((member) => {
+      const spies = openerSpies();
+      render(<AppFooter {...routingProps({ spies, connected: false })} />);
 
-        fireEvent.click(screen.getByRole('button', { name: category.addLabel }));
-        fireEvent.click(
-          within(screen.getByRole('dialog', { name: category.groupLabel })).getByRole('button', {
-            name: member.connectLabel,
-          }),
-        );
+      fireEvent.click(screen.getByRole('button', { name: 'Link your first integration' }));
+      fireEvent.click(
+        within(screen.getByRole('dialog', { name: 'Integrations' })).getByRole('button', {
+          name: member.connectLabel,
+        }),
+      );
 
-        expectRoutedOnlyTo({ spies, provider: member.provider });
-        cleanup();
-      });
+      expectRoutedOnlyTo({ spies, provider: member.provider });
+      cleanup();
     });
   });
 
-  it('places every integration in exactly one category', () => {
-    const placed = FOOTER_CATEGORIES.flatMap((category) =>
-      category.members.map((member) => member.provider),
-    );
-
-    expect([...placed].sort()).toEqual([...FOOTER_INTEGRATION_PROVIDERS].sort());
-  });
-
-  it('keeps the three groups in order with a divider between each pair', () => {
-    render(<AppFooter {...footerProps()} />);
-
-    const groups = screen.getAllByRole('group');
-    expect(groups.map((group) => group.getAttribute('aria-label'))).toEqual([
-      'Code hosts',
-      'Trackers',
-      'Conversation tools',
-    ]);
-
-    const cluster = groups[0]?.parentElement;
-    expect(Array.from(cluster?.children ?? []).map((child) => child.getAttribute('role'))).toEqual([
-      'group',
-      'separator',
-      'group',
-      'separator',
-      'group',
-    ]);
-  });
-
-  it('holds the active state on the group whose disconnected member owns the open studio', () => {
+  it('holds the active state on the link action for a disconnected open studio', () => {
     render(<AppFooter {...footerProps({ overrides: { activeStudio: 'sentry' } })} />);
 
-    expect(screen.getByRole('button', { name: 'Connect a tracker' }).className).toContain(
+    expect(screen.getByRole('button', { name: 'Link your first integration' }).className).toContain(
       'bg-muted text-foreground',
-    );
-    expect(screen.getByRole('button', { name: 'Connect a code host' }).className).toContain(
-      'text-muted-foreground',
     );
   });
 
@@ -467,31 +417,23 @@ describe('AppFooter', () => {
       />,
     );
 
-    expect(
-      screen.getByRole('button', { name: 'Launch a session from a Sentry issue' }).className,
-    ).toContain('bg-muted text-foreground');
-    expect(screen.getByRole('button', { name: 'Connect a tracker' }).className).toContain(
+    expect(screen.getByRole('button', { name: 'Sentry' }).className).toContain(
+      'bg-muted text-foreground',
+    );
+    expect(screen.getByRole('button', { name: 'Link integration' }).className).toContain(
       'text-muted-foreground',
     );
   });
 
-  it('names a category with nothing connected and drops to a glyph once a member connects', () => {
-    const { rerender } = render(<AppFooter {...footerProps()} />);
+  it('keeps the link action reachable with many connected integrations', () => {
+    render(<AppFooter {...routingProps({ spies: openerSpies(), connected: true })} />);
 
-    expect(screen.getByRole('button', { name: 'Connect a code host' }).textContent).toBe(
-      'Code host',
-    );
-    expect(screen.getByRole('button', { name: 'Connect a tracker' }).textContent).toBe('Tracker');
-    expect(screen.getByRole('button', { name: 'Connect a conversation tool' }).textContent).toBe(
-      'Conversation tool',
-    );
-
-    rerender(<AppFooter {...footerProps({ overrides: { linearEnabled: true } })} />);
-
-    expect(screen.getByRole('button', { name: 'Connect a tracker' }).textContent).toBe('');
-    expect(screen.getByRole('button', { name: 'Connect a code host' }).textContent).toBe(
-      'Code host',
-    );
+    expect(
+      within(screen.getByRole('group', { name: 'Connected integrations' })).getAllByRole('button')
+        .length,
+    ).toBe(7);
+    fireEvent.click(screen.getByRole('button', { name: 'Link integration' }));
+    expect(screen.getByRole('dialog', { name: 'Integrations' })).toBeDefined();
   });
 
   it('swaps the code hosts for the conversion CTA and drops Sentry in a simple workspace', () => {
@@ -502,14 +444,12 @@ describe('AppFooter', () => {
       />,
     );
 
-    expect(screen.queryByRole('group', { name: 'Code hosts' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Connect a code host' })).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Connect a tracker' }));
-    const panel = screen.getByRole('dialog', { name: 'Trackers' });
+    fireEvent.click(screen.getByRole('button', { name: 'Link your first integration' }));
+    const panel = screen.getByRole('dialog', { name: 'Integrations' });
     expect(within(panel).getByRole('button', { name: 'Connect Linear' })).toBeDefined();
     expect(within(panel).getByRole('button', { name: 'Connect Jira' })).toBeDefined();
     expect(within(panel).queryByRole('button', { name: 'Connect Sentry' })).toBeNull();
+    expect(within(panel).queryByRole('button', { name: 'Connect GitHub' })).toBeNull();
 
     fireEvent.click(
       screen.getByRole('button', {
@@ -520,13 +460,13 @@ describe('AppFooter', () => {
     expect(onConvertToDevProject).toHaveBeenCalledOnce();
   });
 
-  it('keeps Slack reachable from the conversation group whether or not it is connected', () => {
+  it('keeps Slack reachable whether or not it is connected', () => {
     const onOpenSlack = vi.fn();
     const { rerender } = render(<AppFooter {...footerProps({ overrides: { onOpenSlack } })} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Connect a conversation tool' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Link your first integration' }));
     fireEvent.click(
-      within(screen.getByRole('dialog', { name: 'Conversation tools' })).getByRole('button', {
+      within(screen.getByRole('dialog', { name: 'Integrations' })).getByRole('button', {
         name: 'Connect Slack',
       }),
     );
@@ -534,7 +474,7 @@ describe('AppFooter', () => {
 
     rerender(<AppFooter {...footerProps({ overrides: { slackEnabled: true, onOpenSlack } })} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Launch a session from a Slack thread' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Slack' }));
 
     expect(onOpenSlack).toHaveBeenCalledTimes(2);
   });

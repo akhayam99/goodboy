@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookmarkPlus, Check } from 'lucide-react';
+import { Archive, BookmarkPlus, Check } from 'lucide-react';
 import { CountToggle } from '@goodboy/ui';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
@@ -130,14 +130,24 @@ export const WorkflowsPane = ({ session }: Props) => {
       ) : null}
       {active.length > 0 ? <ul className="flex flex-col gap-2">{active.map(renderCard)}</ul> : null}
       <div className="flex justify-center">
-        <CountToggle
-          label="Completed"
-          itemsLabel="workflows"
-          count={completed.length + discarded.length}
-          isShown={showFiled}
-          icon={Check}
-          onChange={setShowFiled}
-        />
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <CountToggle
+            label="Completed"
+            itemsLabel="workflows"
+            count={completed.length}
+            isShown={showFiled}
+            icon={Check}
+            onChange={setShowFiled}
+          />
+          <CountToggle
+            label="Discarded"
+            itemsLabel="workflows"
+            count={discarded.length}
+            isShown={showFiled}
+            icon={Archive}
+            onChange={setShowFiled}
+          />
+        </div>
       </div>
       {showFiled && completed.length > 0 ? (
         <ul className="flex flex-col gap-2">{completed.map(renderCard)}</ul>

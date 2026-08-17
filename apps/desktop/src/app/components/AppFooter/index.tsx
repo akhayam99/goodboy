@@ -1,4 +1,3 @@
-import { Fragment } from 'react';
 import { Divider } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
 import { useAppStore } from '../../../store';
@@ -7,9 +6,13 @@ import { UpdateIndicator } from '../../../features/updater/components/UpdateIndi
 import { BetaPill } from '../../../shared/components/BetaPill';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
-import { FOOTER_CATEGORIES } from './categories';
+import { FOOTER_INTEGRATIONS } from './categories';
 import { FooterButton } from './FooterButton';
-import { IntegrationCategoryGroup } from './IntegrationCategoryGroup';
+import { IntegrationAddPopover } from './IntegrationAddPopover';
+import {
+  IntegrationGlyph,
+  integrationLabel,
+} from '../../../features/integrations/components/IntegrationGlyph';
 import { MoreStudiosPopover } from './MoreStudiosPopover';
 
 const SETTINGS_LABEL = `Open settings (${shortcutGlyphs('settings.open')})`;
@@ -87,35 +90,59 @@ export const AppFooter = ({
     sentry: onOpenSentry,
     slack: onOpenSlack,
   } satisfies Record<IntegrationGlyphProvider, () => void>;
+  const members = FOOTER_INTEGRATIONS.filter(
+    (member) => !isSimpleWorkspace || member.availableInSimpleWorkspace,
+  );
+  const connectedMembers = members.filter((member) => enabled[member.provider]);
 
   return (
     <div className="flex shrink-0 flex-col">
       <Divider />
       <div className="grid h-9 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 bg-background px-2 [&>*:last-child]:justify-self-end">
-        <div className="flex items-center gap-1.5">
-          {FOOTER_CATEGORIES.map((category, index) => (
-            <Fragment key={category.id}>
-              {index > 0 ? (
-                <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
-              ) : null}
-              {category.id === 'code-host' && isSimpleWorkspace ? (
+        <div className="flex min-w-0 items-center gap-2 overflow-hidden">
+          {isSimpleWorkspace ? (
+            <FooterButton
+              icon={<FolderGit2 size={12} aria-hidden />}
+              label="Add a repo"
+              title="Turn this workspace into a dev project backed by a git repository"
+              onClick={onConvertToDevProject}
+            />
+          ) : null}
+          {isSimpleWorkspace ? (
+            <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
+          ) : null}
+          <div
+            role="group"
+            aria-label="Connected integrations"
+            className="flex min-w-0 items-center gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {connectedMembers.map((member) => {
+              const label = integrationLabel({ provider: member.provider });
+              return (
                 <FooterButton
-                  icon={<FolderGit2 size={12} aria-hidden />}
-                  label="Add a repo"
-                  title="Turn this workspace into a dev project backed by a git repository"
-                  onClick={onConvertToDevProject}
+                  key={member.provider}
+                  icon={<IntegrationGlyph provider={member.provider} size="xs" useBrandColor />}
+                  label={label}
+                  title={label}
+                  onClick={openers[member.provider]}
+                  active={activeStudio === member.provider}
+                  showLabel={false}
                 />
-              ) : (
-                <IntegrationCategoryGroup
-                  category={category}
-                  enabled={enabled}
-                  openers={openers}
-                  activeStudio={activeStudio}
-                  isSimpleWorkspace={isSimpleWorkspace}
-                />
-              )}
-            </Fragment>
-          ))}
+              );
+            })}
+          </div>
+          {connectedMembers.length > 0 ? (
+            <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
+          ) : null}
+          <IntegrationAddPopover
+            members={members}
+            enabled={enabled}
+            openers={openers}
+            isEmpty={connectedMembers.length === 0}
+            active={members.some(
+              (member) => member.provider === activeStudio && !enabled[member.provider],
+            )}
+          />
         </div>
 
         <div className="flex items-center gap-2">

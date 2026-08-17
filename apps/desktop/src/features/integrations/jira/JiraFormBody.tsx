@@ -170,14 +170,6 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
             <label htmlFor="jira-token" className="text-xs font-semibold text-foreground">
               API token
             </label>
-            <Input
-              id="jira-token"
-              type="password"
-              placeholder="ATATT…"
-              value={apiToken}
-              onChange={(event) => setApiToken(event.target.value)}
-              disabled={isBusy}
-            />
             <a
               href={TOKEN_URL}
               target="_blank"
@@ -186,6 +178,14 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
             >
               Create a token in your Atlassian account <ExternalLink size={10} aria-hidden />
             </a>
+            <Input
+              id="jira-token"
+              type="password"
+              placeholder="ATATT…"
+              value={apiToken}
+              onChange={(event) => setApiToken(event.target.value)}
+              disabled={isBusy}
+            />
           </div>
           <p className="text-2xs leading-relaxed text-muted-foreground">
             Jira Cloud only, Data Center and Server are not supported. The token carries your own

@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode, Ref } from 'react';
 import { cn } from '../cn';
+import { ScrollFade } from './ScrollFade';
 
 export type PopoverProps = {
   readonly children: ReactNode;
@@ -9,6 +10,16 @@ export type PopoverProps = {
   readonly ariaLabel?: string;
   readonly innerRef?: Ref<HTMLDivElement>;
   readonly tabIndex?: number;
+};
+
+export type PopoverBodyProps = {
+  readonly children: ReactNode;
+  readonly className?: string;
+};
+
+export type PopoverFooterProps = {
+  readonly children: ReactNode;
+  readonly className?: string;
 };
 
 export const Popover = ({
@@ -28,7 +39,7 @@ export const Popover = ({
       tabIndex={tabIndex}
       style={style}
       className={cn(
-        'overflow-hidden rounded-md border border-border bg-elevated text-xs shadow-lg',
+        'flex max-h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-elevated text-xs shadow-lg',
         className,
       )}
     >
@@ -36,3 +47,13 @@ export const Popover = ({
     </div>
   );
 };
+
+export const PopoverBody = ({ children, className }: PopoverBodyProps) => (
+  <ScrollFade className={cn('min-h-0 flex-1', className)} fadeSize={12} fadeFrom="elevated">
+    {children}
+  </ScrollFade>
+);
+
+export const PopoverFooter = ({ children, className }: PopoverFooterProps) => (
+  <footer className={cn('shrink-0', className)}>{children}</footer>
+);

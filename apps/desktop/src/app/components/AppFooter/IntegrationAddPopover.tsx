@@ -13,33 +13,17 @@ import type { FooterIntegrationEntry } from './categories';
 import { IntegrationAddRow } from './IntegrationAddRow';
 
 type Props = {
-  readonly addLabel: string;
-  readonly emptyLabel: string;
-  readonly exhaustedLabel: string;
-  readonly panelLabel: string;
   readonly members: ReadonlyArray<FooterIntegrationEntry>;
   readonly enabled: Record<IntegrationGlyphProvider, boolean>;
   readonly openers: Record<IntegrationGlyphProvider, () => void>;
-  readonly isExhausted: boolean;
-  readonly showLabel: boolean;
+  readonly isEmpty: boolean;
   readonly active: boolean;
 };
 
 const PANEL_WIDTH = 224;
 const PANEL_MAX_HEIGHT = 240;
 
-export const IntegrationAddPopover = ({
-  addLabel,
-  emptyLabel,
-  exhaustedLabel,
-  panelLabel,
-  members,
-  enabled,
-  openers,
-  isExhausted,
-  showLabel,
-  active,
-}: Props) => {
+export const IntegrationAddPopover = ({ members, enabled, openers, isEmpty, active }: Props) => {
   const {
     open: isOpen,
     close,
@@ -51,7 +35,6 @@ export const IntegrationAddPopover = ({
     portal,
     portalTarget,
   } = useDropdown({
-    disabled: isExhausted,
     align: 'center',
     width: 'w-56',
     expectedWidth: PANEL_WIDTH,
@@ -65,38 +48,36 @@ export const IntegrationAddPopover = ({
     openers[provider]();
   };
 
+  const actionLabel = isEmpty ? 'Link your first integration' : 'Link integration';
+
   return (
-    <div ref={containerRef} className="relative">
-      <Tooltip content={isExhausted ? exhaustedLabel : addLabel}>
+    <div ref={containerRef} className="relative shrink-0">
+      <Tooltip content={actionLabel}>
         <button
           type="button"
           onClick={toggle}
-          aria-label={isExhausted ? exhaustedLabel : addLabel}
+          aria-label={actionLabel}
           aria-expanded={isOpen}
-          aria-disabled={isExhausted}
           className={cn(
-            'flex items-center rounded-md py-1 text-2xs font-medium transition-colors',
-            showLabel ? 'gap-1.5 px-2' : 'px-1.5',
-            isExhausted
-              ? 'cursor-default text-muted-foreground/40'
-              : active
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+            'flex items-center gap-1.5 rounded-md px-2 py-1 text-2xs font-medium transition-colors',
+            active
+              ? 'bg-muted text-foreground'
+              : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
           )}
         >
           <Plus size={12} aria-hidden />
-          {showLabel ? <span>{emptyLabel}</span> : null}
+          <span>Link integration</span>
         </button>
       </Tooltip>
 
       <DropdownPortal portal={portal} portalTarget={portalTarget}>
-        {isOpen && (
+        {isOpen ? (
           <>
             <DropdownBackdrop onClose={close} />
             <Popover
               innerRef={popupRef}
               role="dialog"
-              ariaLabel={panelLabel}
+              ariaLabel="Integrations"
               className={cn(popupClassName, 'flex flex-col')}
               style={popupStyle}
             >
@@ -105,7 +86,7 @@ export const IntegrationAddPopover = ({
                 viewportClassName="py-1"
                 fadeSize={12}
               >
-                <ul aria-label={panelLabel} className="flex flex-col">
+                <ul aria-label="Integrations" className="flex flex-col">
                   {members.map((member) => (
                     <IntegrationAddRow
                       key={member.provider}
@@ -118,7 +99,7 @@ export const IntegrationAddPopover = ({
               </ScrollFade>
             </Popover>
           </>
-        )}
+        ) : null}
       </DropdownPortal>
     </div>
   );

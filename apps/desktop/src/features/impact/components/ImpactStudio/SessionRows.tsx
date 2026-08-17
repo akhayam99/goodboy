@@ -1,7 +1,7 @@
 import type { ImpactSession } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
-import { EmptyState } from '@goodboy/ui';
+import { FilledEmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -14,11 +14,10 @@ type Props = {
 export const SessionRows = ({ sessions, valueLabel, formatValue, onOpenSession }: Props) => {
   if (sessions.length === 0) {
     return (
-      <EmptyState
+      <FilledEmptyState
         icon={CONCEPT_ICONS.impact}
         tone={CONCEPT_TONE.impact}
         title="No sessions in this window"
-        size="inline"
       />
     );
   }

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { IsoDateTime, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { PresetCard } from './index';
 
@@ -20,20 +20,39 @@ const workflow = (over: Partial<Workflow> = {}): Workflow => ({
   ...over,
 });
 
-const renderCard = (template: Workflow, approved = true) =>
+const renderCard = (template: Workflow) =>
   render(
     <ul>
       <PresetCard
         template={template}
         active={false}
-        approved={approved}
         onSelect={vi.fn()}
+        onDuplicate={vi.fn()}
         onDelete={vi.fn()}
       />
     </ul>,
   );
 
 describe('PresetCard', () => {
+  it('duplicates from the row action', () => {
+    const onDuplicate = vi.fn();
+    render(
+      <ul>
+        <PresetCard
+          template={workflow()}
+          active={false}
+          onSelect={vi.fn()}
+          onDuplicate={onDuplicate}
+          onDelete={vi.fn()}
+        />
+      </ul>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Duplicate Refactor' }));
+
+    expect(onDuplicate).toHaveBeenCalledOnce();
+  });
+
   it('names the origin of the workflow', () => {
     renderCard(workflow({ origin: 'library' }));
 
@@ -53,12 +72,5 @@ describe('PresetCard', () => {
     for (const label of ['preset', 'custom', 'orchestrated']) {
       expect(screen.queryByText(label)).toBeNull();
     }
-  });
-
-  it('keeps the draft pill separate from the origin', () => {
-    renderCard(workflow({ origin: 'custom' }), false);
-
-    expect(screen.getByText('draft')).toBeDefined();
-    expect(screen.getByText('custom')).toBeDefined();
   });
 });

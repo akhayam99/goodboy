@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { WorkflowsPanel } from '../WorkflowsPanel';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { useAppStore } from '../../../../store';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -10,6 +12,13 @@ type Props = {
 };
 
 export const WorkflowStudio = ({ workspaceId, workspaceName, onClose }: Props) => {
+  const setWorkflowStudioVisible = useAppStore((state) => state.setWorkflowStudioVisible);
+
+  useEffect(() => {
+    setWorkflowStudioVisible({ workspaceId });
+    return () => setWorkflowStudioVisible({ workspaceId: null });
+  }, [setWorkflowStudioVisible, workspaceId]);
+
   return (
     <StudioShell
       icon={CONCEPT_ICONS.workflows}

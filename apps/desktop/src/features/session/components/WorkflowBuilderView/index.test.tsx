@@ -386,7 +386,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     await draftPlan();
     fireEvent.click(screen.getByRole('switch', { name: /save as preset/i }));
-    fireEvent.click(screen.getByRole('switch', { name: /autorun/i }));
+    fireEvent.click(screen.getByRole('button', { name: /autorun off/i }));
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
     expect(mockSavePhaseTemplate.mock.calls[0]![0].isPreset).toBe(true);
@@ -543,7 +543,8 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     expect(mockGenerateWorkflowTitle).not.toHaveBeenCalled();
   });
 
-  it('defaults auto-run to on for dynamic runs while letting the user disable it', async () => {
+  it('defaults auto-run to off for dynamic runs while letting the user enable it', async () => {
+    storeState.workflowDrafts = {};
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
@@ -551,8 +552,11 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
 
-    const autoRunSwitch = screen.getByRole('switch', { name: /autorun/i });
-    expect(autoRunSwitch.getAttribute('aria-checked')).toBe('true');
+    const autoRunSwitch = screen.getByRole('button', { name: /autorun/i });
+    if (autoRunSwitch.getAttribute('aria-pressed') === 'true') {
+      fireEvent.click(autoRunSwitch);
+    }
+    expect(autoRunSwitch.getAttribute('aria-pressed')).toBe('false');
     fireEvent.click(autoRunSwitch);
     fireEvent.click(startBtn());
 
@@ -560,7 +564,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     expect(mockAttach).toHaveBeenCalledWith(
       'sess-1',
       expect.any(String),
-      expect.objectContaining({ autoRun: false, executionMode: 'dynamic' }),
+      expect.objectContaining({ autoRun: true, executionMode: 'dynamic' }),
     );
   });
 

@@ -52,6 +52,15 @@ afterEach(cleanup);
 import { BitbucketFormBody } from './BitbucketFormBody';
 
 describe('BitbucketFormBody', () => {
+  it('offers the token link before the token field', () => {
+    render(<BitbucketFormBody workspaceId={WS_ID} />);
+
+    const link = screen.getByRole('link', { name: /create a token/i });
+    const field = screen.getByLabelText(/api token/i);
+
+    expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it('keeps Connect disabled until every field is filled', () => {
     render(<BitbucketFormBody workspaceId={WS_ID} />);
     const connect = screen.getByRole('button', { name: /^connect$/i }) as HTMLButtonElement;

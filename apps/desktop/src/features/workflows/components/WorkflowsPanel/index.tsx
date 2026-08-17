@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { formatWorkflowFromNL, type FormattedWorkflow } from '@goodboy/core';
-import { invoke } from '@tauri-apps/api/core';
 import type {
   AgentEffort,
   ProviderId,
@@ -9,365 +7,320 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
-import { useToast } from '../../../../app/components/Toast';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { formatError, StudioRailLayout } from '@goodboy/ui';
-import type { WorkflowUpsertArgs, WorkflowStepUpsertArgs } from '../../workflows';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import type { WorkflowStepUpsertArgs, WorkflowUpsertArgs } from '../../workflows';
 import type { DefinitionForm, TemplateForm } from '../../form';
 import { defFromLibraryStep, emptyDefinition, emptyForm, templateToForm } from '../../form';
 import { useWorkflowDrag } from '../../hooks/useWorkflowDrag';
 import { DragGhost } from '../WorkflowStudio/DragGhost';
-import { WorkflowsRail } from '../WorkflowStudio/WorkflowsRail';
 import { WorkflowComposer } from '../WorkflowStudio/WorkflowComposer';
-import { WorkflowFormatPreview } from '../WorkflowStudio/WorkflowFormatPreview';
+import { WorkflowStarter } from '../WorkflowStudio/WorkflowStarter';
+import { WorkflowsRail } from '../WorkflowStudio/WorkflowsRail';
 
-type Props = {
-  readonly workspaceId: WorkspaceId;
-};
+type Props = { readonly workspaceId: WorkspaceId };
+
+const toStepArgs = ({
+  definition,
+  ordinal,
+}: {
+  definition: DefinitionForm;
+  ordinal: number;
+}): WorkflowStepUpsertArgs => ({
+  ...(definition.id !== undefined && { id: definition.id }),
+  ...(definition.libraryStepId !== undefined && { libraryStepId: definition.libraryStepId }),
+  role: definition.role,
+  ordinal,
+  name: definition.name.trim(),
+  promptPrefix: definition.promptPrefix,
+  ...(definition.expectedOutput.trim().length > 0 && {
+    expectedOutput: definition.expectedOutput.trim(),
+  }),
+  ...(definition.providerOverride.length > 0 && {
+    providerOverride: definition.providerOverride as ProviderId,
+  }),
+  ...(definition.modelOverride.trim().length > 0 && {
+    modelOverride: definition.modelOverride.trim(),
+  }),
+  effort: definition.effort as AgentEffort,
+  verbosity: definition.verbosity,
+});
 
 export const WorkflowsPanel = ({ workspaceId }: Props) => {
-  const templates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? EMPTY_ARRAY);
+  const templates = useAppStore((state) => state.phaseTemplates[workspaceId] ?? EMPTY_ARRAY);
   const stepLibrary = useAppStore(
-    (s) => s.stepLibrary[workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<StepDef>),
+    (state) => state.stepLibrary[workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<StepDef>),
   );
-  const loadPhaseTemplates = useAppStore((s) => s.loadPhaseTemplates);
-  const loadStepLibrary = useAppStore((s) => s.loadStepLibrary);
-  const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
-  const deleteWorkflow = useAppStore((s) => s.deleteWorkflow);
-  const saveStepDef = useAppStore((s) => s.saveStepDef);
-  const deleteStepDef = useAppStore((s) => s.deleteStepDef);
-  const resetWorkflows = useAppStore((s) => s.resetWorkflows);
-  const providers = useAppStore((s) => s.providers);
+  const providers = useAppStore((state) => state.providers);
   const workspaceRoot = useAppStore(
-    (s) => s.workspaces?.find((w) => w.id === workspaceId)?.rootPath ?? null,
+    (state) =>
+      state.workspaces?.find((workspace) => workspace.id === workspaceId)?.rootPath ?? null,
   );
-  const { showToast } = useToast();
+  const storedDraft = useAppStore((state) => state.workflowStudioDrafts[workspaceId]);
+  const generation = useAppStore((state) => state.workflowGenerations[workspaceId]);
+  const loadPhaseTemplates = useAppStore((state) => state.loadPhaseTemplates);
+  const loadStepLibrary = useAppStore((state) => state.loadStepLibrary);
+  const savePhaseTemplate = useAppStore((state) => state.savePhaseTemplate);
+  const deleteWorkflow = useAppStore((state) => state.deleteWorkflow);
+  const saveStepDef = useAppStore((state) => state.saveStepDef);
+  const deleteStepDef = useAppStore((state) => state.deleteStepDef);
+  const resetWorkflows = useAppStore((state) => state.resetWorkflows);
+  const setWorkflowStudioDraft = useAppStore((state) => state.setWorkflowStudioDraft);
+  const clearWorkflowStudioDraft = useAppStore((state) => state.clearWorkflowStudioDraft);
+  const startWorkflowGeneration = useAppStore((state) => state.startWorkflowGeneration);
+  const consumeWorkflowGeneration = useAppStore((state) => state.consumeWorkflowGeneration);
+
   const connectedProviders = useMemo(
-    () => providers.filter((p) => p.connection === 'connected').map((p) => p.id),
+    () =>
+      providers
+        .filter((provider) => provider.connection === 'connected')
+        .map((provider) => provider.id),
     [providers],
   );
-
-  const [editing, setEditing] = useState<Workflow | null | 'new'>(null);
-  const [approved, setApproved] = useState(false);
-  const [form, setForm] = useState<TemplateForm>(emptyForm());
+  const presets = templates.filter(
+    (template) => template.deletedAt == null && template.isPreset !== false,
+  );
+  const restoredWorkflow =
+    storedDraft?.workflowId == null
+      ? null
+      : (presets.find((workflow) => workflow.id === storedDraft.workflowId) ?? null);
+  const [editing, setEditing] = useState<Workflow | null | 'new'>(() =>
+    storedDraft === undefined ? null : (restoredWorkflow ?? 'new'),
+  );
+  const [form, setForm] = useState<TemplateForm>(() => storedDraft?.form ?? emptyForm());
+  const [agentPrompt, setAgentPrompt] = useState(storedDraft?.agentPrompt ?? '');
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmDefaults, setConfirmDefaults] = useState(false);
+  const [confirmEditorReset, setConfirmEditorReset] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const [formatting, setFormatting] = useState(false);
-  const [formatOpen, setFormatOpen] = useState(false);
-  const [preview, setPreview] = useState<FormattedWorkflow | null>(null);
-
-  const presets = templates.filter((t) => !t.deletedAt && t.isPreset !== false);
-
-  const editingIdRef = useRef<WorkflowId | null>(null);
-  const approvedRef = useRef(approved);
-  approvedRef.current = approved;
+  const editingIdRef = useRef<WorkflowId | null>(restoredWorkflow?.id ?? null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const formRef = useRef(form);
   formRef.current = form;
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isSavingRef = useRef(false);
-  const skipNextAutosave = useRef(true);
-  const flushSaveRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
 
   useEffect(() => {
     void loadPhaseTemplates(workspaceId);
     void loadStepLibrary(workspaceId);
   }, [loadPhaseTemplates, loadStepLibrary, workspaceId]);
 
-  useEffect(
-    () => () => {
-      if (saveTimer.current) {
-        clearTimeout(saveTimer.current);
+  useEffect(() => {
+    if (generation?.status !== 'complete') {
+      return;
+    }
+    const workflow = templates.find((template) => template.id === generation.workflowId);
+    if (workflow === undefined) {
+      return;
+    }
+    setEditing(workflow);
+    editingIdRef.current = workflow.id;
+    setForm(templateToForm(workflow));
+    setAgentPrompt('');
+    consumeWorkflowGeneration({ workspaceId });
+  }, [consumeWorkflowGeneration, generation, templates, workspaceId]);
+
+  useEffect(() => {
+    if (editing === null) {
+      if (agentPrompt.length === 0) {
+        return;
       }
-    },
-    [],
-  );
+      setWorkflowStudioDraft({ workspaceId, draft: { workflowId: null, form, agentPrompt } });
+      return;
+    }
+    setWorkflowStudioDraft({
+      workspaceId,
+      draft: { workflowId: editingIdRef.current, form, agentPrompt },
+    });
+  }, [agentPrompt, editing, form, setWorkflowStudioDraft, workspaceId]);
+
+  const flushSave = async (): Promise<boolean> => {
+    const snapshot = formRef.current;
+    if (snapshot.name.trim().length === 0) {
+      setFormError('Name is required');
+      return false;
+    }
+    if (snapshot.steps.some((definition) => definition.name.trim().length === 0)) {
+      setFormError('All steps need a name');
+      return false;
+    }
+    const args: WorkflowUpsertArgs = {
+      ...(editingIdRef.current !== null && { id: editingIdRef.current }),
+      workspaceId,
+      name: snapshot.name.trim(),
+      description: snapshot.description.trim(),
+      ...(snapshot.goal.trim().length > 0 && { goal: snapshot.goal.trim() }),
+      steps: snapshot.steps.map((definition, ordinal) => toStepArgs({ definition, ordinal })),
+      isPreset: true,
+      origin: 'custom',
+    };
+    setSaving(true);
+    setFormError(null);
+    try {
+      const saved = await savePhaseTemplate(args);
+      editingIdRef.current = saved.id;
+      setEditing(saved);
+      setForm(templateToForm(saved));
+      clearWorkflowStudioDraft({ workspaceId });
+      return true;
+    } catch (error) {
+      setFormError(formatError(error));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (editing === null) {
       return;
     }
-    if (skipNextAutosave.current) {
-      skipNextAutosave.current = false;
-      return;
-    }
-    if (saveTimer.current) {
+    if (saveTimer.current !== null) {
       clearTimeout(saveTimer.current);
-      saveTimer.current = null;
     }
-    if (form.steps.some((d) => !d.name.trim())) {
+    if (
+      form.name.trim().length === 0 ||
+      form.steps.some((definition) => definition.name.trim().length === 0)
+    ) {
       return;
     }
     saveTimer.current = setTimeout(() => {
       saveTimer.current = null;
-      void flushSaveRef.current();
+      void flushSave();
     }, 700);
+    return () => {
+      if (saveTimer.current !== null) {
+        clearTimeout(saveTimer.current);
+      }
+    };
   }, [form, editing]);
 
-  const openNew = () => {
-    setEditing('new');
-    setApproved(false);
+  const openStarter = () => {
+    setEditing(null);
     editingIdRef.current = null;
-    skipNextAutosave.current = true;
     setForm(emptyForm());
+    setAgentPrompt('');
+    setFormError(null);
+    clearWorkflowStudioDraft({ workspaceId });
+  };
+
+  const openBlank = () => {
+    const nextForm = emptyForm();
+    setEditing('new');
+    editingIdRef.current = null;
+    setForm(nextForm);
     setExpandedIdx(0);
     setFormError(null);
   };
 
-  const openEdit = (t: Workflow) => {
-    setEditing(t);
-    setApproved(t.isPreset !== false);
-    editingIdRef.current = t.id;
-    skipNextAutosave.current = true;
-    setForm(templateToForm(t));
+  const openEdit = (workflow: Workflow) => {
+    setEditing(workflow);
+    editingIdRef.current = workflow.id;
+    setForm(templateToForm(workflow));
+    setAgentPrompt('');
     setExpandedIdx(null);
     setFormError(null);
   };
 
-  const closeEdit = () => {
-    if (saveTimer.current) {
-      clearTimeout(saveTimer.current);
-      saveTimer.current = null;
-    }
-    setEditing(null);
-    editingIdRef.current = null;
-    setFormError(null);
-  };
-
-  const onFormat = async (description: string) => {
-    const text = description.trim();
-    if (text.length === 0) {
-      return;
-    }
-    const providerId = connectedProviders[0];
-    if (!providerId) {
-      showToast('error', 'connect a provider to format workflows');
-      return;
-    }
-    setFormatting(true);
-    setFormError(null);
-    try {
-      const result = await formatWorkflowFromNL(
-        {
-          providerId,
-          invokeFn: invoke,
-          ...(workspaceRoot != null && { workingDir: workspaceRoot }),
-        },
-        {
-          description: text,
-          currentName: form.name,
-          currentDescription: form.description,
-          currentStepNames: form.steps.map((s) => s.name).filter((n) => n.trim().length > 0),
-        },
-      );
-      if (!result) {
-        showToast('error', 'could not format workflow, try rephrasing');
-        return;
-      }
-      setPreview(result);
-    } catch (err) {
-      showToast('error', formatError(err));
-    } finally {
-      setFormatting(false);
-    }
-  };
-
-  const applyPreview = () => {
-    if (!preview) {
-      return;
-    }
-    setForm((prev) => ({
-      name: prev.name.trim() || preview.name,
-      description: prev.description.trim() || preview.description,
-      goal: prev.goal.trim() || (preview.goal ?? ''),
-      steps: preview.steps.map((s) => ({
-        ...emptyDefinition(),
-        role: s.role,
-        name: s.name,
-        promptPrefix: s.promptPrefix,
-        expectedOutput: s.expectedOutput,
-      })),
-    }));
-    setExpandedIdx(null);
-    setPreview(null);
-    setFormatOpen(false);
-    showToast('success', 'workflow formatted');
-  };
-
-  const closeFormat = () => {
-    setFormatOpen(false);
-    setPreview(null);
-  };
-
-  const flushSave = async (): Promise<boolean> => {
-    if (isSavingRef.current) {
-      return false;
-    }
-    const snapshot = formRef.current;
-    if (!snapshot.name.trim()) {
-      setFormError('name is required');
-      return false;
-    }
-    if (snapshot.steps.some((d) => !d.name.trim())) {
-      setFormError('all steps need a name');
-      return false;
-    }
-
-    const defs: WorkflowStepUpsertArgs[] = snapshot.steps.map((d, i) => ({
-      ...(d.id !== undefined ? { id: d.id } : {}),
-      ...(d.libraryStepId !== undefined ? { libraryStepId: d.libraryStepId } : {}),
-      role: d.role,
-      ordinal: i,
-      name: d.name.trim(),
-      promptPrefix: d.promptPrefix,
-      ...(d.expectedOutput.trim() ? { expectedOutput: d.expectedOutput.trim() } : {}),
-      ...(d.providerOverride ? { providerOverride: d.providerOverride as ProviderId } : {}),
-      ...(d.modelOverride.trim() ? { modelOverride: d.modelOverride.trim() } : {}),
-      effort: d.effort as AgentEffort,
-      verbosity: d.verbosity,
-    }));
-
-    const args: WorkflowUpsertArgs = {
-      ...(editingIdRef.current ? { id: editingIdRef.current } : {}),
+  const duplicate = async (workflow: Workflow) => {
+    const source = templateToForm(workflow);
+    const saved = await savePhaseTemplate({
       workspaceId,
-      name: snapshot.name.trim(),
-      description: snapshot.description.trim(),
-      ...(snapshot.goal.trim() ? { goal: snapshot.goal.trim() } : {}),
-      steps: defs,
-      isPreset: approvedRef.current,
-      origin: 'custom',
-    };
-
-    isSavingRef.current = true;
-    setSaving(true);
-    setFormError(null);
-    try {
-      const saved = await savePhaseTemplate(args);
-      const savedId = (saved as Workflow | undefined)?.id ?? null;
-      if (savedId) {
-        editingIdRef.current = savedId;
-        setEditing((cur) => (cur && cur !== 'new' ? (saved as Workflow) : cur));
-      }
-      return true;
-    } catch (err) {
-      setFormError(formatError(err));
-      return false;
-    } finally {
-      setSaving(false);
-      isSavingRef.current = false;
-    }
-  };
-  flushSaveRef.current = flushSave;
-
-  const setApprovedAndSave = (next: boolean) => {
-    if (saveTimer.current) {
-      clearTimeout(saveTimer.current);
-      saveTimer.current = null;
-    }
-    setApproved(next);
-    approvedRef.current = next;
-    void flushSave();
-  };
-
-  const onDelete = async (t: Workflow) => {
-    await deleteWorkflow(t.id, workspaceId);
-  };
-
-  const onReset = async () => {
-    setResetting(true);
-    setFormError(null);
-    try {
-      await resetWorkflows(workspaceId);
-      setEditing(null);
-    } catch (err) {
-      setFormError(formatError(err));
-    } finally {
-      setResetting(false);
-      setConfirmReset(false);
-    }
-  };
-
-  const activeId = editing !== null && editing !== 'new' ? editing.id : null;
-
-  const insertStep = (def: DefinitionForm, atIndex: number) => {
-    setForm((prev) => {
-      const steps = prev.steps.slice();
-      const clamped = Math.max(0, Math.min(atIndex, steps.length));
-      steps.splice(clamped, 0, def);
-      return { ...prev, steps };
+      name: `${workflow.name} copy`,
+      description: source.description,
+      ...(source.goal.trim().length > 0 && { goal: source.goal.trim() }),
+      steps: source.steps.map((definition, ordinal) => {
+        const copy = { ...definition, id: undefined };
+        return toStepArgs({ definition: copy, ordinal });
+      }),
+      isPreset: true,
+      origin: workflow.origin ?? 'custom',
     });
+    openEdit(saved);
   };
 
-  const insertFromLibrary = (stepDefId: string, atIndex: number) => {
-    const def = stepLibrary.find((s) => s.id === stepDefId);
-    if (!def) {
+  const deleteSelected = async () => {
+    if (editing === null || editing === 'new') {
+      openStarter();
       return;
     }
-    insertStep(defFromLibraryStep(def), atIndex);
+    await deleteWorkflow(editing.id, workspaceId);
+    openStarter();
   };
 
-  const updateStep = (idx: number, patch: Partial<DefinitionForm>) => {
-    setForm((prev) => {
-      const steps = prev.steps.slice();
-      steps[idx] = { ...steps[idx], ...patch } as DefinitionForm;
-      return { ...prev, steps };
+  const resetEditor = () => {
+    if (editing === 'new' || editing === null) {
+      openStarter();
+      return;
+    }
+    setForm(templateToForm(editing));
+    clearWorkflowStudioDraft({ workspaceId });
+    setConfirmEditorReset(false);
+  };
+
+  const createWithAgent = async () => {
+    const providerId = connectedProviders[0];
+    if (providerId === undefined) {
+      return;
+    }
+    const generationDescription =
+      agentPrompt.trim().length > 0
+        ? agentPrompt
+        : [form.description, form.goal].filter((value) => value.trim().length > 0).join('. ');
+    if (generationDescription.length === 0) {
+      setFormError('Add a description or goal before asking an agent to rewrite this workflow');
+      return;
+    }
+    const workflow = editing !== null && editing !== 'new' ? editing : null;
+    const accepted = await startWorkflowGeneration({
+      workspaceId,
+      providerId,
+      description: generationDescription,
+      ...(workspaceRoot !== null && { workingDir: workspaceRoot }),
+      workflow,
+      form: editing === null ? null : form,
+    });
+    if (!accepted && generation?.status === 'running') {
+      setFormError('A workflow is already being created in this workspace');
+    }
+  };
+
+  const insertStep = ({ definition, atIndex }: { definition: DefinitionForm; atIndex: number }) => {
+    setForm((current) => {
+      const steps = current.steps.slice();
+      steps.splice(Math.max(0, Math.min(atIndex, steps.length)), 0, definition);
+      return { ...current, steps };
     });
   };
 
-  const removeStep = (idx: number) => {
-    setForm((prev) => {
-      const next = prev.steps.filter((_, i) => i !== idx);
-      return { ...prev, steps: next.length > 0 ? next : [emptyDefinition()] };
-    });
-    setExpandedIdx(null);
-  };
-
-  const moveStep = (idx: number, dir: -1 | 1) => {
-    const j = idx + dir;
-    setForm((prev) => {
-      if (j < 0 || j >= prev.steps.length) {
-        return prev;
-      }
-      const steps = prev.steps.slice();
-      [steps[idx], steps[j]] = [steps[j], steps[idx]] as [DefinitionForm, DefinitionForm];
-      return { ...prev, steps };
-    });
-    setExpandedIdx((cur) => (cur === idx ? j : cur === j ? idx : cur));
-  };
-
-  const moveStepTo = (from: number, to: number) => {
+  const moveStepTo = ({ from, to }: { from: number; to: number }) => {
     if (to === from || to === from + 1) {
       return;
     }
-    const insertAt = to > from ? to - 1 : to;
-    setForm((prev) => {
-      const steps = prev.steps.slice();
+    setForm((current) => {
+      const steps = current.steps.slice();
       const [moved] = steps.splice(from, 1);
-      steps.splice(insertAt, 0, moved as DefinitionForm);
-      return { ...prev, steps };
-    });
-    setExpandedIdx((cur) => {
-      if (cur === null) {
-        return null;
+      if (moved === undefined) {
+        return current;
       }
-      if (cur === from) {
-        return insertAt;
-      }
-      let c = cur > from ? cur - 1 : cur;
-      if (c >= insertAt) {
-        c += 1;
-      }
-      return c;
+      steps.splice(to > from ? to - 1 : to, 0, moved);
+      return { ...current, steps };
     });
   };
 
   const { drag, dropIndex, startLibraryDrag, startStepDrag, ghost } = useWorkflowDrag({
     enabled: editing !== null,
-    onDropLibrary: insertFromLibrary,
-    onReorder: moveStepTo,
+    onDropLibrary: (stepDefId, atIndex) => {
+      const definition = stepLibrary.find((item) => item.id === stepDefId);
+      if (definition !== undefined) {
+        insertStep({ definition: defFromLibraryStep(definition), atIndex });
+      }
+    },
+    onReorder: (from, to) => moveStepTo({ from, to }),
   });
+
+  const generationError = generation?.status === 'failed' ? generation.error : null;
+  const activeId = editing !== null && editing !== 'new' ? editing.id : null;
 
   return (
     <div className="flex h-full min-h-0">
@@ -378,66 +331,95 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
           <WorkflowsRail
             presets={presets}
             activeId={activeId}
-            editing={editing}
             resetting={resetting}
-            confirmReset={confirmReset}
-            setConfirmReset={setConfirmReset}
+            confirmReset={confirmDefaults}
+            setConfirmReset={setConfirmDefaults}
             onSelect={openEdit}
-            onNew={openNew}
-            onDelete={(t) => void onDelete(t)}
-            onReset={() => void onReset()}
+            onNew={openStarter}
+            onDuplicate={(workflow) => void duplicate(workflow)}
+            onDelete={(workflow) => void deleteWorkflow(workflow.id, workspaceId)}
+            onReset={() => {
+              setResetting(true);
+              void resetWorkflows(workspaceId).finally(() => {
+                setResetting(false);
+                setConfirmDefaults(false);
+              });
+            }}
           />
         }
         detail={
-          <WorkflowComposer
-            open={editing !== null}
-            isNew={editing === 'new'}
-            approved={approved}
-            onToggleApproved={setApprovedAndSave}
-            hasPresets={presets.length > 0}
-            form={form}
-            workspaceId={workspaceId}
-            connectedProviders={connectedProviders}
-            library={stepLibrary}
-            expandedIdx={expandedIdx}
-            saving={saving}
-            error={formError}
-            formatting={formatting}
-            canFormat={connectedProviders.length > 0}
-            onOpenFormat={() => setFormatOpen(true)}
-            dragging={drag !== null}
-            dropIndex={dropIndex}
-            onNew={openNew}
-            onChangeMeta={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
-            onAddBlank={() => {
-              insertStep(emptyDefinition(), form.steps.length);
-              setExpandedIdx(form.steps.length);
-            }}
-            onToggleExpand={(idx) => setExpandedIdx((cur) => (cur === idx ? null : idx))}
-            onUpdateStep={updateStep}
-            onRemoveStep={removeStep}
-            onMoveStep={moveStep}
-            draggingStepIdx={drag?.kind === 'step' ? drag.fromIndex : null}
-            onStartDrag={startLibraryDrag}
-            onStartStepDrag={startStepDrag}
-            onSaveDef={(args) => void saveStepDef(args, workspaceId)}
-            onDeleteDef={(id) => void deleteStepDef(id, workspaceId)}
-            onClose={closeEdit}
-          />
+          editing === null ? (
+            <WorkflowStarter
+              prompt={agentPrompt}
+              isWorking={generation?.status === 'running'}
+              error={generationError}
+              providerReason={
+                connectedProviders.length === 0
+                  ? 'Connect a provider to create a workflow with an agent.'
+                  : null
+              }
+              onPromptChange={setAgentPrompt}
+              onExample={setAgentPrompt}
+              onCreate={() => void createWithAgent()}
+              onBlank={openBlank}
+            />
+          ) : (
+            <WorkflowComposer
+              form={form}
+              workspaceId={workspaceId}
+              connectedProviders={connectedProviders}
+              library={stepLibrary}
+              expandedIdx={expandedIdx}
+              saving={saving}
+              error={formError}
+              dragging={drag !== null}
+              dropIndex={dropIndex}
+              draggingStepIdx={drag?.kind === 'step' ? drag.fromIndex : null}
+              confirmingReset={confirmEditorReset}
+              generating={generation?.status === 'running'}
+              canGenerate={connectedProviders.length > 0}
+              onConfirmingReset={setConfirmEditorReset}
+              onChangeMeta={(patch) => setForm((current) => ({ ...current, ...patch }))}
+              onAddBlank={() => {
+                insertStep({ definition: emptyDefinition(), atIndex: form.steps.length });
+                setExpandedIdx(form.steps.length);
+              }}
+              onToggleExpand={(idx) => setExpandedIdx((current) => (current === idx ? null : idx))}
+              onUpdateStep={(idx, patch) =>
+                setForm((current) => ({
+                  ...current,
+                  steps: current.steps.map((step, stepIdx) =>
+                    stepIdx === idx ? { ...step, ...patch } : step,
+                  ),
+                }))
+              }
+              onRemoveStep={(idx) =>
+                setForm((current) => ({
+                  ...current,
+                  steps: current.steps.filter((_, stepIdx) => stepIdx !== idx),
+                }))
+              }
+              onMoveStep={(idx, direction) =>
+                moveStepTo({ from: idx, to: idx + direction + (direction > 0 ? 1 : 0) })
+              }
+              onStartDrag={startLibraryDrag}
+              onStartStepDrag={startStepDrag}
+              onSaveDef={(args) => void saveStepDef(args, workspaceId)}
+              onDeleteDef={(id) => void deleteStepDef(id, workspaceId)}
+              onDuplicate={() => {
+                if (editing !== 'new') {
+                  void duplicate(editing);
+                }
+              }}
+              onDelete={() => void deleteSelected()}
+              onGenerate={() => void createWithAgent()}
+              onReset={resetEditor}
+              onClose={openStarter}
+            />
+          )
         }
       />
-
       <DragGhost ghost={ghost} />
-
-      <WorkflowFormatPreview
-        open={formatOpen}
-        formatting={formatting}
-        proposal={preview}
-        currentStepNames={form.steps.map((s) => s.name)}
-        onFormat={(description) => void onFormat(description)}
-        onApply={applyPreview}
-        onClose={closeFormat}
-      />
     </div>
   );
 };

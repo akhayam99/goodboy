@@ -59,7 +59,7 @@ export const OpenQuestionCluster = ({ questions, sessionId, viewerAgentId = null
   }, [pendingPairs, flashAnswered, answerOpenQuestions, sessionId, targetAgentId]);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex min-w-0 flex-col gap-1.5">
       {settled.map((q) => (
         <OpenQuestionInlineCard key={q.id} question={q} sessionId={sessionId} />
       ))}
@@ -68,7 +68,7 @@ export const OpenQuestionCluster = ({ questions, sessionId, viewerAgentId = null
           cluster.ownerAgentId != null ? (agentById.get(cluster.ownerAgentId) ?? null) : null;
         const showsOwner = cluster.ownerAgentId != null && cluster.ownerAgentId !== viewerAgentId;
         return (
-          <div key={cluster.ownerAgentId ?? '__orphan__'} className="flex flex-col gap-2">
+          <div key={cluster.ownerAgentId ?? '__orphan__'} className="flex min-w-0 flex-col gap-1.5">
             {showsOwner && (
               <QuestionClusterHeader
                 sessionId={sessionId}

@@ -9,7 +9,7 @@ type Props = {
 
 export const OpenQuestionInlineCard = ({ question, sessionId }: Props) => {
   return (
-    <div data-oq-anchor={question.id}>
+    <div data-oq-anchor={question.id} className="min-w-0">
       {question.status === 'answered' ? (
         <AnsweredCard question={question} />
       ) : (

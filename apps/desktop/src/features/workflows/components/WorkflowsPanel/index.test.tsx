@@ -1,20 +1,27 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const { state } = vi.hoisted(() => ({
   state: {
     phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
     stepLibrary: {} as Record<string, ReadonlyArray<unknown>>,
     providers: [] as ReadonlyArray<unknown>,
+    workspaces: [] as ReadonlyArray<unknown>,
+    workflowStudioDrafts: {} as Record<string, unknown>,
+    workflowGenerations: {} as Record<string, unknown>,
     loadPhaseTemplates: vi.fn(async () => undefined),
     loadStepLibrary: vi.fn(async () => undefined),
-    savePhaseTemplate: vi.fn(async () => undefined),
+    savePhaseTemplate: vi.fn(async (_input: unknown): Promise<unknown> => undefined),
     deleteWorkflow: vi.fn(async () => undefined),
     saveStepDef: vi.fn(async () => undefined),
     deleteStepDef: vi.fn(async () => undefined),
     resetWorkflows: vi.fn(async () => undefined),
+    setWorkflowStudioDraft: vi.fn(),
+    clearWorkflowStudioDraft: vi.fn(),
+    startWorkflowGeneration: vi.fn(async () => true),
+    consumeWorkflowGeneration: vi.fn(),
   },
 }));
 
@@ -44,9 +51,12 @@ beforeEach(() => {
   state.phaseTemplates = {};
   state.stepLibrary = {};
   state.providers = [];
+  state.workspaces = [];
+  state.workflowStudioDrafts = {};
+  state.workflowGenerations = {};
   state.loadPhaseTemplates = vi.fn(async () => undefined);
   state.loadStepLibrary = vi.fn(async () => undefined);
-  state.savePhaseTemplate = vi.fn(async () => undefined);
+  state.savePhaseTemplate = vi.fn(async (_input: unknown): Promise<unknown> => undefined);
   state.deleteWorkflow = vi.fn(async () => undefined);
   state.saveStepDef = vi.fn(async () => undefined);
   state.deleteStepDef = vi.fn(async () => undefined);
@@ -126,5 +136,75 @@ describe('WorkflowsPanel', () => {
     };
     renderPanel();
     expect(screen.getByText(/no presets yet/i)).toBeDefined();
+  });
+
+  it('duplicates a workflow as an independent preset', async () => {
+    const original = makeWorkflow({
+      name: 'Plan and build',
+      steps: [
+        {
+          id: 'step-1',
+          role: 'planner',
+          ordinal: 0,
+          name: 'Plan',
+          promptPrefix: 'Write the plan',
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+    state.phaseTemplates = { 'ws-1': [original] };
+    state.savePhaseTemplate = vi.fn(async (input: unknown) => ({
+      ...original,
+      ...(input as Record<string, unknown>),
+      id: 'wf-copy',
+      steps: [],
+    }));
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Duplicate Plan and build' }));
+
+    await waitFor(() => expect(state.savePhaseTemplate).toHaveBeenCalledOnce());
+    const input = state.savePhaseTemplate.mock.calls[0]?.[0];
+    expect(input).not.toHaveProperty('id');
+    expect(input).toMatchObject({ name: 'Plan and build copy', isPreset: true });
+  });
+
+  it('restores an unnamed local draft and reset clears it', () => {
+    state.workflowStudioDrafts = {
+      'ws-1': {
+        workflowId: null,
+        agentPrompt: '',
+        form: {
+          name: '',
+          description: 'Half typed description',
+          goal: '',
+          steps: [
+            {
+              uid: 'draft-step',
+              role: 'custom',
+              name: '',
+              promptPrefix: '',
+              expectedOutput: '',
+              providerOverride: '',
+              modelOverride: '',
+              effort: 'medium',
+              verbosity: 'normal',
+            },
+          ],
+        },
+      },
+    };
+    renderPanel();
+
+    const description = screen.getByRole('textbox', {
+      name: 'Workflow description',
+    }) as HTMLInputElement;
+    expect(description.value).toBe('Half typed description');
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm reset workflow' }));
+
+    expect(state.clearWorkflowStudioDraft).toHaveBeenCalledWith({ workspaceId: 'ws-1' });
+    expect(screen.getByRole('heading', { name: 'Build a workflow' })).toBeDefined();
   });
 });

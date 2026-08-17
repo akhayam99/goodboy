@@ -98,6 +98,14 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
             <label htmlFor="sentry-token" className="text-xs font-semibold text-foreground">
               Auth token
             </label>
+            <a
+              href="https://sentry.io/settings/account/api/auth-tokens/"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
+            >
+              Create a token in Sentry settings <ExternalLink size={10} aria-hidden />
+            </a>
             <Input
               id="sentry-token"
               type="password"
@@ -107,14 +115,6 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               onChange={(e) => setToken(e.target.value)}
               disabled={busy}
             />
-            <a
-              href="https://sentry.io/settings/account/api/auth-tokens/"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
-            >
-              Create a token in Sentry settings <ExternalLink size={10} aria-hidden />
-            </a>
           </div>
           <div className="flex flex-col gap-2">
             <label htmlFor="sentry-org" className="text-xs font-semibold text-foreground">
