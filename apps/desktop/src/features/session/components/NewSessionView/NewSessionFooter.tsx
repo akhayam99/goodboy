@@ -30,14 +30,14 @@ export const NewSessionFooter = ({
   onCreate,
 }: Props) => {
   return (
-    <>
+    <div className="sticky bottom-0 z-10 bg-background">
       {!isSimple && error != null && isMissingBaseRefError(error) ? (
-        <div className="px-6 pb-2">
+        <div className="pb-2">
           <BaseBranchGuide />
         </div>
       ) : null}
       <Divider />
-      <footer className="flex shrink-0 items-center gap-3 px-6 py-3">
+      <footer className="flex items-center gap-2 py-4">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {error != null && !isMissingBaseRefError(error) ? (
             <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
@@ -72,6 +72,6 @@ export const NewSessionFooter = ({
           </Button>
         )}
       </footer>
-    </>
+    </div>
   );
 };

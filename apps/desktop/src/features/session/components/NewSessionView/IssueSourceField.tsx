@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { SegmentedTabs } from '@goodboy/ui';
 import type { SessionExternalTaskProvider, WorkspaceId } from '@goodboy/types';
+import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
 import { IssuePicker } from '../../../integrations/components/IssuePicker';
 import { useIssueCandidates } from '../../../integrations/hooks/useIssueCandidates';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
@@ -48,18 +49,38 @@ export const IssueSourceField = ({
           size="sm"
         />
       )}
-      <IssuePicker
-        rows={rows}
-        isLoading={isLoading}
-        isLoaded={isLoaded}
-        error={error}
-        value={value}
-        placeholder={`Search ${active?.label ?? ''} issues assigned to you…`}
-        disabled={disabled}
-        onOpen={load}
-        onPick={onPick}
-        onClear={onClear}
-      />
+      {value != null ? (
+        <div role="group" aria-label="Linked task" className="flex flex-col gap-2">
+          <ExternalTaskChip
+            task={value}
+            appearance="row"
+            variant="full"
+            navigation="external"
+            hasReferenceActions={false}
+          />
+          <button
+            type="button"
+            onClick={onClear}
+            disabled={disabled}
+            className="w-fit rounded-md px-2 py-1 text-xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+          >
+            Change task
+          </button>
+        </div>
+      ) : (
+        <IssuePicker
+          rows={rows}
+          isLoading={isLoading}
+          isLoaded={isLoaded}
+          error={error}
+          value={value}
+          placeholder={`Search ${active?.label ?? ''} issues assigned to you…`}
+          disabled={disabled}
+          onOpen={load}
+          onPick={onPick}
+          onClear={onClear}
+        />
+      )}
     </div>
   );
 };

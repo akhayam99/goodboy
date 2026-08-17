@@ -4,12 +4,14 @@ import {
   FieldRow,
   IconButton,
   Input,
+  PANE_RHYTHM,
   SectionHeader,
   Skeleton,
   Textarea,
   cn,
+  tintClasses,
 } from '@goodboy/ui';
-import { AlertTriangle, Expand, Folder, GitBranch, Paperclip, Target } from 'lucide-react';
+import { AlertTriangle, Expand, Folder, GitBranch, Paperclip } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
 import {
@@ -26,12 +28,15 @@ import { DEFAULT_BRANCH_PREFIX } from '../../../settings/settings';
 import { PROVIDER_ORDER } from '../../../providers/components/ProviderStudio/providerOrder';
 import { BranchModeToggle } from './BranchModeToggle';
 import { IssueSourceField } from './IssueSourceField';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NewSessionFooter } from './NewSessionFooter';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type BranchMode = 'new' | 'existing';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly workspaceName: string;
+  readonly workspacePath: string;
   readonly isSimple: boolean;
   readonly noProviderConnected: boolean;
   readonly onOpenSettings: () => void;
@@ -68,11 +73,19 @@ type Props = {
   readonly branchesLoading: boolean;
   readonly conflictSessionId: SessionId | null;
   readonly conflictWorktreePath: string | null;
+  readonly error: string | null;
+  readonly goalReady: boolean;
+  readonly canCreate: boolean;
+  readonly onClose: () => void;
+  readonly onOpenConflictSession: (id: SessionId) => void;
+  readonly onCreate: (eraseWorktreePath?: string) => Promise<void>;
   readonly busy: boolean;
 };
 
 export const NewSessionForm = ({
   workspaceId,
+  workspaceName,
+  workspacePath,
   isSimple,
   noProviderConnected,
   onOpenSettings,
@@ -109,10 +122,37 @@ export const NewSessionForm = ({
   branchesLoading,
   conflictSessionId,
   conflictWorktreePath,
+  error,
+  goalReady,
+  canCreate,
+  onClose,
+  onOpenConflictSession,
+  onCreate,
   busy,
 }: Props) => {
+  const sessionTint = tintClasses(CONCEPT_TONE.sessions);
+
   return (
-    <div className="flex w-full flex-col gap-6">
+    <div className={cn('flex w-full flex-col', PANE_RHYTHM.stack)}>
+      <header className="flex items-start gap-3">
+        <span
+          className={cn(
+            'flex size-10 shrink-0 items-center justify-center rounded-lg border',
+            sessionTint.bgSoft,
+            sessionTint.borderSoft,
+            sessionTint.icon,
+          )}
+        >
+          <CONCEPT_ICONS.sessions size={18} aria-hidden />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Create session</h1>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Choose the work, define the outcome, and prepare its code location.
+          </p>
+        </div>
+      </header>
+
       {noProviderConnected ? (
         <div
           role="alert"
@@ -140,19 +180,28 @@ export const NewSessionForm = ({
         </div>
       ) : null}
 
-      <section className="flex flex-col">
-        <SectionHeader
-          icon={<Target size={12} aria-hidden />}
-          label="Session details"
-          hint="Give the agents a clear outcome and any supporting context they should have."
-        />
-        {!isSimple && issueSources.length > 0 ? (
-          <>
+      {!isSimple && issueSources.length > 0 ? (
+        <>
+          <Divider />
+          <section aria-label="Work item" className="flex flex-col">
+            <SectionHeader
+              size="page"
+              icon={
+                <CONCEPT_ICONS.integrations
+                  size={16}
+                  aria-hidden
+                  className="text-muted-foreground"
+                />
+              }
+              label="Work item"
+              hint="Link assigned work to carry its source and context into the session."
+            />
             <FieldRow
               label="Start from an issue"
-              help="Start from an assigned issue and fill the goal and branch automatically."
+              help="Selecting a task fills the goal and branch while keeping the provider visible."
+              layout="stacked"
             >
-              <div className="w-full sm:w-96">
+              <div className="w-full">
                 <IssueSourceField
                   workspaceId={workspaceId}
                   sources={issueSources}
@@ -163,14 +212,24 @@ export const NewSessionForm = ({
                 />
               </div>
             </FieldRow>
-            <Divider />
-          </>
-        ) : null}
-        <FieldRow
+          </section>
+        </>
+      ) : null}
+
+      <Divider />
+      <section aria-label="Session goal" className="flex flex-col">
+        <SectionHeader
+          size="page"
+          icon={<CONCEPT_ICONS.goal size={16} aria-hidden className="text-muted-foreground" />}
           label="Goal"
+          hint="State the outcome the agents should deliver and attach supporting context."
+        />
+        <FieldRow
+          label="Outcome"
           help="What this session should accomplish. This becomes the agents' primary context."
+          layout="stacked"
         >
-          <div className="flex w-full items-start gap-1.5 sm:w-96">
+          <div className="flex w-full items-start gap-2">
             <Textarea
               value={goal}
               placeholder={
@@ -205,12 +264,13 @@ export const NewSessionForm = ({
         <FieldRow
           label="Attachments"
           help="Images and files the agents can read on demand when they need more context."
+          layout="stacked"
         >
           <div
             ref={composerRef}
             data-drop-composer
             className={cn(
-              'flex w-full flex-col gap-2 rounded-lg border border-dashed p-3 motion-safe:transition-colors sm:w-96',
+              'flex w-full flex-col gap-2 rounded-lg border border-dashed p-3 motion-safe:transition-colors',
               isDragging ? 'border-primary bg-primary/5' : 'border-border-soft',
             )}
           >
@@ -252,14 +312,35 @@ export const NewSessionForm = ({
       </section>
 
       <Divider />
-      {isSimple ? (
-        <>
-          <section className="flex flex-col">
-            <SectionHeader
-              icon={<Folder size={12} aria-hidden />}
-              label="Folder"
-              hint="This is the folder name you will find on disk inside your workspace folder."
-            />
+      <section aria-label="Code location" className="flex flex-col">
+        <SectionHeader
+          size="page"
+          icon={
+            isSimple ? (
+              <Folder size={16} aria-hidden className="text-muted-foreground" />
+            ) : (
+              <GitBranch size={16} aria-hidden className="text-muted-foreground" />
+            )
+          }
+          label={isSimple ? 'Folder' : 'Branch'}
+          hint={
+            isSimple
+              ? 'Choose the session folder created inside this workspace.'
+              : 'Use a dedicated worktree on a new or existing local branch.'
+          }
+        />
+        <div className="flex items-center gap-2 rounded-lg bg-subtle p-3">
+          <Folder size={14} aria-hidden className="shrink-0 text-muted-foreground" />
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="truncate text-xs font-medium text-foreground">{workspaceName}</span>
+            <span className="truncate font-mono text-2xs text-muted-foreground">
+              {workspacePath}
+            </span>
+          </div>
+        </div>
+        <Divider />
+        {isSimple ? (
+          <>
             <FieldRow
               label="Folder name"
               help="The app creates this folder in your workspace under sessions"
@@ -303,16 +384,9 @@ export const NewSessionForm = ({
                 ) : null}
               </div>
             </FieldRow>
-          </section>
-        </>
-      ) : (
-        <>
-          <section className="flex flex-col">
-            <SectionHeader
-              icon={<GitBranch size={12} aria-hidden />}
-              label="Branch"
-              hint="Each session uses its own worktree on a new or existing local branch."
-            />
+          </>
+        ) : (
+          <>
             <FieldRow label="Source" help="Create a fresh branch or attach this session to one.">
               <BranchModeToggle mode={branchMode} onChange={onBranchModeChange} disabled={busy} />
             </FieldRow>
@@ -388,9 +462,21 @@ export const NewSessionForm = ({
                 </div>
               )}
             </FieldRow>
-          </section>
-        </>
-      )}
+          </>
+        )}
+        <NewSessionFooter
+          isSimple={isSimple}
+          error={error}
+          busy={busy}
+          onClose={onClose}
+          conflictSessionId={conflictSessionId}
+          conflictWorktreePath={conflictWorktreePath}
+          goalReady={goalReady}
+          canCreate={canCreate}
+          onOpenConflictSession={onOpenConflictSession}
+          onCreate={onCreate}
+        />
+      </section>
     </div>
   );
 };

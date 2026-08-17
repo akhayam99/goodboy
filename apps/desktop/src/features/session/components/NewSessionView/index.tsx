@@ -33,7 +33,6 @@ import { EMPTY_NEW_SESSION_DRAFT } from '../../../../store/slices/newSessionDraf
 import { generateBranchSlug } from './generateBranchSlug';
 import { GoalEditor } from './GoalEditor';
 import { NewSessionBlocked } from './NewSessionBlocked';
-import { NewSessionFooter } from './NewSessionFooter';
 import { NewSessionForm } from './NewSessionForm';
 import { polishGoal } from './polishGoal';
 import { PANE_RHYTHM } from '@goodboy/ui';
@@ -429,6 +428,8 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
             >
               <NewSessionForm
                 workspaceId={workspaceId}
+                workspaceName={workspace?.name ?? 'Workspace'}
+                workspacePath={workspace?.rootPath ?? ''}
                 isSimple={isSimple}
                 noProviderConnected={noProviderConnected}
                 onOpenSettings={onOpenSettings}
@@ -490,21 +491,15 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
                 branchesLoading={branchesLoading}
                 conflictSessionId={conflictSessionId}
                 conflictWorktreePath={conflictWorktreePath}
+                error={error}
+                goalReady={goalReady}
+                canCreate={canCreate}
+                onClose={onCancel}
+                onOpenConflictSession={onOpenConflictSession}
+                onCreate={onCreate}
                 busy={busy}
               />
             </ScrollFade>
-            <NewSessionFooter
-              isSimple={isSimple}
-              error={error}
-              busy={busy}
-              onClose={onCancel}
-              conflictSessionId={conflictSessionId}
-              conflictWorktreePath={conflictWorktreePath}
-              goalReady={goalReady}
-              canCreate={canCreate}
-              onOpenConflictSession={onOpenConflictSession}
-              onCreate={onCreate}
-            />
           </>
         )}
       </div>

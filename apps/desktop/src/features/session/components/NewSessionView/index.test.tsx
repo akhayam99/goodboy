@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { WorkspaceGitStatus, WorkspaceId, WorkspaceIntegration } from '@goodboy/types';
 import type {
   ClearNewSessionDraftParams,
@@ -88,6 +88,16 @@ const integration = (provider: 'linear' | 'sentry' | 'gitlab'): WorkspaceIntegra
     config: { host: 'https://gitlab.com' },
   }) as WorkspaceIntegration;
 
+const LINEAR_ISSUE = {
+  provider: 'linear',
+  externalId: 'issue-42',
+  identifier: 'ENG-42',
+  title: 'Make session creation intentional',
+  url: 'https://linear.app/goodboy/issue/ENG-42',
+  goal: 'Make session creation intentional',
+  branchSlug: 'intentional-session-creation',
+} as const;
+
 beforeEach(() => {
   h.isGithubAuthenticated = true;
   h.store.workspaces[0]!.kind = 'repo';
@@ -129,6 +139,97 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('NewSessionView issue sources', () => {
+  it('preserves provider attribution when creating from an integration task', async () => {
+    h.store.workspaceIntegrations = { [WORKSPACE_ID]: [integration('linear')] };
+    h.store.newSessionDrafts = {
+      [WORKSPACE_ID]: {
+        goal: LINEAR_ISSUE.goal,
+        branchSlug: LINEAR_ISSUE.branchSlug,
+        slugTouched: true,
+        folderName: LINEAR_ISSUE.goal,
+        folderNameTouched: false,
+        branchMode: 'new',
+        existingBranch: '',
+        issue: LINEAR_ISSUE,
+      },
+    };
+
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    expect(
+      within(screen.getByRole('group', { name: 'Linked task' })).getByRole('img', {
+        name: 'Linear',
+      }),
+    ).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Create session' }));
+
+    await waitFor(() =>
+      expect(h.store.createSession).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        goal: LINEAR_ISSUE.goal,
+        branchPrefix: 'goodboy',
+        branchSlug: LINEAR_ISSUE.branchSlug,
+        externalTask: {
+          provider: LINEAR_ISSUE.provider,
+          externalId: LINEAR_ISSUE.externalId,
+          identifier: LINEAR_ISSUE.identifier,
+          url: LINEAR_ISSUE.url,
+          title: LINEAR_ISSUE.title,
+        },
+      }),
+    );
+  });
+
+  it('keeps the create action at the edge of the code location region', () => {
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    expect(
+      within(screen.getByRole('region', { name: 'Code location' })).getByRole('button', {
+        name: 'Create session',
+      }),
+    ).toBeDefined();
+  });
+
+  it('validates the required decisions before creating a repository session', async () => {
+    const view = render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+    const createButton = screen.getByRole('button', { name: 'Create session' });
+
+    expect(createButton.hasAttribute('disabled')).toBe(true);
+    fireEvent.click(createButton);
+    expect(h.store.createSession).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText('Goal'), {
+      target: { value: 'Create a focused session surface' },
+    });
+    view.rerender(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+    fireEvent.change(screen.getByLabelText('Branch slug'), {
+      target: { value: 'focused-session-surface' },
+    });
+    view.rerender(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    expect(createButton.hasAttribute('disabled')).toBe(false);
+    fireEvent.click(createButton);
+
+    await waitFor(() =>
+      expect(h.store.createSession).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        goal: 'Create a focused session surface',
+        branchPrefix: 'goodboy',
+        branchSlug: 'focused-session-surface',
+      }),
+    );
+  });
+
   it('isolates expanded edits until Save and supports both keyboard actions', () => {
     h.store.newSessionDrafts = {
       [WORKSPACE_ID]: {

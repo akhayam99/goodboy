@@ -123,60 +123,118 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
         class="h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-6 py-5"
       >
         <div
-          class="flex w-full flex-col gap-6"
+          class="flex w-full flex-col gap-5"
         >
+          <header
+            class="flex items-start gap-3"
+          >
+            <span
+              class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-primary/5 border-primary/20 text-primary"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-circle-play"
+                fill="none"
+                height="18"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="18"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M9 9.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997A1 1 0 0 1 9 14.996z"
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                />
+              </svg>
+            </span>
+            <div
+              class="flex min-w-0 flex-1 flex-col gap-1"
+            >
+              <h1
+                class="text-xl font-semibold tracking-tight text-foreground"
+              >
+                Create session
+              </h1>
+              <p
+                class="text-sm leading-relaxed text-muted-foreground"
+              >
+                Choose the work, define the outcome, and prepare its code location.
+              </p>
+            </div>
+          </header>
+          <div
+            aria-orientation="horizontal"
+            class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+            role="separator"
+          />
           <section
+            aria-label="Session goal"
             class="flex flex-col"
           >
             <div
-              class="flex flex-col gap-1"
+              class="flex items-start gap-3"
             >
-              <div
-                class="flex items-center justify-between gap-2"
+              <span
+                class="flex w-5 shrink-0 justify-center"
               >
-                <span
-                  class="text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground flex items-center gap-1.5"
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-target text-muted-foreground"
+                  fill="none"
+                  height="16"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
-                  <svg
-                    aria-hidden="true"
-                    class="lucide lucide-target"
-                    fill="none"
-                    height="12"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="12"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                    />
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="6"
-                    />
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="2"
-                    />
-                  </svg>
-                  Session details
-                </span>
-              </div>
-              <p
-                class="text-2xs text-muted-foreground/70"
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                  />
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="6"
+                  />
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="2"
+                  />
+                </svg>
+              </span>
+              <div
+                class="flex min-w-0 flex-1 flex-col gap-1"
               >
-                Give the agents a clear outcome and any supporting context they should have.
-              </p>
+                <div
+                  class="flex items-center justify-between gap-2"
+                >
+                  <h2
+                    class="text-base font-semibold text-foreground"
+                  >
+                    Goal
+                  </h2>
+                </div>
+                <p
+                  class="text-sm leading-relaxed text-muted-foreground"
+                >
+                  State the outcome the agents should deliver and attach supporting context.
+                </p>
+              </div>
             </div>
             <div
-              class="flex flex-col gap-2 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+              class="flex flex-col gap-2 py-4 first:pt-0 last:pb-0"
             >
               <div
                 class="flex min-w-40 shrink flex-col gap-0.5"
@@ -184,7 +242,7 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
                 <span
                   class="text-xs font-medium text-foreground"
                 >
-                  Goal
+                  Outcome
                 </span>
                 <p
                   class="text-2xs leading-relaxed text-muted-foreground"
@@ -192,11 +250,9 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
                   What this session should accomplish. This becomes the agents' primary context.
                 </p>
               </div>
-              <div
-                class="shrink-0"
-              >
+              <div>
                 <div
-                  class="flex w-full items-start gap-1.5 sm:w-96"
+                  class="flex w-full items-start gap-2"
                 >
                   <textarea
                     aria-label="Goal"
@@ -262,7 +318,7 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
               role="separator"
             />
             <div
-              class="flex flex-col gap-2 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+              class="flex flex-col gap-2 py-4 first:pt-0 last:pb-0"
             >
               <div
                 class="flex min-w-40 shrink flex-col gap-0.5"
@@ -278,11 +334,9 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
                   Images and files the agents can read on demand when they need more context.
                 </p>
               </div>
-              <div
-                class="shrink-0"
-              >
+              <div>
                 <div
-                  class="flex w-full flex-col gap-2 rounded-lg border border-dashed p-3 motion-safe:transition-colors sm:w-96 border-border-soft"
+                  class="flex w-full flex-col gap-2 rounded-lg border border-dashed p-3 motion-safe:transition-colors border-border-soft"
                   data-drop-composer="true"
                 >
                   <input
@@ -324,53 +378,100 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
             role="separator"
           />
           <section
+            aria-label="Code location"
             class="flex flex-col"
           >
             <div
-              class="flex flex-col gap-1"
+              class="flex items-start gap-3"
             >
+              <span
+                class="flex w-5 shrink-0 justify-center"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-git-branch text-muted-foreground"
+                  fill="none"
+                  height="16"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M15 6a9 9 0 0 0-9 9V3"
+                  />
+                  <circle
+                    cx="18"
+                    cy="6"
+                    r="3"
+                  />
+                  <circle
+                    cx="6"
+                    cy="18"
+                    r="3"
+                  />
+                </svg>
+              </span>
               <div
-                class="flex items-center justify-between gap-2"
+                class="flex min-w-0 flex-1 flex-col gap-1"
+              >
+                <div
+                  class="flex items-center justify-between gap-2"
+                >
+                  <h2
+                    class="text-base font-semibold text-foreground"
+                  >
+                    Branch
+                  </h2>
+                </div>
+                <p
+                  class="text-sm leading-relaxed text-muted-foreground"
+                >
+                  Use a dedicated worktree on a new or existing local branch.
+                </p>
+              </div>
+            </div>
+            <div
+              class="flex items-center gap-2 rounded-lg bg-subtle p-3"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-folder shrink-0 text-muted-foreground"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
+                />
+              </svg>
+              <div
+                class="flex min-w-0 flex-1 flex-col gap-0.5"
               >
                 <span
-                  class="text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground flex items-center gap-1.5"
+                  class="truncate text-xs font-medium text-foreground"
                 >
-                  <svg
-                    aria-hidden="true"
-                    class="lucide lucide-git-branch"
-                    fill="none"
-                    height="12"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="12"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M15 6a9 9 0 0 0-9 9V3"
-                    />
-                    <circle
-                      cx="18"
-                      cy="6"
-                      r="3"
-                    />
-                    <circle
-                      cx="6"
-                      cy="18"
-                      r="3"
-                    />
-                  </svg>
-                  Branch
+                  Workspace
                 </span>
+                <span
+                  class="truncate font-mono text-2xs text-muted-foreground"
+                />
               </div>
-              <p
-                class="text-2xs text-muted-foreground/70"
-              >
-                Each session uses its own worktree on a new or existing local branch.
-              </p>
             </div>
+            <div
+              aria-orientation="horizontal"
+              class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+              role="separator"
+            />
             <div
               class="flex flex-col gap-2 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
             >
@@ -508,6 +609,35 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
                 </div>
               </div>
             </div>
+            <div
+              class="sticky bottom-0 z-10 bg-background"
+            >
+              <div
+                aria-orientation="horizontal"
+                class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+                role="separator"
+              />
+              <footer
+                class="flex items-center gap-2 py-4"
+              >
+                <div
+                  class="flex min-w-0 flex-1 items-center gap-3"
+                />
+                <button
+                  class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] border-0 text-foreground hover:bg-muted h-8 px-3 text-sm"
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
+                  disabled=""
+                  type="button"
+                >
+                  Create session
+                </button>
+              </footer>
+            </div>
           </section>
         </div>
       </div>
@@ -522,31 +652,6 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
         style="height: 24px;"
       />
     </div>
-    <div
-      aria-orientation="horizontal"
-      class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
-      role="separator"
-    />
-    <footer
-      class="flex shrink-0 items-center gap-3 px-6 py-3"
-    >
-      <div
-        class="flex min-w-0 flex-1 items-center gap-3"
-      />
-      <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] border-0 text-foreground hover:bg-muted h-8 px-3 text-sm"
-        type="button"
-      >
-        Cancel
-      </button>
-      <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
-        disabled=""
-        type="button"
-      >
-        Create session
-      </button>
-    </footer>
   </div>
 </div>
 `;
@@ -1052,60 +1157,118 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
         class="h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-6 py-5"
       >
         <div
-          class="flex w-full flex-col gap-6"
+          class="flex w-full flex-col gap-5"
         >
+          <header
+            class="flex items-start gap-3"
+          >
+            <span
+              class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-primary/5 border-primary/20 text-primary"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-circle-play"
+                fill="none"
+                height="18"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="18"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M9 9.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997A1 1 0 0 1 9 14.996z"
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                />
+              </svg>
+            </span>
+            <div
+              class="flex min-w-0 flex-1 flex-col gap-1"
+            >
+              <h1
+                class="text-xl font-semibold tracking-tight text-foreground"
+              >
+                Create session
+              </h1>
+              <p
+                class="text-sm leading-relaxed text-muted-foreground"
+              >
+                Choose the work, define the outcome, and prepare its code location.
+              </p>
+            </div>
+          </header>
+          <div
+            aria-orientation="horizontal"
+            class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+            role="separator"
+          />
           <section
+            aria-label="Session goal"
             class="flex flex-col"
           >
             <div
-              class="flex flex-col gap-1"
+              class="flex items-start gap-3"
             >
-              <div
-                class="flex items-center justify-between gap-2"
+              <span
+                class="flex w-5 shrink-0 justify-center"
               >
-                <span
-                  class="text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground flex items-center gap-1.5"
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-target text-muted-foreground"
+                  fill="none"
+                  height="16"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
-                  <svg
-                    aria-hidden="true"
-                    class="lucide lucide-target"
-                    fill="none"
-                    height="12"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="12"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                    />
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="6"
-                    />
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="2"
-                    />
-                  </svg>
-                  Session details
-                </span>
-              </div>
-              <p
-                class="text-2xs text-muted-foreground/70"
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                  />
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="6"
+                  />
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="2"
+                  />
+                </svg>
+              </span>
+              <div
+                class="flex min-w-0 flex-1 flex-col gap-1"
               >
-                Give the agents a clear outcome and any supporting context they should have.
-              </p>
+                <div
+                  class="flex items-center justify-between gap-2"
+                >
+                  <h2
+                    class="text-base font-semibold text-foreground"
+                  >
+                    Goal
+                  </h2>
+                </div>
+                <p
+                  class="text-sm leading-relaxed text-muted-foreground"
+                >
+                  State the outcome the agents should deliver and attach supporting context.
+                </p>
+              </div>
             </div>
             <div
-              class="flex flex-col gap-2 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+              class="flex flex-col gap-2 py-4 first:pt-0 last:pb-0"
             >
               <div
                 class="flex min-w-40 shrink flex-col gap-0.5"
@@ -1113,7 +1276,7 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
                 <span
                   class="text-xs font-medium text-foreground"
                 >
-                  Goal
+                  Outcome
                 </span>
                 <p
                   class="text-2xs leading-relaxed text-muted-foreground"
@@ -1121,11 +1284,9 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
                   What this session should accomplish. This becomes the agents' primary context.
                 </p>
               </div>
-              <div
-                class="shrink-0"
-              >
+              <div>
                 <div
-                  class="flex w-full items-start gap-1.5 sm:w-96"
+                  class="flex w-full items-start gap-2"
                 >
                   <textarea
                     aria-label="Goal"
@@ -1191,7 +1352,7 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
               role="separator"
             />
             <div
-              class="flex flex-col gap-2 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+              class="flex flex-col gap-2 py-4 first:pt-0 last:pb-0"
             >
               <div
                 class="flex min-w-40 shrink flex-col gap-0.5"
@@ -1207,11 +1368,9 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
                   Images and files the agents can read on demand when they need more context.
                 </p>
               </div>
-              <div
-                class="shrink-0"
-              >
+              <div>
                 <div
-                  class="flex w-full flex-col gap-2 rounded-lg border border-dashed p-3 motion-safe:transition-colors sm:w-96 border-border-soft"
+                  class="flex w-full flex-col gap-2 rounded-lg border border-dashed p-3 motion-safe:transition-colors border-border-soft"
                   data-drop-composer="true"
                 >
                   <input
@@ -1253,53 +1412,100 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
             role="separator"
           />
           <section
+            aria-label="Code location"
             class="flex flex-col"
           >
             <div
-              class="flex flex-col gap-1"
+              class="flex items-start gap-3"
             >
+              <span
+                class="flex w-5 shrink-0 justify-center"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-git-branch text-muted-foreground"
+                  fill="none"
+                  height="16"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M15 6a9 9 0 0 0-9 9V3"
+                  />
+                  <circle
+                    cx="18"
+                    cy="6"
+                    r="3"
+                  />
+                  <circle
+                    cx="6"
+                    cy="18"
+                    r="3"
+                  />
+                </svg>
+              </span>
               <div
-                class="flex items-center justify-between gap-2"
+                class="flex min-w-0 flex-1 flex-col gap-1"
+              >
+                <div
+                  class="flex items-center justify-between gap-2"
+                >
+                  <h2
+                    class="text-base font-semibold text-foreground"
+                  >
+                    Branch
+                  </h2>
+                </div>
+                <p
+                  class="text-sm leading-relaxed text-muted-foreground"
+                >
+                  Use a dedicated worktree on a new or existing local branch.
+                </p>
+              </div>
+            </div>
+            <div
+              class="flex items-center gap-2 rounded-lg bg-subtle p-3"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-folder shrink-0 text-muted-foreground"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
+                />
+              </svg>
+              <div
+                class="flex min-w-0 flex-1 flex-col gap-0.5"
               >
                 <span
-                  class="text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground flex items-center gap-1.5"
+                  class="truncate text-xs font-medium text-foreground"
                 >
-                  <svg
-                    aria-hidden="true"
-                    class="lucide lucide-git-branch"
-                    fill="none"
-                    height="12"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="12"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M15 6a9 9 0 0 0-9 9V3"
-                    />
-                    <circle
-                      cx="18"
-                      cy="6"
-                      r="3"
-                    />
-                    <circle
-                      cx="6"
-                      cy="18"
-                      r="3"
-                    />
-                  </svg>
-                  Branch
+                  Workspace
                 </span>
+                <span
+                  class="truncate font-mono text-2xs text-muted-foreground"
+                />
               </div>
-              <p
-                class="text-2xs text-muted-foreground/70"
-              >
-                Each session uses its own worktree on a new or existing local branch.
-              </p>
             </div>
+            <div
+              aria-orientation="horizontal"
+              class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+              role="separator"
+            />
             <div
               class="flex flex-col gap-2 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
             >
@@ -1437,6 +1643,35 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
                 </div>
               </div>
             </div>
+            <div
+              class="sticky bottom-0 z-10 bg-background"
+            >
+              <div
+                aria-orientation="horizontal"
+                class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+                role="separator"
+              />
+              <footer
+                class="flex items-center gap-2 py-4"
+              >
+                <div
+                  class="flex min-w-0 flex-1 items-center gap-3"
+                />
+                <button
+                  class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] border-0 text-foreground hover:bg-muted h-8 px-3 text-sm"
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
+                  disabled=""
+                  type="button"
+                >
+                  Create session
+                </button>
+              </footer>
+            </div>
           </section>
         </div>
       </div>
@@ -1451,31 +1686,6 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
         style="height: 24px;"
       />
     </div>
-    <div
-      aria-orientation="horizontal"
-      class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
-      role="separator"
-    />
-    <footer
-      class="flex shrink-0 items-center gap-3 px-6 py-3"
-    >
-      <div
-        class="flex min-w-0 flex-1 items-center gap-3"
-      />
-      <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] border-0 text-foreground hover:bg-muted h-8 px-3 text-sm"
-        type="button"
-      >
-        Cancel
-      </button>
-      <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
-        disabled=""
-        type="button"
-      >
-        Create session
-      </button>
-    </footer>
   </div>
 </div>
 `;
