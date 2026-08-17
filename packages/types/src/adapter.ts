@@ -1,4 +1,4 @@
-import type { IsoDateTime, PermissionRuleId, ProviderRunId, SessionId } from './ids';
+import type { AgentId, IsoDateTime, PermissionRuleId, ProviderRunId, SessionId } from './ids';
 import type { MessageAttachment } from './message';
 import type { ClaudePermissionMode, PermissionScope } from './permission';
 import type { ProviderName } from './provider';
@@ -109,6 +109,8 @@ export type TurnEvent =
       fromStep: { ordinal: number; name: string };
       toStep: { ordinal: number; name: string };
       carryForwardContext: string;
+      sessionId?: SessionId;
+      fromAgentId?: AgentId;
       degraded?: true;
       durationMs?: number;
       at: IsoDateTime;

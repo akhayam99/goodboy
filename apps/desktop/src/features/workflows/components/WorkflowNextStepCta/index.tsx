@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Play } from 'lucide-react';
+import { AlertTriangle, Play, RotateCcw } from 'lucide-react';
 import { Button, InlineConfirm, cn } from '@goodboy/ui';
 import { classifyWorkflowChain, getModelDescriptor } from '@goodboy/core';
 import type {
@@ -31,6 +31,7 @@ export type Props = {
   readonly runs: ReadonlyArray<Agent>;
   readonly onAdvance: (params: AdvanceParams) => void | Promise<void>;
   readonly onForceAdvance?: () => void | Promise<void>;
+  readonly onRecover?: () => void | Promise<void>;
   readonly blockReason?: WorkflowBlockReason | null;
   readonly consumesActivePlan?: boolean;
   readonly className?: string;
@@ -45,6 +46,7 @@ export const WorkflowNextStepCta = ({
   runs,
   onAdvance,
   onForceAdvance,
+  onRecover,
   blockReason = null,
   consumesActivePlan = false,
   className,
@@ -55,6 +57,7 @@ export const WorkflowNextStepCta = ({
 }: Props) => {
   const [busy, setBusy] = useState(false);
   const [pendingForce, setPendingForce] = useState(false);
+  const [isRecovering, setIsRecovering] = useState(false);
   const chain = useMemo(() => classifyWorkflowChain(workflow, runs), [workflow, runs]);
   const next = chain.kind === 'step' ? chain.step : null;
   const kind = useMemo(() => (next ? inferAgentKindFromName(next.name) : 'generic'), [next]);
@@ -92,12 +95,38 @@ export const WorkflowNextStepCta = ({
       setBusy(false);
     }
   };
+  const recover = async () => {
+    if (busy) {
+      return;
+    }
+    setBusy(true);
+    setIsRecovering(true);
+    try {
+      await onRecover?.();
+    } finally {
+      setBusy(false);
+      setIsRecovering(false);
+    }
+  };
   if (chain.kind === 'complete') {
     return null;
   }
   if (chain.kind === 'blocked') {
     return (
-      <div className={cn('relative', className)}>
+      <div className={cn('relative flex items-center gap-2', className)}>
+        <Button
+          variant="warning"
+          emphasis="outline"
+          size="sm"
+          onClick={() => void recover()}
+          disabled={busy || onRecover == null}
+          data-testid="workflow-recover-step-cta"
+          title="Ask the agent to verify the work, finish anything missing, and emit the completion marker"
+          className="h-auto border-warning/50 bg-warning/10 px-2 py-1 text-2xs font-semibold"
+        >
+          <RotateCcw size={12} aria-hidden className="shrink-0" />
+          {isRecovering ? 'Checking step' : 'Check completion'}
+        </Button>
         <Button
           variant="warning"
           emphasis="outline"
@@ -105,7 +134,7 @@ export const WorkflowNextStepCta = ({
           onClick={() => setPendingForce(true)}
           disabled={busy}
           data-testid="workflow-force-next-step-cta"
-          title={`Step blocked: ${chain.failedStep.name}`}
+          title="Discard this step output and continue without it"
           className="h-auto border-warning/50 bg-warning/10 px-2 py-1 text-2xs font-semibold"
         >
           <AlertTriangle size={12} aria-hidden className="shrink-0" />
@@ -117,7 +146,7 @@ export const WorkflowNextStepCta = ({
               role="alert"
               icon={<AlertTriangle size={12} />}
               title="Skip the blocked step and start the next agent?"
-              description={`${chain.failedStep.name} did not finish. Its output will not be carried forward.`}
+              description={`${chain.failedStep.name} will be marked skipped. Its output will not be carried forward.`}
               confirmLabel="Skip and continue"
               cancelLabel="Cancel"
               isBusy={busy}

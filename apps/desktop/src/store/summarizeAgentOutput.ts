@@ -3,7 +3,7 @@ import { formatError } from '@goodboy/ui';
 import { fallbackStepOutputSummary, summarizeStepOutput } from '@goodboy/core';
 import type { AgentId, TaskModelPreference } from '@goodboy/types';
 
-export const SUMMARY_TIMEOUT_MS = 60_000;
+export const SUMMARY_TIMEOUT_MS = 90_000;
 
 type Params = {
   readonly agentId: AgentId;

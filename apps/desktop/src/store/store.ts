@@ -365,6 +365,10 @@ export type AppActions = {
     workflowRunId: WorkflowRunId,
     options?: { readonly onlyWhenBlocked?: boolean },
   ): Promise<void>;
+  recoverStuckStep(params: {
+    readonly sessionId: SessionId;
+    readonly workflowRunId: WorkflowRunId;
+  }): Promise<void>;
   maybeAutoAdvanceWorkflow(sessionId: SessionId): Promise<void>;
   orchestrateNextStep(
     sessionId: SessionId,

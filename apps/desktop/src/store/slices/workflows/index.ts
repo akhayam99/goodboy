@@ -1,6 +1,7 @@
 import { activateWorkflowAgent } from './activateWorkflowAgent';
 import { advanceClusterImplementation } from './clusterImplementation';
 import { retryStepSummary } from './retryStepSummary';
+import { recoverStuckStep } from './recoverStuckStep';
 import { attachWorkflowToSession } from './attachWorkflowToSession';
 import { deleteStepDef } from './deleteStepDef';
 import { deleteWorkflow } from './deleteWorkflow';
@@ -68,5 +69,6 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     setWorkflowOrchestratorHints: setWorkflowOrchestratorHints(set, get),
     setWorkflowOrchestratorRouting: setWorkflowOrchestratorRouting(set, get),
     retryStepSummary: retryStepSummary(set, get),
+    recoverStuckStep: recoverStuckStep(get),
   };
 };

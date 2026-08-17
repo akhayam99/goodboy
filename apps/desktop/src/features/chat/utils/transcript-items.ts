@@ -1,11 +1,13 @@
 import type {
   IsoDateTime,
+  AgentId,
   MessageAttachment,
   PermissionRuleId,
   PermissionScope,
   ProviderId,
   ProviderRunId,
   ProviderUsage,
+  SessionId,
   TurnEvent,
 } from '@goodboy/types';
 import { isOpenQuestionAnswerText } from '@goodboy/core';
@@ -51,6 +53,8 @@ export type TranscriptItem =
       fromStep: { ordinal: number; name: string };
       toStep: { ordinal: number; name: string };
       carryForwardContext: string;
+      sessionId?: SessionId;
+      fromAgentId?: AgentId;
       degraded?: true;
       durationMs?: number;
       at: string;
@@ -275,6 +279,8 @@ export const reduceTranscript = (
           fromStep: event.fromStep,
           toStep: event.toStep,
           carryForwardContext: event.carryForwardContext,
+          sessionId: event.sessionId,
+          fromAgentId: event.fromAgentId,
           degraded: event.degraded,
           durationMs: event.durationMs,
           at: event.at,

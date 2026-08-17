@@ -355,6 +355,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               },
               toStep: { ordinal: nextDef.ordinal, name: nextDef.name },
               carryForwardContext,
+              sessionId,
+              fromAgentId: immediatePredecessor.id,
               ...(isDegraded && { degraded: true }),
               ...(durationMs != null && { durationMs }),
               at: now(),

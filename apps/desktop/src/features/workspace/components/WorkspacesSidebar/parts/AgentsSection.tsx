@@ -113,6 +113,7 @@ export const AgentsSection = ({
                 onResolveFirstForRun={section.onResolveFirstForRun}
                 toggleClusterExpand={section.toggleClusterExpand}
                 skipStuckStepAndAdvance={section.skipStuckStepAndAdvance}
+                recoverStuckStep={section.recoverStuckStep}
               />
             ))}
           </div>

@@ -9,6 +9,10 @@ const MAX_FIRST_LINE_LENGTH = 120;
 const FALLBACK_HEAD_LENGTH = 1500;
 const FALLBACK_TAIL_LENGTH = 400;
 const FALLBACK_JOINER = '\n...\n';
+const MAX_SUMMARIZER_INPUT_LENGTH = 120_000;
+const SUMMARIZER_INPUT_HEAD_LENGTH = 100_000;
+const SUMMARIZER_INPUT_JOINER =
+  '\n\n[middle output omitted to fit the summarizer input budget]\n\n';
 const CLAMP_NOTICE =
   '\n\n(clamped to the handoff budget, the full step output is in the step transcript)';
 
@@ -76,6 +80,15 @@ const clampToSummaryBudget = ({ summary }: ClampParams): string => {
   return `${kept.join('\n').trimEnd()}${CLAMP_NOTICE}`;
 };
 
+const boundSummarizerInput = ({ output }: Params): string => {
+  if (output.length <= MAX_SUMMARIZER_INPUT_LENGTH) {
+    return output;
+  }
+  const tailLength =
+    MAX_SUMMARIZER_INPUT_LENGTH - SUMMARIZER_INPUT_HEAD_LENGTH - SUMMARIZER_INPUT_JOINER.length;
+  return `${output.slice(0, SUMMARIZER_INPUT_HEAD_LENGTH)}${SUMMARIZER_INPUT_JOINER}${output.slice(-tailLength)}`;
+};
+
 export const summarizeStepOutput = async ({
   providerId,
   binary,
@@ -91,7 +104,7 @@ export const summarizeStepOutput = async ({
     providerId,
     model,
     binary: binary ?? getDefaultBinary(providerId),
-    userMessage: output,
+    userMessage: boundSummarizerInput({ output }),
     systemPrompt: stepOutputSystemPrompt({ expectedOutput: expectedOutput ?? '' }),
     ...(effort != null && { effort }),
     ...(workingDir != null && { workingDir }),

@@ -1,8 +1,17 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
+
+const retryStepSummary = vi.hoisted(() => vi.fn(async () => undefined));
+
+vi.mock('../../../../store', () => ({
+  useAppStore: <T,>(selector: (state: { retryStepSummary: typeof retryStepSummary }) => T) =>
+    selector({ retryStepSummary }),
+}));
+
 import { PhaseTransitionCard } from './index';
 
 afterEach(cleanup);
@@ -64,6 +73,25 @@ describe('PhaseTransitionCard', () => {
     } satisfies Extract<TranscriptItem, { kind: 'step_transition' }>;
     rerender(<PhaseTransitionCard item={degradedItem} />);
     expect(screen.getByText('degraded handoff')).toBeDefined();
+    fireEvent.click(screen.getByRole('button'));
+    expect(screen.getByText(/received a deterministic copy/i)).toBeDefined();
+  });
+
+  it('retries a degraded summary from the transition card', () => {
+    const degradedItem = {
+      ...item,
+      degraded: true,
+      sessionId: 'session-1' as SessionId,
+      fromAgentId: 'agent-1' as AgentId,
+    } satisfies Extract<TranscriptItem, { kind: 'step_transition' }>;
+    render(<PhaseTransitionCard item={degradedItem} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry summary' }));
+
+    expect(retryStepSummary).toHaveBeenCalledWith({
+      sessionId: 'session-1',
+      agentId: 'agent-1',
+    });
   });
 
   it('renders the step duration when present', () => {
