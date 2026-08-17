@@ -136,3 +136,12 @@ type LensEmptyStateProps = IllustrationProps &
 export const LensEmptyState = (props: LensEmptyStateProps) => (
   <EmptyState {...props} bordered size="inline" />
 );
+
+type FilledEmptyStateProps = IllustrationProps &
+  Omit<EmptyStateProps, keyof IllustrationProps | 'bordered' | 'size'> & {
+    readonly description?: string;
+  };
+
+export const FilledEmptyState = (props: FilledEmptyStateProps) => (
+  <EmptyState {...props} className={cn('bg-elevated/40', props.className)} size="inline" />
+);

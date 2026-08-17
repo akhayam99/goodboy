@@ -34,6 +34,7 @@ type ResolveDesiredLeftParams = {
 
 const VIEWPORT_MARGIN = 8;
 const DROPDOWN_GAP = 4;
+const MIN_DROPDOWN_HEIGHT = 160;
 
 const resolveDesiredLeft = ({ rect, popupWidth, align }: ResolveDesiredLeftParams): number => {
   if (align === 'end') {
@@ -106,8 +107,14 @@ export const useDropdownDirection = ({
       const spaceAbove = Math.max(rect.top - DROPDOWN_GAP - VIEWPORT_MARGIN, 0);
       const measuredHeight = popupRef.current?.getBoundingClientRect().height ?? 0;
       const popupHeight = measuredHeight > 0 ? measuredHeight : expectedHeight;
-      const direction = spaceBelow < popupHeight && spaceAbove > spaceBelow ? 'up' : 'down';
-      const maxHeight = direction === 'down' ? spaceBelow : spaceAbove;
+      const direction =
+        spaceBelow >= MIN_DROPDOWN_HEIGHT || spaceBelow >= spaceAbove
+          ? spaceBelow < popupHeight && spaceAbove > spaceBelow
+            ? 'up'
+            : 'down'
+          : 'up';
+      const availableHeight = direction === 'down' ? spaceBelow : spaceAbove;
+      const maxHeight = Math.max(availableHeight, 0);
 
       setPosition({
         direction,
