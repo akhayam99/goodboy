@@ -8,6 +8,7 @@ export type SegmentedTabOption<T extends string = string> = {
   readonly value: T;
   readonly label: string;
   readonly icon?: LucideIcon;
+  readonly glyph?: ReactNode;
   readonly hint?: string;
   readonly badge?: ReactNode;
   readonly disabled?: boolean;
@@ -95,6 +96,7 @@ export const SegmentedTabs = <T extends string>({
       {options.map((option, index) => {
         const isActive = option.value === value;
         const Icon = option.icon;
+        const glyph = option.glyph;
         const tone = option.tone != null ? tintClasses(option.tone) : null;
         const activeStyle: CSSProperties | undefined =
           isActive && option.accent != null
@@ -125,7 +127,9 @@ export const SegmentedTabs = <T extends string>({
                 'cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground',
             )}
           >
-            {Icon != null ? (
+            {glyph != null ? (
+              <span className="flex shrink-0 items-center">{glyph}</span>
+            ) : Icon != null ? (
               isMedium ? (
                 <Icon
                   size={15}

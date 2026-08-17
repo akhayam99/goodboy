@@ -125,9 +125,9 @@ the reading column, so an empty pane never presents a 2000px-wide dashed box.
 
 The fixed chrome row uses one flexible context region followed by one shrink-safe action region. `StudioShell` exposes that region as `headerAccessory`, `HeaderBand` exposes it as `actions`, and inspector headers use the same `actions` slot. Generic object, lifecycle and destructive controls go there. The action region is pushed to the far end and never enters the content scroller.
 
-The focused object's primary action uses the same fixed header action region. The one exception is a creation or edit flow: its commit action uses one fixed footer, with supporting error copy at the start and cancel plus exactly one primary action at the end. A section-scoped action uses `SectionHeader.action`; a field control uses `FieldRow`; neither promotes itself into global chrome.
+The focused object's primary action uses the same fixed header action region. A creation or edit flow instead lands its commit in one action row that sits in the scrolling flow immediately after the last section, with supporting error copy at the start and cancel plus exactly one primary action at the end. Alternates and reset controls join the same row as ghost or secondary buttons. A section-scoped action uses `SectionHeader.action`; a field control uses `FieldRow`; neither promotes itself into global chrome. A surface that genuinely needs a dock argues for one at review; docking is no longer the default for any composition.
 
-Every footer action row belongs to the content it acts on. It shares that content's measure and sits at its edge, never stretched across a shell or container that also holds unrelated content. Edge means both axes: the row follows the last piece of content it commits, inside the same scrolling flow, rather than docking to the bottom of a pane and leaving empty space between itself and the thing it acts on. A pane whose content routinely overflows may still dock its commit action, and then the dock is the exception it argues for, not the default.
+That row also shares the measure of the content it commits, never stretched across a shell or container that also holds unrelated content.
 
 `InlineConfirm` stays attached to a destructive trigger in its action region. A detached confirmation in the body or a destructive footer dock is not another zone.
 
@@ -153,8 +153,8 @@ actions use the shared `Tooltip`, never the native `title`.
 **One creation grammar.** Bare sections stacked in one column, never a bordered
 box around the whole thing; secondary affordances in `SectionHeader`'s
 `action` slot; related options in one container, not one card each; one
-footer, error left, exactly one primary button right, cancel and alternates as
-ghost or secondary.
+action row immediately after the last section, error left, exactly one primary
+button right, cancel and alternates as ghost or secondary.
 
 ## Empty states
 

@@ -36,7 +36,7 @@ import { NewSessionBlocked } from './NewSessionBlocked';
 import { NewSessionFooter } from './NewSessionFooter';
 import { NewSessionForm } from './NewSessionForm';
 import { polishGoal } from './polishGoal';
-import { PANE_RHYTHM } from '@goodboy/ui';
+import { cn, PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
   onClose: () => void;
@@ -86,6 +86,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const [goalEditorDraft, setGoalEditorDraft] = useState('');
   const [goalEditorDirty, setGoalEditorDirty] = useState(false);
   const [goalPolishing, setGoalPolishing] = useState(false);
+  const [resetArmed, setResetArmed] = useState(false);
   const goalPolishRequestId = useRef(0);
   const goalEditorBaseRef = useRef(goal);
 
@@ -139,12 +140,11 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
         return;
       }
       e.preventDefault();
-      clearNewSessionDraft({ workspaceId });
       onClose();
     };
     window.addEventListener('keydown', onKey, { capture: true });
     return () => window.removeEventListener('keydown', onKey, { capture: true });
-  }, [busy, clearNewSessionDraft, onClose, workspaceId]);
+  }, [busy, onClose]);
 
   const onPickIssue = (candidate: IssueCandidate) => {
     setNewSessionDraft({
@@ -356,8 +356,24 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   };
 
   const onCancel = () => {
-    clearNewSessionDraft({ workspaceId });
     onClose();
+  };
+
+  const isDraftDirty =
+    goal.length > 0 ||
+    branchSlug.length > 0 ||
+    slugTouched ||
+    folderName.length > 0 ||
+    folderNameTouched ||
+    existingBranch.length > 0 ||
+    branchMode !== 'new' ||
+    issue !== null;
+
+  const armReset = () => setResetArmed(true);
+  const cancelReset = () => setResetArmed(false);
+  const confirmReset = () => {
+    clearNewSessionDraft({ workspaceId });
+    setResetArmed(false);
   };
 
   const onCreate = async (eraseWorktreePath?: string) => {
@@ -421,78 +437,74 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
             onSave={saveGoalEditor}
           />
         ) : (
-          <>
-            <ScrollFade
-              className="min-h-0 flex-1"
-              viewportClassName={PANE_RHYTHM.body}
-              fadeSize={24}
-            >
-              <NewSessionForm
-                workspaceId={workspaceId}
-                isSimple={isSimple}
-                noProviderConnected={noProviderConnected}
-                onOpenSettings={onOpenSettings}
-                issueSources={issueSources}
-                issue={issue}
-                onPickIssue={onPickIssue}
-                onClearIssue={() => setNewSessionDraft({ workspaceId, draft: { issue: null } })}
-                goal={goal}
-                onGoalChange={(value) =>
-                  setNewSessionDraft({ workspaceId, draft: { goal: value } })
-                }
-                onOpenGoalEditor={openGoalEditor}
-                goalEditorDirty={goalEditorDirty}
-                attachments={attachments}
-                isDragging={isDragging}
-                composerRef={composerRef}
-                fileInputRef={fileInputRef}
-                onFileInputChange={onFileInputChange}
-                onRemoveAttachment={removeAttachment}
-                branchMode={branchMode}
-                onBranchModeChange={(mode) =>
-                  setNewSessionDraft({ workspaceId, draft: { branchMode: mode } })
-                }
-                branchPrefix={sanitizeBranchPrefix({ input: branchPrefix })}
-                branchSlug={branchSlug}
-                onBranchSlugChange={(value) => {
-                  setNewSessionDraft({
-                    workspaceId,
-                    draft: {
-                      branchSlug: sanitizeBranchSlugValue({
-                        input: value,
-                        maxLength: SLUG_MAX_LEN,
-                      }),
-                      slugTouched: true,
-                    },
-                  });
-                }}
-                folderName={folderName}
-                onFolderNameChange={(value) => {
-                  setNewSessionDraft({
-                    workspaceId,
-                    draft: {
-                      folderName: value,
-                      folderNameTouched: true,
-                    },
-                  });
-                }}
-                folderPathPreview={folderPathPreview}
-                folderNameError={folderNameError}
-                folderConflict={folderConflict.exists}
-                folderConflictChecking={folderConflict.checking}
-                slugGenerating={slugGenerating}
-                onGenerateSlug={handleGenerateSlug}
-                existingBranches={existingBranches}
-                existingBranch={existingBranch}
-                onExistingBranchChange={(value) =>
-                  setNewSessionDraft({ workspaceId, draft: { existingBranch: value } })
-                }
-                branchesLoading={branchesLoading}
-                conflictSessionId={conflictSessionId}
-                conflictWorktreePath={conflictWorktreePath}
-                busy={busy}
-              />
-            </ScrollFade>
+          <ScrollFade
+            className="min-h-0 flex-1"
+            viewportClassName={cn(PANE_RHYTHM.body, 'flex flex-col gap-6')}
+            fadeSize={24}
+          >
+            <NewSessionForm
+              workspaceId={workspaceId}
+              isSimple={isSimple}
+              noProviderConnected={noProviderConnected}
+              onOpenSettings={onOpenSettings}
+              issueSources={issueSources}
+              issue={issue}
+              onPickIssue={onPickIssue}
+              onClearIssue={() => setNewSessionDraft({ workspaceId, draft: { issue: null } })}
+              goal={goal}
+              onGoalChange={(value) => setNewSessionDraft({ workspaceId, draft: { goal: value } })}
+              onOpenGoalEditor={openGoalEditor}
+              goalEditorDirty={goalEditorDirty}
+              attachments={attachments}
+              isDragging={isDragging}
+              composerRef={composerRef}
+              fileInputRef={fileInputRef}
+              onFileInputChange={onFileInputChange}
+              onRemoveAttachment={removeAttachment}
+              branchMode={branchMode}
+              onBranchModeChange={(mode) =>
+                setNewSessionDraft({ workspaceId, draft: { branchMode: mode } })
+              }
+              branchPrefix={sanitizeBranchPrefix({ input: branchPrefix })}
+              branchSlug={branchSlug}
+              onBranchSlugChange={(value) => {
+                setNewSessionDraft({
+                  workspaceId,
+                  draft: {
+                    branchSlug: sanitizeBranchSlugValue({
+                      input: value,
+                      maxLength: SLUG_MAX_LEN,
+                    }),
+                    slugTouched: true,
+                  },
+                });
+              }}
+              folderName={folderName}
+              onFolderNameChange={(value) => {
+                setNewSessionDraft({
+                  workspaceId,
+                  draft: {
+                    folderName: value,
+                    folderNameTouched: true,
+                  },
+                });
+              }}
+              folderPathPreview={folderPathPreview}
+              folderNameError={folderNameError}
+              folderConflict={folderConflict.exists}
+              folderConflictChecking={folderConflict.checking}
+              slugGenerating={slugGenerating}
+              onGenerateSlug={handleGenerateSlug}
+              existingBranches={existingBranches}
+              existingBranch={existingBranch}
+              onExistingBranchChange={(value) =>
+                setNewSessionDraft({ workspaceId, draft: { existingBranch: value } })
+              }
+              branchesLoading={branchesLoading}
+              conflictSessionId={conflictSessionId}
+              conflictWorktreePath={conflictWorktreePath}
+              busy={busy}
+            />
             <NewSessionFooter
               isSimple={isSimple}
               error={error}
@@ -502,10 +514,15 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
               conflictWorktreePath={conflictWorktreePath}
               goalReady={goalReady}
               canCreate={canCreate}
+              canReset={isDraftDirty}
+              resetArmed={resetArmed}
+              onArmReset={armReset}
+              onCancelReset={cancelReset}
+              onConfirmReset={confirmReset}
               onOpenConflictSession={onOpenConflictSession}
               onCreate={onCreate}
             />
-          </>
+          </ScrollFade>
         )}
       </div>
     </div>
