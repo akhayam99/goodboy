@@ -36,7 +36,12 @@ below has been "fixed" at least once and had to be put back.
   `ChatInput`, `NotificationCenter`, `DiffViewerContent`, `RoleModelRow`
   (twice), `TaskModelRow`, `AgentSpawnConfig`, `WorkflowBuilderView`,
   `WorkflowStepCard`, `LibraryStepForm`, and `OrchestratorRoutingRow`. Keep the
-  provider in current state or a ref when handling `onModel`. This matters for
+  provider in current state or a ref when handling `onModel`. The contract
+  itself has never been widened to close this: the same stale-pairing bug was
+  fixed at the call site instead, independently, at least twice over
+  (`RoleModelRow`/`TaskModelRow`, then `LibraryStepForm`/
+  `OrchestratorRoutingRow` in #1307), each time by tracking the provider in a
+  ref rather than by adding a provider parameter to `onModel`. This matters for
   more than transient UI: `LibraryStepForm` commits through
   `step_def_upsert`, whose Tauri command inserts or updates the SQLite
   `step_library` table.

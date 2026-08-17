@@ -14,17 +14,21 @@ Four nested things, and everything else hangs off them.
 
 - A **workspace** is the detail view of a project plus the integrations
   specific to it. It aggregates every piece of work on that project, not just
-  the sessions you opened today. `WorkspaceKind` has the values `'repo'`,
-  `'composite'`, and `'simple'`. The workspace form (`WorkspaceLinkForm`)
-  presents those kinds as **Single project**, **Multi project**, and
-  **Standalone**. The onboarding wizard's connected-workspace chip instead
-  labels them **Repository**, **Composite**, and **Standalone**, and the same
-  wizard's earlier audience step asks the question a fourth way, as **I write
-  code** versus **I do not write code** (the second answer only ever offers
-  Standalone). A repo owns one project directory and
-  gives each session a git worktree, a composite links repo workspaces so one
+  the sessions you opened today. A repo owns one project directory and gives
+  each session a git worktree, a composite links repo workspaces so one
   session can span them, and a simple workspace is a standalone folder whose
-  sessions use plain directories without git.
+  sessions use plain directories without git. Those are the three
+  `WorkspaceKind` values (`'repo'`, `'composite'`, `'simple'`), and five
+  different wordings name them, none shared with another: the type union
+  itself; the workspace form (`WorkspaceLinkForm`), which presents them as
+  **Single project**, **Multi project**, and **Standalone**; the onboarding
+  wizard's connected-workspace chip, which labels them **Repository**,
+  **Composite**, and **Standalone**; the same wizard's earlier audience step,
+  which asks the question a different way, as **I write code** versus **I do
+  not write code** (the second answer only ever offers Standalone); and
+  `WorkspaceRow`, live in the workspace launcher and switcher, which renders
+  a simple workspace's chip as the raw kind value, lowercase: **simple**,
+  with no equivalent chip for the other two kinds.
 - A **session** is a container for a goal: its own git worktree, branch,
   budget and shared context. Its stage (attention / running / review /
   building / done) is derived from what the session actually holds, never set
@@ -105,8 +109,10 @@ Ten agent kinds shape how an agent works. Every kind has a display label:
 separate, for example `generic` uses `gen`. Each kind carries default model,
 effort, and optional system prompt settings.
 Kind is inferred automatically from the agent's name or first user message, or
-chosen explicitly when the agent is spawned. Nine are pickable in the spawn
-menu; **resolver** is spawned only by the resolve UI.
+chosen explicitly when the agent is spawned. In a repo or composite
+workspace, nine are pickable in the spawn menu; **resolver** is spawned only
+by the resolve UI. A simple (standalone) workspace's spawn menu offers only
+**generic**.
 
 ### Workflows
 
@@ -185,13 +191,19 @@ the right provider automatically.
 - You see the spend in real time. No surprises at end of month.
 
 Routing is a fact about the work, so it reads like one, except in the agent
-spawn menu itself. `CreateAgentPopover` and `AgentSpawnConfig` both render
-`RoutingPicker`'s `CatalogGrid`, which groups each model's catalog entry by
-`presentation.group` (**Haiku**, **Sonnet**, **Opus**, **Fable**, and the
-equivalent per-provider groups) as a row label, then renders each model as a
-bare `presentation.version` chip (**4.5**, **4.6**, **4.7**, **4.8**, **5**).
-Neither the row label nor the chip carries a provider mark or an effort
-value; effort is a separate control elsewhere in the picker.
+spawn menu itself. `AgentSpawnConfig` renders `RoutingPicker` directly.
+`CreateAgentPopover` does not: it renders `AgentRoutingSections`, which
+imports `RoutingPicker`'s `CatalogGrid` on its own instead of mounting
+`RoutingPicker`. Either way, `CatalogGrid` groups each model's catalog entry
+by `presentation.group` (**Haiku**, **Sonnet**, **Opus**, **Fable**, and the
+equivalent per-provider groups) as a row label, except for ten models, across
+Cursor, OpenCode, Moonshot and OpenRouter, whose `presentation.group` is
+`null`; those render in one ungrouped row per family with no row label at
+all. Each model then renders as a `VersionChip` showing its
+`presentation.version` (**4.5**, **4.6**, **4.7**, **4.8**, **5**) as its
+visible text, not bare. Neither the row label nor the chip carries a provider
+mark or an effort value; effort is a separate control elsewhere in the
+picker.
 
 ### Cost awareness
 
