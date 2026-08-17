@@ -120,7 +120,14 @@ export const PlanProvenance = ({
                     className="flex items-center gap-1.5 text-2xs text-muted-foreground"
                   >
                     <CheckCircle2 size={11} aria-hidden className="shrink-0 text-info" />
-                    <span>Consumed by</span>
+                    {c.stepName != null && c.workflowName != null ? (
+                      <span>
+                        Consumed by step {c.stepName} in {c.workflowName} run{' '}
+                        {(c.workflowRunOrdinal ?? 0) + 1}
+                      </span>
+                    ) : (
+                      <span>Consumed by</span>
+                    )}
                     <button
                       type="button"
                       onClick={() => onAgentClick(c.agentId, displayName, isDeleted)}
