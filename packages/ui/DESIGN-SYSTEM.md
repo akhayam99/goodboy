@@ -136,6 +136,12 @@ That row also shares the measure of the content it commits, never stretched acro
 
 `PANE_RHYTHM.stack` separates peer sections and `Divider` separates regions whose boundary matters. Section children do not add margins. `SectionHeader` is the canonical section heading and optional description: its default eyebrow size is for compact and scan surfaces, while `size="page"` is for a reading-surface section that needs an `h2`. Description copy comes only through `hint`, so its size and muted tone remain paired with the heading grade.
 
+`SectionSurface` is `SectionHeader` on the one raised section surface, for a
+reading surface whose sections would otherwise be separated by vertical space
+alone. It is one step off the canvas, so the cards inside it reach the top of
+the ramp and nothing stacks a fourth level. A metadata line is not a section and
+does not take a surface.
+
 `Eyebrow` is a label primitive for metadata, statistics and small internal groups. It does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment; it does not title a section. When these roles overlap, `SectionHeader` wins for the section, then `FieldRow` labels the controls inside it. `Divider` is a sibling between regions, never decoration after every heading or field.
 
 ## Prose disclosure
