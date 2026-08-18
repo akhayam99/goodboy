@@ -290,8 +290,11 @@ Four animations, one meaning each.
 - `attention-ring`: something new arrived, a finite outward breath (three
   cycles, then rest) on an element that now requires the user, never one that
   is working.
-- `soft-pulse`: the only standing-state animation in the app, breathing the
-  Providers launcher while no provider is connected. The bar for a second one
+- `soft-pulse`: the only standing-state animation in the app, breathing a state
+  that holds and is alive. It breathes the Providers launcher while no provider
+  is connected, and the centre dot of the running marker on the activity rail,
+  where it sits inside the `spin-border` ring so the pair reads as one running
+  state rather than two claims. The bar for a second standing-state animation
   is high.
 
 Motion-safe gating, "motion confirms, never decorates", "motion names who is
