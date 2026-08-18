@@ -124,7 +124,6 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
       <PaneShell
         title="Context"
         description="The current session summary and the decisions settled along the way."
-        measure="reading"
       >
         {REGION_ORDER.map((slotKey, index) => (
           <div key={slotKey} className="contents">

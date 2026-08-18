@@ -234,7 +234,6 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       title={meta.label}
       description={`External ${meta.label} ${meta.nounPlural} linked to this session.`}
       meta={hasTasks ? tasks.length : undefined}
-      measure="reading"
       actions={connection.isConnected && hasTasks ? linkAction : undefined}
     >
       {!connection.isConnected ? (

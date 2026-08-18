@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Play, RotateCcw } from 'lucide-react';
-import { Button, InlineConfirm, cn } from '@goodboy/ui';
+import { Button, InlineConfirm, cn, tintClasses } from '@goodboy/ui';
 import { classifyWorkflowChain, getModelDescriptor } from '@goodboy/core';
 import type {
   Agent,
@@ -17,7 +17,9 @@ import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import type { WorkflowBlockReason } from '../../advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../../blockCopy';
 import { useStartAnywayConfirm } from '../../useStartAnywayConfirm';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+
+const planTint = tintClasses(CONCEPT_TONE.plans);
 
 export type AdvanceParams = {
   readonly step: Step;
@@ -204,7 +206,7 @@ export const WorkflowNextStepCta = ({
         />
         {consumesActivePlan ? (
           <span className="shrink-0" title="Advancing will consume the active plan">
-            <CONCEPT_ICONS.plans size={11} aria-hidden />
+            <CONCEPT_ICONS.plans size={11} aria-hidden className={planTint.icon} />
           </span>
         ) : null}
       </button>

@@ -295,7 +295,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       <PaneShell
         header={<HeaderBand session={session} stage={stage} onSelectLens={onSelectLens} />}
         animationClassName="animate-fade-in"
-        measure="chat"
       >
         <GoalOverviewRegion
           sessionId={sessionId}

@@ -68,14 +68,15 @@ a tone or vice versa.
 - **One tone per concept, passed alongside the icon** as a pair at the call
   site.
 - **Tone is meaning, not decoration.** `questions` is `warning` because a
-  question blocks someone, `decisions` and `plans` are `success` because they
-  are settled, `sentry` is `danger` because it is errors, `terminal` and
-  `settings` are `neutral` because they are plumbing. Recolouring a concept
-  changes what it claims.
+  question blocks someone, `decisions` is `success` because it is settled, and
+  `plans` is `draft` because a plan is a proposal, not a settled fact. `sentry`
+  is `danger` because it is errors, while `terminal` and `settings` are
+  `neutral` because they are plumbing. Recolouring a concept changes what it
+  claims.
 
-Nine tones (`success`, `info`, `warning`, `danger`, `primary`, `accent`,
-`merged`, `operations`, `neutral`), each resolving through the single accessor
-`tintClasses(tone)`. Components take a `Tone` and call it; they never
+Ten tones (`success`, `info`, `warning`, `danger`, `primary`, `accent`,
+`merged`, `draft`, `operations`, `neutral`), each resolving through the single
+accessor `tintClasses(tone)`. Components take a `Tone` and call it; they never
 hand-write `bg-warning/10`.
 
 ## z-index tokens

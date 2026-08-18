@@ -171,32 +171,6 @@
 
   --animate-nav-step-out: nav-step-out 180ms cubic-bezier(0.2, 0, 0, 1);
 
-  --animate-answer-lock: answer-lock 700ms cubic-bezier(0.2, 0, 0, 1);
-
-  @keyframes answer-lock {
-    0% {
-      transform: scale(1);
-      background-color: var(--color-elevated);
-      box-shadow:
-        var(--shadow-sm),
-        0 0 0 0 oklch(from var(--color-success) l c h / 0);
-    }
-    35% {
-      transform: scale(1.005);
-      background-color: oklch(from var(--color-success) l c h / 0.08);
-      box-shadow:
-        var(--shadow-sm),
-        inset 0 0 0 1px oklch(from var(--color-success) l c h / 0.45);
-    }
-    100% {
-      transform: scale(1);
-      background-color: var(--color-elevated);
-      box-shadow:
-        var(--shadow-sm),
-        0 0 0 0 oklch(from var(--color-success) l c h / 0);
-    }
-  }
-
   --animate-studio-in: studio-in 280ms cubic-bezier(0.2, 0, 0, 1);
 
   @keyframes studio-in {

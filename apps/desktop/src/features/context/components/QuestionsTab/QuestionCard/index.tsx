@@ -3,12 +3,13 @@ import { Check, MessageCircleQuestion, X } from 'lucide-react';
 import { cn, Markdown, tintClasses } from '@goodboy/ui';
 import type { OpenQuestion, OpenQuestionId, OpenQuestionSelectMode } from '@goodboy/types';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
+import { CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { TranscriptShell } from '../../../../chat/components/TranscriptShell';
 import { SuggestionChip } from '../SuggestionChip';
 import { CustomAnswerField } from '../CustomAnswerField';
 import { deriveSuggestions } from '../deriveSuggestions';
 
-const warningTint = tintClasses('warning');
+const warningTint = tintClasses(CONCEPT_TONE.questions);
 
 type Props = {
   question: OpenQuestion;
@@ -70,14 +71,9 @@ export const QuestionCard = ({
 
   return (
     <TranscriptShell
-      tone="warning"
+      tone={CONCEPT_TONE.questions}
       variant="leftBorder"
-      className={cn(
-        'group flex flex-col gap-1.5 transition-[background-color,transform] duration-200',
-        animate
-          ? 'motion-safe:animate-answer-lock motion-reduce:bg-success/5'
-          : 'motion-safe:animate-fade-in',
-      )}
+      className="group flex flex-col gap-1.5 transition-[background-color,transform] duration-200 motion-safe:animate-fade-in"
     >
       <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
         <div className="flex min-w-0 items-start gap-2">
@@ -103,7 +99,7 @@ export const QuestionCard = ({
           title="Dismiss question"
           aria-label="Dismiss question"
         >
-          {animate ? <Check size={12} className="text-success" /> : <X size={12} />}
+          {animate ? <Check size={12} className={warningTint.icon} /> : <X size={12} />}
         </button>
         <div className="flex items-center gap-2 text-2xs text-muted-foreground">
           <span>{formatRelativeAge({ fromIso: question.createdAt })}</span>

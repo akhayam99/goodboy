@@ -2,7 +2,9 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { tintClasses } from '@goodboy/ui';
 import type { OpenQuestion } from '@goodboy/types';
+import { CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -62,6 +64,21 @@ describe('OpenQuestionInlineCard', () => {
     fireEvent.click(screen.getByRole('button'));
     expect(screen.getByText('You answered:')).toBeTruthy();
     expect(screen.getByText('Postgres')).toBeTruthy();
+  });
+
+  it('keeps an answered question on the shared question tone', () => {
+    const answered: OpenQuestion = {
+      ...baseQuestion,
+      status: 'answered',
+      userAnswer: 'Postgres',
+      answeredAt: '2026-06-13T00:05:00.000Z',
+    } as unknown as OpenQuestion;
+
+    render(<OpenQuestionInlineCard question={answered} sessionId={'sess-1' as never} />);
+
+    const disclosure = screen.getByRole('button').closest('.border-l-2') as HTMLElement;
+    expect(disclosure.className).toContain(tintClasses(CONCEPT_TONE.questions).border);
+    expect(disclosure.className).not.toContain(tintClasses('success').border);
   });
 
   it('collapses a settled question to a single row until it is expanded', () => {

@@ -122,7 +122,7 @@ export const CONCEPT_TONE = {
   linear: 'primary',
   notifications: 'warning',
   orchestrator: 'accent',
-  plans: 'success',
+  plans: 'draft',
   nextUp: 'warning',
   pr: 'primary',
   providers: 'info',

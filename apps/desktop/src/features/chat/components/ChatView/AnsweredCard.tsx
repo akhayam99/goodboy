@@ -3,6 +3,7 @@ import { Bot, CheckCircle2 } from 'lucide-react';
 import { Markdown } from '@goodboy/ui';
 import type { OpenQuestion } from '@goodboy/types';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 
@@ -16,7 +17,7 @@ export const AnsweredCard = ({ question }: Props) => {
   const [open, setOpen] = useState(false);
   const resolvedByAgent = question.userAnswer === RESOLVED_BY_AGENT;
   const answeredAt = question.answeredAt ?? question.createdAt;
-  const tone = resolvedByAgent ? 'neutral' : 'success';
+  const tone = CONCEPT_TONE.questions;
 
   return (
     <TranscriptDisclosure

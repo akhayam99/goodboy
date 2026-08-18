@@ -2,7 +2,9 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { tintClasses } from '@goodboy/ui';
 import type { OpenQuestion } from '@goodboy/types';
+import { CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { QuestionCard } from '.';
 
 afterEach(cleanup);
@@ -36,6 +38,17 @@ describe('QuestionCard', () => {
     expect(root.className).toContain('border-l-2');
     expect(root.className).toContain('border-warning/40');
     expect(root.className).not.toContain('rounded-lg');
+  });
+
+  it('keeps just-answered feedback on the shared question tone', () => {
+    const { container } = render(<QuestionCard {...baseProps} justAnswered />);
+    const root = container.firstElementChild as HTMLElement;
+    const questionTint = tintClasses(CONCEPT_TONE.questions);
+    const feedbackIcon = screen.getByTitle(/dismiss question/i).querySelector('svg');
+
+    expect(root.className).toContain(questionTint.border);
+    expect(root.className).not.toContain('success');
+    expect(feedbackIcon?.getAttribute('class')).toContain(questionTint.icon);
   });
 
   it('renders the question text with one button per suggestion', () => {

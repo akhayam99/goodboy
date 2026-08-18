@@ -2,7 +2,9 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { tintClasses } from '@goodboy/ui';
 import type { PlanId, PlanWithCount, SessionId } from '@goodboy/types';
+import { CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 import { AgentBriefPlans } from './AgentBriefPlans';
 
@@ -35,6 +37,15 @@ describe('AgentBriefPlans', () => {
     render(<AgentBriefPlans plans={[makePlan({ consumptionCount: 1 })]} sessionId={sessionId} />);
 
     expect(screen.getByText('active · 1 use')).toBeDefined();
+  });
+
+  it('renders each plan with the shared plan tone', () => {
+    render(<AgentBriefPlans plans={[makePlan({})]} sessionId={sessionId} />);
+
+    const card = screen.getByRole('button', { name: /Implement chat surface/ });
+    const planTint = tintClasses(CONCEPT_TONE.plans);
+    expect(card.className).toContain(planTint.bgSoft);
+    expect(card.className).toContain(planTint.borderSoft);
   });
 
   it('pluralizes uses for a consumption count above one', () => {

@@ -1,7 +1,10 @@
 import type { Agent } from '@goodboy/types';
+import { cn, tintClasses } from '@goodboy/ui';
 import { useAppStore, useSessionPlans } from '../../../../../store';
 import { kindConsumesPlan, type AgentKind } from '../../../../session/agent-kind';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+
+const planTint = tintClasses(CONCEPT_TONE.plans);
 
 type Props = {
   readonly run: Agent;
@@ -59,9 +62,15 @@ export const WorkflowStepPlanBadge = ({ run, kind }: Props) => {
       onKeyDown={(event) => event.stopPropagation()}
       title={plan.title}
       aria-label={`Open ${label.toLowerCase()}: ${plan.title}`}
-      className="flex max-w-full shrink-0 items-center gap-1 rounded-md bg-muted/60 px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      className={cn(
+        'flex max-w-full shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors',
+        planTint.bgSoft,
+        planTint.borderSoft,
+        planTint.hoverBgSoft,
+        planTint.hoverText,
+      )}
     >
-      <CONCEPT_ICONS.plans size={12} aria-hidden className="shrink-0" />
+      <CONCEPT_ICONS.plans size={12} aria-hidden className={cn('shrink-0', planTint.icon)} />
       <span className="shrink-0 font-medium">{label}</span>
       <span className="max-w-[24ch] truncate">{plan.title}</span>
     </button>
