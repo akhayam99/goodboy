@@ -120,6 +120,7 @@ export const ResolveConfigPopover = ({
                 }}
                 viewProvider={viewProvider}
                 onViewProvider={setViewProvider}
+                onNavigateProviders={close}
                 onPickProvider={(provider) => onChange(configFor({ provider, base: config }))}
                 onPickModel={(model, effort) =>
                   onChange({ ...config, provider: viewProvider, model, effort })

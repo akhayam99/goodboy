@@ -84,13 +84,22 @@ describe('modelAxes', () => {
     ]);
   });
 
-  it('keeps an unreachable effort axis empty instead of hiding it', () => {
+  it('omits effort and variant axes the model does not support', () => {
     const model = ANTHROPIC_CATALOG.find((candidate) => candidate.key === 'haiku-4.5');
     if (model == null) {
       throw new Error('missing anthropic haiku-4.5');
     }
     const axes = modelAxes({ model, selection: { key: model.key } });
-    expect(axes.effort).toEqual({ label: 'Effort', levels: [] });
+    expect(axes.effort).toBeNull();
+    expect(axes.variant).toBeNull();
+  });
+
+  it('omits the version axis when the catalog declares no model group', () => {
+    const model = CURSOR_CATALOG.find((candidate) => candidate.key === 'auto');
+    if (model == null) {
+      throw new Error('missing cursor auto');
+    }
+    expect(modelAxes({ model, selection: { key: model.key } }).version).toBeNull();
   });
 
   it('uses Effort as the effort axis label across providers', () => {

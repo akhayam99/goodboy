@@ -310,6 +310,19 @@ describe('sendTurn, permission proxy integration', () => {
     expect(JSON.stringify(args)).not.toContain('dangerously-skip-permissions');
   });
 
+  it('keeps scout restrictions in copy instead of enforcing read-only tools', async () => {
+    const useAppStore = await importStore();
+    setupSession(useAppStore);
+    useAppStore.setState({ agentKindOverride: { [AGENT_ID]: 'scout' } });
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'inspect' });
+
+    const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(args.systemPrompt).toContain('FORBIDDEN: editing files');
+    expect(args.allowedTools).toEqual([]);
+    expect(args.disallowedTools).toEqual([]);
+    expect(args.permissionMode).toBe('bypassPermissions');
+  });
+
   it('does NOT forward permission flags when provider is cursor', async () => {
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValueOnce({

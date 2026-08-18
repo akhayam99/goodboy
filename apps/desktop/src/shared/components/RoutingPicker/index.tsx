@@ -386,6 +386,7 @@ export const RoutingPicker = ({
                   activeProvider={isViewingAuto ? null : viewProvider}
                   secondaryProvider={isViewingAuto ? (recommendedProvider ?? null) : null}
                   showDisconnected={availability === 'setup'}
+                  onNavigateProviders={close}
                   onSelect={(id) => {
                     const isConnected = connectedProviders.includes(id);
                     setViewProvider(id);
