@@ -12,6 +12,7 @@ out/
 # tauri
 src-tauri/target/
 /target/
+/target-dev/
 
 # env
 .env
