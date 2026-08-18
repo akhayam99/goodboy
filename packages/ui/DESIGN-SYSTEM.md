@@ -16,11 +16,11 @@ lives here.
 `lg` 17px, `xl` 20px. Any `text-[Npx]` is rejected; standing exceptions live in
 `docs/styling.md`, which owns the authoring rule.
 
-**A size a repeated row composes carries its own line-height.** Without the
-pair, the box height follows whatever `line-height` it inherits: `3xs` and `2xs`
-inherited the body's 1.55 and resolved to 15.5px and 17.05px, which put the lens
-rail's group labels and count chips on a fractional pixel and made a row with a
-count taller than its neighbour without one.
+**Every size a repeated row uses declares its own line-height.** Without that
+pair, the box height follows whatever `line-height` the size inherits: `3xs` and
+`2xs` inherited the body's 1.55 and resolved to 15.5px and 17.05px, which put the
+lens rail's group labels and count chips on a fractional pixel and made a row
+carrying a count taller than a row without one.
 
 ## Radius scale
 
