@@ -15,6 +15,7 @@ import { buildTimelineGroups } from './buildTimelineGroups';
 import { buildTimelineStream, type TimelineStreamItem } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
 import { layoutTimelineRail } from './railGeometry';
+import { runIdentity } from './runIdentity';
 import { markerCenterY, TIMELINE_RHYTHM } from './timelineRhythm';
 
 type TypedStringParams = {
@@ -116,6 +117,27 @@ const attachedWorkflow = ({
   };
 };
 
+const RUN_WITH_PENDING_AGENTS: ReadonlyArray<Agent> = [
+  agent({
+    id: 'plan',
+    ordinal: 1,
+    startedAt: localIso({ day: 18, hour: 9 }),
+    completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+    workflowRunId: RUN_ID,
+  }),
+  agent({
+    id: 'implement',
+    ordinal: 2,
+    status: 'running',
+    startedAt: localIso({ day: 18, hour: 10 }),
+    workflowRunId: RUN_ID,
+  }),
+  agent({ id: 'test', ordinal: 3, status: 'pending', workflowRunId: RUN_ID }),
+  agent({ id: 'review', ordinal: 4, status: 'pending', workflowRunId: RUN_ID }),
+  agent({ id: 'ship', ordinal: 5, status: 'pending', workflowRunId: RUN_ID }),
+  agent({ id: 'built-by-hand', ordinal: 6, startedAt: localIso({ day: 18, hour: 11 }) }),
+];
+
 type StreamParams = {
   readonly agents: ReadonlyArray<Agent>;
   readonly workflows?: ReadonlyArray<ReturnType<typeof attachedWorkflow>>;
@@ -137,6 +159,38 @@ const stream = ({ agents, workflows = [], unreadAgentIds = new Set() }: StreamPa
     blockedRunIds: new Set(),
     dayLabelFor: ({ at }) => dayLabel({ at, now: NOW }),
   });
+
+type LaneSpan = {
+  readonly from: number;
+  readonly to: number;
+};
+
+type LaneSpanParams = {
+  readonly items: ReadonlyArray<TimelineStreamItem>;
+  readonly layout: ReturnType<typeof layoutTimelineRail>;
+};
+
+const laneSpansOf = ({ items, layout }: LaneSpanParams): ReadonlyArray<LaneSpan> => {
+  const spans: LaneSpan[] = [];
+  let offset = 0;
+  for (const [index, item] of items.entries()) {
+    for (const segment of layout.rows[index]?.segments ?? []) {
+      if (segment.column > 0) {
+        spans.push({ from: offset + segment.fromY, to: offset + segment.toY });
+      }
+    }
+    offset += item.height;
+  }
+  return [...spans].sort((first, second) => first.from - second.from);
+};
+
+const topOfItem = ({
+  items,
+  index,
+}: {
+  readonly items: ReadonlyArray<TimelineStreamItem>;
+  readonly index: number;
+}): number => items.slice(0, index).reduce((total, item) => total + item.height, 0);
 
 const labelOf = (item: TimelineStreamItem): string => {
   if (item.kind === 'row') {
@@ -410,6 +464,151 @@ describe('buildTimelineStream', () => {
       'step:agent:running',
       'entry:run:run-1',
     ]);
+  });
+
+  it('lifts a pending block above every dated entry, standalone agents included', () => {
+    const { items } = stream({
+      workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
+      agents: RUN_WITH_PENDING_AGENTS,
+    });
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'cluster:3',
+      'entry:agent:built-by-hand',
+      'step:agent:implement',
+      'step:agent:plan',
+      'entry:run:run-1',
+    ]);
+  });
+
+  it('runs one unbroken lane from the run origin to the topmost pending step', () => {
+    const { items, groups } = stream({
+      workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
+      agents: RUN_WITH_PENDING_AGENTS,
+    });
+    const layout = layoutTimelineRail({ rows: items, groups });
+    const spans = laneSpansOf({ items, layout });
+    const clusterIndex = items.findIndex((item) => item.kind === 'cluster');
+    const originIndex = items.findIndex((item) => item.id === 'run:run-1');
+    const breaks = spans.filter((span, index) => {
+      const previous = spans[index - 1];
+      return previous !== undefined && span.from > previous.to;
+    });
+
+    expect(spans[0]?.from).toBe(
+      topOfItem({ items, index: clusterIndex }) + TIMELINE_RHYTHM.grade.pending.height / 2,
+    );
+    expect(spans.at(-1)?.to).toBe(topOfItem({ items, index: originIndex }));
+    expect(breaks).toEqual([]);
+  });
+
+  it('merges the dashed stretch into the spine at the topmost pending step', () => {
+    const { items, groups } = stream({
+      workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
+      agents: RUN_WITH_PENDING_AGENTS,
+    });
+    const layout = layoutTimelineRail({ rows: items, groups });
+    const clusterIndex = items.findIndex((item) => item.kind === 'cluster');
+    const clusterRail = layout.rows[clusterIndex];
+    const nowRail = layout.rows[0];
+
+    expect(clusterRail?.joins.map((join) => `${join.kind}:${join.dash}`)).toEqual(['merge:dashed']);
+    expect(clusterRail?.segments.filter((segment) => segment.column > 0)).toEqual([
+      {
+        column: 1,
+        identityIndex: runIdentity({ runId: RUN_ID }).index,
+        dash: 'dashed',
+        fromY: TIMELINE_RHYTHM.grade.pending.height / 2,
+        toY: 3 * TIMELINE_RHYTHM.grade.pending.height,
+      },
+    ]);
+    expect(nowRail?.segments.filter((segment) => segment.column > 0)).toEqual([]);
+  });
+
+  it('keeps two concurrent runs on their own pending block and their own lane', () => {
+    const { items, groups } = stream({
+      workflows: [
+        attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) }),
+        attachedWorkflow({
+          runId: OTHER_RUN_ID,
+          name: 'Refactor workflow',
+          createdAt: localIso({ day: 18, hour: 10 }),
+        }),
+      ],
+      agents: [
+        agent({
+          id: 'a-done',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({ id: 'a-next', ordinal: 2, status: 'pending', workflowRunId: RUN_ID }),
+        agent({ id: 'a-last', ordinal: 3, status: 'pending', workflowRunId: RUN_ID }),
+        agent({
+          id: 'b-running',
+          ordinal: 4,
+          status: 'running',
+          startedAt: localIso({ day: 18, hour: 10, minute: 30 }),
+          workflowRunId: OTHER_RUN_ID,
+        }),
+        agent({ id: 'b-next', ordinal: 5, status: 'pending', workflowRunId: OTHER_RUN_ID }),
+        agent({ id: 'b-last', ordinal: 6, status: 'pending', workflowRunId: OTHER_RUN_ID }),
+      ],
+    });
+    const layout = layoutTimelineRail({ rows: items, groups });
+    const clusters = items.flatMap((item, index) =>
+      item.kind === 'cluster' ? [{ item, rail: layout.rows[index] }] : [],
+    );
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'cluster:2',
+      'cluster:2',
+      'step:agent:b-running',
+      'entry:run:run-2',
+      'step:agent:a-done',
+      'entry:run:run-1',
+    ]);
+    expect(clusters.map(({ item }) => item.groupId)).toEqual(['lane:run:run-2', 'lane:run:run-1']);
+    expect(clusters.map(({ item }) => item.identity.index)).toEqual([
+      runIdentity({ runId: OTHER_RUN_ID }).index,
+      runIdentity({ runId: RUN_ID }).index,
+    ]);
+    expect(new Set(clusters.map(({ rail }) => rail?.markerColumn)).size).toBe(2);
+    expect(clusters.map(({ rail }) => rail?.joins.map((join) => join.kind))).toEqual([
+      ['merge'],
+      ['merge'],
+    ]);
+  });
+
+  it('gives a lone pending step no borrowed clock and no day rule of its own', () => {
+    const { items } = stream({
+      workflows: [attachedWorkflow({ createdAt: localIso({ day: 10, hour: 8 }) })],
+      agents: [
+        agent({
+          id: 'done',
+          ordinal: 1,
+          startedAt: localIso({ day: 10, hour: 9 }),
+          completedAt: localIso({ day: 10, hour: 10 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({ id: 'todo', ordinal: 2, status: 'pending', workflowRunId: RUN_ID }),
+        agent({ id: 'built-by-hand', ordinal: 3, startedAt: localIso({ day: 18, hour: 11 }) }),
+      ],
+    });
+    const pending = items.find((item) => item.id === 'agent:todo');
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'step:agent:todo',
+      'entry:agent:built-by-hand',
+      'day:Aug 10',
+      'step:agent:done',
+      'entry:run:run-1',
+    ]);
+    expect(pending?.kind === 'row' ? pending.at : 'borrowed').toBeNull();
   });
 
   it('breaks the day inside a run that crossed midnight and keeps its lane whole', () => {

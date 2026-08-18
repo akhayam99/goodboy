@@ -32,6 +32,7 @@ type StreamRail = {
   readonly height: number;
   readonly topY: number;
   readonly markerY: number | null;
+  readonly topAnchorY: number | null;
   readonly groupId: string | null;
   readonly isPending: boolean;
   readonly gap: TimelineGap;
@@ -315,6 +316,35 @@ const emitRun = ({ entry, context }: EmitRunParams): void => {
   });
 };
 
+const isPendingStep = ({ draft }: { readonly draft: DraftRow }): boolean =>
+  draft.grade === 'step' && draft.markerState === 'pending';
+
+type HeadParams = {
+  readonly drafts: ReadonlyArray<DraftRow>;
+};
+
+const withPendingAtHead = ({ drafts }: HeadParams): ReadonlyArray<DraftRow> => {
+  const laneRankById = new Map<string, number>();
+  for (const [index, draft] of drafts.entries()) {
+    if (draft.familyId === draft.id) {
+      laneRankById.set(draft.id, index);
+    }
+  }
+  const laneRankOf = ({ draft }: { readonly draft: DraftRow }): number =>
+    draft.familyId == null ? drafts.length : (laneRankById.get(draft.familyId) ?? drafts.length);
+  const future = drafts
+    .filter((draft) => isPendingStep({ draft }))
+    .map((draft) => ({ ...draft, at: null }))
+    .sort(
+      (first, second) =>
+        laneRankOf({ draft: first }) - laneRankOf({ draft: second }) ||
+        (first.groupId ?? '').localeCompare(second.groupId ?? '') ||
+        second.sortOrdinal - first.sortOrdinal ||
+        first.id.localeCompare(second.id),
+    );
+  return [...future, ...drafts.filter((draft) => !isPendingStep({ draft }))];
+};
+
 type ClusterParams = {
   readonly drafts: ReadonlyArray<DraftRow>;
 };
@@ -344,8 +374,7 @@ const withPendingClusters = ({ drafts }: ClusterParams): ReadonlyArray<DraftRow 
   };
 
   for (const draft of drafts) {
-    const isPendingStep = draft.grade === 'step' && draft.markerState === 'pending';
-    if (!isPendingStep) {
+    if (!isPendingStep({ draft })) {
       flush();
       clustered.push(draft);
       continue;
@@ -435,7 +464,7 @@ export const buildTimelineStream = ({
 
   const sorted = [...context.drafts].sort((first, second) => compareNewestFirst({ first, second }));
   const withDays = withDayBreaks({
-    drafts: withPendingClusters({ drafts: sorted }),
+    drafts: withPendingClusters({ drafts: withPendingAtHead({ drafts: sorted }) }),
     dayLabelFor,
   });
 
@@ -447,6 +476,7 @@ export const buildTimelineStream = ({
       topY: TIMELINE_RHYTHM.now.ruleY,
       ruleY: TIMELINE_RHYTHM.now.ruleY,
       markerY: null,
+      topAnchorY: null,
       groupId: null,
       isPending: false,
       gap: 'none',
@@ -464,6 +494,7 @@ export const buildTimelineStream = ({
         topY: 0,
         ruleY: TIMELINE_RHYTHM.day.ruleY,
         markerY: TIMELINE_RHYTHM.day.ruleY,
+        topAnchorY: null,
         groupId: null,
         isPending: false,
         gap: 'none',
@@ -490,6 +521,7 @@ export const buildTimelineStream = ({
         height,
         topY: 0,
         markerY: (TIMELINE_RHYTHM.gap[gap] + height) / 2,
+        topAnchorY: TIMELINE_RHYTHM.gap[gap] + TIMELINE_RHYTHM.grade.pending.height / 2,
         groupId: draft.groupId,
         isPending: true,
         gap,
@@ -511,6 +543,7 @@ export const buildTimelineStream = ({
       height: rowBoxHeight({ grade: draft.grade, gap }),
       topY: 0,
       markerY: markerCenterY({ grade: draft.grade, gap }),
+      topAnchorY: null,
       groupId: draft.groupId,
       isPending: draft.isPending,
       gap,
