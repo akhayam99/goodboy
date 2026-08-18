@@ -114,7 +114,7 @@ across sessions. `runIdentity` in
 
 Two constraints keep the exception contained:
 
-- The identity palette is **separate from the nine tones** and never overlaps
+- The identity palette is **separate from the ten tones** and never overlaps
   them. A violet spine is not a plan, a red spine is not a failure; a spine
   colour claims nothing at all beyond "these rows are one run".
 - Identity lives on the spine only. Stage stays in the marker sitting on top of

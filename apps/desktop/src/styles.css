@@ -66,8 +66,8 @@
   --color-workspace-8: oklch(0.72 0.11 220);
 
   /* Run identity, the one palette where color names an object instead of
-     describing its state. Only the timeline spine reads from it, and it is
-     deliberately outside the nine tones so a violet spine is never a plan.
+     describing its state.      Only the timeline spine reads from it, and it is
+     deliberately outside the ten tones so a violet spine is never a plan.
      See packages/ui/DESIGN-SYSTEM.md, "The one identity exception". */
   --color-run-1: oklch(0.68 0.17 12);
   --color-run-2: oklch(0.72 0.15 65);
