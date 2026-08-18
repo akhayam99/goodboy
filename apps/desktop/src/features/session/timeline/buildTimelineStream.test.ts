@@ -152,6 +152,35 @@ const labelOf = (item: TimelineStreamItem): string => {
 };
 
 describe('buildTimelineStream', () => {
+  it('draws no day rule directly under NOW, since it would divide nothing', () => {
+    const { items } = stream({
+      agents: [
+        agent({ id: 'older', ordinal: 1, startedAt: localIso({ day: 11, hour: 9 }) }),
+        agent({ id: 'oldest', ordinal: 2, startedAt: localIso({ day: 11, hour: 8 }) }),
+      ],
+    });
+
+    expect(items.map(labelOf)[0]).toBe('now');
+    expect(items.map(labelOf)[1]).not.toContain('day:');
+    expect(items.filter((item) => item.kind === 'day')).toHaveLength(0);
+  });
+
+  it('keeps the day rule where it actually separates two days', () => {
+    const { items } = stream({
+      agents: [
+        agent({ id: 'today', ordinal: 1, startedAt: localIso({ day: 18, hour: 9 }) }),
+        agent({ id: 'before', ordinal: 2, startedAt: localIso({ day: 11, hour: 9 }) }),
+      ],
+    });
+
+    const labels = items.map(labelOf);
+    expect(labels[0]).toBe('now');
+    expect(labels.some((label) => label.startsWith('day:'))).toBe(true);
+    expect(labels.indexOf('entry:agent:before')).toBeGreaterThan(
+      labels.findIndex((label) => label.startsWith('day:')),
+    );
+  });
+
   it('puts the run origin at the bottom of its group with steps stacking upward', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
@@ -264,7 +293,6 @@ describe('buildTimelineStream', () => {
 
     expect(items.map(labelOf)).toEqual([
       'now',
-      'day:Yesterday',
       'step:agent:two',
       'step:agent:one',
       'entry:run:run-1',
@@ -301,7 +329,6 @@ describe('buildTimelineStream', () => {
 
     expect(items.map(labelOf)).toEqual([
       'now',
-      'day:Aug 12',
       'step:agent:two',
       'entry:run:run-2',
       'step:agent:one',
@@ -309,7 +336,7 @@ describe('buildTimelineStream', () => {
     ]);
   });
 
-  it('emits one day divider per day whatever the age of the entries under it', () => {
+  it('emits a day divider only where one day actually meets another', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 12, hour: 8 }) })],
       agents: [
@@ -324,10 +351,9 @@ describe('buildTimelineStream', () => {
       ],
     });
 
-    expect(items.filter((item) => item.kind === 'day')).toHaveLength(1);
+    expect(items.filter((item) => item.kind === 'day')).toHaveLength(0);
     expect(items.map(labelOf)).toEqual([
       'now',
-      'day:Aug 12',
       'entry:agent:loose',
       'step:agent:old',
       'entry:run:run-1',
@@ -410,7 +436,6 @@ describe('buildTimelineStream', () => {
 
     expect(items.map(labelOf)).toEqual([
       'now',
-      'day:Yesterday',
       'step:agent:after',
       'day:Aug 16',
       'step:agent:before',
