@@ -4,8 +4,8 @@ import { formatClockTime } from './formatClockTime';
 const ISO = '2026-07-29T11:49:00';
 
 describe('formatClockTime', () => {
-  it('renders 2-digit hour, minute, and second with an AM/PM marker', () => {
-    expect(formatClockTime({ iso: ISO })).toBe('11:49:00 AM');
+  it('renders 2-digit hour and minute with an AM/PM marker, and no seconds', () => {
+    expect(formatClockTime({ iso: ISO })).toBe('11:49 AM');
   });
 
   it('pins the Intl locale to en-US', () => {
@@ -21,6 +21,6 @@ describe('formatClockTime', () => {
   });
 
   it('accepts an epoch millisecond number', () => {
-    expect(formatClockTime({ iso: new Date(ISO).getTime() })).toBe('11:49:00 AM');
+    expect(formatClockTime({ iso: new Date(ISO).getTime() })).toBe('11:49 AM');
   });
 });

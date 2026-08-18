@@ -101,6 +101,6 @@ describe('WorkflowKickoffCard', () => {
   it('renders the timestamp', () => {
     render(<WorkflowKickoffCard item={parsedItem} />);
 
-    expect(screen.getByText(/\d{2}:\d{2}:\d{2}/)).toBeDefined();
+    expect(screen.getByText(/\d{2}:\d{2}\s?(AM|PM)/)).toBeDefined();
   });
 });
