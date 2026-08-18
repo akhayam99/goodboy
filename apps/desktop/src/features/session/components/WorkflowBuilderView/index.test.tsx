@@ -31,6 +31,7 @@ const {
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     workspaceOverrides: {},
     workflowDrafts: {} as Record<string, WorkflowBuilderDraft | undefined>,
+    providers: [] as ReadonlyArray<{ id: string; connection: string }>,
   },
 }));
 
@@ -59,6 +60,7 @@ vi.mock('../../../../store', () => {
     setActiveLens: mockSetActiveLens,
     phaseTemplates: storeState.phaseTemplates,
     sessionPhaseRuns: storeState.sessionPhaseRuns,
+    providers: storeState.providers,
     workspaceOverrides: storeState.workspaceOverrides,
     workflowDrafts: storeState.workflowDrafts,
     setWorkflowDraft,
@@ -101,19 +103,23 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 
 vi.mock('../../../../shared/components/RoutingPicker', () => ({
   RoutingPicker: ({
+    connectedProviders,
     provider,
     model,
     recommendation,
     onProvider,
     onModel,
+    onReset,
     effort,
     ariaLabel,
   }: {
+    connectedProviders: ReadonlyArray<string>;
     provider: string;
     model: string;
     recommendation?: { provider?: string; model?: string };
     onProvider: (v: string) => void;
     onModel: (v: string) => void;
+    onReset?: () => void;
     ariaLabel?: string;
     effort:
       | { readonly editable: false; readonly value?: ModelEffort }
@@ -123,7 +129,7 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
           readonly onChange: (value: ModelEffort) => void;
         };
   }) => (
-    <div role="group" aria-label={ariaLabel}>
+    <div role="group" aria-label={ariaLabel} data-offered-providers={connectedProviders.join(',')}>
       <button type="button" onClick={() => onProvider(provider === 'cursor' ? '' : 'cursor')}>
         provider:{provider === '' ? 'default' : provider}
       </button>
@@ -141,6 +147,11 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
       {effort.editable ? (
         <button type="button" onClick={() => effort.onChange('xhigh')}>
           effort:{effort.value}
+        </button>
+      ) : null}
+      {onReset != null ? (
+        <button type="button" onClick={onReset}>
+          reset routing
         </button>
       ) : null}
     </div>
@@ -209,6 +220,7 @@ afterEach(() => {
   storeState.sessionPhaseRuns = {};
   storeState.workspaceOverrides = {};
   storeState.workflowDrafts = {};
+  storeState.providers = [];
 });
 
 const goalField = () =>
@@ -236,6 +248,8 @@ async function draftPlan() {
 }
 
 const withinSteps = () => within(screen.getByRole('list', { name: 'Workflow steps' }));
+
+const orchestratorPicker = () => screen.getByRole('group', { name: /orchestrator routing/i });
 
 const stepToggles = () => screen.getAllByRole('button', { name: /^step \d+:/i });
 
@@ -584,13 +598,76 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     );
   });
 
-  it('shows resolved role models and persists a per-run override', async () => {
+  it('offers one model control, the orchestrator own, and none per role', () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+
+    expect(screen.getByRole('group', { name: /orchestrator routing/i })).toBeDefined();
+    expect(screen.getAllByRole('group', { name: /routing$/i })).toHaveLength(1);
+    expect(screen.queryByRole('group', { name: /implementer routing/i })).toBeNull();
+    expect(screen.queryByText(/models by role/i)).toBeNull();
+    expect(screen.getByText(/decides each step/i)).toBeDefined();
+  });
+
+  it('shows the resolved orchestrator model and leaves the run on it by default', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+    fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
+      target: { value: 'Inspect each result and stop after tests pass.' },
+    });
+
+    const orchestrator = orchestratorPicker();
+    expect(
+      within(orchestrator).getByRole('button', { name: /^model:auto$/i }).dataset.recommendedModel,
+    ).toBe('sonnet-5');
+
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    expect(mockAttach).toHaveBeenCalledWith('sess-1', expect.any(String), {
+      autoRun: false,
+      navigate: true,
+      goal: 'test goal',
+      executionMode: 'dynamic',
+    });
+  });
+
+  it('carries the picked orchestrator model and effort onto the run', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+    fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
+      target: { value: 'Inspect each result and stop after tests pass.' },
+    });
+
+    fireEvent.click(within(orchestratorPicker()).getByRole('button', { name: /^model:auto$/i }));
+    fireEvent.click(within(orchestratorPicker()).getByRole('button', { name: /^effort:medium$/i }));
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    expect(mockAttach).toHaveBeenCalledWith(
+      'sess-1',
+      expect.any(String),
+      expect.objectContaining({
+        executionMode: 'dynamic',
+        orchestratorRouting: {
+          providerId: 'anthropic',
+          model: 'claude-opus-4-6',
+          effort: 'xhigh',
+        },
+      }),
+    );
+  });
+
+  it('reads the workspace orchestrator task model as the recommendation', async () => {
     storeState.workspaceOverrides = {
       'ws-1': {
-        roleModels: {
-          implementer: {
-            providerId: 'anthropic',
-            model: 'claude-sonnet-4-6',
+        taskModels: {
+          workflow_orchestrator: {
+            providerId: 'codex',
+            model: 'gpt-5.6-sol',
             effort: 'high',
           },
         },
@@ -603,13 +680,13 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
 
-    const implementer = screen.getByRole('group', { name: /implementer routing/i });
-    expect(within(implementer).getByRole('button', { name: /^model:auto$/i })).toBeDefined();
+    const orchestrator = orchestratorPicker();
     expect(
-      within(implementer).getByRole('button', { name: /^model:auto$/i }).dataset.recommendedModel,
-    ).toBe('sonnet-4.6');
-    fireEvent.click(within(implementer).getByRole('button', { name: /^model:auto$/i }));
+      within(orchestrator).getByRole('button', { name: /^model:auto$/i }).dataset.recommendedModel,
+    ).toBe('gpt-5.6');
+    expect(within(orchestrator).getByRole('button', { name: /^effort:high$/i })).toBeDefined();
 
+    fireEvent.click(within(orchestrator).getByRole('button', { name: /^effort:high$/i }));
     fireEvent.click(startBtn());
 
     await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
@@ -617,16 +694,43 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
       'sess-1',
       expect.any(String),
       expect.objectContaining({
-        executionMode: 'dynamic',
-        roleModelOverrides: {
-          implementer: {
-            providerId: 'anthropic',
-            model: 'claude-opus-4-6',
-            effort: 'high',
-          },
-        },
+        orchestratorRouting: { providerId: 'codex', model: 'gpt-5.6', effort: 'xhigh' },
       }),
     );
+  });
+
+  it('offers only connected providers the orchestrator can run on', () => {
+    storeState.providers = [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'codex', connection: 'connected' },
+      { id: 'gemini', connection: 'disconnected' },
+    ];
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+
+    expect(orchestratorPicker().dataset.offeredProviders).toBe('anthropic,codex');
+  });
+
+  it('resets the orchestrator model back to the workspace default', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+    fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
+      target: { value: 'Inspect each result and stop after tests pass.' },
+    });
+
+    fireEvent.click(within(orchestratorPicker()).getByRole('button', { name: /^model:auto$/i }));
+    fireEvent.click(within(orchestratorPicker()).getByRole('button', { name: /reset routing/i }));
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    expect(mockAttach).toHaveBeenCalledWith('sess-1', expect.any(String), {
+      autoRun: false,
+      navigate: true,
+      goal: 'test goal',
+      executionMode: 'dynamic',
+    });
   });
 
   it('puts the approach explanation before the workflow fields', () => {

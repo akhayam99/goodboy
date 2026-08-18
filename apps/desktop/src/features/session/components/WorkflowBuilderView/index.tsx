@@ -35,6 +35,7 @@ import {
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import {
+  PROVIDER_CAPABILITIES,
   PlannerClient,
   type PlannerOutput,
   defaultsForRole,
@@ -168,9 +169,12 @@ const isDraftEmpty = (d: WorkflowBuilderDraft): boolean =>
   !d.saveAsPreset &&
   !d.autoRun &&
   !d.dynamicNameEdited &&
-  Object.keys(d.roleModelOverrides).length === 0;
+  d.orchestratorModel.providerOverride === '' &&
+  d.orchestratorModel.modelOverride === '' &&
+  d.orchestratorModel.effortOverride === null;
 
 const PLANNER_EFFORT: EffortLevel = defaultsForRole('planner').effort;
+const ORCHESTRATOR_EFFORT: EffortLevel = 'medium';
 const DYNAMIC_EXECUTION_MODE: WorkflowExecutionMode = 'dynamic';
 
 export const uniqueWorkflowName = (
@@ -263,8 +267,14 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const [isSpendLimitEnabled, setIsSpendLimitEnabled] = useState(false);
   const [spendLimitDraft, setSpendLimitDraft] = useState('');
   const [spendLimitMode, setSpendLimitMode] = useState<WorkflowSpendLimitMode>('pause');
-  const [roleModelOverrides, setRoleModelOverrides] = useState<RoleModelPreferences>(
-    initialDraft?.roleModelOverrides ?? {},
+  const [orchestratorProviderOverride, setOrchestratorProviderOverride] = useState<ProviderId | ''>(
+    initialDraft?.orchestratorModel.providerOverride ?? '',
+  );
+  const [orchestratorModelOverride, setOrchestratorModelOverride] = useState(
+    initialDraft?.orchestratorModel.modelOverride ?? '',
+  );
+  const [orchestratorEffortOverride, setOrchestratorEffortOverride] = useState<EffortLevel | null>(
+    initialDraft?.orchestratorModel.effortOverride ?? null,
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -302,6 +312,43 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         : resolvedPlanTaskModel.model,
     [plannerProviderOverride, resolvedPlanTaskModel],
   );
+
+  const resolvedOrchestratorTaskModel = useMemo(
+    () => resolveTaskModel('workflow_orchestrator', workspaceOverrides?.taskModels, providerId),
+    [workspaceOverrides, providerId],
+  );
+
+  const orchestratorProviders = useMemo<ReadonlyArray<ProviderId>>(
+    () =>
+      connectedProviders.filter((candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0),
+    [connectedProviders],
+  );
+
+  const orchestratorEffectiveProviderId: ProviderId =
+    orchestratorProviderOverride !== ''
+      ? orchestratorProviderOverride
+      : resolvedOrchestratorTaskModel.providerId;
+
+  const recommendedOrchestratorModel = useMemo(
+    () =>
+      orchestratorProviderOverride !== ''
+        ? resolveTaskModel('workflow_orchestrator', null, orchestratorProviderOverride).model
+        : resolvedOrchestratorTaskModel.model,
+    [orchestratorProviderOverride, resolvedOrchestratorTaskModel],
+  );
+
+  const orchestratorEffectiveModel =
+    orchestratorModelOverride !== '' ? orchestratorModelOverride : recommendedOrchestratorModel;
+  const orchestratorEffort = clampEffort(
+    orchestratorEffectiveModel,
+    orchestratorEffortOverride ??
+      (resolvedOrchestratorTaskModel.effort as EffortLevel | undefined) ??
+      ORCHESTRATOR_EFFORT,
+  );
+  const isOrchestratorOverridden =
+    orchestratorProviderOverride !== '' ||
+    orchestratorModelOverride !== '' ||
+    orchestratorEffortOverride !== null;
 
   const basePreset = useMemo(
     () => (basePresetId ? (presets.find((t) => t.id === basePresetId) ?? null) : null),
@@ -363,7 +410,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     autoRun,
     dynamicName,
     dynamicNameEdited,
-    roleModelOverrides,
+    orchestratorModel: {
+      providerOverride: orchestratorProviderOverride,
+      modelOverride: orchestratorModelOverride,
+      effortOverride: orchestratorEffortOverride,
+    },
   };
   const draftEmpty = isDraftEmpty(draft);
 
@@ -387,8 +438,16 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     autoRun,
     dynamicName,
     dynamicNameEdited,
-    roleModelOverrides,
+    orchestratorProviderOverride,
+    orchestratorModelOverride,
+    orchestratorEffortOverride,
   ]);
+
+  const resetOrchestratorModel = () => {
+    setOrchestratorProviderOverride('');
+    setOrchestratorModelOverride('');
+    setOrchestratorEffortOverride(null);
+  };
 
   const resetDraft = () => {
     setMode(presets.length > 0 ? 'preset' : 'custom');
@@ -403,7 +462,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setAutoRun(false);
     setDynamicName(uniqueWorkflowName('Orchestrated workflow', phaseTemplates));
     setDynamicNameEdited(false);
-    setRoleModelOverrides({});
+    resetOrchestratorModel();
     setIsSpendLimitEnabled(false);
     setSpendLimitDraft('');
     setSpendLimitMode('pause');
@@ -617,7 +676,13 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         executionMode: DYNAMIC_EXECUTION_MODE,
       }),
       ...(mode === 'dynamic' &&
-        Object.keys(roleModelOverrides).length > 0 && { roleModelOverrides }),
+        isOrchestratorOverridden && {
+          orchestratorRouting: {
+            providerId: orchestratorEffectiveProviderId,
+            model: orchestratorEffectiveModel,
+            effort: orchestratorEffort,
+          },
+        }),
       ...(spendLimitUsd != null && { spendLimitUsd, spendLimitMode }),
     };
   };
@@ -1108,17 +1173,26 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                   <DynamicWorkflowComposer
                     name={dynamicName}
                     process={processText}
-                    workspaceRoleModels={roleModels}
-                    roleModelOverrides={roleModelOverrides}
-                    defaultProvider={providerId}
-                    connectedProviders={connectedProviders}
+                    orchestratorProviderOverride={orchestratorProviderOverride}
+                    orchestratorModelOverride={orchestratorModelOverride}
+                    orchestratorEffort={orchestratorEffort}
+                    recommendedOrchestratorProvider={resolvedOrchestratorTaskModel.providerId}
+                    recommendedOrchestratorModel={recommendedOrchestratorModel}
+                    orchestratorProviders={orchestratorProviders}
+                    isOrchestratorOverridden={isOrchestratorOverridden}
                     disabled={blocked}
                     onName={(name) => {
                       setDynamicName(name);
                       setDynamicNameEdited(true);
                     }}
                     onProcess={setProcessText}
-                    onRoleModelOverrides={setRoleModelOverrides}
+                    onOrchestratorProvider={(next) => {
+                      setOrchestratorProviderOverride(next);
+                      setOrchestratorModelOverride('');
+                    }}
+                    onOrchestratorModel={setOrchestratorModelOverride}
+                    onOrchestratorEffort={setOrchestratorEffortOverride}
+                    onOrchestratorReset={resetOrchestratorModel}
                   />
                 ) : (
                   <div className="flex flex-col gap-2">

@@ -28,7 +28,7 @@ const buildDraft = (overrides: Partial<WorkflowBuilderDraft> = {}): WorkflowBuil
   autoRun: false,
   dynamicName: 'Orchestrated workflow',
   dynamicNameEdited: false,
-  roleModelOverrides: {},
+  orchestratorModel: { providerOverride: '', modelOverride: '', effortOverride: null },
   ...overrides,
 });
 

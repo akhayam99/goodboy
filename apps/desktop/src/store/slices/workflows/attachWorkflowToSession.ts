@@ -2,8 +2,8 @@ import type {
   Agent,
   AttachmentInput,
   IsoDateTime,
+  OrchestratorRouting,
   ProviderId,
-  RoleModelPreferences,
   SessionId,
   WorkflowId,
   WorkflowExecutionMode,
@@ -27,7 +27,7 @@ type Options = {
   chainAfterId?: WorkflowRunId;
   attachmentInputs?: ReadonlyArray<AttachmentInput>;
   executionMode?: WorkflowExecutionMode;
-  roleModelOverrides?: RoleModelPreferences;
+  orchestratorRouting?: OrchestratorRouting;
   spendLimitUsd?: number;
   spendLimitMode?: WorkflowSpendLimitMode;
   navigate?: boolean;
@@ -56,7 +56,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
         ? options.spendLimitUsd
         : undefined;
     const spendLimitMode = options?.spendLimitMode ?? 'pause';
-    const roleModelOverrides = options?.roleModelOverrides;
+    const orchestratorRouting = options?.orchestratorRouting;
     let triggerMode: WorkflowTriggerMode = options?.triggerMode ?? 'immediate';
     if (triggerMode === 'after_run' && chainAfterId) {
       const predecessor = session.workflowRuns.find((r) => r.id === chainAfterId);
@@ -90,8 +90,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       triggerMode,
       ...(chainAfterId && { chainAfterRunId: chainAfterId }),
       executionMode,
-      ...(roleModelOverrides != null &&
-        Object.keys(roleModelOverrides).length > 0 && { roleModelOverrides }),
+      ...(orchestratorRouting != null && { orchestratorRouting }),
       ...(spendLimitUsd != null && { spendLimitUsd }),
       spendLimitMode,
     });
@@ -129,8 +128,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       triggerMode,
       executionMode,
       createdAt: now,
-      ...(roleModelOverrides != null &&
-        Object.keys(roleModelOverrides).length > 0 && { roleModelOverrides }),
+      ...(orchestratorRouting != null && { orchestratorRouting }),
       ...(chainAfterId && { chainAfterId }),
       ...(goal && { goal }),
       ...(spendLimitUsd != null && { spendLimitUsd }),

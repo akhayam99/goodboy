@@ -1,32 +1,44 @@
 import { Divider, Input, Textarea } from '@goodboy/ui';
-import type { ProviderId, RoleModelPreferences } from '@goodboy/types';
-import type { Dispatch, SetStateAction } from 'react';
-import { DynamicRoleRouting } from './DynamicRoleRouting';
+import type { ProviderId } from '@goodboy/types';
+import type { EffortLevel } from '../../../chat/utils/chat-constants';
+import { OrchestratorModelPicker } from './OrchestratorModelPicker';
 
 type Props = {
   readonly name: string;
   readonly process: string;
-  readonly workspaceRoleModels: RoleModelPreferences | null;
-  readonly roleModelOverrides: RoleModelPreferences;
-  readonly defaultProvider: ProviderId;
-  readonly connectedProviders: ReadonlyArray<ProviderId>;
+  readonly orchestratorProviderOverride: ProviderId | '';
+  readonly orchestratorModelOverride: string;
+  readonly orchestratorEffort: EffortLevel;
+  readonly recommendedOrchestratorProvider: ProviderId;
+  readonly recommendedOrchestratorModel: string;
+  readonly orchestratorProviders: ReadonlyArray<ProviderId>;
+  readonly isOrchestratorOverridden: boolean;
   readonly disabled: boolean;
   readonly onName: (name: string) => void;
   readonly onProcess: (process: string) => void;
-  readonly onRoleModelOverrides: Dispatch<SetStateAction<RoleModelPreferences>>;
+  readonly onOrchestratorProvider: (provider: ProviderId | '') => void;
+  readonly onOrchestratorModel: (model: string) => void;
+  readonly onOrchestratorEffort: (effort: EffortLevel) => void;
+  readonly onOrchestratorReset: () => void;
 };
 
 export const DynamicWorkflowComposer = ({
   name,
   process,
-  workspaceRoleModels,
-  roleModelOverrides,
-  defaultProvider,
-  connectedProviders,
+  orchestratorProviderOverride,
+  orchestratorModelOverride,
+  orchestratorEffort,
+  recommendedOrchestratorProvider,
+  recommendedOrchestratorModel,
+  orchestratorProviders,
+  isOrchestratorOverridden,
   disabled,
   onName,
   onProcess,
-  onRoleModelOverrides,
+  onOrchestratorProvider,
+  onOrchestratorModel,
+  onOrchestratorEffort,
+  onOrchestratorReset,
 }: Props) => (
   <div className="overflow-hidden rounded-lg border border-border-soft bg-subtle/40">
     <div className="flex flex-col gap-1 p-3">
@@ -66,13 +78,19 @@ export const DynamicWorkflowComposer = ({
     </div>
     <Divider />
     <div className="p-3">
-      <DynamicRoleRouting
-        workspaceRoleModels={workspaceRoleModels}
-        overrides={roleModelOverrides}
-        defaultProvider={defaultProvider}
-        connectedProviders={connectedProviders}
+      <OrchestratorModelPicker
+        providerOverride={orchestratorProviderOverride}
+        modelOverride={orchestratorModelOverride}
+        effort={orchestratorEffort}
+        recommendedProvider={recommendedOrchestratorProvider}
+        recommendedModel={recommendedOrchestratorModel}
+        allowedProviders={orchestratorProviders}
+        isOverridden={isOrchestratorOverridden}
         disabled={disabled}
-        onChange={onRoleModelOverrides}
+        onProvider={onOrchestratorProvider}
+        onModel={onOrchestratorModel}
+        onEffort={onOrchestratorEffort}
+        onReset={onOrchestratorReset}
       />
     </div>
   </div>
