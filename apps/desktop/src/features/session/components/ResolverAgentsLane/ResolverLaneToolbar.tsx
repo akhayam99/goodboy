@@ -15,14 +15,16 @@ export const ResolverLaneToolbar = ({ sessionId, queuedCount, isStalled, onForce
     (s) => (s.sessionPendingResolutions[sessionId] ?? EMPTY_ARRAY).length > 0,
   );
 
-  if (!hasPending && !isStalled) {
+  const showRunNext = isStalled && queuedCount > 1;
+
+  if (!hasPending && !showRunNext) {
     return null;
   }
 
   return (
     <div className="flex flex-col gap-2">
       <PendingResolutionsStrip sessionId={sessionId} />
-      {isStalled && (
+      {showRunNext && (
         <div className="flex items-center justify-end gap-1">
           <button
             type="button"

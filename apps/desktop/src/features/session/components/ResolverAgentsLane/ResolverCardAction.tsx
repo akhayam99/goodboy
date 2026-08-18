@@ -1,11 +1,13 @@
-import { useState } from 'react';
 import { cn } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useResolverActions } from '../../hooks/useResolverActions';
 import type { ResolverStatus } from '../../resolver-linkage';
 import { RESOLVER_ACTION_ICON } from '../../resolverActionIcon';
-import { resolverActionOpensPanel, type ResolverActionRole } from '../../resolverActions';
-import { ResolverConfirm } from '../ResolverConfirm';
+import {
+  resolverActionOpensPanel,
+  type ResolverAction,
+  type ResolverActionRole,
+} from '../../resolverActions';
 
 type Props = {
   readonly agent: Agent;
@@ -15,6 +17,7 @@ type Props = {
   readonly isQueueStalled: boolean;
   readonly hasOtherActiveResolvers: boolean;
   readonly onOpenPanel: () => void;
+  readonly onArmConfirm: (params: { action: ResolverAction; run: () => Promise<void> }) => void;
 };
 
 const ROLE_CLASS: Record<ResolverActionRole, string> = {
@@ -35,6 +38,7 @@ export const ResolverCardAction = ({
   isQueueStalled,
   hasOtherActiveResolvers,
   onOpenPanel,
+  onArmConfirm,
 }: Props) => {
   const actions = useResolverActions({
     agent,
@@ -45,7 +49,6 @@ export const ResolverCardAction = ({
     isQueueStalled,
     hasOtherActiveResolvers,
   });
-  const [isArmed, setIsArmed] = useState(false);
   const action = actions.plan.primary;
 
   if (action === null) {
@@ -54,45 +57,26 @@ export const ResolverCardAction = ({
   const Icon = RESOLVER_ACTION_ICON[action.kind];
 
   return (
-    <div
-      className="flex min-w-0 flex-col items-end gap-2"
-      onClick={(event) => event.stopPropagation()}
-      onDoubleClick={(event) => event.stopPropagation()}
-      onKeyDown={(event) => event.stopPropagation()}
+    <button
+      type="button"
+      disabled={!action.isEnabled}
+      title={actions.plan.note ?? undefined}
+      onClick={(event) => {
+        event.stopPropagation();
+        if (resolverActionOpensPanel({ action })) {
+          onOpenPanel();
+          return;
+        }
+        if (action.confirm === null) {
+          void actions.run(action.kind);
+          return;
+        }
+        onArmConfirm({ action, run: () => actions.run(action.kind) });
+      }}
+      className={cn(BUTTON_CLASS, ROLE_CLASS[action.role])}
     >
-      {!isArmed && (
-        <button
-          type="button"
-          disabled={!action.isEnabled}
-          title={actions.plan.note ?? undefined}
-          onClick={() => {
-            if (resolverActionOpensPanel({ action })) {
-              onOpenPanel();
-              return;
-            }
-            if (action.confirm === null) {
-              void actions.run(action.kind);
-              return;
-            }
-            setIsArmed(true);
-          }}
-          className={cn(BUTTON_CLASS, ROLE_CLASS[action.role])}
-        >
-          <Icon size={9} aria-hidden />
-          {action.label}
-        </button>
-      )}
-      {isArmed && (
-        <ResolverConfirm
-          action={action}
-          className="w-full max-w-72 self-end"
-          onConfirm={async () => {
-            await actions.run(action.kind);
-            setIsArmed(false);
-          }}
-          onCancel={() => setIsArmed(false)}
-        />
-      )}
-    </div>
+      <Icon size={9} aria-hidden />
+      {action.label}
+    </button>
   );
 };

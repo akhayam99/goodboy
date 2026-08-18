@@ -121,6 +121,7 @@ vi.mock('../../../../store', () => ({
   useFilesTouched: () => ({ paths: [], count: 0, additions: 0, deletions: 0 }),
   useSessionPlans: () => [],
   useSessionOpenQuestions: () => hooks.openQuestions,
+  useDiffComments: () => [],
 }));
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
@@ -149,9 +150,18 @@ vi.mock('../../../workspace/components/WorkspacesSidebar/parts/AgentsSection', (
   ),
 }));
 vi.mock('../ResolverAgentsLane', () => ({
-  ResolverAgentsLane: ({ inspectedResolverId }: { inspectedResolverId: string | null }) => (
-    <div data-testid="resolver-lane">{inspectedResolverId}</div>
-  ),
+  ResolverAgentsLane: ({
+    mode = 'active',
+    inspectedResolverId,
+  }: {
+    readonly mode?: 'active' | 'finished';
+    readonly inspectedResolverId: string | null;
+  }) =>
+    mode === 'active' ? (
+      <div data-testid="resolver-lane">{inspectedResolverId}</div>
+    ) : (
+      <div data-testid={`resolver-lane-${mode}`}>{inspectedResolverId}</div>
+    ),
 }));
 vi.mock('../StandaloneAgentsLane', () => ({
   StandaloneAgentsLane: ({
