@@ -52,35 +52,37 @@ export const GoalOverviewRegion = ({
     <section aria-label="Goal" className="flex flex-col gap-2">
       <Eyebrow label="Goal" muted className="px-0.5 font-medium" />
       <div className="flex flex-col gap-4 rounded-lg border border-border-soft bg-subtle px-4 py-3">
-        <div className="flex items-start justify-end gap-2">
-          {hasValue ? (
-            <Button size="sm" variant="ghost" onClick={startEditing} disabled={isSummarizing}>
-              Edit
-            </Button>
-          ) : null}
-          {hasValue ? (
-            <CopyButton
-              presentation="icon"
-              value={value}
-              label="copy goal"
-              size={15}
-              className="rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
-            />
-          ) : null}
-          {historyCount > 0 ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onOpenHistory}
-              aria-label={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of Goal`}
-              className="h-7 gap-1.5 px-2 text-xs text-muted-foreground"
-            >
-              <History size={13} aria-hidden />
-              {historyCount} {historyCount === 1 ? 'version' : 'versions'}
-            </Button>
-          ) : null}
-        </div>
+        {hasValue || historyCount > 0 ? (
+          <div className="flex items-start justify-end gap-2">
+            {hasValue ? (
+              <Button size="sm" variant="ghost" onClick={startEditing} disabled={isSummarizing}>
+                Edit
+              </Button>
+            ) : null}
+            {hasValue ? (
+              <CopyButton
+                presentation="icon"
+                value={value}
+                label="copy goal"
+                size={15}
+                className="rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
+              />
+            ) : null}
+            {historyCount > 0 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onOpenHistory}
+                aria-label={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of Goal`}
+                className="h-7 gap-1.5 px-2 text-xs text-muted-foreground"
+              >
+                <History size={13} aria-hidden />
+                {historyCount} {historyCount === 1 ? 'version' : 'versions'}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
         {isLoading ? (
           <div className="flex flex-col gap-2" aria-label="Loading goal">
             <div className="h-4 w-full rounded bg-muted/50" />

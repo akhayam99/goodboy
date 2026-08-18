@@ -7,7 +7,6 @@ type DecisionSegment = {
 export type DecisionRow = {
   readonly index: number;
   readonly text: string;
-  readonly isMultiline: boolean;
 };
 
 export type DecisionsDocument = {
@@ -90,9 +89,7 @@ export const parseDecisions = ({ text }: TextParams): DecisionsDocument => {
   }
 
   const rows = segments.flatMap((segment, index) =>
-    segment.kind === 'row'
-      ? [{ index, text: textOf({ segment }), isMultiline: segment.lines.length > 1 }]
-      : [],
+    segment.kind === 'row' ? [{ index, text: textOf({ segment }) }] : [],
   );
 
   const hasContentOutsideRows = segments.some(

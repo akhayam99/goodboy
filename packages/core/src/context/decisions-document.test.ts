@@ -92,8 +92,7 @@ describe('parseDecisions', () => {
     expect(rows[0]?.text).toBe(
       'the resolver keeps one thread per comment\n  - the marker carries the thread id\n  - a missing marker blocks the publish',
     );
-    expect(rows[0]?.isMultiline).toBe(true);
-    expect(rows[1]?.isMultiline).toBe(false);
+    expect(rows[1]?.text).toBe('the lens order is Overview then Context');
   });
 
   it('keeps a wrapped continuation line inside its row', () => {
