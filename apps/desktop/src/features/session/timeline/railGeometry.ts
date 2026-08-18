@@ -123,7 +123,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
   const depthOf = ({ group }: { readonly group: RailGroupInput }): number => {
     let depth = 0;
     let parentId = group.parentGroupId;
-    while (parentId != null && depth <= groups.length) {
+    while (parentId != null && depth < groups.length) {
       depth += 1;
       parentId = groupById.get(parentId)?.parentGroupId ?? null;
     }
@@ -155,15 +155,17 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
     const parentColumn =
       group.parentGroupId == null ? 0 : (columnByGroupId.get(group.parentGroupId) ?? 0);
     let column = parentColumn + 1;
-    while (
-      (takenByColumn.get(column) ?? []).some((taken) =>
-        overlaps({ first: taken, second: interval }),
-      )
-    ) {
+    let taken = takenByColumn.get(column);
+    while (taken?.some((other) => overlaps({ first: other, second: interval })) === true) {
       column += 1;
+      taken = takenByColumn.get(column);
     }
     columnByGroupId.set(group.id, column);
-    takenByColumn.set(column, [...(takenByColumn.get(column) ?? []), interval]);
+    if (taken === undefined) {
+      takenByColumn.set(column, [interval]);
+    } else {
+      taken.push(interval);
+    }
   }
 
   const plans: ReadonlyArray<GroupPlan> = ordered.map((group) => {
