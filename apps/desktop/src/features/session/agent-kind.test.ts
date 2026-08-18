@@ -258,12 +258,14 @@ describe('AGENT_KIND_PALETTE', () => {
     }
   });
 
-  it('renders the generalist role as the GEN badge', () => {
-    expect(AGENT_KIND_PALETTE.generic.label).toBe('gen');
+  it('renders the generalist role under its full name, never an abbreviation', () => {
+    expect(AGENT_KIND_PALETTE.generic.label).toBe('Generalist');
   });
 
-  it('spells every badge as a word, never a truncated fragment', () => {
-    expect(AGENT_KIND_PALETTE.implementer.label).toBe('implement');
+  it('takes every badge from the one role name the rest of the app uses', () => {
+    for (const kind of ALL_KINDS) {
+      expect(AGENT_KIND_PALETTE[kind].label).toBe(AGENT_KIND_META[kind].label);
+    }
   });
 });
 

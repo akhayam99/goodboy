@@ -39,7 +39,7 @@ type ChipParams = EntryParams & {
 };
 
 const chipOf = ({ entry, grade }: ChipParams) => {
-  if (entry.kind !== 'agent' || grade !== 'entry' || entry.agentKind === 'resolver') {
+  if (entry.kind !== 'agent' || grade !== 'entry') {
     return null;
   }
   const palette = agentKindPalette({ kind: entry.agentKind });
