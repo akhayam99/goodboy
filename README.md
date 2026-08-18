@@ -84,8 +84,8 @@ its own pull request view. An issue from a tracker becomes a session with the
 goal and the branch name already filled in, and a Slack thread starts one the
 same way.
 
-Every connection is optional, and each holds its token in your OS credential
-store. Each one covers a slice of its service rather than the whole API, and
+Every connection is optional, and each holds its personal API key in your OS
+credential store. Each one covers a slice of its service rather than the whole API, and
 the release notes say which slice when it lands.
 
 ## Install
@@ -113,7 +113,7 @@ chmod +x Goodboy_<version>_amd64.AppImage
 ```
 
 Credentials go to the freedesktop Secret Service, GNOME Keyring or KWallet, so
-a keyring daemon has to be running before you save a token.
+a keyring daemon has to be running before you save a personal API key.
 
 **Windows** is a build from source for now. Security posture and the credential
 caveat: [SECURITY.md](./SECURITY.md).
@@ -152,11 +152,11 @@ send. `SECURITY.md` carries the full list.
 - **The website is not the app.** `goodboy-ai.dev` runs Google Tag Manager and
   Vercel's analytics and speed tools to see how the page itself is doing.
   Reading about Goodboy is measured. Running it is not.
-- API keys and tokens stay on your machine, in your OS credential store.
+- API keys stay on your machine, in your OS credential store.
 - Prompts and responses travel between you and the provider you picked, and
   nowhere else.
 - What you send to a connected service reaches that service. A comment posted
-  to GitHub is a comment on GitHub, and its token travels with the request.
+  to GitHub is a comment on GitHub, and its API key travels with the request.
   Local storage does not mean nothing leaves.
 - Local persistence is one SQLite file, `~/.goodboy/data.db`: workspaces,
   sessions, agents, messages, context, plans, local usage records, skills,

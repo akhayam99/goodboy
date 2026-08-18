@@ -202,8 +202,8 @@ breadcrumb IA, exit on close or Esc, and only one is open at a time.
   system-level session: a workspace running on the system `gh` CLI has nothing
   workspace-scoped to clear, so it offers no disconnect and points at
   `gh auth logout`. The control is gated on credential state alone, not on the
-  git remote, so a leftover scoped token on a non-GitHub workspace can still be
-  cleared.
+  git remote, so a leftover scoped personal API key on a non-GitHub workspace can
+  still be cleared.
 - **A code-host studio mounted outside a session is browse-and-launch only.**
   The write verbs (approve, request changes, comment, merge, decline) are keyed
   to a session and stay disabled; a composite workspace has no single

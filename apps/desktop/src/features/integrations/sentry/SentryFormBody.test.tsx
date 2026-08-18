@@ -29,7 +29,7 @@ const sentryIntegration = {
 };
 
 const fillForm = ({ token, org, project }: { token: string; org: string; project: string }) => {
-  fireEvent.change(screen.getByLabelText(/auth token/i), { target: { value: token } });
+  fireEvent.change(screen.getByLabelText(/personal API key/i), { target: { value: token } });
   fireEvent.change(screen.getByLabelText(/organization slug/i), { target: { value: org } });
   fireEvent.change(screen.getByLabelText(/project slug/i), { target: { value: project } });
 };
@@ -47,8 +47,8 @@ describe('SentryFormBody', () => {
   it('offers the token link before the token field', () => {
     render(<SentryFormBody workspaceId={WS_ID} />);
 
-    const link = screen.getByRole('link', { name: /create a token/i });
-    const field = screen.getByLabelText(/auth token/i);
+    const link = screen.getByRole('link', { name: /create a user auth token/i });
+    const field = screen.getByLabelText(/personal API key/i);
 
     expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
@@ -58,7 +58,9 @@ describe('SentryFormBody', () => {
       render(<SentryFormBody workspaceId={WS_ID} />);
       const btn = screen.getByRole('button', { name: /^connect$/i }) as HTMLButtonElement;
       expect(btn.disabled).toBe(true);
-      fireEvent.change(screen.getByLabelText(/auth token/i), { target: { value: 'sntryu_x' } });
+      fireEvent.change(screen.getByLabelText(/personal API key/i), {
+        target: { value: 'sntryu_x' },
+      });
       expect(btn.disabled).toBe(true);
       fireEvent.change(screen.getByLabelText(/organization slug/i), { target: { value: 'org' } });
       expect(btn.disabled).toBe(true);

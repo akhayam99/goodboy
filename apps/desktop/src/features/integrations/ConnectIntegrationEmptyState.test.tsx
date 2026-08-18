@@ -35,11 +35,11 @@ import { ConnectIntegrationEmptyState } from './ConnectIntegrationEmptyState';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const PROVIDERS = [
-  ['linear', 'Linear', 'Personal access token'],
-  ['sentry', 'Sentry', 'Auth token'],
-  ['gitlab', 'GitLab', 'Personal access token'],
-  ['jira', 'Jira', 'API token'],
-  ['bitbucket', 'Bitbucket', 'API token'],
+  ['linear', 'Linear', 'Personal API key'],
+  ['sentry', 'Sentry', 'Personal API key'],
+  ['gitlab', 'GitLab', 'Personal API key'],
+  ['jira', 'Jira', 'Personal API key'],
+  ['bitbucket', 'Bitbucket', 'Personal API key'],
   ['slack', 'Slack', 'Bot token'],
 ] as const;
 
@@ -60,5 +60,24 @@ describe('ConnectIntegrationEmptyState', () => {
     expect(studioListener).not.toHaveBeenCalled();
 
     window.removeEventListener(`goodboy:open-${provider}-studio`, studioListener);
+  });
+
+  const PERSONAL_KEY_PROVIDERS = PROVIDERS.filter(([provider]) => provider !== 'slack');
+
+  it.each(PERSONAL_KEY_PROVIDERS)(
+    'labels the %s credential field a personal API key, never a token',
+    (provider) => {
+      render(<ConnectIntegrationEmptyState provider={provider} workspaceId={WORKSPACE_ID} />);
+
+      expect(screen.getByLabelText('Personal API key')).toBeDefined();
+      expect(screen.queryByLabelText(/access token|auth token|api token/i)).toBeNull();
+    },
+  );
+
+  it('keeps the Slack credential a bot token, because it belongs to an app and not a person', () => {
+    render(<ConnectIntegrationEmptyState provider="slack" workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.getByLabelText('Bot token')).toBeDefined();
+    expect(screen.queryByLabelText('Personal API key')).toBeNull();
   });
 });

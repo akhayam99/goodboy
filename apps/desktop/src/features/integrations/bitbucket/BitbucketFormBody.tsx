@@ -88,7 +88,7 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
               role="danger"
               icon={<Unplug size={12} aria-hidden />}
               title="Disconnect Bitbucket?"
-              description="Deletes the saved Bitbucket API token from your keychain and forgets this workspace's connection. Reconnect anytime."
+              description="Deletes the saved Bitbucket personal API key from your keychain and forgets this workspace's connection. Reconnect anytime."
               confirmLabel="Disconnect Bitbucket"
               autoDisarmMs={4000}
               onConfirm={onDisconnect}
@@ -147,7 +147,7 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
           </div>
           <div className="flex flex-col gap-2">
             <label htmlFor="bitbucket-token" className="text-xs font-semibold text-foreground">
-              API token
+              Personal API key
             </label>
             <a
               href={TOKEN_URL}
@@ -155,7 +155,7 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
               rel="noreferrer"
               className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
             >
-              Create a token in your Atlassian account <ExternalLink size={10} aria-hidden />
+              Create an API token in your Atlassian account <ExternalLink size={10} aria-hidden />
             </a>
             <Input
               id="bitbucket-token"

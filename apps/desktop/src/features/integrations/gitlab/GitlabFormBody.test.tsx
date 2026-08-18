@@ -50,8 +50,8 @@ describe('GitlabFormBody', () => {
   it('offers the token link before the token field', () => {
     render(<GitlabFormBody workspaceId={WS_ID} />);
 
-    const link = screen.getByRole('link', { name: /create a token/i });
-    const field = screen.getByLabelText(/personal access token/i);
+    const link = screen.getByRole('link', { name: /create a personal access token/i });
+    const field = screen.getByLabelText(/personal API key/i);
 
     expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
@@ -61,7 +61,7 @@ describe('GitlabFormBody', () => {
       render(<GitlabFormBody workspaceId={WS_ID} />);
       const btn = (await screen.findByRole('button', { name: /^connect$/i })) as HTMLButtonElement;
       expect(btn.disabled).toBe(true);
-      fireEvent.change(screen.getByLabelText(/personal access token/i), {
+      fireEvent.change(screen.getByLabelText(/personal API key/i), {
         target: { value: 'glpat-x' },
       });
       expect(btn.disabled).toBe(false);
@@ -70,7 +70,7 @@ describe('GitlabFormBody', () => {
     it('connects with the default host and fires onConnected', async () => {
       const onConnected = vi.fn();
       render(<GitlabFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fireEvent.change(await screen.findByLabelText(/personal access token/i), {
+      fireEvent.change(await screen.findByLabelText(/personal API key/i), {
         target: { value: '  glpat-x  ' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -85,7 +85,7 @@ describe('GitlabFormBody', () => {
       fireEvent.change(await screen.findByLabelText(/^host$/i), {
         target: { value: 'gitlab.example.com/' },
       });
-      fireEvent.change(screen.getByLabelText(/personal access token/i), {
+      fireEvent.change(screen.getByLabelText(/personal API key/i), {
         target: { value: 'glpat-x' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -103,7 +103,7 @@ describe('GitlabFormBody', () => {
       fireEvent.change(await screen.findByLabelText(/^host$/i), {
         target: { value: 'javascript://evil.example.com' },
       });
-      fireEvent.change(screen.getByLabelText(/personal access token/i), {
+      fireEvent.change(screen.getByLabelText(/personal API key/i), {
         target: { value: 'glpat-x' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -118,7 +118,7 @@ describe('GitlabFormBody', () => {
         throw new Error('invalid token');
       });
       render(<GitlabFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fireEvent.change(await screen.findByLabelText(/personal access token/i), {
+      fireEvent.change(await screen.findByLabelText(/personal API key/i), {
         target: { value: 'glpat-bad' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -161,14 +161,14 @@ describe('GitlabFormBody', () => {
 
     it('offers the connect form and no cross-host disconnect so both hosts coexist', async () => {
       render(<GitlabFormBody workspaceId={WS_ID} />);
-      expect(await screen.findByLabelText(/personal access token/i)).toBeDefined();
+      expect(await screen.findByLabelText(/personal API key/i)).toBeDefined();
       expect(screen.getByRole('button', { name: /^connect$/i })).toBeDefined();
       expect(screen.queryByText(/Disconnect GitHub/i)).toBeNull();
     });
 
     it('never reads or clears the GitHub token', async () => {
       render(<GitlabFormBody workspaceId={WS_ID} />);
-      fireEvent.change(await screen.findByLabelText(/personal access token/i), {
+      fireEvent.change(await screen.findByLabelText(/personal API key/i), {
         target: { value: 'glpat-x' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -182,7 +182,7 @@ describe('GitlabFormBody', () => {
 
   it('does not claim the token never leaves this machine', async () => {
     render(<GitlabFormBody workspaceId={WS_ID} />);
-    await screen.findByLabelText(/personal access token/i);
+    await screen.findByLabelText(/personal API key/i);
     expect(screen.queryByText(/never leaves this machine/i)).toBeNull();
   });
 });

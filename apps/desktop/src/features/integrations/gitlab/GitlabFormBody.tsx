@@ -89,7 +89,7 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               role="danger"
               icon={<Unplug size={12} aria-hidden />}
               title="Disconnect GitLab?"
-              description="Deletes the saved GitLab token from your keychain and forgets this workspace's connection. Reconnect anytime."
+              description="Deletes the saved GitLab personal API key from your keychain and forgets this workspace's connection. Reconnect anytime."
               confirmLabel="Disconnect GitLab"
               autoDisarmMs={4000}
               onConfirm={onDisconnect}
@@ -127,7 +127,7 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
           </div>
           <div className="flex flex-col gap-2">
             <label htmlFor="gitlab-pat" className="text-xs font-semibold text-foreground">
-              Personal access token
+              Personal API key
             </label>
             <a
               href={tokenUrl}
@@ -135,7 +135,7 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               rel="noreferrer"
               className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
             >
-              Create a token (scope read_api) <ExternalLink size={10} aria-hidden />
+              Create a personal access token (scope read_api) <ExternalLink size={10} aria-hidden />
             </a>
             <Input
               id="gitlab-pat"
@@ -148,7 +148,7 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
             />
           </div>
           <p className="text-2xs leading-relaxed text-muted-foreground">
-            The read_api scope is enough. The token is stored encrypted in your operating system
+            The read_api scope is enough. The key is stored encrypted in your operating system
             keychain. Goodboy sends it directly to GitLab over HTTPS; it never touches
             Goodboy&apos;s own servers.
           </p>

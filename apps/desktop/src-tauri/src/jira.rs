@@ -35,7 +35,7 @@ pub enum JiraError {
     NotFound(String),
     #[error("invalid response shape: {0}")]
     InvalidShape(String),
-    #[error("no token stored for workspace {0}")]
+    #[error("no personal API key stored for workspace {0}")]
     NoToken(String),
     #[error("secret store error: {0}")]
     Secret(#[from] secrets::SecretError),

@@ -41,8 +41,8 @@ describe('LinearFormBody', () => {
   it('offers the token link before the token field', () => {
     render(<LinearFormBody workspaceId={WS_ID} />);
 
-    const link = screen.getByRole('link', { name: /create a token/i });
-    const field = screen.getByLabelText(/personal access token/i);
+    const link = screen.getByRole('link', { name: /create a personal API key/i });
+    const field = screen.getByLabelText(/personal API key/i);
 
     expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
@@ -52,7 +52,7 @@ describe('LinearFormBody', () => {
       render(<LinearFormBody workspaceId={WS_ID} />);
       const btn = screen.getByRole('button', { name: /^connect$/i }) as HTMLButtonElement;
       expect(btn.disabled).toBe(true);
-      fireEvent.change(screen.getByLabelText(/personal access token/i), {
+      fireEvent.change(screen.getByLabelText(/personal API key/i), {
         target: { value: 'lin_api_x' },
       });
       expect(btn.disabled).toBe(false);
@@ -61,7 +61,7 @@ describe('LinearFormBody', () => {
     it('connects with the trimmed token and fires onConnected', async () => {
       const onConnected = vi.fn();
       render(<LinearFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fireEvent.change(screen.getByLabelText(/personal access token/i), {
+      fireEvent.change(screen.getByLabelText(/personal API key/i), {
         target: { value: '  lin_api_x  ' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -75,7 +75,7 @@ describe('LinearFormBody', () => {
         throw new Error('unauthorized');
       });
       render(<LinearFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fireEvent.change(screen.getByLabelText(/personal access token/i), {
+      fireEvent.change(screen.getByLabelText(/personal API key/i), {
         target: { value: 'lin_api_bad' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));

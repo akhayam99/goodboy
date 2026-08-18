@@ -12,7 +12,7 @@ export const CreateTokenLink = () => {
         rel="noreferrer"
         className="inline-flex items-center gap-1 underline underline-offset-2 hover:text-foreground"
       >
-        Create a token on GitHub <ExternalLink size={10} aria-hidden />
+        Create a personal access token on GitHub <ExternalLink size={10} aria-hidden />
       </a>{' '}
       (scope <code className="rounded bg-muted px-1 py-0.5 font-mono">repo</code>), then{' '}
       <a

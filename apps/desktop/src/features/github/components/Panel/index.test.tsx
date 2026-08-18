@@ -59,7 +59,7 @@ describe('GithubPanel', () => {
   it('submits the token via setGithubPat when Connect is clicked', async () => {
     state.githubStatus = { available: true, mode: 'absent' };
     render(<GithubPanel />);
-    fireEvent.change(screen.getByLabelText(/github personal access token/i), {
+    fireEvent.change(screen.getByLabelText(/github personal API key/i), {
       target: { value: 'ghp_token' },
     });
     await act(async () => {

@@ -934,7 +934,7 @@ describe('PrPane', () => {
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
     expect(screen.getByRole('heading', { name: 'GitHub', level: 2 })).toBeDefined();
     expect(screen.getByText(/does not have a GitHub remote/i)).toBeDefined();
-    expect(screen.queryByLabelText('GitHub personal access token')).toBeNull();
+    expect(screen.queryByLabelText('GitHub personal API key')).toBeNull();
     expect(screen.queryByRole('button', { name: /Draft a pull request/i })).toBeNull();
   });
 
@@ -946,12 +946,12 @@ describe('PrPane', () => {
     };
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
-    const tokenInput = await screen.findByLabelText('GitHub personal access token');
+    const tokenInput = await screen.findByLabelText('GitHub personal API key');
     fireEvent.change(tokenInput, { target: { value: 'ghp_valid' } });
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
 
     await waitFor(() => {
-      expect(screen.queryByLabelText('GitHub personal access token')).toBeNull();
+      expect(screen.queryByLabelText('GitHub personal API key')).toBeNull();
     });
     expect(screen.getByRole('button', { name: /Draft a pull request/i })).toBeDefined();
   });

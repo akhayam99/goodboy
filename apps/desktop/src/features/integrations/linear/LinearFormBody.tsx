@@ -68,7 +68,7 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               role="danger"
               icon={<Unplug size={12} aria-hidden />}
               title="Disconnect Linear?"
-              description="Deletes the saved Linear token from your keychain and forgets this workspace's connection. Reconnect anytime."
+              description="Deletes the saved Linear personal API key from your keychain and forgets this workspace's connection. Reconnect anytime."
               confirmLabel="Disconnect Linear"
               autoDisarmMs={4000}
               onConfirm={onDisconnect}
@@ -90,7 +90,7 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         <>
           <div className="flex flex-col gap-2">
             <label htmlFor="linear-pat" className="text-xs font-semibold text-foreground">
-              Personal access token
+              Personal API key
             </label>
             <a
               href="https://linear.app/settings/account/security"
@@ -98,7 +98,7 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               rel="noreferrer"
               className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
             >
-              Create a token in Linear settings <ExternalLink size={10} aria-hidden />
+              Create a personal API key in Linear settings <ExternalLink size={10} aria-hidden />
             </a>
             <Input
               id="linear-pat"
@@ -111,7 +111,7 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
             />
           </div>
           <p className="text-2xs leading-relaxed text-muted-foreground">
-            Read-only scope is enough. The token is stored encrypted in your operating system
+            Read-only scope is enough. The key is stored encrypted in your operating system
             keychain. Goodboy sends it directly to Linear over HTTPS; it never touches
             Goodboy&apos;s own servers.
           </p>

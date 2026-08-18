@@ -74,7 +74,7 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               role="danger"
               icon={<Unplug size={12} aria-hidden />}
               title="Disconnect Sentry?"
-              description="Deletes the saved Sentry token from your keychain and forgets this workspace's connection. Reconnect anytime."
+              description="Deletes the saved Sentry personal API key from your keychain and forgets this workspace's connection. Reconnect anytime."
               confirmLabel="Disconnect Sentry"
               autoDisarmMs={4000}
               onConfirm={onDisconnect}
@@ -96,7 +96,7 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         <>
           <div className="flex flex-col gap-2">
             <label htmlFor="sentry-token" className="text-xs font-semibold text-foreground">
-              Auth token
+              Personal API key
             </label>
             <a
               href="https://sentry.io/settings/account/api/auth-tokens/"
@@ -104,7 +104,7 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               rel="noreferrer"
               className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
             >
-              Create a token in Sentry settings <ExternalLink size={10} aria-hidden />
+              Create a user auth token in Sentry settings <ExternalLink size={10} aria-hidden />
             </a>
             <Input
               id="sentry-token"
@@ -147,7 +147,7 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
             />
           </div>
           <p className="text-2xs leading-relaxed text-muted-foreground">
-            A token with issue read scope is enough. It is stored encrypted in your operating system
+            A key with issue read scope is enough. It is stored encrypted in your operating system
             keychain. Goodboy sends it directly to Sentry over HTTPS; it never touches
             Goodboy&apos;s own servers.
           </p>

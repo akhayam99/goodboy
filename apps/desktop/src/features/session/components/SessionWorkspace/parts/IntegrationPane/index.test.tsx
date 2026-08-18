@@ -442,7 +442,7 @@ describe('IntegrationPane', () => {
 
     expect(screen.getByRole('heading', { name: 'Linear' })).toBeDefined();
     expect(screen.queryByRole('combobox', { name: 'Link an issue' })).toBeNull();
-    fireEvent.change(screen.getByLabelText('Personal access token'), {
+    fireEvent.change(screen.getByLabelText('Personal API key'), {
       target: { value: 'lin_api_test' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));

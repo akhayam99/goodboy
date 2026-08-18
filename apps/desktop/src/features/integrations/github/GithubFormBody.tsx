@@ -72,14 +72,14 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
             Connected as {status?.user ?? '(unknown user)'}
           </div>
           <p className="text-2xs leading-relaxed text-muted-foreground">
-            This workspace uses its own token for every gh call.
+            This workspace uses its own personal API key for every gh call.
           </p>
           {isDisconnectArmed ? (
             <InlineConfirm
               role="danger"
               icon={<Unplug size={12} aria-hidden />}
               title="Disconnect GitHub?"
-              description="Deletes this workspace's GitHub token from your keychain. This does not sign you out of the system gh CLI."
+              description="Deletes this workspace's GitHub personal API key from your keychain. This does not sign you out of the system gh CLI."
               confirmLabel="Disconnect GitHub"
               autoDisarmMs={4000}
               onConfirm={onDisconnect}
@@ -101,8 +101,8 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         <>
           <p className="text-xs leading-relaxed text-muted-foreground">
             {status?.user
-              ? `This workspace falls back to your system gh (connected as ${status.user}). Connect a token to override it, e.g. one authorized for this repo's org via SSO.`
-              : 'Connect a personal access token so Goodboy can resolve PRs for this workspace.'}
+              ? `This workspace falls back to your system gh (connected as ${status.user}). Connect a personal API key to override it, e.g. one authorized for this repo's org via SSO.`
+              : 'Connect a personal API key so Goodboy can resolve PRs for this workspace.'}
           </p>
           <div className="flex flex-col gap-2">
             <CreateTokenLink />
@@ -113,12 +113,12 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               value={token}
               onChange={(e) => setToken(e.target.value)}
               disabled={busy}
-              aria-label="GitHub personal access token"
+              aria-label="GitHub personal API key"
             />
           </div>
           <p className="text-2xs leading-relaxed text-muted-foreground">
-            The token is stored encrypted in your operating system keychain. Goodboy sends it
-            directly to GitHub over HTTPS; it never touches Goodboy&apos;s own servers.
+            The key is stored encrypted in your operating system keychain. Goodboy sends it directly
+            to GitHub over HTTPS; it never touches Goodboy&apos;s own servers.
           </p>
         </>
       )}

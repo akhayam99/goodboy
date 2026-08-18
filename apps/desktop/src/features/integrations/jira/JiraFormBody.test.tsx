@@ -41,7 +41,7 @@ const fillConnectForm = () => {
     target: { value: ' grace@acme.com ' },
   });
   fireEvent.change(screen.getByLabelText(/project key/i), { target: { value: 'eng' } });
-  fireEvent.change(screen.getByLabelText(/api token/i), { target: { value: ' ATATT-x ' } });
+  fireEvent.change(screen.getByLabelText(/personal API key/i), { target: { value: ' ATATT-x ' } });
 };
 
 beforeEach(() => {
@@ -57,8 +57,8 @@ describe('JiraFormBody credential link', () => {
   it('offers the token link before the token field', () => {
     render(<JiraFormBody workspaceId={WS_ID} />);
 
-    const link = screen.getByRole('link', { name: /create a token/i });
-    const field = screen.getByLabelText(/api token/i);
+    const link = screen.getByRole('link', { name: /create an API token/i });
+    const field = screen.getByLabelText(/personal API key/i);
 
     expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
