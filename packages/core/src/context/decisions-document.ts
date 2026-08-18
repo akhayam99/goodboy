@@ -1,3 +1,5 @@
+import { trimEndOf } from './trim-end-of';
+
 type DecisionSegment = {
   readonly kind: 'row' | 'gap';
   readonly lines: ReadonlyArray<string>;
@@ -19,7 +21,7 @@ const BLANK_LINE = /^[ \t]*$/;
 const ROW_START = /^\S/;
 const BULLET_MARKER = /^(?:[-*+]|\d+[.)])[ \t]+/;
 const FENCE_LINE = /^ {0,3}(?:```|~~~)/;
-const TRAILING_NEWLINES = /\n+$/;
+const NEWLINE = '\n';
 const DEFAULT_MARKER = '- ';
 
 type MutableSegment = {
@@ -201,5 +203,5 @@ export const appendDecision = ({ text, decision }: AppendParams): string => {
     return lines.join('\n');
   }
   const separator = usesBlankSeparation({ segments: document.segments }) ? '\n\n' : '\n';
-  return `${text.replace(TRAILING_NEWLINES, '')}${separator}${lines.join('\n')}`;
+  return `${trimEndOf({ text, characters: NEWLINE })}${separator}${lines.join('\n')}`;
 };

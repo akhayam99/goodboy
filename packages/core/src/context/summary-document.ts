@@ -1,3 +1,5 @@
+import { trimEndOf } from './trim-end-of';
+
 export const SUMMARY_SECTION_KEYS = ['problem', 'learned', 'state', 'next'] as const;
 
 export type SummarySectionKey = (typeof SUMMARY_SECTION_KEYS)[number];
@@ -22,9 +24,10 @@ export type SummaryDocument = {
 };
 
 const HEADING_LINE = /^ {0,3}(#{1,6})[ \t]+(\S.*)$/;
-const CLOSING_HASHES = /[ \t]+#+[ \t]*$/;
 const FENCE_LINE = /^ {0,3}(?:```|~~~)/;
-const TITLE_NOISE = /[:.\s]+$/;
+const HEADING_SPACE = ' \t';
+const CLOSING_HASH = '#';
+const TITLE_NOISE = ':. \t';
 
 const SECTION_BY_TITLE = new Map<string, SummarySectionKey>(
   SUMMARY_SECTION_KEYS.map((key) => [key, key]),
@@ -72,7 +75,17 @@ const titleOf = ({ headingLine }: TitleParams): string => {
   if (heading == null) {
     return '';
   }
-  return (heading[2] ?? '').replace(CLOSING_HASHES, '').trim();
+  const written = heading[2] ?? '';
+  const beforeSpace = trimEndOf({ text: written, characters: HEADING_SPACE });
+  const beforeHashes = trimEndOf({ text: beforeSpace, characters: CLOSING_HASH });
+  if (beforeHashes === beforeSpace) {
+    return written.trim();
+  }
+  const beforeSeparator = trimEndOf({ text: beforeHashes, characters: HEADING_SPACE });
+  if (beforeSeparator === beforeHashes) {
+    return written.trim();
+  }
+  return beforeSeparator.trim();
 };
 
 type NormalizeParams = {
@@ -80,7 +93,7 @@ type NormalizeParams = {
 };
 
 const normalizeTitle = ({ title }: NormalizeParams): string =>
-  title.replace(TITLE_NOISE, '').trim().toLowerCase();
+  trimEndOf({ text: title, characters: TITLE_NOISE }).trim().toLowerCase();
 
 type TextParams = {
   readonly text: string;

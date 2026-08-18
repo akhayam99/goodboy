@@ -112,6 +112,9 @@ const CORPUS = {
   closingHashes: '#### Problem ####\nsomething',
   colonTitle: '#### Next:\n- with a colon',
   indentedPseudoHeading: '#### Learned\n- a fact\n\n    #### State\n    indented four spaces',
+  hashesWithoutSeparator: '#### State####\n- the hashes belong to the title',
+  onlyHashesAfterMarker: '#### ####\n- nothing but hashes',
+  noisyTitle: '#### Next: .\n- trailing colon, space and stop',
 } satisfies Record<string, string>;
 
 describe('parseSummaryDocument', () => {
@@ -168,6 +171,21 @@ describe('parseSummaryDocument', () => {
 
   it('lets only the first of two identical headings claim the section', () => {
     expect(sectionKeys(CORPUS.duplicateHeading)).toEqual(['state', null]);
+  });
+
+  it('treats closing hashes as a title unless whitespace separates them', () => {
+    expect(sectionKeys(CORPUS.hashesWithoutSeparator)).toEqual([null]);
+    expect(parseSummaryDocument({ text: CORPUS.hashesWithoutSeparator }).blocks[0]?.title).toBe(
+      'State####',
+    );
+    expect(parseSummaryDocument({ text: CORPUS.onlyHashesAfterMarker }).blocks[0]?.title).toBe(
+      '####',
+    );
+  });
+
+  it('matches a section through several trailing punctuation marks', () => {
+    expect(sectionKeys(CORPUS.noisyTitle)).toEqual(['next']);
+    expect(parseSummaryDocument({ text: CORPUS.noisyTitle }).blocks[0]?.title).toBe('Next: .');
   });
 });
 
