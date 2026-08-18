@@ -5,6 +5,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import type { TimelineMarkerState } from '../../../../timeline/markerState';
 import { TIMELINE_RHYTHM, type TimelineRowGrade } from '../../../../timeline/timelineRhythm';
 import { TimelineMarker } from './TimelineMarker';
+import { TIMELINE_SURFACE_FILL } from './timelineLayout';
 
 afterEach(cleanup);
 
@@ -17,6 +18,16 @@ const STATES = [
   'needsUser',
   'question',
 ] satisfies ReadonlyArray<TimelineMarkerState>;
+
+const CIRCLE_STATES = [
+  'done',
+  'failed',
+  'running',
+  'pending',
+  'skipped',
+] satisfies ReadonlyArray<TimelineMarkerState>;
+
+const ELEVATION_RAMP = ['bg-background', 'bg-subtle', 'bg-muted', 'bg-elevated'];
 
 const LABELS: Record<TimelineMarkerState, string> = {
   done: 'Done',
@@ -50,6 +61,24 @@ const dotOf = ({ root }: { readonly root: Element }) => {
   return dot;
 };
 
+const layersOf = ({ state }: { readonly state: TimelineMarkerState }) => {
+  const root = rootOf({ state });
+  return [root, ...Array.from(root.querySelectorAll('span'))].map((node) => node.className);
+};
+
+const fillsOf = ({ className }: { readonly className: string }): ReadonlyArray<string> =>
+  className.split(' ').filter((token) => token.startsWith('bg-'));
+
+const bottomFillOf = ({ state }: { readonly state: TimelineMarkerState }): string | null => {
+  for (const className of layersOf({ state })) {
+    const fill = fillsOf({ className })[0];
+    if (fill !== undefined) {
+      return fill;
+    }
+  }
+  return null;
+};
+
 describe('TimelineMarker', () => {
   it('names every state for a screen reader', () => {
     for (const state of STATES) {
@@ -60,14 +89,7 @@ describe('TimelineMarker', () => {
   });
 
   it('gives the two blocking states a shape that is not the circle', () => {
-    const circles = [
-      'done',
-      'failed',
-      'running',
-      'pending',
-      'skipped',
-    ] satisfies ReadonlyArray<TimelineMarkerState>;
-    for (const state of circles) {
+    for (const state of CIRCLE_STATES) {
       expect(rootOf({ state }).className).toContain('rounded-full');
       cleanup();
     }
@@ -77,12 +99,33 @@ describe('TimelineMarker', () => {
     }
   });
 
-  it('leaves pending and running hollow so fill reads as has happened', () => {
-    expect(rootOf({ state: 'pending' }).className).toContain('bg-background');
+  it('cuts the lane it sits on, so a translucent tone never paints onto the rail', () => {
+    for (const state of STATES) {
+      const fill = bottomFillOf({ state });
+
+      expect(fill).not.toBeNull();
+      expect(fill).not.toContain('/');
+      cleanup();
+    }
+  });
+
+  it('takes the occluding fill from the elevation ramp, never a picked colour', () => {
+    expect(ELEVATION_RAMP).toContain(TIMELINE_SURFACE_FILL);
+  });
+
+  it('leaves pending an outline while a settled state carries its tone', () => {
+    expect(rootOf({ state: 'pending' }).className).toContain(TIMELINE_SURFACE_FILL);
+    expect(rootOf({ state: 'pending' }).querySelector('span.absolute')).toBeNull();
     cleanup();
-    expect(rootOf({ state: 'running' }).className).toContain('bg-background');
+    expect(rootOf({ state: 'running' }).className).toContain(TIMELINE_SURFACE_FILL);
     cleanup();
-    expect(rootOf({ state: 'done' }).className).toContain('bg-success');
+    expect(rootOf({ state: 'done' }).querySelector('span.absolute')?.className).toContain(
+      'bg-success',
+    );
+    cleanup();
+    expect(rootOf({ state: 'skipped' }).querySelector('span.absolute')?.className).toContain(
+      'bg-muted',
+    );
     cleanup();
     expect(rootOf({ state: 'failed' }).className).toContain('bg-danger');
   });
@@ -152,6 +195,12 @@ describe('TimelineMarker', () => {
   it('carries unread as a dot beside the state instead of replacing it', () => {
     render(<TimelineMarker state="failed" grade="step" hasUnread />);
     expect(screen.getByLabelText('Failed')).toBeDefined();
+    expect(screen.getByLabelText('Unseen')).toBeDefined();
+  });
+
+  it('keeps unread on a blocking state, which does not render a circle', () => {
+    render(<TimelineMarker state="question" grade="entry" hasUnread />);
+    expect(screen.getByLabelText('Waiting on your answer')).toBeDefined();
     expect(screen.getByLabelText('Unseen')).toBeDefined();
   });
 

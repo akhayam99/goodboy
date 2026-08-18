@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import { TIMELINE_RHYTHM, type TimelineRowGrade } from '../../../../timeline/timelineRhythm';
+import { TIMELINE_SURFACE_FILL } from './timelineLayout';
 
 type Props = {
   readonly tone: Tone;
@@ -14,7 +15,8 @@ export const TimelineGlyphMarker = ({ tone, grade, children }: Props) => {
   return (
     <span
       className={cn(
-        'inline-flex items-center justify-center rounded-full bg-background ring-1',
+        'inline-flex items-center justify-center rounded-full ring-1',
+        TIMELINE_SURFACE_FILL,
         tintClasses(tone).ring,
       )}
       style={{ width: markerSize, height: markerSize }}

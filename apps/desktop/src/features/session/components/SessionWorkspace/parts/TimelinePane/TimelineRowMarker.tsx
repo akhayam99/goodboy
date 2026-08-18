@@ -6,6 +6,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components
 import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { TIMELINE_RHYTHM } from '../../../../timeline/timelineRhythm';
+import { TimelineEmphasisMarker } from './TimelineEmphasisMarker';
 import { TimelineGlyphMarker } from './TimelineGlyphMarker';
 import { TimelineMarker } from './TimelineMarker';
 
@@ -19,8 +20,7 @@ type Glyph = {
   readonly label: string;
 };
 
-const ARTIFACT: Record<'plan' | 'branch' | 'answer', Glyph> = {
-  plan: { icon: CONCEPT_ICONS.plans, tone: CONCEPT_TONE.plans, label: 'Plan' },
+const ARTIFACT: Record<'branch' | 'answer', Glyph> = {
   branch: { icon: GitBranch, tone: 'neutral', label: 'Branch' },
   answer: { icon: MessageSquare, tone: 'warning', label: 'You answered' },
 };
@@ -37,6 +37,16 @@ export const TimelineRowMarker = ({ item }: Props) => {
       <TimelineGlyphMarker tone="neutral" grade={grade}>
         <IntegrationGlyph provider={entry.task.provider} size="xs" />
       </TimelineGlyphMarker>
+    );
+  }
+  if (entry.kind === 'plan') {
+    return (
+      <TimelineEmphasisMarker
+        icon={CONCEPT_ICONS.plans}
+        tone={CONCEPT_TONE.plans}
+        label="Plan"
+        grade={grade}
+      />
     );
   }
   const glyph = ARTIFACT[entry.kind];

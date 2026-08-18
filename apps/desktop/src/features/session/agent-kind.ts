@@ -153,52 +153,52 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, AgentKindPaletteEntry> = {
   scout: {
     bg: 'bg-sky-400',
     fg: 'text-sky-400',
-    label: 'scout',
+    label: AGENT_KIND_META.scout.label,
   },
   planner: {
     bg: 'bg-violet-400',
     fg: 'text-violet-400',
-    label: 'plan',
+    label: AGENT_KIND_META.planner.label,
   },
   implementer: {
     bg: 'bg-emerald-400',
     fg: 'text-emerald-400',
-    label: 'implement',
+    label: AGENT_KIND_META.implementer.label,
   },
   debugger: {
     bg: 'bg-amber-400',
     fg: 'text-amber-400',
-    label: 'debug',
+    label: AGENT_KIND_META.debugger.label,
   },
   tester: {
     bg: 'bg-teal-400',
     fg: 'text-teal-400',
-    label: 'test',
+    label: AGENT_KIND_META.tester.label,
   },
   reviewer: {
     bg: 'bg-cyan-400',
     fg: 'text-cyan-400',
-    label: 'review',
+    label: AGENT_KIND_META.reviewer.label,
   },
   'pr-reviewer': {
     bg: 'bg-indigo-400',
     fg: 'text-indigo-400',
-    label: 'pr review',
+    label: AGENT_KIND_META['pr-reviewer'].label,
   },
   docs: {
     bg: 'bg-orange-400',
     fg: 'text-orange-400',
-    label: 'docs',
+    label: AGENT_KIND_META.docs.label,
   },
   resolver: {
     bg: 'bg-lime-400',
     fg: 'text-lime-400',
-    label: 'resolve',
+    label: AGENT_KIND_META.resolver.label,
   },
   generic: {
     bg: 'bg-rose-400',
     fg: 'text-rose-400',
-    label: 'gen',
+    label: AGENT_KIND_META.generic.label,
   },
 };
 
