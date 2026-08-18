@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cn, Divider, Popover, ScrollFade, SectionHeader } from '@goodboy/ui';
+import { cn, Divider, Popover, ScrollFade, SectionHeader, Tooltip } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
 import {
   ChevronDown,
@@ -86,19 +86,21 @@ export const ScriptsSection = ({
           icon={<Terminal size={11} aria-hidden className="text-info" />}
           label="Scripts"
           action={
-            <button
-              type="button"
-              onClick={() => setPanelSectionExpanded(sessionId, 'scripts', !storedExpanded)}
-              aria-expanded={expanded}
-              aria-label={`${expanded ? 'collapse' : 'expand'} scripts`}
-              className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
-            >
-              {expanded ? (
-                <ChevronDown size={12} aria-hidden />
-              ) : (
-                <ChevronRight size={12} aria-hidden />
-              )}
-            </button>
+            <Tooltip content={`${expanded ? 'Collapse' : 'Expand'} scripts`}>
+              <button
+                type="button"
+                onClick={() => setPanelSectionExpanded(sessionId, 'scripts', !storedExpanded)}
+                aria-expanded={expanded}
+                aria-label={`${expanded ? 'collapse' : 'expand'} scripts`}
+                className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+              >
+                {expanded ? (
+                  <ChevronDown size={12} aria-hidden />
+                ) : (
+                  <ChevronRight size={12} aria-hidden />
+                )}
+              </button>
+            </Tooltip>
           }
         />
       )}
@@ -209,26 +211,29 @@ function ScriptRow({
         </button>
       ) : null}
       {isPending ? (
-        <button
-          type="button"
-          onClick={onCancel}
-          title="Stop script"
-          aria-label="Stop script"
-          className="flex size-6 shrink-0 items-center justify-center rounded text-danger transition-colors hover:bg-danger/10"
-        >
-          <Square size={11} fill="currentColor" aria-hidden />
-        </button>
+        <Tooltip content="Stop script">
+          <button
+            type="button"
+            onClick={onCancel}
+            aria-label="Stop script"
+            className="flex size-6 shrink-0 items-center justify-center rounded text-danger transition-colors hover:bg-danger/10"
+          >
+            <Square size={11} fill="currentColor" aria-hidden />
+          </button>
+        </Tooltip>
       ) : (
-        <button
-          type="button"
-          onClick={onRun}
-          disabled={disabled}
-          title="Run script"
-          aria-label="Run script"
-          className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-primary group-hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <Play size={12} aria-hidden />
-        </button>
+        <Tooltip content="Run script">
+          <button
+            type="button"
+            onClick={onRun}
+            disabled={disabled}
+            title="Run script"
+            aria-label="Run script"
+            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-primary group-hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Play size={12} aria-hidden />
+          </button>
+        </Tooltip>
       )}
     </div>
   );
@@ -304,15 +309,16 @@ function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyout
           {script.name}
         </span>
         <span className="shrink-0 text-2xs text-muted-foreground">exit {result.exitCode}</span>
-        <button
-          type="button"
-          onClick={onClose}
-          title="Close log"
-          aria-label="Close log"
-          className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
-        >
-          <X size={12} aria-hidden />
-        </button>
+        <Tooltip content="Close log">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close log"
+            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+          >
+            <X size={12} aria-hidden />
+          </button>
+        </Tooltip>
       </div>
       <Divider className="shrink-0" />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-2">

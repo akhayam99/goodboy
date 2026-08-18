@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Search, Unplug } from 'lucide-react';
-import { Button, Checkbox, EmptyState, Eyebrow, InlineConfirm, ScrollFade } from '@goodboy/ui';
+import {
+  Button,
+  Checkbox,
+  EmptyState,
+  Eyebrow,
+  InlineConfirm,
+  ScrollFade,
+  Tooltip,
+} from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -129,16 +137,17 @@ export const WorkspaceLauncher = () => {
                       highlighted={i === activeIndex}
                       onOpen={() => select(w)}
                     />
-                    <button
-                      type="button"
-                      data-tauri-drag-region="false"
-                      aria-label={`Disconnect ${w.name}`}
-                      title={`Disconnect ${w.name}`}
-                      onClick={() => setDisconnectTarget(w)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-border-soft bg-background p-1.5 text-muted-foreground opacity-0 transition-opacity hover:text-danger focus-visible:opacity-100 group-hover/launcher:opacity-100"
-                    >
-                      <Unplug size={13} aria-hidden />
-                    </button>
+                    <Tooltip content={`Disconnect ${w.name}`}>
+                      <button
+                        type="button"
+                        data-tauri-drag-region="false"
+                        aria-label={`Disconnect ${w.name}`}
+                        onClick={() => setDisconnectTarget(w)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-border-soft bg-background p-1.5 text-muted-foreground opacity-0 transition-opacity hover:text-danger focus-visible:opacity-100 group-hover/launcher:opacity-100"
+                      >
+                        <Unplug size={13} aria-hidden />
+                      </button>
+                    </Tooltip>
                   </li>
                 ),
               )

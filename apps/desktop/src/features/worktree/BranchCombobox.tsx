@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cn, DropdownPortal, ScrollFade, useDropdown } from '@goodboy/ui';
+import { cn, DropdownPortal, ScrollFade, Tooltip, useDropdown } from '@goodboy/ui';
 import { ChevronDown } from 'lucide-react';
 import type { LocalBranchInfo } from './worktree';
 
@@ -176,27 +176,29 @@ export const BranchCombobox = ({
           }}
           onKeyDown={onKeyDown}
         />
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={() => {
-            if (disabled || branches.length === 0) {
-              return;
-            }
-            toggle();
-            if (open) {
-              inputRef.current?.focus();
-            }
-          }}
-          aria-label={open ? 'Close branch list' : 'Open branch list'}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <ChevronDown
-            size={13}
-            aria-hidden
-            className={cn('motion-safe:transition-transform', open && 'rotate-180')}
-          />
-        </button>
+        <Tooltip content={open ? 'Close branch list' : 'Open branch list'}>
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => {
+              if (disabled || branches.length === 0) {
+                return;
+              }
+              toggle();
+              if (open) {
+                inputRef.current?.focus();
+              }
+            }}
+            aria-label={open ? 'Close branch list' : 'Open branch list'}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <ChevronDown
+              size={13}
+              aria-hidden
+              className={cn('motion-safe:transition-transform', open && 'rotate-180')}
+            />
+          </button>
+        </Tooltip>
       </div>
       <DropdownPortal portal={portal} portalTarget={portalTarget}>
         {isPopupVisible ? (

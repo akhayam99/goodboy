@@ -1,5 +1,5 @@
 import { Plus, X } from 'lucide-react';
-import { cn, StatusDot, type Tone } from '@goodboy/ui';
+import { cn, StatusDot, Tooltip, type Tone } from '@goodboy/ui';
 import type {
   TerminalTab,
   TerminalTabId,
@@ -47,28 +47,32 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
           >
             <StatusDot tone={STATUS_TONE[t.status]} size="md" />
             <span className="max-w-[10rem] truncate">{t.title}</span>
-            <button
-              type="button"
-              aria-label={`Close ${t.title}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose(t.id);
-              }}
-              className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
-            >
-              <X size={11} aria-hidden />
-            </button>
+            <Tooltip content={`Close ${t.title}`}>
+              <button
+                type="button"
+                aria-label={`Close ${t.title}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose(t.id);
+                }}
+                className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+              >
+                <X size={11} aria-hidden />
+              </button>
+            </Tooltip>
           </div>
         );
       })}
-      <button
-        type="button"
-        aria-label="New terminal"
-        onClick={onSpawn}
-        className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
-      >
-        <Plus size={13} aria-hidden />
-      </button>
+      <Tooltip content="New terminal">
+        <button
+          type="button"
+          aria-label="New terminal"
+          onClick={onSpawn}
+          className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+        >
+          <Plus size={13} aria-hidden />
+        </button>
+      </Tooltip>
     </div>
   );
 };
