@@ -5,8 +5,10 @@ import { ExternalRefActions } from '../../../../shared/components/ExternalRefAct
 import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
 import { openUrl } from '../../../../shared/lib/editor';
 
+type ExternalTaskChipTask = Pick<SessionExternalTask, 'provider' | 'identifier' | 'title' | 'url'>;
+
 type Props = {
-  task: SessionExternalTask;
+  task: ExternalTaskChipTask;
   variant?: 'full' | 'icon' | 'badge';
   onClick?: () => void;
   appearance?: 'chip' | 'row';

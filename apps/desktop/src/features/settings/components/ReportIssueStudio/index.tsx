@@ -3,7 +3,6 @@ import { AlertTriangle } from 'lucide-react';
 import {
   Button,
   cn,
-  Collapsible,
   Divider,
   FieldRow,
   formatError,
@@ -67,7 +66,6 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
   const imageControl = useBugReportImages();
   const [selectedArea, setSelectedArea] = useState<AreaValue | ''>('');
   const [isAreaTouched, setIsAreaTouched] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [sendState, setSendState] = useState<SendState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -310,18 +308,18 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
 
               <Divider />
 
-              <Collapsible
-                open={isPreviewOpen || previewTruncation != null}
-                onOpenChange={setIsPreviewOpen}
-                trigger={
-                  <span className="flex flex-col gap-1">
-                    <span>Preview</span>
-                    <span className="text-2xs font-normal leading-relaxed text-muted-foreground">
-                      {previewHint({ mode })}
-                    </span>
-                  </span>
-                }
+              <section
+                aria-labelledby="report-preview-heading"
+                className="flex flex-col gap-3 rounded-md bg-muted/30 p-3"
               >
+                <div className="flex flex-col gap-1">
+                  <h2 id="report-preview-heading" className="text-sm font-medium text-foreground">
+                    Preview
+                  </h2>
+                  <p className="text-2xs leading-relaxed text-muted-foreground">
+                    {previewHint({ mode })}
+                  </p>
+                </div>
                 <div className="flex flex-col gap-3">
                   <div className="flex max-w-prose flex-col gap-2 text-sm leading-relaxed text-foreground">
                     <p className="font-medium">{previewTitle === '' ? 'Untitled' : previewTitle}</p>
@@ -331,42 +329,45 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                     <p className="text-2xs leading-relaxed text-warning">{previewTruncation}</p>
                   ) : null}
                 </div>
-              </Collapsible>
+              </section>
+
+              <footer className="flex items-center gap-3">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  {errorMessage != null ? (
+                    <span
+                      role="alert"
+                      className="inline-flex items-center gap-1 text-xs text-danger"
+                    >
+                      <AlertTriangle size={12} aria-hidden />
+                      {errorMessage}
+                    </span>
+                  ) : version != null ? (
+                    <span className="text-2xs text-muted-foreground">
+                      v{version} · Posts publicly on GitHub, under your account
+                    </span>
+                  ) : (
+                    <Skeleton className="h-4 w-14" />
+                  )}
+                </div>
+                <Button variant="ghost" onClick={requestClose}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => void onSend({ requestClose })}
+                  disabled={!canSend}
+                  className={cn(sendState === 'sending' && 'animate-border-pulse')}
+                >
+                  {sendState === 'sending'
+                    ? sendsDirectly
+                      ? 'Sending…'
+                      : 'Opening…'
+                    : sendsDirectly
+                      ? 'Send'
+                      : 'Open on GitHub'}
+                </Button>
+              </footer>
             </div>
           </ScrollFade>
-          <Divider />
-          <footer className="flex shrink-0 items-center gap-3 px-6 py-3">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              {errorMessage != null ? (
-                <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
-                  <AlertTriangle size={12} aria-hidden />
-                  {errorMessage}
-                </span>
-              ) : version != null ? (
-                <span className="text-2xs text-muted-foreground">
-                  v{version} · Posts publicly on GitHub, under your account
-                </span>
-              ) : (
-                <Skeleton className="h-4 w-14" />
-              )}
-            </div>
-            <Button variant="ghost" onClick={requestClose}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => void onSend({ requestClose })}
-              disabled={!canSend}
-              className={cn(sendState === 'sending' && 'animate-border-pulse')}
-            >
-              {sendState === 'sending'
-                ? sendsDirectly
-                  ? 'Sending…'
-                  : 'Opening…'
-                : sendsDirectly
-                  ? 'Send'
-                  : 'Open on GitHub'}
-            </Button>
-          </footer>
         </div>
       )}
     </StudioShell>

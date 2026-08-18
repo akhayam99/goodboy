@@ -132,6 +132,7 @@ export const CreateAgentPopover = ({
                 effective={effective}
                 viewProvider={viewProvider}
                 onViewProvider={setViewProvider}
+                onNavigateProviders={close}
                 onPickProvider={(provider) => {
                   const model = getDefaultTurnModel({ id: provider });
                   setRouting({
