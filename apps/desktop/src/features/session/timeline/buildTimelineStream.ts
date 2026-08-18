@@ -1,5 +1,4 @@
 import type { Agent } from '@goodboy/types';
-import { formatDuration } from '../../chat/utils/format-duration';
 import type {
   TimelineAgentEntry,
   TimelineAnswerEntry,
@@ -28,8 +27,6 @@ export type TimelineStreamEntry =
   | TimelineBranchEntry
   | TimelineAnswerEntry;
 
-type TimelineVisibility = 'full' | 'summary' | 'folded';
-
 type StreamRail = {
   readonly id: string;
   readonly height: number;
@@ -47,12 +44,8 @@ export type TimelineNowItem = StreamRail & {
 
 export type TimelineDayItem = StreamRail & {
   readonly kind: 'day';
-  readonly dayKey: string;
-  readonly at: string;
   readonly label: string;
   readonly ruleY: number;
-  readonly isFoldable: boolean;
-  readonly foldedCount: number | null;
 };
 
 export type TimelineRowItem = StreamRail & {
@@ -63,8 +56,6 @@ export type TimelineRowItem = StreamRail & {
   readonly identity: RunIdentity | null;
   readonly familyId: string | null;
   readonly ordinal: string | null;
-  readonly summary: string | null;
-  readonly isFolded: boolean;
   readonly markerState: TimelineMarkerState;
   readonly hasUnread: boolean;
 };
@@ -86,10 +77,8 @@ export type TimelineStream = {
 
 type Params = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
-  readonly now: Date;
   readonly unreadAgentIds: ReadonlySet<string>;
   readonly blockedRunIds: ReadonlySet<string>;
-  readonly unfoldedIds: ReadonlySet<string>;
   readonly dayLabelFor: (params: { readonly at: string }) => string | null;
 };
 
@@ -104,8 +93,6 @@ type DraftRow = {
   readonly groupId: string | null;
   readonly ordinal: string | null;
   readonly sortOrdinal: number;
-  readonly summary: string | null;
-  readonly isFolded: boolean;
   readonly markerState: TimelineMarkerState;
   readonly hasUnread: boolean;
   readonly isPending: boolean;
@@ -123,25 +110,14 @@ type DraftCluster = {
 type DraftDay = {
   readonly kind: 'day';
   readonly id: string;
-  readonly dayKey: string;
-  readonly at: string;
   readonly label: string;
-  readonly sortOrdinal: number;
-  readonly isFoldable: boolean;
-  readonly foldedCount: number | null;
 };
 
 type Draft = DraftRow | DraftCluster | DraftDay;
 
 const laneIdOf = ({ entryId }: { readonly entryId: string }): string => `lane:${entryId}`;
 
-const startOfDay = ({ date }: { readonly date: Date }): number =>
-  new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-
 const dayKeyOf = ({ at }: { readonly at: string }): string => new Date(at).toDateString();
-
-const endOfDayOf = ({ at }: { readonly at: string }): string =>
-  new Date(startOfDay({ date: new Date(at) }) + 24 * 60 * 60 * 1000 - 1).toISOString();
 
 type Sortable = {
   readonly at: string | null;
@@ -168,11 +144,6 @@ const compareNewestFirst = ({
   return second.sortOrdinal - first.sortOrdinal || first.id.localeCompare(second.id);
 };
 
-const dayRankOf = ({ at, now }: { readonly at: string; readonly now: Date }): number =>
-  Math.round(
-    (startOfDay({ date: now }) - startOfDay({ date: new Date(at) })) / (24 * 60 * 60 * 1000),
-  );
-
 const stepAgentsOf = ({ entry }: { readonly entry: TimelineRunEntry }): ReadonlyArray<Agent> =>
   entry.children.flatMap((child) => (child.kind === 'agent' ? [child.agent] : []));
 
@@ -187,58 +158,10 @@ const isRunFinished = ({ entry }: { readonly entry: TimelineRunEntry }): boolean
   return steps.every((agent) => isSettled({ agent }));
 };
 
-type AgentTreeParams = {
-  readonly entry: TimelineAgentEntry;
-};
-
-const agentTreeAgents = ({ entry }: AgentTreeParams): ReadonlyArray<Agent> => [
-  entry.agent,
-  ...entry.children.flatMap((child) => agentTreeAgents({ entry: child })),
-];
-
-type NewestParams = {
-  readonly entry: TimelineTopLevelEntry;
-};
-
-const newestInstantOf = ({ entry }: NewestParams): string | null => {
-  if (entry.kind !== 'run') {
-    return entry.at;
-  }
-  const instants = entry.children.flatMap((child) => (child.at == null ? [] : [child.at]));
-  return instants.reduce<string | null>(
-    (newest, value) => (newest == null || value > newest ? value : newest),
-    entry.at,
-  );
-};
-
-type SummaryParams = {
-  readonly entry: TimelineRunEntry;
-};
-
-const summaryOf = ({ entry }: SummaryParams): string => {
-  const steps = stepAgentsOf({ entry });
-  const started = steps.flatMap((agent) => (agent.startedAt == null ? [] : [agent.startedAt]));
-  const finished = steps.flatMap((agent) => (agent.completedAt == null ? [] : [agent.completedAt]));
-  const first = started.reduce<string | null>(
-    (earliest, value) => (earliest == null || value < earliest ? value : earliest),
-    null,
-  );
-  const last = finished.reduce<string | null>(
-    (latest, value) => (latest == null || value > latest ? value : latest),
-    null,
-  );
-  const stepLabel = `${steps.length} ${steps.length === 1 ? 'step' : 'steps'}`;
-  if (first == null || last == null) {
-    return stepLabel;
-  }
-  const durationMs = Math.max(0, new Date(last).getTime() - new Date(first).getTime());
-  return `${stepLabel} · ${formatDuration({ durationMs })}`;
-};
-
 type EmitContext = {
   readonly unreadAgentIds: ReadonlySet<string>;
   readonly blockedRunIds: ReadonlySet<string>;
-  readonly drafts: Array<DraftRow | DraftDay>;
+  readonly drafts: Array<DraftRow>;
   readonly groups: RailGroupInput[];
 };
 
@@ -292,8 +215,6 @@ const emitAgent = ({
       groupId,
       ordinal: null,
       sortOrdinal: 0,
-      summary: null,
-      isFolded: false,
       markerState: 'done',
       hasUnread: false,
       isPending: false,
@@ -311,8 +232,6 @@ const emitAgent = ({
     groupId,
     ordinal: entry.stepLabel,
     sortOrdinal: entry.ordinal,
-    summary: null,
-    isFolded: false,
     markerState: resolveMarkerState({
       status: entry.agent.status,
       hasOpenQuestion: entry.openQuestions.length > 0,
@@ -325,16 +244,14 @@ const emitAgent = ({
 
 type EmitRunParams = {
   readonly entry: TimelineRunEntry;
-  readonly visibility: TimelineVisibility;
   readonly context: EmitContext;
 };
 
-const emitRun = ({ entry, visibility, context }: EmitRunParams): void => {
+const emitRun = ({ entry, context }: EmitRunParams): void => {
   const laneId = laneIdOf({ entryId: entry.id });
   const isFinished = isRunFinished({ entry });
   const needsUser = context.blockedRunIds.has(entry.run.id);
-  const shape: RailGroupShape =
-    visibility === 'summary' ? 'collapsed' : isFinished ? 'merged' : 'open';
+  const shape: RailGroupShape = isFinished ? 'merged' : 'open';
   context.groups.push({
     id: laneId,
     parentGroupId: null,
@@ -342,37 +259,33 @@ const emitRun = ({ entry, visibility, context }: EmitRunParams): void => {
     originRowId: entry.id,
     shape,
   });
-  if (visibility === 'full') {
-    for (const child of entry.children) {
-      if (child.kind === 'agent') {
-        emitAgent({
-          entry: child,
-          grade: 'step',
-          identity: entry.identity,
-          familyId: entry.id,
-          groupId: laneId,
-          context,
-        });
-        continue;
-      }
-      context.drafts.push({
-        kind: 'row',
-        id: child.id,
-        at: child.at,
-        grade: 'step',
+  for (const child of entry.children) {
+    if (child.kind === 'agent') {
+      emitAgent({
         entry: child,
+        grade: 'step',
         identity: entry.identity,
         familyId: entry.id,
         groupId: laneId,
-        ordinal: null,
-        sortOrdinal: 0,
-        summary: null,
-        isFolded: false,
-        markerState: 'done',
-        hasUnread: false,
-        isPending: false,
+        context,
       });
+      continue;
     }
+    context.drafts.push({
+      kind: 'row',
+      id: child.id,
+      at: child.at,
+      grade: 'step',
+      entry: child,
+      identity: entry.identity,
+      familyId: entry.id,
+      groupId: laneId,
+      ordinal: null,
+      sortOrdinal: 0,
+      markerState: 'done',
+      hasUnread: false,
+      isPending: false,
+    });
   }
   const steps = stepAgentsOf({ entry });
   context.drafts.push({
@@ -386,8 +299,6 @@ const emitRun = ({ entry, visibility, context }: EmitRunParams): void => {
     groupId: null,
     ordinal: null,
     sortOrdinal: 0,
-    summary: visibility === 'summary' ? summaryOf({ entry }) : null,
-    isFolded: visibility === 'summary',
     markerState: resolveMarkerState({
       status: steps.some((agent) => agent.status === 'running')
         ? 'running'
@@ -405,11 +316,11 @@ const emitRun = ({ entry, visibility, context }: EmitRunParams): void => {
 };
 
 type ClusterParams = {
-  readonly drafts: ReadonlyArray<DraftRow | DraftDay>;
+  readonly drafts: ReadonlyArray<DraftRow>;
 };
 
-const withPendingClusters = ({ drafts }: ClusterParams): ReadonlyArray<Draft> => {
-  const clustered: Draft[] = [];
+const withPendingClusters = ({ drafts }: ClusterParams): ReadonlyArray<DraftRow | DraftCluster> => {
+  const clustered: Array<DraftRow | DraftCluster> = [];
   let run: DraftRow[] = [];
   const flush = () => {
     const first = run[0];
@@ -433,8 +344,7 @@ const withPendingClusters = ({ drafts }: ClusterParams): ReadonlyArray<Draft> =>
   };
 
   for (const draft of drafts) {
-    const isPendingStep =
-      draft.kind === 'row' && draft.grade === 'step' && draft.markerState === 'pending';
+    const isPendingStep = draft.grade === 'step' && draft.markerState === 'pending';
     if (!isPendingStep) {
       flush();
       clustered.push(draft);
@@ -451,28 +361,15 @@ const withPendingClusters = ({ drafts }: ClusterParams): ReadonlyArray<Draft> =>
 };
 
 type DayBreakParams = {
-  readonly drafts: ReadonlyArray<Draft>;
+  readonly drafts: ReadonlyArray<DraftRow | DraftCluster>;
   readonly dayLabelFor: (params: { readonly at: string }) => string | null;
-  readonly foldedCountByDay: ReadonlyMap<string, number>;
-  readonly now: Date;
 };
 
-const withDayBreaks = ({
-  drafts,
-  dayLabelFor,
-  foldedCountByDay,
-  now,
-}: DayBreakParams): ReadonlyArray<Draft> => {
+const withDayBreaks = ({ drafts, dayLabelFor }: DayBreakParams): ReadonlyArray<Draft> => {
   const dated: Draft[] = [];
-  const seen = new Set(drafts.flatMap((draft) => (draft.kind === 'day' ? [draft.dayKey] : [])));
   let previousDayKey: string | null = null;
 
   for (const draft of drafts) {
-    if (draft.kind === 'day') {
-      previousDayKey = draft.dayKey;
-      dated.push(draft);
-      continue;
-    }
     const at = draft.kind === 'row' ? draft.at : null;
     if (at == null) {
       dated.push(draft);
@@ -480,18 +377,8 @@ const withDayBreaks = ({
     }
     const dayKey = dayKeyOf({ at });
     const label = dayLabelFor({ at });
-    if (dayKey !== previousDayKey && label != null && !seen.has(dayKey)) {
-      seen.add(dayKey);
-      dated.push({
-        kind: 'day',
-        id: `day:${dayKey}`,
-        dayKey,
-        at,
-        label,
-        sortOrdinal: Number.MAX_SAFE_INTEGER,
-        isFoldable: dayRankOf({ at, now }) > 1,
-        foldedCount: foldedCountByDay.get(dayKey) ?? null,
-      });
+    if (dayKey !== previousDayKey && label != null) {
+      dated.push({ kind: 'day', id: `day:${dayKey}`, label });
     }
     previousDayKey = dayKey;
     dated.push(draft);
@@ -502,10 +389,8 @@ const withDayBreaks = ({
 
 export const buildTimelineStream = ({
   entries,
-  now,
   unreadAgentIds,
   blockedRunIds,
-  unfoldedIds,
   dayLabelFor,
 }: Params): TimelineStream => {
   const context: EmitContext = {
@@ -515,54 +400,9 @@ export const buildTimelineStream = ({
     groups: [],
   };
 
-  const visibilityOf = ({ entry }: { readonly entry: TimelineTopLevelEntry }) => {
-    if (unfoldedIds.has(entry.id)) {
-      return 'full' as const;
-    }
-    const agents =
-      entry.kind === 'run'
-        ? entry.children.flatMap((child) =>
-            child.kind === 'agent' ? agentTreeAgents({ entry: child }) : [],
-          )
-        : entry.kind === 'agent'
-          ? agentTreeAgents({ entry })
-          : [];
-    const isUnfinished =
-      entry.kind === 'run'
-        ? !isRunFinished({ entry })
-        : agents.some((agent) => !isSettled({ agent }) || agent.status === 'failed');
-    const isUnseen = agents.some((agent) => unreadAgentIds.has(agent.id));
-    if (isUnfinished || isUnseen) {
-      return 'full' as const;
-    }
-    const newest = newestInstantOf({ entry });
-    if (newest == null) {
-      return 'full' as const;
-    }
-    const rank = dayRankOf({ at: newest, now });
-    if (rank <= 0) {
-      return 'full' as const;
-    }
-    if (rank === 1) {
-      return entry.kind === 'run' ? ('summary' as const) : ('full' as const);
-    }
-    return unfoldedIds.has(dayKeyOf({ at: newest })) ? ('full' as const) : ('folded' as const);
-  };
-
-  const foldedCountByDay = new Map<string, number>();
-  const foldedDayInstants = new Map<string, string>();
-
   for (const entry of entries) {
-    const visibility = visibilityOf({ entry });
-    const newest = newestInstantOf({ entry }) ?? entry.at;
-    if (visibility === 'folded' && newest != null) {
-      const dayKey = dayKeyOf({ at: newest });
-      foldedCountByDay.set(dayKey, (foldedCountByDay.get(dayKey) ?? 0) + 1);
-      foldedDayInstants.set(dayKey, endOfDayOf({ at: newest }));
-      continue;
-    }
     if (entry.kind === 'run') {
-      emitRun({ entry, visibility, context });
+      emitRun({ entry, context });
       continue;
     }
     if (entry.kind === 'agent') {
@@ -587,24 +427,9 @@ export const buildTimelineStream = ({
       groupId: null,
       ordinal: null,
       sortOrdinal: 0,
-      summary: null,
-      isFolded: false,
       markerState: 'done',
       hasUnread: false,
       isPending: false,
-    });
-  }
-
-  for (const [dayKey, at] of foldedDayInstants) {
-    context.drafts.push({
-      kind: 'day',
-      id: `day:${dayKey}`,
-      dayKey,
-      at,
-      label: dayLabelFor({ at }) ?? dayKey,
-      sortOrdinal: Number.MAX_SAFE_INTEGER,
-      isFoldable: true,
-      foldedCount: foldedCountByDay.get(dayKey) ?? 0,
     });
   }
 
@@ -612,8 +437,6 @@ export const buildTimelineStream = ({
   const withDays = withDayBreaks({
     drafts: withPendingClusters({ drafts: sorted }),
     dayLabelFor,
-    foldedCountByDay,
-    now,
   });
 
   const items: TimelineStreamItem[] = [
@@ -636,8 +459,6 @@ export const buildTimelineStream = ({
       items.push({
         kind: 'day',
         id: draft.id,
-        dayKey: draft.dayKey,
-        at: draft.at,
         label: draft.label,
         height: TIMELINE_RHYTHM.day.height,
         topY: 0,
@@ -646,8 +467,6 @@ export const buildTimelineStream = ({
         groupId: null,
         isPending: false,
         gap: 'none',
-        isFoldable: draft.isFoldable,
-        foldedCount: draft.foldedCount,
       });
       previous = draft;
       continue;
@@ -656,9 +475,7 @@ export const buildTimelineStream = ({
     const gap: TimelineGap =
       previous == null || previous.kind === 'day'
         ? 'none'
-        : familyId != null &&
-            (previous.kind === 'cluster' || previous.kind === 'row') &&
-            previous.familyId === familyId
+        : familyId != null && previous.familyId === familyId
           ? 'sibling'
           : 'entry';
     if (draft.kind === 'cluster') {
@@ -689,8 +506,6 @@ export const buildTimelineStream = ({
       identity: draft.identity,
       familyId: draft.familyId,
       ordinal: draft.ordinal,
-      summary: draft.summary,
-      isFolded: draft.isFolded,
       markerState: draft.markerState,
       hasUnread: draft.hasUnread,
       height: rowBoxHeight({ grade: draft.grade, gap }),
@@ -703,9 +518,5 @@ export const buildTimelineStream = ({
     previous = draft;
   }
 
-  const rowIds = new Set(items.map((item) => item.id));
-  return {
-    items,
-    groups: context.groups.filter((group) => rowIds.has(group.originRowId)),
-  };
+  return { items, groups: context.groups };
 };

@@ -21,10 +21,11 @@ type Props = {
   readonly railWidth: number;
   readonly sessionId: SessionId;
   readonly openLabel: string;
-  readonly hint: string;
   readonly action: TimelineRowAction | null;
   readonly onOpen: () => void;
 };
+
+const OPEN_HINT = 'Open ↵';
 
 const agentIdOf = ({ item }: { readonly item: TimelineRowItem }): AgentId | null =>
   item.entry.kind === 'agent' ? item.entry.agent.id : null;
@@ -35,7 +36,6 @@ export const TimelineStreamRow = ({
   railWidth,
   sessionId,
   openLabel,
-  hint,
   action,
   onOpen,
 }: Props) => {
@@ -90,7 +90,7 @@ export const TimelineStreamRow = ({
         >
           <TimelineRowLabel item={item} />
           <span className="shrink-0 text-3xs text-muted-foreground opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-            {hint}
+            {OPEN_HINT}
           </span>
         </button>
         {action == null ? null : (

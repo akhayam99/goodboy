@@ -252,8 +252,8 @@ describe('buildTimelineGroups', () => {
     const firstRun = first.entries[0];
     const secondRun = second.entries[0];
 
-    expect(firstRun?.kind === 'run' ? firstRun.identity.spine : null).toBe(
-      secondRun?.kind === 'run' ? secondRun.identity.spine : undefined,
+    expect(firstRun?.kind === 'run' ? firstRun.identity.stroke : null).toBe(
+      secondRun?.kind === 'run' ? secondRun.identity.stroke : undefined,
     );
   });
 

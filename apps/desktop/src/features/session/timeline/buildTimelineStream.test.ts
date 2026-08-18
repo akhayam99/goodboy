@@ -120,15 +120,9 @@ type StreamParams = {
   readonly agents: ReadonlyArray<Agent>;
   readonly workflows?: ReadonlyArray<ReturnType<typeof attachedWorkflow>>;
   readonly unreadAgentIds?: ReadonlySet<string>;
-  readonly unfoldedIds?: ReadonlySet<string>;
 };
 
-const stream = ({
-  agents,
-  workflows = [],
-  unreadAgentIds = new Set(),
-  unfoldedIds = new Set(),
-}: StreamParams) =>
+const stream = ({ agents, workflows = [], unreadAgentIds = new Set() }: StreamParams) =>
   buildTimelineStream({
     entries: buildTimelineGroups({
       agents,
@@ -139,10 +133,8 @@ const stream = ({
       worktrees: [],
       agentKindOverride: {},
     }).entries,
-    now: NOW,
     unreadAgentIds,
     blockedRunIds: new Set(),
-    unfoldedIds,
     dayLabelFor: ({ at }) => dayLabel({ at, now: NOW }),
   });
 
@@ -249,7 +241,7 @@ describe('buildTimelineStream', () => {
     ]);
   });
 
-  it('collapses a settled run from yesterday to its origin row with a summary', () => {
+  it('draws a settled run from yesterday step by step instead of summarising it', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 17, hour: 8 }) })],
       agents: [
@@ -269,13 +261,17 @@ describe('buildTimelineStream', () => {
         }),
       ],
     });
-    const run = items.find((item) => item.kind === 'row' && item.entry.kind === 'run');
 
-    expect(items.map(labelOf)).toEqual(['now', 'day:Yesterday', 'entry:run:run-1']);
-    expect(run?.kind === 'row' ? run.summary : null).toBe('2 steps · 90m');
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'day:Yesterday',
+      'step:agent:two',
+      'step:agent:one',
+      'entry:run:run-1',
+    ]);
   });
 
-  it('folds a settled run older than yesterday into its day, with a count', () => {
+  it('draws every entry of an old day in its own place, never behind a count', () => {
     const { items } = stream({
       workflows: [
         attachedWorkflow({ createdAt: localIso({ day: 12, hour: 8 }) }),
@@ -302,46 +298,40 @@ describe('buildTimelineStream', () => {
         }),
       ],
     });
-    const day = items.find((item) => item.kind === 'day');
 
-    expect(items.map(labelOf)).toEqual(['now', 'day:Aug 12']);
-    expect(day?.kind === 'day' ? day.foldedCount : null).toBe(2);
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'day:Aug 12',
+      'step:agent:two',
+      'entry:run:run-2',
+      'step:agent:one',
+      'entry:run:run-1',
+    ]);
   });
 
-  it('unfolds a day when the reader has clicked it open', () => {
+  it('emits one day divider per day whatever the age of the entries under it', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 12, hour: 8 }) })],
       agents: [
         agent({
-          id: 'one',
+          id: 'old',
           ordinal: 1,
           startedAt: localIso({ day: 12, hour: 9 }),
           completedAt: localIso({ day: 12, hour: 10 }),
           workflowRunId: RUN_ID,
         }),
+        agent({ id: 'loose', ordinal: 2, startedAt: localIso({ day: 12, hour: 11 }) }),
       ],
-      unfoldedIds: new Set([new Date(localIso({ day: 12, hour: 10 })).toDateString()]),
     });
 
-    expect(items.map(labelOf)).toEqual(['now', 'day:Aug 12', 'step:agent:one', 'entry:run:run-1']);
-  });
-
-  it('draws an unseen run in full even when its day would fold', () => {
-    const { items } = stream({
-      workflows: [attachedWorkflow({ createdAt: localIso({ day: 12, hour: 8 }) })],
-      agents: [
-        agent({
-          id: 'one',
-          ordinal: 1,
-          startedAt: localIso({ day: 12, hour: 9 }),
-          completedAt: localIso({ day: 12, hour: 10 }),
-          workflowRunId: RUN_ID,
-        }),
-      ],
-      unreadAgentIds: new Set(['one']),
-    });
-
-    expect(items.map(labelOf)).toEqual(['now', 'day:Aug 12', 'step:agent:one', 'entry:run:run-1']);
+    expect(items.filter((item) => item.kind === 'day')).toHaveLength(1);
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'day:Aug 12',
+      'entry:agent:loose',
+      'step:agent:old',
+      'entry:run:run-1',
+    ]);
   });
 
   it('coalesces a stretch of consecutive pending steps into one marker', () => {
@@ -413,7 +403,6 @@ describe('buildTimelineStream', () => {
           workflowRunId: RUN_ID,
         }),
       ],
-      unfoldedIds: new Set(['run:run-1']),
     });
     const layout = layoutTimelineRail({ rows: items, groups });
     const dayIndex = items.findIndex((item) => item.kind === 'day' && item.label === 'Aug 16');

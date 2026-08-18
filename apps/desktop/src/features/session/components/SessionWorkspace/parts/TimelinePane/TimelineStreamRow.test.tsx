@@ -58,8 +58,6 @@ const itemOf = (): TimelineRowItem => ({
   identity: null,
   familyId: 'run:one',
   ordinal: '2',
-  summary: '4m',
-  isFolded: false,
   markerState: 'done',
   hasUnread: false,
   height: TIMELINE_RHYTHM.grade.step.height + TIMELINE_RHYTHM.gap.sibling,
@@ -75,7 +73,6 @@ const railOf = (): RailRow => ({
   height: TIMELINE_RHYTHM.grade.step.height + TIMELINE_RHYTHM.gap.sibling,
   segments: [],
   joins: [],
-  loops: [],
   markerColumn: 1,
   markerY: 18,
 });
@@ -93,7 +90,6 @@ const renderRow = ({ onOpen = vi.fn(), action = null }: RenderParams = {}) =>
       railWidth={32}
       sessionId={SESSION_ID}
       openLabel="Open chat"
-      hint="Open ↵"
       action={action}
       onOpen={onOpen}
     />,
@@ -130,12 +126,12 @@ describe('TimelineStreamRow', () => {
     expect(marker?.className).toContain('-translate-y-1/2');
   });
 
-  it('prints the row instant in the gutter and its metadata beside the label', () => {
+  it('prints the row instant in the gutter and its ordinal beside the label', () => {
     renderRow();
 
     expect(screen.getByText(/\d{2}:\d{2}/)).toBeDefined();
-    expect(screen.getByText('4m')).toBeDefined();
     expect(screen.getByText('2')).toBeDefined();
+    expect(screen.getByText('Implement the parser')).toBeDefined();
   });
 
   it('hides the open hint until the row is hovered or focused', () => {

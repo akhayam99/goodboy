@@ -84,16 +84,6 @@ export const TimelineRowLabel = ({ item }: Props) => {
       >
         {titleOf({ item })}
       </span>
-      {item.summary != null ? (
-        <span
-          className={cn(
-            'shrink-0 text-3xs tabular-nums',
-            item.markerState === 'failed' ? 'text-danger' : 'text-muted-foreground/70',
-          )}
-        >
-          {item.summary}
-        </span>
-      ) : null}
     </>
   );
 };

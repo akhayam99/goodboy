@@ -233,16 +233,15 @@ describe('layoutTimelineRail', () => {
     expect(railRow(layout, 'origin').joins.map((join) => join.dash)).toEqual(['dashed']);
   });
 
-  it('draws a collapsed run as a loop off the spine and no lane', () => {
+  it('leaves a run with no steps of its own on the spine and draws no lane', () => {
     const layout = layoutTimelineRail({
       rows: [row({ id: 'origin' })],
-      groups: [group({ id: 'lane', originRowId: 'origin', shape: 'collapsed' })],
+      groups: [group({ id: 'lane', originRowId: 'origin' })],
     });
 
-    expect(railRow(layout, 'origin').loops).toEqual([
-      { laneColumn: 1, spineColumn: 0, identityIndex: 0, anchorY: 18 },
-    ]);
     expect(lanesOf(layout, 'origin')).toEqual([]);
+    expect(railRow(layout, 'origin').joins).toEqual([]);
+    expect(railRow(layout, 'origin').markerColumn).toBe(0);
   });
 
   it('keeps the spine on every row and never colours or dashes it', () => {
@@ -257,16 +256,6 @@ describe('layoutTimelineRail', () => {
       expect(spine[0]?.identityIndex).toBeNull();
       expect(spine[0]?.dash).toBe('solid');
     }
-  });
-
-  it('runs the lane into the folded past when the origin row is not rendered', () => {
-    const layout = layoutTimelineRail({
-      rows: [row({ id: 'step-1', groupId: 'lane' }), row({ id: 'day-fold', markerY: 24 })],
-      groups: [group({ id: 'lane', originRowId: 'origin' })],
-    });
-
-    expect(railRow(layout, 'day-fold').joins).toEqual([]);
-    expect(lanesOf(layout, 'day-fold').map((segment) => segment.dash)).toEqual(['solid']);
   });
 
   it('places lane columns one offset apart from the spine', () => {

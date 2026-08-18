@@ -5,7 +5,7 @@ const RAIL_EDGE_PAD = 8;
 
 type RailDash = 'solid' | 'dashed';
 
-export type RailGroupShape = 'open' | 'merged' | 'collapsed';
+export type RailGroupShape = 'open' | 'merged';
 
 export type RailGroupInput = {
   readonly id: string;
@@ -41,19 +41,11 @@ export type RailJoin = {
   readonly anchorY: number;
 };
 
-export type RailLoop = {
-  readonly laneColumn: number;
-  readonly spineColumn: number;
-  readonly identityIndex: number;
-  readonly anchorY: number;
-};
-
 export type RailRow = {
   readonly id: string;
   readonly height: number;
   readonly segments: ReadonlyArray<RailSegment>;
   readonly joins: ReadonlyArray<RailJoin>;
-  readonly loops: ReadonlyArray<RailLoop>;
   readonly markerColumn: number;
   readonly markerY: number | null;
 };
@@ -74,7 +66,6 @@ type GroupPlan = {
   readonly column: number;
   readonly memberIndexes: ReadonlyArray<number>;
   readonly originIndex: number;
-  readonly hasOrigin: boolean;
   readonly boundaryIndex: number;
   readonly hasFuture: boolean;
 };
@@ -164,7 +155,6 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       column: columnByGroupId.get(group.id) ?? 1,
       memberIndexes,
       originIndex,
-      hasOrigin: indexById.has(group.originRowId),
       boundaryIndex,
       hasFuture:
         group.shape === 'open' || memberIndexes.some((index) => rows[index]?.isPending === true),
@@ -173,7 +163,6 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
 
   const segmentsByIndex: RailSegment[][] = rows.map(() => []);
   const joinsByIndex: RailJoin[][] = rows.map(() => []);
-  const loopsByIndex: RailLoop[][] = rows.map(() => []);
 
   for (const [index, row] of rows.entries()) {
     segmentsByIndex[index]?.push({
@@ -217,14 +206,6 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
     const originRow = rows[plan.originIndex];
 
     if (topIndex === undefined) {
-      if (plan.group.shape === 'collapsed' && plan.hasOrigin && originRow !== undefined) {
-        loopsByIndex[plan.originIndex]?.push({
-          laneColumn: plan.column,
-          spineColumn: parentColumn,
-          identityIndex: plan.group.identityIndex,
-          anchorY: anchorOf({ row: originRow }),
-        });
-      }
       continue;
     }
 
@@ -232,7 +213,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       pushSpan({ index, plan });
     }
 
-    if (plan.hasOrigin && originRow !== undefined) {
+    if (originRow !== undefined) {
       joinsByIndex[plan.originIndex]?.push({
         kind: 'depart',
         spineColumn: parentColumn,
@@ -241,9 +222,6 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
         dash: plan.boundaryIndex === plan.originIndex ? 'dashed' : 'solid',
         anchorY: anchorOf({ row: originRow }),
       });
-    }
-    if (!plan.hasOrigin) {
-      pushSpan({ index: plan.originIndex, plan });
     }
 
     const topRow = rows[topIndex];
@@ -311,7 +289,6 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       height: row.height,
       segments: segmentsByIndex[index] ?? [],
       joins: joinsByIndex[index] ?? [],
-      loops: loopsByIndex[index] ?? [],
       markerColumn: row.groupId == null ? 0 : (columnByGroupId.get(row.groupId) ?? 0),
       markerY: row.markerY,
     })),

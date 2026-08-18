@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
 import { Button, Eyebrow } from '@goodboy/ui';
@@ -58,7 +58,6 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
   );
   const questions = useSessionOpenQuestions(sessionId);
   const workflows = useAttachedWorkflowRuns({ session });
-  const [unfoldedIds, setUnfoldedIds] = useState<ReadonlySet<string>>(new Set());
   const openTargetFor = useTimelineOpen({ sessionId });
 
   const model = useMemo(
@@ -137,31 +136,17 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
     () =>
       buildTimelineStream({
         entries: model.entries,
-        now: new Date(),
         unreadAgentIds,
         blockedRunIds,
-        unfoldedIds,
         dayLabelFor: dayLabel,
       }),
-    [blockedRunIds, model.entries, unfoldedIds, unreadAgentIds],
+    [blockedRunIds, model.entries, unreadAgentIds],
   );
 
   const rail = useMemo(
     () => layoutTimelineRail({ rows: stream.items, groups: stream.groups }),
     [stream.groups, stream.items],
   );
-
-  const unfold = (id: string) => {
-    setUnfoldedIds((current) => {
-      const next = new Set(current);
-      if (next.has(id)) {
-        next.delete(id);
-        return next;
-      }
-      next.add(id);
-      return next;
-    });
-  };
 
   const advanceAgent = async ({ agentId }: { readonly agentId: string }) => {
     const agent = agents.find((candidate) => candidate.id === agentId) ?? null;
@@ -246,13 +231,7 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
           }
           if (item.kind === 'day') {
             return (
-              <TimelineDayRule
-                key={item.id}
-                item={item}
-                rail={railRow}
-                railWidth={rail.width}
-                onToggle={() => unfold(item.dayKey)}
-              />
+              <TimelineDayRule key={item.id} item={item} rail={railRow} railWidth={rail.width} />
             );
           }
           if (item.kind === 'cluster') {
@@ -273,10 +252,9 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
               rail={railRow}
               railWidth={rail.width}
               sessionId={sessionId}
-              openLabel={item.isFolded ? `Unfold ${target.label}` : target.label}
-              hint={item.isFolded ? 'Unfold' : 'Open ↵'}
-              action={item.isFolded ? { label: 'Open', onAct: target.open } : actionFor({ item })}
-              onOpen={item.isFolded ? () => unfold(item.id) : target.open}
+              openLabel={target.label}
+              action={actionFor({ item })}
+              onOpen={target.open}
             />
           );
         })}

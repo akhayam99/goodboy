@@ -2,7 +2,6 @@ import { runIdentityStroke } from '../../../../timeline/runIdentity';
 import {
   railColumnX,
   type RailJoin,
-  type RailLoop,
   type RailRow,
   type RailSegment,
 } from '../../../../timeline/railGeometry';
@@ -16,7 +15,6 @@ const LANE_WIDTH = 2;
 const SPINE_WIDTH = 1;
 const DASH_PATTERN = '3 3';
 const DASHED_OPACITY = 0.45;
-const LOOP_RADIUS = 7;
 
 const strokeOf = ({ identityIndex }: { readonly identityIndex: number | null }): string =>
   identityIndex == null ? 'var(--color-border)' : runIdentityStroke({ index: identityIndex });
@@ -31,14 +29,6 @@ const joinPath = ({ join }: { readonly join: RailJoin }): string => {
   const toX = railColumnX({ column: join.kind === 'depart' ? join.laneColumn : join.spineColumn });
   const bend = join.anchorY / 2;
   return `M ${fromX} ${join.anchorY} C ${fromX} ${bend}, ${toX} ${bend}, ${toX} 0`;
-};
-
-const loopPath = ({ loop }: { readonly loop: RailLoop }): string => {
-  const spineX = railColumnX({ column: loop.spineColumn });
-  const laneX = railColumnX({ column: loop.laneColumn });
-  const top = loop.anchorY - LOOP_RADIUS;
-  const bottom = loop.anchorY + LOOP_RADIUS;
-  return `M ${spineX} ${bottom} C ${laneX} ${bottom}, ${laneX} ${top}, ${spineX} ${top}`;
 };
 
 export const TimelineRail = ({ rail, width }: Props) => (
@@ -72,15 +62,6 @@ export const TimelineRail = ({ rail, width }: Props) => (
         strokeWidth={LANE_WIDTH}
         strokeDasharray={join.dash === 'dashed' ? DASH_PATTERN : undefined}
         opacity={join.dash === 'dashed' ? DASHED_OPACITY : 1}
-      />
-    ))}
-    {rail.loops.map((loop) => (
-      <path
-        key={`loop:${loop.laneColumn}:${loop.anchorY}`}
-        d={loopPath({ loop })}
-        fill="none"
-        stroke={strokeOf({ identityIndex: loop.identityIndex })}
-        strokeWidth={LANE_WIDTH}
       />
     ))}
   </svg>
