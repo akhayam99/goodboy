@@ -210,11 +210,25 @@ triaged every release cycle, so you get an answer even when it is "not yet". A
 request for something the project refuses on principle, tracking above all,
 gets a written no rather than silence.
 
-## Star history
+## Contributors
 
-<a href="https://www.star-history.com/?repos=akhayam99%2Fgoodboy&type=date&legend=top-left">
-  <img src="https://api.star-history.com/svg?repos=akhayam99/goodboy&type=Date" alt="Star history chart" width="640" />
-</a>
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/akhayam99">
+        <img src="https://avatars.githubusercontent.com/u/87425758?s=120" width="80" alt="" /><br />
+        <sub><b>Amin Khayam</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/teckperry">
+        <img src="https://avatars.githubusercontent.com/u/85160151?s=120" width="80" alt="" /><br />
+        <sub><b>Luca Laudiero</b></sub>
+      </a><br />
+      <sub><a href="https://teckperry.xyz">teckperry.xyz</a></sub>
+    </td>
+  </tr>
+</table>
 
 ## More
 
