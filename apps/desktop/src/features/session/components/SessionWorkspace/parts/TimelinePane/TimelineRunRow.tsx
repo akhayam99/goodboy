@@ -159,6 +159,7 @@ export const TimelineRunRow = ({
                   timeLabel={null}
                   diffComment={diffCommentByAgentId.get(child.agent.id) ?? null}
                   hasRoleColumn
+                  shouldRenderAnswers={false}
                 />
               );
             }

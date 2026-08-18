@@ -19,7 +19,7 @@ export const TimelineAnswerRow = ({ entry, timeLabel, onOpen, hasRoleColumn }: P
       hasRoleColumn={hasRoleColumn}
       marker={<MessageSquare size={10} aria-hidden className={tint.icon} />}
       onClick={onOpen}
-      ariaLabel="You answered an open question"
+      ariaLabel={`You answered: ${entry.question.text}`}
       label={
         <>
           <span className="shrink-0 text-xs text-muted-foreground">You answered</span>

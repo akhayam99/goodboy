@@ -6,6 +6,8 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  OpenQuestion,
+  OpenQuestionId,
   SessionId,
   Step,
   StepId,
@@ -17,6 +19,7 @@ import type {
 } from '@goodboy/types';
 import type {
   TimelineAgentEntry,
+  TimelineAnswerEntry,
   TimelineRunEntry,
 } from '../../../../timeline/buildTimelineGroups';
 
@@ -148,6 +151,33 @@ const doneChild: TimelineAgentEntry = {
   hasDuration: true,
 };
 
+const QUESTION_ID = typedString<OpenQuestionId>({ value: 'question-1' });
+
+const ANSWERED_QUESTION: OpenQuestion = {
+  id: QUESTION_ID,
+  sessionId: SESSION_ID,
+  createdByAgentId: DONE_AGENT.id,
+  text: 'Should we ship on Friday?',
+  suggestedAnswers: [],
+  userAnswer: 'Yes',
+  status: 'answered',
+  createdAt: typedString<IsoDateTime>({ value: '2026-08-17T09:10:00Z' }),
+  answeredAt: typedString<IsoDateTime>({ value: '2026-08-17T09:20:00Z' }),
+};
+
+const answerChild: TimelineAnswerEntry = {
+  kind: 'answer',
+  id: `answer:agent:${DONE_AGENT.id}:${QUESTION_ID}`,
+  at: '2026-08-17T09:20:00Z',
+  question: ANSWERED_QUESTION,
+  depth: 1,
+};
+
+const doneChildWithAnswer: TimelineAgentEntry = {
+  ...doneChild,
+  answers: [answerChild],
+};
+
 type EntryParams = {
   readonly pendingAgents: ReadonlyArray<Agent>;
 };
@@ -220,5 +250,25 @@ describe('TimelineRunRow', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     fireEvent.click(toggle);
     expect(screen.queryByRole('button', { name: 'Start step' })).toBeNull();
+  });
+
+  it('renders an answered question once even though the run carries it as both an agent answer and a child', () => {
+    const entryWithAnswer: TimelineRunEntry = {
+      ...runEntry({ pendingAgents: [] }),
+      children: [doneChildWithAnswer, answerChild],
+    };
+    render(
+      <TimelineRunRow
+        entry={entryWithAnswer}
+        sessionId={SESSION_ID}
+        timeLabel="09:30"
+        advanceState={{ kind: 'complete' }}
+        onAdvance={vi.fn()}
+        diffCommentByAgentId={new Map()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Expand Release workflow' }));
+
+    expect(screen.getAllByText('Should we ship on Friday?')).toHaveLength(1);
   });
 });

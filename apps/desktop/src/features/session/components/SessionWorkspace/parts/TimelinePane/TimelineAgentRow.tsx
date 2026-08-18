@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Chip, Markdown, ScrollFade, cn } from '@goodboy/ui';
 import type { DiffComment, SessionId } from '@goodboy/types';
@@ -17,6 +17,7 @@ type Props = {
   readonly diffComment?: DiffComment | null;
   readonly onSeen?: () => void;
   readonly hasRoleColumn?: boolean;
+  readonly shouldRenderAnswers?: boolean;
 };
 
 type KindLabelParams = {
@@ -40,9 +41,10 @@ export const TimelineAgentRow = ({
   diffComment = null,
   onSeen,
   hasRoleColumn = true,
+  shouldRenderAnswers = true,
 }: Props) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [dwellTimer, setDwellTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const dwellTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const isResolver = entry.agentKind === 'resolver';
   const duration =
@@ -88,9 +90,9 @@ export const TimelineAgentRow = ({
   ) : null;
   const navigate = () => void selectAgent(sessionId, entry.agent.id);
   const cancelDwell = () => {
-    if (dwellTimer != null) {
-      clearTimeout(dwellTimer);
-      setDwellTimer(null);
+    if (dwellTimerRef.current != null) {
+      clearTimeout(dwellTimerRef.current);
+      dwellTimerRef.current = null;
     }
   };
   const startDwell = () => {
@@ -98,12 +100,18 @@ export const TimelineAgentRow = ({
       return;
     }
     cancelDwell();
-    const timer = setTimeout(() => {
+    dwellTimerRef.current = setTimeout(() => {
       onSeen();
-      setDwellTimer(null);
+      dwellTimerRef.current = null;
     }, DWELL_MS);
-    setDwellTimer(timer);
   };
+  useEffect(() => {
+    return () => {
+      if (dwellTimerRef.current != null) {
+        clearTimeout(dwellTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="flex flex-col">
@@ -191,15 +199,17 @@ export const TimelineAgentRow = ({
           ) : null}
         </div>
       ) : null}
-      {entry.answers.map((answer) => (
-        <TimelineAnswerRow
-          key={answer.id}
-          entry={answer}
-          timeLabel={null}
-          hasRoleColumn={hasRoleColumn}
-          onOpen={navigate}
-        />
-      ))}
+      {shouldRenderAnswers
+        ? entry.answers.map((answer) => (
+            <TimelineAnswerRow
+              key={answer.id}
+              entry={answer}
+              timeLabel={null}
+              hasRoleColumn={hasRoleColumn}
+              onOpen={navigate}
+            />
+          ))
+        : null}
     </div>
   );
 };
