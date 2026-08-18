@@ -53,6 +53,7 @@ const otherRunStep = buildAgent({
 const clusterOne = buildAgent({
   id: 'cluster-one' as AgentId,
   name: 'cluster one',
+  kind: 'implementer',
   ordinal: 3,
   parentAgentId: stepTwo.id,
   workflowRunId: 'run-1' as never,
@@ -60,7 +61,16 @@ const clusterOne = buildAgent({
 const clusterTwo = buildAgent({
   id: 'cluster-two' as AgentId,
   name: 'cluster two',
+  kind: 'implementer',
   ordinal: 4,
+  parentAgentId: stepTwo.id,
+  workflowRunId: 'run-1' as never,
+});
+const parallelBranch = buildAgent({
+  id: 'parallel-branch' as AgentId,
+  name: 'parallel branch',
+  kind: 'scout',
+  ordinal: 5,
   parentAgentId: stepTwo.id,
   workflowRunId: 'run-1' as never,
 });
@@ -112,5 +122,29 @@ describe('switcherPeers', () => {
     });
 
     expect(ids(peers)).toEqual([stepTwo.id, clusterOne.id, clusterTwo.id]);
+  });
+
+  it('keeps a non-implementer branch out of the cluster peers', () => {
+    const peers = switcherPeers({
+      agents: [stepTwo, clusterOne, clusterTwo, parallelBranch],
+      selectedAgent: clusterOne,
+      rootAgent: stepTwo,
+      home: 'workflows',
+      kindOf,
+    });
+
+    expect(ids(peers)).not.toContain(parallelBranch.id);
+  });
+
+  it('never drops the open agent from its own switcher', () => {
+    const peers = switcherPeers({
+      agents: [stepTwo, clusterOne, parallelBranch],
+      selectedAgent: parallelBranch,
+      rootAgent: stepTwo,
+      home: 'workflows',
+      kindOf,
+    });
+
+    expect(ids(peers)).toEqual([stepTwo.id, clusterOne.id, parallelBranch.id]);
   });
 });

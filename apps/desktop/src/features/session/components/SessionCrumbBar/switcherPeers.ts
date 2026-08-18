@@ -41,8 +41,14 @@ export const switcherPeers = ({
       .sort(byOrdinal);
   }
 
-  const children = agents.filter((agent) => agent.parentAgentId === parentAgentId).sort(byOrdinal);
+  const clusterPeers = agents
+    .filter(
+      (agent) =>
+        agent.parentAgentId === parentAgentId &&
+        (kindOf(agent) === 'implementer' || agent.id === selectedAgent.id),
+    )
+    .sort(byOrdinal);
   const parent = agents.find((agent) => agent.id === parentAgentId) ?? null;
 
-  return parent == null ? children : [parent, ...children];
+  return parent == null ? clusterPeers : [parent, ...clusterPeers];
 };
