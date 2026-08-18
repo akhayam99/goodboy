@@ -25,7 +25,7 @@ export const ContextSection = ({
   const tint = tintClasses(CONCEPT_TONE[concept]);
 
   return (
-    <section id={sectionId} aria-label={title} className="flex flex-col gap-2">
+    <section id={sectionId} aria-label={title} className="flex flex-col gap-4">
       <SectionHeader
         size="page"
         label={title}

@@ -143,49 +143,49 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
             class="flex flex-col gap-3"
           >
             <div
-              class="flex items-start gap-3"
+              class="flex flex-col gap-1"
             >
-              <span
-                class="flex w-5 shrink-0 justify-center"
-              >
-                <svg
-                  aria-hidden="true"
-                  class="lucide lucide-target text-primary"
-                  fill="none"
-                  height="16"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  viewBox="0 0 24 24"
-                  width="16"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                  />
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="6"
-                  />
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="2"
-                  />
-                </svg>
-              </span>
               <div
-                class="flex min-w-0 flex-1 flex-col gap-1"
+                class="flex items-center justify-between gap-2"
               >
                 <div
-                  class="flex items-center justify-between gap-2"
+                  class="flex min-w-0 items-center gap-2"
                 >
+                  <span
+                    class="flex shrink-0 items-center"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="lucide lucide-target text-primary"
+                      fill="none"
+                      height="14"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="14"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                      />
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="6"
+                      />
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="2"
+                      />
+                    </svg>
+                  </span>
                   <h2
-                    class="text-base font-semibold text-foreground"
+                    class="min-w-0 text-base font-semibold leading-6 text-foreground"
                   >
                     Goal
                   </h2>
@@ -295,47 +295,47 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
             class="flex flex-col gap-3"
           >
             <div
-              class="flex items-start gap-3"
+              class="flex flex-col gap-1"
             >
-              <span
-                class="flex w-5 shrink-0 justify-center"
-              >
-                <svg
-                  aria-hidden="true"
-                  class="lucide lucide-git-branch text-info"
-                  fill="none"
-                  height="16"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  viewBox="0 0 24 24"
-                  width="16"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M15 6a9 9 0 0 0-9 9V3"
-                  />
-                  <circle
-                    cx="18"
-                    cy="6"
-                    r="3"
-                  />
-                  <circle
-                    cx="6"
-                    cy="18"
-                    r="3"
-                  />
-                </svg>
-              </span>
               <div
-                class="flex min-w-0 flex-1 flex-col gap-1"
+                class="flex items-center justify-between gap-2"
               >
                 <div
-                  class="flex items-center justify-between gap-2"
+                  class="flex min-w-0 items-center gap-2"
                 >
+                  <span
+                    class="flex shrink-0 items-center"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="lucide lucide-git-branch text-info"
+                      fill="none"
+                      height="14"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="14"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M15 6a9 9 0 0 0-9 9V3"
+                      />
+                      <circle
+                        cx="18"
+                        cy="6"
+                        r="3"
+                      />
+                      <circle
+                        cx="6"
+                        cy="18"
+                        r="3"
+                      />
+                    </svg>
+                  </span>
                   <h2
-                    class="text-base font-semibold text-foreground"
+                    class="min-w-0 text-base font-semibold leading-6 text-foreground"
                   >
                     Branch
                   </h2>
@@ -1024,49 +1024,49 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
             class="flex flex-col gap-3"
           >
             <div
-              class="flex items-start gap-3"
+              class="flex flex-col gap-1"
             >
-              <span
-                class="flex w-5 shrink-0 justify-center"
-              >
-                <svg
-                  aria-hidden="true"
-                  class="lucide lucide-target text-primary"
-                  fill="none"
-                  height="16"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  viewBox="0 0 24 24"
-                  width="16"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                  />
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="6"
-                  />
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="2"
-                  />
-                </svg>
-              </span>
               <div
-                class="flex min-w-0 flex-1 flex-col gap-1"
+                class="flex items-center justify-between gap-2"
               >
                 <div
-                  class="flex items-center justify-between gap-2"
+                  class="flex min-w-0 items-center gap-2"
                 >
+                  <span
+                    class="flex shrink-0 items-center"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="lucide lucide-target text-primary"
+                      fill="none"
+                      height="14"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="14"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                      />
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="6"
+                      />
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="2"
+                      />
+                    </svg>
+                  </span>
                   <h2
-                    class="text-base font-semibold text-foreground"
+                    class="min-w-0 text-base font-semibold leading-6 text-foreground"
                   >
                     Goal
                   </h2>
@@ -1176,47 +1176,47 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
             class="flex flex-col gap-3"
           >
             <div
-              class="flex items-start gap-3"
+              class="flex flex-col gap-1"
             >
-              <span
-                class="flex w-5 shrink-0 justify-center"
-              >
-                <svg
-                  aria-hidden="true"
-                  class="lucide lucide-git-branch text-info"
-                  fill="none"
-                  height="16"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  viewBox="0 0 24 24"
-                  width="16"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M15 6a9 9 0 0 0-9 9V3"
-                  />
-                  <circle
-                    cx="18"
-                    cy="6"
-                    r="3"
-                  />
-                  <circle
-                    cx="6"
-                    cy="18"
-                    r="3"
-                  />
-                </svg>
-              </span>
               <div
-                class="flex min-w-0 flex-1 flex-col gap-1"
+                class="flex items-center justify-between gap-2"
               >
                 <div
-                  class="flex items-center justify-between gap-2"
+                  class="flex min-w-0 items-center gap-2"
                 >
+                  <span
+                    class="flex shrink-0 items-center"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="lucide lucide-git-branch text-info"
+                      fill="none"
+                      height="14"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="14"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M15 6a9 9 0 0 0-9 9V3"
+                      />
+                      <circle
+                        cx="18"
+                        cy="6"
+                        r="3"
+                      />
+                      <circle
+                        cx="6"
+                        cy="18"
+                        r="3"
+                      />
+                    </svg>
+                  </span>
                   <h2
-                    class="text-base font-semibold text-foreground"
+                    class="min-w-0 text-base font-semibold leading-6 text-foreground"
                   >
                     Branch
                   </h2>

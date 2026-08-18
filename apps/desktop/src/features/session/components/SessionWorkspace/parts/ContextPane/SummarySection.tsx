@@ -1,13 +1,12 @@
 import { useMemo } from 'react';
-import { Button } from '@goodboy/ui';
+import { SkeletonText } from '@goodboy/ui';
 import {
   insertSummarySection,
   parseSummaryDocument,
   replaceSummarySectionBody,
 } from '@goodboy/core';
-import { CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { RawDocumentEditor } from './RawDocumentEditor';
-import { SummaryBlockCard } from './SummaryBlockCard';
+import { SummaryBlock } from './SummaryBlock';
 import { summaryDisplayBlocks } from './summaryDisplayBlocks';
 
 type Props = {
@@ -44,38 +43,16 @@ export const SummarySection = ({
   }
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col gap-2" aria-label="Loading session summary">
-        <div className="h-4 w-full rounded bg-muted/50" />
-        <div className="h-4 w-3/4 rounded bg-muted/50" />
-      </div>
-    );
-  }
-
-  if (blocks.length === 0) {
-    return (
-      <div className="flex items-center gap-4 rounded-lg bg-subtle p-3">
-        <p className="min-w-0 flex-1 text-sm text-muted-foreground">No session summary yet</p>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={isLocked}
-          onClick={() => onWrite('#### Problem\n')}
-        >
-          Add
-        </Button>
-      </div>
-    );
+    return <SkeletonText lines={3} />;
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-4">
       {blocks.map((block) => (
-        <SummaryBlockCard
+        <SummaryBlock
           key={block.id}
           title={block.title}
           body={block.body}
-          tone={CONCEPT_TONE.sessionSummary}
           isLocked={isLocked}
           onCommit={(body) => {
             if (block.index != null) {
