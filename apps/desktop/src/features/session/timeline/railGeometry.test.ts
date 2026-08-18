@@ -797,12 +797,34 @@ describe('a strength change fades instead of stepping', () => {
       groups: [group({ id: 'lane', originRowId: 'origin' })],
     });
 
-  it('marks the straight edge beside a junction where the next row has different strength', () => {
-    expect(fadedOf(layout(), 'above', 0)).toEqual({ atTop: false, atBottom: true });
+  it('samples the shifted feed ramp on the nearest straight row', () => {
+    expect(fadedOf(layout(), 'above', 0)).toEqual([
+      { offset: 0, recession: 0 },
+      { offset: 0.65, recession: 0 },
+      { offset: 1, recession: 1 },
+    ]);
   });
 
-  it('leaves an edge unmarked where both rows carry the same strength', () => {
-    expect(fadedOf(layout(), 'step-1', 0)).toEqual({ atTop: false, atBottom: false });
+  it('leaves a straight row flat where both edges carry the same strength', () => {
+    expect(fadedOf(layout(), 'step-1', 0)).toEqual([]);
+  });
+
+  it('moves a ramp onto the available span of a partial straight run', () => {
+    const shifted = layoutTimelineRail({
+      rows: [
+        row({ id: 'above', height: 48, topY: 12 }),
+        row({ id: 'step-2', groupId: 'lane' }),
+        row({ id: 'step-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [group({ id: 'lane', originRowId: 'origin' })],
+    });
+
+    expect(fadedOf(shifted, 'above', 0)).toEqual([
+      { offset: 0, recession: 0 },
+      { offset: 0.7375, recession: 0 },
+      { offset: 1, recession: 1 },
+    ]);
   });
 
   it('keeps fades off junction rows and moves them onto adjacent straight runs', () => {
@@ -817,9 +839,17 @@ describe('a strength change fades instead of stepping', () => {
       groups: [group({ id: 'lane', originRowId: 'origin' })],
     });
 
-    expect(fadedOf(shifted, 'above', 0)).toEqual({ atTop: false, atBottom: true });
-    expect(fadedOf(shifted, 'step-2', 0)).toEqual({ atTop: false, atBottom: false });
-    expect(fadedOf(shifted, 'origin', 0)).toEqual({ atTop: false, atBottom: false });
-    expect(fadedOf(shifted, 'below', 0)).toEqual({ atTop: true, atBottom: false });
+    expect(fadedOf(shifted, 'above', 0)).toEqual([
+      { offset: 0, recession: 0 },
+      { offset: 0.65, recession: 0 },
+      { offset: 1, recession: 1 },
+    ]);
+    expect(fadedOf(shifted, 'step-2', 0)).toEqual([]);
+    expect(fadedOf(shifted, 'origin', 0)).toEqual([]);
+    expect(fadedOf(shifted, 'below', 0)).toEqual([
+      { offset: 0, recession: 1 },
+      { offset: 0.35, recession: 0 },
+      { offset: 1, recession: 0 },
+    ]);
   });
 });

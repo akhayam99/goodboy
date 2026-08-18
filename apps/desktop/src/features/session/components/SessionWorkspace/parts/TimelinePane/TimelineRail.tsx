@@ -26,28 +26,19 @@ const strokeOf = ({ identityIndex, strength }: StrokeParams): string => {
   return `color-mix(in oklab, ${stroke} var(--rail-strength-receded), var(--color-background))`;
 };
 
-const FADE_SPAN = 0.35;
-
-type FadeStop = {
-  readonly strength: RailSegment['strength'];
-  readonly offset: number;
+type RecessionStrokeParams = {
+  readonly identityIndex: number | null;
+  readonly recession: number;
 };
 
-const fadeStops = ({ segment }: { readonly segment: RailSegment }): ReadonlyArray<FadeStop> => {
-  const near = segment.strength;
-  const far = segment.strength === 'receded' ? 'full' : 'receded';
-  const stops: FadeStop[] = [];
-  if (segment.fade.atTop) {
-    stops.push({ strength: far, offset: 0 }, { strength: near, offset: FADE_SPAN });
-  } else {
-    stops.push({ strength: near, offset: 0 });
+const strokeAtRecession = ({ identityIndex, recession }: RecessionStrokeParams): string => {
+  if (recession === 0) {
+    return strokeOf({ identityIndex, strength: 'full' });
   }
-  if (segment.fade.atBottom) {
-    stops.push({ strength: near, offset: 1 - FADE_SPAN }, { strength: far, offset: 1 });
-  } else {
-    stops.push({ strength: near, offset: 1 });
+  if (recession === 1) {
+    return strokeOf({ identityIndex, strength: 'receded' });
   }
-  return stops;
+  return `color-mix(in oklab, ${strokeOf({ identityIndex, strength: 'full' })} ${(1 - recession) * 100}%, ${strokeOf({ identityIndex, strength: 'receded' })})`;
 };
 
 type GradientIdParams = {
@@ -56,13 +47,12 @@ type GradientIdParams = {
 };
 
 const gradientIdOf = ({ rail, segment }: GradientIdParams): string =>
-  `rail-${rail.id.replace(/[^a-zA-Z0-9_-]/g, '-')}-${segment.column}-${segment.fromY}-${segment.toY}-${segment.strength}-${segment.fade.atTop ? 'top' : 'bottom'}`;
+  `rail-${rail.id.replace(/[^a-zA-Z0-9_-]/g, '-')}-${segment.column}-${segment.fromY}-${segment.toY}-${segment.strength}`;
 
 const segmentKey = ({ segment }: { readonly segment: RailSegment }): string =>
   `${segment.column}:${segment.fromY}:${segment.toY}:${segment.dash}`;
 
-const faded = ({ segment }: { readonly segment: RailSegment }): boolean =>
-  segment.fade.atTop || segment.fade.atBottom;
+const faded = ({ segment }: { readonly segment: RailSegment }): boolean => segment.fade.length > 0;
 
 export const TimelineRail = ({ rail, width }: Props) => (
   <svg
@@ -85,14 +75,14 @@ export const TimelineRail = ({ rail, width }: Props) => (
             y2={rail.height}
             gradientUnits="userSpaceOnUse"
           >
-            {fadeStops({ segment }).map((stop) => {
+            {segment.fade.map((stop) => {
               return (
                 <stop
-                  key={`${stop.strength}:${stop.offset}`}
+                  key={`${stop.recession}:${stop.offset}`}
                   offset={stop.offset}
-                  stopColor={strokeOf({
+                  stopColor={strokeAtRecession({
                     identityIndex: segment.identityIndex,
-                    strength: stop.strength,
+                    recession: stop.recession,
                   })}
                 />
               );

@@ -6,6 +6,7 @@ export const RAIL_MAX_COLUMN = 3;
 const RAIL_EDGE_PAD = 8;
 const RAIL_CURVE_K = 0.5523;
 const RAIL_CURVE_HANDLE = 8.84;
+const RAIL_FADE_SPAN = 0.35;
 
 type RailDash = 'solid' | 'dashed';
 
@@ -31,9 +32,9 @@ export type RailRowInput = {
   readonly isPending: boolean;
 };
 
-type RailFade = {
-  readonly atTop: boolean;
-  readonly atBottom: boolean;
+type RailFadeStop = {
+  readonly offset: number;
+  readonly recession: number;
 };
 
 export type RailSegment = {
@@ -41,7 +42,7 @@ export type RailSegment = {
   readonly identityIndex: number | null;
   readonly dash: RailDash;
   readonly strength: RailStrength;
-  readonly fade: RailFade;
+  readonly fade: ReadonlyArray<RailFadeStop>;
   readonly fromY: number;
   readonly toY: number;
 };
@@ -101,6 +102,90 @@ type GroupPlan = {
 type Interval = {
   readonly from: number;
   readonly to: number;
+};
+
+type RailRamp = {
+  readonly fromY: number;
+  readonly toY: number;
+  readonly fromRecession: number;
+  readonly toRecession: number;
+};
+
+type FadeStopsParams = {
+  readonly feedY: number;
+  readonly height: number;
+  readonly ramps: ReadonlyArray<RailRamp>;
+  readonly strength: RailStrength;
+};
+
+type StrengthRecessionParams = {
+  readonly strength: RailStrength;
+};
+
+type RoundedSampleParams = {
+  readonly value: number;
+};
+
+type RailEdge = 'top' | 'bottom';
+
+type StraightRunParams = {
+  readonly column: number;
+  readonly edge: RailEdge;
+  readonly index: number;
+};
+
+type BoundaryRampParams = {
+  readonly column: number;
+  readonly lowerIndex: number;
+  readonly upperIndex: number;
+};
+
+const recessionOf = ({ strength }: StrengthRecessionParams): number =>
+  strength === 'receded' ? 1 : 0;
+
+const roundedSample = ({ value }: RoundedSampleParams): number => Number(value.toFixed(4));
+
+const fadeStopsOf = ({
+  feedY,
+  height,
+  ramps,
+  strength,
+}: FadeStopsParams): ReadonlyArray<RailFadeStop> => {
+  if (ramps.length === 0) {
+    return [];
+  }
+  const bottomY = feedY + height;
+  const samplePoints = new Set([feedY, bottomY]);
+  for (const ramp of ramps) {
+    if (ramp.fromY > feedY && ramp.fromY < bottomY) {
+      samplePoints.add(ramp.fromY);
+    }
+    if (ramp.toY > feedY && ramp.toY < bottomY) {
+      samplePoints.add(ramp.toY);
+    }
+  }
+  const stops = [...samplePoints]
+    .sort((first, second) => first - second)
+    .map((sampleY) => {
+      const ramp = ramps.find(
+        (candidate) => candidate.fromY <= sampleY && candidate.toY >= sampleY,
+      );
+      const recession =
+        ramp === undefined
+          ? recessionOf({ strength })
+          : ramp.fromRecession +
+            ((sampleY - ramp.fromY) / (ramp.toY - ramp.fromY)) *
+              (ramp.toRecession - ramp.fromRecession);
+      return {
+        offset: roundedSample({ value: (sampleY - feedY) / height }),
+        recession: roundedSample({ value: recession }),
+      };
+    });
+  const firstRecession = stops[0]?.recession;
+  if (stops.every((stop) => stop.recession === firstRecession)) {
+    return [];
+  }
+  return stops;
 };
 
 export const railColumnX = ({ column }: { readonly column: number }): number =>
@@ -362,25 +447,92 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
     });
   }
 
+  const normalizedRows = rows.map((row, index) => {
+    const ownColumn = row.groupId == null ? 0 : (columnByGroupId.get(row.groupId) ?? 0);
+    const plannedJoins = joinsByIndex[index] ?? [];
+    const ownMerge = plannedJoins.find(
+      (join) => join.kind === 'merge' && join.laneColumn === ownColumn,
+    );
+    const markerColumn = ownMerge?.spineColumn ?? ownColumn;
+    const joins = plannedJoins.map((join) =>
+      join.kind === 'depart' && ownMerge !== undefined
+        ? { ...join, spineColumn: markerColumn }
+        : join,
+    );
+    return { joins, markerColumn };
+  });
   const maxColumn = [...columnByGroupId.values()].reduce((widest, column) => {
     return column > widest ? column : widest;
   }, 0);
+  const feedTopByIndex: number[] = [];
+  let feedY = 0;
+  for (const row of rows) {
+    feedTopByIndex.push(feedY);
+    feedY += row.height;
+  }
+  const straightRunAt = ({ column, edge, index }: StraightRunParams): PlannedSegment | null => {
+    const row = rows[index];
+    if (row === undefined || (joinsByIndex[index]?.length ?? 0) > 0) {
+      return null;
+    }
+    const segments =
+      column === 0
+        ? [
+            {
+              column: 0,
+              identityIndex: null,
+              dash: 'solid',
+              fromY: row.topY,
+              toY: row.height,
+            } satisfies PlannedSegment,
+          ]
+        : (laneSegmentsByIndex[index] ?? []).filter((segment) => segment.column === column);
+    if (edge === 'top') {
+      return segments.find((segment) => segment.fromY === 0) ?? null;
+    }
+    return segments.find((segment) => segment.toY === row.height) ?? null;
+  };
+  const rampAtBoundary = ({
+    column,
+    lowerIndex,
+    upperIndex,
+  }: BoundaryRampParams): RailRamp | null => {
+    const upperRow = rows[upperIndex];
+    const lowerRow = rows[lowerIndex];
+    const boundaryY = feedTopByIndex[lowerIndex];
+    if (upperRow === undefined || lowerRow === undefined || boundaryY === undefined) {
+      return null;
+    }
+    const fromStrength = strengthOf({
+      column,
+      delegated: delegatedByIndex[upperIndex] ?? EMPTY_COLUMNS,
+    });
+    const toStrength = strengthOf({
+      column,
+      delegated: delegatedByIndex[lowerIndex] ?? EMPTY_COLUMNS,
+    });
+    if (fromStrength === toStrength) {
+      return null;
+    }
+    const upperRun = straightRunAt({ column, edge: 'bottom', index: upperIndex });
+    const lowerRun = straightRunAt({ column, edge: 'top', index: lowerIndex });
+    if (upperRun === null && lowerRun === null) {
+      return null;
+    }
+    return {
+      fromY: boundaryY - (upperRun === null ? 0 : (upperRun.toY - upperRun.fromY) * RAIL_FADE_SPAN),
+      toY: boundaryY + (lowerRun === null ? 0 : (lowerRun.toY - lowerRun.fromY) * RAIL_FADE_SPAN),
+      fromRecession: recessionOf({ strength: fromStrength }),
+      toRecession: recessionOf({ strength: toStrength }),
+    };
+  };
 
   return {
     width: RAIL_SPINE_X + maxColumn * RAIL_LANE_OFFSET + RAIL_EDGE_PAD,
     columnByGroupId,
     rows: rows.map((row, index) => {
-      const ownColumn = row.groupId == null ? 0 : (columnByGroupId.get(row.groupId) ?? 0);
-      const plannedJoins = joinsByIndex[index] ?? [];
-      const ownMerge = plannedJoins.find(
-        (join) => join.kind === 'merge' && join.laneColumn === ownColumn,
-      );
-      const markerColumn = ownMerge?.spineColumn ?? ownColumn;
-      const normalizedJoins = plannedJoins.map((join) =>
-        join.kind === 'depart' && ownMerge !== undefined
-          ? { ...join, spineColumn: markerColumn }
-          : join,
-      );
+      const markerColumn = normalizedRows[index]?.markerColumn ?? 0;
+      const normalizedJoins = normalizedRows[index]?.joins ?? [];
       const hasJunction = normalizedJoins.length > 0;
       const segments = [
         {
@@ -396,25 +548,34 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
           column: segment.column,
           delegated: delegatedByIndex[index] ?? EMPTY_COLUMNS,
         });
+        const ramps = [
+          rampAtBoundary({
+            column: segment.column,
+            lowerIndex: index,
+            upperIndex: index - 1,
+          }),
+          rampAtBoundary({
+            column: segment.column,
+            lowerIndex: index + 1,
+            upperIndex: index,
+          }),
+        ].filter((ramp): ramp is RailRamp => ramp !== null);
+        const segmentFeedFrom = (feedTopByIndex[index] ?? 0) + segment.fromY;
+        const segmentFeedTo = (feedTopByIndex[index] ?? 0) + segment.toY;
+        const applicableRamps = ramps.filter(
+          (ramp) => ramp.fromY < segmentFeedTo && ramp.toY > segmentFeedFrom,
+        );
         return {
           ...segment,
           strength,
-          fade: {
-            atTop:
-              !hasJunction &&
-              segment.fromY === 0 &&
-              strengthOf({
-                column: segment.column,
-                delegated: delegatedByIndex[index - 1] ?? EMPTY_COLUMNS,
-              }) !== strength,
-            atBottom:
-              !hasJunction &&
-              segment.toY === row.height &&
-              strengthOf({
-                column: segment.column,
-                delegated: delegatedByIndex[index + 1] ?? EMPTY_COLUMNS,
-              }) !== strength,
-          },
+          fade: !hasJunction
+            ? fadeStopsOf({
+                feedY: feedTopByIndex[index] ?? 0,
+                height: row.height,
+                ramps: applicableRamps,
+                strength,
+              })
+            : [],
         };
       });
       const joins = normalizedJoins.map((join) => ({
