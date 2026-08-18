@@ -507,6 +507,7 @@ describe('store contract', () => {
         planConsumptions: {},
         sessionOpenQuestions: {},
         sessionLoading: {},
+        sessionSlotsLoad: {},
         sessionViewPrefs: {},
         terminalSessions: {},
       };
@@ -530,6 +531,66 @@ describe('store contract', () => {
       ]);
       await store.getState().loadSessionSlots(SESSION_ID);
       expect(store.getState().sessionSlots[SESSION_ID]).toHaveLength(1);
+    });
+
+    it('records a completed read so an open can tell loaded from never read', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      (db.listContextSlotsForSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        [],
+      );
+      await store.getState().loadSessionSlots(SESSION_ID);
+      expect(store.getState().sessionSlotsLoad[SESSION_ID]).toBe('loaded');
+    });
+
+    it('records a rejected read as failed instead of leaving the session looking empty', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      store.setState({
+        sessionLoading: {
+          [SESSION_ID]: {
+            agents: false,
+            transcript: false,
+            telemetry: false,
+            slots: true,
+            plans: false,
+            summary: false,
+          },
+        },
+      });
+      (db.listContextSlotsForSession as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new Error('database is locked'),
+      );
+      const trace = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      await store.getState().loadSessionSlots(SESSION_ID);
+      const traceCount = trace.mock.calls.length;
+      trace.mockRestore();
+
+      expect(store.getState().sessionSlotsLoad[SESSION_ID]).toBe('failed');
+      expect(store.getState().sessionSlots[SESSION_ID]).toBeUndefined();
+      expect(store.getState().sessionLoading[SESSION_ID]?.slots).toBe(false);
+      expect(traceCount).toBe(1);
+    });
+
+    it('ensureSessionSlots reads the database once and reads it again after a failure', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const listSlots = db.listContextSlotsForSession as unknown as ReturnType<typeof vi.fn>;
+      listSlots.mockRejectedValueOnce(new Error('database is locked'));
+      const trace = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      await store.getState().ensureSessionSlots(SESSION_ID);
+      trace.mockRestore();
+      expect(listSlots).toHaveBeenCalledTimes(1);
+
+      listSlots.mockResolvedValueOnce([{ key: 'goal', value: 'g', enabled: true } as ContextSlot]);
+      await store.getState().ensureSessionSlots(SESSION_ID);
+      expect(listSlots).toHaveBeenCalledTimes(2);
+      expect(store.getState().sessionSlots[SESSION_ID]).toHaveLength(1);
+
+      await store.getState().ensureSessionSlots(SESSION_ID);
+      expect(listSlots).toHaveBeenCalledTimes(2);
     });
 
     it('toggleSessionSlot upserts the slot with new enabled flag', async () => {

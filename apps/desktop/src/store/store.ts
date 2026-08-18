@@ -436,6 +436,7 @@ export type AppActions = {
   refreshWorkspaceSummary(workspaceId: WorkspaceId): Promise<void>;
   loadSessionTelemetry(sessionId: SessionId): Promise<void>;
   loadSessionSlots(sessionId: SessionId): Promise<void>;
+  ensureSessionSlots(sessionId: SessionId): Promise<void>;
   upsertSessionSlot(sessionId: SessionId, key: SlotKey, value: string): Promise<void>;
   loadSlotHistory(sessionId: SessionId, key: SlotKey): Promise<void>;
   toggleSessionSlot(sessionId: SessionId, key: SlotKey, enabled: boolean): Promise<void>;
@@ -854,6 +855,7 @@ export const initialState: AppState = {
   sessionSlots: {},
   slotHistory: {},
   slotHistoryCounts: {},
+  sessionSlotsLoad: {},
   summarizerStatus: {},
   storageStats: null,
   storageStatsLoading: false,

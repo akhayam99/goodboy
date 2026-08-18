@@ -137,6 +137,8 @@ export type SessionLoadingFlags = {
   readonly summary: boolean;
 };
 
+export type SessionSlotsLoad = 'loaded' | 'failed';
+
 export type SessionGitlabMrState = {
   readonly mr: GitlabMergeRequest | null;
   readonly fetchedAt: IsoDateTime | null;
@@ -218,6 +220,7 @@ export type AppState = AppSliceState & {
     Record<string, Readonly<Record<string, ReadonlyArray<ContextSlotHistoryEntry>>>>
   >;
   readonly slotHistoryCounts: Readonly<Record<string, Readonly<Record<string, number>>>>;
+  readonly sessionSlotsLoad: Readonly<Record<string, SessionSlotsLoad>>;
   readonly summarizerStatus: Readonly<Record<string, SummarizerSessionStatus>>;
   readonly storageStats: StorageStats | null;
   readonly storageStatsLoading: boolean;
