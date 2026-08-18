@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 
 export type JiraAvatarUrls = {
   readonly '48x48': string | null;
@@ -64,26 +64,27 @@ export type JiraIssueTarget = JiraSite & {
 };
 
 type ValidateParams = {
-  readonly workspaceId: WorkspaceId;
+  readonly credentialId: IntegrationCredentialId;
   readonly siteUrl: string;
   readonly email: string;
-  readonly apiToken: string;
+  readonly apiToken: string | null;
 };
 
 export const jiraValidateConnection = async ({
-  workspaceId,
+  credentialId,
   siteUrl,
   email,
   apiToken,
 }: ValidateParams): Promise<JiraUser> =>
-  invoke<JiraUser>('jira_validate_connection', { workspaceId, siteUrl, email, apiToken });
+  invoke<JiraUser>('jira_validate_connection', { credentialId, siteUrl, email, apiToken });
 
-type DisconnectParams = {
-  readonly workspaceId: WorkspaceId;
+type ConnectParams = {
+  readonly credentialId: IntegrationCredentialId;
+  readonly apiToken: string | null;
 };
 
-export const jiraDisconnect = async ({ workspaceId }: DisconnectParams): Promise<void> => {
-  await invoke('jira_disconnect', { workspaceId });
+export const jiraConnect = async ({ credentialId, apiToken }: ConnectParams): Promise<void> => {
+  await invoke('jira_connect', { credentialId, apiToken });
 };
 
 type ListIssuesParams = JiraSite & {

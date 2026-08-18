@@ -314,11 +314,11 @@ mutation IssueUpdate($issueId: String!, $input: IssueUpdateInput!) {
 }
 "#;
 
-/// Verifies the key a credential holds through the /viewer query and saves it
-/// under that credential's id. A key already stored is verified without the
-/// webview ever seeing it.
+/// Verifies the key a credential holds through the /viewer query and writes
+/// nothing. A key already stored is verified without the webview ever seeing
+/// it.
 #[tauri::command]
-pub async fn linear_connect(
+pub async fn linear_validate_connection(
     credential_id: String,
     token: Option<String>,
     cache: State<'_, LinearTokenCache>,
@@ -326,8 +326,19 @@ pub async fn linear_connect(
     let token =
         integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)?;
     let viewer: ViewerResponse = graphql(&token, VIEWER_QUERY, None).await?;
-    integration_credentials::store_secret(&credential_id, &token, &cache.0)?;
     Ok(viewer.viewer)
+}
+
+#[tauri::command]
+pub async fn linear_connect(
+    credential_id: String,
+    token: Option<String>,
+    cache: State<'_, LinearTokenCache>,
+) -> Result<(), LinearError> {
+    let token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)?;
+    integration_credentials::store_secret(&credential_id, &token, &cache.0)?;
+    Ok(())
 }
 
 #[tauri::command]

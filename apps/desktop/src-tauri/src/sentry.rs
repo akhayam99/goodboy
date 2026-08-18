@@ -21,6 +21,12 @@ pub struct SentryConfig {
     pub project: String,
 }
 
+#[derive(Deserialize)]
+pub struct SentryScope {
+    pub org: String,
+    pub project: String,
+}
+
 pub struct SentryTokenCache(integration_credentials::SecretCache);
 
 impl SentryTokenCache {
@@ -158,10 +164,26 @@ pub struct SentryIssueDetail {
     pub breadcrumbs: Vec<SentryBreadcrumb>,
 }
 
+/// A pre-m114 entry held the whole connection as one blob. The credential now
+/// holds the token alone, so an older blob is read for its token and nothing
+/// else.
+fn token_from_secret(raw: &str) -> String {
+    serde_json::from_str::<SentryConfig>(raw)
+        .map(|held| held.token)
+        .unwrap_or_else(|_| raw.to_string())
+}
+
 fn read_config(workspace_id: &str, cache: &SentryTokenCache) -> Result<SentryConfig, SentryError> {
     let raw = integration_credentials::read_for_workspace(PROVIDER, workspace_id, &cache.0)?
         .ok_or_else(|| SentryError::NoToken(workspace_id.to_string()))?;
-    Ok(serde_json::from_str(&raw)?)
+    let scope = integration_credentials::config_for_workspace(PROVIDER, workspace_id)?
+        .ok_or_else(|| SentryError::NoToken(workspace_id.to_string()))?;
+    let scope: SentryScope = serde_json::from_str(&scope)?;
+    Ok(SentryConfig {
+        token: token_from_secret(&raw),
+        org: scope.org,
+        project: scope.project,
+    })
 }
 
 fn parse_next_cursor(link: &str) -> Option<String> {
@@ -278,42 +300,37 @@ fn extract_breadcrumbs(event: &serde_json::Value) -> Vec<SentryBreadcrumb> {
 }
 
 #[tauri::command]
-pub async fn sentry_connect(
+pub async fn sentry_validate_connection(
     credential_id: String,
     token: Option<String>,
-    org: Option<String>,
-    project: Option<String>,
+    org: String,
+    project: String,
     cache: State<'_, SentryTokenCache>,
 ) -> Result<SentryProject, SentryError> {
-    let stored =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, None, &cache.0)
-            .ok()
-            .and_then(|raw| serde_json::from_str::<SentryConfig>(&raw).ok());
-    let cfg = SentryConfig {
-        token: token
-            .or_else(|| stored.as_ref().map(|held| held.token.clone()))
-            .ok_or_else(|| SentryError::NoToken(credential_id.clone()))?,
-        org: org
-            .or_else(|| stored.as_ref().map(|held| held.org.clone()))
-            .unwrap_or_default(),
-        project: project
-            .or_else(|| stored.as_ref().map(|held| held.project.clone()))
-            .unwrap_or_default(),
-    };
-    let url = format!("{}/projects/{}/{}/", BASE_URL, cfg.org, cfg.project);
-    let res = http_client()
-        .get(&url)
-        .bearer_auth(&cfg.token)
-        .send()
-        .await?;
+    let secret =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)
+            .map(|raw| token_from_secret(&raw))?;
+    let url = format!("{}/projects/{}/{}/", BASE_URL, org, project);
+    let res = http_client().get(&url).bearer_auth(&secret).send().await?;
     let status = res.status();
     if !status.is_success() {
         let body = res.text().await.unwrap_or_default();
         return Err(SentryError::Http(format!("status {}: {}", status, body)));
     }
-    let project_resp: SentryProject = res.json().await?;
-    integration_credentials::store_secret(&credential_id, &serde_json::to_string(&cfg)?, &cache.0)?;
-    Ok(project_resp)
+    Ok(res.json().await?)
+}
+
+#[tauri::command]
+pub async fn sentry_connect(
+    credential_id: String,
+    token: Option<String>,
+    cache: State<'_, SentryTokenCache>,
+) -> Result<(), SentryError> {
+    let secret =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)
+            .map(|raw| token_from_secret(&raw))?;
+    integration_credentials::store_secret(&credential_id, &secret, &cache.0)?;
+    Ok(())
 }
 
 #[tauri::command]

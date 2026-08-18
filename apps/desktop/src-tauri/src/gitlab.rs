@@ -267,7 +267,7 @@ pub struct GitlabIssue {
 }
 
 #[tauri::command]
-pub async fn gitlab_connect(
+pub async fn gitlab_validate_connection(
     credential_id: String,
     host: String,
     token: Option<String>,
@@ -275,9 +275,19 @@ pub async fn gitlab_connect(
 ) -> Result<GitlabUser, GitlabError> {
     let token =
         integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)?;
-    let user: GitlabUser = get_json(&host, &token, "/user").await?;
+    get_json(&host, &token, "/user").await
+}
+
+#[tauri::command]
+pub async fn gitlab_connect(
+    credential_id: String,
+    token: Option<String>,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<(), GitlabError> {
+    let token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)?;
     integration_credentials::store_secret(&credential_id, &token, &cache.0)?;
-    Ok(user)
+    Ok(())
 }
 
 #[tauri::command]

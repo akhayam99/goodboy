@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 
 export type SentryOrganization = {
   slug: string;
@@ -64,17 +64,25 @@ export type SentryIssueDetail = {
   breadcrumbs?: SentryBreadcrumb[];
 };
 
-export const sentryConnect = async (
-  workspaceId: WorkspaceId,
-  token: string,
+export const sentryValidateConnection = async (
+  credentialId: IntegrationCredentialId,
+  token: string | null,
   org: string,
   project: string,
 ): Promise<SentryProject> => {
-  return invoke<SentryProject>('sentry_connect', { workspaceId, token, org, project });
+  return invoke<SentryProject>('sentry_validate_connection', {
+    credentialId,
+    token,
+    org,
+    project,
+  });
 };
 
-export const sentryDisconnect = async (workspaceId: WorkspaceId): Promise<void> => {
-  await invoke('sentry_disconnect', { workspaceId });
+export const sentryConnect = async (
+  credentialId: IntegrationCredentialId,
+  token: string | null,
+): Promise<void> => {
+  await invoke('sentry_connect', { credentialId, token });
 };
 
 export const sentryFetchIssues = async (

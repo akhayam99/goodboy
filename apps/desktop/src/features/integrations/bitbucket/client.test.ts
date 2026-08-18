@@ -1,12 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
-import type { WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 import {
   bitbucketApprovePullRequest,
   bitbucketConnect,
   bitbucketCreatePullRequestComment,
   bitbucketDeclinePullRequest,
-  bitbucketDisconnect,
   bitbucketGetPullRequest,
   bitbucketListPullRequestComments,
   bitbucketListPullRequestStatuses,
@@ -29,6 +28,8 @@ afterEach(() => {
   mockInvoke.mockReset();
 });
 
+const credentialId = 'cred-1' as IntegrationCredentialId;
+
 const repo = {
   workspaceId: 'w1' as WorkspaceId,
   workspaceSlug: 'goodboy',
@@ -39,31 +40,31 @@ const repo = {
 const target = { ...repo, pullRequestId: 42 };
 
 describe('bitbucket client', () => {
-  it('validates a connection without the goodboy workspace id', async () => {
+  it('validates a connection under a credential id, not under a goodboy workspace', async () => {
     mockInvoke.mockResolvedValue({ user: {}, workspace: {} });
 
     await bitbucketValidateConnection({
+      credentialId,
       workspaceSlug: 'goodboy',
       email: 'amin@acme.io',
       apiToken: 'tok',
     });
 
     expect(mockInvoke).toHaveBeenCalledWith('bitbucket_validate_connection', {
+      credentialId,
       workspaceSlug: 'goodboy',
       email: 'amin@acme.io',
       apiToken: 'tok',
     });
   });
 
-  it('stores and clears the token through the two lifecycle commands', async () => {
-    await bitbucketConnect({ workspaceId: 'w1' as WorkspaceId, apiToken: 'tok' });
-    expect(mockInvoke).toHaveBeenCalledWith('bitbucket_connect', {
-      workspaceId: 'w1',
-      apiToken: 'tok',
-    });
+  it('reuses a stored credential by naming it alone, with no token in the payload', async () => {
+    await bitbucketConnect({ credentialId, apiToken: null });
 
-    await bitbucketDisconnect({ workspaceId: 'w1' as WorkspaceId });
-    expect(mockInvoke).toHaveBeenCalledWith('bitbucket_disconnect', { workspaceId: 'w1' });
+    expect(mockInvoke).toHaveBeenCalledWith('bitbucket_connect', {
+      credentialId,
+      apiToken: null,
+    });
   });
 
   it('sends a null state when the caller does not filter the pull request list', async () => {

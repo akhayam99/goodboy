@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 
 export type LinearViewer = {
   id: string;
@@ -97,15 +97,18 @@ export const issuePullRequests = (issue: LinearIssue): ReadonlyArray<LinearLinke
   return out;
 };
 
-export const linearConnect = async (
-  workspaceId: WorkspaceId,
-  token: string,
+export const linearValidateConnection = async (
+  credentialId: IntegrationCredentialId,
+  token: string | null,
 ): Promise<LinearViewer> => {
-  return invoke<LinearViewer>('linear_connect', { workspaceId, token });
+  return invoke<LinearViewer>('linear_validate_connection', { credentialId, token });
 };
 
-export const linearDisconnect = async (workspaceId: WorkspaceId): Promise<void> => {
-  await invoke('linear_disconnect', { workspaceId });
+export const linearConnect = async (
+  credentialId: IntegrationCredentialId,
+  token: string | null,
+): Promise<void> => {
+  await invoke('linear_connect', { credentialId, token });
 };
 
 export const linearFetchAssignedIssues = async (

@@ -802,9 +802,19 @@ pub async fn jira_validate_connection(
         email: &email,
         token: &api_token,
     };
-    let user: JiraUser = get_json(&credentials, &format!("{base}/myself")).await?;
+    get_json(&credentials, &format!("{base}/myself")).await
+}
+
+#[tauri::command]
+pub async fn jira_connect(
+    credential_id: String,
+    api_token: Option<String>,
+    cache: State<'_, JiraTokenCache>,
+) -> Result<(), JiraError> {
+    let api_token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, &cache.0)?;
     integration_credentials::store_secret(&credential_id, &api_token, &cache.0)?;
-    Ok(user)
+    Ok(())
 }
 
 #[tauri::command]

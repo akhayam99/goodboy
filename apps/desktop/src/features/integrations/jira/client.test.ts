@@ -1,9 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
-import type { WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 import {
   jiraCreateComment,
-  jiraDisconnect,
   jiraGetIssue,
   jiraListAssignableUsers,
   jiraListComments,
@@ -32,26 +31,43 @@ const site = {
 
 const target = { ...site, issueKey: 'GB-12' };
 
+const credentialId = 'cred-1' as IntegrationCredentialId;
+
 describe('jira client', () => {
-  it('validates a connection with the site, email and api token', async () => {
+  it('validates a connection under a credential id, not under a workspace', async () => {
     mockInvoke.mockResolvedValue({ accountId: 'acc-1', displayName: 'Amin' });
 
-    await jiraValidateConnection({ ...site, apiToken: 'tok' });
+    await jiraValidateConnection({
+      credentialId,
+      siteUrl: site.siteUrl,
+      email: site.email,
+      apiToken: 'tok',
+    });
 
     expect(mockInvoke).toHaveBeenCalledWith('jira_validate_connection', {
-      workspaceId: 'w1',
+      credentialId,
       siteUrl: 'https://acme.atlassian.net',
       email: 'amin@acme.io',
       apiToken: 'tok',
     });
   });
 
-  it('disconnects with the workspace alone', async () => {
-    mockInvoke.mockResolvedValue(undefined);
+  it('reuses a stored credential with no token in the payload', async () => {
+    mockInvoke.mockResolvedValue({ accountId: 'acc-1', displayName: 'Amin' });
 
-    await jiraDisconnect({ workspaceId: 'w1' as WorkspaceId });
+    await jiraValidateConnection({
+      credentialId,
+      siteUrl: site.siteUrl,
+      email: site.email,
+      apiToken: null,
+    });
 
-    expect(mockInvoke).toHaveBeenCalledWith('jira_disconnect', { workspaceId: 'w1' });
+    expect(mockInvoke).toHaveBeenCalledWith('jira_validate_connection', {
+      credentialId,
+      siteUrl: 'https://acme.atlassian.net',
+      email: 'amin@acme.io',
+      apiToken: null,
+    });
   });
 
   it('lists issues for a project key and returns the payload untouched', async () => {

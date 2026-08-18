@@ -90,6 +90,32 @@ fn credential_id_in_db(
     }
 }
 
+/// The per-workspace half of a connection: everything that is not the secret.
+/// A shared credential must never carry it, or one project would overwrite
+/// another project's scope.
+pub(crate) fn config_for_workspace(
+    provider: &str,
+    workspace_id: &str,
+) -> Result<Option<String>, IntegrationCredentialError> {
+    let conn = open_db()?;
+    let mut stmt = conn
+        .prepare("SELECT config FROM workspace_integrations WHERE workspace_id = ?1 AND provider = ?2 LIMIT 1")
+        .map_err(|e| IntegrationCredentialError::Store(e.to_string()))?;
+    let mut rows = stmt
+        .query([workspace_id, provider])
+        .map_err(|e| IntegrationCredentialError::Store(e.to_string()))?;
+    let row = rows
+        .next()
+        .map_err(|e| IntegrationCredentialError::Store(e.to_string()))?;
+    match row {
+        Some(row) => row
+            .get::<_, String>(0)
+            .map(Some)
+            .map_err(|e| IntegrationCredentialError::Store(e.to_string())),
+        None => Ok(None),
+    }
+}
+
 fn legacy_bindings_in_db() -> Result<Vec<LegacyBinding>, IntegrationCredentialError> {
     let conn = open_db()?;
     let mut stmt = conn

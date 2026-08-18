@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { IsoDateTime, WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, IsoDateTime, WorkspaceId } from '@goodboy/types';
 
 export type SlackConnection = {
   readonly teamId: string;
@@ -44,29 +44,27 @@ export type SlackUser = {
 };
 
 type ValidateParams = {
-  readonly botToken: string;
+  readonly credentialId: IntegrationCredentialId;
+  readonly botToken: string | null;
 };
 
 export const slackValidateConnection = async ({
+  credentialId,
   botToken,
 }: ValidateParams): Promise<SlackConnection> =>
-  invoke<SlackConnection>('slack_validate_connection', { botToken });
+  invoke<SlackConnection>('slack_validate_connection', { credentialId, botToken });
 
 type ConnectParams = {
-  readonly workspaceId: WorkspaceId;
-  readonly botToken: string;
+  readonly credentialId: IntegrationCredentialId;
+  readonly botToken: string | null;
 };
 
-export const slackConnect = async ({ workspaceId, botToken }: ConnectParams): Promise<void> => {
-  await invoke('slack_connect', { workspaceId, botToken });
+export const slackConnect = async ({ credentialId, botToken }: ConnectParams): Promise<void> => {
+  await invoke('slack_connect', { credentialId, botToken });
 };
 
 type WorkspaceParams = {
   readonly workspaceId: WorkspaceId;
-};
-
-export const slackDisconnect = async ({ workspaceId }: WorkspaceParams): Promise<void> => {
-  await invoke('slack_disconnect', { workspaceId });
 };
 
 export const slackListChannels = async ({
