@@ -7,6 +7,167 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.83
+
+The session Overview becomes a live activity feed, Context becomes two editable
+surfaces, and an integration key you save once is offered to every project.
+
+### [#1446, #1461, #1470, #1476, #1484] The Overview is the activity feed
+
+A session's history was only readable by piecing together the workflow rail, the
+agents list and the chat. The Overview is now one chronological feed of
+everything that happened, newest first, with the block above it carrying the
+request, the pull request and the running cost.
+
+Each run owns a coloured lane drawn beside the spine, so a workflow and its
+steps read as one thread rather than as a flat list. A lane departs from the
+spine where its run starts, carries its steps, and merges back where it
+finishes. What has not happened yet is dashed, what has is solid. Plans,
+decisions and open questions appear inline at the moment they were produced,
+and each row opens the surface it belongs to.
+
+The chip on a row takes its lane colour and names what the row is, with the
+kind's own glyph beside it.
+
+### [#1442, #1462, #1475, #1483] Context is two surfaces you can edit in place
+
+Goal, decisions and session summary were three sidebar entries for one thing
+seen at three moments. Context is now a single lens holding Session summary and
+Decisions, each with its own heading, glyph and tone, and the goal moved up into
+the Overview where it is read first.
+
+Editing works on the block you clicked rather than on the whole markdown
+document, and a round trip preserves the bytes it did not touch. Decisions read
+as rows instead of a wall of prose.
+
+### [#1482] An integration key saved once is offered to every project
+
+A credential is now its own object rather than a value copied into each project.
+Connect GitHub, Linear, Sentry or Jira once with a personal API key and every
+workspace is offered it, with the option to override it for a single project.
+
+Follow-up: the key is stored in the app database, not the system keychain.
+
+### [#1437] The footer shows what is connected, and one way to add
+
+The integration groups in the footer are gone. The left side is the glyphs of
+what is actually connected, each opening its studio and named by its tooltip,
+followed by a single action to link a new one.
+
+### [#1439, #1458] A workflow preset is built on the canvas
+
+Creating a preset opened a dialog on top of the canvas, put its controls off
+screen, and made a workflow vanish from the rail when it moved to draft.
+Generation now happens on the canvas itself, a preset can be duplicated, and the
+autosave indicator stops strobing between saving and saved on every keystroke.
+
+### [#1433, #1465, #1489] An open question is answerable where you read it
+
+Suggested answers sit on one row, each chip capped and truncated with its full
+text on the title, and the suggested one comes first. A question can offer
+checkboxes as well as radio buttons, and the send control is a compact button
+rather than a full row of blue.
+
+An open question also appears in the Brief of the step that is waiting on it,
+since a step blocked on a human is state, not conversation.
+
+### [#1440, #1464] Report an issue is compact and confirms in the app
+
+The form leads with its title, guesses the kind from what you wrote, and
+confirms in the app instead of throwing you into a browser. Attached files take
+the full width of the drop zone.
+
+Follow-up: an attached image still travels as a filename in the issue body,
+since the GitHub issue API takes no upload. The files are written to a temp
+directory and Finder opens on them.
+
+### [#1460] Finished work is visible without asking for it
+
+Completed workflows, agents, resolvers, questions and plans were behind a
+toggle in the middle of the screen. Every lens now shows active work at the top
+and finished work below it, each with its own state.
+
+### [#1467, #1491] The orchestrated launch view fits on one screen
+
+The Models by role block, seven selects deciding models for steps that do not
+exist yet, is gone. In its place the form picks the model and effort the
+orchestrator itself runs on. Switching approach no longer turns autorun back on
+behind you.
+
+### [#1436, #1457, #1466] The model picker offers only what you connected
+
+Several surfaces received the connected provider list and rendered the whole
+catalog anyway. The picker is one ladder over connected providers, ends with an
+entry that opens Providers inside the app, and drops rows a model does not have.
+A model chosen mid-chat is the model the next turn runs on.
+
+### [#1448, #1468, #1481, #1492] One breadcrumb ladder across every lens
+
+Selecting an agent, a resolver or a workflow step used to unmount what you were
+reading and rebuild the trail from a new root. There is now one crumb ladder,
+the parent comes from the object rather than from the surface you jumped from,
+and the parent stays mounted while you move between its children.
+
+### [#1449, #1459, #1474, #1493] One canon for actions, measures and type
+
+Actions live in one place per surface, nothing truncates without a way to see
+the rest, every detail surface shares one column width, and one type scale runs
+across the panes. Concept tones stop colliding: a plan is violet rather than the
+green a resolver uses. Every icon-only control says what it does on hover, and
+archiving asks for confirmation the way deleting already did.
+
+### [#1456, #1477] An agent leads with its outcome
+
+The composer stopped taking a stack of full rows, and the four bordered stat
+cards in an agent's Brief are one compact metadata line, so the transcript gets
+the vertical space.
+
+### [#1480] One language per session, chosen from the goal
+
+A workflow whose goal was written in Italian drifted into English partway
+through, decision by decision, including inside sub-steps. The session's
+language is now settled from the goal once and carried into every step.
+
+### [#1432] Autorun is a deliberate choice
+
+A run no longer inherits autorun when nothing asks for it. A stored session
+preference is still honoured, and discarding a workflow stops filing it under
+completed.
+
+### [#1443] A degraded handoff explains itself, and a stuck step recovers
+
+`degraded handoff` said nothing about what had happened. It now names what was
+thinned and what survived, and a step that ended in error offers a way forward
+that does not involve typing the right sentence into the chat.
+
+### [#1463, #1469] Session creation and Resolve read as decisions, not columns
+
+Creating a session reads as three decisions with the integration glyph on the
+task it came from, and the create action sits next to the branch name. The
+Resolve lens shows the work it used to hide, and its header stops resizing when
+you move between its tabs.
+
+### Fixes
+
+- A popover clamps to the viewport and keeps its action row visible, on every
+  tall popover in the app, not only the one that was reported [#1434]
+- Setup checklist items are clickable and lead to what they name [#1435]
+- A goal created from a Linear task keeps its whole description, past the old
+  1200 character cap [#1435]
+- A step panel stops losing the newest turn to a read-modify-write race [#1441]
+- A plan names its consumer when that consumer is a workflow step [#1445]
+- An orchestrated workflow is named after its goal instead of a counter [#1447]
+- Sidebar icons stop shifting by a pixel when you hover a row [#1478]
+- Context shows what the session holds instead of an empty pane on reopen [#1485]
+- A day rule draws only where two days meet, never directly under NOW [#1486]
+- The running marker pulses a filled dot inside its ring [#1487]
+- A marker occludes the lane it sits on, and a role says its full name [#1488]
+- Pending steps head the feed and their lane reaches them [#1490]
+- Feed timestamps show hours and minutes, and NOW keeps its dot [#1495]
+- Every run keeps its own lane instead of falling back to the spine [#1494, #1496]
+- The brand mark is the plain foreground lockup on a brand tile, in the top bar
+  and in the app icon [#1497]
+
 ## Goodboy v0.1.82
 
 Goodboy fast-forwards your checkout without a terminal, tells you when it cannot
