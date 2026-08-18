@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, IsoDateTime, OpenQuestion, SessionId } from '@goodboy/types';
 import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
 
 type Store = {
@@ -38,12 +38,22 @@ type EntryParams = {
   readonly status?: Agent['status'];
   readonly outputSummary?: string;
   readonly stepLabel?: string | null;
+  readonly openQuestions?: ReadonlyArray<OpenQuestion>;
 };
+
+const questionOf = (): OpenQuestion =>
+  ({
+    id: 'question-1',
+    sessionId: SESSION_ID,
+    text: 'Which parser should own the fallback?',
+    status: 'open',
+  }) as unknown as OpenQuestion;
 
 const entryOf = ({
   status = 'completed',
   outputSummary,
   stepLabel = null,
+  openQuestions = [],
 }: EntryParams = {}): TimelineAgentEntry => ({
   kind: 'agent',
   id: 'agent:one',
@@ -61,7 +71,7 @@ const entryOf = ({
   },
   agentKind: 'implementer',
   stepLabel,
-  openQuestions: [],
+  openQuestions,
   terminalQuestions: [],
   children: [],
   answers: [],
@@ -136,6 +146,29 @@ describe('TimelineAgentRow', () => {
 
     expect(screen.getByText('3.1')).toBeDefined();
     expect(screen.queryByText(/\$/)).toBeNull();
+  });
+
+  it('highlights a row that needs the user with a tint and a lit marker, never motion', () => {
+    const { container } = renderRow({ entry: entryOf({ openQuestions: [questionOf()] }) });
+
+    const surface = screen.getByRole('button', { name: 'Expand Implement the parser' })
+      .parentElement?.parentElement;
+    expect(surface?.className).toContain('bg-warning');
+    expect(screen.getByLabelText('Waiting for you')).toBeDefined();
+
+    for (const element of container.querySelectorAll('*')) {
+      expect(element.className.toString()).not.toMatch(
+        /animate-|border-pulse|attention-ring|pulsing/,
+      );
+    }
+  });
+
+  it('offers the action that unblocks the row, in the row', () => {
+    renderRow({ entry: entryOf({ openQuestions: [questionOf()] }) });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
+
+    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'questions');
   });
 
   it('indents by one small step per level rather than compounding', () => {
