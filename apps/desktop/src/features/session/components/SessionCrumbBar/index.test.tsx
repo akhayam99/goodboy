@@ -238,3 +238,71 @@ describe('SessionCrumbBar on a workflow step', () => {
     expect(screen.queryByTestId('workflow-advance')).toBeNull();
   });
 });
+
+type OpenAtParams = {
+  readonly top: number;
+};
+
+const openMenuAt = ({ top }: OpenAtParams): HTMLElement => {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+  Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+  render(<SessionCrumbBar />);
+  const trigger = screen.getByRole('button', { name: /scout one/ });
+  const container = trigger.parentElement as HTMLElement;
+  container.getBoundingClientRect = () =>
+    DOMRect.fromRect({ x: 16, y: top, width: 120, height: 20 });
+
+  fireEvent.click(trigger);
+  return screen.getByRole('menu', { name: 'Switch agent' });
+};
+
+describe('SessionCrumbBar switcher popover', () => {
+  it('caps the scrolling viewport rather than the popover, so long lists scroll', () => {
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: Array.from({ length: 20 }, (_, index) =>
+        buildAgent({ id: `agent-${index}` as AgentId, name: `agent ${index}`, ordinal: index }),
+      ),
+    };
+    h.state.selectedAgentId = { [SESSION_ID]: 'agent-0' };
+    h.crumbs = [
+      { id: 'overview', label: 'Overview', onClick: vi.fn() },
+      { id: 'lens-agents', label: 'Agents', onClick: vi.fn() },
+      { id: 'selected-child', label: 'agent 0' },
+    ];
+    render(<SessionCrumbBar />);
+
+    fireEvent.click(screen.getByRole('button', { name: /agent 0/ }));
+    const menu = screen.getByRole('menu', { name: 'Switch agent' });
+
+    expect(menu.className).not.toContain('max-h-64');
+    const viewport = menu.querySelector('.overflow-y-auto');
+    expect(viewport?.className).toContain('max-h-64');
+    expect(viewport?.className).not.toContain('max-h-[inherit]');
+  });
+
+  it('caps a downward menu at the room below the trigger', () => {
+    const menu = openMenuAt({ top: 40 });
+
+    expect(menu.className).toContain('fixed');
+    expect(menu.style.top).toBe('64px');
+    expect(menu.style.maxHeight).toBe('696px');
+  });
+
+  it('flips up near the window floor and caps at the room above', () => {
+    const menu = openMenuAt({ top: 700 });
+
+    expect(menu.style.top).toBe('');
+    expect(menu.style.bottom).toBe('72px');
+    expect(menu.style.maxHeight).toBe('688px');
+  });
+
+  it('escapes the crumb row so the trigger height never caps the menu', () => {
+    render(<SessionCrumbBar />);
+
+    fireEvent.click(screen.getByRole('button', { name: /scout one/ }));
+    const menu = screen.getByRole('menu', { name: 'Switch agent' });
+
+    expect(menu.closest('nav')).toBeNull();
+    expect(menu.closest('[data-dropdown-portal]')).not.toBeNull();
+  });
+});
