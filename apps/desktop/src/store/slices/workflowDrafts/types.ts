@@ -18,7 +18,7 @@ export type EditableStep = {
   readonly effort?: EffortLevel;
 };
 
-export type OrchestratorModelDraft = {
+type OrchestratorModelDraft = {
   readonly providerOverride: ProviderId | '';
   readonly modelOverride: string;
   readonly effortOverride: EffortLevel | null;

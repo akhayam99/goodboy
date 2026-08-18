@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { CircleHelp, Eraser, PenLine, Play, RotateCcw, SkipForward, Wallet } from 'lucide-react';
+import {
+  CircleHelp,
+  Eraser,
+  PenLine,
+  Play,
+  RotateCcw,
+  SkipForward,
+  Users,
+  Wallet,
+} from 'lucide-react';
 import { Eyebrow, Markdown, StatusDot, cn, formatUsd, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type {
@@ -20,6 +29,7 @@ import { RunSpendLimitPopover } from '../RunSpendLimitPopover';
 import { OrchestratorAction } from './OrchestratorAction';
 import { OrchestratorDrawer } from './OrchestratorDrawer';
 import { OrchestratorRoutingRow } from './OrchestratorRoutingRow';
+import { RunRoleModels } from './RunRoleModels';
 import { resolveOrchestratorState } from './orchestratorState';
 import { useElapsedLabel } from './useElapsedLabel';
 
@@ -57,16 +67,18 @@ export const OrchestratorPanel = ({
   const sessionBudgetBlocked = useAppStore((state) =>
     isBudgetBlocked({ alerts: state.budgetAlerts ?? EMPTY_ALERTS, sessionId }),
   );
-  const [openDrawer, setOpenDrawer] = useState<'none' | 'continue' | 'hints'>('none');
+  const [openDrawer, setOpenDrawer] = useState<'none' | 'continue' | 'hints' | 'roles'>('none');
   const [hintsDraft, setHintsDraft] = useState(run.orchestratorHints ?? '');
   const [continueNote, setContinueNote] = useState('');
   const [busy, setBusy] = useState(false);
   const savedHints = run.orchestratorHints ?? '';
   const continueOpen = openDrawer === 'continue';
   const hintsOpen = openDrawer === 'hints';
+  const rolesOpen = openDrawer === 'roles';
   const hasNote = continueNote.trim() !== '';
+  const overriddenRoleCount = Object.keys(run.roleModelOverrides ?? {}).length;
 
-  const toggleDrawer = (drawer: 'continue' | 'hints') =>
+  const toggleDrawer = (drawer: 'continue' | 'hints' | 'roles') =>
     setOpenDrawer((current) => (current === drawer ? 'none' : drawer));
 
   const state = resolveOrchestratorState({
@@ -242,6 +254,15 @@ export const OrchestratorPanel = ({
             {savedHints === '' ? null : (
               <span className="font-normal text-muted-foreground">· Standing hints on</span>
             )}
+            {overriddenRoleCount === 0 ? null : (
+              <span
+                data-testid="orchestrator-role-models-count"
+                className="font-normal text-muted-foreground"
+              >
+                · {overriddenRoleCount} {overriddenRoleCount === 1 ? 'role' : 'roles'} on a chosen
+                model
+              </span>
+            )}
             {run.spendLimitUsd == null ? null : (
               <span
                 data-testid="orchestrator-spend-limit"
@@ -280,6 +301,15 @@ export const OrchestratorPanel = ({
             expanded={hintsOpen}
             onClick={() => toggleDrawer('hints')}
           />
+          <OrchestratorAction
+            icon={Users}
+            label="Role models"
+            variant="ghost"
+            testId="orchestrator-role-models-toggle"
+            title="Pick the model each role uses for the rest of this run"
+            expanded={rolesOpen}
+            onClick={() => toggleDrawer('roles')}
+          />
           {state.phase === 'paused-budget' ? null : (
             <RunSpendLimitPopover sessionId={sessionId} run={run} variant="ghost" />
           )}
@@ -305,6 +335,8 @@ export const OrchestratorPanel = ({
       </div>
 
       <div className="flex min-w-0 flex-col gap-1.5">
+        {rolesOpen ? <RunRoleModels sessionId={sessionId} run={run} disabled={busy} /> : null}
+
         {continueOpen ? (
           <OrchestratorDrawer
             inputId="orchestrator-continue-note-field"
