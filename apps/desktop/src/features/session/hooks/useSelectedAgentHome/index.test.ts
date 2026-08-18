@@ -19,7 +19,7 @@ const { store } = vi.hoisted(() => {
   return { store };
 });
 
-vi.mock('../../../../../../store', () => ({
+vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: (selector: (state: StoreState) => unknown) => selector(store.state),
 }));

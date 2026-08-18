@@ -119,11 +119,17 @@ parked beside it.
 - **Opening a child extends the trail and preserves every ancestor**:
   `Overview > {HomeLens} > {Agent}`. Selecting a sibling changes only the last
   crumb and the child region. The lens shell remains mounted beneath it.
-- **The home lens is resolved, not inherited.** If the active lens hosts an
-  agent list (`agents`, `resolve`, `workflows`) it wins; otherwise the agent's
-  own home lens, falling back to `agents`. Standing in Agents with a
-  workflow-step agent selected keeps the crumb on Agents, so an auto-advancing
-  step cannot rename it out from under the user.
+- **The trail describes the structure of the app, not the history of the
+  session.** A parent is derived from the object that is open, never from the
+  surface the jump came from: selecting an agent leaves the active lens where it
+  was, so that lens is only ever where the user came from. The activity feed,
+  the palette, a notification, a linked-work chip and a restored session are
+  shortcuts into a place that already has a parent, and none of them may rewrite
+  it. History is what Back is for.
+- **A child hangs off its own home lens**: a step under its run under
+  Workflows, an ad-hoc agent under Agents, a resolver under Resolve. The
+  overlay's back target still prefers the agent-list lens the user was standing
+  in, so Back returns where you were while the trail states where you are.
 - **A crumb with siblings is a switcher**: plain text when the agent is alone
   in its home lens, otherwise a popover that switches the open agent in place.
 - **The workflow case extends the same control**:

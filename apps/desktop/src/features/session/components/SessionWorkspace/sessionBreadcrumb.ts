@@ -1,5 +1,6 @@
 import type { BreadcrumbCrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
 import type { LensKind, SessionStudio } from '../../../../store';
+import type { AgentHomeLens } from '../../agent-kind';
 
 export type SessionBreadcrumbHandlers = {
   toOverview: () => void;
@@ -16,6 +17,7 @@ export type SessionBreadcrumbInput = {
   selectedChildWorkflowName: string | null;
   focusedPlanTitle: string | null;
   selectedChildLabel: string | null;
+  selectedChildHome: AgentHomeLens | null;
   lensLabel: (lens: LensKind) => string;
   handlers: SessionBreadcrumbHandlers;
 };
@@ -35,6 +37,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     selectedChildWorkflowName,
     focusedPlanTitle,
     selectedChildLabel,
+    selectedChildHome,
     lensLabel,
     handlers,
   } = input;
@@ -87,7 +90,25 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     ]);
   }
 
-  if (lens === 'workflows' && selectedChildWorkflowName != null && selectedChildLabel != null) {
+  if (selectedChildLabel != null && selectedChildHome != null) {
+    const selectedChild: BreadcrumbCrumb = { id: 'selected-child', label: selectedChildLabel };
+
+    if (selectedChildHome !== 'workflows') {
+      return sealLast([
+        overview,
+        {
+          id: `lens-${selectedChildHome}`,
+          label: lensLabel(selectedChildHome),
+          onClick: () => handlers.toLens(selectedChildHome),
+        },
+        selectedChild,
+      ]);
+    }
+
+    if (selectedChildWorkflowName == null) {
+      return sealLast([overview, workflowsList, selectedChild]);
+    }
+
     return sealLast([
       overview,
       workflowsList,
@@ -96,7 +117,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
         label: selectedChildWorkflowName,
         onClick: handlers.toWorkflowRun,
       },
-      { id: 'selected-child', label: selectedChildLabel },
+      selectedChild,
     ]);
   }
 
@@ -106,14 +127,6 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
 
   if (lens === 'plans' && focusedPlanTitle != null) {
     return sealLast([overview, plansList, { id: 'plan', label: focusedPlanTitle }]);
-  }
-
-  if (lens != null && selectedChildLabel != null) {
-    return sealLast([
-      overview,
-      { id: `lens-${lens}`, label: lensLabel(lens), onClick: () => handlers.toLens(lens) },
-      { id: 'selected-child', label: selectedChildLabel },
-    ]);
   }
 
   if (lens != null) {
