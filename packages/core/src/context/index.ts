@@ -56,3 +56,23 @@ export {
   type AutoPopulateResult,
 } from './auto-populate';
 export { addQuestionsToSlot, removeQuestionsFromSlot } from './slot-questions';
+export {
+  appendDecision,
+  parseDecisions,
+  removeDecision,
+  replaceDecision,
+  serializeDecisions,
+  type DecisionRow,
+  type DecisionsDocument,
+} from './decisions-document';
+export {
+  insertSummarySection,
+  parseSummaryDocument,
+  replaceSummarySectionBody,
+  serializeSummaryDocument,
+  SUMMARY_SECTION_KEYS,
+  SUMMARY_SECTION_TITLES,
+  type SummaryBlock,
+  type SummaryDocument,
+  type SummarySectionKey,
+} from './summary-document';
