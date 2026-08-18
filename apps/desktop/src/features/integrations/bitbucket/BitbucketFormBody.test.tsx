@@ -6,13 +6,9 @@ import type { BitbucketWorkspaceIntegration, WorkspaceId } from '@goodboy/types'
 
 const { state } = vi.hoisted(() => ({
   state: {
-    workspaces: [] as ReadonlyArray<{ id: string; name: string }>,
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
-    declinedIntegrationReuse: {} as Record<string, ReadonlyArray<string>>,
     connectBitbucket: vi.fn(async () => undefined),
     disconnectBitbucket: vi.fn(async () => undefined),
-    reuseIntegration: vi.fn(async () => undefined),
-    declineIntegrationReuse: vi.fn(),
   },
 }));
 
@@ -47,9 +43,7 @@ const fillConnectForm = () => {
 };
 
 beforeEach(() => {
-  state.workspaces = [];
   state.workspaceIntegrations = {};
-  state.declinedIntegrationReuse = {};
   state.connectBitbucket = vi.fn(async () => undefined);
   state.disconnectBitbucket = vi.fn(async () => undefined);
 });

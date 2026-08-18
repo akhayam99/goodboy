@@ -6,13 +6,9 @@ import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
 
 const { state, ghStatusMock, ghClearTokenMock } = vi.hoisted(() => ({
   state: {
-    workspaces: [] as ReadonlyArray<{ id: string; name: string }>,
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
-    declinedIntegrationReuse: {} as Record<string, ReadonlyArray<string>>,
     connectGitlab: vi.fn(async () => undefined),
     disconnectGitlab: vi.fn(async () => undefined),
-    reuseIntegration: vi.fn(async () => undefined),
-    declineIntegrationReuse: vi.fn(),
   },
   ghStatusMock: vi.fn(async () => ({ scoped: false }) as unknown),
   ghClearTokenMock: vi.fn(async () => undefined),
@@ -40,9 +36,7 @@ const gitlabIntegration: GitlabWorkspaceIntegration = {
 };
 
 beforeEach(() => {
-  state.workspaces = [];
   state.workspaceIntegrations = {};
-  state.declinedIntegrationReuse = {};
   state.connectGitlab = vi.fn(async () => undefined);
   state.disconnectGitlab = vi.fn(async () => undefined);
   ghStatusMock.mockResolvedValue({ scoped: false });

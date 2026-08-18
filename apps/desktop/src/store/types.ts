@@ -46,7 +46,6 @@ import type {
   WorkspaceGitStatus,
   WorkspaceId,
   WorkspaceIntegration,
-  WorkspaceIntegrationProvider,
   WorkspaceScript,
   WorkspaceScriptId,
 } from '@goodboy/types';
@@ -177,9 +176,6 @@ export type AppState = AppSliceState & {
   readonly workspaces: ReadonlyArray<Workspace>;
   readonly workspaceIntegrations: Readonly<
     Record<WorkspaceId, ReadonlyArray<WorkspaceIntegration>>
-  >;
-  readonly declinedIntegrationReuse: Readonly<
-    Record<WorkspaceId, ReadonlyArray<WorkspaceIntegrationProvider>>
   >;
   readonly workspaceGitStatus: Readonly<Record<WorkspaceId, WorkspaceGitStatus>>;
   readonly workspaceCheckoutPulling: Readonly<Record<WorkspaceId, boolean>>;

@@ -4,7 +4,6 @@ import type { SentryIntegrationConfig, WorkspaceId } from '@goodboy/types';
 import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
-import { IntegrationReuseOffer } from '../components/IntegrationReuseOffer';
 
 type Props = {
   workspaceId: WorkspaceId;
@@ -95,11 +94,6 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         </div>
       ) : (
         <>
-          <IntegrationReuseOffer
-            provider="sentry"
-            workspaceId={workspaceId}
-            onReused={onConnected}
-          />
           <div className="flex flex-col gap-2">
             <label htmlFor="sentry-token" className="text-xs font-semibold text-foreground">
               Personal API key

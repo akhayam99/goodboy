@@ -6,13 +6,9 @@ import type { WorkspaceId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
-    workspaces: [] as ReadonlyArray<{ id: string; name: string }>,
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
-    declinedIntegrationReuse: {} as Record<string, ReadonlyArray<string>>,
     connectLinear: vi.fn(async () => undefined),
     disconnectLinear: vi.fn(async () => undefined),
-    reuseIntegration: vi.fn(async () => undefined),
-    declineIntegrationReuse: vi.fn(),
   },
 }));
 
@@ -33,9 +29,7 @@ const linearIntegration = {
 };
 
 beforeEach(() => {
-  state.workspaces = [];
   state.workspaceIntegrations = {};
-  state.declinedIntegrationReuse = {};
   state.connectLinear = vi.fn(async () => undefined);
   state.disconnectLinear = vi.fn(async () => undefined);
 });

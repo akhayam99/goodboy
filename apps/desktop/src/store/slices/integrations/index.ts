@@ -1,5 +1,4 @@
 import { connectBitbucket } from './connectBitbucket';
-import { declineIntegrationReuse } from './declineIntegrationReuse';
 import { connectGitlab } from './connectGitlab';
 import { connectJira } from './connectJira';
 import { connectLinear } from './connectLinear';
@@ -13,14 +12,11 @@ import { disconnectLinear } from './disconnectLinear';
 import { disconnectSentry } from './disconnectSentry';
 import { disconnectSlack } from './disconnectSlack';
 import { loadIntegrations } from './loadIntegrations';
-import { reuseIntegration } from './reuseIntegration';
 import type { GetFn, SetFn } from './types';
 
 export const createIntegrationsSlice = (set: SetFn, get: GetFn) => {
   return {
     loadIntegrations: loadIntegrations(set),
-    reuseIntegration: reuseIntegration(set, get),
-    declineIntegrationReuse: declineIntegrationReuse(set, get),
     connectLinear: connectLinear(set, get),
     disconnectLinear: disconnectLinear(set),
     connectSentry: connectSentry(set, get),

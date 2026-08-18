@@ -3,31 +3,23 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 
 type Store = {
-  readonly workspaces: ReadonlyArray<{ id: string; name: string }>;
   readonly workspaceIntegrations: Readonly<Record<string, ReadonlyArray<unknown>>>;
-  readonly declinedIntegrationReuse: Readonly<Record<string, ReadonlyArray<string>>>;
   readonly connectLinear: ReturnType<typeof vi.fn>;
   readonly disconnectLinear: ReturnType<typeof vi.fn>;
   readonly connectSentry: ReturnType<typeof vi.fn>;
   readonly disconnectSentry: ReturnType<typeof vi.fn>;
   readonly connectGitlab: ReturnType<typeof vi.fn>;
   readonly disconnectGitlab: ReturnType<typeof vi.fn>;
-  readonly reuseIntegration: ReturnType<typeof vi.fn>;
-  readonly declineIntegrationReuse: ReturnType<typeof vi.fn>;
 };
 
 const store: Store = {
-  workspaces: [],
   workspaceIntegrations: {},
-  declinedIntegrationReuse: {},
   connectLinear: vi.fn(),
   disconnectLinear: vi.fn(),
   connectSentry: vi.fn(),
   disconnectSentry: vi.fn(),
   connectGitlab: vi.fn(),
   disconnectGitlab: vi.fn(),
-  reuseIntegration: vi.fn(),
-  declineIntegrationReuse: vi.fn(),
 };
 
 vi.mock('../../store', () => ({

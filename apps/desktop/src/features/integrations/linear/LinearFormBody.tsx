@@ -4,7 +4,6 @@ import type { LinearIntegrationConfig, WorkspaceId } from '@goodboy/types';
 import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
-import { IntegrationReuseOffer } from '../components/IntegrationReuseOffer';
 
 type Props = {
   workspaceId: WorkspaceId;
@@ -89,11 +88,6 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         </div>
       ) : (
         <>
-          <IntegrationReuseOffer
-            provider="linear"
-            workspaceId={workspaceId}
-            onReused={onConnected}
-          />
           <div className="flex flex-col gap-2">
             <label htmlFor="linear-pat" className="text-xs font-semibold text-foreground">
               Personal API key

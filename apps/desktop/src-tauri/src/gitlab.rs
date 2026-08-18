@@ -20,7 +20,7 @@ fn http_client() -> &'static reqwest::Client {
     CLIENT.get_or_init(reqwest::Client::new)
 }
 
-pub(crate) fn credential_key(workspace_id: &str) -> String {
+fn credential_key(workspace_id: &str) -> String {
     format!("goodboy.workspace.{}.gitlab", workspace_id)
 }
 

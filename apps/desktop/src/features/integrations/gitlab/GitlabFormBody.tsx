@@ -4,7 +4,6 @@ import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
 import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
-import { IntegrationReuseOffer } from '../components/IntegrationReuseOffer';
 
 type Props = {
   workspaceId: WorkspaceId;
@@ -110,11 +109,6 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         </div>
       ) : (
         <>
-          <IntegrationReuseOffer
-            provider="gitlab"
-            workspaceId={workspaceId}
-            onReused={onConnected}
-          />
           <div className="flex flex-col gap-2">
             <label htmlFor="gitlab-host" className="text-xs font-semibold text-foreground">
               Host
