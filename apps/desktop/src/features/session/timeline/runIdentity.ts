@@ -1,16 +1,16 @@
 export type RunIdentity = {
-  readonly spine: string;
-  readonly text: string;
+  readonly stroke: string;
+  readonly chip: string;
   readonly index: number;
 };
 
 const IDENTITIES: ReadonlyArray<RunIdentity> = [
-  { spine: 'bg-run-1', text: 'text-run-1', index: 0 },
-  { spine: 'bg-run-2', text: 'text-run-2', index: 1 },
-  { spine: 'bg-run-3', text: 'text-run-3', index: 2 },
-  { spine: 'bg-run-4', text: 'text-run-4', index: 3 },
-  { spine: 'bg-run-5', text: 'text-run-5', index: 4 },
-  { spine: 'bg-run-6', text: 'text-run-6', index: 5 },
+  { stroke: 'var(--color-run-1)', chip: 'bg-run-1/12 text-run-1 ring-run-1/35', index: 0 },
+  { stroke: 'var(--color-run-2)', chip: 'bg-run-2/12 text-run-2 ring-run-2/35', index: 1 },
+  { stroke: 'var(--color-run-3)', chip: 'bg-run-3/12 text-run-3 ring-run-3/35', index: 2 },
+  { stroke: 'var(--color-run-4)', chip: 'bg-run-4/12 text-run-4 ring-run-4/35', index: 3 },
+  { stroke: 'var(--color-run-5)', chip: 'bg-run-5/12 text-run-5 ring-run-5/35', index: 4 },
+  { stroke: 'var(--color-run-6)', chip: 'bg-run-6/12 text-run-6 ring-run-6/35', index: 5 },
 ];
 
 type Params = {
@@ -28,3 +28,10 @@ export const runIdentity = ({ runId }: Params): RunIdentity => {
   }
   return identity;
 };
+
+type StrokeParams = {
+  readonly index: number;
+};
+
+export const runIdentityStroke = ({ index }: StrokeParams): string =>
+  IDENTITIES[index]?.stroke ?? 'var(--color-border)';

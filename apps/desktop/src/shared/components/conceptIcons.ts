@@ -19,6 +19,7 @@ import {
   GitCommitVertical,
   Highlighter,
   History,
+  LayoutTemplate,
   Lightbulb,
   LifeBuoy,
   Link2,
@@ -28,6 +29,7 @@ import {
   MessageSquareReply,
   Network,
   NotebookText,
+  PenLine,
   SearchX,
   Settings,
   ScrollText,
@@ -91,6 +93,8 @@ export const CONCEPT_ICONS = {
   timeline: GitCommitVertical,
   checks: ListChecks,
   comments: MessageSquare,
+  workflowCustom: PenLine,
+  workflowPreset: LayoutTemplate,
   workflows: Waypoints,
   workspace: FolderPlus,
 } satisfies Record<string, LucideIcon>;
@@ -140,6 +144,8 @@ export const CONCEPT_TONE = {
   timeline: 'neutral',
   checks: 'success',
   comments: 'info',
+  workflowCustom: 'accent',
+  workflowPreset: 'accent',
   workflows: 'accent',
   workspace: 'info',
 } satisfies Record<Concept, Tone>;

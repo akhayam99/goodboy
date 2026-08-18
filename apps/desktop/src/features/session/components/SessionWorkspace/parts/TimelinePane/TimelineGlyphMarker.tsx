@@ -1,22 +1,25 @@
-import type { LucideIcon } from 'lucide-react';
-import { tintClasses } from '@goodboy/ui';
+import type { ReactNode } from 'react';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
-import { TimelineMarker } from './TimelineMarker';
+import { TIMELINE_RHYTHM, type TimelineRowGrade } from '../../../../timeline/timelineRhythm';
 
 type Props = {
-  readonly icon: LucideIcon;
   readonly tone: Tone;
-  readonly ariaLabel: string;
-  readonly isEmphasised?: boolean;
+  readonly grade: TimelineRowGrade;
+  readonly children: ReactNode;
 };
 
-export const TimelineGlyphMarker = ({
-  icon: Icon,
-  tone,
-  ariaLabel,
-  isEmphasised = false,
-}: Props) => (
-  <TimelineMarker tone={tone} isEmphasised={isEmphasised}>
-    <Icon size={12} aria-label={ariaLabel} className={tintClasses(tone).icon} />
-  </TimelineMarker>
-);
+export const TimelineGlyphMarker = ({ tone, grade, children }: Props) => {
+  const { markerSize } = TIMELINE_RHYTHM.grade[grade];
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center justify-center rounded-full bg-background ring-1',
+        tintClasses(tone).ring,
+      )}
+      style={{ width: markerSize, height: markerSize }}
+    >
+      {children}
+    </span>
+  );
+};

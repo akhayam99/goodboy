@@ -6,7 +6,7 @@ const HOVER_DWELL_MS = 450;
 
 type Params = {
   readonly sessionId: SessionId;
-  readonly agentId: AgentId;
+  readonly agentId: AgentId | null;
   readonly hasUnread: boolean;
 };
 
@@ -19,7 +19,7 @@ export const useHoverMarkViewed = ({ sessionId, agentId, hasUnread }: Params): H
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onMouseEnter = useCallback(() => {
-    if (timerRef.current != null) {
+    if (timerRef.current != null || agentId == null) {
       return;
     }
     timerRef.current = setTimeout(() => {
@@ -47,7 +47,7 @@ export const useHoverMarkViewed = ({ sessionId, agentId, hasUnread }: Params): H
   );
 
   return {
-    onMouseEnter: hasUnread ? onMouseEnter : undefined,
-    onMouseLeave: hasUnread ? onMouseLeave : undefined,
+    onMouseEnter: hasUnread && agentId != null ? onMouseEnter : undefined,
+    onMouseLeave: hasUnread && agentId != null ? onMouseLeave : undefined,
   };
 };
