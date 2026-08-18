@@ -504,7 +504,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
           invokeFn: invoke,
           ...(sessionWorktree != null && { workingDir: sessionWorktree }),
         },
-        { role: step.role, name: step.name, instruction: step.promptPrefix },
+        {
+          role: step.role,
+          name: step.name,
+          instruction: step.promptPrefix,
+          ...(goalText.trim().length > 0 && { goal: goalText }),
+        },
       );
       if (polished && polished !== step.promptPrefix) {
         patchStep(key, { promptPrefix: polished });

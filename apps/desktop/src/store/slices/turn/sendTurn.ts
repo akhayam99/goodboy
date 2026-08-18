@@ -71,6 +71,7 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { detectParallelGroup } from '../../parallel-turn';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
+import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
 import { stepSummaryDegraded } from '../../summarizeAgentOutput';
 import { relinkSimpleSessionDirectories } from '../workspaces/relinkSimpleSessionDirectories';
 import { flushTurnEvents } from '../transcripts/buffer';
@@ -845,10 +846,20 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               '[/worktree-scope]',
             ]
     ).join('\n');
-    const fullSystemPrompt = kindSystemPrompt ? `${scopeGuard}\n\n${kindSystemPrompt}` : scopeGuard;
+    const languageGuard = buildSessionLanguageGuard({
+      goal: resolveSessionLanguageGoal({
+        session,
+        workflows: get().phaseTemplates[session.workspaceId] ?? [],
+        ...(agentRowEarly?.workflowRunId != null && {
+          workflowRunId: agentRowEarly.workflowRunId,
+        }),
+      }),
+    });
+    const guards = languageGuard.length > 0 ? `${scopeGuard}\n\n${languageGuard}` : scopeGuard;
+    const fullSystemPrompt = kindSystemPrompt ? `${guards}\n\n${kindSystemPrompt}` : guards;
 
     if (provider !== 'anthropic') {
-      resolvedPrompt = `${scopeGuard}\n\n${
+      resolvedPrompt = `${guards}\n\n${
         kindSystemPrompt ? `[role-boundary]\n${kindSystemPrompt}\n[/role-boundary]\n\n` : ''
       }${resolvedPrompt}`;
     }

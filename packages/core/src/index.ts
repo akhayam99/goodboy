@@ -97,6 +97,12 @@ export {
 
 export { classifyFirstTurn, type AgentKindLabel } from './first-turn-classifier';
 
+export {
+  SESSION_LANGUAGE_TURN_RULE,
+  sessionLanguageRule,
+  type SessionLanguageRuleParams,
+} from './language';
+
 export { resolveProvider, type ResolveProviderInput } from './budget/router';
 
 export { computeCostUsd, priceFor } from './providers/claude/cost';
