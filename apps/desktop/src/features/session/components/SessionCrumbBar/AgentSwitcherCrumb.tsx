@@ -1,12 +1,11 @@
 import { ChevronDown } from 'lucide-react';
 import { Popover, ScrollFade, cn, useDropdown } from '@goodboy/ui';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId } from '@goodboy/types';
 import { CRUMB_BUTTON_CLASS, CRUMB_LAST_CLASS, SIBLING_GROUP_LABEL_CLASS } from './crumbClasses';
 import { SiblingRow } from './SiblingRow';
 import type { SwitcherEntry } from './switcherEntry';
 
 type AgentSwitcherCrumbProps = {
-  readonly sessionId: SessionId;
   readonly label: string;
   readonly siblings: ReadonlyArray<SwitcherEntry>;
   readonly selectedAgentId: AgentId;
@@ -14,7 +13,6 @@ type AgentSwitcherCrumbProps = {
 };
 
 export const AgentSwitcherCrumb = ({
-  sessionId: _sessionId,
   label,
   siblings,
   selectedAgentId,

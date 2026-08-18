@@ -116,15 +116,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   );
   const githubIssueNumber =
     focusedGithubIssueNumber ?? (githubTask != null ? Number(githubTask.externalId) : null);
-  const selectedRootAgent = useMemo(() => {
-    if (selectedAgentId == null) {
-      return null;
-    }
-    return resolveRootAgent({ agents: phaseRuns, agentId: selectedAgentId });
-  }, [phaseRuns, selectedAgentId]);
-  const selectedWorkflowRunId = selectedRootAgent?.workflowRunId ?? null;
-  const showWorkflowStrip =
-    showAgentOverlay && overlayHome === 'workflows' && selectedWorkflowRunId != null;
   const standaloneAgents = useMemo(
     () => phaseRuns.filter((agent) => isStandaloneAgent(agent) && !resolverAgentIds.has(agent.id)),
     [phaseRuns, resolverAgentIds],
@@ -216,14 +207,9 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [showAgentOverlay, sessionId, overlayHome, setActiveLens]);
 
-  const hideCrumbBar = showWorkflowStrip;
-
   return (
     <div className="relative flex h-full w-full min-w-0 flex-col">
-      <div
-        className={cn(hideCrumbBar && 'pointer-events-none invisible absolute inset-x-0 top-0')}
-        inert={hideCrumbBar}
-      >
+      <div>
         <SessionCrumbBar />
         <RepoScopeBar sessionId={sessionId} />
       </div>
@@ -362,16 +348,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             sessionId={sessionId}
             isChatActive={isActive && selectedAgentId != null}
             selectedAgentId={selectedAgentId}
-            showWorkflowStrip={showWorkflowStrip}
-            onOverview={onSelectOverview}
             onBack={() => setActiveLens(sessionId, overlayHome)}
-            onOpenWorkflow={() => {
-              if (selectedWorkflowRunId == null) {
-                return;
-              }
-              setFocusedWorkflowRun(sessionId, selectedWorkflowRunId);
-              setActiveLens(sessionId, 'workflows');
-            }}
           />
         ) : null}
 

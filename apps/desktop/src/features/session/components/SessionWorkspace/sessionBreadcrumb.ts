@@ -5,6 +5,7 @@ export type SessionBreadcrumbHandlers = {
   toOverview: () => void;
   toLens: (lens: LensKind) => void;
   toWorkflowsList: () => void;
+  toWorkflowRun: () => void;
   toPlansList: () => void;
 };
 
@@ -12,6 +13,7 @@ export type SessionBreadcrumbInput = {
   lens: LensKind | null;
   studio: SessionStudio | null;
   focusedWorkflowName: string | null;
+  selectedChildWorkflowName: string | null;
   focusedPlanTitle: string | null;
   selectedChildLabel: string | null;
   lensLabel: (lens: LensKind) => string;
@@ -30,6 +32,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     lens,
     studio,
     focusedWorkflowName,
+    selectedChildWorkflowName,
     focusedPlanTitle,
     selectedChildLabel,
     lensLabel,
@@ -81,6 +84,19 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
         onClick: () => handlers.toLens('gitlab_issues'),
       },
       { id: 'mr', label: 'Merge request' },
+    ]);
+  }
+
+  if (lens === 'workflows' && selectedChildWorkflowName != null && selectedChildLabel != null) {
+    return sealLast([
+      overview,
+      workflowsList,
+      {
+        id: 'workflow-run',
+        label: selectedChildWorkflowName,
+        onClick: handlers.toWorkflowRun,
+      },
+      { id: 'selected-child', label: selectedChildLabel },
     ]);
   }
 

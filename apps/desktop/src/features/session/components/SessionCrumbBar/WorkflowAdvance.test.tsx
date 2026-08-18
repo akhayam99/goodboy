@@ -46,18 +46,18 @@ const { store, gate } = vi.hoisted(() => ({
   gate: { hasOpenQuestions: false },
 }));
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: Store) => T) => selector(store),
   useSessionOpenQuestions: () => [],
 }));
 
-vi.mock('../../../../context/openQuestionsGate', () => ({
+vi.mock('../../../context/openQuestionsGate', () => ({
   workflowRunHasOpenQuestions: () => gate.hasOpenQuestions,
 }));
 
-import { ChatWorkflowAdvance } from './ChatWorkflowAdvance';
-import { WorkflowGateError } from '../../../../../store/slices/workflows/workflowActivationGate';
+import { WorkflowAdvance } from './WorkflowAdvance';
+import { WorkflowGateError } from '../../../../store/slices/workflows/workflowActivationGate';
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKFLOW_ID = 'workflow-1' as WorkflowId;
@@ -105,8 +105,8 @@ const buildRun = (overrides: Partial<WorkflowRun> = {}): WorkflowRun => ({
   ...overrides,
 });
 
-const renderStrip = (run: WorkflowRun = buildRun()) =>
-  render(<ChatWorkflowAdvance sessionId={SESSION_ID} run={run} workflow={workflow} />);
+const renderAdvance = (run: WorkflowRun = buildRun()) =>
+  render(<WorkflowAdvance sessionId={SESSION_ID} run={run} workflow={workflow} />);
 
 beforeEach(() => {
   store.sessionPhaseRuns = {};
@@ -127,10 +127,10 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-describe('ChatWorkflowAdvance', () => {
+describe('WorkflowAdvance', () => {
   it('starts the next step agent when nothing blocks', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
-    renderStrip();
+    renderAdvance();
 
     fireEvent.click(screen.getByTestId('workflow-next-step-cta'));
 
@@ -145,7 +145,7 @@ describe('ChatWorkflowAdvance', () => {
   it('names the blocker instead of hiding the CTA while the summarizer runs', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
     store.summarizerStatus = { [SESSION_ID]: { status: 'running' } };
-    renderStrip();
+    renderAdvance();
 
     expect(screen.getByTestId('workflow-next-step-blocked')).toBeDefined();
     expect(screen.getByTestId('workflow-next-step-cta').getAttribute('title')).toMatch(
@@ -156,7 +156,7 @@ describe('ChatWorkflowAdvance', () => {
   it('warns and confirms while the predecessor turn is still running', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
     store.agentTurnState = { 'agent-0': { kind: 'running' } };
-    renderStrip();
+    renderAdvance();
 
     const cta = screen.getByTestId('workflow-next-step-cta');
     expect(cta.className).toContain('border-warning');
@@ -173,7 +173,7 @@ describe('ChatWorkflowAdvance', () => {
 
   it('forces past a stuck step only after an explicit confirmation', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'failed'), agent(1, 'pending')] };
-    renderStrip();
+    renderAdvance();
 
     fireEvent.click(screen.getByTestId('workflow-force-next-step-cta'));
     expect(store.skipStuckStepAndAdvance).not.toHaveBeenCalled();
@@ -186,7 +186,7 @@ describe('ChatWorkflowAdvance', () => {
 
   it('asks the failed agent to check completion without skipping its output', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'failed'), agent(1, 'pending')] };
-    renderStrip();
+    renderAdvance();
 
     fireEvent.click(screen.getByRole('button', { name: 'Check completion' }));
 
@@ -199,7 +199,7 @@ describe('ChatWorkflowAdvance', () => {
 
   it('renders nothing at all while autorun drives the run, controls live on the run card', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
-    const { container } = renderStrip(buildRun({ autoRun: true }));
+    const { container } = renderAdvance(buildRun({ autoRun: true }));
 
     expect(container.innerHTML).toBe('');
     expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
@@ -210,7 +210,7 @@ describe('ChatWorkflowAdvance', () => {
 
   it('offers the manual advance on a stopped run instead of an autorun switch', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
-    renderStrip(
+    renderAdvance(
       buildRun({ autoRun: false, orchestrationStop: { kind: 'operator', message: 'stopped' } }),
     );
 
@@ -220,7 +220,7 @@ describe('ChatWorkflowAdvance', () => {
 
   it('offers no resume of its own on a stopped dynamic run, the orchestrator card owns it', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
-    renderStrip(
+    renderAdvance(
       buildRun({
         autoRun: false,
         executionMode: 'dynamic',
@@ -234,7 +234,7 @@ describe('ChatWorkflowAdvance', () => {
 
   it('falls through to the manual advance CTA on a provider-failure stop, same as before this PR', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
-    renderStrip(
+    renderAdvance(
       buildRun({
         autoRun: false,
         orchestrationStop: { kind: 'failure', message: 'provider died' },
@@ -248,7 +248,7 @@ describe('ChatWorkflowAdvance', () => {
 
   it('falls through to the manual advance CTA on a budget stop, same as before this PR', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
-    renderStrip(
+    renderAdvance(
       buildRun({ autoRun: false, orchestrationStop: { kind: 'budget', message: 'cap' } }),
     );
 
@@ -258,7 +258,7 @@ describe('ChatWorkflowAdvance', () => {
 
   it('keeps the skip control under autorun once a step has failed', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'failed'), agent(1, 'pending')] };
-    renderStrip(buildRun({ autoRun: true }));
+    renderAdvance(buildRun({ autoRun: true }));
 
     expect(screen.getByTestId('workflow-force-next-step-cta')).toBeDefined();
   });
@@ -266,7 +266,7 @@ describe('ChatWorkflowAdvance', () => {
   it('names the blocker and frees the button when the engine rejects the advance', async () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
     store.activateWorkflowAgent.mockRejectedValue(new WorkflowGateError({ reason: 'questions' }));
-    renderStrip();
+    renderAdvance();
 
     fireEvent.click(screen.getByTestId('workflow-next-step-cta'));
 
@@ -286,7 +286,7 @@ describe('ChatWorkflowAdvance', () => {
   it('shows the routing frozen on the pending agent, not the one preferences resolve today', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
     const withoutOverride = render(
-      <ChatWorkflowAdvance sessionId={SESSION_ID} run={buildRun()} workflow={workflow} />,
+      <WorkflowAdvance sessionId={SESSION_ID} run={buildRun()} workflow={workflow} />,
     );
     const defaultLabel = withoutOverride
       .getByTestId('workflow-next-step-cta')
@@ -295,7 +295,7 @@ describe('ChatWorkflowAdvance', () => {
 
     store.agentModelOverride = { 'agent-1': FROZEN_MODEL };
     store.agentEffortOverride = { 'agent-1': 'xhigh' };
-    renderStrip();
+    renderAdvance();
 
     const label = screen.getByTestId('workflow-next-step-cta').getAttribute('aria-label');
     expect(label).toContain(getModelDescriptor(FROZEN_MODEL)?.label ?? FROZEN_MODEL);
@@ -305,7 +305,7 @@ describe('ChatWorkflowAdvance', () => {
 
   it('renders nothing once every step is done', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'completed')] };
-    const { container } = renderStrip();
+    const { container } = renderAdvance();
 
     expect(container.innerHTML).toBe('');
   });

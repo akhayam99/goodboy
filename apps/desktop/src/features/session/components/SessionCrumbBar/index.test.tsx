@@ -31,6 +31,12 @@ vi.mock('../../hooks/useResolverIndex', () => ({
   useResolverIndex: () => ({ links: [] }),
 }));
 
+vi.mock('./WorkflowAdvance', () => ({
+  WorkflowAdvance: ({ run }: { run: { id: string } }) => (
+    <div data-testid="workflow-advance">{run.id}</div>
+  ),
+}));
+
 import { SessionCrumbBar } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -59,12 +65,32 @@ const workflowStep = buildAgent({
   stepId: 'step-1' as never,
   workflowRunId: 'run-1' as never,
 });
+const laterWorkflowStep = buildAgent({
+  id: 'agent-step-2' as AgentId,
+  name: 'workflow review',
+  ordinal: 3,
+  status: 'running',
+  stepId: 'step-2' as never,
+  workflowRunId: 'run-1' as never,
+});
 
 const session = {
   id: SESSION_ID,
   workspaceId: 'workspace-1',
   workflowRuns: [],
 } as unknown as Session;
+
+const workflowSession = {
+  ...session,
+  workflowRuns: [{ id: 'run-1', workflowId: 'workflow-1', ordinal: 0 }],
+} as unknown as Session;
+
+const STEP_CRUMBS = [
+  { id: 'overview', label: 'Overview', onClick: vi.fn() },
+  { id: 'workflows', label: 'Workflows', onClick: vi.fn() },
+  { id: 'workflow-run', label: 'refactor', onClick: vi.fn() },
+  { id: 'selected-child', label: 'workflow step' },
+];
 
 const resetState = () => {
   Object.keys(h.state).forEach((key) => delete h.state[key]);
@@ -76,8 +102,19 @@ const resetState = () => {
     sessionPendingResolutions: {},
     sessionResolvedThreads: {},
     sessionGithub: {},
+    phaseTemplates: { 'workspace-1': [{ id: 'workflow-1', name: 'refactor', steps: [] }] },
+    sessionWorkflows: { [SESSION_ID]: [] },
     selectAgent: h.selectAgent,
   });
+};
+
+const openStepSurface = () => {
+  h.currentSession = workflowSession;
+  h.crumbs = STEP_CRUMBS;
+  h.state.selectedAgentId = { [SESSION_ID]: workflowStep.id };
+  h.state.sessionPhaseRuns = {
+    [SESSION_ID]: [scout, implementer, workflowStep, laterWorkflowStep],
+  };
 };
 
 beforeEach(() => {
@@ -145,5 +182,59 @@ describe('SessionCrumbBar', () => {
     const last = screen.getByText('Agents');
     expect(last.getAttribute('aria-current')).toBe('page');
     expect(screen.queryByRole('menu')).toBeNull();
+  });
+});
+
+describe('SessionCrumbBar on a workflow step', () => {
+  it('is the only breadcrumb on the surface, and it names all four levels', () => {
+    openStepSurface();
+    render(<SessionCrumbBar />);
+
+    expect(screen.getAllByRole('navigation', { name: 'Breadcrumb' })).toHaveLength(1);
+    expect(screen.queryByRole('navigation', { name: 'Workflow breadcrumb' })).toBeNull();
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(nav.textContent).toContain('Overview');
+    expect(nav.textContent).toContain('Workflows');
+    expect(nav.textContent).toContain('refactor');
+    expect(nav.textContent).toContain('workflow step');
+  });
+
+  it('switches between the started steps of the open run, not across runs', () => {
+    openStepSurface();
+    render(<SessionCrumbBar />);
+
+    fireEvent.click(screen.getByRole('button', { name: /workflow step/ }));
+    const menu = screen.getByRole('menu', { name: 'Switch agent' });
+    expect(menu.textContent).toContain('workflow review');
+    expect(menu.textContent).not.toContain('implement two');
+
+    fireEvent.click(screen.getByRole('menuitem', { name: /workflow review/ }));
+    expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, laterWorkflowStep.id);
+  });
+
+  it('keeps the advance action the strip used to carry', () => {
+    openStepSurface();
+    render(<SessionCrumbBar />);
+
+    expect(screen.getByTestId('workflow-advance').textContent).toBe('run-1');
+  });
+
+  it('leaves the advance action off a trail that is not a workflow step', () => {
+    render(<SessionCrumbBar />);
+
+    expect(screen.queryByTestId('workflow-advance')).toBeNull();
+  });
+
+  it('leaves the advance action off a discarded run', () => {
+    openStepSurface();
+    h.currentSession = {
+      ...session,
+      workflowRuns: [
+        { id: 'run-1', workflowId: 'workflow-1', ordinal: 0, discardedAt: '2026-08-18' },
+      ],
+    } as unknown as Session;
+    render(<SessionCrumbBar />);
+
+    expect(screen.queryByTestId('workflow-advance')).toBeNull();
   });
 });
