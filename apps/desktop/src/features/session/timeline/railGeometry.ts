@@ -1,9 +1,9 @@
 export const RAIL_SPINE_X = 8;
 export const RAIL_LANE_OFFSET = 16;
-export const RAIL_MAX_COLUMN = 3;
-export const RAIL_EDGE_PAD = 8;
+const RAIL_MAX_COLUMN = 3;
+const RAIL_EDGE_PAD = 8;
 
-export type RailDash = 'solid' | 'dashed';
+type RailDash = 'solid' | 'dashed';
 
 export type RailGroupShape = 'open' | 'merged' | 'collapsed';
 

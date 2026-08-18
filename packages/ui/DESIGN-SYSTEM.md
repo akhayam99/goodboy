@@ -106,21 +106,46 @@ readable as part of that run at a glance, and stage cannot carry that: two
 workflows running at once are both `info`, which is exactly the pair a reader
 needs to tell apart.
 
-So the spine segment of a run takes an **identity** colour from a six-entry
-palette, `--color-run-1` to `--color-run-6` in `apps/desktop/src/styles.css`,
-picked deterministically from the run id so it is stable across reloads and
-across sessions. `runIdentity` in
-`apps/desktop/src/features/session/timeline/runIdentity.ts` is the only accessor.
+So the lane of a run takes an **identity** colour from a six-entry palette,
+`--color-run-1` to `--color-run-6` in `apps/desktop/src/styles.css`, picked
+deterministically from the run id so it is stable across reloads and across
+sessions. `runIdentity` in
+`apps/desktop/src/features/session/timeline/runIdentity.ts` is the only accessor,
+and `runIdentityStroke` beside it is the only way an SVG stroke reads one.
 
 Two constraints keep the exception contained:
 
 - The identity palette is **separate from the ten tones** and never overlaps
-  them. A violet spine is not a plan, a red spine is not a failure; a spine
+  them. A violet lane is not a plan, a red lane is not a failure; a lane
   colour claims nothing at all beyond "these rows are one run".
-- Identity lives on the spine only. Stage stays in the marker sitting on top of
+- Identity lives on the lane only. Stage stays in the marker sitting on top of
   it, which still resolves through `tintClasses(tone)` like everything else.
 
 Anything else reaching for the run palette is a bug. Add a tone instead.
+
+### Lane vocabulary
+
+The activity feed draws structure instead of indenting it. Four ingredients
+carry the whole grammar, and nothing outside this list is allowed to appear on
+the rail:
+
+| ingredient                | value                                                       | meaning                                                   |
+| ------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
+| spine                     | 1px, `--color-border`, solid, unbroken on every row         | the session's own thread                                  |
+| lane                      | 2px, identity hue, solid                                    | a run whose steps have happened                           |
+| lane, dashed at 45% alpha | 2px, identity hue                                           | the stretch of a run still to come                        |
+| join                      | quarter curve between spine and lane at a row's marker line | a run departing at its origin or merging when it finished |
+| loop                      | short arc off the spine at one row                          | a settled run folded to its origin row                    |
+
+Geometry is computed in
+`apps/desktop/src/features/session/timeline/railGeometry.ts`; the lane offset is
+one 16px unit per level and depth is capped at three columns. Rows are laid out
+against `timelineRhythm.ts`, whose grades fix line height, box height and marker
+size so a marker centres on its label's line rather than on its row box.
+
+Two rules follow from the direction of time. Newer sits above older at every
+level, so a run's origin row is the bottom of its group and its steps stack
+upward, and dashed always points toward NOW because dashed means future.
 
 ## z-index tokens
 

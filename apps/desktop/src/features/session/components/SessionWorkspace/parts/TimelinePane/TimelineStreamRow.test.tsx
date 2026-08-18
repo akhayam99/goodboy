@@ -1,0 +1,154 @@
+// @vitest-environment happy-dom
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
+import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
+import type { RailRow } from '../../../../timeline/railGeometry';
+import { TIMELINE_RHYTHM } from '../../../../timeline/timelineRhythm';
+
+vi.mock('../../../../../../store', () => ({
+  EMPTY_ARRAY: Object.freeze([]),
+  agentHasUnread: () => false,
+  useAppStore: { getState: () => ({ markAgentSeen: vi.fn() }) },
+}));
+
+import { TimelineStreamRow } from './TimelineStreamRow';
+
+type TypedStringParams = {
+  readonly value: string;
+};
+
+const typedString = <Value extends string>({ value }: TypedStringParams): Value =>
+  JSON.parse(JSON.stringify(value));
+
+const SESSION_ID = typedString<SessionId>({ value: 'session-1' });
+
+const entryOf = ({ status = 'completed' }: { readonly status?: Agent['status'] } = {}) =>
+  ({
+    kind: 'agent',
+    id: 'agent:one',
+    at: '2026-08-17T09:04:00Z',
+    ordinal: 2,
+    agent: {
+      id: typedString<AgentId>({ value: 'one' }),
+      sessionId: SESSION_ID,
+      ordinal: 2,
+      name: 'Implement the parser',
+      status,
+      startedAt: typedString<IsoDateTime>({ value: '2026-08-17T09:00:00Z' }),
+      completedAt: typedString<IsoDateTime>({ value: '2026-08-17T09:04:00Z' }),
+    },
+    agentKind: 'implementer',
+    stepLabel: '2',
+    openQuestions: [],
+    terminalQuestions: [],
+    children: [],
+    answers: [],
+    hasDuration: true,
+  }) as unknown as TimelineAgentEntry;
+
+const itemOf = (): TimelineRowItem => ({
+  kind: 'row',
+  id: 'agent:one',
+  at: '2026-08-17T09:04:00Z',
+  grade: 'step',
+  entry: entryOf(),
+  identity: null,
+  familyId: 'run:one',
+  ordinal: '2',
+  summary: '4m',
+  isFolded: false,
+  markerState: 'done',
+  hasUnread: false,
+  height: TIMELINE_RHYTHM.grade.step.height + TIMELINE_RHYTHM.gap.sibling,
+  topY: 0,
+  markerY: 18,
+  groupId: 'lane:run:one',
+  isPending: false,
+  gap: 'sibling',
+});
+
+const railOf = (): RailRow => ({
+  id: 'agent:one',
+  height: TIMELINE_RHYTHM.grade.step.height + TIMELINE_RHYTHM.gap.sibling,
+  segments: [],
+  joins: [],
+  loops: [],
+  markerColumn: 1,
+  markerY: 18,
+});
+
+type RenderParams = {
+  readonly onOpen?: () => void;
+  readonly action?: { readonly label: string; readonly onAct: () => void } | null;
+};
+
+const renderRow = ({ onOpen = vi.fn(), action = null }: RenderParams = {}) =>
+  render(
+    <TimelineStreamRow
+      item={itemOf()}
+      rail={railOf()}
+      railWidth={32}
+      sessionId={SESSION_ID}
+      openLabel="Open chat"
+      hint="Open ↵"
+      action={action}
+      onOpen={onOpen}
+    />,
+  );
+
+afterEach(cleanup);
+
+describe('TimelineStreamRow', () => {
+  it('opens the thing the row is about when the row is clicked', () => {
+    const onOpen = vi.fn();
+    renderRow({ onOpen });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open chat' }));
+
+    expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps a continuation action as its own target beside the row', () => {
+    const onOpen = vi.fn();
+    const onAct = vi.fn();
+    renderRow({ onOpen, action: { label: 'Answer', onAct } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
+
+    expect(onAct).toHaveBeenCalledTimes(1);
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it('centres the marker on the rail anchor rather than on the row box', () => {
+    const { container } = renderRow();
+    const marker = container.querySelector('[style*="top: 18px"]');
+
+    expect(marker).not.toBeNull();
+    expect(marker?.className).toContain('-translate-y-1/2');
+  });
+
+  it('prints the row instant in the gutter and its metadata beside the label', () => {
+    renderRow();
+
+    expect(screen.getByText(/\d{2}:\d{2}/)).toBeDefined();
+    expect(screen.getByText('4m')).toBeDefined();
+    expect(screen.getByText('2')).toBeDefined();
+  });
+
+  it('hides the open hint until the row is hovered or focused', () => {
+    renderRow();
+
+    expect(screen.getByText('Open ↵').className).toContain('opacity-0');
+    expect(screen.getByText('Open ↵').className).toContain('group-hover:opacity-100');
+  });
+
+  it('reserves the same box for a step whatever trailing metadata it carries', () => {
+    renderRow();
+    const button = screen.getByRole('button', { name: 'Open chat' });
+
+    expect(button.getAttribute('style')).toContain(`${TIMELINE_RHYTHM.grade.step.height}px`);
+  });
+});

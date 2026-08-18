@@ -28,7 +28,7 @@ export type TimelineStreamEntry =
   | TimelineBranchEntry
   | TimelineAnswerEntry;
 
-export type TimelineVisibility = 'full' | 'summary' | 'folded';
+type TimelineVisibility = 'full' | 'summary' | 'folded';
 
 type StreamRail = {
   readonly id: string;

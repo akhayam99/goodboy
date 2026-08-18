@@ -54,7 +54,7 @@ export type TimelineAnswerEntry = {
   readonly question: OpenQuestion;
 };
 
-export type TimelineRunChild = TimelineAgentEntry | TimelinePlanEntry;
+type TimelineRunChild = TimelineAgentEntry | TimelinePlanEntry;
 
 export type TimelineRunEntry = {
   readonly kind: 'run';
