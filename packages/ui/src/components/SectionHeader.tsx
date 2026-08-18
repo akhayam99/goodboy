@@ -25,17 +25,17 @@ export const SectionHeader = ({
 
   if (size === 'page') {
     return (
-      <div className={cn('flex items-start gap-3', className)}>
-        {icon != null ? <span className="flex w-5 shrink-0 justify-center">{icon}</span> : null}
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-base font-semibold text-foreground">{title}</h2>
-            {action ?? null}
+      <div className={cn('flex flex-col gap-1', className)}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            {icon != null ? <span className="flex shrink-0 items-center">{icon}</span> : null}
+            <h2 className="min-w-0 text-base font-semibold leading-6 text-foreground">{title}</h2>
           </div>
-          {hint != null ? (
-            <p className="text-sm leading-relaxed text-muted-foreground">{hint}</p>
-          ) : null}
+          {action ?? null}
         </div>
+        {hint != null ? (
+          <p className="text-sm leading-relaxed text-muted-foreground">{hint}</p>
+        ) : null}
       </div>
     );
   }
