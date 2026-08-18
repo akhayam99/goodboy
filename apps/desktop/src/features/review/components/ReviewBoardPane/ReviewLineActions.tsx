@@ -1,5 +1,5 @@
 import { Bot, MessageSquarePlus } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, Tooltip } from '@goodboy/ui';
 import type { ReviewLineTarget } from './ReviewFileDiff';
 
 type Props = {
@@ -18,24 +18,26 @@ export const ReviewLineActions = ({ target, isActive, onToggleComposer, onAskAge
   }
   return (
     <span className="flex items-center gap-0.5">
-      <button
-        type="button"
-        onClick={() => onToggleComposer(target)}
-        title="Draft a comment on this line"
-        aria-label={`Draft a comment on ${target.side} line ${target.line}`}
-        className={cn(ACTION_BTN, isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')}
-      >
-        <MessageSquarePlus size={9} aria-hidden />
-      </button>
-      <button
-        type="button"
-        onClick={() => onAskAgent(target)}
-        title="Ask the agent about this line"
-        aria-label={`Ask the agent about ${target.side} line ${target.line}`}
-        className={cn(ACTION_BTN, 'opacity-0 group-hover:opacity-100')}
-      >
-        <Bot size={9} aria-hidden />
-      </button>
+      <Tooltip content="Draft a comment on this line">
+        <button
+          type="button"
+          onClick={() => onToggleComposer(target)}
+          aria-label={`Draft a comment on ${target.side} line ${target.line}`}
+          className={cn(ACTION_BTN, isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')}
+        >
+          <MessageSquarePlus size={9} aria-hidden />
+        </button>
+      </Tooltip>
+      <Tooltip content="Ask the agent about this line">
+        <button
+          type="button"
+          onClick={() => onAskAgent(target)}
+          aria-label={`Ask the agent about ${target.side} line ${target.line}`}
+          className={cn(ACTION_BTN, 'opacity-0 group-hover:opacity-100')}
+        >
+          <Bot size={9} aria-hidden />
+        </button>
+      </Tooltip>
     </span>
   );
 };

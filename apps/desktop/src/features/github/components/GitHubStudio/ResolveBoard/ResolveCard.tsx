@@ -1,5 +1,5 @@
 import type { AgentId, ProviderId } from '@goodboy/types';
-import { Button, Checkbox, Chip, ClampedProse, cn } from '@goodboy/ui';
+import { Button, Checkbox, Chip, ClampedProse, cn, Tooltip } from '@goodboy/ui';
 import { ArrowUpRight, ChevronDown, ExternalLink, RotateCcw } from 'lucide-react';
 import { modelEffortLevels } from '../../../../chat/utils/chat-constants';
 import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
@@ -74,15 +74,16 @@ export const ResolveCard = ({
             <div className="flex shrink-0 items-center gap-1.5">
               {link ? <ResolverStateBadge state={resolverBadgeState(link.status)} /> : null}
               {onOpenThread ? (
-                <button
-                  type="button"
-                  onClick={onOpenThread}
-                  title="Open the full thread"
-                  aria-label="Open the full thread"
-                  className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <ExternalLink size={12} aria-hidden />
-                </button>
+                <Tooltip content="Open the full thread">
+                  <button
+                    type="button"
+                    onClick={onOpenThread}
+                    aria-label="Open the full thread"
+                    className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <ExternalLink size={12} aria-hidden />
+                  </button>
+                </Tooltip>
               ) : null}
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { Check, GitBranch, RefreshCw, X } from 'lucide-react';
-import { Chip, cn, Divider } from '@goodboy/ui';
+import { Chip, cn, Divider, Tooltip } from '@goodboy/ui';
 import type { WorktreeStatus } from '@goodboy/types';
 import { distanceAhead, distanceBehind } from '../../../../shared/lib/gitStatus';
 import { TOOLBAR_ICON_BTN } from './lib';
@@ -95,27 +95,30 @@ export const DiffToolbar = ({
 
         <div className="flex shrink-0 items-center gap-0.5">
           {onRefresh ? (
-            <button
-              type="button"
-              onClick={onRefresh}
-              disabled={refreshing}
-              title="Refresh git state"
-              aria-label="Refresh git state"
-              className={cn(TOOLBAR_ICON_BTN, 'disabled:opacity-50')}
-            >
-              <RefreshCw size={12} aria-hidden />
-            </button>
+            <Tooltip content="Refresh git state">
+              <button
+                type="button"
+                onClick={onRefresh}
+                disabled={refreshing}
+                title="Refresh git state"
+                aria-label="Refresh git state"
+                className={cn(TOOLBAR_ICON_BTN, 'disabled:opacity-50')}
+              >
+                <RefreshCw size={12} aria-hidden />
+              </button>
+            </Tooltip>
           ) : null}
           {showClose ? (
-            <button
-              type="button"
-              onClick={onClose}
-              title="Close"
-              aria-label="Close"
-              className={TOOLBAR_ICON_BTN}
-            >
-              <X size={13} />
-            </button>
+            <Tooltip content="Close">
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close"
+                className={TOOLBAR_ICON_BTN}
+              >
+                <X size={13} />
+              </button>
+            </Tooltip>
           ) : null}
         </div>
       </div>

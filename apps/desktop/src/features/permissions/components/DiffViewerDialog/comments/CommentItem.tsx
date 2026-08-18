@@ -1,5 +1,5 @@
 import { ArrowUpRight, Check, RotateCcw, Trash2 } from 'lucide-react';
-import { Chip, cn, type Tone } from '@goodboy/ui';
+import { Chip, cn, Tooltip, type Tone } from '@goodboy/ui';
 import type { AgentId, DiffComment } from '@goodboy/types';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 
@@ -53,36 +53,39 @@ export const CommentItem = ({
         ) : null}
         <div className="ml-auto flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           {comment.status === 'open' && (
-            <button
-              type="button"
-              onClick={() => onResolve(comment.id)}
-              title="Mark resolved"
-              aria-label="Mark resolved"
-              className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-success"
-            >
-              <Check size={11} />
-            </button>
+            <Tooltip content="Mark resolved">
+              <button
+                type="button"
+                onClick={() => onResolve(comment.id)}
+                aria-label="Mark resolved"
+                className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-success"
+              >
+                <Check size={11} />
+              </button>
+            </Tooltip>
           )}
           {comment.status === 'consumed' && (
+            <Tooltip content="Reopen note">
+              <button
+                type="button"
+                onClick={() => onReopen(comment.id)}
+                aria-label="Reopen note"
+                className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-warning"
+              >
+                <RotateCcw size={11} />
+              </button>
+            </Tooltip>
+          )}
+          <Tooltip content="Delete">
             <button
               type="button"
-              onClick={() => onReopen(comment.id)}
-              title="Reopen note"
-              aria-label="Reopen note"
-              className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-warning"
+              onClick={() => onDelete(comment.id)}
+              aria-label="Delete"
+              className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-danger"
             >
-              <RotateCcw size={11} />
+              <Trash2 size={11} />
             </button>
-          )}
-          <button
-            type="button"
-            onClick={() => onDelete(comment.id)}
-            title="Delete"
-            aria-label="Delete"
-            className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-danger"
-          >
-            <Trash2 size={11} />
-          </button>
+          </Tooltip>
         </div>
       </div>
       <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-foreground">

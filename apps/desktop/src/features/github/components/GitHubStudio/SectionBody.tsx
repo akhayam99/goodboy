@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { PrDetail } from '@goodboy/types';
-import { ClampedProse, PANE_RHYTHM, Skeleton } from '@goodboy/ui';
+import { ClampedProse, PANE_RHYTHM, Skeleton, Tooltip } from '@goodboy/ui';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 type Props = {
@@ -20,14 +20,16 @@ export const SectionBody = ({ detail, detailLoading, detailError, onRetry, child
           <div className="min-w-0 flex-1">
             <ClampedProse text={detailError} lines={2} className="text-xs text-danger" />
           </div>
-          <button
-            type="button"
-            onClick={onRetry}
-            aria-label="Retry"
-            className="rounded-md p-0.5 hover:bg-muted"
-          >
-            <RefreshCw size={12} aria-hidden />
-          </button>
+          <Tooltip content="Retry">
+            <button
+              type="button"
+              onClick={onRetry}
+              aria-label="Retry"
+              className="rounded-md p-0.5 hover:bg-muted"
+            >
+              <RefreshCw size={12} aria-hidden />
+            </button>
+          </Tooltip>
         </div>
       ) : detailLoading && detail == null ? (
         <div className="flex flex-col gap-2" role="status" aria-label="Loading pr data">

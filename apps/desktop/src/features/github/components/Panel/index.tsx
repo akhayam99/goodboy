@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Check, AlertCircle, RefreshCw } from 'lucide-react';
-import { Button, cn, formatError, Input } from '@goodboy/ui';
+import { Button, cn, formatError, Input, Tooltip } from '@goodboy/ui';
 import { GithubIcon } from '@goodboy/ui';
 import type { SaveState } from '../../../../shared/types/saveState';
 import { useAppStore } from '../../../../store';
@@ -72,16 +72,18 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
           </>
         )}
         <div className="flex-1" />
-        <button
-          type="button"
-          onClick={() => void onReload()}
-          disabled={checking}
-          title="Refresh GitHub status"
-          aria-label="Refresh GitHub status"
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
-        >
-          <RefreshCw size={13} aria-hidden />
-        </button>
+        <Tooltip content="Refresh GitHub status">
+          <button
+            type="button"
+            onClick={() => void onReload()}
+            disabled={checking}
+            title="Refresh GitHub status"
+            aria-label="Refresh GitHub status"
+            className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
+          >
+            <RefreshCw size={13} aria-hidden />
+          </button>
+        </Tooltip>
       </div>
 
       {status === null ? (

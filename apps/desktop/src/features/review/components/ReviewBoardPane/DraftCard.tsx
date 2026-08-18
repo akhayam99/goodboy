@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Chip, Textarea, cn } from '@goodboy/ui';
+import { Chip, cn, Textarea, Tooltip } from '@goodboy/ui';
 import type { PrReviewDraft } from '@goodboy/types';
 import { ComposerActionRow } from './ComposerActionRow';
 
@@ -57,15 +57,16 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
           />
         ) : null}
         <span className="flex-1" />
-        <button
-          type="button"
-          onClick={onDiscard}
-          title="Discard draft"
-          aria-label={`Discard draft on ${draft.path}:${draft.line}`}
-          className="flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-danger"
-        >
-          <Trash2 size={11} aria-hidden />
-        </button>
+        <Tooltip content="Discard draft">
+          <button
+            type="button"
+            onClick={onDiscard}
+            aria-label={`Discard draft on ${draft.path}:${draft.line}`}
+            className="flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-danger"
+          >
+            <Trash2 size={11} aria-hidden />
+          </button>
+        </Tooltip>
       </div>
       {editing ? (
         <div className="flex flex-col gap-1">
