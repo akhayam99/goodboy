@@ -274,16 +274,6 @@ export const deleteAttachment = async (worktreeDir: string, relPath: string): Pr
   await invoke('attachment_delete', { worktreeDir, relPath });
 };
 
-export type DroppedAttachment = {
-  readonly fileName: string;
-  readonly mimeType: string;
-  readonly dataBase64: string;
-};
-
-export const readDroppedAttachment = async (absPath: string): Promise<DroppedAttachment> => {
-  return invoke<DroppedAttachment>('attachment_read_dropped', { absPath });
-};
-
 type ParallelRunSpec = {
   readonly runId: ProviderRunId;
   readonly workingDir: string;

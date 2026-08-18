@@ -17,7 +17,7 @@ describe('resolveLensSurface', () => {
 
   it('leaves every other lens on its own surface', () => {
     expect(resolveLensSurface({ lens: 'context' })).toBe('context');
-    expect(resolveLensSurface({ lens: 'timeline' })).toBe('timeline');
+    expect(resolveLensSurface({ lens: 'agents' })).toBe('agents');
     expect(resolveLensSurface({ lens: 'workflows' })).toBe('workflows');
   });
 });

@@ -11,6 +11,9 @@ export const readPersistedLens = (sessionId: SessionId): LensKind | null => {
     if (raw == null) {
       return null;
     }
+    if (raw === 'timeline') {
+      return null;
+    }
     return [...LENS_KINDS].find((lens) => lens === raw) ?? null;
   } catch {
     return null;

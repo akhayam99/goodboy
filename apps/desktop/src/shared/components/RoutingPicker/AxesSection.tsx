@@ -32,14 +32,16 @@ export const AxesSection = ({
   onToggle,
 }: Props) => {
   const toggleRowLabel = 'Modes';
+  const selectionAxes = axes.version == null ? [axes.model] : [axes.model, axes.version];
+  const variantAxis = axes.variant;
   return (
     <section aria-label="Model options" className="flex flex-col gap-2.5 p-3">
-      {[axes.model, axes.version].map((axis) => (
+      {selectionAxes.map((axis) => (
         <AxisRow key={axis.label} label={axis.label}>
           <div
             role="group"
             aria-label={axis.label}
-            className="flex flex-wrap justify-center gap-1 rounded-lg bg-background/40 p-1"
+            className="flex flex-wrap justify-end gap-1 rounded-lg bg-background/40 p-1"
           >
             {axis.options.map((option) => (
               <PickerChip
@@ -52,52 +54,40 @@ export const AxesSection = ({
           </div>
         </AxisRow>
       ))}
-      <AxisRow label={axes.variant.label}>
-        <div
-          role="group"
-          aria-label={axes.variant.label}
-          className="flex flex-wrap justify-center gap-1 rounded-lg bg-background/40 p-1"
-        >
-          {axes.variant.options.length === 0 ? (
-            <PickerChip label="Not available" active={false} disabled onSelect={() => undefined} />
-          ) : (
-            axes.variant.options.map((option) => {
-              return (
-                <PickerChip
-                  key={option.id}
-                  label={option.label}
-                  active={option.id === axes.variant.activeId}
-                  onSelect={() => onVariant(option.id)}
-                />
-              );
-            })
-          )}
-        </div>
-      </AxisRow>
-      <AxisRow label={axes.effort.label}>
-        {axes.effort.levels.length === 0 ? (
+      {variantAxis != null && (
+        <AxisRow label={variantAxis.label}>
           <div
             role="group"
-            aria-label={axes.effort.label}
-            className="flex rounded-lg bg-background/40 p-1"
+            aria-label={variantAxis.label}
+            className="flex flex-wrap justify-end gap-1 rounded-lg bg-background/40 p-1"
           >
-            <PickerChip label="Not available" active={false} disabled onSelect={() => undefined} />
+            {variantAxis.options.map((option) => (
+              <PickerChip
+                key={option.id}
+                label={option.label}
+                active={option.id === variantAxis.activeId}
+                onSelect={() => onVariant(option.id)}
+              />
+            ))}
           </div>
-        ) : (
+        </AxisRow>
+      )}
+      {axes.effort != null && (
+        <AxisRow label={axes.effort.label}>
           <EffortChips
             axis={axes.effort}
             value={effortValue}
             canEdit={canEditEffort}
             onPick={onEffort}
           />
-        )}
-      </AxisRow>
+        </AxisRow>
+      )}
       {axes.toggles.length > 0 && (
         <AxisRow label={toggleRowLabel}>
           <div
             role="group"
             aria-label={toggleRowLabel}
-            className="flex flex-wrap justify-center gap-1 rounded-lg bg-background/40 p-1"
+            className="flex flex-wrap justify-end gap-1 rounded-lg bg-background/40 p-1"
           >
             {axes.toggles.map((toggle) => (
               <PickerChip

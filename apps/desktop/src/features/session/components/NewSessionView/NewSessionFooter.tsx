@@ -1,6 +1,6 @@
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, RotateCcw } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
-import { Button, Divider, cn } from '@goodboy/ui';
+import { Button, InlineConfirm, cn } from '@goodboy/ui';
 import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
 import { isMissingBaseRefError } from '../../../../shared/lib/errors';
 
@@ -13,6 +13,11 @@ type Props = {
   readonly conflictWorktreePath: string | null;
   readonly goalReady: boolean;
   readonly canCreate: boolean;
+  readonly canReset: boolean;
+  readonly resetArmed: boolean;
+  readonly onArmReset: () => void;
+  readonly onCancelReset: () => void;
+  readonly onConfirmReset: () => void;
   readonly onOpenConflictSession: (id: SessionId) => void;
   readonly onCreate: (eraseWorktreePath?: string) => Promise<void>;
 };
@@ -26,18 +31,22 @@ export const NewSessionFooter = ({
   conflictWorktreePath,
   goalReady,
   canCreate,
+  canReset,
+  resetArmed,
+  onArmReset,
+  onCancelReset,
+  onConfirmReset,
   onOpenConflictSession,
   onCreate,
 }: Props) => {
   return (
-    <>
-      {!isSimple && error != null && isMissingBaseRefError(error) ? (
-        <div className="px-6 pb-2">
-          <BaseBranchGuide />
-        </div>
-      ) : null}
-      <Divider />
-      <footer className="flex shrink-0 items-center gap-3 px-6 py-3">
+    <div className="flex flex-col gap-3">
+      {!isSimple && error != null && isMissingBaseRefError(error) ? <BaseBranchGuide /> : null}
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" onClick={onArmReset} disabled={busy || !canReset || resetArmed}>
+          <RotateCcw size={13} aria-hidden />
+          Reset
+        </Button>
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {error != null && !isMissingBaseRefError(error) ? (
             <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
@@ -71,7 +80,19 @@ export const NewSessionFooter = ({
             {busy ? 'Creating…' : 'Create session'}
           </Button>
         )}
-      </footer>
-    </>
+      </div>
+      {resetArmed ? (
+        <InlineConfirm
+          role="danger"
+          icon={<RotateCcw size={12} aria-hidden />}
+          title="Reset this session draft?"
+          description="Throws away everything you have typed. There is no undo."
+          confirmLabel="Reset"
+          autoDisarmMs={4000}
+          onConfirm={onConfirmReset}
+          onCancel={onCancelReset}
+        />
+      ) : null}
+    </div>
   );
 };

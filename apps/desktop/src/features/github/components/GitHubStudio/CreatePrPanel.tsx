@@ -334,55 +334,57 @@ export const CreatePrPanel = ({
 
       <Divider />
 
-      <footer className="flex shrink-0 items-center gap-3 px-6 py-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          {error != null && (
-            <span
-              role="alert"
-              className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-danger"
-              title={error}
+      <footer className="shrink-0 px-6 py-3">
+        <div className="mx-auto flex w-full max-w-2xl items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            {error != null && (
+              <span
+                role="alert"
+                className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-danger"
+                title={error}
+              >
+                <AlertTriangle size={12} aria-hidden className="shrink-0" />
+                {error}
+              </span>
+            )}
+          </div>
+          {onCancel != null && (
+            <Button variant="ghost" onClick={onCancel} disabled={busy !== null}>
+              Cancel
+            </Button>
+          )}
+          {mode === 'manual' ? (
+            <Button
+              onClick={() => void onCreate()}
+              disabled={busy !== null || title.trim().length === 0}
+              className={cn(busy === 'create' && 'animate-border-pulse')}
             >
-              <AlertTriangle size={12} aria-hidden className="shrink-0" />
-              {error}
-            </span>
+              {busy === 'create' ? (
+                'Creating…'
+              ) : (
+                <>
+                  Create PR
+                  <ArrowRight size={13} aria-hidden />
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => void onCreateWithAi()}
+              disabled={busy !== null}
+              className={cn(busy === 'ai' && 'animate-border-pulse')}
+            >
+              {busy === 'ai' ? (
+                'Drafting…'
+              ) : (
+                <>
+                  <CONCEPT_ICONS.agents size={13} aria-hidden />
+                  Draft with agent
+                </>
+              )}
+            </Button>
           )}
         </div>
-        {onCancel != null && (
-          <Button variant="ghost" onClick={onCancel} disabled={busy !== null}>
-            Cancel
-          </Button>
-        )}
-        {mode === 'manual' ? (
-          <Button
-            onClick={() => void onCreate()}
-            disabled={busy !== null || title.trim().length === 0}
-            className={cn(busy === 'create' && 'animate-border-pulse')}
-          >
-            {busy === 'create' ? (
-              'Creating…'
-            ) : (
-              <>
-                Create PR
-                <ArrowRight size={13} aria-hidden />
-              </>
-            )}
-          </Button>
-        ) : (
-          <Button
-            onClick={() => void onCreateWithAi()}
-            disabled={busy !== null}
-            className={cn(busy === 'ai' && 'animate-border-pulse')}
-          >
-            {busy === 'ai' ? (
-              'Drafting…'
-            ) : (
-              <>
-                <CONCEPT_ICONS.agents size={13} aria-hidden />
-                Draft with agent
-              </>
-            )}
-          </Button>
-        )}
       </footer>
     </div>
   );

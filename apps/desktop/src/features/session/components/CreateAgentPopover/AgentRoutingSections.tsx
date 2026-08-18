@@ -3,6 +3,7 @@ import { MODEL_CATALOGS, modelAxes, modelIdForSelection } from '@goodboy/core';
 import { Divider } from '@goodboy/ui';
 import type { ModelSelection, ProviderId } from '@goodboy/types';
 import { AxesSection } from '../../../../shared/components/RoutingPicker/AxesSection';
+import { NoConnectedProviders } from '../../../../shared/components/RoutingPicker/NoConnectedProviders';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { ProviderGrid } from '../../../../shared/components/RoutingPicker/ProviderGrid';
 import { ROUTING_PICKER_CONSTANTS } from '../../../../shared/components/RoutingPicker/constants';
@@ -19,6 +20,7 @@ type Props = {
   readonly onViewProvider: (provider: ProviderId) => void;
   readonly onPickProvider: (provider: ProviderId) => void;
   readonly onPickModel: (model: string, effort: AgentKindRouting['effort']) => void;
+  readonly onNavigateProviders: () => void;
 };
 
 type PickSelectionParams = {
@@ -32,6 +34,7 @@ export const AgentRoutingSections = ({
   onViewProvider,
   onPickProvider,
   onPickModel,
+  onNavigateProviders,
 }: Props) => {
   const viewedRouting = resolveRouting({
     providers: ROUTING_PICKER_CONSTANTS.providers,
@@ -67,11 +70,12 @@ export const AgentRoutingSections = ({
     <>
       <PickerSection label="Provider">
         {connectedProviders.length === 0 ? (
-          <p className="px-2.5 py-2 text-xs text-muted-foreground">No providers connected</p>
+          <NoConnectedProviders onNavigate={onNavigateProviders} />
         ) : (
           <ProviderGrid
             connectedProviders={connectedProviders}
             activeProvider={viewProvider}
+            onNavigateProviders={onNavigateProviders}
             onSelect={(provider) => {
               onViewProvider(provider);
               setClampNotice(undefined);
@@ -82,7 +86,7 @@ export const AgentRoutingSections = ({
       </PickerSection>
       <Divider />
       <div>
-        {!isProviderConnected && (
+        {connectedProviders.length > 0 && !isProviderConnected && (
           <p className="px-2.5 py-1 text-xs text-muted-foreground">
             Selected provider is not connected
           </p>
