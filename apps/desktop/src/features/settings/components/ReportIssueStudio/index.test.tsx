@@ -155,6 +155,18 @@ describe('ReportIssueStudio', () => {
     ).toBeDefined();
   });
 
+  it('sits the category icon in the heading, immediately before the category name', () => {
+    setGithubStatus({ available: true, mode: 'gh-cli' });
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    const bug = screen.getByRole('tab', { name: /Bug/ });
+    const icon = bug.querySelector('svg');
+
+    expect(icon?.nextElementSibling?.textContent).toBe('Bug');
+    expect(icon?.parentElement?.textContent).toBe('Bug');
+    expect(bug.textContent).toContain('Something broke');
+  });
+
   it('renders the compact file drop action across the available width', () => {
     setGithubStatus({ available: true, mode: 'gh-cli' });
     render(<ReportIssueStudio onClose={vi.fn()} />);

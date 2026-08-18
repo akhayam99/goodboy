@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { Bug } from 'lucide-react';
 import { SegmentedTabs } from '../components/SegmentedTabs';
 
 const OPTIONS = [
@@ -47,5 +48,22 @@ describe('SegmentedTabs', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Third' }));
 
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('sits the icon in the heading line, immediately before the label it names', () => {
+    render(
+      <SegmentedTabs
+        size="md"
+        ariaLabel="Issue type"
+        options={[{ value: 'bug', label: 'Bug', icon: Bug, hint: 'Something broke' }]}
+        value="bug"
+        onChange={vi.fn()}
+      />,
+    );
+
+    const icon = screen.getByRole('tab', { name: /Bug/ }).querySelector('svg');
+
+    expect(icon?.nextElementSibling?.textContent).toBe('Bug');
+    expect(icon?.parentElement?.textContent).toBe('Bug');
   });
 });

@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react';
-import { SectionHeader, cn } from '@goodboy/ui';
+import { SectionSurface, cn } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
@@ -47,8 +47,7 @@ export const AgentFollowUps = ({ sourceAgent, sourceKind, summary, sessionId }: 
   };
 
   return (
-    <section className="flex flex-col gap-2">
-      <SectionHeader label="Continue" hint="Spawn a follow-up seeded with this agent's output." />
+    <SectionSurface label="Continue" hint="Spawn a follow-up seeded with this agent's output.">
       <div className="flex flex-col gap-1.5">
         {moves.map((move) => (
           <button
@@ -56,7 +55,7 @@ export const AgentFollowUps = ({ sourceAgent, sourceKind, summary, sessionId }: 
             type="button"
             onClick={() => onSpawn(move.kind)}
             className={cn(
-              'group flex items-start gap-2 rounded-md border border-border-soft bg-panel px-3 py-2 text-left text-xs transition-colors hover:border-border hover:bg-elevated',
+              'group flex items-start gap-2 rounded-md border border-border-soft bg-elevated px-3 py-2 text-left text-xs transition-colors hover:border-border',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             )}
           >
@@ -72,6 +71,6 @@ export const AgentFollowUps = ({ sourceAgent, sourceKind, summary, sessionId }: 
           </button>
         ))}
       </div>
-    </section>
+    </SectionSurface>
   );
 };

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { fallbackStepOutputSummary, stripControlMarkers } from '@goodboy/core';
-import { Markdown, SectionHeader, StatusDot, type Tone } from '@goodboy/ui';
+import { Markdown, SectionSurface, StatusDot, type Tone } from '@goodboy/ui';
 import type { Agent, Session, TurnEvent, TurnState } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useTranscript } from '../../../../store/transcript';
@@ -9,7 +9,7 @@ import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren'
 import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
-import { CostsSection } from './CostsSection';
+import { AgentMetaLine } from './AgentMetaLine';
 import { AgentBriefChildren } from './AgentBriefChildren';
 import { AgentBriefPlans } from './AgentBriefPlans';
 import { AgentFollowUps } from './AgentFollowUps';
@@ -78,32 +78,29 @@ export const AgentBrief = ({ session, agent }: Props) => {
   const now = nowState({ agent, turnState, transcript });
 
   return (
-    <div className="flex flex-col gap-6">
-      {!isTerminal ? (
-        <section className="flex flex-col gap-2">
-          <SectionHeader label="Now" />
-          <div className="flex items-center gap-2 text-sm text-foreground">
-            <StatusDot tone={now.tone} size="sm" pulsing={now.isPulsing} />
-            <span>{now.label}</span>
-          </div>
-        </section>
-      ) : null}
+    <div className="flex flex-col gap-4">
       {summary !== '' ? (
-        <section className="flex flex-col gap-2">
-          <SectionHeader label={hasOutputSummary ? 'Outcome' : 'Latest'} />
+        <SectionSurface label={hasOutputSummary ? 'Outcome' : 'Latest'} headingSize="page">
           <div className="text-sm text-foreground">
             <Markdown text={stripControlMarkers(summary)} />
           </div>
           {!hasOutputSummary ? (
             <span className="text-2xs text-muted-foreground">from the last reply</span>
           ) : null}
-        </section>
+        </SectionSurface>
+      ) : null}
+      {!isTerminal ? (
+        <SectionSurface label="Now">
+          <div className="flex items-center gap-2 text-sm text-foreground">
+            <StatusDot tone={now.tone} size="sm" pulsing={now.isPulsing} />
+            <span>{now.label}</span>
+          </div>
+        </SectionSurface>
       ) : null}
       {expectedOutput != null && expectedOutput !== '' ? (
-        <section className="flex flex-col gap-2">
-          <SectionHeader label="Expected output" />
+        <SectionSurface label="Expected output">
           <p className="text-sm text-foreground">{expectedOutput}</p>
-        </section>
+        </SectionSurface>
       ) : null}
       <AgentBriefPlans
         plans={plans.filter((plan) => plan.agentId === agent.id)}
@@ -116,7 +113,7 @@ export const AgentBrief = ({ session, agent }: Props) => {
         sessionId={session.id}
       />
       <AgentBriefChildren session={session} kind={kind} children={children} />
-      <CostsSection
+      <AgentMetaLine
         aggregate={metrics.aggregatesByAgentId.get(agent.id) ?? null}
         contextUsage={metrics.providerUsageByAgentId.get(agent.id) ?? EMPTY_ARRAY}
         turns={metrics.turnsByAgentId.get(agent.id) ?? 0}

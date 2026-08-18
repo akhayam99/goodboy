@@ -9,6 +9,7 @@ import {
   Input,
   PANE_RHYTHM,
   ScrollFade,
+  SectionSurface,
   SegmentedTabs,
   Select,
   Skeleton,
@@ -308,18 +309,12 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
 
               <Divider />
 
-              <section
-                aria-labelledby="report-preview-heading"
-                className="flex flex-col gap-3 rounded-md bg-muted/30 p-3"
+              <SectionSurface
+                label="Preview"
+                ariaLabel="Preview"
+                hint={previewHint({ mode })}
+                headingSize="page"
               >
-                <div className="flex flex-col gap-1">
-                  <h2 id="report-preview-heading" className="text-sm font-medium text-foreground">
-                    Preview
-                  </h2>
-                  <p className="text-2xs leading-relaxed text-muted-foreground">
-                    {previewHint({ mode })}
-                  </p>
-                </div>
                 <div className="flex flex-col gap-3">
                   <div className="flex max-w-prose flex-col gap-2 text-sm leading-relaxed text-foreground">
                     <p className="font-medium">{previewTitle === '' ? 'Untitled' : previewTitle}</p>
@@ -329,7 +324,7 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                     <p className="text-2xs leading-relaxed text-warning">{previewTruncation}</p>
                   ) : null}
                 </div>
-              </section>
+              </SectionSurface>
 
               <footer className="flex items-center gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-3">

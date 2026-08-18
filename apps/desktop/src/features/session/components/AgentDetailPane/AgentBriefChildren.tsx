@@ -1,4 +1,4 @@
-import { SectionHeader, StatusDot, formatUsd } from '@goodboy/ui';
+import { SectionSurface, StatusDot, formatUsd } from '@goodboy/ui';
 import type { AgentId, Session } from '@goodboy/types';
 import type { SpawnedChild } from '../../../../shared/utils/spawnedChildren';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
@@ -23,15 +23,14 @@ export const AgentBriefChildren = ({ session, kind, children }: Props) => {
     void selectAgent(session.id, agentId);
   };
   return (
-    <section className="flex flex-col gap-2">
-      <SectionHeader
-        label={isClusters ? 'Clusters' : 'Agents'}
-        action={
-          <span className="text-2xs tabular-nums text-muted-foreground">
-            {isClusters ? `${done}/${children.length}` : String(children.length)}
-          </span>
-        }
-      />
+    <SectionSurface
+      label={isClusters ? 'Clusters' : 'Agents'}
+      action={
+        <span className="text-2xs tabular-nums text-muted-foreground">
+          {isClusters ? `${done}/${children.length}` : String(children.length)}
+        </span>
+      }
+    >
       <div className="flex flex-col gap-2">
         {children.map((child) => {
           const cost = metrics.aggregatesByAgentId.get(child.agent.id)?.estimatedCostUsd ?? 0;
@@ -79,6 +78,6 @@ export const AgentBriefChildren = ({ session, kind, children }: Props) => {
           );
         })}
       </div>
-    </section>
+    </SectionSurface>
   );
 };

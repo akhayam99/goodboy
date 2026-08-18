@@ -81,6 +81,21 @@ describe('AgentDetailPane', () => {
     expect(screen.queryByRole('tab', { name: 'Brief' })).toBeNull();
   });
 
+  it('gives a workflow step the same brief component a standalone agent gets', () => {
+    const step = {
+      ...agent,
+      workflowRunId: 'run-1' as Agent['workflowRunId'],
+      stepId: 'step-1' as Agent['stepId'],
+    } satisfies Agent;
+
+    render(
+      <AgentDetailPane session={session} agent={step} isChatActive onBack={() => undefined} />,
+    );
+
+    expect(screen.getByText('Brief body')).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Brief' })).toBeDefined();
+  });
+
   it('reveals the transcript without changing the selected agent', () => {
     render(
       <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
