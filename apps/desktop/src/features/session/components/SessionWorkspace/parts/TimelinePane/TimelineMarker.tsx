@@ -60,7 +60,7 @@ const glyphClasses = ({ fill, tone }: { readonly fill: Fill; readonly tone: Tone
 };
 
 export const TimelineMarker = ({ state, grade, hasUnread = false }: Props) => {
-  const { markerSize, glyphSize } = TIMELINE_RHYTHM.grade[grade];
+  const { markerSize, glyphSize, dotSize } = TIMELINE_RHYTHM.grade[grade];
   const unread = hasUnread ? (
     <span
       className={cn(
@@ -113,6 +113,12 @@ export const TimelineMarker = ({ state, grade, hasUnread = false }: Props) => {
           aria-label={spec.label}
         />
       )}
+      {state === 'running' ? (
+        <span
+          className={cn('rounded-full motion-safe:animate-soft-pulse', tintClasses(spec.tone).dot)}
+          style={{ width: dotSize, height: dotSize }}
+        />
+      ) : null}
       {unread}
     </span>
   );

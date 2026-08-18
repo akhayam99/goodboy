@@ -7,12 +7,13 @@ type GradeRhythm = {
   readonly height: number;
   readonly markerSize: number;
   readonly glyphSize: number;
+  readonly dotSize: number;
 };
 
 const GRADE: Record<TimelineRowGrade, GradeRhythm> = {
-  entry: { lineHeight: 20, height: 36, markerSize: 16, glyphSize: 10 },
-  step: { lineHeight: 16, height: 28, markerSize: 12, glyphSize: 8 },
-  pending: { lineHeight: 16, height: 16, markerSize: 12, glyphSize: 8 },
+  entry: { lineHeight: 20, height: 36, markerSize: 16, glyphSize: 10, dotSize: 6 },
+  step: { lineHeight: 16, height: 28, markerSize: 12, glyphSize: 8, dotSize: 4 },
+  pending: { lineHeight: 16, height: 16, markerSize: 12, glyphSize: 8, dotSize: 4 },
 };
 
 const GAP: Record<TimelineGap, number> = {

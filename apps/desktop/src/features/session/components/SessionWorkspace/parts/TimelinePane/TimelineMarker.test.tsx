@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { TimelineMarkerState } from '../../../../timeline/markerState';
-import { TIMELINE_RHYTHM } from '../../../../timeline/timelineRhythm';
+import { TIMELINE_RHYTHM, type TimelineRowGrade } from '../../../../timeline/timelineRhythm';
 import { TimelineMarker } from './TimelineMarker';
 
 afterEach(cleanup);
@@ -35,6 +35,19 @@ const rootOf = ({ state }: { readonly state: TimelineMarkerState }) => {
     throw new Error('marker did not render');
   }
   return root;
+};
+
+const classOf = ({ node }: { readonly node: Element }) => node.getAttribute('class') ?? '';
+
+const animatedInside = ({ root }: { readonly root: Element }) =>
+  Array.from(root.querySelectorAll('*')).filter((node) => classOf({ node }).includes('animate-'));
+
+const dotOf = ({ root }: { readonly root: Element }) => {
+  const dot = root.querySelector('[class*="bg-info"]');
+  if (dot === null) {
+    throw new Error('running marker rendered no centre dot');
+  }
+  return dot;
 };
 
 describe('TimelineMarker', () => {
@@ -85,6 +98,54 @@ describe('TimelineMarker', () => {
     ] satisfies ReadonlyArray<TimelineMarkerState>) {
       expect(rootOf({ state }).className).not.toContain('spin-border');
       cleanup();
+    }
+  });
+
+  it('draws running as the ring plus a pulsing dot at its centre', () => {
+    const root = rootOf({ state: 'running' });
+
+    expect(root.className).toContain('spin-border');
+    expect(classOf({ node: dotOf({ root }) })).toContain('motion-safe:animate-soft-pulse');
+  });
+
+  it('pulses the running dot and leaves every other marker still', () => {
+    expect(animatedInside({ root: rootOf({ state: 'running' }) })).toHaveLength(1);
+    cleanup();
+    for (const state of [
+      'done',
+      'failed',
+      'pending',
+      'skipped',
+      'needsUser',
+      'question',
+    ] satisfies ReadonlyArray<TimelineMarkerState>) {
+      const root = rootOf({ state });
+      expect(root.className).not.toContain('animate-');
+      expect(animatedInside({ root })).toHaveLength(0);
+      cleanup();
+    }
+  });
+
+  it('keeps the dot under reduced motion and stops only its animation', () => {
+    const dot = dotOf({ root: rootOf({ state: 'running' }) });
+    const animations = classOf({ node: dot })
+      .split(' ')
+      .filter((token) => token.includes('animate-'));
+
+    expect(animations).toHaveLength(1);
+    expect(animations.every((token) => token.startsWith('motion-safe:'))).toBe(true);
+    expect(dot.getAttribute('style')).toContain(`${TIMELINE_RHYTHM.grade.step.dotSize}px`);
+  });
+
+  it('keeps the dot inside the ring so running never reads as the filled done marker', () => {
+    const root = rootOf({ state: 'running' });
+
+    expect(root.className).toContain('bg-background');
+    expect(root.getAttribute('style')).toContain(`${TIMELINE_RHYTHM.grade.step.markerSize}px`);
+    for (const grade of ['entry', 'step', 'pending'] satisfies ReadonlyArray<TimelineRowGrade>) {
+      const { markerSize, dotSize } = TIMELINE_RHYTHM.grade[grade];
+      expect(dotSize).toBeLessThanOrEqual(markerSize / 2);
+      expect(dotSize % 2).toBe(0);
     }
   });
 
