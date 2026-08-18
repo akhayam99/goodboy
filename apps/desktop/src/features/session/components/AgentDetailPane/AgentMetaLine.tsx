@@ -24,8 +24,12 @@ export const AgentMetaLine = ({ aggregate, contextUsage, turns }: Props) => (
           value={formatCost(aggregate?.estimatedCostUsd ?? 0)}
         />,
         <AgentMetric key="turns" label="turns" value={String(aggregate?.turns ?? turns)} />,
-        <AgentMetric key="input" label="in" value={formatTokens(aggregate?.inputTokens ?? 0)} />,
-        <AgentMetric key="output" label="out" value={formatTokens(aggregate?.outputTokens ?? 0)} />,
+        <AgentMetric key="input" label="input" value={formatTokens(aggregate?.inputTokens ?? 0)} />,
+        <AgentMetric
+          key="output"
+          label="output"
+          value={formatTokens(aggregate?.outputTokens ?? 0)}
+        />,
       ]}
     />
     <ContextWindowBar usage={contextUsage} />

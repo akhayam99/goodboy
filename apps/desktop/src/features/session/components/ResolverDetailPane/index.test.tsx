@@ -216,6 +216,7 @@ vi.mock('../../../chat/components/ChatView', () => ({
   ChatView: () => <div data-testid="chat-view" />,
 }));
 
+import { SECTION_SURFACE_CLASS } from '@goodboy/ui';
 import { ResolverDetailPane } from '.';
 
 const SESSION: Session = {
@@ -306,6 +307,10 @@ const renderPane = (agentId: AgentId) => {
 const openOverflow = () =>
   fireEvent.click(screen.getByRole('button', { name: 'More resolver actions' }));
 
+const carriesSurface = (element: Element | null): boolean =>
+  element !== null &&
+  SECTION_SURFACE_CLASS.split(' ').every((token) => element.classList.contains(token));
+
 describe('ResolverDetailPane (resolver)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -381,6 +386,13 @@ describe('ResolverDetailPane (resolver)', () => {
 
     expect(screen.getAllByText('this needs a guard clause')).toHaveLength(2);
     expect(screen.getByRole('button', { name: /Open thread/ })).toBeDefined();
+  });
+
+  it('carries its brief sections on the same surface the agent brief uses', () => {
+    renderPane(RUNNING_ID);
+
+    expect(carriesSurface(screen.getByText('Comment').closest('section'))).toBe(true);
+    expect(carriesSurface(screen.getByText(/^Threads?$/).closest('section'))).toBe(true);
   });
 
   it('opens on the resolve board and keeps the transcript one tab away', () => {

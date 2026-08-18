@@ -46,7 +46,11 @@ vi.mock('./AgentFollowUps', () => ({
   AgentFollowUps: () => null,
 }));
 
+import { SECTION_SURFACE_CLASS } from '@goodboy/ui';
 import { AgentBrief } from './AgentBrief';
+
+const carriesSurface = (element: Element): boolean =>
+  SECTION_SURFACE_CLASS.split(' ').every((token) => element.classList.contains(token));
 
 const sessionId = 'session-1' as SessionId;
 const agentId = 'agent-1' as AgentId;
@@ -104,5 +108,58 @@ describe('AgentBrief summary', () => {
 
     expect(screen.getByText('Latest')).toBeDefined();
     expect(screen.getByText('still working from the transcript')).toBeDefined();
+  });
+});
+
+describe('AgentBrief statistics', () => {
+  it('reads cost, turns, input and output as one metadata line, not four cards', () => {
+    const { container } = render(
+      <AgentBrief session={session} agent={makeAgent({ outputSummary: 'shipped the refactor' })} />,
+    );
+
+    const metrics = ['cost', 'turns', 'input', 'output'].map((label) => screen.getByText(label));
+    const line = metrics[0]?.parentElement?.parentElement ?? null;
+
+    expect(line).not.toBeNull();
+    expect(metrics.every((metric) => metric.parentElement?.parentElement === line)).toBe(true);
+    expect(container.querySelector('.grid')).toBeNull();
+  });
+
+  it('leads with the outcome and leaves the numbers behind it', () => {
+    render(
+      <AgentBrief session={session} agent={makeAgent({ outputSummary: 'shipped the refactor' })} />,
+    );
+
+    const outcome = screen.getByRole('heading', { level: 2, name: 'Outcome' });
+    const position = outcome.compareDocumentPosition(screen.getByText('cost'));
+
+    expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.getAllByRole('heading')).toHaveLength(1);
+  });
+
+  it('keeps the numbers off a surface of their own, so they cannot reinflate', () => {
+    render(
+      <AgentBrief session={session} agent={makeAgent({ outputSummary: 'shipped the refactor' })} />,
+    );
+
+    expect(screen.getByText('cost').closest('section')).toBeNull();
+  });
+});
+
+describe('AgentBrief sections', () => {
+  it('carries every section on the one shared surface', () => {
+    state.sessionPlans = {
+      [sessionId]: [
+        { id: 'plan-1', agentId, title: 'Split the store', status: 'active', consumptionCount: 1 },
+      ],
+    };
+
+    const { container } = render(
+      <AgentBrief session={session} agent={makeAgent({ outputSummary: 'shipped the refactor' })} />,
+    );
+    const sections = Array.from(container.querySelectorAll('section'));
+
+    expect(sections.length).toBeGreaterThan(2);
+    expect(sections.every(carriesSurface)).toBe(true);
   });
 });
