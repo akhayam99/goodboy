@@ -56,12 +56,11 @@ export const OverflowMenu = ({
 
   return (
     <div className="relative" ref={dropdown.containerRef}>
-      <Tooltip content={tooltip ?? label}>
+      <Tooltip content={tooltip ?? label} anchorClassName="shrink-0">
         <button
           type="button"
           onClick={dropdown.toggle}
           disabled={disabled}
-          title={disabled === true ? (tooltip ?? label) : undefined}
           aria-label={label}
           aria-haspopup="menu"
           aria-expanded={dropdown.open}

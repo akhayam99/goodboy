@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
 
 const { state } = vi.hoisted(() => ({
@@ -82,8 +83,8 @@ describe('PreferencesStep', () => {
       const gemini = screen.getByRole('button', { name: /gemini/i }) as HTMLButtonElement;
       expect(codex.disabled).toBe(true);
       expect(gemini.disabled).toBe(true);
-      expect(codex.getAttribute('title')).toContain('not connected');
-      expect(gemini.getAttribute('title')).toContain('not connected');
+      expect(tooltipTextOf({ element: codex })).toContain('not connected');
+      expect(tooltipTextOf({ element: gemini })).toContain('not connected');
     });
 
     it('leaves connected providers enabled', () => {

@@ -30,30 +30,32 @@ export const CardAction = ({
   disabled = false,
   onClick,
 }: CardActionProps) => (
-  <Tooltip content={label} side="top">
-    <span className={cn('inline-flex shrink-0', size === 'compact' ? 'size-6' : 'size-7')}>
-      <button
-        type="button"
-        aria-label={label}
-        aria-pressed={pressed}
-        aria-expanded={expanded}
-        disabled={disabled}
-        onClick={(event) => {
-          event.stopPropagation();
-          onClick();
-        }}
-        className={cn(
-          'inline-flex size-full shrink-0 items-center justify-center rounded-md font-medium text-muted-foreground transition-[background-color,color,opacity] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:pointer-events-none disabled:opacity-40',
-          size === 'compact' ? 'text-3xs' : 'text-xs',
-          tintClasses(tone).hoverBgSoft,
-          tintClasses(tone).hoverText,
-          reveal && 'opacity-0',
-          reveal && revealGroup,
-          highlighted && cn(tintClasses(tone).bgSoft, tintClasses(tone).text),
-        )}
-      >
-        <Icon size={size === 'compact' ? 12 : 14} aria-hidden />
-      </button>
-    </span>
+  <Tooltip
+    content={label}
+    side="top"
+    anchorClassName={cn('shrink-0', size === 'compact' ? 'size-6' : 'size-7')}
+  >
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={pressed}
+      aria-expanded={expanded}
+      disabled={disabled}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
+      className={cn(
+        'inline-flex size-full shrink-0 items-center justify-center rounded-md font-medium text-muted-foreground transition-[background-color,color,opacity] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:opacity-40',
+        size === 'compact' ? 'text-3xs' : 'text-xs',
+        tintClasses(tone).hoverBgSoft,
+        tintClasses(tone).hoverText,
+        reveal && 'opacity-0',
+        reveal && revealGroup,
+        highlighted && cn(tintClasses(tone).bgSoft, tintClasses(tone).text),
+      )}
+    >
+      <Icon size={size === 'compact' ? 12 : 14} aria-hidden />
+    </button>
   </Tooltip>
 );

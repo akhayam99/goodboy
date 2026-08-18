@@ -72,12 +72,11 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
           </>
         )}
         <div className="flex-1" />
-        <Tooltip content="Refresh GitHub status">
+        <Tooltip content="Refresh GitHub status" anchorClassName="shrink-0">
           <button
             type="button"
             onClick={() => void onReload()}
             disabled={checking}
-            title="Refresh GitHub status"
             aria-label="Refresh GitHub status"
             className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
           >

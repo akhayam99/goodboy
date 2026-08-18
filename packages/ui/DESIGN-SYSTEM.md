@@ -280,15 +280,18 @@ themselves, and a hand-rolled icon button wraps itself in `Tooltip`. The native
 positioned or styled. Passing `tooltip` says more than the accessible name when
 the control needs it, and `IconButton` refuses a `title` at the type level.
 
-A control that can go `disabled` is the exception, because a disabled element
-dispatches no pointer events and its hover tooltip would never open. Such a
-control needs one of two things: a `title` set only for the disabled state, which
-is what the primitives do, or a `Tooltip` that wraps something around the control
-rather than the control itself, so the wrapper takes the hover the disabled
-button swallows. Never a `title` that is always present, since then the OS
-tooltip and ours both open while the control is live.
-`icon-only-controls-carry-a-tooltip` holds the rule and both halves of the
-exception.
+There is no exception for a control that can go `disabled`, and no native
+`title` for that state either. A disabled element dispatches no mouse event and
+truncates the event path above itself, so listeners on the control are dead in
+exactly the state where the user most needs to know why nothing happens.
+`Tooltip` answers that itself: a trigger that declares `disabled` gets an anchor
+span that carries the listeners and takes `pointer-events` away from the
+disabled control, so the hover lands on the anchor and the tooltip still opens.
+A trigger that needs its anchor shaped, because it is out of flow or stretches,
+passes `anchorClassName` rather than hand-rolling a wrapper, since a wrapper
+between `Tooltip` and the control hides the `disabled` the primitive acts on.
+Keyboard focus is still out of reach while `disabled`, which is the attribute's
+own doing. `icon-only-controls-carry-a-tooltip` holds the rule.
 
 **One creation grammar.** Bare sections stacked in one column, never a bordered
 box around the whole thing; secondary affordances in `SectionHeader`'s

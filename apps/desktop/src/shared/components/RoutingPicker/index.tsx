@@ -302,12 +302,14 @@ export const RoutingPicker = ({
           </button>
         </Tooltip>
       )}
-      <Tooltip content={disabled ? (disabledTitle ?? summary) : `${summary}. Click to change.`}>
+      <Tooltip
+        content={disabled ? (disabledTitle ?? summary) : `${summary}. Click to change.`}
+        anchorClassName={variant === 'field' ? 'w-full' : undefined}
+      >
         <button
           type="button"
           onClick={toggle}
           disabled={disabled}
-          title={disabled ? (disabledTitle ?? summary) : `${summary}. Click to change.`}
           aria-haspopup="dialog"
           aria-expanded={open}
           aria-label={ariaLabel != null ? `${ariaLabel}: ${summary}` : summary}

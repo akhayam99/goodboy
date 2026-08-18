@@ -204,50 +204,54 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
               <div
                 class="flex shrink-0 flex-col items-end gap-1"
               >
-                <button
-                  aria-label="Open goal editor"
-                  class="inline-flex items-center justify-center rounded-md border border-border-soft p-1.5 text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-                  type="button"
+                <span
+                  class="inline-flex"
                 >
-                  <svg
-                    aria-hidden="true"
-                    class="lucide lucide-expand"
-                    fill="none"
-                    height="13"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="13"
-                    xmlns="http://www.w3.org/2000/svg"
+                  <button
+                    aria-label="Open goal editor"
+                    class="inline-flex items-center justify-center rounded-md border border-border-soft p-1.5 text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                    type="button"
                   >
-                    <path
-                      d="m15 15 6 6"
-                    />
-                    <path
-                      d="m15 9 6-6"
-                    />
-                    <path
-                      d="M21 16v5h-5"
-                    />
-                    <path
-                      d="M21 8V3h-5"
-                    />
-                    <path
-                      d="M3 16v5h5"
-                    />
-                    <path
-                      d="m3 21 6-6"
-                    />
-                    <path
-                      d="M3 8V3h5"
-                    />
-                    <path
-                      d="M9 9 3 3"
-                    />
-                  </svg>
-                </button>
+                    <svg
+                      aria-hidden="true"
+                      class="lucide lucide-expand"
+                      fill="none"
+                      height="13"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="13"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="m15 15 6 6"
+                      />
+                      <path
+                        d="m15 9 6-6"
+                      />
+                      <path
+                        d="M21 16v5h-5"
+                      />
+                      <path
+                        d="M21 8V3h-5"
+                      />
+                      <path
+                        d="M3 16v5h5"
+                      />
+                      <path
+                        d="m3 21 6-6"
+                      />
+                      <path
+                        d="M3 8V3h5"
+                      />
+                      <path
+                        d="M9 9 3 3"
+                      />
+                    </svg>
+                  </button>
+                </span>
               </div>
             </div>
             <div
@@ -1084,50 +1088,54 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
               <div
                 class="flex shrink-0 flex-col items-end gap-1"
               >
-                <button
-                  aria-label="Open goal editor"
-                  class="inline-flex items-center justify-center rounded-md border border-border-soft p-1.5 text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-                  type="button"
+                <span
+                  class="inline-flex"
                 >
-                  <svg
-                    aria-hidden="true"
-                    class="lucide lucide-expand"
-                    fill="none"
-                    height="13"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="13"
-                    xmlns="http://www.w3.org/2000/svg"
+                  <button
+                    aria-label="Open goal editor"
+                    class="inline-flex items-center justify-center rounded-md border border-border-soft p-1.5 text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                    type="button"
                   >
-                    <path
-                      d="m15 15 6 6"
-                    />
-                    <path
-                      d="m15 9 6-6"
-                    />
-                    <path
-                      d="M21 16v5h-5"
-                    />
-                    <path
-                      d="M21 8V3h-5"
-                    />
-                    <path
-                      d="M3 16v5h5"
-                    />
-                    <path
-                      d="m3 21 6-6"
-                    />
-                    <path
-                      d="M3 8V3h5"
-                    />
-                    <path
-                      d="M9 9 3 3"
-                    />
-                  </svg>
-                </button>
+                    <svg
+                      aria-hidden="true"
+                      class="lucide lucide-expand"
+                      fill="none"
+                      height="13"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="13"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="m15 15 6 6"
+                      />
+                      <path
+                        d="m15 9 6-6"
+                      />
+                      <path
+                        d="M21 16v5h-5"
+                      />
+                      <path
+                        d="M21 8V3h-5"
+                      />
+                      <path
+                        d="M3 16v5h5"
+                      />
+                      <path
+                        d="m3 21 6-6"
+                      />
+                      <path
+                        d="M3 8V3h5"
+                      />
+                      <path
+                        d="M9 9 3 3"
+                      />
+                    </svg>
+                  </button>
+                </span>
               </div>
             </div>
             <div

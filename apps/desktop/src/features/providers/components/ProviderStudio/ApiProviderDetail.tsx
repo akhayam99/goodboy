@@ -36,7 +36,6 @@ export const ApiProviderDetail = ({ info }: Props) => {
           type="button"
           aria-label="Re-detect OpenCode"
           disabled={isRefreshing}
-          title={isRefreshing ? 'Looking for OpenCode' : undefined}
           onClick={() => void onRefresh()}
           className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
         >

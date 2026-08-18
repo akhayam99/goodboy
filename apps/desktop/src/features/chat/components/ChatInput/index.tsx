@@ -503,16 +503,14 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 content={
                   sendDisabledTitle ?? (isRunning ? 'Queue message (enter)' : 'Send (enter)')
                 }
+                anchorClassName="absolute right-2 top-1/2 -translate-y-1/2"
               >
                 <button
                   type="button"
                   onClick={() => void onSend()}
                   disabled={!canSend}
-                  title={
-                    sendDisabledTitle ?? (isRunning ? 'Queue message (enter)' : 'Send (enter)')
-                  }
                   aria-label={isRunning ? 'Queue message' : 'Send message'}
-                  className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
                 >
                   <Send size={14} aria-hidden className="-translate-x-px" />
                 </button>
@@ -528,7 +526,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={providerDisconnected}
-                  title="Attach files"
                   aria-label="Attach files"
                   className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                 >

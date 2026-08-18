@@ -117,7 +117,7 @@ export const WorkflowStepCard = ({
   };
 
   const grip = (
-    <Tooltip content="Reorder step (drag or arrow keys)">
+    <Tooltip content="Reorder step (drag or arrow keys)" anchorClassName="shrink-0 self-stretch">
       <button
         type="button"
         onPointerDown={onStartDrag}
@@ -135,7 +135,6 @@ export const WorkflowStepCard = ({
         }}
         disabled={disabled}
         aria-label="Reorder step (drag or arrow keys)"
-        title="Reorder step (drag or arrow keys)"
         className="flex shrink-0 cursor-grab touch-none items-center self-stretch rounded-l-lg px-1 text-muted-foreground/30 transition-colors hover:bg-muted/40 hover:text-muted-foreground active:cursor-grabbing disabled:cursor-not-allowed"
       >
         <GripVertical size={14} aria-hidden />
@@ -162,14 +161,13 @@ export const WorkflowStepCard = ({
   );
 
   const removeButton = (
-    <Tooltip content="Remove step">
+    <Tooltip content="Remove step" anchorClassName="absolute right-1.5 top-1.5 z-10">
       <button
         type="button"
         onClick={onRemove}
         disabled={disabled}
         aria-label="Remove step"
-        title="Remove step"
-        className="absolute right-1.5 top-1.5 z-10 inline-flex items-center justify-center rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted/60 hover:text-danger focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30 group-hover:opacity-100"
+        className="inline-flex items-center justify-center rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted/60 hover:text-danger focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30 group-hover:opacity-100"
       >
         <Trash2 size={13} aria-hidden />
       </button>

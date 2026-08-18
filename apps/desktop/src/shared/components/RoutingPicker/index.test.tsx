@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MODEL_CATALOGS, PROVIDER_CAPABILITIES } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
+import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
 import { cursorMaxModeAdvisory } from '../../lib/cursorMaxModeAdvisory';
 import { RoutingPicker } from './index';
@@ -48,21 +49,21 @@ describe('RoutingPicker', () => {
     render(<RoutingPicker {...baseProps} verbosity="brief" onVerbosity={vi.fn()} />);
     const trigger = screen.getByRole('button', { name: /routing/i });
     expect(trigger.getAttribute('aria-label')).toBe('routing: Claude · Opus 5 · High · Brief');
-    expect(trigger.getAttribute('title')).toContain('Claude · Opus 5 · High · Brief');
+    expect(tooltipTextOf({ element: trigger })).toContain('Claude · Opus 5 · High · Brief');
   });
 
   it('still explains a disabled trigger when the caller gives no reason', () => {
     render(
       <RoutingPicker {...baseProps} disabled={true} verbosity="brief" onVerbosity={vi.fn()} />,
     );
-    expect(screen.getByRole('button', { name: /routing/i }).getAttribute('title')).toBe(
+    expect(tooltipTextOf({ element: screen.getByRole('button', { name: /routing/i }) })).toBe(
       'Claude · Opus 5 · High · Brief',
     );
   });
 
   it('prefers the caller reason over the summary on a disabled trigger', () => {
     render(<RoutingPicker {...baseProps} disabled={true} disabledTitle="the turn is running" />);
-    expect(screen.getByRole('button', { name: /routing/i }).getAttribute('title')).toBe(
+    expect(tooltipTextOf({ element: screen.getByRole('button', { name: /routing/i }) })).toBe(
       'the turn is running',
     );
   });
@@ -226,7 +227,7 @@ describe('RoutingPicker', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    const providerRow = screen.getByRole('button', { name: 'Cursor' }).parentElement;
+    const providerRow = screen.getByRole('button', { name: 'Cursor' }).closest('div');
     expect(providerRow?.querySelectorAll('svg')).toHaveLength(
       baseProps.connectedProviders.length + 1,
     );
@@ -547,7 +548,7 @@ describe('RoutingPicker', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('button', { name: 'Codex' }).getAttribute('title')).toBe(
+    expect(tooltipTextOf({ element: screen.getByRole('button', { name: 'Codex' }) })).toBe(
       'Codex is not connected',
     );
     expect(screen.getByText('Codex is not connected')).toBeDefined();
@@ -611,9 +612,9 @@ describe('RoutingPicker', () => {
     render(<RoutingPicker {...baseProps} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const providerButton = screen.getByRole('button', { name: 'Cursor' });
-    const providerRow = providerButton.parentElement;
+    const providerRow = providerButton.closest('div');
     expect(providerRow?.className).toContain('gap-1.5');
-    expect(providerRow?.className).toContain('[&>button]:flex-1');
+    expect(providerRow?.className).toContain('[&>*]:flex-1');
     expect(providerButton.className).toContain('min-w-0');
   });
 });

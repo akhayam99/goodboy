@@ -86,7 +86,6 @@ function Detail({
           type="button"
           aria-label="Re-detect CLIs"
           disabled={refreshing}
-          title={refreshing ? 'Looking for CLIs' : undefined}
           onClick={() => void onRefresh()}
           className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
         >

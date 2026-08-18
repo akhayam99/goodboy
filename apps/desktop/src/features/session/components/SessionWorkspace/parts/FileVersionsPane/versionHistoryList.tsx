@@ -69,9 +69,6 @@ export const VersionHistoryList = ({
                   type="button"
                   onClick={() => onDeleteVersion(version.id)}
                   disabled={isDeleting || restoringVersionId != null}
-                  title={
-                    isDeleting || restoringVersionId != null ? 'Delete this version' : undefined
-                  }
                   aria-label="Delete this version"
                   className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
                 >

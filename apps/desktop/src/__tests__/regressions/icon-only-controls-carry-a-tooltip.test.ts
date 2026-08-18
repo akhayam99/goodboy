@@ -116,23 +116,25 @@ const rendersOwnText = ({ body }: { body: string }): boolean => {
   if (literalText) {
     return true;
   }
-  // an interpolated child with no element inside it resolves to text, not an icon
-  return childExpressions({ body }).some((expression) => !expression.includes('<'));
+  const interpolationsResolvingToText = childExpressions({ body }).filter(
+    (expression) => !expression.includes('<'),
+  );
+  return interpolationsResolvingToText.length > 0;
 };
 
 const rendersAnIcon = ({ body }: { body: string }): boolean =>
   /<[A-Z]\w*\s[^>]*(size=|aria-hidden)/.test(body);
 
-const NOT_FOUND = -1;
+const NO_TOOLTIP = -1;
 
-const tooltipDistance = ({ source, from }: { source: string; from: number }): number => {
+const elementsUpToTooltip = ({ source, from }: { source: string; from: number }): number => {
   let cursor = from - 1;
   for (let hop = 0; hop < 3; hop++) {
     while (cursor >= 0 && /\s/.test(source.charAt(cursor))) {
       cursor--;
     }
     if (source.charAt(cursor) !== '>') {
-      return NOT_FOUND;
+      return NO_TOOLTIP;
     }
     const start = source.lastIndexOf('<', cursor);
     if (/^<Tooltip\b/.test(source.slice(start, cursor + 1))) {
@@ -140,7 +142,7 @@ const tooltipDistance = ({ source, from }: { source: string; from: number }): nu
     }
     cursor = start - 1;
   }
-  return NOT_FOUND;
+  return NO_TOOLTIP;
 };
 
 type Offender = { location: string; reason: string };
@@ -177,24 +179,19 @@ const auditFile = ({ file, root }: { file: string; root: string }): Audit => {
     const line = source.slice(0, start).split('\n').length;
     const location = `${relative(root, file)}:${line}`;
     const canBeDisabled = /\sdisabled(?:=|\s|$)/.test(openTag);
-    const hasTitle = /\stitle=/.test(openTag);
-    const distance = tooltipDistance({ source, from: start });
-
-    if (distance === NOT_FOUND) {
+    if (/\stitle=/.test(openTag)) {
+      offenders.push({ location, reason: 'carries a native title' });
+      continue;
+    }
+    const hops = elementsUpToTooltip({ source, from: start });
+    if (hops === NO_TOOLTIP) {
       offenders.push({ location, reason: 'has no Tooltip' });
       continue;
     }
-    if (hasTitle && !canBeDisabled) {
-      offenders.push({ location, reason: 'carries a native title it does not need' });
-      continue;
-    }
-    // the tooltip opens on whatever the Tooltip wraps, so a wrapper between the two
-    // still receives the hover the disabled control itself would swallow
-    const tooltipReachesTheDisabledState = distance > 0;
-    if (canBeDisabled && !hasTitle && !tooltipReachesTheDisabledState) {
+    if (canBeDisabled && hops > 0) {
       offenders.push({
         location,
-        reason: 'can go disabled with nothing left to explain it',
+        reason: 'can go disabled behind a wrapper, where Tooltip cannot anchor it',
       });
     }
   }
@@ -229,9 +226,10 @@ describe('an icon-only control', () => {
         'names it for assistive tech, and nothing at all names it for the pointer.',
         'The native title waits a second and renders in the OS chrome, so wrap the',
         'control in the shared Tooltip instead. A control that can go disabled is',
-        'the exception, since a disabled element dispatches no pointer events: give',
-        'it a title for that state, or let the Tooltip wrap something around it that',
-        'can still take the hover. Offenders:',
+        'the direct child of its Tooltip, never wrapped in a hand-rolled span: the',
+        'primitive reads disabled off its child to anchor the listeners somewhere',
+        'the pointer can still reach. Shape that anchor with anchorClassName.',
+        'Offenders:',
         offenders.join('\n'),
       ].join('\n'),
     ).toEqual([]);

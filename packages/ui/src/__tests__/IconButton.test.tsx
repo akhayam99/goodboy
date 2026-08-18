@@ -5,6 +5,14 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { RefreshCw } from 'lucide-react';
 import { IconButton } from '../components/IconButton';
 
+const anchorOf = (trigger: HTMLElement): HTMLElement => {
+  const anchor = trigger.parentElement;
+  if (anchor === null) {
+    throw new Error('the trigger has no anchor to hover');
+  }
+  return anchor;
+};
+
 const hover = (button: HTMLElement): void => {
   vi.useFakeTimers();
   fireEvent.mouseEnter(button);
@@ -38,11 +46,12 @@ describe('IconButton', () => {
     expect(screen.getByRole('tooltip').textContent).toBe('Refresh issues from GitHub');
   });
 
-  it('falls back to a native title while disabled, the one state hover cannot reach', () => {
+  it('keeps explaining itself while disabled, and still without a native title', () => {
     render(<IconButton icon={RefreshCw} label="Refresh issues" disabled />);
-    expect(screen.getByRole('button', { name: 'Refresh issues' }).getAttribute('title')).toBe(
-      'Refresh issues',
-    );
+    const button = screen.getByRole('button', { name: 'Refresh issues' });
+    expect(button.getAttribute('title')).toBeNull();
+    hover(anchorOf(button));
+    expect(screen.getByRole('tooltip').textContent).toBe('Refresh issues');
   });
 
   it('reports the action back to the caller', () => {

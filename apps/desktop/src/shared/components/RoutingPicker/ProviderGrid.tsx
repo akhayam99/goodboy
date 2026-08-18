@@ -45,13 +45,12 @@ export const ProviderGrid = ({
           >
             <button
               type="button"
-              title={isConnected ? PROVIDER_LABEL[id] : `${PROVIDER_LABEL[id]} is not connected`}
               aria-label={PROVIDER_LABEL[id]}
               aria-pressed={isActive}
               disabled={isDisabled}
               onClick={() => onSelect(id)}
               className={cn(
-                'relative inline-flex min-w-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground',
+                'relative inline-flex size-full min-w-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground',
                 isActive && 'bg-background text-foreground shadow-sm',
                 isSecondary && 'text-foreground ring-1 ring-inset ring-border-soft',
                 isDisabled && 'cursor-not-allowed',

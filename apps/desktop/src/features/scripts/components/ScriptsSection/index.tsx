@@ -222,12 +222,11 @@ function ScriptRow({
           </button>
         </Tooltip>
       ) : (
-        <Tooltip content="Run script">
+        <Tooltip content="Run script" anchorClassName="shrink-0">
           <button
             type="button"
             onClick={onRun}
             disabled={disabled}
-            title="Run script"
             aria-label="Run script"
             className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-primary group-hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >

@@ -7,8 +7,10 @@ export type TooltipSide = 'top' | 'bottom' | 'left' | 'right';
 export type TooltipProps = {
   content: string;
   side?: TooltipSide;
+  anchorClassName?: string;
   children: React.ReactElement<{
     ref?: React.Ref<HTMLElement>;
+    disabled?: boolean;
     onMouseEnter?: React.MouseEventHandler;
     onMouseLeave?: React.MouseEventHandler;
     onFocus?: React.FocusEventHandler;
@@ -99,7 +101,7 @@ const positionFor = (anchor: DOMRect, tip: DOMRect, side: TooltipSide): Coords =
   return { top, left, side: chosen };
 };
 
-export const Tooltip = ({ content, side = 'top', children }: TooltipProps) => {
+export const Tooltip = ({ content, side = 'top', anchorClassName, children }: TooltipProps) => {
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState<Coords | null>(null);
   const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -156,25 +158,45 @@ export const Tooltip = ({ content, side = 'top', children }: TooltipProps) => {
     [childRef],
   );
 
-  const enhanced = cloneElement(children, {
-    ref: mergedRef,
-    onMouseEnter: (e: React.MouseEvent) => {
-      show();
-      children.props.onMouseEnter?.(e);
-    },
-    onMouseLeave: (e: React.MouseEvent) => {
-      hide();
-      children.props.onMouseLeave?.(e);
-    },
-    onFocus: (e: React.FocusEvent) => {
-      show();
-      children.props.onFocus?.(e);
-    },
-    onBlur: (e: React.FocusEvent) => {
-      hide();
-      children.props.onBlur?.(e);
-    },
-  });
+  const isTriggerDisabled = children.props.disabled;
+  const canTriggerBeDisabled = isTriggerDisabled !== undefined;
+  const hasAnchor = canTriggerBeDisabled || anchorClassName !== undefined;
+
+  const enhanced = hasAnchor ? (
+    <span
+      className={cn(
+        'inline-flex',
+        isTriggerDisabled === true && 'cursor-not-allowed [&_:disabled]:pointer-events-none',
+        anchorClassName,
+      )}
+      onMouseEnter={show}
+      onMouseLeave={hide}
+      onFocus={show}
+      onBlur={hide}
+    >
+      {cloneElement(children, { ref: mergedRef })}
+    </span>
+  ) : (
+    cloneElement(children, {
+      ref: mergedRef,
+      onMouseEnter: (e: React.MouseEvent) => {
+        show();
+        children.props.onMouseEnter?.(e);
+      },
+      onMouseLeave: (e: React.MouseEvent) => {
+        hide();
+        children.props.onMouseLeave?.(e);
+      },
+      onFocus: (e: React.FocusEvent) => {
+        show();
+        children.props.onFocus?.(e);
+      },
+      onBlur: (e: React.FocusEvent) => {
+        hide();
+        children.props.onBlur?.(e);
+      },
+    })
+  );
   const portalTarget =
     typeof document === 'undefined'
       ? null

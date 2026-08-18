@@ -100,7 +100,6 @@ export const DiffToolbar = ({
                 type="button"
                 onClick={onRefresh}
                 disabled={refreshing}
-                title="Refresh git state"
                 aria-label="Refresh git state"
                 className={cn(TOOLBAR_ICON_BTN, 'disabled:opacity-50')}
               >
