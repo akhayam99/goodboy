@@ -233,7 +233,6 @@
      and drops below 3:1 on the brighter elevations. */
   --color-focus-ring: oklch(0.72 0.11 200);
 
-  --rail-strength-receded: 45%;
 
   --z-index-popover-backdrop: 55;
   --z-index-popover: 65;
@@ -363,7 +362,6 @@ html[data-theme='light'] {
   --color-syntax-punctuation: oklch(0.5 0.015 255);
   --color-syntax-tag: oklch(0.48 0.16 25);
   --color-syntax-regex: oklch(0.46 0.13 120);
-  --rail-strength-receded: 50%;
   /* Light shadows: a single hairline at sm/md so flat surfaces stay flat.
      Only shadow-lg still lifts, reserved for popovers and dialogs. */
   --shadow-sm: 0 1px 1px 0 oklch(0 0 0 / 0.05);

@@ -1,5 +1,3 @@
-const EMPTY_COLUMNS: ReadonlySet<number> = new Set();
-
 export const RAIL_SPINE_X = 8;
 export const RAIL_LANE_OFFSET = 16;
 export const RAIL_MAX_COLUMN = 3;
@@ -8,8 +6,6 @@ const RAIL_CURVE_K = 0.5523;
 const RAIL_CURVE_HANDLE = 8.84;
 
 type RailDash = 'solid' | 'dashed';
-
-type RailStrength = 'full' | 'receded';
 
 export type RailGroupShape = 'open' | 'merged';
 
@@ -35,12 +31,9 @@ export type RailSegment = {
   readonly column: number;
   readonly identityIndex: number | null;
   readonly dash: RailDash;
-  readonly strength: RailStrength;
   readonly fromY: number;
   readonly toY: number;
 };
-
-type PlannedSegment = Omit<RailSegment, 'strength'>;
 
 export type RailJoin = {
   readonly kind: 'depart' | 'merge';
@@ -49,19 +42,10 @@ export type RailJoin = {
   readonly identityIndex: number | null;
   readonly dash: RailDash;
   readonly anchorY: number;
-  readonly strength: RailStrength;
   readonly path: string;
 };
 
-type PlannedJoin = Omit<RailJoin, 'strength' | 'path'>;
-
-const strengthOf = ({
-  column,
-  delegated,
-}: {
-  readonly column: number;
-  readonly delegated: ReadonlySet<number>;
-}): RailStrength => (delegated.has(column) ? 'receded' : 'full');
+type PlannedJoin = Omit<RailJoin, 'path'>;
 
 export type RailRow = {
   readonly id: string;
@@ -208,49 +192,8 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       };
     });
 
-  const laneSegmentsByIndex: PlannedSegment[][] = rows.map(() => []);
+  const laneSegmentsByIndex: RailSegment[][] = rows.map(() => []);
   const joinsByIndex: PlannedJoin[][] = rows.map(() => []);
-  const delegatedByIndex: Array<Set<number>> = rows.map(() => new Set());
-
-  const ancestorColumnsOf = ({
-    group,
-  }: {
-    readonly group: RailGroupInput;
-  }): ReadonlyArray<number> => {
-    const columns = [0];
-    let ancestorId = group.parentGroupId;
-    let depth = 0;
-    while (ancestorId != null && depth <= RAIL_MAX_COLUMN) {
-      const column = columnByGroupId.get(ancestorId);
-      if (column !== undefined) {
-        columns.push(column);
-      }
-      ancestorId = groupById.get(ancestorId)?.parentGroupId ?? null;
-      depth += 1;
-    }
-    return columns;
-  };
-
-  const markDelegatedRow = ({
-    index,
-    columns,
-  }: {
-    readonly index: number;
-    readonly columns: ReadonlyArray<number>;
-  }) => {
-    const row = rows[index];
-    const delegated = delegatedByIndex[index];
-    if (row === undefined || delegated === undefined) {
-      return;
-    }
-    const ownColumn = row.groupId == null ? null : columnByGroupId.get(row.groupId);
-    for (const column of columns) {
-      if (ownColumn != null && column === ownColumn) {
-        continue;
-      }
-      delegated.add(column);
-    }
-  };
 
   const pushSpan = ({ index, plan }: { readonly index: number; readonly plan: GroupPlan }) => {
     const row = rows[index];
@@ -289,7 +232,6 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
   for (const plan of plans) {
     const parentColumn =
       plan.group.parentGroupId == null ? 0 : (columnByGroupId.get(plan.group.parentGroupId) ?? 0);
-    const columns = ancestorColumnsOf({ group: plan.group });
     const first = plan.memberIndexes[0];
     const topIndex = first !== undefined && first < plan.originIndex ? first : undefined;
     const originRow = rows[plan.originIndex];
@@ -300,7 +242,6 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
 
     for (let index = topIndex + 1; index < plan.originIndex; index += 1) {
       pushSpan({ index, plan });
-      markDelegatedRow({ index, columns });
     }
 
     if (originRow !== undefined) {
@@ -312,7 +253,6 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
         dash: plan.boundaryIndex === plan.originIndex ? 'dashed' : 'solid',
         anchorY: anchorOf({ row: originRow }),
       });
-      markDelegatedRow({ index: plan.originIndex, columns });
     }
 
     const topRow = rows[topIndex];
@@ -336,7 +276,6 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
         fromY: topRow.topY,
         toY: topAnchor,
       });
-      markDelegatedRow({ index: topIndex, columns });
       for (let index = 0; index < topIndex; index += 1) {
         const row = rows[index];
         if (row === undefined) {
@@ -348,12 +287,10 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
           fromY: row.topY,
           toY: row.height,
         });
-        markDelegatedRow({ index, columns });
       }
       continue;
     }
 
-    markDelegatedRow({ index: topIndex, columns });
     joinsByIndex[topIndex]?.push({
       kind: 'merge',
       spineColumn: parentColumn,
@@ -395,21 +332,11 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
           dash: 'solid',
           fromY: row.topY,
           toY: row.height,
-        } satisfies PlannedSegment,
+        } satisfies RailSegment,
         ...(laneSegmentsByIndex[index] ?? []),
-      ].map((segment) => ({
-        ...segment,
-        strength: strengthOf({
-          column: segment.column,
-          delegated: delegatedByIndex[index] ?? EMPTY_COLUMNS,
-        }),
-      }));
+      ];
       const joins = normalizedJoins.map((join) => ({
         ...join,
-        strength: strengthOf({
-          column: join.laneColumn,
-          delegated: delegatedByIndex[index] ?? EMPTY_COLUMNS,
-        }),
         path: joinPathOf({ join, height: row.height }),
       }));
       return {

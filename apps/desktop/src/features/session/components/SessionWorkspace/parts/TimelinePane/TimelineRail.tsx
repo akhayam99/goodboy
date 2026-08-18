@@ -9,16 +9,9 @@ type Props = {
 const LANE_WIDTH = 2;
 const SPINE_WIDTH = 1;
 const DASH_PATTERN = '3 3';
-const RECEDED_CLASS = 'opacity-[var(--rail-strength-receded)]';
 
 const strokeOf = ({ identityIndex }: { readonly identityIndex: number | null }): string =>
   identityIndex == null ? 'var(--color-border)' : runIdentityStroke({ index: identityIndex });
-
-const recededClassOf = ({
-  strength,
-}: {
-  readonly strength: RailSegment['strength'];
-}): string | undefined => (strength === 'receded' ? RECEDED_CLASS : undefined);
 
 const segmentKey = ({ segment }: { readonly segment: RailSegment }): string =>
   `${segment.column}:${segment.fromY}:${segment.toY}:${segment.dash}`;
@@ -34,7 +27,6 @@ export const TimelineRail = ({ rail, width }: Props) => (
     {rail.segments.map((segment) => (
       <line
         key={segmentKey({ segment })}
-        className={recededClassOf({ strength: segment.strength })}
         x1={railColumnX({ column: segment.column })}
         y1={segment.fromY}
         x2={railColumnX({ column: segment.column })}
@@ -49,7 +41,6 @@ export const TimelineRail = ({ rail, width }: Props) => (
     {rail.joins.map((join) => (
       <path
         key={`${join.kind}:${join.laneColumn}:${join.anchorY}`}
-        className={recededClassOf({ strength: join.strength })}
         d={join.path}
         fill="none"
         stroke={strokeOf({ identityIndex: join.identityIndex })}

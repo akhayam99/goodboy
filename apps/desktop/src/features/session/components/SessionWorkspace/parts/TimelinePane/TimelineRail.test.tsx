@@ -17,7 +17,7 @@ const railOf = ({ segment }: { readonly segment: RailSegment }): RailRow => ({
 afterEach(cleanup);
 
 describe('TimelineRail', () => {
-  it('keeps a receded stroke on its own colour and dims it with opacity', () => {
+  it('keeps every lane stroke on its own colour at full strength', () => {
     const { container } = render(
       <TimelineRail
         width={32}
@@ -26,7 +26,6 @@ describe('TimelineRail', () => {
             column: 1,
             identityIndex: 0,
             dash: 'solid',
-            strength: 'receded',
             fromY: 0,
             toY: 32,
           },
@@ -36,7 +35,7 @@ describe('TimelineRail', () => {
     const line = container.querySelector('line');
 
     expect(line?.getAttribute('stroke')).toBe('var(--color-run-1)');
-    expect(line?.getAttribute('class') ?? '').toContain('opacity-[var(--rail-strength-receded)]');
+    expect(line?.getAttribute('class') ?? '').not.toContain('opacity');
   });
 
   it('paints every stroke with one flat colour and no gradient machinery', () => {
@@ -48,7 +47,6 @@ describe('TimelineRail', () => {
             column: 0,
             identityIndex: null,
             dash: 'solid',
-            strength: 'full',
             fromY: 16,
             toY: 32,
           },
