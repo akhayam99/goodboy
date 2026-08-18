@@ -15,6 +15,7 @@ type RowParams = {
   readonly groupId?: string | null;
   readonly isPending?: boolean;
   readonly markerY?: number | null;
+  readonly topAnchorY?: number | null;
   readonly height?: number;
   readonly topY?: number;
 };
@@ -24,9 +25,10 @@ const row = ({
   groupId = null,
   isPending = false,
   markerY = 18,
+  topAnchorY = null,
   height = 36,
   topY = 0,
-}: RowParams): RailRowInput => ({ id, groupId, isPending, markerY, height, topY });
+}: RowParams): RailRowInput => ({ id, groupId, isPending, markerY, topAnchorY, height, topY });
 
 type GroupParams = {
   readonly id: string;
@@ -111,6 +113,56 @@ describe('layoutTimelineRail', () => {
     expect(lanesOf(layout, 'now')).toEqual([
       { column: 1, identityIndex: 0, dash: 'dashed', fromY: 12, toY: 48 },
     ]);
+  });
+
+  it('ends an open lane at its topmost pending row instead of dangling past it', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'now', markerY: null, height: 48, topY: 12 }),
+        row({ id: 'pending', groupId: 'lane', isPending: true }),
+        row({ id: 'done', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [group({ id: 'lane', originRowId: 'origin', shape: 'open' })],
+    });
+
+    expect(railRow(layout, 'pending').joins).toEqual([
+      {
+        kind: 'merge',
+        spineColumn: 0,
+        laneColumn: 1,
+        identityIndex: 0,
+        dash: 'dashed',
+        anchorY: 18,
+      },
+    ]);
+    expect(lanesOf(layout, 'pending')).toEqual([
+      { column: 1, identityIndex: 0, dash: 'dashed', fromY: 18, toY: 36 },
+    ]);
+    expect(lanesOf(layout, 'now')).toEqual([]);
+  });
+
+  it('anchors the merge on the first line of a compressed pending stretch', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({
+          id: 'cluster',
+          groupId: 'lane',
+          isPending: true,
+          markerY: 24,
+          topAnchorY: 8,
+          height: 48,
+        }),
+        row({ id: 'origin' }),
+      ],
+      groups: [group({ id: 'lane', originRowId: 'origin', shape: 'open' })],
+    });
+
+    expect(railRow(layout, 'cluster').joins.map((join) => join.anchorY)).toEqual([8]);
+    expect(lanesOf(layout, 'cluster')).toEqual([
+      { column: 1, identityIndex: 0, dash: 'dashed', fromY: 8, toY: 48 },
+    ]);
+    expect(railRow(layout, 'cluster').markerY).toBe(24);
   });
 
   it('draws the lane through a standalone row that interleaves with the run', () => {

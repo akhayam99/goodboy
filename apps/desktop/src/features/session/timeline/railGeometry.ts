@@ -20,6 +20,7 @@ export type RailRowInput = {
   readonly height: number;
   readonly topY: number;
   readonly markerY: number | null;
+  readonly topAnchorY: number | null;
   readonly groupId: string | null;
   readonly isPending: boolean;
 };
@@ -80,6 +81,9 @@ export const railColumnX = ({ column }: { readonly column: number }): number =>
 
 const anchorOf = ({ row }: { readonly row: RailRowInput }): number =>
   row.markerY ?? (row.topY + row.height) / 2;
+
+const topAnchorOf = ({ row }: { readonly row: RailRowInput }): number =>
+  row.topAnchorY ?? anchorOf({ row });
 
 const overlaps = ({ first, second }: { readonly first: Interval; readonly second: Interval }) =>
   first.from <= second.to && second.from <= first.to;
@@ -228,24 +232,23 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
     if (topRow === undefined) {
       continue;
     }
-    const topAnchor = anchorOf({ row: topRow });
+    const topAnchor = topAnchorOf({ row: topRow });
     const shared = { column: plan.column, identityIndex: plan.group.identityIndex };
     const isTopPending = topIndex < plan.boundaryIndex;
 
-    if (plan.group.shape === 'open') {
-      segmentsByIndex[topIndex]?.push(
-        isTopPending
-          ? { ...shared, dash: 'dashed', fromY: topRow.topY, toY: topRow.height }
-          : { ...shared, dash: 'solid', fromY: topAnchor, toY: topRow.height },
-      );
-      if (!isTopPending) {
-        segmentsByIndex[topIndex]?.push({
-          ...shared,
-          dash: 'dashed',
-          fromY: topRow.topY,
-          toY: topAnchor,
-        });
-      }
+    if (plan.group.shape === 'open' && !isTopPending) {
+      segmentsByIndex[topIndex]?.push({
+        ...shared,
+        dash: 'solid',
+        fromY: topAnchor,
+        toY: topRow.height,
+      });
+      segmentsByIndex[topIndex]?.push({
+        ...shared,
+        dash: 'dashed',
+        fromY: topRow.topY,
+        toY: topAnchor,
+      });
       for (let index = 0; index < topIndex; index += 1) {
         const row = rows[index];
         if (row === undefined) {
@@ -272,7 +275,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       spineColumn: parentColumn,
       laneColumn: plan.column,
       identityIndex: plan.group.identityIndex,
-      dash: 'solid',
+      dash: isTopPending ? 'dashed' : 'solid',
       anchorY: topAnchor,
     });
   }
