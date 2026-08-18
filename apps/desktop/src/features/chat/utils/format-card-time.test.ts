@@ -2,14 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { formatCardTime } from './format-card-time';
 
 describe('formatCardTime', () => {
-  it('renders ISO timestamps as HH:MM:SS', () => {
+  it('renders ISO timestamps as HH:MM with a meridiem', () => {
     const output = formatCardTime('2026-05-14T09:30:45');
-    expect(output).toMatch(/\d{1,2}:\d{2}:\d{2}/);
+    expect(output).toMatch(/^\d{2}:\d{2}\s?(AM|PM)$/);
   });
 
-  it('includes hour, minute, and second fields', () => {
+  it('carries hour and minute only, never seconds', () => {
     const output = formatCardTime('2026-05-14T23:59:59');
-    expect(output).toMatch(/\d{1,2}:\d{2}:\d{2}/);
+    expect(output).not.toMatch(/:\d{2}:\d{2}/);
   });
 
   it('pins the Intl locale to en-US', () => {

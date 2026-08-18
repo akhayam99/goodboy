@@ -13,6 +13,5 @@ export const formatClockTime = ({ iso }: Params): string => {
   return new Intl.DateTimeFormat(APP_LOCALE, {
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit',
   }).format(date);
 };

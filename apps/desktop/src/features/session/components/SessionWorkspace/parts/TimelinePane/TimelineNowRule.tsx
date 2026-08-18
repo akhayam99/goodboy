@@ -1,6 +1,6 @@
 import { cn } from '@goodboy/ui';
 import type { TimelineNowItem } from '../../../../timeline/buildTimelineStream';
-import type { RailRow } from '../../../../timeline/railGeometry';
+import { RAIL_SPINE_X, type RailRow } from '../../../../timeline/railGeometry';
 import { TIMELINE_GUTTER } from './timelineLayout';
 import { TimelineRail } from './TimelineRail';
 
@@ -22,13 +22,13 @@ export const TimelineNowRule = ({ item, rail, railWidth }: Props) => (
     </span>
     <span className="relative shrink-0" style={{ width: railWidth }}>
       <TimelineRail rail={rail} width={railWidth} />
-    </span>
-    <span className="relative min-w-0 flex-1">
       <span
-        className="absolute left-2 right-0 border-t border-dashed border-border-soft"
-        style={{ top: item.ruleY }}
+        data-testid="timeline-now-dot"
         aria-hidden
+        className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-border"
+        style={{ left: RAIL_SPINE_X, top: item.ruleY }}
       />
     </span>
+    <span className="relative min-w-0 flex-1" />
   </div>
 );
