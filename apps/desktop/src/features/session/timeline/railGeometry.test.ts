@@ -1,0 +1,276 @@
+import { describe, expect, it } from 'vitest';
+import {
+  RAIL_LANE_OFFSET,
+  RAIL_SPINE_X,
+  layoutTimelineRail,
+  railColumnX,
+  type RailGroupInput,
+  type RailGroupShape,
+  type RailRowInput,
+} from './railGeometry';
+
+type RowParams = {
+  readonly id: string;
+  readonly groupId?: string | null;
+  readonly isPending?: boolean;
+  readonly markerY?: number | null;
+  readonly height?: number;
+  readonly topY?: number;
+};
+
+const row = ({
+  id,
+  groupId = null,
+  isPending = false,
+  markerY = 18,
+  height = 36,
+  topY = 0,
+}: RowParams): RailRowInput => ({ id, groupId, isPending, markerY, height, topY });
+
+type GroupParams = {
+  readonly id: string;
+  readonly originRowId: string;
+  readonly shape?: RailGroupShape;
+  readonly parentGroupId?: string | null;
+  readonly identityIndex?: number;
+};
+
+const group = ({
+  id,
+  originRowId,
+  shape = 'merged',
+  parentGroupId = null,
+  identityIndex = 0,
+}: GroupParams): RailGroupInput => ({ id, originRowId, shape, parentGroupId, identityIndex });
+
+const railRow = (layout: ReturnType<typeof layoutTimelineRail>, id: string) => {
+  const found = layout.rows.find((candidate) => candidate.id === id);
+  if (found === undefined) {
+    throw new Error(`no rail row for ${id}`);
+  }
+  return found;
+};
+
+const lanesOf = (layout: ReturnType<typeof layoutTimelineRail>, id: string) =>
+  railRow(layout, id).segments.filter((segment) => segment.column > 0);
+
+describe('layoutTimelineRail', () => {
+  it('departs the spine at the origin row and travels upward to the newest step', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'step-2', groupId: 'lane' }),
+        row({ id: 'step-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [group({ id: 'lane', originRowId: 'origin' })],
+    });
+
+    expect(railRow(layout, 'origin').joins).toEqual([
+      {
+        kind: 'depart',
+        spineColumn: 0,
+        laneColumn: 1,
+        identityIndex: 0,
+        dash: 'solid',
+        anchorY: 18,
+      },
+    ]);
+    expect(railRow(layout, 'origin').markerColumn).toBe(0);
+    expect(railRow(layout, 'step-1').markerColumn).toBe(1);
+    expect(railRow(layout, 'step-2').markerColumn).toBe(1);
+  });
+
+  it('merges a finished run back into the spine at its newest row', () => {
+    const layout = layoutTimelineRail({
+      rows: [row({ id: 'step-1', groupId: 'lane' }), row({ id: 'origin' })],
+      groups: [group({ id: 'lane', originRowId: 'origin', shape: 'merged' })],
+    });
+
+    expect(railRow(layout, 'step-1').joins.map((join) => join.kind)).toEqual(['merge']);
+    expect(lanesOf(layout, 'step-1')).toEqual([
+      { column: 1, identityIndex: 0, dash: 'solid', fromY: 18, toY: 36 },
+    ]);
+  });
+
+  it('dangles an unfinished run toward NOW instead of merging', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'now', markerY: null, height: 48, topY: 12 }),
+        row({ id: 'newer-entry' }),
+        row({ id: 'step-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [group({ id: 'lane', originRowId: 'origin', shape: 'open' })],
+    });
+
+    expect(railRow(layout, 'step-1').joins).toEqual([]);
+    expect(lanesOf(layout, 'newer-entry')).toEqual([
+      { column: 1, identityIndex: 0, dash: 'dashed', fromY: 0, toY: 36 },
+    ]);
+    expect(lanesOf(layout, 'now')).toEqual([
+      { column: 1, identityIndex: 0, dash: 'dashed', fromY: 12, toY: 48 },
+    ]);
+  });
+
+  it('draws the lane through a standalone row that interleaves with the run', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'step-2', groupId: 'lane' }),
+        row({ id: 'standalone' }),
+        row({ id: 'step-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [group({ id: 'lane', originRowId: 'origin' })],
+    });
+
+    expect(railRow(layout, 'standalone').markerColumn).toBe(0);
+    expect(lanesOf(layout, 'standalone')).toEqual([
+      { column: 1, identityIndex: 0, dash: 'solid', fromY: 0, toY: 36 },
+    ]);
+  });
+
+  it('keeps the spine and the lane continuous through a day boundary', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'step-2', groupId: 'lane' }),
+        row({ id: 'day', markerY: 24, height: 48 }),
+        row({ id: 'step-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [group({ id: 'lane', originRowId: 'origin' })],
+    });
+    const dayRail = railRow(layout, 'day');
+
+    expect(dayRail.segments).toEqual([
+      { column: 0, identityIndex: null, dash: 'solid', fromY: 0, toY: 48 },
+      { column: 1, identityIndex: 0, dash: 'solid', fromY: 0, toY: 48 },
+    ]);
+  });
+
+  it('puts a fan-out stub one offset past the lane it hangs off', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'child-1', groupId: 'stub' }),
+        row({ id: 'step-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [
+        group({ id: 'lane', originRowId: 'origin' }),
+        group({ id: 'stub', originRowId: 'step-1', parentGroupId: 'lane' }),
+      ],
+    });
+
+    expect(layout.columnByGroupId.get('lane')).toBe(1);
+    expect(layout.columnByGroupId.get('stub')).toBe(2);
+    expect(
+      railRow(layout, 'step-1').joins.map((join) => `${join.kind}:${join.laneColumn}`),
+    ).toEqual(['merge:1', 'depart:2']);
+    expect(railRow(layout, 'child-1').markerColumn).toBe(2);
+    expect(layout.width).toBe(RAIL_SPINE_X + 2 * RAIL_LANE_OFFSET + 8);
+  });
+
+  it('gives the run met first from the top the leftmost slot so lanes never cross', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'b-step', groupId: 'lane-b' }),
+        row({ id: 'a-step', groupId: 'lane-a' }),
+        row({ id: 'b-origin' }),
+        row({ id: 'a-origin' }),
+      ],
+      groups: [
+        group({ id: 'lane-a', originRowId: 'a-origin', identityIndex: 0 }),
+        group({ id: 'lane-b', originRowId: 'b-origin', identityIndex: 3 }),
+      ],
+    });
+
+    expect(layout.columnByGroupId.get('lane-b')).toBe(1);
+    expect(layout.columnByGroupId.get('lane-a')).toBe(2);
+  });
+
+  it('reuses a slot once the earlier run has merged back', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'b-step', groupId: 'lane-b' }),
+        row({ id: 'b-origin' }),
+        row({ id: 'a-step', groupId: 'lane-a' }),
+        row({ id: 'a-origin' }),
+      ],
+      groups: [
+        group({ id: 'lane-a', originRowId: 'a-origin' }),
+        group({ id: 'lane-b', originRowId: 'b-origin' }),
+      ],
+    });
+
+    expect(layout.columnByGroupId.get('lane-b')).toBe(1);
+    expect(layout.width).toBe(RAIL_SPINE_X + RAIL_LANE_OFFSET + 8);
+  });
+
+  it('turns dashed above the running step and stays solid below it', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'pending-2', groupId: 'lane', isPending: true }),
+        row({ id: 'running', groupId: 'lane' }),
+        row({ id: 'done-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [group({ id: 'lane', originRowId: 'origin', shape: 'open' })],
+    });
+
+    expect(lanesOf(layout, 'pending-2').map((segment) => segment.dash)).toEqual(['dashed']);
+    expect(lanesOf(layout, 'running')).toEqual([
+      { column: 1, identityIndex: 0, dash: 'solid', fromY: 18, toY: 36 },
+      { column: 1, identityIndex: 0, dash: 'dashed', fromY: 0, toY: 18 },
+    ]);
+    expect(lanesOf(layout, 'done-1').map((segment) => segment.dash)).toEqual(['solid']);
+  });
+
+  it('dashes the departure itself when nothing in the run has started', () => {
+    const layout = layoutTimelineRail({
+      rows: [row({ id: 'pending-1', groupId: 'lane', isPending: true }), row({ id: 'origin' })],
+      groups: [group({ id: 'lane', originRowId: 'origin', shape: 'open' })],
+    });
+
+    expect(railRow(layout, 'origin').joins.map((join) => join.dash)).toEqual(['dashed']);
+  });
+
+  it('draws a collapsed run as a loop off the spine and no lane', () => {
+    const layout = layoutTimelineRail({
+      rows: [row({ id: 'origin' })],
+      groups: [group({ id: 'lane', originRowId: 'origin', shape: 'collapsed' })],
+    });
+
+    expect(railRow(layout, 'origin').loops).toEqual([
+      { laneColumn: 1, spineColumn: 0, identityIndex: 0, anchorY: 18 },
+    ]);
+    expect(lanesOf(layout, 'origin')).toEqual([]);
+  });
+
+  it('keeps the spine on every row and never colours or dashes it', () => {
+    const layout = layoutTimelineRail({
+      rows: [row({ id: 'pending', groupId: 'lane', isPending: true }), row({ id: 'origin' })],
+      groups: [group({ id: 'lane', originRowId: 'origin', shape: 'open' })],
+    });
+
+    for (const rail of layout.rows) {
+      const spine = rail.segments.filter((segment) => segment.column === 0);
+      expect(spine).toHaveLength(1);
+      expect(spine[0]?.identityIndex).toBeNull();
+      expect(spine[0]?.dash).toBe('solid');
+    }
+  });
+
+  it('runs the lane into the folded past when the origin row is not rendered', () => {
+    const layout = layoutTimelineRail({
+      rows: [row({ id: 'step-1', groupId: 'lane' }), row({ id: 'day-fold', markerY: 24 })],
+      groups: [group({ id: 'lane', originRowId: 'origin' })],
+    });
+
+    expect(railRow(layout, 'day-fold').joins).toEqual([]);
+    expect(lanesOf(layout, 'day-fold').map((segment) => segment.dash)).toEqual(['solid']);
+  });
+
+  it('places lane columns one offset apart from the spine', () => {
+    expect(railColumnX({ column: 0 })).toBe(RAIL_SPINE_X);
+    expect(railColumnX({ column: 2 })).toBe(RAIL_SPINE_X + 2 * RAIL_LANE_OFFSET);
+  });
+});
