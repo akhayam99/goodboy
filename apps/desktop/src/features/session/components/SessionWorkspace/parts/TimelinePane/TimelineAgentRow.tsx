@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Chip, Markdown, ScrollFade, cn } from '@goodboy/ui';
+import { Chip, Markdown, ScrollFade, SectionSurface, cn } from '@goodboy/ui';
 import type { DiffComment, SessionId } from '@goodboy/types';
 import { agentHasUnread, useAppStore } from '../../../../../../store';
 import { formatDuration } from '../../../../../chat/utils/format-duration';
@@ -176,16 +176,14 @@ export const TimelineAgentRow = ({
               <TimelineQuestionInset key={question.id} question={question} sessionId={sessionId} />
             ))}
             {entry.agent.outputSummary != null ? (
-              <section className="flex flex-col gap-2">
-                <span className="text-2xs uppercase text-muted-foreground">Outcome</span>
+              <SectionSurface label="Outcome">
                 <ScrollFade className="max-h-48">
                   <Markdown text={entry.agent.outputSummary} />
                 </ScrollFade>
-              </section>
+              </SectionSurface>
             ) : null}
             {entry.terminalQuestions.length > 0 ? (
-              <section className="flex flex-col gap-2">
-                <span className="text-2xs uppercase text-muted-foreground">Questions</span>
+              <SectionSurface label="Questions">
                 {entry.terminalQuestions.map((question) => (
                   <div key={question.id} className="flex flex-col gap-1 text-xs">
                     <span>{question.text}</span>
@@ -194,11 +192,10 @@ export const TimelineAgentRow = ({
                     </span>
                   </div>
                 ))}
-              </section>
+              </SectionSurface>
             ) : null}
             {diffComment != null ? (
-              <section className="flex flex-col gap-2">
-                <span className="text-2xs uppercase text-muted-foreground">Origin</span>
+              <SectionSurface label="Origin">
                 <span className="text-xs text-foreground">{diffComment.body}</span>
                 <span className="text-2xs text-muted-foreground">
                   {diffComment.resolvedAt != null
@@ -207,7 +204,7 @@ export const TimelineAgentRow = ({
                       ? 'consumed'
                       : 'open'}
                 </span>
-              </section>
+              </SectionSurface>
             ) : null}
           </>
         ) : undefined
