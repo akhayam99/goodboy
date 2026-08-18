@@ -540,6 +540,7 @@ describe('store contract', () => {
         planConsumptions: {},
         sessionOpenQuestions: {},
         sessionLoading: {},
+        sessionSlotsLoad: {},
         sessionViewPrefs: {},
         terminalSessions: {},
       };
@@ -567,6 +568,58 @@ describe('store contract', () => {
       expect(ss).toHaveLength(2);
       expect(ss[0]?.id).toBe(SESSION_ID);
       expect(ss[1]?.goal).toBe('two');
+    });
+
+    it('setCurrentSession reads the context slots the database holds', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      (db.listContextSlotsForSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([
+        { key: 'last_output_summary', value: '#### State\n- shipped', enabled: true },
+        { key: 'decisions', value: '- use tailwind', enabled: true },
+      ]);
+
+      await store.getState().setCurrentSession(SESSION_ID);
+
+      await vi.waitFor(() => {
+        expect(store.getState().sessionSlotsLoad[SESSION_ID]).toBe('loaded');
+      });
+      expect(store.getState().sessionSlots[SESSION_ID]).toHaveLength(2);
+    });
+
+    it('opens a session whose id another path already made current, so its context still loads', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      (db.listContextSlotsForSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([
+        { key: 'last_output_summary', value: '#### State\n- shipped', enabled: true },
+      ]);
+      store.setState({
+        sessions: [buildSession({ id: SESSION_ID })],
+        currentWorkspaceId: WS_ID,
+        currentSessionId: SESSION_ID,
+      });
+
+      await store.getState().setCurrentSession(SESSION_ID);
+
+      expect(store.getState().sessionSlots[SESSION_ID]).toHaveLength(1);
+      expect(store.getState().sessionSlotsLoad[SESSION_ID]).toBe('loaded');
+    });
+
+    it('reads the database for a session whose slots were only ever written in memory', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      (db.listContextSlotsForSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([
+        { key: 'goal', value: 'ship it', enabled: true },
+        { key: 'last_output_summary', value: '#### State\n- shipped', enabled: true },
+      ]);
+      store.setState({
+        sessionSlots: { [SESSION_ID]: [{ key: 'goal', value: 'ship it', enabled: true }] },
+      });
+
+      await store.getState().setCurrentSession(SESSION_ID);
+
+      await vi.waitFor(() => {
+        expect(store.getState().sessionSlots[SESSION_ID]).toHaveLength(2);
+      });
     });
 
     it('setCurrentSession rebuilds resolver verdicts from the persisted transcript', async () => {

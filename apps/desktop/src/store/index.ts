@@ -19,6 +19,7 @@ export {
   useRunSpendUsd,
   useSessionPrFetchState,
   useSessionSlots,
+  useSessionSlotsLoad,
   useSessionStageInfo,
   useSessionUnreadLens,
   useSessionViewPrefs,

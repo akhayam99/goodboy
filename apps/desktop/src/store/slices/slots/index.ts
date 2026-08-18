@@ -1,3 +1,4 @@
+import { ensureSessionSlots } from './ensureSessionSlots';
 import { loadSessionSlots } from './loadSessionSlots';
 import { loadSessionTelemetry } from './loadSessionTelemetry';
 import { loadSlotHistory } from './loadSlotHistory';
@@ -9,6 +10,7 @@ export const createSlotsSlice = (set: SetFn, get: GetFn) => {
   return {
     loadSessionTelemetry: loadSessionTelemetry(set),
     loadSessionSlots: loadSessionSlots(set),
+    ensureSessionSlots: ensureSessionSlots(get),
     upsertSessionSlot: upsertSessionSlot(set, get),
     loadSlotHistory: loadSlotHistory(set),
     toggleSessionSlot: toggleSessionSlot(set, get),

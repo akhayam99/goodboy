@@ -29,7 +29,12 @@ import type { Workspace } from '@goodboy/types';
 import type { TerminalTab } from '../shared/types/terminal';
 import { isBranchlessSession } from '../shared/utils/isBranchlessSession';
 import { useAppStore } from './store';
-import type { AppState, SessionLoadingFlags, SummarizerSessionStatus } from './types';
+import type {
+  AppState,
+  SessionLoadingFlags,
+  SessionSlotsLoad,
+  SummarizerSessionStatus,
+} from './types';
 import {
   deriveSessionStage,
   isPrReviewSession,
@@ -497,6 +502,9 @@ const EMPTY_SLOTS: ReadonlyArray<ContextSlot> = [];
 
 export const useSessionSlots = (sessionId: SessionId | null): ReadonlyArray<ContextSlot> =>
   useAppStore((s) => (sessionId ? (s.sessionSlots[sessionId] ?? EMPTY_SLOTS) : EMPTY_SLOTS));
+
+export const useSessionSlotsLoad = (sessionId: SessionId | null): SessionSlotsLoad | null =>
+  useAppStore((s) => (sessionId ? (s.sessionSlotsLoad[sessionId] ?? null) : null));
 
 const EMPTY_OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
 

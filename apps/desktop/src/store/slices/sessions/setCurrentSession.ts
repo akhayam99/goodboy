@@ -1,13 +1,6 @@
-import type {
-  IsoDateTime,
-  Message,
-  PlanWithCount,
-  ProviderRunId,
-  SessionId,
-  TurnState,
-} from '@goodboy/types';
+import type { IsoDateTime, Message, ProviderRunId, SessionId, TurnState } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import {
-  listContextSlotsForSession,
   listAgentRunIdsForSession,
   listOpenQuestionsForSession,
   listTelemetryForSession,
@@ -26,6 +19,9 @@ import type { GetFn, SetFn } from './types';
 export const setCurrentSession = (set: SetFn, get: GetFn) => {
   return async (id: SessionId | null) => {
     if (get().currentSessionId === id) {
+      if (id !== null) {
+        await get().ensureSessionSlots(id);
+      }
       return;
     }
     const tSwitch = performance.now();
@@ -33,7 +29,7 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
     const cached = id
       ? {
           telemetry: stateNow.sessionTelemetry[id] !== undefined,
-          slots: stateNow.sessionSlots[id] !== undefined,
+          slots: stateNow.sessionSlotsLoad[id] === 'loaded',
           plans: stateNow.sessionPlans[id] !== undefined,
           agents: stateNow.sessionPhaseRuns[id] !== undefined,
         }
@@ -109,7 +105,9 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
             sessionTelemetry: { ...state.sessionTelemetry, [id]: telemetry },
           }));
         })
-        .catch(() => {})
+        .catch((error: unknown) => {
+          console.error(`[telemetry] load failed for session ${id}`, formatError(error));
+        })
         .finally(() => {
           endTelemetry();
           markDone('telemetry');
@@ -118,17 +116,9 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
 
     if (!cached?.slots) {
       const endSlots = perf('slots');
-      void listContextSlotsForSession(tauriDatabase, id)
-        .then((slots) => {
-          set((state) => ({
-            sessionSlots: { ...state.sessionSlots, [id]: slots },
-          }));
-        })
-        .catch(() => {})
-        .finally(() => {
-          endSlots();
-          markDone('slots');
-        });
+      void get()
+        .ensureSessionSlots(id)
+        .finally(() => endSlots());
     }
 
     void get().loadGoalAttachments({ type: 'session', id });
@@ -143,19 +133,15 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
 
     if (!cached?.plans) {
       const endPlans = perf('plans');
-      void (async (): Promise<ReadonlyArray<PlanWithCount>> => {
-        try {
-          return await invokeListPlansForSession(id);
-        } catch {
-          return [];
-        }
-      })()
+      void invokeListPlansForSession(id)
         .then((plans) => {
           set((state) => ({
             sessionPlans: { ...state.sessionPlans, [id]: plans },
           }));
         })
-        .catch(() => {})
+        .catch((error: unknown) => {
+          console.error(`[plans] load failed for session ${id}`, formatError(error));
+        })
         .finally(() => {
           endPlans();
           markDone('plans');
@@ -233,7 +219,8 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
             markDone('transcript');
           }
         })
-        .catch(() => {
+        .catch((error: unknown) => {
+          console.error(`[agents] load failed for session ${id}`, formatError(error));
           markDone('agents');
           markDone('transcript');
         })
