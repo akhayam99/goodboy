@@ -1,8 +1,7 @@
 import { PANE_RHYTHM, Skeleton, SkeletonText, cn } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
-import type { AgentHomeLens } from '../../../agent-kind';
 import { AgentDetailPane } from '../../AgentDetailPane';
-import { agentOverlayHeader } from './agentOverlayHeader';
+import { ChatWorkflowHeader } from './ChatWorkflowHeader';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 
 type Props = {
@@ -10,8 +9,6 @@ type Props = {
   readonly sessionId: SessionId;
   readonly isChatActive: boolean;
   readonly selectedAgentId: AgentId | null;
-  readonly overlayHome: AgentHomeLens;
-  readonly overlayHomeLabel: string;
   readonly showWorkflowStrip: boolean;
   readonly onOverview: () => void;
   readonly onBack: () => void;
@@ -23,8 +20,6 @@ export const AgentOverlay = ({
   sessionId,
   isChatActive,
   selectedAgentId,
-  overlayHome,
-  overlayHomeLabel,
   showWorkflowStrip,
   onOverview,
   onBack,
@@ -36,21 +31,18 @@ export const AgentOverlay = ({
         (agent) => agent.id === selectedAgentId,
       ) ?? null,
   );
-  const header = agentOverlayHeader({
-    session,
-    sessionId,
-    selectedAgentId,
-    overlayHome,
-    overlayHomeLabel,
-    showWorkflowStrip,
-    onOverview,
-    onBack,
-    onOpenWorkflow,
-  });
 
   return (
     <div className="absolute inset-0 z-20 flex flex-col bg-background motion-safe:animate-studio-in">
-      {header}
+      {showWorkflowStrip && selectedAgentId != null ? (
+        <ChatWorkflowHeader
+          sessionId={sessionId}
+          session={session}
+          selectedAgentId={selectedAgentId}
+          onOverview={onOverview}
+          onOpenWorkflow={onOpenWorkflow}
+        />
+      ) : null}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {selectedAgent === null ? (
           <div className={cn('flex flex-col gap-4', PANE_RHYTHM.body)}>

@@ -42,6 +42,10 @@ vi.mock('../../../workflows/useAttachedWorkflowRuns', () => ({
   useAttachedWorkflowRuns: () => [],
 }));
 
+vi.mock('./AgentFollowUps', () => ({
+  AgentFollowUps: () => null,
+}));
+
 import { AgentBrief } from './AgentBrief';
 
 const sessionId = 'session-1' as SessionId;

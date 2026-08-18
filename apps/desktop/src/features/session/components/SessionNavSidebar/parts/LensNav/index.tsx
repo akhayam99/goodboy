@@ -324,7 +324,12 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
                   : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
               )}
             >
-              <span className="flex w-5 flex-none items-center justify-center transition-colors">
+              <span
+                className={cn(
+                  'flex w-5 flex-none items-center justify-center transition-[color,opacity]',
+                  isOverviewActive ? 'opacity-100' : 'opacity-55 group-hover:opacity-80',
+                )}
+              >
                 <LayoutDashboard size={14} aria-hidden />
               </span>
               <span
