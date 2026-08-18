@@ -51,6 +51,7 @@ export type TimelineDayItem = StreamRail & {
   readonly at: string;
   readonly label: string;
   readonly ruleY: number;
+  readonly isFoldable: boolean;
   readonly foldedCount: number | null;
 };
 
@@ -63,6 +64,7 @@ export type TimelineRowItem = StreamRail & {
   readonly familyId: string | null;
   readonly ordinal: string | null;
   readonly summary: string | null;
+  readonly isFolded: boolean;
   readonly markerState: TimelineMarkerState;
   readonly hasUnread: boolean;
 };
@@ -103,6 +105,7 @@ type DraftRow = {
   readonly ordinal: string | null;
   readonly sortOrdinal: number;
   readonly summary: string | null;
+  readonly isFolded: boolean;
   readonly markerState: TimelineMarkerState;
   readonly hasUnread: boolean;
   readonly isPending: boolean;
@@ -124,6 +127,7 @@ type DraftDay = {
   readonly at: string;
   readonly label: string;
   readonly sortOrdinal: number;
+  readonly isFoldable: boolean;
   readonly foldedCount: number | null;
 };
 
@@ -234,7 +238,7 @@ const summaryOf = ({ entry }: SummaryParams): string => {
 type EmitContext = {
   readonly unreadAgentIds: ReadonlySet<string>;
   readonly blockedRunIds: ReadonlySet<string>;
-  readonly drafts: Draft[];
+  readonly drafts: Array<DraftRow | DraftDay>;
   readonly groups: RailGroupInput[];
 };
 
@@ -289,6 +293,7 @@ const emitAgent = ({
       ordinal: null,
       sortOrdinal: 0,
       summary: null,
+      isFolded: false,
       markerState: 'done',
       hasUnread: false,
       isPending: false,
@@ -307,6 +312,7 @@ const emitAgent = ({
     ordinal: entry.stepLabel,
     sortOrdinal: entry.ordinal,
     summary: null,
+    isFolded: false,
     markerState: resolveMarkerState({
       status: entry.agent.status,
       hasOpenQuestion: entry.openQuestions.length > 0,
@@ -361,6 +367,7 @@ const emitRun = ({ entry, visibility, context }: EmitRunParams): void => {
         ordinal: null,
         sortOrdinal: 0,
         summary: null,
+        isFolded: false,
         markerState: 'done',
         hasUnread: false,
         isPending: false,
@@ -380,6 +387,7 @@ const emitRun = ({ entry, visibility, context }: EmitRunParams): void => {
     ordinal: null,
     sortOrdinal: 0,
     summary: visibility === 'summary' ? summaryOf({ entry }) : null,
+    isFolded: visibility === 'summary',
     markerState: resolveMarkerState({
       status: steps.some((agent) => agent.status === 'running')
         ? 'running'
@@ -397,7 +405,7 @@ const emitRun = ({ entry, visibility, context }: EmitRunParams): void => {
 };
 
 type ClusterParams = {
-  readonly drafts: ReadonlyArray<Draft>;
+  readonly drafts: ReadonlyArray<DraftRow | DraftDay>;
 };
 
 const withPendingClusters = ({ drafts }: ClusterParams): ReadonlyArray<Draft> => {
@@ -446,12 +454,14 @@ type DayBreakParams = {
   readonly drafts: ReadonlyArray<Draft>;
   readonly dayLabelFor: (params: { readonly at: string }) => string | null;
   readonly foldedCountByDay: ReadonlyMap<string, number>;
+  readonly now: Date;
 };
 
 const withDayBreaks = ({
   drafts,
   dayLabelFor,
   foldedCountByDay,
+  now,
 }: DayBreakParams): ReadonlyArray<Draft> => {
   const dated: Draft[] = [];
   const seen = new Set(drafts.flatMap((draft) => (draft.kind === 'day' ? [draft.dayKey] : [])));
@@ -479,6 +489,7 @@ const withDayBreaks = ({
         at,
         label,
         sortOrdinal: Number.MAX_SAFE_INTEGER,
+        isFoldable: dayRankOf({ at, now }) > 1,
         foldedCount: foldedCountByDay.get(dayKey) ?? null,
       });
     }
@@ -577,6 +588,7 @@ export const buildTimelineStream = ({
       ordinal: null,
       sortOrdinal: 0,
       summary: null,
+      isFolded: false,
       markerState: 'done',
       hasUnread: false,
       isPending: false,
@@ -591,6 +603,7 @@ export const buildTimelineStream = ({
       at,
       label: dayLabelFor({ at }) ?? dayKey,
       sortOrdinal: Number.MAX_SAFE_INTEGER,
+      isFoldable: true,
       foldedCount: foldedCountByDay.get(dayKey) ?? 0,
     });
   }
@@ -600,6 +613,7 @@ export const buildTimelineStream = ({
     drafts: withPendingClusters({ drafts: sorted }),
     dayLabelFor,
     foldedCountByDay,
+    now,
   });
 
   const items: TimelineStreamItem[] = [
@@ -632,6 +646,7 @@ export const buildTimelineStream = ({
         groupId: null,
         isPending: false,
         gap: 'none',
+        isFoldable: draft.isFoldable,
         foldedCount: draft.foldedCount,
       });
       previous = draft;
@@ -675,6 +690,7 @@ export const buildTimelineStream = ({
       familyId: draft.familyId,
       ordinal: draft.ordinal,
       summary: draft.summary,
+      isFolded: draft.isFolded,
       markerState: draft.markerState,
       hasUnread: draft.hasUnread,
       height: rowBoxHeight({ grade: draft.grade, gap }),
