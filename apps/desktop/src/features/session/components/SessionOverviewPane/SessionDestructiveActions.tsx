@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react';
 import { Archive, ArchiveRestore, Trash2 } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
 import { cn, formatError, Tooltip } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { DeleteSessionConfirm } from '../DeleteSessionConfirm';
 
 type Props = {
   readonly session: Session;
@@ -22,24 +24,36 @@ const withHint = ({ label, hint }: HintParams): string =>
 
 export const SessionDestructiveActions = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
+  const archiveTask = useAppStore((s) => s.archiveTask);
   const unarchiveTask = useAppStore((s) => s.unarchiveTask);
   const { showToast } = useToast();
+  const [isDeleteArmed, setIsDeleteArmed] = useState(false);
   const archived = session.archivedAt != null;
+
+  useEffect(() => {
+    if (!isDeleteArmed) {
+      return;
+    }
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+      setIsDeleteArmed(false);
+    };
+    window.addEventListener('keydown', onEscape);
+    return () => window.removeEventListener('keydown', onEscape);
+  }, [isDeleteArmed]);
+
+  const doArchive = () => {
+    archiveTask(sessionId).catch((err: unknown) => {
+      showToast('error', `couldn't archive: ${formatError(err)}`);
+    });
+  };
 
   const doUnarchive = () => {
     unarchiveTask(sessionId).catch((err: unknown) => {
       showToast('error', `couldn't unarchive: ${formatError(err)}`);
     });
-  };
-
-  const openArchiveConfirm = () => {
-    window.dispatchEvent(
-      new CustomEvent('goodboy:open-archive-session', { detail: { sessionId } }),
-    );
-  };
-
-  const openDeleteConfirm = () => {
-    window.dispatchEvent(new CustomEvent('goodboy:open-delete-session', { detail: { sessionId } }));
   };
 
   const archiveLabel = archived ? 'Unarchive session' : 'Archive session';
@@ -57,22 +71,32 @@ export const SessionDestructiveActions = ({ session }: Props) => {
         <button
           type="button"
           aria-label={archiveLabel}
-          onClick={archived ? doUnarchive : openArchiveConfirm}
+          onClick={archived ? doUnarchive : doArchive}
           className={ICON_BUTTON}
         >
           {archived ? <ArchiveRestore size={13} aria-hidden /> : <Archive size={13} aria-hidden />}
         </button>
       </Tooltip>
-      <Tooltip content={deleteTooltip}>
-        <button
-          type="button"
-          aria-label="Delete session"
-          onClick={openDeleteConfirm}
-          className={cn(ICON_BUTTON, 'text-danger/70 hover:bg-danger/10 hover:text-danger')}
-        >
-          <Trash2 size={13} aria-hidden />
-        </button>
-      </Tooltip>
+      <span className="relative flex shrink-0 items-center">
+        <Tooltip content={deleteTooltip}>
+          <button
+            type="button"
+            aria-label="Delete session"
+            aria-expanded={isDeleteArmed}
+            onClick={() => setIsDeleteArmed((armed) => !armed)}
+            className={cn(ICON_BUTTON, 'text-danger/70 hover:bg-danger/10 hover:text-danger')}
+          >
+            <Trash2 size={13} aria-hidden />
+          </button>
+        </Tooltip>
+        {isDeleteArmed ? (
+          <DeleteSessionConfirm
+            session={session}
+            onClose={() => setIsDeleteArmed(false)}
+            className="absolute right-0 top-full z-popover w-80 max-w-[calc(100vw-2rem)] bg-background shadow-lg"
+          />
+        ) : null}
+      </span>
     </>
   );
 };

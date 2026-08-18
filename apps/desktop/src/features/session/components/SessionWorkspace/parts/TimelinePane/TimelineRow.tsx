@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
-import { Button, Tooltip, cn } from '@goodboy/ui';
+import { Button, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { TimelineDepth } from '../../../../timeline/flattenTimelineRows';
 import type { RunIdentity } from '../../../../timeline/runIdentity';
 import { TimelineSpine } from './TimelineSpine';
@@ -93,7 +93,7 @@ export const TimelineRow = ({
           className={cn(
             'flex min-w-0 flex-1 flex-col rounded-md motion-safe:transition-colors',
             isExpanded && 'bg-muted/40',
-            needsUser && !isExpanded && 'bg-warning/5',
+            needsUser && !isExpanded && tintClasses('warning').bgSoft,
           )}
         >
           <div className="flex min-w-0 items-start">

@@ -6,6 +6,7 @@ import type { Session } from '@goodboy/types';
 
 const { state, toastMock } = vi.hoisted(() => ({
   state: {
+    archiveTask: vi.fn(async () => undefined),
     unarchiveTask: vi.fn(async () => undefined),
   },
   toastMock: vi.fn(),
@@ -19,12 +20,24 @@ vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
 }));
 
+vi.mock('../DeleteSessionConfirm', () => ({
+  DeleteSessionConfirm: ({ onClose, className }: { onClose: () => void; className?: string }) => (
+    <div data-testid="delete-confirm" className={className}>
+      <button type="button" onClick={onClose}>
+        cancel delete
+      </button>
+    </div>
+  ),
+}));
+
 import { SessionDestructiveActions } from './SessionDestructiveActions';
 
 const session = (over: Record<string, unknown> = {}): Session =>
   ({ id: 'sess-1', goal: 'refactor auth', archivedAt: null, ...over }) as unknown as Session;
 
 beforeEach(() => {
+  state.archiveTask.mockClear();
+  state.archiveTask.mockResolvedValue(undefined);
   state.unarchiveTask.mockClear();
   state.unarchiveTask.mockResolvedValue(undefined);
   toastMock.mockReset();
@@ -46,6 +59,22 @@ describe('SessionDestructiveActions', () => {
     expect(screen.queryByRole('button', { name: /unarchive session/i })).toBeNull();
   });
 
+  it('archives on a single click without a confirmation step', () => {
+    render(<SessionDestructiveActions session={session()} />);
+    fireEvent.click(screen.getByRole('button', { name: /^archive session/i }));
+    expect(state.archiveTask).toHaveBeenCalledWith('sess-1');
+    expect(screen.queryByTestId('delete-confirm')).toBeNull();
+  });
+
+  it('surfaces an archive failure as a toast', async () => {
+    state.archiveTask.mockRejectedValueOnce(new Error('locked'));
+    render(<SessionDestructiveActions session={session()} />);
+    fireEvent.click(screen.getByRole('button', { name: /^archive session/i }));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(toastMock).toHaveBeenCalledWith('error', expect.stringContaining("couldn't archive"));
+  });
+
   it('surfaces an unarchive failure as a toast', async () => {
     state.unarchiveTask.mockRejectedValueOnce(new Error('locked'));
     render(
@@ -57,22 +86,27 @@ describe('SessionDestructiveActions', () => {
     expect(toastMock).toHaveBeenCalledWith('error', expect.stringContaining("couldn't unarchive"));
   });
 
-  it('dispatches the open-archive-session event when the archive control is pressed', () => {
-    const onOpen = vi.fn();
-    window.addEventListener('goodboy:open-archive-session', onOpen);
+  it('takes two gestures to delete, arming a confirmation attached to the trigger', () => {
     render(<SessionDestructiveActions session={session()} />);
-    fireEvent.click(screen.getByRole('button', { name: /^archive session/i }));
-    window.removeEventListener('goodboy:open-archive-session', onOpen);
-    expect(onOpen).toHaveBeenCalledOnce();
+    expect(screen.queryByTestId('delete-confirm')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /delete session/i }));
+
+    const confirm = screen.getByTestId('delete-confirm');
+    expect(confirm.className).toContain('absolute');
+    expect(
+      screen.getByRole('button', { name: /delete session/i }).getAttribute('aria-expanded'),
+    ).toBe('true');
   });
 
-  it('keeps deletion behind the confirmation dialog rather than deleting on click', () => {
-    const onOpen = vi.fn();
-    window.addEventListener('goodboy:open-delete-session', onOpen);
+  it('disarms the delete confirmation on Escape', () => {
     render(<SessionDestructiveActions session={session()} />);
     fireEvent.click(screen.getByRole('button', { name: /delete session/i }));
-    window.removeEventListener('goodboy:open-delete-session', onOpen);
-    expect(onOpen).toHaveBeenCalledOnce();
+    expect(screen.queryByTestId('delete-confirm')).not.toBeNull();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByTestId('delete-confirm')).toBeNull();
   });
 
   it('reads both controls out of the overflow menu and onto the title row', () => {
