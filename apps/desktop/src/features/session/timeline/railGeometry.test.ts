@@ -79,6 +79,7 @@ describe('layoutTimelineRail', () => {
         identityIndex: 0,
         dash: 'solid',
         anchorY: 18,
+        strength: 'full',
       },
     ]);
     expect(railRow(layout, 'origin').markerColumn).toBe(0);
@@ -137,6 +138,7 @@ describe('layoutTimelineRail', () => {
         identityIndex: 0,
         dash: 'dashed',
         anchorY: 18,
+        strength: 'full',
       },
     ]);
     expect(lanesOf(layout, 'pending')).toEqual([
@@ -577,5 +579,35 @@ describe('layoutTimelineRail', () => {
   it('places lane columns one offset apart from the spine', () => {
     expect(railColumnX({ column: 0 })).toBe(RAIL_SPINE_X);
     expect(railColumnX({ column: 2 })).toBe(RAIL_SPINE_X + 2 * RAIL_LANE_OFFSET);
+  });
+});
+
+describe('a receded span carries its curves', () => {
+  it('recedes the joins that sit inside a delegated stretch', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        { id: 'child-top', height: 32, topY: 0, markerY: 16, topAnchorY: null, groupId: 'child', isPending: false },
+        { id: 'child-bottom', height: 32, topY: 0, markerY: 16, topAnchorY: null, groupId: 'child', isPending: false },
+        { id: 'parent-origin', height: 32, topY: 0, markerY: 16, topAnchorY: null, groupId: 'parent', isPending: false },
+      ],
+      groups: [
+        { id: 'parent', parentGroupId: null, identityIndex: 0, originRowId: 'parent-origin', shape: 'merged' },
+        { id: 'child', parentGroupId: 'parent', identityIndex: 1, originRowId: 'child-bottom', shape: 'merged' },
+      ],
+    });
+
+    for (const row of layout.rows) {
+      for (const join of row.joins) {
+        const receded = row.segments.filter(
+          (segment) => segment.column === join.laneColumn && segment.strength === 'receded',
+        );
+        const covers = receded.some(
+          (segment) => segment.fromY <= join.anchorY && segment.toY >= join.anchorY,
+        );
+        if (covers) {
+          expect(join.strength).toBe('receded');
+        }
+      }
+    }
   });
 });

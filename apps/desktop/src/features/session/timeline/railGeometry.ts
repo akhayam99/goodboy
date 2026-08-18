@@ -45,7 +45,21 @@ export type RailJoin = {
   readonly identityIndex: number | null;
   readonly dash: RailDash;
   readonly anchorY: number;
+  readonly strength: RailStrength;
 };
+
+type PlannedJoin = Omit<RailJoin, 'strength'>;
+
+const joinStrength = ({
+  join,
+  delegated,
+}: {
+  readonly join: PlannedJoin;
+  readonly delegated: ReadonlyArray<RailSpan>;
+}): RailStrength =>
+  delegated.some((span) => span.fromY <= join.anchorY && span.toY >= join.anchorY)
+    ? 'receded'
+    : 'full';
 
 export type RailRow = {
   readonly id: string;
@@ -218,7 +232,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
   });
 
   const laneSegmentsByIndex: PlannedSegment[][] = rows.map(() => []);
-  const joinsByIndex: RailJoin[][] = rows.map(() => []);
+  const joinsByIndex: PlannedJoin[][] = rows.map(() => []);
   const delegatedByIndex: Array<Map<number, RailSpan[]>> = rows.map(() => new Map());
 
   const ancestorColumnsOf = ({
@@ -422,7 +436,13 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
           delegated: delegatedByIndex[index]?.get(segment.column) ?? [],
         }),
       ),
-      joins: joinsByIndex[index] ?? [],
+      joins: (joinsByIndex[index] ?? []).map((join) => ({
+        ...join,
+        strength: joinStrength({
+          join,
+          delegated: delegatedByIndex[index]?.get(join.laneColumn) ?? [],
+        }),
+      })),
       markerColumn: row.groupId == null ? 0 : (columnByGroupId.get(row.groupId) ?? 0),
       markerY: row.markerY,
     })),

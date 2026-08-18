@@ -61,6 +61,7 @@ export const TimelineRail = ({ rail, width }: Props) => (
         stroke={strokeOf({ identityIndex: join.identityIndex })}
         strokeWidth={join.identityIndex == null ? SPINE_WIDTH : LANE_WIDTH}
         strokeDasharray={join.dash === 'dashed' ? DASH_PATTERN : undefined}
+        className={join.strength === 'receded' ? RECEDED_CLASS : undefined}
       />
     ))}
   </svg>
