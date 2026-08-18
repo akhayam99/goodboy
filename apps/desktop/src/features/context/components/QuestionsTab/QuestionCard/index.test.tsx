@@ -41,8 +41,8 @@ describe('QuestionCard', () => {
   it('renders the question text with one button per suggestion', () => {
     render(<QuestionCard {...baseProps} />);
     expect(screen.getByText('pick a database')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'sqlite' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'postgres' })).toBeDefined();
+    expect(screen.getByRole('radio', { name: 'sqlite' })).toBeDefined();
+    expect(screen.getByRole('radio', { name: 'postgres' })).toBeDefined();
   });
 
   it('fires onDismiss when the close button is clicked', () => {
@@ -59,7 +59,7 @@ describe('QuestionCard', () => {
       <QuestionCard {...baseProps} question={question} onToggleSuggestion={onToggleSuggestion} />,
     );
     fireEvent.click(screen.getByTitle('sqlite (suggested)'));
-    expect(onToggleSuggestion).toHaveBeenCalledWith('q1', 'sqlite');
+    expect(onToggleSuggestion).toHaveBeenCalledWith('q1', 'sqlite', 'one');
   });
 
   it('prepends a free-form recommendation as a marked chip when it is not a suggestion', () => {
@@ -69,6 +69,35 @@ describe('QuestionCard', () => {
       <QuestionCard {...baseProps} question={question} onToggleSuggestion={onToggleSuggestion} />,
     );
     fireEvent.click(screen.getByTitle('use both (suggested)'));
-    expect(onToggleSuggestion).toHaveBeenCalledWith('q1', 'use both');
+    expect(onToggleSuggestion).toHaveBeenCalledWith('q1', 'use both', 'one');
+  });
+
+  it('exposes chips as radios in a radiogroup for a single-choice question', () => {
+    render(<QuestionCard {...baseProps} />);
+    expect(screen.getByRole('radiogroup', { name: /pick one answer/i })).toBeDefined();
+    expect(screen.queryByRole('checkbox')).toBeNull();
+  });
+
+  it('exposes chips as checkboxes for a multi-choice question', () => {
+    const question = { ...baseQuestion, selectMode: 'many' } as OpenQuestion;
+    const onToggleSuggestion = vi.fn();
+    render(
+      <QuestionCard {...baseProps} question={question} onToggleSuggestion={onToggleSuggestion} />,
+    );
+    const sqlite = screen.getByRole('checkbox', { name: 'sqlite' });
+    const postgres = screen.getByRole('checkbox', { name: 'postgres' });
+    fireEvent.click(sqlite);
+    fireEvent.click(postgres);
+    expect(onToggleSuggestion).toHaveBeenNthCalledWith(1, 'q1', 'sqlite', 'many');
+    expect(onToggleSuggestion).toHaveBeenNthCalledWith(2, 'q1', 'postgres', 'many');
+  });
+
+  it('always exposes the "other" free-text trigger in both modes', () => {
+    const single = render(<QuestionCard {...baseProps} />);
+    expect(single.getByRole('button', { name: /other/i })).toBeDefined();
+    single.unmount();
+    const question = { ...baseQuestion, selectMode: 'many' } as OpenQuestion;
+    render(<QuestionCard {...baseProps} question={question} />);
+    expect(screen.getByRole('button', { name: /other/i })).toBeDefined();
   });
 });

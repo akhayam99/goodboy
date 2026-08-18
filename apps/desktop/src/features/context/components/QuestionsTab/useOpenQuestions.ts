@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
+import type { OpenQuestion, OpenQuestionId, OpenQuestionSelectMode } from '@goodboy/types';
 
 const UNDO_TTL_MS = 5_000;
 
@@ -18,7 +18,11 @@ type OpenQuestionsUiState = {
   drafts: Record<string, QuestionDraft>;
   justAnswered: ReadonlyArray<OpenQuestionId>;
   pendingUndo: PendingUndo | null;
-  toggleSuggestion: (questionId: OpenQuestionId, suggestion: string) => void;
+  toggleSuggestion: (
+    questionId: OpenQuestionId,
+    suggestion: string,
+    mode?: OpenQuestionSelectMode,
+  ) => void;
   setCustomAnswer: (questionId: OpenQuestionId, text: string) => void;
   toggleCustomField: (questionId: OpenQuestionId) => void;
   flashAnswered: (ids: ReadonlyArray<OpenQuestionId>) => void;
@@ -41,10 +45,18 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
   justAnswered: [],
   pendingUndo: null,
 
-  toggleSuggestion: (questionId, suggestion) => {
+  toggleSuggestion: (questionId, suggestion, mode = 'one') => {
     const drafts = { ...get().drafts };
     const draft = drafts[questionId] ?? emptyDraft();
-    const next = draft.selectedSuggestions.includes(suggestion) ? [] : [suggestion];
+    const alreadySelected = draft.selectedSuggestions.includes(suggestion);
+    const next =
+      mode === 'many'
+        ? alreadySelected
+          ? draft.selectedSuggestions.filter((s) => s !== suggestion)
+          : [...draft.selectedSuggestions, suggestion]
+        : alreadySelected
+          ? []
+          : [suggestion];
     drafts[questionId] = { ...draft, selectedSuggestions: next };
     set({ drafts });
   },

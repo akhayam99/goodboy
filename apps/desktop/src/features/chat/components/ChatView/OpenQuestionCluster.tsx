@@ -45,9 +45,12 @@ export const OpenQuestionCluster = ({ questions, sessionId, viewerAgentId = null
     return map;
   }, [agents]);
 
-  const pendingPairs = openQuestions
-    .map((q) => ({ id: q.id, text: q.text, answer: deriveDraftAnswer(drafts[q.id]) }))
-    .filter((pair) => pair.answer.length > 0);
+  const answerablePairs = openQuestions.map((q) => ({
+    id: q.id,
+    text: q.text,
+    answer: deriveDraftAnswer(drafts[q.id]),
+  }));
+  const pendingPairs = answerablePairs.filter((pair) => pair.answer.length > 0);
   const targetAgentId = questions[0]?.createdByAgentId ?? null;
 
   const handleSubmit = useCallback(async () => {
@@ -84,7 +87,11 @@ export const OpenQuestionCluster = ({ questions, sessionId, viewerAgentId = null
         );
       })}
       {pendingPairs.length > 0 && (
-        <AnswerSubmitButton answerCount={pendingPairs.length} onClick={() => void handleSubmit()} />
+        <AnswerSubmitButton
+          answerCount={pendingPairs.length}
+          totalCount={answerablePairs.length}
+          onClick={() => void handleSubmit()}
+        />
       )}
     </div>
   );

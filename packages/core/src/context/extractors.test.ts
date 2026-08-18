@@ -89,7 +89,12 @@ describe('extractMarkers', () => {
     const out = extractMarkers(text);
     expect(out.decisions).toEqual(['use sqlite for local persistence', 'tauri 2 over electron']);
     expect(out.questions).toEqual([
-      { text: 'do we need wal mode?', suggestedAnswers: [], recommendedAnswer: null },
+      {
+        text: 'do we need wal mode?',
+        suggestedAnswers: [],
+        recommendedAnswer: null,
+        selectMode: null,
+      },
     ]);
   });
 
@@ -102,6 +107,7 @@ describe('extractMarkers', () => {
         text: 'do we need wal mode?',
         suggestedAnswers: ['yes', 'no', 'maybe'],
         recommendedAnswer: null,
+        selectMode: null,
       },
     ]);
   });
@@ -109,7 +115,12 @@ describe('extractMarkers', () => {
   it('extracts question without suggestions as empty array', () => {
     const text = '<<ctx-question>>plain question<</ctx-question>>';
     expect(extractMarkers(text).questions).toEqual([
-      { text: 'plain question', suggestedAnswers: [], recommendedAnswer: null },
+      {
+        text: 'plain question',
+        suggestedAnswers: [],
+        recommendedAnswer: null,
+        selectMode: null,
+      },
     ]);
   });
 
@@ -117,8 +128,45 @@ describe('extractMarkers', () => {
     const text =
       '<<ctx-question recommended="yes" suggestions="yes | no">>do we need wal mode?<</ctx-question>>';
     expect(extractMarkers(text).questions).toEqual([
-      { text: 'do we need wal mode?', suggestedAnswers: ['yes', 'no'], recommendedAnswer: 'yes' },
+      {
+        text: 'do we need wal mode?',
+        suggestedAnswers: ['yes', 'no'],
+        recommendedAnswer: 'yes',
+        selectMode: null,
+      },
     ]);
+  });
+
+  it('extracts select mode when the agent declares "one" or "many"', () => {
+    const single = extractMarkers(
+      '<<ctx-question select="one" suggestions="a | b">>pick one<</ctx-question>>',
+    );
+    expect(single.questions).toEqual([
+      {
+        text: 'pick one',
+        suggestedAnswers: ['a', 'b'],
+        recommendedAnswer: null,
+        selectMode: 'one',
+      },
+    ]);
+    const multi = extractMarkers(
+      '<<ctx-question select="many" suggestions="a | b | c">>pick some<</ctx-question>>',
+    );
+    expect(multi.questions).toEqual([
+      {
+        text: 'pick some',
+        suggestedAnswers: ['a', 'b', 'c'],
+        recommendedAnswer: null,
+        selectMode: 'many',
+      },
+    ]);
+  });
+
+  it('falls back to no declared select mode when the value is unknown', () => {
+    const out = extractMarkers(
+      '<<ctx-question select="lots" suggestions="a | b">>anything<</ctx-question>>',
+    );
+    expect(out.questions[0]?.selectMode).toBeNull();
   });
 
   it('trims whitespace inside markers', () => {

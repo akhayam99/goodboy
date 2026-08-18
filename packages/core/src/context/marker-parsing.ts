@@ -117,6 +117,7 @@ export type ExtractedQuestion = {
   readonly text: string;
   readonly suggestedAnswers: ReadonlyArray<string>;
   readonly recommendedAnswer: string | null;
+  readonly selectMode: 'one' | 'many' | null;
 };
 
 export const extractMarkers = (
@@ -167,10 +168,13 @@ function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
             .filter((s) => s.length > 0)
         : [];
     const recommended = (attrs.recommended ?? '').trim();
+    const selectRaw = (attrs.select ?? '').trim().toLowerCase();
+    const selectMode = selectRaw === 'many' ? 'many' : selectRaw === 'one' ? 'one' : null;
     out.push({
       text: body,
       suggestedAnswers,
       recommendedAnswer: recommended.length > 0 ? recommended : null,
+      selectMode,
     });
   }
   return out;
