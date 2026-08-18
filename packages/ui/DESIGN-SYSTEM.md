@@ -12,9 +12,15 @@ lives here.
 
 ## Type scale
 
-`text-3xs` 10px, `2xs` 11px, `xs` 12px, `sm` 14px, `base` 15px, `lg` 17px,
-`xl` 20px. Any `text-[Npx]` is rejected; standing exceptions live in
+`text-3xs` 10px/14px, `2xs` 11px/16px, `xs` 12px, `sm` 14px/20px, `base` 15px,
+`lg` 17px, `xl` 20px. Any `text-[Npx]` is rejected; standing exceptions live in
 `docs/styling.md`, which owns the authoring rule.
+
+**Every size a repeated row uses declares its own line-height.** Without that
+pair, the box height follows whatever `line-height` the size inherits: `3xs` and
+`2xs` inherited the body's 1.55 and resolved to 15.5px and 17.05px, which put the
+lens rail's group labels and count chips on a fractional pixel and made a row
+carrying a count taller than a row without one.
 
 ## Radius scale
 
@@ -26,6 +32,19 @@ at this scale.
 | `rounded-lg`   | 8px   | framed surfaces: cards, banners, inputs, buttons   |
 | `rounded-md`   | 6px   | small inset controls: icon buttons, segmented tabs |
 | `rounded-full` | n/a   | pills, avatars, circular icon buttons              |
+
+## Spacing scale
+
+The base is `4px`, declared in px and never in rem. Every utility resolves to
+`calc(4px * n)`, so the smallest step the scale offers (`0.5`, a 2px gap) is
+still a whole pixel and so is everything above it.
+
+A rem base breaks that: the root font size is 15px, which turns the same scale
+into a 3.75px grid and leaves most boxes on a fractional pixel. That is invisible
+until something animates. An element with a running transition is promoted to its
+own compositing layer and rasterised on the device pixel grid, so a fractional
+box snaps to whole pixels when the transition starts and back when it ends, which
+reads as a one pixel bounce on every icon in the column.
 
 ## Gap scale
 
