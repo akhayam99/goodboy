@@ -98,6 +98,30 @@ Ten tones (`success`, `info`, `warning`, `danger`, `primary`, `accent`,
 accessor `tintClasses(tone)`. Components take a `Tone` and call it; they never
 hand-write `bg-warning/10`.
 
+### The one identity exception
+
+The session timeline spine is the single place where colour names an object
+instead of describing its state. A step belonging to one workflow run has to be
+readable as part of that run at a glance, and stage cannot carry that: two
+workflows running at once are both `info`, which is exactly the pair a reader
+needs to tell apart.
+
+So the spine segment of a run takes an **identity** colour from a six-entry
+palette, `--color-run-1` to `--color-run-6` in `apps/desktop/src/styles.css`,
+picked deterministically from the run id so it is stable across reloads and
+across sessions. `runIdentity` in
+`apps/desktop/src/features/session/timeline/runIdentity.ts` is the only accessor.
+
+Two constraints keep the exception contained:
+
+- The identity palette is **separate from the nine tones** and never overlaps
+  them. A violet spine is not a plan, a red spine is not a failure; a spine
+  colour claims nothing at all beyond "these rows are one run".
+- Identity lives on the spine only. Stage stays in the marker sitting on top of
+  it, which still resolves through `tintClasses(tone)` like everything else.
+
+Anything else reaching for the run palette is a bug. Add a tone instead.
+
 ## z-index tokens
 
 Named tokens in `apps/desktop/src/styles.css` under `@theme`, keys

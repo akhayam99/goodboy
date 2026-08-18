@@ -14,6 +14,7 @@ export type TintClasses = {
   readonly bg: string;
   readonly bgSoft: string;
   readonly ring: string;
+  readonly ringStrong: string;
   readonly border: string;
   readonly borderSoft: string;
   readonly hoverBorder: string;
@@ -31,6 +32,7 @@ const TINT: Record<Tone, TintClasses> = {
     bg: 'bg-success/10',
     bgSoft: 'bg-success/5',
     ring: 'ring-success/20',
+    ringStrong: 'ring-success/60',
     border: 'border-success/40',
     borderSoft: 'border-success/20',
     hoverBorder: 'hover:border-success/40',
@@ -46,6 +48,7 @@ const TINT: Record<Tone, TintClasses> = {
     bg: 'bg-info/10',
     bgSoft: 'bg-info/5',
     ring: 'ring-info/20',
+    ringStrong: 'ring-info/60',
     border: 'border-info/40',
     borderSoft: 'border-info/20',
     hoverBorder: 'hover:border-info/40',
@@ -61,6 +64,7 @@ const TINT: Record<Tone, TintClasses> = {
     bg: 'bg-warning/10',
     bgSoft: 'bg-warning/5',
     ring: 'ring-warning/20',
+    ringStrong: 'ring-warning/60',
     border: 'border-warning/40',
     borderSoft: 'border-warning/20',
     hoverBorder: 'hover:border-warning/40',
@@ -76,6 +80,7 @@ const TINT: Record<Tone, TintClasses> = {
     bg: 'bg-danger/10',
     bgSoft: 'bg-danger/5',
     ring: 'ring-danger/20',
+    ringStrong: 'ring-danger/60',
     border: 'border-danger/40',
     borderSoft: 'border-danger/20',
     hoverBorder: 'hover:border-danger/40',
@@ -91,6 +96,7 @@ const TINT: Record<Tone, TintClasses> = {
     bg: 'bg-primary/10',
     bgSoft: 'bg-primary/5',
     ring: 'ring-primary/20',
+    ringStrong: 'ring-primary/60',
     border: 'border-primary/40',
     borderSoft: 'border-primary/20',
     hoverBorder: 'hover:border-primary/40',
@@ -106,6 +112,7 @@ const TINT: Record<Tone, TintClasses> = {
     bg: 'bg-accent/10',
     bgSoft: 'bg-accent/5',
     ring: 'ring-accent/20',
+    ringStrong: 'ring-accent/60',
     border: 'border-accent/40',
     borderSoft: 'border-accent/20',
     hoverBorder: 'hover:border-accent/40',
@@ -121,6 +128,7 @@ const TINT: Record<Tone, TintClasses> = {
     bg: 'bg-merged/10',
     bgSoft: 'bg-merged/5',
     ring: 'ring-merged/20',
+    ringStrong: 'ring-merged/60',
     border: 'border-merged/40',
     borderSoft: 'border-merged/20',
     hoverBorder: 'hover:border-merged/40',
@@ -136,6 +144,7 @@ const TINT: Record<Tone, TintClasses> = {
     bg: 'bg-draft/10',
     bgSoft: 'bg-draft/5',
     ring: 'ring-draft/20',
+    ringStrong: 'ring-draft/60',
     border: 'border-draft/40',
     borderSoft: 'border-draft/20',
     hoverBorder: 'hover:border-draft/40',
@@ -151,6 +160,7 @@ const TINT: Record<Tone, TintClasses> = {
     bg: 'bg-muted/30',
     bgSoft: 'bg-muted/30',
     ring: 'ring-primary/20',
+    ringStrong: 'ring-primary/60',
     border: 'border-primary/20',
     borderSoft: 'border-primary/20',
     hoverBorder: 'hover:border-primary/40',
@@ -166,6 +176,7 @@ const TINT: Record<Tone, TintClasses> = {
     bg: 'bg-muted',
     bgSoft: 'bg-muted',
     ring: 'ring-border-soft',
+    ringStrong: 'ring-border',
     border: 'border-border-soft',
     borderSoft: 'border-border-soft',
     hoverBorder: 'hover:border-border-soft',
