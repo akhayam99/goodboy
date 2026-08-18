@@ -12,6 +12,7 @@ import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
 import { AgentMetaLine } from './AgentMetaLine';
 import { AgentBriefChildren } from './AgentBriefChildren';
 import { AgentBriefPlans } from './AgentBriefPlans';
+import { AgentBriefQuestions } from './AgentBriefQuestions';
 import { AgentFollowUps } from './AgentFollowUps';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 
@@ -79,6 +80,7 @@ export const AgentBrief = ({ session, agent }: Props) => {
 
   return (
     <div className="flex flex-col gap-4">
+      <AgentBriefQuestions session={session} agent={agent} />
       {summary !== '' ? (
         <SectionSurface label={hasOutputSummary ? 'Outcome' : 'Latest'} headingSize="page">
           <div className="text-sm text-foreground">

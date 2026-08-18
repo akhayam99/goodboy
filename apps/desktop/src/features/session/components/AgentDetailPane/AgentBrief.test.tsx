@@ -2,14 +2,19 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, OpenQuestion, Session, SessionId } from '@goodboy/types';
 
 const state = vi.hoisted(() => ({
   sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
+  sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
   agentTurnState: {} as Record<string, unknown>,
   agentKindOverride: {} as Record<string, unknown>,
   sessionPlans: {} as Record<string, ReadonlyArray<unknown>>,
+  openQuestions: [] as ReadonlyArray<OpenQuestion>,
   selectAgent: async () => undefined,
+  answerOpenQuestions: async () => undefined,
+  dismissOpenQuestion: async () => undefined,
+  loadSessionOpenQuestions: async () => undefined,
 }));
 
 const transcriptItems = vi.hoisted(() => ({
@@ -19,6 +24,7 @@ const transcriptItems = vi.hoisted(() => ({
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
+  useSessionOpenQuestions: () => state.openQuestions,
 }));
 
 vi.mock('../../../../store/transcript', () => ({
@@ -74,6 +80,7 @@ beforeEach(() => {
     agentTurnState: {},
     agentKindOverride: {},
     sessionPlans: {},
+    openQuestions: [],
   });
   transcriptItems.items = [];
 });
@@ -143,6 +150,40 @@ describe('AgentBrief statistics', () => {
     );
 
     expect(screen.getByText('cost').closest('section')).toBeNull();
+  });
+});
+
+describe('AgentBrief open questions', () => {
+  const blocking = {
+    id: 'oq-1',
+    sessionId,
+    text: 'Il refactor del core è già su main?',
+    suggestedAnswers: ['sì', 'no'],
+    userAnswer: null,
+    status: 'open',
+    createdByAgentId: agentId,
+    createdAt: '2026-08-18T09:00:00.000Z',
+  } as unknown as OpenQuestion;
+
+  it('leads the brief with the question that blocks the step, above Latest', () => {
+    state.openQuestions = [blocking];
+    transcriptItems.items = [{ kind: 'assistant_text', text: 'here is the last reply' }];
+
+    render(<AgentBrief session={session} agent={makeAgent({ outputSummary: '' })} />);
+
+    const question = screen.getByText('Il refactor del core è già su main?');
+    const latest = screen.getByText('Latest');
+
+    expect(question.compareDocumentPosition(latest) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it('says nothing about questions when none is waiting', () => {
+    render(<AgentBrief session={session} agent={makeAgent({ outputSummary: 'shipped it' })} />);
+
+    expect(screen.queryByText('Open question')).toBeNull();
+    expect(screen.queryByText('Open questions')).toBeNull();
   });
 });
 
