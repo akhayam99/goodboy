@@ -6,9 +6,8 @@ import {
   MessageSquareReply,
   RotateCcw,
   Trash2,
-  type LucideIcon,
 } from 'lucide-react';
-import { Chip, InlineConfirm, cn } from '@goodboy/ui';
+import { Chip, InlineConfirm } from '@goodboy/ui';
 import type { Agent, DiffComment, PrComment, TelemetryRecord } from '@goodboy/types';
 import { getModelProvider } from '@goodboy/core';
 import { agentHasUnread, useAppStore } from '../../../../store';
@@ -16,16 +15,16 @@ import type { ProviderContextUsage } from '../../../workspace/components/Workspa
 import { AgentCard } from '../AgentCard';
 import { AgentCardAction } from '../AgentCard/AgentCardAction';
 import { agentCardTitleClass } from '../AgentCard/agentCardTitleClass';
-import { AgentLastUpdate } from '../../../../shared/components/AgentLastUpdate';
-import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { resolverBadgeState } from '../ResolverStateBadge';
 import { ResolverStateIcon } from '../ResolverStateBadge/ResolverStateIcon';
 import { ResolverCardAction } from './ResolverCardAction';
 import { ResolverConfirm } from '../ResolverConfirm';
 import { resolverOrigin } from '../../resolver-origin';
 import type { ResolverStatus } from '../../resolver-linkage';
+import { ResolverCardMetrics } from './ResolverCardMetrics';
 import { ResolverCardSnippet } from './ResolverCardSnippet';
 import { ResolverCardTally } from './ResolverCardTally';
+import { ResolverLifecycleButton } from './ResolverLifecycleButton';
 import { resolverCardTone } from './resolverCardTone';
 import { resolverDiffActionLabel, type ResolverDiffTarget } from './resolverDiffActionLabel';
 import type { ResolverAction } from '../../resolverActions';
@@ -59,40 +58,6 @@ type Props = {
 type ArmedConfirm =
   | { readonly kind: 'action'; readonly action: ResolverAction; readonly run: () => Promise<void> }
   | { readonly kind: 'delete' };
-
-const LIFECYCLE_TONE_CLASS: Record<'neutral' | 'success' | 'danger', string> = {
-  neutral: 'border-border text-muted-foreground hover:bg-muted hover:text-foreground',
-  success: 'border-success/40 text-success hover:bg-success/10',
-  danger: 'border-danger/40 text-danger hover:bg-danger/10',
-};
-
-const LifecycleButton = ({
-  icon: Icon,
-  label,
-  tone,
-  onClick,
-}: {
-  readonly icon: LucideIcon;
-  readonly label: string;
-  readonly tone: 'neutral' | 'success' | 'danger';
-  readonly onClick: () => void;
-}) => (
-  <button
-    type="button"
-    aria-label={label}
-    onClick={(event) => {
-      event.stopPropagation();
-      onClick();
-    }}
-    className={cn(
-      'inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-3xs font-medium motion-safe:transition-colors',
-      LIFECYCLE_TONE_CLASS[tone],
-    )}
-  >
-    <Icon size={10} aria-hidden />
-    {label}
-  </button>
-);
 
 export const ResolverCard = ({
   agent,
@@ -202,7 +167,7 @@ export const ResolverCard = ({
       lifecycleActions={
         <>
           {canMarkDone && (
-            <LifecycleButton
+            <ResolverLifecycleButton
               icon={CircleCheck}
               label="Mark done"
               tone="success"
@@ -210,14 +175,14 @@ export const ResolverCard = ({
             />
           )}
           {isDone && (
-            <LifecycleButton
+            <ResolverLifecycleButton
               icon={RotateCcw}
               label="Reopen"
               tone="neutral"
               onClick={() => void clearAgentDone(agent.sessionId, agent.id)}
             />
           )}
-          <LifecycleButton
+          <ResolverLifecycleButton
             icon={Trash2}
             label="Delete"
             tone="danger"
@@ -278,27 +243,3 @@ const resolverDiffTooltip = ({
   }
   return 'No changes to diff yet';
 };
-
-const ResolverCardMetrics = ({
-  agent,
-  provider,
-  model,
-  turns,
-  turnsLoading,
-}: {
-  readonly agent: Agent;
-  readonly provider: string | null;
-  readonly model: string | null;
-  readonly turns: number;
-  readonly turnsLoading: boolean;
-}) => (
-  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-2xs text-muted-foreground/70">
-    <RoutingBadge provider={provider} model={model} missingLabel="no model yet" />
-    {!turnsLoading && (
-      <span className="tabular-nums" title={`${turns} turn${turns === 1 ? '' : 's'}`}>
-        {turns}t
-      </span>
-    )}
-    <AgentLastUpdate agent={agent} />
-  </div>
-);

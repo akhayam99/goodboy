@@ -277,4 +277,21 @@ describe('ResolverCard', () => {
     const navigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
     expect(navigationSlot.contains(screen.getByRole('button', { name: 'Delete' }))).toBe(false);
   });
+
+  it('keeps keyboard activation of a lifecycle action from also opening chat', () => {
+    const onOpenChat = vi.fn();
+    renderCard({ onOpenChat });
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Mark done' }), { key: 'Enter' });
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Delete' }), { key: ' ' });
+    expect(onOpenChat).not.toHaveBeenCalled();
+  });
+
+  it('keeps keyboard activation and double click on the run action from also opening chat', () => {
+    const onOpenChat = vi.fn();
+    renderCard({ status: 'committed', reportedCommitSha: 'abcdef1234567890', onOpenChat });
+    const primary = screen.getByRole('button', { name: 'Push & resolve' });
+    fireEvent.keyDown(primary, { key: 'Enter' });
+    fireEvent.doubleClick(primary);
+    expect(onOpenChat).not.toHaveBeenCalled();
+  });
 });

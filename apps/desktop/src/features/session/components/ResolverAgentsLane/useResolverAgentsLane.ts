@@ -241,7 +241,7 @@ export const useResolverAgentsLane = ({ session }: Params) => {
   const activeIds = activeResolverIds({ links: resolverIndex.links });
 
   const statusByAgentId = useMemo(() => {
-    const map = new Map<AgentId, string>();
+    const map = new Map<AgentId, (typeof resolverIndex.links)[number]['status']>();
     for (const { agent, status } of resolverIndex.links) {
       map.set(agent.id, status);
     }
