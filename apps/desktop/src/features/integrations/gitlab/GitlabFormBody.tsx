@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import type {
+  GitlabWorkspaceIntegration,
+  IntegrationCredentialId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
+import { IntegrationCredentialPicker } from '../components/IntegrationCredentialPicker';
 
 type Props = {
   workspaceId: WorkspaceId;
@@ -36,10 +41,11 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
     integrations.find((i): i is GitlabWorkspaceIntegration => i.provider === 'gitlab') ?? null;
   const config = gitlab ? gitlab.config : null;
   const connectGitlab = useAppStore((s) => s.connectGitlab);
-  const disconnectGitlab = useAppStore((s) => s.disconnectGitlab);
+  const disconnectIntegration = useAppStore((s) => s.disconnectIntegration);
 
   const [host, setHost] = useState(DEFAULT_HOST);
   const [token, setToken] = useState('');
+  const [credentialId, setCredentialId] = useState<IntegrationCredentialId | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDisconnectArmed, setIsDisconnectArmed] = useState(false);
@@ -48,7 +54,12 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
     setBusy(true);
     setError(null);
     try {
-      await connectGitlab(workspaceId, normalizeHost(host), token.trim());
+      await connectGitlab({
+        workspaceId,
+        host: normalizeHost(host),
+        token: token.trim(),
+        credentialId,
+      });
       setToken('');
       onConnected?.();
     } catch (err) {
@@ -62,7 +73,7 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
     setBusy(true);
     setError(null);
     try {
-      await disconnectGitlab(workspaceId);
+      await disconnectIntegration({ workspaceId, provider: 'gitlab' });
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -89,7 +100,7 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               role="danger"
               icon={<Unplug size={12} aria-hidden />}
               title="Disconnect GitLab?"
-              description="Deletes the saved GitLab personal API key from your keychain and forgets this workspace's connection. Reconnect anytime."
+              description="Unlinks this project from the GitLab personal API key. The key stays saved for your other projects."
               confirmLabel="Disconnect GitLab"
               autoDisarmMs={4000}
               onConfirm={onDisconnect}
@@ -109,6 +120,17 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         </div>
       ) : (
         <>
+          <IntegrationCredentialPicker
+            provider="gitlab"
+            selectedCredentialId={credentialId}
+            onSelect={(credential) => {
+              setCredentialId(credential?.id ?? null);
+              if (credential !== null && credential.account !== '') {
+                setHost(credential.account);
+              }
+            }}
+            isDisabled={busy}
+          />
           <div className="flex flex-col gap-2">
             <label htmlFor="gitlab-host" className="text-xs font-semibold text-foreground">
               Host
@@ -125,33 +147,38 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               spellCheck={false}
             />
           </div>
-          <div className="flex flex-col gap-2">
-            <label htmlFor="gitlab-pat" className="text-xs font-semibold text-foreground">
-              Personal API key
-            </label>
-            <a
-              href={tokenUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
-            >
-              Create a personal access token (scope read_api) <ExternalLink size={10} aria-hidden />
-            </a>
-            <Input
-              id="gitlab-pat"
-              type="password"
-              autoFocus={shouldAutoFocus}
-              placeholder="glpat-…"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              disabled={busy}
-            />
-          </div>
-          <p className="text-2xs leading-relaxed text-muted-foreground">
-            The read_api scope is enough. The key is stored encrypted in your operating system
-            keychain. Goodboy sends it directly to GitLab over HTTPS; it never touches
-            Goodboy&apos;s own servers.
-          </p>
+          {credentialId === null ? (
+            <>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="gitlab-pat" className="text-xs font-semibold text-foreground">
+                  Personal API key
+                </label>
+                <a
+                  href={tokenUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
+                >
+                  Create a personal access token (scope read_api){' '}
+                  <ExternalLink size={10} aria-hidden />
+                </a>
+                <Input
+                  id="gitlab-pat"
+                  type="password"
+                  autoFocus={shouldAutoFocus}
+                  placeholder="glpat-…"
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  disabled={busy}
+                />
+              </div>
+              <p className="text-2xs leading-relaxed text-muted-foreground">
+                The read_api scope is enough. The key is stored encrypted in your operating system
+                keychain. Goodboy sends it directly to GitLab over HTTPS; it never touches
+                Goodboy&apos;s own servers.
+              </p>
+            </>
+          ) : null}
         </>
       )}
 
@@ -165,7 +192,7 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         <div className="flex justify-end">
           <Button
             onClick={() => void onConnect()}
-            disabled={busy || token.trim().length === 0}
+            disabled={busy || (credentialId === null && token.trim().length === 0)}
             className={busy ? 'animate-border-pulse' : undefined}
           >
             {busy ? 'Verifying…' : 'Connect'}

@@ -14,7 +14,7 @@ const h = vi.hoisted(() => ({
   groups: [] as ReadonlyArray<BitbucketPrGroup>,
   repoHookEnabled: null as boolean | null,
   detailSessionId: undefined as SessionId | null | undefined,
-  disconnectBitbucket: vi.fn(async () => undefined),
+  disconnectIntegration: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -22,10 +22,13 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(
     selector: (state: {
       workspaceIntegrations: typeof h.integrations;
-      disconnectBitbucket: typeof h.disconnectBitbucket;
+      disconnectIntegration: typeof h.disconnectIntegration;
     }) => T,
   ) =>
-    selector({ workspaceIntegrations: h.integrations, disconnectBitbucket: h.disconnectBitbucket }),
+    selector({
+      workspaceIntegrations: h.integrations,
+      disconnectIntegration: h.disconnectIntegration,
+    }),
 }));
 
 vi.mock('../../../../shared/components/StudioShell', () => ({
@@ -129,7 +132,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
-  h.disconnectBitbucket.mockReset();
+  h.disconnectIntegration.mockReset();
 });
 
 describe('BitbucketWorkspaceStudio', () => {
@@ -180,7 +183,10 @@ describe('BitbucketWorkspaceStudio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect Bitbucket' }));
 
     await vi.waitFor(() =>
-      expect(h.disconnectBitbucket).toHaveBeenCalledWith({ workspaceId: 'workspace-1' }),
+      expect(h.disconnectIntegration).toHaveBeenCalledWith({
+        workspaceId: 'workspace-1',
+        provider: 'bitbucket',
+      }),
     );
   });
 });

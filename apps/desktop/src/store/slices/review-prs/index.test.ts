@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RepoPullRequest } from '@goodboy/core';
 import type {
   GitlabWorkspaceIntegration,
+  IntegrationCredentialId,
   IsoDateTime,
   Workspace,
   WorkspaceId,
@@ -56,7 +57,7 @@ const buildGitlabIntegration = (): GitlabWorkspaceIntegration => {
     id: 'wi-1' as WorkspaceIntegrationId,
     workspaceId: WS_ID,
     provider: 'gitlab',
-    credentialKey: 'k',
+    credentialId: 'k' as IntegrationCredentialId,
     config: { userName: 'nbro', userId: '1', host: 'https://gitlab.com' },
     createdAt: NOW,
     updatedAt: NOW,

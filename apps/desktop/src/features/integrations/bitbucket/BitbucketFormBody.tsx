@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { BitbucketWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import type {
+  BitbucketWorkspaceIntegration,
+  IntegrationCredentialId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
+import { IntegrationCredentialPicker } from '../components/IntegrationCredentialPicker';
 import { normalizeWorkspaceSlug } from './normalizeWorkspaceSlug';
 
 type Props = {
@@ -24,11 +29,12 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
         integration.provider === 'bitbucket',
     ) ?? null;
   const connectBitbucket = useAppStore((state) => state.connectBitbucket);
-  const disconnectBitbucket = useAppStore((state) => state.disconnectBitbucket);
+  const disconnectIntegration = useAppStore((state) => state.disconnectIntegration);
 
   const [workspaceSlug, setWorkspaceSlug] = useState('');
   const [email, setEmail] = useState('');
   const [apiToken, setApiToken] = useState('');
+  const [credentialId, setCredentialId] = useState<IntegrationCredentialId | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDisconnectArmed, setIsDisconnectArmed] = useState(false);
@@ -36,7 +42,8 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
   const normalizedSlug = normalizeWorkspaceSlug({ input: workspaceSlug });
   const trimmedEmail = email.trim();
   const trimmedToken = apiToken.trim();
-  const canConnect = normalizedSlug !== '' && trimmedEmail !== '' && trimmedToken !== '';
+  const canConnect =
+    normalizedSlug !== '' && trimmedEmail !== '' && (credentialId !== null || trimmedToken !== '');
 
   const onConnect = async () => {
     setIsBusy(true);
@@ -47,6 +54,7 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
         workspaceSlug: normalizedSlug,
         email: trimmedEmail,
         apiToken: trimmedToken,
+        credentialId,
       });
       setApiToken('');
       onConnected?.();
@@ -61,7 +69,7 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
     setIsBusy(true);
     setError(null);
     try {
-      await disconnectBitbucket({ workspaceId });
+      await disconnectIntegration({ workspaceId, provider: 'bitbucket' });
     } catch (disconnectError) {
       setError(formatError(disconnectError));
     } finally {
@@ -88,7 +96,7 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
               role="danger"
               icon={<Unplug size={12} aria-hidden />}
               title="Disconnect Bitbucket?"
-              description="Deletes the saved Bitbucket personal API key from your keychain and forgets this workspace's connection. Reconnect anytime."
+              description="Unlinks this project from the Bitbucket personal API key. The key stays saved for your other projects."
               confirmLabel="Disconnect Bitbucket"
               autoDisarmMs={4000}
               onConfirm={onDisconnect}
@@ -108,6 +116,17 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
         </div>
       ) : (
         <>
+          <IntegrationCredentialPicker
+            provider="bitbucket"
+            selectedCredentialId={credentialId}
+            onSelect={(credential) => {
+              setCredentialId(credential?.id ?? null);
+              if (credential !== null && credential.account !== '') {
+                setEmail(credential.account);
+              }
+            }}
+            isDisabled={isBusy}
+          />
           <div className="flex flex-col gap-2">
             <label htmlFor="bitbucket-workspace" className="text-xs font-semibold text-foreground">
               Workspace slug
@@ -145,34 +164,39 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
               spellCheck={false}
             />
           </div>
-          <div className="flex flex-col gap-2">
-            <label htmlFor="bitbucket-token" className="text-xs font-semibold text-foreground">
-              Personal API key
-            </label>
-            <a
-              href={TOKEN_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
-            >
-              Create an API token in your Atlassian account <ExternalLink size={10} aria-hidden />
-            </a>
-            <Input
-              id="bitbucket-token"
-              type="password"
-              placeholder="ATATT…"
-              value={apiToken}
-              onChange={(event) => setApiToken(event.target.value)}
-              disabled={isBusy}
-            />
-          </div>
-          <p className="text-2xs leading-relaxed text-muted-foreground">
-            Bitbucket Cloud only, Data Center and Server are not supported. An older Bitbucket app
-            password works in the same field while Atlassian keeps it alive. The secret carries your
-            own Bitbucket permissions and is stored encrypted in your operating system keychain.
-            Goodboy sends it directly to Bitbucket over HTTPS; it never touches Goodboy&apos;s own
-            servers.
-          </p>
+          {credentialId === null ? (
+            <>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="bitbucket-token" className="text-xs font-semibold text-foreground">
+                  Personal API key
+                </label>
+                <a
+                  href={TOKEN_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
+                >
+                  Create an API token in your Atlassian account{' '}
+                  <ExternalLink size={10} aria-hidden />
+                </a>
+                <Input
+                  id="bitbucket-token"
+                  type="password"
+                  placeholder="ATATT…"
+                  value={apiToken}
+                  onChange={(event) => setApiToken(event.target.value)}
+                  disabled={isBusy}
+                />
+              </div>
+              <p className="text-2xs leading-relaxed text-muted-foreground">
+                Bitbucket Cloud only, Data Center and Server are not supported. An older Bitbucket
+                app password works in the same field while Atlassian keeps it alive. The secret
+                carries your own Bitbucket permissions and is stored encrypted in your operating
+                system keychain. Goodboy sends it directly to Bitbucket over HTTPS; it never touches
+                Goodboy&apos;s own servers.
+              </p>
+            </>
+          ) : null}
         </>
       )}
 

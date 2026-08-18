@@ -2,7 +2,11 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import type {
+  GitlabWorkspaceIntegration,
+  IntegrationCredentialId,
+  WorkspaceId,
+} from '@goodboy/types';
 
 const { state, ghStatusMock, ghSetTokenMock, ghClearTokenMock } = vi.hoisted(() => ({
   state: {
@@ -30,7 +34,7 @@ const gitlabIntegration: GitlabWorkspaceIntegration = {
   id: 'wi-1' as never,
   workspaceId: WS_ID,
   provider: 'gitlab',
-  credentialKey: 'cred-1',
+  credentialId: 'cred-1' as IntegrationCredentialId,
   config: { userName: 'octo', userId: '42', host: 'https://gitlab.com' },
   createdAt: '2026-01-01T00:00:00.000Z' as never,
   updatedAt: '2026-01-01T00:00:00.000Z' as never,

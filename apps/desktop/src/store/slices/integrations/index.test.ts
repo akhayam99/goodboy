@@ -9,6 +9,8 @@ import type {
   ContextSlot,
   DiffComment,
   GhTokenStatus,
+  IntegrationCredential,
+  IntegrationCredentialId,
   IsoDateTime,
   PlanConsumption,
   PlanConsumptionId,
@@ -59,6 +61,12 @@ const listIntegrationsForWorkspaceSpy = vi.fn(
   async () => [] as ReadonlyArray<WorkspaceIntegration>,
 );
 const deleteWorkspaceIntegrationSpy = vi.fn(async () => undefined);
+const upsertIntegrationCredentialSpy = vi.fn(async () => undefined);
+const deleteIntegrationCredentialSpy = vi.fn(async () => undefined);
+const listIntegrationCredentialsSpy = vi.fn(async () => [] as ReadonlyArray<IntegrationCredential>);
+const countWorkspacesPerIntegrationCredentialSpy = vi.fn(
+  async () => ({}) as Record<string, number>,
+);
 const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>);
 const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
 const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
@@ -140,6 +148,10 @@ vi.mock('@goodboy/db', () => ({
   getWorkspaceIntegration: getWorkspaceIntegrationSpy,
   upsertWorkspaceIntegration: upsertWorkspaceIntegrationSpy,
   deleteWorkspaceIntegration: deleteWorkspaceIntegrationSpy,
+  upsertIntegrationCredential: upsertIntegrationCredentialSpy,
+  deleteIntegrationCredential: deleteIntegrationCredentialSpy,
+  listIntegrationCredentials: listIntegrationCredentialsSpy,
+  countWorkspacesPerIntegrationCredential: countWorkspacesPerIntegrationCredentialSpy,
   insertOpenQuestion: vi.fn(async () => undefined),
   markOpenQuestionsResolvedByText: vi.fn(async () => 0),
   listResolvedQuestionTextsForSession: vi.fn(async () => []),
@@ -290,49 +302,47 @@ vi.mock('../../../features/plans/plans', () => ({
   listConsumptionsForPlan: invokeListConsumptionsForPlanSpy,
 }));
 
-const linearConnectSpy = vi.fn();
-const linearDisconnectSpy = vi.fn(async () => undefined);
+const linearValidateConnectionSpy = vi.fn();
+const linearConnectSpy = vi.fn(async () => undefined);
 
 vi.mock('../../../features/integrations/linear/client', () => ({
+  linearValidateConnection: linearValidateConnectionSpy,
   linearConnect: linearConnectSpy,
-  linearDisconnect: linearDisconnectSpy,
 }));
 
-const sentryConnectSpy = vi.fn();
-const sentryDisconnectSpy = vi.fn(async () => undefined);
+const sentryValidateConnectionSpy = vi.fn();
+const sentryConnectSpy = vi.fn(async () => undefined);
 
 vi.mock('../../../features/integrations/sentry/client', () => ({
+  sentryValidateConnection: sentryValidateConnectionSpy,
   sentryConnect: sentryConnectSpy,
-  sentryDisconnect: sentryDisconnectSpy,
 }));
 
-const gitlabConnectSpy = vi.fn();
-const gitlabDisconnectSpy = vi.fn(async () => undefined);
+const gitlabValidateConnectionSpy = vi.fn();
+const gitlabConnectSpy = vi.fn(async () => undefined);
 
 vi.mock('../../../features/integrations/gitlab/client', () => ({
+  gitlabValidateConnection: gitlabValidateConnectionSpy,
   gitlabConnect: gitlabConnectSpy,
-  gitlabDisconnect: gitlabDisconnectSpy,
   gitlabFetchAssignedIssues: vi.fn(async () => []),
   issueIdentifier: vi.fn(),
 }));
 
 const jiraValidateConnectionSpy = vi.fn();
-const jiraDisconnectSpy = vi.fn(async () => undefined);
+const jiraConnectSpy = vi.fn(async () => undefined);
 
 vi.mock('../../../features/integrations/jira/client', () => ({
   jiraValidateConnection: jiraValidateConnectionSpy,
-  jiraDisconnect: jiraDisconnectSpy,
+  jiraConnect: jiraConnectSpy,
   jiraListIssues: vi.fn(async () => []),
 }));
 
 const slackValidateConnectionSpy = vi.fn();
 const slackConnectSpy = vi.fn(async () => undefined);
-const slackDisconnectSpy = vi.fn(async () => undefined);
 
 vi.mock('../../../features/integrations/slack/client', () => ({
   slackValidateConnection: slackValidateConnectionSpy,
   slackConnect: slackConnectSpy,
-  slackDisconnect: slackDisconnectSpy,
 }));
 
 const ghStatusSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<GhTokenStatus>>(async () => ({
@@ -486,6 +496,8 @@ describe('store contract', () => {
       resetState = {
         workspaces: [],
         workspaceIntegrations: {},
+        integrationCredentials: [],
+        integrationCredentialUsage: {},
         sessionExternalTasks: {},
         currentWorkspaceId: null,
         sessions: [],
@@ -560,75 +572,183 @@ describe('store contract', () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
-
   describe('integrations', () => {
+    const CRED_ID = 'cred-1' as IntegrationCredentialId;
+
+    const linearRow = (): WorkspaceIntegration => ({
+      id: 'i-1' as WorkspaceIntegrationId,
+      workspaceId: WS_ID,
+      provider: 'linear',
+      config: { workspaceUrlKey: 'k', viewerUserId: 'u', viewerName: 'n' },
+      credentialId: CRED_ID,
+      createdAt: NOW,
+      updatedAt: NOW,
+    });
+
     it('loadIntegrations caches rows keyed by workspaceId', async () => {
       const store = await getStore();
-      const integ: WorkspaceIntegration = {
-        id: 'i-1' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
-        provider: 'linear',
-        config: { workspaceUrlKey: 'k', viewerUserId: 'u', viewerName: 'n' },
-        credentialKey: 'k',
-        createdAt: NOW,
-        updatedAt: NOW,
-      };
+      const integ = linearRow();
       listIntegrationsForWorkspaceSpy.mockResolvedValueOnce([integ]);
       await store.getState().loadIntegrations(WS_ID);
       expect(store.getState().workspaceIntegrations[WS_ID]).toEqual([integ]);
     });
 
-    it('connectLinear upserts a workspace_integrations row and caches it', async () => {
+    it('loadIntegrationCredentials caches the global keys and how many projects hold each', async () => {
       const store = await getStore();
-      linearConnectSpy.mockResolvedValueOnce({
+      const credential: IntegrationCredential = {
+        id: CRED_ID,
+        provider: 'linear',
+        label: 'tester',
+        account: 'linear.app/org',
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+      listIntegrationCredentialsSpy.mockResolvedValueOnce([credential]);
+      countWorkspacesPerIntegrationCredentialSpy.mockResolvedValueOnce({ [CRED_ID]: 2 });
+
+      await store.getState().loadIntegrationCredentials();
+
+      expect(store.getState().integrationCredentials).toEqual([credential]);
+      expect(store.getState().integrationCredentialUsage).toEqual({ [CRED_ID]: 2 });
+    });
+
+    it('connectLinear writes a credential of its own and points the workspace row at it', async () => {
+      const store = await getStore();
+      linearValidateConnectionSpy.mockResolvedValueOnce({
         id: 'viewer-1',
         name: 'tester',
         organization: { urlKey: 'org' },
       });
-      const out = await store.getState().connectLinear(WS_ID, 'tok');
+      const out = await store
+        .getState()
+        .connectLinear({ workspaceId: WS_ID, token: 'tok', credentialId: null });
       expect(out.id).toBe('viewer-1');
+      expect(upsertIntegrationCredentialSpy).toHaveBeenCalledTimes(1);
       expect(upsertWorkspaceIntegrationSpy).toHaveBeenCalledTimes(1);
       const cached = store.getState().workspaceIntegrations[WS_ID];
-      expect(cached?.some((i) => i.provider === 'linear')).toBe(true);
+      const linear = cached?.find((i) => i.provider === 'linear');
+      expect(linear?.credentialId).toBeDefined();
+      expect(linear?.credentialId).not.toBe(`goodboy.workspace.${WS_ID}.linear`);
+      const stored = store.getState().integrationCredentials[0];
+      expect(stored?.label).toBe('tester');
+      expect(stored?.account).toBe('linear.app/org');
     });
 
-    it('disconnectLinear removes the linear row from cache', async () => {
+    it('connectLinear on a chosen credential sends no token across the boundary and writes no second credential', async () => {
       const store = await getStore();
-      const integ: WorkspaceIntegration = {
-        id: 'i-1' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
-        provider: 'linear',
-        config: { workspaceUrlKey: 'k', viewerUserId: 'u', viewerName: 'n' },
-        credentialKey: 'k',
-        createdAt: NOW,
-        updatedAt: NOW,
-      };
-      store.setState({ workspaceIntegrations: { [WS_ID]: [integ] } });
-      await store.getState().disconnectLinear(WS_ID);
+      linearValidateConnectionSpy.mockResolvedValueOnce({
+        id: 'viewer-1',
+        name: 'tester',
+        organization: { urlKey: 'org' },
+      });
+
+      await store
+        .getState()
+        .connectLinear({ workspaceId: WS_ID, token: 'ignored', credentialId: CRED_ID });
+
+      expect(linearValidateConnectionSpy).toHaveBeenCalledWith(CRED_ID, null);
+      expect(linearConnectSpy).toHaveBeenCalledWith(CRED_ID, null);
+      expect(upsertIntegrationCredentialSpy).not.toHaveBeenCalled();
+      const linear = store
+        .getState()
+        .workspaceIntegrations[WS_ID]?.find((i) => i.provider === 'linear');
+      expect(linear?.credentialId).toBe(CRED_ID);
+    });
+
+    it('disconnectIntegration drops the workspace row and never touches the key', async () => {
+      const store = await getStore();
+      store.setState({ workspaceIntegrations: { [WS_ID]: [linearRow()] } });
+
+      await store.getState().disconnectIntegration({ workspaceId: WS_ID, provider: 'linear' });
+
+      expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        WS_ID,
+        'linear',
+      );
+      expect(deleteIntegrationCredentialSpy).not.toHaveBeenCalled();
       expect(store.getState().workspaceIntegrations[WS_ID]).toEqual([]);
     });
 
-    it('connectSentry upserts a sentry row, derives config, and caches it', async () => {
+    it('disconnectIntegration leaves the other providers of the workspace alone', async () => {
       const store = await getStore();
-      sentryConnectSpy.mockResolvedValueOnce({
+      const sentry: WorkspaceIntegration = {
+        id: 'sentry-1' as WorkspaceIntegrationId,
+        workspaceId: WS_ID,
+        provider: 'sentry',
+        config: { org: 'goodboy', project: 'desktop' },
+        credentialId: 'cred-sentry' as IntegrationCredentialId,
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+      const linear = linearRow();
+      store.setState({ workspaceIntegrations: { [WS_ID]: [linear, sentry] } });
+
+      await store.getState().disconnectIntegration({ workspaceId: WS_ID, provider: 'sentry' });
+
+      expect(store.getState().workspaceIntegrations[WS_ID]).toEqual([linear]);
+    });
+
+    it('forgetIntegrationCredential refuses while another project still holds the key', async () => {
+      const store = await getStore();
+      store.setState({ integrationCredentialUsage: { [CRED_ID]: 1 } });
+
+      await expect(
+        store.getState().forgetIntegrationCredential({ credentialId: CRED_ID }),
+      ).rejects.toThrow(/still uses this key/);
+
+      expect(deleteIntegrationCredentialSpy).not.toHaveBeenCalled();
+    });
+
+    it('forgetIntegrationCredential removes the row and the secret once nothing references it', async () => {
+      const store = await getStore();
+      const credential: IntegrationCredential = {
+        id: CRED_ID,
+        provider: 'linear',
+        label: 'tester',
+        account: 'linear.app/org',
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+      store.setState({ integrationCredentials: [credential], integrationCredentialUsage: {} });
+
+      await store.getState().forgetIntegrationCredential({ credentialId: CRED_ID });
+
+      expect(deleteIntegrationCredentialSpy).toHaveBeenCalledWith(expect.anything(), CRED_ID);
+      expect(store.getState().integrationCredentials).toEqual([]);
+    });
+
+    it('connectSentry derives the project config and labels the credential by organization', async () => {
+      const store = await getStore();
+      sentryValidateConnectionSpy.mockResolvedValueOnce({
         slug: 'desktop',
         name: 'Desktop',
         organization: { slug: 'goodboy', name: 'Goodboy' },
       });
-      const out = await store.getState().connectSentry(WS_ID, 'tok', 'goodboy', 'desktop');
+      const out = await store.getState().connectSentry({
+        workspaceId: WS_ID,
+        token: 'tok',
+        org: 'goodboy',
+        project: 'desktop',
+        credentialId: null,
+      });
       expect(out.slug).toBe('desktop');
-      expect(sentryConnectSpy).toHaveBeenCalledWith(WS_ID, 'tok', 'goodboy', 'desktop');
-      expect(upsertWorkspaceIntegrationSpy).toHaveBeenCalledTimes(1);
-      const cached = store.getState().workspaceIntegrations[WS_ID];
-      const sentry = cached?.find((i) => i.provider === 'sentry');
-      expect(sentry).toBeDefined();
-      expect(sentry?.credentialKey).toBe(`goodboy.workspace.${WS_ID}.sentry`);
+      expect(sentryValidateConnectionSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        'tok',
+        'goodboy',
+        'desktop',
+      );
+      const sentry = store
+        .getState()
+        .workspaceIntegrations[WS_ID]?.find((i) => i.provider === 'sentry');
       expect(sentry?.config).toEqual({
         org: 'goodboy',
         project: 'desktop',
         projectName: 'Desktop',
         orgName: 'Goodboy',
       });
+      expect(store.getState().integrationCredentials[0]?.account).toBe('goodboy');
     });
 
     it('connectSentry reuses an existing row id and createdAt on reconnect', async () => {
@@ -638,43 +758,48 @@ describe('store contract', () => {
         workspaceId: WS_ID,
         provider: 'sentry',
         config: { org: 'goodboy', project: 'old', projectName: 'Old' },
-        credentialKey: `goodboy.workspace.${WS_ID}.sentry`,
+        credentialId: CRED_ID,
         createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
         updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
       };
+      getWorkspaceIntegrationSpy.mockResolvedValueOnce(existing);
       store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
-      sentryConnectSpy.mockResolvedValueOnce({
+      sentryValidateConnectionSpy.mockResolvedValueOnce({
         slug: 'new',
         name: 'New',
         organization: { slug: 'goodboy', name: 'Goodboy' },
       });
-      await store.getState().connectSentry(WS_ID, 'tok', 'goodboy', 'new');
-      const cached = store.getState().workspaceIntegrations[WS_ID] ?? [];
-      const sentryRows = cached.filter((i) => i.provider === 'sentry');
-      expect(sentryRows).toHaveLength(1);
-      expect(sentryRows[0]?.id).toBe('sentry-old');
-      expect(sentryRows[0]?.createdAt).toBe('2026-01-01T00:00:00.000Z');
-      expect((sentryRows[0]?.config as { project: string }).project).toBe('new');
+      await store.getState().connectSentry({
+        workspaceId: WS_ID,
+        token: 'tok',
+        org: 'goodboy',
+        project: 'new',
+        credentialId: CRED_ID,
+      });
+      const rows = (store.getState().workspaceIntegrations[WS_ID] ?? []).filter(
+        (i) => i.provider === 'sentry',
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.id).toBe('sentry-old');
+      expect(rows[0]?.createdAt).toBe('2026-01-01T00:00:00.000Z');
+      expect((rows[0]?.config as { project: string }).project).toBe('new');
     });
 
     it('connectSentry preserves a coexisting linear row', async () => {
       const store = await getStore();
-      const linear: WorkspaceIntegration = {
-        id: 'lin-1' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
-        provider: 'linear',
-        config: { workspaceUrlKey: 'k', viewerUserId: 'u', viewerName: 'n' },
-        credentialKey: 'k',
-        createdAt: NOW,
-        updatedAt: NOW,
-      };
-      store.setState({ workspaceIntegrations: { [WS_ID]: [linear] } });
-      sentryConnectSpy.mockResolvedValueOnce({
+      store.setState({ workspaceIntegrations: { [WS_ID]: [linearRow()] } });
+      sentryValidateConnectionSpy.mockResolvedValueOnce({
         slug: 'desktop',
         name: 'Desktop',
         organization: { slug: 'goodboy', name: 'Goodboy' },
       });
-      await store.getState().connectSentry(WS_ID, 'tok', 'goodboy', 'desktop');
+      await store.getState().connectSentry({
+        workspaceId: WS_ID,
+        token: 'tok',
+        org: 'goodboy',
+        project: 'desktop',
+        credentialId: null,
+      });
       const providers = (store.getState().workspaceIntegrations[WS_ID] ?? [])
         .map((i) => i.provider)
         .sort();
@@ -683,52 +808,40 @@ describe('store contract', () => {
 
     it('connectSentry propagates a backend error and leaves cache untouched', async () => {
       const store = await getStore();
-      sentryConnectSpy.mockRejectedValueOnce(new Error('invalid token'));
+      sentryValidateConnectionSpy.mockRejectedValueOnce(new Error('invalid token'));
       await expect(
-        store.getState().connectSentry(WS_ID, 'bad', 'goodboy', 'desktop'),
+        store.getState().connectSentry({
+          workspaceId: WS_ID,
+          token: 'bad',
+          org: 'goodboy',
+          project: 'desktop',
+          credentialId: null,
+        }),
       ).rejects.toThrow('invalid token');
       expect(upsertWorkspaceIntegrationSpy).not.toHaveBeenCalled();
+      expect(upsertIntegrationCredentialSpy).not.toHaveBeenCalled();
       expect(store.getState().workspaceIntegrations[WS_ID]).toBeUndefined();
     });
 
-    it('disconnectSentry calls backend + db and removes only the sentry row', async () => {
+    it('connectGitlab carries host into the config and labels the credential by host', async () => {
       const store = await getStore();
-      const linear: WorkspaceIntegration = {
-        id: 'lin-1' as WorkspaceIntegrationId,
+      gitlabValidateConnectionSpy.mockResolvedValueOnce({
+        id: 99,
+        username: 'amin',
+        name: 'Amin K',
+      });
+      const out = await store.getState().connectGitlab({
         workspaceId: WS_ID,
-        provider: 'linear',
-        config: { workspaceUrlKey: 'k', viewerUserId: 'u', viewerName: 'n' },
-        credentialKey: 'k',
-        createdAt: NOW,
-        updatedAt: NOW,
-      };
-      const sentry: WorkspaceIntegration = {
-        id: 'sentry-1' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
-        provider: 'sentry',
-        config: { org: 'goodboy', project: 'desktop' },
-        credentialKey: `goodboy.workspace.${WS_ID}.sentry`,
-        createdAt: NOW,
-        updatedAt: NOW,
-      };
-      store.setState({ workspaceIntegrations: { [WS_ID]: [linear, sentry] } });
-      await store.getState().disconnectSentry(WS_ID);
-      expect(sentryDisconnectSpy).toHaveBeenCalledWith(WS_ID);
-      expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(
-        expect.anything(),
-        WS_ID,
-        'sentry',
-      );
-      expect(store.getState().workspaceIntegrations[WS_ID]).toEqual([linear]);
-    });
-
-    it('connectGitlab upserts a row carrying host + user config and caches it', async () => {
-      const store = await getStore();
-      gitlabConnectSpy.mockResolvedValueOnce({ id: 99, username: 'amin', name: 'Amin K' });
-      const out = await store.getState().connectGitlab(WS_ID, 'https://gitlab.example.com', 'tok');
+        host: 'https://gitlab.example.com',
+        token: 'tok',
+        credentialId: null,
+      });
       expect(out.id).toBe(99);
-      expect(gitlabConnectSpy).toHaveBeenCalledWith(WS_ID, 'https://gitlab.example.com', 'tok');
-      expect(upsertWorkspaceIntegrationSpy).toHaveBeenCalledTimes(1);
+      expect(gitlabValidateConnectionSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        'https://gitlab.example.com',
+        'tok',
+      );
       const cached = store
         .getState()
         .workspaceIntegrations[WS_ID]?.find((i) => i.provider === 'gitlab');
@@ -737,7 +850,9 @@ describe('store contract', () => {
         userId: '99',
         host: 'https://gitlab.example.com',
       });
-      expect(cached?.credentialKey).toBe(`goodboy.workspace.${WS_ID}.gitlab`);
+      expect(store.getState().integrationCredentials[0]?.account).toBe(
+        'https://gitlab.example.com',
+      );
     });
 
     it('connectGitlab preserves id + createdAt and refreshes host on reconnect', async () => {
@@ -747,52 +862,31 @@ describe('store contract', () => {
         workspaceId: WS_ID,
         provider: 'gitlab',
         config: { userName: 'old', userId: '1', host: 'https://gitlab.com' },
-        credentialKey: `goodboy.workspace.${WS_ID}.gitlab`,
+        credentialId: CRED_ID,
         createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
         updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
       };
+      getWorkspaceIntegrationSpy.mockResolvedValueOnce(existing);
       store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
-      gitlabConnectSpy.mockResolvedValueOnce({ id: 2, username: 'amin', name: 'Amin K' });
-      await store.getState().connectGitlab(WS_ID, 'https://self.hosted', 'tok2');
-      const rows = store.getState().workspaceIntegrations[WS_ID] ?? [];
-      const gitlab = rows.filter((i) => i.provider === 'gitlab');
+      gitlabValidateConnectionSpy.mockResolvedValueOnce({
+        id: 2,
+        username: 'amin',
+        name: 'Amin K',
+      });
+      await store.getState().connectGitlab({
+        workspaceId: WS_ID,
+        host: 'https://self.hosted',
+        token: 'tok2',
+        credentialId: CRED_ID,
+      });
+      const gitlab = (store.getState().workspaceIntegrations[WS_ID] ?? []).filter(
+        (i) => i.provider === 'gitlab',
+      );
       expect(gitlab).toHaveLength(1);
       expect(gitlab[0]?.id).toBe('gl-keep');
       expect(gitlab[0]?.createdAt).toBe('2026-01-01T00:00:00.000Z');
       expect(gitlab[0]?.updatedAt).not.toBe('2026-01-01T00:00:00.000Z');
       expect((gitlab[0]?.config as { host: string }).host).toBe('https://self.hosted');
-    });
-
-    it('disconnectGitlab removes only the gitlab row, leaving other providers intact', async () => {
-      const store = await getStore();
-      const linear: WorkspaceIntegration = {
-        id: 'li-1' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
-        provider: 'linear',
-        config: { workspaceUrlKey: 'k', viewerUserId: 'u', viewerName: 'n' },
-        credentialKey: 'k',
-        createdAt: NOW,
-        updatedAt: NOW,
-      };
-      const gitlab: WorkspaceIntegration = {
-        id: 'gl-1' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
-        provider: 'gitlab',
-        config: { userName: 'a', userId: '1', host: 'https://gitlab.com' },
-        credentialKey: 'g',
-        createdAt: NOW,
-        updatedAt: NOW,
-      };
-      store.setState({ workspaceIntegrations: { [WS_ID]: [linear, gitlab] } });
-      await store.getState().disconnectGitlab(WS_ID);
-      expect(gitlabDisconnectSpy).toHaveBeenCalledWith(WS_ID);
-      expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(
-        expect.anything(),
-        WS_ID,
-        'gitlab',
-      );
-      const remaining = store.getState().workspaceIntegrations[WS_ID] ?? [];
-      expect(remaining.map((i) => i.provider)).toEqual(['linear']);
     });
 
     it('connectJira caches the site, project and account details it validated', async () => {
@@ -807,6 +901,7 @@ describe('store contract', () => {
         email: 'grace@acme.com',
         projectKey: 'ENG',
         apiToken: 'ATATT-x',
+        credentialId: null,
       });
       expect(out.accountId).toBe('acc-7');
       const cached = store
@@ -819,7 +914,7 @@ describe('store contract', () => {
         email: 'grace@acme.com',
         projectKey: 'ENG',
       });
-      expect(cached?.credentialKey).toBe(`goodboy.workspace.${WS_ID}.jira`);
+      expect(store.getState().integrationCredentials[0]?.account).toBe('grace@acme.com');
     });
 
     it('connectJira keeps the row identity and refreshes the project on reconnect', async () => {
@@ -833,10 +928,11 @@ describe('store contract', () => {
           email: 'grace@acme.com',
           projectKey: 'OLD',
         },
-        credentialKey: `goodboy.workspace.${WS_ID}.jira`,
+        credentialId: CRED_ID,
         createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
         updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
       };
+      getWorkspaceIntegrationSpy.mockResolvedValueOnce(existing);
       store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
       jiraValidateConnectionSpy.mockResolvedValueOnce({
         accountId: 'acc-7',
@@ -847,7 +943,8 @@ describe('store contract', () => {
         siteUrl: 'https://acme.atlassian.net',
         email: 'grace@acme.com',
         projectKey: 'ENG',
-        apiToken: 'ATATT-x',
+        apiToken: null,
+        credentialId: CRED_ID,
       });
       const rows = (store.getState().workspaceIntegrations[WS_ID] ?? []).filter(
         (i) => i.provider === 'jira',
@@ -856,38 +953,6 @@ describe('store contract', () => {
       expect(rows[0]?.id).toBe('ji-keep');
       expect(rows[0]?.createdAt).toBe('2026-01-01T00:00:00.000Z');
       expect((rows[0]?.config as { projectKey: string }).projectKey).toBe('ENG');
-    });
-
-    it('disconnectJira drops the cached token and only the jira row', async () => {
-      const store = await getStore();
-      const linear: WorkspaceIntegration = {
-        id: 'li-2' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
-        provider: 'linear',
-        config: { workspaceUrlKey: 'k', viewerUserId: 'u', viewerName: 'n' },
-        credentialKey: 'k',
-        createdAt: NOW,
-        updatedAt: NOW,
-      };
-      const jira: WorkspaceIntegration = {
-        id: 'ji-1' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
-        provider: 'jira',
-        config: {
-          siteUrl: 'https://acme.atlassian.net',
-          email: 'grace@acme.com',
-          projectKey: 'ENG',
-        },
-        credentialKey: 'j',
-        createdAt: NOW,
-        updatedAt: NOW,
-      };
-      store.setState({ workspaceIntegrations: { [WS_ID]: [linear, jira] } });
-      await store.getState().disconnectJira({ workspaceId: WS_ID });
-      expect(jiraDisconnectSpy).toHaveBeenCalledWith({ workspaceId: WS_ID });
-      expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(expect.anything(), WS_ID, 'jira');
-      const remaining = store.getState().workspaceIntegrations[WS_ID] ?? [];
-      expect(remaining.map((i) => i.provider)).toEqual(['linear']);
     });
 
     it('connectSlack probes the token, stores it, then caches the team it answered with', async () => {
@@ -901,12 +966,11 @@ describe('store contract', () => {
 
       const out = await store
         .getState()
-        .connectSlack({ workspaceId: WS_ID, botToken: ' xoxb-secret ' });
+        .connectSlack({ workspaceId: WS_ID, botToken: ' xoxb-secret ', credentialId: null });
 
       expect(out.teamId).toBe('T01');
-      expect(slackValidateConnectionSpy).toHaveBeenCalledWith({ botToken: ' xoxb-secret ' });
-      expect(slackConnectSpy).toHaveBeenCalledWith({
-        workspaceId: WS_ID,
+      expect(slackValidateConnectionSpy).toHaveBeenCalledWith({
+        credentialId: expect.any(String),
         botToken: ' xoxb-secret ',
       });
       const cached = store
@@ -918,7 +982,7 @@ describe('store contract', () => {
         botUserId: 'U09',
         botUserName: 'goodboy',
       });
-      expect(cached?.credentialKey).toBe(`goodboy.workspace.${WS_ID}.slack`);
+      expect(cached?.credentialId).toBeDefined();
     });
 
     it('connectSlack writes the database row before the keychain, so a failure between them never orphans a live token', async () => {
@@ -930,7 +994,9 @@ describe('store contract', () => {
         botUserName: 'goodboy',
       });
 
-      await store.getState().connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-secret' });
+      await store
+        .getState()
+        .connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-secret', credentialId: null });
 
       const dbCallOrder = upsertWorkspaceIntegrationSpy.mock.invocationCallOrder[0];
       const keychainCallOrder = slackConnectSpy.mock.invocationCallOrder[0];
@@ -939,7 +1005,7 @@ describe('store contract', () => {
       expect(dbCallOrder as number).toBeLessThan(keychainCallOrder as number);
     });
 
-    it('connectSlack rolls back the freshly written database row when the keychain write fails', async () => {
+    it('connectSlack rolls back both fresh rows when the keychain write fails', async () => {
       const store = await getStore();
       slackValidateConnectionSpy.mockResolvedValueOnce({
         teamId: 'T01',
@@ -950,11 +1016,14 @@ describe('store contract', () => {
       slackConnectSpy.mockRejectedValueOnce(new Error('keychain unavailable'));
 
       await expect(
-        store.getState().connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-secret' }),
+        store
+          .getState()
+          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-secret', credentialId: null }),
       ).rejects.toThrow(/keychain unavailable/);
 
       expect(upsertWorkspaceIntegrationSpy).toHaveBeenCalledTimes(1);
       expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(expect.anything(), WS_ID, 'slack');
+      expect(deleteIntegrationCredentialSpy).toHaveBeenCalledTimes(1);
       expect(store.getState().workspaceIntegrations[WS_ID] ?? []).toEqual([]);
     });
 
@@ -965,7 +1034,7 @@ describe('store contract', () => {
         workspaceId: WS_ID,
         provider: 'slack',
         config: { teamId: 'T00', teamName: 'Old', botUserId: 'U00' },
-        credentialKey: `goodboy.workspace.${WS_ID}.slack`,
+        credentialId: CRED_ID,
         createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
         updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
       };
@@ -979,10 +1048,13 @@ describe('store contract', () => {
       slackConnectSpy.mockRejectedValueOnce(new Error('keychain unavailable'));
 
       await expect(
-        store.getState().connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-new' }),
+        store
+          .getState()
+          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-new', credentialId: CRED_ID }),
       ).rejects.toThrow(/keychain unavailable/);
 
       expect(deleteWorkspaceIntegrationSpy).not.toHaveBeenCalled();
+      expect(deleteIntegrationCredentialSpy).not.toHaveBeenCalled();
       expect(upsertWorkspaceIntegrationSpy).toHaveBeenLastCalledWith(expect.anything(), existing);
     });
 
@@ -998,41 +1070,10 @@ describe('store contract', () => {
       deleteWorkspaceIntegrationSpy.mockRejectedValueOnce(new Error('rollback failed'));
 
       await expect(
-        store.getState().connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-secret' }),
+        store
+          .getState()
+          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-secret', credentialId: null }),
       ).rejects.toThrow(/keychain unavailable/);
-    });
-
-    it('connectSlack restores the prior row when a reconnect fails the keychain write', async () => {
-      const store = await getStore();
-      const existing: WorkspaceIntegration = {
-        id: 'sl-keep' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
-        provider: 'slack',
-        config: { teamId: 'T00', teamName: 'Old', botUserId: 'U00' },
-        credentialKey: `goodboy.workspace.${WS_ID}.slack`,
-        createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
-        updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
-      };
-      getWorkspaceIntegrationSpy.mockResolvedValueOnce(existing);
-      store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
-      slackValidateConnectionSpy.mockResolvedValueOnce({
-        teamId: 'T01',
-        teamName: 'NewTeam',
-        botUserId: 'U09',
-        botUserName: 'goodboy',
-      });
-      slackConnectSpy.mockRejectedValueOnce(new Error('keychain unavailable'));
-
-      await expect(
-        store.getState().connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-new' }),
-      ).rejects.toThrow(/keychain unavailable/);
-
-      expect(upsertWorkspaceIntegrationSpy).toHaveBeenLastCalledWith(expect.anything(), existing);
-      expect(deleteWorkspaceIntegrationSpy).not.toHaveBeenCalled();
-      const stillSlack = store
-        .getState()
-        .workspaceIntegrations[WS_ID]?.find((i) => i.provider === 'slack');
-      expect(stillSlack?.config).toEqual({ teamId: 'T00', teamName: 'Old', botUserId: 'U00' });
     });
 
     it('connectSlack never stores a token the probe rejected', async () => {
@@ -1040,7 +1081,9 @@ describe('store contract', () => {
       slackValidateConnectionSpy.mockRejectedValueOnce(new Error('invalid_auth'));
 
       await expect(
-        store.getState().connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-bad' }),
+        store
+          .getState()
+          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-bad', credentialId: null }),
       ).rejects.toThrow(/invalid_auth/);
 
       expect(slackConnectSpy).not.toHaveBeenCalled();
@@ -1055,7 +1098,7 @@ describe('store contract', () => {
         workspaceId: WS_ID,
         provider: 'slack',
         config: { teamId: 'T00', teamName: 'Old', botUserId: 'U00' },
-        credentialKey: `goodboy.workspace.${WS_ID}.slack`,
+        credentialId: CRED_ID,
         createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
         updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
       };
@@ -1068,7 +1111,9 @@ describe('store contract', () => {
         botUserName: 'goodboy',
       });
 
-      await store.getState().connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-secret' });
+      await store
+        .getState()
+        .connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-secret', credentialId: CRED_ID });
 
       const rows = (store.getState().workspaceIntegrations[WS_ID] ?? []).filter(
         (i) => i.provider === 'slack',
@@ -1077,36 +1122,6 @@ describe('store contract', () => {
       expect(rows[0]?.id).toBe('sl-keep');
       expect(rows[0]?.createdAt).toBe('2026-01-01T00:00:00.000Z');
       expect((rows[0]?.config as { teamName: string }).teamName).toBe('Acme');
-    });
-
-    it('disconnectSlack drops the cached token and only the slack row', async () => {
-      const store = await getStore();
-      const linear: WorkspaceIntegration = {
-        id: 'li-3' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
-        provider: 'linear',
-        config: { workspaceUrlKey: 'k', viewerUserId: 'u', viewerName: 'n' },
-        credentialKey: 'k',
-        createdAt: NOW,
-        updatedAt: NOW,
-      };
-      const slack: WorkspaceIntegration = {
-        id: 'sl-1' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
-        provider: 'slack',
-        config: { teamId: 'T01', teamName: 'Acme', botUserId: 'U09' },
-        credentialKey: 's',
-        createdAt: NOW,
-        updatedAt: NOW,
-      };
-      store.setState({ workspaceIntegrations: { [WS_ID]: [linear, slack] } });
-
-      await store.getState().disconnectSlack({ workspaceId: WS_ID });
-
-      expect(slackDisconnectSpy).toHaveBeenCalledWith({ workspaceId: WS_ID });
-      expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(expect.anything(), WS_ID, 'slack');
-      const remaining = store.getState().workspaceIntegrations[WS_ID] ?? [];
-      expect(remaining.map((i) => i.provider)).toEqual(['linear']);
     });
 
     it('disconnectGithub clears the workspace-scoped keychain token only', async () => {

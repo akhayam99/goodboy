@@ -11,7 +11,7 @@ const h = vi.hoisted(() => ({
   integrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
   groups: [] as ReadonlyArray<SlackThreadGroup>,
   isEnabled: null as boolean | null,
-  disconnectSlack: vi.fn(async () => undefined),
+  disconnectIntegration: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -19,9 +19,13 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(
     selector: (state: {
       workspaceIntegrations: typeof h.integrations;
-      disconnectSlack: typeof h.disconnectSlack;
+      disconnectIntegration: typeof h.disconnectIntegration;
     }) => T,
-  ) => selector({ workspaceIntegrations: h.integrations, disconnectSlack: h.disconnectSlack }),
+  ) =>
+    selector({
+      workspaceIntegrations: h.integrations,
+      disconnectIntegration: h.disconnectIntegration,
+    }),
 }));
 
 vi.mock('../../../../shared/components/StudioShell', () => ({
@@ -107,7 +111,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
-  h.disconnectSlack.mockReset();
+  h.disconnectIntegration.mockReset();
 });
 
 describe('SlackStudio', () => {
@@ -164,7 +168,10 @@ describe('SlackStudio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect Slack' }));
 
     await vi.waitFor(() =>
-      expect(h.disconnectSlack).toHaveBeenCalledWith({ workspaceId: 'workspace-1' }),
+      expect(h.disconnectIntegration).toHaveBeenCalledWith({
+        workspaceId: 'workspace-1',
+        provider: 'slack',
+      }),
     );
   });
 

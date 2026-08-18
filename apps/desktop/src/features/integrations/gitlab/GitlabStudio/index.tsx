@@ -51,7 +51,7 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;
-  const disconnectGitlab = useAppStore((s) => s.disconnectGitlab);
+  const disconnectIntegration = useAppStore((state) => state.disconnectIntegration);
   const { groups, loading, error, refetch } = useGitlabIssues({
     workspaceId,
     isEnabled: isConnected,
@@ -132,8 +132,8 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
             <Divider orientation="vertical" className="mx-0.5 h-5" />
             <IntegrationDisconnect
               label="GitLab"
-              description="Deletes the saved GitLab token from your keychain and forgets this workspace's connection. Reconnect anytime."
-              onDisconnect={() => disconnectGitlab(workspaceId)}
+              description="Unlinks this project from the GitLab personal API key. The key stays saved for your other projects."
+              onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'gitlab' })}
             />
           </div>
         ) : null

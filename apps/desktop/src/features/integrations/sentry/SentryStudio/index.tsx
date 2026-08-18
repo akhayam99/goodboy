@@ -31,7 +31,7 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;
-  const disconnectSentry = useAppStore((s) => s.disconnectSentry);
+  const disconnectIntegration = useAppStore((state) => state.disconnectIntegration);
   const { rows, loadMore, hasMore, loading, error, refetch } = useSentryIssues(
     workspaceId,
     isConnected,
@@ -75,8 +75,8 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
       ) : null}
       <IntegrationDisconnect
         label="Sentry"
-        description="Deletes the saved Sentry token from your keychain and forgets this workspace's connection. Reconnect anytime."
-        onDisconnect={() => disconnectSentry(workspaceId)}
+        description="Unlinks this project from the Sentry personal API key. The key stays saved for your other projects."
+        onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'sentry' })}
       />
     </div>
   );

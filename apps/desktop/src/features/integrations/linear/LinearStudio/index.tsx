@@ -31,7 +31,7 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;
-  const disconnectLinear = useAppStore((s) => s.disconnectLinear);
+  const disconnectIntegration = useAppStore((state) => state.disconnectIntegration);
   const { groups, loading, error, refetch } = useLinearIssues(workspaceId, isConnected);
   const [focused, setFocused] = useState<LinearIssue | null>(null);
 
@@ -82,8 +82,8 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
       ) : null}
       <IntegrationDisconnect
         label="Linear"
-        description="Deletes the saved Linear token from your keychain and forgets this workspace's connection. Reconnect anytime."
-        onDisconnect={() => disconnectLinear(workspaceId)}
+        description="Unlinks this project from the Linear personal API key. The key stays saved for your other projects."
+        onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'linear' })}
       />
     </div>
   );

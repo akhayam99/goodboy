@@ -48,8 +48,10 @@ import type {
   TurnProviderOverride,
   SessionExternalTaskProvider,
   SessionExternalTask,
+  IntegrationCredentialId,
   Workspace,
   WorkspaceId,
+  WorkspaceIntegrationProvider,
   WorkspaceScriptId,
   GhTokenStatus,
   PrMergeMethod,
@@ -242,34 +244,50 @@ export type AppActions = {
   loadWorkspaceGitStatus(input: { workspaceId: WorkspaceId }): Promise<void>;
   fastForwardWorkspaceCheckout(input: { workspaceId: WorkspaceId }): Promise<void>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
-  connectLinear(workspaceId: WorkspaceId, token: string): Promise<LinearViewer>;
-  disconnectLinear(workspaceId: WorkspaceId): Promise<void>;
-  connectSentry(
-    workspaceId: WorkspaceId,
-    token: string,
-    org: string,
-    project: string,
-  ): Promise<SentryProject>;
-  disconnectSentry(workspaceId: WorkspaceId): Promise<void>;
-  connectGitlab(workspaceId: WorkspaceId, host: string, token: string): Promise<GitlabUser>;
-  disconnectGitlab(workspaceId: WorkspaceId): Promise<void>;
+  loadIntegrationCredentials(): Promise<void>;
+  forgetIntegrationCredential(params: { credentialId: IntegrationCredentialId }): Promise<void>;
+  disconnectIntegration(params: {
+    workspaceId: WorkspaceId;
+    provider: WorkspaceIntegrationProvider;
+  }): Promise<void>;
+  connectLinear(params: {
+    workspaceId: WorkspaceId;
+    token: string | null;
+    credentialId: IntegrationCredentialId | null;
+  }): Promise<LinearViewer>;
+  connectSentry(params: {
+    workspaceId: WorkspaceId;
+    token: string | null;
+    org: string | null;
+    project: string | null;
+    credentialId: IntegrationCredentialId | null;
+  }): Promise<SentryProject>;
+  connectGitlab(params: {
+    workspaceId: WorkspaceId;
+    host: string;
+    token: string | null;
+    credentialId: IntegrationCredentialId | null;
+  }): Promise<GitlabUser>;
   connectJira(params: {
     workspaceId: WorkspaceId;
     siteUrl: string;
     email: string;
     projectKey: string;
-    apiToken: string;
+    apiToken: string | null;
+    credentialId: IntegrationCredentialId | null;
   }): Promise<JiraUser>;
-  disconnectJira(params: { workspaceId: WorkspaceId }): Promise<void>;
   connectBitbucket(params: {
     workspaceId: WorkspaceId;
     workspaceSlug: string;
     email: string;
-    apiToken: string;
+    apiToken: string | null;
+    credentialId: IntegrationCredentialId | null;
   }): Promise<BitbucketConnection>;
-  disconnectBitbucket(params: { workspaceId: WorkspaceId }): Promise<void>;
-  connectSlack(params: { workspaceId: WorkspaceId; botToken: string }): Promise<SlackConnection>;
-  disconnectSlack(params: { workspaceId: WorkspaceId }): Promise<void>;
+  connectSlack(params: {
+    workspaceId: WorkspaceId;
+    botToken: string | null;
+    credentialId: IntegrationCredentialId | null;
+  }): Promise<SlackConnection>;
   disconnectGithub(params: { workspaceId: WorkspaceId }): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
@@ -791,6 +809,8 @@ export const initialState: AppState = {
   ...createInitialSessionViewState({}),
   workspaces: [],
   workspaceIntegrations: {},
+  integrationCredentials: [],
+  integrationCredentialUsage: {},
   workspaceGitStatus: {},
   workspaceCheckoutPulling: {},
   sessionExternalTasks: {},

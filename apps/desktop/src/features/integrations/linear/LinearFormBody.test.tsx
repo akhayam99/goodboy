@@ -2,13 +2,16 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     connectLinear: vi.fn(async () => undefined),
-    disconnectLinear: vi.fn(async () => undefined),
+    disconnectIntegration: vi.fn(async () => undefined),
+    forgetIntegrationCredential: vi.fn(async () => undefined),
+    integrationCredentials: [] as ReadonlyArray<unknown>,
+    integrationCredentialUsage: {} as Record<string, number>,
   },
 }));
 
@@ -22,7 +25,7 @@ const linearIntegration = {
   id: 'wi-1',
   workspaceId: WS_ID,
   provider: 'linear' as const,
-  credentialKey: 'cred-1',
+  credentialId: 'cred-1' as IntegrationCredentialId,
   config: { viewerName: 'Ada Lovelace', workspaceUrlKey: 'acme' },
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
@@ -31,7 +34,10 @@ const linearIntegration = {
 beforeEach(() => {
   state.workspaceIntegrations = {};
   state.connectLinear = vi.fn(async () => undefined);
-  state.disconnectLinear = vi.fn(async () => undefined);
+  state.disconnectIntegration = vi.fn(async () => undefined);
+  state.forgetIntegrationCredential = vi.fn(async () => undefined);
+  state.integrationCredentials = [];
+  state.integrationCredentialUsage = {};
 });
 afterEach(cleanup);
 
@@ -65,7 +71,13 @@ describe('LinearFormBody', () => {
         target: { value: '  lin_api_x  ' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
-      await waitFor(() => expect(state.connectLinear).toHaveBeenCalledWith(WS_ID, 'lin_api_x'));
+      await waitFor(() =>
+        expect(state.connectLinear).toHaveBeenCalledWith({
+          workspaceId: WS_ID,
+          token: 'lin_api_x',
+          credentialId: null,
+        }),
+      );
       await waitFor(() => expect(onConnected).toHaveBeenCalledOnce());
     });
 
@@ -100,14 +112,17 @@ describe('LinearFormBody', () => {
       render(<LinearFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
       expect(screen.getByText(/Disconnect Linear\?/i)).toBeDefined();
-      expect(state.disconnectLinear).not.toHaveBeenCalled();
+      expect(state.disconnectIntegration).not.toHaveBeenCalled();
     });
 
     it('disconnects Linear for the workspace once the confirm is confirmed', () => {
       render(<LinearFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
       fireEvent.click(screen.getByRole('button', { name: /^disconnect linear$/i }));
-      expect(state.disconnectLinear).toHaveBeenCalledWith(WS_ID);
+      expect(state.disconnectIntegration).toHaveBeenCalledWith({
+        workspaceId: WS_ID,
+        provider: 'linear',
+      });
     });
   });
 

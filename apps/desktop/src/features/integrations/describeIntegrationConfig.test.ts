@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type {
+  IntegrationCredentialId,
   IsoDateTime,
   WorkspaceId,
   WorkspaceIntegration,
@@ -22,7 +23,7 @@ const integration = ({ provider, config }: Params): WorkspaceIntegration =>
     workspaceId: WS,
     provider,
     config,
-    credentialKey: `goodboy.workspace.${WS}.${provider}`,
+    credentialId: `goodboy.workspace.${WS}.${provider}` as IntegrationCredentialId,
     createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
     updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
   }) as WorkspaceIntegration;

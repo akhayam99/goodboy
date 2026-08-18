@@ -29,7 +29,7 @@ export const BitbucketStudio = ({ sessionId, workspaceName, onClose }: Props) =>
   const error = useAppStore((state) => state.sessionBitbucketPr[sessionId]?.error ?? null);
   const refreshSessionBitbucketPr = useAppStore((state) => state.refreshSessionBitbucketPr);
   const selectSessionBitbucketPr = useAppStore((state) => state.selectSessionBitbucketPr);
-  const disconnectBitbucket = useAppStore((state) => state.disconnectBitbucket);
+  const disconnectIntegration = useAppStore((state) => state.disconnectIntegration);
   const integrations = useAppStore((state) =>
     workspaceId != null ? (state.workspaceIntegrations[workspaceId] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   );
@@ -75,8 +75,8 @@ export const BitbucketStudio = ({ sessionId, workspaceName, onClose }: Props) =>
         isConnected && workspaceId != null ? (
           <IntegrationDisconnect
             label="Bitbucket"
-            description="Deletes the saved Bitbucket API token from your keychain and forgets this workspace's connection. Reconnect anytime."
-            onDisconnect={() => disconnectBitbucket({ workspaceId })}
+            description="Unlinks this project from the Bitbucket personal API key. The key stays saved for your other projects."
+            onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'bitbucket' })}
           />
         ) : null
       }

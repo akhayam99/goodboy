@@ -2,13 +2,20 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { SlackWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import type {
+  IntegrationCredentialId,
+  SlackWorkspaceIntegration,
+  WorkspaceId,
+} from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     connectSlack: vi.fn(async () => undefined),
-    disconnectSlack: vi.fn(async () => undefined),
+    disconnectIntegration: vi.fn(async () => undefined),
+    forgetIntegrationCredential: vi.fn(async () => undefined),
+    integrationCredentials: [] as ReadonlyArray<unknown>,
+    integrationCredentialUsage: {} as Record<string, number>,
   },
 }));
 
@@ -22,7 +29,7 @@ const slackIntegration: SlackWorkspaceIntegration = {
   id: 'wi-1' as never,
   workspaceId: WS_ID,
   provider: 'slack',
-  credentialKey: 'cred-1',
+  credentialId: 'cred-1' as IntegrationCredentialId,
   config: {
     teamId: 'T01',
     teamName: 'Acme',
@@ -36,7 +43,10 @@ const slackIntegration: SlackWorkspaceIntegration = {
 beforeEach(() => {
   state.workspaceIntegrations = {};
   state.connectSlack = vi.fn(async () => undefined);
-  state.disconnectSlack = vi.fn(async () => undefined);
+  state.disconnectIntegration = vi.fn(async () => undefined);
+  state.forgetIntegrationCredential = vi.fn(async () => undefined);
+  state.integrationCredentials = [];
+  state.integrationCredentialUsage = {};
 });
 afterEach(cleanup);
 
@@ -69,6 +79,7 @@ describe('SlackFormBody', () => {
       expect(state.connectSlack).toHaveBeenCalledWith({
         workspaceId: WS_ID,
         botToken: 'xoxb-secret',
+        credentialId: null,
       }),
     );
     await waitFor(() => expect(onConnected).toHaveBeenCalledOnce());
@@ -114,14 +125,17 @@ describe('SlackFormBody', () => {
       render(<SlackFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
       expect(screen.getByText(/Disconnect Slack\?/i)).toBeDefined();
-      expect(state.disconnectSlack).not.toHaveBeenCalled();
+      expect(state.disconnectIntegration).not.toHaveBeenCalled();
     });
 
     it('disconnects Slack for the workspace once the confirm is confirmed', () => {
       render(<SlackFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
       fireEvent.click(screen.getByRole('button', { name: /^disconnect slack$/i }));
-      expect(state.disconnectSlack).toHaveBeenCalledWith({ workspaceId: WS_ID });
+      expect(state.disconnectIntegration).toHaveBeenCalledWith({
+        workspaceId: WS_ID,
+        provider: 'slack',
+      });
     });
   });
 });

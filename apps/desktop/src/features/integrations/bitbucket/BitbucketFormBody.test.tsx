@@ -2,13 +2,20 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { BitbucketWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import type {
+  BitbucketWorkspaceIntegration,
+  IntegrationCredentialId,
+  WorkspaceId,
+} from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     connectBitbucket: vi.fn(async () => undefined),
-    disconnectBitbucket: vi.fn(async () => undefined),
+    disconnectIntegration: vi.fn(async () => undefined),
+    forgetIntegrationCredential: vi.fn(async () => undefined),
+    integrationCredentials: [] as ReadonlyArray<unknown>,
+    integrationCredentialUsage: {} as Record<string, number>,
   },
 }));
 
@@ -22,7 +29,7 @@ const bitbucketIntegration: BitbucketWorkspaceIntegration = {
   id: 'wi-1' as never,
   workspaceId: WS_ID,
   provider: 'bitbucket',
-  credentialKey: 'cred-1',
+  credentialId: 'cred-1' as IntegrationCredentialId,
   config: {
     workspaceSlug: 'goodboy',
     email: 'grace@acme.com',
@@ -45,7 +52,10 @@ const fillConnectForm = () => {
 beforeEach(() => {
   state.workspaceIntegrations = {};
   state.connectBitbucket = vi.fn(async () => undefined);
-  state.disconnectBitbucket = vi.fn(async () => undefined);
+  state.disconnectIntegration = vi.fn(async () => undefined);
+  state.forgetIntegrationCredential = vi.fn(async () => undefined);
+  state.integrationCredentials = [];
+  state.integrationCredentialUsage = {};
 });
 afterEach(cleanup);
 
@@ -80,6 +90,7 @@ describe('BitbucketFormBody', () => {
         workspaceSlug: 'goodboy',
         email: 'grace@acme.com',
         apiToken: 'ATATT-x',
+        credentialId: null,
       }),
     );
     await waitFor(() => expect(onConnected).toHaveBeenCalledOnce());
@@ -114,14 +125,17 @@ describe('BitbucketFormBody', () => {
       render(<BitbucketFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
       expect(screen.getByText(/Disconnect Bitbucket\?/i)).toBeDefined();
-      expect(state.disconnectBitbucket).not.toHaveBeenCalled();
+      expect(state.disconnectIntegration).not.toHaveBeenCalled();
     });
 
     it('disconnects Bitbucket for the workspace once the confirm is confirmed', () => {
       render(<BitbucketFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
       fireEvent.click(screen.getByRole('button', { name: /^disconnect bitbucket$/i }));
-      expect(state.disconnectBitbucket).toHaveBeenCalledWith({ workspaceId: WS_ID });
+      expect(state.disconnectIntegration).toHaveBeenCalledWith({
+        workspaceId: WS_ID,
+        provider: 'bitbucket',
+      });
     });
   });
 

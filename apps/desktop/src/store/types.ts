@@ -13,6 +13,8 @@ import type {
   FileVersion,
   GhTokenStatus,
   GoalAttachment,
+  IntegrationCredential,
+  IntegrationCredentialUsage,
   IsoDateTime,
   LinkedIssue,
   Message,
@@ -177,6 +179,8 @@ export type AppState = AppSliceState & {
   readonly workspaceIntegrations: Readonly<
     Record<WorkspaceId, ReadonlyArray<WorkspaceIntegration>>
   >;
+  readonly integrationCredentials: ReadonlyArray<IntegrationCredential>;
+  readonly integrationCredentialUsage: IntegrationCredentialUsage;
   readonly workspaceGitStatus: Readonly<Record<WorkspaceId, WorkspaceGitStatus>>;
   readonly workspaceCheckoutPulling: Readonly<Record<WorkspaceId, boolean>>;
   readonly sessionExternalTasks: Readonly<Record<SessionId, ReadonlyArray<SessionExternalTask>>>;

@@ -8,7 +8,7 @@ import { ToastProvider } from '../../../../app/components/Toast';
 
 const h = vi.hoisted(() => ({
   integrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
-  disconnectLinear: vi.fn(async () => undefined),
+  disconnectIntegration: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -16,9 +16,13 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(
     selector: (state: {
       workspaceIntegrations: typeof h.integrations;
-      disconnectLinear: typeof h.disconnectLinear;
+      disconnectIntegration: typeof h.disconnectIntegration;
     }) => T,
-  ) => selector({ workspaceIntegrations: h.integrations, disconnectLinear: h.disconnectLinear }),
+  ) =>
+    selector({
+      workspaceIntegrations: h.integrations,
+      disconnectIntegration: h.disconnectIntegration,
+    }),
 }));
 
 vi.mock('../../../../shared/components/StudioShell', () => ({
@@ -71,7 +75,7 @@ const renderStudio = () =>
 afterEach(() => {
   cleanup();
   h.integrations = {};
-  h.disconnectLinear.mockReset();
+  h.disconnectIntegration.mockReset();
 });
 
 describe('LinearStudio', () => {
@@ -91,6 +95,11 @@ describe('LinearStudio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect Linear' }));
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect Linear' }));
 
-    await vi.waitFor(() => expect(h.disconnectLinear).toHaveBeenCalledWith('workspace-1'));
+    await vi.waitFor(() =>
+      expect(h.disconnectIntegration).toHaveBeenCalledWith({
+        workspaceId: 'workspace-1',
+        provider: 'linear',
+      }),
+    );
   });
 });

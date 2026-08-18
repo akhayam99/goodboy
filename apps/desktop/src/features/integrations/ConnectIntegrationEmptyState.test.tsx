@@ -4,22 +4,24 @@ import type { WorkspaceId } from '@goodboy/types';
 
 type Store = {
   readonly workspaceIntegrations: Readonly<Record<string, ReadonlyArray<unknown>>>;
+  readonly integrationCredentials: ReadonlyArray<unknown>;
+  readonly integrationCredentialUsage: Readonly<Record<string, number>>;
+  readonly forgetIntegrationCredential: ReturnType<typeof vi.fn>;
+  readonly disconnectIntegration: ReturnType<typeof vi.fn>;
   readonly connectLinear: ReturnType<typeof vi.fn>;
-  readonly disconnectLinear: ReturnType<typeof vi.fn>;
   readonly connectSentry: ReturnType<typeof vi.fn>;
-  readonly disconnectSentry: ReturnType<typeof vi.fn>;
   readonly connectGitlab: ReturnType<typeof vi.fn>;
-  readonly disconnectGitlab: ReturnType<typeof vi.fn>;
 };
 
 const store: Store = {
   workspaceIntegrations: {},
+  integrationCredentials: [],
+  integrationCredentialUsage: {},
+  forgetIntegrationCredential: vi.fn(),
+  disconnectIntegration: vi.fn(),
   connectLinear: vi.fn(),
-  disconnectLinear: vi.fn(),
   connectSentry: vi.fn(),
-  disconnectSentry: vi.fn(),
   connectGitlab: vi.fn(),
-  disconnectGitlab: vi.fn(),
 };
 
 vi.mock('../../store', () => ({

@@ -14,7 +14,7 @@ const h = vi.hoisted(() => ({
     refetch: vi.fn(),
   })),
   integrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
-  disconnectSentry: vi.fn(async () => undefined),
+  disconnectIntegration: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -22,9 +22,13 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(
     selector: (state: {
       workspaceIntegrations: typeof h.integrations;
-      disconnectSentry: typeof h.disconnectSentry;
+      disconnectIntegration: typeof h.disconnectIntegration;
     }) => T,
-  ) => selector({ workspaceIntegrations: h.integrations, disconnectSentry: h.disconnectSentry }),
+  ) =>
+    selector({
+      workspaceIntegrations: h.integrations,
+      disconnectIntegration: h.disconnectIntegration,
+    }),
 }));
 
 vi.mock('../../../../shared/components/StudioShell', () => ({
@@ -75,7 +79,7 @@ afterEach(() => {
   cleanup();
   h.useSentryIssues.mockClear();
   h.integrations = {};
-  h.disconnectSentry.mockReset();
+  h.disconnectIntegration.mockReset();
 });
 
 describe('SentryStudio', () => {
@@ -98,6 +102,11 @@ describe('SentryStudio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect Sentry' }));
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect Sentry' }));
 
-    await vi.waitFor(() => expect(h.disconnectSentry).toHaveBeenCalledWith('workspace-1'));
+    await vi.waitFor(() =>
+      expect(h.disconnectIntegration).toHaveBeenCalledWith({
+        workspaceId: 'workspace-1',
+        provider: 'sentry',
+      }),
+    );
   });
 });

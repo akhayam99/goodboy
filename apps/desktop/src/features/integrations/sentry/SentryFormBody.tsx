@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { SentryIntegrationConfig, WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, SentryIntegrationConfig, WorkspaceId } from '@goodboy/types';
 import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
+import { IntegrationCredentialPicker } from '../components/IntegrationCredentialPicker';
 
 type Props = {
   workspaceId: WorkspaceId;
@@ -16,11 +17,12 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
   const sentry = integrations.find((i) => i.provider === 'sentry') ?? null;
   const sentryConfig = (sentry?.config ?? null) as SentryIntegrationConfig | null;
   const connectSentry = useAppStore((s) => s.connectSentry);
-  const disconnectSentry = useAppStore((s) => s.disconnectSentry);
+  const disconnectIntegration = useAppStore((s) => s.disconnectIntegration);
 
   const [token, setToken] = useState('');
   const [org, setOrg] = useState('');
   const [project, setProject] = useState('');
+  const [credentialId, setCredentialId] = useState<IntegrationCredentialId | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDisconnectArmed, setIsDisconnectArmed] = useState(false);
@@ -29,7 +31,13 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
     setBusy(true);
     setError(null);
     try {
-      await connectSentry(workspaceId, token.trim(), org.trim(), project.trim());
+      await connectSentry({
+        workspaceId,
+        token: token.trim(),
+        org: org.trim(),
+        project: project.trim(),
+        credentialId,
+      });
       setToken('');
       setOrg('');
       setProject('');
@@ -45,7 +53,7 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
     setBusy(true);
     setError(null);
     try {
-      await disconnectSentry(workspaceId);
+      await disconnectIntegration({ workspaceId, provider: 'sentry' });
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -53,7 +61,10 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
     }
   };
 
-  const canConnect = token.trim().length > 0 && org.trim().length > 0 && project.trim().length > 0;
+  const canConnect =
+    (credentialId !== null || token.trim().length > 0) &&
+    org.trim().length > 0 &&
+    project.trim().length > 0;
 
   return (
     <div className="flex flex-col gap-5">
@@ -74,7 +85,7 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               role="danger"
               icon={<Unplug size={12} aria-hidden />}
               title="Disconnect Sentry?"
-              description="Deletes the saved Sentry personal API key from your keychain and forgets this workspace's connection. Reconnect anytime."
+              description="Unlinks this project from the Sentry personal API key. The key stays saved for your other projects."
               confirmLabel="Disconnect Sentry"
               autoDisarmMs={4000}
               onConfirm={onDisconnect}
@@ -94,28 +105,36 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         </div>
       ) : (
         <>
-          <div className="flex flex-col gap-2">
-            <label htmlFor="sentry-token" className="text-xs font-semibold text-foreground">
-              Personal API key
-            </label>
-            <a
-              href="https://sentry.io/settings/account/api/auth-tokens/"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
-            >
-              Create a user auth token in Sentry settings <ExternalLink size={10} aria-hidden />
-            </a>
-            <Input
-              id="sentry-token"
-              type="password"
-              autoFocus={shouldAutoFocus}
-              placeholder="sntryu_…"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              disabled={busy}
-            />
-          </div>
+          <IntegrationCredentialPicker
+            provider="sentry"
+            selectedCredentialId={credentialId}
+            onSelect={(credential) => setCredentialId(credential?.id ?? null)}
+            isDisabled={busy}
+          />
+          {credentialId === null ? (
+            <div className="flex flex-col gap-2">
+              <label htmlFor="sentry-token" className="text-xs font-semibold text-foreground">
+                Personal API key
+              </label>
+              <a
+                href="https://sentry.io/settings/account/api/auth-tokens/"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
+              >
+                Create a user auth token in Sentry settings <ExternalLink size={10} aria-hidden />
+              </a>
+              <Input
+                id="sentry-token"
+                type="password"
+                autoFocus={shouldAutoFocus}
+                placeholder="sntryu_…"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                disabled={busy}
+              />
+            </div>
+          ) : null}
           <div className="flex flex-col gap-2">
             <label htmlFor="sentry-org" className="text-xs font-semibold text-foreground">
               Organization slug

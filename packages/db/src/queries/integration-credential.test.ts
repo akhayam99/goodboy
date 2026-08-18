@@ -133,6 +133,33 @@ describe('integration_credentials queries', () => {
     expect(await countWorkspacesPerIntegrationCredential(db)).toEqual({});
   });
 
+  it('has nowhere to keep the secret, so listing one cannot hand it back', async () => {
+    const db = await seed();
+    await upsertIntegrationCredential(db, makeCredential());
+
+    const columns = await db.select<{ name: string }>(
+      "PRAGMA table_info('integration_credentials')",
+    );
+    expect(columns.map((column) => column.name)).toEqual([
+      'id',
+      'provider',
+      'label',
+      'account',
+      'created_at',
+      'updated_at',
+    ]);
+
+    const [credential] = await listIntegrationCredentials(db);
+    expect(Object.keys(credential ?? {})).toEqual([
+      'id',
+      'provider',
+      'label',
+      'account',
+      'createdAt',
+      'updatedAt',
+    ]);
+  });
+
   it('keeps the credential when a workspace is deleted out from under it', async () => {
     const db = await seed();
     await upsertIntegrationCredential(db, makeCredential());

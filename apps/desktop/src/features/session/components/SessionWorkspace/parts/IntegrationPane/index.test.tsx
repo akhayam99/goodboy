@@ -26,8 +26,11 @@ type Store = {
   readonly sessions: ReadonlyArray<{ id: string; workspaceId: string }>;
   readonly linkSessionExternalTask: ReturnType<typeof vi.fn>;
   readonly unlinkSessionExternalTask: ReturnType<typeof vi.fn>;
+  readonly integrationCredentials: ReadonlyArray<unknown>;
+  readonly integrationCredentialUsage: Readonly<Record<string, number>>;
+  readonly forgetIntegrationCredential: ReturnType<typeof vi.fn>;
+  readonly disconnectIntegration: ReturnType<typeof vi.fn>;
   readonly connectLinear: ReturnType<typeof vi.fn>;
-  readonly disconnectLinear: ReturnType<typeof vi.fn>;
 };
 
 type Props = {
@@ -50,8 +53,11 @@ const h = vi.hoisted(() => ({
     sessions: [],
     linkSessionExternalTask: vi.fn(async () => undefined),
     unlinkSessionExternalTask: vi.fn(async () => undefined),
+    integrationCredentials: [],
+    integrationCredentialUsage: {},
+    forgetIntegrationCredential: vi.fn(async () => undefined),
+    disconnectIntegration: vi.fn(async () => undefined),
     connectLinear: vi.fn(async () => undefined),
-    disconnectLinear: vi.fn(async () => undefined),
   },
   openUrl: vi.fn(async () => undefined),
   loadCandidates: vi.fn(),
@@ -209,7 +215,7 @@ beforeEach(() => {
   h.store.linkSessionExternalTask.mockClear();
   h.store.unlinkSessionExternalTask.mockClear();
   h.store.connectLinear.mockClear();
-  h.store.disconnectLinear.mockClear();
+  h.store.disconnectIntegration.mockClear();
   h.openUrl.mockClear();
 });
 
@@ -447,7 +453,11 @@ describe('IntegrationPane', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     await waitFor(() =>
-      expect(h.store.connectLinear).toHaveBeenCalledWith(WORKSPACE_ID, 'lin_api_test'),
+      expect(h.store.connectLinear).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        token: 'lin_api_test',
+        credentialId: null,
+      }),
     );
     expect(listener).not.toHaveBeenCalled();
     window.removeEventListener('goodboy:open-linear-studio', listener);
