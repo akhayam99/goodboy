@@ -11,7 +11,7 @@ const h = vi.hoisted(() => ({
   integrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
   groups: [] as ReadonlyArray<unknown>,
   lastParams: null as { assignedOnly: boolean } | null,
-  disconnectJira: vi.fn(async () => undefined),
+  disconnectIntegration: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -19,9 +19,13 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(
     selector: (state: {
       workspaceIntegrations: typeof h.integrations;
-      disconnectJira: typeof h.disconnectJira;
+      disconnectIntegration: typeof h.disconnectIntegration;
     }) => T,
-  ) => selector({ workspaceIntegrations: h.integrations, disconnectJira: h.disconnectJira }),
+  ) =>
+    selector({
+      workspaceIntegrations: h.integrations,
+      disconnectIntegration: h.disconnectIntegration,
+    }),
 }));
 
 vi.mock('../../../../shared/components/StudioShell', () => ({
@@ -83,7 +87,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
-  h.disconnectJira.mockReset();
+  h.disconnectIntegration.mockReset();
 });
 
 describe('JiraStudio', () => {
@@ -114,7 +118,10 @@ describe('JiraStudio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect Jira' }));
 
     await vi.waitFor(() =>
-      expect(h.disconnectJira).toHaveBeenCalledWith({ workspaceId: 'workspace-1' }),
+      expect(h.disconnectIntegration).toHaveBeenCalledWith({
+        workspaceId: 'workspace-1',
+        provider: 'jira',
+      }),
     );
   });
 });

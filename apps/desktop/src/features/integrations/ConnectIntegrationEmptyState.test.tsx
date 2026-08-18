@@ -4,22 +4,24 @@ import type { WorkspaceId } from '@goodboy/types';
 
 type Store = {
   readonly workspaceIntegrations: Readonly<Record<string, ReadonlyArray<unknown>>>;
+  readonly integrationCredentials: ReadonlyArray<unknown>;
+  readonly integrationCredentialUsage: Readonly<Record<string, number>>;
+  readonly forgetIntegrationCredential: ReturnType<typeof vi.fn>;
+  readonly disconnectIntegration: ReturnType<typeof vi.fn>;
   readonly connectLinear: ReturnType<typeof vi.fn>;
-  readonly disconnectLinear: ReturnType<typeof vi.fn>;
   readonly connectSentry: ReturnType<typeof vi.fn>;
-  readonly disconnectSentry: ReturnType<typeof vi.fn>;
   readonly connectGitlab: ReturnType<typeof vi.fn>;
-  readonly disconnectGitlab: ReturnType<typeof vi.fn>;
 };
 
 const store: Store = {
   workspaceIntegrations: {},
+  integrationCredentials: [],
+  integrationCredentialUsage: {},
+  forgetIntegrationCredential: vi.fn(),
+  disconnectIntegration: vi.fn(),
   connectLinear: vi.fn(),
-  disconnectLinear: vi.fn(),
   connectSentry: vi.fn(),
-  disconnectSentry: vi.fn(),
   connectGitlab: vi.fn(),
-  disconnectGitlab: vi.fn(),
 };
 
 vi.mock('../../store', () => ({
@@ -35,11 +37,11 @@ import { ConnectIntegrationEmptyState } from './ConnectIntegrationEmptyState';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const PROVIDERS = [
-  ['linear', 'Linear', 'Personal access token'],
-  ['sentry', 'Sentry', 'Auth token'],
-  ['gitlab', 'GitLab', 'Personal access token'],
-  ['jira', 'Jira', 'API token'],
-  ['bitbucket', 'Bitbucket', 'API token'],
+  ['linear', 'Linear', 'Personal API key'],
+  ['sentry', 'Sentry', 'Personal API key'],
+  ['gitlab', 'GitLab', 'Personal API key'],
+  ['jira', 'Jira', 'Personal API key'],
+  ['bitbucket', 'Bitbucket', 'Personal API key'],
   ['slack', 'Slack', 'Bot token'],
 ] as const;
 
@@ -60,5 +62,24 @@ describe('ConnectIntegrationEmptyState', () => {
     expect(studioListener).not.toHaveBeenCalled();
 
     window.removeEventListener(`goodboy:open-${provider}-studio`, studioListener);
+  });
+
+  const PERSONAL_KEY_PROVIDERS = PROVIDERS.filter(([provider]) => provider !== 'slack');
+
+  it.each(PERSONAL_KEY_PROVIDERS)(
+    'labels the %s credential field a personal API key, never a token',
+    (provider) => {
+      render(<ConnectIntegrationEmptyState provider={provider} workspaceId={WORKSPACE_ID} />);
+
+      expect(screen.getByLabelText('Personal API key')).toBeDefined();
+      expect(screen.queryByLabelText(/access token|auth token|api token/i)).toBeNull();
+    },
+  );
+
+  it('keeps the Slack credential a bot token, because it belongs to an app and not a person', () => {
+    render(<ConnectIntegrationEmptyState provider="slack" workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.getByLabelText('Bot token')).toBeDefined();
+    expect(screen.queryByLabelText('Personal API key')).toBeNull();
   });
 });

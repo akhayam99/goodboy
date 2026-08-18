@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
-import type { WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 import {
   sentryConnect,
-  sentryDisconnect,
+  sentryValidateConnection,
   sentryFetchIssue,
   sentryFetchIssueDetail,
   sentryFetchIssues,
@@ -12,30 +12,44 @@ import {
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
 const WS = 'ws-1' as WorkspaceId;
+const CRED = 'cred-1' as IntegrationCredentialId;
 const mockInvoke = vi.mocked(invoke);
 
 afterEach(() => {
   mockInvoke.mockReset();
 });
 
-describe('sentryConnect', () => {
-  it('invokes sentry_connect with token, org and project', async () => {
+describe('sentryValidateConnection', () => {
+  it('probes the org and project under a credential id', async () => {
     mockInvoke.mockResolvedValue({ slug: 'p', name: 'P', organization: { slug: 'o', name: 'O' } });
-    await sentryConnect(WS, 'tok', 'org', 'proj');
-    expect(mockInvoke).toHaveBeenCalledWith('sentry_connect', {
-      workspaceId: WS,
+    await sentryValidateConnection(CRED, 'tok', 'org', 'proj');
+    expect(mockInvoke).toHaveBeenCalledWith('sentry_validate_connection', {
+      credentialId: CRED,
       token: 'tok',
+      org: 'org',
+      project: 'proj',
+    });
+  });
+
+  it('reuses a stored credential without carrying its token', async () => {
+    mockInvoke.mockResolvedValue({ slug: 'p', name: 'P', organization: { slug: 'o', name: 'O' } });
+    await sentryValidateConnection(CRED, null, 'org', 'proj');
+    expect(mockInvoke).toHaveBeenCalledWith('sentry_validate_connection', {
+      credentialId: CRED,
+      token: null,
       org: 'org',
       project: 'proj',
     });
   });
 });
 
-describe('sentryDisconnect', () => {
-  it('invokes sentry_disconnect with workspace id', async () => {
-    mockInvoke.mockResolvedValue(undefined);
-    await sentryDisconnect(WS);
-    expect(mockInvoke).toHaveBeenCalledWith('sentry_disconnect', { workspaceId: WS });
+describe('sentryConnect', () => {
+  it('stores the secret under the credential id alone, with no project scope', async () => {
+    await sentryConnect(CRED, 'tok');
+    expect(mockInvoke).toHaveBeenCalledWith('sentry_connect', {
+      credentialId: CRED,
+      token: 'tok',
+    });
   });
 });
 

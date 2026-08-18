@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 
 export type BitbucketUser = {
   readonly uuid: string;
@@ -83,37 +83,35 @@ export type BitbucketStatus = {
 };
 
 type ValidateParams = {
+  readonly credentialId: IntegrationCredentialId;
   readonly workspaceSlug: string;
   readonly email: string;
-  readonly apiToken: string;
+  readonly apiToken: string | null;
 };
 
 export const bitbucketValidateConnection = async ({
+  credentialId,
   workspaceSlug,
   email,
   apiToken,
 }: ValidateParams): Promise<BitbucketConnection> =>
   invoke<BitbucketConnection>('bitbucket_validate_connection', {
+    credentialId,
     workspaceSlug,
     email,
     apiToken,
   });
 
 type ConnectParams = {
-  readonly workspaceId: WorkspaceId;
-  readonly apiToken: string;
+  readonly credentialId: IntegrationCredentialId;
+  readonly apiToken: string | null;
 };
 
-export const bitbucketConnect = async ({ workspaceId, apiToken }: ConnectParams): Promise<void> => {
-  await invoke('bitbucket_connect', { workspaceId, apiToken });
-};
-
-type DisconnectParams = {
-  readonly workspaceId: WorkspaceId;
-};
-
-export const bitbucketDisconnect = async ({ workspaceId }: DisconnectParams): Promise<void> => {
-  await invoke('bitbucket_disconnect', { workspaceId });
+export const bitbucketConnect = async ({
+  credentialId,
+  apiToken,
+}: ConnectParams): Promise<void> => {
+  await invoke('bitbucket_connect', { credentialId, apiToken });
 };
 
 export type BitbucketRepo = {

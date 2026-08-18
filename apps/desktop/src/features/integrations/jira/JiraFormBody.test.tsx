@@ -2,13 +2,20 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { JiraWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import type {
+  IntegrationCredentialId,
+  JiraWorkspaceIntegration,
+  WorkspaceId,
+} from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     connectJira: vi.fn(async () => undefined),
-    disconnectJira: vi.fn(async () => undefined),
+    disconnectIntegration: vi.fn(async () => undefined),
+    forgetIntegrationCredential: vi.fn(async () => undefined),
+    integrationCredentials: [] as ReadonlyArray<unknown>,
+    integrationCredentialUsage: {} as Record<string, number>,
   },
 }));
 
@@ -22,7 +29,7 @@ const jiraIntegration: JiraWorkspaceIntegration = {
   id: 'wi-1' as never,
   workspaceId: WS_ID,
   provider: 'jira',
-  credentialKey: 'cred-1',
+  credentialId: 'cred-1' as IntegrationCredentialId,
   config: {
     siteUrl: 'https://acme.atlassian.net',
     email: 'grace@acme.com',
@@ -41,13 +48,16 @@ const fillConnectForm = () => {
     target: { value: ' grace@acme.com ' },
   });
   fireEvent.change(screen.getByLabelText(/project key/i), { target: { value: 'eng' } });
-  fireEvent.change(screen.getByLabelText(/api token/i), { target: { value: ' ATATT-x ' } });
+  fireEvent.change(screen.getByLabelText(/personal API key/i), { target: { value: ' ATATT-x ' } });
 };
 
 beforeEach(() => {
   state.workspaceIntegrations = {};
   state.connectJira = vi.fn(async () => undefined);
-  state.disconnectJira = vi.fn(async () => undefined);
+  state.disconnectIntegration = vi.fn(async () => undefined);
+  state.forgetIntegrationCredential = vi.fn(async () => undefined);
+  state.integrationCredentials = [];
+  state.integrationCredentialUsage = {};
 });
 afterEach(cleanup);
 
@@ -57,8 +67,8 @@ describe('JiraFormBody credential link', () => {
   it('offers the token link before the token field', () => {
     render(<JiraFormBody workspaceId={WS_ID} />);
 
-    const link = screen.getByRole('link', { name: /create a token/i });
-    const field = screen.getByLabelText(/api token/i);
+    const link = screen.getByRole('link', { name: /create an API token/i });
+    const field = screen.getByLabelText(/personal API key/i);
 
     expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
@@ -85,6 +95,7 @@ describe('JiraFormBody', () => {
         email: 'grace@acme.com',
         projectKey: 'ENG',
         apiToken: 'ATATT-x',
+        credentialId: null,
       }),
     );
     await waitFor(() => expect(onConnected).toHaveBeenCalledOnce());
@@ -119,14 +130,17 @@ describe('JiraFormBody', () => {
       render(<JiraFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
       expect(screen.getByText(/Disconnect Jira\?/i)).toBeDefined();
-      expect(state.disconnectJira).not.toHaveBeenCalled();
+      expect(state.disconnectIntegration).not.toHaveBeenCalled();
     });
 
     it('disconnects Jira for the workspace once the confirm is confirmed', () => {
       render(<JiraFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
       fireEvent.click(screen.getByRole('button', { name: /^disconnect jira$/i }));
-      expect(state.disconnectJira).toHaveBeenCalledWith({ workspaceId: WS_ID });
+      expect(state.disconnectIntegration).toHaveBeenCalledWith({
+        workspaceId: WS_ID,
+        provider: 'jira',
+      });
     });
   });
 

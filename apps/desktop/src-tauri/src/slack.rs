@@ -6,10 +6,13 @@ use serde_json::Value;
 use tauri::State;
 use thiserror::Error;
 
+use crate::integration_credentials::{self, IntegrationCredentialError};
 use crate::secrets;
+
+const PROVIDER: &str = "slack";
 use crate::util::epoch_secs_to_datetime;
 
-pub struct SlackTokenCache(Mutex<HashMap<String, String>>);
+pub struct SlackTokenCache(integration_credentials::SecretCache);
 
 impl SlackTokenCache {
     pub fn new() -> Self {
@@ -20,10 +23,6 @@ impl SlackTokenCache {
 fn http_client() -> &'static reqwest::Client {
     static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
     CLIENT.get_or_init(reqwest::Client::new)
-}
-
-fn credential_key(workspace_id: &str) -> String {
-    format!("goodboy.workspace.{}.slack", workspace_id)
 }
 
 const API_BASE: &str = "https://slack.com/api";
@@ -46,8 +45,10 @@ pub enum SlackError {
     Api(String),
     #[error("invalid response shape: {0}")]
     InvalidShape(String),
-    #[error("no token stored for workspace {0}")]
+    #[error("no bot token stored for workspace {0}")]
     NoToken(String),
+    #[error("credential store error: {0}")]
+    Credential(#[from] IntegrationCredentialError),
     #[error("secret store error: {0}")]
     Secret(#[from] secrets::SecretError),
 }
@@ -64,6 +65,7 @@ impl SlackError {
             SlackError::Api(_) => "api",
             SlackError::InvalidShape(_) => "shape",
             SlackError::NoToken(_) => "no_token",
+            SlackError::Credential(_) => "credential",
             SlackError::Secret(_) => "secret",
         }
     }
@@ -440,17 +442,8 @@ async fn fetch_paged<T: serde::de::DeserializeOwned>(
 }
 
 fn read_token(workspace_id: &str, cache: &SlackTokenCache) -> Result<String, SlackError> {
-    if let Some(token) = cache.0.lock().unwrap().get(workspace_id) {
-        return Ok(token.clone());
-    }
-    let token = secrets::read(&credential_key(workspace_id))?
-        .ok_or_else(|| SlackError::NoToken(workspace_id.to_string()))?;
-    cache
-        .0
-        .lock()
-        .unwrap()
-        .insert(workspace_id.to_string(), token.clone());
-    Ok(token)
+    integration_credentials::read_for_workspace(PROVIDER, workspace_id, &cache.0)?
+        .ok_or_else(|| SlackError::NoToken(workspace_id.to_string()))
 }
 
 pub fn iso_from_slack_ts(ts: &str) -> Option<String> {
@@ -851,28 +844,25 @@ async fn add_reaction(
 }
 
 #[tauri::command]
-pub async fn slack_validate_connection(bot_token: String) -> Result<SlackConnection, SlackError> {
+pub async fn slack_validate_connection(
+    credential_id: String,
+    bot_token: Option<String>,
+    cache: State<'_, SlackTokenCache>,
+) -> Result<SlackConnection, SlackError> {
+    let bot_token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, bot_token, &cache.0)?;
     validate_connection(API_BASE, &bot_token).await
 }
 
 #[tauri::command]
 pub async fn slack_connect(
-    workspace_id: String,
-    bot_token: String,
+    credential_id: String,
+    bot_token: Option<String>,
     cache: State<'_, SlackTokenCache>,
 ) -> Result<(), SlackError> {
-    secrets::set(&credential_key(&workspace_id), &bot_token)?;
-    cache.0.lock().unwrap().insert(workspace_id, bot_token);
-    Ok(())
-}
-
-#[tauri::command]
-pub async fn slack_disconnect(
-    workspace_id: String,
-    cache: State<'_, SlackTokenCache>,
-) -> Result<(), SlackError> {
-    secrets::clear(&credential_key(&workspace_id))?;
-    cache.0.lock().unwrap().remove(&workspace_id);
+    let bot_token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, bot_token, &cache.0)?;
+    integration_credentials::store_secret(&credential_id, &bot_token, &cache.0)?;
     Ok(())
 }
 
@@ -1122,11 +1112,6 @@ mod tests {
                 body,
             });
         }
-    }
-
-    #[test]
-    fn credential_key_is_namespaced_per_workspace() {
-        assert_eq!(credential_key("ws-1"), "goodboy.workspace.ws-1.slack");
     }
 
     #[test]

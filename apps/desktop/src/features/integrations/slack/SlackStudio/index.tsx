@@ -30,7 +30,7 @@ export const SlackStudio = ({ workspaceId, workspaceName, initialThreadTs, onClo
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;
-  const disconnectSlack = useAppStore((s) => s.disconnectSlack);
+  const disconnectIntegration = useAppStore((state) => state.disconnectIntegration);
   const { groups, hiddenChannelCount, isLoading, error, refetch } = useSlackThreads({
     workspaceId,
     isEnabled: isConnected,
@@ -89,8 +89,8 @@ export const SlackStudio = ({ workspaceId, workspaceName, initialThreadTs, onClo
             <Divider orientation="vertical" className="mx-0.5 h-5" />
             <IntegrationDisconnect
               label="Slack"
-              description="Deletes the saved Slack bot token from your keychain and forgets this workspace's connection. Reconnect anytime."
-              onDisconnect={() => disconnectSlack({ workspaceId })}
+              description="Unlinks this project from the Slack bot token. The token stays saved for your other projects."
+              onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'slack' })}
             />
           </div>
         ) : null

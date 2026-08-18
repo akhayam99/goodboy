@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { SlackWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import type {
+  IntegrationCredentialId,
+  SlackWorkspaceIntegration,
+  WorkspaceId,
+} from '@goodboy/types';
 import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
+import { IntegrationCredentialPicker } from '../components/IntegrationCredentialPicker';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -24,21 +29,22 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
       (integration): integration is SlackWorkspaceIntegration => integration.provider === 'slack',
     ) ?? null;
   const connectSlack = useAppStore((state) => state.connectSlack);
-  const disconnectSlack = useAppStore((state) => state.disconnectSlack);
+  const disconnectIntegration = useAppStore((state) => state.disconnectIntegration);
 
   const [botToken, setBotToken] = useState('');
+  const [credentialId, setCredentialId] = useState<IntegrationCredentialId | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDisconnectArmed, setIsDisconnectArmed] = useState(false);
 
   const trimmedToken = botToken.trim();
-  const canConnect = trimmedToken !== '';
+  const canConnect = credentialId !== null || trimmedToken !== '';
 
   const onConnect = async () => {
     setIsBusy(true);
     setError(null);
     try {
-      await connectSlack({ workspaceId, botToken: trimmedToken });
+      await connectSlack({ workspaceId, botToken: trimmedToken, credentialId });
       setBotToken('');
       onConnected?.();
     } catch (connectError) {
@@ -52,7 +58,7 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
     setIsBusy(true);
     setError(null);
     try {
-      await disconnectSlack({ workspaceId });
+      await disconnectIntegration({ workspaceId, provider: 'slack' });
     } catch (disconnectError) {
       setError(formatError(disconnectError));
     } finally {
@@ -81,7 +87,7 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
               role="danger"
               icon={<Unplug size={12} aria-hidden />}
               title="Disconnect Slack?"
-              description="Deletes the saved Slack bot token from your keychain and forgets this workspace's connection. Reconnect anytime."
+              description="Unlinks this project from the Slack bot token. The token stays saved for your other projects."
               confirmLabel="Disconnect Slack"
               autoDisarmMs={4000}
               onConfirm={onDisconnect}
@@ -101,47 +107,57 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
         </div>
       ) : (
         <>
-          <div className="flex flex-col gap-2">
-            <label htmlFor="slack-token" className="text-xs font-semibold text-foreground">
-              Bot token
-            </label>
-            <a
-              href={APP_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
-            >
-              Create a Slack app and copy its bot token <ExternalLink size={10} aria-hidden />
-            </a>
-            <Input
-              id="slack-token"
-              type="password"
-              autoFocus={shouldAutoFocus}
-              placeholder="xoxb-…"
-              value={botToken}
-              onChange={(event) => setBotToken(event.target.value)}
-              disabled={isBusy}
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <p className="text-2xs leading-relaxed text-muted-foreground">
-              The bot token starts with <span className="font-mono">xoxb-</span> and needs these
-              scopes:
-            </p>
-            <ul className="flex flex-wrap gap-2">
-              {SCOPES.map((scope) => (
-                <li
-                  key={scope}
-                  className="rounded-full border border-border-soft px-2 py-0.5 font-mono text-2xs text-foreground"
+          <IntegrationCredentialPicker
+            provider="slack"
+            selectedCredentialId={credentialId}
+            onSelect={(credential) => setCredentialId(credential?.id ?? null)}
+            isDisabled={isBusy}
+          />
+          {credentialId === null ? (
+            <>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="slack-token" className="text-xs font-semibold text-foreground">
+                  Bot token
+                </label>
+                <a
+                  href={APP_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
                 >
-                  {scope}
-                </li>
-              ))}
-            </ul>
-          </div>
+                  Create a Slack app and copy its bot token <ExternalLink size={10} aria-hidden />
+                </a>
+                <Input
+                  id="slack-token"
+                  type="password"
+                  autoFocus={shouldAutoFocus}
+                  placeholder="xoxb-…"
+                  value={botToken}
+                  onChange={(event) => setBotToken(event.target.value)}
+                  disabled={isBusy}
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <p className="text-2xs leading-relaxed text-muted-foreground">
+                  The bot token starts with <span className="font-mono">xoxb-</span> and needs these
+                  scopes:
+                </p>
+                <ul className="flex flex-wrap gap-2">
+                  {SCOPES.map((scope) => (
+                    <li
+                      key={scope}
+                      className="rounded-full border border-border-soft px-2 py-0.5 font-mono text-2xs text-foreground"
+                    >
+                      {scope}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </>
+          ) : null}
           <p className="text-2xs leading-relaxed text-muted-foreground">
             Public channels only, and Goodboy sees only the ones the bot has joined. Invite it to a
             channel in Slack to read that conversation here. Goodboy also pulls your

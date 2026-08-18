@@ -5,7 +5,10 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use thiserror::Error;
 
+use crate::integration_credentials::{self, IntegrationCredentialError};
 use crate::secrets;
+
+const PROVIDER: &str = "sentry";
 
 const BASE_URL: &str = "https://sentry.io/api/0";
 const PAGE_LIMIT: &str = "25";
@@ -18,7 +21,13 @@ pub struct SentryConfig {
     pub project: String,
 }
 
-pub struct SentryTokenCache(Mutex<HashMap<String, SentryConfig>>);
+#[derive(Deserialize)]
+pub struct SentryScope {
+    pub org: String,
+    pub project: String,
+}
+
+pub struct SentryTokenCache(integration_credentials::SecretCache);
 
 impl SentryTokenCache {
     pub fn new() -> Self {
@@ -31,18 +40,16 @@ fn http_client() -> &'static reqwest::Client {
     CLIENT.get_or_init(reqwest::Client::new)
 }
 
-fn credential_key(workspace_id: &str) -> String {
-    format!("goodboy.workspace.{}.sentry", workspace_id)
-}
-
 #[derive(Debug, Error)]
 pub enum SentryError {
     #[error("http error: {0}")]
     Http(String),
     #[error("invalid response shape: {0}")]
     InvalidShape(String),
-    #[error("no token stored for workspace {0}")]
+    #[error("no personal API key stored for workspace {0}")]
     NoToken(String),
+    #[error("credential store error: {0}")]
+    Credential(#[from] IntegrationCredentialError),
     #[error("secret store error: {0}")]
     Secret(#[from] secrets::SecretError),
 }
@@ -53,6 +60,7 @@ impl SentryError {
             SentryError::Http(_) => "http",
             SentryError::InvalidShape(_) => "shape",
             SentryError::NoToken(_) => "no_token",
+            SentryError::Credential(_) => "credential",
             SentryError::Secret(_) => "secret",
         }
     }
@@ -156,19 +164,26 @@ pub struct SentryIssueDetail {
     pub breadcrumbs: Vec<SentryBreadcrumb>,
 }
 
+/// A pre-m114 entry held the whole connection as one blob. The credential now
+/// holds the token alone, so an older blob is read for its token and nothing
+/// else.
+fn token_from_secret(raw: &str) -> String {
+    serde_json::from_str::<SentryConfig>(raw)
+        .map(|held| held.token)
+        .unwrap_or_else(|_| raw.to_string())
+}
+
 fn read_config(workspace_id: &str, cache: &SentryTokenCache) -> Result<SentryConfig, SentryError> {
-    if let Some(cfg) = cache.0.lock().unwrap().get(workspace_id) {
-        return Ok(cfg.clone());
-    }
-    let raw = secrets::read(&credential_key(workspace_id))?
+    let raw = integration_credentials::read_for_workspace(PROVIDER, workspace_id, &cache.0)?
         .ok_or_else(|| SentryError::NoToken(workspace_id.to_string()))?;
-    let cfg: SentryConfig = serde_json::from_str(&raw)?;
-    cache
-        .0
-        .lock()
-        .unwrap()
-        .insert(workspace_id.to_string(), cfg.clone());
-    Ok(cfg)
+    let scope = integration_credentials::config_for_workspace(PROVIDER, workspace_id)?
+        .ok_or_else(|| SentryError::NoToken(workspace_id.to_string()))?;
+    let scope: SentryScope = serde_json::from_str(&scope)?;
+    Ok(SentryConfig {
+        token: token_from_secret(&raw),
+        org: scope.org,
+        project: scope.project,
+    })
 }
 
 fn parse_next_cursor(link: &str) -> Option<String> {
@@ -285,41 +300,36 @@ fn extract_breadcrumbs(event: &serde_json::Value) -> Vec<SentryBreadcrumb> {
 }
 
 #[tauri::command]
-pub async fn sentry_connect(
-    workspace_id: String,
-    token: String,
+pub async fn sentry_validate_connection(
+    credential_id: String,
+    token: Option<String>,
     org: String,
     project: String,
     cache: State<'_, SentryTokenCache>,
 ) -> Result<SentryProject, SentryError> {
+    let secret =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)
+            .map(|raw| token_from_secret(&raw))?;
     let url = format!("{}/projects/{}/{}/", BASE_URL, org, project);
-    let res = http_client().get(&url).bearer_auth(&token).send().await?;
+    let res = http_client().get(&url).bearer_auth(&secret).send().await?;
     let status = res.status();
     if !status.is_success() {
         let body = res.text().await.unwrap_or_default();
         return Err(SentryError::Http(format!("status {}: {}", status, body)));
     }
-    let project_resp: SentryProject = res.json().await?;
-    let cfg = SentryConfig {
-        token,
-        org,
-        project,
-    };
-    secrets::set(
-        &credential_key(&workspace_id),
-        &serde_json::to_string(&cfg)?,
-    )?;
-    cache.0.lock().unwrap().insert(workspace_id, cfg);
-    Ok(project_resp)
+    Ok(res.json().await?)
 }
 
 #[tauri::command]
-pub async fn sentry_disconnect(
-    workspace_id: String,
+pub async fn sentry_connect(
+    credential_id: String,
+    token: Option<String>,
     cache: State<'_, SentryTokenCache>,
 ) -> Result<(), SentryError> {
-    secrets::clear(&credential_key(&workspace_id))?;
-    cache.0.lock().unwrap().remove(&workspace_id);
+    let secret =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)
+            .map(|raw| token_from_secret(&raw))?;
+    integration_credentials::store_secret(&credential_id, &secret, &cache.0)?;
     Ok(())
 }
 

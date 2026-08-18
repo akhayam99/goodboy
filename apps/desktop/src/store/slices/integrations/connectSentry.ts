@@ -1,44 +1,42 @@
-import { upsertWorkspaceIntegration } from '@goodboy/db';
-import type {
-  IsoDateTime,
-  WorkspaceId,
-  WorkspaceIntegration,
-  WorkspaceIntegrationId,
-} from '@goodboy/types';
-import { sentryConnect, type SentryProject } from '../../../features/integrations/sentry/client';
-import { tauriDatabase } from '../../../shared/lib/db';
+import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
+import {
+  sentryConnect,
+  sentryValidateConnection,
+  type SentryProject,
+} from '../../../features/integrations/sentry/client';
+import { commitIntegrationConnection } from './commitIntegrationConnection';
 import { configFromSentry } from './configFromSentry';
-import type { GetFn, SetFn } from './types';
+import type { SetFn } from './types';
 
-export const connectSentry = (set: SetFn, get: GetFn) => {
-  return async (
-    workspaceId: WorkspaceId,
-    token: string,
-    org: string,
-    project: string,
-  ): Promise<SentryProject> => {
-    const projectInfo = await sentryConnect(workspaceId, token, org, project);
-    const now = new Date().toISOString() as IsoDateTime;
-    const existing = get().workspaceIntegrations[workspaceId]?.find((i) => i.provider === 'sentry');
-    const integration: WorkspaceIntegration = {
-      id: (existing?.id ?? crypto.randomUUID()) as WorkspaceIntegrationId,
+type Params = {
+  readonly workspaceId: WorkspaceId;
+  readonly token: string | null;
+  readonly org: string;
+  readonly project: string;
+  readonly credentialId: IntegrationCredentialId | null;
+};
+
+export const connectSentry = (set: SetFn) => {
+  return async ({
+    workspaceId,
+    token,
+    org,
+    project,
+    credentialId,
+  }: Params): Promise<SentryProject> => {
+    const chosen = credentialId ?? (crypto.randomUUID() as IntegrationCredentialId);
+    const supplied = credentialId === null ? token : null;
+    const projectInfo = await sentryValidateConnection(chosen, supplied, org, project);
+    const config = configFromSentry(projectInfo);
+    await commitIntegrationConnection({
+      set,
       workspaceId,
       provider: 'sentry',
-      config: configFromSentry(projectInfo),
-      credentialKey: `goodboy.workspace.${workspaceId}.sentry`,
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-    };
-    await upsertWorkspaceIntegration(tauriDatabase, integration);
-    set((state) => {
-      const current = state.workspaceIntegrations[workspaceId] ?? [];
-      const rest = current.filter((i) => i.provider !== 'sentry');
-      return {
-        workspaceIntegrations: {
-          ...state.workspaceIntegrations,
-          [workspaceId]: [...rest, integration],
-        },
-      };
+      credentialId: chosen,
+      config,
+      newCredential:
+        credentialId === null ? { label: config.orgName ?? config.org, account: config.org } : null,
+      storeSecret: () => sentryConnect(chosen, supplied),
     });
     return projectInfo;
   };

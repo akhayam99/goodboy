@@ -6,9 +6,12 @@ use serde_json::Value;
 use tauri::State;
 use thiserror::Error;
 
+use crate::integration_credentials::{self, IntegrationCredentialError};
 use crate::secrets;
 
-pub struct JiraTokenCache(Mutex<HashMap<String, String>>);
+const PROVIDER: &str = "jira";
+
+pub struct JiraTokenCache(integration_credentials::SecretCache);
 
 impl JiraTokenCache {
     pub fn new() -> Self {
@@ -21,10 +24,6 @@ fn http_client() -> &'static reqwest::Client {
     CLIENT.get_or_init(reqwest::Client::new)
 }
 
-fn credential_key(workspace_id: &str) -> String {
-    format!("goodboy.workspace.{}.jira", workspace_id)
-}
-
 #[derive(Debug, Error)]
 pub enum JiraError {
     #[error("http error {status}: {body}")]
@@ -35,8 +34,10 @@ pub enum JiraError {
     NotFound(String),
     #[error("invalid response shape: {0}")]
     InvalidShape(String),
-    #[error("no token stored for workspace {0}")]
+    #[error("no personal API key stored for workspace {0}")]
     NoToken(String),
+    #[error("credential store error: {0}")]
+    Credential(#[from] IntegrationCredentialError),
     #[error("secret store error: {0}")]
     Secret(#[from] secrets::SecretError),
 }
@@ -51,6 +52,7 @@ impl JiraError {
             JiraError::NotFound(_) => "not_found",
             JiraError::InvalidShape(_) => "shape",
             JiraError::NoToken(_) => "no_token",
+            JiraError::Credential(_) => "credential",
             JiraError::Secret(_) => "secret",
         }
     }
@@ -260,17 +262,8 @@ async fn send_no_content(
 }
 
 fn read_token(workspace_id: &str, cache: &JiraTokenCache) -> Result<String, JiraError> {
-    if let Some(token) = cache.0.lock().unwrap().get(workspace_id) {
-        return Ok(token.clone());
-    }
-    let token = secrets::read(&credential_key(workspace_id))?
-        .ok_or_else(|| JiraError::NoToken(workspace_id.to_string()))?;
-    cache
-        .0
-        .lock()
-        .unwrap()
-        .insert(workspace_id.to_string(), token.clone());
-    Ok(token)
+    integration_credentials::read_for_workspace(PROVIDER, workspace_id, &cache.0)?
+        .ok_or_else(|| JiraError::NoToken(workspace_id.to_string()))
 }
 
 fn flatten_text(node: &Value) -> String {
@@ -794,12 +787,14 @@ fn transition_write(base: &str, issue_key: &str, transition_id: &str) -> JiraWri
 
 #[tauri::command]
 pub async fn jira_validate_connection(
-    workspace_id: String,
+    credential_id: String,
     site_url: String,
     email: String,
-    api_token: String,
+    api_token: Option<String>,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<JiraUser, JiraError> {
+    let api_token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, &cache.0)?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -807,19 +802,18 @@ pub async fn jira_validate_connection(
         email: &email,
         token: &api_token,
     };
-    let user: JiraUser = get_json(&credentials, &format!("{base}/myself")).await?;
-    secrets::set(&credential_key(&workspace_id), &api_token)?;
-    cache.0.lock().unwrap().insert(workspace_id, api_token);
-    Ok(user)
+    get_json(&credentials, &format!("{base}/myself")).await
 }
 
 #[tauri::command]
-pub async fn jira_disconnect(
-    workspace_id: String,
+pub async fn jira_connect(
+    credential_id: String,
+    api_token: Option<String>,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<(), JiraError> {
-    secrets::clear(&credential_key(&workspace_id))?;
-    cache.0.lock().unwrap().remove(&workspace_id);
+    let api_token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, &cache.0)?;
+    integration_credentials::store_secret(&credential_id, &api_token, &cache.0)?;
     Ok(())
 }
 
@@ -1076,11 +1070,6 @@ mod tests {
             browse_url("https://acme.atlassian.net", "GB-12"),
             "https://acme.atlassian.net/browse/GB-12"
         );
-    }
-
-    #[test]
-    fn credential_key_is_namespaced_per_workspace() {
-        assert_eq!(credential_key("ws-1"), "goodboy.workspace.ws-1.jira");
     }
 
     #[test]

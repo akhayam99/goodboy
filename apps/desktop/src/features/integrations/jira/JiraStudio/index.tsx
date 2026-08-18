@@ -43,7 +43,7 @@ export const JiraStudio = ({ workspaceId, workspaceName, initialIssueId, onClose
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;
-  const disconnectJira = useAppStore((s) => s.disconnectJira);
+  const disconnectIntegration = useAppStore((state) => state.disconnectIntegration);
   const [scope, setScope] = useState<Scope>('mine');
   const { groups, isLoading, error, refetch } = useJiraIssues({
     workspaceId,
@@ -110,8 +110,8 @@ export const JiraStudio = ({ workspaceId, workspaceName, initialIssueId, onClose
             <Divider orientation="vertical" className="mx-0.5 h-5" />
             <IntegrationDisconnect
               label="Jira"
-              description="Deletes the saved Jira API token from your keychain and forgets this workspace's connection. Reconnect anytime."
-              onDisconnect={() => disconnectJira({ workspaceId })}
+              description="Unlinks this project from the Jira personal API key. The key stays saved for your other projects."
+              onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'jira' })}
             />
           </div>
         ) : null

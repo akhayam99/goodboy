@@ -12,7 +12,7 @@ const h = vi.hoisted(() => ({
   integrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
   repo: null as BitbucketRepo | null,
   groups: [] as ReadonlyArray<BitbucketPrGroup>,
-  disconnectBitbucket: vi.fn(async () => undefined),
+  disconnectIntegration: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -25,7 +25,7 @@ vi.mock('../../../../store', () => ({
       refreshSessionBitbucketPr: () => Promise<void>;
       selectSessionBitbucketPr: () => Promise<void>;
       workspaceIntegrations: typeof h.integrations;
-      disconnectBitbucket: typeof h.disconnectBitbucket;
+      disconnectIntegration: typeof h.disconnectIntegration;
     }) => T,
   ) =>
     selector({
@@ -35,7 +35,7 @@ vi.mock('../../../../store', () => ({
       refreshSessionBitbucketPr: vi.fn(async () => undefined),
       selectSessionBitbucketPr: vi.fn(async () => undefined),
       workspaceIntegrations: h.integrations,
-      disconnectBitbucket: h.disconnectBitbucket,
+      disconnectIntegration: h.disconnectIntegration,
     }),
 }));
 
@@ -95,7 +95,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
-  h.disconnectBitbucket.mockReset();
+  h.disconnectIntegration.mockReset();
 });
 
 describe('BitbucketStudio', () => {
@@ -160,7 +160,10 @@ describe('BitbucketStudio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect Bitbucket' }));
 
     await vi.waitFor(() =>
-      expect(h.disconnectBitbucket).toHaveBeenCalledWith({ workspaceId: 'workspace-1' }),
+      expect(h.disconnectIntegration).toHaveBeenCalledWith({
+        workspaceId: 'workspace-1',
+        provider: 'bitbucket',
+      }),
     );
   });
 });

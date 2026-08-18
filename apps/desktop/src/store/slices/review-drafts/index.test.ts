@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AgentId,
+  IntegrationCredentialId,
   IsoDateTime,
   PrReviewDraft,
   SessionExternalTask,
@@ -291,7 +292,7 @@ describe('review-drafts slice', () => {
             id: 'wi-1' as WorkspaceIntegrationId,
             workspaceId: WS_ID,
             provider: 'gitlab',
-            credentialKey: 'k',
+            credentialId: 'k' as IntegrationCredentialId,
             config: { userName: 'nbro', userId: '1', host: 'https://gitlab.com' },
             createdAt: NOW,
             updatedAt: NOW,

@@ -58,7 +58,10 @@ mod tests {
         match probe_for("moonshot", "sk-test") {
             Probe::Header { url, headers } => {
                 assert_eq!(url, "https://api.moonshot.ai/v1/models");
-                assert_eq!(headers, vec![("authorization", "Bearer sk-test".to_string())]);
+                assert_eq!(
+                    headers,
+                    vec![("authorization", "Bearer sk-test".to_string())]
+                );
             }
             _ => panic!("moonshot must not fall through to Probe::Skip"),
         }

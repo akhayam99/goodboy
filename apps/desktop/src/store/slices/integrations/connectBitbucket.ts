@@ -1,24 +1,23 @@
-import { upsertWorkspaceIntegration } from '@goodboy/db';
 import type {
   BitbucketWorkspaceIntegration,
-  IsoDateTime,
+  IntegrationCredentialId,
   WorkspaceId,
-  WorkspaceIntegrationId,
 } from '@goodboy/types';
 import {
-  bitbucketConnect as bitbucketStoreToken,
+  bitbucketConnect,
   bitbucketValidateConnection,
   type BitbucketConnection,
 } from '../../../features/integrations/bitbucket/client';
-import { tauriDatabase } from '../../../shared/lib/db';
+import { commitIntegrationConnection } from './commitIntegrationConnection';
 import { configFromBitbucketConnection } from './configFromBitbucketConnection';
 import type { GetFn, SetFn } from './types';
 
-type ConnectParams = {
+type Params = {
   readonly workspaceId: WorkspaceId;
   readonly workspaceSlug: string;
   readonly email: string;
-  readonly apiToken: string;
+  readonly apiToken: string | null;
+  readonly credentialId: IntegrationCredentialId | null;
 };
 
 export const connectBitbucket = (set: SetFn, get: GetFn) => {
@@ -27,37 +26,35 @@ export const connectBitbucket = (set: SetFn, get: GetFn) => {
     workspaceSlug,
     email,
     apiToken,
-  }: ConnectParams): Promise<BitbucketConnection> => {
-    const connection = await bitbucketValidateConnection({ workspaceSlug, email, apiToken });
-    await bitbucketStoreToken({ workspaceId, apiToken });
-    const now = new Date().toISOString() as IsoDateTime;
+    credentialId,
+  }: Params): Promise<BitbucketConnection> => {
+    const chosen = credentialId ?? (crypto.randomUUID() as IntegrationCredentialId);
+    const supplied = credentialId === null ? apiToken : null;
+    const connection = await bitbucketValidateConnection({
+      credentialId: chosen,
+      workspaceSlug,
+      email,
+      apiToken: supplied,
+    });
     const existing = get().workspaceIntegrations[workspaceId]?.find(
       (integration): integration is BitbucketWorkspaceIntegration =>
         integration.provider === 'bitbucket',
     );
-    const integration: BitbucketWorkspaceIntegration = {
-      id: (existing?.id ?? crypto.randomUUID()) as WorkspaceIntegrationId,
+    await commitIntegrationConnection({
+      set,
       workspaceId,
       provider: 'bitbucket',
+      credentialId: chosen,
       config: {
         ...(existing?.config ?? {}),
         ...configFromBitbucketConnection({ connection }),
         email,
       },
-      credentialKey: `goodboy.workspace.${workspaceId}.bitbucket`,
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-    };
-    await upsertWorkspaceIntegration(tauriDatabase, integration);
-    set((state) => {
-      const current = state.workspaceIntegrations[workspaceId] ?? [];
-      const rest = current.filter((candidate) => candidate.provider !== 'bitbucket');
-      return {
-        workspaceIntegrations: {
-          ...state.workspaceIntegrations,
-          [workspaceId]: [...rest, integration],
-        },
-      };
+      newCredential:
+        credentialId === null
+          ? { label: connection.user.displayName ?? email, account: email }
+          : null,
+      storeSecret: () => bitbucketConnect({ credentialId: chosen, apiToken: supplied }),
     });
     return connection;
   };

@@ -2,13 +2,20 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import type {
+  GitlabWorkspaceIntegration,
+  IntegrationCredentialId,
+  WorkspaceId,
+} from '@goodboy/types';
 
 const { state, ghStatusMock, ghClearTokenMock } = vi.hoisted(() => ({
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     connectGitlab: vi.fn(async () => undefined),
-    disconnectGitlab: vi.fn(async () => undefined),
+    disconnectIntegration: vi.fn(async () => undefined),
+    forgetIntegrationCredential: vi.fn(async () => undefined),
+    integrationCredentials: [] as ReadonlyArray<unknown>,
+    integrationCredentialUsage: {} as Record<string, number>,
   },
   ghStatusMock: vi.fn(async () => ({ scoped: false }) as unknown),
   ghClearTokenMock: vi.fn(async () => undefined),
@@ -29,7 +36,7 @@ const gitlabIntegration: GitlabWorkspaceIntegration = {
   id: 'wi-1' as never,
   workspaceId: WS_ID,
   provider: 'gitlab',
-  credentialKey: 'cred-1',
+  credentialId: 'cred-1' as IntegrationCredentialId,
   config: { userName: 'octo', userId: '42', host: 'https://gitlab.example.com' },
   createdAt: '2026-01-01T00:00:00.000Z' as never,
   updatedAt: '2026-01-01T00:00:00.000Z' as never,
@@ -38,7 +45,10 @@ const gitlabIntegration: GitlabWorkspaceIntegration = {
 beforeEach(() => {
   state.workspaceIntegrations = {};
   state.connectGitlab = vi.fn(async () => undefined);
-  state.disconnectGitlab = vi.fn(async () => undefined);
+  state.disconnectIntegration = vi.fn(async () => undefined);
+  state.forgetIntegrationCredential = vi.fn(async () => undefined);
+  state.integrationCredentials = [];
+  state.integrationCredentialUsage = {};
   ghStatusMock.mockResolvedValue({ scoped: false });
   ghClearTokenMock.mockResolvedValue(undefined);
 });
@@ -50,8 +60,8 @@ describe('GitlabFormBody', () => {
   it('offers the token link before the token field', () => {
     render(<GitlabFormBody workspaceId={WS_ID} />);
 
-    const link = screen.getByRole('link', { name: /create a token/i });
-    const field = screen.getByLabelText(/personal access token/i);
+    const link = screen.getByRole('link', { name: /create a personal access token/i });
+    const field = screen.getByLabelText(/personal API key/i);
 
     expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
@@ -61,7 +71,7 @@ describe('GitlabFormBody', () => {
       render(<GitlabFormBody workspaceId={WS_ID} />);
       const btn = (await screen.findByRole('button', { name: /^connect$/i })) as HTMLButtonElement;
       expect(btn.disabled).toBe(true);
-      fireEvent.change(screen.getByLabelText(/personal access token/i), {
+      fireEvent.change(screen.getByLabelText(/personal API key/i), {
         target: { value: 'glpat-x' },
       });
       expect(btn.disabled).toBe(false);
@@ -70,12 +80,17 @@ describe('GitlabFormBody', () => {
     it('connects with the default host and fires onConnected', async () => {
       const onConnected = vi.fn();
       render(<GitlabFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fireEvent.change(await screen.findByLabelText(/personal access token/i), {
+      fireEvent.change(await screen.findByLabelText(/personal API key/i), {
         target: { value: '  glpat-x  ' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
       await waitFor(() =>
-        expect(state.connectGitlab).toHaveBeenCalledWith(WS_ID, 'https://gitlab.com', 'glpat-x'),
+        expect(state.connectGitlab).toHaveBeenCalledWith({
+          workspaceId: WS_ID,
+          host: 'https://gitlab.com',
+          token: 'glpat-x',
+          credentialId: null,
+        }),
       );
       await waitFor(() => expect(onConnected).toHaveBeenCalledOnce());
     });
@@ -85,16 +100,17 @@ describe('GitlabFormBody', () => {
       fireEvent.change(await screen.findByLabelText(/^host$/i), {
         target: { value: 'gitlab.example.com/' },
       });
-      fireEvent.change(screen.getByLabelText(/personal access token/i), {
+      fireEvent.change(screen.getByLabelText(/personal API key/i), {
         target: { value: 'glpat-x' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
       await waitFor(() =>
-        expect(state.connectGitlab).toHaveBeenCalledWith(
-          WS_ID,
-          'https://gitlab.example.com',
-          'glpat-x',
-        ),
+        expect(state.connectGitlab).toHaveBeenCalledWith({
+          workspaceId: WS_ID,
+          host: 'https://gitlab.example.com',
+          token: 'glpat-x',
+          credentialId: null,
+        }),
       );
     });
 
@@ -103,12 +119,17 @@ describe('GitlabFormBody', () => {
       fireEvent.change(await screen.findByLabelText(/^host$/i), {
         target: { value: 'javascript://evil.example.com' },
       });
-      fireEvent.change(screen.getByLabelText(/personal access token/i), {
+      fireEvent.change(screen.getByLabelText(/personal API key/i), {
         target: { value: 'glpat-x' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
       await waitFor(() =>
-        expect(state.connectGitlab).toHaveBeenCalledWith(WS_ID, 'https://gitlab.com', 'glpat-x'),
+        expect(state.connectGitlab).toHaveBeenCalledWith({
+          workspaceId: WS_ID,
+          host: 'https://gitlab.com',
+          token: 'glpat-x',
+          credentialId: null,
+        }),
       );
     });
 
@@ -118,7 +139,7 @@ describe('GitlabFormBody', () => {
         throw new Error('invalid token');
       });
       render(<GitlabFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fireEvent.change(await screen.findByLabelText(/personal access token/i), {
+      fireEvent.change(await screen.findByLabelText(/personal API key/i), {
         target: { value: 'glpat-bad' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -143,14 +164,17 @@ describe('GitlabFormBody', () => {
       render(<GitlabFormBody workspaceId={WS_ID} />);
       fireEvent.click(await screen.findByRole('button', { name: /^disconnect$/i }));
       expect(await screen.findByText(/Disconnect GitLab\?/i)).toBeDefined();
-      expect(state.disconnectGitlab).not.toHaveBeenCalled();
+      expect(state.disconnectIntegration).not.toHaveBeenCalled();
     });
 
     it('disconnects GitLab for the workspace once the confirm is confirmed', async () => {
       render(<GitlabFormBody workspaceId={WS_ID} />);
       fireEvent.click(await screen.findByRole('button', { name: /^disconnect$/i }));
       fireEvent.click(await screen.findByRole('button', { name: /^disconnect gitlab$/i }));
-      expect(state.disconnectGitlab).toHaveBeenCalledWith(WS_ID);
+      expect(state.disconnectIntegration).toHaveBeenCalledWith({
+        workspaceId: WS_ID,
+        provider: 'gitlab',
+      });
     });
   });
 
@@ -161,19 +185,24 @@ describe('GitlabFormBody', () => {
 
     it('offers the connect form and no cross-host disconnect so both hosts coexist', async () => {
       render(<GitlabFormBody workspaceId={WS_ID} />);
-      expect(await screen.findByLabelText(/personal access token/i)).toBeDefined();
+      expect(await screen.findByLabelText(/personal API key/i)).toBeDefined();
       expect(screen.getByRole('button', { name: /^connect$/i })).toBeDefined();
       expect(screen.queryByText(/Disconnect GitHub/i)).toBeNull();
     });
 
     it('never reads or clears the GitHub token', async () => {
       render(<GitlabFormBody workspaceId={WS_ID} />);
-      fireEvent.change(await screen.findByLabelText(/personal access token/i), {
+      fireEvent.change(await screen.findByLabelText(/personal API key/i), {
         target: { value: 'glpat-x' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
       await waitFor(() =>
-        expect(state.connectGitlab).toHaveBeenCalledWith(WS_ID, 'https://gitlab.com', 'glpat-x'),
+        expect(state.connectGitlab).toHaveBeenCalledWith({
+          workspaceId: WS_ID,
+          host: 'https://gitlab.com',
+          token: 'glpat-x',
+          credentialId: null,
+        }),
       );
       expect(ghStatusMock).not.toHaveBeenCalled();
       expect(ghClearTokenMock).not.toHaveBeenCalled();
@@ -182,7 +211,7 @@ describe('GitlabFormBody', () => {
 
   it('does not claim the token never leaves this machine', async () => {
     render(<GitlabFormBody workspaceId={WS_ID} />);
-    await screen.findByLabelText(/personal access token/i);
+    await screen.findByLabelText(/personal API key/i);
     expect(screen.queryByText(/never leaves this machine/i)).toBeNull();
   });
 });

@@ -17,7 +17,7 @@ is live, prefer it: reports stay private until a fix ships.
 
 Goodboy runs entirely on your machine, no backend:
 
-- API keys and tokens live in the OS credential store, never in files.
+- API keys live in the OS credential store, never in files.
 - Conversations and code flow only between you and the providers you
   connected, over their official CLIs or APIs.
 - Local persistence is a SQLite file (`~/.goodboy/data.db`) you own.
@@ -60,9 +60,10 @@ Goodboy runs entirely on your machine, no backend:
   you act.
 - No telemetry, of any kind, ever. Adding it is refused whoever asks.
 
-Caveat: a token you paste for an integration (GitHub, GitLab, Jira,
-Bitbucket, Linear, Sentry) is stored locally but sent to that provider on
-every request. Local-only storage does not mean the token never travels.
+Caveat: a personal API key you paste for an integration (GitHub, GitLab, Jira,
+Bitbucket, Linear, Sentry), or a Slack bot token, is stored locally but sent to
+that provider on every request. Local-only storage does not mean the credential
+never travels.
 
 Starting the app only runs pending migrations; it never clears anything. A
 local reset is an explicit action: it drops the database contents and replays
@@ -81,8 +82,8 @@ publishes no update manifest entry for them: a Linux build is never offered an
 update, and every new version is a package taken from the release page.
 The OS credential store is the Keychain on macOS, and on Linux the
 freedesktop Secret Service (GNOME Keyring or KWallet), so a keyring daemon
-must be running before a token can be saved there.
+must be running before a credential can be saved there.
 
 Follow-up: the Linux backend is whichever the `keyring` crate selects; no
-token has been stored and read back on a Linux desktop yet. If the backend
-disagrees, its own error comes back and the token is not saved.
+credential has been stored and read back on a Linux desktop yet. If the backend
+disagrees, its own error comes back and the credential is not saved.

@@ -1,4 +1,5 @@
 import type {
+  IntegrationCredentialId,
   IsoDateTime,
   ProviderRunId,
   SessionId,
@@ -211,7 +212,7 @@ export type WorkspaceIntegrationConfig =
 type WorkspaceIntegrationBase = Readonly<{
   id: WorkspaceIntegrationId;
   workspaceId: WorkspaceId;
-  credentialKey: string;
+  credentialId: IntegrationCredentialId;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;

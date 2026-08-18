@@ -5,13 +5,16 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use thiserror::Error;
 
+use crate::integration_credentials::{self, IntegrationCredentialError};
 use crate::secrets;
 
-/// In-memory cache of Linear PATs keyed by workspace id.
+const PROVIDER: &str = "linear";
+
+/// In-memory cache of Linear personal API keys keyed by credential id.
 /// macOS Keychain prompts the user on every `get_password` unless the ACL is
 /// "Always Allow" + the app's code signature is stable. Caching avoids the
 /// repeated prompt in dev builds and the per-fetch prompt in any build.
-pub struct LinearTokenCache(Mutex<HashMap<String, String>>);
+pub struct LinearTokenCache(integration_credentials::SecretCache);
 
 impl LinearTokenCache {
     pub fn new() -> Self {
@@ -28,10 +31,6 @@ fn http_client() -> &'static reqwest::Client {
     CLIENT.get_or_init(reqwest::Client::new)
 }
 
-fn credential_key(workspace_id: &str) -> String {
-    format!("goodboy.workspace.{}.linear", workspace_id)
-}
-
 #[derive(Debug, Error)]
 pub enum LinearError {
     #[error("http error: {0}")]
@@ -40,8 +39,10 @@ pub enum LinearError {
     GraphQl(String),
     #[error("invalid response shape: {0}")]
     InvalidShape(String),
-    #[error("no token stored for workspace {0}")]
+    #[error("no personal API key stored for workspace {0}")]
     NoToken(String),
+    #[error("credential store error: {0}")]
+    Credential(#[from] IntegrationCredentialError),
     #[error("secret store error: {0}")]
     Secret(#[from] secrets::SecretError),
 }
@@ -55,6 +56,7 @@ impl LinearError {
             LinearError::GraphQl(_) => "graphql",
             LinearError::InvalidShape(_) => "shape",
             LinearError::NoToken(_) => "no_token",
+            LinearError::Credential(_) => "credential",
             LinearError::Secret(_) => "secret",
         }
     }
@@ -101,17 +103,8 @@ async fn graphql<T: serde::de::DeserializeOwned>(
 }
 
 fn read_token(workspace_id: &str, cache: &LinearTokenCache) -> Result<String, LinearError> {
-    if let Some(tok) = cache.0.lock().unwrap().get(workspace_id) {
-        return Ok(tok.clone());
-    }
-    let tok = secrets::read(&credential_key(workspace_id))?
-        .ok_or_else(|| LinearError::NoToken(workspace_id.to_string()))?;
-    cache
-        .0
-        .lock()
-        .unwrap()
-        .insert(workspace_id.to_string(), tok.clone());
-    Ok(tok)
+    integration_credentials::read_for_workspace(PROVIDER, workspace_id, &cache.0)?
+        .ok_or_else(|| LinearError::NoToken(workspace_id.to_string()))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -321,26 +314,30 @@ mutation IssueUpdate($issueId: String!, $input: IssueUpdateInput!) {
 }
 "#;
 
-/// Verify token via /viewer query and save to keyring on success.
+/// Verifies the key a credential holds through the /viewer query and writes
+/// nothing. A key already stored is verified without the webview ever seeing
+/// it.
 #[tauri::command]
-pub async fn linear_connect(
-    workspace_id: String,
-    token: String,
+pub async fn linear_validate_connection(
+    credential_id: String,
+    token: Option<String>,
     cache: State<'_, LinearTokenCache>,
 ) -> Result<LinearViewer, LinearError> {
+    let token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)?;
     let viewer: ViewerResponse = graphql(&token, VIEWER_QUERY, None).await?;
-    secrets::set(&credential_key(&workspace_id), &token)?;
-    cache.0.lock().unwrap().insert(workspace_id, token);
     Ok(viewer.viewer)
 }
 
 #[tauri::command]
-pub async fn linear_disconnect(
-    workspace_id: String,
+pub async fn linear_connect(
+    credential_id: String,
+    token: Option<String>,
     cache: State<'_, LinearTokenCache>,
 ) -> Result<(), LinearError> {
-    secrets::clear(&credential_key(&workspace_id))?;
-    cache.0.lock().unwrap().remove(&workspace_id);
+    let token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)?;
+    integration_credentials::store_secret(&credential_id, &token, &cache.0)?;
     Ok(())
 }
 

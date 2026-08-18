@@ -15,6 +15,7 @@ import {
 } from '../../../features/settings/settings';
 import { recoverStagedFileVersions } from '../file-versions/recoverStagedFileVersions';
 import { applyQaDecidingPreview } from '../workflows/applyQaDecidingPreview';
+import { adoptLegacyIntegrationSecrets } from '../integrations/adoptLegacyIntegrationSecrets';
 import { drainAuditRetryQueue } from './auditRetryQueue';
 import type { GetFn, SetFn } from './types';
 import type { BootPhase } from '../../types';
@@ -100,13 +101,17 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         set({ bootPhase: 'loading-workspaces' });
         const workspaces = await listWorkspaces(tauriDatabase);
         set({ workspaces });
-        await Promise.all(
-          workspaces.map((w) =>
+        await adoptLegacyIntegrationSecrets();
+        await Promise.all([
+          get()
+            .loadIntegrationCredentials()
+            .catch(() => {}),
+          ...workspaces.map((w) =>
             get()
               .loadIntegrations(w.id)
               .catch(() => {}),
           ),
-        );
+        ]);
         try {
           await recoverStagedFileVersions({
             onFailure: async ({ sessionId, runId, message }) => {

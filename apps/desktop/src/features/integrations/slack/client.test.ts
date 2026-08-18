@@ -1,10 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
-import type { WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 import {
   slackAddReaction,
   slackConnect,
-  slackDisconnect,
   slackGetPermalink,
   slackGetThread,
   slackListChannels,
@@ -23,16 +22,18 @@ afterEach(() => {
 });
 
 const workspaceId = 'w1' as WorkspaceId;
+const credentialId = 'cred-1' as IntegrationCredentialId;
 const channelId = 'C0EN';
 const threadTs = '1723456789.123456';
 
 describe('slack client', () => {
-  it('probes a token without naming the goodboy workspace', async () => {
+  it('probes a token under a credential id, never under a goodboy workspace', async () => {
     mockInvoke.mockResolvedValue({ teamId: 'T01' });
 
-    await slackValidateConnection({ botToken: 'xoxb-secret' });
+    await slackValidateConnection({ credentialId, botToken: 'xoxb-secret' });
 
     expect(mockInvoke).toHaveBeenCalledWith('slack_validate_connection', {
+      credentialId,
       botToken: 'xoxb-secret',
     });
     expect(mockInvoke).not.toHaveBeenCalledWith(
@@ -41,15 +42,13 @@ describe('slack client', () => {
     );
   });
 
-  it('stores and clears the token through the two lifecycle commands', async () => {
-    await slackConnect({ workspaceId, botToken: 'xoxb-secret' });
-    expect(mockInvoke).toHaveBeenCalledWith('slack_connect', {
-      workspaceId,
-      botToken: 'xoxb-secret',
-    });
+  it('reuses a stored credential by naming it alone, with no token in the payload', async () => {
+    await slackConnect({ credentialId, botToken: null });
 
-    await slackDisconnect({ workspaceId });
-    expect(mockInvoke).toHaveBeenCalledWith('slack_disconnect', { workspaceId });
+    expect(mockInvoke).toHaveBeenCalledWith('slack_connect', {
+      credentialId,
+      botToken: null,
+    });
   });
 
   it('reads channels and users with the workspace id alone', async () => {

@@ -33,8 +33,13 @@ describe('m108 integration slack provider', () => {
 
     const now = Date.now();
     await db.execute(
-      `INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_key, created_at, updated_at)
-       VALUES ('wi-sl', ?, 'slack', '{}', 'goodboy.workspace.ws-1.slack', ?, ?)`,
+      `INSERT INTO integration_credentials (id, provider, label, account, created_at, updated_at)
+       VALUES ('ic-sl', 'slack', 'goodboy', 'Acme', ?, ?)`,
+      [now, now],
+    );
+    await db.execute(
+      `INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_id, created_at, updated_at)
+       VALUES ('wi-sl', ?, 'slack', '{}', 'ic-sl', ?, ?)`,
       [workspaceId, now, now],
     );
     await db.execute(
@@ -91,8 +96,8 @@ describe('m108 integration slack provider', () => {
 
     await expect(
       db.execute(
-        `INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_key, created_at, updated_at)
-         VALUES ('wi-x', ?, 'asana', '{}', 'k', ?, ?)`,
+        `INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_id, created_at, updated_at)
+         VALUES ('wi-x', ?, 'asana', '{}', 'ic-x', ?, ?)`,
         [workspaceId, Date.now(), Date.now()],
       ),
     ).rejects.toThrow(/CHECK constraint/);
@@ -117,6 +122,7 @@ describe('m108 integration slack provider', () => {
     expect(indexes.map((index) => index.name)).toEqual([
       'idx_session_external_tasks_identity',
       'idx_session_external_tasks_provider_external',
+      'idx_workspace_integrations_credential_id',
       'idx_workspace_integrations_workspace_id',
     ]);
   });

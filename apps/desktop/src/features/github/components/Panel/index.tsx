@@ -103,9 +103,9 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
       )}
 
       <p className="text-3xs leading-relaxed text-muted-foreground">
-        This is your baseline (system gh / global token). To use a different token for a specific
-        repo (e.g. SSO-authorized for its org), connect one per-workspace in that workspace&apos;s
-        Settings → Integrations.
+        This is your baseline (system gh / global key). To use a different personal API key for a
+        specific repo (e.g. SSO-authorized for its org), connect one per-workspace in that
+        workspace&apos;s Settings → Integrations.
       </p>
     </div>
   );
@@ -152,7 +152,7 @@ function Absent({
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs leading-relaxed text-muted-foreground">
-        connect with a personal access token (classic or fine-grained, scope:{' '}
+        connect with a personal API key (classic or fine-grained personal access token, scope:{' '}
         <code className="rounded bg-muted px-1 py-0.5 font-mono text-3xs">repo</code>), or run{' '}
         <code className="rounded bg-muted px-1 py-0.5 font-mono text-3xs">gh auth login</code> in a
         terminal and reload Goodboy.
@@ -164,7 +164,7 @@ function Absent({
           value={token}
           onChange={(e) => setToken(e.target.value)}
           className="flex-1 font-mono text-xs"
-          aria-label="GitHub personal access token"
+          aria-label="GitHub personal API key"
         />
         <Button
           size="sm"
@@ -182,7 +182,7 @@ function Absent({
       ) : null}
       <CreateTokenLink />
       <p className="text-3xs text-muted-foreground">
-        token is stored in your OS keychain via the system credential store. Goodboy sends it
+        the key is stored in your OS keychain via the system credential store. Goodboy sends it
         directly to GitHub over HTTPS; it never touches Goodboy&apos;s own servers.
       </p>
     </div>
@@ -239,10 +239,10 @@ function Connected({
       ) : (
         <div className="flex flex-col gap-2">
           <p className="text-3xs leading-relaxed text-muted-foreground">
-            Using your system gh login, Goodboy is not storing a token. To disconnect, run{' '}
+            Using your system gh login, Goodboy is not storing a key. To disconnect, run{' '}
             <code className="rounded bg-muted px-1 py-0.5 font-mono">gh auth logout</code> in a
-            terminal. To use a different token here (e.g. one authorized for your org via SSO),
-            connect one below.
+            terminal. To use a different personal API key here (e.g. one authorized for your org via
+            SSO), connect one below.
           </p>
           <div className="flex items-center gap-2">
             <Input
@@ -251,7 +251,7 @@ function Connected({
               value={token}
               onChange={(e) => setToken(e.target.value)}
               className="flex-1 font-mono text-xs"
-              aria-label="GitHub personal access token"
+              aria-label="GitHub personal API key"
             />
             <Button
               size="sm"
@@ -259,7 +259,7 @@ function Connected({
               disabled={save === 'saving' || token.trim().length === 0}
               className={cn(save === 'saving' && 'animate-border-pulse')}
             >
-              Use a token
+              Use a key
             </Button>
           </div>
           <CreateTokenLink />

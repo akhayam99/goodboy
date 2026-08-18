@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { JiraWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import type {
+  IntegrationCredentialId,
+  JiraWorkspaceIntegration,
+  WorkspaceId,
+} from '@goodboy/types';
 import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
+import { IntegrationCredentialPicker } from '../components/IntegrationCredentialPicker';
 import { normalizeSiteUrl } from './normalizeSiteUrl';
 
 type Props = {
@@ -23,12 +28,13 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
       (integration): integration is JiraWorkspaceIntegration => integration.provider === 'jira',
     ) ?? null;
   const connectJira = useAppStore((state) => state.connectJira);
-  const disconnectJira = useAppStore((state) => state.disconnectJira);
+  const disconnectIntegration = useAppStore((state) => state.disconnectIntegration);
 
   const [siteUrl, setSiteUrl] = useState('');
   const [email, setEmail] = useState('');
   const [projectKey, setProjectKey] = useState('');
   const [apiToken, setApiToken] = useState('');
+  const [credentialId, setCredentialId] = useState<IntegrationCredentialId | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDisconnectArmed, setIsDisconnectArmed] = useState(false);
@@ -41,7 +47,7 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
     normalizedSiteUrl !== '' &&
     trimmedEmail !== '' &&
     trimmedProjectKey !== '' &&
-    trimmedToken !== '';
+    (credentialId !== null || trimmedToken !== '');
 
   const onConnect = async () => {
     setIsBusy(true);
@@ -53,6 +59,7 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
         email: trimmedEmail,
         projectKey: trimmedProjectKey,
         apiToken: trimmedToken,
+        credentialId,
       });
       setApiToken('');
       onConnected?.();
@@ -67,7 +74,7 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
     setIsBusy(true);
     setError(null);
     try {
-      await disconnectJira({ workspaceId });
+      await disconnectIntegration({ workspaceId, provider: 'jira' });
     } catch (disconnectError) {
       setError(formatError(disconnectError));
     } finally {
@@ -94,7 +101,7 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
               role="danger"
               icon={<Unplug size={12} aria-hidden />}
               title="Disconnect Jira?"
-              description="Deletes the saved Jira API token from your keychain and forgets this workspace's connection. Reconnect anytime."
+              description="Unlinks this project from the Jira personal API key. The key stays saved for your other projects."
               confirmLabel="Disconnect Jira"
               autoDisarmMs={4000}
               onConfirm={onDisconnect}
@@ -114,6 +121,17 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
         </div>
       ) : (
         <>
+          <IntegrationCredentialPicker
+            provider="jira"
+            selectedCredentialId={credentialId}
+            onSelect={(credential) => {
+              setCredentialId(credential?.id ?? null);
+              if (credential !== null && credential.account !== '') {
+                setEmail(credential.account);
+              }
+            }}
+            isDisabled={isBusy}
+          />
           <div className="flex flex-col gap-2">
             <label htmlFor="jira-site" className="text-xs font-semibold text-foreground">
               Site URL
@@ -166,32 +184,37 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
               One project per workspace. It is the prefix on every issue key, the ENG in ENG-142.
             </p>
           </div>
-          <div className="flex flex-col gap-2">
-            <label htmlFor="jira-token" className="text-xs font-semibold text-foreground">
-              API token
-            </label>
-            <a
-              href={TOKEN_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
-            >
-              Create a token in your Atlassian account <ExternalLink size={10} aria-hidden />
-            </a>
-            <Input
-              id="jira-token"
-              type="password"
-              placeholder="ATATT…"
-              value={apiToken}
-              onChange={(event) => setApiToken(event.target.value)}
-              disabled={isBusy}
-            />
-          </div>
-          <p className="text-2xs leading-relaxed text-muted-foreground">
-            Jira Cloud only, Data Center and Server are not supported. The token carries your own
-            Jira permissions and is stored encrypted in your operating system keychain. Goodboy
-            sends it directly to Jira over HTTPS; it never touches Goodboy&apos;s own servers.
-          </p>
+          {credentialId === null ? (
+            <>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="jira-token" className="text-xs font-semibold text-foreground">
+                  Personal API key
+                </label>
+                <a
+                  href={TOKEN_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
+                >
+                  Create an API token in your Atlassian account{' '}
+                  <ExternalLink size={10} aria-hidden />
+                </a>
+                <Input
+                  id="jira-token"
+                  type="password"
+                  placeholder="ATATT…"
+                  value={apiToken}
+                  onChange={(event) => setApiToken(event.target.value)}
+                  disabled={isBusy}
+                />
+              </div>
+              <p className="text-2xs leading-relaxed text-muted-foreground">
+                Jira Cloud only, Data Center and Server are not supported. The key carries your own
+                Jira permissions and is stored encrypted in your operating system keychain. Goodboy
+                sends it directly to Jira over HTTPS; it never touches Goodboy&apos;s own servers.
+              </p>
+            </>
+          ) : null}
         </>
       )}
 

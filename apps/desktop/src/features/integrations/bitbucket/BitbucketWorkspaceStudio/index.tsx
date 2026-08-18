@@ -31,7 +31,7 @@ export const BitbucketWorkspaceStudio = ({ workspaceId, workspaceName, onClose }
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;
-  const disconnectBitbucket = useAppStore((s) => s.disconnectBitbucket);
+  const disconnectIntegration = useAppStore((state) => state.disconnectIntegration);
   const repo = useWorkspaceBitbucketRepo({ workspaceId, isEnabled: isConnected });
   const [focused, setFocused] = useState<BitbucketPullRequest | null>(null);
   const pullRequests = useBitbucketPrs({ repo });
@@ -57,8 +57,8 @@ export const BitbucketWorkspaceStudio = ({ workspaceId, workspaceName, onClose }
         isConnected ? (
           <IntegrationDisconnect
             label="Bitbucket"
-            description="Deletes the saved Bitbucket API token from your keychain and forgets this workspace's connection. Reconnect anytime."
-            onDisconnect={() => disconnectBitbucket({ workspaceId })}
+            description="Unlinks this project from the Bitbucket personal API key. The key stays saved for your other projects."
+            onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'bitbucket' })}
           />
         ) : null
       }

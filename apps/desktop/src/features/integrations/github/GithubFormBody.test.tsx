@@ -2,7 +2,11 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import type {
+  GitlabWorkspaceIntegration,
+  IntegrationCredentialId,
+  WorkspaceId,
+} from '@goodboy/types';
 
 const { state, ghStatusMock, ghSetTokenMock, ghClearTokenMock } = vi.hoisted(() => ({
   state: {
@@ -30,7 +34,7 @@ const gitlabIntegration: GitlabWorkspaceIntegration = {
   id: 'wi-1' as never,
   workspaceId: WS_ID,
   provider: 'gitlab',
-  credentialKey: 'cred-1',
+  credentialId: 'cred-1' as IntegrationCredentialId,
   config: { userName: 'octo', userId: '42', host: 'https://gitlab.com' },
   createdAt: '2026-01-01T00:00:00.000Z' as never,
   updatedAt: '2026-01-01T00:00:00.000Z' as never,
@@ -51,8 +55,8 @@ describe('GithubFormBody', () => {
   it('offers the token link before the token field', async () => {
     render(<GithubFormBody workspaceId={WS_ID} />);
 
-    const link = await screen.findByRole('link', { name: /create a token/i });
-    const field = screen.getByLabelText(/GitHub personal access token/i);
+    const link = await screen.findByRole('link', { name: /create a personal access token/i });
+    const field = screen.getByLabelText(/GitHub personal API key/i);
 
     expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
@@ -60,14 +64,12 @@ describe('GithubFormBody', () => {
   describe('token form (happy path)', () => {
     it('only focuses the token field when the containing surface opts in', async () => {
       const view = render(<GithubFormBody workspaceId={WS_ID} />);
-      const inlineField = await screen.findByLabelText(/GitHub personal access token/i);
+      const inlineField = await screen.findByLabelText(/GitHub personal API key/i);
       expect(inlineField).not.toBe(document.activeElement);
 
       view.unmount();
       render(<GithubFormBody workspaceId={WS_ID} shouldAutoFocus />);
-      expect(await screen.findByLabelText(/GitHub personal access token/i)).toBe(
-        document.activeElement,
-      );
+      expect(await screen.findByLabelText(/GitHub personal API key/i)).toBe(document.activeElement);
     });
 
     it('queries gh status for the workspace on mount', async () => {
@@ -79,7 +81,7 @@ describe('GithubFormBody', () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
       const btn = (await screen.findByRole('button', { name: /^connect$/i })) as HTMLButtonElement;
       expect(btn.disabled).toBe(true);
-      fireEvent.change(screen.getByLabelText(/GitHub personal access token/i), {
+      fireEvent.change(screen.getByLabelText(/GitHub personal API key/i), {
         target: { value: 'ghp_abc' },
       });
       expect(btn.disabled).toBe(false);
@@ -87,8 +89,8 @@ describe('GithubFormBody', () => {
 
     it('keeps Connect disabled for a whitespace-only token', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
-      await screen.findByLabelText(/GitHub personal access token/i);
-      fireEvent.change(screen.getByLabelText(/GitHub personal access token/i), {
+      await screen.findByLabelText(/GitHub personal API key/i);
+      fireEvent.change(screen.getByLabelText(/GitHub personal API key/i), {
         target: { value: '   ' },
       });
       expect(
@@ -99,7 +101,7 @@ describe('GithubFormBody', () => {
     it('sets the trimmed token and fires onConnected on a successful connect', async () => {
       const onConnected = vi.fn();
       render(<GithubFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fireEvent.change(await screen.findByLabelText(/GitHub personal access token/i), {
+      fireEvent.change(await screen.findByLabelText(/GitHub personal API key/i), {
         target: { value: '  ghp_abc  ' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -111,7 +113,7 @@ describe('GithubFormBody', () => {
       const onConnected = vi.fn();
       ghSetTokenMock.mockRejectedValueOnce(new Error('bad credentials'));
       render(<GithubFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fireEvent.change(await screen.findByLabelText(/GitHub personal access token/i), {
+      fireEvent.change(await screen.findByLabelText(/GitHub personal API key/i), {
         target: { value: 'ghp_bad' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -121,32 +123,32 @@ describe('GithubFormBody', () => {
 
     it('renders the rejection it is handed without decorating it', async () => {
       ghSetTokenMock.mockRejectedValueOnce(
-        'GitHub rejected this token. Check you pasted the whole value, then try again.',
+        'GitHub rejected this personal API key. Check you pasted the whole value, then try again.',
       );
       render(<GithubFormBody workspaceId={WS_ID} />);
-      fireEvent.change(await screen.findByLabelText(/GitHub personal access token/i), {
+      fireEvent.change(await screen.findByLabelText(/GitHub personal API key/i), {
         target: { value: 'ghp_bad' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
 
-      const box = await screen.findByText(/GitHub rejected this token/);
+      const box = await screen.findByText(/GitHub rejected this personal API key/);
       expect(box.textContent).toBe(
-        'GitHub rejected this token. Check you pasted the whole value, then try again.',
+        'GitHub rejected this personal API key. Check you pasted the whole value, then try again.',
       );
     });
 
     it('keeps each rejection cause distinguishable in the danger box', async () => {
       const causes = [
-        'GitHub rejected this token. Check you pasted the whole value, then try again.',
-        'This token has expired or was revoked. Create a new one on GitHub and paste it here.',
-        'This token is missing the access Goodboy needs. Recreate it with the repo scope, and authorize it for your org if SSO is on.',
+        'GitHub rejected this personal API key. Check you pasted the whole value, then try again.',
+        'This personal API key has expired or was revoked. Create a new one on GitHub and paste it here.',
+        'This personal API key is missing the access Goodboy needs. Recreate it with the repo scope, and authorize it for your org if SSO is on.',
         'Goodboy cannot reach github.com. Check your connection, then try again.',
       ];
       const shown: string[] = [];
       for (const cause of causes) {
         ghSetTokenMock.mockRejectedValueOnce(cause);
         const view = render(<GithubFormBody workspaceId={WS_ID} />);
-        fireEvent.change(await screen.findByLabelText(/GitHub personal access token/i), {
+        fireEvent.change(await screen.findByLabelText(/GitHub personal API key/i), {
           target: { value: 'ghp_bad' },
         });
         fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -192,14 +194,14 @@ describe('GithubFormBody', () => {
 
     it('still offers the token form so both hosts can coexist', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
-      expect(await screen.findByLabelText(/GitHub personal access token/i)).toBeDefined();
+      expect(await screen.findByLabelText(/GitHub personal API key/i)).toBeDefined();
       expect(screen.getByRole('button', { name: /^connect$/i })).toBeDefined();
       expect(screen.queryByText(/Disconnect GitLab/i)).toBeNull();
     });
 
     it('connects GitHub without touching the GitLab integration', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
-      fireEvent.change(await screen.findByLabelText(/GitHub personal access token/i), {
+      fireEvent.change(await screen.findByLabelText(/GitHub personal API key/i), {
         target: { value: 'ghp_abc' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -210,7 +212,7 @@ describe('GithubFormBody', () => {
 
   it('does not claim the token never leaves this machine', async () => {
     render(<GithubFormBody workspaceId={WS_ID} />);
-    await screen.findByLabelText(/GitHub personal access token/i);
+    await screen.findByLabelText(/GitHub personal API key/i);
     expect(screen.queryByText(/never leaves this machine/i)).toBeNull();
   });
 });

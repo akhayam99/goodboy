@@ -5,9 +5,12 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use thiserror::Error;
 
+use crate::integration_credentials::{self, IntegrationCredentialError};
 use crate::secrets;
 
-pub struct GitlabTokenCache(Mutex<HashMap<String, String>>);
+const PROVIDER: &str = "gitlab";
+
+pub struct GitlabTokenCache(integration_credentials::SecretCache);
 
 impl GitlabTokenCache {
     pub fn new() -> Self {
@@ -20,18 +23,16 @@ fn http_client() -> &'static reqwest::Client {
     CLIENT.get_or_init(reqwest::Client::new)
 }
 
-fn credential_key(workspace_id: &str) -> String {
-    format!("goodboy.workspace.{}.gitlab", workspace_id)
-}
-
 #[derive(Debug, Error)]
 pub enum GitlabError {
     #[error("http error {status}: {body}")]
     Http { status: u16, body: String },
     #[error("invalid response shape: {0}")]
     InvalidShape(String),
-    #[error("no token stored for workspace {0}")]
+    #[error("no personal API key stored for workspace {0}")]
     NoToken(String),
+    #[error("credential store error: {0}")]
+    Credential(#[from] IntegrationCredentialError),
     #[error("secret store error: {0}")]
     Secret(#[from] secrets::SecretError),
 }
@@ -44,6 +45,7 @@ impl GitlabError {
             GitlabError::Http { .. } => "http",
             GitlabError::InvalidShape(_) => "shape",
             GitlabError::NoToken(_) => "no_token",
+            GitlabError::Credential(_) => "credential",
             GitlabError::Secret(_) => "secret",
         }
     }
@@ -225,17 +227,8 @@ fn encode_project_path(project_path: &str) -> String {
 }
 
 fn read_token(workspace_id: &str, cache: &GitlabTokenCache) -> Result<String, GitlabError> {
-    if let Some(tok) = cache.0.lock().unwrap().get(workspace_id) {
-        return Ok(tok.clone());
-    }
-    let tok = secrets::read(&credential_key(workspace_id))?
-        .ok_or_else(|| GitlabError::NoToken(workspace_id.to_string()))?;
-    cache
-        .0
-        .lock()
-        .unwrap()
-        .insert(workspace_id.to_string(), tok.clone());
-    Ok(tok)
+    integration_credentials::read_for_workspace(PROVIDER, workspace_id, &cache.0)?
+        .ok_or_else(|| GitlabError::NoToken(workspace_id.to_string()))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -274,25 +267,26 @@ pub struct GitlabIssue {
 }
 
 #[tauri::command]
-pub async fn gitlab_connect(
-    workspace_id: String,
+pub async fn gitlab_validate_connection(
+    credential_id: String,
     host: String,
-    token: String,
+    token: Option<String>,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabUser, GitlabError> {
-    let user: GitlabUser = get_json(&host, &token, "/user").await?;
-    secrets::set(&credential_key(&workspace_id), &token)?;
-    cache.0.lock().unwrap().insert(workspace_id, token);
-    Ok(user)
+    let token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)?;
+    get_json(&host, &token, "/user").await
 }
 
 #[tauri::command]
-pub async fn gitlab_disconnect(
-    workspace_id: String,
+pub async fn gitlab_connect(
+    credential_id: String,
+    token: Option<String>,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<(), GitlabError> {
-    secrets::clear(&credential_key(&workspace_id))?;
-    cache.0.lock().unwrap().remove(&workspace_id);
+    let token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)?;
+    integration_credentials::store_secret(&credential_id, &token, &cache.0)?;
     Ok(())
 }
 
@@ -1370,11 +1364,6 @@ mod tests {
         assert!(retitle.get("state_event").is_none());
 
         assert_eq!(mr_update_payload(None, None), serde_json::json!({}));
-    }
-
-    #[test]
-    fn credential_key_is_namespaced_per_workspace() {
-        assert_eq!(credential_key("ws-1"), "goodboy.workspace.ws-1.gitlab");
     }
 
     #[test]

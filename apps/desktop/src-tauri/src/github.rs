@@ -9,18 +9,18 @@ use crate::secrets;
 
 const TOKEN_KEY: &str = "github.pat";
 
-const EMPTY_TOKEN_MESSAGE: &str = "Paste a personal access token first.";
+const EMPTY_TOKEN_MESSAGE: &str = "Paste a personal API key first.";
 const BAD_CREDENTIALS_MESSAGE: &str =
-    "GitHub rejected this token. Check you pasted the whole value, then try again.";
+    "GitHub rejected this personal API key. Check you pasted the whole value, then try again.";
 const EXPIRED_MESSAGE: &str =
-    "This token has expired or was revoked. Create a new one on GitHub and paste it here.";
-const MISSING_SCOPE_MESSAGE: &str = "This token is missing the access Goodboy needs. Recreate it with the repo scope, and authorize it for your org if SSO is on.";
+    "This personal API key has expired or was revoked. Create a new one on GitHub and paste it here.";
+const MISSING_SCOPE_MESSAGE: &str = "This personal API key is missing the access Goodboy needs. Recreate it with the repo scope, and authorize it for your org if SSO is on.";
 const NETWORK_MESSAGE: &str =
     "Goodboy cannot reach github.com. Check your connection, then try again.";
 const CERTIFICATE_MESSAGE: &str = "Goodboy cannot verify the certificate github.com presented. Check your system clock and any proxy or VPN in the way, then try again.";
 const RATE_LIMIT_MESSAGE: &str =
-    "GitHub is rate limiting this token. Wait a few minutes, then try again.";
-const UNVERIFIED_MESSAGE: &str = "Goodboy could not verify this token.";
+    "GitHub is rate limiting this personal API key. Wait a few minutes, then try again.";
+const UNVERIFIED_MESSAGE: &str = "Goodboy could not verify this personal API key.";
 const TIMEOUT_MESSAGE: &str =
     "The gh CLI stopped responding, so Goodboy gave up waiting. Check your connection, then try again.";
 
@@ -845,6 +845,19 @@ mod tests {
                 TOKEN_KEY.to_string(),
             ]
         );
+    }
+
+    #[test]
+    fn clearing_one_workspace_token_leaves_the_global_key_serving_that_workspace() {
+        let cleared = token_key(Some("composite"));
+        let mut reads = Vec::new();
+        let token = read_token_from(Some("composite"), None, |key| {
+            reads.push(key.to_string());
+            (key == TOKEN_KEY).then(|| "global-token".to_string())
+        });
+
+        assert_eq!(token.as_deref(), Some("global-token"));
+        assert_eq!(reads, vec![cleared, TOKEN_KEY.to_string()]);
     }
 
     #[test]

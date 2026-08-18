@@ -2,13 +2,16 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     connectSentry: vi.fn(async () => undefined),
-    disconnectSentry: vi.fn(async () => undefined),
+    disconnectIntegration: vi.fn(async () => undefined),
+    forgetIntegrationCredential: vi.fn(async () => undefined),
+    integrationCredentials: [] as ReadonlyArray<unknown>,
+    integrationCredentialUsage: {} as Record<string, number>,
   },
 }));
 
@@ -22,14 +25,14 @@ const sentryIntegration = {
   id: 'wi-1',
   workspaceId: WS_ID,
   provider: 'sentry' as const,
-  credentialKey: 'cred-1',
+  credentialId: 'cred-1' as IntegrationCredentialId,
   config: { org: 'my-org', project: 'my-proj', projectName: 'My Project' },
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
 const fillForm = ({ token, org, project }: { token: string; org: string; project: string }) => {
-  fireEvent.change(screen.getByLabelText(/auth token/i), { target: { value: token } });
+  fireEvent.change(screen.getByLabelText(/personal API key/i), { target: { value: token } });
   fireEvent.change(screen.getByLabelText(/organization slug/i), { target: { value: org } });
   fireEvent.change(screen.getByLabelText(/project slug/i), { target: { value: project } });
 };
@@ -37,7 +40,10 @@ const fillForm = ({ token, org, project }: { token: string; org: string; project
 beforeEach(() => {
   state.workspaceIntegrations = {};
   state.connectSentry = vi.fn(async () => undefined);
-  state.disconnectSentry = vi.fn(async () => undefined);
+  state.disconnectIntegration = vi.fn(async () => undefined);
+  state.forgetIntegrationCredential = vi.fn(async () => undefined);
+  state.integrationCredentials = [];
+  state.integrationCredentialUsage = {};
 });
 afterEach(cleanup);
 
@@ -47,8 +53,8 @@ describe('SentryFormBody', () => {
   it('offers the token link before the token field', () => {
     render(<SentryFormBody workspaceId={WS_ID} />);
 
-    const link = screen.getByRole('link', { name: /create a token/i });
-    const field = screen.getByLabelText(/auth token/i);
+    const link = screen.getByRole('link', { name: /create a user auth token/i });
+    const field = screen.getByLabelText(/personal API key/i);
 
     expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
@@ -58,7 +64,9 @@ describe('SentryFormBody', () => {
       render(<SentryFormBody workspaceId={WS_ID} />);
       const btn = screen.getByRole('button', { name: /^connect$/i }) as HTMLButtonElement;
       expect(btn.disabled).toBe(true);
-      fireEvent.change(screen.getByLabelText(/auth token/i), { target: { value: 'sntryu_x' } });
+      fireEvent.change(screen.getByLabelText(/personal API key/i), {
+        target: { value: 'sntryu_x' },
+      });
       expect(btn.disabled).toBe(true);
       fireEvent.change(screen.getByLabelText(/organization slug/i), { target: { value: 'org' } });
       expect(btn.disabled).toBe(true);
@@ -72,7 +80,13 @@ describe('SentryFormBody', () => {
       fillForm({ token: '  sntryu_x  ', org: '  my-org  ', project: '  my-proj  ' });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
       await waitFor(() =>
-        expect(state.connectSentry).toHaveBeenCalledWith(WS_ID, 'sntryu_x', 'my-org', 'my-proj'),
+        expect(state.connectSentry).toHaveBeenCalledWith({
+          workspaceId: WS_ID,
+          token: 'sntryu_x',
+          org: 'my-org',
+          project: 'my-proj',
+          credentialId: null,
+        }),
       );
       await waitFor(() => expect(onConnected).toHaveBeenCalledOnce());
     });
@@ -107,14 +121,17 @@ describe('SentryFormBody', () => {
       render(<SentryFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
       expect(screen.getByText(/Disconnect Sentry\?/i)).toBeDefined();
-      expect(state.disconnectSentry).not.toHaveBeenCalled();
+      expect(state.disconnectIntegration).not.toHaveBeenCalled();
     });
 
     it('disconnects Sentry for the workspace once the confirm is confirmed', () => {
       render(<SentryFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
       fireEvent.click(screen.getByRole('button', { name: /^disconnect sentry$/i }));
-      expect(state.disconnectSentry).toHaveBeenCalledWith(WS_ID);
+      expect(state.disconnectIntegration).toHaveBeenCalledWith({
+        workspaceId: WS_ID,
+        provider: 'sentry',
+      });
     });
   });
 

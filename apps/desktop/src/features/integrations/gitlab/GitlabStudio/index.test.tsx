@@ -24,7 +24,7 @@ const h = vi.hoisted(() => ({
   isConnected: true,
   useGitlabIssues: vi.fn(),
   useGitlabMrs: vi.fn(),
-  disconnectGitlab: vi.fn(async () => undefined),
+  disconnectIntegration: vi.fn(async () => undefined),
 }));
 
 vi.mock('./useGitlabIssues', () => ({
@@ -61,12 +61,12 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(
     selector: (state: {
       workspaceIntegrations: Record<string, Array<{ provider: string }>>;
-      disconnectGitlab: typeof h.disconnectGitlab;
+      disconnectIntegration: typeof h.disconnectIntegration;
     }) => T,
   ) =>
     selector({
       workspaceIntegrations: h.isConnected ? { 'workspace-1': [{ provider: 'gitlab' }] } : {},
-      disconnectGitlab: h.disconnectGitlab,
+      disconnectIntegration: h.disconnectIntegration,
     }),
 }));
 vi.mock('../../../../shared/components/StudioShell', () => ({
@@ -118,7 +118,7 @@ afterEach(() => {
   cleanup();
   h.useGitlabIssues.mockReset();
   h.useGitlabMrs.mockReset();
-  h.disconnectGitlab.mockReset();
+  h.disconnectIntegration.mockReset();
 });
 
 describe('GitlabStudio', () => {
@@ -171,6 +171,11 @@ describe('GitlabStudio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitLab' }));
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitLab' }));
 
-    await vi.waitFor(() => expect(h.disconnectGitlab).toHaveBeenCalledWith('workspace-1'));
+    await vi.waitFor(() =>
+      expect(h.disconnectIntegration).toHaveBeenCalledWith({
+        workspaceId: 'workspace-1',
+        provider: 'gitlab',
+      }),
+    );
   });
 });

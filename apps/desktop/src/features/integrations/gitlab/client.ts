@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 
 export type GitlabUser = {
   id: number;
@@ -21,16 +21,19 @@ export type GitlabIssue = {
   labels: ReadonlyArray<string>;
 };
 
-export const gitlabConnect = async (
-  workspaceId: WorkspaceId,
+export const gitlabValidateConnection = async (
+  credentialId: IntegrationCredentialId,
   host: string,
-  token: string,
+  token: string | null,
 ): Promise<GitlabUser> => {
-  return invoke<GitlabUser>('gitlab_connect', { workspaceId, host, token });
+  return invoke<GitlabUser>('gitlab_validate_connection', { credentialId, host, token });
 };
 
-export const gitlabDisconnect = async (workspaceId: WorkspaceId): Promise<void> => {
-  await invoke('gitlab_disconnect', { workspaceId });
+export const gitlabConnect = async (
+  credentialId: IntegrationCredentialId,
+  token: string | null,
+): Promise<void> => {
+  await invoke('gitlab_connect', { credentialId, token });
 };
 
 export const gitlabFetchAssignedIssues = async (

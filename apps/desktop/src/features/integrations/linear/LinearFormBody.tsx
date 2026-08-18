@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { LinearIntegrationConfig, WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, LinearIntegrationConfig, WorkspaceId } from '@goodboy/types';
 import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
+import { IntegrationCredentialPicker } from '../components/IntegrationCredentialPicker';
 
 type Props = {
   workspaceId: WorkspaceId;
@@ -16,9 +17,10 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
   const linear = integrations.find((i) => i.provider === 'linear') ?? null;
   const linearConfig = linear ? (linear.config as LinearIntegrationConfig) : null;
   const connectLinear = useAppStore((s) => s.connectLinear);
-  const disconnectLinear = useAppStore((s) => s.disconnectLinear);
+  const disconnectIntegration = useAppStore((s) => s.disconnectIntegration);
 
   const [token, setToken] = useState('');
+  const [credentialId, setCredentialId] = useState<IntegrationCredentialId | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDisconnectArmed, setIsDisconnectArmed] = useState(false);
@@ -27,7 +29,7 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
     setBusy(true);
     setError(null);
     try {
-      await connectLinear(workspaceId, token.trim());
+      await connectLinear({ workspaceId, token: token.trim(), credentialId });
       setToken('');
       onConnected?.();
     } catch (err) {
@@ -41,7 +43,7 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
     setBusy(true);
     setError(null);
     try {
-      await disconnectLinear(workspaceId);
+      await disconnectIntegration({ workspaceId, provider: 'linear' });
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -68,7 +70,7 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               role="danger"
               icon={<Unplug size={12} aria-hidden />}
               title="Disconnect Linear?"
-              description="Deletes the saved Linear token from your keychain and forgets this workspace's connection. Reconnect anytime."
+              description="Unlinks this project from the Linear personal API key. The key stays saved for your other projects."
               confirmLabel="Disconnect Linear"
               autoDisarmMs={4000}
               onConfirm={onDisconnect}
@@ -88,33 +90,44 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         </div>
       ) : (
         <>
-          <div className="flex flex-col gap-2">
-            <label htmlFor="linear-pat" className="text-xs font-semibold text-foreground">
-              Personal access token
-            </label>
-            <a
-              href="https://linear.app/settings/account/security"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
-            >
-              Create a token in Linear settings <ExternalLink size={10} aria-hidden />
-            </a>
-            <Input
-              id="linear-pat"
-              type="password"
-              autoFocus={shouldAutoFocus}
-              placeholder="lin_api_…"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              disabled={busy}
-            />
-          </div>
-          <p className="text-2xs leading-relaxed text-muted-foreground">
-            Read-only scope is enough. The token is stored encrypted in your operating system
-            keychain. Goodboy sends it directly to Linear over HTTPS; it never touches
-            Goodboy&apos;s own servers.
-          </p>
+          <IntegrationCredentialPicker
+            provider="linear"
+            selectedCredentialId={credentialId}
+            onSelect={(credential) => setCredentialId(credential?.id ?? null)}
+            isDisabled={busy}
+          />
+          {credentialId === null ? (
+            <>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="linear-pat" className="text-xs font-semibold text-foreground">
+                  Personal API key
+                </label>
+                <a
+                  href="https://linear.app/settings/account/security"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
+                >
+                  Create a personal API key in Linear settings{' '}
+                  <ExternalLink size={10} aria-hidden />
+                </a>
+                <Input
+                  id="linear-pat"
+                  type="password"
+                  autoFocus={shouldAutoFocus}
+                  placeholder="lin_api_…"
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  disabled={busy}
+                />
+              </div>
+              <p className="text-2xs leading-relaxed text-muted-foreground">
+                Read-only scope is enough. The key is stored encrypted in your operating system
+                keychain. Goodboy sends it directly to Linear over HTTPS; it never touches
+                Goodboy&apos;s own servers.
+              </p>
+            </>
+          ) : null}
         </>
       )}
 
@@ -128,7 +141,7 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         <div className="flex justify-end">
           <Button
             onClick={() => void onConnect()}
-            disabled={busy || token.trim().length === 0}
+            disabled={busy || (credentialId === null && token.trim().length === 0)}
             className={busy ? 'animate-border-pulse' : undefined}
           >
             {busy ? 'Verifying…' : 'Connect'}

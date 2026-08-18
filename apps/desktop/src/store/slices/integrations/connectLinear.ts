@@ -1,41 +1,35 @@
-import { upsertWorkspaceIntegration } from '@goodboy/db';
-import type {
-  IsoDateTime,
-  LinearWorkspaceIntegration,
-  WorkspaceId,
-  WorkspaceIntegrationId,
-} from '@goodboy/types';
-import { linearConnect, type LinearViewer } from '../../../features/integrations/linear/client';
-import { tauriDatabase } from '../../../shared/lib/db';
+import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
+import {
+  linearConnect,
+  linearValidateConnection,
+  type LinearViewer,
+} from '../../../features/integrations/linear/client';
+import { commitIntegrationConnection } from './commitIntegrationConnection';
 import { configFromLinearViewer } from './configFromLinearViewer';
-import type { GetFn, SetFn } from './types';
+import type { SetFn } from './types';
 
-export const connectLinear = (set: SetFn, get: GetFn) => {
-  return async (workspaceId: WorkspaceId, token: string): Promise<LinearViewer> => {
-    const viewer = await linearConnect(workspaceId, token);
-    const now = new Date().toISOString() as IsoDateTime;
-    const existing = get().workspaceIntegrations[workspaceId]?.find(
-      (i): i is LinearWorkspaceIntegration => i.provider === 'linear',
-    );
-    const integration: LinearWorkspaceIntegration = {
-      id: (existing?.id ?? crypto.randomUUID()) as WorkspaceIntegrationId,
+type Params = {
+  readonly workspaceId: WorkspaceId;
+  readonly token: string | null;
+  readonly credentialId: IntegrationCredentialId | null;
+};
+
+export const connectLinear = (set: SetFn) => {
+  return async ({ workspaceId, token, credentialId }: Params): Promise<LinearViewer> => {
+    const chosen = credentialId ?? (crypto.randomUUID() as IntegrationCredentialId);
+    const supplied = credentialId === null ? token : null;
+    const viewer = await linearValidateConnection(chosen, supplied);
+    await commitIntegrationConnection({
+      set,
       workspaceId,
       provider: 'linear',
-      config: { ...(existing?.config ?? {}), ...configFromLinearViewer(viewer) },
-      credentialKey: `goodboy.workspace.${workspaceId}.linear`,
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-    };
-    await upsertWorkspaceIntegration(tauriDatabase, integration);
-    set((state) => {
-      const current = state.workspaceIntegrations[workspaceId] ?? [];
-      const rest = current.filter((i) => i.provider !== 'linear');
-      return {
-        workspaceIntegrations: {
-          ...state.workspaceIntegrations,
-          [workspaceId]: [...rest, integration],
-        },
-      };
+      credentialId: chosen,
+      config: configFromLinearViewer(viewer),
+      newCredential:
+        credentialId === null
+          ? { label: viewer.name, account: `linear.app/${viewer.organization.urlKey}` }
+          : null,
+      storeSecret: () => linearConnect(chosen, supplied),
     });
     return viewer;
   };

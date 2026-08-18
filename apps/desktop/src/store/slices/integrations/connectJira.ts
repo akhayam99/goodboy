@@ -1,21 +1,24 @@
-import { upsertWorkspaceIntegration } from '@goodboy/db';
 import type {
-  IsoDateTime,
+  IntegrationCredentialId,
   JiraWorkspaceIntegration,
   WorkspaceId,
-  WorkspaceIntegrationId,
 } from '@goodboy/types';
-import { jiraValidateConnection, type JiraUser } from '../../../features/integrations/jira/client';
-import { tauriDatabase } from '../../../shared/lib/db';
+import {
+  jiraConnect,
+  jiraValidateConnection,
+  type JiraUser,
+} from '../../../features/integrations/jira/client';
+import { commitIntegrationConnection } from './commitIntegrationConnection';
 import { configFromJiraUser } from './configFromJiraUser';
 import type { GetFn, SetFn } from './types';
 
-type ConnectParams = {
+type Params = {
   readonly workspaceId: WorkspaceId;
   readonly siteUrl: string;
   readonly email: string;
   readonly projectKey: string;
-  readonly apiToken: string;
+  readonly apiToken: string | null;
+  readonly credentialId: IntegrationCredentialId | null;
 };
 
 export const connectJira = (set: SetFn, get: GetFn) => {
@@ -25,16 +28,24 @@ export const connectJira = (set: SetFn, get: GetFn) => {
     email,
     projectKey,
     apiToken,
-  }: ConnectParams): Promise<JiraUser> => {
-    const user = await jiraValidateConnection({ workspaceId, siteUrl, email, apiToken });
-    const now = new Date().toISOString() as IsoDateTime;
+    credentialId,
+  }: Params): Promise<JiraUser> => {
+    const chosen = credentialId ?? (crypto.randomUUID() as IntegrationCredentialId);
+    const supplied = credentialId === null ? apiToken : null;
+    const user = await jiraValidateConnection({
+      credentialId: chosen,
+      siteUrl,
+      email,
+      apiToken: supplied,
+    });
     const existing = get().workspaceIntegrations[workspaceId]?.find(
       (integration): integration is JiraWorkspaceIntegration => integration.provider === 'jira',
     );
-    const integration: JiraWorkspaceIntegration = {
-      id: (existing?.id ?? crypto.randomUUID()) as WorkspaceIntegrationId,
+    await commitIntegrationConnection({
+      set,
       workspaceId,
       provider: 'jira',
+      credentialId: chosen,
       config: {
         ...(existing?.config ?? {}),
         ...configFromJiraUser({ user }),
@@ -42,20 +53,9 @@ export const connectJira = (set: SetFn, get: GetFn) => {
         email,
         projectKey,
       },
-      credentialKey: `goodboy.workspace.${workspaceId}.jira`,
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-    };
-    await upsertWorkspaceIntegration(tauriDatabase, integration);
-    set((state) => {
-      const current = state.workspaceIntegrations[workspaceId] ?? [];
-      const rest = current.filter((candidate) => candidate.provider !== 'jira');
-      return {
-        workspaceIntegrations: {
-          ...state.workspaceIntegrations,
-          [workspaceId]: [...rest, integration],
-        },
-      };
+      newCredential:
+        credentialId === null ? { label: user.displayName ?? email, account: email } : null,
+      storeSecret: () => jiraConnect({ credentialId: chosen, apiToken: supplied }),
     });
     return user;
   };
