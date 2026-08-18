@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 import type { Agent, SessionId, Step, Workflow, WorkflowRun } from '@goodboy/types';
 import { runsForWorkflowRun } from '@goodboy/core';
-import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../../store';
-import { notifyWorkflowGateBlock } from '../../../../../store/slices/workflows/notifyWorkflowGateBlock';
-import { workflowRunHasOpenQuestions } from '../../../../context/openQuestionsGate';
-import { agentRoutingOverrides } from '../../../../workflows/agentRoutingOverrides';
-import { resolveWorkflowAdvance } from '../../../../workflows/advanceGate';
-import { WorkflowNextStepCta } from '../../../../workflows/components/WorkflowNextStepCta';
-import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRoleModels';
+import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../store';
+import { notifyWorkflowGateBlock } from '../../../../store/slices/workflows/notifyWorkflowGateBlock';
+import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
+import { agentRoutingOverrides } from '../../../workflows/agentRoutingOverrides';
+import { resolveWorkflowAdvance } from '../../../workflows/advanceGate';
+import { WorkflowNextStepCta } from '../../../workflows/components/WorkflowNextStepCta';
+import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -20,7 +20,7 @@ type AdvanceParams = {
   readonly isConfirmed: boolean;
 };
 
-export const ChatWorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
+export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
   const workflowRunId = run.id;
   const phaseRuns = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),

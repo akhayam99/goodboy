@@ -7,6 +7,7 @@ import { workflowKindName } from '../../../workspace/components/WorkspacesSideba
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { buildSessionBreadcrumb } from '../../components/SessionWorkspace/sessionBreadcrumb';
 import { SIMPLE_LENSES, lensLabelFor } from '../../lens-labels';
+import { useSelectedWorkflowRun } from '../useSelectedWorkflowRun';
 
 type Params = {
   readonly session: Session;
@@ -29,6 +30,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       s.sessionPhaseRuns[sessionId]?.find((agent) => agent.id === selectedAgentId)?.name ?? null,
   );
   const attachedWorkflowRuns = useAttachedWorkflowRuns({ session });
+  const selectedWorkflowRun = useSelectedWorkflowRun({ session });
   const plans = useSessionPlans(sessionId);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
@@ -44,12 +46,17 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     [plans, focusedPlanId],
   );
 
+  const selectedChildWorkflowName =
+    selectedWorkflowRun == null ? null : workflowKindName(selectedWorkflowRun.workflow);
+  const selectedWorkflowRunId = selectedWorkflowRun?.run.id ?? null;
+
   return useMemo(
     () =>
       buildSessionBreadcrumb({
         lens,
         studio,
         focusedWorkflowName,
+        selectedChildWorkflowName,
         focusedPlanTitle,
         selectedChildLabel,
         lensLabel: (kind: LensKind) => lensLabelFor({ lens: kind, isBranchless }),
@@ -58,6 +65,13 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
           toLens: (l) => setActiveLens(sessionId, l),
           toWorkflowsList: () => {
             setFocusedWorkflowRun(sessionId, null);
+            setActiveLens(sessionId, 'workflows');
+          },
+          toWorkflowRun: () => {
+            if (selectedWorkflowRunId == null) {
+              return;
+            }
+            setFocusedWorkflowRun(sessionId, selectedWorkflowRunId);
             setActiveLens(sessionId, 'workflows');
           },
           toPlansList: () => {
@@ -70,6 +84,8 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       lens,
       studio,
       focusedWorkflowName,
+      selectedChildWorkflowName,
+      selectedWorkflowRunId,
       focusedPlanTitle,
       selectedChildLabel,
       isBranchless,

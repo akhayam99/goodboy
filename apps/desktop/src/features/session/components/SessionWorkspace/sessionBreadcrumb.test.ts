@@ -7,6 +7,7 @@ const makeHandlers = (): SessionBreadcrumbHandlers => ({
   toOverview: vi.fn(),
   toLens: vi.fn(),
   toWorkflowsList: vi.fn(),
+  toWorkflowRun: vi.fn(),
   toPlansList: vi.fn(),
 });
 
@@ -19,6 +20,7 @@ const base = (
   lens: null,
   studio: null,
   focusedWorkflowName: null,
+  selectedChildWorkflowName: null,
   focusedPlanTitle: null,
   selectedChildLabel: null,
   lensLabel,
@@ -68,6 +70,69 @@ describe('buildSessionBreadcrumb', () => {
     crumbs[1]!.onClick!();
     expect(h.toWorkflowsList).toHaveBeenCalledOnce();
     expect(last(crumbs)?.onClick).toBeUndefined();
+  });
+
+  it('gives a workflow step the same four-level trail, run crumb included', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          lens: 'workflows',
+          selectedChildWorkflowName: 'refactor',
+          selectedChildLabel: 'Implement',
+        },
+        h,
+      ),
+    );
+
+    expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'refactor', 'Implement']);
+    expect(last(crumbs)?.id).toBe('selected-child');
+    expect(last(crumbs)?.onClick).toBeUndefined();
+  });
+
+  it('navigates to the run from the third crumb of a step trail', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          lens: 'workflows',
+          selectedChildWorkflowName: 'refactor',
+          selectedChildLabel: 'Implement',
+        },
+        h,
+      ),
+    );
+
+    crumbs[2]!.onClick!();
+    expect(h.toWorkflowRun).toHaveBeenCalledOnce();
+    crumbs[1]!.onClick!();
+    expect(h.toWorkflowsList).toHaveBeenCalledOnce();
+  });
+
+  it('prefers the run of the open step over whichever run is merely focused', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          lens: 'workflows',
+          focusedWorkflowName: 'release',
+          selectedChildWorkflowName: 'refactor',
+          selectedChildLabel: 'Implement',
+        },
+        h,
+      ),
+    );
+
+    expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'refactor', 'Implement']);
+  });
+
+  it('keeps a workflow agent with no resolvable run on the three-crumb lens trail', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base({ lens: 'workflows', selectedChildLabel: 'Implement' }, h),
+    );
+
+    expect(labels(crumbs)).toEqual(['Overview', 'workflows', 'Implement']);
   });
 
   it('renders Overview > Workflows > Create for the workflow builder studio', () => {
