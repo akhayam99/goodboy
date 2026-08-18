@@ -1,6 +1,5 @@
 export const RAIL_SPINE_X = 8;
 export const RAIL_LANE_OFFSET = 16;
-export const RAIL_MAX_COLUMN = 3;
 const RAIL_EDGE_PAD = 8;
 const RAIL_CURVE_K = 0.5523;
 const RAIL_CURVE_HANDLE = 8.84;
@@ -124,7 +123,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
   const depthOf = ({ group }: { readonly group: RailGroupInput }): number => {
     let depth = 0;
     let parentId = group.parentGroupId;
-    while (parentId != null && depth <= RAIL_MAX_COLUMN) {
+    while (parentId != null && depth <= groups.length) {
       depth += 1;
       parentId = groupById.get(parentId)?.parentGroupId ?? null;
     }
@@ -150,7 +149,6 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
   );
 
   const columnByGroupId = new Map<string, number>();
-  const lanelessGroupIds = new Set<string>();
   const takenByColumn = new Map<number, Interval[]>();
   for (const group of ordered) {
     const interval = intervalOf({ group });
@@ -158,39 +156,31 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       group.parentGroupId == null ? 0 : (columnByGroupId.get(group.parentGroupId) ?? 0);
     let column = parentColumn + 1;
     while (
-      column <= RAIL_MAX_COLUMN &&
       (takenByColumn.get(column) ?? []).some((taken) =>
         overlaps({ first: taken, second: interval }),
       )
     ) {
       column += 1;
     }
-    if (column > RAIL_MAX_COLUMN) {
-      columnByGroupId.set(group.id, 0);
-      lanelessGroupIds.add(group.id);
-      continue;
-    }
     columnByGroupId.set(group.id, column);
     takenByColumn.set(column, [...(takenByColumn.get(column) ?? []), interval]);
   }
 
-  const plans: ReadonlyArray<GroupPlan> = ordered
-    .filter((group) => !lanelessGroupIds.has(group.id))
-    .map((group) => {
-      const memberIndexes = membersByGroupId.get(group.id) ?? [];
-      const settled = memberIndexes.filter((index) => rows[index]?.isPending !== true);
-      const originIndex = indexById.get(group.originRowId) ?? lastIndex;
-      const boundaryIndex = settled[0] ?? originIndex;
-      return {
-        group,
-        column: columnByGroupId.get(group.id) ?? 1,
-        memberIndexes,
-        originIndex,
-        boundaryIndex,
-        hasFuture:
-          group.shape === 'open' || memberIndexes.some((index) => rows[index]?.isPending === true),
-      };
-    });
+  const plans: ReadonlyArray<GroupPlan> = ordered.map((group) => {
+    const memberIndexes = membersByGroupId.get(group.id) ?? [];
+    const settled = memberIndexes.filter((index) => rows[index]?.isPending !== true);
+    const originIndex = indexById.get(group.originRowId) ?? lastIndex;
+    const boundaryIndex = settled[0] ?? originIndex;
+    return {
+      group,
+      column: columnByGroupId.get(group.id) ?? 1,
+      memberIndexes,
+      originIndex,
+      boundaryIndex,
+      hasFuture:
+        group.shape === 'open' || memberIndexes.some((index) => rows[index]?.isPending === true),
+    };
+  });
 
   const laneSegmentsByIndex: RailSegment[][] = rows.map(() => []);
   const joinsByIndex: PlannedJoin[][] = rows.map(() => []);
