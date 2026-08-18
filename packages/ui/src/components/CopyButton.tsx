@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Check, Copy, X } from 'lucide-react';
 import { cn } from '../cn';
 import { useCopyLink } from '../useCopyLink';
+import { Tooltip } from './Tooltip';
 
 export type CopyButtonProps = {
   value: string;
@@ -27,31 +28,32 @@ export const CopyButton = ({
   const Glyph = GLYPH[state];
 
   return (
-    <button
-      type="button"
-      onClick={(event) => {
-        event.stopPropagation();
-        void copy(value);
-      }}
-      title={state === 'idle' ? label : state === 'copied' ? 'copied' : 'copy failed'}
-      aria-label={presentation === 'text' ? `copy ${label === 'Copy' ? 'text' : label}` : label}
-      className={cn(
-        'inline-flex shrink-0 items-center rounded-md p-1 transition-colors',
-        state === 'idle' && 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-        state === 'copied' && 'text-success',
-        state === 'failed' && 'text-danger',
-        className,
-      )}
-    >
-      {presentation === 'icon' ? <Glyph size={size} aria-hidden /> : null}
-      {presentation === 'text'
-        ? state === 'copied'
-          ? `copied: ${label === 'Copy' ? 'text' : label}`
-          : state === 'failed'
-            ? 'copy failed'
-            : 'copy'
-        : null}
-      {presentation === 'icon' && children != null && (state === 'copied' ? 'Copied' : children)}
-    </button>
+    <Tooltip content={state === 'idle' ? label : state === 'copied' ? 'copied' : 'copy failed'}>
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          void copy(value);
+        }}
+        aria-label={presentation === 'text' ? `copy ${label === 'Copy' ? 'text' : label}` : label}
+        className={cn(
+          'inline-flex shrink-0 items-center rounded-md p-1 transition-colors',
+          state === 'idle' && 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+          state === 'copied' && 'text-success',
+          state === 'failed' && 'text-danger',
+          className,
+        )}
+      >
+        {presentation === 'icon' ? <Glyph size={size} aria-hidden /> : null}
+        {presentation === 'text'
+          ? state === 'copied'
+            ? `copied: ${label === 'Copy' ? 'text' : label}`
+            : state === 'failed'
+              ? 'copy failed'
+              : 'copy'
+          : null}
+        {presentation === 'icon' && children != null && (state === 'copied' ? 'Copied' : children)}
+      </button>
+    </Tooltip>
   );
 };

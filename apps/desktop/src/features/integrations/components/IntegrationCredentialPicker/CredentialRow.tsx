@@ -53,7 +53,7 @@ export const CredentialRow = ({
         icon={Trash2}
         label={`Forget ${credential.label}`}
         disabled={isDisabled}
-        title={
+        tooltip={
           usedBy > 0
             ? `${usageLabel({ usedBy })}. Disconnect it there before removing the key.`
             : 'Remove this key from the keychain'

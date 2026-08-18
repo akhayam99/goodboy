@@ -1,5 +1,5 @@
 import { Square } from 'lucide-react';
-import { StatusDot } from '@goodboy/ui';
+import { StatusDot, Tooltip } from '@goodboy/ui';
 import type { RunningScript } from './useRunningScripts';
 
 type Props = {
@@ -36,13 +36,15 @@ export const RunningScriptRow = ({ run, now, onOpen, onStop }: Props) => (
     <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
       {elapsed(now - run.startedAt)}
     </span>
-    <button
-      type="button"
-      onClick={() => onStop(run)}
-      aria-label={`Stop ${run.scriptName}`}
-      className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
-    >
-      <Square size={11} aria-hidden />
-    </button>
+    <Tooltip content={`Stop ${run.scriptName}`}>
+      <button
+        type="button"
+        onClick={() => onStop(run)}
+        aria-label={`Stop ${run.scriptName}`}
+        className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
+      >
+        <Square size={11} aria-hidden />
+      </button>
+    </Tooltip>
   </li>
 );

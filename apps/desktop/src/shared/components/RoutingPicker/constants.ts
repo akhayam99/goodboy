@@ -12,5 +12,5 @@ export const ROUTING_PICKER_CONSTANTS = {
     (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
   ),
   emptyModelKeys: new Set<string>(),
-  providerChipGroupClassName: 'flex gap-1.5 bg-subtle px-2.5 [&>button]:h-7 [&>button]:flex-1',
+  providerChipGroupClassName: 'flex gap-1.5 bg-subtle px-2.5 [&>*]:h-7 [&>*]:flex-1',
 } satisfies RoutingPickerConstants;

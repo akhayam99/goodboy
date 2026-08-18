@@ -36,6 +36,19 @@ describe('SectionSurface', () => {
     expect(screen.getByText('what the agent produced')).toBeDefined();
   });
 
+  it('keeps the label in the outline while it stays on the eyebrow grade', () => {
+    render(
+      <SectionSurface label="Outcome" headingLevel={2}>
+        shipped it
+      </SectionSurface>,
+    );
+
+    const heading = screen.getByRole('heading', { level: 2, name: 'Outcome' });
+
+    expect(heading.className).not.toContain('text-base');
+    expect(screen.getByText('Outcome').className).toContain('text-2xs');
+  });
+
   it('names the surface as a region only when it is given a name', () => {
     const { rerender } = render(<SectionSurface label="Preview">body</SectionSurface>);
     expect(screen.queryByRole('region')).toBeNull();

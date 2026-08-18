@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, EmptyState, SectionHeader, StatusDot } from '@goodboy/ui';
+import { Button, EmptyState, SectionHeader, StatusDot, Tooltip } from '@goodboy/ui';
 import { RotateCw, type LucideIcon } from 'lucide-react';
 import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider, type ProviderId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
@@ -81,15 +81,17 @@ function Detail({
   const subtitle = info.version ? `${info.binary} ${info.version}` : info.binary;
   const action = (
     <div className="flex items-center gap-2">
-      <button
-        type="button"
-        aria-label="Re-detect CLIs"
-        disabled={refreshing}
-        onClick={() => void onRefresh()}
-        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
-      >
-        <RotateCw size={14} aria-hidden />
-      </button>
+      <Tooltip content="Re-detect CLIs">
+        <button
+          type="button"
+          aria-label="Re-detect CLIs"
+          disabled={refreshing}
+          onClick={() => void onRefresh()}
+          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+        >
+          <RotateCw size={14} aria-hidden />
+        </button>
+      </Tooltip>
     </div>
   );
 

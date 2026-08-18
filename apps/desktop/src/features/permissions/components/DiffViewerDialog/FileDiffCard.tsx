@@ -260,22 +260,23 @@ export const FileDiffCard = ({
     <section ref={registerRef} data-file-path={file.path} className="min-w-0 max-w-full">
       <div className="sticky top-0 z-10 bg-background">
         <div className="flex items-center gap-2 px-3 py-1.5">
-          <button
-            type="button"
-            onClick={() => setCollapsed((c) => !c)}
-            title={collapsed ? 'Expand file' : 'Collapse file'}
-            aria-label={collapsed ? 'Expand file' : 'Collapse file'}
-            className={TOOLBAR_ICON_BTN}
-          >
-            <ChevronRight
-              size={13}
-              aria-hidden
-              className={cn(
-                'motion-safe:transition-transform duration-150',
-                !collapsed && 'rotate-90',
-              )}
-            />
-          </button>
+          <Tooltip content={collapsed ? 'Expand file' : 'Collapse file'}>
+            <button
+              type="button"
+              onClick={() => setCollapsed((c) => !c)}
+              aria-label={collapsed ? 'Expand file' : 'Collapse file'}
+              className={TOOLBAR_ICON_BTN}
+            >
+              <ChevronRight
+                size={13}
+                aria-hidden
+                className={cn(
+                  'motion-safe:transition-transform duration-150',
+                  !collapsed && 'rotate-90',
+                )}
+              />
+            </button>
+          </Tooltip>
           <span
             className={cn(
               'w-3 shrink-0 text-center font-mono text-2xs font-bold',

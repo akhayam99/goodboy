@@ -4,6 +4,7 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { useInstalledVersion } from '../../hooks/useInstalledVersion';
 import { useUnseenRelease } from '../../hooks/useUnseenRelease';
+import { Tooltip } from '@goodboy/ui';
 
 type Props = {
   readonly onOpenChangelog: () => void;
@@ -44,14 +45,16 @@ export const ReleaseToast = ({ onOpenChangelog }: Props) => {
           Read the changelog
         </button>
       </div>
-      <button
-        type="button"
-        aria-label="Dismiss release notice"
-        onClick={() => setDismissed(true)}
-        className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 hover:bg-muted hover:text-foreground"
-      >
-        <X size={13} aria-hidden />
-      </button>
+      <Tooltip content="Dismiss release notice">
+        <button
+          type="button"
+          aria-label="Dismiss release notice"
+          onClick={() => setDismissed(true)}
+          className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+        >
+          <X size={13} aria-hidden />
+        </button>
+      </Tooltip>
     </div>
   );
 };

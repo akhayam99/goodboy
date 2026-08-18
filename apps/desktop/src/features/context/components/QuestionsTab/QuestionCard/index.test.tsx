@@ -48,7 +48,9 @@ describe('QuestionCard', () => {
     const { container } = render(<QuestionCard {...baseProps} justAnswered />);
     const root = container.firstElementChild as HTMLElement;
     const questionTint = tintClasses(CONCEPT_TONE.questions);
-    const feedbackIcon = screen.getByTitle(/dismiss question/i).querySelector('svg');
+    const feedbackIcon = screen
+      .getByRole('button', { name: /dismiss question/i })
+      .querySelector('svg');
 
     expect(root.className).toContain(questionTint.border);
     expect(root.className).not.toContain('success');
@@ -65,7 +67,7 @@ describe('QuestionCard', () => {
   it('fires onDismiss when the close button is clicked', () => {
     const onDismiss = vi.fn();
     render(<QuestionCard {...baseProps} onDismiss={onDismiss} />);
-    fireEvent.click(screen.getByTitle(/dismiss question/i));
+    fireEvent.click(screen.getByRole('button', { name: /dismiss question/i }));
     expect(onDismiss).toHaveBeenCalledWith('q1');
   });
 

@@ -1,15 +1,40 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { OverflowMenu, type OverflowMenuItem } from '../components/OverflowMenu';
 
 afterEach(cleanup);
+
+const hover = (button: HTMLElement): void => {
+  vi.useFakeTimers();
+  fireEvent.mouseEnter(button);
+  act(() => {
+    vi.advanceTimersByTime(400);
+  });
+  vi.useRealTimers();
+};
 
 describe('OverflowMenu', () => {
   it('renders a trigger button with the default label', () => {
     render(<OverflowMenu items={[]} />);
     expect(screen.getByRole('button', { name: /more actions/i })).toBeDefined();
+  });
+
+  it('explains the trigger through the shared tooltip, not a native title', () => {
+    render(<OverflowMenu items={[]} />);
+    const trigger = screen.getByRole('button', { name: /more actions/i });
+    expect(trigger.getAttribute('title')).toBeNull();
+    hover(trigger);
+    expect(screen.getByRole('tooltip').textContent).toBe('More actions');
+  });
+
+  it('lets the caller name the action in the tooltip', () => {
+    render(
+      <OverflowMenu items={[]} label="Branch actions" tooltip="Rebase this branch, or push" />,
+    );
+    hover(screen.getByRole('button', { name: /branch actions/i }));
+    expect(screen.getByRole('tooltip').textContent).toBe('Rebase this branch, or push');
   });
 
   it('opens the menu on trigger click and shows item labels', () => {

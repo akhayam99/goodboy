@@ -49,7 +49,7 @@ export const TranscriptRowHeader = ({
       {badge}
       <span className="min-w-0 flex-1 truncate text-xs text-foreground/60">{preview}</span>
       {meta != null && (
-        <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground">
+        <span className="shrink-0 font-mono text-3xs tabular-nums text-muted-foreground">
           {meta}
         </span>
       )}

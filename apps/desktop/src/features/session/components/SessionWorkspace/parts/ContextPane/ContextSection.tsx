@@ -27,10 +27,10 @@ export const ContextSection = ({
   return (
     <section id={sectionId} aria-label={title} className="flex flex-col gap-4">
       <SectionHeader
-        size="page"
+        headingLevel={2}
         label={title}
         hint={description}
-        icon={<Icon size={14} aria-hidden className={tint.icon} />}
+        icon={<Icon size={13} aria-hidden className={tint.icon} />}
         action={actions}
       />
       {children}

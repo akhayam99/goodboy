@@ -1,5 +1,14 @@
 import { Fragment, type Dispatch, type SetStateAction } from 'react';
-import { cn, Collapsible, Divider, formatUsdPrecise, Input, MetaRow, StatusDot } from '@goodboy/ui';
+import {
+  cn,
+  Collapsible,
+  Divider,
+  formatUsdPrecise,
+  Input,
+  MetaRow,
+  StatusDot,
+  Tooltip,
+} from '@goodboy/ui';
 import { ChevronDown, ChevronRight, ChevronUp, Pencil, Undo2 } from 'lucide-react';
 import type {
   Agent,
@@ -223,20 +232,21 @@ export const WorkflowRow = ({
                     <h2 className="truncate text-xl font-semibold leading-snug text-foreground">
                       {name}
                     </h2>
-                    <button
-                      type="button"
-                      onClick={rename.start}
-                      aria-label="Edit workflow name"
-                      title="Edit workflow name"
-                      className={cn(
-                        'mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50',
-                        'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
-                        'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-                        'group-hover/name:opacity-100 motion-reduce:opacity-60',
-                      )}
-                    >
-                      <Pencil size={13} aria-hidden />
-                    </button>
+                    <Tooltip content="Edit workflow name">
+                      <button
+                        type="button"
+                        onClick={rename.start}
+                        aria-label="Edit workflow name"
+                        className={cn(
+                          'mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50',
+                          'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
+                          'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+                          'group-hover/name:opacity-100 motion-reduce:opacity-60',
+                        )}
+                      >
+                        <Pencil size={13} aria-hidden />
+                      </button>
+                    </Tooltip>
                   </div>
                 )}
                 <WorkflowRunStatus

@@ -2,6 +2,7 @@ import type { ComponentType, ReactNode } from 'react';
 import { MoreVertical } from 'lucide-react';
 import { cn } from '../cn';
 import { Popover } from './Popover';
+import { Tooltip } from './Tooltip';
 import { useDropdown } from '../useDropdown';
 import { DropdownPortal } from '../useDropdown/DropdownPortal';
 
@@ -29,6 +30,7 @@ export type OverflowMenuItem =
 type OverflowMenuProps = {
   readonly items: ReadonlyArray<OverflowMenuItem>;
   readonly label?: string;
+  readonly tooltip?: string;
   readonly triggerClassName?: string;
   readonly trigger?: ReactNode;
   readonly disabled?: boolean;
@@ -38,6 +40,7 @@ type OverflowMenuProps = {
 export const OverflowMenu = ({
   items,
   label = 'More actions',
+  tooltip,
   triggerClassName,
   trigger,
   disabled,
@@ -53,25 +56,26 @@ export const OverflowMenu = ({
 
   return (
     <div className="relative" ref={dropdown.containerRef}>
-      <button
-        type="button"
-        onClick={dropdown.toggle}
-        disabled={disabled}
-        title={label}
-        aria-label={label}
-        aria-haspopup="menu"
-        aria-expanded={dropdown.open}
-        className={cn(
-          'shrink-0 rounded p-1 motion-safe:transition-colors',
-          disabled
-            ? 'cursor-not-allowed text-muted-foreground/30'
-            : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground',
-          dropdown.open && 'bg-foreground/10 text-foreground',
-          triggerClassName,
-        )}
-      >
-        {trigger ?? <MoreVertical size={13} aria-hidden />}
-      </button>
+      <Tooltip content={tooltip ?? label} anchorClassName="shrink-0">
+        <button
+          type="button"
+          onClick={dropdown.toggle}
+          disabled={disabled}
+          aria-label={label}
+          aria-haspopup="menu"
+          aria-expanded={dropdown.open}
+          className={cn(
+            'shrink-0 rounded p-1 motion-safe:transition-colors',
+            disabled
+              ? 'cursor-not-allowed text-muted-foreground/30'
+              : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground',
+            dropdown.open && 'bg-foreground/10 text-foreground',
+            triggerClassName,
+          )}
+        >
+          {trigger ?? <MoreVertical size={13} aria-hidden />}
+        </button>
+      </Tooltip>
       {dropdown.open ? (
         <DropdownPortal portal={dropdown.portal} portalTarget={dropdown.portalTarget}>
           <Popover

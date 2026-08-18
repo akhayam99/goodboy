@@ -26,7 +26,7 @@ export const RefreshIconButton = ({
       onClick={onClick}
       disabled={isLoading}
       busy={isLoading}
-      title={error != null && error !== '' ? `refresh failed: ${error}` : label}
+      tooltip={error != null && error !== '' ? `refresh failed: ${error}` : label}
       className={className}
     />
   );

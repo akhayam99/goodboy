@@ -110,6 +110,7 @@ export const SessionGitActions = ({ session, density = 'full' }: Props) => {
     <OverflowMenu
       items={items}
       label="Branch actions"
+      tooltip="Rebase this branch on main, or push it"
       align="left"
       triggerClassName={triggerClassName}
       trigger={

@@ -43,25 +43,26 @@ export const BranchChip = ({ branch, mountName = null, sessionId, canEdit }: Pro
           : 'border-border-soft bg-muted/30 text-foreground/80 hover:border-border hover:bg-muted/50 hover:text-foreground',
       )}
     >
-      <button
-        type="button"
-        onClick={() => void copy(branch)}
-        title="Click to copy branch name"
-        aria-label={`Copy branch ${branch}`}
-        className="inline-flex min-w-0 items-center gap-1.5 px-2 py-1"
-      >
-        {copied ? (
-          <Check size={10} aria-hidden className="shrink-0" />
-        ) : (
-          <GitBranch
-            size={10}
-            aria-hidden
-            className="shrink-0 text-muted-foreground group-hover/branch:text-foreground"
-          />
-        )}
-        {mountName != null ? <span className="text-muted-foreground">{mountName}:</span> : null}
-        <span className="truncate">{branch}</span>
-      </button>
+      <Tooltip content={copied ? 'Copied' : 'Click to copy the branch name'}>
+        <button
+          type="button"
+          onClick={() => void copy(branch)}
+          aria-label={`Copy branch ${branch}`}
+          className="inline-flex min-w-0 items-center gap-1.5 px-2 py-1"
+        >
+          {copied ? (
+            <Check size={10} aria-hidden className="shrink-0" />
+          ) : (
+            <GitBranch
+              size={10}
+              aria-hidden
+              className="shrink-0 text-muted-foreground group-hover/branch:text-foreground"
+            />
+          )}
+          {mountName != null ? <span className="text-muted-foreground">{mountName}:</span> : null}
+          <span className="truncate">{branch}</span>
+        </button>
+      </Tooltip>
 
       {canEdit ? (
         <Tooltip content="Edit branch" side="top">

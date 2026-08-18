@@ -75,30 +75,26 @@ export const WorkflowsRail = ({
               made are kept.
             </span>
             <Tooltip content="confirm restore">
-              <span className="inline-flex">
-                <button
-                  type="button"
-                  onClick={onReset}
-                  disabled={resetting}
-                  aria-label="Confirm restore defaults"
-                  className="rounded-md p-0.5 text-warning transition-colors hover:bg-warning/10 disabled:opacity-50"
-                >
-                  <Check size={13} aria-hidden />
-                </button>
-              </span>
+              <button
+                type="button"
+                onClick={onReset}
+                disabled={resetting}
+                aria-label="Confirm restore defaults"
+                className="rounded-md p-0.5 text-warning transition-colors hover:bg-warning/10 disabled:opacity-50"
+              >
+                <Check size={13} aria-hidden />
+              </button>
             </Tooltip>
             <Tooltip content="cancel">
-              <span className="inline-flex">
-                <button
-                  type="button"
-                  onClick={() => setConfirmReset(false)}
-                  disabled={resetting}
-                  aria-label="Cancel restore defaults"
-                  className="rounded-md p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
-                >
-                  <X size={13} aria-hidden />
-                </button>
-              </span>
+              <button
+                type="button"
+                onClick={() => setConfirmReset(false)}
+                disabled={resetting}
+                aria-label="Cancel restore defaults"
+                className="rounded-md p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
+              >
+                <X size={13} aria-hidden />
+              </button>
             </Tooltip>
           </div>
         ) : (

@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AlertTriangle, GitBranch, RefreshCw, X } from 'lucide-react';
-import { cn, DiffLayoutToggle, Divider, formatError, ScrollFade, Skeleton } from '@goodboy/ui';
+import {
+  cn,
+  DiffLayoutToggle,
+  Divider,
+  formatError,
+  ScrollFade,
+  Skeleton,
+  Tooltip,
+} from '@goodboy/ui';
 import { getDefaultTurnModel, parseUnifiedDiff } from '@goodboy/core';
 import type {
   BranchCommit,
@@ -863,15 +871,16 @@ export const DiffViewerContent = ({
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
               {isGitAware &&
                 (isDefaultView ? (
-                  <button
-                    type="button"
-                    onClick={() => setRefreshTick((tick) => tick + 1)}
-                    title="Refresh git state"
-                    aria-label="Refresh git state"
-                    className={cn(TOOLBAR_ICON_BTN, 'disabled:opacity-50')}
-                  >
-                    <RefreshCw size={12} aria-hidden />
-                  </button>
+                  <Tooltip content="Refresh git state">
+                    <button
+                      type="button"
+                      onClick={() => setRefreshTick((tick) => tick + 1)}
+                      aria-label="Refresh git state"
+                      className={cn(TOOLBAR_ICON_BTN, 'disabled:opacity-50')}
+                    >
+                      <RefreshCw size={12} aria-hidden />
+                    </button>
+                  </Tooltip>
                 ) : (
                   <DiffViewSelector
                     view={view}
@@ -902,15 +911,16 @@ export const DiffViewerContent = ({
                     />
                   </div>
                   {showToolbarClose ? (
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      title="Close"
-                      aria-label="Close"
-                      className={TOOLBAR_ICON_BTN}
-                    >
-                      <X size={13} />
-                    </button>
+                    <Tooltip content="Close">
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Close"
+                        className={TOOLBAR_ICON_BTN}
+                      >
+                        <X size={13} />
+                      </button>
+                    </Tooltip>
                   ) : null}
                 </div>
                 <Divider className="shrink-0" />
@@ -918,15 +928,16 @@ export const DiffViewerContent = ({
             ) : showToolbarClose ? (
               <>
                 <div className="flex shrink-0 items-center justify-end px-2.5 py-1.5">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    title="Close"
-                    aria-label="Close"
-                    className={TOOLBAR_ICON_BTN}
-                  >
-                    <X size={13} />
-                  </button>
+                  <Tooltip content="Close">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      aria-label="Close"
+                      className={TOOLBAR_ICON_BTN}
+                    >
+                      <X size={13} />
+                    </button>
+                  </Tooltip>
                 </div>
                 <Divider className="shrink-0" />
               </>

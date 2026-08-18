@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ProviderId } from '@goodboy/types';
+import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { ProviderPicker } from './ProviderPicker';
 
 const connectedProviders = ['anthropic', 'cursor'] as ReadonlyArray<ProviderId>;
@@ -63,6 +64,6 @@ describe('ProviderPicker', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Default provider: Claude' }));
     const codex = screen.getByRole('button', { name: 'Codex' });
     expect(codex.hasAttribute('disabled')).toBe(true);
-    expect(codex.getAttribute('title')).toBe('Codex is not connected');
+    expect(tooltipTextOf({ element: codex })).toBe('Codex is not connected');
   });
 });

@@ -1,4 +1,4 @@
-import { formatUsd } from '@goodboy/ui';
+import { formatUsd, Tooltip } from '@goodboy/ui';
 import { TriangleAlert, X } from 'lucide-react';
 import type { BudgetAlert } from '@goodboy/types';
 import { providerLabel } from './lib';
@@ -46,14 +46,16 @@ export const AlertBanner = ({ alerts, onDismiss }: Props) => {
               className={exceeded ? 'shrink-0 text-danger' : 'shrink-0 text-warning'}
             />
             <span className="flex-1 text-xs text-foreground">{alertMessage(alert)}</span>
-            <button
-              type="button"
-              onClick={() => onDismiss(alert.id)}
-              aria-label="Dismiss alert"
-              className="shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-            >
-              <X size={13} aria-hidden />
-            </button>
+            <Tooltip content="Dismiss alert">
+              <button
+                type="button"
+                onClick={() => onDismiss(alert.id)}
+                aria-label="Dismiss alert"
+                className="shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+              >
+                <X size={13} aria-hidden />
+              </button>
+            </Tooltip>
           </li>
         );
       })}

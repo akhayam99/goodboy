@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from '../cn';
 import { tintClasses, type Tone } from '../tint';
 import { X, type LucideIcon } from 'lucide-react';
+import { Tooltip } from './Tooltip';
 
 type Props = {
   readonly icon?: LucideIcon;
@@ -76,20 +77,22 @@ export const OverlayHeader = ({
       ) : null}
       <div className="flex-1" />
       {children}
-      <button
-        type="button"
-        onClick={onClose}
-        disabled={closeDisabled}
-        aria-label={closeLabel}
-        className={cn(
-          'flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors',
-          'hover:bg-muted/50 hover:text-foreground',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-          closeDisabled && 'cursor-not-allowed opacity-50',
-        )}
-      >
-        <X size={14} aria-hidden />
-      </button>
+      <Tooltip content={closeLabel} anchorClassName="shrink-0">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={closeDisabled}
+          aria-label={closeLabel}
+          className={cn(
+            'flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors',
+            'hover:bg-muted/50 hover:text-foreground',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+            closeDisabled && 'cursor-not-allowed opacity-50',
+          )}
+        >
+          <X size={14} aria-hidden />
+        </button>
+      </Tooltip>
     </header>
   );
 };

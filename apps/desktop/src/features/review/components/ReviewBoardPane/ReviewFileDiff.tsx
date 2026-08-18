@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react';
 import { Bot, ChevronRight, MessageSquarePlus } from 'lucide-react';
-import { Chip, cn, type DiffLayoutMode, Divider, EmptyState } from '@goodboy/ui';
+import { Chip, cn, Divider, EmptyState, Tooltip, type DiffLayoutMode } from '@goodboy/ui';
 import type { DiffHunkLine, FileDiff, PrReviewDraft, ReviewDraftSide } from '@goodboy/types';
 import {
   INITIAL_VISIBLE_LINES,
@@ -120,22 +120,23 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
     <section data-file-path={file.path}>
       <div className="sticky top-0 z-10 bg-background">
         <div className="flex items-center gap-2 px-3 py-1.5">
-          <button
-            type="button"
-            onClick={() => setCollapsed((value) => !value)}
-            title={collapsed ? 'Expand file' : 'Collapse file'}
-            aria-label={collapsed ? 'Expand file' : 'Collapse file'}
-            className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <ChevronRight
-              size={13}
-              aria-hidden
-              className={cn(
-                'duration-150 motion-safe:transition-transform',
-                !collapsed && 'rotate-90',
-              )}
-            />
-          </button>
+          <Tooltip content={collapsed ? 'Expand file' : 'Collapse file'}>
+            <button
+              type="button"
+              onClick={() => setCollapsed((value) => !value)}
+              aria-label={collapsed ? 'Expand file' : 'Collapse file'}
+              className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <ChevronRight
+                size={13}
+                aria-hidden
+                className={cn(
+                  'duration-150 motion-safe:transition-transform',
+                  !collapsed && 'rotate-90',
+                )}
+              />
+            </button>
+          </Tooltip>
           <span
             className={cn(
               'w-3 shrink-0 text-center font-mono text-2xs font-bold',
@@ -295,31 +296,33 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                             >
                               {target != null && canComment ? (
                                 <span className="flex items-center gap-0.5">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setActiveAnchor(isActive ? null : (anchor ?? null))
-                                    }
-                                    title="Draft a comment on this line"
-                                    aria-label={`Draft a comment on line ${target.line}`}
-                                    className={cn(
-                                      'flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-                                      isActive
-                                        ? 'opacity-100'
-                                        : 'opacity-0 group-hover:opacity-100',
-                                    )}
-                                  >
-                                    <MessageSquarePlus size={9} aria-hidden />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => onAskAgent?.(target)}
-                                    title="Ask the agent about this line"
-                                    aria-label={`Ask the agent about line ${target.line}`}
-                                    className="flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-                                  >
-                                    <Bot size={9} aria-hidden />
-                                  </button>
+                                  <Tooltip content="Draft a comment on this line">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setActiveAnchor(isActive ? null : (anchor ?? null))
+                                      }
+                                      aria-label={`Draft a comment on line ${target.line}`}
+                                      className={cn(
+                                        'flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+                                        isActive
+                                          ? 'opacity-100'
+                                          : 'opacity-0 group-hover:opacity-100',
+                                      )}
+                                    >
+                                      <MessageSquarePlus size={9} aria-hidden />
+                                    </button>
+                                  </Tooltip>
+                                  <Tooltip content="Ask the agent about this line">
+                                    <button
+                                      type="button"
+                                      onClick={() => onAskAgent?.(target)}
+                                      aria-label={`Ask the agent about line ${target.line}`}
+                                      className="flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                                    >
+                                      <Bot size={9} aria-hidden />
+                                    </button>
+                                  </Tooltip>
                                 </span>
                               ) : null}
                             </td>

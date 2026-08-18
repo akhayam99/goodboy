@@ -1,5 +1,5 @@
 import { ExternalLink } from 'lucide-react';
-import { Chip } from '@goodboy/ui';
+import { Chip, Tooltip } from '@goodboy/ui';
 import type { CommentThread } from '../../comment-threads';
 import { isBot } from '../../comment-threads';
 import {
@@ -52,15 +52,16 @@ export const OpenThread = ({ thread, link, onOpenUrl }: Props) => {
             title="This comment is anchored to code that later commits changed"
           />
         ) : null}
-        <button
-          type="button"
-          onClick={() => onOpenUrl(head.url)}
-          title="Open in browser"
-          aria-label="Open in browser"
-          className="ml-auto rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-        >
-          <ExternalLink size={12} aria-hidden />
-        </button>
+        <Tooltip content="Open in browser">
+          <button
+            type="button"
+            onClick={() => onOpenUrl(head.url)}
+            aria-label="Open in browser"
+            className="ml-auto rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <ExternalLink size={12} aria-hidden />
+          </button>
+        </Tooltip>
       </div>
 
       {head.path != null && head.path !== '' ? (

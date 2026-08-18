@@ -82,7 +82,7 @@ export const AgentBrief = ({ session, agent }: Props) => {
     <div className="flex flex-col gap-4">
       <AgentBriefQuestions session={session} agent={agent} />
       {summary !== '' ? (
-        <SectionSurface label={hasOutputSummary ? 'Outcome' : 'Latest'} headingSize="page">
+        <SectionSurface label={hasOutputSummary ? 'Outcome' : 'Latest'} headingLevel={2}>
           <div className="text-sm text-foreground">
             <Markdown text={stripControlMarkers(summary)} />
           </div>
@@ -93,7 +93,7 @@ export const AgentBrief = ({ session, agent }: Props) => {
       ) : null}
       {!isTerminal ? (
         <SectionSurface label="Now">
-          <div className="flex items-center gap-2 text-sm text-foreground">
+          <div className="flex items-center gap-2 text-xs text-foreground">
             <StatusDot tone={now.tone} size="sm" pulsing={now.isPulsing} />
             <span>{now.label}</span>
           </div>

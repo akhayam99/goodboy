@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Divider, cn } from '@goodboy/ui';
+import { cn, Divider, Tooltip } from '@goodboy/ui';
 import { X } from 'lucide-react';
 import { PANE_RHYTHM } from '@goodboy/ui';
 
@@ -10,7 +10,7 @@ type Props = {
   readonly onClose?: () => void;
 };
 
-export const InspectorHeader = ({ title, closeLabel, actions, onClose }: Props) => (
+export const InspectorHeader = ({ title, closeLabel = 'close panel', actions, onClose }: Props) => (
   <>
     <div
       className={cn('flex shrink-0 items-center justify-between gap-2', PANE_RHYTHM.rail.header)}
@@ -21,14 +21,16 @@ export const InspectorHeader = ({ title, closeLabel, actions, onClose }: Props) 
       <div className="flex shrink-0 items-center gap-0.5">
         {actions}
         {onClose !== undefined && (
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={closeLabel}
-            className="rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
-          >
-            <X size={14} aria-hidden />
-          </button>
+          <Tooltip content={closeLabel}>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={closeLabel}
+              className="rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
+            >
+              <X size={14} aria-hidden />
+            </button>
+          </Tooltip>
         )}
       </div>
     </div>

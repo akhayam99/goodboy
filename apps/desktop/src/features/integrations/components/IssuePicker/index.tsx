@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cn, EmptyState, ScrollFade, Skeleton, useDropdown } from '@goodboy/ui';
+import { cn, EmptyState, ScrollFade, Skeleton, Tooltip, useDropdown } from '@goodboy/ui';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 import type { IssueCandidate } from '../../fetchIssueCandidates';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -178,32 +178,36 @@ export const IssuePicker = ({
           onKeyDown={onKeyDown}
         />
         {value != null && value.url !== '' && (
+          <Tooltip content="Open issue in browser">
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={(event) => {
+                event.stopPropagation();
+                void openUrl(value.url);
+              }}
+              aria-label="Open issue in browser"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <ExternalLink size={12} aria-hidden />
+            </button>
+          </Tooltip>
+        )}
+        <Tooltip content={isOpen ? 'Close issue list' : 'Open issue list'}>
           <button
             type="button"
             tabIndex={-1}
-            onClick={(event) => {
-              event.stopPropagation();
-              void openUrl(value.url);
-            }}
-            aria-label="Open issue in browser"
+            onClick={togglePanel}
+            aria-label={isOpen ? 'Close issue list' : 'Open issue list'}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <ExternalLink size={12} aria-hidden />
+            <ChevronDown
+              size={13}
+              aria-hidden
+              className={cn('motion-safe:transition-transform', isOpen && 'rotate-180')}
+            />
           </button>
-        )}
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={togglePanel}
-          aria-label={isOpen ? 'Close issue list' : 'Open issue list'}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <ChevronDown
-            size={13}
-            aria-hidden
-            className={cn('motion-safe:transition-transform', isOpen && 'rotate-180')}
-          />
-        </button>
+        </Tooltip>
       </div>
 
       {isOpen && pasted == null && isLoading && rows.length === 0 && (

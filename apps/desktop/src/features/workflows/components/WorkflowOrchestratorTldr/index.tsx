@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Chip, Divider, Markdown, type Tone } from '@goodboy/ui';
+import { Chip, Divider, Markdown, Tooltip, type Tone } from '@goodboy/ui';
 import type { Step, WorkflowRun } from '@goodboy/types';
 
 const COLLAPSED_COUNT = 3;
@@ -123,26 +123,28 @@ export const WorkflowOrchestratorTldr = ({ steps, run }: Props) => {
                 data-testid="workflow-orchestrator-closing"
                 className="flex min-w-0 flex-col gap-1"
               >
-                <button
-                  type="button"
-                  aria-expanded={closingOpen}
-                  aria-label={`Why the run ended: ${OUTCOME_LABEL[outcome]}`}
-                  onClick={() => setClosingOpen((open) => !open)}
-                  className={ROW_BUTTON}
-                >
-                  <Chip
-                    tone={OUTCOME_TONE[outcome]}
-                    size="xs"
-                    bordered={false}
-                    label={OUTCOME_LABEL[outcome]}
-                    className="shrink-0 font-semibold"
-                  />
-                  {!closingOpen && (
-                    <span className="min-w-0 flex-1 truncate text-muted-foreground">
-                      {closingReason}
-                    </span>
-                  )}
-                </button>
+                <Tooltip content={`Why the run ended: ${OUTCOME_LABEL[outcome]}`}>
+                  <button
+                    type="button"
+                    aria-expanded={closingOpen}
+                    aria-label={`Why the run ended: ${OUTCOME_LABEL[outcome]}`}
+                    onClick={() => setClosingOpen((open) => !open)}
+                    className={ROW_BUTTON}
+                  >
+                    <Chip
+                      tone={OUTCOME_TONE[outcome]}
+                      size="xs"
+                      bordered={false}
+                      label={OUTCOME_LABEL[outcome]}
+                      className="shrink-0 font-semibold"
+                    />
+                    {!closingOpen && (
+                      <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                        {closingReason}
+                      </span>
+                    )}
+                  </button>
+                </Tooltip>
                 {closingOpen ? (
                   <div className="min-w-0 pl-5">
                     <Markdown text={closingReason} className="text-2xs leading-relaxed" />

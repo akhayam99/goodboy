@@ -168,7 +168,9 @@ describe('WorkflowStepRow', () => {
     expect(planButton.className).toContain(planTint.borderSoft);
     fireEvent.click(planButton);
 
-    expect(screen.getByTitle(plan.title).textContent).toContain('Plan');
+    expect(screen.getByRole('button', { name: `Open plan: ${plan.title}` }).textContent).toContain(
+      'Plan',
+    );
     const event = onOpen.mock.calls[0]?.[0];
     if (!(event instanceof CustomEvent)) {
       throw new Error('expected a plan studio event');
@@ -213,7 +215,7 @@ describe('WorkflowStepRow', () => {
     expect(screen.getByRole('button', { name: /open from plan:/i }).textContent).toContain(
       'From plan',
     );
-    expect(screen.getByTitle(plan.title)).toBeTruthy();
+    expect(screen.getByRole('button', { name: `Open from plan: ${plan.title}` })).toBeTruthy();
   });
 
   it('falls back to the latest run plan for a completed consumer without consumptions', () => {
@@ -235,7 +237,6 @@ describe('WorkflowStepRow', () => {
 
     renderRow({ kind: 'generic', runOverride: consumer });
 
-    expect(screen.getByRole('button', { name: /open from plan:/i })).toBeTruthy();
-    expect(screen.getByTitle(plan.title)).toBeTruthy();
+    expect(screen.getByRole('button', { name: `Open from plan: ${plan.title}` })).toBeTruthy();
   });
 });

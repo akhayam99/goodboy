@@ -8,7 +8,16 @@ import {
   resolveModelArgs,
   resolveStoredModelSelection,
 } from '@goodboy/core';
-import { Button, cn, Divider, DropdownPortal, Popover, ScrollFade, useDropdown } from '@goodboy/ui';
+import {
+  Button,
+  cn,
+  Divider,
+  DropdownPortal,
+  Popover,
+  ScrollFade,
+  Tooltip,
+  useDropdown,
+} from '@goodboy/ui';
 import type { CatalogModel, ModelSelection, ProviderId } from '@goodboy/types';
 import {
   EFFORT_LABEL,
@@ -278,61 +287,68 @@ export const RoutingPicker = ({
       className={cn('relative flex items-center gap-1', variant === 'field' && 'w-full')}
     >
       {onReset != null && isOverridden && !disabled && (
-        <button
-          type="button"
-          onClick={onReset}
-          title={
+        <Tooltip
+          content={
             defaultSummary != null ? `reset to default (${defaultSummary})` : 'reset to default'
           }
-          aria-label="Reset routing override"
-          className="shrink-0 rounded-full p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
         >
-          <RotateCcw size={10} aria-hidden />
-        </button>
+          <button
+            type="button"
+            onClick={onReset}
+            aria-label="Reset routing override"
+            className="shrink-0 rounded-full p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <RotateCcw size={10} aria-hidden />
+          </button>
+        </Tooltip>
       )}
-      <button
-        type="button"
-        onClick={toggle}
-        disabled={disabled}
-        title={disabled ? (disabledTitle ?? summary) : `${summary}. Click to change.`}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-label={ariaLabel != null ? `${ariaLabel}: ${summary}` : summary}
-        className={cn(
-          'items-center gap-1.5 text-xs transition-colors',
-          variant === 'pill'
-            ? 'inline-flex rounded-full px-2.5 py-0.5'
-            : 'flex w-full rounded-md border px-2 py-1.5 text-left',
-          variant === 'field' &&
-            (open
-              ? 'border-primary bg-primary/5'
-              : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50'),
-          variant === 'pill' &&
-            (isOverridden
-              ? 'bg-warning/10 ring-1 ring-warning/30 hover:bg-warning/15'
-              : 'bg-subtle hover:bg-muted'),
-          disabled && 'cursor-not-allowed opacity-60',
-        )}
+      <Tooltip
+        content={disabled ? (disabledTitle ?? summary) : `${summary}. Click to change.`}
+        anchorClassName={variant === 'field' ? 'w-full' : undefined}
       >
-        <span className="flex min-w-0 flex-1 items-center gap-1.5">
-          <TriggerLabel
-            provider={routing.provider}
-            model={routing.model}
-            modelDetail={routingVariant?.label}
-            effort={routing.effort}
-            showEffort={showEffort}
-            verbosity={verbosity}
-          />
-        </span>
-        <ChevronDown
-          size={11}
-          aria-hidden
+        <button
+          type="button"
+          onClick={toggle}
+          disabled={disabled}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-label={ariaLabel != null ? `${ariaLabel}: ${summary}` : summary}
           className={cn(
-            'shrink-0 text-muted-foreground transition-transform',
-            open && 'rotate-180',
+            'items-center gap-1.5 text-xs transition-colors',
+            variant === 'pill'
+              ? 'inline-flex rounded-full px-2.5 py-0.5'
+              : 'flex w-full rounded-md border px-2 py-1.5 text-left',
+            variant === 'field' &&
+              (open
+                ? 'border-primary bg-primary/5'
+                : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50'),
+            variant === 'pill' &&
+              (isOverridden
+                ? 'bg-warning/10 ring-1 ring-warning/30 hover:bg-warning/15'
+                : 'bg-subtle hover:bg-muted'),
+            disabled && 'cursor-not-allowed opacity-60',
           )}
-        />
-      </button>
+        >
+          <span className="flex min-w-0 flex-1 items-center gap-1.5">
+            <TriggerLabel
+              provider={routing.provider}
+              model={routing.model}
+              modelDetail={routingVariant?.label}
+              effort={routing.effort}
+              showEffort={showEffort}
+              verbosity={verbosity}
+            />
+          </span>
+          <ChevronDown
+            size={11}
+            aria-hidden
+            className={cn(
+              'shrink-0 text-muted-foreground transition-transform',
+              open && 'rotate-180',
+            )}
+          />
+        </button>
+      </Tooltip>
       <DropdownPortal portal={portal} portalTarget={portalTarget}>
         {open && (
           <Popover

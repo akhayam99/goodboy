@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AlertCircle, AlertTriangle, Bell, CheckCircle2, Info, X } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, Tooltip } from '@goodboy/ui';
 
 export type ToastKind = 'info' | 'warning' | 'error' | 'success';
 
@@ -232,14 +232,16 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
             </button>
           ) : null}
         </div>
-        <button
-          type="button"
-          className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 hover:bg-muted hover:text-foreground"
-          onClick={() => onDismiss(toast.id)}
-          aria-label="Dismiss notification"
-        >
-          <X size={13} aria-hidden />
-        </button>
+        <Tooltip content="Dismiss notification">
+          <button
+            type="button"
+            className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+            onClick={() => onDismiss(toast.id)}
+            aria-label="Dismiss notification"
+          >
+            <X size={13} aria-hidden />
+          </button>
+        </Tooltip>
       </div>
     </div>
   );

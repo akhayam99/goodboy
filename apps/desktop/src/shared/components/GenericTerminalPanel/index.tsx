@@ -10,6 +10,7 @@ import { RotateCcw } from 'lucide-react';
 import { useThemeStore } from '../../lib/theme';
 import { openUrl } from '../../lib/editor';
 import { resolveTerminalTheme } from './terminal-theme';
+import { Tooltip } from '@goodboy/ui';
 
 export type TerminalDriver = {
   write(data: string): void;
@@ -207,15 +208,16 @@ export const GenericTerminalPanel = ({
         className="size-full overflow-hidden"
       />
       {onRestart ? (
-        <button
-          type="button"
-          onClick={onRestart}
-          title="Restart shell"
-          aria-label="Restart shell"
-          className="absolute right-2 top-2 z-10 rounded-sm bg-background/80 p-1 text-muted-foreground backdrop-blur hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-        >
-          <RotateCcw size={12} aria-hidden />
-        </button>
+        <Tooltip content="Restart shell">
+          <button
+            type="button"
+            onClick={onRestart}
+            aria-label="Restart shell"
+            className="absolute right-2 top-2 z-10 rounded-sm bg-background/80 p-1 text-muted-foreground backdrop-blur hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+          >
+            <RotateCcw size={12} aria-hidden />
+          </button>
+        </Tooltip>
       ) : null}
     </div>
   );

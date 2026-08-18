@@ -20,7 +20,36 @@ lives here.
 pair, the box height follows whatever `line-height` the size inherits: `3xs` and
 `2xs` inherited the body's 1.55 and resolved to 15.5px and 17.05px, which put the
 lens rail's group labels and count chips on a fractional pixel and made a row
-carrying a count taller than a row without one.
+carrying a count taller than a row without one. `3xs`, `2xs` and `sm` carry a
+pinned line height in the tokens; `xs` does not, so a repeated row using it
+writes `leading-4` at the call site.
+
+### One grade per role
+
+The grade follows what a thing **is**, not which file draws it. A row label is a
+row label in the activity feed and in a brief, so it is the same size in both.
+The session Overview is the reference surface: its density was calibrated
+deliberately, and a surface that runs a grade larger for the same role forces the
+user to pick between a comfortable Overview and a comfortable everything else,
+since window zoom scales all of them at once.
+
+| role                                             | grade               | resolves to |
+| ------------------------------------------------ | ------------------- | ----------- |
+| pane title                                       | `text-xl`           | 20px        |
+| section label, and its `hint`                    | `text-2xs`          | 11px / 16px |
+| top-level row label                              | `text-sm leading-5` | 14px / 20px |
+| nested row label, a child of the row above it    | `text-xs leading-4` | 12px / 16px |
+| secondary label beside a row label               | `text-2xs`          | 11px / 16px |
+| chip                                             | `text-2xs`          | 11px / 16px |
+| metadata inside a row: time, ordinal, cost, hint | `text-3xs`          | 10px / 14px |
+| status label                                     | `text-xs`           | 12px        |
+
+**Prose is the one exception, and it is a reading grade, not a drift.** Human and
+assistant transcript messages, a markdown body and any artifact the reader came
+for stay on the comfortable grade (`text-sm`). Shrinking those makes the app
+worse. Chrome around prose still takes the grade its role asks for: a document
+pane's section label is an eyebrow even when the body under it is `text-sm`,
+because `DESIGN.md` compresses chrome without limit and never the artifact.
 
 ## Radius scale
 
@@ -218,7 +247,9 @@ That row also shares the measure of the content it commits, never stretched acro
 
 ## Section rhythm
 
-`PANE_RHYTHM.stack` separates peer sections and `Divider` separates regions whose boundary matters. Section children do not add margins. `SectionHeader` is the canonical section heading and optional description: its default eyebrow size is for compact and scan surfaces, while `size="page"` is for a reading-surface section that needs an `h2`. Description copy comes only through `hint`, so its size and muted tone remain paired with the heading grade.
+`PANE_RHYTHM.stack` separates peer sections and `Divider` separates regions whose boundary matters. Section children do not add margins. `SectionHeader` is the canonical section heading and optional description: the eyebrow size is the default for every surface, and `size="page"` is reserved for a document whose body is prose the reader came for, such as the guide or a creation flow's form sections. Description copy comes only through `hint`, so its size and muted tone remain paired with the heading grade.
+
+**The outline is independent of the grade.** `headingLevel` promotes an eyebrow-grade label to an `h2` or `h3`, so a pane section keeps its place in the document outline without taking the page grade. A section that needs a heading is not thereby a section that needs bigger type.
 
 `SectionSurface` is `SectionHeader` on the one raised section surface, for a
 reading surface whose sections would otherwise be separated by vertical space
@@ -240,6 +271,27 @@ Artifacts exempted by `DESIGN.md`, including the text of an open question, never
 visible; lifecycle and destructive bottom right. Hover may reveal lifecycle
 actions without moving either slot, and keyboard focus reveals the same. Icon
 actions use the shared `Tooltip`, never the native `title`.
+
+**A control whose only content is an icon carries a tooltip, everywhere.** The
+`aria-label` names it for assistive tech and leaves the pointer with nothing, so
+`IconButton`, `OverflowMenu`, `CopyButton` and `RefreshIconButton` wrap
+themselves, and a hand-rolled icon button wraps itself in `Tooltip`. The native
+`title` waits a second, renders in the OS chrome rather than ours, and cannot be
+positioned or styled. Passing `tooltip` says more than the accessible name when
+the control needs it, and `IconButton` refuses a `title` at the type level.
+
+There is no exception for a control that can go `disabled`, and no native
+`title` for that state either. A disabled element dispatches no mouse event and
+truncates the event path above itself, so listeners on the control are dead in
+exactly the state where the user most needs to know why nothing happens.
+`Tooltip` answers that itself: a trigger that declares `disabled` gets an anchor
+span that carries the listeners and takes `pointer-events` away from the
+disabled control, so the hover lands on the anchor and the tooltip still opens.
+A trigger that needs its anchor shaped, because it is out of flow or stretches,
+passes `anchorClassName` rather than hand-rolling a wrapper, since a wrapper
+between `Tooltip` and the control hides the `disabled` the primitive acts on.
+Keyboard focus is still out of reach while `disabled`, which is the attribute's
+own doing. `icon-only-controls-carry-a-tooltip` holds the rule.
 
 **One creation grammar.** Bare sections stacked in one column, never a bordered
 box around the whole thing; secondary affordances in `SectionHeader`'s
