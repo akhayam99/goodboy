@@ -29,7 +29,7 @@ vi.mock('../../../chat/components/ChatView', () => ({
   ChatView: () => <div>Transcript body</div>,
 }));
 vi.mock('./AgentBrief', () => ({ AgentBrief: () => <div>Brief body</div> }));
-vi.mock('../AgentInspector/AgentHeaderActions', () => ({ AgentHeaderActions: () => null }));
+vi.mock('../AgentHeaderActions', () => ({ AgentHeaderActions: () => null }));
 vi.mock('../ResolverDetailPane', () => ({ ResolverDetailPane: () => <div>Resolver body</div> }));
 
 import { AgentDetailPane } from './index';

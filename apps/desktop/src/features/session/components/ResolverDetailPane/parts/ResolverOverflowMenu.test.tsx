@@ -3,8 +3,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Agent } from '@goodboy/types';
-import type { ResolverAction } from '../../resolverActions';
-import type { ResolverActionsController } from '../../hooks/useResolverActions';
+import type { ResolverAction } from '../../../resolverActions';
+import type { ResolverActionsController } from '../../../hooks/useResolverActions';
 import { ResolverOverflowMenu } from './ResolverOverflowMenu';
 
 const FORCE_CLOSE = {

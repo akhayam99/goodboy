@@ -1,6 +1,6 @@
 import { Ban, CheckCheck, CircleHelp, Lock, Search } from 'lucide-react';
 import { Chip, type Tone } from '@goodboy/ui';
-import type { ResolverThreadSettlementKind } from '../../resolverThreadSettlements';
+import type { ResolverThreadSettlementKind } from '../../../resolverThreadSettlements';
 
 type Props = {
   readonly kind: ResolverThreadSettlementKind;

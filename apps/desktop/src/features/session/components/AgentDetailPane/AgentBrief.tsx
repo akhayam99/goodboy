@@ -9,7 +9,7 @@ import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren'
 import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
-import { CostsSection } from '../AgentInspector/CostsSection';
+import { CostsSection } from './CostsSection';
 import { AgentBriefChildren } from './AgentBriefChildren';
 import { AgentBriefPlans } from './AgentBriefPlans';
 import { AgentFollowUps } from './AgentFollowUps';

@@ -3,7 +3,7 @@ import { cn } from '@goodboy/ui';
 import type { BranchCommit } from '@goodboy/types';
 import { CommitRow } from './CommitRow';
 import { ResolverPanelSection } from './ResolverPanelSection';
-import { displayPath } from '../../../../shared/utils/display-path';
+import { displayPath } from '../../../../../shared/utils/display-path';
 
 type Props = {
   readonly files: ReadonlyArray<string>;

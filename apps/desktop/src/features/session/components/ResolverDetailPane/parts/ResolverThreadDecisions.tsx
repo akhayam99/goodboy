@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { Textarea } from '@goodboy/ui';
 import { GhostActionButton } from '@goodboy/ui';
-import { RESOLVER_ACTION_BUSY_LABEL } from '../../resolverActionBusyLabel';
-import { RESOLVER_ACTION_ICON } from '../../resolverActionIcon';
-import { RESOLVER_ACTION_TONE } from '../../resolverActionTone';
-import type { ResolverActionKind } from '../../resolverActions';
+import { RESOLVER_ACTION_BUSY_LABEL } from '../../../resolverActionBusyLabel';
+import { RESOLVER_ACTION_ICON } from '../../../resolverActionIcon';
+import { RESOLVER_ACTION_TONE } from '../../../resolverActionTone';
+import type { ResolverActionKind } from '../../../resolverActions';
 import type {
   ResolverThreadDecisionPlan,
   ResolverThreadNotes,
-} from '../../resolverThreadDecisions';
-import { ResolverConfirm } from '../ResolverConfirm';
+} from '../../../resolverThreadDecisions';
+import { ResolverConfirm } from '../../ResolverConfirm';
 
 type Props = {
   readonly plan: ResolverThreadDecisionPlan;

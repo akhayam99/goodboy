@@ -12,7 +12,7 @@ import type {
   TurnEvent,
   WorkspaceId,
 } from '@goodboy/types';
-import type { ResolverState } from '../../resolver-linkage';
+import type { ResolverState } from '../../../resolver-linkage';
 
 const SESSION_ID = 'session-1' as SessionId;
 const RUNNING_ID = 'resolver-1' as AgentId;
@@ -179,17 +179,17 @@ const reset = ({
   });
 };
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (s: typeof h.state) => T) => selector(h.state),
   useDiffComments: () => [],
 }));
 
-vi.mock('../../../../store/transcript', () => ({
+vi.mock('../../../../../store/transcript', () => ({
   useTranscript: () => h.runtime.events,
 }));
 
-vi.mock('../../../../store/slices/worktrees/useSessionRepo', () => ({
+vi.mock('../../../../../store/slices/worktrees/useSessionRepo', () => ({
   useSessionRepo: () => ({
     repoRoot: '/tmp/repo',
     worktreePath: '/tmp/wt',
@@ -200,10 +200,10 @@ vi.mock('../../../../store/slices/worktrees/useSessionRepo', () => ({
 }));
 
 vi.mock('@goodboy/db', () => ({ listTurnEventsForAgent: h.listTurnEventsForAgent }));
-vi.mock('../../../../shared/lib/db', () => ({ tauriDatabase: {} }));
-vi.mock('../../../worktree/worktree', () => ({ listBranchCommits: h.listBranchCommits }));
+vi.mock('../../../../../shared/lib/db', () => ({ tauriDatabase: {} }));
+vi.mock('../../../../worktree/worktree', () => ({ listBranchCommits: h.listBranchCommits }));
 
-vi.mock('../../hooks/useAgentMetrics', () => ({
+vi.mock('../../../hooks/useAgentMetrics', () => ({
   useAgentMetrics: () => ({
     latestTelemetryByAgentId: new Map(),
     aggregatesByAgentId: new Map(),
@@ -212,11 +212,11 @@ vi.mock('../../hooks/useAgentMetrics', () => ({
   }),
 }));
 
-vi.mock('../../../chat/components/ChatView', () => ({
+vi.mock('../../../../chat/components/ChatView', () => ({
   ChatView: () => <div data-testid="chat-view" />,
 }));
 
-import { ResolverDetailPane } from '../ResolverDetailPane';
+import { ResolverDetailPane } from '..';
 
 const SESSION: Session = {
   id: SESSION_ID,

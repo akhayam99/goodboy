@@ -17,15 +17,12 @@ import { resolverCommitSha } from '../../resolverCommitSha';
 import { resolverThreadCommitShas } from '../../resolverThreadCommitShas';
 import { resolverTallySentence } from '../../resolverTallySentence';
 import { agentThreadIds } from '../../agentThreadIds';
-import { AgentHeaderActions } from '../AgentInspector/AgentHeaderActions';
-import { ChangesSection } from '../AgentInspector/ChangesSection';
-import {
-  ResolverCommentSection,
-  type ResolverCommentLink,
-} from '../AgentInspector/ResolverCommentSection';
-import { ResolverOverflowMenu } from '../AgentInspector/ResolverOverflowMenu';
-import { ResolverMetaLine } from '../AgentInspector/ResolverMetaLine';
-import { ResolverThreadList } from '../AgentInspector/ResolverThreadList';
+import { AgentHeaderActions } from '../AgentHeaderActions';
+import { ChangesSection } from './parts/ChangesSection';
+import { ResolverCommentSection, type ResolverCommentLink } from './parts/ResolverCommentSection';
+import { ResolverOverflowMenu } from './parts/ResolverOverflowMenu';
+import { ResolverMetaLine } from './parts/ResolverMetaLine';
+import { ResolverThreadList } from './parts/ResolverThreadList';
 import {
   ResolverStateBadge,
   resolverBadgeState,

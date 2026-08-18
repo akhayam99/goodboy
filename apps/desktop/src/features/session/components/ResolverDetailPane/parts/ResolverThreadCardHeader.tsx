@@ -1,5 +1,5 @@
 import { ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
-import type { ResolverThreadSettlement } from '../../resolverThreadSettlements';
+import type { ResolverThreadSettlement } from '../../../resolverThreadSettlements';
 import { ResolverOutcomeChip } from './ResolverOutcomeChip';
 
 type Props = {
