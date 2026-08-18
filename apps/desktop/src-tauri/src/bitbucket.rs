@@ -6,9 +6,12 @@ use serde_json::Value;
 use tauri::State;
 use thiserror::Error;
 
+use crate::integration_credentials::{self, IntegrationCredentialError};
 use crate::secrets;
 
-pub struct BitbucketTokenCache(Mutex<HashMap<String, String>>);
+const PROVIDER: &str = "bitbucket";
+
+pub struct BitbucketTokenCache(integration_credentials::SecretCache);
 
 impl BitbucketTokenCache {
     pub fn new() -> Self {
@@ -19,10 +22,6 @@ impl BitbucketTokenCache {
 fn http_client() -> &'static reqwest::Client {
     static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
     CLIENT.get_or_init(reqwest::Client::new)
-}
-
-fn credential_key(workspace_id: &str) -> String {
-    format!("goodboy.workspace.{}.bitbucket", workspace_id)
 }
 
 const API_BASE: &str = "https://api.bitbucket.org/2.0";
@@ -43,6 +42,8 @@ pub enum BitbucketError {
     InvalidShape(String),
     #[error("no personal API key stored for workspace {0}")]
     NoToken(String),
+    #[error("credential store error: {0}")]
+    Credential(#[from] IntegrationCredentialError),
     #[error("secret store error: {0}")]
     Secret(#[from] secrets::SecretError),
 }
@@ -57,6 +58,7 @@ impl BitbucketError {
             BitbucketError::NotFound(_) => "not_found",
             BitbucketError::InvalidShape(_) => "shape",
             BitbucketError::NoToken(_) => "no_token",
+            BitbucketError::Credential(_) => "credential",
             BitbucketError::Secret(_) => "secret",
         }
     }
@@ -295,17 +297,8 @@ async fn send_no_content(
 }
 
 fn read_token(workspace_id: &str, cache: &BitbucketTokenCache) -> Result<String, BitbucketError> {
-    if let Some(token) = cache.0.lock().unwrap().get(workspace_id) {
-        return Ok(token.clone());
-    }
-    let token = secrets::read(&credential_key(workspace_id))?
-        .ok_or_else(|| BitbucketError::NoToken(workspace_id.to_string()))?;
-    cache
-        .0
-        .lock()
-        .unwrap()
-        .insert(workspace_id.to_string(), token.clone());
-    Ok(token)
+    integration_credentials::read_for_workspace(PROVIDER, workspace_id, &cache.0)?
+        .ok_or_else(|| BitbucketError::NoToken(workspace_id.to_string()))
 }
 
 #[derive(Debug, Deserialize)]
@@ -873,10 +866,14 @@ fn reply_write(
 
 #[tauri::command]
 pub async fn bitbucket_validate_connection(
+    credential_id: String,
     workspace_slug: String,
     email: String,
-    api_token: String,
+    api_token: Option<String>,
+    cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketConnection, BitbucketError> {
+    let api_token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, &cache.0)?;
     let credentials = Credentials {
         email: &email,
         token: &api_token,
@@ -898,22 +895,13 @@ pub async fn bitbucket_validate_connection(
 
 #[tauri::command]
 pub async fn bitbucket_connect(
-    workspace_id: String,
-    api_token: String,
+    credential_id: String,
+    api_token: Option<String>,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<(), BitbucketError> {
-    secrets::set(&credential_key(&workspace_id), &api_token)?;
-    cache.0.lock().unwrap().insert(workspace_id, api_token);
-    Ok(())
-}
-
-#[tauri::command]
-pub async fn bitbucket_disconnect(
-    workspace_id: String,
-    cache: State<'_, BitbucketTokenCache>,
-) -> Result<(), BitbucketError> {
-    secrets::clear(&credential_key(&workspace_id))?;
-    cache.0.lock().unwrap().remove(&workspace_id);
+    let api_token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, &cache.0)?;
+    integration_credentials::store_secret(&credential_id, &api_token, &cache.0)?;
     Ok(())
 }
 
@@ -1232,11 +1220,6 @@ mod tests {
             envelope["next"] = Value::String(url.to_string());
         }
         serde_json::from_value(envelope).unwrap()
-    }
-
-    #[test]
-    fn credential_key_is_namespaced_per_workspace() {
-        assert_eq!(credential_key("ws-1"), "goodboy.workspace.ws-1.bitbucket");
     }
 
     #[test]

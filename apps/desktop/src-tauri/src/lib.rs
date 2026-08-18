@@ -13,6 +13,7 @@ mod external_terminal;
 mod file_versions;
 mod github;
 mod gitlab;
+mod integration_credentials;
 mod jira;
 mod linear;
 mod parallel_groups;
@@ -336,20 +337,19 @@ pub fn run() {
             github::gh_run,
             github::git_push,
             github::gh_pr_diff,
+            integration_credentials::integration_credentials_adopt,
+            integration_credentials::integration_credential_forget,
             linear::linear_connect,
-            linear::linear_disconnect,
             linear::linear_fetch_assigned_issues,
             linear::linear_fetch_issue,
             linear::linear_fetch_issue_comments,
             linear::linear_create_comment,
             linear::linear_update_issue,
             sentry::sentry_connect,
-            sentry::sentry_disconnect,
             sentry::sentry_fetch_issues,
             sentry::sentry_fetch_issue,
             sentry::sentry_fetch_issue_detail,
             gitlab::gitlab_connect,
-            gitlab::gitlab_disconnect,
             gitlab::gitlab_fetch_assigned_issues,
             gitlab::gitlab_fetch_issue,
             gitlab::gitlab_update_issue,
@@ -372,7 +372,6 @@ pub fn run() {
             gitlab::gitlab_unapprove_mr,
             gitlab::gitlab_update_mr_state,
             jira::jira_validate_connection,
-            jira::jira_disconnect,
             jira::jira_list_issues,
             jira::jira_get_issue,
             jira::jira_list_comments,
@@ -384,7 +383,6 @@ pub fn run() {
             jira::jira_transition_issue,
             bitbucket::bitbucket_validate_connection,
             bitbucket::bitbucket_connect,
-            bitbucket::bitbucket_disconnect,
             bitbucket::bitbucket_list_pull_requests,
             bitbucket::bitbucket_get_pull_request,
             bitbucket::bitbucket_pull_request_diff,
@@ -401,7 +399,6 @@ pub fn run() {
             bitbucket::bitbucket_reply_to_pull_request_comment,
             slack::slack_validate_connection,
             slack::slack_connect,
-            slack::slack_disconnect,
             slack::slack_list_channels,
             slack::slack_list_thread_heads,
             slack::slack_get_thread,
