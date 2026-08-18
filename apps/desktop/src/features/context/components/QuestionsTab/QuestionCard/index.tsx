@@ -120,21 +120,23 @@ export const QuestionCard = ({
         </div>
       </div>
 
-      <div
-        role={groupRole}
-        aria-label={groupLabel}
-        className="flex flex-wrap items-center gap-1.5 pl-6"
-      >
-        {suggestions.map((suggestion) => (
-          <SuggestionChip
-            key={suggestion}
-            label={suggestion}
-            mode={mode}
-            selected={selectedSuggestions.includes(suggestion)}
-            recommended={recommended.length > 0 && suggestion === recommended}
-            onToggle={() => onToggleSuggestion(question.id, suggestion, mode)}
-          />
-        ))}
+      <div className="flex flex-wrap items-center gap-1.5 pl-6">
+        <div
+          role={groupRole}
+          aria-label={groupLabel}
+          className="flex flex-wrap items-center gap-1.5"
+        >
+          {suggestions.map((suggestion) => (
+            <SuggestionChip
+              key={suggestion}
+              label={suggestion}
+              mode={mode}
+              selected={selectedSuggestions.includes(suggestion)}
+              recommended={recommended.length > 0 && suggestion === recommended}
+              onToggle={() => onToggleSuggestion(question.id, suggestion, mode)}
+            />
+          ))}
+        </div>
         <CustomAnswerField
           value={customAnswer}
           open={showCustomField}
