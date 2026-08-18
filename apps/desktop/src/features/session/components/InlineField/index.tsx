@@ -1,5 +1,5 @@
 import { Pencil } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, Tooltip } from '@goodboy/ui';
 
 type Props = {
   label: string;
@@ -16,19 +16,21 @@ export const InlineField = ({ label, children, onEdit, editLabel }: Props) => {
           {label}
         </span>
         {onEdit ? (
-          <button
-            type="button"
-            onClick={onEdit}
-            aria-label={editLabel ?? `edit ${label}`}
-            className={cn(
-              'inline-flex size-4 items-center justify-center rounded text-muted-foreground/50',
-              'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
-              'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-              'group-hover/inline:opacity-100 motion-reduce:opacity-60',
-            )}
-          >
-            <Pencil size={10} aria-hidden />
-          </button>
+          <Tooltip content={editLabel ?? `Edit ${label}`}>
+            <button
+              type="button"
+              onClick={onEdit}
+              aria-label={editLabel ?? `edit ${label}`}
+              className={cn(
+                'inline-flex size-4 items-center justify-center rounded text-muted-foreground/50',
+                'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
+                'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+                'group-hover/inline:opacity-100 motion-reduce:opacity-60',
+              )}
+            >
+              <Pencil size={10} aria-hidden />
+            </button>
+          </Tooltip>
         ) : null}
       </div>
       {children}

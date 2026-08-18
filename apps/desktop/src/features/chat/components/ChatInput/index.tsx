@@ -1,6 +1,6 @@
 import { useRef, useCallback, useEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Paperclip, Send, Square } from 'lucide-react';
-import { Divider, Textarea, cn, formatUsd } from '@goodboy/ui';
+import { cn, Divider, formatUsd, Textarea, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { resolveStoredModelSelection } from '@goodboy/core';
 import { useAppStore, useSessionCost } from '../../../../store';
@@ -488,42 +488,53 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               className="resize-none border-0 bg-transparent px-3 py-2 pr-12 text-sm text-foreground shadow-none placeholder:text-muted-foreground/60 focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
             />
             {isRunning && value.trim().length === 0 && attachments.length === 0 ? (
-              <button
-                type="button"
-                onClick={() => void cancelCurrentTurn(session.id)}
-                title="Cancel turn"
-                aria-label="Cancel turn"
-                className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg bg-danger/10 text-danger transition-colors hover:bg-danger/20"
-              >
-                <Square size={14} aria-hidden fill="currentColor" />
-              </button>
+              <Tooltip content="Cancel turn">
+                <button
+                  type="button"
+                  onClick={() => void cancelCurrentTurn(session.id)}
+                  aria-label="Cancel turn"
+                  className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg bg-danger/10 text-danger transition-colors hover:bg-danger/20"
+                >
+                  <Square size={14} aria-hidden fill="currentColor" />
+                </button>
+              </Tooltip>
             ) : (
-              <button
-                type="button"
-                onClick={() => void onSend()}
-                disabled={!canSend}
-                title={sendDisabledTitle ?? (isRunning ? 'Queue message (enter)' : 'Send (enter)')}
-                aria-label={isRunning ? 'Queue message' : 'Send message'}
-                className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
+              <Tooltip
+                content={
+                  sendDisabledTitle ?? (isRunning ? 'Queue message (enter)' : 'Send (enter)')
+                }
               >
-                <Send size={14} aria-hidden className="-translate-x-px" />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => void onSend()}
+                  disabled={!canSend}
+                  title={
+                    sendDisabledTitle ?? (isRunning ? 'Queue message (enter)' : 'Send (enter)')
+                  }
+                  aria-label={isRunning ? 'Queue message' : 'Send message'}
+                  className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
+                >
+                  <Send size={14} aria-hidden className="-translate-x-px" />
+                </button>
+              </Tooltip>
             )}
           </div>
           <Divider />
           <div className="flex h-9 items-center justify-between gap-2 px-2.5">
             <div className="flex items-center gap-2">
               <PermissionModePicker session={session} activeProvider={routing.effectiveProvider} />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={providerDisconnected}
-                title="Attach files"
-                aria-label="Attach files"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <Paperclip size={15} aria-hidden />
-              </button>
+              <Tooltip content="Attach files">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={providerDisconnected}
+                  title="Attach files"
+                  aria-label="Attach files"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Paperclip size={15} aria-hidden />
+                </button>
+              </Tooltip>
               <input
                 ref={fileInputRef}
                 type="file"

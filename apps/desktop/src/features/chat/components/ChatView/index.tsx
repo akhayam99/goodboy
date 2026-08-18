@@ -21,7 +21,7 @@ import type {
   TurnEvent,
   TurnProviderOverride,
 } from '@goodboy/types';
-import { Button, Divider, ScrollFade, cn } from '@goodboy/ui';
+import { Button, cn, Divider, ScrollFade, Tooltip } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
@@ -592,18 +592,19 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
           )}
         </ScrollFade>
         {!pinned && (
-          <button
-            type="button"
-            aria-label="Jump to latest"
-            title="Jump to latest"
-            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background/90 ring-1 ring-border-soft transition-colors hover:bg-muted"
-            onClick={() => {
-              const el = scrollerRef.current;
-              el?.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-            }}
-          >
-            <ArrowDown size={14} aria-hidden />
-          </button>
+          <Tooltip content="Jump to latest">
+            <button
+              type="button"
+              aria-label="Jump to latest"
+              className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background/90 ring-1 ring-border-soft transition-colors hover:bg-muted"
+              onClick={() => {
+                const el = scrollerRef.current;
+                el?.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+              }}
+            >
+              <ArrowDown size={14} aria-hidden />
+            </button>
+          </Tooltip>
         )}
       </div>
       {selectedAgentId != null &&

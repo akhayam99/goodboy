@@ -28,9 +28,10 @@ import {
   ScrollFade,
   SectionHeader,
   SegmentedTabs,
-  type SegmentedTabOption,
   Skeleton,
   Textarea,
+  Tooltip,
+  type SegmentedTabOption,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
@@ -1130,22 +1131,26 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                   <span className="px-1 text-2xs text-muted-foreground">
                                     Delete?
                                   </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => void onDeletePreset(t)}
-                                    aria-label={`Confirm delete ${t.name}`}
-                                    className="rounded-md p-1 text-danger transition-colors hover:bg-danger/10"
-                                  >
-                                    <Check size={12} aria-hidden />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setConfirmDeleteId(null)}
-                                    aria-label="Cancel delete"
-                                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-                                  >
-                                    <X size={12} aria-hidden />
-                                  </button>
+                                  <Tooltip content={`Confirm delete ${t.name}`}>
+                                    <button
+                                      type="button"
+                                      onClick={() => void onDeletePreset(t)}
+                                      aria-label={`Confirm delete ${t.name}`}
+                                      className="rounded-md p-1 text-danger transition-colors hover:bg-danger/10"
+                                    >
+                                      <Check size={12} aria-hidden />
+                                    </button>
+                                  </Tooltip>
+                                  <Tooltip content="Cancel delete">
+                                    <button
+                                      type="button"
+                                      onClick={() => setConfirmDeleteId(null)}
+                                      aria-label="Cancel delete"
+                                      className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                                    >
+                                      <X size={12} aria-hidden />
+                                    </button>
+                                  </Tooltip>
                                 </span>
                               ) : (
                                 <OverflowMenu

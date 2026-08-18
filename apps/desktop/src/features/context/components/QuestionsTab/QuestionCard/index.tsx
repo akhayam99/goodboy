@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Check, MessageCircleQuestion, X } from 'lucide-react';
-import { cn, Markdown, tintClasses } from '@goodboy/ui';
+import { cn, Markdown, tintClasses, Tooltip } from '@goodboy/ui';
 import type { OpenQuestion, OpenQuestionId, OpenQuestionSelectMode } from '@goodboy/types';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
@@ -88,20 +88,21 @@ export const QuestionCard = ({
             className="min-w-0 gap-1.5 break-words text-sm font-medium leading-relaxed text-foreground"
           />
         </div>
-        <button
-          type="button"
-          onClick={() => onDismiss(question.id)}
-          className={cn(
-            'shrink-0 rounded-md p-1 text-muted-foreground/60 opacity-0 transition-[opacity,color,background-color] duration-150',
-            'hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
-            'group-hover:opacity-100 motion-reduce:opacity-60',
-            animate && 'opacity-100',
-          )}
-          title="Dismiss question"
-          aria-label="Dismiss question"
-        >
-          {animate ? <Check size={12} className={warningTint.icon} /> : <X size={12} />}
-        </button>
+        <Tooltip content="Dismiss question">
+          <button
+            type="button"
+            onClick={() => onDismiss(question.id)}
+            className={cn(
+              'shrink-0 rounded-md p-1 text-muted-foreground/60 opacity-0 transition-[opacity,color,background-color] duration-150',
+              'hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
+              'group-hover:opacity-100 motion-reduce:opacity-60',
+              animate && 'opacity-100',
+            )}
+            aria-label="Dismiss question"
+          >
+            {animate ? <Check size={12} className={warningTint.icon} /> : <X size={12} />}
+          </button>
+        </Tooltip>
         <div className="flex items-center gap-2 text-2xs text-muted-foreground">
           <span>{formatRelativeAge({ fromIso: question.createdAt })}</span>
           {question.ownedByStepOrdinal != null && (

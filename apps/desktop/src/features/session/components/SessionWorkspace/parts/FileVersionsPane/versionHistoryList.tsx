@@ -1,5 +1,5 @@
 import { RotateCcw, Trash2 } from 'lucide-react';
-import { Button, EmptyState } from '@goodboy/ui';
+import { Button, EmptyState, Tooltip } from '@goodboy/ui';
 import type { FileVersion, FileVersionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { AuthorshipChip } from '../AuthorshipChip';
@@ -64,15 +64,17 @@ export const VersionHistoryList = ({
                 <RotateCcw size={12} aria-hidden />
                 {isRestoring ? 'Restoring' : 'Restore'}
               </Button>
-              <button
-                type="button"
-                onClick={() => onDeleteVersion(version.id)}
-                disabled={isDeleting || restoringVersionId != null}
-                aria-label="Delete this version"
-                className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Trash2 size={12} aria-hidden />
-              </button>
+              <Tooltip content="Delete this version">
+                <button
+                  type="button"
+                  onClick={() => onDeleteVersion(version.id)}
+                  disabled={isDeleting || restoringVersionId != null}
+                  aria-label="Delete this version"
+                  className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Trash2 size={12} aria-hidden />
+                </button>
+              </Tooltip>
             </div>
           </li>
         );

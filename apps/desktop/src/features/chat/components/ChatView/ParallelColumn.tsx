@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { ArrowDown } from 'lucide-react';
 import type { Agent, ProviderRunId } from '@goodboy/types';
-import { Divider, EmptyState, ScrollFade, StatusDot } from '@goodboy/ui';
+import { Divider, EmptyState, ScrollFade, StatusDot, Tooltip } from '@goodboy/ui';
 import { useAppStore, useTranscript } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { filterEventsByRunId, reduceTranscript } from '../../utils/transcript-items';
@@ -118,18 +118,19 @@ export const ParallelColumn = ({
           )}
         </ScrollFade>
         {!pinned && (
-          <button
-            type="button"
-            aria-label="Jump to latest"
-            title="Jump to latest"
-            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background/90 ring-1 ring-border-soft transition-colors hover:bg-muted"
-            onClick={() => {
-              const el = scrollerRef.current;
-              el?.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-            }}
-          >
-            <ArrowDown size={14} aria-hidden />
-          </button>
+          <Tooltip content="Jump to latest">
+            <button
+              type="button"
+              aria-label="Jump to latest"
+              className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background/90 ring-1 ring-border-soft transition-colors hover:bg-muted"
+              onClick={() => {
+                const el = scrollerRef.current;
+                el?.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+              }}
+            >
+              <ArrowDown size={14} aria-hidden />
+            </button>
+          </Tooltip>
         )}
       </div>
     </div>

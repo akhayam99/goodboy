@@ -1,6 +1,6 @@
 import { type ReactNode, useRef } from 'react';
 import { GripVertical, Trash2 } from 'lucide-react';
-import { ClampedProse, Input, Textarea, cn } from '@goodboy/ui';
+import { ClampedProse, cn, Input, Textarea, Tooltip } from '@goodboy/ui';
 import type { AgentRole, ProviderId } from '@goodboy/types';
 import { agentKindPalette, ROLE_LABEL, ROLE_TO_KIND, type AgentKind } from '../../agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
@@ -117,28 +117,30 @@ export const WorkflowStepCard = ({
   };
 
   const grip = (
-    <button
-      type="button"
-      onPointerDown={onStartDrag}
-      onKeyDown={(e) => {
-        if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          onMoveUp();
-          return;
-        }
-        if (e.key === 'ArrowDown') {
-          e.preventDefault();
-          onMoveDown();
-          return;
-        }
-      }}
-      disabled={disabled}
-      aria-label="Reorder step (drag or arrow keys)"
-      title="Reorder step (drag or arrow keys)"
-      className="flex shrink-0 cursor-grab touch-none items-center self-stretch rounded-l-lg px-1 text-muted-foreground/30 transition-colors hover:bg-muted/40 hover:text-muted-foreground active:cursor-grabbing disabled:cursor-not-allowed"
-    >
-      <GripVertical size={14} aria-hidden />
-    </button>
+    <Tooltip content="Reorder step (drag or arrow keys)">
+      <button
+        type="button"
+        onPointerDown={onStartDrag}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            onMoveUp();
+            return;
+          }
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            onMoveDown();
+            return;
+          }
+        }}
+        disabled={disabled}
+        aria-label="Reorder step (drag or arrow keys)"
+        title="Reorder step (drag or arrow keys)"
+        className="flex shrink-0 cursor-grab touch-none items-center self-stretch rounded-l-lg px-1 text-muted-foreground/30 transition-colors hover:bg-muted/40 hover:text-muted-foreground active:cursor-grabbing disabled:cursor-not-allowed"
+      >
+        <GripVertical size={14} aria-hidden />
+      </button>
+    </Tooltip>
   );
 
   const headerRow = (trailing?: ReactNode) => (
@@ -160,16 +162,18 @@ export const WorkflowStepCard = ({
   );
 
   const removeButton = (
-    <button
-      type="button"
-      onClick={onRemove}
-      disabled={disabled}
-      aria-label="Remove step"
-      title="Remove step"
-      className="absolute right-1.5 top-1.5 z-10 inline-flex items-center justify-center rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted/60 hover:text-danger focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30 group-hover:opacity-100"
-    >
-      <Trash2 size={13} aria-hidden />
-    </button>
+    <Tooltip content="Remove step">
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={disabled}
+        aria-label="Remove step"
+        title="Remove step"
+        className="absolute right-1.5 top-1.5 z-10 inline-flex items-center justify-center rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted/60 hover:text-danger focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30 group-hover:opacity-100"
+      >
+        <Trash2 size={13} aria-hidden />
+      </button>
+    </Tooltip>
   );
 
   return (

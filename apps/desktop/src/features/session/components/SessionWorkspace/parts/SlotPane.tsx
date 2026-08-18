@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { History, type LucideIcon } from 'lucide-react';
-import { Button, Markdown, Textarea, cn, type Tone } from '@goodboy/ui';
+import { Button, cn, Markdown, Textarea, Tooltip, type Tone } from '@goodboy/ui';
 import { LensEmptyState } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
@@ -178,18 +178,19 @@ export const SlotPane = ({ session, slotKey }: Props) => {
               />
             ) : null}
             {historyCount > 0 ? (
-              <button
-                type="button"
-                onClick={toggleHistory}
-                title={`View history for ${SLOT_TITLE[slotKey]}`}
-                aria-label={`View history for ${SLOT_TITLE[slotKey]}`}
-                className={cn(
-                  'rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground',
-                  historyOpen && 'bg-foreground/5 text-foreground',
-                )}
-              >
-                <History size={15} aria-hidden />
-              </button>
+              <Tooltip content={`View history for ${SLOT_TITLE[slotKey]}`}>
+                <button
+                  type="button"
+                  onClick={toggleHistory}
+                  aria-label={`View history for ${SLOT_TITLE[slotKey]}`}
+                  className={cn(
+                    'rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground',
+                    historyOpen && 'bg-foreground/5 text-foreground',
+                  )}
+                >
+                  <History size={15} aria-hidden />
+                </button>
+              </Tooltip>
             ) : null}
           </>
         }

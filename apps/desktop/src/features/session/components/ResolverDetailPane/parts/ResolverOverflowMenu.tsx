@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MoreHorizontal } from 'lucide-react';
-import { cn, Divider, Popover, useDropdown } from '@goodboy/ui';
+import { cn, Divider, Popover, Tooltip, useDropdown } from '@goodboy/ui';
 import type { Agent, BranchCommit } from '@goodboy/types';
 import { RESOLVER_ACTION_ICON } from '../../../resolverActionIcon';
 import type { ResolverAction, ResolverActionKind } from '../../../resolverActions';
@@ -59,19 +59,21 @@ export const ResolverOverflowMenu = ({
 
   return (
     <div className="relative" ref={containerRef}>
-      <button
-        type="button"
-        onClick={toggle}
-        aria-label="More resolver actions"
-        aria-haspopup="menu"
-        aria-expanded={isOpen}
-        className={cn(
-          'rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground',
-          isOpen && 'bg-foreground/10 text-foreground',
-        )}
-      >
-        <MoreHorizontal size={14} aria-hidden />
-      </button>
+      <Tooltip content="More resolver actions">
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label="More resolver actions"
+          aria-haspopup="menu"
+          aria-expanded={isOpen}
+          className={cn(
+            'rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground',
+            isOpen && 'bg-foreground/10 text-foreground',
+          )}
+        >
+          <MoreHorizontal size={14} aria-hidden />
+        </button>
+      </Tooltip>
       {isOpen && (
         <Popover
           role="menu"
