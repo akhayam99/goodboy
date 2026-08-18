@@ -212,23 +212,8 @@ gets a written no rather than silence.
 
 ## Contributors
 
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/akhayam99">
-        <img src="https://avatars.githubusercontent.com/u/87425758?s=120" width="80" alt="" /><br />
-        <sub><b>Amin Khayam</b></sub>
-      </a>
-    </td>
-    <td align="center">
-      <a href="https://github.com/teckperry">
-        <img src="https://avatars.githubusercontent.com/u/85160151?s=120" width="80" alt="" /><br />
-        <sub><b>Luca Laudiero</b></sub>
-      </a><br />
-      <sub><a href="https://teckperry.xyz">teckperry.xyz</a></sub>
-    </td>
-  </tr>
-</table>
+<a href="https://github.com/akhayam99"><img src="https://avatars.githubusercontent.com/u/87425758?s=120" width="56" height="56" alt="Amin Khayam" style="border-radius:50%" /></a>
+<a href="https://github.com/teckperry"><img src="https://avatars.githubusercontent.com/u/85160151?s=120" width="56" height="56" alt="Luca Laudiero" style="border-radius:50%" /></a>
 
 ## More
 
