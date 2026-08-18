@@ -28,6 +28,7 @@ import {
   ScrollFade,
   SectionHeader,
   SegmentedTabs,
+  type SegmentedTabOption,
   Skeleton,
   Textarea,
 } from '@goodboy/ui';
@@ -55,6 +56,7 @@ import type {
   Step,
   StepId,
   Workflow,
+  WorkflowExecutionMode,
   WorkflowId,
   WorkflowRunId,
   WorkflowSpendLimitMode,
@@ -73,10 +75,7 @@ import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { type EffortLevel, clampEffort } from '../../../chat/utils/chat-constants';
 import { useWorkflowDrag } from '../../../workflows/hooks/useWorkflowDrag';
 import { StepFlowConnector } from '../../../workflows/components/WorkflowStudio/StepFlowConnector';
-import {
-  SpendLimitFields,
-  parseSpendLimit,
-} from '../../../workflows/components/RunSpendLimitPopover/SpendLimitFields';
+import { parseSpendLimit } from '../../../workflows/components/RunSpendLimitPopover/SpendLimitFields';
 import { DragGhost } from '../../../workflows/components/WorkflowStudio/DragGhost';
 import { useToast } from '../../../../app/components/Toast';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -89,8 +88,9 @@ import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/
 import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
 import { ChainAfterSelect } from './parts/ChainAfterSelect';
 import { LaunchToggleRow } from './parts/LaunchToggleRow';
-import { WorkflowAutorunToggle } from '../../../workflows/components/WorkflowAutorunToggle';
-import { TriggerButton } from './parts/TriggerButton';
+import { ApproachSummary } from './ApproachSummary';
+import { DynamicWorkflowComposer } from './DynamicWorkflowComposer';
+import { SpendLimitDisclosure } from './SpendLimitDisclosure';
 
 type Props = {
   readonly session: Session;
@@ -166,9 +166,12 @@ const isDraftEmpty = (d: WorkflowBuilderDraft): boolean =>
   d.plan === null &&
   d.steps.length === 0 &&
   !d.saveAsPreset &&
-  !d.autoRun;
+  !d.autoRun &&
+  !d.dynamicNameEdited &&
+  Object.keys(d.roleModelOverrides).length === 0;
 
 const PLANNER_EFFORT: EffortLevel = defaultsForRole('planner').effort;
+const DYNAMIC_EXECUTION_MODE: WorkflowExecutionMode = 'dynamic';
 
 export const uniqueWorkflowName = (
   requested: string,
@@ -242,6 +245,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     initialDraft?.basePresetId ?? null,
   );
   const [processText, setProcessText] = useState(initialDraft?.processText ?? '');
+  const [dynamicName, setDynamicName] = useState(
+    initialDraft?.dynamicName ?? uniqueWorkflowName('Orchestrated workflow', phaseTemplates),
+  );
+  const [dynamicNameEdited, setDynamicNameEdited] = useState(
+    initialDraft?.dynamicNameEdited ?? false,
+  );
   const [plan, setPlan] = useState<PlannerOutput | null>(initialDraft?.plan ?? null);
   const [steps, setSteps] = useState<ReadonlyArray<EditableStep>>(initialDraft?.steps ?? []);
   const [planning, setPlanning] = useState(false);
@@ -251,8 +260,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const [autoRun, setAutoRun] = useState(initialDraft?.autoRun ?? false);
   const [triggerMode, setTriggerMode] = useState<WorkflowTriggerMode>('immediate');
   const [chainAfterId, setChainAfterId] = useState<WorkflowRunId | null>(null);
+  const [isSpendLimitEnabled, setIsSpendLimitEnabled] = useState(false);
   const [spendLimitDraft, setSpendLimitDraft] = useState('');
   const [spendLimitMode, setSpendLimitMode] = useState<WorkflowSpendLimitMode>('pause');
+  const [roleModelOverrides, setRoleModelOverrides] = useState<RoleModelPreferences>(
+    initialDraft?.roleModelOverrides ?? {},
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<WorkflowId | null>(null);
@@ -348,6 +361,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     steps,
     saveAsPreset,
     autoRun,
+    dynamicName,
+    dynamicNameEdited,
+    roleModelOverrides,
   };
   const draftEmpty = isDraftEmpty(draft);
 
@@ -369,6 +385,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     steps,
     saveAsPreset,
     autoRun,
+    dynamicName,
+    dynamicNameEdited,
+    roleModelOverrides,
   ]);
 
   const resetDraft = () => {
@@ -382,6 +401,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setSteps([]);
     setSaveAsPreset(false);
     setAutoRun(false);
+    setDynamicName(uniqueWorkflowName('Orchestrated workflow', phaseTemplates));
+    setDynamicNameEdited(false);
+    setRoleModelOverrides({});
+    setIsSpendLimitEnabled(false);
+    setSpendLimitDraft('');
+    setSpendLimitMode('pause');
     setError(null);
     setExpandedKey(null);
     clearWorkflowDraft(session.id);
@@ -574,7 +599,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const attachOptions = () => {
     const goal = goalText.trim();
     const after = triggerMode === 'after_run' ? resolvedChainId : null;
-    const spendLimitUsd = mode === 'dynamic' ? parseSpendLimit(spendLimitDraft) : null;
+    const spendLimitUsd =
+      mode === 'dynamic' && isSpendLimitEnabled ? parseSpendLimit(spendLimitDraft) : null;
     return {
       autoRun,
       navigate: true,
@@ -582,7 +608,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       ...(triggerMode !== 'immediate' && { triggerMode }),
       ...(triggerMode === 'after_run' && after && { chainAfterId: after }),
       ...(attachments.length > 0 && { attachmentInputs: attachments.map(toAttachmentInput) }),
-      ...(mode === 'dynamic' && { executionMode: 'dynamic' as const }),
+      ...(mode === 'dynamic' && {
+        executionMode: DYNAMIC_EXECUTION_MODE,
+      }),
+      ...(mode === 'dynamic' &&
+        Object.keys(roleModelOverrides).length > 0 && { roleModelOverrides }),
       ...(spendLimitUsd != null && { spendLimitUsd, spendLimitMode }),
     };
   };
@@ -664,7 +694,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     if (
       (mode === 'preset' && selectedPreset === null) ||
       (mode === 'custom' && steps.length === 0) ||
-      (mode === 'dynamic' && processText.trim().length === 0)
+      (mode === 'dynamic' && (processText.trim().length === 0 || dynamicName.trim().length === 0))
     ) {
       return;
     }
@@ -683,7 +713,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         mode === 'custom'
           ? (plan?.workflowName ?? 'Custom workflow')
           : mode === 'dynamic'
-            ? 'Untitled orchestrated workflow'
+            ? dynamicName.trim()
             : (selectedPreset?.name ?? basePreset?.name ?? 'Custom workflow'),
         phaseTemplates,
       );
@@ -709,7 +739,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         updatedAt: now,
       };
       const saved = await savePhaseTemplate(workflow);
-      if (mode === 'dynamic') {
+      if (mode === 'dynamic' && !dynamicNameEdited) {
         void generateWorkflowTitle(
           session.workspaceId,
           workflowId,
@@ -737,8 +767,10 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         ? processText.trim().length === 0
         : steps.length === 0;
   const spendLimitInvalid =
-    mode === 'dynamic' && spendLimitDraft.trim() !== '' && parseSpendLimit(spendLimitDraft) == null;
-  const startDisabled = blocked || goalMissing || approachMissing || spendLimitInvalid;
+    mode === 'dynamic' && isSpendLimitEnabled && parseSpendLimit(spendLimitDraft) == null;
+  const dynamicNameMissing = mode === 'dynamic' && dynamicName.trim().length === 0;
+  const startDisabled =
+    blocked || goalMissing || approachMissing || spendLimitInvalid || dynamicNameMissing;
   const startHint = goalMissing
     ? 'Set a goal to start'
     : approachMissing
@@ -747,12 +779,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         : mode === 'dynamic'
           ? 'Describe the intent and constraints to start'
           : 'Generate a plan to start'
-      : null;
+      : dynamicNameMissing
+        ? 'Name the workflow to start'
+        : null;
   const onModeChange = (next: Mode) => {
     setMode(next);
-    if (next === 'dynamic') {
-      setAutoRun(true);
-    }
   };
 
   const stepCount = steps.length;
@@ -763,8 +794,34 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     mode === 'custom'
       ? (plan?.workflowName ?? 'Custom workflow')
       : mode === 'dynamic'
-        ? 'Untitled orchestrated workflow'
+        ? dynamicName
         : (selectedPreset?.name ?? basePreset?.name ?? 'Workflow');
+  const chainedTriggerOptions: ReadonlyArray<SegmentedTabOption<WorkflowTriggerMode>> =
+    activeRuns.length > 0
+      ? [
+          {
+            value: 'after_run',
+            label: 'Run after',
+            icon: Link2,
+            disabled: blocked,
+          },
+        ]
+      : [];
+  const triggerOptions: ReadonlyArray<SegmentedTabOption<WorkflowTriggerMode>> = [
+    {
+      value: 'immediate',
+      label: 'Start now',
+      icon: Play,
+      disabled: blocked,
+    },
+    {
+      value: 'manual',
+      label: 'Start manually',
+      icon: Hand,
+      disabled: blocked,
+    },
+    ...chainedTriggerOptions,
+  ];
 
   return (
     <StudioShell
@@ -906,6 +963,17 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     />
                   }
                 />
+                <ApproachSummary mode={mode} />
+              </section>
+
+              <Divider />
+
+              <section className="flex flex-col gap-3">
+                <SectionHeader
+                  icon={<PenLine size={11} aria-hidden />}
+                  label="Workflow"
+                  hint="Name and configure the work that will run."
+                />
 
                 {mode === 'preset' ? (
                   <div className="flex flex-col gap-2">
@@ -928,197 +996,184 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         }
                       />
                     ) : (
-                      <>
-                        <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
-                          Pick a preset. Tune its steps below before starting.
-                        </p>
-                        <div
-                          className="flex flex-col gap-1.5"
-                          role="radiogroup"
-                          aria-label="Presets"
-                        >
-                          {presets.map((t) => {
-                            const tSteps = sortedSteps(t);
-                            const kinds = tSteps.map((s) =>
-                              s.role ? ROLE_TO_KIND[s.role] : inferAgentKindFromName(s.name),
-                            );
-                            const shown = kinds.slice(0, 5);
-                            const selected = t.id === selectedPresetId;
-                            const desc = t.description || t.goal;
-                            return (
-                              <div
-                                key={t.id}
+                      <div className="flex flex-col gap-1.5" role="radiogroup" aria-label="Presets">
+                        {presets.map((t) => {
+                          const tSteps = sortedSteps(t);
+                          const kinds = tSteps.map((s) =>
+                            s.role ? ROLE_TO_KIND[s.role] : inferAgentKindFromName(s.name),
+                          );
+                          const shown = kinds.slice(0, 5);
+                          const selected = t.id === selectedPresetId;
+                          const desc = t.description || t.goal;
+                          return (
+                            <div
+                              key={t.id}
+                              className={cn(
+                                'flex items-center gap-1 rounded-lg border border-l-2 pr-1.5 transition-colors',
+                                selected
+                                  ? 'border-l-primary border-border-soft bg-subtle'
+                                  : 'border-l-transparent border-border-soft hover:border-border hover:bg-muted/40',
+                              )}
+                            >
+                              <button
+                                type="button"
+                                role="radio"
+                                aria-checked={selected}
+                                onClick={() => onSelectPreset(t)}
+                                disabled={busy}
                                 className={cn(
-                                  'flex items-center gap-1 rounded-lg border border-l-2 pr-1.5 transition-colors',
-                                  selected
-                                    ? 'border-l-primary border-border-soft bg-subtle'
-                                    : 'border-l-transparent border-border-soft hover:border-border hover:bg-muted/40',
+                                  'flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 text-left',
+                                  busy && 'cursor-not-allowed opacity-60',
                                 )}
                               >
-                                <button
-                                  type="button"
-                                  role="radio"
-                                  aria-checked={selected}
-                                  onClick={() => onSelectPreset(t)}
-                                  disabled={busy}
-                                  className={cn(
-                                    'flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 text-left',
-                                    busy && 'cursor-not-allowed opacity-60',
-                                  )}
-                                >
-                                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                    <span className="flex items-center gap-1.5">
-                                      <span className="min-w-0 truncate text-xs font-medium text-foreground">
-                                        {t.name}
-                                      </span>
-                                      <span className="shrink-0 rounded-full bg-muted px-1.5 text-3xs tabular-nums text-muted-foreground">
-                                        {tSteps.length}
-                                      </span>
+                                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                  <span className="flex items-center gap-1.5">
+                                    <span className="min-w-0 truncate text-xs font-medium text-foreground">
+                                      {t.name}
                                     </span>
-                                    {desc ? (
-                                      <span className="truncate text-3xs leading-snug text-muted-foreground/70">
-                                        {desc}
-                                      </span>
-                                    ) : null}
+                                    <span className="shrink-0 rounded-full bg-muted px-1.5 text-3xs tabular-nums text-muted-foreground">
+                                      {tSteps.length}
+                                    </span>
                                   </span>
-                                  <span className="flex shrink-0 items-center gap-1">
-                                    {shown.map((k, i) => (
-                                      <AgentAvatar key={`${k}-${i}`} kind={k} size="xs" />
-                                    ))}
-                                    {kinds.length > shown.length ? (
-                                      <span className="text-3xs text-muted-foreground">
-                                        +{kinds.length - shown.length}
-                                      </span>
-                                    ) : null}
-                                  </span>
-                                  {selected ? (
-                                    <Check
-                                      size={13}
-                                      className="shrink-0 text-primary"
-                                      aria-hidden
-                                    />
+                                  {desc ? (
+                                    <span className="truncate text-3xs leading-snug text-muted-foreground/70">
+                                      {desc}
+                                    </span>
                                   ) : null}
-                                </button>
-                                {confirmDeleteId === t.id ? (
-                                  <span className="flex shrink-0 items-center gap-0.5">
-                                    <span className="px-1 text-2xs text-muted-foreground">
-                                      Delete?
+                                </span>
+                                <span className="flex shrink-0 items-center gap-1">
+                                  {shown.map((k, i) => (
+                                    <AgentAvatar key={`${k}-${i}`} kind={k} size="xs" />
+                                  ))}
+                                  {kinds.length > shown.length ? (
+                                    <span className="text-3xs text-muted-foreground">
+                                      +{kinds.length - shown.length}
                                     </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => void onDeletePreset(t)}
-                                      aria-label={`Confirm delete ${t.name}`}
-                                      className="rounded-md p-1 text-danger transition-colors hover:bg-danger/10"
-                                    >
-                                      <Check size={12} aria-hidden />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setConfirmDeleteId(null)}
-                                      aria-label="Cancel delete"
-                                      className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-                                    >
-                                      <X size={12} aria-hidden />
-                                    </button>
+                                  ) : null}
+                                </span>
+                                {selected ? (
+                                  <Check size={13} className="shrink-0 text-primary" aria-hidden />
+                                ) : null}
+                              </button>
+                              {confirmDeleteId === t.id ? (
+                                <span className="flex shrink-0 items-center gap-0.5">
+                                  <span className="px-1 text-2xs text-muted-foreground">
+                                    Delete?
                                   </span>
-                                ) : (
-                                  <OverflowMenu
-                                    label={`Preset actions: ${t.name}`}
-                                    disabled={busy}
-                                    items={[
-                                      {
-                                        kind: 'item',
-                                        key: 'delete',
-                                        label: 'Delete preset',
-                                        icon: Trash2,
-                                        destructive: true,
-                                        onClick: () => setConfirmDeleteId(t.id),
-                                      },
-                                    ]}
-                                  />
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </>
+                                  <button
+                                    type="button"
+                                    onClick={() => void onDeletePreset(t)}
+                                    aria-label={`Confirm delete ${t.name}`}
+                                    className="rounded-md p-1 text-danger transition-colors hover:bg-danger/10"
+                                  >
+                                    <Check size={12} aria-hidden />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirmDeleteId(null)}
+                                    aria-label="Cancel delete"
+                                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                                  >
+                                    <X size={12} aria-hidden />
+                                  </button>
+                                </span>
+                              ) : (
+                                <OverflowMenu
+                                  label={`Preset actions: ${t.name}`}
+                                  disabled={busy}
+                                  items={[
+                                    {
+                                      kind: 'item',
+                                      key: 'delete',
+                                      label: 'Delete preset',
+                                      icon: Trash2,
+                                      destructive: true,
+                                      onClick: () => setConfirmDeleteId(t.id),
+                                    },
+                                  ]}
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
+                ) : mode === 'dynamic' ? (
+                  <DynamicWorkflowComposer
+                    name={dynamicName}
+                    process={processText}
+                    workspaceRoleModels={roleModels}
+                    roleModelOverrides={roleModelOverrides}
+                    defaultProvider={providerId}
+                    connectedProviders={connectedProviders}
+                    disabled={blocked}
+                    onName={(name) => {
+                      setDynamicName(name);
+                      setDynamicNameEdited(true);
+                    }}
+                    onProcess={setProcessText}
+                    onRoleModelOverrides={setRoleModelOverrides}
+                  />
                 ) : (
                   <div className="flex flex-col gap-2">
-                    <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
-                      {mode === 'dynamic'
-                        ? 'Describe the intent and constraints. The orchestrator decides each step from the latest results.'
-                        : 'Describe the flow. The planner drafts ordered steps you tune below.'}
-                    </p>
                     <div className="rounded-lg bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
                       <div className="relative">
                         <Textarea
                           value={processText}
                           onChange={(e) => setProcessText(e.target.value)}
-                          placeholder={
-                            mode === 'dynamic'
-                              ? 'describe the intent, constraints, and stopping conditions…'
-                              : 'describe the process you expect (e.g. read the existing github integration, study how it works, then plan the gitlab equivalent, then implement)…'
-                          }
+                          placeholder="describe the process you expect (e.g. read the existing GitHub integration, study how it works, then plan the GitLab equivalent, then implement)…"
                           autoGrow
                           minRows={3}
                           maxRows={7}
-                          className={cn(
-                            'min-h-16 resize-none border-0 bg-transparent px-4 pt-3 text-sm shadow-none focus-visible:ring-0',
-                            mode === 'custom' ? 'pb-12' : 'pb-3',
-                          )}
+                          className="min-h-16 resize-none border-0 bg-transparent px-4 pb-12 pt-3 text-sm shadow-none focus-visible:ring-0"
                         />
-                        {mode === 'custom' ? (
-                          <div className="absolute bottom-2.5 right-2.5">
-                            <Button
-                              size="sm"
-                              onClick={() => void onPlan()}
-                              disabled={blocked || processText.trim().length === 0}
-                              className={cn('min-w-[6.5rem]', planning && 'animate-border-pulse')}
-                            >
-                              {planning ? 'Planning…' : plan ? 'Re-plan' : 'Generate plan'}
-                            </Button>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                    {mode === 'custom' ? (
-                      <div className="flex justify-end px-1">
-                        <div className="w-64">
-                          <RoutingPicker
-                            ariaLabel="Planner routing"
-                            connectedProviders={connectedProviders}
-                            provider={plannerProviderOverride}
-                            model={plannerModelOverride}
-                            effort={{
-                              editable: true,
-                              value: plannerEffortOverride,
-                              onChange: setPlannerEffortOverride,
-                            }}
-                            recommendation={{
-                              provider: resolvedPlanTaskModel.providerId,
-                              model: plannerRecommendedModel,
-                            }}
-                            disabled={blocked}
-                            onProvider={(next) => {
-                              setPlannerProviderOverride(next);
-                              setPlannerModelOverride('');
-                            }}
-                            onModel={setPlannerModelOverride}
-                          />
+                        <div className="absolute bottom-2.5 right-2.5">
+                          <Button
+                            size="sm"
+                            onClick={() => void onPlan()}
+                            disabled={blocked || processText.trim().length === 0}
+                            className={cn('min-w-[6.5rem]', planning && 'animate-border-pulse')}
+                          >
+                            {planning ? 'Planning…' : plan ? 'Re-plan' : 'Generate plan'}
+                          </Button>
                         </div>
                       </div>
-                    ) : null}
+                    </div>
+                    <div className="flex justify-end px-1">
+                      <div className="w-64">
+                        <RoutingPicker
+                          ariaLabel="Planner routing"
+                          connectedProviders={connectedProviders}
+                          provider={plannerProviderOverride}
+                          model={plannerModelOverride}
+                          effort={{
+                            editable: true,
+                            value: plannerEffortOverride,
+                            onChange: setPlannerEffortOverride,
+                          }}
+                          recommendation={{
+                            provider: resolvedPlanTaskModel.providerId,
+                            model: plannerRecommendedModel,
+                          }}
+                          disabled={blocked}
+                          onProvider={(next) => {
+                            setPlannerProviderOverride(next);
+                            setPlannerModelOverride('');
+                          }}
+                          onModel={setPlannerModelOverride}
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
               </section>
 
-              {showSteps || mode === 'dynamic' || planning ? (
+              {showSteps || planning ? (
                 <>
                   <Divider />
                   <section className="flex flex-col gap-3">
-                    {showSteps || mode === 'dynamic' ? (
+                    {showSteps ? (
                       <div className="flex items-center justify-between gap-2">
                         <span className="truncate text-xs font-semibold text-foreground">
                           {workflowName}
@@ -1134,7 +1189,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                               <CONCEPT_ICONS.enhance size={10} aria-hidden /> Re-design
                             </button>
                           ) : null}
-                          {mode === 'custom' || mode === 'dynamic' ? (
+                          {mode === 'custom' ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-2xs font-medium text-success">
                               <Check size={10} aria-hidden /> Ready
                             </span>
@@ -1151,47 +1206,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       </div>
                     ) : null}
 
-                    {mode === 'dynamic' ? (
-                      <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle/40 p-4">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground">
-                          <CONCEPT_ICONS.orchestrator
-                            size={13}
-                            className="text-accent"
-                            aria-hidden
-                          />
-                          Steps are decided at runtime
-                        </span>
-                        <p className="text-2xs leading-relaxed text-muted-foreground">
-                          After kickoff and each completed step, the orchestrator reviews the goal,
-                          your process, prior outputs, and open questions before choosing what comes
-                          next.
-                        </p>
-                        <p className="text-2xs leading-relaxed text-muted-foreground">
-                          Each step runs on the model configured for its role.
-                        </p>
-                        <div className="mt-1 flex flex-col gap-1.5 border-t border-border-soft pt-3">
-                          <label
-                            htmlFor="builder-spend-limit-amount"
-                            className="text-2xs font-medium text-foreground"
-                          >
-                            Spend limit
-                          </label>
-                          <SpendLimitFields
-                            amount={spendLimitDraft}
-                            mode={spendLimitMode}
-                            inputId="builder-spend-limit-amount"
-                            invalid={spendLimitInvalid}
-                            onAmount={setSpendLimitDraft}
-                            onMode={setSpendLimitMode}
-                          />
-                          <p className="text-2xs leading-relaxed text-muted-foreground">
-                            {spendLimitInvalid
-                              ? 'Enter an amount above zero, or clear the field for no limit.'
-                              : 'Leave it empty and the run spends whatever it needs.'}
-                          </p>
-                        </div>
-                      </div>
-                    ) : showSteps ? (
+                    {showSteps ? (
                       <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-2">
                           <span className={SECTION_LABEL_CLS}>
@@ -1318,36 +1333,18 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             When to start
                           </span>
                           <div className="flex flex-wrap items-center gap-2">
-                            <div className="flex w-fit items-center gap-0 rounded-md bg-background/80 p-0.5 ring-1 ring-border-soft">
-                              <TriggerButton
-                                active={triggerMode === 'immediate'}
-                                disabled={blocked}
-                                onClick={() => setTriggerMode('immediate')}
-                                icon={<Play size={11} aria-hidden />}
-                                label="Start now"
-                              />
-                              <TriggerButton
-                                active={triggerMode === 'manual'}
-                                disabled={blocked}
-                                onClick={() => setTriggerMode('manual')}
-                                icon={<Hand size={11} aria-hidden />}
-                                label="Start manually"
-                              />
-                              {activeRuns.length > 0 ? (
-                                <TriggerButton
-                                  active={triggerMode === 'after_run'}
-                                  disabled={blocked}
-                                  onClick={() => {
-                                    setTriggerMode('after_run');
-                                    if (chainAfterId === null) {
-                                      setChainAfterId(latestActiveRunId);
-                                    }
-                                  }}
-                                  icon={<Link2 size={11} aria-hidden />}
-                                  label="Run after"
-                                />
-                              ) : null}
-                            </div>
+                            <SegmentedTabs<WorkflowTriggerMode>
+                              ariaLabel="When to start"
+                              size="sm"
+                              options={triggerOptions}
+                              value={triggerMode}
+                              onChange={(next) => {
+                                setTriggerMode(next);
+                                if (next === 'after_run' && chainAfterId === null) {
+                                  setChainAfterId(latestActiveRunId);
+                                }
+                              }}
+                            />
                             {triggerMode === 'after_run' && activeRuns.length > 0 ? (
                               <ChainAfterSelect
                                 runs={activeRuns}
@@ -1369,17 +1366,24 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 } completes.`}
                         </p>
                       </div>
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center justify-between gap-4 px-3 py-2.5">
                         <div className="flex min-w-0 flex-col gap-1">
-                          <span className="text-2xs font-medium text-foreground">Autorun</span>
+                          <span className="text-2xs font-medium text-foreground">Step handoff</span>
                           <span className="text-2xs leading-relaxed text-muted-foreground/60">
-                            Run each step automatically after the previous step finishes
+                            {autoRun
+                              ? 'Continue automatically after each completed step.'
+                              : 'Pause after each step so you can review the result.'}
                           </span>
                         </div>
-                        <WorkflowAutorunToggle
-                          isOn={autoRun}
-                          isStepInFlight={false}
-                          onToggle={() => setAutoRun((current) => !current)}
+                        <SegmentedTabs<'review' | 'autorun'>
+                          ariaLabel="Step handoff"
+                          size="sm"
+                          options={[
+                            { value: 'review', label: 'Review each step', icon: Hand },
+                            { value: 'autorun', label: 'Autorun', icon: Rocket },
+                          ]}
+                          value={autoRun ? 'autorun' : 'review'}
+                          onChange={(next) => setAutoRun(next === 'autorun')}
                         />
                       </div>
                       {mode === 'custom' || presetDirty ? (
@@ -1392,6 +1396,18 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         />
                       ) : null}
                     </div>
+                    {mode === 'dynamic' && (
+                      <SpendLimitDisclosure
+                        enabled={isSpendLimitEnabled}
+                        amount={spendLimitDraft}
+                        mode={spendLimitMode}
+                        invalid={spendLimitInvalid}
+                        disabled={blocked}
+                        onEnabled={setIsSpendLimitEnabled}
+                        onAmount={setSpendLimitDraft}
+                        onMode={setSpendLimitMode}
+                      />
+                    )}
                   </section>
                 </>
               ) : null}

@@ -7,8 +7,6 @@ const MODE_OPTIONS: ReadonlyArray<SegmentedTabOption<WorkflowSpendLimitMode>> = 
   { value: 'pause', label: 'Pause', hint: 'stop the run', icon: Pause },
 ];
 
-const DISABLED_MODE_OPTIONS = MODE_OPTIONS.map((option) => ({ ...option, disabled: true }));
-
 export const parseSpendLimit = (draft: string): number | null => {
   const amount = Number.parseFloat(draft.trim());
   return Number.isFinite(amount) && amount > 0 ? amount : null;
@@ -54,13 +52,15 @@ export const SpendLimitFields = ({
         className={cn('pl-6 text-xs', invalid && 'border-danger')}
       />
     </div>
-    <SegmentedTabs
-      fill
-      size="sm"
-      ariaLabel="What happens at the limit"
-      options={parseSpendLimit(amount) == null ? DISABLED_MODE_OPTIONS : MODE_OPTIONS}
-      value={mode}
-      onChange={onMode}
-    />
+    {parseSpendLimit(amount) != null && (
+      <SegmentedTabs
+        fill
+        size="sm"
+        ariaLabel="What happens at the limit"
+        options={MODE_OPTIONS}
+        value={mode}
+        onChange={onMode}
+      />
+    )}
   </div>
 );

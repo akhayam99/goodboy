@@ -59,6 +59,7 @@ import type {
   TaskModelPreference,
   ReviewablePr,
   PrReviewDraft,
+  RoleModelPreferences,
 } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { resolveSettings } from '@goodboy/core';
@@ -335,6 +336,9 @@ export type AppActions = {
       chainAfterId?: WorkflowRunId;
       attachmentInputs?: ReadonlyArray<AttachmentInput>;
       executionMode?: WorkflowExecutionMode;
+      roleModelOverrides?: RoleModelPreferences;
+      spendLimitUsd?: number;
+      spendLimitMode?: WorkflowSpendLimitMode;
       navigate?: boolean;
     },
   ): Promise<void>;

@@ -26,6 +26,9 @@ const buildDraft = (overrides: Partial<WorkflowBuilderDraft> = {}): WorkflowBuil
   steps: [],
   saveAsPreset: false,
   autoRun: false,
+  dynamicName: 'Orchestrated workflow',
+  dynamicNameEdited: false,
+  roleModelOverrides: {},
   ...overrides,
 });
 

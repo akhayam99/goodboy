@@ -11,6 +11,7 @@ import type {
 import type { SessionProviderPreference } from './provider-preference';
 import type { ModelEffort, ProviderId } from './provider-registry';
 import type { ClaudePermissionMode } from './permission';
+import type { RoleModelPreferences } from './settings';
 import type { GitDistance, GitOperation, GitWorkingTree } from './worktree';
 
 export type WorkspaceKind = 'repo' | 'composite' | 'simple';
@@ -113,6 +114,7 @@ export type WorkflowRun = Readonly<{
   orchestratorHints?: string;
   orchestratorSummary?: string;
   orchestratorRouting?: OrchestratorRouting;
+  roleModelOverrides?: RoleModelPreferences;
   spendLimitUsd?: number;
   spendLimitMode?: WorkflowSpendLimitMode;
   chainAfterId?: WorkflowRunId;

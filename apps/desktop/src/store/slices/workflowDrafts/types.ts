@@ -1,4 +1,10 @@
-import type { AgentRole, ProviderId, StepId, WorkflowId } from '@goodboy/types';
+import type {
+  AgentRole,
+  ProviderId,
+  RoleModelPreferences,
+  StepId,
+  WorkflowId,
+} from '@goodboy/types';
 import type { PlannerOutput } from '@goodboy/core';
 import type { EffortLevel } from '../../../features/chat/utils/chat-constants';
 
@@ -29,4 +35,7 @@ export type WorkflowBuilderDraft = {
   readonly steps: ReadonlyArray<EditableStep>;
   readonly saveAsPreset: boolean;
   readonly autoRun: boolean;
+  readonly dynamicName: string;
+  readonly dynamicNameEdited: boolean;
+  readonly roleModelOverrides: RoleModelPreferences;
 };
