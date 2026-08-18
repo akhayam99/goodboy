@@ -155,25 +155,16 @@ vi.mock('../features/updater/hooks/useUpdaterPolling', () => ({ useUpdaterPollin
 
 import { App } from '../App';
 
-const openArchive = (): void => {
+const pressCombo = (code: string): void => {
   act(() => {
     window.dispatchEvent(
-      new CustomEvent('goodboy:open-archive-session', {
-        detail: { sessionId: state.currentSessionId },
-      }),
+      new KeyboardEvent('keydown', { code, metaKey: true, shiftKey: true, bubbles: true }),
     );
   });
 };
 
-const openDelete = (): void => {
-  act(() => {
-    window.dispatchEvent(
-      new CustomEvent('goodboy:open-delete-session', {
-        detail: { sessionId: state.currentSessionId },
-      }),
-    );
-  });
-};
+const openArchive = (): void => pressCombo('KeyA');
+const openDelete = (): void => pressCombo('Backspace');
 
 beforeEach(() => {
   state.currentSessionId = 'session-1';
@@ -186,8 +177,8 @@ afterEach(() => {
   state.sessions = state.sessions.slice(0, 1);
 });
 
-describe('archive/delete session open events', () => {
-  it('opens the archive confirm, not the delete confirm, on the archive event', () => {
+describe('archive/delete session shortcuts', () => {
+  it('opens the archive confirm, not the delete confirm, on the archive shortcut', () => {
     const { container } = render(<App />);
 
     openArchive();
@@ -198,7 +189,7 @@ describe('archive/delete session open events', () => {
     expect(deleteConfirmCalls).toEqual([]);
   });
 
-  it('opens the delete confirm, not the archive confirm, on the delete event', () => {
+  it('opens the delete confirm, not the archive confirm, on the delete shortcut', () => {
     const { container } = render(<App />);
 
     openDelete();
@@ -209,34 +200,18 @@ describe('archive/delete session open events', () => {
     expect(archiveConfirmCalls).toEqual([]);
   });
 
-  it('registers each open listener exactly once and removes both on unmount', () => {
+  it('no longer listens for the removed open-session events', () => {
     const addSpy = vi.spyOn(window, 'addEventListener');
-    const removeSpy = vi.spyOn(window, 'removeEventListener');
 
-    const { unmount } = render(<App />);
+    render(<App />);
 
-    const archiveAdds = addSpy.mock.calls.filter(
-      (call) => call[0] === 'goodboy:open-archive-session',
+    const openEventAdds = addSpy.mock.calls.filter(
+      (call) =>
+        call[0] === 'goodboy:open-archive-session' || call[0] === 'goodboy:open-delete-session',
     );
-    const deleteAdds = addSpy.mock.calls.filter(
-      (call) => call[0] === 'goodboy:open-delete-session',
-    );
-    expect(archiveAdds).toHaveLength(1);
-    expect(deleteAdds).toHaveLength(1);
-
-    unmount();
-
-    const archiveRemoves = removeSpy.mock.calls.filter(
-      (call) => call[0] === 'goodboy:open-archive-session',
-    );
-    const deleteRemoves = removeSpy.mock.calls.filter(
-      (call) => call[0] === 'goodboy:open-delete-session',
-    );
-    expect(archiveRemoves).toHaveLength(1);
-    expect(deleteRemoves).toHaveLength(1);
+    expect(openEventAdds).toEqual([]);
 
     addSpy.mockRestore();
-    removeSpy.mockRestore();
   });
 
   it('dismisses the armed archive confirm on Escape', () => {
@@ -266,58 +241,28 @@ describe('archive/delete session open events', () => {
   });
 });
 
-describe('wrong-target session repair', () => {
-  it('targets the session named in the event detail, not the current session', () => {
+describe('shortcut target session', () => {
+  it('targets the session the user is currently in', () => {
     state.sessions.push({ id: 'session-2', workspaceId: 'workspace-1' });
+    state.currentSessionId = 'session-2';
     const { container } = render(<App />);
 
-    act(() => {
-      window.dispatchEvent(
-        new CustomEvent('goodboy:open-delete-session', {
-          detail: { sessionId: 'session-2' },
-        }),
-      );
-    });
+    openDelete();
 
     expect(container.querySelector('[data-testid="delete-confirm"]')).not.toBeNull();
     expect(deleteConfirmCalls).toEqual([{ sessionId: 'session-2' }]);
   });
 
-  it('does not open when the current session is used instead of the event detail', () => {
-    state.sessions.push({ id: 'session-2', workspaceId: 'workspace-1' });
-    render(<App />);
-
-    act(() => {
-      window.dispatchEvent(
-        new CustomEvent('goodboy:open-delete-session', {
-          detail: { sessionId: 'session-2' },
-        }),
-      );
-    });
-
-    expect(deleteConfirmCalls).not.toEqual([{ sessionId: 'session-1' }]);
-    expect(deleteConfirmCalls[0]?.sessionId).toBe('session-2');
-  });
-
-  it('opens nothing when the event detail has no resolvable session id', () => {
+  it('opens nothing when there is no current session', () => {
+    state.currentSessionId = null;
     const { container } = render(<App />);
 
-    act(() => {
-      window.dispatchEvent(
-        new CustomEvent('goodboy:open-delete-session', {
-          detail: { sessionId: 'does-not-exist' },
-        }),
-      );
-    });
+    openDelete();
+    openArchive();
 
     expect(container.querySelector('[data-testid="delete-confirm"]')).toBeNull();
-    expect(deleteConfirmCalls).toEqual([]);
-
-    act(() => {
-      window.dispatchEvent(new CustomEvent('goodboy:open-archive-session'));
-    });
-
     expect(container.querySelector('[data-testid="archive-confirm"]')).toBeNull();
+    expect(deleteConfirmCalls).toEqual([]);
     expect(archiveConfirmCalls).toEqual([]);
   });
 });

@@ -1,5 +1,4 @@
 import { GitBranch } from 'lucide-react';
-import { tintClasses } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
@@ -9,36 +8,43 @@ import type {
   TimelineIssueEntry,
   TimelinePlanEntry,
 } from '../../../../timeline/buildTimelineGroups';
+import type { RunIdentity } from '../../../../timeline/runIdentity';
+import { TimelineGlyphMarker } from './TimelineGlyphMarker';
+import { TimelineMarker } from './TimelineMarker';
+import type { TimelineDepth } from '../../../../timeline/flattenTimelineRows';
 import { TimelineRow } from './TimelineRow';
 
+type ArtifactEntry = TimelinePlanEntry | TimelineIssueEntry | TimelineBranchEntry;
+
 type Props = {
-  readonly entry: TimelinePlanEntry | TimelineIssueEntry | TimelineBranchEntry;
+  readonly entry: ArtifactEntry;
   readonly sessionId: SessionId;
   readonly timeLabel: string | null;
-  readonly hasRoleColumn?: boolean;
+  readonly indent: TimelineDepth;
+  readonly identity: RunIdentity | null;
 };
 
 type MarkerParams = {
-  readonly entry: TimelinePlanEntry | TimelineIssueEntry | TimelineBranchEntry;
+  readonly entry: ArtifactEntry;
 };
 
 const markerFor = ({ entry }: MarkerParams) => {
   if (entry.kind === 'issue') {
-    return <IntegrationGlyph provider={entry.task.provider} size="xs" />;
+    return (
+      <TimelineMarker tone="neutral">
+        <IntegrationGlyph provider={entry.task.provider} size="xs" />
+      </TimelineMarker>
+    );
   }
-  const planTint = tintClasses(CONCEPT_TONE.plans);
   if (entry.kind === 'plan') {
-    return <CONCEPT_ICONS.plans size={10} aria-hidden className={planTint.icon} />;
+    return (
+      <TimelineGlyphMarker icon={CONCEPT_ICONS.plans} tone={CONCEPT_TONE.plans} ariaLabel="Plan" />
+    );
   }
-  return <GitBranch size={10} aria-hidden className="text-muted-foreground" />;
+  return <TimelineGlyphMarker icon={GitBranch} tone="neutral" ariaLabel="Branch" />;
 };
 
-export const TimelineArtifactRow = ({
-  entry,
-  sessionId,
-  timeLabel,
-  hasRoleColumn = false,
-}: Props) => {
+export const TimelineArtifactRow = ({ entry, sessionId, timeLabel, indent, identity }: Props) => {
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
   const openExternalTaskLens = useAppStore((s) => s.openExternalTaskLens);
@@ -70,23 +76,20 @@ export const TimelineArtifactRow = ({
   return (
     <TimelineRow
       timeLabel={timeLabel}
-      depth={entry.depth}
-      hasRoleColumn={hasRoleColumn}
+      indent={indent}
+      identity={identity}
       marker={markerFor({ entry })}
-      onClick={open}
-      ariaLabel={
-        entry.kind === 'plan'
-          ? `open plan ${title}`
-          : entry.kind === 'issue'
-            ? `open ${entry.task.identifier}`
-            : `open ${title}`
-      }
       label={<span className="min-w-0 truncate text-sm text-foreground">{title}</span>}
-      meta={
-        meta != null ? (
-          <span className="text-xs font-medium text-muted-foreground">{meta}</span>
-        ) : null
-      }
+      meta={meta}
+      navigation={{
+        label:
+          entry.kind === 'plan'
+            ? 'Open plan'
+            : entry.kind === 'issue'
+              ? `Open ${entry.task.identifier}`
+              : 'Open files',
+        onNavigate: open,
+      }}
     />
   );
 };

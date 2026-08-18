@@ -243,6 +243,51 @@ describe('HeaderBand', () => {
     expect(onSelectLens).toHaveBeenCalledWith('github_issue');
   });
 
+  it('fits the header into exactly two rows', () => {
+    const { container } = render(
+      <HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />,
+    );
+    const band = container.firstElementChild;
+
+    expect(band?.children).toHaveLength(2);
+  });
+
+  it('puts the title first and the folder, branch and destructive controls at the far end of that row', () => {
+    const { container } = render(
+      <HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />,
+    );
+    const titleRow = container.firstElementChild?.firstElementChild;
+
+    expect(titleRow?.textContent).toContain('refactor auth');
+    expect(titleRow?.querySelector('[aria-label="open worktree"]')).not.toBeNull();
+    expect(titleRow?.querySelector('[aria-label="branch actions"]')).not.toBeNull();
+    expect(titleRow?.querySelector('[aria-label="session actions"]')).not.toBeNull();
+  });
+
+  it('renames from a click on the title, with no separate edit button', () => {
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />);
+
+    expect(screen.queryByRole('button', { name: /edit goal/i })).toBeNull();
+    fireEvent.click(screen.getByText('refactor auth'));
+    expect(screen.getByRole('textbox', { name: 'Session title' })).toBeDefined();
+  });
+
+  it('reaches rename from the keyboard as well as the mouse', () => {
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />);
+    const title = screen.getByText('refactor auth');
+
+    expect(title.getAttribute('tabindex')).toBe('0');
+    fireEvent.keyDown(title, { key: 'Enter' });
+    expect(screen.getByRole('textbox', { name: 'Session title' })).toBeDefined();
+  });
+
+  it('leaves "Mark all seen" to the activity heading', () => {
+    store.sessionPhaseRuns = { [SESSION_ID]: [{ id: 'agent-1' }] };
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />);
+
+    expect(screen.queryByRole('button', { name: /mark all seen/i })).toBeNull();
+  });
+
   it('mounts the editor menu, git actions and destructive actions at compact density for this session', () => {
     render(
       <HeaderBand

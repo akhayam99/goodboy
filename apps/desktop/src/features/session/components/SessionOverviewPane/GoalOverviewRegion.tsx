@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import type { KeyboardEvent, MouseEvent } from 'react';
 import { History } from 'lucide-react';
-import { Button, ClampedProse, CopyButton, Eyebrow, Textarea } from '@goodboy/ui';
+import { CopyButton, Textarea, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
@@ -14,6 +15,18 @@ type Props = {
   readonly onOpenHistory: () => void;
 };
 
+type ClickParams = {
+  readonly event: MouseEvent<HTMLElement>;
+};
+
+const isTextGesture = ({ event }: ClickParams): boolean => {
+  if (event.target instanceof Element && event.target.closest('a') != null) {
+    return true;
+  }
+  const selection = window.getSelection();
+  return selection != null && selection.isCollapsed === false && selection.toString() !== '';
+};
+
 export const GoalOverviewRegion = ({
   sessionId,
   value,
@@ -25,12 +38,12 @@ export const GoalOverviewRegion = ({
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value);
-  const hasValue = value.length > 0;
 
   useEffect(() => {
-    if (isEditing === false) {
-      setDraft(value);
+    if (isEditing) {
+      return;
     }
+    setDraft(value);
   }, [isEditing, value]);
 
   const commit = () => {
@@ -48,50 +61,27 @@ export const GoalOverviewRegion = ({
     setIsEditing(true);
   };
 
+  const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+    event.preventDefault();
+    startEditing();
+  };
+
+  const hasValue = value !== '';
+
   return (
-    <section aria-label="Goal" className="flex flex-col gap-2">
-      <Eyebrow label="Goal" muted className="px-0.5 font-medium" />
-      <div className="flex flex-col gap-4 rounded-lg border border-border-soft bg-subtle px-4 py-3">
-        {hasValue || historyCount > 0 ? (
-          <div className="flex items-start justify-end gap-2">
-            {hasValue ? (
-              <Button size="sm" variant="ghost" onClick={startEditing} disabled={isSummarizing}>
-                Edit
-              </Button>
-            ) : null}
-            {hasValue ? (
-              <CopyButton
-                presentation="icon"
-                value={value}
-                label="copy goal"
-                size={15}
-                className="rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
-              />
-            ) : null}
-            {historyCount > 0 ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={onOpenHistory}
-                aria-label={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of Goal`}
-                className="h-7 gap-1.5 px-2 text-xs text-muted-foreground"
-              >
-                <History size={13} aria-hidden />
-                {historyCount} {historyCount === 1 ? 'version' : 'versions'}
-              </Button>
-            ) : null}
-          </div>
-        ) : null}
+    <section aria-label="Goal" className="flex min-w-0 flex-col gap-2">
+      <div className="flex min-w-0 items-center gap-2 px-0.5">
+        <span className="shrink-0 text-3xs font-medium uppercase tracking-eyebrow text-muted-foreground">
+          Goal
+        </span>
         {isLoading ? (
-          <div className="flex flex-col gap-2" aria-label="Loading goal">
-            <div className="h-4 w-full rounded bg-muted/50" />
-            <div className="h-4 w-3/4 rounded bg-muted/50" />
-          </div>
+          <span className="h-4 min-w-0 flex-1 rounded bg-muted/50" aria-label="Loading goal" />
         ) : isEditing ? (
           <Textarea
             autoFocus
-            aria-label="Goal"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onBlur={commit}
@@ -107,24 +97,61 @@ export const GoalOverviewRegion = ({
                 commit();
               }
             }}
-            className="font-mono text-sm"
+            aria-label="Goal"
+            className="min-w-0 flex-1 text-sm"
             autoGrow
-            maxRows={24}
+            maxRows={12}
           />
-        ) : hasValue === false ? (
-          <div className="flex items-center gap-4 rounded-lg bg-subtle p-3">
-            <p className="min-w-0 flex-1 text-sm text-muted-foreground">No goal yet</p>
-            <Button size="sm" variant="ghost" onClick={startEditing} disabled={isSummarizing}>
-              Add
-            </Button>
-          </div>
         ) : (
-          <div className="min-w-0">
-            <ClampedProse text={value} lines={2} className="text-base leading-relaxed" />
-          </div>
+          <Tooltip content={hasValue ? value : 'Add a goal'}>
+            <span
+              role="button"
+              tabIndex={isSummarizing ? -1 : 0}
+              onClick={(event) => {
+                if (isTextGesture({ event })) {
+                  return;
+                }
+                startEditing();
+              }}
+              onKeyDown={onKeyDown}
+              aria-label={hasValue ? 'Edit goal' : 'Add a goal'}
+              className={cn(
+                'min-w-0 flex-1 truncate rounded-md text-sm motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]',
+                hasValue ? 'text-foreground' : 'text-muted-foreground',
+                isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-foreground/[0.03]',
+              )}
+            >
+              {hasValue ? value : 'No goal yet'}
+            </span>
+          </Tooltip>
         )}
-        <GoalAttachmentsStrip owner={{ type: 'session', id: sessionId }} />
+        <span className="flex shrink-0 items-center gap-1">
+          {hasValue ? (
+            <CopyButton
+              presentation="icon"
+              value={value}
+              label="copy goal"
+              size={13}
+              className="rounded-md p-1 text-muted-foreground/60 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
+            />
+          ) : null}
+          {historyCount > 0 ? (
+            <Tooltip
+              content={`${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'}`}
+            >
+              <button
+                type="button"
+                onClick={onOpenHistory}
+                aria-label={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of Goal`}
+                className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground/60 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
+              >
+                <History size={13} aria-hidden />
+              </button>
+            </Tooltip>
+          ) : null}
+        </span>
       </div>
+      <GoalAttachmentsStrip owner={{ type: 'session', id: sessionId }} />
     </section>
   );
 };
