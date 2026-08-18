@@ -285,7 +285,13 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
     if (row === undefined) {
       return;
     }
-    markDelegated({ index, columns, fromY: row.topY, toY: row.height });
+    const ownColumn = row.groupId == null ? null : columnByGroupId.get(row.groupId);
+    markDelegated({
+      index,
+      columns: ownColumn == null ? columns : columns.filter((column) => column !== ownColumn),
+      fromY: row.topY,
+      toY: row.height,
+    });
   };
 
   const pushSpan = ({ index, plan }: { readonly index: number; readonly plan: GroupPlan }) => {
@@ -377,7 +383,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
         fromY: topRow.topY,
         toY: topAnchor,
       });
-      markDelegatedRow({ index: topIndex, columns });
+      markDelegated({ index: topIndex, columns, fromY: topAnchor, toY: topRow.height });
       for (let index = 0; index < topIndex; index += 1) {
         const row = rows[index];
         if (row === undefined) {

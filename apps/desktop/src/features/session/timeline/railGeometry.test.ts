@@ -611,3 +611,27 @@ describe('a receded span carries its curves', () => {
     }
   });
 });
+
+describe('a line keeps its own work at full strength', () => {
+  it('leaves a run lane full on its own step that sits between a fan-out and its origin', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'child-2', groupId: 'stub' }),
+        row({ id: 'child-1', groupId: 'stub' }),
+        row({ id: 'step-2', groupId: 'lane' }),
+        row({ id: 'step-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [
+        group({ id: 'lane', originRowId: 'origin' }),
+        group({ id: 'stub', originRowId: 'step-1', parentGroupId: 'lane' }),
+      ],
+    });
+
+    expect(
+      lanesOf(layout, 'step-2')
+        .filter((segment) => segment.column === 1)
+        .every((segment) => segment.strength === 'full'),
+    ).toBe(true);
+  });
+});
