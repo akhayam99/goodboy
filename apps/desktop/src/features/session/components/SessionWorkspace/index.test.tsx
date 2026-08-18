@@ -240,7 +240,7 @@ vi.mock('../../../../shared/components/PaneShell', () => ({
     </div>
   ),
 }));
-vi.mock('./hooks/useSelectedAgentHome', () => ({
+vi.mock('../../hooks/useSelectedAgentHome', () => ({
   useSelectedAgentHome: () => hooks.agentHome,
 }));
 import { SessionWorkspace } from './index';
@@ -725,7 +725,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     ]);
   });
 
-  it('keeps resolve as the chat-header back target when a workflow step agent auto-advances', () => {
+  it('keeps resolve as the back target while the trail still names the run', () => {
     const workflowAgent = {
       ...selectedAgent,
       stepId: 'step-1',
@@ -753,13 +753,15 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     render(<SessionWorkspace session={workflowSession} isActive />);
 
-    expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
     expect(screen.queryByText('Part of')).toBeNull();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'resolve');
 
     const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
     expect(result.current.map((crumb) => crumb.label)).toEqual([
       'Overview',
-      'Resolve',
+      'Workflows',
+      'Release flow',
       'Selected agent',
     ]);
   });

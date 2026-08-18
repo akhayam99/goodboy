@@ -25,7 +25,7 @@ import { ResolvePane } from './parts/ResolvePane';
 import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
 import { PaneShell } from '../../../../shared/components/PaneShell';
-import { useSelectedAgentHome } from './hooks/useSelectedAgentHome';
+import { useSelectedAgentHome } from '../../hooks/useSelectedAgentHome';
 import { resolveOverlayHome } from './resolveOverlayHome';
 import { WorkflowsPane } from './parts/WorkflowsPane';
 import { IntegrationPane } from './parts/IntegrationPane';

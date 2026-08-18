@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import {
   agentHomeLens,
   classifyAgent,
   resolveRootAgent,
   type AgentHomeLens,
-} from '../../../../agent-kind';
+} from '../../agent-kind';
 
 export const useSelectedAgentHome = (sessionId: SessionId): AgentHomeLens | null => {
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
