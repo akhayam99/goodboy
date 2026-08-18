@@ -2,6 +2,7 @@ export type {
   AgentId,
   CredentialId,
   FileVersionId,
+  IntegrationCredentialId,
   IsoDateTime,
   MessageId,
   OpenQuestionId,
@@ -22,6 +23,7 @@ export type {
   WorkspaceScriptId,
 } from './ids';
 export type { FileVersion, FileVersionChangeKind, FileVersionSnapshotSource } from './file-version';
+export type { IntegrationCredential, IntegrationCredentialUsage } from './integration-credential';
 export type { OpenQuestion, OpenQuestionSelectMode, OpenQuestionStatus } from './open-question';
 export type {
   BitbucketIntegrationConfig,

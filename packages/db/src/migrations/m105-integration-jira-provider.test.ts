@@ -64,8 +64,13 @@ describe('m105 integration jira provider', () => {
 
     const now = Date.now();
     await db.execute(
-      `INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_key, created_at, updated_at)
-       VALUES ('wi-jira', ?, 'jira', '{}', 'goodboy.workspace.ws-1.jira', ?, ?)`,
+      `INSERT INTO integration_credentials (id, provider, label, account, created_at, updated_at)
+       VALUES ('ic-jira', 'jira', 'Grace Hopper', 'https://acme.atlassian.net', ?, ?)`,
+      [now, now],
+    );
+    await db.execute(
+      `INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_id, created_at, updated_at)
+       VALUES ('wi-jira', ?, 'jira', '{}', 'ic-jira', ?, ?)`,
       [workspaceId, now, now],
     );
     await db.execute(
@@ -88,8 +93,8 @@ describe('m105 integration jira provider', () => {
 
     await expect(
       db.execute(
-        `INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_key, created_at, updated_at)
-         VALUES ('wi-x', ?, 'asana', '{}', 'k', ?, ?)`,
+        `INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_id, created_at, updated_at)
+         VALUES ('wi-x', ?, 'asana', '{}', 'ic-x', ?, ?)`,
         [workspaceId, Date.now(), Date.now()],
       ),
     ).rejects.toThrow(/CHECK constraint/);

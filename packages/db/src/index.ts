@@ -26,6 +26,12 @@ export {
   deleteWorkspaceIntegration,
 } from './queries/workspace-integration';
 export {
+  listIntegrationCredentials,
+  upsertIntegrationCredential,
+  deleteIntegrationCredential,
+  countWorkspacesPerIntegrationCredential,
+} from './queries/integration-credential';
+export {
   upsertSessionExternalTask,
   listSessionExternalTasks,
   listExternalTasksForWorkspace,

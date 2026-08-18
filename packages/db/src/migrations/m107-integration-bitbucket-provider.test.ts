@@ -33,8 +33,13 @@ describe('m107 integration bitbucket provider', () => {
 
     const now = Date.now();
     await db.execute(
-      `INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_key, created_at, updated_at)
-       VALUES ('wi-bb', ?, 'bitbucket', '{}', 'goodboy.workspace.ws-1.bitbucket', ?, ?)`,
+      `INSERT INTO integration_credentials (id, provider, label, account, created_at, updated_at)
+       VALUES ('ic-bb', 'bitbucket', 'Grace Hopper', 'bitbucket.org/goodboy', ?, ?)`,
+      [now, now],
+    );
+    await db.execute(
+      `INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_id, created_at, updated_at)
+       VALUES ('wi-bb', ?, 'bitbucket', '{}', 'ic-bb', ?, ?)`,
       [workspaceId, now, now],
     );
     await db.execute(
@@ -98,6 +103,7 @@ describe('m107 integration bitbucket provider', () => {
       'idx_pr_review_drafts_session',
       'idx_session_external_tasks_identity',
       'idx_session_external_tasks_provider_external',
+      'idx_workspace_integrations_credential_id',
       'idx_workspace_integrations_workspace_id',
     ]);
   });
@@ -109,8 +115,8 @@ describe('m107 integration bitbucket provider', () => {
 
     await expect(
       db.execute(
-        `INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_key, created_at, updated_at)
-         VALUES ('wi-x', ?, 'asana', '{}', 'k', ?, ?)`,
+        `INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_id, created_at, updated_at)
+         VALUES ('wi-x', ?, 'asana', '{}', 'ic-x', ?, ?)`,
         [workspaceId, Date.now(), Date.now()],
       ),
     ).rejects.toThrow(/CHECK constraint/);

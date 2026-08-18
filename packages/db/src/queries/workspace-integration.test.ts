@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type {
   GitlabIntegrationConfig,
+  IntegrationCredentialId,
   JiraIntegrationConfig,
   LinearIntegrationConfig,
   SentryIntegrationConfig,
@@ -29,6 +30,18 @@ async function seed() {
     `INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
     [workspaceId, 'ws', '/tmp/ws', now, now],
   );
+  for (const provider of ['linear', 'sentry', 'gitlab', 'jira']) {
+    await db.execute(
+      `INSERT INTO integration_credentials (id, provider, label, account, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [`cred-${provider}`, provider, 'Amin', 'acme', now, now],
+    );
+  }
+  await db.execute(
+    `INSERT INTO integration_credentials (id, provider, label, account, created_at, updated_at)
+     VALUES ('cred-linear-rotated', 'linear', 'Amin rotated', 'acme', ?, ?)`,
+    [now, now],
+  );
   return db;
 }
 
@@ -44,7 +57,7 @@ function makeIntegration(overrides: Partial<WorkspaceIntegration> = {}): Workspa
     workspaceId,
     provider: 'linear',
     config,
-    credentialKey: `goodboy.workspace.${workspaceId}.linear`,
+    credentialId: 'cred-linear' as IntegrationCredentialId,
     createdAt: ts,
     updatedAt: ts,
     ...overrides,
@@ -66,7 +79,7 @@ function makeSentryIntegration(
     workspaceId,
     provider: 'sentry',
     config,
-    credentialKey: `goodboy.workspace.${workspaceId}.sentry`,
+    credentialId: 'cred-sentry' as IntegrationCredentialId,
     createdAt: ts,
     updatedAt: ts,
     ...overrides,
@@ -84,10 +97,10 @@ describe('workspace_integrations queries', () => {
     expect(got!.id).toBe(integration.id);
     expect((got!.config as LinearIntegrationConfig).workspaceUrlKey).toBe('serenis');
     expect((got!.config as LinearIntegrationConfig).viewerUserId).toBe('u-abc');
-    expect(got!.credentialKey).toBe(integration.credentialKey);
+    expect(got!.credentialId).toBe(integration.credentialId);
   });
 
-  it('upsert on conflict updates config + credential_key, preserves id and created_at', async () => {
+  it('upsert on conflict updates config + credential_id, preserves id and created_at', async () => {
     const db = await seed();
     const initial = makeIntegration();
     await upsertWorkspaceIntegration(db, initial);
@@ -99,7 +112,7 @@ describe('workspace_integrations queries', () => {
         viewerUserId: 'u-abc',
         viewerName: 'Amin Khayam',
       },
-      credentialKey: 'rotated-key',
+      credentialId: 'cred-linear-rotated' as IntegrationCredentialId,
       updatedAt: new Date('2026-05-22T10:00:00Z').toISOString() as IsoDateTime,
     });
     await upsertWorkspaceIntegration(db, updated);
@@ -107,7 +120,7 @@ describe('workspace_integrations queries', () => {
     const got = await getWorkspaceIntegration(db, workspaceId, 'linear');
     expect(got!.id).toBe(initial.id);
     expect((got!.config as LinearIntegrationConfig).viewerName).toBe('Amin Khayam');
-    expect(got!.credentialKey).toBe('rotated-key');
+    expect(got!.credentialId).toBe('cred-linear-rotated');
     expect(got!.createdAt).toBe(initial.createdAt);
   });
 
@@ -134,7 +147,7 @@ describe('workspace_integrations queries', () => {
       id: 'gl-1' as WorkspaceIntegrationId,
       provider: 'gitlab',
       config: gitlabConfig,
-      credentialKey: `goodboy.workspace.${workspaceId}.gitlab`,
+      credentialId: 'cred-gitlab' as IntegrationCredentialId,
     });
     await upsertWorkspaceIntegration(db, makeIntegration());
     await upsertWorkspaceIntegration(db, gitlab);
@@ -158,7 +171,7 @@ describe('workspace_integrations queries', () => {
         id: 'gl-2' as WorkspaceIntegrationId,
         provider: 'gitlab',
         config: { userName: 'a', userId: '1', host: 'https://gitlab.com' },
-        credentialKey: `goodboy.workspace.${workspaceId}.gitlab`,
+        credentialId: 'cred-gitlab' as IntegrationCredentialId,
       }),
     );
 
@@ -198,7 +211,7 @@ describe('workspace_integrations queries', () => {
     expect(config.project).toBe('desktop');
     expect(config.projectName).toBe('Desktop');
     expect(config.orgName).toBe('Goodboy');
-    expect(got!.credentialKey).toBe(`goodboy.workspace.${workspaceId}.sentry`);
+    expect(got!.credentialId).toBe('cred-sentry');
   });
 
   it('persists a sentry config with optional name fields omitted', async () => {
@@ -285,7 +298,7 @@ describe('workspace_integrations queries', () => {
         id: 'jira-1' as WorkspaceIntegrationId,
         provider: 'jira',
         config: jiraConfig,
-        credentialKey: `goodboy.workspace.${workspaceId}.jira`,
+        credentialId: 'cred-jira' as IntegrationCredentialId,
       }),
     );
 
@@ -293,6 +306,6 @@ describe('workspace_integrations queries', () => {
     expect(got!.provider).toBe('jira');
     expect((got!.config as JiraIntegrationConfig).siteUrl).toBe('https://acme.atlassian.net');
     expect((got!.config as JiraIntegrationConfig).projectKey).toBe('GB');
-    expect(got!.credentialKey).toBe(`goodboy.workspace.${workspaceId}.jira`);
+    expect(got!.credentialId).toBe('cred-jira');
   });
 });
