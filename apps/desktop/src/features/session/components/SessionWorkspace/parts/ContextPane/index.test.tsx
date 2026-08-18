@@ -84,7 +84,11 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
   return {
     ...actual,
     ScrollFade: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    Markdown: ({ text }: { text: string }) => <span data-testid="markdown">{text}</span>,
+    Markdown: ({ text, className }: { text: string; className?: string }) => (
+      <span data-testid="markdown" className={className}>
+        {text}
+      </span>
+    ),
   };
 });
 
@@ -264,6 +268,39 @@ describe('Decisions rows', () => {
     ]);
     expect(decisions.querySelector('li')).toBeNull();
     expect(decisions.querySelector('[class*="list-disc"]')).toBeNull();
+  });
+
+  it('sets a row one step down the type scale, on a whole-pixel line box', () => {
+    render(<ContextPane session={SESSION} />);
+    const decisions = sectionFor('Decisions');
+
+    const prose = within(decisions).getAllByTestId('markdown')[0] as HTMLElement;
+
+    expect(prose.className).toContain('text-xs');
+    expect(prose.className).toContain('[&_p]:leading-5');
+    expect(prose.className).not.toContain('text-sm');
+  });
+
+  it('tightens the row and keeps the delete control on the text it belongs to', () => {
+    render(<ContextPane session={SESSION} />);
+    const decisions = sectionFor('Decisions');
+
+    const row = within(decisions).getByRole('button', { name: 'Edit decision 1' })
+      .parentElement as HTMLElement;
+
+    expect(row.className).toContain('py-2');
+    expect(row.className).not.toContain('p-3');
+    expect(row.className).toContain('items-center');
+    expect(row.className).not.toContain('border');
+  });
+
+  it('leaves the empty section to its add row rather than a placeholder', () => {
+    store.sessionSlots['session-1'] = slots({ decisions: '' });
+    render(<ContextPane session={SESSION} />);
+    const decisions = sectionFor('Decisions');
+
+    expect(decisions.textContent).not.toContain('No decisions yet');
+    expect(within(decisions).getByRole('button', { name: 'Add decision' })).toBeDefined();
   });
 
   it('edits the clicked row in place and leaves the rest byte identical', () => {

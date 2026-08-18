@@ -37,9 +37,9 @@ export const AddDecisionRow = ({ isLocked, onAdd }: Props) => {
       type="button"
       disabled={isLocked}
       onClick={() => setIsWriting(true)}
-      className="flex w-full items-center gap-2 rounded-lg border border-dashed border-border-soft px-3 py-2.5 text-left text-sm text-muted-foreground motion-safe:transition-colors hover:bg-muted/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:pointer-events-none disabled:opacity-40"
+      className="flex w-full items-center gap-2 rounded-lg border border-dashed border-border-soft px-3 py-2 text-left text-xs leading-5 text-muted-foreground motion-safe:transition-colors hover:bg-muted/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:pointer-events-none disabled:opacity-40"
     >
-      <Plus size={14} aria-hidden className="shrink-0" />
+      <Plus size={13} aria-hidden className="shrink-0" />
       Add decision
     </button>
   );
