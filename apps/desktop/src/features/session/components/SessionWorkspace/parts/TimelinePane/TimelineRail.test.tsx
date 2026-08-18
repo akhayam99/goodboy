@@ -5,9 +5,6 @@ import { cleanup, render } from '@testing-library/react';
 import type { RailRow, RailSegment } from '../../../../timeline/railGeometry';
 import { TimelineRail } from './TimelineRail';
 
-const RECEDED_RUN_STROKE =
-  'color-mix(in oklab, var(--color-run-1) var(--rail-strength-receded), var(--color-background))';
-
 const railOf = ({ segment }: { readonly segment: RailSegment }): RailRow => ({
   id: 'row',
   height: 32,
@@ -20,7 +17,7 @@ const railOf = ({ segment }: { readonly segment: RailSegment }): RailRow => ({
 afterEach(cleanup);
 
 describe('TimelineRail', () => {
-  it('dims a receded stroke by mixing its colour toward the opaque surface', () => {
+  it('keeps a receded stroke on its own colour and dims it with opacity', () => {
     const { container } = render(
       <TimelineRail
         width={32}
@@ -38,9 +35,8 @@ describe('TimelineRail', () => {
     );
     const line = container.querySelector('line');
 
-    expect(line?.getAttribute('stroke')).toBe(RECEDED_RUN_STROKE);
-    expect(line?.getAttribute('class') ?? '').not.toContain('opacity');
-    expect(line?.hasAttribute('opacity')).toBe(false);
+    expect(line?.getAttribute('stroke')).toBe('var(--color-run-1)');
+    expect(line?.getAttribute('class') ?? '').toContain('opacity-[var(--rail-strength-receded)]');
   });
 
   it('paints every stroke with one flat colour and no gradient machinery', () => {
@@ -59,9 +55,11 @@ describe('TimelineRail', () => {
         })}
       />,
     );
+    const line = container.querySelector('line');
 
     expect(container.querySelector('defs')).toBeNull();
     expect(container.querySelector('linearGradient')).toBeNull();
-    expect(container.querySelector('line')?.getAttribute('stroke')).toBe('var(--color-border)');
+    expect(line?.getAttribute('stroke')).toBe('var(--color-border)');
+    expect(line?.getAttribute('class') ?? '').not.toContain('opacity');
   });
 });

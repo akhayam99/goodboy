@@ -9,22 +9,16 @@ type Props = {
 const LANE_WIDTH = 2;
 const SPINE_WIDTH = 1;
 const DASH_PATTERN = '3 3';
+const RECEDED_CLASS = 'opacity-[var(--rail-strength-receded)]';
 
-const baseStrokeOf = ({ identityIndex }: { readonly identityIndex: number | null }): string =>
+const strokeOf = ({ identityIndex }: { readonly identityIndex: number | null }): string =>
   identityIndex == null ? 'var(--color-border)' : runIdentityStroke({ index: identityIndex });
 
-type StrokeParams = {
-  readonly identityIndex: number | null;
+const recededClassOf = ({
+  strength,
+}: {
   readonly strength: RailSegment['strength'];
-};
-
-const strokeOf = ({ identityIndex, strength }: StrokeParams): string => {
-  const stroke = baseStrokeOf({ identityIndex });
-  if (strength === 'full') {
-    return stroke;
-  }
-  return `color-mix(in oklab, ${stroke} var(--rail-strength-receded), var(--color-background))`;
-};
+}): string | undefined => (strength === 'receded' ? RECEDED_CLASS : undefined);
 
 const segmentKey = ({ segment }: { readonly segment: RailSegment }): string =>
   `${segment.column}:${segment.fromY}:${segment.toY}:${segment.dash}`;
@@ -40,14 +34,12 @@ export const TimelineRail = ({ rail, width }: Props) => (
     {rail.segments.map((segment) => (
       <line
         key={segmentKey({ segment })}
+        className={recededClassOf({ strength: segment.strength })}
         x1={railColumnX({ column: segment.column })}
         y1={segment.fromY}
         x2={railColumnX({ column: segment.column })}
         y2={segment.toY}
-        stroke={strokeOf({
-          identityIndex: segment.identityIndex,
-          strength: segment.strength,
-        })}
+        stroke={strokeOf({ identityIndex: segment.identityIndex })}
         strokeWidth={segment.identityIndex == null ? SPINE_WIDTH : LANE_WIDTH}
         strokeDasharray={segment.dash === 'dashed' ? DASH_PATTERN : undefined}
         strokeLinecap="butt"
@@ -57,9 +49,10 @@ export const TimelineRail = ({ rail, width }: Props) => (
     {rail.joins.map((join) => (
       <path
         key={`${join.kind}:${join.laneColumn}:${join.anchorY}`}
+        className={recededClassOf({ strength: join.strength })}
         d={join.path}
         fill="none"
-        stroke={strokeOf({ identityIndex: join.identityIndex, strength: join.strength })}
+        stroke={strokeOf({ identityIndex: join.identityIndex })}
         strokeWidth={join.identityIndex == null ? SPINE_WIDTH : LANE_WIDTH}
         strokeDasharray={join.dash === 'dashed' ? DASH_PATTERN : undefined}
         strokeLinecap="butt"
