@@ -15,8 +15,17 @@ describe('runIdentity', () => {
     for (let index = 0; index < 40; index += 1) {
       const identity = runIdentity({ runId: `run-${index}` });
       expect(tones.some((tone) => identity.stroke.includes(tone))).toBe(false);
+      expect(tones.some((tone) => identity.chip.includes(tone))).toBe(false);
       expect(identity.stroke.startsWith('var(--color-run-')).toBe(true);
     }
+  });
+
+  it('offers the same identity to a chip as to its lane', () => {
+    const identity = runIdentity({ runId: 'run-7' });
+    const slot = identity.index + 1;
+
+    expect(identity.stroke).toBe(`var(--color-run-${slot})`);
+    expect(identity.chip).toContain(`text-run-${slot}`);
   });
 
   it('reads a lane stroke back from the index the geometry carries', () => {

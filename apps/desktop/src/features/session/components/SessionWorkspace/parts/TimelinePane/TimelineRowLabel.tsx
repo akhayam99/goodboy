@@ -1,17 +1,24 @@
 import { Chip, cn } from '@goodboy/ui';
 import { agentKindPalette } from '../../../../agent-kind';
-import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
-import { runKindLabel } from '../../../../timeline/runKindLabel';
+import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
+import type {
+  TimelineRowItem,
+  TimelineStreamEntry,
+} from '../../../../timeline/buildTimelineStream';
+import type { TimelineRowGrade } from '../../../../timeline/timelineRhythm';
+import { TimelineRunLabel } from './TimelineRunLabel';
 
 type Props = {
   readonly item: TimelineRowItem;
 };
 
-const titleOf = ({ item }: Props): string => {
-  const { entry } = item;
-  if (entry.kind === 'run') {
-    return entry.workflow.name;
-  }
+type LabelEntry = Exclude<TimelineStreamEntry, TimelineRunEntry>;
+
+type EntryParams = {
+  readonly entry: LabelEntry;
+};
+
+const titleOf = ({ entry }: EntryParams): string => {
   if (entry.kind === 'agent') {
     return entry.agent.name;
   }
@@ -27,21 +34,12 @@ const titleOf = ({ item }: Props): string => {
   return entry.question.text;
 };
 
-const chipOf = ({ item }: Props) => {
-  const { entry } = item;
-  if (entry.kind === 'run') {
-    return (
-      <Chip
-        tone="accent"
-        label={runKindLabel({ workflow: entry.workflow })}
-        shape="badge"
-        size="3xs"
-        width="md"
-        className="shrink-0"
-      />
-    );
-  }
-  if (entry.kind !== 'agent' || item.grade !== 'entry' || entry.agentKind === 'resolver') {
+type ChipParams = EntryParams & {
+  readonly grade: TimelineRowGrade;
+};
+
+const chipOf = ({ entry, grade }: ChipParams) => {
+  if (entry.kind !== 'agent' || grade !== 'entry' || entry.agentKind === 'resolver') {
     return null;
   }
   const palette = agentKindPalette({ kind: entry.agentKind });
@@ -59,16 +57,20 @@ const chipOf = ({ item }: Props) => {
 };
 
 export const TimelineRowLabel = ({ item }: Props) => {
-  const isStep = item.grade === 'step';
+  const { entry, grade } = item;
+  if (entry.kind === 'run') {
+    return <TimelineRunLabel entry={entry} />;
+  }
+  const isStep = grade === 'step';
   return (
     <>
-      {chipOf({ item })}
+      {chipOf({ entry, grade })}
       {item.ordinal != null ? (
         <span className="w-4 shrink-0 text-right text-3xs tabular-nums text-muted-foreground/60">
           {item.ordinal}
         </span>
       ) : null}
-      {item.entry.kind === 'answer' ? (
+      {entry.kind === 'answer' ? (
         <span className="shrink-0 text-2xs text-muted-foreground">You answered</span>
       ) : null}
       <span
@@ -82,7 +84,7 @@ export const TimelineRowLabel = ({ item }: Props) => {
               : 'text-foreground',
         )}
       >
-        {titleOf({ item })}
+        {titleOf({ entry })}
       </span>
     </>
   );
