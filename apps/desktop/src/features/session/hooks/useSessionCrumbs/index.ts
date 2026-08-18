@@ -8,6 +8,7 @@ import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowR
 import { buildSessionBreadcrumb } from '../../components/SessionWorkspace/sessionBreadcrumb';
 import { SIMPLE_LENSES, lensLabelFor } from '../../lens-labels';
 import { useSelectedWorkflowRun } from '../useSelectedWorkflowRun';
+import { useSelectedAgentHome } from '../useSelectedAgentHome';
 
 type Params = {
   readonly session: Session;
@@ -29,6 +30,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     (s) =>
       s.sessionPhaseRuns[sessionId]?.find((agent) => agent.id === selectedAgentId)?.name ?? null,
   );
+  const selectedChildHome = useSelectedAgentHome(sessionId);
   const attachedWorkflowRuns = useAttachedWorkflowRuns({ session });
   const selectedWorkflowRun = useSelectedWorkflowRun({ session });
   const plans = useSessionPlans(sessionId);
@@ -59,6 +61,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
         selectedChildWorkflowName,
         focusedPlanTitle,
         selectedChildLabel,
+        selectedChildHome,
         lensLabel: (kind: LensKind) => lensLabelFor({ lens: kind, isBranchless }),
         handlers: {
           toOverview: () => setActiveLens(sessionId, null),
@@ -88,6 +91,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       selectedWorkflowRunId,
       focusedPlanTitle,
       selectedChildLabel,
+      selectedChildHome,
       isBranchless,
       sessionId,
       setActiveLens,

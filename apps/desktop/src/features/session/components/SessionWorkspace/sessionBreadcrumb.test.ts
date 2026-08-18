@@ -23,6 +23,7 @@ const base = (
   selectedChildWorkflowName: null,
   focusedPlanTitle: null,
   selectedChildLabel: null,
+  selectedChildHome: null,
   lensLabel,
   handlers,
   ...overrides,
@@ -49,16 +50,61 @@ describe('buildSessionBreadcrumb', () => {
     expect(last(crumbs)?.onClick).toBeUndefined();
   });
 
-  it('extends the lens trail without dropping an ancestor when a child opens', () => {
+  it('extends the trail without dropping an ancestor when a child opens', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(
-      base({ lens: 'agents', selectedChildLabel: 'Selected agent' }, h),
+      base(
+        { lens: 'agents', selectedChildHome: 'agents', selectedChildLabel: 'Selected agent' },
+        h,
+      ),
     );
 
     expect(labels(crumbs)).toEqual(['Overview', 'agents', 'Selected agent']);
     crumbs[1]!.onClick!();
     expect(h.toLens).toHaveBeenCalledWith('agents');
     expect(last(crumbs)?.onClick).toBeUndefined();
+  });
+
+  it('parents a child on its own home when a shortcut left the lens on overview', () => {
+    const h = makeHandlers();
+    const adHoc = buildSessionBreadcrumb(
+      base({ lens: null, selectedChildHome: 'agents', selectedChildLabel: 'scout one' }, h),
+    );
+    const resolver = buildSessionBreadcrumb(
+      base({ lens: null, selectedChildHome: 'resolve', selectedChildLabel: 'resolve one' }, h),
+    );
+
+    expect(labels(adHoc)).toEqual(['Overview', 'agents', 'scout one']);
+    expect(labels(resolver)).toEqual(['Overview', 'resolve', 'resolve one']);
+  });
+
+  it('parents a step on its run no matter which lens the jump came from', () => {
+    const h = makeHandlers();
+    const fromFeed = buildSessionBreadcrumb(
+      base(
+        {
+          lens: null,
+          selectedChildHome: 'workflows',
+          selectedChildWorkflowName: 'refactor',
+          selectedChildLabel: 'Implement',
+        },
+        h,
+      ),
+    );
+    const fromAnotherLens = buildSessionBreadcrumb(
+      base(
+        {
+          lens: 'resolve',
+          selectedChildHome: 'workflows',
+          selectedChildWorkflowName: 'refactor',
+          selectedChildLabel: 'Implement',
+        },
+        h,
+      ),
+    );
+
+    expect(labels(fromFeed)).toEqual(['Overview', 'Workflows', 'refactor', 'Implement']);
+    expect(labels(fromAnotherLens)).toEqual(labels(fromFeed));
   });
 
   it('renders Overview > Workflows > {name} for a focused workflow run', () => {
@@ -78,6 +124,7 @@ describe('buildSessionBreadcrumb', () => {
       base(
         {
           lens: 'workflows',
+          selectedChildHome: 'workflows',
           selectedChildWorkflowName: 'refactor',
           selectedChildLabel: 'Implement',
         },
@@ -96,6 +143,7 @@ describe('buildSessionBreadcrumb', () => {
       base(
         {
           lens: 'workflows',
+          selectedChildHome: 'workflows',
           selectedChildWorkflowName: 'refactor',
           selectedChildLabel: 'Implement',
         },
@@ -115,6 +163,7 @@ describe('buildSessionBreadcrumb', () => {
       base(
         {
           lens: 'workflows',
+          selectedChildHome: 'workflows',
           focusedWorkflowName: 'release',
           selectedChildWorkflowName: 'refactor',
           selectedChildLabel: 'Implement',
@@ -126,13 +175,35 @@ describe('buildSessionBreadcrumb', () => {
     expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'refactor', 'Implement']);
   });
 
-  it('keeps a workflow agent with no resolvable run on the three-crumb lens trail', () => {
+  it('keeps a workflow agent with no resolvable run under the workflows list', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(
-      base({ lens: 'workflows', selectedChildLabel: 'Implement' }, h),
+      base(
+        { lens: 'workflows', selectedChildHome: 'workflows', selectedChildLabel: 'Implement' },
+        h,
+      ),
     );
 
-    expect(labels(crumbs)).toEqual(['Overview', 'workflows', 'Implement']);
+    expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'Implement']);
+    crumbs[1]!.onClick!();
+    expect(h.toWorkflowsList).toHaveBeenCalledOnce();
+  });
+
+  it('shows the open child rather than the plan the lens still has focused', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          lens: 'plans',
+          focusedPlanTitle: 'migration plan',
+          selectedChildHome: 'agents',
+          selectedChildLabel: 'scout one',
+        },
+        h,
+      ),
+    );
+
+    expect(labels(crumbs)).toEqual(['Overview', 'agents', 'scout one']);
   });
 
   it('renders Overview > Workflows > Create for the workflow builder studio', () => {
