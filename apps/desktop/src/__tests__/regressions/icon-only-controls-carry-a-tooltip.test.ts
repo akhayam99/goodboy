@@ -123,22 +123,24 @@ const rendersOwnText = ({ body }: { body: string }): boolean => {
 const rendersAnIcon = ({ body }: { body: string }): boolean =>
   /<[A-Z]\w*\s[^>]*(size=|aria-hidden)/.test(body);
 
-const hasTooltipAncestor = ({ source, from }: { source: string; from: number }): boolean => {
+const NOT_FOUND = -1;
+
+const tooltipDistance = ({ source, from }: { source: string; from: number }): number => {
   let cursor = from - 1;
   for (let hop = 0; hop < 3; hop++) {
     while (cursor >= 0 && /\s/.test(source.charAt(cursor))) {
       cursor--;
     }
     if (source.charAt(cursor) !== '>') {
-      return false;
+      return NOT_FOUND;
     }
     const start = source.lastIndexOf('<', cursor);
     if (/^<Tooltip\b/.test(source.slice(start, cursor + 1))) {
-      return true;
+      return hop;
     }
     cursor = start - 1;
   }
-  return false;
+  return NOT_FOUND;
 };
 
 type Offender = { location: string; reason: string };
@@ -175,12 +177,25 @@ const auditFile = ({ file, root }: { file: string; root: string }): Audit => {
     const line = source.slice(0, start).split('\n').length;
     const location = `${relative(root, file)}:${line}`;
     const canBeDisabled = /\sdisabled(?:=|\s|$)/.test(openTag);
-    if (/\stitle=/.test(openTag) && !canBeDisabled) {
-      offenders.push({ location, reason: 'carries a native title' });
+    const hasTitle = /\stitle=/.test(openTag);
+    const distance = tooltipDistance({ source, from: start });
+
+    if (distance === NOT_FOUND) {
+      offenders.push({ location, reason: 'has no Tooltip' });
       continue;
     }
-    if (!hasTooltipAncestor({ source, from: start })) {
-      offenders.push({ location, reason: 'has no Tooltip' });
+    if (hasTitle && !canBeDisabled) {
+      offenders.push({ location, reason: 'carries a native title it does not need' });
+      continue;
+    }
+    // the tooltip opens on whatever the Tooltip wraps, so a wrapper between the two
+    // still receives the hover the disabled control itself would swallow
+    const tooltipReachesTheDisabledState = distance > 0;
+    if (canBeDisabled && !hasTitle && !tooltipReachesTheDisabledState) {
+      offenders.push({
+        location,
+        reason: 'can go disabled with nothing left to explain it',
+      });
     }
   }
   return { offenders, inspected };
@@ -213,7 +228,10 @@ describe('an icon-only control', () => {
         'A control whose only content is an icon needs a tooltip: the aria-label',
         'names it for assistive tech, and nothing at all names it for the pointer.',
         'The native title waits a second and renders in the OS chrome, so wrap the',
-        'control in the shared Tooltip instead. Offenders:',
+        'control in the shared Tooltip instead. A control that can go disabled is',
+        'the exception, since a disabled element dispatches no pointer events: give',
+        'it a title for that state, or let the Tooltip wrap something around it that',
+        'can still take the hover. Offenders:',
         offenders.join('\n'),
       ].join('\n'),
     ).toEqual([]);

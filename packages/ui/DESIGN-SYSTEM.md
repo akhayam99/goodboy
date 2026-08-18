@@ -280,11 +280,15 @@ themselves, and a hand-rolled icon button wraps itself in `Tooltip`. The native
 positioned or styled. Passing `tooltip` says more than the accessible name when
 the control needs it, and `IconButton` refuses a `title` at the type level.
 
-The one place a native `title` stays is a control that can go `disabled`: a
-disabled element dispatches no pointer events, so its hover tooltip would never
-open, and the title is the only thing left that explains why the control is
-unavailable. Those controls carry both. `icon-only-controls-carry-a-tooltip`
-holds the rule and that exception.
+A control that can go `disabled` is the exception, because a disabled element
+dispatches no pointer events and its hover tooltip would never open. Such a
+control needs one of two things: a `title` set only for the disabled state, which
+is what the primitives do, or a `Tooltip` that wraps something around the control
+rather than the control itself, so the wrapper takes the hover the disabled
+button swallows. Never a `title` that is always present, since then the OS
+tooltip and ours both open while the control is live.
+`icon-only-controls-carry-a-tooltip` holds the rule and both halves of the
+exception.
 
 **One creation grammar.** Bare sections stacked in one column, never a bordered
 box around the whole thing; secondary affordances in `SectionHeader`'s

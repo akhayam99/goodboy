@@ -82,6 +82,7 @@ export const OverlayHeader = ({
           type="button"
           onClick={onClose}
           disabled={closeDisabled}
+          title={closeDisabled === true ? closeLabel : undefined}
           aria-label={closeLabel}
           className={cn(
             'flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors',

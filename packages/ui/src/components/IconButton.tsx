@@ -27,13 +27,18 @@ export const IconButton = ({
   busy = false,
   tone = 'neutral',
   type = 'button',
+  disabled,
   className,
   ...rest
 }: IconButtonProps) => {
+  const explanation = tooltip ?? label;
+
   return (
-    <Tooltip content={tooltip ?? label}>
+    <Tooltip content={explanation}>
       <button
         type={type}
+        disabled={disabled}
+        title={disabled === true ? explanation : undefined}
         aria-label={label}
         className={cn(
           'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',

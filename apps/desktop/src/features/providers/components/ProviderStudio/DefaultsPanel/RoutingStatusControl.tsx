@@ -26,6 +26,7 @@ export const RoutingStatusControl = ({ label, isCustom, disabled, onReset }: Pro
                 type="button"
                 onClick={onReset}
                 disabled={disabled}
+                title={disabled === true ? 'Reset to default' : undefined}
                 aria-label="Reset to default"
                 className="inline-flex items-center justify-center rounded-full text-current opacity-70 transition-opacity hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40"
               >

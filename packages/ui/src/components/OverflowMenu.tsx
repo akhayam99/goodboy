@@ -61,6 +61,7 @@ export const OverflowMenu = ({
           type="button"
           onClick={dropdown.toggle}
           disabled={disabled}
+          title={disabled === true ? (tooltip ?? label) : undefined}
           aria-label={label}
           aria-haspopup="menu"
           aria-expanded={dropdown.open}

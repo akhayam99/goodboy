@@ -38,6 +38,13 @@ describe('IconButton', () => {
     expect(screen.getByRole('tooltip').textContent).toBe('Refresh issues from GitHub');
   });
 
+  it('falls back to a native title while disabled, the one state hover cannot reach', () => {
+    render(<IconButton icon={RefreshCw} label="Refresh issues" disabled />);
+    expect(screen.getByRole('button', { name: 'Refresh issues' }).getAttribute('title')).toBe(
+      'Refresh issues',
+    );
+  });
+
   it('reports the action back to the caller', () => {
     const onClick = vi.fn();
     render(<IconButton icon={RefreshCw} label="Refresh issues" onClick={onClick} />);
