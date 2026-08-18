@@ -9,20 +9,39 @@ import type {
   TimelineIssueEntry,
   TimelinePlanEntry,
 } from '../../../../timeline/buildTimelineGroups';
+import { TimelineRow } from './TimelineRow';
 
 type Props = {
   readonly entry: TimelinePlanEntry | TimelineIssueEntry | TimelineBranchEntry;
   readonly sessionId: SessionId;
   readonly timeLabel: string | null;
+  readonly hasRoleColumn?: boolean;
 };
 
-export const TimelineArtifactRow = ({ entry, sessionId, timeLabel }: Props) => {
+type MarkerParams = {
+  readonly entry: TimelinePlanEntry | TimelineIssueEntry | TimelineBranchEntry;
+};
+
+const markerFor = ({ entry }: MarkerParams) => {
+  if (entry.kind === 'issue') {
+    return <IntegrationGlyph provider={entry.task.provider} size="xs" />;
+  }
+  const planTint = tintClasses(CONCEPT_TONE.plans);
+  if (entry.kind === 'plan') {
+    return <CONCEPT_ICONS.plans size={10} aria-hidden className={planTint.icon} />;
+  }
+  return <GitBranch size={10} aria-hidden className="text-muted-foreground" />;
+};
+
+export const TimelineArtifactRow = ({
+  entry,
+  sessionId,
+  timeLabel,
+  hasRoleColumn = false,
+}: Props) => {
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
   const openExternalTaskLens = useAppStore((s) => s.openExternalTaskLens);
-  const Icon =
-    entry.kind === 'plan' ? CONCEPT_ICONS.plans : entry.kind === 'branch' ? GitBranch : null;
-  const planTint = tintClasses(CONCEPT_TONE.plans);
   const title =
     entry.kind === 'plan'
       ? entry.plan.title
@@ -31,7 +50,7 @@ export const TimelineArtifactRow = ({ entry, sessionId, timeLabel }: Props) => {
         : 'Branch created';
   const meta =
     entry.kind === 'plan'
-      ? `${entry.plan.status}${entry.plan.consumptionCount > 0 ? ` · ${entry.plan.consumptionCount} consumers` : ''}`
+      ? entry.plan.status
       : entry.kind === 'branch'
         ? entry.worktree.branch
         : null;
@@ -49,34 +68,25 @@ export const TimelineArtifactRow = ({ entry, sessionId, timeLabel }: Props) => {
   };
 
   return (
-    <div className="grid min-h-9 grid-cols-[44px_24px_minmax(0,1fr)]">
-      <span className="self-center text-right text-3xs tabular-nums text-muted-foreground">
-        {timeLabel}
-      </span>
-      <div className="relative flex items-center justify-center">
-        <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border" />
-        <span className="relative z-10 flex size-4 items-center justify-center rounded-full bg-elevated ring-1 ring-border">
-          {entry.kind === 'issue' ? (
-            <IntegrationGlyph provider={entry.task.provider} size="xs" />
-          ) : Icon != null ? (
-            <Icon
-              size={10}
-              aria-hidden
-              className={entry.kind === 'plan' ? planTint.icon : 'text-muted-foreground'}
-            />
-          ) : null}
-        </span>
-      </div>
-      <button
-        type="button"
-        onClick={open}
-        className="flex min-w-0 items-center gap-2 py-1.5 text-left"
-      >
-        <span className="truncate text-sm text-foreground">{title}</span>
-        {meta != null ? (
-          <span className="shrink-0 text-xs font-medium text-muted-foreground">{meta}</span>
-        ) : null}
-      </button>
-    </div>
+    <TimelineRow
+      timeLabel={timeLabel}
+      depth={entry.depth}
+      hasRoleColumn={hasRoleColumn}
+      marker={markerFor({ entry })}
+      onClick={open}
+      ariaLabel={
+        entry.kind === 'plan'
+          ? `open plan ${title}`
+          : entry.kind === 'issue'
+            ? `open ${entry.task.identifier}`
+            : `open ${title}`
+      }
+      label={<span className="min-w-0 truncate text-sm text-foreground">{title}</span>}
+      meta={
+        meta != null ? (
+          <span className="text-xs font-medium text-muted-foreground">{meta}</span>
+        ) : null
+      }
+    />
   );
 };

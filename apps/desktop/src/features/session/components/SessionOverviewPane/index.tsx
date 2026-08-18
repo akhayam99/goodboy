@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Divider, Eyebrow, LensEmptyState } from '@goodboy/ui';
+import { Eyebrow, LensEmptyState } from '@goodboy/ui';
 import { classifyWorkflowChain, runsForWorkflowRun, upcomingSteps } from '@goodboy/core';
 import type { Agent, AgentId, Session, SessionId, Workflow } from '@goodboy/types';
 import {
@@ -36,7 +36,6 @@ import {
   type WaitingAgent,
 } from './selectNextUp';
 import { HeaderBand } from './HeaderBand';
-import { LinkedWorkSection } from './LinkedWorkSection';
 import { NextUpCard } from './NextUpCard';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { CreateAgentPopover } from '../CreateAgentPopover';
@@ -294,11 +293,10 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       }
     >
       <PaneShell
-        header={<HeaderBand session={session} stage={stage} />}
+        header={<HeaderBand session={session} stage={stage} onSelectLens={onSelectLens} />}
         animationClassName="animate-fade-in"
         measure="chat"
       >
-        <Divider />
         <GoalOverviewRegion
           sessionId={sessionId}
           value={goalSlot?.value ?? ''}
@@ -310,7 +308,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
             setIsGoalHistoryOpen(true);
           }}
         />
-        <Divider />
         <section aria-label="Next up" className="flex flex-col gap-2">
           <Eyebrow label="Next up" muted className="px-0.5 font-medium" />
           {nextUp !== null ? (
@@ -324,15 +321,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
             />
           )}
         </section>
-        <Divider />
-        <LinkedWorkSection sessionId={sessionId} onSelectLens={onSelectLens} />
-        <Divider />
-        <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
-          <Eyebrow label="Overview" muted className="min-w-0 truncate font-medium" />
-          {!isFresh ? (
-            <OverviewActions sessionId={sessionId} onOpenWorkflowBuilder={openWorkflowBuilder} />
-          ) : null}
-        </div>
         {isFresh ? (
           <section aria-label="Start work" className="flex flex-col gap-2">
             <p className="text-sm text-muted-foreground">
@@ -356,7 +344,11 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
               description="Spawns one agent on a single task with the session context."
             />
           </section>
-        ) : null}
+        ) : (
+          <div className="flex items-center justify-end px-0.5">
+            <OverviewActions sessionId={sessionId} onOpenWorkflowBuilder={openWorkflowBuilder} />
+          </div>
+        )}
         <TimelinePane
           session={session}
           suppressOpenQuestions={nextUp?.id === 'question'}

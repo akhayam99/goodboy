@@ -1,19 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Button, Chip, Markdown, ScrollFade, cn } from '@goodboy/ui';
+import { Chip, Markdown, ScrollFade, cn } from '@goodboy/ui';
 import type { DiffComment, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
 import { formatDuration } from '../../../../../chat/utils/format-duration';
 import { agentKindPalette } from '../../../../agent-kind';
 import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
+import { TimelineAnswerRow } from './TimelineAnswerRow';
 import { TimelineNode } from './TimelineNode';
+import { TimelineRow } from './TimelineRow';
 
 type Props = {
   readonly entry: TimelineAgentEntry;
   readonly sessionId: SessionId;
-  readonly estimatedCostUsd: number | null;
   readonly timeLabel: string | null;
   readonly diffComment?: DiffComment | null;
+  readonly onSeen?: () => void;
+  readonly hasRoleColumn?: boolean;
+  readonly shouldRenderAnswers?: boolean;
 };
 
 type KindLabelParams = {
@@ -28,17 +32,21 @@ const kindLabel = ({ entry }: KindLabelParams): string => {
   return palette.label;
 };
 
+const DWELL_MS = 900;
+
 export const TimelineAgentRow = ({
   entry,
   sessionId,
-  estimatedCostUsd,
   timeLabel,
   diffComment = null,
+  onSeen,
+  hasRoleColumn = true,
+  shouldRenderAnswers = true,
 }: Props) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const dwellTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const isResolver = entry.agentKind === 'resolver';
-  const isRunning = entry.agent.status === 'running';
   const duration =
     entry.hasDuration && entry.agent.completedAt != null
       ? formatDuration({
@@ -54,128 +62,154 @@ export const TimelineAgentRow = ({
     entry.terminalQuestions.length > 0 ||
     entry.agent.status === 'failed' ||
     diffComment != null;
-  const meta = [
-    duration,
-    estimatedCostUsd != null ? `$${estimatedCostUsd.toFixed(2)}` : null,
-    entry.agent.status === 'failed' ? 'failed' : null,
-  ].filter((value): value is string => value != null);
+  const meta = duration != null ? duration : null;
+  const roleChip = !isResolver ? (
+    <Chip
+      tone="neutral"
+      label={kindLabel({ entry })}
+      shape="badge"
+      size="xs"
+      width="md"
+      uppercase
+      className={palette.fg}
+    />
+  ) : null;
+  const trailing = hasBody ? (
+    <button
+      type="button"
+      aria-expanded={isExpanded}
+      aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${entry.agent.name}`}
+      onClick={(event) => {
+        event.stopPropagation();
+        setIsExpanded((current) => !current);
+      }}
+      className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
+    >
+      {isExpanded ? <ChevronDown size={13} aria-hidden /> : <ChevronRight size={13} aria-hidden />}
+    </button>
+  ) : null;
+  const navigate = () => void selectAgent(sessionId, entry.agent.id);
+  const cancelDwell = () => {
+    if (dwellTimerRef.current != null) {
+      clearTimeout(dwellTimerRef.current);
+      dwellTimerRef.current = null;
+    }
+  };
+  const startDwell = () => {
+    if (onSeen == null) {
+      return;
+    }
+    cancelDwell();
+    dwellTimerRef.current = setTimeout(() => {
+      onSeen();
+      dwellTimerRef.current = null;
+    }, DWELL_MS);
+  };
+  useEffect(() => {
+    return () => {
+      if (dwellTimerRef.current != null) {
+        clearTimeout(dwellTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
-    <div
-      className={cn(
-        'relative grid grid-cols-[44px_24px_minmax(0,1fr)]',
-        isExpanded && 'rounded-md bg-muted/60',
-      )}
-    >
-      <span className="self-start py-2 text-right text-3xs tabular-nums text-muted-foreground">
-        {timeLabel}
-      </span>
-      <div className="relative flex min-h-9 items-center justify-center">
-        <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border" />
-        <span className="relative z-10 flex size-4 items-center justify-center bg-canvas">
-          <TimelineNode status={entry.agent.status} size={entry.depth === 0 ? 'main' : 'child'} />
-        </span>
-      </div>
-      <div
-        className={cn(
-          'group flex min-w-0 flex-col',
-          entry.depth === 1 && 'pl-5',
-          entry.depth === 2 && 'pl-10',
-        )}
-      >
-        <div className="flex min-h-9 min-w-0 items-center gap-2 py-1.5">
-          {!isResolver ? (
-            <Chip
-              tone="neutral"
-              label={kindLabel({ entry })}
-              shape="badge"
-              size="xs"
-              width="sm"
-              uppercase
-              className={palette.fg}
-            />
-          ) : null}
-          <button
-            type="button"
-            disabled={!hasBody}
-            aria-expanded={hasBody ? isExpanded : undefined}
-            aria-label={
-              hasBody ? `${isExpanded ? 'Collapse' : 'Expand'} ${entry.agent.name}` : undefined
-            }
-            onClick={() => setIsExpanded((current) => !current)}
+    <div className="flex flex-col">
+      <TimelineRow
+        timeLabel={timeLabel}
+        depth={entry.depth}
+        hasRoleColumn={hasRoleColumn}
+        isHighlighted={isExpanded}
+        marker={<TimelineNode status={entry.agent.status} />}
+        roleChip={roleChip}
+        onClick={navigate}
+        onMouseEnter={startDwell}
+        onMouseLeave={cancelDwell}
+        ariaLabel={
+          isResolver ? `open resolve for ${entry.agent.name}` : `open chat for ${entry.agent.name}`
+        }
+        label={
+          <span
             className={cn(
-              'min-w-0 truncate text-left text-sm text-foreground',
-              isRunning && 'font-medium',
+              'min-w-0 truncate text-sm text-foreground',
+              entry.agent.status === 'running' && 'font-medium',
             )}
           >
             {entry.agent.name}
-          </button>
-          {meta.length > 0 ? (
+          </span>
+        }
+        meta={
+          meta != null || entry.agent.status === 'failed' ? (
             <span
               className={cn(
-                'shrink-0 text-2xs tabular-nums text-muted-foreground',
+                'text-2xs tabular-nums text-muted-foreground',
                 entry.agent.status === 'failed' && 'text-danger',
               )}
             >
-              {meta.join(' · ')}
+              {[meta, entry.agent.status === 'failed' ? 'failed' : null]
+                .filter((value): value is string => value != null)
+                .join(' · ')}
             </span>
+          ) : null
+        }
+        trailing={trailing}
+      />
+      {isExpanded ? (
+        <div
+          className={cn(
+            'flex flex-col gap-4 pb-3 pr-3',
+            entry.depth === 0 && 'pl-[92px]',
+            entry.depth === 1 && 'pl-[116px]',
+            entry.depth === 2 && 'pl-[140px]',
+          )}
+        >
+          {entry.agent.outputSummary != null ? (
+            <section className="flex flex-col gap-2">
+              <span className="text-2xs uppercase text-muted-foreground">Outcome</span>
+              <ScrollFade className="max-h-48">
+                <Markdown text={entry.agent.outputSummary} />
+              </ScrollFade>
+            </section>
           ) : null}
-          <span className="flex flex-1 justify-end gap-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => void selectAgent(sessionId, entry.agent.id)}
-            >
-              {isResolver ? 'Open resolve' : 'Open chat'}
-            </Button>
-            {hasBody ? (
-              isExpanded ? (
-                <ChevronDown size={13} aria-hidden />
-              ) : (
-                <ChevronRight size={13} aria-hidden />
-              )
-            ) : null}
-          </span>
+          {entry.terminalQuestions.length > 0 ? (
+            <section className="flex flex-col gap-2">
+              <span className="text-2xs uppercase text-muted-foreground">Questions</span>
+              {entry.terminalQuestions.map((question) => (
+                <div key={question.id} className="flex flex-col gap-1 text-xs">
+                  <span>{question.text}</span>
+                  <span className="text-muted-foreground">
+                    {question.userAnswer ?? question.status}
+                  </span>
+                </div>
+              ))}
+            </section>
+          ) : null}
+          {diffComment != null ? (
+            <section className="flex flex-col gap-2">
+              <span className="text-2xs uppercase text-muted-foreground">Origin</span>
+              <span className="text-xs text-foreground">{diffComment.body}</span>
+              <span className="text-2xs text-muted-foreground">
+                {diffComment.resolvedAt != null
+                  ? 'resolved'
+                  : diffComment.consumedAt != null
+                    ? 'consumed'
+                    : 'open'}
+              </span>
+            </section>
+          ) : null}
         </div>
-        {isExpanded ? (
-          <div className="flex flex-col gap-4 pb-3 pr-3">
-            {entry.agent.outputSummary != null ? (
-              <section className="flex flex-col gap-2">
-                <span className="text-2xs uppercase text-muted-foreground">Outcome</span>
-                <ScrollFade className="max-h-48">
-                  <Markdown text={entry.agent.outputSummary} />
-                </ScrollFade>
-              </section>
-            ) : null}
-            {entry.terminalQuestions.length > 0 ? (
-              <section className="flex flex-col gap-2">
-                <span className="text-2xs uppercase text-muted-foreground">Questions</span>
-                {entry.terminalQuestions.map((question) => (
-                  <div key={question.id} className="flex flex-col gap-1 text-xs">
-                    <span>{question.text}</span>
-                    <span className="text-muted-foreground">
-                      {question.userAnswer ?? question.status}
-                    </span>
-                  </div>
-                ))}
-              </section>
-            ) : null}
-            {diffComment != null ? (
-              <section className="flex flex-col gap-2">
-                <span className="text-2xs uppercase text-muted-foreground">Origin</span>
-                <span className="text-xs text-foreground">{diffComment.body}</span>
-                <span className="text-2xs text-muted-foreground">
-                  {diffComment.resolvedAt != null
-                    ? 'resolved'
-                    : diffComment.consumedAt != null
-                      ? 'consumed'
-                      : 'open'}
-                </span>
-              </section>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
+      ) : null}
+      {shouldRenderAnswers
+        ? entry.answers.map((answer) => (
+            <TimelineAnswerRow
+              key={answer.id}
+              entry={answer}
+              timeLabel={null}
+              hasRoleColumn={hasRoleColumn}
+              onOpen={navigate}
+            />
+          ))
+        : null}
     </div>
   );
 };

@@ -11,7 +11,7 @@ type Props = {
   readonly sessionId: SessionId;
   readonly slotKey: ContextRegionKey;
   readonly title: string;
-  readonly description: string;
+  readonly description?: string;
   readonly emptyLabel: string;
   readonly value: string;
   readonly copyValue: string;
@@ -20,6 +20,8 @@ type Props = {
   readonly isSummarizing: boolean;
   readonly onOpenHistory: () => void;
   readonly clampLines?: 1 | 2 | 3 | 4 | 5 | 6;
+  readonly fullWidth?: boolean;
+  readonly showTitle?: boolean;
 };
 
 export const ContextRegion = ({
@@ -35,6 +37,8 @@ export const ContextRegion = ({
   isSummarizing,
   onOpenHistory,
   clampLines,
+  fullWidth = false,
+  showTitle = true,
 }: Props) => {
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
   const [isEditing, setIsEditing] = useState(false);
@@ -71,10 +75,14 @@ export const ContextRegion = ({
     >
       <div className="flex items-start gap-4">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h2 id={`context-${slotKey}-title`} className="text-sm font-semibold text-foreground">
-            {title}
-          </h2>
-          <p className="text-xs text-muted-foreground">{description}</p>
+          {showTitle ? (
+            <h2 id={`context-${slotKey}-title`} className="text-sm font-semibold text-foreground">
+              {title}
+            </h2>
+          ) : null}
+          {description != null && description !== '' ? (
+            <p className="text-xs text-muted-foreground">{description}</p>
+          ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {hasValue && clampLines != null ? (
@@ -145,7 +153,7 @@ export const ContextRegion = ({
           </Button>
         </div>
       ) : clampLines != null ? (
-        <div className="max-w-2xl">
+        <div className={fullWidth ? 'min-w-0' : 'max-w-2xl'}>
           <ClampedProse text={value} lines={clampLines} className="text-base leading-relaxed" />
         </div>
       ) : rendersMarkdown ? (
