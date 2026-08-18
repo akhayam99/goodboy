@@ -377,7 +377,7 @@ const withDayBreaks = ({ drafts, dayLabelFor }: DayBreakParams): ReadonlyArray<D
     }
     const dayKey = dayKeyOf({ at });
     const label = dayLabelFor({ at });
-    if (dayKey !== previousDayKey && label != null) {
+    if (dayKey !== previousDayKey && label != null && dated.length > 0) {
       dated.push({ kind: 'day', id: `day:${dayKey}`, label });
     }
     previousDayKey = dayKey;
