@@ -13,6 +13,7 @@ mod external_terminal;
 mod file_versions;
 mod github;
 mod gitlab;
+mod integration_credentials;
 mod jira;
 mod linear;
 mod parallel_groups;
@@ -177,6 +178,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             secrets::secret_set,
             secrets::secret_delete,
+            integration_credentials::integration_credential_reuse,
             editor::detect_editors,
             editor::open_in_editor,
             editor::open_file_in_workspace,

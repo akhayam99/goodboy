@@ -22,7 +22,7 @@ fn http_client() -> &'static reqwest::Client {
     CLIENT.get_or_init(reqwest::Client::new)
 }
 
-fn credential_key(workspace_id: &str) -> String {
+pub(crate) fn credential_key(workspace_id: &str) -> String {
     format!("goodboy.workspace.{}.slack", workspace_id)
 }
 
