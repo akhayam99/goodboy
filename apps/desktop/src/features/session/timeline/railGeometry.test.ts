@@ -8,6 +8,7 @@ import {
   type RailGroupInput,
   type RailGroupShape,
   type RailRowInput,
+  type RailSegment,
 } from './railGeometry';
 
 type RowParams = {
@@ -54,11 +55,20 @@ const railRow = (layout: ReturnType<typeof layoutTimelineRail>, id: string) => {
   return found;
 };
 
+const withoutFade = ({ fade: _fade, ...segment }: RailSegment) => segment;
+
 const lanesOf = (layout: ReturnType<typeof layoutTimelineRail>, id: string) =>
-  railRow(layout, id).segments.filter((segment) => segment.column > 0);
+  railRow(layout, id)
+    .segments.filter((segment) => segment.column > 0)
+    .map(withoutFade);
 
 const spineOf = (layout: ReturnType<typeof layoutTimelineRail>, id: string) =>
-  railRow(layout, id).segments.filter((segment) => segment.column === 0);
+  railRow(layout, id)
+    .segments.filter((segment) => segment.column === 0)
+    .map(withoutFade);
+
+const fadedOf = (layout: ReturnType<typeof layoutTimelineRail>, id: string, column: number) =>
+  railRow(layout, id).segments.find((segment) => segment.column === column)?.fade;
 
 describe('layoutTimelineRail', () => {
   it('departs the spine at the origin row and travels upward to the newest step', () => {
@@ -199,7 +209,7 @@ describe('layoutTimelineRail', () => {
     });
     const dayRail = railRow(layout, 'day');
 
-    expect(dayRail.segments).toEqual([
+    expect(dayRail.segments.map(withoutFade)).toEqual([
       { column: 0, identityIndex: null, dash: 'solid', strength: 'receded', fromY: 0, toY: 48 },
       { column: 1, identityIndex: 0, dash: 'solid', strength: 'full', fromY: 0, toY: 48 },
     ]);
@@ -626,5 +636,26 @@ describe('a line keeps its own work at full strength', () => {
         .filter((segment) => segment.column === 1)
         .every((segment) => segment.strength === 'full'),
     ).toBe(true);
+  });
+});
+
+describe('a strength change fades instead of stepping', () => {
+  const layout = () =>
+    layoutTimelineRail({
+      rows: [
+        row({ id: 'above' }),
+        row({ id: 'step-2', groupId: 'lane' }),
+        row({ id: 'step-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [group({ id: 'lane', originRowId: 'origin' })],
+    });
+
+  it('marks the edge where a spine row meets a row of different strength', () => {
+    expect(fadedOf(layout(), 'step-2', 0)).toEqual({ atTop: true, atBottom: false });
+  });
+
+  it('leaves an edge unmarked where both rows carry the same strength', () => {
+    expect(fadedOf(layout(), 'step-1', 0)).toEqual({ atTop: false, atBottom: false });
   });
 });

@@ -1,3 +1,5 @@
+const EMPTY_COLUMNS: ReadonlySet<number> = new Set();
+
 export const RAIL_SPINE_X = 8;
 export const RAIL_LANE_OFFSET = 16;
 export const RAIL_MAX_COLUMN = 3;
@@ -27,16 +29,22 @@ export type RailRowInput = {
   readonly isPending: boolean;
 };
 
+export type RailFade = {
+  readonly atTop: boolean;
+  readonly atBottom: boolean;
+};
+
 export type RailSegment = {
   readonly column: number;
   readonly identityIndex: number | null;
   readonly dash: RailDash;
   readonly strength: RailStrength;
+  readonly fade: RailFade;
   readonly fromY: number;
   readonly toY: number;
 };
 
-type PlannedSegment = Omit<RailSegment, 'strength'>;
+type PlannedSegment = Omit<RailSegment, 'strength' | 'fade'>;
 
 export type RailJoin = {
   readonly kind: 'depart' | 'merge';
@@ -362,18 +370,33 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
           toY: row.height,
         } satisfies PlannedSegment,
         ...(laneSegmentsByIndex[index] ?? []),
-      ].map((segment) => ({
-        ...segment,
-        strength: strengthOf({
+      ].map((segment) => {
+        const strength = strengthOf({
           column: segment.column,
-          delegated: delegatedByIndex[index] ?? new Set<number>(),
-        }),
-      })),
+          delegated: delegatedByIndex[index] ?? EMPTY_COLUMNS,
+        });
+        return {
+          ...segment,
+          strength,
+          fade: {
+            atTop:
+              strengthOf({
+                column: segment.column,
+                delegated: delegatedByIndex[index - 1] ?? EMPTY_COLUMNS,
+              }) !== strength,
+            atBottom:
+              strengthOf({
+                column: segment.column,
+                delegated: delegatedByIndex[index + 1] ?? EMPTY_COLUMNS,
+              }) !== strength,
+          },
+        };
+      }),
       joins: (joinsByIndex[index] ?? []).map((join) => ({
         ...join,
         strength: strengthOf({
           column: join.laneColumn,
-          delegated: delegatedByIndex[index] ?? new Set<number>(),
+          delegated: delegatedByIndex[index] ?? EMPTY_COLUMNS,
         }),
       })),
       markerColumn: row.groupId == null ? 0 : (columnByGroupId.get(row.groupId) ?? 0),

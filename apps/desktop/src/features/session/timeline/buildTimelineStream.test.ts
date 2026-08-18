@@ -514,7 +514,11 @@ describe('buildTimelineStream', () => {
     const nowRail = layout.rows[0];
 
     expect(clusterRail?.joins.map((join) => `${join.kind}:${join.dash}`)).toEqual(['merge:dashed']);
-    expect(clusterRail?.segments.filter((segment) => segment.column > 0)).toEqual([
+    expect(
+      clusterRail?.segments
+        .filter((segment) => segment.column > 0)
+        .map(({ fade: _fade, ...segment }) => segment),
+    ).toEqual([
       {
         column: 1,
         identityIndex: runIdentity({ runId: RUN_ID }).index,
