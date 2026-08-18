@@ -1122,7 +1122,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         <Textarea
                           value={processText}
                           onChange={(e) => setProcessText(e.target.value)}
-                          placeholder="describe the process you expect (e.g. read the existing github integration, study how it works, then plan the gitlab equivalent, then implement)…"
+                          placeholder="describe the process you expect (e.g. read the existing GitHub integration, study how it works, then plan the GitLab equivalent, then implement)…"
                           autoGrow
                           minRows={3}
                           maxRows={7}
