@@ -29,8 +29,12 @@ describe('orderSuggestions', () => {
     ).toEqual(['postgres', 'sqlite', 'duckdb']);
   });
 
-  it('returns nothing for an empty list, recommended or not', () => {
+  it('offers no row at all when there is neither a suggestion nor a recommendation', () => {
     expect(orderSuggestions({ suggestions: [], recommendedAnswer: '' })).toEqual([]);
+  });
+
+  it('offers the recommendation alone when it is the only answer there is', () => {
+    expect(orderSuggestions({ suggestions: [], recommendedAnswer: 'sqlite' })).toEqual(['sqlite']);
   });
 
   it('drops a repeated suggestion so every row stands for one answer', () => {
