@@ -10,7 +10,7 @@ pub enum IntegrationCredentialError {
     MissingWorkspace,
     #[error("a workspace cannot reuse the credential it already holds")]
     SameWorkspace,
-    #[error("no personal API key stored for workspace {0}")]
+    #[error("no {0} credential stored for the workspace it would be copied from")]
     NoCredential(String),
     #[error("secret store error: {0}")]
     Secret(#[from] secrets::SecretError),
@@ -64,7 +64,7 @@ where
     let target = credential_key(provider, to_workspace_id)
         .ok_or_else(|| IntegrationCredentialError::UnknownProvider(provider.to_string()))?;
     let credential = read(&source)?
-        .ok_or_else(|| IntegrationCredentialError::NoCredential(from_workspace_id.to_string()))?;
+        .ok_or_else(|| IntegrationCredentialError::NoCredential(provider.to_string()))?;
     write(&target, &credential)?;
     Ok(())
 }
@@ -218,5 +218,17 @@ mod tests {
         .expect_err("no credential");
 
         assert!(matches!(error, IntegrationCredentialError::NoCredential(_)));
+    }
+
+    #[test]
+    fn a_missing_credential_names_the_provider_and_never_a_personal_api_key() {
+        let slack = reuse_with("slack", "ws-from", "ws-to", reader(None), |_key, _value| {
+            panic!("nothing to write without a source credential")
+        })
+        .expect_err("no credential");
+
+        let message = slack.to_string();
+        assert!(message.contains("slack"));
+        assert!(!message.contains("personal API key"));
     }
 }

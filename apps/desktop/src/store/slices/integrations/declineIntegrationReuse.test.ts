@@ -11,10 +11,14 @@ type State = {
 
 const harness = () => {
   const state: State = { declinedIntegrationReuse: {} };
+  const writes: Array<Partial<State>> = [];
   const set = (updater: (current: State) => Partial<State>) => {
-    Object.assign(state, updater(state));
+    const written = updater(state);
+    writes.push(written);
+    Object.assign(state, written);
   };
-  return { state, decline: declineIntegrationReuse(set as never) };
+  const get = () => state;
+  return { state, writes, decline: declineIntegrationReuse(set as never, get as never) };
 };
 
 describe('declineIntegrationReuse', () => {
@@ -43,12 +47,13 @@ describe('declineIntegrationReuse', () => {
     expect(state.declinedIntegrationReuse[API]).toEqual(['linear', 'jira']);
   });
 
-  it('records a repeated refusal once', () => {
-    const { state, decline } = harness();
+  it('records a repeated refusal once, and writes nothing the second time', () => {
+    const { state, writes, decline } = harness();
 
     decline({ provider: 'linear', workspaceId: API });
     decline({ provider: 'linear', workspaceId: API });
 
     expect(state.declinedIntegrationReuse[API]).toEqual(['linear']);
+    expect(writes).toHaveLength(1);
   });
 });

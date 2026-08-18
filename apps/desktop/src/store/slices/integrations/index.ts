@@ -20,7 +20,7 @@ export const createIntegrationsSlice = (set: SetFn, get: GetFn) => {
   return {
     loadIntegrations: loadIntegrations(set),
     reuseIntegration: reuseIntegration(set, get),
-    declineIntegrationReuse: declineIntegrationReuse(set),
+    declineIntegrationReuse: declineIntegrationReuse(set, get),
     connectLinear: connectLinear(set, get),
     disconnectLinear: disconnectLinear(set),
     connectSentry: connectSentry(set, get),
