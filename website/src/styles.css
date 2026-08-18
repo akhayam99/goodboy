@@ -226,6 +226,13 @@ h2 {
   letter-spacing: -0.01em;
 }
 
+.logo-tile {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  background: var(--accent);
+}
+
 .vtag {
   font-size: 12px;
   font-weight: 600;
