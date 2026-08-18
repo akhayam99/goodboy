@@ -30,7 +30,9 @@ export const summaryDisplayBlocks = ({ document }: Params): ReadonlyArray<Summar
       sectionKey: null,
     }));
 
-  const hasAnyKnownSection = document.blocks.some((block) => block.sectionKey != null);
+  const hasKnownSection = document.blocks.some((block) => block.sectionKey != null);
+  const isBlankDocument = document.blocks.length === 0;
+  const offersEverySection = hasKnownSection || isBlankDocument;
 
   const sections = SUMMARY_SECTION_KEYS.flatMap<SummaryDisplayBlock>((sectionKey) => {
     const block = document.blocks.find((candidate) => candidate.sectionKey === sectionKey);
@@ -45,7 +47,7 @@ export const summaryDisplayBlocks = ({ document }: Params): ReadonlyArray<Summar
         },
       ];
     }
-    if (hasAnyKnownSection === false) {
+    if (offersEverySection === false) {
       return [];
     }
     return [

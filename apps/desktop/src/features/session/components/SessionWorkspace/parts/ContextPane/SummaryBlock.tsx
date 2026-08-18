@@ -1,19 +1,21 @@
 import { useState } from 'react';
-import { Button, Eyebrow, Markdown, cn, tintClasses, type Tone } from '@goodboy/ui';
+import { Pencil, Plus } from 'lucide-react';
+import { CardAction, CardActionSlot, Eyebrow, Markdown } from '@goodboy/ui';
 import { BlockEditor } from './BlockEditor';
+
+const REVEAL_GROUP =
+  'group-hover/summary-block:opacity-100 group-focus-within/summary-block:opacity-100';
 
 type Props = {
   readonly title: string;
   readonly body: string;
-  readonly tone: Tone;
   readonly isLocked: boolean;
   readonly onCommit: (body: string) => void;
 };
 
-export const SummaryBlockCard = ({ title, body, tone, isLocked, onCommit }: Props) => {
+export const SummaryBlock = ({ title, body, isLocked, onCommit }: Props) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(body);
-  const tint = tintClasses(tone);
   const hasBody = body.trim() !== '';
 
   const startEditing = () => {
@@ -30,25 +32,22 @@ export const SummaryBlockCard = ({ title, body, tone, isLocked, onCommit }: Prop
   };
 
   return (
-    <section
-      aria-label={title}
-      className={cn('flex flex-col gap-2 rounded-lg border bg-muted/30 p-3', tint.borderSoft)}
-    >
+    <section aria-label={title} className="group/summary-block flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
         <h3>
           <Eyebrow label={title} />
         </h3>
         {isEditing ? null : (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={startEditing}
-            disabled={isLocked}
-            aria-label={`${hasBody ? 'Edit' : 'Add'} ${title.toLowerCase()}`}
-            className="h-6 px-2 text-2xs"
-          >
-            {hasBody ? 'Edit' : 'Add'}
-          </Button>
+          <CardActionSlot label={`${title} actions`}>
+            <CardAction
+              icon={hasBody ? Pencil : Plus}
+              label={`${hasBody ? 'Edit' : 'Add'} ${title.toLowerCase()}`}
+              reveal={hasBody}
+              revealGroup={REVEAL_GROUP}
+              disabled={isLocked}
+              onClick={startEditing}
+            />
+          </CardActionSlot>
         )}
       </div>
       {isEditing ? (
@@ -66,9 +65,7 @@ export const SummaryBlockCard = ({ title, body, tone, isLocked, onCommit }: Prop
         <div className="text-sm leading-relaxed [overflow-wrap:anywhere] [&_pre]:whitespace-pre-wrap">
           <Markdown text={body} />
         </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">Nothing here yet</p>
-      )}
+      ) : null}
     </section>
   );
 };

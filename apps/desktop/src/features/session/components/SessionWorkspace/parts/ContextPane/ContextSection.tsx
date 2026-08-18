@@ -30,7 +30,7 @@ export const ContextSection = ({
         size="page"
         label={title}
         hint={description}
-        icon={<Icon size={16} aria-hidden className={tint.icon} />}
+        icon={<Icon size={14} aria-hidden className={tint.icon} />}
         action={actions}
       />
       {children}

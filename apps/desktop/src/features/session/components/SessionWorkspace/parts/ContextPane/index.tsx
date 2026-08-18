@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Button, CopyButton, Divider } from '@goodboy/ui';
-import { History } from 'lucide-react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { CopyButton, Divider, GhostActionButton } from '@goodboy/ui';
+import { Code, History } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   useAppStore,
@@ -28,7 +28,7 @@ const REGION_TITLE: Record<ContextLens, string> = {
 
 const REGION_DESCRIPTION: Record<ContextLens, string> = {
   decisions: 'One row per choice already settled along the way.',
-  last_output_summary: 'What the session has amounted to so far, in four blocks.',
+  last_output_summary: 'What the session has amounted to so far, block by block.',
 };
 
 const REGION_CONCEPT = {
@@ -123,10 +123,7 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
         )
       }
     >
-      <PaneShell
-        title="Context"
-        description="The current session summary and the decisions settled along the way."
-      >
+      <PaneShell title="Context">
         {REGION_ORDER.map((slotKey, index) => {
           const value = valueFor({ slots, slotKey });
           const title = REGION_TITLE[slotKey];
@@ -138,7 +135,7 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
           };
 
           return (
-            <div key={slotKey} className="contents">
+            <Fragment key={slotKey}>
               {index > 0 ? <Divider /> : null}
               <ContextSection
                 concept={REGION_CONCEPT[slotKey]}
@@ -147,16 +144,25 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
                 description={REGION_DESCRIPTION[slotKey]}
                 actions={
                   <div className="flex shrink-0 items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setRawKey(isRawEditing ? null : slotKey)}
-                      aria-pressed={isRawEditing}
+                    <GhostActionButton
+                      icon={Code}
+                      label={isRawEditing ? 'Done' : 'Edit source'}
+                      pressed={isRawEditing}
+                      highlighted={isRawEditing}
                       disabled={isLocked}
-                      className="h-7 px-2 text-xs text-muted-foreground"
-                    >
-                      {isRawEditing ? 'Done' : 'Edit source'}
-                    </Button>
+                      onClick={() => setRawKey(isRawEditing ? null : slotKey)}
+                    />
+                    {historyCount > 0 ? (
+                      <GhostActionButton
+                        icon={History}
+                        label={`${historyCount} ${historyCount === 1 ? 'version' : 'versions'}`}
+                        ariaLabel={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of ${title}`}
+                        onClick={() => {
+                          void loadSlotHistory(sessionId, slotKey);
+                          setHistoryKey(slotKey);
+                        }}
+                      />
+                    ) : null}
                     {value.length > 0 ? (
                       <CopyButton
                         presentation="icon"
@@ -166,25 +172,8 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
                             ? 'copy shareable summary'
                             : `copy ${title.toLowerCase()}`
                         }
-                        size={15}
-                        className="rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                        size={13}
                       />
-                    ) : null}
-                    {historyCount > 0 ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          void loadSlotHistory(sessionId, slotKey);
-                          setHistoryKey(slotKey);
-                        }}
-                        aria-label={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of ${title}`}
-                        className="h-7 gap-1.5 px-2 text-xs text-muted-foreground"
-                      >
-                        <History size={13} aria-hidden />
-                        {historyCount} {historyCount === 1 ? 'version' : 'versions'}
-                      </Button>
                     ) : null}
                   </div>
                 }
@@ -209,7 +198,7 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
                   />
                 )}
               </ContextSection>
-            </div>
+            </Fragment>
           );
         })}
       </PaneShell>

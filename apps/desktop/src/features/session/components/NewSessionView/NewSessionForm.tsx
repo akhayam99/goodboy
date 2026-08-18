@@ -37,7 +37,7 @@ const sectionGlyph = ({
 }: {
   readonly Icon: (typeof CONCEPT_ICONS)[keyof typeof CONCEPT_ICONS];
   readonly tone: Tone;
-}): ReactNode => <Icon size={16} aria-hidden className={tintClasses(tone).icon} />;
+}): ReactNode => <Icon size={14} aria-hidden className={tintClasses(tone).icon} />;
 
 type BranchMode = 'new' | 'existing';
 

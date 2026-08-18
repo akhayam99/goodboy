@@ -209,12 +209,14 @@ describe('ContextPane', () => {
     ).toEqual(['Session summary', 'Decisions']);
   });
 
-  it('shows a normal empty state for each empty region', () => {
+  it('offers the way into each empty region rather than a placeholder', () => {
     store.sessionSlots['session-1'] = [];
     render(<ContextPane session={SESSION} />);
 
-    expect(screen.getByText('No decisions yet')).toBeDefined();
-    expect(screen.getByText('No session summary yet')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add decision' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add problem' })).toBeDefined();
+    expect(screen.queryByText('No decisions yet')).toBeNull();
+    expect(screen.queryByText('No session summary yet')).toBeNull();
   });
 
   it('does not pull slot history on mount, only the counts already in the store', () => {

@@ -84,7 +84,11 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
   return {
     ...actual,
     ScrollFade: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    Markdown: ({ text }: { text: string }) => <span data-testid="markdown">{text}</span>,
+    Markdown: ({ text, className }: { text: string; className?: string }) => (
+      <span data-testid="markdown" className={className}>
+        {text}
+      </span>
+    ),
   };
 });
 
@@ -142,6 +146,25 @@ describe('Context regions', () => {
     );
   });
 
+  it('puts the variable-width controls before the constant-width copy glyph', () => {
+    store.sessionSlots['session-1'] = slots();
+    render(<ContextPane session={SESSION} />);
+    const decisions = sectionFor('Decisions');
+    const actions = within(decisions).getAllByRole('button');
+    const editSource = within(decisions).getByRole('button', { name: 'Edit source' });
+    const copy = within(decisions).getByRole('button', { name: 'copy decisions' });
+
+    expect(actions.indexOf(copy)).toBeGreaterThan(actions.indexOf(editSource));
+  });
+
+  it('states each region once, in its own heading, and not again above them', () => {
+    render(<ContextPane session={SESSION} />);
+
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Context');
+    expect(screen.getByText('One row per choice already settled along the way.')).toBeDefined();
+    expect(screen.queryByText(/summary and the decisions settled/)).toBeNull();
+  });
+
   it('keeps both regions on one page rather than behind a segmented control', () => {
     render(<ContextPane session={SESSION} />);
 
@@ -161,6 +184,29 @@ describe('Session summary blocks', () => {
       expect(within(summary).getByRole('region', { name: title })).toBeDefined();
     }
     expect(summary.textContent).not.toContain('####');
+  });
+
+  it('labels each block without drawing a box around it', () => {
+    render(<ContextPane session={SESSION} />);
+    const problem = within(sectionFor('Session summary')).getByRole('region', { name: 'Problem' });
+
+    expect(problem.className).not.toContain('border');
+    expect(problem.className).not.toContain('bg-');
+    expect(within(problem).getByText('Problem').className).toContain('uppercase');
+  });
+
+  it('offers the four blocks on an empty document instead of a bespoke placeholder', () => {
+    store.sessionSlots['session-1'] = slots({ last_output_summary: '' });
+    render(<ContextPane session={SESSION} />);
+    const summary = sectionFor('Session summary');
+
+    for (const title of ['Problem', 'Learned', 'State', 'Next']) {
+      expect(within(summary).getByRole('region', { name: title })).toBeDefined();
+      expect(
+        within(summary).getByRole('button', { name: `Add ${title.toLowerCase()}` }),
+      ).toBeDefined();
+    }
+    expect(summary.textContent).not.toContain('No session summary yet');
   });
 
   it('edits one section without touching the other three', () => {
@@ -237,7 +283,7 @@ describe('Session summary blocks', () => {
     render(<ContextPane session={SESSION} />);
     const next = within(sectionFor('Session summary')).getByRole('region', { name: 'Next' });
 
-    expect(next.textContent).toContain('Nothing here yet');
+    expect(next.textContent).toBe('Next');
     expect(store.upsertSessionSlot).not.toHaveBeenCalled();
 
     fireEvent.click(within(next).getByRole('button', { name: 'Add next' }));
@@ -264,6 +310,39 @@ describe('Decisions rows', () => {
     ]);
     expect(decisions.querySelector('li')).toBeNull();
     expect(decisions.querySelector('[class*="list-disc"]')).toBeNull();
+  });
+
+  it('sets a row one step down the type scale, on a whole-pixel line box', () => {
+    render(<ContextPane session={SESSION} />);
+    const decisions = sectionFor('Decisions');
+
+    const prose = within(decisions).getAllByTestId('markdown')[0] as HTMLElement;
+
+    expect(prose.className).toContain('text-xs');
+    expect(prose.className).toContain('[&_p]:leading-5');
+    expect(prose.className).not.toContain('text-sm');
+  });
+
+  it('tightens the row and keeps the delete control on the text it belongs to', () => {
+    render(<ContextPane session={SESSION} />);
+    const decisions = sectionFor('Decisions');
+
+    const row = within(decisions).getByRole('button', { name: 'Edit decision 1' })
+      .parentElement as HTMLElement;
+
+    expect(row.className).toContain('py-2');
+    expect(row.className).not.toContain('p-3');
+    expect(row.className).toContain('items-center');
+    expect(row.className).not.toContain('border');
+  });
+
+  it('leaves the empty section to its add row rather than a placeholder', () => {
+    store.sessionSlots['session-1'] = slots({ decisions: '' });
+    render(<ContextPane session={SESSION} />);
+    const decisions = sectionFor('Decisions');
+
+    expect(decisions.textContent).not.toContain('No decisions yet');
+    expect(within(decisions).getByRole('button', { name: 'Add decision' })).toBeDefined();
   });
 
   it('edits the clicked row in place and leaves the rest byte identical', () => {

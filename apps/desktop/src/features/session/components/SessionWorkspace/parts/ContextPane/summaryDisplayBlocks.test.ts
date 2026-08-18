@@ -35,9 +35,16 @@ describe('summaryDisplayBlocks', () => {
     expect(blocks.map((block) => block.index)).toEqual([0, null, null, null]);
   });
 
-  it('implies no structure for a document that carries none', () => {
+  it('implies no structure over prose that carries none', () => {
     expect(titlesOf('**bold label:** legacy prose')).toEqual(['Notes']);
-    expect(titlesOf('')).toEqual([]);
+  });
+
+  it('offers the four sections on a blank document, so nothing needs a placeholder', () => {
+    const blocks = summaryDisplayBlocks({ document: parseSummaryDocument({ text: '' }) });
+
+    expect(blocks.map((block) => block.title)).toEqual(['Problem', 'Learned', 'State', 'Next']);
+    expect(blocks.map((block) => block.index)).toEqual([null, null, null, null]);
+    expect(blocks.map((block) => block.body)).toEqual(['', '', '', '']);
   });
 
   it('keeps the heading the document actually wrote as the block title', () => {
