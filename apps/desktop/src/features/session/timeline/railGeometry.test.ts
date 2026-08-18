@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   RAIL_LANE_OFFSET,
-  RAIL_MAX_COLUMN,
   RAIL_SPINE_X,
   layoutTimelineRail,
   railColumnX,
@@ -466,7 +465,7 @@ describe('layoutTimelineRail', () => {
     ]);
   });
 
-  it('never puts a lane past the column cap however deep the nesting goes', () => {
+  it('gives every nesting level its own lane so no marker falls back to the spine', () => {
     const layout = layoutTimelineRail({
       rows: [
         row({ id: 'great-grandchild', groupId: 'stub-3' }),
@@ -483,10 +482,8 @@ describe('layoutTimelineRail', () => {
       ],
     });
 
-    for (const column of layout.columnByGroupId.values()) {
-      expect(column).toBeLessThanOrEqual(RAIL_MAX_COLUMN);
-    }
-    expect(layout.width).toBe(RAIL_SPINE_X + RAIL_MAX_COLUMN * RAIL_LANE_OFFSET + 8);
+    expect([...layout.columnByGroupId.values()]).toEqual([1, 2, 3, 4]);
+    expect(layout.width).toBe(RAIL_SPINE_X + 4 * RAIL_LANE_OFFSET + 8);
   });
 
   it('draws a standalone agent fan-out in the neutral spine ink, not a run colour', () => {
@@ -571,16 +568,15 @@ describe('junction integrity', () => {
 
   const fixtures: ReadonlyArray<Fixture> = [saturated, nested, dangling];
 
-  it('parks a group on the spine when every free column under the cap is taken', () => {
+  it('widens the rail rather than sharing a lane when many runs are live at once', () => {
     const layout = layoutTimelineRail(saturated);
 
     expect(layout.columnByGroupId.get('lane-a')).toBe(1);
     expect(layout.columnByGroupId.get('lane-b')).toBe(2);
     expect(layout.columnByGroupId.get('lane-c')).toBe(3);
-    expect(layout.columnByGroupId.get('stub-a')).toBe(0);
-    expect(railRow(layout, 'a-child').joins).toEqual([]);
-    expect(railRow(layout, 'a-child').markerColumn).toBe(0);
-    expect(railRow(layout, 'a-step').joins).toEqual([]);
+    expect(layout.columnByGroupId.get('stub-a')).toBe(4);
+    expect(railRow(layout, 'a-child').markerColumn).toBe(1);
+    expect(railRow(layout, 'a-child').joins.map((join) => join.laneColumn)).toEqual([4]);
   });
 
   it('never overlaps two strokes in the same lane column of a row', () => {
@@ -625,7 +621,8 @@ describe('junction integrity', () => {
         if (upper === undefined || lower === undefined) {
           continue;
         }
-        for (let column = 1; column <= RAIL_MAX_COLUMN; column += 1) {
+        const widest = Math.max(...layout.columnByGroupId.values());
+        for (let column = 1; column <= widest; column += 1) {
           const bottomTouch =
             upper.segments.some(
               (segment) => segment.column === column && segment.toY === upper.height,
