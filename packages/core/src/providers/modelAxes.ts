@@ -52,14 +52,15 @@ type CursorToggleParams = CursorParams & {
   readonly fast: boolean;
 };
 
-const effortAxis = ({ label, efforts }: EffortParams): EffortAxis => {
+const effortAxis = ({ label, efforts }: EffortParams): EffortAxis | null => {
+  if (efforts.length === 0) {
+    return null;
+  }
   return {
     label,
     levels: efforts.map((level) => ({ level, available: true })),
   };
 };
-
-const unavailableEffortAxis = (): EffortAxis => ({ label: 'Effort', levels: [] });
 
 const selectionAxes = ({ model }: SelectionAxesParams) => {
   const catalog = [...MODEL_CATALOGS[model.provider]].sort(
@@ -83,20 +84,23 @@ const selectionAxes = ({ model }: SelectionAxesParams) => {
       })),
       activeId: activeGroup,
     },
-    version: {
-      label: 'Model Version',
-      options: catalog
-        .filter(
-          (candidate) =>
-            (candidate.presentation.group ?? candidate.presentation.version) === activeGroup,
-        )
-        .map((candidate) => ({
-          id: candidate.key,
-          label: candidate.presentation.version,
-          modelKey: candidate.key,
-        })),
-      activeId: model.key,
-    },
+    version:
+      model.presentation.group == null
+        ? null
+        : {
+            label: 'Model Version',
+            options: catalog
+              .filter(
+                (candidate) =>
+                  (candidate.presentation.group ?? candidate.presentation.version) === activeGroup,
+              )
+              .map((candidate) => ({
+                id: candidate.key,
+                label: candidate.presentation.version,
+                modelKey: candidate.key,
+              })),
+            activeId: model.key,
+          },
   };
 };
 
@@ -144,8 +148,8 @@ const cursorAxes = ({ model, selection }: CursorParams): ModelAxes => {
     : null;
   return {
     ...selectionAxes({ model }),
-    effort: effort ?? unavailableEffortAxis(),
-    variant: { label: 'Variant', options: [], activeId: null },
+    effort,
+    variant: null,
     toggles: cursorToggles({ model, selection, thinking, fast }),
     requiresMaxMode: resolveCursorCombo({ model, selection }).maxMode,
   };
@@ -156,14 +160,14 @@ type VariantParams = {
   readonly selection: ModelSelection;
 };
 
-const variantAxis = ({ model, selection }: VariantParams): VariantAxis => {
+const variantAxis = ({ model, selection }: VariantParams): VariantAxis | null => {
   if (model.variants.length <= 1) {
-    return { label: 'Variant', options: [], activeId: null };
+    return null;
   }
   const active =
     model.variants.find((variant) => variant.id === selection.variant) ?? model.variants[0];
   if (active == null) {
-    return { label: 'Variant', options: [], activeId: null };
+    return null;
   }
   return {
     label: 'Variant',
@@ -179,16 +183,16 @@ export const modelAxes = ({ model, selection }: Params): ModelAxes => {
       return {
         ...selections,
         effort:
-          model.efforts.length > 0
-            ? {
+          model.efforts.length === 0
+            ? null
+            : {
                 label: 'Effort',
                 levels: ANTHROPIC_EFFORT_ORDER.map((level) => ({
                   level,
                   available: model.efforts.includes(level),
                 })),
-              }
-            : unavailableEffortAxis(),
-        variant: { label: 'Variant', options: [], activeId: null },
+              },
+        variant: null,
         toggles: [],
         requiresMaxMode: false,
       };
@@ -209,7 +213,7 @@ export const modelAxes = ({ model, selection }: Params): ModelAxes => {
       return {
         ...selections,
         effort: effortAxis({ label: 'Effort', efforts: model.efforts }),
-        variant: { label: 'Variant', options: [], activeId: null },
+        variant: null,
         toggles: [],
         requiresMaxMode: false,
       };

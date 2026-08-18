@@ -142,9 +142,9 @@ export type ToggleAxis = {
 
 export type ModelAxes = {
   readonly model: ModelAxis;
-  readonly version: ModelAxis;
-  readonly effort: EffortAxis;
-  readonly variant: VariantAxis;
+  readonly version: ModelAxis | null;
+  readonly effort: EffortAxis | null;
+  readonly variant: VariantAxis | null;
   readonly toggles: ReadonlyArray<ToggleAxis>;
   readonly requiresMaxMode: boolean;
 };

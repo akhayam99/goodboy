@@ -21,7 +21,6 @@ import { Pane } from './parts/Pane';
 import { SessionStudioLayer } from './parts/SessionStudioLayer';
 import { QuestionsPane } from './parts/QuestionsPane';
 import { ContextPane } from './parts/ContextPane';
-import { TimelinePane } from './parts/TimelinePane';
 import { ResolvePane } from './parts/ResolvePane';
 import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
@@ -244,7 +243,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             )
           ) : null}
           {lens === 'questions' ? <QuestionsPane session={session} /> : null}
-          {lens === 'timeline' ? <TimelinePane session={session} /> : null}
           {lens === 'plans' ? <PlanStudio sessionId={sessionId} /> : null}
           {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
           {lens === 'resolve' ? (

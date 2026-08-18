@@ -30,7 +30,7 @@ describe('buildLensNavigation', () => {
   it('keeps every group mounted and labelled when every count is zero', () => {
     const { primaryRows, groups } = buildLensNavigation(BASE);
 
-    expect(primaryRows.map((row) => row.kind)).toEqual(['context', 'timeline']);
+    expect(primaryRows.map((row) => row.kind)).toEqual(['context']);
     expect(groups.map((group) => group.label)).toEqual(['Work', 'Infra', 'Integrations']);
   });
 
