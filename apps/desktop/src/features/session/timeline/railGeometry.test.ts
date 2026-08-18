@@ -7,6 +7,7 @@ import {
   railColumnX,
   type RailGroupInput,
   type RailGroupShape,
+  type RailJoin,
   type RailRowInput,
   type RailSegment,
 } from './railGeometry';
@@ -70,6 +71,35 @@ const spineOf = (layout: ReturnType<typeof layoutTimelineRail>, id: string) =>
 const fadedOf = (layout: ReturnType<typeof layoutTimelineRail>, id: string, column: number) =>
   railRow(layout, id).segments.find((segment) => segment.column === column)?.fade;
 
+type CubicCoordinates = {
+  readonly startX: number;
+  readonly startY: number;
+  readonly firstControlX: number;
+  readonly secondControlX: number;
+  readonly endX: number;
+  readonly endY: number;
+};
+
+type CubicCoordinatesParams = {
+  readonly join: RailJoin;
+};
+
+const cubicCoordinatesOf = ({ join }: CubicCoordinatesParams): CubicCoordinates => {
+  const [startX, startY, firstControlX, , secondControlX, , endX, endY] =
+    join.path.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+  if (
+    startX === undefined ||
+    startY === undefined ||
+    firstControlX === undefined ||
+    secondControlX === undefined ||
+    endX === undefined ||
+    endY === undefined
+  ) {
+    throw new Error(`invalid rail cubic ${join.path}`);
+  }
+  return { startX, startY, firstControlX, secondControlX, endX, endY };
+};
+
 describe('layoutTimelineRail', () => {
   it('departs the spine at the origin row and travels upward to the newest step', () => {
     const layout = layoutTimelineRail({
@@ -90,11 +120,24 @@ describe('layoutTimelineRail', () => {
         dash: 'solid',
         anchorY: 18,
         strength: 'full',
+        path: 'M 8 18 C 16.84 18, 24 9.9414, 24 0',
       },
     ]);
     expect(railRow(layout, 'origin').markerColumn).toBe(0);
     expect(railRow(layout, 'step-1').markerColumn).toBe(1);
-    expect(railRow(layout, 'step-2').markerColumn).toBe(1);
+    expect(railRow(layout, 'step-2').markerColumn).toBe(0);
+  });
+
+  it('builds a departure from the marker to a vertical lane edge with the reviewed quarter arc', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'step-1', groupId: 'lane', height: 32, markerY: 16 }),
+        row({ id: 'origin', height: 32, markerY: 16 }),
+      ],
+      groups: [group({ id: 'lane', originRowId: 'origin' })],
+    });
+
+    expect(railRow(layout, 'origin').joins[0]?.path).toBe('M 8 16 C 16.84 16, 24 8.8368, 24 0');
   });
 
   it('merges a finished run back into the spine at its newest row', () => {
@@ -104,9 +147,73 @@ describe('layoutTimelineRail', () => {
     });
 
     expect(railRow(layout, 'step-1').joins.map((join) => join.kind)).toEqual(['merge']);
-    expect(lanesOf(layout, 'step-1')).toEqual([
-      { column: 1, identityIndex: 0, dash: 'solid', strength: 'full', fromY: 18, toY: 36 },
-    ]);
+    expect(lanesOf(layout, 'step-1')).toEqual([]);
+  });
+
+  it('builds a merge from the vertical lane edge into a marker moved onto the spine', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'step-1', groupId: 'lane', height: 32, markerY: 16 }),
+        row({ id: 'origin', height: 32, markerY: 16 }),
+      ],
+      groups: [group({ id: 'lane', originRowId: 'origin' })],
+    });
+    const merged = railRow(layout, 'step-1');
+
+    expect(merged.joins[0]?.path).toBe('M 24 32 C 24 23.16, 16.84 16, 8 16');
+    expect(merged.markerColumn).toBe(0);
+    expect(lanesOf(layout, 'step-1')).toEqual([]);
+  });
+
+  it('crosses row edges only at integer columns with a vertical tangent', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'child', groupId: 'stub', height: 32, markerY: 16 }),
+        row({ id: 'step', groupId: 'lane', height: 32, markerY: 16 }),
+        row({ id: 'origin', height: 32, markerY: 16 }),
+      ],
+      groups: [
+        group({ id: 'lane', originRowId: 'origin' }),
+        group({ id: 'stub', originRowId: 'step', parentGroupId: 'lane' }),
+      ],
+    });
+
+    for (const rail of layout.rows) {
+      for (const join of rail.joins) {
+        const coordinates = cubicCoordinatesOf({ join });
+        const edgeX = join.kind === 'depart' ? coordinates.endX : coordinates.startX;
+        const tangentX =
+          join.kind === 'depart' ? coordinates.secondControlX : coordinates.firstControlX;
+        const edgeY = join.kind === 'depart' ? coordinates.endY : coordinates.startY;
+        expect(Number.isInteger(edgeX)).toBe(true);
+        expect(tangentX).toBe(edgeX);
+        expect(edgeY).toBe(join.kind === 'depart' ? 0 : rail.height);
+      }
+    }
+  });
+
+  it('terminates every junction under its row marker', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'child', groupId: 'stub', height: 32, markerY: 16 }),
+        row({ id: 'step', groupId: 'lane', height: 32, markerY: 16 }),
+        row({ id: 'origin', height: 32, markerY: 16 }),
+      ],
+      groups: [
+        group({ id: 'lane', originRowId: 'origin' }),
+        group({ id: 'stub', originRowId: 'step', parentGroupId: 'lane' }),
+      ],
+    });
+
+    for (const rail of layout.rows) {
+      for (const join of rail.joins) {
+        const coordinates = cubicCoordinatesOf({ join });
+        const terminalX = join.kind === 'depart' ? coordinates.startX : coordinates.endX;
+        const terminalY = join.kind === 'depart' ? coordinates.startY : coordinates.endY;
+        expect(terminalX).toBe(railColumnX({ column: rail.markerColumn }));
+        expect(terminalY).toBe(join.anchorY);
+      }
+    }
   });
 
   it('dangles an unfinished run toward NOW instead of merging', () => {
@@ -149,15 +256,14 @@ describe('layoutTimelineRail', () => {
         dash: 'dashed',
         anchorY: 18,
         strength: 'full',
+        path: 'M 24 36 C 24 27.16, 16.84 18, 8 18',
       },
     ]);
-    expect(lanesOf(layout, 'pending')).toEqual([
-      { column: 1, identityIndex: 0, dash: 'dashed', strength: 'full', fromY: 18, toY: 36 },
-    ]);
+    expect(lanesOf(layout, 'pending')).toEqual([]);
     expect(lanesOf(layout, 'now')).toEqual([]);
   });
 
-  it('anchors the merge on the first line of a compressed pending stretch', () => {
+  it('anchors the merge under the marker of a compressed pending stretch', () => {
     const layout = layoutTimelineRail({
       rows: [
         row({
@@ -173,10 +279,8 @@ describe('layoutTimelineRail', () => {
       groups: [group({ id: 'lane', originRowId: 'origin', shape: 'open' })],
     });
 
-    expect(railRow(layout, 'cluster').joins.map((join) => join.anchorY)).toEqual([8]);
-    expect(lanesOf(layout, 'cluster')).toEqual([
-      { column: 1, identityIndex: 0, dash: 'dashed', strength: 'full', fromY: 8, toY: 48 },
-    ]);
+    expect(railRow(layout, 'cluster').joins.map((join) => join.anchorY)).toEqual([24]);
+    expect(lanesOf(layout, 'cluster')).toEqual([]);
     expect(railRow(layout, 'cluster').markerY).toBe(24);
   });
 
@@ -233,7 +337,8 @@ describe('layoutTimelineRail', () => {
     expect(
       railRow(layout, 'step-1').joins.map((join) => `${join.kind}:${join.laneColumn}`),
     ).toEqual(['merge:1', 'depart:2']);
-    expect(railRow(layout, 'child-1').markerColumn).toBe(2);
+    expect(railRow(layout, 'step-1').markerColumn).toBe(0);
+    expect(railRow(layout, 'child-1').markerColumn).toBe(1);
     expect(layout.width).toBe(RAIL_SPINE_X + 2 * RAIL_LANE_OFFSET + 8);
   });
 
@@ -284,7 +389,8 @@ describe('layoutTimelineRail', () => {
       groups: [group({ id: 'lane', originRowId: 'origin', shape: 'open' })],
     });
 
-    expect(lanesOf(layout, 'pending-2').map((segment) => segment.dash)).toEqual(['dashed']);
+    expect(railRow(layout, 'pending-2').joins.map((join) => join.dash)).toEqual(['dashed']);
+    expect(lanesOf(layout, 'pending-2')).toEqual([]);
     expect(lanesOf(layout, 'running')).toEqual([
       { column: 1, identityIndex: 0, dash: 'solid', strength: 'full', fromY: 18, toY: 36 },
       { column: 1, identityIndex: 0, dash: 'dashed', strength: 'full', fromY: 0, toY: 18 },
@@ -416,7 +522,12 @@ describe('layoutTimelineRail', () => {
     expect(spineOf(layout, 'b-origin')).toEqual([
       { column: 0, identityIndex: null, dash: 'solid', strength: 'receded', fromY: 0, toY: 36 },
     ]);
-    expect([...lanesOf(layout, 'a-step')].map((segment) => segment.column).sort()).toEqual([1, 2]);
+    expect(
+      [
+        ...lanesOf(layout, 'a-step').map((segment) => segment.column),
+        ...railRow(layout, 'a-step').joins.map((join) => join.laneColumn),
+      ].sort(),
+    ).toEqual([1, 2]);
   });
 
   it('dims the spine under a fan-out that hangs off a lane rather than off the spine', () => {
@@ -461,11 +572,10 @@ describe('layoutTimelineRail', () => {
     ]);
     expect(lanesOf(layout, 'child-2')).toEqual([
       { column: 1, identityIndex: 0, dash: 'solid', strength: 'receded', fromY: 0, toY: 36 },
-      { column: 2, identityIndex: 0, dash: 'solid', strength: 'full', fromY: 18, toY: 36 },
     ]);
-    expect(lanesOf(layout, 'step-2')).toEqual([
-      { column: 1, identityIndex: 0, dash: 'solid', strength: 'full', fromY: 18, toY: 36 },
-    ]);
+    expect(railRow(layout, 'child-2').joins.map((join) => join.strength)).toEqual(['full']);
+    expect(lanesOf(layout, 'step-2')).toEqual([]);
+    expect(railRow(layout, 'step-2').joins.map((join) => join.strength)).toEqual(['full']);
   });
 
   it('leaves the lane full on the row its own fan-out departs from', () => {
@@ -503,8 +613,8 @@ describe('layoutTimelineRail', () => {
 
     expect(lanesOf(layout, 'child-1')).toEqual([
       { column: 1, identityIndex: 0, dash: 'dashed', strength: 'receded', fromY: 0, toY: 36 },
-      { column: 2, identityIndex: 0, dash: 'solid', strength: 'full', fromY: 18, toY: 36 },
     ]);
+    expect(railRow(layout, 'child-1').joins.map((join) => join.strength)).toEqual(['full']);
   });
 
   it('dims the spine to the head of the feed while an open run dangles toward NOW', () => {
@@ -573,7 +683,7 @@ describe('layoutTimelineRail', () => {
       groups: [group({ id: 'stub', originRowId: 'standalone-agent', identityIndex: null })],
     });
 
-    expect(lanesOf(layout, 'child').map((segment) => segment.identityIndex)).toEqual([null]);
+    expect(railRow(layout, 'child').joins.map((join) => join.identityIndex)).toEqual([null]);
     expect(railRow(layout, 'standalone-agent').joins.map((join) => join.identityIndex)).toEqual([
       null,
     ]);
@@ -589,13 +699,49 @@ describe('a receded span carries its curves', () => {
   it('recedes the joins that sit inside a delegated stretch', () => {
     const layout = layoutTimelineRail({
       rows: [
-        { id: 'child-top', height: 32, topY: 0, markerY: 16, topAnchorY: null, groupId: 'child', isPending: false },
-        { id: 'child-bottom', height: 32, topY: 0, markerY: 16, topAnchorY: null, groupId: 'child', isPending: false },
-        { id: 'parent-origin', height: 32, topY: 0, markerY: 16, topAnchorY: null, groupId: 'parent', isPending: false },
+        {
+          id: 'child-top',
+          height: 32,
+          topY: 0,
+          markerY: 16,
+          topAnchorY: null,
+          groupId: 'child',
+          isPending: false,
+        },
+        {
+          id: 'child-bottom',
+          height: 32,
+          topY: 0,
+          markerY: 16,
+          topAnchorY: null,
+          groupId: 'child',
+          isPending: false,
+        },
+        {
+          id: 'parent-origin',
+          height: 32,
+          topY: 0,
+          markerY: 16,
+          topAnchorY: null,
+          groupId: 'parent',
+          isPending: false,
+        },
       ],
       groups: [
-        { id: 'parent', parentGroupId: null, identityIndex: 0, originRowId: 'parent-origin', shape: 'merged' },
-        { id: 'child', parentGroupId: 'parent', identityIndex: 1, originRowId: 'child-bottom', shape: 'merged' },
+        {
+          id: 'parent',
+          parentGroupId: null,
+          identityIndex: 0,
+          originRowId: 'parent-origin',
+          shape: 'merged',
+        },
+        {
+          id: 'child',
+          parentGroupId: 'parent',
+          identityIndex: 1,
+          originRowId: 'child-bottom',
+          shape: 'merged',
+        },
       ],
     });
 
@@ -651,11 +797,29 @@ describe('a strength change fades instead of stepping', () => {
       groups: [group({ id: 'lane', originRowId: 'origin' })],
     });
 
-  it('marks the edge where a spine row meets a row of different strength', () => {
-    expect(fadedOf(layout(), 'step-2', 0)).toEqual({ atTop: true, atBottom: false });
+  it('marks the straight edge beside a junction where the next row has different strength', () => {
+    expect(fadedOf(layout(), 'above', 0)).toEqual({ atTop: false, atBottom: true });
   });
 
   it('leaves an edge unmarked where both rows carry the same strength', () => {
     expect(fadedOf(layout(), 'step-1', 0)).toEqual({ atTop: false, atBottom: false });
+  });
+
+  it('keeps fades off junction rows and moves them onto adjacent straight runs', () => {
+    const shifted = layoutTimelineRail({
+      rows: [
+        row({ id: 'above' }),
+        row({ id: 'step-2', groupId: 'lane' }),
+        row({ id: 'step-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+        row({ id: 'below' }),
+      ],
+      groups: [group({ id: 'lane', originRowId: 'origin' })],
+    });
+
+    expect(fadedOf(shifted, 'above', 0)).toEqual({ atTop: false, atBottom: true });
+    expect(fadedOf(shifted, 'step-2', 0)).toEqual({ atTop: false, atBottom: false });
+    expect(fadedOf(shifted, 'origin', 0)).toEqual({ atTop: false, atBottom: false });
+    expect(fadedOf(shifted, 'below', 0)).toEqual({ atTop: true, atBottom: false });
   });
 });

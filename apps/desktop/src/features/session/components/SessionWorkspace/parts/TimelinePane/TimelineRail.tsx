@@ -1,10 +1,5 @@
 import { runIdentityStroke } from '../../../../timeline/runIdentity';
-import {
-  railColumnX,
-  type RailJoin,
-  type RailRow,
-  type RailSegment,
-} from '../../../../timeline/railGeometry';
+import { railColumnX, type RailRow, type RailSegment } from '../../../../timeline/railGeometry';
 
 type Props = {
   readonly rail: RailRow;
@@ -14,44 +9,57 @@ type Props = {
 const LANE_WIDTH = 2;
 const SPINE_WIDTH = 1;
 const DASH_PATTERN = '3 3';
-const RECEDED_CLASS = 'opacity-[var(--rail-strength-receded)]';
 
-const strokeOf = ({ identityIndex }: { readonly identityIndex: number | null }): string =>
+const baseStrokeOf = ({ identityIndex }: { readonly identityIndex: number | null }): string =>
   identityIndex == null ? 'var(--color-border)' : runIdentityStroke({ index: identityIndex });
+
+type StrokeParams = {
+  readonly identityIndex: number | null;
+  readonly strength: RailSegment['strength'];
+};
+
+const strokeOf = ({ identityIndex, strength }: StrokeParams): string => {
+  const stroke = baseStrokeOf({ identityIndex });
+  if (strength === 'full') {
+    return stroke;
+  }
+  return `color-mix(in oklab, ${stroke} var(--rail-strength-receded), var(--color-background))`;
+};
 
 const FADE_SPAN = 0.35;
 
-const fadeStops = ({ segment }: { readonly segment: RailSegment }): ReadonlyArray<string> => {
-  const near = segment.strength === 'receded' ? 1 : 0;
-  const far = segment.strength === 'receded' ? 0 : 1;
-  const stops: string[] = [];
+type FadeStop = {
+  readonly strength: RailSegment['strength'];
+  readonly offset: number;
+};
+
+const fadeStops = ({ segment }: { readonly segment: RailSegment }): ReadonlyArray<FadeStop> => {
+  const near = segment.strength;
+  const far = segment.strength === 'receded' ? 'full' : 'receded';
+  const stops: FadeStop[] = [];
   if (segment.fade.atTop) {
-    stops.push(`${far}:0`, `${near}:${FADE_SPAN}`);
+    stops.push({ strength: far, offset: 0 }, { strength: near, offset: FADE_SPAN });
   } else {
-    stops.push(`${near}:0`);
+    stops.push({ strength: near, offset: 0 });
   }
   if (segment.fade.atBottom) {
-    stops.push(`${near}:${1 - FADE_SPAN}`, `${far}:1`);
+    stops.push({ strength: near, offset: 1 - FADE_SPAN }, { strength: far, offset: 1 });
   } else {
-    stops.push(`${near}:1`);
+    stops.push({ strength: near, offset: 1 });
   }
   return stops;
 };
 
-const gradientIdOf = ({ segment }: { readonly segment: RailSegment }): string =>
-  `rail-${segment.column}-${segment.fromY}-${segment.toY}-${segment.strength}`;
+type GradientIdParams = {
+  readonly rail: RailRow;
+  readonly segment: RailSegment;
+};
+
+const gradientIdOf = ({ rail, segment }: GradientIdParams): string =>
+  `rail-${rail.id.replace(/[^a-zA-Z0-9_-]/g, '-')}-${segment.column}-${segment.fromY}-${segment.toY}-${segment.strength}-${segment.fade.atTop ? 'top' : 'bottom'}`;
 
 const segmentKey = ({ segment }: { readonly segment: RailSegment }): string =>
   `${segment.column}:${segment.fromY}:${segment.toY}:${segment.dash}`;
-
-const joinPath = ({ join }: { readonly join: RailJoin }): string => {
-  const fromX = railColumnX({
-    column: join.kind === 'depart' ? join.spineColumn : join.laneColumn,
-  });
-  const toX = railColumnX({ column: join.kind === 'depart' ? join.laneColumn : join.spineColumn });
-  const bend = join.anchorY / 2;
-  return `M ${fromX} ${join.anchorY} C ${fromX} ${bend}, ${toX} ${bend}, ${toX} 0`;
-};
 
 const faded = ({ segment }: { readonly segment: RailSegment }): boolean =>
   segment.fade.atTop || segment.fade.atBottom;
@@ -65,29 +73,32 @@ export const TimelineRail = ({ rail, width }: Props) => (
     aria-hidden
   >
     <defs>
-      {rail.segments.filter((segment) => faded({ segment })).map((segment) => (
-        <linearGradient
-          key={gradientIdOf({ segment })}
-          id={gradientIdOf({ segment })}
-          x1="0"
-          y1={segment.fromY}
-          x2="0"
-          y2={segment.toY}
-          gradientUnits="userSpaceOnUse"
-        >
-          {fadeStops({ segment }).map((stop) => {
-            const [strong, offset] = stop.split(':');
-            return (
-              <stop
-                key={stop}
-                offset={offset}
-                stopColor={strokeOf({ identityIndex: segment.identityIndex })}
-                stopOpacity={strong === '1' ? 'var(--rail-strength-receded)' : '1'}
-              />
-            );
-          })}
-        </linearGradient>
-      ))}
+      {rail.segments
+        .filter((segment) => faded({ segment }))
+        .map((segment) => (
+          <linearGradient
+            key={gradientIdOf({ rail, segment })}
+            id={gradientIdOf({ rail, segment })}
+            x1="0"
+            y1="0"
+            x2="0"
+            y2={rail.height}
+            gradientUnits="userSpaceOnUse"
+          >
+            {fadeStops({ segment }).map((stop) => {
+              return (
+                <stop
+                  key={`${stop.strength}:${stop.offset}`}
+                  offset={stop.offset}
+                  stopColor={strokeOf({
+                    identityIndex: segment.identityIndex,
+                    strength: stop.strength,
+                  })}
+                />
+              );
+            })}
+          </linearGradient>
+        ))}
     </defs>
     {rail.segments.map((segment) => (
       <line
@@ -98,26 +109,28 @@ export const TimelineRail = ({ rail, width }: Props) => (
         y2={segment.toY}
         stroke={
           faded({ segment })
-            ? `url(#${gradientIdOf({ segment })})`
-            : strokeOf({ identityIndex: segment.identityIndex })
+            ? `url(#${gradientIdOf({ rail, segment })})`
+            : strokeOf({
+                identityIndex: segment.identityIndex,
+                strength: segment.strength,
+              })
         }
         strokeWidth={segment.identityIndex == null ? SPINE_WIDTH : LANE_WIDTH}
         strokeDasharray={segment.dash === 'dashed' ? DASH_PATTERN : undefined}
-        className={
-          !faded({ segment }) && segment.strength === 'receded' ? RECEDED_CLASS : undefined
-        }
+        strokeLinecap="butt"
         shapeRendering="crispEdges"
       />
     ))}
     {rail.joins.map((join) => (
       <path
         key={`${join.kind}:${join.laneColumn}:${join.anchorY}`}
-        d={joinPath({ join })}
+        d={join.path}
         fill="none"
-        stroke={strokeOf({ identityIndex: join.identityIndex })}
+        stroke={strokeOf({ identityIndex: join.identityIndex, strength: join.strength })}
         strokeWidth={join.identityIndex == null ? SPINE_WIDTH : LANE_WIDTH}
         strokeDasharray={join.dash === 'dashed' ? DASH_PATTERN : undefined}
-        className={join.strength === 'receded' ? RECEDED_CLASS : undefined}
+        strokeLinecap="butt"
+        strokeLinejoin="round"
       />
     ))}
   </svg>

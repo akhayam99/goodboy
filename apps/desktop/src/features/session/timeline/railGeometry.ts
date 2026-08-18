@@ -4,6 +4,8 @@ export const RAIL_SPINE_X = 8;
 export const RAIL_LANE_OFFSET = 16;
 export const RAIL_MAX_COLUMN = 3;
 const RAIL_EDGE_PAD = 8;
+const RAIL_CURVE_K = 0.5523;
+const RAIL_CURVE_HANDLE = 8.84;
 
 type RailDash = 'solid' | 'dashed';
 
@@ -29,7 +31,7 @@ export type RailRowInput = {
   readonly isPending: boolean;
 };
 
-export type RailFade = {
+type RailFade = {
   readonly atTop: boolean;
   readonly atBottom: boolean;
 };
@@ -54,9 +56,10 @@ export type RailJoin = {
   readonly dash: RailDash;
   readonly anchorY: number;
   readonly strength: RailStrength;
+  readonly path: string;
 };
 
-type PlannedJoin = Omit<RailJoin, 'strength'>;
+type PlannedJoin = Omit<RailJoin, 'strength' | 'path'>;
 
 const strengthOf = ({
   column,
@@ -108,6 +111,20 @@ const anchorOf = ({ row }: { readonly row: RailRowInput }): number =>
 
 const topAnchorOf = ({ row }: { readonly row: RailRowInput }): number =>
   row.topAnchorY ?? anchorOf({ row });
+
+type JoinPathParams = {
+  readonly join: PlannedJoin;
+  readonly height: number;
+};
+
+const joinPathOf = ({ join, height }: JoinPathParams): string => {
+  const spineX = railColumnX({ column: join.spineColumn });
+  const laneX = railColumnX({ column: join.laneColumn });
+  if (join.kind === 'depart') {
+    return `M ${spineX} ${join.anchorY} C ${spineX + RAIL_CURVE_HANDLE} ${join.anchorY}, ${laneX} ${RAIL_CURVE_K * join.anchorY}, ${laneX} 0`;
+  }
+  return `M ${laneX} ${height} C ${laneX} ${height - RAIL_CURVE_HANDLE}, ${spineX + RAIL_CURVE_HANDLE} ${join.anchorY}, ${spineX} ${join.anchorY}`;
+};
 
 const overlaps = ({ first, second }: { readonly first: Interval; readonly second: Interval }) =>
   first.from <= second.to && second.from <= first.to;
@@ -334,12 +351,6 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       continue;
     }
 
-    laneSegmentsByIndex[topIndex]?.push({
-      ...shared,
-      dash: isTopPending ? 'dashed' : 'solid',
-      fromY: topAnchor,
-      toY: topRow.height,
-    });
     markDelegatedRow({ index: topIndex, columns });
     joinsByIndex[topIndex]?.push({
       kind: 'merge',
@@ -347,7 +358,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       laneColumn: plan.column,
       identityIndex: plan.group.identityIndex,
       dash: isTopPending ? 'dashed' : 'solid',
-      anchorY: topAnchor,
+      anchorY: anchorOf({ row: topRow }),
     });
   }
 
@@ -358,10 +369,20 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
   return {
     width: RAIL_SPINE_X + maxColumn * RAIL_LANE_OFFSET + RAIL_EDGE_PAD,
     columnByGroupId,
-    rows: rows.map((row, index) => ({
-      id: row.id,
-      height: row.height,
-      segments: [
+    rows: rows.map((row, index) => {
+      const ownColumn = row.groupId == null ? 0 : (columnByGroupId.get(row.groupId) ?? 0);
+      const plannedJoins = joinsByIndex[index] ?? [];
+      const ownMerge = plannedJoins.find(
+        (join) => join.kind === 'merge' && join.laneColumn === ownColumn,
+      );
+      const markerColumn = ownMerge?.spineColumn ?? ownColumn;
+      const normalizedJoins = plannedJoins.map((join) =>
+        join.kind === 'depart' && ownMerge !== undefined
+          ? { ...join, spineColumn: markerColumn }
+          : join,
+      );
+      const hasJunction = normalizedJoins.length > 0;
+      const segments = [
         {
           column: 0,
           identityIndex: null,
@@ -380,27 +401,38 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
           strength,
           fade: {
             atTop:
+              !hasJunction &&
+              segment.fromY === 0 &&
               strengthOf({
                 column: segment.column,
                 delegated: delegatedByIndex[index - 1] ?? EMPTY_COLUMNS,
               }) !== strength,
             atBottom:
+              !hasJunction &&
+              segment.toY === row.height &&
               strengthOf({
                 column: segment.column,
                 delegated: delegatedByIndex[index + 1] ?? EMPTY_COLUMNS,
               }) !== strength,
           },
         };
-      }),
-      joins: (joinsByIndex[index] ?? []).map((join) => ({
+      });
+      const joins = normalizedJoins.map((join) => ({
         ...join,
         strength: strengthOf({
           column: join.laneColumn,
           delegated: delegatedByIndex[index] ?? EMPTY_COLUMNS,
         }),
-      })),
-      markerColumn: row.groupId == null ? 0 : (columnByGroupId.get(row.groupId) ?? 0),
-      markerY: row.markerY,
-    })),
+        path: joinPathOf({ join, height: row.height }),
+      }));
+      return {
+        id: row.id,
+        height: row.height,
+        segments,
+        joins,
+        markerColumn,
+        markerY: row.markerY,
+      };
+    }),
   };
 };

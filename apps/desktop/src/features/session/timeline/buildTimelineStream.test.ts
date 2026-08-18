@@ -174,10 +174,17 @@ const laneSpansOf = ({ items, layout }: LaneSpanParams): ReadonlyArray<LaneSpan>
   const spans: LaneSpan[] = [];
   let offset = 0;
   for (const [index, item] of items.entries()) {
-    for (const segment of layout.rows[index]?.segments ?? []) {
+    const rail = layout.rows[index];
+    for (const segment of rail?.segments ?? []) {
       if (segment.column > 0) {
         spans.push({ from: offset + segment.fromY, to: offset + segment.toY });
       }
+    }
+    for (const join of rail?.joins ?? []) {
+      spans.push({
+        from: offset + (join.kind === 'merge' ? join.anchorY : 0),
+        to: offset + (join.kind === 'merge' ? item.height : join.anchorY),
+      });
     }
     offset += item.height;
   }
@@ -497,13 +504,15 @@ describe('buildTimelineStream', () => {
     });
 
     expect(spans[0]?.from).toBe(
-      topOfItem({ items, index: clusterIndex }) + TIMELINE_RHYTHM.grade.pending.height / 2,
+      topOfItem({ items, index: clusterIndex }) + (layout.rows[clusterIndex]?.markerY ?? 0),
     );
-    expect(spans.at(-1)?.to).toBe(topOfItem({ items, index: originIndex }));
+    expect(spans.at(-1)?.to).toBe(
+      topOfItem({ items, index: originIndex }) + (layout.rows[originIndex]?.markerY ?? 0),
+    );
     expect(breaks).toEqual([]);
   });
 
-  it('merges the dashed stretch into the spine at the topmost pending step', () => {
+  it('merges the dashed stretch into the spine under the pending marker', () => {
     const { items, groups } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
       agents: RUN_WITH_PENDING_AGENTS,
@@ -518,16 +527,9 @@ describe('buildTimelineStream', () => {
       clusterRail?.segments
         .filter((segment) => segment.column > 0)
         .map(({ fade: _fade, ...segment }) => segment),
-    ).toEqual([
-      {
-        column: 1,
-        identityIndex: runIdentity({ runId: RUN_ID }).index,
-        dash: 'dashed',
-        strength: 'full',
-        fromY: TIMELINE_RHYTHM.grade.pending.height / 2,
-        toY: 3 * TIMELINE_RHYTHM.grade.pending.height,
-      },
-    ]);
+    ).toEqual([]);
+    expect(clusterRail?.joins[0]?.path).toBe('M 24 48 C 24 39.16, 16.84 24, 8 24');
+    expect(clusterRail?.markerColumn).toBe(0);
     expect(nowRail?.segments.filter((segment) => segment.column > 0)).toEqual([]);
   });
 
@@ -581,7 +583,11 @@ describe('buildTimelineStream', () => {
       runIdentity({ runId: OTHER_RUN_ID }).index,
       runIdentity({ runId: RUN_ID }).index,
     ]);
-    expect(new Set(clusters.map(({ rail }) => rail?.markerColumn)).size).toBe(2);
+    expect(clusters.every(({ rail }) => rail?.markerColumn === 0)).toBe(true);
+    expect(
+      new Set(clusters.flatMap(({ rail }) => rail?.joins.map((join) => join.laneColumn) ?? []))
+        .size,
+    ).toBe(2);
     expect(clusters.map(({ rail }) => rail?.joins.map((join) => join.kind))).toEqual([
       ['merge'],
       ['merge'],

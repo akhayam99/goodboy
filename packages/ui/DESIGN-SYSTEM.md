@@ -159,9 +159,10 @@ line, at any depth, and a dashed stretch always points toward NOW.
 **Strength is attention.** A line whose activity has moved onto a live branch
 stays solid in pattern and recedes to `--rail-strength-receded` over exactly the
 span where that branch is live. The deepest live branch is the only stroke at
-full strength; every ancestor over that span steps back. The token is 0.45 on
-dark and 0.5 on light, so the receded stroke reads as background structure on
-both themes rather than disappearing on paper or reading as disabled on ink.
+full strength; every ancestor over that span steps back. The token mixes 45% of
+the stroke on dark and 50% on light toward the surface colour, so the receded
+stroke reads as background structure on both themes rather than disappearing
+on paper or reading as disabled on ink.
 
 The rule is one predicate over a line and a span, asked identically of the spine
 and of a lane, so it holds spine to run, run to fan-out, and at any further
