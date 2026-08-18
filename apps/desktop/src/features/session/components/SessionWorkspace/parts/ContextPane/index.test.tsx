@@ -42,7 +42,7 @@ const { store } = vi.hoisted(() => ({
         plans: false,
         summary: false,
       },
-    },
+    } as Record<string, Record<string, boolean>>,
     summarizerStatus: {
       'session-1': {
         status: 'idle',
@@ -68,14 +68,15 @@ vi.mock('../../../../../../store', () => ({
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
   useSessionSlots: (sessionId: string) => store.sessionSlots[sessionId] ?? [],
   useSessionSlotsLoad: (sessionId: string) => store.sessionSlotsLoad[sessionId] ?? null,
-  useSessionLoading: () => ({
-    agents: false,
-    transcript: false,
-    telemetry: false,
-    slots: false,
-    plans: false,
-    summary: false,
-  }),
+  useSessionLoading: (sessionId: string) =>
+    store.sessionLoading[sessionId] ?? {
+      agents: false,
+      transcript: false,
+      telemetry: false,
+      slots: false,
+      plans: false,
+      summary: false,
+    },
   useSummarizerStatus: (sessionId: string) =>
     store.summarizerStatus[sessionId] ?? { status: 'idle' },
   useSlotHistory: () => [],
@@ -130,6 +131,14 @@ const sectionFor = (name: string): HTMLElement => {
 beforeEach(() => {
   store.sessionSlots['session-1'] = slots();
   store.sessionSlotsLoad['session-1'] = 'loaded';
+  store.sessionLoading['session-1'] = {
+    agents: false,
+    transcript: false,
+    telemetry: false,
+    slots: false,
+    plans: false,
+    summary: false,
+  };
   store.summarizerStatus['session-1'] = { status: 'idle' };
   store.upsertSessionSlot = vi.fn();
   store.ensureSessionSlots = vi.fn().mockResolvedValue(undefined);
@@ -206,6 +215,24 @@ describe('Context regions', () => {
     fireEvent.click(within(sectionFor('Decisions')).getByRole('button', { name: 'Retry' }));
 
     expect(store.loadSessionSlots).toHaveBeenCalledWith('session-1');
+  });
+
+  it('shows the retry underway rather than the failure it is already replacing', () => {
+    store.sessionSlots['session-1'] = [];
+    store.sessionSlotsLoad['session-1'] = 'failed';
+    store.sessionLoading['session-1'] = {
+      agents: false,
+      transcript: false,
+      telemetry: false,
+      slots: true,
+      plans: false,
+      summary: false,
+    };
+    render(<ContextPane session={SESSION} />);
+    const summary = sectionFor('Session summary');
+
+    expect(within(summary).getByRole('status', { name: 'Loading' })).toBeDefined();
+    expect(within(summary).queryByText('Session summary did not load')).toBeNull();
   });
 
   it('waits rather than claiming a session is empty before the read has answered', () => {

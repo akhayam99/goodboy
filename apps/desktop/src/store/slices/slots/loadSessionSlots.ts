@@ -6,21 +6,24 @@ import { EMPTY_LOADING } from '../../session-mutators';
 import type { AppState, SessionLoadingFlags } from '../../types';
 import type { SetFn } from './types';
 
-type SettleParams = {
+type ReadingParams = {
   readonly state: AppState;
   readonly sessionId: SessionId;
+  readonly isReading: boolean;
 };
 
-const withSlotsSettled = ({
+const withSlotsReading = ({
   state,
   sessionId,
-}: SettleParams): Readonly<Record<string, SessionLoadingFlags>> => {
+  isReading,
+}: ReadingParams): Readonly<Record<string, SessionLoadingFlags>> => {
   const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
-  return { ...state.sessionLoading, [sessionId]: { ...current, slots: false } };
+  return { ...state.sessionLoading, [sessionId]: { ...current, slots: isReading } };
 };
 
 export const loadSessionSlots = (set: SetFn) => {
   return async (sessionId: SessionId) => {
+    set((state) => ({ sessionLoading: withSlotsReading({ state, sessionId, isReading: true }) }));
     try {
       const [slots, counts] = await Promise.all([
         listContextSlotsForSession(tauriDatabase, sessionId),
@@ -30,13 +33,13 @@ export const loadSessionSlots = (set: SetFn) => {
         sessionSlots: { ...state.sessionSlots, [sessionId]: slots },
         slotHistoryCounts: { ...state.slotHistoryCounts, [sessionId]: counts },
         sessionSlotsLoad: { ...state.sessionSlotsLoad, [sessionId]: 'loaded' },
-        sessionLoading: withSlotsSettled({ state, sessionId }),
+        sessionLoading: withSlotsReading({ state, sessionId, isReading: false }),
       }));
     } catch (error) {
       console.error(`[slots] context load failed for session ${sessionId}`, formatError(error));
       set((state) => ({
         sessionSlotsLoad: { ...state.sessionSlotsLoad, [sessionId]: 'failed' },
-        sessionLoading: withSlotsSettled({ state, sessionId }),
+        sessionLoading: withSlotsReading({ state, sessionId, isReading: false }),
       }));
     }
   };

@@ -593,6 +593,40 @@ describe('store contract', () => {
       expect(listSlots).toHaveBeenCalledTimes(2);
     });
 
+    it('reads the database once when the switch and the pane both ask at once', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const listSlots = db.listContextSlotsForSession as unknown as ReturnType<typeof vi.fn>;
+      listSlots.mockResolvedValue([{ key: 'goal', value: 'g', enabled: true } as ContextSlot]);
+
+      await Promise.all([
+        store.getState().ensureSessionSlots(SESSION_ID),
+        store.getState().ensureSessionSlots(SESSION_ID),
+      ]);
+
+      expect(listSlots).toHaveBeenCalledTimes(1);
+      expect(store.getState().sessionSlotsLoad[SESSION_ID]).toBe('loaded');
+    });
+
+    it('marks the read in flight so a retry is not mistaken for the failure it replaces', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const listSlots = db.listContextSlotsForSession as unknown as ReturnType<typeof vi.fn>;
+      let release: (slots: ReadonlyArray<ContextSlot>) => void = () => undefined;
+      listSlots.mockReturnValueOnce(
+        new Promise<ReadonlyArray<ContextSlot>>((resolve) => {
+          release = resolve;
+        }),
+      );
+
+      const read = store.getState().loadSessionSlots(SESSION_ID);
+      expect(store.getState().sessionLoading[SESSION_ID]?.slots).toBe(true);
+
+      release([]);
+      await read;
+      expect(store.getState().sessionLoading[SESSION_ID]?.slots).toBe(false);
+    });
+
     it('toggleSessionSlot upserts the slot with new enabled flag', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');

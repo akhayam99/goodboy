@@ -139,7 +139,7 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
           const historyCount = historyCounts[slotKey];
           const hasSlot = slots.some((slot) => slot.key === slotKey);
           const isLoading = !hasSlot && (loading.slots || slotsLoad === null);
-          const hasFailed = !hasSlot && slotsLoad === 'failed';
+          const hasFailed = !hasSlot && !isLoading && slotsLoad === 'failed';
           const isRawEditing = rawKey === slotKey;
           const onWrite = (next: string) => {
             void upsertSessionSlot(sessionId, slotKey, next);
