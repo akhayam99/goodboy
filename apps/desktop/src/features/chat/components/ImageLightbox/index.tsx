@@ -71,7 +71,7 @@ export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => 
       <IconButton
         icon={X}
         label="Close image preview"
-        title="Close image preview (esc)"
+        tooltip="Close image preview (esc)"
         iconSize={18}
         onClick={requestClose}
         className={`absolute right-4 top-4 h-9 w-9 rounded-full border-0 bg-background/95 p-0 text-foreground shadow-lg ring-1 ring-border-soft transition-all duration-[180ms] ease-out hover:bg-background hover:text-foreground ${

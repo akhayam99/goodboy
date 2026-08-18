@@ -207,7 +207,6 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
                 <button
                   aria-label="Open goal editor"
                   class="inline-flex items-center justify-center rounded-md border border-border-soft p-1.5 text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-                  title="Open goal editor"
                   type="button"
                 >
                   <svg
@@ -1088,7 +1087,6 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
                 <button
                   aria-label="Open goal editor"
                   class="inline-flex items-center justify-center rounded-md border border-border-soft p-1.5 text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-                  title="Open goal editor"
                   type="button"
                 >
                   <svg

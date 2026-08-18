@@ -2,10 +2,12 @@ import type { ComponentProps } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
 import { tintClasses, type Tone } from '../tint';
+import { Tooltip } from './Tooltip';
 
-export type IconButtonProps = Omit<ComponentProps<'button'>, 'type' | 'children'> & {
+export type IconButtonProps = Omit<ComponentProps<'button'>, 'type' | 'children' | 'title'> & {
   icon: LucideIcon;
   label: string;
+  tooltip?: string;
   iconSize?: number;
   busy?: boolean;
   tone?: Tone;
@@ -20,6 +22,7 @@ const toneClasses = (tone: Tone): string => {
 export const IconButton = ({
   icon: Icon,
   label,
+  tooltip,
   iconSize = 13,
   busy = false,
   tone = 'neutral',
@@ -28,22 +31,23 @@ export const IconButton = ({
   ...rest
 }: IconButtonProps) => {
   return (
-    <button
-      type={type}
-      title={label}
-      aria-label={label}
-      className={cn(
-        'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',
-        'text-muted-foreground motion-safe:transition-colors',
-        'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-        tone !== 'neutral' && toneClasses(tone),
-        busy && 'animate-border-pulse',
-        className,
-      )}
-      {...rest}
-    >
-      <Icon size={iconSize} aria-hidden />
-    </button>
+    <Tooltip content={tooltip ?? label}>
+      <button
+        type={type}
+        aria-label={label}
+        className={cn(
+          'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',
+          'text-muted-foreground motion-safe:transition-colors',
+          'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+          tone !== 'neutral' && toneClasses(tone),
+          busy && 'animate-border-pulse',
+          className,
+        )}
+        {...rest}
+      >
+        <Icon size={iconSize} aria-hidden />
+      </button>
+    </Tooltip>
   );
 };
