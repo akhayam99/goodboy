@@ -20,6 +20,7 @@ import {
   updateWorkflowRunOrchestrationOutcome,
   updateWorkflowRunOrchestrationStop,
   updateWorkflowRunOrchestratorRouting,
+  updateWorkflowRunRoleModelOverrides,
   updateWorkflowRunSpendLimit,
 } from './session-workflow';
 import { listSessionsForWorkspace } from './session';
@@ -107,6 +108,43 @@ describe('session_workflows trigger-mode queries', () => {
       expect(runs[0]!.executionMode).toBe('dynamic');
     });
 
+    it('persists the orchestrator routing chosen at launch', async () => {
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        workflowId,
+        autoRun: false,
+        updatedAt: NOW,
+        executionMode: 'dynamic',
+        orchestratorRouting: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+      });
+
+      const runs = await listWorkflowsForSession(db, sessionId);
+
+      expect(runs[0]!.orchestratorRouting).toEqual({
+        providerId: 'codex',
+        model: 'gpt-5.6-sol',
+        effort: 'high',
+      });
+    });
+
+    it('leaves the orchestrator routing unset when launch did not override it', async () => {
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        workflowId,
+        autoRun: false,
+        updatedAt: NOW,
+        executionMode: 'dynamic',
+      });
+
+      const runs = await listWorkflowsForSession(db, sessionId);
+
+      expect(runs[0]!.orchestratorRouting).toBeUndefined();
+    });
+
     it('round-trips the per-run role model overrides', async () => {
       const roleModelOverrides = {
         implementer: {
@@ -123,8 +161,8 @@ describe('session_workflows trigger-mode queries', () => {
         autoRun: false,
         updatedAt: NOW,
         executionMode: 'dynamic',
-        roleModelOverrides,
       });
+      await updateWorkflowRunRoleModelOverrides(db, 'run-1' as WorkflowRunId, roleModelOverrides);
 
       const runs = await listWorkflowsForSession(db, sessionId);
 
@@ -149,6 +187,26 @@ describe('session_workflows trigger-mode queries', () => {
       expect(
         reordered.find((run) => run.id === ('run-1' as WorkflowRunId))!.roleModelOverrides,
       ).toEqual(roleModelOverrides);
+    });
+
+    it('clears the per-run role model overrides when every role is reset', async () => {
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        workflowId,
+        autoRun: false,
+        updatedAt: NOW,
+        executionMode: 'dynamic',
+      });
+      await updateWorkflowRunRoleModelOverrides(db, 'run-1' as WorkflowRunId, {
+        implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+      });
+      await updateWorkflowRunRoleModelOverrides(db, 'run-1' as WorkflowRunId, {});
+
+      const runs = await listWorkflowsForSession(db, sessionId);
+
+      expect(runs[0]!.roleModelOverrides).toBeUndefined();
     });
 
     it('drops malformed persisted role model overrides', async () => {

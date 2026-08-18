@@ -354,7 +354,7 @@ export type AppActions = {
       chainAfterId?: WorkflowRunId;
       attachmentInputs?: ReadonlyArray<AttachmentInput>;
       executionMode?: WorkflowExecutionMode;
-      roleModelOverrides?: RoleModelPreferences;
+      orchestratorRouting?: OrchestratorRouting;
       spendLimitUsd?: number;
       spendLimitMode?: WorkflowSpendLimitMode;
       navigate?: boolean;
@@ -412,6 +412,11 @@ export type AppActions = {
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
     routing: OrchestratorRouting | null,
+  ): Promise<void>;
+  setWorkflowRoleModelOverrides(
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+    overrides: RoleModelPreferences,
   ): Promise<void>;
   setWorkflowRunSpendLimit(
     sessionId: SessionId,

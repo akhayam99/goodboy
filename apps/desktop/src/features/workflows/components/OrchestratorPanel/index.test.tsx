@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -120,6 +120,7 @@ beforeEach(() => {
     continueWorkflowRun: vi.fn(async () => undefined),
     setWorkflowOrchestratorHints: vi.fn(async () => undefined),
     setWorkflowOrchestratorRouting: vi.fn(async () => undefined),
+    setWorkflowRoleModelOverrides: vi.fn(async () => undefined),
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
     setWorkflowRunAutoRun: vi.fn(async () => undefined),
     stopWorkflowRunNow: vi.fn(async () => undefined),
@@ -583,6 +584,69 @@ describe('OrchestratorPanel strip', () => {
       8,
       'notify',
     );
+  });
+
+  it('keeps role models behind a drawer, one row per role the orchestrator can pick', () => {
+    renderPanel();
+    expect(screen.queryByTestId('orchestrator-role-models')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('orchestrator-role-models-toggle'));
+
+    const drawer = screen.getByTestId('orchestrator-role-models');
+    expect(drawer.textContent).toContain('for the rest of this run');
+    expect(screen.getAllByRole('group', { name: /model$/i })).toHaveLength(7);
+    expect(screen.getByRole('group', { name: /implementer model/i })).toBeDefined();
+  });
+
+  it('reads the role models a run already carries', () => {
+    renderPanel({
+      runOverride: run({
+        roleModelOverrides: {
+          implementer: { providerId: 'codex', model: 'gpt-5.6', effort: 'high' },
+        },
+      }),
+    });
+
+    expect(screen.getByTestId('orchestrator-role-models-count').textContent).toContain(
+      '1 role on a chosen model',
+    );
+
+    fireEvent.click(screen.getByTestId('orchestrator-role-models-toggle'));
+
+    const implementer = screen.getByRole('group', { name: /implementer model/i });
+    expect(implementer.textContent).toContain('GPT-5.6');
+    expect(screen.getByRole('group', { name: /scout model/i }).textContent).not.toContain(
+      'GPT-5.6',
+    );
+  });
+
+  it('drops a role back to the workspace default from the drawer', () => {
+    renderPanel({
+      runOverride: run({
+        roleModelOverrides: {
+          implementer: { providerId: 'codex', model: 'gpt-5.6', effort: 'high' },
+          scout: { providerId: 'codex', model: 'gpt-5.6', effort: 'low' },
+        },
+      }),
+    });
+
+    fireEvent.click(screen.getByTestId('orchestrator-role-models-toggle'));
+    const implementer = screen.getByRole('group', { name: /implementer model/i });
+    fireEvent.click(within(implementer).getByRole('button', { name: /reset routing override/i }));
+
+    expect(storeState['setWorkflowRoleModelOverrides']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
+      scout: { providerId: 'codex', model: 'gpt-5.6', effort: 'low' },
+    });
+  });
+
+  it('opens role models instead of hints, never both', () => {
+    renderPanel();
+
+    openHints();
+    fireEvent.click(screen.getByTestId('orchestrator-role-models-toggle'));
+
+    expect(screen.getByTestId('orchestrator-role-models')).toBeDefined();
+    expect(screen.queryByTestId('orchestrator-hints-input')).toBeNull();
   });
 
   it('folds the decisions into the strip behind a count', () => {

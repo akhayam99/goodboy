@@ -1,10 +1,4 @@
-import type {
-  AgentRole,
-  ProviderId,
-  RoleModelPreferences,
-  StepId,
-  WorkflowId,
-} from '@goodboy/types';
+import type { AgentRole, ProviderId, StepId, WorkflowId } from '@goodboy/types';
 import type { PlannerOutput } from '@goodboy/core';
 import type { EffortLevel } from '../../../features/chat/utils/chat-constants';
 
@@ -24,6 +18,12 @@ export type EditableStep = {
   readonly effort?: EffortLevel;
 };
 
+type OrchestratorModelDraft = {
+  readonly providerOverride: ProviderId | '';
+  readonly modelOverride: string;
+  readonly effortOverride: EffortLevel | null;
+};
+
 export type WorkflowBuilderDraft = {
   readonly mode: Mode;
   readonly goalText: string;
@@ -37,5 +37,5 @@ export type WorkflowBuilderDraft = {
   readonly autoRun: boolean;
   readonly dynamicName: string;
   readonly dynamicNameEdited: boolean;
-  readonly roleModelOverrides: RoleModelPreferences;
+  readonly orchestratorModel: OrchestratorModelDraft;
 };

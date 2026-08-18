@@ -285,7 +285,7 @@ type AttachWorkflowToSessionParams = {
   readonly triggerMode?: WorkflowTriggerMode;
   readonly chainAfterRunId?: WorkflowRunId;
   readonly executionMode?: WorkflowExecutionMode;
-  readonly roleModelOverrides?: RoleModelPreferences;
+  readonly orchestratorRouting?: OrchestratorRouting;
   readonly spendLimitUsd?: number;
   readonly spendLimitMode?: WorkflowSpendLimitMode;
 };
@@ -301,7 +301,7 @@ export const attachWorkflowToSession = async ({
   triggerMode = 'immediate',
   chainAfterRunId,
   executionMode = 'static',
-  roleModelOverrides,
+  orchestratorRouting,
   spendLimitUsd,
   spendLimitMode = 'pause',
 }: AttachWorkflowToSessionParams): Promise<void> => {
@@ -312,7 +312,7 @@ export const attachWorkflowToSession = async ({
   const nextOrdinal = (maxOrdinal[0]?.max_ordinal ?? -1) + 1;
 
   await db.execute(
-    'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, trigger_mode, chain_after_run_id, execution_mode, role_model_overrides, spend_limit_usd, spend_limit_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, trigger_mode, chain_after_run_id, execution_mode, orchestrator_provider, orchestrator_model, orchestrator_effort, spend_limit_usd, spend_limit_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
       workflowRunId,
       sessionId,
@@ -324,9 +324,9 @@ export const attachWorkflowToSession = async ({
       triggerMode,
       chainAfterRunId ?? null,
       executionMode,
-      roleModelOverrides != null && Object.keys(roleModelOverrides).length > 0
-        ? JSON.stringify(roleModelOverrides)
-        : null,
+      orchestratorRouting?.providerId ?? null,
+      orchestratorRouting?.model ?? null,
+      orchestratorRouting?.effort ?? null,
       spendLimitUsd ?? null,
       spendLimitMode,
     ],
@@ -478,6 +478,19 @@ export const updateWorkflowRunOrchestratorRouting = async (
   await db.execute(
     'UPDATE session_workflows SET orchestrator_provider = ?, orchestrator_model = ?, orchestrator_effort = ? WHERE workflow_run_id = ?',
     [routing?.providerId ?? null, routing?.model ?? null, routing?.effort ?? null, workflowRunId],
+  );
+};
+
+export const updateWorkflowRunRoleModelOverrides = async (
+  db: Database,
+  workflowRunId: WorkflowRunId,
+  overrides: RoleModelPreferences | null,
+): Promise<void> => {
+  const serialized =
+    overrides != null && Object.keys(overrides).length > 0 ? JSON.stringify(overrides) : null;
+  await db.execute(
+    'UPDATE session_workflows SET role_model_overrides = ? WHERE workflow_run_id = ?',
+    [serialized, workflowRunId],
   );
 };
 
