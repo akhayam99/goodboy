@@ -523,11 +523,7 @@ describe('buildTimelineStream', () => {
     const nowRail = layout.rows[0];
 
     expect(clusterRail?.joins.map((join) => `${join.kind}:${join.dash}`)).toEqual(['merge:dashed']);
-    expect(
-      clusterRail?.segments
-        .filter((segment) => segment.column > 0)
-        .map(({ fade: _fade, ...segment }) => segment),
-    ).toEqual([]);
+    expect(clusterRail?.segments.filter((segment) => segment.column > 0)).toEqual([]);
     expect(clusterRail?.joins[0]?.path).toBe('M 24 48 C 24 39.16, 16.84 24, 8 24');
     expect(clusterRail?.markerColumn).toBe(0);
     expect(nowRail?.segments.filter((segment) => segment.column > 0)).toEqual([]);

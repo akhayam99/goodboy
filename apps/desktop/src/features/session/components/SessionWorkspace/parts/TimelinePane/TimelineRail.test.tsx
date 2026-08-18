@@ -30,7 +30,6 @@ describe('TimelineRail', () => {
             identityIndex: 0,
             dash: 'solid',
             strength: 'receded',
-            fade: [],
             fromY: 0,
             toY: 32,
           },
@@ -44,7 +43,7 @@ describe('TimelineRail', () => {
     expect(line?.hasAttribute('opacity')).toBe(false);
   });
 
-  it('samples a colour fade over the whole row without alpha stops', () => {
+  it('paints every stroke with one flat colour and no gradient machinery', () => {
     const { container } = render(
       <TimelineRail
         width={32}
@@ -54,25 +53,15 @@ describe('TimelineRail', () => {
             identityIndex: null,
             dash: 'solid',
             strength: 'full',
-            fade: [
-              { offset: 0, recession: 0 },
-              { offset: 0.65, recession: 0 },
-              { offset: 1, recession: 1 },
-            ],
             fromY: 16,
             toY: 32,
           },
         })}
       />,
     );
-    const gradient = container.querySelector('linearGradient');
-    const stops = Array.from(container.querySelectorAll('stop'));
 
-    expect(gradient?.getAttribute('y1')).toBe('0');
-    expect(gradient?.getAttribute('y2')).toBe('32');
-    expect(stops.some((stop) => stop.getAttribute('stop-color')?.startsWith('color-mix('))).toBe(
-      true,
-    );
-    expect(stops.every((stop) => !stop.hasAttribute('stop-opacity'))).toBe(true);
+    expect(container.querySelector('defs')).toBeNull();
+    expect(container.querySelector('linearGradient')).toBeNull();
+    expect(container.querySelector('line')?.getAttribute('stroke')).toBe('var(--color-border)');
   });
 });
