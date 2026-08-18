@@ -1,5 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Button, EmptyState, formatError, InlineConfirm, Input, SectionHeader } from '@goodboy/ui';
+import {
+  Button,
+  EmptyState,
+  formatError,
+  InlineConfirm,
+  Input,
+  SectionHeader,
+  Tooltip,
+} from '@goodboy/ui';
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
 import { PROVIDER_API_KEY_ENV, type CredentialId, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -130,14 +138,16 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
                   <span className="font-mono text-2xs text-muted-foreground/70">{c.hint}</span>
                 </div>
                 <div className="flex-1" />
-                <button
-                  type="button"
-                  aria-label={`Remove ${c.label}`}
-                  onClick={() => setArmedId(c.id)}
-                  className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-danger/10 hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] group-hover:opacity-100"
-                >
-                  <Trash2 size={13} aria-hidden />
-                </button>
+                <Tooltip content={`Remove ${c.label}`}>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${c.label}`}
+                    onClick={() => setArmedId(c.id)}
+                    className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-danger/10 hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] group-hover:opacity-100"
+                  >
+                    <Trash2 size={13} aria-hidden />
+                  </button>
+                </Tooltip>
               </li>
             ),
           )}

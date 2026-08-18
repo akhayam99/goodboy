@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import { collapse, visibleOnboardingSteps, type OnboardingGroup } from '../onboarding-store';
 import type { OnboardingProgress } from '../hooks/useOnboardingProgress';
 import { StepRow } from './StepRow';
+import { Tooltip } from '@goodboy/ui';
 
 const GROUP_LABEL: Record<OnboardingGroup, string> = {
   setup: 'Setup',
@@ -20,15 +21,16 @@ export const ChecklistBody = ({ progress }: Props) => {
     <>
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold tracking-tight text-foreground">Goodboy setup</span>
-        <button
-          type="button"
-          onClick={() => collapse()}
-          title="Hide onboarding checklist (reopen it from the top bar)"
-          aria-label="Hide onboarding checklist"
-          className="rounded-md p-0.5 text-muted-foreground/70 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
-        >
-          <X size={11} aria-hidden />
-        </button>
+        <Tooltip content="Hide onboarding checklist (reopen it from the top bar)">
+          <button
+            type="button"
+            onClick={() => collapse()}
+            aria-label="Hide onboarding checklist"
+            className="rounded-md p-0.5 text-muted-foreground/70 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
+          >
+            <X size={11} aria-hidden />
+          </button>
+        </Tooltip>
       </div>
       <div className="flex flex-col gap-2.5">
         {GROUP_ORDER.map((group) => {

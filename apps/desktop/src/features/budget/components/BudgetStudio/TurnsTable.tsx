@@ -1,5 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Button, Chip, EmptyState, formatTokens, formatUsd, formatUsdPrecise } from '@goodboy/ui';
+import {
+  Button,
+  Chip,
+  EmptyState,
+  formatTokens,
+  formatUsd,
+  formatUsdPrecise,
+  Tooltip,
+} from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
@@ -126,14 +134,16 @@ export const TurnsTable = ({
                       {formatSpent(record.estimatedCostUsd)}
                     </td>
                     <td className="px-2 py-2">
-                      <button
-                        type="button"
-                        aria-label={`Open session ${sessionGoal}`}
-                        onClick={() => onOpenSession(sessionId)}
-                        className="inline-flex size-5 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] group-hover:opacity-100"
-                      >
-                        <ArrowUpRight size={12} aria-hidden />
-                      </button>
+                      <Tooltip content={`Open session ${sessionGoal}`}>
+                        <button
+                          type="button"
+                          aria-label={`Open session ${sessionGoal}`}
+                          onClick={() => onOpenSession(sessionId)}
+                          className="inline-flex size-5 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] group-hover:opacity-100"
+                        >
+                          <ArrowUpRight size={12} aria-hidden />
+                        </button>
+                      </Tooltip>
                     </td>
                   </tr>
                 ))}

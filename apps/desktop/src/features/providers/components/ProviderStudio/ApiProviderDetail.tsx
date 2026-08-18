@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { SectionHeader } from '@goodboy/ui';
+import { SectionHeader, Tooltip } from '@goodboy/ui';
 import { CircleCheck, RotateCw, Terminal, TriangleAlert } from 'lucide-react';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
@@ -31,15 +31,17 @@ export const ApiProviderDetail = ({ info }: Props) => {
 
   const action = (
     <div className="flex items-center gap-2">
-      <button
-        type="button"
-        aria-label="Re-detect OpenCode"
-        disabled={isRefreshing}
-        onClick={() => void onRefresh()}
-        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
-      >
-        <RotateCw size={14} aria-hidden />
-      </button>
+      <Tooltip content="Re-detect OpenCode">
+        <button
+          type="button"
+          aria-label="Re-detect OpenCode"
+          disabled={isRefreshing}
+          onClick={() => void onRefresh()}
+          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+        >
+          <RotateCw size={14} aria-hidden />
+        </button>
+      </Tooltip>
     </div>
   );
 

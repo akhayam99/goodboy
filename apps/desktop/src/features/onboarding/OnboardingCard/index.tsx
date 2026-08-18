@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, Tooltip } from '@goodboy/ui';
 import { finish, reopen, visibleOnboardingSteps } from '../onboarding-store';
 import { useOnboardingProgress } from '../hooks/useOnboardingProgress';
 import { ChecklistBody } from './ChecklistBody';
@@ -52,17 +52,19 @@ export const OnboardingChip = () => {
           />
         ))}
       </button>
-      <button
-        type="button"
-        aria-label="Skip tutorial"
-        onClick={(event) => {
-          event.stopPropagation();
-          finish();
-        }}
-        className="flex items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100"
-      >
-        <X size={10} aria-hidden />
-      </button>
+      <Tooltip content="Skip tutorial">
+        <button
+          type="button"
+          aria-label="Skip tutorial"
+          onClick={(event) => {
+            event.stopPropagation();
+            finish();
+          }}
+          className="flex items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100"
+        >
+          <X size={10} aria-hidden />
+        </button>
+      </Tooltip>
     </div>
   );
 };

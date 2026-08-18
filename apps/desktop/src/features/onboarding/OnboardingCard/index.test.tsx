@@ -41,6 +41,7 @@ afterEach(() => {
   finishMock.mockReset();
 });
 
+import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { OnboardingCard, OnboardingChip } from './index';
 
 describe('OnboardingCard', () => {
@@ -48,7 +49,7 @@ describe('OnboardingCard', () => {
     progress.collapsed = false;
     render(<OnboardingCard />);
     const hide = screen.getByRole('button', { name: 'Hide onboarding checklist' });
-    expect(hide.getAttribute('title')).toBe(
+    expect(tooltipTextOf({ element: hide })).toBe(
       'Hide onboarding checklist (reopen it from the top bar)',
     );
   });
@@ -57,7 +58,7 @@ describe('OnboardingCard', () => {
     progress.collapsed = false;
     render(<OnboardingCard />);
     const hide = screen.getByRole('button', { name: 'Hide onboarding checklist' });
-    expect(hide.getAttribute('title')).not.toMatch(/sidebar/i);
+    expect(tooltipTextOf({ element: hide })).not.toMatch(/sidebar/i);
   });
 });
 

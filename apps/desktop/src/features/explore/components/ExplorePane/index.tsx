@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, ExternalLink, File, Folder, FolderSearch } from 'lucide-react';
-import { Button, EmptyState, Skeleton, cn } from '@goodboy/ui';
+import { Button, cn, EmptyState, Skeleton, Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import {
   exploreList,
@@ -308,22 +308,26 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
               )}
               <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/explore-row:opacity-100 group-focus-within/explore-row:opacity-100">
                 {entry.isDir ? null : <ExploreSpawnPopover sessionId={sessionId} entry={entry} />}
-                <button
-                  type="button"
-                  onClick={() => void runOpenAction({ entry, reveal: false })}
-                  aria-label={`Open ${entry.name} outside the app`}
-                  className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
-                >
-                  <ExternalLink size={14} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void runOpenAction({ entry, reveal: true })}
-                  aria-label={`Reveal ${entry.name} in file manager`}
-                  className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
-                >
-                  <FolderSearch size={14} aria-hidden />
-                </button>
+                <Tooltip content={`Open ${entry.name} outside the app`}>
+                  <button
+                    type="button"
+                    onClick={() => void runOpenAction({ entry, reveal: false })}
+                    aria-label={`Open ${entry.name} outside the app`}
+                    className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                  >
+                    <ExternalLink size={14} aria-hidden />
+                  </button>
+                </Tooltip>
+                <Tooltip content={`Reveal ${entry.name} in file manager`}>
+                  <button
+                    type="button"
+                    onClick={() => void runOpenAction({ entry, reveal: true })}
+                    aria-label={`Reveal ${entry.name} in file manager`}
+                    className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                  >
+                    <FolderSearch size={14} aria-hidden />
+                  </button>
+                </Tooltip>
               </div>
             </div>
             {actionError != null ? <p className="pl-8 text-xs text-danger">{actionError}</p> : null}
