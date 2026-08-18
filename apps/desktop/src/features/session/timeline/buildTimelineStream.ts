@@ -315,6 +315,35 @@ const emitRun = ({ entry, context }: EmitRunParams): void => {
   });
 };
 
+const isPendingStep = ({ draft }: { readonly draft: DraftRow }): boolean =>
+  draft.grade === 'step' && draft.markerState === 'pending';
+
+type HeadParams = {
+  readonly drafts: ReadonlyArray<DraftRow>;
+};
+
+const withPendingAtHead = ({ drafts }: HeadParams): ReadonlyArray<DraftRow> => {
+  const laneRankById = new Map<string, number>();
+  for (const [index, draft] of drafts.entries()) {
+    if (draft.familyId === draft.id) {
+      laneRankById.set(draft.id, index);
+    }
+  }
+  const laneRankOf = ({ draft }: { readonly draft: DraftRow }): number =>
+    draft.familyId == null ? drafts.length : (laneRankById.get(draft.familyId) ?? drafts.length);
+  const future = drafts
+    .filter((draft) => isPendingStep({ draft }))
+    .map((draft) => ({ ...draft, at: null }))
+    .sort(
+      (first, second) =>
+        laneRankOf({ draft: first }) - laneRankOf({ draft: second }) ||
+        (first.groupId ?? '').localeCompare(second.groupId ?? '') ||
+        second.sortOrdinal - first.sortOrdinal ||
+        first.id.localeCompare(second.id),
+    );
+  return [...future, ...drafts.filter((draft) => !isPendingStep({ draft }))];
+};
+
 type ClusterParams = {
   readonly drafts: ReadonlyArray<DraftRow>;
 };
@@ -344,8 +373,7 @@ const withPendingClusters = ({ drafts }: ClusterParams): ReadonlyArray<DraftRow 
   };
 
   for (const draft of drafts) {
-    const isPendingStep = draft.grade === 'step' && draft.markerState === 'pending';
-    if (!isPendingStep) {
+    if (!isPendingStep({ draft })) {
       flush();
       clustered.push(draft);
       continue;
@@ -435,7 +463,7 @@ export const buildTimelineStream = ({
 
   const sorted = [...context.drafts].sort((first, second) => compareNewestFirst({ first, second }));
   const withDays = withDayBreaks({
-    drafts: withPendingClusters({ drafts: sorted }),
+    drafts: withPendingClusters({ drafts: withPendingAtHead({ drafts: sorted }) }),
     dayLabelFor,
   });
 

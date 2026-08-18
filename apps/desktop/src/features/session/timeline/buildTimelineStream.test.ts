@@ -116,6 +116,27 @@ const attachedWorkflow = ({
   };
 };
 
+const RUN_WITH_PENDING_AGENTS: ReadonlyArray<Agent> = [
+  agent({
+    id: 'plan',
+    ordinal: 1,
+    startedAt: localIso({ day: 18, hour: 9 }),
+    completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+    workflowRunId: RUN_ID,
+  }),
+  agent({
+    id: 'implement',
+    ordinal: 2,
+    status: 'running',
+    startedAt: localIso({ day: 18, hour: 10 }),
+    workflowRunId: RUN_ID,
+  }),
+  agent({ id: 'test', ordinal: 3, status: 'pending', workflowRunId: RUN_ID }),
+  agent({ id: 'review', ordinal: 4, status: 'pending', workflowRunId: RUN_ID }),
+  agent({ id: 'ship', ordinal: 5, status: 'pending', workflowRunId: RUN_ID }),
+  agent({ id: 'built-by-hand', ordinal: 6, startedAt: localIso({ day: 18, hour: 11 }) }),
+];
+
 type StreamParams = {
   readonly agents: ReadonlyArray<Agent>;
   readonly workflows?: ReadonlyArray<ReturnType<typeof attachedWorkflow>>;
@@ -410,6 +431,50 @@ describe('buildTimelineStream', () => {
       'step:agent:running',
       'entry:run:run-1',
     ]);
+  });
+
+  it('lifts a pending block above every dated entry, standalone agents included', () => {
+    const { items } = stream({
+      workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
+      agents: RUN_WITH_PENDING_AGENTS,
+    });
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'cluster:3',
+      'entry:agent:built-by-hand',
+      'step:agent:implement',
+      'step:agent:plan',
+      'entry:run:run-1',
+    ]);
+  });
+
+  it('gives a lone pending step no borrowed clock and no day rule of its own', () => {
+    const { items } = stream({
+      workflows: [attachedWorkflow({ createdAt: localIso({ day: 10, hour: 8 }) })],
+      agents: [
+        agent({
+          id: 'done',
+          ordinal: 1,
+          startedAt: localIso({ day: 10, hour: 9 }),
+          completedAt: localIso({ day: 10, hour: 10 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({ id: 'todo', ordinal: 2, status: 'pending', workflowRunId: RUN_ID }),
+        agent({ id: 'built-by-hand', ordinal: 3, startedAt: localIso({ day: 18, hour: 11 }) }),
+      ],
+    });
+    const pending = items.find((item) => item.id === 'agent:todo');
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'step:agent:todo',
+      'entry:agent:built-by-hand',
+      'day:Aug 10',
+      'step:agent:done',
+      'entry:run:run-1',
+    ]);
+    expect(pending?.kind === 'row' ? pending.at : 'borrowed').toBeNull();
   });
 
   it('breaks the day inside a run that crossed midnight and keeps its lane whole', () => {
