@@ -273,7 +273,6 @@ export {
   type GoalPolishDeps,
   polishStepInstruction,
   parsePolishedStep,
-  buildStepPolishUserPrompt,
   type StepPolishDeps,
   type StepPolishInput,
 } from './workflows';

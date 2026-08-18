@@ -47,14 +47,19 @@ export type StepPolishInput = {
   readonly goal?: string;
 };
 
-export const buildStepPolishUserPrompt = (input: StepPolishInput): string => {
-  const goal = input.goal?.trim() ?? '';
+export const buildStepPolishUserPrompt = ({
+  role,
+  name,
+  instruction,
+  goal,
+}: StepPolishInput): string => {
+  const trimmedGoal = goal?.trim() ?? '';
   return [
-    `STEP ROLE: ${input.role}`,
-    `STEP NAME: ${input.name}`,
+    `STEP ROLE: ${role}`,
+    `STEP NAME: ${name}`,
     '',
-    ...(goal.length > 0 ? [`WORKFLOW GOAL:\n${goal}`, ''] : []),
-    `INSTRUCTION (rough draft):\n${input.instruction.trim()}`,
+    ...(trimmedGoal.length > 0 ? [`WORKFLOW GOAL:\n${trimmedGoal}`, ''] : []),
+    `INSTRUCTION (rough draft):\n${instruction.trim()}`,
     '',
     'Rewrite it as the single <<step>> marker block.',
   ].join('\n');

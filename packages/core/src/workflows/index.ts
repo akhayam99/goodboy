@@ -30,7 +30,6 @@ export { polishWorkflowGoal, parsePolishedGoal, type GoalPolishDeps } from './po
 export {
   polishStepInstruction,
   parsePolishedStep,
-  buildStepPolishUserPrompt,
   type StepPolishDeps,
   type StepPolishInput,
 } from './polish-step';
