@@ -357,12 +357,10 @@ describe('layoutTimelineRail', () => {
       { column: 0, identityIndex: null, dash: 'solid', strength: 'full', fromY: 0, toY: 36 },
     ]);
     expect(spineOf(layout, 'step-1')).toEqual([
-      { column: 0, identityIndex: null, dash: 'solid', strength: 'full', fromY: 0, toY: 18 },
-      { column: 0, identityIndex: null, dash: 'solid', strength: 'receded', fromY: 18, toY: 36 },
+      { column: 0, identityIndex: null, dash: 'solid', strength: 'receded', fromY: 0, toY: 36 },
     ]);
     expect(spineOf(layout, 'origin')).toEqual([
-      { column: 0, identityIndex: null, dash: 'solid', strength: 'receded', fromY: 0, toY: 18 },
-      { column: 0, identityIndex: null, dash: 'solid', strength: 'full', fromY: 18, toY: 36 },
+      { column: 0, identityIndex: null, dash: 'solid', strength: 'receded', fromY: 0, toY: 36 },
     ]);
     expect(spineOf(layout, 'older')).toEqual([
       { column: 0, identityIndex: null, dash: 'solid', strength: 'full', fromY: 0, toY: 36 },
@@ -425,8 +423,7 @@ describe('layoutTimelineRail', () => {
     });
 
     expect(spineOf(layout, 'child-1')).toEqual([
-      { column: 0, identityIndex: null, dash: 'solid', strength: 'full', fromY: 0, toY: 18 },
-      { column: 0, identityIndex: null, dash: 'solid', strength: 'receded', fromY: 18, toY: 36 },
+      { column: 0, identityIndex: null, dash: 'solid', strength: 'receded', fromY: 0, toY: 36 },
     ]);
     expect(spineOf(layout, 'step-1')).toEqual([
       { column: 0, identityIndex: null, dash: 'solid', strength: 'receded', fromY: 0, toY: 36 },
@@ -453,8 +450,7 @@ describe('layoutTimelineRail', () => {
       { column: 2, identityIndex: 0, dash: 'solid', strength: 'full', fromY: 0, toY: 36 },
     ]);
     expect(lanesOf(layout, 'child-2')).toEqual([
-      { column: 1, identityIndex: 0, dash: 'solid', strength: 'full', fromY: 0, toY: 18 },
-      { column: 1, identityIndex: 0, dash: 'solid', strength: 'receded', fromY: 18, toY: 36 },
+      { column: 1, identityIndex: 0, dash: 'solid', strength: 'receded', fromY: 0, toY: 36 },
       { column: 2, identityIndex: 0, dash: 'solid', strength: 'full', fromY: 18, toY: 36 },
     ]);
     expect(lanesOf(layout, 'step-2')).toEqual([
@@ -462,7 +458,7 @@ describe('layoutTimelineRail', () => {
     ]);
   });
 
-  it('dims a lane above the point its fan-out departs and leaves it full below', () => {
+  it('leaves the lane full on the row its own fan-out departs from', () => {
     const layout = layoutTimelineRail({
       rows: [
         row({ id: 'step-2', groupId: 'lane' }),
@@ -477,8 +473,7 @@ describe('layoutTimelineRail', () => {
     });
 
     expect(lanesOf(layout, 'step-1').filter((segment) => segment.column === 1)).toEqual([
-      { column: 1, identityIndex: 0, dash: 'solid', strength: 'receded', fromY: 0, toY: 18 },
-      { column: 1, identityIndex: 0, dash: 'solid', strength: 'full', fromY: 18, toY: 36 },
+      { column: 1, identityIndex: 0, dash: 'solid', strength: 'full', fromY: 0, toY: 36 },
     ]);
   });
 
@@ -497,8 +492,7 @@ describe('layoutTimelineRail', () => {
     });
 
     expect(lanesOf(layout, 'child-1')).toEqual([
-      { column: 1, identityIndex: 0, dash: 'dashed', strength: 'full', fromY: 0, toY: 18 },
-      { column: 1, identityIndex: 0, dash: 'dashed', strength: 'receded', fromY: 18, toY: 36 },
+      { column: 1, identityIndex: 0, dash: 'dashed', strength: 'receded', fromY: 0, toY: 36 },
       { column: 2, identityIndex: 0, dash: 'solid', strength: 'full', fromY: 18, toY: 36 },
     ]);
   });
@@ -521,8 +515,7 @@ describe('layoutTimelineRail', () => {
       { column: 0, identityIndex: null, dash: 'solid', strength: 'receded', fromY: 0, toY: 36 },
     ]);
     expect(spineOf(layout, 'origin')).toEqual([
-      { column: 0, identityIndex: null, dash: 'solid', strength: 'receded', fromY: 0, toY: 18 },
-      { column: 0, identityIndex: null, dash: 'solid', strength: 'full', fromY: 18, toY: 36 },
+      { column: 0, identityIndex: null, dash: 'solid', strength: 'receded', fromY: 0, toY: 36 },
     ]);
   });
 

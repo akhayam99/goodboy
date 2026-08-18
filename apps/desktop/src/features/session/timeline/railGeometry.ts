@@ -50,16 +50,13 @@ export type RailJoin = {
 
 type PlannedJoin = Omit<RailJoin, 'strength'>;
 
-const joinStrength = ({
-  join,
+const strengthOf = ({
+  column,
   delegated,
 }: {
-  readonly join: PlannedJoin;
-  readonly delegated: ReadonlyArray<RailSpan>;
-}): RailStrength =>
-  delegated.some((span) => span.fromY <= join.anchorY && span.toY >= join.anchorY)
-    ? 'receded'
-    : 'full';
+  readonly column: number;
+  readonly delegated: ReadonlySet<number>;
+}): RailStrength => (delegated.has(column) ? 'receded' : 'full');
 
 export type RailRow = {
   readonly id: string;
@@ -95,11 +92,6 @@ type Interval = {
   readonly to: number;
 };
 
-type RailSpan = {
-  readonly fromY: number;
-  readonly toY: number;
-};
-
 export const railColumnX = ({ column }: { readonly column: number }): number =>
   RAIL_SPINE_X + column * RAIL_LANE_OFFSET;
 
@@ -111,48 +103,6 @@ const topAnchorOf = ({ row }: { readonly row: RailRowInput }): number =>
 
 const overlaps = ({ first, second }: { readonly first: Interval; readonly second: Interval }) =>
   first.from <= second.to && second.from <= first.to;
-
-const mergedSpans = ({
-  spans,
-}: {
-  readonly spans: ReadonlyArray<RailSpan>;
-}): ReadonlyArray<RailSpan> =>
-  [...spans]
-    .sort((first, second) => first.fromY - second.fromY)
-    .reduce<RailSpan[]>((merged, span) => {
-      const last = merged[merged.length - 1];
-      if (last === undefined || span.fromY > last.toY) {
-        return [...merged, span];
-      }
-      return [...merged.slice(0, -1), { fromY: last.fromY, toY: Math.max(last.toY, span.toY) }];
-    }, []);
-
-const recededOver = ({
-  segment,
-  delegated,
-}: {
-  readonly segment: PlannedSegment;
-  readonly delegated: ReadonlyArray<RailSpan>;
-}): ReadonlyArray<RailSegment> => {
-  const pieces: RailSegment[] = [];
-  let cursor = segment.fromY;
-  for (const span of mergedSpans({ spans: delegated })) {
-    const fromY = Math.max(cursor, span.fromY);
-    const toY = Math.min(segment.toY, span.toY);
-    if (toY <= fromY) {
-      continue;
-    }
-    if (fromY > cursor) {
-      pieces.push({ ...segment, strength: 'full', fromY: cursor, toY: fromY });
-    }
-    pieces.push({ ...segment, strength: 'receded', fromY, toY });
-    cursor = toY;
-  }
-  if (cursor < segment.toY) {
-    pieces.push({ ...segment, strength: 'full', fromY: cursor, toY: segment.toY });
-  }
-  return pieces;
-};
 
 export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
   const indexById = new Map<string, number>();
@@ -233,7 +183,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
 
   const laneSegmentsByIndex: PlannedSegment[][] = rows.map(() => []);
   const joinsByIndex: PlannedJoin[][] = rows.map(() => []);
-  const delegatedByIndex: Array<Map<number, RailSpan[]>> = rows.map(() => new Map());
+  const delegatedByIndex: Array<Set<number>> = rows.map(() => new Set());
 
   const ancestorColumnsOf = ({
     group,
@@ -254,26 +204,6 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
     return columns;
   };
 
-  const markDelegated = ({
-    index,
-    columns,
-    fromY,
-    toY,
-  }: {
-    readonly index: number;
-    readonly columns: ReadonlyArray<number>;
-    readonly fromY: number;
-    readonly toY: number;
-  }) => {
-    const byColumn = delegatedByIndex[index];
-    if (byColumn === undefined || toY <= fromY) {
-      return;
-    }
-    for (const column of columns) {
-      byColumn.set(column, [...(byColumn.get(column) ?? []), { fromY, toY }]);
-    }
-  };
-
   const markDelegatedRow = ({
     index,
     columns,
@@ -282,16 +212,17 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
     readonly columns: ReadonlyArray<number>;
   }) => {
     const row = rows[index];
-    if (row === undefined) {
+    const delegated = delegatedByIndex[index];
+    if (row === undefined || delegated === undefined) {
       return;
     }
     const ownColumn = row.groupId == null ? null : columnByGroupId.get(row.groupId);
-    markDelegated({
-      index,
-      columns: ownColumn == null ? columns : columns.filter((column) => column !== ownColumn),
-      fromY: row.topY,
-      toY: row.height,
-    });
+    for (const column of columns) {
+      if (ownColumn != null && column === ownColumn) {
+        continue;
+      }
+      delegated.add(column);
+    }
   };
 
   const pushSpan = ({ index, plan }: { readonly index: number; readonly plan: GroupPlan }) => {
@@ -354,12 +285,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
         dash: plan.boundaryIndex === plan.originIndex ? 'dashed' : 'solid',
         anchorY: anchorOf({ row: originRow }),
       });
-      markDelegated({
-        index: plan.originIndex,
-        columns,
-        fromY: originRow.topY,
-        toY: anchorOf({ row: originRow }),
-      });
+      markDelegatedRow({ index: plan.originIndex, columns });
     }
 
     const topRow = rows[topIndex];
@@ -383,7 +309,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
         fromY: topRow.topY,
         toY: topAnchor,
       });
-      markDelegated({ index: topIndex, columns, fromY: topAnchor, toY: topRow.height });
+      markDelegatedRow({ index: topIndex, columns });
       for (let index = 0; index < topIndex; index += 1) {
         const row = rows[index];
         if (row === undefined) {
@@ -406,7 +332,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       fromY: topAnchor,
       toY: topRow.height,
     });
-    markDelegated({ index: topIndex, columns, fromY: topAnchor, toY: topRow.height });
+    markDelegatedRow({ index: topIndex, columns });
     joinsByIndex[topIndex]?.push({
       kind: 'merge',
       spineColumn: parentColumn,
@@ -436,17 +362,18 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
           toY: row.height,
         } satisfies PlannedSegment,
         ...(laneSegmentsByIndex[index] ?? []),
-      ].flatMap((segment) =>
-        recededOver({
-          segment,
-          delegated: delegatedByIndex[index]?.get(segment.column) ?? [],
+      ].map((segment) => ({
+        ...segment,
+        strength: strengthOf({
+          column: segment.column,
+          delegated: delegatedByIndex[index] ?? new Set<number>(),
         }),
-      ),
+      })),
       joins: (joinsByIndex[index] ?? []).map((join) => ({
         ...join,
-        strength: joinStrength({
-          join,
-          delegated: delegatedByIndex[index]?.get(join.laneColumn) ?? [],
+        strength: strengthOf({
+          column: join.laneColumn,
+          delegated: delegatedByIndex[index] ?? new Set<number>(),
         }),
       })),
       markerColumn: row.groupId == null ? 0 : (columnByGroupId.get(row.groupId) ?? 0),
