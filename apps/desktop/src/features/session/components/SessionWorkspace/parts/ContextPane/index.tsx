@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Divider } from '@goodboy/ui';
+import { Button, CopyButton, Divider } from '@goodboy/ui';
+import { History } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   useAppStore,
@@ -11,40 +12,38 @@ import {
   useSummarizerStatus,
 } from '../../../../../../store';
 import { PaneShell } from '../../../../../../shared/components/PaneShell';
+import type { ContextLens } from '../../../../lens-surface';
 import { InspectorSplit } from '../InspectorSplit';
 import { SlotHistoryPanel } from '../SlotHistoryPanel';
-import { ContextRegion, type ContextRegionKey } from './ContextRegion';
+import { ContextSection } from './ContextSection';
+import { DecisionsSection } from './DecisionsSection';
+import { SummarySection } from './SummarySection';
 
-const REGION_ORDER = ['last_output_summary', 'decisions'] satisfies ReadonlyArray<ContextRegionKey>;
+const REGION_ORDER = ['last_output_summary', 'decisions'] satisfies ReadonlyArray<ContextLens>;
 
-type RegionKey = (typeof REGION_ORDER)[number];
-
-const REGION_TITLE: Record<ContextRegionKey, string> = {
+const REGION_TITLE: Record<ContextLens, string> = {
   decisions: 'Decisions',
   last_output_summary: 'Session summary',
-  goal: 'Goal',
 };
 
-const REGION_DESCRIPTION: Record<ContextRegionKey, string> = {
-  decisions: 'Choices already settled along the way.',
-  last_output_summary: 'What the session has amounted to so far.',
-  goal: 'What this session is meant to achieve.',
+const REGION_DESCRIPTION: Record<ContextLens, string> = {
+  decisions: 'One row per choice already settled along the way.',
+  last_output_summary: 'What the session has amounted to so far, in four blocks.',
 };
 
-const REGION_EMPTY: Record<ContextRegionKey, string> = {
-  decisions: 'No decisions yet',
-  last_output_summary: 'No session summary yet',
-  goal: 'No goal yet',
-};
+const REGION_CONCEPT = {
+  decisions: 'decisions',
+  last_output_summary: 'sessionSummary',
+} satisfies Record<ContextLens, 'decisions' | 'sessionSummary'>;
 
 type Props = {
   readonly session: Session;
-  readonly initialRegion?: ContextRegionKey;
+  readonly initialRegion?: ContextLens;
 };
 
 type ValueParams = {
   readonly slots: ReturnType<typeof useSessionSlots>;
-  readonly slotKey: ContextRegionKey;
+  readonly slotKey: ContextLens | 'goal';
 };
 
 const valueFor = ({ slots, slotKey }: ValueParams): string =>
@@ -61,13 +60,16 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
   const summarizer = useSummarizerStatus(sessionId);
   const decisionsCount = useSlotHistoryCount(sessionId, 'decisions');
   const summaryCount = useSlotHistoryCount(sessionId, 'last_output_summary');
-  const [historyKey, setHistoryKey] = useState<ContextRegionKey | null>(null);
+  const [historyKey, setHistoryKey] = useState<ContextLens | null>(null);
+  const [rawKey, setRawKey] = useState<ContextLens | null>(null);
   const openHistory = useSlotHistory(sessionId, historyKey ?? '');
 
-  const historyCounts: Record<RegionKey, number> = {
+  const historyCounts: Record<ContextLens, number> = {
     decisions: decisionsCount,
     last_output_summary: summaryCount,
   };
+
+  const isLocked = summarizer.status === 'running';
 
   useEffect(() => {
     void loadSessionOpenQuestions(sessionId);
@@ -110,7 +112,7 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
         historyKey == null ? null : (
           <SlotHistoryPanel
             label={REGION_TITLE[historyKey]}
-            renderAsMarkdown={historyKey !== 'goal'}
+            renderAsMarkdown
             entries={openHistory}
             onRestore={(entry) => {
               void upsertSessionSlot(sessionId, historyKey, entry.value);
@@ -125,29 +127,91 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
         title="Context"
         description="The current session summary and the decisions settled along the way."
       >
-        {REGION_ORDER.map((slotKey, index) => (
-          <div key={slotKey} className="contents">
-            {index > 0 ? <Divider /> : null}
-            <ContextRegion
-              sessionId={sessionId}
-              slotKey={slotKey}
-              title={REGION_TITLE[slotKey]}
-              description={REGION_DESCRIPTION[slotKey]}
-              emptyLabel={REGION_EMPTY[slotKey]}
-              value={valueFor({ slots, slotKey })}
-              copyValue={
-                slotKey === 'last_output_summary' ? shareableSummary : valueFor({ slots, slotKey })
-              }
-              historyCount={historyCounts[slotKey]}
-              isLoading={slots.some((slot) => slot.key === slotKey) === false && loading.slots}
-              isSummarizing={summarizer.status === 'running'}
-              onOpenHistory={() => {
-                void loadSlotHistory(sessionId, slotKey);
-                setHistoryKey(slotKey);
-              }}
-            />
-          </div>
-        ))}
+        {REGION_ORDER.map((slotKey, index) => {
+          const value = valueFor({ slots, slotKey });
+          const title = REGION_TITLE[slotKey];
+          const historyCount = historyCounts[slotKey];
+          const isLoading = slots.some((slot) => slot.key === slotKey) === false && loading.slots;
+          const isRawEditing = rawKey === slotKey;
+          const onWrite = (next: string) => {
+            void upsertSessionSlot(sessionId, slotKey, next);
+          };
+
+          return (
+            <div key={slotKey} className="contents">
+              {index > 0 ? <Divider /> : null}
+              <ContextSection
+                concept={REGION_CONCEPT[slotKey]}
+                sectionId={`context-${slotKey}`}
+                title={title}
+                description={REGION_DESCRIPTION[slotKey]}
+                actions={
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setRawKey(isRawEditing ? null : slotKey)}
+                      aria-pressed={isRawEditing}
+                      disabled={isLocked}
+                      className="h-7 px-2 text-xs text-muted-foreground"
+                    >
+                      {isRawEditing ? 'Done' : 'Edit source'}
+                    </Button>
+                    {value.length > 0 ? (
+                      <CopyButton
+                        presentation="icon"
+                        value={slotKey === 'last_output_summary' ? shareableSummary : value}
+                        label={
+                          slotKey === 'last_output_summary'
+                            ? 'copy shareable summary'
+                            : `copy ${title.toLowerCase()}`
+                        }
+                        size={15}
+                        className="rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                      />
+                    ) : null}
+                    {historyCount > 0 ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          void loadSlotHistory(sessionId, slotKey);
+                          setHistoryKey(slotKey);
+                        }}
+                        aria-label={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of ${title}`}
+                        className="h-7 gap-1.5 px-2 text-xs text-muted-foreground"
+                      >
+                        <History size={13} aria-hidden />
+                        {historyCount} {historyCount === 1 ? 'version' : 'versions'}
+                      </Button>
+                    ) : null}
+                  </div>
+                }
+              >
+                {slotKey === 'last_output_summary' ? (
+                  <SummarySection
+                    value={value}
+                    isLoading={isLoading}
+                    isLocked={isLocked}
+                    isRawEditing={isRawEditing}
+                    onWrite={onWrite}
+                    onCloseRawEditor={() => setRawKey(null)}
+                  />
+                ) : (
+                  <DecisionsSection
+                    value={value}
+                    isLoading={isLoading}
+                    isLocked={isLocked}
+                    isRawEditing={isRawEditing}
+                    onWrite={onWrite}
+                    onCloseRawEditor={() => setRawKey(null)}
+                  />
+                )}
+              </ContextSection>
+            </div>
+          );
+        })}
       </PaneShell>
     </InspectorSplit>
   );
