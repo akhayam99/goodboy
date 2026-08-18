@@ -190,6 +190,31 @@ describe('Context regions', () => {
     expect(screen.queryByRole('tablist')).toBeNull();
   });
 
+  it('labels a region on the eyebrow grade, not the page grade, while keeping the h2', () => {
+    render(<ContextPane session={SESSION} />);
+
+    const heading = screen.getByRole('heading', { level: 2, name: 'Decisions' });
+
+    expect(heading.className).not.toContain('text-base');
+    expect(screen.getByText('Decisions').className).toContain('text-2xs');
+  });
+
+  it('pairs the region description with its heading grade instead of the reading grade', () => {
+    render(<ContextPane session={SESSION} />);
+
+    const hint = screen.getByText('One row per choice already settled along the way.');
+
+    expect(hint.className).toContain('text-2xs');
+    expect(hint.className).not.toContain('text-sm');
+  });
+
+  it('leaves the summary body on the reading grade, because the document is the artifact', () => {
+    render(<ContextPane session={SESSION} />);
+    const problem = within(sectionFor('Session summary')).getByRole('region', { name: 'Problem' });
+
+    expect(problem.querySelector('.text-sm')).not.toBeNull();
+  });
+
   it('asks for the context itself, so the pane does not depend on the session switch', () => {
     render(<ContextPane session={SESSION} />);
 
