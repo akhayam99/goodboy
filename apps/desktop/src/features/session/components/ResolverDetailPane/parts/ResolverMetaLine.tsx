@@ -1,12 +1,12 @@
 import type { Agent } from '@goodboy/types';
 import { MetaRow } from '@goodboy/ui';
-import type { AgentAggregate } from '../AgentMetrics';
-import { AgentDuration } from '../AgentMetrics/AgentDuration';
-import { formatCost, shortModel } from '../../agent-row-format';
+import type { AgentAggregate } from '../../AgentMetrics';
+import { AgentDuration } from '../../AgentMetrics/AgentDuration';
+import { formatCost, shortModel } from '../../../agent-row-format';
 import {
   ContextWindowBar,
   type ProviderContextUsage,
-} from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
+} from '../../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
 
 type Props = {
   readonly agent: Agent;

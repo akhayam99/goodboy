@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { CircleCheck, CircleDot, OctagonX, Trash2 } from 'lucide-react';
 import { InlineConfirm } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore } from '../../../store';
 import { GhostActionButton } from '@goodboy/ui';
 
 type Props = {

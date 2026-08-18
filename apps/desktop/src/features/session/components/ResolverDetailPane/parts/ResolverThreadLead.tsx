@@ -1,5 +1,5 @@
 import { ClampedProse } from '@goodboy/ui';
-import type { ResolverThreadBrief } from '../../resolverThreadBrief';
+import type { ResolverThreadBrief } from '../../../resolverThreadBrief';
 
 type Props = {
   readonly brief: ResolverThreadBrief;

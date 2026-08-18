@@ -216,7 +216,7 @@ vi.mock('../../../chat/components/ChatView', () => ({
   ChatView: () => <div data-testid="chat-view" />,
 }));
 
-import { ResolverDetailPane } from '../ResolverDetailPane';
+import { ResolverDetailPane } from '.';
 
 const SESSION: Session = {
   id: SESSION_ID,

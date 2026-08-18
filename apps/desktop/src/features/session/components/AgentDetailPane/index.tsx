@@ -9,7 +9,7 @@ import { classifyAgent } from '../../agent-kind';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import { AgentKindChip } from '../AgentKindChip';
 import { AgentStatusBadge } from '../../../workspace/components/WorkspacesSidebar/parts/AgentStatusBadge';
-import { AgentHeaderActions } from '../AgentInspector/AgentHeaderActions';
+import { AgentHeaderActions } from '../AgentHeaderActions';
 import { ResolverDetailPane } from '../ResolverDetailPane';
 import { AgentBrief } from './AgentBrief';
 

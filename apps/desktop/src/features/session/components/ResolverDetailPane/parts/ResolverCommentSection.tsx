@@ -1,8 +1,8 @@
 import { ArrowRight } from 'lucide-react';
 import type { DiffComment } from '@goodboy/types';
-import { CommentSnippet } from '../CommentSnippet';
-import type { ResolverOrigin } from '../../resolver-origin';
-import { diffCommentLocation } from '../../diff-comment-location';
+import { CommentSnippet } from '../../CommentSnippet';
+import type { ResolverOrigin } from '../../../resolver-origin';
+import { diffCommentLocation } from '../../../diff-comment-location';
 import { ResolverPanelSection } from './ResolverPanelSection';
 
 export type ResolverCommentLink = {

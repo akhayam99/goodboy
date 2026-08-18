@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Markdown, cn, tintClasses } from '@goodboy/ui';
-import { ResolverOutcomeChip } from '../../../session/components/AgentInspector/ResolverOutcomeChip';
+import { ResolverOutcomeChip } from '../../../session/components/ResolverDetailPane/parts/ResolverOutcomeChip';
 import { TranscriptChevron } from '../TranscriptChevron';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptShell } from '../TranscriptShell';

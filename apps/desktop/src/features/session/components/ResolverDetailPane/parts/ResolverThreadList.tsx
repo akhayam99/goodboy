@@ -1,8 +1,8 @@
 import type { PrComment } from '@goodboy/types';
-import type { ResolverActionKind } from '../../resolverActions';
-import type { ResolverMissingVerdicts } from '../../resolverMissingVerdicts';
-import type { ResolverRunningThreadAction } from '../../hooks/useResolverActions';
-import type { ResolverThreadSettlement } from '../../resolverThreadSettlements';
+import type { ResolverActionKind } from '../../../resolverActions';
+import type { ResolverMissingVerdicts } from '../../../resolverMissingVerdicts';
+import type { ResolverRunningThreadAction } from '../../../hooks/useResolverActions';
+import type { ResolverThreadSettlement } from '../../../resolverThreadSettlements';
 import { ResolverMissingVerdictsNotice } from './ResolverMissingVerdictsNotice';
 import { ResolverPanelSection } from './ResolverPanelSection';
 import { ResolverThreadCard } from './ResolverThreadCard';
