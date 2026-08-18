@@ -14,16 +14,13 @@ type Props = {
 const LANE_WIDTH = 2;
 const SPINE_WIDTH = 1;
 const DASH_PATTERN = '3 3';
-const DASHED_OPACITY = 0.45;
+const RECEDED_CLASS = 'opacity-[var(--rail-strength-receded)]';
 
 const strokeOf = ({ identityIndex }: { readonly identityIndex: number | null }): string =>
   identityIndex == null ? 'var(--color-border)' : runIdentityStroke({ index: identityIndex });
 
 const segmentKey = ({ segment }: { readonly segment: RailSegment }): string =>
   `${segment.column}:${segment.fromY}:${segment.toY}:${segment.dash}`;
-
-const segmentOpacity = ({ segment }: { readonly segment: RailSegment }): number =>
-  segment.dash === 'dashed' && segment.column > 0 ? DASHED_OPACITY : 1;
 
 const joinPath = ({ join }: { readonly join: RailJoin }): string => {
   const fromX = railColumnX({
@@ -52,7 +49,7 @@ export const TimelineRail = ({ rail, width }: Props) => (
         stroke={strokeOf({ identityIndex: segment.identityIndex })}
         strokeWidth={segment.identityIndex == null ? SPINE_WIDTH : LANE_WIDTH}
         strokeDasharray={segment.dash === 'dashed' ? DASH_PATTERN : undefined}
-        opacity={segmentOpacity({ segment })}
+        className={segment.strength === 'receded' ? RECEDED_CLASS : undefined}
         shapeRendering="crispEdges"
       />
     ))}
@@ -64,7 +61,6 @@ export const TimelineRail = ({ rail, width }: Props) => (
         stroke={strokeOf({ identityIndex: join.identityIndex })}
         strokeWidth={join.identityIndex == null ? SPINE_WIDTH : LANE_WIDTH}
         strokeDasharray={join.dash === 'dashed' ? DASH_PATTERN : undefined}
-        opacity={join.dash === 'dashed' ? DASHED_OPACITY : 1}
       />
     ))}
   </svg>

@@ -519,6 +519,7 @@ describe('buildTimelineStream', () => {
         column: 1,
         identityIndex: runIdentity({ runId: RUN_ID }).index,
         dash: 'dashed',
+        strength: 'full',
         fromY: TIMELINE_RHYTHM.grade.pending.height / 2,
         toY: 3 * TIMELINE_RHYTHM.grade.pending.height,
       },

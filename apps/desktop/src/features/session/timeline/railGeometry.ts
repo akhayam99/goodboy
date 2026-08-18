@@ -5,6 +5,8 @@ const RAIL_EDGE_PAD = 8;
 
 type RailDash = 'solid' | 'dashed';
 
+type RailStrength = 'full' | 'receded';
+
 export type RailGroupShape = 'open' | 'merged';
 
 export type RailGroupInput = {
@@ -29,9 +31,12 @@ export type RailSegment = {
   readonly column: number;
   readonly identityIndex: number | null;
   readonly dash: RailDash;
+  readonly strength: RailStrength;
   readonly fromY: number;
   readonly toY: number;
 };
+
+type PlannedSegment = Omit<RailSegment, 'strength'>;
 
 export type RailJoin = {
   readonly kind: 'depart' | 'merge';
@@ -108,32 +113,31 @@ const mergedSpans = ({
       return [...merged.slice(0, -1), { fromY: last.fromY, toY: Math.max(last.toY, span.toY) }];
     }, []);
 
-const spineSegmentsOf = ({
-  row,
-  branched,
+const recededOver = ({
+  segment,
+  delegated,
 }: {
-  readonly row: RailRowInput;
-  readonly branched: ReadonlyArray<RailSpan>;
+  readonly segment: PlannedSegment;
+  readonly delegated: ReadonlyArray<RailSpan>;
 }): ReadonlyArray<RailSegment> => {
-  const segments: RailSegment[] = [];
-  const spine = { column: 0, identityIndex: null };
-  let cursor = row.topY;
-  for (const span of mergedSpans({ spans: branched })) {
+  const pieces: RailSegment[] = [];
+  let cursor = segment.fromY;
+  for (const span of mergedSpans({ spans: delegated })) {
     const fromY = Math.max(cursor, span.fromY);
-    const toY = Math.min(row.height, span.toY);
+    const toY = Math.min(segment.toY, span.toY);
     if (toY <= fromY) {
       continue;
     }
     if (fromY > cursor) {
-      segments.push({ ...spine, dash: 'solid', fromY: cursor, toY: fromY });
+      pieces.push({ ...segment, strength: 'full', fromY: cursor, toY: fromY });
     }
-    segments.push({ ...spine, dash: 'dashed', fromY, toY });
+    pieces.push({ ...segment, strength: 'receded', fromY, toY });
     cursor = toY;
   }
-  if (cursor < row.height) {
-    segments.push({ ...spine, dash: 'solid', fromY: cursor, toY: row.height });
+  if (cursor < segment.toY) {
+    pieces.push({ ...segment, strength: 'full', fromY: cursor, toY: segment.toY });
   }
-  return segments;
+  return pieces;
 };
 
 export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
@@ -213,31 +217,61 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
     };
   });
 
-  const laneSegmentsByIndex: RailSegment[][] = rows.map(() => []);
+  const laneSegmentsByIndex: PlannedSegment[][] = rows.map(() => []);
   const joinsByIndex: RailJoin[][] = rows.map(() => []);
-  const branchedByIndex: RailSpan[][] = rows.map(() => []);
+  const delegatedByIndex: Array<Map<number, RailSpan[]>> = rows.map(() => new Map());
 
-  const markBranched = ({
+  const ancestorColumnsOf = ({
+    group,
+  }: {
+    readonly group: RailGroupInput;
+  }): ReadonlyArray<number> => {
+    const columns = [0];
+    let ancestorId = group.parentGroupId;
+    let depth = 0;
+    while (ancestorId != null && depth <= RAIL_MAX_COLUMN) {
+      const column = columnByGroupId.get(ancestorId);
+      if (column !== undefined) {
+        columns.push(column);
+      }
+      ancestorId = groupById.get(ancestorId)?.parentGroupId ?? null;
+      depth += 1;
+    }
+    return columns;
+  };
+
+  const markDelegated = ({
     index,
+    columns,
     fromY,
     toY,
   }: {
     readonly index: number;
+    readonly columns: ReadonlyArray<number>;
     readonly fromY: number;
     readonly toY: number;
   }) => {
-    if (toY <= fromY) {
+    const byColumn = delegatedByIndex[index];
+    if (byColumn === undefined || toY <= fromY) {
       return;
     }
-    branchedByIndex[index]?.push({ fromY, toY });
+    for (const column of columns) {
+      byColumn.set(column, [...(byColumn.get(column) ?? []), { fromY, toY }]);
+    }
   };
 
-  const markBranchedRow = ({ index }: { readonly index: number }) => {
+  const markDelegatedRow = ({
+    index,
+    columns,
+  }: {
+    readonly index: number;
+    readonly columns: ReadonlyArray<number>;
+  }) => {
     const row = rows[index];
     if (row === undefined) {
       return;
     }
-    markBranched({ index, fromY: row.topY, toY: row.height });
+    markDelegated({ index, columns, fromY: row.topY, toY: row.height });
   };
 
   const pushSpan = ({ index, plan }: { readonly index: number; readonly plan: GroupPlan }) => {
@@ -277,6 +311,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
   for (const plan of plans) {
     const parentColumn =
       plan.group.parentGroupId == null ? 0 : (columnByGroupId.get(plan.group.parentGroupId) ?? 0);
+    const columns = ancestorColumnsOf({ group: plan.group });
     const first = plan.memberIndexes[0];
     const topIndex = first !== undefined && first < plan.originIndex ? first : undefined;
     const originRow = rows[plan.originIndex];
@@ -287,7 +322,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
 
     for (let index = topIndex + 1; index < plan.originIndex; index += 1) {
       pushSpan({ index, plan });
-      markBranchedRow({ index });
+      markDelegatedRow({ index, columns });
     }
 
     if (originRow !== undefined) {
@@ -299,8 +334,9 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
         dash: plan.boundaryIndex === plan.originIndex ? 'dashed' : 'solid',
         anchorY: anchorOf({ row: originRow }),
       });
-      markBranched({
+      markDelegated({
         index: plan.originIndex,
+        columns,
         fromY: originRow.topY,
         toY: anchorOf({ row: originRow }),
       });
@@ -327,7 +363,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
         fromY: topRow.topY,
         toY: topAnchor,
       });
-      markBranchedRow({ index: topIndex });
+      markDelegatedRow({ index: topIndex, columns });
       for (let index = 0; index < topIndex; index += 1) {
         const row = rows[index];
         if (row === undefined) {
@@ -339,7 +375,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
           fromY: row.topY,
           toY: row.height,
         });
-        markBranchedRow({ index });
+        markDelegatedRow({ index, columns });
       }
       continue;
     }
@@ -350,7 +386,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       fromY: topAnchor,
       toY: topRow.height,
     });
-    markBranched({ index: topIndex, fromY: topAnchor, toY: topRow.height });
+    markDelegated({ index: topIndex, columns, fromY: topAnchor, toY: topRow.height });
     joinsByIndex[topIndex]?.push({
       kind: 'merge',
       spineColumn: parentColumn,
@@ -372,9 +408,20 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       id: row.id,
       height: row.height,
       segments: [
-        ...spineSegmentsOf({ row, branched: branchedByIndex[index] ?? [] }),
+        {
+          column: 0,
+          identityIndex: null,
+          dash: 'solid',
+          fromY: row.topY,
+          toY: row.height,
+        } satisfies PlannedSegment,
         ...(laneSegmentsByIndex[index] ?? []),
-      ],
+      ].flatMap((segment) =>
+        recededOver({
+          segment,
+          delegated: delegatedByIndex[index]?.get(segment.column) ?? [],
+        }),
+      ),
       joins: joinsByIndex[index] ?? [],
       markerColumn: row.groupId == null ? 0 : (columnByGroupId.get(row.groupId) ?? 0),
       markerY: row.markerY,
