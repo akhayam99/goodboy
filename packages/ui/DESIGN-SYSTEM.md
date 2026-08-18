@@ -272,6 +272,20 @@ visible; lifecycle and destructive bottom right. Hover may reveal lifecycle
 actions without moving either slot, and keyboard focus reveals the same. Icon
 actions use the shared `Tooltip`, never the native `title`.
 
+**A control whose only content is an icon carries a tooltip, everywhere.** The
+`aria-label` names it for assistive tech and leaves the pointer with nothing, so
+`IconButton`, `OverflowMenu`, `CopyButton` and `RefreshIconButton` wrap
+themselves, and a hand-rolled icon button wraps itself in `Tooltip`. The native
+`title` waits a second, renders in the OS chrome rather than ours, and cannot be
+positioned or styled. Passing `tooltip` says more than the accessible name when
+the control needs it, and `IconButton` refuses a `title` at the type level.
+
+The one place a native `title` stays is a control that can go `disabled`: a
+disabled element dispatches no pointer events, so its hover tooltip would never
+open, and the title is the only thing left that explains why the control is
+unavailable. Those controls carry both. `icon-only-controls-carry-a-tooltip`
+holds the rule and that exception.
+
 **One creation grammar.** Bare sections stacked in one column, never a bordered
 box around the whole thing; secondary affordances in `SectionHeader`'s
 `action` slot; related options in one container, not one card each; one
