@@ -22,6 +22,9 @@ const strokeOf = ({ identityIndex }: { readonly identityIndex: number | null }):
 const segmentKey = ({ segment }: { readonly segment: RailSegment }): string =>
   `${segment.column}:${segment.fromY}:${segment.toY}:${segment.dash}`;
 
+const segmentOpacity = ({ segment }: { readonly segment: RailSegment }): number =>
+  segment.dash === 'dashed' && segment.column > 0 ? DASHED_OPACITY : 1;
+
 const joinPath = ({ join }: { readonly join: RailJoin }): string => {
   const fromX = railColumnX({
     column: join.kind === 'depart' ? join.spineColumn : join.laneColumn,
@@ -49,7 +52,7 @@ export const TimelineRail = ({ rail, width }: Props) => (
         stroke={strokeOf({ identityIndex: segment.identityIndex })}
         strokeWidth={segment.identityIndex == null ? SPINE_WIDTH : LANE_WIDTH}
         strokeDasharray={segment.dash === 'dashed' ? DASH_PATTERN : undefined}
-        opacity={segment.dash === 'dashed' ? DASHED_OPACITY : 1}
+        opacity={segmentOpacity({ segment })}
         shapeRendering="crispEdges"
       />
     ))}

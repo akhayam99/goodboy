@@ -136,13 +136,29 @@ The activity feed draws structure instead of indenting it. Four ingredients
 carry the whole grammar, and nothing outside this list is allowed to appear on
 the rail:
 
-| ingredient                | value                                                       | meaning                                                   |
-| ------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| spine                     | 1px, `--color-border`, solid, unbroken on every row         | the session's own thread                                  |
-| lane                      | 2px, identity hue, solid                                    | a run whose steps have happened                           |
-| lane, dashed at 45% alpha | 2px, identity hue                                           | the stretch of a run still to come                        |
-| join                      | quarter curve between spine and lane at a row's marker line | a run departing at its origin or merging when it finished |
-| stub                      | 1px, `--color-border`, offset one column                    | a standalone agent's fan-out, which belongs to no run     |
+| ingredient                  | value                                                       | meaning                                                   |
+| --------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
+| spine                       | 1px, `--color-border`, solid, unbroken on every row         | the main line is carrying the work here                   |
+| spine, dashed at full alpha | 1px, `--color-border`                                       | the main line still runs here, but a branch has the work  |
+| lane                        | 2px, identity hue, solid                                    | a run whose steps have happened                           |
+| lane, dashed at 45% alpha   | 2px, identity hue                                           | the stretch of a run still to come                        |
+| join                        | quarter curve between spine and lane at a row's marker line | a run departing at its origin or merging when it finished |
+| stub                        | 1px, `--color-border`, offset one column                    | a standalone agent's fan-out, which belongs to no run     |
+
+The spine is the backbone of the feed: full height, always drawn, never tinted
+and never interrupted. It goes dashed, and only dashed, from the y where a lane
+departs to the y where that lane merges back, so the reader can see at a glance
+which stretch of the session is running on a branch. Two lanes live over the
+same rows dash that stretch once, since the statement is about the spine and not
+about either branch.
+
+**Dashed carries two statements and they are not the same one.** On a lane, in
+an identity hue at 45% alpha, dashed means work still to come. On the spine, in
+the neutral ink at full alpha, dashed means the work moved onto a branch. They
+never collide in a row: the two live in different columns, at different weights,
+and the spine's dash is always bracketed by a join curve at each of its ends.
+The spine keeps full alpha for exactly this reason, since the faded reading
+belongs to the future and the spine is never in the future.
 
 The stub exists because identity names a run and nothing else. A standalone
 agent's children are still session work, so their offset line stays in the
@@ -156,7 +172,8 @@ size so a marker centres on its label's line rather than on its row box.
 
 Two rules follow from the direction of time. Newer sits above older at every
 level, so a run's origin row is the bottom of its group and its steps stack
-upward, and dashed always points toward NOW because dashed means future.
+upward, and a lane's dash always points toward NOW because on a lane dashed
+means future.
 
 A third rule governs what the feed shows: **everything, always**. Nothing in the
 feed collapses, summarises or hides behind a count, and no disclosure control

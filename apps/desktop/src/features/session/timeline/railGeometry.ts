@@ -76,6 +76,11 @@ type Interval = {
   readonly to: number;
 };
 
+type RailSpan = {
+  readonly fromY: number;
+  readonly toY: number;
+};
+
 export const railColumnX = ({ column }: { readonly column: number }): number =>
   RAIL_SPINE_X + column * RAIL_LANE_OFFSET;
 
@@ -87,6 +92,49 @@ const topAnchorOf = ({ row }: { readonly row: RailRowInput }): number =>
 
 const overlaps = ({ first, second }: { readonly first: Interval; readonly second: Interval }) =>
   first.from <= second.to && second.from <= first.to;
+
+const mergedSpans = ({
+  spans,
+}: {
+  readonly spans: ReadonlyArray<RailSpan>;
+}): ReadonlyArray<RailSpan> =>
+  [...spans]
+    .sort((first, second) => first.fromY - second.fromY)
+    .reduce<RailSpan[]>((merged, span) => {
+      const last = merged[merged.length - 1];
+      if (last === undefined || span.fromY > last.toY) {
+        return [...merged, span];
+      }
+      return [...merged.slice(0, -1), { fromY: last.fromY, toY: Math.max(last.toY, span.toY) }];
+    }, []);
+
+const spineSegmentsOf = ({
+  row,
+  branched,
+}: {
+  readonly row: RailRowInput;
+  readonly branched: ReadonlyArray<RailSpan>;
+}): ReadonlyArray<RailSegment> => {
+  const segments: RailSegment[] = [];
+  const spine = { column: 0, identityIndex: null };
+  let cursor = row.topY;
+  for (const span of mergedSpans({ spans: branched })) {
+    const fromY = Math.max(cursor, span.fromY);
+    const toY = Math.min(row.height, span.toY);
+    if (toY <= fromY) {
+      continue;
+    }
+    if (fromY > cursor) {
+      segments.push({ ...spine, dash: 'solid', fromY: cursor, toY: fromY });
+    }
+    segments.push({ ...spine, dash: 'dashed', fromY, toY });
+    cursor = toY;
+  }
+  if (cursor < row.height) {
+    segments.push({ ...spine, dash: 'solid', fromY: cursor, toY: row.height });
+  }
+  return segments;
+};
 
 export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
   const indexById = new Map<string, number>();
@@ -165,18 +213,32 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
     };
   });
 
-  const segmentsByIndex: RailSegment[][] = rows.map(() => []);
+  const laneSegmentsByIndex: RailSegment[][] = rows.map(() => []);
   const joinsByIndex: RailJoin[][] = rows.map(() => []);
+  const branchedByIndex: RailSpan[][] = rows.map(() => []);
 
-  for (const [index, row] of rows.entries()) {
-    segmentsByIndex[index]?.push({
-      column: 0,
-      identityIndex: null,
-      dash: 'solid',
-      fromY: row.topY,
-      toY: row.height,
-    });
-  }
+  const markBranched = ({
+    index,
+    fromY,
+    toY,
+  }: {
+    readonly index: number;
+    readonly fromY: number;
+    readonly toY: number;
+  }) => {
+    if (toY <= fromY) {
+      return;
+    }
+    branchedByIndex[index]?.push({ fromY, toY });
+  };
+
+  const markBranchedRow = ({ index }: { readonly index: number }) => {
+    const row = rows[index];
+    if (row === undefined) {
+      return;
+    }
+    markBranched({ index, fromY: row.topY, toY: row.height });
+  };
 
   const pushSpan = ({ index, plan }: { readonly index: number; readonly plan: GroupPlan }) => {
     const row = rows[index];
@@ -185,16 +247,26 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
     }
     const shared = { column: plan.column, identityIndex: plan.group.identityIndex };
     if (index > plan.boundaryIndex) {
-      segmentsByIndex[index]?.push({ ...shared, dash: 'solid', fromY: row.topY, toY: row.height });
+      laneSegmentsByIndex[index]?.push({
+        ...shared,
+        dash: 'solid',
+        fromY: row.topY,
+        toY: row.height,
+      });
       return;
     }
     if (index < plan.boundaryIndex) {
-      segmentsByIndex[index]?.push({ ...shared, dash: 'dashed', fromY: row.topY, toY: row.height });
+      laneSegmentsByIndex[index]?.push({
+        ...shared,
+        dash: 'dashed',
+        fromY: row.topY,
+        toY: row.height,
+      });
       return;
     }
     const anchor = anchorOf({ row });
-    segmentsByIndex[index]?.push({ ...shared, dash: 'solid', fromY: anchor, toY: row.height });
-    segmentsByIndex[index]?.push({
+    laneSegmentsByIndex[index]?.push({ ...shared, dash: 'solid', fromY: anchor, toY: row.height });
+    laneSegmentsByIndex[index]?.push({
       ...shared,
       dash: plan.hasFuture ? 'dashed' : 'solid',
       fromY: row.topY,
@@ -215,6 +287,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
 
     for (let index = topIndex + 1; index < plan.originIndex; index += 1) {
       pushSpan({ index, plan });
+      markBranchedRow({ index });
     }
 
     if (originRow !== undefined) {
@@ -225,6 +298,11 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
         identityIndex: plan.group.identityIndex,
         dash: plan.boundaryIndex === plan.originIndex ? 'dashed' : 'solid',
         anchorY: anchorOf({ row: originRow }),
+      });
+      markBranched({
+        index: plan.originIndex,
+        fromY: originRow.topY,
+        toY: anchorOf({ row: originRow }),
       });
     }
 
@@ -237,39 +315,42 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
     const isTopPending = topIndex < plan.boundaryIndex;
 
     if (plan.group.shape === 'open' && !isTopPending) {
-      segmentsByIndex[topIndex]?.push({
+      laneSegmentsByIndex[topIndex]?.push({
         ...shared,
         dash: 'solid',
         fromY: topAnchor,
         toY: topRow.height,
       });
-      segmentsByIndex[topIndex]?.push({
+      laneSegmentsByIndex[topIndex]?.push({
         ...shared,
         dash: 'dashed',
         fromY: topRow.topY,
         toY: topAnchor,
       });
+      markBranchedRow({ index: topIndex });
       for (let index = 0; index < topIndex; index += 1) {
         const row = rows[index];
         if (row === undefined) {
           continue;
         }
-        segmentsByIndex[index]?.push({
+        laneSegmentsByIndex[index]?.push({
           ...shared,
           dash: 'dashed',
           fromY: row.topY,
           toY: row.height,
         });
+        markBranchedRow({ index });
       }
       continue;
     }
 
-    segmentsByIndex[topIndex]?.push({
+    laneSegmentsByIndex[topIndex]?.push({
       ...shared,
       dash: isTopPending ? 'dashed' : 'solid',
       fromY: topAnchor,
       toY: topRow.height,
     });
+    markBranched({ index: topIndex, fromY: topAnchor, toY: topRow.height });
     joinsByIndex[topIndex]?.push({
       kind: 'merge',
       spineColumn: parentColumn,
@@ -290,7 +371,10 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
     rows: rows.map((row, index) => ({
       id: row.id,
       height: row.height,
-      segments: segmentsByIndex[index] ?? [],
+      segments: [
+        ...spineSegmentsOf({ row, branched: branchedByIndex[index] ?? [] }),
+        ...(laneSegmentsByIndex[index] ?? []),
+      ],
       joins: joinsByIndex[index] ?? [],
       markerColumn: row.groupId == null ? 0 : (columnByGroupId.get(row.groupId) ?? 0),
       markerY: row.markerY,
