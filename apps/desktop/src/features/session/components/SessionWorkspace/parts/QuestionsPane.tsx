@@ -7,6 +7,7 @@ import type {
   AgentId,
   OpenQuestion,
   OpenQuestionId,
+  OpenQuestionSelectMode,
   Session,
   SessionId,
 } from '@goodboy/types';
@@ -47,7 +48,11 @@ type ClusterSectionProps = {
   readonly ownerAgent: Agent | null;
   readonly drafts: ReturnType<typeof useOpenQuestions.getState>['drafts'];
   readonly justAnswered: ReadonlyArray<OpenQuestionId>;
-  readonly onToggleSuggestion: (questionId: OpenQuestionId, suggestion: string) => void;
+  readonly onToggleSuggestion: (
+    questionId: OpenQuestionId,
+    suggestion: string,
+    mode: OpenQuestionSelectMode,
+  ) => void;
   readonly onSetCustomAnswer: (questionId: OpenQuestionId, text: string) => void;
   readonly onToggleCustomField: (questionId: OpenQuestionId) => void;
   readonly onClearJustAnswered: (id: OpenQuestionId) => void;
@@ -72,10 +77,10 @@ const ClusterSection = ({
   onUndo,
   onSubmit,
 }: ClusterSectionProps) => {
-  const pendingPairs = cluster.questions
+  const answerablePairs = cluster.questions
     .filter((question) => question.id !== pendingUndoQuestionId)
-    .map((q) => ({ id: q.id, text: q.text, answer: deriveDraftAnswer(drafts[q.id]) }))
-    .filter((pair) => pair.answer.length > 0);
+    .map((q) => ({ id: q.id, text: q.text, answer: deriveDraftAnswer(drafts[q.id]) }));
+  const pendingPairs = answerablePairs.filter((pair) => pair.answer.length > 0);
 
   return (
     <div className="flex flex-col gap-2">
@@ -109,6 +114,7 @@ const ClusterSection = ({
       {pendingPairs.length > 0 ? (
         <AnswerSubmitButton
           answerCount={pendingPairs.length}
+          totalCount={answerablePairs.length}
           onClick={() => onSubmit(pendingPairs, cluster.ownerAgentId)}
         />
       ) : null}

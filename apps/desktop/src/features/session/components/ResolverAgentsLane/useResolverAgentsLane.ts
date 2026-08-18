@@ -240,14 +240,25 @@ export const useResolverAgentsLane = ({ session }: Params) => {
   const isStalled = isResolverQueueStalled({ links: resolverIndex.links });
   const activeIds = activeResolverIds({ links: resolverIndex.links });
 
+  const statusByAgentId = useMemo(() => {
+    const map = new Map<AgentId, (typeof resolverIndex.links)[number]['status']>();
+    for (const { agent, status } of resolverIndex.links) {
+      map.set(agent.id, status);
+    }
+    return map;
+  }, [resolverIndex.links]);
+
   const onOpenChat = useCallback(
     (agentId: AgentId) => {
       if (agentId !== selectedAgentId) {
         void selectAgent(sessionId, agentId);
       }
+      if (statusByAgentId.get(agentId) === 'pending') {
+        return;
+      }
       window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
     },
-    [selectAgent, selectedAgentId, sessionId],
+    [selectAgent, selectedAgentId, sessionId, statusByAgentId],
   );
 
   const onJump = useCallback(

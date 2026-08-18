@@ -4,6 +4,7 @@ import { resolveDetailFields, type DetailFieldRegistry } from '../../detail-fiel
 import { StudioWidget } from '@goodboy/ui';
 import { HeaderBand } from '@goodboy/ui';
 import { RailBlock } from '@goodboy/ui';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { StudioDetailLayout } from './StudioDetailLayout';
 import { StudioDetailTabs } from '@goodboy/ui';
 import { STORAGE_KEYS } from '../../lib/storage-keys';
@@ -73,6 +74,32 @@ describe('StudioDetailLayout', () => {
     );
 
     expect(screen.getByText('Tabs slot')).toBeDefined();
+  });
+
+  it('keeps the header measure constant across fit modes', () => {
+    const { unmount } = render(
+      <StudioDetailLayout header={<span>Header slot</span>} fit="fill">
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+    const fillHeaderMeasure = screen
+      .getByTestId('detail-header-band')
+      .querySelector(`.${PANE_RHYTHM.measure.reading}`);
+    expect(fillHeaderMeasure).not.toBeNull();
+    unmount();
+
+    render(
+      <StudioDetailLayout header={<span>Header slot</span>} fit="bleed">
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+    const bleedHeaderMeasure = screen
+      .getByTestId('detail-header-band')
+      .querySelector(`.${PANE_RHYTHM.measure.reading}`);
+    expect(bleedHeaderMeasure).not.toBeNull();
+    expect(
+      screen.getByTestId('detail-header-band').querySelector(`.${PANE_RHYTHM.measure.full}`),
+    ).toBeNull();
   });
 
   it('drops the rail and the scroll region for a full-bleed body', () => {

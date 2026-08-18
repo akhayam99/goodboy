@@ -45,7 +45,7 @@ const insertRun = async ({ db }: InsertRunParams): Promise<void> => {
   );
 };
 
-describe('m112 workflow run role models', () => {
+describe('m113 workflow run role models', () => {
   it('leaves existing runs inheriting workspace role models', async () => {
     const db = await seedThrough111();
     await insertRun({ db });

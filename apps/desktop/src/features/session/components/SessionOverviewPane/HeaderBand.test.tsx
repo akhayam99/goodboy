@@ -2,7 +2,7 @@
 
 import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
 
 type Store = {
@@ -12,15 +12,29 @@ type Store = {
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   sessionMounts: Record<string, ReadonlyArray<never>>;
   sessionActiveMount: Record<string, string>;
-  sessionGithub: Record<string, { pr?: unknown; linkedIssues?: ReadonlyArray<unknown> }>;
+  sessionGithub: Record<
+    string,
+    {
+      pr?: {
+        number: number;
+        state: 'draft' | 'open' | 'approved' | 'queued' | 'merged' | 'closed';
+        isDraft: boolean;
+        checks: 'success' | 'failure' | 'pending' | null;
+        reviewDecision?: 'approved' | 'changes_requested' | null;
+      } | null;
+      linkedIssues?: ReadonlyArray<unknown>;
+    }
+  >;
   sessionGitlabMr: Record<string, { mr?: unknown }>;
   sessionExternalTasks: Record<string, ReadonlyArray<unknown>>;
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
   markAllAgentsSeen: ReturnType<typeof vi.fn>;
   renameTask: ReturnType<typeof vi.fn>;
+  setFocusedGithubIssueNumber: ReturnType<typeof vi.fn>;
+  openExternalTaskLens: ReturnType<typeof vi.fn>;
 };
 
-const { store } = vi.hoisted(() => ({
+const { store, hooks } = vi.hoisted(() => ({
   store: {
     sessions: [] as ReadonlyArray<Session>,
     workspaces: [] as ReadonlyArray<unknown>,
@@ -28,13 +42,18 @@ const { store } = vi.hoisted(() => ({
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     sessionMounts: {} as Record<string, ReadonlyArray<never>>,
     sessionActiveMount: {} as Record<string, string>,
-    sessionGithub: {} as Record<string, { pr?: unknown; linkedIssues?: ReadonlyArray<unknown> }>,
+    sessionGithub: {} as Store['sessionGithub'],
     sessionGitlabMr: {} as Record<string, { mr?: unknown }>,
     sessionExternalTasks: {} as Record<string, ReadonlyArray<unknown>>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     markAllAgentsSeen: vi.fn(async () => undefined),
     renameTask: vi.fn(async () => undefined),
+    setFocusedGithubIssueNumber: vi.fn(),
+    openExternalTaskLens: vi.fn(),
   } as Store,
+  hooks: {
+    remoteKind: { current: 'github' as 'github' | 'gitlab' | 'other' | 'none' | null },
+  },
 }));
 
 vi.mock('../../../../store', () => ({
@@ -54,6 +73,10 @@ vi.mock('./BranchChip', () => ({
 
 vi.mock('./SessionCostChip', () => ({
   SessionCostChip: () => <span data-testid="cost-chip" />,
+}));
+
+vi.mock('../../../worktree/useRemoteHostKind', () => ({
+  useRemoteHostKind: () => hooks.remoteKind.current,
 }));
 
 const editorMenuCalls: Array<{ sessionId: string; density?: string }> = [];
@@ -105,6 +128,9 @@ const baseSession = (): Session =>
     workflowRuns: [],
   }) as unknown as Session;
 
+const stageWith = (over: Partial<SessionStageInfo> = {}): SessionStageInfo =>
+  ({ stage: 'attention', reason: 'PR needs review', ...over }) as SessionStageInfo;
+
 beforeEach(() => {
   store.sessions = [];
   store.workspaces = [];
@@ -118,6 +144,9 @@ beforeEach(() => {
   store.sessionPhaseRuns = {};
   store.markAllAgentsSeen.mockReset();
   store.renameTask.mockReset();
+  store.setFocusedGithubIssueNumber.mockReset();
+  store.openExternalTaskLens.mockReset();
+  hooks.remoteKind.current = 'github';
   editorMenuCalls.length = 0;
   sessionGitActionsCalls.length = 0;
   sessionDestructiveActionsCalls.length = 0;
@@ -126,22 +155,102 @@ afterEach(cleanup);
 
 describe('HeaderBand', () => {
   it('states the stage label and the reason together, not the reason alone', () => {
-    const stage: SessionStageInfo = { stage: 'attention', reason: 'PR needs review' };
-    render(<HeaderBand session={baseSession()} stage={stage} />);
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />);
     const tooltip = screen.getByText('PR needs review').closest('[data-tooltip]');
     expect(tooltip?.getAttribute('data-tooltip')).toBe('needs you · PR needs review');
   });
 
-  it('renders no tooltip at all when there is no reason to say more', () => {
-    const stage: SessionStageInfo = { stage: 'building', reason: '' };
-    render(<HeaderBand session={baseSession()} stage={stage} />);
-    expect(screen.queryByText('', { selector: '[data-tooltip]' })).toBeNull();
-    expect(document.querySelector('[data-tooltip]')).toBeNull();
+  it('hides the noisy "no PR yet" reason to make room for the create action', () => {
+    render(
+      <HeaderBand
+        session={baseSession()}
+        stage={stageWith({ stage: 'building', reason: 'no PR yet' })}
+        onSelectLens={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText('no PR yet')).toBeNull();
+    expect(screen.getByRole('button', { name: /open pull request/i })).toBeDefined();
+  });
+
+  it('offers a merge-request creation action when the remote is GitLab', () => {
+    hooks.remoteKind.current = 'gitlab';
+    render(
+      <HeaderBand
+        session={baseSession()}
+        stage={stageWith({ stage: 'building', reason: '' })}
+        onSelectLens={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /open merge request/i })).toBeDefined();
+  });
+
+  it('dispatches the GitHub studio event when the create action fires', () => {
+    const events: Array<CustomEvent> = [];
+    const listener = (event: Event) => events.push(event as CustomEvent);
+    window.addEventListener('goodboy:open-github-session', listener);
+    render(
+      <HeaderBand
+        session={baseSession()}
+        stage={stageWith({ stage: 'building', reason: '' })}
+        onSelectLens={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /open pull request/i }));
+    window.removeEventListener('goodboy:open-github-session', listener);
+    expect(events[0]?.detail).toEqual({ sessionId: SESSION_ID });
+  });
+
+  it('inlines the pull request chip in the status row when a PR exists', () => {
+    store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: {
+          number: 42,
+          state: 'open',
+          isDraft: false,
+          checks: 'success',
+          reviewDecision: null,
+        },
+      },
+    };
+    render(
+      <HeaderBand
+        session={baseSession()}
+        stage={stageWith({ stage: 'review', reason: 'PR #42 awaiting review' })}
+        onSelectLens={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Open PR #42' })).toBeDefined();
+  });
+
+  it('renders a linked work chip that navigates to the github issue lens', () => {
+    store.sessionGithub = {
+      [SESSION_ID]: {
+        linkedIssues: [
+          { number: 7, title: 'Broken auth', url: 'https://github.com/acme/repo/issues/7' },
+        ],
+      },
+    };
+    const onSelectLens = vi.fn();
+    render(
+      <HeaderBand
+        session={baseSession()}
+        stage={stageWith({ stage: 'building', reason: '' })}
+        onSelectLens={onSelectLens}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Open issue #7' }));
+    expect(store.setFocusedGithubIssueNumber).toHaveBeenCalledWith(SESSION_ID, 7);
+    expect(onSelectLens).toHaveBeenCalledWith('github_issue');
   });
 
   it('mounts the editor menu, git actions and destructive actions at compact density for this session', () => {
-    const stage: SessionStageInfo = { stage: 'building', reason: '' };
-    render(<HeaderBand session={baseSession()} stage={stage} />);
+    render(
+      <HeaderBand
+        session={baseSession()}
+        stage={stageWith({ stage: 'building', reason: '' })}
+        onSelectLens={vi.fn()}
+      />,
+    );
     expect(editorMenuCalls).toEqual([{ sessionId: SESSION_ID, density: 'compact' }]);
     expect(sessionGitActionsCalls).toEqual([{ sessionId: SESSION_ID, density: 'compact' }]);
     expect(sessionDestructiveActionsCalls).toEqual([{ sessionId: SESSION_ID }]);

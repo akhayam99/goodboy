@@ -77,6 +77,36 @@ describe('open_questions queries', () => {
     expect(byId.get('oq_norec' as OpenQuestionId)?.recommendedAnswer).toBeUndefined();
   });
 
+  it('selectMode round-trips and omitted reads undefined', async () => {
+    const db = await seed();
+    await insertOpenQuestion(db, {
+      id: 'oq_one' as OpenQuestionId,
+      sessionId,
+      text: 'pick one',
+      suggestedAnswers: ['a', 'b'],
+      selectMode: 'one',
+    });
+    await insertOpenQuestion(db, {
+      id: 'oq_many' as OpenQuestionId,
+      sessionId,
+      text: 'pick some',
+      suggestedAnswers: ['a', 'b', 'c'],
+      selectMode: 'many',
+    });
+    await insertOpenQuestion(db, {
+      id: 'oq_mode_omitted' as OpenQuestionId,
+      sessionId,
+      text: 'unspecified',
+      suggestedAnswers: [],
+    });
+
+    const open = await listOpenQuestionsForSession(db, sessionId, 'open');
+    const byId = new Map(open.map((q) => [q.id, q]));
+    expect(byId.get('oq_one' as OpenQuestionId)?.selectMode).toBe('one');
+    expect(byId.get('oq_many' as OpenQuestionId)?.selectMode).toBe('many');
+    expect(byId.get('oq_mode_omitted' as OpenQuestionId)?.selectMode).toBeUndefined();
+  });
+
   it('answered list returns rows with turnOrdinal preserved', async () => {
     const db = await seed();
     await insertOpenQuestion(db, {

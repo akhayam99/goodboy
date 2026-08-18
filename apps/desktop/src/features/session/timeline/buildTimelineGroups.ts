@@ -18,6 +18,7 @@ export type TimelineAgentEntry = {
   readonly depth: 0 | 1 | 2;
   readonly clusterIndex: number | null;
   readonly terminalQuestions: ReadonlyArray<OpenQuestion>;
+  readonly answers: ReadonlyArray<TimelineAnswerEntry>;
   readonly hasDuration: boolean;
 };
 
@@ -45,7 +46,15 @@ export type TimelineBranchEntry = {
   readonly depth: 0;
 };
 
-export type TimelineChildEntry = TimelineAgentEntry | TimelinePlanEntry;
+export type TimelineAnswerEntry = {
+  readonly kind: 'answer';
+  readonly id: string;
+  readonly at: string;
+  readonly question: OpenQuestion;
+  readonly depth: 1 | 2;
+};
+
+export type TimelineChildEntry = TimelineAgentEntry | TimelinePlanEntry | TimelineAnswerEntry;
 
 export type TimelineRunEntry = {
   readonly kind: 'run';
@@ -142,6 +151,54 @@ const compareAscending = ({ first, second }: CompareParams): number => {
   return first.id.localeCompare(second.id);
 };
 
+type QuestionAttachParams = {
+  readonly questions: ReadonlyArray<OpenQuestion>;
+  readonly agent: Agent;
+};
+
+const attachedQuestionsFor = ({
+  questions,
+  agent,
+}: QuestionAttachParams): ReadonlyArray<OpenQuestion> => {
+  const direct = questions.filter((question) => question.createdByAgentId === agent.id);
+  const inferred =
+    agent.workflowRunId == null
+      ? []
+      : questions.filter(
+          (question) =>
+            question.createdByAgentId == null &&
+            question.workflowRunId === agent.workflowRunId &&
+            question.createdByStepOrdinal === agent.ordinal,
+        );
+  return [...direct, ...inferred];
+};
+
+type BuildAnswersParams = {
+  readonly questions: ReadonlyArray<OpenQuestion>;
+  readonly parentId: string;
+  readonly depth: 1 | 2;
+};
+
+const buildAnswers = ({
+  questions,
+  parentId,
+  depth,
+}: BuildAnswersParams): ReadonlyArray<TimelineAnswerEntry> =>
+  questions.flatMap((question) => {
+    if (question.status !== 'answered' || question.answeredAt == null) {
+      return [];
+    }
+    return [
+      {
+        kind: 'answer',
+        id: `answer:${parentId}:${question.id}`,
+        at: question.answeredAt,
+        question,
+        depth,
+      },
+    ];
+  });
+
 export const buildTimelineGroups = ({
   agents,
   workflows,
@@ -159,14 +216,6 @@ export const buildTimelineGroups = ({
     }
     const children = childrenByParentId.get(agent.parentAgentId) ?? [];
     childrenByParentId.set(agent.parentAgentId, [...children, agent]);
-  }
-  const questionsByAgentId = new Map<string, ReadonlyArray<OpenQuestion>>();
-  for (const question of questions) {
-    if (question.createdByAgentId == null) {
-      continue;
-    }
-    const attached = questionsByAgentId.get(question.createdByAgentId) ?? [];
-    questionsByAgentId.set(question.createdByAgentId, [...attached, question]);
   }
 
   const agentEntries: ReadonlyArray<TimelineAgentEntry> = agents.flatMap((agent) => {
@@ -191,29 +240,27 @@ export const buildTimelineGroups = ({
           .sort((first, second) => first.ordinal - second.ordinal)
           .findIndex((sibling) => sibling.id === agent.id) + 1
       : null;
-    const inferredQuestions =
-      agent.workflowRunId == null
-        ? []
-        : questions.filter(
-            (question) =>
-              question.createdByAgentId == null &&
-              question.workflowRunId === agent.workflowRunId &&
-              question.createdByStepOrdinal === agent.ordinal,
-          );
-    const attachedQuestions = [
-      ...(questionsByAgentId.get(agent.id) ?? []),
-      ...inferredQuestions,
-    ].filter((question) => question.status !== 'open');
+    const attachedQuestions = attachedQuestionsFor({ questions, agent });
+    const terminalQuestions = attachedQuestions.filter((question) => question.status !== 'open');
+    const depth: 0 | 1 | 2 = isClusterBlock ? 2 : agent.workflowRunId != null ? 1 : 0;
+    const answerDepth: 1 | 2 = depth === 2 ? 2 : depth === 1 ? 2 : 1;
+    const entryId = `agent:${agent.id}`;
+    const answers = buildAnswers({
+      questions: attachedQuestions,
+      parentId: entryId,
+      depth: answerDepth,
+    });
     return [
       {
         kind: 'agent',
-        id: `agent:${agent.id}`,
+        id: entryId,
         at: placement.at,
         agent,
         agentKind: classifyAgent(agent, agentKindOverride[agent.id] ?? null),
-        depth: isClusterBlock ? 2 : agent.workflowRunId != null ? 1 : 0,
+        depth,
         clusterIndex,
-        terminalQuestions: attachedQuestions,
+        terminalQuestions,
+        answers,
         hasDuration: placement.hasDuration,
       },
     ];
@@ -224,7 +271,10 @@ export const buildTimelineGroups = ({
     const runPlans: ReadonlyArray<TimelinePlanEntry> = plans
       .filter((plan) => plan.workflowRunId === run.id)
       .map((plan) => ({ kind: 'plan', id: `plan:${plan.id}`, at: plan.createdAt, plan, depth: 1 }));
-    const children = [...runAgents, ...runPlans].sort((first, second) =>
+    const runAnswers: ReadonlyArray<TimelineAnswerEntry> = runAgents.flatMap(
+      (entry) => entry.answers,
+    );
+    const children = [...runAgents, ...runPlans, ...runAnswers].sort((first, second) =>
       compareAscending({ first, second }),
     );
     const pendingAgents = agents

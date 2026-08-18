@@ -121,6 +121,7 @@ vi.mock('../../../../store', () => ({
   useFilesTouched: () => ({ paths: [], count: 0, additions: 0, deletions: 0 }),
   useSessionPlans: () => [],
   useSessionOpenQuestions: () => hooks.openQuestions,
+  useDiffComments: () => [],
 }));
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
@@ -149,9 +150,18 @@ vi.mock('../../../workspace/components/WorkspacesSidebar/parts/AgentsSection', (
   ),
 }));
 vi.mock('../ResolverAgentsLane', () => ({
-  ResolverAgentsLane: ({ inspectedResolverId }: { inspectedResolverId: string | null }) => (
-    <div data-testid="resolver-lane">{inspectedResolverId}</div>
-  ),
+  ResolverAgentsLane: ({
+    mode = 'active',
+    inspectedResolverId,
+  }: {
+    readonly mode?: 'active' | 'finished';
+    readonly inspectedResolverId: string | null;
+  }) =>
+    mode === 'active' ? (
+      <div data-testid="resolver-lane">{inspectedResolverId}</div>
+    ) : (
+      <div data-testid={`resolver-lane-${mode}`}>{inspectedResolverId}</div>
+    ),
 }));
 vi.mock('../StandaloneAgentsLane', () => ({
   StandaloneAgentsLane: ({
@@ -240,12 +250,6 @@ vi.mock('./parts/WorkflowBreadcrumb', () => ({
     </button>
   ),
 }));
-vi.mock('../AgentInspector', () => ({
-  AgentInspector: ({ agentId }: { agentId: string }) => (
-    <div data-testid="agent-inspector">{agentId}</div>
-  ),
-}));
-
 import { SessionWorkspace } from './index';
 import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
 
@@ -349,7 +353,7 @@ describe('SessionWorkspace agent overlay', () => {
 
     expect(screen.queryByTestId('workflow-breadcrumb')).toBeNull();
     expect(screen.getByTestId('agent-detail-pane').textContent).toBe('resolver-1');
-    expect(screen.getByRole('button', { name: 'Resolve' })).toBeDefined();
+    expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
   });
 
   it('does not show workflow linkage outside the workflows lens', () => {
@@ -425,10 +429,10 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByTestId('workflow-breadcrumb')).toBeNull();
     expect(screen.queryByRole('separator', { name: 'resize agent list' })).toBeNull();
     expect(screen.getByTestId('agents-lane')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Agents' })).toHaveLength(1);
     expect(screen.getByTestId('agent-detail-pane').textContent).toBe(standaloneAgent.id);
-    expect(screen.getAllByTestId('agent-inspector')).toHaveLength(1);
+    expect(screen.queryByTestId('agent-inspector')).toBeNull();
     expect(screen.queryByRole('separator', { name: 'Resize agent inspector' })).toBeNull();
+    expect(screen.queryByRole('separator', { name: 'Resize inspector panel' })).toBeNull();
   });
 
   it('opens the resolve dashboard on the selected resolver and returns to the lane', () => {
@@ -507,112 +511,22 @@ describe('SessionWorkspace agent overlay', () => {
   });
 });
 
-describe('SessionWorkspace agents inspector', () => {
-  it('opens the running standalone agent before newer attention and pending agents', () => {
-    const running = {
+describe('SessionWorkspace agents lens', () => {
+  it('renders the agents lens without an inspector rail', () => {
+    const standalone = {
       ...selectedAgent,
-      id: 'agent-running',
-      ordinal: 0,
+      id: 'agent-standalone',
       stepId: undefined,
       workflowRunId: undefined,
     } as Agent;
-    const attention = {
-      ...running,
-      id: 'agent-attention',
-      ordinal: 1,
-      status: 'failed',
-    } as Agent;
-    const newest = {
-      ...running,
-      id: 'agent-newest',
-      ordinal: 2,
-      status: 'pending',
-    } as Agent;
     store.selectedAgentId = {};
-    store.sessionPhaseRuns = { [SESSION_ID]: [running, attention, newest] };
+    store.sessionPhaseRuns = { [SESSION_ID]: [standalone] };
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('agent-inspector').textContent).toBe(running.id);
-  });
-
-  it('prioritizes an agent awaiting attention over the newest pending agent', () => {
-    const attention = {
-      ...selectedAgent,
-      id: 'agent-attention',
-      ordinal: 0,
-      status: 'completed',
-      stepId: undefined,
-      workflowRunId: undefined,
-    } as Agent;
-    const newest = {
-      ...attention,
-      id: 'agent-newest',
-      ordinal: 1,
-      status: 'pending',
-    } as Agent;
-    store.selectedAgentId = {};
-    store.sessionPhaseRuns = { [SESSION_ID]: [attention, newest] };
-    hooks.openQuestions = [{ createdByAgentId: attention.id }];
-
-    render(<SessionWorkspace session={session} isActive />);
-
-    expect(screen.getByTestId('agent-inspector').textContent).toBe(attention.id);
-  });
-
-  it('keeps manual details selections and re-picks after the inspected agent is deleted', () => {
-    const older = {
-      ...selectedAgent,
-      id: 'agent-older',
-      ordinal: 0,
-      status: 'pending',
-      stepId: undefined,
-      workflowRunId: undefined,
-    } as Agent;
-    const newer = {
-      ...older,
-      id: 'agent-newer',
-      ordinal: 1,
-    } as Agent;
-    store.selectedAgentId = {};
-    store.sessionPhaseRuns = { [SESSION_ID]: [older, newer] };
-    const view = render(<SessionWorkspace session={session} isActive />);
-
-    expect(screen.getByTestId('agent-inspector').textContent).toBe(newer.id);
-
-    fireEvent.click(screen.getByRole('button', { name: `inspect ${older.id}` }));
-    expect(screen.getByTestId('agent-inspector').textContent).toBe(older.id);
-
-    store.sessionPhaseRuns = { [SESSION_ID]: [newer] };
-    view.rerender(<SessionWorkspace session={session} isActive />);
-    expect(screen.getByTestId('agent-inspector').textContent).toBe(newer.id);
-  });
-
-  it('closes the agent inspector after the last agent is deleted', () => {
-    const lastAgent = {
-      ...selectedAgent,
-      id: 'agent-last',
-      stepId: undefined,
-      workflowRunId: undefined,
-    } as Agent;
-    store.selectedAgentId = {};
-    store.sessionPhaseRuns = { [SESSION_ID]: [lastAgent] };
-    const view = render(<SessionWorkspace session={session} isActive />);
-
-    expect(screen.getByRole('separator', { name: 'Resize inspector panel' })).toBeDefined();
-
-    store.activeLens = { [SESSION_ID]: 'questions' };
-    store.sessionPhaseRuns = { [SESSION_ID]: [] };
-    view.rerender(<SessionWorkspace session={session} isActive />);
-
-    expect(
-      screen.queryByRole('separator', { name: 'Resize inspector panel', hidden: true }),
-    ).toBeNull();
-
-    store.activeLens = { [SESSION_ID]: 'agents' };
-    view.rerender(<SessionWorkspace session={session} isActive />);
-
+    expect(screen.getByTestId('agents-lane')).toBeDefined();
     expect(screen.queryByRole('separator', { name: 'Resize inspector panel' })).toBeNull();
+    expect(screen.queryByTestId('agent-inspector')).toBeNull();
   });
 });
 
@@ -725,7 +639,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByRole('navigation', { name: 'Agent breadcrumb' })).toBeDefined();
+    expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
     expect(screen.getByRole('status', { name: 'Loading' })).toBeDefined();
     expect(screen.queryByTestId('agent-detail-pane')).toBeNull();
   });
@@ -812,7 +726,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     render(<SessionWorkspace session={workflowSession} isActive />);
 
     expect(screen.queryByTestId('workflow-breadcrumb')).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'Resolve' })).toHaveLength(1);
+    expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
     expect(screen.queryByText('Part of')).toBeNull();
   });
 

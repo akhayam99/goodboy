@@ -4,27 +4,30 @@ import {
   FileDiff,
   GitCommitHorizontal,
   MessageSquareReply,
-  PanelRight,
   RotateCcw,
   Trash2,
 } from 'lucide-react';
 import { Chip, InlineConfirm } from '@goodboy/ui';
 import type { Agent, DiffComment, PrComment, TelemetryRecord } from '@goodboy/types';
+import { getModelProvider } from '@goodboy/core';
 import { agentHasUnread, useAppStore } from '../../../../store';
 import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
 import { AgentCard } from '../AgentCard';
 import { AgentCardAction } from '../AgentCard/AgentCardAction';
 import { agentCardTitleClass } from '../AgentCard/agentCardTitleClass';
-import { AgentMetrics, type AgentAggregate } from '../AgentMetrics';
 import { resolverBadgeState } from '../ResolverStateBadge';
 import { ResolverStateIcon } from '../ResolverStateBadge/ResolverStateIcon';
 import { ResolverCardAction } from './ResolverCardAction';
+import { ResolverConfirm } from '../ResolverConfirm';
 import { resolverOrigin } from '../../resolver-origin';
 import type { ResolverStatus } from '../../resolver-linkage';
+import { ResolverCardMetrics } from './ResolverCardMetrics';
 import { ResolverCardSnippet } from './ResolverCardSnippet';
 import { ResolverCardTally } from './ResolverCardTally';
+import { ResolverLifecycleButton } from './ResolverLifecycleButton';
 import { resolverCardTone } from './resolverCardTone';
 import { resolverDiffActionLabel, type ResolverDiffTarget } from './resolverDiffActionLabel';
+import type { ResolverAction } from '../../resolverActions';
 import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
 
 type Props = {
@@ -33,7 +36,6 @@ type Props = {
   readonly threadComment: PrComment | null;
   readonly diffComment: DiffComment | null;
   readonly telemetry: TelemetryRecord | null;
-  readonly aggregate: AgentAggregate | null;
   readonly contextUsage: ReadonlyArray<ProviderContextUsage>;
   readonly turns: number;
   readonly turnsLoading: boolean;
@@ -48,10 +50,14 @@ type Props = {
   readonly isMuted: boolean;
   readonly canJump: boolean;
   readonly onOpenChat: () => void;
-  readonly onInspect: () => void;
+  readonly onOpenBrief: () => void;
   readonly onJump: () => void;
   readonly onOpenDiff: () => void;
 };
+
+type ArmedConfirm =
+  | { readonly kind: 'action'; readonly action: ResolverAction; readonly run: () => Promise<void> }
+  | { readonly kind: 'delete' };
 
 export const ResolverCard = ({
   agent,
@@ -59,7 +65,6 @@ export const ResolverCard = ({
   threadComment,
   diffComment,
   telemetry,
-  aggregate,
   contextUsage,
   turns,
   turnsLoading,
@@ -74,7 +79,7 @@ export const ResolverCard = ({
   isMuted,
   canJump,
   onOpenChat,
-  onInspect,
+  onOpenBrief,
   onJump,
   onOpenDiff,
 }: Props) => {
@@ -90,9 +95,17 @@ export const ResolverCard = ({
   const setAgentDone = useAppStore((state) => state.setAgentDone);
   const clearAgentDone = useAppStore((state) => state.clearAgentDone);
   const deleteAgent = useAppStore((state) => state.deleteAgent);
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [armed, setArmed] = useState<ArmedConfirm | null>(null);
   const canMarkDone = agent.status !== 'running' && agent.doneAt == null;
+  const isDone = agent.doneAt != null;
   const origin = resolverOrigin({ agent, hasDiffComment: diffComment !== null });
+  const model = telemetry?.model ?? contextUsage[0]?.model ?? plannedModel ?? null;
+  const provider =
+    telemetry?.provider ??
+    contextUsage[0]?.provider ??
+    (plannedModel != null ? getModelProvider(plannedModel) : null);
+  const hasResolverChanges = reportedCommitSha !== null;
+  const diffTooltip = resolverDiffTooltip({ diffTarget, hasResolverChanges });
   const rowTitle = [
     agent.name,
     `Origin: ${origin.label}`,
@@ -117,33 +130,31 @@ export const ResolverCard = ({
       }
       navigationAction={
         <>
+          <ResolverCardAction
+            agent={agent}
+            sessionId={agent.sessionId}
+            status={status}
+            commitSha={reportedCommitSha}
+            isQueueStalled={isQueueStalled}
+            hasOtherActiveResolvers={hasOtherActiveResolvers}
+            onOpenPanel={onOpenBrief}
+            onArmConfirm={({ action, run }) => setArmed({ kind: 'action', action, run })}
+          />
           <span className="flex size-6 shrink-0 items-center justify-center">
             {canOpenDiff && (
               <AgentCardAction
                 icon={diffTarget.kind === 'commit' ? GitCommitHorizontal : FileDiff}
-                label={resolverDiffActionLabel({ target: diffTarget })}
-                reveal
+                label={diffTooltip}
+                disabled={!hasResolverChanges}
                 onClick={onOpenDiff}
               />
             )}
           </span>
           <span className="flex size-6 shrink-0 items-center justify-center">
             {canJump && (
-              <AgentCardAction
-                icon={MessageSquareReply}
-                label="Go to comment"
-                reveal
-                onClick={onJump}
-              />
+              <AgentCardAction icon={MessageSquareReply} label="Go to comment" onClick={onJump} />
             )}
           </span>
-          <AgentCardAction
-            icon={PanelRight}
-            label="Toggle resolver details"
-            pressed={isInspected}
-            highlighted={isInspected}
-            onClick={onInspect}
-          />
         </>
       }
       status={
@@ -153,53 +164,34 @@ export const ResolverCard = ({
           <ResolverCardTally agent={agent} sessionId={agent.sessionId} />
         </>
       }
-      meta={
-        <AgentMetrics
-          run={agent}
-          telemetry={telemetry}
-          aggregate={aggregate}
-          contextUsage={contextUsage}
-          turns={turns}
-          turnsLoading={turnsLoading}
-          density="lane"
-          plannedModel={plannedModel}
-        />
-      }
       lifecycleActions={
         <>
-          <span className="flex size-6 shrink-0 items-center justify-center">
-            {canMarkDone && (
-              <AgentCardAction
-                icon={CircleCheck}
-                label="Mark resolver done"
-                tone="success"
-                reveal
-                onClick={() => void setAgentDone(agent.sessionId, agent.id)}
-              />
-            )}
-            {agent.doneAt != null && (
-              <AgentCardAction
-                icon={RotateCcw}
-                label="Reopen resolver"
-                reveal
-                onClick={() => void clearAgentDone(agent.sessionId, agent.id)}
-              />
-            )}
-          </span>
-          <span className="flex size-6 shrink-0 items-center justify-center">
-            <AgentCardAction
-              icon={Trash2}
-              label="Delete resolver"
-              tone="danger"
-              highlighted={isConfirmingDelete}
-              reveal={!isConfirmingDelete}
-              onClick={() => setIsConfirmingDelete(true)}
+          {canMarkDone && (
+            <ResolverLifecycleButton
+              icon={CircleCheck}
+              label="Mark done"
+              tone="success"
+              onClick={() => void setAgentDone(agent.sessionId, agent.id)}
             />
-          </span>
+          )}
+          {isDone && (
+            <ResolverLifecycleButton
+              icon={RotateCcw}
+              label="Reopen"
+              tone="neutral"
+              onClick={() => void clearAgentDone(agent.sessionId, agent.id)}
+            />
+          )}
+          <ResolverLifecycleButton
+            icon={Trash2}
+            label="Delete"
+            tone="danger"
+            onClick={() => setArmed({ kind: 'delete' })}
+          />
         </>
       }
       confirmation={
-        isConfirmingDelete ? (
+        armed?.kind === 'delete' ? (
           <InlineConfirm
             role="danger"
             icon={<Trash2 size={12} aria-hidden />}
@@ -207,26 +199,47 @@ export const ResolverCard = ({
             description="Removes this resolver and its transcript from the session."
             confirmLabel="Delete"
             onConfirm={() => {
-              setIsConfirmingDelete(false);
+              setArmed(null);
               void deleteAgent(agent.sessionId, agent.id);
             }}
-            onCancel={() => setIsConfirmingDelete(false)}
+            onCancel={() => setArmed(null)}
+          />
+        ) : armed?.kind === 'action' ? (
+          <ResolverConfirm
+            action={armed.action}
+            onConfirm={async () => {
+              await armed.run();
+              setArmed(null);
+            }}
+            onCancel={() => setArmed(null)}
           />
         ) : null
       }
-      footer={
-        <ResolverCardAction
-          agent={agent}
-          sessionId={agent.sessionId}
-          status={status}
-          commitSha={reportedCommitSha}
-          isQueueStalled={isQueueStalled}
-          hasOtherActiveResolvers={hasOtherActiveResolvers}
-          onOpenPanel={onInspect}
-        />
-      }
     >
       <ResolverCardSnippet threadComment={threadComment} diffComment={diffComment} />
+      <ResolverCardMetrics
+        agent={agent}
+        provider={provider}
+        model={model}
+        turns={turns}
+        turnsLoading={turnsLoading}
+      />
     </AgentCard>
   );
+};
+
+const resolverDiffTooltip = ({
+  diffTarget,
+  hasResolverChanges,
+}: {
+  readonly diffTarget: ResolverDiffTarget;
+  readonly hasResolverChanges: boolean;
+}): string => {
+  if (hasResolverChanges) {
+    return resolverDiffActionLabel({ target: diffTarget });
+  }
+  if (diffTarget.kind === 'unknown') {
+    return 'Diff loading';
+  }
+  return 'No changes to diff yet';
 };

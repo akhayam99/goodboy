@@ -69,7 +69,8 @@ describe('OpenQuestionCluster', () => {
     fireEvent.click(screen.getByText('Postgres'));
     fireEvent.click(screen.getByText('Redis'));
 
-    const submit = await screen.findByText('send 2 answers');
+    expect(await screen.findByText('2 of 2 answered')).toBeDefined();
+    const submit = screen.getByRole('button', { name: 'Send' });
     fireEvent.click(submit);
 
     expect(state.answerOpenQuestions).toHaveBeenCalledTimes(1);
@@ -88,8 +89,7 @@ describe('OpenQuestionCluster', () => {
       <OpenQuestionCluster questions={[dbQuestion, cacheQuestion]} sessionId={'sess-1' as never} />,
     );
 
-    expect(screen.queryByText('send answer')).toBeNull();
-    expect(screen.queryByText(/send \d+ answers/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });
 
   it('uses the singular label and a single-element batch for one drafted question', async () => {
@@ -97,7 +97,7 @@ describe('OpenQuestionCluster', () => {
 
     fireEvent.click(screen.getByText('Postgres'));
 
-    const submit = await screen.findByText('send answer');
+    const submit = await screen.findByRole('button', { name: 'Send' });
     fireEvent.click(submit);
 
     expect(state.answerOpenQuestions).toHaveBeenCalledTimes(1);
@@ -115,7 +115,7 @@ describe('OpenQuestionCluster', () => {
 
     fireEvent.click(screen.getByText('Redis'));
 
-    const submit = await screen.findByText('send answer');
+    const submit = await screen.findByRole('button', { name: 'Send' });
     fireEvent.click(submit);
 
     expect(state.answerOpenQuestions).toHaveBeenCalledTimes(1);
@@ -141,7 +141,7 @@ describe('OpenQuestionCluster', () => {
 
     fireEvent.click(screen.getByText('Redis'));
 
-    const submit = await screen.findByText('send answer');
+    const submit = await screen.findByRole('button', { name: 'Send' });
     fireEvent.click(submit);
 
     expect(state.answerOpenQuestions).toHaveBeenCalledWith(
@@ -167,8 +167,7 @@ describe('OpenQuestionCluster', () => {
 
     render(<OpenQuestionCluster questions={[a1, a2]} sessionId={'sess-1' as never} />);
 
-    expect(screen.queryByText('send answer')).toBeNull();
-    expect(screen.queryByText(/send \d+ answers/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });
 
   it('prefers a custom answer over selected suggestions', async () => {
@@ -180,7 +179,7 @@ describe('OpenQuestionCluster', () => {
       target: { value: '  use Neon  ' },
     });
 
-    const submit = await screen.findByText('send answer');
+    const submit = await screen.findByRole('button', { name: 'Send' });
     fireEvent.click(submit);
 
     expect(state.answerOpenQuestions).toHaveBeenCalledWith(
@@ -194,10 +193,10 @@ describe('OpenQuestionCluster', () => {
     render(<OpenQuestionCluster questions={[dbQuestion]} sessionId={'sess-1' as never} />);
 
     fireEvent.click(screen.getByText('Postgres'));
-    expect(screen.queryByText('send answer')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeTruthy();
 
     fireEvent.click(screen.getByText('Postgres'));
-    expect(screen.queryByText('send answer')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });
 
   it('targets the agent that authored the first question in the cluster', async () => {
@@ -215,7 +214,7 @@ describe('OpenQuestionCluster', () => {
     fireEvent.click(screen.getByText('Postgres'));
     fireEvent.click(screen.getByText('Redis'));
 
-    fireEvent.click(await screen.findByText('send 2 answers'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Send' }));
 
     expect(state.answerOpenQuestions).toHaveBeenCalledWith('sess-1', expect.any(Array), 'agent-2');
   });
@@ -254,11 +253,63 @@ describe('OpenQuestionCluster', () => {
     fireEvent.click(screen.getByText('Postgres'));
     fireEvent.click(screen.getByText('Redis'));
 
-    fireEvent.click(await screen.findByText('send 2 answers'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Send' }));
 
     const ui = useOpenQuestions.getState();
     expect(ui.justAnswered).toEqual(['oq-1', 'oq-2']);
     expect(ui.drafts).toEqual({});
-    expect(screen.queryByText('send 2 answers')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+  });
+
+  it('renders multi-choice suggestions as checkboxes and joins them into a single answer', async () => {
+    const multi = makeQuestion({
+      id: 'oq-multi',
+      text: 'Pick every backend that fits.',
+      suggestedAnswers: ['Redis', 'Memcached', 'Cloudflare KV'],
+      selectMode: 'many',
+    });
+
+    render(<OpenQuestionCluster questions={[multi]} sessionId={'sess-1' as never} />);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Redis' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Cloudflare KV' }));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Send' }));
+
+    expect(state.answerOpenQuestions).toHaveBeenCalledWith(
+      'sess-1',
+      [
+        {
+          id: 'oq-multi',
+          text: 'Pick every backend that fits.',
+          answer: 'Redis, Cloudflare KV',
+        },
+      ],
+      'agent-1',
+    );
+  });
+
+  it('lets a multi-choice question fall back to the free-text field with no chip selected', async () => {
+    const multi = makeQuestion({
+      id: 'oq-multi',
+      text: 'Pick anything.',
+      suggestedAnswers: ['a', 'b'],
+      selectMode: 'many',
+    });
+
+    render(<OpenQuestionCluster questions={[multi]} sessionId={'sess-1' as never} />);
+
+    fireEvent.click(screen.getByText('other'));
+    fireEvent.change(screen.getByPlaceholderText('write your own answer…'), {
+      target: { value: 'both, plus dynamo' },
+    });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Send' }));
+
+    expect(state.answerOpenQuestions).toHaveBeenCalledWith(
+      'sess-1',
+      [{ id: 'oq-multi', text: 'Pick anything.', answer: 'both, plus dynamo' }],
+      'agent-1',
+    );
   });
 });

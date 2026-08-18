@@ -25,7 +25,7 @@ type Props = {
   readonly reportedCommitShaByAgentId: ReadonlyMap<AgentId, string>;
   readonly diffTargetByAgentId: ReadonlyMap<AgentId, ResolverDiffTarget>;
   readonly onOpenChat: (agentId: AgentId) => void;
-  readonly onInspect: (agentId: AgentId) => void;
+  readonly onOpenBrief: (agentId: AgentId) => void;
   readonly onJump: (agent: Agent) => void;
   readonly onOpenDiff: (agentId: AgentId) => void;
 };
@@ -46,7 +46,7 @@ export const ResolverRows = ({
   reportedCommitShaByAgentId,
   diffTargetByAgentId,
   onOpenChat,
-  onInspect,
+  onOpenBrief,
   onJump,
   onOpenDiff,
 }: Props) => (
@@ -67,7 +67,6 @@ export const ResolverRows = ({
           threadComment={threadComment}
           diffComment={diffComment}
           telemetry={metrics.latestTelemetryByAgentId.get(agent.id) ?? null}
-          aggregate={metrics.aggregatesByAgentId.get(agent.id) ?? null}
           contextUsage={metrics.providerUsageByAgentId.get(agent.id) ?? EMPTY_ARRAY}
           turns={metrics.turnsByAgentId.get(agent.id) ?? 0}
           turnsLoading={agent.id === selectedAgentId && isTranscriptLoading}
@@ -82,7 +81,7 @@ export const ResolverRows = ({
           isMuted={isMuted}
           canJump={threadIds.length > 0 || agent.sourceCommentUrl != null}
           onOpenChat={() => onOpenChat(agent.id)}
-          onInspect={() => onInspect(agent.id)}
+          onOpenBrief={() => onOpenBrief(agent.id)}
           onJump={() => onJump(agent)}
           onOpenDiff={() => onOpenDiff(agent.id)}
         />

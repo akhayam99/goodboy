@@ -1,11 +1,10 @@
-import { useState } from 'react';
 import { CheckCheck, Pencil } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, cn, Input, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
-import { agentHasUnread, EMPTY_ARRAY, useAppStore, useCurrentWorkspace } from '../../../../store';
+import { agentHasUnread, useAppStore, useCurrentWorkspace } from '../../../../store';
+import type { LensKind } from '../../../../store';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../session-stage';
-import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { SummarizerBadge } from '../SummarizerBadge';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
@@ -14,50 +13,44 @@ import { SessionGitActions } from '../SessionWorkspace/parts/SessionGitActions';
 import { SessionDestructiveActions } from './SessionDestructiveActions';
 import { BranchChip } from './BranchChip';
 import { SessionCostChip } from './SessionCostChip';
-import { PrStatusLine } from './PrStatusLine';
-import { definitionOfDone } from './definitionOfDone';
+import { StatusRowRequest } from './StatusRowRequest';
+import { LinkedWorkChips } from './LinkedWorkChips';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 
 type Props = {
   readonly session: Session;
   readonly stage: SessionStageInfo;
+  readonly onSelectLens: (lens: LensKind) => void;
 };
 
-const GOAL_CLAMP_CHARS = 160;
+const REASON_HIDDEN: ReadonlySet<string> = new Set([
+  'no PR yet',
+  'checking GitHub',
+  'GitHub unreachable',
+]);
 
-export const HeaderBand = ({ session, stage }: Props) => {
+export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
   const sessionId = session.id as SessionId;
-  const [goalExpanded, setGoalExpanded] = useState(false);
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
   const workspace = useCurrentWorkspace();
   const repo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const storedBranch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
   const branch = repo != null && repo.mountName != null ? repo.branch : storedBranch;
-  const github = useAppStore((s) => s.sessionGithub[sessionId]);
-  const mergeRequest = useAppStore((s) => s.sessionGitlabMr[sessionId]?.mr ?? null);
-  const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
-  const sessionAgents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
+  const sessionAgents = useAppStore((s) => s.sessionPhaseRuns[sessionId]);
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
-  const pullRequest = github?.pr ?? null;
-  const hasUnreadAgents = sessionAgents.some((agent) => agentHasUnread(agent, false));
+  const hasUnreadAgents = (sessionAgents ?? []).some((agent) => agentHasUnread(agent, false));
   const goalText = session.goal || 'Untitled session';
-  const canExpandGoal = goalText.length > GOAL_CLAMP_CHARS;
-  const done = definitionOfDone({
-    pr: pullRequest,
-    mergeRequest,
-    linkedIssues: github?.linkedIssues ?? EMPTY_ARRAY,
-    externalTasks,
-  });
+  const reasonVisible = stage.reason !== '' && !REASON_HIDDEN.has(stage.reason);
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <StatusDot tone={STAGE_TONE[stage.stage]} pulsing={stage.stage === 'running'} />
           <span className="shrink-0 text-xs font-medium text-foreground">
             {SESSION_STAGE_META[stage.stage].label}
           </span>
-          {stage.reason !== '' ? (
+          {reasonVisible ? (
             <Tooltip
               content={`${SESSION_STAGE_META[stage.stage].label} · ${stage.reason}`}
               side="top"
@@ -67,9 +60,21 @@ export const HeaderBand = ({ session, stage }: Props) => {
               </span>
             </Tooltip>
           ) : null}
+          <StatusRowRequest sessionId={sessionId} />
+          {branch != null ? (
+            <BranchChip
+              branch={branch}
+              mountName={repo?.mountName ?? null}
+              sessionId={sessionId}
+              canEdit={
+                workspace != null && !isBranchlessSession({ workspaceKind: workspace.kind, branch })
+              }
+            />
+          ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {hasUnreadAgents && (
+          <SummarizerBadge sessionId={sessionId} />
+          {hasUnreadAgents ? (
             <Button
               variant="ghost"
               size="sm"
@@ -79,7 +84,7 @@ export const HeaderBand = ({ session, stage }: Props) => {
               <CheckCheck size={13} aria-hidden />
               Mark all seen
             </Button>
-          )}
+          ) : null}
           <EditorMenu sessionId={sessionId} density="compact" />
           <SessionGitActions session={session} density="compact" />
           <SessionDestructiveActions session={session} />
@@ -101,68 +106,34 @@ export const HeaderBand = ({ session, stage }: Props) => {
           {rename.error != null && <span className="text-2xs text-danger">{rename.error}</span>}
         </div>
       ) : (
-        <div className="group/goal flex items-start gap-2">
-          <div className="flex min-w-0 flex-col items-start gap-1">
+        <div className="group/goal flex items-start gap-3">
+          <div className="flex min-w-0 flex-1 items-start gap-2">
             <h1
               className={cn(
-                'text-balance text-xl font-semibold leading-snug text-foreground',
-                canExpandGoal && !goalExpanded && 'line-clamp-3',
+                'min-w-0 flex-1 text-balance text-xl font-semibold leading-snug text-foreground',
+                'line-clamp-2',
               )}
             >
               {goalText}
             </h1>
-            {canExpandGoal ? (
-              <button
-                type="button"
-                aria-expanded={goalExpanded}
-                onClick={() => setGoalExpanded((current) => !current)}
-                className="rounded text-2xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-              >
-                {goalExpanded ? 'Show less' : 'Show more'}
-              </button>
-            ) : null}
+            <button
+              type="button"
+              onClick={rename.start}
+              aria-label="Edit goal"
+              title="Edit goal"
+              className={cn(
+                'mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50',
+                'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
+                'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+                'group-hover/goal:opacity-100 motion-reduce:opacity-60',
+              )}
+            >
+              <Pencil size={13} aria-hidden />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={rename.start}
-            aria-label="Edit goal"
-            title="Edit goal"
-            className={cn(
-              'mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50',
-              'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
-              'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-              'group-hover/goal:opacity-100 motion-reduce:opacity-60',
-            )}
-          >
-            <Pencil size={13} aria-hidden />
-          </button>
+          <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />
         </div>
       )}
-      {done !== '' ? (
-        <p
-          aria-label="Definition of done"
-          className="text-sm leading-relaxed text-muted-foreground"
-        >
-          {done}
-        </p>
-      ) : null}
-      {pullRequest != null ? <PrStatusLine pr={pullRequest} sessionId={sessionId} /> : null}
-      <div className="flex flex-wrap items-center gap-2">
-        {branch != null ? (
-          <BranchChip
-            branch={branch}
-            mountName={repo?.mountName ?? null}
-            sessionId={sessionId}
-            canEdit={
-              workspace != null && !isBranchlessSession({ workspaceKind: workspace.kind, branch })
-            }
-          />
-        ) : null}
-        <SummarizerBadge sessionId={sessionId} />
-        <span className="text-2xs text-muted-foreground/70">
-          {formatAdaptiveAge({ iso: session.createdAt })}
-        </span>
-      </div>
     </div>
   );
 };

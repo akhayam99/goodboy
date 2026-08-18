@@ -7,14 +7,11 @@ import { PlanStudio } from '../../../plans/components/PlanStudio';
 import { ScriptsPanel } from '../../../scripts';
 import {
   EMPTY_ARRAY,
-  agentHasUnread,
   readPersistedLens,
   useAppStore,
   useIsSessionCollectionLoaded,
-  useSessionOpenQuestions,
 } from '../../../../store';
 import type { LensKind } from '../../../../store';
-import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
 import { SessionOverviewPane } from '../SessionOverviewPane';
 import { SessionCrumbBar } from '../SessionCrumbBar';
 import { RepoScopeBar } from './parts/RepoScopeBar';
@@ -34,7 +31,6 @@ import { WorkflowsPane } from './parts/WorkflowsPane';
 import { IntegrationPane } from './parts/IntegrationPane';
 import { GithubTaskDetail } from './parts/IntegrationPane/GithubTaskDetail';
 import { LinkTicketPopover } from './parts/IntegrationPane/LinkTicketPopover';
-import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { isStandaloneAgent, resolveRootAgent } from '../../agent-kind';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
 import { SessionOverviewLoading } from './parts/SessionOverviewLoading';
@@ -42,7 +38,7 @@ import { ReviewBoardPane } from '../../../review/components/ReviewBoardPane';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { ExplorePane } from '../../../explore/components/ExplorePane';
-import { LENS_LABEL, SIMPLE_LENSES } from '../../lens-labels';
+import { SIMPLE_LENSES } from '../../lens-labels';
 import { contextRegionFor, resolveLensSurface } from '../../lens-surface';
 import { LensEmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -55,9 +51,7 @@ type SessionWorkspaceProps = {
 export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) => {
   const sessionId = session.id as SessionId;
   const [inspectedResolverId, setInspectedResolverId] = useState<AgentId | null>(null);
-  const [inspectedAgentId, setInspectedAgentId] = useState<AgentId | null>(null);
   const hasInitializedResolverInspector = useRef(false);
-  const hasInitializedAgentInspector = useRef(false);
   const storedActiveLens = useAppStore((s) => s.activeLens[sessionId]);
   const isBranchless = useIsBranchlessSession({ session });
   const activeLens =
@@ -82,9 +76,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
-  const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId[sessionId] ?? null);
-  const attachedWorkflowRuns = useAttachedWorkflowRuns({ session });
-  const openQuestions = useSessionOpenQuestions(sessionId);
   const areAgentsLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'agents' });
   const arePlansLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'plans' });
   const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
@@ -166,37 +157,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       ? undefined
       : `${resolverCounts.queued} queued, ${resolverCounts.resolved} resolved`;
   useEffect(() => {
-    if (standaloneAgents.length === 0) {
-      if (inspectedAgentId !== null) {
-        setInspectedAgentId(null);
-      }
-      return;
-    }
-    if (lens !== 'agents') {
-      return;
-    }
-    const isInspectedAgentPresent =
-      inspectedAgentId !== null && standaloneAgents.some((agent) => agent.id === inspectedAgentId);
-    if (isInspectedAgentPresent) {
-      hasInitializedAgentInspector.current = true;
-      return;
-    }
-    if (inspectedAgentId === null && hasInitializedAgentInspector.current) {
-      return;
-    }
-    const newestAgents = [...standaloneAgents].sort((a, b) => b.ordinal - a.ordinal);
-    const running = newestAgents.find((agent) => agent.status === 'running');
-    const attention = newestAgents.find(
-      (agent) =>
-        agent.status === 'failed' ||
-        agentHasUnread(agent, false) ||
-        openQuestions.some((question) => question.createdByAgentId === agent.id),
-    );
-    hasInitializedAgentInspector.current = true;
-    setInspectedAgentId((running ?? attention ?? newestAgents[0])?.id ?? null);
-  }, [inspectedAgentId, lens, openQuestions, standaloneAgents]);
-
-  useEffect(() => {
     if (resolverIndex.links.length === 0) {
       if (inspectedResolverId !== null) {
         setInspectedResolverId(null);
@@ -245,11 +205,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     return () =>
       window.removeEventListener('goodboy:open-resolver-inspector', onOpenResolverInspector);
   }, [sessionId]);
-  const focusedWorkflowName = useMemo(() => {
-    const focusedRun = attachedWorkflowRuns.find(({ run }) => run.id === focusedWorkflowRunId);
-    const visibleRun = focusedRun ?? (lens === 'workflows' ? attachedWorkflowRuns[0] : null);
-    return visibleRun == null ? null : workflowKindName(visibleRun.workflow);
-  }, [focusedWorkflowRunId, attachedWorkflowRuns, lens]);
   useEffect(() => {
     if (!showAgentOverlay) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -261,11 +216,13 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [showAgentOverlay, sessionId, overlayHome, setActiveLens]);
 
+  const hideCrumbBar = showWorkflowStrip;
+
   return (
     <div className="relative flex h-full w-full min-w-0 flex-col">
       <div
-        className={cn(!showLens && 'pointer-events-none invisible absolute inset-x-0 top-0')}
-        inert={!showLens}
+        className={cn(hideCrumbBar && 'pointer-events-none invisible absolute inset-x-0 top-0')}
+        inert={hideCrumbBar}
       >
         <SessionCrumbBar />
         <RepoScopeBar sessionId={sessionId} />
@@ -395,12 +352,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             <ExplorePane sessionId={sessionId} sessionDir={workingDir} />
           ) : null}
           <Pane visible={lens === 'agents'}>
-            <AgentsPane
-              session={session}
-              meta={agentsMeta}
-              inspectedAgentId={inspectedAgentId}
-              onInspectAgent={setInspectedAgentId}
-            />
+            <AgentsPane session={session} meta={agentsMeta} />
           </Pane>
         </div>
 
@@ -410,8 +362,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             sessionId={sessionId}
             isChatActive={isActive && selectedAgentId != null}
             selectedAgentId={selectedAgentId}
-            overlayHome={overlayHome}
-            overlayHomeLabel={LENS_LABEL[overlayHome]}
             showWorkflowStrip={showWorkflowStrip}
             onOverview={onSelectOverview}
             onBack={() => setActiveLens(sessionId, overlayHome)}

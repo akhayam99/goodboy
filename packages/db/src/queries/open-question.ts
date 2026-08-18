@@ -3,6 +3,7 @@ import type {
   IsoDateTime,
   OpenQuestion,
   OpenQuestionId,
+  OpenQuestionSelectMode,
   OpenQuestionStatus,
   SessionId,
   WorkflowId,
@@ -21,12 +22,20 @@ type OpenQuestionRow = {
   text: string;
   suggested_answers: string;
   recommended_answer: string | null;
+  select_mode: string | null;
   user_answer: string | null;
   turn_ordinal: number | null;
   status: string;
   created_at: number;
   answered_at: number | null;
   dismissed_at: number | null;
+};
+
+const toSelectMode = (raw: string | null): OpenQuestionSelectMode | undefined => {
+  if (raw === 'one' || raw === 'many') {
+    return raw;
+  }
+  return undefined;
 };
 
 function toDomain(row: OpenQuestionRow): OpenQuestion {
@@ -41,6 +50,7 @@ function toDomain(row: OpenQuestionRow): OpenQuestion {
     text: row.text,
     suggestedAnswers: JSON.parse(row.suggested_answers) as ReadonlyArray<string>,
     recommendedAnswer: row.recommended_answer ?? undefined,
+    selectMode: toSelectMode(row.select_mode),
     userAnswer: row.user_answer,
     turnOrdinal: row.turn_ordinal ?? undefined,
     status: row.status as OpenQuestionStatus,
@@ -65,6 +75,7 @@ export type InsertOpenQuestionInput = {
   readonly text: string;
   readonly suggestedAnswers: ReadonlyArray<string>;
   readonly recommendedAnswer?: string;
+  readonly selectMode?: OpenQuestionSelectMode;
   readonly turnOrdinal?: number;
 };
 
@@ -81,8 +92,8 @@ export const insertOpenQuestion = async (
   await db.execute(
     `INSERT OR IGNORE INTO open_questions
        (id, session_id, workflow_id, workflow_run_id, created_by_step_ordinal, owned_by_step_ordinal,
-        created_by_agent_id, text, suggested_answers, recommended_answer, turn_ordinal, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)`,
+        created_by_agent_id, text, suggested_answers, recommended_answer, select_mode, turn_ordinal, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)`,
     [
       input.id,
       input.sessionId,
@@ -94,6 +105,7 @@ export const insertOpenQuestion = async (
       input.text,
       JSON.stringify(input.suggestedAnswers),
       input.recommendedAnswer ?? null,
+      input.selectMode ?? null,
       input.turnOrdinal ?? null,
       now,
     ],

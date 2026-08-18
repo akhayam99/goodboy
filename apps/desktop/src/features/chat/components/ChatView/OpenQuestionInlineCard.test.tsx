@@ -58,7 +58,7 @@ describe('OpenQuestionInlineCard', () => {
     );
 
     expect(container.querySelector('[data-oq-anchor="oq-1"]')).toBeTruthy();
-    expect(screen.queryByText('send answer')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     fireEvent.click(screen.getByRole('button'));
     expect(screen.getByText('You answered:')).toBeTruthy();
     expect(screen.getByText('Postgres')).toBeTruthy();

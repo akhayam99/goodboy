@@ -78,7 +78,7 @@ type Params = {
   readonly canOpenDiff?: boolean;
   readonly hasOtherActiveResolvers?: boolean;
   readonly onOpenChat?: () => void;
-  readonly onInspect?: () => void;
+  readonly onOpenBrief?: () => void;
   readonly onOpenDiff?: () => void;
 };
 
@@ -100,7 +100,7 @@ const renderCard = ({
   canOpenDiff = true,
   hasOtherActiveResolvers = false,
   onOpenChat = () => undefined,
-  onInspect = () => undefined,
+  onOpenBrief = () => undefined,
   onOpenDiff = () => undefined,
 }: Params = {}) =>
   render(
@@ -110,7 +110,6 @@ const renderCard = ({
       threadComment={null}
       diffComment={null}
       telemetry={cardTelemetry}
-      aggregate={{ inputTokens: 400, outputTokens: 40, estimatedCostUsd: 0.75, turns: 2 }}
       contextUsage={contextUsage}
       turns={2}
       turnsLoading={false}
@@ -125,7 +124,7 @@ const renderCard = ({
       isMuted={false}
       canJump={false}
       onOpenChat={onOpenChat}
-      onInspect={onInspect}
+      onOpenBrief={onOpenBrief}
       onJump={() => undefined}
       onOpenDiff={onOpenDiff}
     />,
@@ -134,12 +133,11 @@ const renderCard = ({
 afterEach(cleanup);
 
 describe('ResolverCard', () => {
-  it('shows model, cost, context share and turns without being selected', () => {
+  it('shows model and turns without a cost badge', () => {
     renderCard();
-    expect(screen.getByTestId('agent-metrics-inline')).toBeTruthy();
     expect(screen.getByText('Haiku 4.5')).toBeTruthy();
     expect(screen.getByText('2t')).toBeTruthy();
-    expect(screen.getByText(/ctx \d+%/)).toBeTruthy();
+    expect(screen.queryByText(/\$/)).toBeNull();
   });
 
   it('shows the planned model before telemetry arrives', () => {
@@ -153,17 +151,16 @@ describe('ResolverCard', () => {
     expect(screen.queryByText('no model yet')).toBeNull();
   });
 
-  it('mirrors exactly one action, enabled from the reported resolver sha', () => {
+  it('places the primary action inside the header, not on a new row', () => {
     renderCard({ status: 'committed', reportedCommitSha: 'abcdef1234567890' });
 
-    expect(screen.getByRole('button', { name: 'Push & resolve' }).hasAttribute('disabled')).toBe(
-      false,
-    );
-    expect(screen.queryByRole('button', { name: 'Add to push batch' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Force close' })).toBeNull();
+    const primary = screen.getByRole('button', { name: 'Push & resolve' });
+    const navigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
+    expect(navigationSlot.contains(primary)).toBe(true);
+    expect(primary.hasAttribute('disabled')).toBe(false);
   });
 
-  it('mirrors the batch action instead while other resolvers are still active', () => {
+  it('shows the batch action instead while other resolvers are still active', () => {
     renderCard({
       status: 'committed',
       reportedCommitSha: 'abcdef1234567890',
@@ -174,29 +171,16 @@ describe('ResolverCard', () => {
     expect(screen.queryByRole('button', { name: 'Push now' })).toBeNull();
   });
 
-  it('opens the panel rather than executing an action that needs typed input', () => {
-    const onInspect = vi.fn();
-    renderCard({ status: 'wontfix', onInspect });
+  it('opens brief instead of running an action that needs typed input', () => {
+    const onOpenBrief = vi.fn();
+    renderCard({ status: 'wontfix', onOpenBrief });
 
     fireEvent.click(screen.getByRole('button', { name: 'Post explanation & close' }));
 
-    expect(onInspect).toHaveBeenCalledOnce();
+    expect(onOpenBrief).toHaveBeenCalledOnce();
   });
 
-  it('keeps duration and last update on the one fact line', () => {
-    const meta = within(renderCard().getByTestId('agent-metrics-inline'));
-    expect(meta.getByTitle(/^Started .+2026/)).toBeTruthy();
-    expect(meta.getByText(/^updated /)).toBeTruthy();
-  });
-
-  it('leaves the token split and the context gauge to the inspector', () => {
-    const { container } = renderCard();
-    expect(screen.queryByTestId('agent-metrics-block')).toBeNull();
-    expect(screen.queryByTitle('in: 400 tokens (cumulative)')).toBeNull();
-    expect(container.querySelector('[title*="last turn context:"]')).toBeNull();
-  });
-
-  it('keeps the resolver name and its origin readable alongside the metrics', () => {
+  it('reads the resolver name and its origin alongside the metrics', () => {
     renderCard();
     const name = screen.getByText('resolve comment 12');
     expect(name.previousElementSibling?.getAttribute('title')).toBe('needs you');
@@ -205,87 +189,80 @@ describe('ResolverCard', () => {
     expect(screen.getByText('Review comment')).toBeTruthy();
   });
 
-  it('names the commit the diff shortcut will open, and reaches it without the inspector', () => {
+  it('opens the commit diff from the header shortcut when the resolver has committed', () => {
     const onOpenDiff = vi.fn();
-    const onInspect = vi.fn();
+    const onOpenBrief = vi.fn();
     renderCard({
       diffTarget: { kind: 'commit', sha: 'abcdef1234567890' },
+      reportedCommitSha: 'abcdef1234567890',
       onOpenDiff,
-      onInspect,
+      onOpenBrief,
     });
 
     const shortcut = screen.getByRole('button', { name: 'Open the diff of commit abcdef1' });
     const navigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
     expect(navigationSlot.contains(shortcut)).toBe(true);
+    expect(shortcut.hasAttribute('disabled')).toBe(false);
 
     fireEvent.click(shortcut);
 
     expect(onOpenDiff).toHaveBeenCalledOnce();
-    expect(onInspect).not.toHaveBeenCalled();
+    expect(onOpenBrief).not.toHaveBeenCalled();
   });
 
-  it('says it will open the uncommitted changes once confirmed the resolver has no commit', () => {
-    renderCard({ diffTarget: { kind: 'working' } });
+  it('disables the diff shortcut while no commit is attributed to the resolver', () => {
+    renderCard({ diffTarget: { kind: 'working' }, reportedCommitSha: null });
 
-    expect(
-      screen.getByRole('button', { name: 'Open the diff of the uncommitted changes' }),
-    ).toBeTruthy();
+    const shortcut = screen.getByRole('button', { name: 'No changes to diff yet' });
+    expect(shortcut.hasAttribute('disabled')).toBe(true);
   });
 
-  it('never claims working tree or a commit while the diff metadata is still loading', () => {
-    renderCard({ diffTarget: { kind: 'unknown' } });
+  it('names the disabled state as loading while diff metadata resolves', () => {
+    renderCard({ diffTarget: { kind: 'unknown' }, reportedCommitSha: null });
 
-    expect(screen.getByRole('button', { name: 'Open the diff' })).toBeTruthy();
-    expect(
-      screen.queryByRole('button', { name: 'Open the diff of the uncommitted changes' }),
-    ).toBeNull();
-    expect(screen.queryByRole('button', { name: /Open the diff of commit/ })).toBeNull();
+    const shortcut = screen.getByRole('button', { name: 'Diff loading' });
+    expect(shortcut.hasAttribute('disabled')).toBe(true);
   });
 
   it('drops the diff shortcut when the session has no worktree to diff', () => {
-    renderCard({ diffTarget: { kind: 'commit', sha: 'abcdef1234567890' }, canOpenDiff: false });
+    renderCard({
+      diffTarget: { kind: 'commit', sha: 'abcdef1234567890' },
+      canOpenDiff: false,
+      reportedCommitSha: 'abcdef1234567890',
+    });
 
     expect(screen.queryByRole('button', { name: /Open the diff/ })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Toggle resolver details' })).toBeTruthy();
   });
 
-  it('opens the chat from the card body and keeps details behind an explicit action', () => {
+  it('opens the chat from the card body without a separate detail toggle', () => {
     const onOpenChat = vi.fn();
-    const onInspect = vi.fn();
-    renderCard({ onOpenChat, onInspect });
+    renderCard({ onOpenChat });
 
     fireEvent.click(screen.getByRole('button', { name: 'resolve comment 12' }));
     expect(onOpenChat).toHaveBeenCalledOnce();
-    expect(onInspect).not.toHaveBeenCalled();
 
-    expect(screen.queryByRole('button', { name: 'Open resolver chat' })).toBeNull();
-
-    const details = screen.getByRole('button', { name: 'Toggle resolver details' });
-    const navigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
-    expect(navigationSlot.contains(details)).toBe(true);
-    expect(details.className).not.toContain('opacity-0');
-
-    fireEvent.click(details);
-    expect(onInspect).toHaveBeenCalledOnce();
-    expect(onOpenChat).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Toggle resolver details' })).toBeNull();
   });
 
-  it('marks the resolver done from the card', () => {
+  it('keeps the labelled mark done button visible without hover', () => {
     renderCard();
-    fireEvent.click(screen.getByRole('button', { name: 'Mark resolver done' }));
+    const button = screen.getByRole('button', { name: 'Mark done' });
+    expect(button.textContent).toContain('Mark done');
+    expect(button.className).not.toContain('opacity-0');
+    fireEvent.click(button);
     expect(lifecycle.setAgentDone).toHaveBeenCalledWith(SID, 'resolver-1');
   });
 
   it('offers reopen instead of mark done once the resolver is done', () => {
     renderCard({ run: { ...agent, doneAt: '2026-05-28T00:02:00Z' } as Agent });
-    expect(screen.queryByRole('button', { name: 'Mark resolver done' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Reopen resolver' }));
+    expect(screen.queryByRole('button', { name: 'Mark done' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen' }));
     expect(lifecycle.clearAgentDone).toHaveBeenCalledWith(SID, 'resolver-1');
   });
 
   it('deletes the resolver only after the confirm step', () => {
     renderCard();
-    fireEvent.click(screen.getByRole('button', { name: 'Delete resolver' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(lifecycle.deleteAgent).not.toHaveBeenCalled();
 
     const panel = screen.getByRole('group', { name: 'Delete this resolver?' });
@@ -296,12 +273,25 @@ describe('ResolverCard', () => {
   it('keeps the lifecycle actions in their own slot, away from navigation', () => {
     renderCard();
     const lifecycleSlot = screen.getByRole('group', { name: 'Agent lifecycle actions' });
-    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete resolver' }))).toBe(
-      true,
-    );
+    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete' }))).toBe(true);
     const navigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
-    expect(navigationSlot.contains(screen.getByRole('button', { name: 'Delete resolver' }))).toBe(
-      false,
-    );
+    expect(navigationSlot.contains(screen.getByRole('button', { name: 'Delete' }))).toBe(false);
+  });
+
+  it('keeps keyboard activation of a lifecycle action from also opening chat', () => {
+    const onOpenChat = vi.fn();
+    renderCard({ onOpenChat });
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Mark done' }), { key: 'Enter' });
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Delete' }), { key: ' ' });
+    expect(onOpenChat).not.toHaveBeenCalled();
+  });
+
+  it('keeps keyboard activation and double click on the run action from also opening chat', () => {
+    const onOpenChat = vi.fn();
+    renderCard({ status: 'committed', reportedCommitSha: 'abcdef1234567890', onOpenChat });
+    const primary = screen.getByRole('button', { name: 'Push & resolve' });
+    fireEvent.keyDown(primary, { key: 'Enter' });
+    fireEvent.doubleClick(primary);
+    expect(onOpenChat).not.toHaveBeenCalled();
   });
 });

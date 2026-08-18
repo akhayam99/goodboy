@@ -109,7 +109,8 @@ import { m108IntegrationSlackProvider } from './m108-integration-slack-provider'
 import { m109WorkflowRunSummary } from './m109-workflow-run-summary';
 import { m110WorkflowRunSpendLimit } from './m110-workflow-run-spend-limit';
 import { m111SessionWorktreeRepoSlug } from './m111-session-worktree-repo-slug';
-import { m112WorkflowRunRoleModels } from './m112-workflow-run-role-models';
+import { m112OpenQuestionsSelectMode } from './m112-open-questions-select-mode';
+import { m113WorkflowRunRoleModels } from './m113-workflow-run-role-models';
 
 export type Migration = {
   readonly version: number;
@@ -228,5 +229,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 109, sql: m109WorkflowRunSummary },
   { version: 110, sql: m110WorkflowRunSpendLimit },
   { version: 111, sql: m111SessionWorktreeRepoSlug },
-  { version: 112, sql: m112WorkflowRunRoleModels },
+  { version: 112, sql: m112OpenQuestionsSelectMode },
+  { version: 113, sql: m113WorkflowRunRoleModels },
 ];

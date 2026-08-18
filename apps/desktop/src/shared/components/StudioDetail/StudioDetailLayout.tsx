@@ -28,7 +28,8 @@ export const StudioDetailLayout = ({
   const isFlow = fit === 'flow';
   const hasProperties = properties != null && properties.length > 0;
   const hasMeta = fit !== 'bleed' && (rail != null || hasProperties);
-  const measure = fit === 'fill' ? PANE_RHYTHM.measure.reading : PANE_RHYTHM.measure.full;
+  const headerMeasure = PANE_RHYTHM.measure.reading;
+  const bodyMeasure = fit === 'fill' ? PANE_RHYTHM.measure.reading : PANE_RHYTHM.measure.full;
 
   return (
     <div className={cn('flex flex-col', isFlow ? 'gap-4' : 'h-full min-h-0')}>
@@ -37,7 +38,7 @@ export const StudioDetailLayout = ({
         className={cn('flex shrink-0 flex-col', isFlow && 'sticky top-0 z-10 gap-4 bg-background')}
       >
         <div className={cn('flex flex-col', !isFlow && PANE_RHYTHM.header)}>
-          <div className={cn('flex flex-col gap-3', PANE_RHYTHM.column, measure)}>
+          <div className={cn('flex flex-col gap-3', PANE_RHYTHM.column, headerMeasure)}>
             {header}
             {hasMeta ? (
               <div data-testid="detail-meta" className="flex min-w-0 flex-col gap-3">
@@ -55,13 +56,13 @@ export const StudioDetailLayout = ({
         {fit === 'bleed' ? <div className="flex min-h-0 flex-1 flex-col">{children}</div> : null}
         {fit === 'fill' ? (
           <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-            <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.stack, measure)}>{children}</div>
+            <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.stack, bodyMeasure)}>{children}</div>
           </ScrollFade>
         ) : null}
         {dock != null ? <Divider /> : null}
         {dock != null ? (
           <div data-testid="detail-dock" className={cn('flex shrink-0 flex-col', PANE_RHYTHM.dock)}>
-            <div className={cn('flex flex-col', PANE_RHYTHM.column, measure)}>{dock}</div>
+            <div className={cn('flex flex-col', PANE_RHYTHM.column, bodyMeasure)}>{dock}</div>
           </div>
         ) : null}
       </div>
