@@ -4,6 +4,7 @@ import type { BitbucketWorkspaceIntegration, WorkspaceId } from '@goodboy/types'
 import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
+import { IntegrationReuseOffer } from '../components/IntegrationReuseOffer';
 import { normalizeWorkspaceSlug } from './normalizeWorkspaceSlug';
 
 type Props = {
@@ -108,6 +109,11 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
         </div>
       ) : (
         <>
+          <IntegrationReuseOffer
+            provider="bitbucket"
+            workspaceId={workspaceId}
+            onReused={onConnected}
+          />
           <div className="flex flex-col gap-2">
             <label htmlFor="bitbucket-workspace" className="text-xs font-semibold text-foreground">
               Workspace slug

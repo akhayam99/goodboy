@@ -6,9 +6,13 @@ import type { SlackWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
+    workspaces: [] as ReadonlyArray<{ id: string; name: string }>,
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
+    declinedIntegrationReuse: {} as Record<string, ReadonlyArray<string>>,
     connectSlack: vi.fn(async () => undefined),
     disconnectSlack: vi.fn(async () => undefined),
+    reuseIntegration: vi.fn(async () => undefined),
+    declineIntegrationReuse: vi.fn(),
   },
 }));
 
@@ -34,7 +38,9 @@ const slackIntegration: SlackWorkspaceIntegration = {
 };
 
 beforeEach(() => {
+  state.workspaces = [];
   state.workspaceIntegrations = {};
+  state.declinedIntegrationReuse = {};
   state.connectSlack = vi.fn(async () => undefined);
   state.disconnectSlack = vi.fn(async () => undefined);
 });

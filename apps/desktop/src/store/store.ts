@@ -50,6 +50,7 @@ import type {
   SessionExternalTask,
   Workspace,
   WorkspaceId,
+  WorkspaceIntegrationProvider,
   WorkspaceScriptId,
   GhTokenStatus,
   PrMergeMethod,
@@ -242,6 +243,14 @@ export type AppActions = {
   loadWorkspaceGitStatus(input: { workspaceId: WorkspaceId }): Promise<void>;
   fastForwardWorkspaceCheckout(input: { workspaceId: WorkspaceId }): Promise<void>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
+  reuseIntegration(params: {
+    provider: WorkspaceIntegrationProvider;
+    workspaceId: WorkspaceId;
+  }): Promise<void>;
+  declineIntegrationReuse(params: {
+    provider: WorkspaceIntegrationProvider;
+    workspaceId: WorkspaceId;
+  }): void;
   connectLinear(workspaceId: WorkspaceId, token: string): Promise<LinearViewer>;
   disconnectLinear(workspaceId: WorkspaceId): Promise<void>;
   connectSentry(
@@ -791,6 +800,7 @@ export const initialState: AppState = {
   ...createInitialSessionViewState({}),
   workspaces: [],
   workspaceIntegrations: {},
+  declinedIntegrationReuse: {},
   workspaceGitStatus: {},
   workspaceCheckoutPulling: {},
   sessionExternalTasks: {},

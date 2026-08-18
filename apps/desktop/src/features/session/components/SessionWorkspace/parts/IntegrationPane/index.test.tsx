@@ -22,12 +22,16 @@ type Store = {
   readonly focusedExternalTask: Readonly<Record<string, FocusedExternalTask | null>>;
   readonly sessionGithubPrs: Readonly<Record<string, ReadonlyArray<PullRequestState>>>;
   readonly sessionGitlabMr: Readonly<Record<string, unknown>>;
+  readonly workspaces: ReadonlyArray<{ id: string; name: string }>;
   readonly workspaceIntegrations: Readonly<Record<string, ReadonlyArray<{ provider: string }>>>;
+  readonly declinedIntegrationReuse: Readonly<Record<string, ReadonlyArray<string>>>;
   readonly sessions: ReadonlyArray<{ id: string; workspaceId: string }>;
   readonly linkSessionExternalTask: ReturnType<typeof vi.fn>;
   readonly unlinkSessionExternalTask: ReturnType<typeof vi.fn>;
   readonly connectLinear: ReturnType<typeof vi.fn>;
   readonly disconnectLinear: ReturnType<typeof vi.fn>;
+  readonly reuseIntegration: ReturnType<typeof vi.fn>;
+  readonly declineIntegrationReuse: ReturnType<typeof vi.fn>;
 };
 
 type Props = {
@@ -46,12 +50,16 @@ const h = vi.hoisted(() => ({
     focusedExternalTask: {},
     sessionGithubPrs: {},
     sessionGitlabMr: {},
+    workspaces: [],
     workspaceIntegrations: {},
+    declinedIntegrationReuse: {},
     sessions: [],
     linkSessionExternalTask: vi.fn(async () => undefined),
     unlinkSessionExternalTask: vi.fn(async () => undefined),
     connectLinear: vi.fn(async () => undefined),
     disconnectLinear: vi.fn(async () => undefined),
+    reuseIntegration: vi.fn(async () => undefined),
+    declineIntegrationReuse: vi.fn(),
   },
   openUrl: vi.fn(async () => undefined),
   loadCandidates: vi.fn(),

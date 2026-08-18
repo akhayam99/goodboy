@@ -4,6 +4,7 @@ import type { JiraWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
 import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
+import { IntegrationReuseOffer } from '../components/IntegrationReuseOffer';
 import { normalizeSiteUrl } from './normalizeSiteUrl';
 
 type Props = {
@@ -114,6 +115,7 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
         </div>
       ) : (
         <>
+          <IntegrationReuseOffer provider="jira" workspaceId={workspaceId} onReused={onConnected} />
           <div className="flex flex-col gap-2">
             <label htmlFor="jira-site" className="text-xs font-semibold text-foreground">
               Site URL
