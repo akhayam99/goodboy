@@ -168,8 +168,8 @@ describe('buildTimelineStream', () => {
   it('keeps the day rule where it actually separates two days', () => {
     const { items } = stream({
       agents: [
-        agent({ id: 'today', ordinal: 1, startedAt: localIso({ day: 18, hour: 9 }) }),
-        agent({ id: 'before', ordinal: 2, startedAt: localIso({ day: 11, hour: 9 }) }),
+        agent({ id: 'today', ordinal: 2, startedAt: localIso({ day: 18, hour: 9 }) }),
+        agent({ id: 'before', ordinal: 1, startedAt: localIso({ day: 11, hour: 9 }) }),
       ],
     });
 
