@@ -848,6 +848,19 @@ mod tests {
     }
 
     #[test]
+    fn clearing_one_workspace_token_leaves_the_global_key_serving_that_workspace() {
+        let cleared = token_key(Some("composite"));
+        let mut reads = Vec::new();
+        let token = read_token_from(Some("composite"), None, |key| {
+            reads.push(key.to_string());
+            (key == TOKEN_KEY).then(|| "global-token".to_string())
+        });
+
+        assert_eq!(token.as_deref(), Some("global-token"));
+        assert_eq!(reads, vec![cleared, TOKEN_KEY.to_string()]);
+    }
+
+    #[test]
     fn explicit_workspace_token_wins_before_member() {
         let workspace_key = token_key(Some("composite"));
         let mut reads = Vec::new();
