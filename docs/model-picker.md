@@ -37,25 +37,30 @@ independent toggle, an account-level gate. The picker refuses to learn those
 differences. One provider-aware layer, `modelAxes`, normalizes them into a
 single shape, and every surface renders that shape.
 
-- **A level the current selection cannot reach renders disabled, never
-  hidden.** The ladder must not jump around as the user toggles things.
+- **An axis the model does not have is omitted. An axis the current selection
+  cannot reach stays mounted and disabled.** The ladder must not jump around as
+  the user toggles things.
 - **Every control here is a chip**, never a `select`.
 - **One effort control exists in the app.** A second one anywhere is a bug.
 - A tuning concept that is not a ladder, a variant list or a toggle is added to
   the axes shape and renders for everyone, never special-cased in a mount.
 
-The picker renders one stable ladder in this order: Provider, Model, Model
-Version, Variant and Effort. Model names and versions come directly from the
-catalog entry's authored `presentation.group` and `presentation.version`.
-`modelAxes` turns those entries into separate model and version axes alongside
-variant and effort, so mounts never regroup catalog entries themselves.
+The picker renders one ladder in this order: Provider, Model, Model Version,
+Variant and Effort. Model names and versions come directly from the catalog
+entry's authored `presentation.group` and `presentation.version`. `modelAxes`
+turns those entries into separate model and version axes alongside variant and
+effort, so mounts never regroup catalog entries themselves.
 
-Every level remains mounted. When Variant does not apply, its row contains one
-disabled `Not available` chip. Effort follows the same rule when the selected
-model has no effort choices. A partially reachable effort ladder keeps every
-authored level visible and disables only the unavailable chips. This keeps the
-ladder's height, reading order and keyboard order stable as higher levels
-change.
+An absent axis is `null` in `modelAxes` and renders no row. A model whose
+`presentation.group` is `null` has no version axis. A model with no variants
+has no variant axis, and a model or provider with no effort control has no
+effort axis. Opus 5 therefore renders no Variant row.
+
+A present axis remains mounted when the current selection makes some or all of
+its authored choices unreachable. Those choices render disabled. A partially
+reachable effort ladder keeps every authored level visible and disables only
+the unavailable chips. This preserves the ladder's height, reading order and
+keyboard order while the user changes a higher selection.
 
 ## Selection to spawn
 

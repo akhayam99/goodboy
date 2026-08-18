@@ -35,8 +35,8 @@ vi.mock('../../../../../shared/lib/zoom', () => ({
   currentZoom: () => hooks.zoom,
 }));
 
-vi.mock('../../../turn', () => ({
-  readDroppedAttachment: (path: string) => hooks.read(path),
+vi.mock('../../../../../shared/lib/readDroppedAttachment', () => ({
+  readDroppedAttachment: ({ absolutePath }: { absolutePath: string }) => hooks.read(absolutePath),
 }));
 
 import { usePendingAttachments } from './usePendingAttachments';

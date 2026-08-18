@@ -89,6 +89,8 @@ export { Eyebrow } from './components/Eyebrow';
 export type { EyebrowProps } from './components/Eyebrow';
 export { FieldRow } from './components/FieldRow';
 export type { FieldRowProps } from './components/FieldRow';
+export { FileDropZone } from './components/FileDropZone';
+export type { FileDropZoneProps } from './components/FileDropZone';
 export type { GhostActionButtonProps } from './components/GhostActionButton';
 export { IconButton } from './components/IconButton';
 export type { IconButtonProps } from './components/IconButton';

@@ -20,6 +20,7 @@ import {
   updateSessionActiveMount,
   updateSessionState,
 } from '@goodboy/db';
+import type { SessionWorktree } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
 import { isMainWindow } from '../../../features/workspace/window';
@@ -147,6 +148,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
             })
           : loadedWorktreesBySession;
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
+      const sessionWorktreeRecords: Record<string, ReadonlyArray<SessionWorktree>> = {};
       const sessionMounts: Record<string, ReturnType<typeof buildSessionMounts>> = {};
       const sessionActiveMount: Record<string, WorkspaceId> = {};
       const sessionBranches: Record<string, string> = {};
@@ -155,6 +157,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       const invalidActiveMountSessionIds = new Set<string>();
       for (const s of sessions) {
         const rows = worktreesBySession.get(s.id) ?? [];
+        sessionWorktreeRecords[s.id] = rows;
         const mounts = buildSessionMounts({ workspace, rows });
         sessionMounts[s.id] = mounts;
         if (
@@ -206,6 +209,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       set((state) => ({
         sessions: sessionsWithValidActiveMounts,
         sessionWorktrees,
+        sessionWorktreeRecords,
         sessionMounts,
         sessionActiveMount,
         sessionBranches,

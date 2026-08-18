@@ -768,7 +768,6 @@ export const App = () => {
 
   useShortcut('lens.overview', () => goToLens(null));
   useShortcut('lens.context', () => goToLens('context'));
-  useShortcut('lens.timeline', () => goToLens('timeline'));
   useShortcut('lens.goal', () => goToLens('goal'));
   useShortcut('lens.decisions', () => goToLens('decisions'));
   useShortcut('lens.summary', () => goToLens('last_output_summary'));

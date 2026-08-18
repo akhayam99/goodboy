@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
 import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
@@ -11,6 +12,7 @@ type Props = {
   readonly disableDisconnected?: boolean;
   readonly showDisconnected?: boolean;
   readonly onSelect: (provider: ProviderId) => void;
+  readonly onNavigateProviders?: () => void;
 };
 
 export const ProviderGrid = ({
@@ -20,6 +22,7 @@ export const ProviderGrid = ({
   disableDisconnected = false,
   showDisconnected = false,
   onSelect,
+  onNavigateProviders,
 }: Props) => (
   <div className={ROUTING_PICKER_CONSTANTS.providerChipGroupClassName}>
     {ROUTING_PICKER_CONSTANTS.providers
@@ -63,5 +66,20 @@ export const ProviderGrid = ({
           </button>
         );
       })}
+    {onNavigateProviders != null && (
+      <button
+        type="button"
+        title="Add provider"
+        aria-label="Add provider"
+        onClick={() => {
+          onNavigateProviders();
+          window.dispatchEvent(new CustomEvent('goodboy:open-provider-studio'));
+        }}
+        className="inline-flex min-w-0 items-center justify-center gap-1 rounded-md text-3xs font-medium text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground"
+      >
+        <Plus size={13} aria-hidden className="shrink-0" />
+        <span className="truncate">Add</span>
+      </button>
+    )}
   </div>
 );

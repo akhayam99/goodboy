@@ -190,7 +190,10 @@ vi.mock('../../turn', () => ({
   writeAttachment: writeAttachmentMock,
   readAttachment: readAttachmentMock,
   deleteAttachment: deleteAttachmentMock,
-  readDroppedAttachment: readDroppedAttachmentMock,
+}));
+
+vi.mock('../../../../shared/lib/readDroppedAttachment', () => ({
+  readDroppedAttachment: () => readDroppedAttachmentMock(),
 }));
 
 vi.mock('@goodboy/core', async (importOriginal) => {
