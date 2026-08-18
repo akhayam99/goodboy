@@ -16,22 +16,10 @@ import { agentHomeLens, classifyAgent, type AgentHomeLens } from '../../agent-ki
 import { isAgentFinished } from '../../agent-lifecycle';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
 import type { ResolverStatus } from '../../resolver-linkage';
-
-const CRUMB_BUTTON_CLASS =
-  'max-w-48 truncate rounded px-1 py-0.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
-
-const CRUMB_LINK_CLASS = 'text-muted-foreground/70 hover:bg-muted/50 hover:text-foreground';
-
-const CRUMB_LAST_CLASS = 'font-medium text-foreground';
-
-const SIBLING_GROUP_LABEL_CLASS =
-  'px-2 pb-1 pt-2 text-3xs font-medium uppercase tracking-[0.12em] text-muted-foreground/60 first:pt-1';
-
-type SwitcherEntry = {
-  readonly agent: Agent;
-  readonly kind: ReturnType<typeof classifyAgent>;
-  readonly isFinished: boolean;
-};
+import { CRUMB_BUTTON_CLASS, CRUMB_LAST_CLASS, CRUMB_LINK_CLASS } from './crumbClasses';
+import { PlainCrumb } from './PlainCrumb';
+import { AgentSwitcherCrumb } from './AgentSwitcherCrumb';
+import type { SwitcherEntry } from './switcherEntry';
 
 type SessionCrumbsProps = {
   readonly session: Session;
@@ -132,145 +120,6 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
     </>
   );
 };
-
-type PlainCrumbProps = {
-  readonly crumb: BreadcrumbCrumb;
-  readonly isLast: boolean;
-};
-
-const PlainCrumb = ({ crumb, isLast }: PlainCrumbProps) =>
-  crumb.onClick != null && !isLast ? (
-    <button
-      type="button"
-      onClick={crumb.onClick}
-      className={cn(CRUMB_BUTTON_CLASS, CRUMB_LINK_CLASS)}
-    >
-      {crumb.label}
-    </button>
-  ) : (
-    <span
-      aria-current={isLast ? 'page' : undefined}
-      className={cn(CRUMB_BUTTON_CLASS, CRUMB_LAST_CLASS)}
-    >
-      {crumb.label}
-    </span>
-  );
-
-type AgentSwitcherCrumbProps = {
-  readonly sessionId: SessionId;
-  readonly label: string;
-  readonly siblings: ReadonlyArray<SwitcherEntry>;
-  readonly selectedAgentId: AgentId;
-  readonly onSelect: (id: AgentId) => void;
-};
-
-const AgentSwitcherCrumb = ({
-  sessionId: _sessionId,
-  label,
-  siblings,
-  selectedAgentId,
-  onSelect,
-}: AgentSwitcherCrumbProps) => {
-  const { open, close, toggle, containerRef, popupClassName } = useDropdown({
-    align: 'start',
-    expectedHeight: 260,
-    width: 'w-64 max-w-[calc(100vw-2rem)]',
-  });
-  const active = siblings.filter((entry) => !entry.isFinished);
-  const done = siblings.filter((entry) => entry.isFinished);
-  const showGroups = active.length > 0 && done.length > 0;
-
-  return (
-    <div ref={containerRef} className="relative flex min-w-0 items-center">
-      <button
-        type="button"
-        onClick={toggle}
-        title={`${label}. Switch agent.`}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        className={cn(CRUMB_BUTTON_CLASS, CRUMB_LAST_CLASS, 'inline-flex items-center gap-1')}
-      >
-        <span className="min-w-0 max-w-48 truncate">{label}</span>
-        <ChevronDown
-          size={11}
-          aria-hidden
-          className={cn('shrink-0 text-muted-foreground/60', open && 'rotate-180')}
-        />
-      </button>
-      {open && (
-        <Popover
-          role="menu"
-          ariaLabel="Switch agent"
-          className={cn(popupClassName, 'flex flex-col bg-subtle')}
-        >
-          <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-64">
-            <div className="flex flex-col gap-0.5 p-1">
-              {active.length > 0 && (
-                <>
-                  {showGroups && <span className={SIBLING_GROUP_LABEL_CLASS}>Active</span>}
-                  {active.map((entry) => (
-                    <SiblingRow
-                      key={entry.agent.id}
-                      entry={entry}
-                      selectedAgentId={selectedAgentId}
-                      onSelect={(id) => {
-                        close();
-                        onSelect(id);
-                      }}
-                    />
-                  ))}
-                </>
-              )}
-              {done.length > 0 && (
-                <>
-                  {showGroups && <span className={SIBLING_GROUP_LABEL_CLASS}>Done</span>}
-                  {done.map((entry) => (
-                    <SiblingRow
-                      key={entry.agent.id}
-                      entry={entry}
-                      selectedAgentId={selectedAgentId}
-                      onSelect={(id) => {
-                        close();
-                        onSelect(id);
-                      }}
-                    />
-                  ))}
-                </>
-              )}
-            </div>
-          </ScrollFade>
-        </Popover>
-      )}
-    </div>
-  );
-};
-
-type SiblingRowProps = {
-  readonly entry: SwitcherEntry;
-  readonly selectedAgentId: AgentId;
-  readonly onSelect: (id: AgentId) => void;
-};
-
-const SiblingRow = ({ entry, selectedAgentId, onSelect }: SiblingRowProps) => (
-  <button
-    key={entry.agent.id}
-    type="button"
-    role="menuitem"
-    onClick={() => onSelect(entry.agent.id)}
-    className={cn(
-      'flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors',
-      entry.agent.id === selectedAgentId
-        ? 'bg-background text-foreground'
-        : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
-    )}
-  >
-    <AgentAvatar kind={entry.kind} size="sm" />
-    <span className="min-w-0 flex-1 truncate">{entry.agent.name}</span>
-    <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground/70">
-      {entry.agent.status}
-    </span>
-  </button>
-);
 
 export const SessionCrumbBar = () => {
   const currentSession = useCurrentSession();
