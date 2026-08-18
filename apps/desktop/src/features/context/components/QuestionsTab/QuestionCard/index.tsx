@@ -5,9 +5,10 @@ import type { OpenQuestion, OpenQuestionId, OpenQuestionSelectMode } from '@good
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { TranscriptShell } from '../../../../chat/components/TranscriptShell';
-import { SuggestionChip } from '../SuggestionChip';
+import { SuggestionRow } from '../SuggestionRow';
 import { CustomAnswerField } from '../CustomAnswerField';
 import { deriveSuggestions } from '../deriveSuggestions';
+import { orderSuggestions } from '../orderSuggestions';
 
 const warningTint = tintClasses(CONCEPT_TONE.questions);
 
@@ -60,10 +61,10 @@ export const QuestionCard = ({
       : deriveSuggestions(question.text);
 
   const recommended = question.recommendedAnswer?.trim() ?? '';
-  const suggestions =
-    recommended.length > 0 && !baseSuggestions.includes(recommended)
-      ? [recommended, ...baseSuggestions]
-      : baseSuggestions;
+  const suggestions = orderSuggestions({
+    suggestions: baseSuggestions,
+    recommendedAnswer: recommended,
+  });
 
   const mode: OpenQuestionSelectMode = question.selectMode ?? 'one';
   const groupRole = mode === 'many' ? 'group' : 'radiogroup';
@@ -116,14 +117,10 @@ export const QuestionCard = ({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5 pl-6">
-        <div
-          role={groupRole}
-          aria-label={groupLabel}
-          className="flex flex-wrap items-center gap-1.5"
-        >
+      <div className="flex flex-col gap-1 pl-6">
+        <div role={groupRole} aria-label={groupLabel} className="flex flex-col gap-1">
           {suggestions.map((suggestion) => (
-            <SuggestionChip
+            <SuggestionRow
               key={suggestion}
               label={suggestion}
               mode={mode}
