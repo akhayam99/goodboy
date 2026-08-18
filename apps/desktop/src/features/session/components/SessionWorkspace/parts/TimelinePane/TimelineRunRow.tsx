@@ -1,62 +1,32 @@
-import { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Chip, Tooltip } from '@goodboy/ui';
-import type { DiffComment, SessionId } from '@goodboy/types';
-import { classifyWorkflowChain } from '@goodboy/core';
+import { Chip } from '@goodboy/ui';
+import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
-import { workflowKindName } from '../../../../../workspace/components/WorkspacesSidebar/lib';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
-import { TimelineAgentRow } from './TimelineAgentRow';
-import { TimelineAnswerRow } from './TimelineAnswerRow';
-import { TimelineArtifactRow } from './TimelineArtifactRow';
-import { TimelineGhostRow } from './TimelineGhostRow';
-import { TimelineNode, type TimelineNodeStatus } from './TimelineNode';
-import { TimelineRow } from './TimelineRow';
+import { runKindLabel } from '../../../../timeline/runKindLabel';
 import type { WorkflowAdvanceState } from '../../../../../workflows/advanceGate';
+import { TimelineRow, type TimelineRowContinuation } from './TimelineRow';
+import { TimelineStatusMarker, type TimelineMarkerState } from './TimelineStatusMarker';
+
+type AdvanceParams = {
+  readonly agentId: string;
+};
 
 type Props = {
   readonly entry: TimelineRunEntry;
   readonly sessionId: SessionId;
   readonly timeLabel: string | null;
   readonly advanceState: WorkflowAdvanceState;
+  readonly hasStalledStep: boolean;
+  readonly isExpanded: boolean;
+  readonly onToggle: () => void;
   readonly onAdvance: (params: AdvanceParams) => void;
-  readonly diffCommentByAgentId: ReadonlyMap<string, DiffComment>;
 };
 
-type AdvanceParams = {
-  readonly agentId: string;
+type StatusParams = {
+  readonly agents: ReadonlyArray<Agent>;
 };
 
-type RunTitleParams = {
-  readonly entry: TimelineRunEntry;
-};
-
-type RunTitle = {
-  readonly label: string;
-  readonly tooltip: string | null;
-};
-
-const PLACEHOLDER_NAME = /^orchestrated workflow( \d+)?$/i;
-
-const runTitle = ({ entry }: RunTitleParams): RunTitle => {
-  if (!PLACEHOLDER_NAME.test(entry.workflow.name)) {
-    return { label: entry.workflow.name, tooltip: null };
-  }
-  if (entry.producedPlan != null) {
-    return { label: entry.producedPlan.title, tooltip: 'Auto-titled from its plan' };
-  }
-  return { label: 'Unnamed workflow', tooltip: 'Not yet named' };
-};
-
-type RunStatusParams = {
-  readonly entry: TimelineRunEntry;
-};
-
-const runStatusOf = ({ entry }: RunStatusParams): TimelineNodeStatus => {
-  const agents = [
-    ...entry.children.flatMap((child) => (child.kind === 'agent' ? [child.agent] : [])),
-    ...entry.pendingAgents,
-  ];
+const runStatusOf = ({ agents }: StatusParams): TimelineMarkerState => {
   if (agents.some((agent) => agent.status === 'running')) {
     return 'running';
   }
@@ -64,7 +34,7 @@ const runStatusOf = ({ entry }: RunStatusParams): TimelineNodeStatus => {
     return 'failed';
   }
   if (agents.length === 0) {
-    return 'waiting';
+    return 'pending';
   }
   if (agents.every((agent) => agent.status === 'completed' || agent.status === 'skipped')) {
     return 'completed';
@@ -77,115 +47,71 @@ export const TimelineRunRow = ({
   sessionId,
   timeLabel,
   advanceState,
+  hasStalledStep,
+  isExpanded,
+  onToggle,
   onAdvance,
-  diffCommentByAgentId,
 }: Props) => {
-  const runAgents = [
-    ...entry.children.flatMap((child) => (child.kind === 'agent' ? [child.agent] : [])),
-    ...entry.pendingAgents,
-  ];
-  const isComplete =
-    runAgents.length > 0 &&
-    runAgents.every((agent) => agent.status === 'completed' || agent.status === 'skipped');
-  const [isOpen, setIsOpen] = useState(!isComplete && entry.run.discardedAt == null);
-  const chain = classifyWorkflowChain(entry.workflow, runAgents);
-  const ghostStep = chain.kind === 'step' ? chain.step : null;
-  const ghostAgent =
-    ghostStep == null ? null : (runAgents.find((agent) => agent.stepId === ghostStep.id) ?? null);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
-  const title = runTitle({ entry });
-  const status = runStatusOf({ entry });
-  const navigate = () => {
+  const stepAgents = entry.children.flatMap((child) =>
+    child.kind === 'agent' ? [child.agent] : [],
+  );
+  const status = runStatusOf({ agents: stepAgents });
+  const openRun = () => {
     setFocusedWorkflowRun(sessionId, entry.run.id);
     setActiveLens(sessionId, 'workflows');
   };
-  const label = (
-    <>
-      {title.tooltip != null ? (
-        <Tooltip content={title.tooltip}>
-          <span className="min-w-0 truncate text-sm font-medium text-foreground">
-            {title.label}
-          </span>
-        </Tooltip>
-      ) : (
-        <span className="min-w-0 truncate text-sm font-medium text-foreground">{title.label}</span>
-      )}
-      <Chip
-        tone="accent"
-        label={workflowKindName(entry.workflow).toLowerCase()}
-        shape="badge"
-        size="xs"
-        width="sm"
-      />
-    </>
-  );
-  const trailing = (
-    <button
-      type="button"
-      aria-expanded={isOpen}
-      aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${title.label}`}
-      onClick={(event) => {
-        event.stopPropagation();
-        setIsOpen((current) => !current);
-      }}
-      className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
-    >
-      {isOpen ? <ChevronDown size={13} aria-hidden /> : <ChevronRight size={13} aria-hidden />}
-    </button>
-  );
+
+  const continuation = ((): TimelineRowContinuation | null => {
+    if (hasStalledStep) {
+      return { label: 'Restart the step', onContinue: openRun };
+    }
+    if (advanceState.kind === 'blocked' && advanceState.reason === 'questions') {
+      return { label: 'Answer', onContinue: () => setActiveLens(sessionId, 'questions') };
+    }
+    if (advanceState.kind !== 'ready') {
+      return null;
+    }
+    const pending = stepAgents.find(
+      (agent) => agent.stepId === advanceState.step.id && agent.status === 'pending',
+    );
+    if (pending == null) {
+      return null;
+    }
+    return {
+      label: `Start ${advanceState.step.name}`,
+      onContinue: () => onAdvance({ agentId: pending.id }),
+    };
+  })();
 
   return (
-    <div className="flex flex-col">
-      <TimelineRow
-        timeLabel={timeLabel}
-        depth={0}
-        hasRoleColumn
-        marker={<TimelineNode status={status} />}
-        roleChip={null}
-        onClick={navigate}
-        ariaLabel={`open ${title.label} workflow`}
-        label={label}
-        trailing={trailing}
-      />
-      {isOpen
-        ? entry.children.map((child) => {
-            if (child.kind === 'agent') {
-              return (
-                <TimelineAgentRow
-                  key={child.id}
-                  entry={child}
-                  sessionId={sessionId}
-                  timeLabel={null}
-                  diffComment={diffCommentByAgentId.get(child.agent.id) ?? null}
-                  hasRoleColumn
-                  shouldRenderAnswers={false}
-                />
-              );
-            }
-            if (child.kind === 'plan') {
-              return (
-                <TimelineArtifactRow
-                  key={child.id}
-                  entry={child}
-                  sessionId={sessionId}
-                  timeLabel={null}
-                  hasRoleColumn
-                />
-              );
-            }
-            return (
-              <TimelineAnswerRow key={child.id} entry={child} timeLabel={null} hasRoleColumn />
-            );
-          })
-        : null}
-      {isOpen && ghostStep != null && ghostAgent?.status === 'pending' ? (
-        <TimelineGhostRow
-          title={ghostStep.name}
-          canAdvance={advanceState.kind === 'ready'}
-          onAdvance={() => onAdvance({ agentId: ghostAgent.id })}
+    <TimelineRow
+      timeLabel={timeLabel}
+      indent={0}
+      identity={entry.identity}
+      needsUser={hasStalledStep || advanceState.kind === 'blocked'}
+      marker={<TimelineStatusMarker state={hasStalledStep ? 'waiting' : status} />}
+      chip={
+        <Chip
+          tone="accent"
+          label={runKindLabel({ workflow: entry.workflow })}
+          shape="badge"
+          size="xs"
+          width="md"
+          className="shrink-0"
         />
-      ) : null}
-    </div>
+      }
+      label={
+        <span className="min-w-0 truncate text-sm font-medium text-foreground">
+          {entry.workflow.name}
+        </span>
+      }
+      navigation={{ label: 'Open run', onNavigate: openRun }}
+      continuation={continuation}
+      isExpanded={isExpanded}
+      onToggle={entry.children.length > 0 ? onToggle : undefined}
+      disclosureLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${entry.workflow.name}`}
+    />
   );
 };

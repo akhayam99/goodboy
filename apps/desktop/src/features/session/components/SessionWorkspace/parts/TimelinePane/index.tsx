@@ -1,121 +1,55 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Archive } from 'lucide-react';
-import { CountToggle, StatusDot } from '@goodboy/ui';
+import type { ReactNode } from 'react';
+import { Archive, CheckCheck } from 'lucide-react';
+import { Button, CountToggle, Eyebrow, StatusDot } from '@goodboy/ui';
 import type { AgentId, DiffComment, Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../../../store';
+import {
+  EMPTY_ARRAY,
+  agentHasUnread,
+  useAppStore,
+  useSessionOpenQuestions,
+} from '../../../../../../store';
 import { notifyWorkflowGateBlock } from '../../../../../../store/slices/workflows/notifyWorkflowGateBlock';
-import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
 import { workflowRunHasOpenQuestions } from '../../../../../context/openQuestionsGate';
 import {
   resolveWorkflowAdvance,
   type WorkflowAdvanceState,
 } from '../../../../../workflows/advanceGate';
-import {
-  buildTimelineGroups,
-  type TimelineTopLevelEntry,
-} from '../../../../timeline/buildTimelineGroups';
+import { buildTimelineGroups } from '../../../../timeline/buildTimelineGroups';
+import { flattenTimelineRows, withDayBreaks } from '../../../../timeline/flattenTimelineRows';
 import { formatCardTime } from '../../../../../chat/utils/format-card-time';
-import { sessionCreationLabel } from '../../../SessionOverviewPane/sessionCreationLabel';
+import { dayLabel } from './dayLabel';
 import { TimelineAgentRow } from './TimelineAgentRow';
+import { TimelineAnswerRow } from './TimelineAnswerRow';
 import { TimelineArtifactRow } from './TimelineArtifactRow';
-import { TimelineNowRow } from './TimelineNowRow';
-import { TimelineQuestionInset } from './TimelineQuestionInset';
+import { TimelineDayRow } from './TimelineDayRow';
 import { TimelineRunRow } from './TimelineRunRow';
+import { TimelineSpine } from './TimelineSpine';
 import type { WorkspaceRuns } from '../../../../../orchestration/hooks/useWorkspaceRuns';
 
 type Props = {
   readonly session: Session;
-  readonly suppressOpenQuestions?: boolean;
   readonly runs: WorkspaceRuns;
+  readonly actions: ReactNode;
 };
 
-type AtParams = {
-  readonly at: string;
-};
+const VISIBLE_LIMIT = 30;
 
-type QuietDaysParams = {
-  readonly newerAt: string;
-  readonly olderAt: string;
-};
-
-type AdvanceDetailParams = {
-  readonly state: WorkflowAdvanceState;
-};
-
-type RenderEntryParams = {
-  readonly entry: TimelineTopLevelEntry;
-};
-
-type AdvanceAgentParams = {
-  readonly agentId: string;
-};
-
-const dayKey = ({ at }: AtParams): string => at.slice(0, 10);
-
-const dayLabel = ({ at }: AtParams): string => {
-  const date = new Date(at);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  if (date.toDateString() === today.toDateString()) {
-    return 'Today';
-  }
-  if (date.toDateString() === yesterday.toDateString()) {
-    return 'Yesterday';
-  }
-  return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(date);
-};
-
-const quietDaysBetween = ({ newerAt, olderAt }: QuietDaysParams): number => {
-  const dayMs = 24 * 60 * 60 * 1000;
-  const newer = new Date(`${dayKey({ at: newerAt })}T00:00:00Z`).getTime();
-  const older = new Date(`${dayKey({ at: olderAt })}T00:00:00Z`).getTime();
-  return Math.max(0, Math.round((newer - older) / dayMs) - 1);
-};
-
-const advanceDetail = ({ state }: AdvanceDetailParams): string => {
-  if (state.kind === 'complete') {
-    return '';
-  }
-  if (state.kind === 'ready') {
-    return 'ready to start';
-  }
-  if (state.kind === 'automatic') {
-    return 'automation is advancing';
-  }
-  if (state.reason === 'questions') {
-    return 'waiting for answers';
-  }
-  if (state.reason === 'summarizer') {
-    return 'waiting for the handoff';
-  }
-  if (state.reason === 'failed-step') {
-    return 'a step failed';
-  }
-  return 'waiting for running work';
-};
-
-const RAIL_GRID = 'grid min-h-9 grid-cols-[44px_minmax(0,1fr)]';
-
-export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: Props) => {
+export const TimelinePane = ({ session, runs, actions }: Props) => {
   const sessionId: SessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const plans = useAppStore((s) => s.sessionPlans?.[sessionId] ?? EMPTY_ARRAY);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks?.[sessionId] ?? EMPTY_ARRAY);
   const worktrees = useAppStore((s) => s.sessionWorktreeRecords?.[sessionId] ?? EMPTY_ARRAY);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
-  const sessionCreations = useAppStore((s) => s.sessionCreations?.[sessionId] ?? EMPTY_ARRAY);
-  const pendingResolutionCount = useAppStore(
-    (s) => s.sessionPendingResolutions?.[sessionId]?.length ?? 0,
-  );
   const diffComments = useAppStore((s) => s.diffComments?.[sessionId] ?? EMPTY_ARRAY);
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
   const emitNotification = useAppStore((s) => s.emitNotification);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
-  const selectAgent = useAppStore((s) => s.selectAgent);
   const markAgentSeen = useAppStore((s) => s.markAgentSeen);
+  const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const isSummarizerRunning = useAppStore(
     (s) => s.summarizerStatus?.[sessionId]?.status === 'running',
   );
@@ -128,6 +62,8 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
   const questions = useSessionOpenQuestions(sessionId);
   const workflows = useAttachedWorkflowRuns({ session });
   const [isEarlierShown, setIsEarlierShown] = useState(false);
+  const [collapsedIds, setCollapsedIds] = useState<ReadonlySet<string>>(new Set());
+  const [openedIds, setOpenedIds] = useState<ReadonlySet<string>>(new Set());
 
   useEffect(() => {
     void loadDiffComments(sessionId);
@@ -146,6 +82,7 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
       }),
     [agentKindOverride, agents, externalTasks, plans, questions, workflows, worktrees],
   );
+
   const advanceByRunId = useMemo(() => {
     const states = new Map<string, WorkflowAdvanceState>();
     for (const attached of workflows) {
@@ -169,6 +106,21 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
     }
     return states;
   }, [agents, hasRunningTurn, isSummarizerRunning, questions, workflows]);
+
+  const stalledRunIds = useMemo(() => {
+    const stalled = new Set<string>();
+    for (const lane of [
+      ...runs.lanes,
+      ...(runs.blockedLanes ?? []),
+      ...(runs.completedLanes ?? []),
+    ]) {
+      if (lane.steps.some((step) => step.status === 'stalled')) {
+        stalled.add(lane.runId);
+      }
+    }
+    return stalled;
+  }, [runs.lanes, runs.blockedLanes, runs.completedLanes]);
+
   const diffCommentByAgentId = useMemo(() => {
     const comments = new Map<string, DiffComment>();
     for (const comment of diffComments) {
@@ -178,15 +130,69 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
     }
     return comments;
   }, [diffComments]);
-  const openDiffComments = diffComments.filter(
-    (comment) => comment.status === 'open' && comment.consumedByAgentId == null,
-  );
-  const visibleEntries = isEarlierShown ? model.entries : model.entries.slice(0, 30);
-  const earlierCount = Math.max(0, model.entries.length - 30);
-  let previousDay = '';
-  let previousEntryAt: string | null = null;
 
-  const advanceAgent = async ({ agentId }: AdvanceAgentParams) => {
+  const liveRunIds = useMemo(() => {
+    const live = new Set<string>();
+    for (const entry of model.entries) {
+      if (entry.kind !== 'run') {
+        continue;
+      }
+      const steps = entry.children.flatMap((child) =>
+        child.kind === 'agent' ? [child.agent] : [],
+      );
+      const isComplete =
+        steps.length > 0 &&
+        steps.every((agent) => agent.status === 'completed' || agent.status === 'skipped');
+      if (!isComplete && entry.run.discardedAt == null) {
+        live.add(entry.id);
+      }
+    }
+    return live;
+  }, [model.entries]);
+
+  const expandedIds = useMemo(() => {
+    const expanded = new Set(openedIds);
+    for (const id of liveRunIds) {
+      if (!collapsedIds.has(id)) {
+        expanded.add(id);
+      }
+    }
+    return expanded;
+  }, [collapsedIds, liveRunIds, openedIds]);
+
+  const toggle = (id: string) => {
+    if (expandedIds.has(id)) {
+      setOpenedIds((current) => {
+        const next = new Set(current);
+        next.delete(id);
+        return next;
+      });
+      setCollapsedIds((current) => new Set(current).add(id));
+      return;
+    }
+    setCollapsedIds((current) => {
+      const next = new Set(current);
+      next.delete(id);
+      return next;
+    });
+    setOpenedIds((current) => new Set(current).add(id));
+  };
+
+  const rows = useMemo(
+    () => flattenTimelineRows({ entries: model.entries, expandedIds }),
+    [expandedIds, model.entries],
+  );
+  const visibleRows = isEarlierShown ? rows : rows.slice(0, VISIBLE_LIMIT);
+  const earlierCount = Math.max(0, rows.length - VISIBLE_LIMIT);
+  const items = useMemo(
+    () => withDayBreaks({ rows: visibleRows, labelFor: dayLabel }),
+    [visibleRows],
+  );
+
+  const hasUnreadAgents = agents.some((agent) => agentHasUnread(agent, false));
+  const isAnyAgentRunning = agents.some((agent) => agent.status === 'running');
+
+  const advanceAgent = async ({ agentId }: { readonly agentId: string }) => {
     const agent = agents.find((candidate) => candidate.id === agentId) ?? null;
     if (agent == null || agent.status !== 'pending') {
       return;
@@ -202,230 +208,123 @@ export const TimelinePane = ({ session, suppressOpenQuestions = false, runs }: P
     void markAgentSeen(sessionId, agentId);
   };
 
-  const renderEntry = ({ entry }: RenderEntryParams) => {
-    const timeLabel = formatCardTime(entry.at);
-    if (entry.kind === 'run') {
-      const advanceState = advanceByRunId.get(entry.run.id) ?? { kind: 'complete' };
-      return (
-        <TimelineRunRow
-          key={entry.id}
-          entry={entry}
-          sessionId={sessionId}
-          timeLabel={timeLabel}
-          advanceState={advanceState}
-          onAdvance={({ agentId }) => void advanceAgent({ agentId })}
-          diffCommentByAgentId={diffCommentByAgentId}
-        />
-      );
-    }
-    if (entry.kind === 'agent') {
-      return (
-        <TimelineAgentRow
-          key={entry.id}
-          entry={entry}
-          sessionId={sessionId}
-          timeLabel={timeLabel}
-          diffComment={diffCommentByAgentId.get(entry.agent.id) ?? null}
-          onSeen={() => markSeen(entry.agent.id)}
-          hasRoleColumn
-        />
-      );
-    }
-    return (
-      <TimelineArtifactRow
-        key={entry.id}
-        entry={entry}
-        sessionId={sessionId}
-        timeLabel={timeLabel}
-        hasRoleColumn
-      />
-    );
-  };
-
   return (
-    <section aria-label="Timeline" className="flex flex-col">
-      <div className={RAIL_GRID}>
-        <span />
-        <div className="flex min-w-0 items-stretch">
-          <div className="relative flex w-6 shrink-0 items-center justify-center">
-            <span className="absolute inset-y-1/2 bottom-0 left-1/2 w-px -translate-x-1/2 bg-border" />
-            <span className="relative z-10 flex size-4 items-center justify-center rounded-full bg-elevated ring-1 ring-border">
-              {agents.some((agent) => agent.status === 'running') ? (
-                <StatusDot tone="info" size="sm" pulsing ariaLabel="Work running" />
-              ) : (
-                <span className="size-2 rounded-full ring-1 ring-border" aria-label="Now" />
-              )}
-            </span>
-          </div>
-          <span className="flex flex-1 items-center pl-2 text-2xs font-medium uppercase text-muted-foreground">
-            Now
-          </span>
-        </div>
+    <section aria-label="Activity" className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-4 px-0.5">
+        <Eyebrow label="Activity" muted className="font-medium" />
+        {hasUnreadAgents ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7"
+            onClick={() => void markAllAgentsSeen(sessionId)}
+          >
+            <CheckCheck size={13} aria-hidden />
+            Mark all seen
+          </Button>
+        ) : null}
       </div>
-      {!suppressOpenQuestions
-        ? model.now
-            .filter((item) => item.kind === 'question')
-            .map((item) =>
-              item.kind === 'question' ? (
-                <div key={item.id} className={RAIL_GRID}>
-                  <span />
-                  <div className="flex min-w-0 items-stretch">
-                    <span className="relative w-6 shrink-0">
-                      <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border" />
-                    </span>
-                    <TimelineQuestionInset question={item.question} sessionId={sessionId} />
-                  </div>
-                </div>
-              ) : null,
-            )
-        : null}
-      {sessionCreations.map((creation) => (
-        <TimelineNowRow
-          key={creation.id}
-          tone="info"
-          label={sessionCreationLabel({ creation })}
-          isRunning
-          hasRoleColumn
-        />
-      ))}
-      {workflows.map((attached) => {
-        const state = advanceByRunId.get(attached.run.id) ?? { kind: 'complete' };
-        if (state.kind !== 'blocked' || state.reason === 'turn-running') {
-          return null;
-        }
-        return (
-          <TimelineNowRow
-            key={`gate:${attached.run.id}`}
-            icon={AlertTriangle}
-            tone="warning"
-            label={`${state.step.name} is next in ${attached.workflow.name}`}
-            detail={advanceDetail({ state })}
-            action="Open run"
-            onClick={() => {
-              useAppStore.getState().setFocusedWorkflowRun(sessionId, attached.run.id);
-              setActiveLens(sessionId, 'workflows');
-            }}
-            hasRoleColumn
-          />
-        );
-      })}
-      {[...runs.lanes, ...(runs.blockedLanes ?? []), ...(runs.completedLanes ?? [])].flatMap(
-        (lane) =>
-          lane.steps
-            .filter((step) => step.status === 'stalled')
-            .map((step) => (
-              <TimelineNowRow
-                key={`stalled:${lane.runId}:${step.name}`}
-                icon={AlertTriangle}
-                tone="warning"
-                label={step.name}
-                detail="stalled"
-                action="Restart the step"
-                onClick={() => {
-                  useAppStore.getState().setFocusedWorkflowRun(sessionId, lane.runId);
-                  setActiveLens(sessionId, 'workflows');
-                }}
-                hasRoleColumn
-              />
-            )),
-      )}
-      {model.now
-        .filter((item) => item.kind === 'agent')
-        .map((item) =>
-          item.kind === 'agent' ? (
-            <TimelineNowRow
-              key={item.id}
-              icon={CONCEPT_ICONS.agents}
-              tone="neutral"
-              label={item.agent.name}
-              detail="created, not started"
-              action="Open chat"
-              onClick={() => void selectAgent(sessionId, item.agent.id)}
-              hasRoleColumn
-            />
-          ) : null,
-        )}
-      {pendingResolutionCount > 0 ? (
-        <TimelineNowRow
-          icon={CONCEPT_ICONS.resolve}
-          tone="success"
-          label={
-            pendingResolutionCount === 1
-              ? '1 pending resolution'
-              : `${pendingResolutionCount} pending resolutions`
-          }
-          action="Open resolve"
-          onClick={() => setActiveLens(sessionId, 'resolve')}
-          hasRoleColumn
-        />
-      ) : null}
-      {openDiffComments.length > 0 ? (
-        <TimelineNowRow
-          icon={CONCEPT_ICONS.review}
-          tone="warning"
-          label={
-            openDiffComments.length === 1
-              ? '1 open diff comment'
-              : `${openDiffComments.length} open diff comments`
-          }
-          action="Open diff"
-          onClick={() => setActiveLens(sessionId, 'files')}
-          hasRoleColumn
-        />
-      ) : null}
-      {visibleEntries.map((entry) => {
-        const currentDay = dayKey({ at: entry.at });
-        const showsDay = currentDay !== previousDay;
-        const quietDays =
-          previousEntryAt == null
-            ? 0
-            : quietDaysBetween({ newerAt: previousEntryAt, olderAt: entry.at });
-        previousDay = currentDay;
-        previousEntryAt = entry.at;
-        return (
-          <div key={entry.id} className="flex flex-col">
-            {quietDays > 2 ? (
-              <div className={RAIL_GRID}>
-                <span />
-                <div className="flex min-w-0 items-stretch">
-                  <span className="relative w-6 shrink-0">
-                    <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 border-l border-dashed border-border" />
-                  </span>
-                  <span className="self-center pl-2 text-3xs text-muted-foreground">
-                    {quietDays} quiet days
-                  </span>
-                </div>
-              </div>
-            ) : null}
-            {showsDay ? (
-              <div className={`${RAIL_GRID} bg-canvas`}>
-                <span />
-                <div className="flex min-w-0 items-stretch">
-                  <span className="relative w-6 shrink-0">
-                    <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border" />
-                  </span>
-                  <span className="self-center pl-2 text-2xs font-medium uppercase text-muted-foreground">
-                    {dayLabel({ at: entry.at })}
-                  </span>
-                </div>
-              </div>
-            ) : null}
-            {renderEntry({ entry })}
+      <div className="flex flex-col">
+        <div className="grid grid-cols-[52px_minmax(0,1fr)]">
+          <span />
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="relative w-5 shrink-0 self-stretch">
+              <span className="absolute bottom-0 left-1/2 top-1/2 w-px -translate-x-1/2 bg-border" />
+              <span className="absolute left-1/2 top-1/2 z-10 flex size-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-background ring-1 ring-border">
+                {isAnyAgentRunning ? (
+                  <StatusDot tone="info" size="md" pulsing ariaLabel="Work running" />
+                ) : (
+                  <span className="size-2 rounded-full bg-muted-foreground" aria-label="Now" />
+                )}
+              </span>
+            </span>
+            <span className="flex-1 py-1.5 text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground">
+              Now
+            </span>
+            {actions}
           </div>
-        );
-      })}
-      {earlierCount > 0 ? (
-        <div className="flex justify-center py-2">
-          <CountToggle
-            label="Earlier"
-            itemsLabel="entries"
-            count={earlierCount}
-            isShown={isEarlierShown}
-            icon={Archive}
-            onChange={setIsEarlierShown}
-          />
         </div>
-      ) : null}
+        {items.map((item) => {
+          if (item.kind === 'day') {
+            const label = dayLabel({ at: item.at });
+            return label === null ? null : (
+              <TimelineDayRow key={item.id} label={label} identity={item.identity} />
+            );
+          }
+          const { entry } = item;
+          const timeLabel = item.at != null && item.depth === 0 ? formatCardTime(item.at) : null;
+          if (entry.kind === 'run') {
+            return (
+              <TimelineRunRow
+                key={item.id}
+                entry={entry}
+                sessionId={sessionId}
+                timeLabel={timeLabel}
+                advanceState={advanceByRunId.get(entry.run.id) ?? { kind: 'complete' }}
+                hasStalledStep={stalledRunIds.has(entry.run.id)}
+                isExpanded={expandedIds.has(entry.id)}
+                onToggle={() => toggle(entry.id)}
+                onAdvance={({ agentId }) => void advanceAgent({ agentId })}
+              />
+            );
+          }
+          if (entry.kind === 'agent') {
+            return (
+              <TimelineAgentRow
+                key={item.id}
+                entry={entry}
+                sessionId={sessionId}
+                timeLabel={timeLabel}
+                depth={item.depth}
+                identity={item.identity}
+                diffComment={diffCommentByAgentId.get(entry.agent.id) ?? null}
+                isExpanded={expandedIds.has(entry.id)}
+                onToggle={() => toggle(entry.id)}
+                onSeen={() => markSeen(entry.agent.id)}
+              />
+            );
+          }
+          if (entry.kind === 'answer') {
+            return (
+              <TimelineAnswerRow
+                key={item.id}
+                entry={entry}
+                indent={item.depth}
+                identity={item.identity}
+                onOpen={() => setActiveLens(sessionId, 'questions')}
+              />
+            );
+          }
+          return (
+            <TimelineArtifactRow
+              key={item.id}
+              entry={entry}
+              sessionId={sessionId}
+              timeLabel={timeLabel}
+              indent={item.depth}
+              identity={item.identity}
+            />
+          );
+        })}
+        {earlierCount > 0 ? (
+          <div className="grid grid-cols-[52px_minmax(0,1fr)]">
+            <span />
+            <div className="flex min-w-0 items-stretch">
+              <TimelineSpine identity={null} />
+              <div className="flex flex-1 py-2 pl-2">
+                <CountToggle
+                  label="Earlier"
+                  itemsLabel="entries"
+                  count={earlierCount}
+                  isShown={isEarlierShown}
+                  icon={Archive}
+                  onChange={setIsEarlierShown}
+                />
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 };

@@ -6,8 +6,6 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
-  OpenQuestion,
-  OpenQuestionId,
   SessionId,
   Step,
   StepId,
@@ -19,9 +17,9 @@ import type {
 } from '@goodboy/types';
 import type {
   TimelineAgentEntry,
-  TimelineAnswerEntry,
   TimelineRunEntry,
 } from '../../../../timeline/buildTimelineGroups';
+import { runIdentity } from '../../../../timeline/runIdentity';
 
 type Store = {
   readonly setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
@@ -71,7 +69,6 @@ const step = ({ id, ordinal, name }: StepParams): Step => ({
 
 const PLAN = step({ id: 'step-plan', ordinal: 0, name: 'Plan' });
 const IMPLEMENT = step({ id: 'step-implement', ordinal: 1, name: 'Implement' });
-const REVIEW = step({ id: 'step-review', ordinal: 2, name: 'Review' });
 
 type AgentParams = {
   readonly id: string;
@@ -110,19 +107,12 @@ const NEXT_AGENT = agent({
   status: 'pending',
 });
 
-const LATER_AGENT = agent({
-  id: 'review-agent',
-  stepId: REVIEW.id,
-  ordinal: 2,
-  status: 'pending',
-});
-
 const WORKFLOW: Workflow = {
   id: WORKFLOW_ID,
   workspaceId: typedString<WorkspaceId>({ value: 'workspace-1' }),
   name: 'Release workflow',
   description: '',
-  steps: [PLAN, IMPLEMENT, REVIEW],
+  steps: [PLAN, IMPLEMENT],
   createdAt: typedString<IsoDateTime>({ value: '2026-08-17T08:00:00Z' }),
   updatedAt: typedString<IsoDateTime>({ value: '2026-08-17T08:00:00Z' }),
 };
@@ -138,76 +128,55 @@ const RUN: WorkflowRun = {
   createdAt: typedString<IsoDateTime>({ value: '2026-08-17T08:00:00Z' }),
 };
 
-const doneChild: TimelineAgentEntry = {
+const childOf = ({ target }: { readonly target: Agent }): TimelineAgentEntry => ({
   kind: 'agent',
-  id: `agent:${DONE_AGENT.id}`,
+  id: `agent:${target.id}`,
   at: '2026-08-17T09:00:00Z',
-  agent: DONE_AGENT,
+  ordinal: target.ordinal,
+  agent: target,
   agentKind: 'planner',
-  depth: 1,
-  clusterIndex: null,
+  stepLabel: `${target.ordinal + 1}`,
+  openQuestions: [],
   terminalQuestions: [],
+  children: [],
   answers: [],
   hasDuration: true,
-};
+});
 
-const QUESTION_ID = typedString<OpenQuestionId>({ value: 'question-1' });
-
-const ANSWERED_QUESTION: OpenQuestion = {
-  id: QUESTION_ID,
-  sessionId: SESSION_ID,
-  createdByAgentId: DONE_AGENT.id,
-  text: 'Should we ship on Friday?',
-  suggestedAnswers: [],
-  userAnswer: 'Yes',
-  status: 'answered',
-  createdAt: typedString<IsoDateTime>({ value: '2026-08-17T09:10:00Z' }),
-  answeredAt: typedString<IsoDateTime>({ value: '2026-08-17T09:20:00Z' }),
-};
-
-const answerChild: TimelineAnswerEntry = {
-  kind: 'answer',
-  id: `answer:agent:${DONE_AGENT.id}:${QUESTION_ID}`,
-  at: '2026-08-17T09:20:00Z',
-  question: ANSWERED_QUESTION,
-  depth: 1,
-};
-
-const doneChildWithAnswer: TimelineAgentEntry = {
-  ...doneChild,
-  answers: [answerChild],
-};
-
-type EntryParams = {
-  readonly pendingAgents: ReadonlyArray<Agent>;
-};
-
-const runEntry = ({ pendingAgents }: EntryParams): TimelineRunEntry => ({
+const runEntry = (): TimelineRunEntry => ({
   kind: 'run',
   id: `run:${RUN.id}`,
-  at: '2026-08-17T09:30:00Z',
+  at: '2026-08-17T08:00:00Z',
   run: RUN,
   workflow: WORKFLOW,
-  children: [doneChild],
-  pendingAgents,
+  identity: runIdentity({ runId: RUN.id }),
+  children: [childOf({ target: DONE_AGENT }), childOf({ target: NEXT_AGENT })],
   producedPlan: null,
-  depth: 0,
 });
 
 type RenderParams = {
-  readonly pendingAgents: ReadonlyArray<Agent>;
-  readonly onAdvance: (params: { readonly agentId: string }) => void;
+  readonly onAdvance?: (params: { readonly agentId: string }) => void;
+  readonly onToggle?: () => void;
+  readonly isExpanded?: boolean;
+  readonly hasStalledStep?: boolean;
 };
 
-const renderRow = ({ pendingAgents, onAdvance }: RenderParams) =>
+const renderRow = ({
+  onAdvance = vi.fn(),
+  onToggle = vi.fn(),
+  isExpanded = false,
+  hasStalledStep = false,
+}: RenderParams = {}) =>
   render(
     <TimelineRunRow
-      entry={runEntry({ pendingAgents })}
+      entry={runEntry()}
       sessionId={SESSION_ID}
       timeLabel="09:30"
       advanceState={{ kind: 'ready', step: IMPLEMENT }}
+      hasStalledStep={hasStalledStep}
+      isExpanded={isExpanded}
+      onToggle={onToggle}
       onAdvance={onAdvance}
-      diffCommentByAgentId={new Map()}
     />,
   );
 
@@ -220,55 +189,46 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('TimelineRunRow', () => {
-  it('keeps the workflow reference on one line and drops step counts', () => {
-    renderRow({ pendingAgents: [NEXT_AGENT, LATER_AGENT], onAdvance: vi.fn() });
+  it('says what the run is before it says its name, and drops step counts', () => {
+    renderRow();
 
+    expect(screen.getByText('workflow')).toBeDefined();
     expect(screen.getByText('Release workflow')).toBeDefined();
-    expect(screen.queryByText('1/3')).toBeNull();
+    expect(screen.queryByText('1/2')).toBeNull();
   });
 
-  it('offers the pending next step and starts it', () => {
-    const onAdvance = vi.fn();
-    renderRow({ pendingAgents: [NEXT_AGENT, LATER_AGENT], onAdvance });
+  it('keeps the kind chip from shrinking so it cannot wrap', () => {
+    renderRow();
 
-    expect(screen.getByText('Implement')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Start step' }));
+    expect(screen.getByText('workflow').className).toContain('shrink-0');
+  });
+
+  it('offers the next step inline and starts it', () => {
+    const onAdvance = vi.fn();
+    renderRow({ onAdvance });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Implement' }));
     expect(onAdvance).toHaveBeenCalledWith({ agentId: NEXT_AGENT.id });
   });
 
-  it('navigates the whole run row to the workflows lens', () => {
-    renderRow({ pendingAgents: [NEXT_AGENT, LATER_AGENT], onAdvance: vi.fn() });
-    fireEvent.click(screen.getByRole('button', { name: /open Release workflow workflow/i }));
+  it('separates the disclosure target from the navigation target', () => {
+    const onToggle = vi.fn();
+    renderRow({ onToggle });
+
+    const disclosure = screen.getByRole('button', { name: 'Expand Release workflow' });
+    expect(disclosure.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(disclosure);
+    expect(onToggle).toHaveBeenCalledTimes(1);
+    expect(store.setActiveLens).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open run' }));
     expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, RUN.id);
     expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'workflows');
   });
 
-  it('names the collapse action for the run it toggles', () => {
-    renderRow({ pendingAgents: [NEXT_AGENT, LATER_AGENT], onAdvance: vi.fn() });
-    const toggle = screen.getByRole('button', { name: 'Collapse Release workflow' });
+  it('offers a restart when a step has stalled', () => {
+    renderRow({ hasStalledStep: true });
 
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    fireEvent.click(toggle);
-    expect(screen.queryByRole('button', { name: 'Start step' })).toBeNull();
-  });
-
-  it('renders an answered question once even though the run carries it as both an agent answer and a child', () => {
-    const entryWithAnswer: TimelineRunEntry = {
-      ...runEntry({ pendingAgents: [] }),
-      children: [doneChildWithAnswer, answerChild],
-    };
-    render(
-      <TimelineRunRow
-        entry={entryWithAnswer}
-        sessionId={SESSION_ID}
-        timeLabel="09:30"
-        advanceState={{ kind: 'complete' }}
-        onAdvance={vi.fn()}
-        diffCommentByAgentId={new Map()}
-      />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Expand Release workflow' }));
-
-    expect(screen.getAllByText('Should we ship on Friday?')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Restart the step' })).toBeDefined();
   });
 });
