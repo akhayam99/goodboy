@@ -25,8 +25,6 @@ type Props = {
   readonly onOpen: () => void;
 };
 
-const OPEN_HINT = 'Open ↵';
-
 const agentIdOf = ({ item }: { readonly item: TimelineRowItem }): AgentId | null =>
   item.entry.kind === 'agent' ? item.entry.agent.id : null;
 
@@ -79,7 +77,6 @@ export const TimelineStreamRow = ({
       <div className={cn('flex min-w-0 flex-1 items-end gap-1', item.grade === 'step' && 'pr-1')}>
         <button
           type="button"
-          aria-label={openLabel}
           onClick={onOpen}
           className={cn(
             'flex min-w-0 flex-1 items-center gap-2 rounded-md pl-2 pr-1.5 text-left motion-safe:transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]',
@@ -90,7 +87,7 @@ export const TimelineStreamRow = ({
         >
           <TimelineRowLabel item={item} />
           <span className="shrink-0 text-3xs text-muted-foreground opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-            {OPEN_HINT}
+            {`${openLabel} ↵`}
           </span>
         </button>
         {action == null ? null : (

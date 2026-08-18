@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   RAIL_LANE_OFFSET,
+  RAIL_MAX_COLUMN,
   RAIL_SPINE_X,
   layoutTimelineRail,
   railColumnX,
@@ -32,7 +33,7 @@ type GroupParams = {
   readonly originRowId: string;
   readonly shape?: RailGroupShape;
   readonly parentGroupId?: string | null;
-  readonly identityIndex?: number;
+  readonly identityIndex?: number | null;
 };
 
 const group = ({
@@ -256,6 +257,45 @@ describe('layoutTimelineRail', () => {
       expect(spine[0]?.identityIndex).toBeNull();
       expect(spine[0]?.dash).toBe('solid');
     }
+  });
+
+  it('never puts a lane past the column cap however deep the nesting goes', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'great-grandchild', groupId: 'stub-3' }),
+        row({ id: 'grandchild', groupId: 'stub-2' }),
+        row({ id: 'child', groupId: 'stub-1' }),
+        row({ id: 'step', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [
+        group({ id: 'lane', originRowId: 'origin' }),
+        group({ id: 'stub-1', originRowId: 'step', parentGroupId: 'lane' }),
+        group({ id: 'stub-2', originRowId: 'child', parentGroupId: 'stub-1' }),
+        group({ id: 'stub-3', originRowId: 'grandchild', parentGroupId: 'stub-2' }),
+      ],
+    });
+
+    for (const column of layout.columnByGroupId.values()) {
+      expect(column).toBeLessThanOrEqual(RAIL_MAX_COLUMN);
+    }
+    expect(layout.width).toBe(RAIL_SPINE_X + RAIL_MAX_COLUMN * RAIL_LANE_OFFSET + 8);
+  });
+
+  it('draws a standalone agent fan-out in the neutral spine ink, not a run colour', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'child', groupId: 'stub' }),
+        row({ id: 'standalone-agent' }),
+        row({ id: 'older' }),
+      ],
+      groups: [group({ id: 'stub', originRowId: 'standalone-agent', identityIndex: null })],
+    });
+
+    expect(lanesOf(layout, 'child').map((segment) => segment.identityIndex)).toEqual([null]);
+    expect(railRow(layout, 'standalone-agent').joins.map((join) => join.identityIndex)).toEqual([
+      null,
+    ]);
   });
 
   it('places lane columns one offset apart from the spine', () => {

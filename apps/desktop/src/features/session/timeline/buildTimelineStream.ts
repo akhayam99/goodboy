@@ -188,7 +188,7 @@ const emitAgent = ({
     context.groups.push({
       id: childLaneId,
       parentGroupId: groupId,
-      identityIndex: identity?.index ?? 0,
+      identityIndex: identity?.index ?? null,
       originRowId: entry.id,
       shape: entry.children.every((child) => isSettled({ agent: child.agent })) ? 'merged' : 'open',
     });

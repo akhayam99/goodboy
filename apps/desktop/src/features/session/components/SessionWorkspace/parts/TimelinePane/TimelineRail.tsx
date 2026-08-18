@@ -59,7 +59,7 @@ export const TimelineRail = ({ rail, width }: Props) => (
         d={joinPath({ join })}
         fill="none"
         stroke={strokeOf({ identityIndex: join.identityIndex })}
-        strokeWidth={LANE_WIDTH}
+        strokeWidth={join.identityIndex == null ? SPINE_WIDTH : LANE_WIDTH}
         strokeDasharray={join.dash === 'dashed' ? DASH_PATTERN : undefined}
         opacity={join.dash === 'dashed' ? DASHED_OPACITY : 1}
       />

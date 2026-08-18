@@ -142,6 +142,11 @@ the rail:
 | lane                      | 2px, identity hue, solid                                    | a run whose steps have happened                           |
 | lane, dashed at 45% alpha | 2px, identity hue                                           | the stretch of a run still to come                        |
 | join                      | quarter curve between spine and lane at a row's marker line | a run departing at its origin or merging when it finished |
+| stub                      | 1px, `--color-border`, offset one column                    | a standalone agent's fan-out, which belongs to no run     |
+
+The stub exists because identity names a run and nothing else. A standalone
+agent's children are still session work, so their offset line stays in the
+neutral spine ink rather than borrowing a run's colour.
 
 Geometry is computed in
 `apps/desktop/src/features/session/timeline/railGeometry.ts`; the lane offset is

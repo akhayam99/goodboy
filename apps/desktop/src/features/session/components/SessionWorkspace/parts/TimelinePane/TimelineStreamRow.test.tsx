@@ -102,9 +102,17 @@ describe('TimelineStreamRow', () => {
     const onOpen = vi.fn();
     renderRow({ onOpen });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open chat' }));
+    fireEvent.click(screen.getByRole('button', { name: /Implement the parser/ }));
 
     expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('announces the row content rather than the verb that opens it', () => {
+    renderRow();
+    const row = screen.getByRole('button', { name: /Implement the parser/ });
+
+    expect(row.getAttribute('aria-label')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open chat' })).toBeNull();
   });
 
   it('keeps a continuation action as its own target beside the row', () => {
@@ -137,13 +145,13 @@ describe('TimelineStreamRow', () => {
   it('hides the open hint until the row is hovered or focused', () => {
     renderRow();
 
-    expect(screen.getByText('Open ↵').className).toContain('opacity-0');
-    expect(screen.getByText('Open ↵').className).toContain('group-hover:opacity-100');
+    expect(screen.getByText('Open chat ↵').className).toContain('opacity-0');
+    expect(screen.getByText('Open chat ↵').className).toContain('group-hover:opacity-100');
   });
 
   it('reserves the same box for a step whatever trailing metadata it carries', () => {
     renderRow();
-    const button = screen.getByRole('button', { name: 'Open chat' });
+    const button = screen.getByRole('button', { name: /Implement the parser/ });
 
     expect(button.getAttribute('style')).toContain(`${TIMELINE_RHYTHM.grade.step.height}px`);
   });

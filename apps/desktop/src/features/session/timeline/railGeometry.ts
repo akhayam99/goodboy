@@ -1,6 +1,6 @@
 export const RAIL_SPINE_X = 8;
 export const RAIL_LANE_OFFSET = 16;
-const RAIL_MAX_COLUMN = 3;
+export const RAIL_MAX_COLUMN = 3;
 const RAIL_EDGE_PAD = 8;
 
 type RailDash = 'solid' | 'dashed';
@@ -10,7 +10,7 @@ export type RailGroupShape = 'open' | 'merged';
 export type RailGroupInput = {
   readonly id: string;
   readonly parentGroupId: string | null;
-  readonly identityIndex: number;
+  readonly identityIndex: number | null;
   readonly originRowId: string;
   readonly shape: RailGroupShape;
 };
@@ -36,7 +36,7 @@ export type RailJoin = {
   readonly kind: 'depart' | 'merge';
   readonly spineColumn: number;
   readonly laneColumn: number;
-  readonly identityIndex: number;
+  readonly identityIndex: number | null;
   readonly dash: RailDash;
   readonly anchorY: number;
 };
@@ -132,7 +132,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
     const interval = intervalOf({ group });
     const parentColumn =
       group.parentGroupId == null ? 0 : (columnByGroupId.get(group.parentGroupId) ?? 0);
-    let column = parentColumn + 1;
+    let column = Math.min(parentColumn + 1, RAIL_MAX_COLUMN);
     while (
       column < RAIL_MAX_COLUMN &&
       (takenByColumn.get(column) ?? []).some((taken) =>
