@@ -110,16 +110,23 @@ So the lane of a run takes an **identity** colour from a six-entry palette,
 `--color-run-1` to `--color-run-6` in `apps/desktop/src/styles.css`, picked
 deterministically from the run id so it is stable across reloads and across
 sessions. `runIdentity` in
-`apps/desktop/src/features/session/timeline/runIdentity.ts` is the only accessor,
-and `runIdentityStroke` beside it is the only way an SVG stroke reads one.
+`apps/desktop/src/features/session/timeline/runIdentity.ts` is the only accessor.
+It hands out exactly two readings of one slot: `stroke` for an SVG lane and
+`chip` for the run's own chip, and `runIdentityStroke` beside it resolves a
+stroke back from the index the rail geometry carries.
 
-Two constraints keep the exception contained:
+Three constraints keep the exception contained:
 
 - The identity palette is **separate from the ten tones** and never overlaps
   them. A violet lane is not a plan, a red lane is not a failure; a lane
   colour claims nothing at all beyond "these rows are one run".
-- Identity lives on the lane only. Stage stays in the marker sitting on top of
-  it, which still resolves through `tintClasses(tone)` like everything else.
+- Identity reaches the lane and the run chip that names it, nowhere else.
+  Stage stays in the marker sitting on top of the lane, which still resolves
+  through `tintClasses(tone)` like everything else.
+- The run chip is the one component tinted from identity rather than from a
+  tone, so it is deliberately **not** a `Chip`: `TimelineRunChip` in the
+  timeline feature owns its own surface and the palette never enters
+  `packages/ui`. A pink chip there means "this run" and nothing more.
 
 Anything else reaching for the run palette is a bug. Add a tone instead.
 
@@ -135,7 +142,6 @@ the rail:
 | lane                      | 2px, identity hue, solid                                    | a run whose steps have happened                           |
 | lane, dashed at 45% alpha | 2px, identity hue                                           | the stretch of a run still to come                        |
 | join                      | quarter curve between spine and lane at a row's marker line | a run departing at its origin or merging when it finished |
-| loop                      | short arc off the spine at one row                          | a settled run folded to its origin row                    |
 
 Geometry is computed in
 `apps/desktop/src/features/session/timeline/railGeometry.ts`; the lane offset is
@@ -146,6 +152,11 @@ size so a marker centres on its label's line rather than on its row box.
 Two rules follow from the direction of time. Newer sits above older at every
 level, so a run's origin row is the bottom of its group and its steps stack
 upward, and dashed always points toward NOW because dashed means future.
+
+A third rule governs what the feed shows: **everything, always**. Nothing in the
+feed collapses, summarises or hides behind a count, and no disclosure control
+exists on any row or divider. Density is the only defence against a wall, and it
+is carried by the grades in `timelineRhythm.ts` rather than by hiding rows.
 
 ## z-index tokens
 
