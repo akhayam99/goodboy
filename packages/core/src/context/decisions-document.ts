@@ -39,6 +39,9 @@ const textOf = ({ segment }: SegmentParams): string => {
   return [first.slice(segment.marker.length), ...rest].join('\n');
 };
 
+const isBlankGap = ({ segment }: SegmentParams): boolean =>
+  segment.kind === 'gap' && segment.lines.every((line) => BLANK_LINE.test(line));
+
 type TextParams = {
   readonly text: string;
 };
@@ -176,10 +179,11 @@ export const removeDecision = ({ text, index }: RemoveParams): string => {
   const dropped = new Set<number>([index]);
   const next = document.segments[index + 1];
   const previous = document.segments[index - 1];
-  if (next?.kind === 'gap') {
+  const hasBlankNext = next != null && isBlankGap({ segment: next });
+  if (hasBlankNext) {
     dropped.add(index + 1);
   }
-  if (next?.kind !== 'gap' && previous?.kind === 'gap') {
+  if (hasBlankNext === false && previous != null && isBlankGap({ segment: previous })) {
     dropped.add(index - 1);
   }
 

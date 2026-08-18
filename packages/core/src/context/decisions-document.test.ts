@@ -7,6 +7,8 @@ import {
   serializeDecisions,
 } from './decisions-document';
 
+const BLANK_LINE_SHAPE = /^[ \t]*$/;
+
 const roundTrip = (text: string): string =>
   serializeDecisions({ segments: parseDecisions({ text }).segments });
 
@@ -243,9 +245,29 @@ describe('removeDecision', () => {
     expect(updated).not.toContain('the marker carries the thread id');
   });
 
-  it('leaves a fenced block alone when a neighbouring row goes', () => {
-    const updated = removeDecision({ text: CORPUS.fenced, index: 4 });
-    expect(updated).toContain('```\n- not a decision');
+  it('leaves a fenced block alone when the row beside it goes', () => {
+    const rows = parseDecisions({ text: CORPUS.fenced }).rows;
+    const updated = removeDecision({ text: CORPUS.fenced, index: rows[0]?.index ?? -1 });
+
+    expect(updated).toContain('```\n- not a decision\nplain line inside a fence\n```');
+    expect(updated).toContain('- and the publish blocks without it');
+    expect(updated).not.toContain('the protocol marker looks like this:');
+  });
+
+  it('never drops a non-blank line that sits beside the row it removes', () => {
+    for (const text of Object.values(CORPUS)) {
+      const document = parseDecisions({ text });
+      for (const row of document.rows) {
+        const updated = removeDecision({ text, index: row.index });
+        const survivors = document.segments
+          .filter((_, position) => position !== row.index)
+          .flatMap((segment) => [...segment.lines])
+          .filter((line) => BLANK_LINE_SHAPE.test(line) === false);
+        for (const line of survivors) {
+          expect(updated).toContain(line);
+        }
+      }
+    }
   });
 
   it('ignores an index that names no row', () => {

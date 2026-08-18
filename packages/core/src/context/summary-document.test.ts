@@ -330,6 +330,23 @@ describe('insertSummarySection', () => {
     expect(sectionKeys(updated)).toEqual([null, 'problem']);
   });
 
+  it('leaves the document it inserts into byte identical, blank tail included', () => {
+    expect(
+      insertSummarySection({ text: CORPUS.trailingBlank, sectionKey: 'next', body: '- go' }),
+    ).toBe('#### Problem\nsomething\n\n#### Next\n- go');
+    for (const text of [CORPUS.canonical, CORPUS.missingState, CORPUS.withPreamble]) {
+      const updated = insertSummarySection({ text, sectionKey: 'learned', body: '- added' });
+      for (const block of parseSummaryDocument({ text }).blocks) {
+        if (block.headingLine != null) {
+          expect(updated).toContain(block.headingLine);
+        }
+        if (block.body != null && block.body.trim() !== '') {
+          expect(updated).toContain(block.body.trim());
+        }
+      }
+    }
+  });
+
   it('covers every known section key', () => {
     for (const sectionKey of SUMMARY_SECTION_KEYS) {
       const updated = insertSummarySection({ text: '', sectionKey, body: 'body' });
