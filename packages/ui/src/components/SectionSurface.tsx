@@ -9,6 +9,7 @@ export type SectionSurfaceProps = {
   readonly hint?: string;
   readonly action?: ReactNode;
   readonly headingSize?: 'eyebrow' | 'page';
+  readonly headingLevel?: 2 | 3;
   readonly ariaLabel?: string;
   readonly className?: string;
   readonly children: ReactNode;
@@ -19,12 +20,19 @@ export const SectionSurface = ({
   hint,
   action,
   headingSize = 'eyebrow',
+  headingLevel,
   ariaLabel,
   className,
   children,
 }: SectionSurfaceProps) => (
   <section aria-label={ariaLabel} className={cn(SECTION_SURFACE_CLASS, className)}>
-    <SectionHeader label={label} size={headingSize} hint={hint} action={action} />
+    <SectionHeader
+      label={label}
+      size={headingSize}
+      headingLevel={headingLevel}
+      hint={hint}
+      action={action}
+    />
     {children}
   </section>
 );

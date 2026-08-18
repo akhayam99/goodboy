@@ -66,4 +66,34 @@ describe('SectionHeader, eyebrow size', () => {
     expect(screen.getByText('Versions')).toBeDefined();
     expect(screen.getByText('restore any of them')).toBeDefined();
   });
+
+  it('sits the label on the eyebrow grade and the description one grade under nothing', () => {
+    render(<SectionHeader label="Decisions" hint="One row per choice already settled." />);
+
+    expect(screen.getByText('Decisions').className).toContain('text-2xs');
+    expect(screen.getByText('One row per choice already settled.').className).toContain('text-2xs');
+  });
+
+  it('keeps the heading in the outline when a reading surface asks for one', () => {
+    render(<SectionHeader label="Session summary" headingLevel={2} />);
+
+    const heading = screen.getByRole('heading', { level: 2, name: 'Session summary' });
+
+    expect(heading.textContent).toBe('Session summary');
+  });
+
+  it('leaves a promoted heading on the eyebrow grade rather than the page grade', () => {
+    render(<SectionHeader label="Session summary" headingLevel={2} />);
+
+    const heading = screen.getByRole('heading', { level: 2 });
+
+    expect(heading.className).not.toContain('text-base');
+    expect(screen.getByText('Session summary').className).toContain('text-2xs');
+  });
+
+  it('takes a third-level heading for a block nested inside a section', () => {
+    render(<SectionHeader label="Decisions" headingLevel={3} />);
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Decisions' })).toBeDefined();
+  });
 });
