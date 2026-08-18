@@ -8,6 +8,7 @@ import type {
   WorkflowRun,
 } from '@goodboy/types';
 import { classifyAgent, type AgentKind } from '../agent-kind';
+import { attachedQuestionsFor } from './attachedQuestions';
 import { resolveAgentCreation, type AgentCreation } from './agentCreation';
 import { runIdentity, type RunIdentity } from './runIdentity';
 
@@ -97,11 +98,6 @@ type WorktreeParams = {
   readonly worktree: SessionWorktree;
 };
 
-type QuestionAttachParams = {
-  readonly questions: ReadonlyArray<OpenQuestion>;
-  readonly agent: Agent;
-};
-
 type SortableEntry = {
   readonly at: string | null;
   readonly ordinal: number;
@@ -110,23 +106,6 @@ type SortableEntry = {
 
 const timestampForWorktree = ({ worktree }: WorktreeParams): string =>
   new Date(worktree.createdAt).toISOString();
-
-const attachedQuestionsFor = ({
-  questions,
-  agent,
-}: QuestionAttachParams): ReadonlyArray<OpenQuestion> => {
-  const direct = questions.filter((question) => question.createdByAgentId === agent.id);
-  const inferred =
-    agent.workflowRunId == null
-      ? []
-      : questions.filter(
-          (question) =>
-            question.createdByAgentId == null &&
-            question.workflowRunId === agent.workflowRunId &&
-            question.createdByStepOrdinal === agent.ordinal,
-        );
-  return [...direct, ...inferred];
-};
 
 type BuildAnswersParams = {
   readonly questions: ReadonlyArray<OpenQuestion>;

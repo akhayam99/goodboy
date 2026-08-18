@@ -9,6 +9,10 @@ import { QuestionCard } from '.';
 
 afterEach(cleanup);
 
+const LONG_OPTION =
+  'rilancia lo step precedente dopo aver rebasato il branch, perché il refactor non è ancora ' +
+  'arrivato su main e la build partirebbe dal codice vecchio';
+
 const baseQuestion = {
   id: 'q1',
   text: 'pick a database',
@@ -112,5 +116,77 @@ describe('QuestionCard', () => {
     const question = { ...baseQuestion, selectMode: 'many' } as OpenQuestion;
     render(<QuestionCard {...baseProps} question={question} />);
     expect(screen.getByRole('button', { name: /other/i })).toBeDefined();
+  });
+
+  it('gives every option a row of its own, in one column', () => {
+    render(<QuestionCard {...baseProps} />);
+    const group = screen.getByRole('radiogroup', { name: /pick one answer/i });
+    const options = screen.getAllByRole('radio');
+
+    expect(group.className).toContain('flex-col');
+    expect(group.className).not.toContain('flex-wrap');
+    expect(options).toHaveLength(2);
+    expect(options.every((option) => option.className.includes('w-full'))).toBe(true);
+  });
+
+  it('reads a multi-choice question as one row per option too', () => {
+    const question = { ...baseQuestion, selectMode: 'many' } as OpenQuestion;
+    render(<QuestionCard {...baseProps} question={question} />);
+    const group = screen.getByRole('group', { name: /pick one or more answers/i });
+
+    expect(group.className).toContain('flex-col');
+    expect(screen.getAllByRole('checkbox').every((box) => box.className.includes('w-full'))).toBe(
+      true,
+    );
+  });
+
+  it('shows a sentence-long option whole instead of cutting it off', () => {
+    const question = {
+      ...baseQuestion,
+      suggestedAnswers: [LONG_OPTION, 'postgres'],
+    } as unknown as OpenQuestion;
+    render(<QuestionCard {...baseProps} question={question} />);
+
+    expect(screen.getByRole('radio', { name: LONG_OPTION }).textContent).toBe(LONG_OPTION);
+  });
+
+  it('keeps the "other" trigger on its own row after the options', () => {
+    render(<QuestionCard {...baseProps} />);
+    const other = screen.getByRole('button', { name: /other/i });
+    const lastOption = screen.getByRole('radio', { name: 'postgres' });
+
+    expect(other.className).toContain('self-start');
+    expect(lastOption.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it('puts the suggested answer first however late it arrived', () => {
+    const question = {
+      ...baseQuestion,
+      suggestedAnswers: ['postgres', 'sqlite', 'duckdb'],
+      recommendedAnswer: 'sqlite',
+    } as unknown as OpenQuestion;
+    render(<QuestionCard {...baseProps} question={question} />);
+
+    expect(screen.getAllByRole('radio').map((option) => option.textContent)).toEqual([
+      'sqlite',
+      'postgres',
+      'duckdb',
+    ]);
+  });
+
+  it('leaves the arrival order alone when no answer is marked suggested', () => {
+    const question = {
+      ...baseQuestion,
+      suggestedAnswers: ['postgres', 'sqlite', 'duckdb'],
+    } as unknown as OpenQuestion;
+    render(<QuestionCard {...baseProps} question={question} />);
+
+    expect(screen.getAllByRole('radio').map((option) => option.textContent)).toEqual([
+      'postgres',
+      'sqlite',
+      'duckdb',
+    ]);
   });
 });

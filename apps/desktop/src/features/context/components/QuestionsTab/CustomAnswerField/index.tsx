@@ -23,7 +23,7 @@ export const CustomAnswerField = ({
         onClick={onToggle}
         title="Add custom answer"
         className={cn(
-          'inline-flex items-center gap-1 rounded-md border border-dashed border-border/60 px-2.5 py-1',
+          'inline-flex self-start items-center gap-1 rounded-md border border-dashed border-border/60 px-2.5 py-1',
           'text-xs text-muted-foreground transition-[color,background-color,border-color,transform] duration-150',
           'hover:border-border hover:bg-muted hover:text-foreground active:scale-[0.97]',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
@@ -36,7 +36,7 @@ export const CustomAnswerField = ({
   }
 
   return (
-    <div className="flex min-w-0 max-w-full flex-[1_1_14rem] items-center gap-2 motion-safe:animate-fade-in">
+    <div className="flex w-full min-w-0 items-center gap-2 motion-safe:animate-fade-in">
       <span className="shrink-0 text-2xs font-medium text-muted-foreground">your answer</span>
       <Textarea
         autoFocus
