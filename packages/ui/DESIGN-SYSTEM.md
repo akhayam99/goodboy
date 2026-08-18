@@ -165,13 +165,44 @@ The activity feed draws structure instead of indenting it. Four ingredients
 carry the whole grammar, and nothing outside this list is allowed to appear on
 the rail:
 
-| ingredient                | value                                                       | meaning                                                   |
-| ------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| spine                     | 1px, `--color-border`, solid, unbroken on every row         | the session's own thread                                  |
-| lane                      | 2px, identity hue, solid                                    | a run whose steps have happened                           |
-| lane, dashed at 45% alpha | 2px, identity hue                                           | the stretch of a run still to come                        |
-| join                      | quarter curve between spine and lane at a row's marker line | a run departing at its origin or merging when it finished |
-| stub                      | 1px, `--color-border`, offset one column                    | a standalone agent's fan-out, which belongs to no run     |
+| ingredient | value                                                       | meaning                                                   |
+| ---------- | ----------------------------------------------------------- | --------------------------------------------------------- |
+| spine      | 1px, `--color-border`, solid, unbroken on every row         | the session's own thread                                  |
+| lane       | 2px, identity hue, solid                                    | a run whose steps have happened                           |
+| join       | quarter curve between spine and lane at a row's marker line | a run departing at its origin or merging when it finished |
+| stub       | 1px, `--color-border`, offset one column                    | a standalone agent's fan-out, which belongs to no run     |
+
+The spine is the backbone of the feed: full height, always drawn, never tinted
+and never interrupted.
+
+### The two channels a rail line speaks through
+
+Every stroke on the rail carries two independent readings, and keeping them
+independent is what stops either one from being guessed at.
+
+**Pattern is time.** Solid means this line's own work has happened, dashed means
+it has not happened yet. The solid-to-dashed boundary sits at the running step,
+so the transition itself reads as progress. Dashed means nothing else, on any
+line, at any depth, and a dashed stretch always points toward NOW.
+
+**Strength is attention.** A line whose activity has moved onto a live branch
+stays solid in pattern and recedes to `--rail-strength-receded` over exactly the
+span where that branch is live. The deepest live branch is the only stroke at
+full strength; every ancestor over that span steps back. The token mixes 45% of
+the stroke on dark and 50% on light toward the surface colour, so the receded
+stroke reads as background structure on both themes rather than disappearing
+on paper or reading as disabled on ink.
+
+The rule is one predicate over a line and a span, asked identically of the spine
+and of a lane, so it holds spine to run, run to fan-out, and at any further
+depth the column cap allows without a second rule. Two branches live over the
+same rows recede their shared ancestor once, since the statement is about the
+ancestor and not about either branch.
+
+The channels are orthogonal, so both statements survive together and in
+greyscale. A run's lane past its own running step while a fan-out of its own is
+live renders **dashed and receded**: the pattern says its remaining work is
+future, the strength says attention is one level further out.
 
 The stub exists because identity names a run and nothing else. A standalone
 agent's children are still session work, so their offset line stays in the
@@ -185,7 +216,7 @@ size so a marker centres on its label's line rather than on its row box.
 
 Two rules follow from the direction of time. Newer sits above older at every
 level, so a run's origin row is the bottom of its group and its steps stack
-upward, and dashed always points toward NOW because dashed means future.
+upward, and a dash always points toward NOW because dashed means future.
 
 A third rule governs what the feed shows: **everything, always**. Nothing in the
 feed collapses, summarises or hides behind a count, and no disclosure control
