@@ -187,6 +187,38 @@ describe('AgentBrief open questions', () => {
   });
 });
 
+describe('AgentBrief type scale', () => {
+  it('labels the outcome on the eyebrow grade while keeping it in the outline', () => {
+    render(
+      <AgentBrief session={session} agent={makeAgent({ outputSummary: 'shipped the refactor' })} />,
+    );
+
+    const heading = screen.getByRole('heading', { level: 2, name: 'Outcome' });
+
+    expect(heading.className).not.toContain('text-base');
+    expect(screen.getByText('Outcome').className).toContain('text-2xs');
+  });
+
+  it('leaves the outcome body on the reading grade, since it is prose', () => {
+    render(
+      <AgentBrief session={session} agent={makeAgent({ outputSummary: 'shipped the refactor' })} />,
+    );
+
+    const prose = screen.getByText('shipped the refactor').closest('.text-sm');
+
+    expect(prose).not.toBeNull();
+  });
+
+  it('reads the live state on the status grade the overview header uses', () => {
+    render(<AgentBrief session={session} agent={makeAgent({ status: 'pending' })} />);
+
+    const line = screen.getByText('queued').parentElement;
+
+    expect(line?.className).toContain('text-xs');
+    expect(line?.className).not.toContain('text-sm');
+  });
+});
+
 describe('AgentBrief sections', () => {
   it('carries every section on the one shared surface', () => {
     state.sessionPlans = {

@@ -54,14 +54,14 @@ export const AgentBriefChildren = ({ session, kind, children }: Props) => {
                 size="sm"
                 pulsing={child.status === 'running'}
               />
-              <span className="w-5 shrink-0 text-2xs tabular-nums text-muted-foreground">
+              <span className="w-5 shrink-0 text-3xs tabular-nums text-muted-foreground">
                 {child.index + 1}
               </span>
-              <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+              <span className="min-w-0 flex-1 truncate text-xs leading-4 text-foreground">
                 {child.agent.name}
               </span>
               {cost > 0 ? (
-                <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
+                <span className="shrink-0 text-3xs tabular-nums text-muted-foreground">
                   {formatUsd(cost)}
                 </span>
               ) : null}
