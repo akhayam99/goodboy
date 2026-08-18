@@ -53,10 +53,13 @@ const { store } = vi.hoisted(() => ({
       },
     } as Record<string, { status: string }>,
     slotHistory: {} as Record<string, Record<string, ReadonlyArray<unknown>>>,
+    sessionSlotsLoad: {} as Record<string, 'loaded' | 'failed' | undefined>,
     sessionOpenQuestions: {} as Record<string, ReadonlyArray<unknown>>,
     upsertSessionSlot: vi.fn(),
     loadSlotHistory: vi.fn().mockResolvedValue(undefined),
     loadSessionOpenQuestions: vi.fn().mockResolvedValue(undefined),
+    ensureSessionSlots: vi.fn().mockResolvedValue(undefined),
+    loadSessionSlots: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -64,6 +67,7 @@ vi.mock('../../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
   useSessionSlots: (sessionId: string) => store.sessionSlots[sessionId] ?? [],
+  useSessionSlotsLoad: (sessionId: string) => store.sessionSlotsLoad[sessionId] ?? null,
   useSessionLoading: () => ({
     agents: false,
     transcript: false,
@@ -125,8 +129,11 @@ const sectionFor = (name: string): HTMLElement => {
 
 beforeEach(() => {
   store.sessionSlots['session-1'] = slots();
+  store.sessionSlotsLoad['session-1'] = 'loaded';
   store.summarizerStatus['session-1'] = { status: 'idle' };
   store.upsertSessionSlot = vi.fn();
+  store.ensureSessionSlots = vi.fn().mockResolvedValue(undefined);
+  store.loadSessionSlots = vi.fn().mockResolvedValue(undefined);
 });
 
 afterEach(cleanup);
@@ -172,6 +179,43 @@ describe('Context regions', () => {
       screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
     ).toEqual(['Session summary', 'Decisions']);
     expect(screen.queryByRole('tablist')).toBeNull();
+  });
+
+  it('asks for the context itself, so the pane does not depend on the session switch', () => {
+    render(<ContextPane session={SESSION} />);
+
+    expect(store.ensureSessionSlots).toHaveBeenCalledWith('session-1');
+  });
+
+  it('says the read failed instead of offering the blank document as the truth', () => {
+    store.sessionSlots['session-1'] = [];
+    store.sessionSlotsLoad['session-1'] = 'failed';
+    render(<ContextPane session={SESSION} />);
+    const summary = sectionFor('Session summary');
+
+    expect(within(summary).getByText('Session summary did not load')).toBeDefined();
+    expect(within(summary).queryByRole('region', { name: 'Problem' })).toBeNull();
+    expect(within(sectionFor('Decisions')).getByText('Decisions did not load')).toBeDefined();
+  });
+
+  it('reads the database again from the failed state', () => {
+    store.sessionSlots['session-1'] = [];
+    store.sessionSlotsLoad['session-1'] = 'failed';
+    render(<ContextPane session={SESSION} />);
+
+    fireEvent.click(within(sectionFor('Decisions')).getByRole('button', { name: 'Retry' }));
+
+    expect(store.loadSessionSlots).toHaveBeenCalledWith('session-1');
+  });
+
+  it('waits rather than claiming a session is empty before the read has answered', () => {
+    store.sessionSlots['session-1'] = [];
+    store.sessionSlotsLoad['session-1'] = undefined;
+    render(<ContextPane session={SESSION} />);
+    const summary = sectionFor('Session summary');
+
+    expect(within(summary).getByRole('status', { name: 'Loading' })).toBeDefined();
+    expect(within(summary).queryByRole('region', { name: 'Problem' })).toBeNull();
   });
 });
 

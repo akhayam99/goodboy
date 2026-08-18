@@ -114,9 +114,12 @@ const { store } = vi.hoisted(() => {
           },
         ],
       } as Record<string, OpenQuestion[]>,
+      sessionSlotsLoad: {} as Record<string, 'loaded' | 'failed' | undefined>,
       upsertSessionSlot: vi.fn(),
       loadSlotHistory: vi.fn().mockResolvedValue(undefined),
       loadSessionOpenQuestions: vi.fn().mockResolvedValue(undefined),
+      ensureSessionSlots: vi.fn().mockResolvedValue(undefined),
+      loadSessionSlots: vi.fn().mockResolvedValue(undefined),
     },
   };
 });
@@ -125,6 +128,7 @@ vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
   useSessionSlots: (sessionId: string) => store.sessionSlots[sessionId] ?? [],
+  useSessionSlotsLoad: (sessionId: string) => store.sessionSlotsLoad[sessionId] ?? null,
   useSessionLoading: (sessionId: string) =>
     store.sessionLoading[sessionId] ?? {
       agents: false,
@@ -176,9 +180,12 @@ beforeEach(() => {
     { key: 'decisions', value: 'use tailwind', enabled: true },
     { key: 'last_output_summary', value: '**Status**: done', enabled: true },
   ];
+  store.sessionSlotsLoad['session-1'] = 'loaded';
   store.upsertSessionSlot = vi.fn();
   store.loadSlotHistory = vi.fn().mockResolvedValue(undefined);
   store.loadSessionOpenQuestions = vi.fn().mockResolvedValue(undefined);
+  store.ensureSessionSlots = vi.fn().mockResolvedValue(undefined);
+  store.loadSessionSlots = vi.fn().mockResolvedValue(undefined);
   writeText.mockReset();
   writeText.mockResolvedValue(undefined);
   Object.defineProperty(navigator, 'clipboard', {

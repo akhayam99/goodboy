@@ -7,6 +7,7 @@ import {
   useSessionLoading,
   useSessionOpenQuestions,
   useSessionSlots,
+  useSessionSlotsLoad,
   useSlotHistory,
   useSlotHistoryCount,
   useSummarizerStatus,
@@ -15,6 +16,7 @@ import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import type { ContextLens } from '../../../../lens-surface';
 import { InspectorSplit } from '../InspectorSplit';
 import { SlotHistoryPanel } from '../SlotHistoryPanel';
+import { ContextLoadFailure } from './ContextLoadFailure';
 import { ContextSection } from './ContextSection';
 import { DecisionsSection } from './DecisionsSection';
 import { SummarySection } from './SummarySection';
@@ -53,8 +55,11 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
   const sessionId = session.id as SessionId;
   const slots = useSessionSlots(sessionId);
   const loading = useSessionLoading(sessionId);
+  const slotsLoad = useSessionSlotsLoad(sessionId);
   const openQuestions = useSessionOpenQuestions(sessionId);
   const loadSessionOpenQuestions = useAppStore((s) => s.loadSessionOpenQuestions);
+  const ensureSessionSlots = useAppStore((s) => s.ensureSessionSlots);
+  const loadSessionSlots = useAppStore((s) => s.loadSessionSlots);
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
   const summarizer = useSummarizerStatus(sessionId);
@@ -74,6 +79,10 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
   useEffect(() => {
     void loadSessionOpenQuestions(sessionId);
   }, [loadSessionOpenQuestions, sessionId]);
+
+  useEffect(() => {
+    void ensureSessionSlots(sessionId);
+  }, [ensureSessionSlots, sessionId]);
 
   useEffect(() => {
     if (initialRegion == null) {
@@ -128,7 +137,9 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
           const value = valueFor({ slots, slotKey });
           const title = REGION_TITLE[slotKey];
           const historyCount = historyCounts[slotKey];
-          const isLoading = slots.some((slot) => slot.key === slotKey) === false && loading.slots;
+          const hasSlot = slots.some((slot) => slot.key === slotKey);
+          const isLoading = !hasSlot && (loading.slots || slotsLoad === null);
+          const hasFailed = !hasSlot && slotsLoad === 'failed';
           const isRawEditing = rawKey === slotKey;
           const onWrite = (next: string) => {
             void upsertSessionSlot(sessionId, slotKey, next);
@@ -178,7 +189,14 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
                   </div>
                 }
               >
-                {slotKey === 'last_output_summary' ? (
+                {hasFailed ? (
+                  <ContextLoadFailure
+                    title={title}
+                    onRetry={() => {
+                      void loadSessionSlots(sessionId);
+                    }}
+                  />
+                ) : slotKey === 'last_output_summary' ? (
                   <SummarySection
                     value={value}
                     isLoading={isLoading}
