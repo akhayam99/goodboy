@@ -102,6 +102,20 @@ export const SegmentedTabs = <T extends string>({
           isActive && option.accent != null
             ? { color: option.accent, borderColor: option.accent }
             : undefined;
+        const mark =
+          glyph != null ? (
+            <span className="flex shrink-0 items-center">{glyph}</span>
+          ) : Icon != null ? (
+            <Icon
+              size={isMedium ? 15 : 13}
+              aria-hidden
+              className={cn(
+                'shrink-0',
+                isActive && option.accent == null && tone != null && tone.icon,
+              )}
+            />
+          ) : null;
+        const hasStackedHint = isMedium && option.hint != null;
         return (
           <button
             key={option.value}
@@ -127,39 +141,24 @@ export const SegmentedTabs = <T extends string>({
                 'cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground',
             )}
           >
-            {glyph != null ? (
-              <span className="flex shrink-0 items-center">{glyph}</span>
-            ) : Icon != null ? (
-              isMedium ? (
-                <Icon
-                  size={15}
-                  aria-hidden
-                  className={cn(
-                    'shrink-0',
-                    isActive && option.accent == null && tone != null && tone.icon,
-                  )}
-                />
-              ) : (
-                <Icon
-                  size={13}
-                  aria-hidden
-                  className={cn(
-                    'shrink-0',
-                    isActive && option.accent == null && tone != null && tone.icon,
-                  )}
-                />
-              )
-            ) : null}
-            <span
-              className={cn('min-w-0', isMedium && option.hint != null && 'flex flex-col gap-0.5')}
-            >
-              <span className="block truncate">{option.label}</span>
-              {isMedium && option.hint != null ? (
+            {hasStackedHint ? (
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="flex min-w-0 items-center gap-1.5">
+                  {mark}
+                  <span className="truncate">{option.label}</span>
+                </span>
                 <span className="block truncate text-2xs font-normal text-muted-foreground">
                   {option.hint}
                 </span>
-              ) : null}
-            </span>
+              </span>
+            ) : (
+              <>
+                {mark}
+                <span className="min-w-0">
+                  <span className="block truncate">{option.label}</span>
+                </span>
+              </>
+            )}
             {option.badge != null ? (
               typeof option.badge === 'string' ? (
                 <span className="rounded-md bg-foreground/10 px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wide text-muted-foreground">

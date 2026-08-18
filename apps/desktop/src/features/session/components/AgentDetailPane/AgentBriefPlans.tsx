@@ -1,4 +1,4 @@
-import { SectionHeader, cn, tintClasses } from '@goodboy/ui';
+import { SectionSurface, cn, tintClasses } from '@goodboy/ui';
 import type { PlanWithCount, SessionId } from '@goodboy/types';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -15,8 +15,7 @@ export const AgentBriefPlans = ({ plans, sessionId }: Props) => {
     return null;
   }
   return (
-    <section className="flex flex-col gap-2">
-      <SectionHeader label="Plans" />
+    <SectionSurface label="Plans">
       <div className="flex flex-col gap-2">
         {plans.map((plan) => (
           <button
@@ -46,6 +45,6 @@ export const AgentBriefPlans = ({ plans, sessionId }: Props) => {
           </button>
         ))}
       </div>
-    </section>
+    </SectionSurface>
   );
 };

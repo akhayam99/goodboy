@@ -118,6 +118,8 @@ export { SegmentedTabs } from './components/SegmentedTabs';
 export type { Props as SegmentedTabsProps, SegmentedTabOption } from './components/SegmentedTabs';
 export { SectionHeader } from './components/SectionHeader';
 export type { SectionHeaderProps } from './components/SectionHeader';
+export { SECTION_SURFACE_CLASS, SectionSurface } from './components/SectionSurface';
+export type { SectionSurfaceProps } from './components/SectionSurface';
 export { SelectableRow } from './components/SelectableRow';
 export type { SelectableRowProps } from './components/SelectableRow';
 export { Select } from './components/Select';
