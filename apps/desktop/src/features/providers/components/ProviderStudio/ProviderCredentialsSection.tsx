@@ -53,11 +53,16 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
 
   const onDelete = useCallback(
     async (credentialId: CredentialId) => {
-      await deleteCredential(credentialId);
-      await refreshProviders();
-      setArmedId(null);
+      try {
+        await deleteCredential(credentialId);
+        await refreshProviders();
+      } catch (err) {
+        showToast('error', formatError(err));
+      } finally {
+        setArmedId(null);
+      }
     },
-    [deleteCredential, refreshProviders],
+    [deleteCredential, refreshProviders, showToast],
   );
 
   if (apiKeyEnv === undefined) {
@@ -102,7 +107,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
                   role="danger"
                   icon={<Trash2 size={12} aria-hidden />}
                   title={`Remove "${c.label}"?`}
-                  description="Deletes this API key from Goodboy. You can add it again later."
+                  description="Deletes this API key from Goodboy. A key a workspace still uses is kept."
                   confirmLabel={`Remove ${c.label}`}
                   autoDisarmMs={4000}
                   onConfirm={() => onDelete(c.id)}
