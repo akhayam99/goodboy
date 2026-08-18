@@ -7,7 +7,7 @@ type Props = {
 
 export const Logo = ({ size = 26, href = '#top' }: Props) => (
   <a className="logo" href={href} style={{ fontSize: size >= 26 ? 19 : 16 }}>
-    <DogMascot size={size} color="var(--accent)" />
-    Goodboy
+    <DogMascot size={size} color="var(--ink)" />
+    <span style={{ color: 'var(--accent)' }}>Goodboy</span>
   </a>
 );
