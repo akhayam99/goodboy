@@ -4,6 +4,8 @@ import { cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type { TimelineMarkerState } from '../../../../timeline/markerState';
 import { TIMELINE_RHYTHM, type TimelineRowGrade } from '../../../../timeline/timelineRhythm';
+import { TimelineEmphasisMarker } from './TimelineEmphasisMarker';
+import { TIMELINE_SURFACE_FILL } from './timelineLayout';
 
 type Props = {
   readonly state: TimelineMarkerState;
@@ -38,18 +40,27 @@ const SHAPE: Record<
   question: { icon: MessageCircleQuestionMark, label: 'Waiting on your answer' },
 };
 
-const fillClasses = ({ fill, tone }: { readonly fill: Fill; readonly tone: Tone }): string => {
+type FillParams = {
+  readonly fill: Fill;
+  readonly tone: Tone;
+};
+
+const surfaceClasses = ({ fill, tone }: FillParams): string => {
   const tint = tintClasses(tone);
   if (fill === 'solid') {
     return cn(tint.solid, 'ring-1', tint.ringStrong);
   }
-  if (fill === 'soft') {
-    return cn(tint.bg, 'ring-1', tint.ring);
-  }
-  return cn('bg-background ring-1', tint.ring);
+  return cn(TIMELINE_SURFACE_FILL, 'ring-1', tint.ring);
 };
 
-const glyphClasses = ({ fill, tone }: { readonly fill: Fill; readonly tone: Tone }): string => {
+const toneWashClasses = ({ fill, tone }: FillParams): string | null => {
+  if (fill === 'soft') {
+    return tintClasses(tone).bg;
+  }
+  return null;
+};
+
+const glyphClasses = ({ fill, tone }: FillParams): string => {
   if (fill === 'solid') {
     return 'text-current';
   }
@@ -72,50 +83,45 @@ export const TimelineMarker = ({ state, grade, hasUnread = false }: Props) => {
   ) : null;
 
   if (state === 'needsUser' || state === 'question') {
-    const { icon: Icon, label } = SHAPE[state];
+    const { icon, label } = SHAPE[state];
     return (
-      <span className="relative inline-flex items-center justify-center">
-        <span
-          className="absolute rounded-full bg-background"
-          style={{ width: markerSize, height: markerSize }}
-        />
-        <Icon
-          size={markerSize + 4}
-          strokeWidth={2}
-          fill="currentColor"
-          fillOpacity={0.18}
-          className="relative text-warning"
-          aria-label={label}
-        />
+      <TimelineEmphasisMarker icon={icon} tone="warning" label={label} grade={grade}>
         {unread}
-      </span>
+      </TimelineEmphasisMarker>
     );
   }
 
   const spec = CIRCLE[state];
   const Glyph = spec.icon;
+  const wash = toneWashClasses({ fill: spec.fill, tone: spec.tone });
   return (
     <span
       className={cn(
         'relative inline-flex items-center justify-center rounded-full',
-        fillClasses({ fill: spec.fill, tone: spec.tone }),
+        surfaceClasses({ fill: spec.fill, tone: spec.tone }),
         state === 'running' && 'spin-border spin-border-info',
       )}
       style={{ width: markerSize, height: markerSize }}
       aria-label={Glyph === null ? spec.label : undefined}
       role={Glyph === null ? 'img' : undefined}
     >
+      {wash === null ? null : (
+        <span aria-hidden className={cn('absolute inset-0 rounded-full', wash)} />
+      )}
       {Glyph === null ? null : (
         <Glyph
           size={glyphSize}
           strokeWidth={2.5}
-          className={glyphClasses({ fill: spec.fill, tone: spec.tone })}
+          className={cn('relative', glyphClasses({ fill: spec.fill, tone: spec.tone }))}
           aria-label={spec.label}
         />
       )}
       {state === 'running' ? (
         <span
-          className={cn('rounded-full motion-safe:animate-soft-pulse', tintClasses(spec.tone).dot)}
+          className={cn(
+            'relative rounded-full motion-safe:animate-soft-pulse',
+            tintClasses(spec.tone).dot,
+          )}
           style={{ width: dotSize, height: dotSize }}
         />
       ) : null}
