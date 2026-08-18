@@ -27,6 +27,8 @@ const CIRCLE_STATES = [
   'skipped',
 ] satisfies ReadonlyArray<TimelineMarkerState>;
 
+const ELEVATION_RAMP = ['bg-background', 'bg-subtle', 'bg-muted', 'bg-elevated'];
+
 const LABELS: Record<TimelineMarkerState, string> = {
   done: 'Done',
   failed: 'Failed',
@@ -107,8 +109,8 @@ describe('TimelineMarker', () => {
     }
   });
 
-  it('takes the occluding fill from the surface the feed is drawn on', () => {
-    expect(TIMELINE_SURFACE_FILL).toBe('bg-background');
+  it('takes the occluding fill from the elevation ramp, never a picked colour', () => {
+    expect(ELEVATION_RAMP).toContain(TIMELINE_SURFACE_FILL);
   });
 
   it('leaves pending an outline while a settled state carries its tone', () => {

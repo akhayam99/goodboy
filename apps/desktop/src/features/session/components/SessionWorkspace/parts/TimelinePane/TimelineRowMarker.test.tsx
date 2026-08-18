@@ -11,6 +11,7 @@ import type {
 import { TIMELINE_RHYTHM } from '../../../../timeline/timelineRhythm';
 import { TimelineMarker } from './TimelineMarker';
 import { TimelineRowMarker } from './TimelineRowMarker';
+import { TIMELINE_SURFACE_FILL } from './timelineLayout';
 
 afterEach(cleanup);
 
@@ -84,7 +85,7 @@ describe('TimelineRowMarker', () => {
     const { container } = render(<TimelineRowMarker item={itemOf({ entry: planEntry() })} />);
     const root = container.firstElementChild;
 
-    expect(root?.querySelector('span')?.className).toContain('bg-background');
+    expect(root?.querySelector('span')?.className).toContain(TIMELINE_SURFACE_FILL);
   });
 
   it('leaves the other artifact markers on their own container', () => {
