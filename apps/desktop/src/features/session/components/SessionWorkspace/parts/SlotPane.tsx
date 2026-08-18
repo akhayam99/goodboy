@@ -166,7 +166,6 @@ export const SlotPane = ({ session, slotKey }: Props) => {
       <PaneShell
         title={SLOT_TITLE[slotKey]}
         description={SLOT_DESCRIPTION[slotKey]}
-        measure="reading"
         actions={
           <>
             {hasValue ? (

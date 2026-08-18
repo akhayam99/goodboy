@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { Agent, Session, StepId, Workflow } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -15,7 +15,9 @@ import {
   kindConsumesPlan,
 } from '../../../../session/agent-kind';
 import { useAgentStartedToast } from '../../../../../shared/hooks/useAgentStartedToast';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+
+const planTint = tintClasses(CONCEPT_TONE.plans);
 
 type Props = {
   task: Session;
@@ -98,18 +100,31 @@ export const PlanReadySuggestion = ({ task }: Props) => {
       title={latest.title}
       aria-label={`Spawn an implementer agent to execute the plan: ${latest.title}`}
       className={cn(
-        'group mt-1 flex w-full items-start gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-2 text-left transition-colors hover:border-primary/60 hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60',
+        'group mt-1 flex w-full items-start gap-2 rounded-md border px-2.5 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+        planTint.border,
+        planTint.bg,
+        planTint.hoverBorder,
+        planTint.hoverBg,
         spawning && 'animate-border-pulse',
       )}
     >
       <span
-        className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary"
+        className={cn(
+          'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full',
+          planTint.bg,
+          planTint.icon,
+        )}
         aria-hidden
       >
-        <CONCEPT_ICONS.suggestion size={11} />
+        <CONCEPT_ICONS.plans size={11} />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="flex items-center gap-1.5 text-3xs font-semibold uppercase tracking-wide text-primary">
+        <span
+          className={cn(
+            'flex items-center gap-1.5 text-3xs font-semibold uppercase tracking-wide',
+            planTint.text,
+          )}
+        >
           <span>plan ready</span>
           <span aria-hidden className="opacity-40">
             ·
@@ -123,7 +138,11 @@ export const PlanReadySuggestion = ({ task }: Props) => {
       <ArrowRight
         size={12}
         aria-hidden
-        className="mt-0.5 shrink-0 text-primary/70 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+        className={cn(
+          'mt-0.5 shrink-0 opacity-70 motion-safe:transition-transform group-hover:translate-x-0.5',
+          planTint.icon,
+          planTint.hoverText,
+        )}
       />
     </button>
   );

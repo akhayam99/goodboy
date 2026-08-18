@@ -2,6 +2,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { tintClasses } from '@goodboy/ui';
+import { CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 const { extractPlanMock, state } = vi.hoisted(() => ({
   extractPlanMock: vi.fn<(text: string) => unknown>(() => null),
@@ -30,12 +32,18 @@ describe('PlanChip', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders a clickable chip with the plan title', () => {
+  it('renders a clickable chip with the shared plan tone', () => {
     extractPlanMock.mockReturnValue({ title: 'My Plan', bodyMd: 'body' });
     state.sessionPlans = { s1: [{ id: 'p1', title: 'My Plan' }] };
     render(<PlanChip assistantText="x" sessionId={'s1' as never} />);
+
+    const chip = screen.getByTestId('plan-chip');
+    const planTint = tintClasses(CONCEPT_TONE.plans);
+
     expect(screen.getByText('My Plan')).toBeTruthy();
-    expect(screen.getByTestId('plan-chip')).toBeTruthy();
+    expect(chip.className).toContain(planTint.bg);
+    expect(chip.className).toContain(planTint.border);
+    expect(chip.className).toContain(planTint.text);
   });
 
   it('dispatches goodboy:open-plan-studio with planId when clicked', () => {

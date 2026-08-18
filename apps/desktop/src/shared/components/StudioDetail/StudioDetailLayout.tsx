@@ -28,8 +28,8 @@ export const StudioDetailLayout = ({
   const isFlow = fit === 'flow';
   const hasProperties = properties != null && properties.length > 0;
   const hasMeta = fit !== 'bleed' && (rail != null || hasProperties);
-  const headerMeasure = PANE_RHYTHM.measure.reading;
-  const bodyMeasure = fit === 'fill' ? PANE_RHYTHM.measure.reading : PANE_RHYTHM.measure.full;
+  const headerMeasure = PANE_RHYTHM.measure.pane;
+  const bodyMeasure = fit === 'fill' ? PANE_RHYTHM.measure.pane : PANE_RHYTHM.measure.full;
 
   return (
     <div className={cn('flex flex-col', isFlow ? 'gap-4' : 'h-full min-h-0')}>

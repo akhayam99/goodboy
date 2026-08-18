@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { tintClasses } from '@goodboy/ui';
 import type {
   Agent,
   AgentId,
@@ -14,6 +15,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import { CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { WorkflowNextStepCta } from './index';
 
 afterEach(cleanup);
@@ -138,6 +140,17 @@ describe('WorkflowNextStepCta', () => {
     render(<WorkflowNextStepCta workflow={wf()} runs={ctaRuns} onAdvance={vi.fn()} />);
     expect(screen.getByTestId('workflow-next-step-cta').textContent).toMatch(
       /run next step: scout/i,
+    );
+  });
+
+  it('uses the shared plan tone for an active plan marker', () => {
+    render(
+      <WorkflowNextStepCta workflow={wf()} runs={ctaRuns} onAdvance={vi.fn()} consumesActivePlan />,
+    );
+
+    const marker = screen.getByTitle('Advancing will consume the active plan');
+    expect(marker.querySelector('svg')?.getAttribute('class')).toContain(
+      tintClasses(CONCEPT_TONE.plans).icon,
     );
   });
 

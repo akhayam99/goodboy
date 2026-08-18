@@ -37,7 +37,7 @@ export const PlanChip = ({ assistantText, sessionId }: Props) => {
       type="button"
       onClick={onClick}
       data-testid="plan-chip"
-      tone="neutral"
+      tone={CONCEPT_TONE.plans}
       variant="pill"
       className={`inline-flex w-fit items-center gap-1.5 text-xs font-medium transition-opacity hover:opacity-80 ${accent.text}`}
     >

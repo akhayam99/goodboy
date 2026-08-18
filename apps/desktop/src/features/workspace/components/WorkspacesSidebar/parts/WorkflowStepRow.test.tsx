@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { tintClasses } from '@goodboy/ui';
 import type {
   Agent,
   AgentId,
@@ -15,6 +16,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
+import { CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 
 const storeState = vi.hoisted(() => ({
   plans: [] as ReadonlyArray<PlanWithCount>,
@@ -160,7 +162,11 @@ describe('WorkflowStepRow', () => {
     window.addEventListener('goodboy:open-plan-studio', onOpen);
 
     renderRow({ kind: 'planner' });
-    fireEvent.click(screen.getByRole('button', { name: /open plan:/i }));
+    const planButton = screen.getByRole('button', { name: /open plan:/i });
+    const planTint = tintClasses(CONCEPT_TONE.plans);
+    expect(planButton.className).toContain(planTint.bgSoft);
+    expect(planButton.className).toContain(planTint.borderSoft);
+    fireEvent.click(planButton);
 
     expect(screen.getByTitle(plan.title).textContent).toContain('Plan');
     const event = onOpen.mock.calls[0]?.[0];

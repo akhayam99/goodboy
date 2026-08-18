@@ -76,7 +76,7 @@ describe('StudioDetailLayout', () => {
     expect(screen.getByText('Tabs slot')).toBeDefined();
   });
 
-  it('keeps the header measure constant across fit modes', () => {
+  it('uses the shared pane measure for every header and a fill body', () => {
     const { unmount } = render(
       <StudioDetailLayout header={<span>Header slot</span>} fit="fill">
         <span>Main slot</span>
@@ -84,8 +84,9 @@ describe('StudioDetailLayout', () => {
     );
     const fillHeaderMeasure = screen
       .getByTestId('detail-header-band')
-      .querySelector(`.${PANE_RHYTHM.measure.reading}`);
+      .querySelector(`.${PANE_RHYTHM.measure.pane}`);
     expect(fillHeaderMeasure).not.toBeNull();
+    expect(screen.getByText('Main slot').closest(`.${PANE_RHYTHM.measure.pane}`)).not.toBeNull();
     unmount();
 
     render(
@@ -95,11 +96,9 @@ describe('StudioDetailLayout', () => {
     );
     const bleedHeaderMeasure = screen
       .getByTestId('detail-header-band')
-      .querySelector(`.${PANE_RHYTHM.measure.reading}`);
+      .querySelector(`.${PANE_RHYTHM.measure.pane}`);
     expect(bleedHeaderMeasure).not.toBeNull();
-    expect(
-      screen.getByTestId('detail-header-band').querySelector(`.${PANE_RHYTHM.measure.full}`),
-    ).toBeNull();
+    expect(screen.getByText('Main slot').closest('[class*="max-w-"]')).toBeNull();
   });
 
   it('drops the rail and the scroll region for a full-bleed body', () => {

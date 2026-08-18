@@ -1,6 +1,9 @@
-import { SectionHeader } from '@goodboy/ui';
+import { SectionHeader, cn, tintClasses } from '@goodboy/ui';
 import type { PlanWithCount, SessionId } from '@goodboy/types';
 import { pluralize } from '../../../../shared/utils/pluralize';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+
+const planTint = tintClasses(CONCEPT_TONE.plans);
 
 type Props = {
   readonly plans: ReadonlyArray<PlanWithCount>;
@@ -19,7 +22,12 @@ export const AgentBriefPlans = ({ plans, sessionId }: Props) => {
           <button
             key={plan.id}
             type="button"
-            className="flex items-center justify-between gap-4 rounded-md bg-elevated px-3 py-2 text-left text-sm ring-1 ring-border-soft"
+            className={cn(
+              'flex items-center justify-between gap-4 rounded-md border px-3 py-2 text-left text-sm transition-colors',
+              planTint.bgSoft,
+              planTint.borderSoft,
+              planTint.hoverBgSoft,
+            )}
             onClick={() =>
               window.dispatchEvent(
                 new CustomEvent('goodboy:open-plan-studio', {
@@ -28,7 +36,10 @@ export const AgentBriefPlans = ({ plans, sessionId }: Props) => {
               )
             }
           >
-            <span className="min-w-0 truncate text-foreground">{plan.title}</span>
+            <span className="flex min-w-0 items-center gap-2">
+              <CONCEPT_ICONS.plans size={13} aria-hidden className={planTint.icon} />
+              <span className="min-w-0 truncate text-foreground">{plan.title}</span>
+            </span>
             <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
               {plan.status} · {pluralize(plan.consumptionCount, 'use')}
             </span>

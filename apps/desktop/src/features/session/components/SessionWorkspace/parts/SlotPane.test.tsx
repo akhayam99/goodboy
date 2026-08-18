@@ -2,6 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 
 const writeText = vi.fn(async () => undefined);
@@ -189,6 +190,16 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('ContextPane', () => {
+  it('matches the shared pane measure', () => {
+    render(<ContextPane session={SESSION} />);
+
+    expect(
+      screen
+        .getByRole('heading', { level: 1, name: 'Context' })
+        .closest(`.${PANE_RHYTHM.measure.pane}`),
+    ).not.toBeNull();
+  });
+
   it('renders session summary and decisions as two ordered regions', () => {
     render(<ContextPane session={SESSION} />);
 

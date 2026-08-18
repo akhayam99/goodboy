@@ -32,7 +32,7 @@ const MEASURE = /^max-w-/;
 
 const paneShellBody = () => {
   const { unmount } = render(
-    <PaneShell title="Pane" measure="reading">
+    <PaneShell title="Pane">
       <p>Pane body</p>
     </PaneShell>,
   );
@@ -111,7 +111,7 @@ describe('pane rhythm', () => {
 
     expect(detail.header.measure).toBe(detail.body.measure);
     expect(detail.tabsMeasure).toBe(detail.body.measure);
-    expect(detail.header.measure).toBe(PANE_RHYTHM.measure.reading);
+    expect(detail.header.measure).toBe(PANE_RHYTHM.measure.pane);
   });
 
   it('fills its parent so the studio column centers instead of hugging the left edge', () => {
