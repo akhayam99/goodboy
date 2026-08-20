@@ -48,6 +48,8 @@ import type {
   TurnProviderOverride,
   SessionExternalTaskProvider,
   SessionExternalTask,
+  SessionEventKind,
+  SessionEventPayload,
   IntegrationCredentialId,
   Workspace,
   WorkspaceId,
@@ -84,6 +86,7 @@ import { createSkillsSlice } from './slices/skills';
 import { createStorageSlice } from './slices/storage';
 import { createDiffCommentsSlice } from './slices/diff-comments';
 import { createFileVersionsSlice } from './slices/file-versions';
+import { createSessionEventsSlice } from './slices/session-events';
 import { createAttachmentsSlice } from './slices/attachments';
 import { createGithubSlice } from './slices/github';
 import { createGitlabMrSlice } from './slices/gitlab-mr';
@@ -714,6 +717,12 @@ export type AppActions = {
   ): Promise<void>;
   reopenDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
   deleteDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
+  loadSessionEvents(params: { sessionId: SessionId; force?: boolean }): Promise<void>;
+  recordSessionEvent(params: {
+    sessionId: SessionId;
+    kind: SessionEventKind;
+    payload?: SessionEventPayload;
+  }): Promise<void>;
   loadSessionFileVersions(params: { sessionId: SessionId; force?: boolean }): Promise<void>;
   selectSessionFileVersionPath(params: { sessionId: SessionId; relativePath: string | null }): void;
   restoreSessionFileVersion(params: {
@@ -820,6 +829,7 @@ export const initialState: AppState = {
   workspaceGitStatus: {},
   workspaceCheckoutPulling: {},
   sessionExternalTasks: {},
+  sessionEvents: {},
   currentWorkspaceId: null,
   windowPresence: {},
   sessions: [],
@@ -953,6 +963,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createStorageSlice(set, get),
   ...createDiffCommentsSlice(set, get),
   ...createFileVersionsSlice(set, get),
+  ...createSessionEventsSlice(set, get),
   ...createAttachmentsSlice(set, get),
   ...createGithubSlice(set, get),
   ...createGitlabMrSlice(set, get),

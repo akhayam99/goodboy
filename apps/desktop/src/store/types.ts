@@ -33,6 +33,7 @@ import type {
   PullRequestState,
   Session,
   SessionBudget,
+  SessionEvent,
   SessionExternalTask,
   SessionId,
   SessionMount,
@@ -186,6 +187,7 @@ export type AppState = AppSliceState & {
   readonly workspaceGitStatus: Readonly<Record<WorkspaceId, WorkspaceGitStatus>>;
   readonly workspaceCheckoutPulling: Readonly<Record<WorkspaceId, boolean>>;
   readonly sessionExternalTasks: Readonly<Record<SessionId, ReadonlyArray<SessionExternalTask>>>;
+  readonly sessionEvents: Readonly<Record<SessionId, ReadonlyArray<SessionEvent> | undefined>>;
   readonly currentWorkspaceId: WorkspaceId | null;
   readonly windowPresence: Readonly<Record<string, WorkspaceId | null>>;
   readonly sessions: ReadonlyArray<Session>;

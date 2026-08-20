@@ -19,6 +19,8 @@ export type IsoDateTime = string & { readonly __brand: 'IsoDateTime' };
 export type PermissionRuleId = string & { readonly __brand: 'PermissionRuleId' };
 export type PermissionRequestId = string & { readonly __brand: 'PermissionRequestId' };
 
+export type SessionEventId = string & { readonly __brand: 'SessionEventId' };
+
 export type OpenQuestionId = string & { readonly __brand: 'OpenQuestionId' };
 export type WorkspaceIntegrationId = string & { readonly __brand: 'WorkspaceIntegrationId' };
 

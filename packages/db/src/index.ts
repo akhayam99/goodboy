@@ -170,6 +170,11 @@ export {
   type SessionWorktree,
 } from './queries/session-worktree';
 export {
+  insertSessionEvent,
+  listSessionEvents,
+  deleteSessionEvents,
+} from './queries/session-event';
+export {
   enqueueAuditRetry,
   drainOldest,
   updateAuditRetryAttempts,
