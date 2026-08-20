@@ -24,6 +24,7 @@ mod provider_credentials;
 mod provider_lifecycle;
 mod providers;
 mod qa_preview;
+mod query_bridge;
 mod releases;
 mod remote_image;
 mod repo;
@@ -67,6 +68,7 @@ fn drain_child_processes(app: &tauri::AppHandle) {
     scripts::shutdown(&app.state::<scripts::ScriptRegistry>());
     terminal::shutdown(&app.state::<terminal::TerminalRegistry>());
     provider_lifecycle::shutdown(&app.state::<provider_lifecycle::ProviderLifecycleRegistry>());
+    query_bridge::shutdown();
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -155,6 +157,7 @@ pub fn run() {
         .setup(move |app| {
             use tauri::Manager;
             providers::spawn_startup_detection(app.handle().clone(), detection_opener);
+            query_bridge::start(app.handle().clone());
             #[cfg(desktop)]
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::new().build())?;

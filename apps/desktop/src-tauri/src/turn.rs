@@ -314,6 +314,8 @@ pub(crate) fn spawn_one(
         command.env("GITHUB_TOKEN", &token);
     }
 
+    crate::query_bridge::apply_env(&mut command, args.workspace_id);
+
     let cli_args = build_provider_cli_args(args.binary, &args);
     for a in &cli_args {
         command.arg(a);

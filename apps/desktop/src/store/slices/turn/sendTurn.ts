@@ -71,6 +71,7 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { detectParallelGroup } from '../../parallel-turn';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
+import { buildIntegrationsGuard } from '../../integrationsGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
 import { stepSummaryDegraded } from '../../summarizeAgentOutput';
 import { relinkSimpleSessionDirectories } from '../workspaces/relinkSimpleSessionDirectories';
@@ -855,7 +856,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }),
       }),
     });
-    const guards = languageGuard.length > 0 ? `${scopeGuard}\n\n${languageGuard}` : scopeGuard;
+    const integrationsGuard = buildIntegrationsGuard({
+      providers: (get().workspaceIntegrations[session.workspaceId] ?? []).map(
+        (integration) => integration.provider,
+      ),
+    });
+    const guards = [scopeGuard, languageGuard, integrationsGuard]
+      .filter((block) => block.length > 0)
+      .join('\n\n');
     const fullSystemPrompt = kindSystemPrompt ? `${guards}\n\n${kindSystemPrompt}` : guards;
 
     if (provider !== 'anthropic') {
