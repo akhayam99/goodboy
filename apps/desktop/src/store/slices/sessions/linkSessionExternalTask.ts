@@ -43,5 +43,15 @@ export const linkSessionExternalTask = ({ set, get }: Params) => {
         sessionExternalTasks: { ...state.sessionExternalTasks, [sessionId]: next },
       };
     });
+    await get().recordSessionEvent({
+      sessionId,
+      kind: 'issue_linked',
+      payload: {
+        provider: linkedTask.provider,
+        identifier: linkedTask.identifier,
+        title: linkedTask.title,
+        url: linkedTask.url,
+      },
+    });
   };
 };

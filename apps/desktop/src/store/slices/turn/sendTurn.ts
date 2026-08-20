@@ -73,6 +73,7 @@ import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } fro
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
 import { stepSummaryDegraded } from '../../summarizeAgentOutput';
+import { decisionsDelta } from '../session-events';
 import { relinkSimpleSessionDirectories } from '../workspaces/relinkSimpleSessionDirectories';
 import { flushTurnEvents } from '../transcripts/buffer';
 import {
@@ -1064,6 +1065,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         } catch {
           turnOrdinal = transcriptTurnOrdinal;
         }
+        const decisionsBefore =
+          (get().sessionSlots[sessionId] ?? []).find((slot) => slot.key === 'decisions')?.value ??
+          '';
         const result = await autoPopulateContext({
           db: tauriDatabase,
           sessionId,
@@ -1084,6 +1088,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           set((state) => ({
             sessionSlots: { ...state.sessionSlots, [sessionId]: refreshedSlots },
           }));
+          const delta = decisionsDelta({
+            previous: decisionsBefore,
+            next: refreshedSlots.find((slot) => slot.key === 'decisions')?.value ?? '',
+          });
+          if (delta.added > 0 || delta.removed > 0) {
+            await get().recordSessionEvent({
+              sessionId,
+              kind: 'decisions_changed',
+              payload: { added: delta.added, removed: delta.removed },
+            });
+          }
         }
         if (result.openQuestionsChanged) {
           await get().loadSessionOpenQuestions(sessionId);

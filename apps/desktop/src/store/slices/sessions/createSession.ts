@@ -303,6 +303,18 @@ export const createSession = (set: SetFn, get: GetFn) => {
         createdAt: Date.now(),
       });
     }
+    await get().recordSessionEvent({
+      sessionId: session.id,
+      kind: 'worktree_created',
+      payload: { worktreePath: worktree.worktreePath },
+    });
+    if (worktree.branchName.length > 0) {
+      await get().recordSessionEvent({
+        sessionId: session.id,
+        kind: 'branch_created',
+        payload: { branch: worktree.branchName },
+      });
+    }
     const repoSlugTargets: ReadonlyArray<RepoSlugTarget> = isComposite
       ? memberWorktrees.map(({ member, worktree: wt }) => ({
           repoRoot: member.rootPath,

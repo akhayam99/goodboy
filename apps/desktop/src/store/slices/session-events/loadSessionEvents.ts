@@ -10,7 +10,7 @@ type Params = Readonly<{
 
 export const loadSessionEvents = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, force = false }: Params): Promise<void> => {
-    if (!force && get().sessionEvents[sessionId] !== undefined) {
+    if (!force && get().sessionEvents?.[sessionId] !== undefined) {
       return;
     }
     if (sessionEventsLoadInFlight.has(sessionId)) {

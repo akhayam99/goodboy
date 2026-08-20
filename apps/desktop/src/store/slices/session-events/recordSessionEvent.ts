@@ -32,7 +32,7 @@ export const recordSessionEvent = (set: SetFn) => {
       return;
     }
     set((state) => {
-      const existing = state.sessionEvents[sessionId];
+      const existing = state.sessionEvents?.[sessionId];
       if (existing === undefined) {
         return {};
       }

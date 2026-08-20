@@ -126,6 +126,8 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       delete nextFileVersionsLoading[sessionId];
       const nextFileVersionsPath = { ...state.sessionFileVersionSelectedPath };
       delete nextFileVersionsPath[sessionId];
+      const nextSessionEvents = { ...state.sessionEvents };
+      delete nextSessionEvents[sessionId];
       const cachedArchived = state.archivedSessions[sessionWorkspaceId];
       const nextArchived = cachedArchived
         ? {
@@ -156,6 +158,7 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         sessionFileVersions: nextFileVersions,
         sessionFileVersionsLoading: nextFileVersionsLoading,
         sessionFileVersionSelectedPath: nextFileVersionsPath,
+        sessionEvents: nextSessionEvents,
       };
     });
     void get().emitNotification(

@@ -171,6 +171,7 @@ describe('maybeAutoAdvanceWorkflow chain detection', () => {
       startWorkflowRun: vi.fn(async () => undefined),
       activateWorkflowAgent: vi.fn(async () => undefined),
       emitNotification: vi.fn(async () => undefined),
+      recordSessionEvent: vi.fn(async () => undefined),
     };
   }
 
@@ -445,6 +446,7 @@ describe('discardWorkflow chain flip', () => {
       sessions: [makeSession([target, chained])],
       sessionPhaseRuns: { [SESSION_ID]: [] as ReadonlyArray<Agent> },
       agentTurnState: {},
+      recordSessionEvent: vi.fn(async () => undefined),
     };
     const { set, get, setCalls } = harness(state);
     await discardWorkflow(set, get)(SESSION_ID, 'target' as WorkflowRunId);
@@ -469,6 +471,7 @@ describe('discardWorkflow chain flip', () => {
       sessions: [makeSession([target, a, b])],
       sessionPhaseRuns: { [SESSION_ID]: [] as ReadonlyArray<Agent> },
       agentTurnState: {},
+      recordSessionEvent: vi.fn(async () => undefined),
     };
     const { set, get } = harness(state);
     await discardWorkflow(set, get)(SESSION_ID, 'target' as WorkflowRunId);
@@ -495,6 +498,7 @@ describe('discardWorkflow chain flip', () => {
       sessions: [makeSession([target, other])],
       sessionPhaseRuns: { [SESSION_ID]: [] as ReadonlyArray<Agent> },
       agentTurnState: {},
+      recordSessionEvent: vi.fn(async () => undefined),
     };
     const { set, get } = harness(state);
     await discardWorkflow(set, get)(SESSION_ID, 'target' as WorkflowRunId);
@@ -511,6 +515,7 @@ describe('discardWorkflow chain flip', () => {
       sessions: [makeSession([target, chained])],
       sessionPhaseRuns: { [SESSION_ID]: [] as ReadonlyArray<Agent> },
       agentTurnState: {},
+      recordSessionEvent: vi.fn(async () => undefined),
     };
     const { set, get } = harness(state);
     await discardWorkflow(set, get)(SESSION_ID, 'target' as WorkflowRunId);
@@ -526,6 +531,7 @@ describe('discardWorkflow chain flip', () => {
       sessions: [makeSession([target, chained])],
       sessionPhaseRuns: { [SESSION_ID]: [] as ReadonlyArray<Agent> },
       agentTurnState: {},
+      recordSessionEvent: vi.fn(async () => undefined),
     };
     const { set, get } = harness(state);
     await discardWorkflow(set, get)(SESSION_ID, 'target' as WorkflowRunId);
@@ -543,6 +549,7 @@ describe('attachWorkflowToSession trigger modes', () => {
       providers: [],
       transcripts: {},
       agentTurnState: {},
+      recordSessionEvent: vi.fn(async () => undefined),
       agentModelOverride: {} as Record<string, string>,
       agentKindOverride: {} as Record<string, string>,
       agentProviderOverride: {} as Record<string, ProviderId>,
