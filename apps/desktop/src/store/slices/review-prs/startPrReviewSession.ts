@@ -78,14 +78,16 @@ export const startPrReviewSession = (get: GetFn) => {
       firstAgentKind: 'pr-reviewer',
       autoRun: true,
       kickoffPrompt,
-      externalTask: {
-        provider: pr.provider,
-        ...(pr.mountWorkspaceId != null ? { mountWorkspaceId: pr.mountWorkspaceId } : {}),
-        externalId: String(pr.number),
-        identifier: isGitlab ? `!${pr.number}` : `#${pr.number}`,
-        url: pr.url,
-        title: pr.title,
-      },
+      externalTasks: [
+        {
+          provider: pr.provider,
+          ...(pr.mountWorkspaceId != null ? { mountWorkspaceId: pr.mountWorkspaceId } : {}),
+          externalId: String(pr.number),
+          identifier: isGitlab ? `!${pr.number}` : `#${pr.number}`,
+          url: pr.url,
+          title: pr.title,
+        },
+      ],
     });
     if (pr.mountWorkspaceId != null) {
       await get().setSessionActiveMount({

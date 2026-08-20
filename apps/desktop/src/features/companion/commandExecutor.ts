@@ -560,7 +560,7 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
         ({ session } = await store.createSession({
           workspaceId: gate.workspaceId,
           goal: resolved.goal,
-          externalTask: resolved.externalTask,
+          externalTasks: [resolved.externalTask],
           mobileShared: true,
         }));
       } catch (e) {

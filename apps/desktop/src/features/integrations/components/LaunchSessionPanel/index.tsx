@@ -174,7 +174,7 @@ export const LaunchSessionPanel = ({
           ? { folderName }
           : { branchPrefix: prefix, branchSlug: branchSlug.trim() || undefined }),
         ...(adoptedBranch != null ? { existingBranch: adoptedBranch } : {}),
-        externalTask,
+        externalTasks: [externalTask],
       });
       showToast('success', `Session created: ${session.goal}`);
       onClose();

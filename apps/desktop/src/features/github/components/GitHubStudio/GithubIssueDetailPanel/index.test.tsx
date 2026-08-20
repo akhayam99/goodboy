@@ -77,13 +77,15 @@ describe('GithubIssueDetailPanel', () => {
       expect.objectContaining({
         workspaceId: 'workspace-1',
         branchSlug: '42-add-issue-dashboard',
-        externalTask: {
-          provider: 'github',
-          externalId: '42',
-          identifier: '#42',
-          url: ISSUE.url,
-          title: ISSUE.title,
-        },
+        externalTasks: [
+          {
+            provider: 'github',
+            externalId: '42',
+            identifier: '#42',
+            url: ISSUE.url,
+            title: ISSUE.title,
+          },
+        ],
       }),
     );
   });

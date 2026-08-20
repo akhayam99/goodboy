@@ -34,15 +34,26 @@ describe('newSessionDrafts slice', () => {
         folderNameTouched: true,
         branchMode: 'existing',
         existingBranch: 'checkout-work',
-        issue: {
-          provider: 'github',
-          externalId: '42',
-          identifier: '#42',
-          title: 'Fix checkout flow',
-          url: 'https://example.com/issues/42',
-          goal: 'Fix the checkout flow',
-          branchSlug: 'fix-checkout-flow',
-        },
+        issues: [
+          {
+            provider: 'github',
+            externalId: '42',
+            identifier: '#42',
+            title: 'Fix checkout flow',
+            url: 'https://example.com/issues/42',
+            goal: 'Fix the checkout flow',
+            branchSlug: 'fix-checkout-flow',
+          },
+          {
+            provider: 'linear',
+            externalId: 'iss-7',
+            identifier: 'ENG-7',
+            title: 'Ship the payment retry',
+            url: 'https://example.com/issues/eng-7',
+            goal: 'Ship the payment retry',
+            branchSlug: 'ship-payment-retry',
+          },
+        ],
       },
     });
     store.getState().setNewSessionDraft({
@@ -62,8 +73,10 @@ describe('newSessionDrafts slice', () => {
       folderNameTouched: true,
       branchMode: 'existing',
       existingBranch: 'checkout-work',
-      issue: { identifier: '#42' },
     });
+    expect(
+      store.getState().newSessionDrafts[WORKSPACE_ID]?.issues.map((issue) => issue.identifier),
+    ).toEqual(['#42', 'ENG-7']);
 
     store.getState().clearNewSessionDraft({ workspaceId: WORKSPACE_ID });
 

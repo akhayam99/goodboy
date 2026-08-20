@@ -1227,13 +1227,70 @@ describe('store contract', () => {
 
       const { session } = await store
         .getState()
-        .createSession({ workspaceId: WS_ID, goal: 'do gitlab work', externalTask: GITLAB_TASK });
+        .createSession({
+          workspaceId: WS_ID,
+          goal: 'do gitlab work',
+          externalTasks: [GITLAB_TASK],
+        });
 
       expect(spy).toHaveBeenCalledTimes(1);
       const cached = store.getState().sessionExternalTasks[session.id];
       expect(cached?.[0]?.provider).toBe('gitlab');
       expect(cached?.[0]?.externalId).toBe('101');
       expect(cached?.[0]?.sessionId).toBe(session.id);
+    });
+
+    it('persists every task a session was created from, in the order they were picked', async () => {
+      const LINEAR_TASK = {
+        provider: 'linear' as const,
+        externalId: 'iss-9',
+        identifier: 'ENG-9',
+        url: 'https://linear.app/acme/issue/ENG-9',
+        title: 'Ship the retry',
+      };
+      const store = await getStore();
+      store.setState({ currentWorkspaceId: WS_ID });
+      await primeWorktree();
+      const { upsertSessionExternalTask } = await import('@goodboy/db');
+      const spy = upsertSessionExternalTask as unknown as ReturnType<typeof vi.fn>;
+
+      const { session } = await store.getState().createSession({
+        workspaceId: WS_ID,
+        goal: 'do both',
+        externalTasks: [GITLAB_TASK, LINEAR_TASK],
+      });
+
+      expect(spy).toHaveBeenCalledTimes(2);
+      expect(
+        store.getState().sessionExternalTasks[session.id]?.map((task) => task.identifier),
+      ).toEqual(['acme/web#7', 'ENG-9']);
+    });
+
+    it('keeps the tasks that persisted when one of several fails', async () => {
+      const LINEAR_TASK = {
+        provider: 'linear' as const,
+        externalId: 'iss-9',
+        identifier: 'ENG-9',
+        url: 'https://linear.app/acme/issue/ENG-9',
+        title: 'Ship the retry',
+      };
+      const store = await getStore();
+      store.setState({ currentWorkspaceId: WS_ID });
+      await primeWorktree();
+      const { upsertSessionExternalTask } = await import('@goodboy/db');
+      (upsertSessionExternalTask as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new Error('db down'),
+      );
+
+      const { session } = await store.getState().createSession({
+        workspaceId: WS_ID,
+        goal: 'do both',
+        externalTasks: [GITLAB_TASK, LINEAR_TASK],
+      });
+
+      expect(
+        store.getState().sessionExternalTasks[session.id]?.map((task) => task.identifier),
+      ).toEqual(['ENG-9']);
     });
 
     it('still creates the session and keys an empty task list when persistence fails', async () => {
@@ -1247,7 +1304,11 @@ describe('store contract', () => {
 
       const { session } = await store
         .getState()
-        .createSession({ workspaceId: WS_ID, goal: 'do gitlab work', externalTask: GITLAB_TASK });
+        .createSession({
+          workspaceId: WS_ID,
+          goal: 'do gitlab work',
+          externalTasks: [GITLAB_TASK],
+        });
 
       expect(session.id).toBeDefined();
       expect(store.getState().sessionExternalTasks[session.id]).toEqual([]);
