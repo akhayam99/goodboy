@@ -5,16 +5,26 @@ import { useAppStore } from '../../../../store';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 import type { AgentKind } from '../../agent-kind';
 import { AGENT_KIND_META } from '../../agent-kind';
+import { AgentKindChip } from '../AgentKindChip';
 import { agentFollowUpMoves, composeFollowUpSeed } from './followUpMoves';
+import type { FollowUpChild } from './followUpChildren';
+import { AgentFollowUpChild } from './AgentFollowUpChild';
 
 type Props = {
   readonly sourceAgent: Agent;
   readonly sourceKind: AgentKind;
   readonly summary: string;
   readonly sessionId: SessionId;
+  readonly followUps: ReadonlyArray<FollowUpChild>;
 };
 
-export const AgentFollowUps = ({ sourceAgent, sourceKind, summary, sessionId }: Props) => {
+export const AgentFollowUps = ({
+  sourceAgent,
+  sourceKind,
+  summary,
+  sessionId,
+  followUps,
+}: Props) => {
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const announceAgentStarted = useAgentStartedToast();
 
@@ -29,12 +39,16 @@ export const AgentFollowUps = ({ sourceAgent, sourceKind, summary, sessionId }: 
     return null;
   }
 
+  const spawnedKinds = new Set(followUps.map((entry) => entry.kind));
+  const pending = moves.filter((move) => !spawnedKinds.has(move.kind));
+
   const onSpawn = (nextKind: AgentKind) => {
     const seed = composeFollowUpSeed({ sourceAgent, summary });
     void (async () => {
       const agentId = await spawnAgent(sessionId, {
         kindOverride: nextKind,
         initialPrompt: seed,
+        parentAgentId: sourceAgent.id,
         focus: 'agent',
       });
       announceAgentStarted({
@@ -47,27 +61,35 @@ export const AgentFollowUps = ({ sourceAgent, sourceKind, summary, sessionId }: 
   };
 
   return (
-    <SectionSurface label="Continue" hint="Spawn a follow-up seeded with this agent's output.">
+    <SectionSurface
+      label="Continue"
+      hint={
+        pending.length > 0
+          ? "Spawn a follow-up seeded with this agent's output."
+          : "Follow-ups already picked up this agent's output."
+      }
+    >
       <div className="flex flex-col gap-1.5">
-        {moves.map((move) => (
+        {followUps.map((entry) => (
+          <AgentFollowUpChild key={entry.child.agent.id} entry={entry} sessionId={sessionId} />
+        ))}
+        {pending.map((move) => (
           <button
             key={move.kind}
             type="button"
             onClick={() => onSpawn(move.kind)}
             className={cn(
-              'group flex items-start gap-2 rounded-md border border-border-soft bg-elevated px-3 py-2 text-left text-xs transition-colors hover:border-border',
+              'group flex items-center gap-2 rounded-md border border-border-soft bg-elevated px-3 py-2 text-left text-xs transition-colors hover:border-border',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             )}
           >
+            <AgentKindChip kind={move.kind} title={move.label} />
+            <span className="min-w-0 flex-1 text-foreground">{move.hint}</span>
             <ArrowRight
               size={12}
               aria-hidden
-              className="mt-0.5 shrink-0 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5"
+              className="shrink-0 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5"
             />
-            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="font-medium text-foreground">{move.label}</span>
-              <span className="text-2xs text-muted-foreground">{move.hint}</span>
-            </span>
           </button>
         ))}
       </div>
