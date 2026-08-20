@@ -21,6 +21,35 @@ describe('buildIssueBody', () => {
       'Type: Bug\nArea: Board and sessions\nVersion: 0.1.69\n\nThe board freezes after archiving a session.',
     );
   });
+
+  it('asks for a drag and drop when the images have nowhere to live', () => {
+    const body = buildIssueBody({
+      typeLabel: 'Bug',
+      version: '0.1.69',
+      areaLabel: 'Board and sessions',
+      notes: 'Freezes on archive.',
+      imageNames: ['board.png', 'lane.png'],
+    });
+    expect(body).toContain('Screenshots to drag into this issue: board.png, lane.png');
+  });
+
+  it('embeds the uploaded images instead of naming them', () => {
+    const body = buildIssueBody({
+      typeLabel: 'Bug',
+      version: '0.1.69',
+      areaLabel: 'Board and sessions',
+      notes: 'Freezes on archive.',
+      imageNames: ['board.png', 'lane.png'],
+      uploadedImages: [
+        { fileName: 'board.png', url: 'https://raw.githubusercontent.com/o/r/main/board.png' },
+        { fileName: 'lane.png', url: 'https://raw.githubusercontent.com/o/r/main/lane.png' },
+      ],
+    });
+    expect(body).toBe(
+      'Type: Bug\nArea: Board and sessions\nVersion: 0.1.69\n\nFreezes on archive.\n\n![board.png](https://raw.githubusercontent.com/o/r/main/board.png)\n![lane.png](https://raw.githubusercontent.com/o/r/main/lane.png)',
+    );
+    expect(body).not.toContain('drag');
+  });
 });
 
 describe('buildFallbackIssue', () => {

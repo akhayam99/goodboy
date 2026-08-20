@@ -263,9 +263,11 @@ pub fn bug_report_stage_images(
     Ok(dir.to_string_lossy().to_string())
 }
 
-#[tauri::command]
-pub fn bug_report_reveal_images(dir: String) -> Result<(), AttachmentError> {
-    let canonical_dir = Path::new(&dir).canonicalize()?;
+/// Resolves a caller-supplied path back to a staging folder this process
+/// created. Anything outside the temp directory, or not named like a report
+/// folder, is refused before it can be opened, written to, or deleted.
+fn resolve_bug_report_dir(dir: &str) -> Result<std::path::PathBuf, AttachmentError> {
+    let canonical_dir = Path::new(dir).canonicalize()?;
     let canonical_temp_dir = std::env::temp_dir().canonicalize()?;
     let is_report_dir = canonical_dir
         .file_name()
@@ -274,7 +276,69 @@ pub fn bug_report_reveal_images(dir: String) -> Result<(), AttachmentError> {
     if !canonical_dir.starts_with(canonical_temp_dir) || !is_report_dir {
         return Err(AttachmentError::InvalidPath);
     }
+    Ok(canonical_dir)
+}
+
+#[tauri::command]
+pub fn bug_report_reveal_images(dir: String) -> Result<(), AttachmentError> {
+    let canonical_dir = resolve_bug_report_dir(&dir)?;
     crate::explore::spawn_open(&canonical_dir, false)?;
+    Ok(())
+}
+
+/// The base64 payload of one staged image, written next to the image itself.
+/// `gh api -F content=@<path>` reads the value from this file: the same bytes
+/// passed as an argument would blow the platform argv ceiling well before the
+/// 5MB per-image cap the composer allows.
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StagedUploadPayload {
+    file_name: String,
+    payload_path: String,
+}
+
+const UPLOAD_SUBDIR: &str = ".upload";
+
+fn write_bug_report_upload_payloads(
+    dir: &Path,
+    images: &[BugReportImageInput],
+) -> Result<Vec<StagedUploadPayload>, AttachmentError> {
+    let upload_dir = dir.join(UPLOAD_SUBDIR);
+    fs::create_dir_all(&upload_dir)?;
+    let mut payloads = Vec::with_capacity(images.len());
+    for (index, image) in images.iter().enumerate() {
+        let bytes = STANDARD.decode(image.data_base64.as_bytes())?;
+        if bytes.len() > MAX_BYTES {
+            return Err(AttachmentError::TooLarge(MAX_BYTES));
+        }
+        let stored = format!(
+            "{:02}-{}.b64",
+            index + 1,
+            sanitize_segment(&image.file_name)
+        );
+        let payload_path = upload_dir.join(stored);
+        fs::write(&payload_path, image.data_base64.as_bytes())?;
+        payloads.push(StagedUploadPayload {
+            file_name: image.file_name.clone(),
+            payload_path: payload_path.to_string_lossy().to_string(),
+        });
+    }
+    Ok(payloads)
+}
+
+#[tauri::command]
+pub fn bug_report_stage_upload_payloads(
+    dir: String,
+    images: Vec<BugReportImageInput>,
+) -> Result<Vec<StagedUploadPayload>, AttachmentError> {
+    let canonical_dir = resolve_bug_report_dir(&dir)?;
+    write_bug_report_upload_payloads(&canonical_dir, &images)
+}
+
+#[tauri::command]
+pub fn bug_report_discard_images(dir: String) -> Result<(), AttachmentError> {
+    let canonical_dir = resolve_bug_report_dir(&dir)?;
+    fs::remove_dir_all(&canonical_dir)?;
     Ok(())
 }
 
@@ -427,6 +491,79 @@ mod tests {
         );
         assert!(matches!(err, Err(AttachmentError::Decode(_))));
 
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn bug_report_upload_payloads_carry_the_base64_verbatim() {
+        let dir = std::env::temp_dir().join(format!("goodboy-report-up-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+
+        let png_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+        let payloads = write_bug_report_upload_payloads(
+            &dir,
+            &[BugReportImageInput {
+                file_name: "board freeze.png".to_string(),
+                data_base64: png_b64.to_string(),
+            }],
+        )
+        .unwrap();
+
+        assert_eq!(payloads[0].file_name, "board freeze.png");
+        assert!(payloads[0].payload_path.ends_with("01-board_freeze.png.b64"));
+        assert_eq!(fs::read_to_string(&payloads[0].payload_path).unwrap(), png_b64);
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn bug_report_upload_payloads_reject_a_bad_payload() {
+        let dir = std::env::temp_dir().join(format!("goodboy-report-upbad-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+
+        let err = write_bug_report_upload_payloads(
+            &dir,
+            &[BugReportImageInput {
+                file_name: "shot.png".to_string(),
+                data_base64: "not base64!!".to_string(),
+            }],
+        );
+
+        assert!(matches!(err, Err(AttachmentError::Decode(_))));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn bug_report_discard_removes_a_staged_folder_with_its_payloads() {
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let dir = std::env::temp_dir().join(format!(
+            "goodboy-report-discard-{}-{}",
+            std::process::id(),
+            stamp
+        ));
+        fs::create_dir_all(dir.join(UPLOAD_SUBDIR)).unwrap();
+        fs::write(dir.join("01-shot.png"), b"bytes").unwrap();
+        let path = dir.to_string_lossy().to_string();
+
+        bug_report_discard_images(path.clone()).unwrap();
+
+        assert!(!dir.exists());
+        assert!(bug_report_discard_images(path).is_err());
+    }
+
+    #[test]
+    fn bug_report_discard_rejects_an_unrelated_temp_folder() {
+        let dir = std::env::temp_dir().join(format!("goodboy-other-rm-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+
+        let result = bug_report_discard_images(dir.to_string_lossy().to_string());
+
+        assert!(matches!(result, Err(AttachmentError::InvalidPath)));
+        assert!(dir.exists());
         let _ = fs::remove_dir_all(&dir);
     }
 
