@@ -22,11 +22,21 @@ const catalogVerbs = (): Record<string, ReadonlyArray<string>> => {
 
 describe('buildIntegrationsGuard', () => {
   it('says nothing when the workspace has no connection', () => {
-    expect(buildIntegrationsGuard({ providers: [] })).toBe('');
+    expect(buildIntegrationsGuard({ providers: [], isBridgeServing: true })).toBe('');
+  });
+
+  it('says nothing while the bridge is not serving, connections or not', () => {
+    const guard = buildIntegrationsGuard({
+      providers: ['linear', 'jira'],
+      isBridgeServing: false,
+    });
+
+    expect(guard).toBe('');
+    expect(guard).not.toContain('GOODBOY_BIN');
   });
 
   it('lists only the providers the workspace actually connected', () => {
-    const guard = buildIntegrationsGuard({ providers: ['linear'] });
+    const guard = buildIntegrationsGuard({ providers: ['linear'], isBridgeServing: true });
 
     expect(guard).toContain('[integrations]');
     expect(guard).toContain('linear: issue,');
@@ -35,14 +45,14 @@ describe('buildIntegrationsGuard', () => {
   });
 
   it('names the command an agent has to type', () => {
-    const guard = buildIntegrationsGuard({ providers: ['linear'] });
+    const guard = buildIntegrationsGuard({ providers: ['linear'], isBridgeServing: true });
 
     expect(guard).toContain('"$GOODBOY_BIN" query linear issue ENG-123');
     expect(guard).toContain('"$GOODBOY_BIN" query <provider> --help');
   });
 
   it('quotes the binary so a path with a space still runs', () => {
-    const guard = buildIntegrationsGuard({ providers: ['linear'] });
+    const guard = buildIntegrationsGuard({ providers: ['linear'], isBridgeServing: true });
 
     expect(guard).not.toMatch(/[^"]\$GOODBOY_BIN" query/);
     expect(guard).toContain('Keep the quotes');
@@ -51,13 +61,17 @@ describe('buildIntegrationsGuard', () => {
   it('never leaks a credential, a token or an MCP endpoint into the prompt', () => {
     const guard = buildIntegrationsGuard({
       providers: ['linear', 'sentry', 'gitlab', 'jira', 'bitbucket', 'slack'],
+      isBridgeServing: true,
     });
 
     expect(guard).not.toMatch(/token|api[_ -]?key|secret|credential_id/i);
   });
 
   it('collapses a duplicated provider into a single line', () => {
-    const guard = buildIntegrationsGuard({ providers: ['linear', 'linear'] });
+    const guard = buildIntegrationsGuard({
+      providers: ['linear', 'linear'],
+      isBridgeServing: true,
+    });
 
     expect(guard.split('\n').filter((line) => line.startsWith('linear:'))).toHaveLength(1);
   });
@@ -65,6 +79,7 @@ describe('buildIntegrationsGuard', () => {
   it('stays short enough to ride along on every prompt', () => {
     const guard = buildIntegrationsGuard({
       providers: ['linear', 'sentry', 'gitlab', 'jira', 'bitbucket', 'slack'],
+      isBridgeServing: true,
     });
 
     expect(guard.split('\n')).toHaveLength(12);
@@ -73,6 +88,7 @@ describe('buildIntegrationsGuard', () => {
   it('ignores a provider the bridge cannot serve', () => {
     const guard = buildIntegrationsGuard({
       providers: ['github' as WorkspaceIntegrationProvider, 'linear'],
+      isBridgeServing: true,
     });
 
     expect(guard).not.toContain('github');
@@ -86,6 +102,7 @@ describe('buildIntegrationsGuard', () => {
         'constructor' as WorkspaceIntegrationProvider,
         'linear',
       ],
+      isBridgeServing: true,
     });
 
     expect(guard).not.toContain('toString');

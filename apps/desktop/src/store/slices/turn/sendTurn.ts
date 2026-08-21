@@ -71,6 +71,7 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { detectParallelGroup } from '../../parallel-turn';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
+import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from '../../integrationsGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
 import { stepSummaryDegraded } from '../../summarizeAgentOutput';
@@ -861,6 +862,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       providers: (get().workspaceIntegrations[session.workspaceId] ?? []).map(
         (integration) => integration.provider,
       ),
+      isBridgeServing: await isQueryBridgeServing(),
     });
     const guards = [scopeGuard, languageGuard, integrationsGuard]
       .filter((block) => block.length > 0)

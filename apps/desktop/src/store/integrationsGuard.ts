@@ -54,9 +54,13 @@ export const QUERY_BRIDGE_VERBS: Readonly<
 
 type GuardParams = {
   readonly providers: ReadonlyArray<WorkspaceIntegrationProvider>;
+  readonly isBridgeServing: boolean;
 };
 
-export const buildIntegrationsGuard = ({ providers }: GuardParams): string => {
+export const buildIntegrationsGuard = ({ providers, isBridgeServing }: GuardParams): string => {
+  if (!isBridgeServing) {
+    return '';
+  }
   const known = Array.from(new Set(providers)).filter(
     (provider): provider is WorkspaceIntegrationProvider =>
       Object.prototype.hasOwnProperty.call(QUERY_BRIDGE_VERBS, provider),
