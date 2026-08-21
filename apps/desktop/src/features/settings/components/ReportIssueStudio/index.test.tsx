@@ -17,6 +17,15 @@ const mocks = vi.hoisted(() => ({
   ),
   showToast: vi.fn(),
   dragHandlers: Array<DragHandler>(),
+  settings: new Map<string, string>(),
+}));
+
+vi.mock('@goodboy/db', () => ({
+  migrate: vi.fn(),
+  getSetting: async (_db: unknown, key: string) => mocks.settings.get(key) ?? null,
+  setSetting: async (_db: unknown, key: string, value: string) => {
+    mocks.settings.set(key, value);
+  },
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -67,6 +76,55 @@ vi.mock('../../../../app/components/Toast', () => ({
 import { ReportIssueStudio } from './index';
 import { useAppStore } from '../../../../store';
 import { initialBugReportDraftState } from '../../../../store/slices/bugReportDraft/state';
+import { SETTING_ISSUE_ASSETS_REPO } from '../../settings';
+
+const ASSETS_REPO = 'octocat/goodboy-issue-assets';
+const STAGED_DIR = '/tmp/goodboy-report-1';
+const RAW_URL = `https://raw.githubusercontent.com/${ASSETS_REPO}/main/reports/board.png`;
+
+const stagingInvoke = async (command: string, args: Record<string, unknown>): Promise<unknown> => {
+  if (command !== 'bug_report_stage_upload_payloads') {
+    return STAGED_DIR;
+  }
+  const staged = args.images as ReadonlyArray<{ readonly fileName: string }>;
+  return staged.map(({ fileName }, index) => ({
+    fileName,
+    payloadPath: `${STAGED_DIR}/.upload/0${index + 1}-${fileName}.b64`,
+  }));
+};
+
+type GhRouterParams = {
+  readonly hasAssetsRepo: boolean;
+  readonly isUploadOk?: boolean;
+};
+
+const ghRouter =
+  ({ hasAssetsRepo, isUploadOk = true }: GhRouterParams) =>
+  async (args: ReadonlyArray<string>): Promise<GhRunResult> => {
+    if (args.includes('PUT')) {
+      return isUploadOk
+        ? { stdout: `${RAW_URL}\n`, stderr: '', exitCode: 0 }
+        : { stdout: '', stderr: 'HTTP 403', exitCode: 1 };
+    }
+    if (args.includes('user/repos')) {
+      return { stdout: '{}', stderr: '', exitCode: 0 };
+    }
+    if (args.includes(`repos/${ASSETS_REPO}`)) {
+      return hasAssetsRepo
+        ? { stdout: `${ASSETS_REPO}\n`, stderr: '', exitCode: 0 }
+        : { stdout: '', stderr: 'gh: Not Found', exitCode: 1 };
+    }
+    return {
+      stdout: 'https://github.com/akhayam99/goodboy/issues/99\n',
+      stderr: '',
+      exitCode: 0,
+    };
+  };
+
+const issueBody = (): string => {
+  const call = mocks.run.mock.calls.find(([args]) => args[0] === 'issue');
+  return (call?.[0][7] as string | undefined) ?? '';
+};
 
 const setGithubStatus = (githubStatus: GhTokenStatus | null) => {
   useAppStore.setState({ githubStatus });
@@ -96,9 +154,10 @@ beforeEach(() => {
   mocks.openUrl.mockReset();
   mocks.openUrl.mockImplementation(async () => undefined);
   mocks.invoke.mockReset();
-  mocks.invoke.mockImplementation(async () => '/tmp/goodboy-report-1');
+  mocks.invoke.mockImplementation(stagingInvoke);
   mocks.showToast.mockReset();
   mocks.dragHandlers = [];
+  mocks.settings.clear();
 });
 afterEach(cleanup);
 
@@ -571,6 +630,97 @@ describe('ReportIssueStudio', () => {
 
     expect(screen.getByText(/Connect GitHub to send the full text\./)).toBeDefined();
     expect(screen.queryByText(/GitHub CLI/)).toBeNull();
+  });
+
+  const renderWithImageAndLogin = ({ hasAssetsRepo, isUploadOk }: GhRouterParams) => {
+    setGithubStatus({ available: true, mode: 'gh-cli', user: 'octocat' });
+    attachOneImage();
+    mocks.run.mockImplementation(ghRouter({ hasAssetsRepo, isUploadOk }));
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'Freezes on archive.' });
+  };
+
+  const clickSend = async () => {
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    });
+  };
+
+  it('asks before it creates the assets repository, and files nothing yet', async () => {
+    renderWithImageAndLogin({ hasAssetsRepo: false });
+
+    await clickSend();
+
+    expect(
+      screen.getByRole('group', { name: `Create ${ASSETS_REPO} to carry your images` }),
+    ).toBeDefined();
+    expect(screen.getByText(/small public repository on your account/)).toBeDefined();
+    expect(mocks.run.mock.calls.some(([args]) => args[0] === 'issue')).toBe(false);
+  });
+
+  it('creates the repository and embeds the uploaded images once the reporter accepts', async () => {
+    renderWithImageAndLogin({ hasAssetsRepo: false });
+
+    await clickSend();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Create and attach' }));
+    });
+
+    expect(mocks.run.mock.calls.some(([args]) => args.includes('user/repos'))).toBe(true);
+    expect(issueBody()).toContain(`![board.png](${RAW_URL})`);
+    expect(mocks.settings.get(SETTING_ISSUE_ASSETS_REPO)).toBe(ASSETS_REPO);
+  });
+
+  it('clears the staged folder and drops the drag reminder after a full upload', async () => {
+    renderWithImageAndLogin({ hasAssetsRepo: true });
+
+    await clickSend();
+
+    expect(mocks.invoke).toHaveBeenCalledWith('bug_report_discard_images', { dir: STAGED_DIR });
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      'success',
+      'Filed on GitHub with your images, under your account.',
+      expect.objectContaining({ title: 'Issue sent' }),
+    );
+  });
+
+  it('never asks again once the assets repository is remembered', async () => {
+    mocks.settings.set(SETTING_ISSUE_ASSETS_REPO, ASSETS_REPO);
+    renderWithImageAndLogin({ hasAssetsRepo: true });
+
+    await clickSend();
+
+    expect(mocks.run.mock.calls.some(([args]) => args.includes(`repos/${ASSETS_REPO}`))).toBe(
+      false,
+    );
+    expect(issueBody()).toContain(`![board.png](${RAW_URL})`);
+  });
+
+  it('files the report with the drag reminder when the reporter declines', async () => {
+    renderWithImageAndLogin({ hasAssetsRepo: false });
+
+    await clickSend();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send without them' }));
+    });
+
+    expect(mocks.run.mock.calls.some(([args]) => args.includes('user/repos'))).toBe(false);
+    expect(issueBody()).toContain('Screenshots to drag into this issue: board.png');
+    expect(mocks.invoke).not.toHaveBeenCalledWith('bug_report_discard_images', { dir: STAGED_DIR });
+  });
+
+  it('falls back to the staged folder when an upload fails, and still files the report', async () => {
+    mocks.settings.set(SETTING_ISSUE_ASSETS_REPO, ASSETS_REPO);
+    renderWithImageAndLogin({ hasAssetsRepo: true, isUploadOk: false });
+
+    await clickSend();
+
+    expect(issueBody()).toContain('Screenshots to drag into this issue: board.png');
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      'success',
+      "Your images aren't on it yet. GitHub only takes them by drag and drop.",
+      expect.objectContaining({ persist: true }),
+    );
   });
 
   it('discloses that the report is posted publicly under the reporter account', () => {

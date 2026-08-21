@@ -253,6 +253,8 @@ pub fn run() {
             attachment::attachment_read_dropped,
             attachment::bug_report_stage_images,
             attachment::bug_report_reveal_images,
+            attachment::bug_report_stage_upload_payloads,
+            attachment::bug_report_discard_images,
             file_versions::file_versions_begin_snapshot,
             file_versions::file_versions_finalize_snapshot,
             file_versions::file_versions_list_staged_snapshots,

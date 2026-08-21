@@ -5,6 +5,7 @@ export const SETTING_DEFAULT_EDITOR = 'editor.default';
 export const SETTING_LAST_WORKSPACE_ID = 'last.workspace_id';
 export const SETTING_LAST_SESSION_ID = 'last.session_id';
 export const SETTING_REOPEN_LAST = 'launch.reopen_last';
+export const SETTING_ISSUE_ASSETS_REPO = 'report.issue_assets_repo';
 export const DEFAULT_EDITOR_BINARY = 'code';
 export const DEFAULT_BRANCH_PREFIX = 'goodboy';
 
