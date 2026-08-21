@@ -50,6 +50,24 @@ describe('buildIssueBody', () => {
     );
     expect(body).not.toContain('drag');
   });
+
+  it('escapes brackets and backslashes in the embedded alt text', () => {
+    const body = buildIssueBody({
+      typeLabel: 'Bug',
+      version: '0.1.69',
+      areaLabel: 'Board and sessions',
+      notes: 'Freezes on archive.',
+      uploadedImages: [
+        {
+          fileName: 'scr[een]sh\\ot.png',
+          url: 'https://raw.githubusercontent.com/o/r/main/board.png',
+        },
+      ],
+    });
+    expect(body).toContain(
+      '![scr\\[een\\]sh\\\\ot.png](https://raw.githubusercontent.com/o/r/main/board.png)',
+    );
+  });
 });
 
 describe('buildFallbackIssue', () => {

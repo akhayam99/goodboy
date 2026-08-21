@@ -3,7 +3,7 @@ const MAX_NAME_CHARS = 60;
 const padded = ({ value }: { readonly value: number }): string => String(value).padStart(2, '0');
 
 const assetFileName = ({ fileName }: { readonly fileName: string }): string => {
-  const base = fileName.split('/').pop() ?? '';
+  const base = fileName.split(/[/\\]/).pop() ?? '';
   const cleaned = base.replace(/[^A-Za-z0-9._-]/g, '-').replace(/^[-.]+/, '');
   const capped = cleaned.slice(0, MAX_NAME_CHARS);
   return capped === '' ? 'image.png' : capped;

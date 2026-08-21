@@ -11,6 +11,9 @@ import type { UploadedIssueImage } from './uploadIssueImages';
 const TRUNCATION_NOTICE =
   '\n\n[Notes truncated to fit the GitHub link. Finish writing after the issue opens.]';
 
+const escapedAltText = ({ text }: { readonly text: string }): string =>
+  text.replace(/[\\[\]]/g, (char) => `\\${char}`);
+
 type BuildIssueBodyParams = {
   readonly typeLabel: string;
   readonly version: string;
@@ -30,7 +33,9 @@ export const buildIssueBody = ({
 }: BuildIssueBodyParams): string => {
   const head = `Type: ${typeLabel}\nArea: ${areaLabel}\nVersion: ${version}\n\n${notes}`;
   if (uploadedImages.length > 0) {
-    const embeds = uploadedImages.map(({ fileName, url }) => `![${fileName}](${url})`).join('\n');
+    const embeds = uploadedImages
+      .map(({ fileName, url }) => `![${escapedAltText({ text: fileName })}](${url})`)
+      .join('\n');
     return `${head}\n\n${embeds}`;
   }
   if (imageNames.length === 0) {

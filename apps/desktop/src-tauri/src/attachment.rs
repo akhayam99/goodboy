@@ -1,5 +1,7 @@
+use std::collections::HashSet;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::{Mutex, OnceLock};
 
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
@@ -254,26 +256,59 @@ fn write_bug_report_images(
     Ok(())
 }
 
+/// Canonical paths of the staging folders this process created, so a
+/// caller-supplied path can be proven to be one of ours before it is opened,
+/// written to, or deleted.
+fn staged_bug_report_dirs() -> &'static Mutex<HashSet<PathBuf>> {
+    static DIRS: OnceLock<Mutex<HashSet<PathBuf>>> = OnceLock::new();
+    DIRS.get_or_init(|| Mutex::new(HashSet::new()))
+}
+
+fn remember_bug_report_dir(dir: &Path) {
+    if let Ok(mut dirs) = staged_bug_report_dirs().lock() {
+        dirs.insert(dir.to_path_buf());
+    }
+}
+
+fn forget_bug_report_dir(dir: &Path) {
+    if let Ok(mut dirs) = staged_bug_report_dirs().lock() {
+        dirs.remove(dir);
+    }
+}
+
+fn is_staged_bug_report_dir(dir: &Path) -> bool {
+    staged_bug_report_dirs()
+        .lock()
+        .map(|dirs| dirs.contains(dir))
+        .unwrap_or(false)
+}
+
 #[tauri::command]
 pub fn bug_report_stage_images(
     images: Vec<BugReportImageInput>,
 ) -> Result<String, AttachmentError> {
     let dir = std::env::temp_dir().join(bug_report_dir_name());
     write_bug_report_images(&dir, &images)?;
-    Ok(dir.to_string_lossy().to_string())
+    let canonical_dir = dir.canonicalize()?;
+    remember_bug_report_dir(&canonical_dir);
+    Ok(canonical_dir.to_string_lossy().to_string())
 }
 
 /// Resolves a caller-supplied path back to a staging folder this process
-/// created. Anything outside the temp directory, or not named like a report
-/// folder, is refused before it can be opened, written to, or deleted.
-fn resolve_bug_report_dir(dir: &str) -> Result<std::path::PathBuf, AttachmentError> {
+/// created. Anything this process did not stage, anything outside the temp
+/// directory, and anything not named like a report folder is refused before it
+/// can be opened, written to, or deleted.
+fn resolve_bug_report_dir(dir: &str) -> Result<PathBuf, AttachmentError> {
     let canonical_dir = Path::new(dir).canonicalize()?;
     let canonical_temp_dir = std::env::temp_dir().canonicalize()?;
     let is_report_dir = canonical_dir
         .file_name()
         .and_then(|name| name.to_str())
-        .is_some_and(|name| name.starts_with("goodboy-report-"));
-    if !canonical_dir.starts_with(canonical_temp_dir) || !is_report_dir {
+        .is_some_and(|name| name.starts_with(&format!("goodboy-report-{}-", std::process::id())));
+    if !canonical_dir.starts_with(canonical_temp_dir)
+        || !is_report_dir
+        || !is_staged_bug_report_dir(&canonical_dir)
+    {
         return Err(AttachmentError::InvalidPath);
     }
     Ok(canonical_dir)
@@ -339,6 +374,7 @@ pub fn bug_report_stage_upload_payloads(
 pub fn bug_report_discard_images(dir: String) -> Result<(), AttachmentError> {
     let canonical_dir = resolve_bug_report_dir(&dir)?;
     fs::remove_dir_all(&canonical_dir)?;
+    forget_bug_report_dir(&canonical_dir);
     Ok(())
 }
 
@@ -535,23 +571,66 @@ mod tests {
 
     #[test]
     fn bug_report_discard_removes_a_staged_folder_with_its_payloads() {
-        let stamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_nanos())
-            .unwrap_or(0);
-        let dir = std::env::temp_dir().join(format!(
-            "goodboy-report-discard-{}-{}",
-            std::process::id(),
-            stamp
-        ));
-        fs::create_dir_all(dir.join(UPLOAD_SUBDIR)).unwrap();
-        fs::write(dir.join("01-shot.png"), b"bytes").unwrap();
-        let path = dir.to_string_lossy().to_string();
+        let png_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+        let path = bug_report_stage_images(vec![BugReportImageInput {
+            file_name: "shot.png".to_string(),
+            data_base64: png_b64.to_string(),
+        }])
+        .unwrap();
+        let dir = PathBuf::from(&path);
+        bug_report_stage_upload_payloads(
+            path.clone(),
+            vec![BugReportImageInput {
+                file_name: "shot.png".to_string(),
+                data_base64: png_b64.to_string(),
+            }],
+        )
+        .unwrap();
+        assert!(dir.join(UPLOAD_SUBDIR).is_dir());
 
         bug_report_discard_images(path.clone()).unwrap();
 
         assert!(!dir.exists());
         assert!(bug_report_discard_images(path).is_err());
+    }
+
+    #[test]
+    fn bug_report_discard_rejects_a_report_folder_this_process_did_not_stage() {
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let dir =
+            std::env::temp_dir().join(format!("goodboy-report-{}-{}", std::process::id(), stamp));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+
+        let result = bug_report_discard_images(dir.to_string_lossy().to_string());
+
+        assert!(matches!(result, Err(AttachmentError::InvalidPath)));
+        assert!(dir.exists());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn bug_report_stage_upload_payloads_rejects_a_folder_this_process_did_not_stage() {
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let dir = std::env::temp_dir().join(format!(
+            "goodboy-report-{}-up-{}",
+            std::process::id(),
+            stamp
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+
+        let result = bug_report_stage_upload_payloads(dir.to_string_lossy().to_string(), vec![]);
+
+        assert!(matches!(result, Err(AttachmentError::InvalidPath)));
+        assert!(!dir.join(UPLOAD_SUBDIR).exists());
+        let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]
