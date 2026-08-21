@@ -14,6 +14,7 @@ use protocol::{
 pub(crate) use cli::dispatch as run_cli;
 
 const APP_DIR: &str = ".goodboy";
+const SWEEP_SUFFIX: &str = "sweep-";
 
 static SOCKET_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
 static EXE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
@@ -45,10 +46,10 @@ fn socket_path() -> Option<&'static Path> {
 fn abandoned_sockets<'a>(
     file_names: impl Iterator<Item = &'a str>,
     is_alive: &dyn Fn(u32) -> bool,
-) -> Vec<String> {
+) -> Vec<(String, u32)> {
     file_names
-        .filter(|name| socket_pid(name).is_some_and(|pid| !is_alive(pid)))
-        .map(str::to_string)
+        .filter_map(|name| socket_pid(name).map(|pid| (name.to_string(), pid)))
+        .filter(|(_, pid)| !is_alive(*pid))
         .collect()
 }
 
@@ -105,14 +106,21 @@ fn has_listener(path: &Path) -> bool {
 }
 
 #[cfg(unix)]
-fn sweep_legacy_socket(path: &Path) {
-    if !path.exists() {
+fn staged_name(path: &Path) -> PathBuf {
+    path.with_extension(format!("{}{}", SWEEP_SUFFIX, std::process::id()))
+}
+
+#[cfg(unix)]
+fn discard_unless_owned(path: &Path, is_owned: &dyn Fn(&Path) -> bool) {
+    let staged = staged_name(path);
+    if std::fs::rename(path, &staged).is_err() {
         return;
     }
-    if has_listener(path) {
+    if is_owned(&staged) {
+        let _ = std::fs::rename(&staged, path);
         return;
     }
-    let _ = std::fs::remove_file(path);
+    let _ = std::fs::remove_file(&staged);
 }
 
 #[cfg(unix)]
@@ -124,10 +132,10 @@ fn sweep_abandoned_sockets(dir: &Path) {
         .filter_map(|entry| entry.ok())
         .filter_map(|entry| entry.file_name().into_string().ok())
         .collect();
-    for name in abandoned_sockets(file_names.iter().map(String::as_str), &is_pid_alive) {
-        let _ = std::fs::remove_file(dir.join(name));
+    for (name, pid) in abandoned_sockets(file_names.iter().map(String::as_str), &is_pid_alive) {
+        discard_unless_owned(&dir.join(name), &|_| is_pid_alive(pid));
     }
-    sweep_legacy_socket(&dir.join(protocol::LEGACY_SOCKET_FILE));
+    discard_unless_owned(&dir.join(protocol::LEGACY_SOCKET_FILE), &has_listener);
 }
 
 #[cfg(unix)]
@@ -269,7 +277,13 @@ mod tests {
 
         let taken = abandoned_sockets(names.into_iter(), &alive);
 
-        assert_eq!(taken, vec!["query-11.sock", "query-33.sock"]);
+        assert_eq!(
+            taken,
+            vec![
+                ("query-11.sock".to_string(), 11),
+                ("query-33.sock".to_string(), 33)
+            ]
+        );
     }
 
     #[cfg(unix)]
@@ -294,14 +308,51 @@ mod tests {
         let path = dir.join(protocol::LEGACY_SOCKET_FILE);
         let listener = std::os::unix::net::UnixListener::bind(&path).expect("a legacy listener");
 
-        sweep_legacy_socket(&path);
+        sweep_abandoned_sockets(&dir);
+
         assert!(path.exists());
+        assert!(has_listener(&path));
+        assert_eq!(staged_leftovers(&dir), Vec::<String>::new());
 
         drop(listener);
-        sweep_legacy_socket(&path);
-        assert!(!path.exists());
+        sweep_abandoned_sockets(&dir);
 
-        sweep_legacy_socket(&path);
+        assert!(!path.exists());
+        assert_eq!(staged_leftovers(&dir), Vec::<String>::new());
+
+        sweep_abandoned_sockets(&dir);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    fn staged_leftovers(dir: &Path) -> Vec<String> {
+        let mut names: Vec<String> = std::fs::read_dir(dir)
+            .expect("a readable directory")
+            .filter_map(|entry| entry.ok())
+            .filter_map(|entry| entry.file_name().into_string().ok())
+            .filter(|name| name.contains(SWEEP_SUFFIX))
+            .collect();
+        names.sort();
+        names
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_socket_taken_out_of_the_way_goes_back_when_its_owner_still_answers() {
+        let dir = scratch_dir("restore");
+        let path = dir.join(socket_file_name(std::process::id()));
+        std::fs::write(&path, b"").expect("a probe file");
+
+        discard_unless_owned(&path, &|_| true);
+
+        assert!(path.exists());
+        assert_eq!(staged_leftovers(&dir), Vec::<String>::new());
+
+        discard_unless_owned(&path, &|_| false);
+
+        assert!(!path.exists());
+        assert_eq!(staged_leftovers(&dir), Vec::<String>::new());
 
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -324,6 +375,7 @@ mod tests {
         assert!(!leftover.exists());
         assert!(!legacy.exists());
         assert!(unrelated.exists());
+        assert_eq!(staged_leftovers(&dir), Vec::<String>::new());
 
         let _ = std::fs::remove_dir_all(&dir);
     }
