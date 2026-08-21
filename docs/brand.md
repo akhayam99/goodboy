@@ -19,8 +19,12 @@ places:
 
 It is never drawn as a coloured image. It is a **mask**, filled by the
 surface underneath, which is what `DogMascot` does with a CSS mask and what
-`website/public/og-image.svg` does with an SVG luminance mask. Everything
-downstream is one asset and one fill.
+every rendered card does with the same mask in CSS. Everything downstream is
+one asset and one fill.
+
+The ink inside that PNG is symmetric in its own canvas: the alpha bounding
+box leaves 25px left and right and 92px top and bottom of the 512px square.
+Centring the mask box centres the mark. Nothing downstream may nudge it.
 
 That single rule is what keeps the dog the same dog in the app, on the site,
 in an avatar and in a favicon. It also means a colour change is a token
@@ -35,9 +39,28 @@ change, never a new file.
 
 ## The lockup
 
-`website/src/components/Logo.tsx` is the lockup: the mask at the accent
-colour, then the word `Goodboy`. No tagline inside it, no registered mark, no
-second line.
+`website/src/components/Logo.tsx` is the lockup: the mask in white on a black
+tile, then the word `Goodboy`. `BrandBadge.tsx` is the same lockup in the app.
+No tagline inside it, no registered mark, no second line.
+
+The tile has one geometry everywhere, and it is the only geometry:
+
+| Ratio       | Value   | Meaning                             |
+| ----------- | ------- | ----------------------------------- |
+| Mark scale  | `0.76`  | Mask box against the tile side      |
+| Tile radius | `0.28`  | Corner radius against the tile side |
+| Mark inset  | derived | `(1 - 0.76) / 2` on **both** axes   |
+
+The inset is derived, never typed. An offset that differs between the two
+axes is a bug: it was one, and it put the mark 3% low on every surface.
+
+**The app icon is the one deliberate exception.** It uses
+`APP_ICON_MARK_SCALE_EXCEPTION` in `website/scripts/build-brand-assets.mjs`,
+a smaller `0.66`, because the dock renders it between 32 and 64px and the
+silhouette needs air to stay readable at that size. Nothing else deviates:
+the badge, the site logo and the favicon all take the shared `0.76`, and the
+inset is still derived on both axes. Adding a second exception needs a
+reason as concrete as that one.
 
 The word is always **Goodboy**, one word, capital G, never `GoodBoy`,
 `goodboy` in running text, or an abbreviation. `GB` is not a short form of
@@ -49,6 +72,19 @@ The identity colour is the **accent teal**. The exact value differs by
 surface and is owned by tokens, not by this file: `--accent` in
 `website/src/styles.css`, the accent ramp in `apps/desktop/src/styles.css`.
 Read them, do not retype them.
+
+The tile the mark sits on is **black, never the accent**, and it is one value
+across the app, the site, the favicon and the app icon: `--brand-tile` in
+`website/src/styles.css` and `--color-brand` in `apps/desktop/src/styles.css`.
+The generator refuses to run when those two disagree.
+
+**The tile is meant to disappear in the app, and that is not a defect.**
+Against the top bar (`bg-background`) the black tile sits at 1.09:1, so what
+the eye reads there is a bare white mark, which is the whole point: the mark
+is white on black, not a coloured pill. The mark itself clears 19.66:1, so
+nothing is illegible. Do not add a border, a lighter dark-theme tile or a
+glow to make the tile visible. On the site and in the dock, where the ground
+is white or the icon is standalone, the same tile is doing visible work.
 
 The ground is white on the site and charcoal in the app, and both are
 correct. An asset made for one is not automatically valid on the other, so a
@@ -85,7 +121,7 @@ suggests. Every one of these is generated, never hand-cropped.
 | X header                    | 1500x500                 | Bottom left, where the avatar overlaps, and the top and bottom edges, which crop on mobile |
 | LinkedIn company cover      | 1128x191, rendered at 2x | Bottom left, under the company logo                                                        |
 | LinkedIn profile background | 1584x396                 | The left third, under the profile photo                                                    |
-| og-image                    | 1200x630                 | Nothing, but crawlers need the PNG as well as the SVG                                      |
+| og-image                    | 1200x630                 | Nothing, but crawlers only take the PNG, so the PNG is the only source                     |
 
 A banner is displayed far smaller than it is authored: 1500 px wide becomes
 roughly 600 on desktop and 440 on mobile. Anything under about 40 px in the
@@ -109,3 +145,19 @@ Chrome renders `oklch()` and CSS masks exactly, so the card is the same
 colour space the product ships in. Rendering at `--force-device-scale-factor=2`
 and letting the platform downscale is the fix for any surface that compresses
 hard, which on current evidence is every LinkedIn cover.
+
+`website/scripts/build-brand-assets.mjs` owns every generated surface, the
+five social formats above plus `favicon` and `app-icon`. Pass a surface slug
+to rebuild one without touching the rest:
+
+```
+node scripts/build-brand-assets.mjs app-icon
+```
+
+`favicon` writes the whole of `website/public/favicon.svg`, tile and glyph
+together, so no attribute in it is hand-maintained. `app-icon` renders a
+1024px card and hands it to the Tauri CLI, which emits the PNG set, the
+`.icns` and the `.ico` into `apps/desktop/src-tauri/icons`. The CLI orders
+`.icns` chunks nondeterministically, so the script compares chunk payloads
+rather than bytes and leaves the file alone when only the order moved. Never
+hand-paste a binary into that directory: rerun the surface.
