@@ -66,6 +66,23 @@ The socket is created when the app starts and removed when it stops, so an
 agent outliving the app fails loudly instead of hanging. Windows has no Unix
 socket and is not served.
 
+## One socket per running instance
+
+The socket file is named after the process that binds it, `query-<pid>.sock` in
+the state directory. A fixed name can only ever belong to the newest process
+that started, and the loss is silent: an installed build and a development
+build both bind it, the second one wins, and the agents of the first keep
+talking to a bridge that answers from another database with another set of
+credentials. Naming the file after the owner removes the collision instead of
+detecting it, and it is what lets a second window hold its own bridge later.
+
+Nothing has to be cleaned up by hand. Before binding, a starting instance
+removes the sockets in that directory whose owning pid no longer exists, which
+is what a crash leaves behind, and never touches one whose owner is still
+alive, including another live instance. The fixed-name socket earlier versions
+bound is removed only when no listener answers on it, so upgrading does not
+disturb an older build that is still running.
+
 The CLI is not a second program. It is the same executable the user launched,
 entered through the `query` first argument, which is answered and exited before
 any window or plugin exists. One binary is what a macOS bundle actually ships,
@@ -85,7 +102,8 @@ answer. So the advertisement is not gated on credentials. Both the injection
 and the prompt read one predicate, true only when this process owns a bound
 listener and its socket file is still there, and the frontend reaches it
 through `query_bridge_serving` rather than inferring it. A frontend that cannot
-reach that command reads it as false.
+reach that command reads it as false. The path handed to the child is the one
+this process bound, so a child never inherits an address another instance owns.
 
 That is what suppresses the block on Windows, where nothing ever binds, and
 before the listener is up or after it is gone. The two can still disagree only
