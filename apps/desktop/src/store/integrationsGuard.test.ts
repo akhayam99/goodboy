@@ -71,6 +71,20 @@ describe('buildIntegrationsGuard', () => {
     expect(guard).not.toContain('github');
     expect(guard).toContain('linear:');
   });
+
+  it('ignores a name that only exists on the object prototype', () => {
+    const guard = buildIntegrationsGuard({
+      providers: [
+        'toString' as WorkspaceIntegrationProvider,
+        'constructor' as WorkspaceIntegrationProvider,
+        'linear',
+      ],
+    });
+
+    expect(guard).not.toContain('toString');
+    expect(guard).not.toContain('constructor');
+    expect(guard.split('\n')).toHaveLength(7);
+  });
 });
 
 describe('the advertised verbs', () => {

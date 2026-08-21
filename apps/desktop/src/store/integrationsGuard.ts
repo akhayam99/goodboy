@@ -58,7 +58,8 @@ type GuardParams = {
 
 export const buildIntegrationsGuard = ({ providers }: GuardParams): string => {
   const known = Array.from(new Set(providers)).filter(
-    (provider): provider is WorkspaceIntegrationProvider => provider in QUERY_BRIDGE_VERBS,
+    (provider): provider is WorkspaceIntegrationProvider =>
+      Object.prototype.hasOwnProperty.call(QUERY_BRIDGE_VERBS, provider),
   );
   if (known.length === 0) {
     return '';
