@@ -14,6 +14,7 @@ use protocol::{
 pub(crate) use cli::dispatch as run_cli;
 
 const APP_DIR: &str = ".goodboy";
+const SWEEP_SUFFIX: &str = ".sweep-";
 
 static SOCKET_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
 static EXE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
@@ -45,9 +46,23 @@ fn socket_path() -> Option<&'static Path> {
 fn abandoned_sockets<'a>(
     file_names: impl Iterator<Item = &'a str>,
     is_alive: &dyn Fn(u32) -> bool,
+) -> Vec<(String, u32)> {
+    file_names
+        .filter_map(|name| socket_pid(name).map(|pid| (name.to_string(), pid)))
+        .filter(|(_, pid)| !is_alive(*pid))
+        .collect()
+}
+
+fn sweeper_pid(file_name: &str) -> Option<u32> {
+    file_name.rsplit_once(SWEEP_SUFFIX)?.1.parse::<u32>().ok()
+}
+
+fn abandoned_staged_files<'a>(
+    file_names: impl Iterator<Item = &'a str>,
+    is_alive: &dyn Fn(u32) -> bool,
 ) -> Vec<String> {
     file_names
-        .filter(|name| socket_pid(name).is_some_and(|pid| !is_alive(pid)))
+        .filter(|name| sweeper_pid(name).is_some_and(|pid| !is_alive(pid)))
         .map(str::to_string)
         .collect()
 }
@@ -105,14 +120,31 @@ fn has_listener(path: &Path) -> bool {
 }
 
 #[cfg(unix)]
-fn sweep_legacy_socket(path: &Path) {
-    if !path.exists() {
+fn staged_name(path: &Path) -> PathBuf {
+    let mut name = path.as_os_str().to_os_string();
+    name.push(format!("{}{}", SWEEP_SUFFIX, std::process::id()));
+    PathBuf::from(name)
+}
+
+#[cfg(unix)]
+fn restore_staged(staged: &Path, path: &Path) {
+    if std::fs::hard_link(staged, path).is_err() {
         return;
     }
-    if has_listener(path) {
+    let _ = std::fs::remove_file(staged);
+}
+
+#[cfg(unix)]
+fn discard_unless_owned(path: &Path, is_owned: &dyn Fn(&Path) -> bool) {
+    let staged = staged_name(path);
+    if std::fs::rename(path, &staged).is_err() {
         return;
     }
-    let _ = std::fs::remove_file(path);
+    if is_owned(&staged) {
+        restore_staged(&staged, path);
+        return;
+    }
+    let _ = std::fs::remove_file(&staged);
 }
 
 #[cfg(unix)]
@@ -124,10 +156,13 @@ fn sweep_abandoned_sockets(dir: &Path) {
         .filter_map(|entry| entry.ok())
         .filter_map(|entry| entry.file_name().into_string().ok())
         .collect();
-    for name in abandoned_sockets(file_names.iter().map(String::as_str), &is_pid_alive) {
+    for (name, pid) in abandoned_sockets(file_names.iter().map(String::as_str), &is_pid_alive) {
+        discard_unless_owned(&dir.join(name), &|_| is_pid_alive(pid));
+    }
+    for name in abandoned_staged_files(file_names.iter().map(String::as_str), &is_pid_alive) {
         let _ = std::fs::remove_file(dir.join(name));
     }
-    sweep_legacy_socket(&dir.join(protocol::LEGACY_SOCKET_FILE));
+    discard_unless_owned(&dir.join(protocol::LEGACY_SOCKET_FILE), &has_listener);
 }
 
 #[cfg(unix)]
@@ -269,7 +304,39 @@ mod tests {
 
         let taken = abandoned_sockets(names.into_iter(), &alive);
 
-        assert_eq!(taken, vec!["query-11.sock", "query-33.sock"]);
+        assert_eq!(
+            taken,
+            vec![
+                ("query-11.sock".to_string(), 11),
+                ("query-33.sock".to_string(), 33)
+            ]
+        );
+    }
+
+    #[test]
+    fn a_staged_file_belongs_to_the_sweeper_named_in_it() {
+        assert_eq!(sweeper_pid("query-9.sock.sweep-4321"), Some(4321));
+        assert_eq!(sweeper_pid("query.sock.sweep-7"), Some(7));
+        assert_eq!(sweeper_pid("query-9.sock"), None);
+        assert_eq!(sweeper_pid("query-9.sock.sweep-"), None);
+        assert_eq!(sweeper_pid("query-9.sock.sweep-abc"), None);
+        assert_eq!(sweeper_pid("data.db"), None);
+    }
+
+    #[test]
+    fn a_sweeper_that_died_mid_operation_leaves_nothing_behind() {
+        let names = [
+            "query-9.sock.sweep-11",
+            "query-9.sock.sweep-22",
+            "query.sock.sweep-33",
+            "query-9.sock",
+            "data.db",
+        ];
+        let alive = |pid: u32| pid == 22;
+
+        let taken = abandoned_staged_files(names.into_iter(), &alive);
+
+        assert_eq!(taken, vec!["query-9.sock.sweep-11", "query.sock.sweep-33"]);
     }
 
     #[cfg(unix)]
@@ -294,14 +361,117 @@ mod tests {
         let path = dir.join(protocol::LEGACY_SOCKET_FILE);
         let listener = std::os::unix::net::UnixListener::bind(&path).expect("a legacy listener");
 
-        sweep_legacy_socket(&path);
+        sweep_abandoned_sockets(&dir);
+
         assert!(path.exists());
+        assert!(has_listener(&path));
+        assert_eq!(staged_leftovers(&dir), Vec::<String>::new());
 
         drop(listener);
-        sweep_legacy_socket(&path);
-        assert!(!path.exists());
+        sweep_abandoned_sockets(&dir);
 
-        sweep_legacy_socket(&path);
+        assert!(!path.exists());
+        assert_eq!(staged_leftovers(&dir), Vec::<String>::new());
+
+        sweep_abandoned_sockets(&dir);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    fn staged_leftovers(dir: &Path) -> Vec<String> {
+        let mut names: Vec<String> = std::fs::read_dir(dir)
+            .expect("a readable directory")
+            .filter_map(|entry| entry.ok())
+            .filter_map(|entry| entry.file_name().into_string().ok())
+            .filter(|name| name.contains(SWEEP_SUFFIX))
+            .collect();
+        names.sort();
+        names
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_socket_taken_out_of_the_way_goes_back_when_its_owner_still_answers() {
+        let dir = scratch_dir("restore");
+        let path = dir.join(socket_file_name(std::process::id()));
+        std::fs::write(&path, b"").expect("a probe file");
+
+        discard_unless_owned(&path, &|_| true);
+
+        assert!(path.exists());
+        assert_eq!(staged_leftovers(&dir), Vec::<String>::new());
+
+        discard_unless_owned(&path, &|_| false);
+
+        assert!(!path.exists());
+        assert_eq!(staged_leftovers(&dir), Vec::<String>::new());
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_restore_puts_the_very_same_file_back_under_its_own_name() {
+        let dir = scratch_dir("restore-back");
+        let path = dir.join(socket_file_name(std::process::id()));
+        std::fs::write(&path, b"owner").expect("a probe file");
+        let staged = staged_name(&path);
+        std::fs::rename(&path, &staged).expect("a staged file");
+
+        restore_staged(&staged, &path);
+
+        assert_eq!(std::fs::read_to_string(&path).expect("the file"), "owner");
+        assert!(!staged.exists());
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_restore_never_lands_on_a_name_another_process_took_meanwhile() {
+        let dir = scratch_dir("restore-taken");
+        let path = dir.join(socket_file_name(std::process::id()));
+        std::fs::write(&path, b"owner").expect("a probe file");
+        let staged = staged_name(&path);
+        std::fs::rename(&path, &staged).expect("a staged file");
+        std::fs::write(&path, b"newcomer").expect("a newcomer file");
+
+        restore_staged(&staged, &path);
+
+        assert_eq!(
+            std::fs::read_to_string(&path).expect("the file"),
+            "newcomer"
+        );
+        assert!(staged.exists());
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_staged_file_outlives_its_sweeper_only_while_that_sweeper_runs() {
+        let dir = scratch_dir("staged");
+        let mine = dir.join(format!(
+            "{}{}{}",
+            socket_file_name(7),
+            SWEEP_SUFFIX,
+            std::process::id()
+        ));
+        let orphan = dir.join(format!(
+            "{}{}{}",
+            socket_file_name(7),
+            SWEEP_SUFFIX,
+            0x7fff_fffe_u32
+        ));
+        for path in [&mine, &orphan] {
+            std::fs::write(path, b"").expect("a probe file");
+        }
+
+        sweep_abandoned_sockets(&dir);
+
+        assert!(mine.exists());
+        assert!(!orphan.exists());
 
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -324,6 +494,7 @@ mod tests {
         assert!(!leftover.exists());
         assert!(!legacy.exists());
         assert!(unrelated.exists());
+        assert_eq!(staged_leftovers(&dir), Vec::<String>::new());
 
         let _ = std::fs::remove_dir_all(&dir);
     }
