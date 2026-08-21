@@ -6,7 +6,9 @@ use serde::{Deserialize, Serialize};
 
 pub const SOCKET_ENV: &str = "GOODBOY_QUERY_SOCKET";
 pub const WORKSPACE_ENV: &str = "GOODBOY_WORKSPACE_ID";
-pub const SOCKET_FILE: &str = "query.sock";
+pub const LEGACY_SOCKET_FILE: &str = "query.sock";
+pub const SOCKET_PREFIX: &str = "query-";
+pub const SOCKET_SUFFIX: &str = ".sock";
 pub const BIN_ENV: &str = "GOODBOY_BIN";
 pub const SUBCOMMAND: &str = "query";
 pub const INVOCATION: &str = "\"$GOODBOY_BIN\" query";

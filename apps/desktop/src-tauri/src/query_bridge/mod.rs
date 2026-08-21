@@ -7,7 +7,9 @@ use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
 
-use protocol::{QueryRequest, QueryResponse, BIN_ENV, SOCKET_ENV, SOCKET_FILE, WORKSPACE_ENV};
+use protocol::{
+    QueryRequest, QueryResponse, BIN_ENV, SOCKET_ENV, SOCKET_PREFIX, SOCKET_SUFFIX, WORKSPACE_ENV,
+};
 
 pub(crate) use cli::dispatch as run_cli;
 
@@ -17,10 +19,37 @@ static SOCKET_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
 static EXE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
 static LISTENING: AtomicBool = AtomicBool::new(false);
 
+fn socket_file_name(pid: u32) -> String {
+    format!("{}{}{}", SOCKET_PREFIX, pid, SOCKET_SUFFIX)
+}
+
+fn socket_pid(file_name: &str) -> Option<u32> {
+    file_name
+        .strip_prefix(SOCKET_PREFIX)?
+        .strip_suffix(SOCKET_SUFFIX)?
+        .parse::<u32>()
+        .ok()
+}
+
 fn socket_path() -> Option<&'static Path> {
     SOCKET_PATH
-        .get_or_init(|| dirs::home_dir().map(|home| home.join(APP_DIR).join(SOCKET_FILE)))
+        .get_or_init(|| {
+            dirs::home_dir().map(|home| {
+                home.join(APP_DIR)
+                    .join(socket_file_name(std::process::id()))
+            })
+        })
         .as_deref()
+}
+
+fn abandoned_sockets<'a>(
+    file_names: impl Iterator<Item = &'a str>,
+    is_alive: &dyn Fn(u32) -> bool,
+) -> Vec<String> {
+    file_names
+        .filter(|name| socket_pid(name).is_some_and(|pid| !is_alive(pid)))
+        .map(str::to_string)
+        .collect()
 }
 
 fn exe_path() -> Option<&'static Path> {
@@ -59,6 +88,49 @@ pub(crate) fn apply_env(command: &mut Command, workspace_id: Option<&str>) {
 }
 
 #[cfg(unix)]
+fn is_pid_alive(pid: u32) -> bool {
+    if pid == 0 {
+        return true;
+    }
+    let outcome = unsafe { libc::kill(pid as libc::pid_t, 0) };
+    if outcome == 0 {
+        return true;
+    }
+    std::io::Error::last_os_error().raw_os_error() == Some(libc::EPERM)
+}
+
+#[cfg(unix)]
+fn has_listener(path: &Path) -> bool {
+    std::os::unix::net::UnixStream::connect(path).is_ok()
+}
+
+#[cfg(unix)]
+fn sweep_legacy_socket(path: &Path) {
+    if !path.exists() {
+        return;
+    }
+    if has_listener(path) {
+        return;
+    }
+    let _ = std::fs::remove_file(path);
+}
+
+#[cfg(unix)]
+fn sweep_abandoned_sockets(dir: &Path) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    let file_names: Vec<String> = entries
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| entry.file_name().into_string().ok())
+        .collect();
+    for name in abandoned_sockets(file_names.iter().map(String::as_str), &is_pid_alive) {
+        let _ = std::fs::remove_file(dir.join(name));
+    }
+    sweep_legacy_socket(&dir.join(protocol::LEGACY_SOCKET_FILE));
+}
+
+#[cfg(unix)]
 pub(crate) fn start(app: tauri::AppHandle) {
     use std::os::unix::fs::PermissionsExt;
     use tokio::net::UnixListener;
@@ -71,6 +143,7 @@ pub(crate) fn start(app: tauri::AppHandle) {
             log::warn!("query bridge: state directory unavailable: {error}");
             return;
         }
+        sweep_abandoned_sockets(parent);
     }
     let _ = std::fs::remove_file(path);
     tauri::async_runtime::spawn(async move {
@@ -154,7 +227,105 @@ mod tests {
     fn the_socket_lives_beside_the_database_in_the_state_directory() {
         let path = socket_path().expect("a home directory");
 
-        assert!(path.ends_with(format!("{}/{}", APP_DIR, SOCKET_FILE)));
+        assert!(path.ends_with(format!(
+            "{}/{}",
+            APP_DIR,
+            socket_file_name(std::process::id())
+        )));
+    }
+
+    #[test]
+    fn every_running_instance_binds_a_socket_named_after_its_own_pid() {
+        let path = socket_path().expect("a home directory");
+        let name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .expect("a file name");
+
+        assert_eq!(socket_pid(name), Some(std::process::id()));
+        assert_ne!(socket_file_name(1), socket_file_name(2));
+    }
+
+    #[test]
+    fn only_a_pid_suffixed_socket_answers_for_an_owner() {
+        assert_eq!(socket_pid("query-4321.sock"), Some(4321));
+        assert_eq!(socket_pid(protocol::LEGACY_SOCKET_FILE), None);
+        assert_eq!(socket_pid("query-.sock"), None);
+        assert_eq!(socket_pid("query-abc.sock"), None);
+        assert_eq!(socket_pid("query-12.sock.bak"), None);
+        assert_eq!(socket_pid("data.db"), None);
+    }
+
+    #[test]
+    fn the_sweep_takes_the_dead_and_spares_every_live_instance() {
+        let names = [
+            "query-11.sock",
+            "query-22.sock",
+            "query-33.sock",
+            "query.sock",
+            "data.db",
+        ];
+        let alive = |pid: u32| pid == 22;
+
+        let taken = abandoned_sockets(names.into_iter(), &alive);
+
+        assert_eq!(taken, vec!["query-11.sock", "query-33.sock"]);
+    }
+
+    #[cfg(unix)]
+    fn scratch_dir(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("goodboy-query-bridge-{}", name));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("a scratch directory");
+        dir
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_process_running_the_sweep_is_alive_and_a_free_pid_is_not() {
+        assert!(is_pid_alive(std::process::id()));
+        assert!(!is_pid_alive(0x7fff_fffe));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_legacy_socket_survives_only_while_a_listener_answers_on_it() {
+        let dir = scratch_dir("legacy");
+        let path = dir.join(protocol::LEGACY_SOCKET_FILE);
+        let listener = std::os::unix::net::UnixListener::bind(&path).expect("a legacy listener");
+
+        sweep_legacy_socket(&path);
+        assert!(path.exists());
+
+        drop(listener);
+        sweep_legacy_socket(&path);
+        assert!(!path.exists());
+
+        sweep_legacy_socket(&path);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_crash_leftover_goes_and_this_instance_keeps_its_own_socket() {
+        let dir = scratch_dir("sweep");
+        let mine = dir.join(socket_file_name(std::process::id()));
+        let leftover = dir.join(socket_file_name(0x7fff_fffe));
+        let legacy = dir.join(protocol::LEGACY_SOCKET_FILE);
+        let unrelated = dir.join("data.db");
+        for path in [&mine, &leftover, &legacy, &unrelated] {
+            std::fs::write(path, b"").expect("a probe file");
+        }
+
+        sweep_abandoned_sockets(&dir);
+
+        assert!(mine.exists());
+        assert!(!leftover.exists());
+        assert!(!legacy.exists());
+        assert!(unrelated.exists());
+
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     fn injected_names(workspace_id: Option<&str>) -> Vec<String> {
@@ -173,6 +344,21 @@ mod tests {
         assert_eq!(names.contains(&SOCKET_ENV.to_string()), is_serving());
         assert_eq!(names.contains(&BIN_ENV.to_string()), is_serving());
         assert_eq!(names.contains(&WORKSPACE_ENV.to_string()), is_serving());
+    }
+
+    #[test]
+    fn the_socket_a_child_is_handed_is_the_one_this_instance_binds() {
+        let mut command = Command::new("true");
+        apply_env(&mut command, Some("ws-1"));
+        let injected = command
+            .get_envs()
+            .find(|(key, _)| *key == std::ffi::OsStr::new(SOCKET_ENV))
+            .and_then(|(_, value)| value);
+
+        assert_eq!(
+            injected,
+            is_serving().then(|| socket_path().expect("a home directory").as_os_str())
+        );
     }
 
     #[test]
