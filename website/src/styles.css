@@ -45,7 +45,8 @@
   --reviewer: oklch(0.46 0.12 213);
   --pr-reviewer: oklch(0.5 0.16 275);
 
-  --display: 'Avenir Next', 'Avenir', ui-rounded, 'SF Pro Rounded', Futura, -apple-system, sans-serif;
+  --display:
+    'Avenir Next', 'Avenir', ui-rounded, 'SF Pro Rounded', Futura, -apple-system, sans-serif;
   --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --mono: ui-monospace, 'SF Mono', Menlo, Monaco, monospace;
 }
@@ -227,8 +228,9 @@ h2 {
 }
 
 .logo-tile {
-  position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
   background: var(--accent);
 }

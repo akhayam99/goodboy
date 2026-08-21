@@ -9,6 +9,11 @@ const WEBSITE_DIRECTORY = resolve(SCRIPT_DIRECTORY, '..');
 const REPOSITORY_DIRECTORY = resolve(WEBSITE_DIRECTORY, '..');
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
+const FAVICON_CANVAS_PX = 32;
+const FAVICON_GLYPH_PX = 256;
+const TILE_RADIUS_RATIO = 0.28;
+const MARK_SCALE = 0.76;
+
 const readSource = (relativePath) =>
   readFileSync(resolve(REPOSITORY_DIRECTORY, relativePath), 'utf8');
 
@@ -31,11 +36,8 @@ const extractBraceBlock = ({ source, startIndex, description }) => {
       if (state.closingOffset !== -1) {
         return state;
       }
-      const depth = character === '{'
-        ? state.depth + 1
-        : character === '}'
-          ? state.depth - 1
-          : state.depth;
+      const depth =
+        character === '{' ? state.depth + 1 : character === '}' ? state.depth - 1 : state.depth;
       return {
         depth,
         closingOffset: depth === 0 ? index : -1,
@@ -66,8 +68,15 @@ const parseSocialFormats = (brandSource) => {
   const rows = section
     .split('\n')
     .filter((line) => /^\|/.test(line))
-    .map((line) => line.split('|').slice(1, -1).map((cell) => cell.trim()))
-    .filter(([surface, size]) => surface !== 'Surface' && !/^-+$/.test(surface) && size !== undefined)
+    .map((line) =>
+      line
+        .split('|')
+        .slice(1, -1)
+        .map((cell) => cell.trim()),
+    )
+    .filter(
+      ([surface, size]) => surface !== 'Surface' && !/^-+$/.test(surface) && size !== undefined,
+    )
     .map(([surface, size, keepClear]) => {
       const dimensions = requireMatch({
         source: size,
@@ -108,9 +117,11 @@ const parseProviderBrand = ({ providerBrandSource, providerIds }) => {
     startIndex: declarationIndex,
     description: 'PROVIDER_BRAND',
   });
-  const entries = [...block.matchAll(
-    /([a-z][a-z0-9]*):\s*\{\s*icon:\s*([A-Za-z][A-Za-z0-9]*),\s*cssVar:\s*['"]([^'"]+)['"]\s*\}/g,
-  )].reduce(
+  const entries = [
+    ...block.matchAll(
+      /([a-z][a-z0-9]*):\s*\{\s*icon:\s*([A-Za-z][A-Za-z0-9]*),\s*cssVar:\s*['"]([^'"]+)['"]\s*\}/g,
+    ),
+  ].reduce(
     (brands, match) => ({
       ...brands,
       [match[1]]: { iconName: match[2], cssVar: match[3] },
@@ -163,6 +174,43 @@ const extractCssValue = ({ cssSource, variableName }) =>
     description: `${variableName} in the light theme`,
   })[1].trim();
 
+const encodeSrgbChannel = (value) => {
+  const clamped = Math.min(1, Math.max(0, value));
+  const encoded = clamped <= 0.0031308 ? clamped * 12.92 : 1.055 * clamped ** (1 / 2.4) - 0.055;
+  return Math.round(encoded * 255)
+    .toString(16)
+    .padStart(2, '0');
+};
+
+const oklchToHex = ({ lightness, chroma, hue }) => {
+  const radians = (hue * Math.PI) / 180;
+  const a = chroma * Math.cos(radians);
+  const b = chroma * Math.sin(radians);
+  const long = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const medium = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const short = (lightness - 0.0894841775 * a - 1.29148555 * b) ** 3;
+  const red = 4.0767416621 * long - 3.3077115913 * medium + 0.2309699292 * short;
+  const green = -1.2684380046 * long + 2.6097574011 * medium - 0.3413193965 * short;
+  const blue = -0.0041960863 * long - 0.7034186147 * medium + 1.707614701 * short;
+  return `#${encodeSrgbChannel(red)}${encodeSrgbChannel(green)}${encodeSrgbChannel(blue)}`;
+};
+
+const toHexColor = (color) => {
+  if (color.startsWith('#')) {
+    return color;
+  }
+  const match = requireMatch({
+    source: color,
+    pattern: /^oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)$/,
+    description: `a hex or oklch color, received "${color}"`,
+  });
+  return oklchToHex({
+    lightness: Number(match[1]),
+    chroma: Number(match[2]),
+    hue: Number(match[3]),
+  });
+};
+
 const resolveBrands = ({ brands, iconSource, lightThemeSource }) =>
   brands.map(({ id, iconName, cssVar }) => ({
     id,
@@ -182,7 +230,14 @@ const createLockupHtml = ({ mascotBase64, tagline = '' }) => `
     </div>
   </div>`;
 
-const createBaseHtml = ({ width, height, accent, bodyClass, content, extraCss = '' }) => `<!doctype html>
+const createBaseHtml = ({
+  width,
+  height,
+  accent,
+  bodyClass,
+  content,
+  extraCss = '',
+}) => `<!doctype html>
 <meta charset="utf-8">
 <style>
   @page { size: ${width}px ${height}px; margin: 0 }
@@ -195,9 +250,12 @@ const createBaseHtml = ({ width, height, accent, bodyClass, content, extraCss = 
 <body class="${bodyClass}">${content}</body>`;
 
 const createOgHtml = ({ format, accent, mascotBase64, providerBrands, date }) => {
-  const marks = providerBrands.map(({ id, path, color }) =>
-    `<svg aria-label="${id}" width="30" height="30" viewBox="0 0 24 24" fill="${color}"><path d="${path}"/></svg>`,
-  ).join('');
+  const marks = providerBrands
+    .map(
+      ({ id, path, color }) =>
+        `<svg aria-label="${id}" width="30" height="30" viewBox="0 0 24 24" fill="${color}"><path d="${path}"/></svg>`,
+    )
+    .join('');
   const content = `
     <div class="brand">${createMascot({ className: 'mascot', mascotBase64 })}<span>Goodboy</span></div>
     <h1>Stop <em>re&#8209;explaining yourself.</em></h1>
@@ -232,27 +290,38 @@ const createOgHtml = ({ format, accent, mascotBase64, providerBrands, date }) =>
   });
 };
 
-const createAvatarHtml = ({ format, accent, mascotBase64 }) => createBaseHtml({
-  width: format.width,
-  height: format.height,
-  accent,
-  bodyClass: 'avatar',
-  content: createMascot({ className: 'mascot', mascotBase64 }),
-  extraCss: `
+const createAvatarHtml = ({ format, accent, mascotBase64 }) =>
+  createBaseHtml({
+    width: format.width,
+    height: format.height,
+    accent,
+    bodyClass: 'avatar',
+    content: createMascot({ className: 'mascot', mascotBase64 }),
+    extraCss: `
     body { display: grid; place-items: center; padding: 18% }
     .mascot { width: 60vh; height: 60vh }
   `,
-});
+  });
 
-const createFaviconGlyphHtml = ({ accent, mascotBase64 }) => `<!doctype html>
+const createFaviconGlyphHtml = ({ mascotBase64 }) => `<!doctype html>
 <meta charset="utf-8">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box }
-  html, body { width: 160px; height: 160px; background: transparent; overflow: hidden }
-  body { display: grid; place-items: center; padding: 18% }
-  .mascot { width: 60vh; height: 60vh; background: ${accent}; -webkit-mask: url(data:image/png;base64,${mascotBase64}) no-repeat center / contain }
+  html, body { width: ${FAVICON_GLYPH_PX}px; height: ${FAVICON_GLYPH_PX}px; background: transparent; overflow: hidden }
+  .mascot { display: block; width: 100%; height: 100%; background: #fff; -webkit-mask: url(data:image/png;base64,${mascotBase64}) no-repeat center / contain }
 </style>
 <body><i class="mascot"></i></body>`;
+
+const createFaviconSvg = ({ tileColor, glyphBase64 }) => {
+  const markSize = FAVICON_CANVAS_PX * MARK_SCALE;
+  const markInset = (FAVICON_CANVAS_PX - markSize) / 2;
+  const tileRadius = FAVICON_CANVAS_PX * TILE_RADIUS_RATIO;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${FAVICON_CANVAS_PX} ${FAVICON_CANVAS_PX}">
+  <rect width="${FAVICON_CANVAS_PX}" height="${FAVICON_CANVAS_PX}" rx="${tileRadius}" fill="${tileColor}"/>
+  <image x="${markInset}" y="${markInset}" width="${markSize}" height="${markSize}" href="data:image/png;base64,${glyphBase64}"/>
+</svg>
+`;
+};
 
 const createBannerHtml = ({ format, accent, mascotBase64, variant }) => {
   const isXHeader = variant === 'x-header';
@@ -274,9 +343,12 @@ const createBannerHtml = ({ format, accent, mascotBase64, variant }) => {
   });
 };
 
-const outputPathFor = (surface) => surface === 'og-image'
-  ? resolve(WEBSITE_DIRECTORY, 'public/og-image.png')
-  : resolve(WEBSITE_DIRECTORY, `public/brand/${surface.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`);
+const slugFor = (surface) => surface.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+const outputPathFor = (surface) =>
+  surface === 'og-image'
+    ? resolve(WEBSITE_DIRECTORY, 'public/og-image.png')
+    : resolve(WEBSITE_DIRECTORY, `public/brand/${slugFor(surface)}.png`);
 
 const createHtmlFor = ({ format, accent, mascotBase64, providerBrands, date }) => {
   if (format.surface === 'og-image') {
@@ -301,7 +373,7 @@ const renderFormat = ({ format, html }) => {
   const outputPath = outputPathFor(format.surface);
   const temporaryPath = resolve(
     tmpdir(),
-    `goodboy-brand-${format.surface.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${process.pid}.html`,
+    `goodboy-brand-${slugFor(format.surface)}-${process.pid}.html`,
   );
   mkdirSync(dirname(outputPath), { recursive: true });
   try {
@@ -328,32 +400,26 @@ const renderFavicon = ({ accent, mascotBase64 }) => {
   const temporaryHtmlPath = resolve(tmpdir(), `goodboy-favicon-glyph-${process.pid}.html`);
   const temporaryPngPath = resolve(tmpdir(), `goodboy-favicon-glyph-${process.pid}.png`);
   try {
-    writeFileSync(temporaryHtmlPath, createFaviconGlyphHtml({ accent, mascotBase64 }));
+    writeFileSync(temporaryHtmlPath, createFaviconGlyphHtml({ mascotBase64 }));
     execFileSync(CHROME, [
       '--headless=new',
       '--disable-gpu',
       '--hide-scrollbars',
       '--default-background-color=00000000',
       '--force-device-scale-factor=1',
-      '--window-size=160,160',
+      `--window-size=${FAVICON_GLYPH_PX},${FAVICON_GLYPH_PX}`,
       `--screenshot=${temporaryPngPath}`,
       pathToFileURL(temporaryHtmlPath).href,
     ]);
-    const glyphBase64 = readFileSync(temporaryPngPath).toString('base64');
-    const svgSource = readFileSync(outputPath, 'utf8');
-    const match = svgSource.match(/(href="data:image\/png;base64,)([^"]+)(")/);
-    if (match === null) {
-      throw new Error('Could not find the embedded PNG in favicon.svg');
-    }
-    if (match[2] === glyphBase64) {
-      console.log('favicon.svg glyph already matches the live accent token, no change needed');
+    const svgSource = createFaviconSvg({
+      tileColor: toHexColor(accent),
+      glyphBase64: readFileSync(temporaryPngPath).toString('base64'),
+    });
+    if (existsSync(outputPath) && readFileSync(outputPath, 'utf8') === svgSource) {
+      console.log('favicon.svg already matches the live brand tile, no change needed');
       return;
     }
-    const matchIndex = match.index ?? 0;
-    const updatedSvg = `${svgSource.slice(0, matchIndex)}${match[1]}${glyphBase64}${match[3]}${svgSource.slice(
-      matchIndex + match[0].length,
-    )}`;
-    writeFileSync(outputPath, updatedSvg);
+    writeFileSync(outputPath, svgSource);
     console.log('rendered', outputPath);
   } finally {
     if (existsSync(temporaryHtmlPath)) {
@@ -392,9 +458,21 @@ const providerBrands = resolveBrands({
 const accent = extractCssValue({ cssSource: websiteStylesSource, variableName: '--accent' });
 const date = new Date().toISOString().slice(0, 10);
 
-formats.forEach((format) => {
+const requestedSurface = process.argv[2] ?? '';
+const isRequested = (slug) => requestedSurface === '' || requestedSurface === slug;
+const selectedFormats = formats.filter((format) => isRequested(slugFor(format.surface)));
+
+if (requestedSurface !== '' && selectedFormats.length === 0 && !isRequested('favicon')) {
+  throw new Error(
+    `Unknown surface "${requestedSurface}". Known surfaces: ${[...formats.map((format) => slugFor(format.surface)), 'favicon'].join(', ')}`,
+  );
+}
+
+selectedFormats.forEach((format) => {
   const html = createHtmlFor({ format, accent, mascotBase64, providerBrands, date });
   renderFormat({ format, html });
 });
 
-renderFavicon({ accent, mascotBase64 });
+if (isRequested('favicon')) {
+  renderFavicon({ accent, mascotBase64 });
+}
