@@ -26,6 +26,7 @@ const APP_ICON_PX = 1024;
 const ICNS_HEADER_BYTES = 8;
 const TILE_RADIUS_RATIO = 0.28;
 const MARK_SCALE = 0.76;
+const APP_ICON_MARK_SCALE_EXCEPTION = 0.66;
 
 const readSource = (relativePath) =>
   readFileSync(resolve(REPOSITORY_DIRECTORY, relativePath), 'utf8');
@@ -342,7 +343,7 @@ const createAppIconHtml = ({ tileColor, mascotBase64 }) => `<!doctype html>
   * { margin: 0; padding: 0; box-sizing: border-box }
   html, body { width: ${APP_ICON_PX}px; height: ${APP_ICON_PX}px; background: ${tileColor}; overflow: hidden }
   body { display: grid; place-items: center }
-  .mascot { display: block; width: ${APP_ICON_PX * MARK_SCALE}px; height: ${APP_ICON_PX * MARK_SCALE}px; background: #fff; -webkit-mask: url(data:image/png;base64,${mascotBase64}) no-repeat center / contain }
+  .mascot { display: block; width: ${APP_ICON_PX * APP_ICON_MARK_SCALE_EXCEPTION}px; height: ${APP_ICON_PX * APP_ICON_MARK_SCALE_EXCEPTION}px; background: #fff; -webkit-mask: url(data:image/png;base64,${mascotBase64}) no-repeat center / contain }
 </style>
 <body><i class="mascot"></i></body>`;
 

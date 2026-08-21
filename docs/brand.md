@@ -54,6 +54,14 @@ The tile has one geometry everywhere, and it is the only geometry:
 The inset is derived, never typed. An offset that differs between the two
 axes is a bug: it was one, and it put the mark 3% low on every surface.
 
+**The app icon is the one deliberate exception.** It uses
+`APP_ICON_MARK_SCALE_EXCEPTION` in `website/scripts/build-brand-assets.mjs`,
+a smaller `0.66`, because the dock renders it between 32 and 64px and the
+silhouette needs air to stay readable at that size. Nothing else deviates:
+the badge, the site logo and the favicon all take the shared `0.76`, and the
+inset is still derived on both axes. Adding a second exception needs a
+reason as concrete as that one.
+
 The word is always **Goodboy**, one word, capital G, never `GoodBoy`,
 `goodboy` in running text, or an abbreviation. `GB` is not a short form of
 anything here.
@@ -69,6 +77,14 @@ The tile the mark sits on is **black, never the accent**, and it is one value
 across the app, the site, the favicon and the app icon: `--brand-tile` in
 `website/src/styles.css` and `--color-brand` in `apps/desktop/src/styles.css`.
 The generator refuses to run when those two disagree.
+
+**The tile is meant to disappear in the app, and that is not a defect.**
+Against the top bar (`bg-background`) the black tile sits at 1.09:1, so what
+the eye reads there is a bare white mark, which is the whole point: the mark
+is white on black, not a coloured pill. The mark itself clears 19.66:1, so
+nothing is illegible. Do not add a border, a lighter dark-theme tile or a
+glow to make the tile visible. On the site and in the dock, where the ground
+is white or the icon is standalone, the same tile is doing visible work.
 
 The ground is white on the site and charcoal in the app, and both are
 correct. An asset made for one is not automatically valid on the other, so a

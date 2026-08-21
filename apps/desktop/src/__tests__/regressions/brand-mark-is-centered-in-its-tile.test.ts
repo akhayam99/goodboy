@@ -11,6 +11,8 @@ const DESKTOP_ICONS = join(__dirname, '..', '..', '..', 'src-tauri', 'icons');
 const SITE_LOGO = join(REPOSITORY_ROOT, 'website', 'src', 'components', 'Logo.tsx');
 const SITE_STYLES = join(REPOSITORY_ROOT, 'website', 'src', 'styles.css');
 const FAVICON = join(REPOSITORY_ROOT, 'website', 'public', 'favicon.svg');
+const BRAND_GENERATOR = join(REPOSITORY_ROOT, 'website', 'scripts', 'build-brand-assets.mjs');
+const APP_ICON = 'icon.png';
 
 const PNG_SIGNATURE_BYTES = 8;
 const CHUNK_HEADER_BYTES = 8;
@@ -19,8 +21,9 @@ const RGBA_BYTES_PER_PIXEL = 4;
 const EIGHT_BIT_DEPTH = 8;
 const RGBA_COLOR_TYPE = 6;
 const NO_INTERLACE = 0;
-const WHITE_FLOOR = 200;
+const HALF_COVERAGE = 128;
 const OPAQUE_FLOOR = 128;
+const CENTER_TOLERANCE_PX = 0.5;
 
 type Channels = {
   readonly red: number;
@@ -176,17 +179,46 @@ const marginsOf = ({
 const inkMargins = ({ source }: { source: Buffer }): Bounds =>
   marginsOf({ source, isInk: ({ alpha }) => alpha > 0 });
 
-const whiteInkMargins = ({ source }: { source: Buffer }): Bounds =>
-  marginsOf({
-    source,
-    isInk: ({ red, green, blue, alpha }) =>
-      alpha > OPAQUE_FLOOR && red > WHITE_FLOOR && green > WHITE_FLOOR && blue > WHITE_FLOOR,
-  });
+const tileChannelsOf = ({ source }: { source: Buffer }): Channels => {
+  const { pixels } = readPixelData({ source });
+  return {
+    red: pixels[0] ?? 0,
+    green: pixels[1] ?? 0,
+    blue: pixels[2] ?? 0,
+    alpha: pixels[3] ?? 0,
+  };
+};
 
 const tileColorOf = ({ source }: { source: Buffer }): string => {
-  const { pixels } = readPixelData({ source });
-  const channel = (index: number): string => (pixels[index] ?? 0).toString(16).padStart(2, '0');
-  return `#${channel(0)}${channel(1)}${channel(2)}`;
+  const { red, green, blue } = tileChannelsOf({ source });
+  return [red, green, blue].reduce(
+    (hex, channel) => `${hex}${channel.toString(16).padStart(2, '0')}`,
+    '#',
+  );
+};
+
+const markMarginsOf = ({ source }: { source: Buffer }): Bounds => {
+  const tile = tileChannelsOf({ source });
+  return marginsOf({
+    source,
+    isInk: ({ red, green, blue, alpha }) =>
+      alpha > OPAQUE_FLOOR &&
+      Math.max(Math.abs(red - tile.red), Math.abs(green - tile.green), Math.abs(blue - tile.blue)) >
+        HALF_COVERAGE,
+  });
+};
+
+const centerOffsetOf = ({ margins }: { margins: Bounds }): { x: number; y: number } => ({
+  x: (margins.left - margins.right) / 2,
+  y: (margins.top - margins.bottom) / 2,
+});
+
+const canvasWidthOf = ({ source }: { source: Buffer }): number => readPixelData({ source }).width;
+
+const inkWidthRatioOf = ({ source }: { source: Buffer }): number => {
+  const width = canvasWidthOf({ source });
+  const margins = markMarginsOf({ source });
+  return (width - margins.left - margins.right) / width;
 };
 
 const cssValueOf = ({ path, variableName }: { path: string; variableName: string }): string => {
@@ -233,6 +265,15 @@ const TILE_RADIUS = ratioOf({ source: BADGE_SOURCE, name: 'TILE_RADIUS' });
 const DESKTOP_TILE = cssValueOf({ path: DESKTOP_STYLES, variableName: '--color-brand' });
 const SITE_TILE = cssValueOf({ path: SITE_STYLES, variableName: '--brand-tile' });
 const ICON_FILES = readdirSync(DESKTOP_ICONS).filter((name) => name.endsWith('.png'));
+const GENERATOR_SOURCE = readFileSync(BRAND_GENERATOR, 'utf8');
+const APP_ICON_SCALE = ratioOf({
+  source: GENERATOR_SOURCE,
+  name: 'APP_ICON_MARK_SCALE_EXCEPTION',
+});
+const MASCOT_MARGINS = inkMargins({ source: readFileSync(MASCOT_PNG) });
+const MASCOT_CANVAS_PX = canvasWidthOf({ source: readFileSync(MASCOT_PNG) });
+const MASCOT_INK_RATIO =
+  (MASCOT_CANVAS_PX - MASCOT_MARGINS.left - MASCOT_MARGINS.right) / MASCOT_CANVAS_PX;
 
 describe('brand mark is centered in its tile', () => {
   it('ships a mascot whose ink is symmetric inside its own canvas', () => {
@@ -293,14 +334,22 @@ describe('brand mark is centered in its tile', () => {
   it('centers the mark on every desktop icon and keeps them on the brand tile', () => {
     expect(ICON_FILES.length).toBeGreaterThan(0);
     const offCenter = ICON_FILES.filter((name) => {
-      const source = readFileSync(join(DESKTOP_ICONS, name));
-      const margins = whiteInkMargins({ source });
-      return margins.left !== margins.right || margins.top !== margins.bottom;
+      const margins = markMarginsOf({ source: readFileSync(join(DESKTOP_ICONS, name)) });
+      const offset = centerOffsetOf({ margins });
+      return Math.abs(offset.x) > CENTER_TOLERANCE_PX || Math.abs(offset.y) > CENTER_TOLERANCE_PX;
     });
     expect(offCenter).toEqual([]);
     const offBrand = ICON_FILES.filter(
       (name) => tileColorOf({ source: readFileSync(join(DESKTOP_ICONS, name)) }) !== DESKTOP_TILE,
     );
     expect(offBrand).toEqual([]);
+  });
+
+  it('gives the app icon its own scale and leaves the shared ratio to the rest', () => {
+    expect(APP_ICON_SCALE).toBeLessThan(MARK_SCALE);
+    expect(GENERATOR_SOURCE).toContain(`APP_ICON_PX * APP_ICON_MARK_SCALE_EXCEPTION`);
+    const measured = inkWidthRatioOf({ source: readFileSync(join(DESKTOP_ICONS, APP_ICON)) });
+    expect(measured).toBeCloseTo(APP_ICON_SCALE * MASCOT_INK_RATIO, 1);
+    expect(measured).not.toBeCloseTo(MARK_SCALE * MASCOT_INK_RATIO, 1);
   });
 });
