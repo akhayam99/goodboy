@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { inflateSync } from 'zlib';
 import { describe, expect, it } from 'vitest';
@@ -6,7 +6,10 @@ import { describe, expect, it } from 'vitest';
 const REPOSITORY_ROOT = join(__dirname, '..', '..', '..', '..', '..');
 const MASCOT_PNG = join(__dirname, '..', '..', 'assets', 'mascot.png');
 const BRAND_BADGE = join(__dirname, '..', '..', 'app', 'components', 'AppTopBar', 'BrandBadge.tsx');
+const DESKTOP_STYLES = join(__dirname, '..', '..', 'styles.css');
+const DESKTOP_ICONS = join(__dirname, '..', '..', '..', 'src-tauri', 'icons');
 const SITE_LOGO = join(REPOSITORY_ROOT, 'website', 'src', 'components', 'Logo.tsx');
+const SITE_STYLES = join(REPOSITORY_ROOT, 'website', 'src', 'styles.css');
 const FAVICON = join(REPOSITORY_ROOT, 'website', 'public', 'favicon.svg');
 
 const PNG_SIGNATURE_BYTES = 8;
@@ -16,6 +19,15 @@ const RGBA_BYTES_PER_PIXEL = 4;
 const EIGHT_BIT_DEPTH = 8;
 const RGBA_COLOR_TYPE = 6;
 const NO_INTERLACE = 0;
+const WHITE_FLOOR = 200;
+const OPAQUE_FLOOR = 128;
+
+type Channels = {
+  readonly red: number;
+  readonly green: number;
+  readonly blue: number;
+  readonly alpha: number;
+};
 
 type Bounds = {
   readonly left: number;
@@ -124,7 +136,13 @@ const readPixelData = ({
   return { width, height, pixels };
 };
 
-const inkMargins = ({ source }: { source: Buffer }): Bounds => {
+const marginsOf = ({
+  source,
+  isInk,
+}: {
+  source: Buffer;
+  isInk: (channels: Channels) => boolean;
+}): Bounds => {
   const { width, height, pixels } = readPixelData({ source });
   const stride = width * RGBA_BYTES_PER_PIXEL;
   let minX = width;
@@ -133,8 +151,14 @@ const inkMargins = ({ source }: { source: Buffer }): Bounds => {
   let maxY = -1;
   for (let row = 0; row < height; row += 1) {
     for (let column = 0; column < width; column += 1) {
-      const alpha = pixels[row * stride + column * RGBA_BYTES_PER_PIXEL + 3] ?? 0;
-      if (alpha === 0) {
+      const start = row * stride + column * RGBA_BYTES_PER_PIXEL;
+      const channels = {
+        red: pixels[start] ?? 0,
+        green: pixels[start + 1] ?? 0,
+        blue: pixels[start + 2] ?? 0,
+        alpha: pixels[start + 3] ?? 0,
+      };
+      if (!isInk(channels)) {
         continue;
       }
       minX = Math.min(minX, column);
@@ -144,9 +168,33 @@ const inkMargins = ({ source }: { source: Buffer }): Bounds => {
     }
   }
   if (maxX === -1) {
-    throw new Error('The mark has no opaque pixels');
+    throw new Error('The mark has no ink');
   }
   return { left: minX, top: minY, right: width - 1 - maxX, bottom: height - 1 - maxY };
+};
+
+const inkMargins = ({ source }: { source: Buffer }): Bounds =>
+  marginsOf({ source, isInk: ({ alpha }) => alpha > 0 });
+
+const whiteInkMargins = ({ source }: { source: Buffer }): Bounds =>
+  marginsOf({
+    source,
+    isInk: ({ red, green, blue, alpha }) =>
+      alpha > OPAQUE_FLOOR && red > WHITE_FLOOR && green > WHITE_FLOOR && blue > WHITE_FLOOR,
+  });
+
+const tileColorOf = ({ source }: { source: Buffer }): string => {
+  const { pixels } = readPixelData({ source });
+  const channel = (index: number): string => (pixels[index] ?? 0).toString(16).padStart(2, '0');
+  return `#${channel(0)}${channel(1)}${channel(2)}`;
+};
+
+const cssValueOf = ({ path, variableName }: { path: string; variableName: string }): string => {
+  const match = new RegExp(`${variableName}:\\s*([^;]+);`).exec(readFileSync(path, 'utf8'));
+  if (match === null) {
+    throw new Error(`${path} must declare ${variableName}`);
+  }
+  return (match[1] ?? '').trim();
 };
 
 const numberAttribute = ({
@@ -182,6 +230,9 @@ const LOGO_SOURCE = readFileSync(SITE_LOGO, 'utf8');
 const FAVICON_SOURCE = readFileSync(FAVICON, 'utf8');
 const MARK_SCALE = ratioOf({ source: BADGE_SOURCE, name: 'MARK_SCALE' });
 const TILE_RADIUS = ratioOf({ source: BADGE_SOURCE, name: 'TILE_RADIUS' });
+const DESKTOP_TILE = cssValueOf({ path: DESKTOP_STYLES, variableName: '--color-brand' });
+const SITE_TILE = cssValueOf({ path: SITE_STYLES, variableName: '--brand-tile' });
+const ICON_FILES = readdirSync(DESKTOP_ICONS).filter((name) => name.endsWith('.png'));
 
 describe('brand mark is centered in its tile', () => {
   it('ships a mascot whose ink is symmetric inside its own canvas', () => {
@@ -230,5 +281,26 @@ describe('brand mark is centered in its tile', () => {
     const margins = inkMargins({ source: Buffer.from(glyph, 'base64') });
     expect(margins.left).toBe(margins.right);
     expect(margins.top).toBe(margins.bottom);
+  });
+
+  it('paints one black tile on the app, the site and the favicon', () => {
+    expect(DESKTOP_TILE).toMatch(/^#[0-9a-f]{6}$/);
+    expect(SITE_TILE).toBe(DESKTOP_TILE);
+    expect(BADGE_SOURCE).toContain('bg-brand');
+    expect(FAVICON_SOURCE).toContain(`fill="${DESKTOP_TILE}"`);
+  });
+
+  it('centers the mark on every desktop icon and keeps them on the brand tile', () => {
+    expect(ICON_FILES.length).toBeGreaterThan(0);
+    const offCenter = ICON_FILES.filter((name) => {
+      const source = readFileSync(join(DESKTOP_ICONS, name));
+      const margins = whiteInkMargins({ source });
+      return margins.left !== margins.right || margins.top !== margins.bottom;
+    });
+    expect(offCenter).toEqual([]);
+    const offBrand = ICON_FILES.filter(
+      (name) => tileColorOf({ source: readFileSync(join(DESKTOP_ICONS, name)) }) !== DESKTOP_TILE,
+    );
+    expect(offBrand).toEqual([]);
   });
 });
