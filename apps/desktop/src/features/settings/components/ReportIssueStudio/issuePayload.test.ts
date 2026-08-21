@@ -21,6 +21,17 @@ describe('buildIssueBody', () => {
       'Type: Bug\nArea: Board and sessions\nVersion: 0.1.69\n\nThe board freezes after archiving a session.',
     );
   });
+
+  it('names the staged screenshots so the reporter can drag them in', () => {
+    const body = buildIssueBody({
+      typeLabel: 'Bug',
+      version: '0.1.69',
+      areaLabel: 'Board and sessions',
+      notes: 'The board freezes after archiving a session.',
+      imageNames: ['board.png', 'console.png'],
+    });
+    expect(body).toContain('Screenshots to drag into this issue: board.png, console.png');
+  });
 });
 
 describe('buildFallbackIssue', () => {
