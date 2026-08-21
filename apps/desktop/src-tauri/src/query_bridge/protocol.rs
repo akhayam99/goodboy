@@ -7,7 +7,9 @@ use serde::{Deserialize, Serialize};
 pub const SOCKET_ENV: &str = "GOODBOY_QUERY_SOCKET";
 pub const WORKSPACE_ENV: &str = "GOODBOY_WORKSPACE_ID";
 pub const SOCKET_FILE: &str = "query.sock";
-pub const BINARY_NAME: &str = "goodboy-query";
+pub const BIN_ENV: &str = "GOODBOY_BIN";
+pub const SUBCOMMAND: &str = "query";
+pub const INVOCATION: &str = "\"$GOODBOY_BIN\" query";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct QueryRequest {
@@ -509,7 +511,7 @@ pub fn providers() -> Vec<&'static str> {
 }
 
 pub fn usage(spec: &VerbSpec) -> String {
-    let mut line = format!("{} {} {}", BINARY_NAME, spec.provider, spec.verb);
+    let mut line = format!("{} {} {}", INVOCATION, spec.provider, spec.verb);
     for param in spec.params {
         let body = match param.kind {
             ParamKind::Flag => format!("--{}", param.name),
@@ -587,13 +589,13 @@ pub fn parse_argv(argv: &[String]) -> Result<ArgvOutcome, String> {
     let Some(verb) = positional.get(1) else {
         return Err(format!(
             "missing verb. try: {} {} --help",
-            BINARY_NAME, provider
+            INVOCATION, provider
         ));
     };
     let Some(spec) = spec_for(provider, verb) else {
         return Err(format!(
             "unknown command: {} {}. try: {} --help",
-            provider, verb, BINARY_NAME
+            provider, verb, INVOCATION
         ));
     };
 
@@ -667,17 +669,14 @@ pub fn help_text(provider: Option<&str>) -> String {
     let mut lines: Vec<String> = Vec::new();
     match provider {
         Some(provider) => {
-            lines.push(format!("{} {} commands", BINARY_NAME, provider));
+            lines.push(format!("{} {} commands", INVOCATION, provider));
             for spec in specs_for_provider(provider) {
                 lines.push(format!("  {}", usage(spec)));
                 lines.push(format!("      {}", spec.summary));
             }
         }
         None => {
-            lines.push(format!(
-                "usage: {} <provider> <verb> [options]",
-                BINARY_NAME
-            ));
+            lines.push(format!("usage: {} <provider> <verb> [options]", INVOCATION));
             lines.push(String::new());
             lines.push("providers:".to_string());
             for provider in providers() {
@@ -687,7 +686,7 @@ pub fn help_text(provider: Option<&str>) -> String {
             lines.push(String::new());
             lines.push(format!(
                 "run `{} <provider> --help` for that provider's commands",
-                BINARY_NAME
+                INVOCATION
             ));
             lines.push(format!(
                 "the workspace comes from {}; override it with --workspace <id>",
@@ -864,7 +863,7 @@ mod tests {
         let error = parse_argv(&argv).expect_err("missing id");
 
         assert!(error.contains("--id"));
-        assert!(error.contains("goodboy-query linear issue"));
+        assert!(error.contains(&format!("{} linear issue", INVOCATION)));
     }
 
     #[test]
@@ -947,6 +946,12 @@ mod tests {
             providers(),
             vec!["linear", "sentry", "gitlab", "jira", "bitbucket", "slack"]
         );
+    }
+
+    #[test]
+    fn the_advertised_invocation_quotes_a_binary_path_that_may_hold_spaces() {
+        assert_eq!(INVOCATION, format!("\"${}\" {}", BIN_ENV, SUBCOMMAND));
+        assert!(help_text(Some("linear")).contains("\"$GOODBOY_BIN\" query linear issue"));
     }
 
     #[test]

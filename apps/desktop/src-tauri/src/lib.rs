@@ -71,6 +71,10 @@ fn drain_child_processes(app: &tauri::AppHandle) {
     query_bridge::shutdown();
 }
 
+pub fn run_query_cli() -> Option<i32> {
+    query_bridge::run_cli()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     boot_breadcrumb::record("process-start", Some("start"));
@@ -250,6 +254,7 @@ pub fn run() {
             turn::turn_spawn,
             turn::turn_cancel,
             turn::turn_list_live,
+            query_bridge::query_bridge_serving,
             attachment::attachment_write,
             attachment::attachment_read,
             attachment::attachment_delete,

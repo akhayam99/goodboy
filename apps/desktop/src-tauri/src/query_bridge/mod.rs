@@ -1,16 +1,21 @@
+mod cli;
 mod dispatch;
 pub mod protocol;
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
 
-use protocol::{QueryRequest, QueryResponse, SOCKET_ENV, SOCKET_FILE, WORKSPACE_ENV};
+use protocol::{QueryRequest, QueryResponse, BIN_ENV, SOCKET_ENV, SOCKET_FILE, WORKSPACE_ENV};
+
+pub(crate) use cli::dispatch as run_cli;
 
 const APP_DIR: &str = ".goodboy";
 
 static SOCKET_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
-static CLI_DIR: OnceLock<Option<PathBuf>> = OnceLock::new();
+static EXE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+static LISTENING: AtomicBool = AtomicBool::new(false);
 
 fn socket_path() -> Option<&'static Path> {
     SOCKET_PATH
@@ -18,33 +23,38 @@ fn socket_path() -> Option<&'static Path> {
         .as_deref()
 }
 
-fn cli_dir() -> Option<&'static Path> {
-    CLI_DIR
-        .get_or_init(|| {
-            let exe = std::env::current_exe().ok()?;
-            let dir = exe.parent()?;
-            let candidate = dir.join(protocol::BINARY_NAME);
-            candidate.is_file().then(|| dir.to_path_buf())
-        })
+fn exe_path() -> Option<&'static Path> {
+    EXE_PATH
+        .get_or_init(|| std::env::current_exe().ok())
         .as_deref()
 }
 
+fn serving(is_listening: bool, socket: Option<&Path>) -> bool {
+    is_listening && socket.map(Path::exists).unwrap_or(false)
+}
+
+pub(crate) fn is_serving() -> bool {
+    serving(LISTENING.load(Ordering::SeqCst), socket_path())
+}
+
+#[tauri::command]
+pub fn query_bridge_serving() -> bool {
+    is_serving()
+}
+
 pub(crate) fn apply_env(command: &mut Command, workspace_id: Option<&str>) {
+    if !is_serving() {
+        return;
+    }
     let Some(socket) = socket_path() else {
         return;
     };
-    if !socket.exists() {
-        return;
-    }
     command.env(SOCKET_ENV, socket);
     if let Some(workspace_id) = workspace_id {
         command.env(WORKSPACE_ENV, workspace_id);
     }
-    if let Some(dir) = cli_dir() {
-        command.env(
-            "PATH",
-            format!("{}:{}", dir.display(), crate::path_env::resolved_path()),
-        );
+    if let Some(exe) = exe_path() {
+        command.env(BIN_ENV, exe);
     }
 }
 
@@ -79,6 +89,7 @@ pub(crate) fn start(app: tauri::AppHandle) {
             let _ = std::fs::remove_file(path);
             return;
         }
+        LISTENING.store(true, Ordering::SeqCst);
         loop {
             let Ok((stream, _)) = listener.accept().await else {
                 break;
@@ -88,6 +99,7 @@ pub(crate) fn start(app: tauri::AppHandle) {
                 serve_connection(stream, app).await;
             });
         }
+        LISTENING.store(false, Ordering::SeqCst);
     });
 }
 
@@ -95,6 +107,7 @@ pub(crate) fn start(app: tauri::AppHandle) {
 pub(crate) fn start(_app: tauri::AppHandle) {}
 
 pub(crate) fn shutdown() {
+    LISTENING.store(false, Ordering::SeqCst);
     if let Some(path) = socket_path() {
         let _ = std::fs::remove_file(path);
     }
@@ -144,18 +157,62 @@ mod tests {
         assert!(path.ends_with(format!("{}/{}", APP_DIR, SOCKET_FILE)));
     }
 
-    #[test]
-    fn a_child_is_told_about_the_bridge_only_while_the_socket_is_live() {
+    fn injected_names(workspace_id: Option<&str>) -> Vec<String> {
         let mut command = Command::new("true");
-
-        apply_env(&mut command, Some("ws-1"));
-
-        let names: Vec<String> = command
+        apply_env(&mut command, workspace_id);
+        command
             .get_envs()
             .filter_map(|(key, _)| key.to_str().map(str::to_string))
-            .collect();
-        let live = socket_path().map(Path::exists).unwrap_or(false);
-        assert_eq!(names.contains(&SOCKET_ENV.to_string()), live);
+            .collect()
+    }
+
+    #[test]
+    fn a_child_is_told_about_the_bridge_only_while_it_is_serving() {
+        let names = injected_names(Some("ws-1"));
+
+        assert_eq!(names.contains(&SOCKET_ENV.to_string()), is_serving());
+        assert_eq!(names.contains(&BIN_ENV.to_string()), is_serving());
+        assert_eq!(names.contains(&WORKSPACE_ENV.to_string()), is_serving());
+    }
+
+    #[test]
+    fn the_advertisement_and_the_injection_answer_to_one_predicate() {
+        let advertised = query_bridge_serving();
+
+        assert_eq!(advertised, is_serving());
+        assert_eq!(injected_names(Some("ws-1")).is_empty(), !advertised);
+    }
+
+    #[test]
+    fn a_socket_file_no_listener_owns_serves_nobody() {
+        assert!(!LISTENING.load(Ordering::SeqCst));
+
+        assert!(!is_serving());
+        assert!(!query_bridge_serving());
+        assert!(injected_names(Some("ws-1")).is_empty());
+    }
+
+    #[test]
+    fn serving_needs_a_live_listener_and_the_socket_file_it_bound() {
+        let file = std::env::temp_dir().join("goodboy-query-bridge-serving.probe");
+        std::fs::write(&file, b"").expect("a probe file");
+        let missing = std::env::temp_dir().join("goodboy-query-bridge-serving.absent");
+        let _ = std::fs::remove_file(&missing);
+
+        assert!(serving(true, Some(&file)));
+        assert!(!serving(false, Some(&file)));
+        assert!(!serving(true, Some(&missing)));
+        assert!(!serving(true, None));
+
+        let _ = std::fs::remove_file(&file);
+    }
+
+    #[test]
+    fn the_advertised_binary_is_the_running_executable_by_absolute_path() {
+        let exe = exe_path().expect("a current executable");
+
+        assert!(exe.is_absolute(), "{}", exe.display());
+        assert_eq!(exe, std::env::current_exe().expect("a current executable"));
     }
 
     #[test]

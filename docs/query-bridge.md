@@ -63,8 +63,31 @@ Gemini or opencode. Nothing about it is provider-specific.
 ## Where it is reachable
 
 The socket is created when the app starts and removed when it stops, so an
-agent outliving the app fails loudly instead of hanging. The CLI is found next
-to the running executable, which covers both a development build and a bundled
-app once the binary is shipped alongside the main one; when it is not there,
-the environment is simply not injected and no prompt advertises a command that
-cannot run. Windows has no Unix socket and is not served.
+agent outliving the app fails loudly instead of hanging. Windows has no Unix
+socket and is not served.
+
+The CLI is not a second program. It is the same executable the user launched,
+entered through the `query` first argument, which is answered and exited before
+any window or plugin exists. One binary is what a macOS bundle actually ships,
+so nothing has to be packaged beside it or resolved on PATH.
+
+A spawned agent is told where that executable lives through `GOODBOY_BIN`, an
+absolute path injected next to the socket and workspace variables. The prompt
+advertises the call as `"$GOODBOY_BIN" query <provider> <verb>`, quoted because
+the path may contain a space.
+
+## Advertised and injected are the same condition
+
+Having a connected integration is not the same thing as having a reachable
+bridge, and a prompt that names a command the child cannot run is worse than
+silence: the agent runs an empty path and reads a shell error instead of an
+answer. So the advertisement is not gated on credentials. Both the injection
+and the prompt read one predicate, true only when this process owns a bound
+listener and its socket file is still there, and the frontend reaches it
+through `query_bridge_serving` rather than inferring it. A frontend that cannot
+reach that command reads it as false.
+
+That is what suppresses the block on Windows, where nothing ever binds, and
+before the listener is up or after it is gone. The two can still disagree only
+inside the instant between composing a prompt and spawning the child, and the
+cost of losing that race is a command the agent is told about for one turn.

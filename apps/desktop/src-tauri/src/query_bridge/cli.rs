@@ -1,24 +1,26 @@
-#[path = "../query_bridge/protocol.rs"]
-mod protocol;
-
-use std::process::ExitCode;
-
-use protocol::{
-    help_text, parse_argv, ArgvOutcome, QueryRequest, QueryResponse, SOCKET_ENV, WORKSPACE_ENV,
+use super::protocol::{
+    self, help_text, parse_argv, ArgvOutcome, QueryRequest, QueryResponse, SOCKET_ENV, SUBCOMMAND,
+    WORKSPACE_ENV,
 };
 
-fn main() -> ExitCode {
-    let argv: Vec<String> = std::env::args().skip(1).collect();
+pub(crate) fn dispatch() -> Option<i32> {
+    let tokens: Vec<String> = std::env::args().skip(1).collect();
+    let argv = query_argv(&tokens)?;
     match run(&argv) {
         Ok(out) => {
             println!("{}", out);
-            ExitCode::SUCCESS
+            Some(0)
         }
         Err(error) => {
             eprintln!("{}", error);
-            ExitCode::FAILURE
+            Some(1)
         }
     }
+}
+
+fn query_argv(tokens: &[String]) -> Option<Vec<String>> {
+    let (first, rest) = tokens.split_first()?;
+    (first == SUBCOMMAND).then(|| rest.to_vec())
 }
 
 fn run(argv: &[String]) -> Result<String, String> {
@@ -156,6 +158,35 @@ fn render_entry(value: &serde_json::Value) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn owned(tokens: &[&str]) -> Vec<String> {
+        tokens.iter().map(|token| token.to_string()).collect()
+    }
+
+    #[test]
+    fn the_query_subcommand_hands_the_rest_of_argv_to_the_client() {
+        let tokens = owned(&["query", "linear", "issue", "ENG-1"]);
+
+        assert_eq!(
+            query_argv(&tokens),
+            Some(owned(&["linear", "issue", "ENG-1"]))
+        );
+    }
+
+    #[test]
+    fn a_bare_launch_or_another_first_token_leaves_the_app_alone() {
+        assert_eq!(query_argv(&[]), None);
+        assert_eq!(query_argv(&owned(&["--version"])), None);
+        assert_eq!(query_argv(&owned(&["linear", "issue"])), None);
+    }
+
+    #[test]
+    fn the_subcommand_with_nothing_after_it_asks_for_help() {
+        let argv = query_argv(&owned(&["query"])).expect("the query subcommand");
+
+        assert!(argv.is_empty());
+        assert!(run(&argv).expect("help").contains("usage:"));
+    }
 
     #[test]
     fn the_workspace_override_is_read_from_argv_in_both_spellings() {
