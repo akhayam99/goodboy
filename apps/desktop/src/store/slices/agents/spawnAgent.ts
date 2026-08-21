@@ -48,6 +48,7 @@ type SpawnArgs = {
   sourceKind?: AgentSourceKind;
   deferKickoff?: boolean;
   focus?: SpawnFocus;
+  parentAgentId?: AgentId;
 };
 
 type Params = {
@@ -115,6 +116,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     ...(args.sourceThreadIds !== undefined && { sourceThreadIds: args.sourceThreadIds }),
     ...(args.sourceCommentUrl !== undefined && { sourceCommentUrl: args.sourceCommentUrl }),
     ...(args.sourceKind !== undefined && { sourceKind: args.sourceKind }),
+    ...(args.parentAgentId !== undefined && { parentAgentId: args.parentAgentId }),
   });
   const resolvedProvider = args.provider ?? routing.provider;
   const resolvedModel = args.model ?? routing.model;

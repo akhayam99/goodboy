@@ -86,7 +86,7 @@ describe('LaunchSessionPanel', () => {
     await waitFor(() => expect(h.createSession).toHaveBeenCalledOnce());
     const payload = h.createSession.mock.calls[0]?.[0] ?? {};
     expect(payload['openWorkflowBuilder']).toBeUndefined();
-    expect(payload).toMatchObject({ externalTask: EXTERNAL_TASK });
+    expect(payload).toMatchObject({ externalTasks: [EXTERNAL_TASK] });
   });
 
   it('launches on the keyboard submit shortcut', async () => {

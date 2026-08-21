@@ -98,6 +98,16 @@ const LINEAR_ISSUE = {
   branchSlug: 'intentional-session-creation',
 } as const;
 
+const SENTRY_ISSUE = {
+  provider: 'sentry',
+  externalId: 'sentry-9',
+  identifier: 'SENTRY-9',
+  title: 'TypeError in the session composer',
+  url: 'https://sentry.io/issues/9',
+  goal: 'Stop the TypeError in the session composer',
+  branchSlug: 'fix-session-composer-typeerror',
+} as const;
+
 beforeEach(() => {
   h.isGithubAuthenticated = true;
   h.store.workspaces[0]!.kind = 'repo';
@@ -116,7 +126,7 @@ beforeEach(() => {
       folderNameTouched: false,
       branchMode: 'new',
       existingBranch: '',
-      issue: null,
+      issues: [],
       ...h.store.newSessionDrafts[workspaceId],
       ...draft,
     };
@@ -150,7 +160,7 @@ describe('NewSessionView issue sources', () => {
         folderNameTouched: false,
         branchMode: 'new',
         existingBranch: '',
-        issue: LINEAR_ISSUE,
+        issues: [LINEAR_ISSUE],
       },
     };
 
@@ -159,7 +169,7 @@ describe('NewSessionView issue sources', () => {
     );
 
     expect(
-      within(screen.getByRole('group', { name: 'Linked task' })).getByRole('img', {
+      within(screen.getByRole('group', { name: 'Linked tasks' })).getByRole('img', {
         name: 'Linear',
       }),
     ).toBeDefined();
@@ -171,15 +181,150 @@ describe('NewSessionView issue sources', () => {
         goal: LINEAR_ISSUE.goal,
         branchPrefix: 'goodboy',
         branchSlug: LINEAR_ISSUE.branchSlug,
-        externalTask: {
+        externalTasks: [
+          {
+            provider: LINEAR_ISSUE.provider,
+            externalId: LINEAR_ISSUE.externalId,
+            identifier: LINEAR_ISSUE.identifier,
+            url: LINEAR_ISSUE.url,
+            title: LINEAR_ISSUE.title,
+          },
+        ],
+      }),
+    );
+  });
+
+  it('carries every linked task into the session it creates', async () => {
+    h.store.workspaceIntegrations = { [WORKSPACE_ID]: [integration('linear')] };
+    h.store.newSessionDrafts = {
+      [WORKSPACE_ID]: {
+        goal: LINEAR_ISSUE.goal,
+        branchSlug: LINEAR_ISSUE.branchSlug,
+        slugTouched: true,
+        folderName: LINEAR_ISSUE.goal,
+        folderNameTouched: false,
+        branchMode: 'new',
+        existingBranch: '',
+        issues: [LINEAR_ISSUE, SENTRY_ISSUE],
+      },
+    };
+
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Create session' }));
+
+    await waitFor(() =>
+      expect(h.store.createSession.mock.calls[0]?.[0]?.externalTasks).toEqual([
+        {
           provider: LINEAR_ISSUE.provider,
           externalId: LINEAR_ISSUE.externalId,
           identifier: LINEAR_ISSUE.identifier,
           url: LINEAR_ISSUE.url,
           title: LINEAR_ISSUE.title,
         },
+        {
+          provider: SENTRY_ISSUE.provider,
+          externalId: SENTRY_ISSUE.externalId,
+          identifier: SENTRY_ISSUE.identifier,
+          url: SENTRY_ISSUE.url,
+          title: SENTRY_ISSUE.title,
+        },
+      ]),
+    );
+  });
+
+  it('offers to draft one goal only once a second task is linked', () => {
+    h.store.workspaceIntegrations = { [WORKSPACE_ID]: [integration('linear')] };
+    h.store.newSessionDrafts = {
+      [WORKSPACE_ID]: {
+        goal: LINEAR_ISSUE.goal,
+        branchSlug: LINEAR_ISSUE.branchSlug,
+        slugTouched: true,
+        folderName: '',
+        folderNameTouched: false,
+        branchMode: 'new',
+        existingBranch: '',
+        issues: [LINEAR_ISSUE],
+      },
+    };
+
+    const { unmount } = render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+    expect(screen.queryByTestId('new-session-draft-goal-from-tasks')).toBeNull();
+    unmount();
+
+    h.store.newSessionDrafts[WORKSPACE_ID] = {
+      ...h.store.newSessionDrafts[WORKSPACE_ID]!,
+      issues: [LINEAR_ISSUE, SENTRY_ISSUE],
+    };
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    expect(screen.getByTestId('new-session-draft-goal-from-tasks')).toBeDefined();
+  });
+
+  it('replaces the goal with the one drafted from every linked task', async () => {
+    h.invoke.mockResolvedValue({
+      stdout: JSON.stringify({ result: 'Ship ENG-42 and SENTRY-9 as one change.' }),
+      stderr: '',
+      exitCode: 0,
+    });
+    h.store.workspaceIntegrations = { [WORKSPACE_ID]: [integration('linear')] };
+    h.store.newSessionDrafts = {
+      [WORKSPACE_ID]: {
+        goal: LINEAR_ISSUE.goal,
+        branchSlug: LINEAR_ISSUE.branchSlug,
+        slugTouched: true,
+        folderName: '',
+        folderNameTouched: false,
+        branchMode: 'new',
+        existingBranch: '',
+        issues: [LINEAR_ISSUE, SENTRY_ISSUE],
+      },
+    };
+
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByTestId('new-session-draft-goal-from-tasks'));
+
+    await waitFor(() =>
+      expect(h.store.setNewSessionDraft).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        draft: { goal: 'Ship ENG-42 and SENTRY-9 as one change.' },
       }),
     );
+  });
+
+  it('keeps the goal the user has when drafting from the tasks fails', async () => {
+    h.invoke.mockRejectedValue(new Error('cli not found'));
+    h.store.workspaceIntegrations = { [WORKSPACE_ID]: [integration('linear')] };
+    h.store.newSessionDrafts = {
+      [WORKSPACE_ID]: {
+        goal: LINEAR_ISSUE.goal,
+        branchSlug: LINEAR_ISSUE.branchSlug,
+        slugTouched: true,
+        folderName: '',
+        folderNameTouched: false,
+        branchMode: 'new',
+        existingBranch: '',
+        issues: [LINEAR_ISSUE, SENTRY_ISSUE],
+      },
+    };
+
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByTestId('new-session-draft-goal-from-tasks'));
+
+    await waitFor(() => expect(h.showToast).toHaveBeenCalled());
+    expect(h.store.setNewSessionDraft).not.toHaveBeenCalledWith(
+      expect.objectContaining({ draft: expect.objectContaining({ goal: expect.anything() }) }),
+    );
+    expect(h.store.newSessionDrafts[WORKSPACE_ID]?.goal).toBe(LINEAR_ISSUE.goal);
   });
 
   it('lands the action row inline after the last section, reading reset then cancel then create', () => {
@@ -303,7 +448,7 @@ describe('NewSessionView issue sources', () => {
         folderNameTouched: false,
         branchMode: 'new',
         existingBranch: '',
-        issue: null,
+        issues: [],
       },
     };
     const onClose = vi.fn();
@@ -343,7 +488,7 @@ describe('NewSessionView issue sources', () => {
         folderNameTouched: false,
         branchMode: 'new',
         existingBranch: '',
-        issue: null,
+        issues: [],
       },
     };
     render(
@@ -376,7 +521,7 @@ describe('NewSessionView issue sources', () => {
         folderNameTouched: false,
         branchMode: 'new',
         existingBranch: '',
-        issue: null,
+        issues: [],
       },
     };
     const view = render(
@@ -411,7 +556,7 @@ describe('NewSessionView issue sources', () => {
         folderNameTouched: false,
         branchMode: 'new',
         existingBranch: '',
-        issue: null,
+        issues: [],
       },
     };
     render(
@@ -446,7 +591,7 @@ describe('NewSessionView issue sources', () => {
         folderNameTouched: false,
         branchMode: 'new',
         existingBranch: '',
-        issue: null,
+        issues: [],
       },
     };
     const view = render(
@@ -491,7 +636,7 @@ describe('NewSessionView issue sources', () => {
         folderNameTouched: false,
         branchMode: 'new',
         existingBranch: '',
-        issue: null,
+        issues: [],
       },
     };
     render(
@@ -738,7 +883,8 @@ describe('NewSessionView issue sources', () => {
     expect(input).not.toHaveProperty('branchSlug');
     expect(input).not.toHaveProperty('existingBranch');
     expect(input.folderName).toBe('Exam prep 2026');
-    expect(h.store.newSessionDrafts[WORKSPACE_ID]).toBeUndefined();
+    expect(h.store.clearNewSessionDraft).toHaveBeenCalledWith({ workspaceId: WORKSPACE_ID });
+    expect(h.store.newSessionDrafts[WORKSPACE_ID]?.folderName).not.toBe('Exam prep 2026');
   });
 });
 

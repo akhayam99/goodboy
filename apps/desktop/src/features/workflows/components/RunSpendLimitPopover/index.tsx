@@ -19,13 +19,8 @@ import { SpendLimitFields, parseSpendLimit } from './SpendLimitFields';
 type Props = {
   readonly sessionId: SessionId;
   readonly run: WorkflowRun;
-  readonly variant: 'primary' | 'ghost' | 'meta';
+  readonly variant: 'primary' | 'meta';
 };
-
-const TRIGGER_LABEL = {
-  primary: 'Raise the spend limit',
-  ghost: 'Spend limit',
-} as const;
 
 export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
   const setWorkflowRunSpendLimit = useAppStore((state) => state.setWorkflowRunSpendLimit);
@@ -85,8 +80,8 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
       ) : (
         <OrchestratorAction
           icon={CircleDollarSign}
-          label={TRIGGER_LABEL[variant]}
-          variant={variant}
+          label="Raise the spend limit"
+          variant="primary"
           tone="warning"
           testId="run-spend-limit-trigger"
           title="Cap what this run is allowed to spend"

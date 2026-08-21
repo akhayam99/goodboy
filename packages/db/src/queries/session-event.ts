@@ -31,6 +31,18 @@ const numberAt = ({ source, key }: FieldParams): number | null => {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 };
 
+type DecodePayloadParams = {
+  readonly raw: string;
+};
+
+const decodePayload = ({ raw }: DecodePayloadParams): unknown => {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
 type ParsePayloadParams = {
   readonly raw: string | null;
 };
@@ -39,7 +51,7 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
   if (raw == null || raw.length === 0) {
     return null;
   }
-  const decoded: unknown = JSON.parse(raw);
+  const decoded = decodePayload({ raw });
   if (typeof decoded !== 'object' || decoded === null || Array.isArray(decoded)) {
     return null;
   }

@@ -306,14 +306,14 @@ export type AppActions = {
     firstAgentKind?: AgentKind;
     firstAgentModel?: string;
     kickoffPrompt?: string;
-    externalTask?: {
+    externalTasks?: ReadonlyArray<{
       provider: SessionExternalTaskProvider;
       mountWorkspaceId?: WorkspaceId;
       externalId: string;
       identifier: string;
       url: string;
       title: string;
-    };
+    }>;
     mobileShared?: boolean;
   }): Promise<{ session: Session; worktree: CreatedWorktree }>;
   linkSessionExternalTask(
@@ -522,6 +522,7 @@ export type AppActions = {
       sourceKind?: AgentSourceKind;
       deferKickoff?: boolean;
       focus?: SpawnFocus;
+      parentAgentId?: AgentId;
     },
   ): Promise<AgentId>;
   activateNextResolver(sessionId: SessionId): Promise<void>;

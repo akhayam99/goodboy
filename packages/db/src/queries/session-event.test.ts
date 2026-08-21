@@ -91,6 +91,35 @@ describe('session_events queries', () => {
     expect((await listSessionEvents({ db, sessionId }))[0]?.payload).toEqual({ from: 'main' });
   });
 
+  it('keeps reading the feed when a payload is malformed json', async () => {
+    const db = await seed();
+    await db.execute(
+      'INSERT INTO session_events (id, session_id, kind, payload_json, created_at) VALUES (?, ?, ?, ?, ?)',
+      [
+        'ev-corrupt',
+        sessionId,
+        'branch_created',
+        '{"branch":"ak/feat',
+        Date.parse('2026-08-21T10:00:00.000Z'),
+      ],
+    );
+    await insertSessionEvent({
+      db,
+      event: makeEvent({
+        overrides: {
+          id: 'ev-after' as SessionEventId,
+          createdAt: new Date('2026-08-21T11:00:00.000Z').toISOString() as IsoDateTime,
+        },
+      }),
+    });
+
+    const events = await listSessionEvents({ db, sessionId });
+
+    expect(events.map((event) => event.id)).toEqual(['ev-corrupt', 'ev-after']);
+    expect(events[0]?.payload).toBeNull();
+    expect(events[1]?.payload).toEqual({ branch: 'ak/feat-session-events' });
+  });
+
   it('scopes a read to one session', async () => {
     const db = await seed();
     const otherSessionId = 's2' as SessionId;
