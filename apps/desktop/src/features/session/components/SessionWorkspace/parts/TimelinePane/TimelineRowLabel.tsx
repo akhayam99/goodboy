@@ -1,6 +1,10 @@
 import { Chip, cn } from '@goodboy/ui';
 import { agentKindPalette } from '../../../../agent-kind';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
+import {
+  sessionEventEmphasis,
+  sessionEventTitle,
+} from '../../../../timeline/sessionEventPresentation';
 import type {
   TimelineRowItem,
   TimelineStreamEntry,
@@ -20,7 +24,7 @@ type EntryParams = {
 
 const titleOf = ({ entry }: EntryParams): string => {
   if (entry.kind === 'agent') {
-    return entry.agent.name;
+    return entry.chain?.label ?? entry.agent.name;
   }
   if (entry.kind === 'plan') {
     return entry.plan.title;
@@ -30,6 +34,9 @@ const titleOf = ({ entry }: EntryParams): string => {
   }
   if (entry.kind === 'branch') {
     return 'Branch created';
+  }
+  if (entry.kind === 'event') {
+    return sessionEventTitle({ event: entry.event });
   }
   return entry.question.text;
 };
@@ -41,6 +48,19 @@ type ChipParams = EntryParams & {
 const chipOf = ({ entry, grade }: ChipParams) => {
   if (entry.kind !== 'agent' || grade !== 'entry') {
     return null;
+  }
+  if (entry.chain != null) {
+    return (
+      <Chip
+        tone="neutral"
+        label="Chain"
+        shape="badge"
+        size="3xs"
+        width="md"
+        uppercase
+        className={cn('shrink-0', entry.chain.identity.chip)}
+      />
+    );
   }
   const palette = agentKindPalette({ kind: entry.agentKind });
   return (
@@ -62,6 +82,9 @@ export const TimelineRowLabel = ({ item }: Props) => {
     return <TimelineRunLabel entry={entry} />;
   }
   const isStep = grade === 'step';
+  const emphasis =
+    entry.kind === 'event' ? sessionEventEmphasis({ kind: entry.event.kind }) : 'plain';
+  const isPath = entry.kind === 'event' && entry.event.kind === 'worktree_created';
   return (
     <>
       {chipOf({ entry, grade })}
@@ -77,11 +100,16 @@ export const TimelineRowLabel = ({ item }: Props) => {
         className={cn(
           'min-w-0 truncate',
           isStep ? 'text-xs leading-4' : 'text-sm leading-5',
-          item.markerState === 'running' || item.hasUnread
-            ? 'font-medium text-foreground'
-            : isStep
-              ? 'text-foreground/85'
-              : 'text-foreground',
+          isPath && 'font-mono text-xs',
+          emphasis === 'success'
+            ? 'text-success'
+            : emphasis === 'muted'
+              ? 'text-muted-foreground'
+              : item.markerState === 'running' || item.hasUnread
+                ? 'font-medium text-foreground'
+                : isStep
+                  ? 'text-foreground/85'
+                  : 'text-foreground',
         )}
       >
         {titleOf({ entry })}

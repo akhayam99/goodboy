@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
-import { Button, Eyebrow } from '@goodboy/ui';
+import { Button, Eyebrow, useCopyLink } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -12,6 +12,8 @@ import {
 import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
 import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
 import { useWorkflowAdvanceStates } from '../../../../../workflows/useWorkflowAdvanceStates';
+import { useToast } from '../../../../../../app/components/Toast';
+import { filterTimelineEntries } from '../../../../timeline/activityFilter';
 import { buildTimelineGroups } from '../../../../timeline/buildTimelineGroups';
 import {
   buildTimelineStream,
@@ -19,7 +21,9 @@ import {
 } from '../../../../timeline/buildTimelineStream';
 import { dayLabel } from '../../../../timeline/dayLabel';
 import { layoutTimelineRail } from '../../../../timeline/railGeometry';
+import { useActivityFilter } from '../../../../hooks/useActivityFilter';
 import { useTimelineOpen } from '../../../../hooks/useTimelineOpen';
+import { ActivityFilterButton } from './ActivityFilterButton';
 import { TimelineDayRule } from './TimelineDayRule';
 import { TimelineNowRule } from './TimelineNowRule';
 import { TimelinePendingCluster } from './TimelinePendingCluster';
@@ -38,6 +42,8 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
   const plans = useAppStore((s) => s.sessionPlans?.[sessionId] ?? EMPTY_ARRAY);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks?.[sessionId] ?? EMPTY_ARRAY);
   const worktrees = useAppStore((s) => s.sessionWorktreeRecords?.[sessionId] ?? EMPTY_ARRAY);
+  const events = useAppStore((s) => s.sessionEvents?.[sessionId] ?? EMPTY_ARRAY);
+  const loadSessionEvents = useAppStore((s) => s.loadSessionEvents);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
@@ -45,6 +51,25 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
   const workflows = useAttachedWorkflowRuns({ session });
   const openTargetFor = useTimelineOpen({ sessionId });
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
+  const activity = useActivityFilter();
+  const { showToast } = useToast();
+  const { copied, failed, copy } = useCopyLink();
+
+  useEffect(() => {
+    void loadSessionEvents({ sessionId });
+  }, [loadSessionEvents, sessionId]);
+
+  useEffect(() => {
+    if (copied) {
+      showToast('success', 'path copied');
+    }
+  }, [copied, showToast]);
+
+  useEffect(() => {
+    if (failed) {
+      showToast('error', 'copy failed');
+    }
+  }, [failed, showToast]);
 
   const model = useMemo(
     () =>
@@ -55,9 +80,15 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
         externalTasks,
         questions,
         worktrees,
+        events,
         agentKindOverride,
       }),
-    [agentKindOverride, agents, externalTasks, plans, questions, workflows, worktrees],
+    [agentKindOverride, agents, events, externalTasks, plans, questions, workflows, worktrees],
+  );
+
+  const visibleEntries = useMemo(
+    () => filterTimelineEntries({ entries: model.entries, filter: activity.filter }),
+    [activity.filter, model.entries],
   );
 
   const advanceByRunId = useWorkflowAdvanceStates({ sessionId, workflows, agents });
@@ -99,12 +130,12 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
   const stream = useMemo(
     () =>
       buildTimelineStream({
-        entries: model.entries,
+        entries: visibleEntries,
         unreadAgentIds,
         blockedRunIds,
         dayLabelFor: dayLabel,
       }),
-    [blockedRunIds, model.entries, unreadAgentIds],
+    [blockedRunIds, unreadAgentIds, visibleEntries],
   );
 
   const rail = useMemo(
@@ -114,6 +145,16 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
 
   const actionFor = ({ item }: { readonly item: TimelineRowItem }): TimelineRowAction | null => {
     const { entry } = item;
+    if (entry.kind === 'event' && entry.event.kind === 'worktree_created') {
+      const worktreePath = entry.event.payload?.worktreePath ?? null;
+      if (worktreePath == null) {
+        return null;
+      }
+      return {
+        label: copied ? 'Copied' : 'Copy path',
+        onAct: () => void copy(worktreePath),
+      };
+    }
     if (entry.kind === 'agent' && entry.openQuestions.length > 0) {
       return { label: 'Answer', onAct: () => setActiveLens(sessionId, 'questions') };
     }
@@ -167,6 +208,11 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
               Mark all seen
             </Button>
           ) : null}
+          <ActivityFilterButton
+            filter={activity.filter}
+            hiddenCount={activity.hiddenCount}
+            onCategory={activity.setCategory}
+          />
           {actions}
         </div>
       </div>

@@ -1,7 +1,34 @@
 import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
+import type { SessionEventKind } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import type { LensKind } from '../../../../store/slices/session-view/types';
 import type { TimelineStreamEntry } from '../../timeline/buildTimelineStream';
+
+type EventTarget = {
+  readonly lens: LensKind | null;
+  readonly label: string;
+};
+
+const EVENT_TARGET: Record<SessionEventKind, EventTarget> = {
+  worktree_created: { lens: 'files', label: 'Open files' },
+  branch_created: { lens: 'files', label: 'Open files' },
+  branch_switched: { lens: 'files', label: 'Open files' },
+  issue_linked: { lens: null, label: 'Open overview' },
+  issue_unlinked: { lens: null, label: 'Open overview' },
+  pr_created: { lens: 'pr', label: 'Open PR' },
+  pr_ready: { lens: 'pr', label: 'Open PR' },
+  pr_approved: { lens: 'pr', label: 'Open PR' },
+  pr_merged: { lens: 'pr', label: 'Open PR' },
+  pr_closed: { lens: 'pr', label: 'Open PR' },
+  workflow_started: { lens: 'workflows', label: 'Open workflows' },
+  workflow_discarded: { lens: 'workflows', label: 'Open workflows' },
+  workflow_deleted: { lens: 'workflows', label: 'Open workflows' },
+  decisions_changed: { lens: 'decisions', label: 'Open decisions' },
+};
+
+const eventOpenTarget = ({ kind }: { readonly kind: SessionEventKind }): EventTarget =>
+  EVENT_TARGET[kind];
 
 type Params = {
   readonly sessionId: SessionId;
@@ -60,6 +87,13 @@ export const useTimelineOpen = ({
       }
       if (entry.kind === 'branch') {
         return { label: 'Open files', open: () => store.setActiveLens(sessionId, 'files') };
+      }
+      if (entry.kind === 'event') {
+        const target = eventOpenTarget({ kind: entry.event.kind });
+        return {
+          label: target.label,
+          open: () => store.setActiveLens(sessionId, target.lens),
+        };
       }
       return {
         label: 'Open questions',

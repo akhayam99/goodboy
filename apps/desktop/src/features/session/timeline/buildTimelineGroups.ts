@@ -3,6 +3,7 @@ import type {
   Agent,
   OpenQuestion,
   PlanWithCount,
+  SessionEvent,
   SessionExternalTask,
   Workflow,
   WorkflowRun,
@@ -11,6 +12,11 @@ import { classifyAgent, type AgentKind } from '../agent-kind';
 import { attachedQuestionsFor } from './attachedQuestions';
 import { resolveAgentCreation, type AgentCreation } from './agentCreation';
 import { runIdentity, type RunIdentity } from './runIdentity';
+
+export type TimelineChain = {
+  readonly identity: RunIdentity;
+  readonly label: string;
+};
 
 export type TimelineAgentEntry = {
   readonly kind: 'agent';
@@ -25,6 +31,7 @@ export type TimelineAgentEntry = {
   readonly children: ReadonlyArray<TimelineAgentEntry>;
   readonly answers: ReadonlyArray<TimelineAnswerEntry>;
   readonly hasDuration: boolean;
+  readonly chain: TimelineChain | null;
 };
 
 export type TimelinePlanEntry = {
@@ -46,6 +53,13 @@ export type TimelineBranchEntry = {
   readonly id: string;
   readonly at: string;
   readonly worktree: SessionWorktree;
+};
+
+export type TimelineEventEntry = {
+  readonly kind: 'event';
+  readonly id: string;
+  readonly at: string;
+  readonly event: SessionEvent;
 };
 
 export type TimelineAnswerEntry = {
@@ -73,6 +87,7 @@ export type TimelineTopLevelEntry =
   | TimelinePlanEntry
   | TimelineIssueEntry
   | TimelineBranchEntry
+  | TimelineEventEntry
   | TimelineRunEntry;
 
 export type TimelineModel = {
@@ -91,6 +106,7 @@ type Params = {
   readonly externalTasks: ReadonlyArray<SessionExternalTask>;
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly worktrees: ReadonlyArray<SessionWorktree>;
+  readonly events: ReadonlyArray<SessionEvent>;
   readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
 };
 
@@ -130,6 +146,23 @@ const buildAnswers = ({
     ];
   });
 
+const CHAIN_LABEL_LIMIT = 3;
+
+type ChainLabelParams = {
+  readonly entry: TimelineAgentEntry;
+};
+
+const chainLabelOf = ({ entry }: ChainLabelParams): string => {
+  const names: string[] = [];
+  let node: TimelineAgentEntry | undefined = entry;
+  while (node !== undefined && names.length < CHAIN_LABEL_LIMIT) {
+    names.push(node.agent.name);
+    node = node.children[node.children.length - 1];
+  }
+  const suffix = node === undefined ? '' : ' → …';
+  return `${names.join(' → ')}${suffix}`;
+};
+
 const compareNewestFirst = (first: SortableEntry, second: SortableEntry): number => {
   if (first.at != null && second.at != null && first.at !== second.at) {
     return second.at.localeCompare(first.at);
@@ -150,6 +183,7 @@ export const buildTimelineGroups = ({
   externalTasks,
   questions,
   worktrees,
+  events,
   agentKindOverride,
 }: Params): TimelineModel => {
   const liveAgents = agents.filter((agent) => agent.deletedAt == null);
@@ -209,6 +243,7 @@ export const buildTimelineGroups = ({
       children,
       answers: buildAnswers({ questions: attachedQuestions, parentId: entryId }),
       hasDuration: agent.startedAt != null && agent.completedAt != null,
+      chain: null,
     };
   };
 
@@ -260,7 +295,18 @@ export const buildTimelineGroups = ({
         agent.parentAgentId == null &&
         !(agent.workflowRunId != null && agent.stepId != null && runIds.has(agent.workflowRunId)),
     )
-    .map((agent) => buildAgentEntry({ agent, stepLabel: null }));
+    .map((agent) => buildAgentEntry({ agent, stepLabel: null }))
+    .map((entry) =>
+      entry.children.length === 0
+        ? entry
+        : {
+            ...entry,
+            chain: {
+              identity: runIdentity({ runId: entry.agent.id }),
+              label: chainLabelOf({ entry }),
+            },
+          },
+    );
   const standalonePlans: ReadonlyArray<TimelinePlanEntry> = plans
     .filter((plan) => !groupedPlanIds.has(plan.id))
     .map((plan) => ({ kind: 'plan', id: `plan:${plan.id}`, at: plan.createdAt, plan }));
@@ -270,19 +316,35 @@ export const buildTimelineGroups = ({
     at: task.createdAt,
     task,
   }));
-  const branches: ReadonlyArray<TimelineBranchEntry> = worktrees.map((worktree) => ({
-    kind: 'branch',
-    id: `branch:${worktree.id}`,
-    at: timestampForWorktree({ worktree }),
-    worktree,
+  const linkedIssueUrls = new Set(
+    events.flatMap((event) =>
+      event.kind === 'issue_linked' && event.payload?.url != null ? [event.payload.url] : [],
+    ),
+  );
+  const visibleIssues = issues.filter((entry) => !linkedIssueUrls.has(entry.task.url));
+  const hasBranchEvent = events.some((event) => event.kind === 'branch_created');
+  const branches: ReadonlyArray<TimelineBranchEntry> = hasBranchEvent
+    ? []
+    : worktrees.map((worktree) => ({
+        kind: 'branch',
+        id: `branch:${worktree.id}`,
+        at: timestampForWorktree({ worktree }),
+        worktree,
+      }));
+  const eventEntries: ReadonlyArray<TimelineEventEntry> = events.map((event) => ({
+    kind: 'event',
+    id: `event:${event.id}`,
+    at: event.createdAt,
+    event,
   }));
 
   const entries = [
     ...runEntries,
     ...standaloneAgents,
     ...standalonePlans,
-    ...issues,
+    ...visibleIssues,
     ...branches,
+    ...eventEntries,
   ].sort((first, second) =>
     compareNewestFirst(
       { at: first.at, ordinal: first.kind === 'agent' ? first.ordinal : 0, id: first.id },

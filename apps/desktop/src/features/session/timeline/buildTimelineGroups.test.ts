@@ -5,6 +5,11 @@ import type {
   IsoDateTime,
   OpenQuestion,
   OpenQuestionId,
+  SessionEvent,
+  SessionEventId,
+  SessionEventKind,
+  SessionEventPayload,
+  SessionExternalTask,
   SessionId,
   StepId,
   Workflow,
@@ -13,6 +18,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import type { SessionWorktree } from '@goodboy/db';
 import { buildTimelineGroups } from './buildTimelineGroups';
 
 type TypedStringParams = {
@@ -128,16 +134,27 @@ type BuildParams = {
   readonly agents: ReadonlyArray<Agent>;
   readonly workflows?: ReadonlyArray<ReturnType<typeof attachedWorkflow>>;
   readonly questions?: ReadonlyArray<OpenQuestion>;
+  readonly externalTasks?: ReadonlyArray<SessionExternalTask>;
+  readonly worktrees?: ReadonlyArray<SessionWorktree>;
+  readonly events?: ReadonlyArray<SessionEvent>;
 };
 
-const build = ({ agents, workflows = [], questions = [] }: BuildParams) =>
+const build = ({
+  agents,
+  workflows = [],
+  questions = [],
+  externalTasks = [],
+  worktrees = [],
+  events = [],
+}: BuildParams) =>
   buildTimelineGroups({
     agents,
     workflows,
     plans: [],
-    externalTasks: [],
+    externalTasks,
     questions,
-    worktrees: [],
+    worktrees,
+    events,
     agentKindOverride: {},
   });
 
@@ -373,5 +390,182 @@ describe('buildTimelineGroups', () => {
     expect(agentEntry?.kind === 'agent' ? agentEntry.answers.map((item) => item.id) : []).toEqual([
       'answer:agent:first:direct',
     ]);
+  });
+});
+
+type EventParams = {
+  readonly id: string;
+  readonly kind: SessionEventKind;
+  readonly at: string;
+  readonly payload?: SessionEventPayload;
+};
+
+const sessionEvent = ({ id, kind, at, payload }: EventParams): SessionEvent => ({
+  id: typedString<SessionEventId>({ value: id }),
+  sessionId: SESSION_ID,
+  kind,
+  payload: payload ?? null,
+  createdAt: typedString<IsoDateTime>({ value: at }),
+});
+
+const worktree = ({ branch }: { readonly branch: string }): SessionWorktree => ({
+  id: 'wt-1',
+  sessionId: SESSION_ID,
+  worktreePath: '/repo/.goodboy/worktrees/gb-trace',
+  branch,
+  parallelIndex: 0,
+  createdAt: Date.parse('2026-08-17T07:00:00Z'),
+});
+
+const externalTask = ({ url }: { readonly url: string }): SessionExternalTask => ({
+  sessionId: SESSION_ID,
+  provider: 'linear',
+  externalId: 'lin-1',
+  identifier: 'GB-1',
+  url,
+  title: 'Persist the trace',
+  createdAt: typedString<IsoDateTime>({ value: '2026-08-17T07:30:00Z' }),
+});
+
+describe('buildTimelineGroups, session events', () => {
+  it('turns every event into its own top level entry', () => {
+    const model = build({
+      agents: [],
+      events: [
+        sessionEvent({ id: 'ev-1', kind: 'pr_merged', at: '2026-08-17T12:00:00Z' }),
+        sessionEvent({ id: 'ev-2', kind: 'branch_switched', at: '2026-08-17T11:00:00Z' }),
+      ],
+    });
+
+    expect(model.entries.map((entry) => entry.id)).toEqual(['event:ev-1', 'event:ev-2']);
+  });
+
+  it('drops the derived branch row once a branch event exists', () => {
+    const model = build({
+      agents: [],
+      worktrees: [worktree({ branch: 'ak/feat' })],
+      events: [
+        sessionEvent({
+          id: 'ev-1',
+          kind: 'branch_created',
+          at: '2026-08-17T07:00:00Z',
+          payload: { branch: 'ak/feat' },
+        }),
+      ],
+    });
+
+    expect(model.entries.map((entry) => entry.kind)).toEqual(['event']);
+  });
+
+  it('keeps the derived branch row for a session recorded before the event log', () => {
+    const model = build({
+      agents: [],
+      worktrees: [worktree({ branch: 'ak/feat' })],
+      events: [sessionEvent({ id: 'ev-1', kind: 'pr_merged', at: '2026-08-17T12:00:00Z' })],
+    });
+
+    expect(model.entries.some((entry) => entry.kind === 'branch')).toBe(true);
+  });
+
+  it('drops the derived issue row once the link event carries the same url', () => {
+    const url = 'https://linear.app/goodboy/issue/GB-1';
+    const model = build({
+      agents: [],
+      externalTasks: [externalTask({ url })],
+      events: [
+        sessionEvent({
+          id: 'ev-1',
+          kind: 'issue_linked',
+          at: '2026-08-17T07:30:00Z',
+          payload: { url, identifier: 'GB-1', title: 'Persist the trace' },
+        }),
+      ],
+    });
+
+    expect(model.entries.map((entry) => entry.kind)).toEqual(['event']);
+  });
+
+  it('keeps the derived issue row when the event points at another issue', () => {
+    const model = build({
+      agents: [],
+      externalTasks: [externalTask({ url: 'https://linear.app/goodboy/issue/GB-1' })],
+      events: [
+        sessionEvent({
+          id: 'ev-1',
+          kind: 'issue_linked',
+          at: '2026-08-17T07:30:00Z',
+          payload: { url: 'https://linear.app/goodboy/issue/GB-2' },
+        }),
+      ],
+    });
+
+    expect(model.entries.filter((entry) => entry.kind === 'issue')).toHaveLength(1);
+  });
+});
+
+describe('buildTimelineGroups, agent chains', () => {
+  it('marks a standalone agent with descendants as a chain and names the path', () => {
+    const model = build({
+      agents: [
+        agent({ id: 'planner', ordinal: 0, startedAt: '2026-08-17T09:00:00Z' }),
+        agent({
+          id: 'implementer',
+          ordinal: 1,
+          parentAgentId: 'planner',
+          startedAt: '2026-08-17T09:30:00Z',
+        }),
+      ],
+    });
+    const root = model.entries.find((entry) => entry.kind === 'agent');
+
+    expect(root?.kind === 'agent' ? root.chain?.label : null).toBe('planner → implementer');
+    expect(root?.kind === 'agent' ? root.chain?.identity.index : null).toEqual(expect.any(Number));
+  });
+
+  it('leaves a childless agent without a chain', () => {
+    const model = build({
+      agents: [agent({ id: 'solo', startedAt: '2026-08-17T09:00:00Z' })],
+    });
+    const root = model.entries.find((entry) => entry.kind === 'agent');
+
+    expect(root?.kind === 'agent' ? root.chain : 'missing').toBeNull();
+  });
+
+  it('leaves a workflow step without a chain so the run keeps its own grammar', () => {
+    const model = build({
+      workflows: [attachedWorkflow()],
+      agents: [
+        agent({ id: 'step', startedAt: '2026-08-17T09:00:00Z', workflowRunId: WORKFLOW_RUN_ID }),
+        agent({
+          id: 'child',
+          ordinal: 1,
+          parentAgentId: 'step',
+          startedAt: '2026-08-17T09:10:00Z',
+        }),
+      ],
+    });
+    const run = model.entries.find((entry) => entry.kind === 'run');
+    const step = run?.kind === 'run' ? run.children[0] : null;
+
+    expect(step?.kind === 'agent' ? step.chain : 'missing').toBeNull();
+  });
+
+  it('truncates a chain longer than three agents', () => {
+    const model = build({
+      agents: [
+        agent({ id: 'one', ordinal: 0, startedAt: '2026-08-17T09:00:00Z' }),
+        agent({ id: 'two', ordinal: 1, parentAgentId: 'one', startedAt: '2026-08-17T09:10:00Z' }),
+        agent({ id: 'three', ordinal: 2, parentAgentId: 'two', startedAt: '2026-08-17T09:20:00Z' }),
+        agent({
+          id: 'four',
+          ordinal: 3,
+          parentAgentId: 'three',
+          startedAt: '2026-08-17T09:30:00Z',
+        }),
+      ],
+    });
+    const root = model.entries.find((entry) => entry.kind === 'agent');
+
+    expect(root?.kind === 'agent' ? root.chain?.label : null).toBe('one → two → three → …');
   });
 });
