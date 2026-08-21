@@ -519,6 +519,7 @@ export type AppActions = {
       sourceKind?: AgentSourceKind;
       deferKickoff?: boolean;
       focus?: SpawnFocus;
+      parentAgentId?: AgentId;
     },
   ): Promise<AgentId>;
   activateNextResolver(sessionId: SessionId): Promise<void>;
