@@ -7,6 +7,86 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.84
+
+The activity feed becomes a full trace of everything the session did, and
+every agent, not only Claude, can reach the workspace's connected
+integrations.
+
+### [#1505, #1510, #1511] The activity feed records the whole session
+
+The feed only showed what could be derived from agents and runs, so a branch
+switch, a merged pull request or an unlinked issue left no trace. The session
+now keeps a persisted log. The trace opens with the worktree and its copyable
+path, and every branch created or switched, issue linked or unlinked, pull
+request created, approved, merged or closed, workflow discarded or deleted,
+and decision change lands as its own row in the tone of what happened.
+
+A filter on the Activity header picks which categories show and persists
+across sessions. The count of hidden categories sits next to the icon, so a
+filtered feed never looks empty by accident. Decisions start hidden.
+
+An agent that spawned followers reads as a chain: a colored lane like a
+workflow run, labeled with the path of names instead of a stepper.
+
+### [#1508, #1514, #1515, #1516] Any agent queries the connected integrations
+
+Only Claude could reach Linear, through MCP, and paid tokens for it on every
+turn. Any agent Goodboy runs (Claude, Codex, Cursor, Gemini, opencode) can now
+read and act on Linear, Sentry, GitLab, Jira, Bitbucket and Slack through a
+`query` command the app serves from its own binary. 53 verbs, each backed by
+the same call the app itself makes, on macOS and Linux.
+
+The credential never leaves Goodboy. The agent names a provider and a verb,
+the app runs the query with the key it already holds, and nothing the agent
+receives can be replayed against a provider API. Each running instance serves
+its own bridge, so an installed app and a dev build never answer for each
+other.
+
+Follow-up: no query has gone out to a live provider from an agent turn yet.
+If a provider rejects one, its own error reaches the agent and the exit code
+says so.
+
+### [#1504] The follow-up section tracks the agents it spawned
+
+Spawning a follow-up was a dead end: the suggestion stayed, the toast faded,
+and the agent it created was nowhere on the page. A spawned suggestion now
+turns into a live status row with the agent's kind, name, current state and a
+**Go to chat** button. The suggestions still on offer carry the colored chip
+of the role they would start.
+
+### [#1506] A new session links several tasks and drafts its goal
+
+A session could start from exactly one issue. The picker now stays open and
+appends, each linked task gets its own chip with its own remove control, and
+switching the provider tab keeps what is already picked. From two tasks on,
+an action next to the goal field drafts one goal covering all of them, still
+yours to edit.
+
+### [#1509] Report screenshots land inside the GitHub issue
+
+Report an issue used to stage the screenshots in a folder and ask you to drag
+them onto GitHub yourself. They now land inside the issue: on first send the
+app asks before creating a small public assets repository on your account,
+uploads the images there and embeds them in the body. A decline or a failed
+upload files the issue exactly as before, drag reminder included.
+
+### [#1507] Rename an agent and run the next step in place
+
+Renaming an agent needed a double click on its sidebar card, and the title on
+its own page was read-only. The detail header now renames in place, double
+click or the pencil on hover. A run waiting between steps offered its next
+step only in the workflow detail. The session overview now carries the same
+button in an Up next band above the feed.
+
+### Fixes
+
+- The orchestrator card drops its spend and budget lines and actions. The
+  spend limit keeps its place in the run header and the budget its own studio
+  (#1503)
+- With two binaries in the crate, `pnpm tauri dev` could not pick one and
+  died on startup (#1513)
+
 ## Goodboy v0.1.83
 
 The session Overview becomes a live activity feed, Context becomes two editable
