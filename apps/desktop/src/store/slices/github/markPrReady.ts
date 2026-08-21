@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
+import { prEventPayload } from './prEventPayload';
 import type { GetFn, SetFn } from './types';
 
 export const markPrReady = (_set: SetFn, get: GetFn) => {
@@ -32,5 +33,10 @@ export const markPrReady = (_set: SetFn, get: GetFn) => {
       throw new Error(errMsg);
     }
     await get().refreshSessionPr(sessionId, { force: true });
+    await get().recordSessionEventOnce({
+      sessionId,
+      kind: 'pr_ready',
+      payload: prEventPayload({ number: num, pr: get().sessionGithub[sessionId]?.pr ?? null }),
+    });
   };
 };

@@ -1,6 +1,7 @@
 import type { PrMergeMethod, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
+import { prEventPayload } from './prEventPayload';
 import type { GetFn, SetFn } from './types';
 
 // `gh pr merge` takes exactly one strategy flag. Squash is the desktop default
@@ -40,5 +41,10 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
       throw new Error(errMsg);
     }
     await get().refreshSessionPr(sessionId, { force: true });
+    await get().recordSessionEventOnce({
+      sessionId,
+      kind: 'pr_merged',
+      payload: prEventPayload({ number: num, pr: get().sessionGithub[sessionId]?.pr ?? null }),
+    });
   };
 };

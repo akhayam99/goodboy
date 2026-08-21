@@ -97,6 +97,11 @@ export const changeSessionBranch = (set: SetFn, get: GetFn) => {
         sessionSelectedPrNumber: nextSelectedPrNumber,
       };
     });
+    await get().recordSessionEvent({
+      sessionId,
+      kind: 'branch_switched',
+      payload: { from: previousBranch, to: target },
+    });
     await announceSessionBranchChange({
       get,
       sessionId,

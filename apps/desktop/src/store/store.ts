@@ -724,6 +724,11 @@ export type AppActions = {
     kind: SessionEventKind;
     payload?: SessionEventPayload;
   }): Promise<void>;
+  recordSessionEventOnce(params: {
+    sessionId: SessionId;
+    kind: SessionEventKind;
+    payload?: SessionEventPayload;
+  }): Promise<void>;
   loadSessionFileVersions(params: { sessionId: SessionId; force?: boolean }): Promise<void>;
   selectSessionFileVersionPath(params: { sessionId: SessionId; relativePath: string | null }): void;
   restoreSessionFileVersion(params: {

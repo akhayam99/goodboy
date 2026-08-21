@@ -84,5 +84,16 @@ export const discardWorkflow = (set: SetFn, get: GetFn) => {
     if (derived !== null) {
       await updateSessionState(tauriDatabase, sessionId, derived, now).catch(() => undefined);
     }
+    const discarded = (state.sessionWorkflows?.[sessionId] ?? []).find(
+      (workflow) => workflow.id === run.workflowId,
+    );
+    await get().recordSessionEvent({
+      sessionId,
+      kind: 'workflow_discarded',
+      payload: {
+        runId: workflowRunId,
+        ...(discarded == null ? {} : { workflowName: discarded.name }),
+      },
+    });
   };
 };

@@ -39,7 +39,7 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
   return {
     loadPhaseTemplates: loadPhaseTemplates(set),
     savePhaseTemplate: savePhaseTemplate(set),
-    deleteWorkflow: deleteWorkflow(set),
+    deleteWorkflow: deleteWorkflow(set, get),
     renameWorkflow: renameWorkflow(set, get),
     makeWorkflowPreset: makeWorkflowPreset(set, get),
     generateWorkflowTitle: generateWorkflowTitle(set, get),

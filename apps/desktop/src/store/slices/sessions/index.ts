@@ -32,7 +32,7 @@ export const createSessionsSlice = (set: SetFn, get: GetFn) => {
     bulkUnarchiveTask: bulkUnarchiveTask(set, get),
     createSession: createSession(set, get),
     linkSessionExternalTask: linkSessionExternalTask({ set, get }),
-    unlinkSessionExternalTask: unlinkSessionExternalTask({ set }),
+    unlinkSessionExternalTask: unlinkSessionExternalTask({ set, get }),
     setCurrentSession: setCurrentSession(set, get),
   };
 };

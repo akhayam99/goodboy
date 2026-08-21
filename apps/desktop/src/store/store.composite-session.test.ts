@@ -127,6 +127,7 @@ type Store = {
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
   closeSessionTerminals: () => Promise<void>;
   emitNotification: () => void;
+  recordSessionEvent: () => Promise<void>;
 };
 
 type MakeStoreParams = {
@@ -184,6 +185,7 @@ const makeStore = ({ activeMount }: MakeStoreParams): Store => ({
   sessionPhaseRuns: {},
   closeSessionTerminals: vi.fn(async () => undefined),
   emitNotification: vi.fn(),
+  recordSessionEvent: vi.fn(async () => undefined),
 });
 
 beforeEach(() => {

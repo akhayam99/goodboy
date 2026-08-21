@@ -6,6 +6,7 @@ import {
   upsertContextSlot,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { decisionsDelta } from '../session-events';
 import { mergeSlots, type GetFn, type SetFn } from './types';
 
 export const upsertSessionSlot = (set: SetFn, get: GetFn) => {
@@ -38,5 +39,17 @@ export const upsertSessionSlot = (set: SetFn, get: GetFn) => {
             },
       slotHistoryCounts: { ...state.slotHistoryCounts, [sessionId]: counts },
     }));
+    if (key !== 'decisions') {
+      return;
+    }
+    const delta = decisionsDelta({ previous: prev?.value ?? '', next: value });
+    if (delta.added === 0 && delta.removed === 0) {
+      return;
+    }
+    await get().recordSessionEvent({
+      sessionId,
+      kind: 'decisions_changed',
+      payload: { added: delta.added, removed: delta.removed },
+    });
   };
 };

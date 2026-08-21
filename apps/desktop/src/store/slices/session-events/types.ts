@@ -4,6 +4,8 @@ export type { SetFn, GetFn } from '../../slice-types';
 
 export const sessionEventsLoadInFlight = new Set<SessionId>();
 
+export const sessionEventsOnceInFlight = new Set<string>();
+
 type MergeParams = {
   readonly existing: ReadonlyArray<SessionEvent>;
   readonly next: SessionEvent;
