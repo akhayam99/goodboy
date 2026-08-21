@@ -1225,13 +1225,11 @@ describe('store contract', () => {
       const { upsertSessionExternalTask } = await import('@goodboy/db');
       const spy = upsertSessionExternalTask as unknown as ReturnType<typeof vi.fn>;
 
-      const { session } = await store
-        .getState()
-        .createSession({
-          workspaceId: WS_ID,
-          goal: 'do gitlab work',
-          externalTasks: [GITLAB_TASK],
-        });
+      const { session } = await store.getState().createSession({
+        workspaceId: WS_ID,
+        goal: 'do gitlab work',
+        externalTasks: [GITLAB_TASK],
+      });
 
       expect(spy).toHaveBeenCalledTimes(1);
       const cached = store.getState().sessionExternalTasks[session.id];
@@ -1302,13 +1300,11 @@ describe('store contract', () => {
         new Error('db down'),
       );
 
-      const { session } = await store
-        .getState()
-        .createSession({
-          workspaceId: WS_ID,
-          goal: 'do gitlab work',
-          externalTasks: [GITLAB_TASK],
-        });
+      const { session } = await store.getState().createSession({
+        workspaceId: WS_ID,
+        goal: 'do gitlab work',
+        externalTasks: [GITLAB_TASK],
+      });
 
       expect(session.id).toBeDefined();
       expect(store.getState().sessionExternalTasks[session.id]).toEqual([]);

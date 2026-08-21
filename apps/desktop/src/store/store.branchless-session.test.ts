@@ -79,6 +79,7 @@ type Store = {
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
   closeSessionTerminals: () => Promise<void>;
   emitNotification: () => void;
+  recordSessionEvent: () => Promise<void>;
 };
 
 const makeStore = (branch: string): Store => ({
@@ -94,6 +95,7 @@ const makeStore = (branch: string): Store => ({
   sessionPhaseRuns: {},
   closeSessionTerminals: vi.fn(async () => undefined),
   emitNotification: vi.fn(),
+  recordSessionEvent: vi.fn(async () => undefined),
 });
 
 beforeEach(() => {

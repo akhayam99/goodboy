@@ -9,6 +9,7 @@ import { formatError } from '@goodboy/ui';
 import type { IsoDateTime, PullRequestState, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { observePrTransition } from './observePrTransition';
 import { resolveSessionPrFetch } from './resolveSessionPrFetch';
 import type { GetFn, SetFn } from './types';
 
@@ -124,6 +125,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
           ...(memberWorkspaceId != null ? { memberWorkspaceId } : {}),
         });
         const canonicalPr = prs[0] ?? null;
+        const observedFrom = get().sessionGithub[sessionId]?.pr ?? null;
         const selectedNumber = get().sessionSelectedPrNumber[sessionId] ?? null;
         const selectedPr =
           selectedNumber != null
@@ -175,6 +177,12 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
               },
             },
           };
+        });
+        await observePrTransition({
+          get,
+          sessionId,
+          previous: observedFrom,
+          next: canonicalPr,
         });
         await persistSessionPrCache({
           sessionId,

@@ -71,8 +71,11 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { detectParallelGroup } from '../../parallel-turn';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
+import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
+import { buildIntegrationsGuard } from '../../integrationsGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
 import { stepSummaryDegraded } from '../../summarizeAgentOutput';
+import { decisionsDelta } from '../session-events';
 import { relinkSimpleSessionDirectories } from '../workspaces/relinkSimpleSessionDirectories';
 import { flushTurnEvents } from '../transcripts/buffer';
 import {
@@ -855,7 +858,15 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }),
       }),
     });
-    const guards = languageGuard.length > 0 ? `${scopeGuard}\n\n${languageGuard}` : scopeGuard;
+    const integrationsGuard = buildIntegrationsGuard({
+      providers: (get().workspaceIntegrations[session.workspaceId] ?? []).map(
+        (integration) => integration.provider,
+      ),
+      isBridgeServing: await isQueryBridgeServing(),
+    });
+    const guards = [scopeGuard, languageGuard, integrationsGuard]
+      .filter((block) => block.length > 0)
+      .join('\n\n');
     const fullSystemPrompt = kindSystemPrompt ? `${guards}\n\n${kindSystemPrompt}` : guards;
 
     if (provider !== 'anthropic') {
@@ -1064,6 +1075,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         } catch {
           turnOrdinal = transcriptTurnOrdinal;
         }
+        const decisionsBefore =
+          (get().sessionSlots[sessionId] ?? []).find((slot) => slot.key === 'decisions')?.value ??
+          '';
         const result = await autoPopulateContext({
           db: tauriDatabase,
           sessionId,
@@ -1084,6 +1098,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           set((state) => ({
             sessionSlots: { ...state.sessionSlots, [sessionId]: refreshedSlots },
           }));
+          const delta = decisionsDelta({
+            previous: decisionsBefore,
+            next: refreshedSlots.find((slot) => slot.key === 'decisions')?.value ?? '',
+          });
+          if (delta.added > 0 || delta.removed > 0) {
+            await get().recordSessionEvent({
+              sessionId,
+              kind: 'decisions_changed',
+              payload: { added: delta.added, removed: delta.removed },
+            });
+          }
         }
         if (result.openQuestionsChanged) {
           await get().loadSessionOpenQuestions(sessionId);

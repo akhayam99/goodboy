@@ -24,6 +24,7 @@ mod provider_credentials;
 mod provider_lifecycle;
 mod providers;
 mod qa_preview;
+mod query_bridge;
 mod releases;
 mod remote_image;
 mod repo;
@@ -67,6 +68,11 @@ fn drain_child_processes(app: &tauri::AppHandle) {
     scripts::shutdown(&app.state::<scripts::ScriptRegistry>());
     terminal::shutdown(&app.state::<terminal::TerminalRegistry>());
     provider_lifecycle::shutdown(&app.state::<provider_lifecycle::ProviderLifecycleRegistry>());
+    query_bridge::shutdown();
+}
+
+pub fn run_query_cli() -> Option<i32> {
+    query_bridge::run_cli()
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -155,6 +161,7 @@ pub fn run() {
         .setup(move |app| {
             use tauri::Manager;
             providers::spawn_startup_detection(app.handle().clone(), detection_opener);
+            query_bridge::start(app.handle().clone());
             #[cfg(desktop)]
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::new().build())?;
@@ -247,12 +254,15 @@ pub fn run() {
             turn::turn_spawn,
             turn::turn_cancel,
             turn::turn_list_live,
+            query_bridge::query_bridge_serving,
             attachment::attachment_write,
             attachment::attachment_read,
             attachment::attachment_delete,
             attachment::attachment_read_dropped,
             attachment::bug_report_stage_images,
             attachment::bug_report_reveal_images,
+            attachment::bug_report_stage_upload_payloads,
+            attachment::bug_report_discard_images,
             file_versions::file_versions_begin_snapshot,
             file_versions::file_versions_finalize_snapshot,
             file_versions::file_versions_list_staged_snapshots,

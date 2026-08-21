@@ -84,6 +84,14 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
           .catch(() => undefined);
       }
     }
+    const created = get().sessionGithub[sessionId]?.pr ?? null;
+    if (created != null) {
+      await get().recordSessionEventOnce({
+        sessionId,
+        kind: 'pr_created',
+        payload: { number: created.number, title: created.title, url: created.url },
+      });
+    }
     void get().emitNotification(
       'pr-created',
       'success',

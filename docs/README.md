@@ -78,6 +78,8 @@ one only when the current task reaches its trigger.
   the app: subprocess environment, provider routing, or DB migrations.
 - [model-picker.md](model-picker.md): when changing how a user picks a model or
   effort.
+- [query-bridge.md](query-bridge.md): when changing what a spawned agent can
+  ask a connected integration, or how it asks.
 - [workflows.md](workflows.md): when touching workflow tables, run advance
   logic, or the post-step summarizer.
 - [release.md](release.md): when you need the technical detail of a release:

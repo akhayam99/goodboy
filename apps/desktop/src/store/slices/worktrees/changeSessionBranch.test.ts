@@ -44,6 +44,7 @@ const makeState = (): State => ({
     [SESSION_ID]: [{ provider: 'linear', externalId: 'GB-1', branch: 'ak/outgoing' }],
   },
   emitNotification: h.emitNotification,
+  recordSessionEvent: vi.fn(async () => undefined),
 });
 
 beforeEach(() => {
@@ -69,6 +70,24 @@ describe('changeSessionBranch', () => {
       '1 linked issue stays on ak/outgoing and moved to the work history. Pull requests now read from ak/incoming.',
       { sessionId: SESSION_ID, workspaceId: 'workspace-1' },
     );
+  });
+
+  it('writes the switch to the session trace with both branch names', async () => {
+    const state = makeState();
+    const set = vi.fn((updater: (current: State) => State) => {
+      Object.assign(state, updater(state));
+    });
+
+    await changeSessionBranch(set as never, (() => state) as never)(SESSION_ID, {
+      branch: 'ak/incoming',
+      createNew: false,
+    });
+
+    expect(state['recordSessionEvent']).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      kind: 'branch_switched',
+      payload: { from: 'ak/outgoing', to: 'ak/incoming' },
+    });
   });
 
   it('resets the pull requests of the outgoing branch and the selected one', async () => {

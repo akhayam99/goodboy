@@ -52,6 +52,7 @@ type FakeState = {
   refreshSessionPr: ReturnType<typeof vi.fn>;
   editPr: ReturnType<typeof vi.fn>;
   emitNotification: ReturnType<typeof vi.fn>;
+  recordSessionEventOnce: ReturnType<typeof vi.fn>;
 };
 
 const buildState = (overrides: Partial<FakeState> = {}): FakeState => ({
@@ -66,6 +67,7 @@ const buildState = (overrides: Partial<FakeState> = {}): FakeState => ({
   refreshSessionPr: vi.fn(async () => undefined),
   editPr: vi.fn(async () => undefined),
   emitNotification: vi.fn(async () => undefined),
+  recordSessionEventOnce: vi.fn(async () => undefined),
   ...overrides,
 });
 
