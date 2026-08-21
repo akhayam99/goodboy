@@ -1,5 +1,14 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -8,9 +17,13 @@ const SCRIPT_DIRECTORY = dirname(fileURLToPath(import.meta.url));
 const WEBSITE_DIRECTORY = resolve(SCRIPT_DIRECTORY, '..');
 const REPOSITORY_DIRECTORY = resolve(WEBSITE_DIRECTORY, '..');
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const TAURI_CLI = resolve(REPOSITORY_DIRECTORY, 'apps/desktop/node_modules/.bin/tauri');
+const DESKTOP_ICONS_DIRECTORY = resolve(REPOSITORY_DIRECTORY, 'apps/desktop/src-tauri/icons');
 
 const FAVICON_CANVAS_PX = 32;
 const FAVICON_GLYPH_PX = 256;
+const APP_ICON_PX = 1024;
+const ICNS_HEADER_BYTES = 8;
 const TILE_RADIUS_RATIO = 0.28;
 const MARK_SCALE = 0.76;
 
@@ -323,6 +336,39 @@ const createFaviconSvg = ({ tileColor, glyphBase64 }) => {
 `;
 };
 
+const createAppIconHtml = ({ tileColor, mascotBase64 }) => `<!doctype html>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box }
+  html, body { width: ${APP_ICON_PX}px; height: ${APP_ICON_PX}px; background: ${tileColor}; overflow: hidden }
+  body { display: grid; place-items: center }
+  .mascot { display: block; width: ${APP_ICON_PX * MARK_SCALE}px; height: ${APP_ICON_PX * MARK_SCALE}px; background: #fff; -webkit-mask: url(data:image/png;base64,${mascotBase64}) no-repeat center / contain }
+</style>
+<body><i class="mascot"></i></body>`;
+
+const icnsChunkDigests = (buffer) => {
+  const digests = [];
+  let cursor = ICNS_HEADER_BYTES;
+  while (cursor + ICNS_HEADER_BYTES <= buffer.length) {
+    const type = buffer.toString('ascii', cursor, cursor + 4);
+    const length = buffer.readUInt32BE(cursor + 4);
+    if (length < ICNS_HEADER_BYTES) {
+      throw new Error(`Malformed icns chunk "${type}" of length ${length}`);
+    }
+    const payload = buffer.subarray(cursor + ICNS_HEADER_BYTES, cursor + length);
+    digests.push(`${type}:${createHash('sha256').update(payload).digest('hex')}`);
+    cursor += length;
+  }
+  return digests.sort();
+};
+
+const carriesSameIcons = ({ name, current, next }) => {
+  if (!name.endsWith('.icns')) {
+    return current.equals(next);
+  }
+  return icnsChunkDigests(current).join() === icnsChunkDigests(next).join();
+};
+
 const createBannerHtml = ({ format, accent, mascotBase64, variant }) => {
   const isXHeader = variant === 'x-header';
   const tagline = isXHeader ? 'Your agents, in the right order.' : '';
@@ -395,7 +441,61 @@ const renderFormat = ({ format, html }) => {
   }
 };
 
-const renderFavicon = ({ accent, mascotBase64 }) => {
+const renderAppIcons = ({ tileColor, mascotBase64 }) => {
+  if (!existsSync(TAURI_CLI)) {
+    throw new Error(`The Tauri CLI is missing at ${TAURI_CLI}. Run pnpm install first.`);
+  }
+  const temporaryHtmlPath = resolve(tmpdir(), `goodboy-app-icon-${process.pid}.html`);
+  const temporaryPngPath = resolve(tmpdir(), `goodboy-app-icon-${process.pid}.png`);
+  const temporaryIconsDirectory = resolve(tmpdir(), `goodboy-app-icons-${process.pid}`);
+  try {
+    writeFileSync(temporaryHtmlPath, createAppIconHtml({ tileColor, mascotBase64 }));
+    execFileSync(CHROME, [
+      '--headless=new',
+      '--disable-gpu',
+      '--hide-scrollbars',
+      '--force-device-scale-factor=1',
+      `--window-size=${APP_ICON_PX},${APP_ICON_PX}`,
+      `--screenshot=${temporaryPngPath}`,
+      pathToFileURL(temporaryHtmlPath).href,
+    ]);
+    mkdirSync(temporaryIconsDirectory, { recursive: true });
+    execFileSync(TAURI_CLI, ['icon', temporaryPngPath, '-o', temporaryIconsDirectory], {
+      stdio: 'ignore',
+    });
+    const stale = readdirSync(DESKTOP_ICONS_DIRECTORY)
+      .filter((name) => existsSync(resolve(temporaryIconsDirectory, name)))
+      .filter(
+        (name) =>
+          !carriesSameIcons({
+            name,
+            current: readFileSync(resolve(DESKTOP_ICONS_DIRECTORY, name)),
+            next: readFileSync(resolve(temporaryIconsDirectory, name)),
+          }),
+      );
+    if (stale.length === 0) {
+      console.log('the desktop icons already match the live brand tile, no change needed');
+      return;
+    }
+    stale.forEach((name) => {
+      writeFileSync(
+        resolve(DESKTOP_ICONS_DIRECTORY, name),
+        readFileSync(resolve(temporaryIconsDirectory, name)),
+      );
+    });
+    console.log('rendered', stale.length, 'desktop icons in', DESKTOP_ICONS_DIRECTORY);
+  } finally {
+    if (existsSync(temporaryHtmlPath)) {
+      unlinkSync(temporaryHtmlPath);
+    }
+    if (existsSync(temporaryPngPath)) {
+      unlinkSync(temporaryPngPath);
+    }
+    rmSync(temporaryIconsDirectory, { recursive: true, force: true });
+  }
+};
+
+const renderFavicon = ({ tileColor, mascotBase64 }) => {
   const outputPath = resolve(WEBSITE_DIRECTORY, 'public/favicon.svg');
   const temporaryHtmlPath = resolve(tmpdir(), `goodboy-favicon-glyph-${process.pid}.html`);
   const temporaryPngPath = resolve(tmpdir(), `goodboy-favicon-glyph-${process.pid}.png`);
@@ -412,7 +512,7 @@ const renderFavicon = ({ accent, mascotBase64 }) => {
       pathToFileURL(temporaryHtmlPath).href,
     ]);
     const svgSource = createFaviconSvg({
-      tileColor: toHexColor(accent),
+      tileColor,
       glyphBase64: readFileSync(temporaryPngPath).toString('base64'),
     });
     if (existsSync(outputPath) && readFileSync(outputPath, 'utf8') === svgSource) {
@@ -456,15 +556,30 @@ const providerBrands = resolveBrands({
   lightThemeSource,
 });
 const accent = extractCssValue({ cssSource: websiteStylesSource, variableName: '--accent' });
+const tileColor = toHexColor(
+  extractCssValue({ cssSource: websiteStylesSource, variableName: '--brand-tile' }),
+);
+const desktopTileColor = toHexColor(
+  extractCssValue({ cssSource: desktopStylesSource, variableName: '--color-brand' }),
+);
 const date = new Date().toISOString().slice(0, 10);
+
+if (tileColor !== desktopTileColor) {
+  throw new Error(
+    `The brand tile must be one colour everywhere: --brand-tile is ${tileColor}, --color-brand is ${desktopTileColor}`,
+  );
+}
+
+const GENERATED_SURFACES = ['favicon', 'app-icon'];
 
 const requestedSurface = process.argv[2] ?? '';
 const isRequested = (slug) => requestedSurface === '' || requestedSurface === slug;
 const selectedFormats = formats.filter((format) => isRequested(slugFor(format.surface)));
+const knownSurfaces = [...formats.map((format) => slugFor(format.surface)), ...GENERATED_SURFACES];
 
-if (requestedSurface !== '' && selectedFormats.length === 0 && !isRequested('favicon')) {
+if (requestedSurface !== '' && !knownSurfaces.includes(requestedSurface)) {
   throw new Error(
-    `Unknown surface "${requestedSurface}". Known surfaces: ${[...formats.map((format) => slugFor(format.surface)), 'favicon'].join(', ')}`,
+    `Unknown surface "${requestedSurface}". Known surfaces: ${knownSurfaces.join(', ')}`,
   );
 }
 
@@ -474,5 +589,9 @@ selectedFormats.forEach((format) => {
 });
 
 if (isRequested('favicon')) {
-  renderFavicon({ accent, mascotBase64 });
+  renderFavicon({ tileColor, mascotBase64 });
+}
+
+if (isRequested('app-icon')) {
+  renderAppIcons({ tileColor, mascotBase64 });
 }

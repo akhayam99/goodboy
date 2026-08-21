@@ -8,6 +8,8 @@
   --gray1: #f1f3f5;
   --gray0: #f8f9fa;
 
+  --brand-tile: #0b0b0d;
+
   --accent: oklch(0.5 0.13 200);
   --accent-deep: oklch(0.44 0.12 200);
   --accent-bright: oklch(0.74 0.11 200);
@@ -232,7 +234,7 @@ h2 {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: var(--accent);
+  background: var(--brand-tile);
 }
 
 .vtag {
