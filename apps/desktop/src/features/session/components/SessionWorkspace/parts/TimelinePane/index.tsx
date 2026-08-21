@@ -9,13 +9,9 @@ import {
   useAppStore,
   useSessionOpenQuestions,
 } from '../../../../../../store';
-import { notifyWorkflowGateBlock } from '../../../../../../store/slices/workflows/notifyWorkflowGateBlock';
 import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
-import { workflowRunHasOpenQuestions } from '../../../../../context/openQuestionsGate';
-import {
-  resolveWorkflowAdvance,
-  type WorkflowAdvanceState,
-} from '../../../../../workflows/advanceGate';
+import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
+import { useWorkflowAdvanceStates } from '../../../../../workflows/useWorkflowAdvanceStates';
 import { buildTimelineGroups } from '../../../../timeline/buildTimelineGroups';
 import {
   buildTimelineStream,
@@ -43,22 +39,12 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
   const externalTasks = useAppStore((s) => s.sessionExternalTasks?.[sessionId] ?? EMPTY_ARRAY);
   const worktrees = useAppStore((s) => s.sessionWorktreeRecords?.[sessionId] ?? EMPTY_ARRAY);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
-  const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
-  const emitNotification = useAppStore((s) => s.emitNotification);
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
-  const isSummarizerRunning = useAppStore(
-    (s) => s.summarizerStatus?.[sessionId]?.status === 'running',
-  );
-  const hasRunningTurn = useAppStore((s) =>
-    agents.some((agent) => {
-      const turn = s.agentTurnState?.[agent.id];
-      return turn?.kind === 'running' || turn?.kind === 'starting';
-    }),
-  );
   const questions = useSessionOpenQuestions(sessionId);
   const workflows = useAttachedWorkflowRuns({ session });
   const openTargetFor = useTimelineOpen({ sessionId });
+  const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
 
   const model = useMemo(
     () =>
@@ -74,29 +60,7 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
     [agentKindOverride, agents, externalTasks, plans, questions, workflows, worktrees],
   );
 
-  const advanceByRunId = useMemo(() => {
-    const states = new Map<string, WorkflowAdvanceState>();
-    for (const attached of workflows) {
-      const runAgents = agents.filter(
-        (agent) =>
-          agent.workflowRunId === attached.run.id &&
-          agent.parentAgentId == null &&
-          agent.stepId != null,
-      );
-      states.set(
-        attached.run.id,
-        resolveWorkflowAdvance({
-          workflow: attached.workflow,
-          agents: runAgents,
-          hasOpenQuestions: workflowRunHasOpenQuestions(questions, attached.run.id),
-          isSummarizerRunning,
-          isTurnRunning: hasRunningTurn,
-          isAutoRun: attached.run.autoRun === true,
-        }),
-      );
-    }
-    return states;
-  }, [agents, hasRunningTurn, isSummarizerRunning, questions, workflows]);
+  const advanceByRunId = useWorkflowAdvanceStates({ sessionId, workflows, agents });
 
   const stalledRunIds = useMemo(() => {
     const stalled = new Set<string>();
@@ -148,18 +112,6 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
     [stream.groups, stream.items],
   );
 
-  const advanceAgent = async ({ agentId }: { readonly agentId: string }) => {
-    const agent = agents.find((candidate) => candidate.id === agentId) ?? null;
-    if (agent == null || agent.status !== 'pending') {
-      return;
-    }
-    try {
-      await activateWorkflowAgent({ sessionId, agentId: agent.id, focus: 'none' });
-    } catch (error) {
-      notifyWorkflowGateBlock({ error, sessionId, emitNotification });
-    }
-  };
-
   const actionFor = ({ item }: { readonly item: TimelineRowItem }): TimelineRowAction | null => {
     const { entry } = item;
     if (entry.kind === 'agent' && entry.openQuestions.length > 0) {
@@ -193,7 +145,7 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
     const { agent } = pending;
     return {
       label: `Start ${advance.step.name}`,
-      onAct: () => void advanceAgent({ agentId: agent.id }),
+      onAct: () => void advanceAgent({ agent }),
     };
   };
 
