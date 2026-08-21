@@ -30,6 +30,7 @@ import { buildSimpleSessionDirectoryPath } from '../../../../shared/utils/buildS
 import { sessionDirectoryNameValidationMessage } from '../../../../shared/utils/sessionDirectoryNameValidationMessage';
 import { PROVIDER_ORDER } from '../../../providers/components/ProviderStudio/providerOrder';
 import { EMPTY_NEW_SESSION_DRAFT } from '../../../../store/slices/newSessionDrafts/emptyNewSessionDraft';
+import { draftGoalFromTasks } from './draftGoalFromTasks';
 import { generateBranchSlug } from './generateBranchSlug';
 import { GoalEditor } from './GoalEditor';
 import { NewSessionBlocked } from './NewSessionBlocked';
@@ -73,7 +74,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     folderNameTouched,
     branchMode,
     existingBranch,
-    issue,
+    issues,
   } = draft;
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [slugGenerating, setSlugGenerating] = useState(false);
@@ -86,8 +87,10 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const [goalEditorDraft, setGoalEditorDraft] = useState('');
   const [goalEditorDirty, setGoalEditorDirty] = useState(false);
   const [goalPolishing, setGoalPolishing] = useState(false);
+  const [goalDrafting, setGoalDrafting] = useState(false);
   const [resetArmed, setResetArmed] = useState(false);
   const goalPolishRequestId = useRef(0);
+  const goalDraftRequestId = useRef(0);
   const goalEditorBaseRef = useRef(goal);
 
   const {
@@ -146,15 +149,29 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     return () => window.removeEventListener('keydown', onKey, { capture: true });
   }, [busy, onClose]);
 
+  const isSameIssue = (a: IssueCandidate, b: IssueCandidate) =>
+    a.provider === b.provider && a.externalId === b.externalId;
+
   const onPickIssue = (candidate: IssueCandidate) => {
+    if (issues.some((picked) => isSameIssue(picked, candidate))) {
+      return;
+    }
+    const isFirstPick = issues.length === 0 && goal.trim() === '';
     setNewSessionDraft({
       workspaceId,
       draft: {
-        issue: candidate,
-        goal: candidate.goal,
-        branchSlug: candidate.branchSlug,
-        slugTouched: true,
+        issues: [...issues, candidate],
+        ...(isFirstPick
+          ? { goal: candidate.goal, branchSlug: candidate.branchSlug, slugTouched: true }
+          : {}),
       },
+    });
+  };
+
+  const onRemoveIssue = (candidate: IssueCandidate) => {
+    setNewSessionDraft({
+      workspaceId,
+      draft: { issues: issues.filter((picked) => !isSameIssue(picked, candidate)) },
     });
   };
 
@@ -314,6 +331,47 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       });
   };
 
+  const canDraftGoalFromTasks = issues.length > 1;
+
+  const handleDraftGoalFromTasks = () => {
+    if (!canDraftGoalFromTasks || goalDrafting) {
+      return;
+    }
+    const requestId = goalDraftRequestId.current + 1;
+    goalDraftRequestId.current = requestId;
+    setGoalDrafting(true);
+    const taskModel = resolveTaskModel(
+      'prose_polish',
+      workspaceOverrides?.taskModels,
+      defaultProvider,
+    );
+    draftGoalFromTasks({
+      tasks: issues,
+      fallbackGoal: goal,
+      ...taskModel,
+      invokeFn: invoke,
+      ...(workspace?.rootPath != null && { workingDir: workspace.rootPath }),
+    })
+      .then((result) => {
+        if (goalDraftRequestId.current !== requestId) {
+          return;
+        }
+        if (result.accepted) {
+          setNewSessionDraft({ workspaceId, draft: { goal: result.goal } });
+          return;
+        }
+        showToast('warning', 'Could not draft a goal from the tasks, kept your wording', {
+          context: result.error ?? 'unknown error',
+        });
+      })
+      .finally(() => {
+        if (goalDraftRequestId.current !== requestId) {
+          return;
+        }
+        setGoalDrafting(false);
+      });
+  };
+
   const conflict = useBranchConflict(
     !isSimple && branchMode === 'existing' ? existingBranch.trim() || null : null,
     workspace?.rootPath ?? null,
@@ -367,7 +425,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     folderNameTouched ||
     existingBranch.length > 0 ||
     branchMode !== 'new' ||
-    issue !== null;
+    issues.length > 0;
 
   const armReset = () => setResetArmed(true);
   const cancelReset = () => setResetArmed(false);
@@ -396,15 +454,15 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
               branchSlug: branchSlug.trim() || undefined,
             }),
         ...(useExisting ? { existingBranch: existingBranch.trim() } : {}),
-        ...(issue
+        ...(issues.length > 0
           ? {
-              externalTask: {
-                provider: issue.provider,
-                externalId: issue.externalId,
-                identifier: issue.identifier,
-                url: issue.url,
-                title: issue.title,
-              },
+              externalTasks: issues.map((picked) => ({
+                provider: picked.provider,
+                externalId: picked.externalId,
+                identifier: picked.identifier,
+                url: picked.url,
+                title: picked.title,
+              })),
             }
           : {}),
         ...(attachments.length > 0 ? { attachmentInputs: attachments.map(toAttachmentInput) } : {}),
@@ -448,13 +506,16 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
               noProviderConnected={noProviderConnected}
               onOpenSettings={onOpenSettings}
               issueSources={issueSources}
-              issue={issue}
+              issues={issues}
               onPickIssue={onPickIssue}
-              onClearIssue={() => setNewSessionDraft({ workspaceId, draft: { issue: null } })}
+              onRemoveIssue={onRemoveIssue}
               goal={goal}
               onGoalChange={(value) => setNewSessionDraft({ workspaceId, draft: { goal: value } })}
               onOpenGoalEditor={openGoalEditor}
               goalEditorDirty={goalEditorDirty}
+              canDraftGoalFromTasks={canDraftGoalFromTasks}
+              goalDrafting={goalDrafting}
+              onDraftGoalFromTasks={handleDraftGoalFromTasks}
               attachments={attachments}
               isDragging={isDragging}
               composerRef={composerRef}

@@ -8,5 +8,5 @@ export const EMPTY_NEW_SESSION_DRAFT: NewSessionDraft = {
   folderNameTouched: false,
   branchMode: 'new',
   existingBranch: '',
-  issue: null,
+  issues: [],
 };

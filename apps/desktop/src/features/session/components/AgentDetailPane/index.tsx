@@ -12,6 +12,7 @@ import { AgentStatusBadge } from '../../../workspace/components/WorkspacesSideba
 import { AgentHeaderActions } from '../AgentHeaderActions';
 import { ResolverDetailPane } from '../ResolverDetailPane';
 import { AgentBrief } from './AgentBrief';
+import { AgentTitle } from './AgentTitle';
 
 type Props = {
   readonly session: Session;
@@ -76,7 +77,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack }: Props)
       fit={tab === 'transcript' ? 'bleed' : 'fill'}
       header={
         <HeaderBand
-          title={agent.name}
+          title={<AgentTitle agent={agent} sessionId={session.id} />}
           meta={
             <>
               <AgentStatusBadge status={status} />

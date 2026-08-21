@@ -36,14 +36,14 @@ type CreateSessionInput = {
   firstAgentKind?: string;
   autoRun?: boolean;
   kickoffPrompt?: string;
-  externalTask?: {
+  externalTasks?: ReadonlyArray<{
     provider: string;
     mountWorkspaceId?: WorkspaceId;
     externalId: string;
     identifier: string;
     url: string;
     title: string;
-  };
+  }>;
 };
 
 const buildWorkspace = (): Workspace => {
@@ -130,13 +130,15 @@ describe('startPrReviewSession', () => {
       fallbackRef: 'pull/7/head',
       firstAgentKind: 'pr-reviewer',
       autoRun: true,
-      externalTask: {
-        provider: 'github',
-        externalId: '7',
-        identifier: '#7',
-        url: 'https://github.com/org/repo/pull/7',
-        title: 'Fix parser',
-      },
+      externalTasks: [
+        {
+          provider: 'github',
+          externalId: '7',
+          identifier: '#7',
+          url: 'https://github.com/org/repo/pull/7',
+          title: 'Fix parser',
+        },
+      ],
     });
     expect(input.kickoffPrompt).toContain('diff --git a/x b/x');
   });
@@ -159,7 +161,7 @@ describe('startPrReviewSession', () => {
     const input = createSessionSpy.mock.calls[0]![0];
     expect(input.goal).toBe('Review MR !12: Fix parser');
     expect(input.fallbackRef).toBe('merge-requests/12/head');
-    expect(input.externalTask?.identifier).toBe('!12');
+    expect(input.externalTasks?.[0]?.identifier).toBe('!12');
     expect(input.kickoffPrompt).toContain('diff --git a/y b/y');
   });
 
@@ -193,7 +195,7 @@ describe('startPrReviewSession', () => {
     await action(WS_ID, buildPr({ mountWorkspaceId: memberWorkspaceId }));
 
     expect(ghPrDiffSpy).toHaveBeenCalledWith('org/repo', 7, '/tmp/api', WS_ID, memberWorkspaceId);
-    expect(createSessionSpy.mock.calls[0]![0].externalTask).toMatchObject({
+    expect(createSessionSpy.mock.calls[0]![0].externalTasks?.[0]).toMatchObject({
       mountWorkspaceId: memberWorkspaceId,
     });
     expect(setSessionActiveMountSpy).toHaveBeenCalledWith({
