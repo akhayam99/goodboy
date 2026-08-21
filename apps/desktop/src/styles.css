@@ -22,7 +22,7 @@
      cooler sibling one step toward blue, never a clone of it. */
   --color-primary: oklch(0.75 0.115 200);
   --color-primary-foreground: oklch(0.16 0.02 200);
-  --color-brand: oklch(0.5 0.13 200);
+  --color-brand: #0b0b0d;
 
   /* Semantic tokens. Every tone clears 4.5:1 as text on the brightest surface
      (`elevated`), which is what sets their lightness floor. */
@@ -233,7 +233,6 @@
   /* Opaque on purpose: a translucent ring composites toward the surface under it
      and drops below 3:1 on the brighter elevations. */
   --color-focus-ring: oklch(0.72 0.11 200);
-
 
   --z-index-popover-backdrop: 55;
   --z-index-popover: 65;
