@@ -5,6 +5,7 @@ import type { Tone } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
+import { sessionEventGlyph } from '../../../../timeline/sessionEventPresentation';
 import { TIMELINE_RHYTHM } from '../../../../timeline/timelineRhythm';
 import { TimelineEmphasisMarker } from './TimelineEmphasisMarker';
 import { TimelineGlyphMarker } from './TimelineGlyphMarker';
@@ -36,6 +37,19 @@ export const TimelineRowMarker = ({ item }: Props) => {
     return (
       <TimelineGlyphMarker tone="neutral" grade={grade}>
         <IntegrationGlyph provider={entry.task.provider} size="xs" />
+      </TimelineGlyphMarker>
+    );
+  }
+  if (entry.kind === 'event') {
+    const eventGlyph = sessionEventGlyph({ kind: entry.event.kind });
+    const EventIcon = eventGlyph.icon;
+    return (
+      <TimelineGlyphMarker tone={eventGlyph.tone} grade={grade}>
+        <EventIcon
+          size={glyphSize}
+          aria-label={eventGlyph.label}
+          className={tintClasses(eventGlyph.tone).icon}
+        />
       </TimelineGlyphMarker>
     );
   }

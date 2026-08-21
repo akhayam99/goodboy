@@ -1,8 +1,9 @@
-import type { Agent } from '@goodboy/types';
+import type { Agent, SessionEventKind } from '@goodboy/types';
 import type {
   TimelineAgentEntry,
   TimelineAnswerEntry,
   TimelineBranchEntry,
+  TimelineEventEntry,
   TimelineIssueEntry,
   TimelinePlanEntry,
   TimelineRunEntry,
@@ -25,6 +26,7 @@ export type TimelineStreamEntry =
   | TimelinePlanEntry
   | TimelineIssueEntry
   | TimelineBranchEntry
+  | TimelineEventEntry
   | TimelineAnswerEntry;
 
 type StreamRail = {
@@ -115,6 +117,16 @@ type DraftDay = {
 };
 
 type Draft = DraftRow | DraftCluster | DraftDay;
+
+const eventRank = ({ kind }: { readonly kind: SessionEventKind }): number => {
+  if (kind === 'worktree_created') {
+    return -2;
+  }
+  if (kind === 'branch_created') {
+    return -1;
+  }
+  return 0;
+};
 
 const laneIdOf = ({ entryId }: { readonly entryId: string }): string => `lane:${entryId}`;
 
@@ -438,7 +450,7 @@ export const buildTimelineStream = ({
       emitAgent({
         entry,
         grade: 'entry',
-        identity: null,
+        identity: entry.chain?.identity ?? null,
         familyId: entry.id,
         groupId: null,
         context,
@@ -455,7 +467,7 @@ export const buildTimelineStream = ({
       familyId: null,
       groupId: null,
       ordinal: null,
-      sortOrdinal: 0,
+      sortOrdinal: entry.kind === 'event' ? eventRank({ kind: entry.event.kind }) : 0,
       markerState: 'done',
       hasUnread: false,
       isPending: false,

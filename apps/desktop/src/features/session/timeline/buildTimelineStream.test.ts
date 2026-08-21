@@ -3,6 +3,9 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  SessionEvent,
+  SessionEventId,
+  SessionEventKind,
   SessionId,
   StepId,
   Workflow,
@@ -142,9 +145,15 @@ type StreamParams = {
   readonly agents: ReadonlyArray<Agent>;
   readonly workflows?: ReadonlyArray<ReturnType<typeof attachedWorkflow>>;
   readonly unreadAgentIds?: ReadonlySet<string>;
+  readonly events?: ReadonlyArray<SessionEvent>;
 };
 
-const stream = ({ agents, workflows = [], unreadAgentIds = new Set() }: StreamParams) =>
+const stream = ({
+  agents,
+  workflows = [],
+  unreadAgentIds = new Set(),
+  events = [],
+}: StreamParams) =>
   buildTimelineStream({
     entries: buildTimelineGroups({
       agents,
@@ -153,6 +162,7 @@ const stream = ({ agents, workflows = [], unreadAgentIds = new Set() }: StreamPa
       externalTasks: [],
       questions: [],
       worktrees: [],
+      events,
       agentKindOverride: {},
     }).entries,
     unreadAgentIds,
@@ -750,5 +760,68 @@ describe('buildTimelineStream', () => {
       'agent:step-one:sibling',
       'run:run-1:sibling',
     ]);
+  });
+});
+
+type SessionEventParams = {
+  readonly id: string;
+  readonly kind: SessionEventKind;
+  readonly at: string;
+};
+
+const sessionEvent = ({ id, kind, at }: SessionEventParams): SessionEvent => ({
+  id: typedString<SessionEventId>({ value: id }),
+  sessionId: SESSION_ID,
+  kind,
+  payload: null,
+  createdAt: typedString<IsoDateTime>({ value: at }),
+});
+
+describe('buildTimelineStream, session events', () => {
+  it('keeps the worktree row at the bottom when creation events share an instant', () => {
+    const at = localIso({ day: 18, hour: 8 });
+    const result = stream({
+      agents: [],
+      events: [
+        sessionEvent({ id: 'ev-branch', kind: 'branch_created', at }),
+        sessionEvent({ id: 'ev-worktree', kind: 'worktree_created', at }),
+      ],
+    });
+    const rows = result.items.flatMap((item) => (item.kind === 'row' ? [item.id] : []));
+
+    expect(rows).toEqual(['event:ev-branch', 'event:ev-worktree']);
+  });
+
+  it('orders the rest of the trace newest first', () => {
+    const result = stream({
+      agents: [],
+      events: [
+        sessionEvent({
+          id: 'ev-worktree',
+          kind: 'worktree_created',
+          at: localIso({ day: 18, hour: 8 }),
+        }),
+        sessionEvent({ id: 'ev-merge', kind: 'pr_merged', at: localIso({ day: 18, hour: 12 }) }),
+      ],
+    });
+    const rows = result.items.flatMap((item) => (item.kind === 'row' ? [item.id] : []));
+
+    expect(rows).toEqual(['event:ev-merge', 'event:ev-worktree']);
+  });
+
+  it('gives a chained agent group a colored lane', () => {
+    const result = stream({
+      agents: [
+        agent({ id: 'planner', ordinal: 0, startedAt: localIso({ day: 18, hour: 9 }) }),
+        agent({
+          id: 'implementer',
+          ordinal: 1,
+          parentAgentId: 'planner',
+          startedAt: localIso({ day: 18, hour: 10 }),
+        }),
+      ],
+    });
+
+    expect(result.groups.map((group) => group.identityIndex)).toEqual([expect.any(Number)]);
   });
 });
