@@ -6,8 +6,6 @@ import {
   Divider,
   FieldRow,
   formatError,
-  GithubIcon,
-  InlineConfirm,
   Input,
   PANE_RHYTHM,
   ScrollFade,
@@ -30,14 +28,11 @@ import { ISSUE_TYPE_OPTIONS, issueTypeLabel, type IssueTypeValue } from '../../r
 import { BugReportImages } from '../BugReportImages';
 import { AREA_OPTIONS, type AreaValue } from './areas';
 import { guessArea } from './guessArea';
-import { knownIssueAssetsRepo, rememberIssueAssetsRepo } from './issueAssetsConsent';
-import { createIssueAssetsRepo, hasIssueAssetsRepo, issueAssetsRepoSlug } from './issueAssetsRepo';
 import { buildFallbackIssue, buildIssueBody, isOpenableUrl } from './issuePayload';
 import { parseIssueCreateResult } from './parseIssueCreateResult';
 import { previewHint } from './previewHint';
-import { discardBugReportImages, revealBugReportImages, stageBugReportImages } from './stageImages';
+import { revealBugReportImages, stageBugReportImages } from './stageImages';
 import { truncationNotice } from './truncationNotice';
-import { uploadIssueImages } from './uploadIssueImages';
 
 type Props = {
   readonly onClose: () => void;
@@ -47,11 +42,7 @@ type Params = {
   readonly requestClose: () => void;
 };
 
-type SendState = 'idle' | 'sending' | 'consent' | 'error';
-
-type RunParams = Params & {
-  readonly isUploadAllowed: boolean;
-};
+type SendState = 'idle' | 'sending' | 'error';
 
 const TITLE_PLACEHOLDERS = {
   bug: "What's wrong, in one line",
@@ -140,36 +131,25 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
     area !== '' &&
     trimmedTitle !== '' &&
     mode != null &&
-    sendState !== 'sending' &&
-    sendState !== 'consent';
-  const login = status?.user ?? '';
-  const assetsRepoSlug = login === '' ? '' : issueAssetsRepoSlug({ login });
-  const canAttachImages = sendsDirectly && imageControl.images.length > 0 && assetsRepoSlug !== '';
+    sendState !== 'sending';
 
-  const runSend = async ({ requestClose, isUploadAllowed }: RunParams) => {
+  const onSend = async ({ requestClose }: Params) => {
+    if (!canSend) {
+      return;
+    }
     setSendState('sending');
     setErrorMessage(null);
 
-    let dir: string | null;
+    let stagedImagesDir: string | null;
     try {
-      dir = await stageBugReportImages({ images: imageControl.images });
+      stagedImagesDir = await stageBugReportImages({ images: imageControl.images });
     } catch (err) {
       setSendState('error');
       setErrorMessage(`Could not prepare the images to attach. ${formatError(err)}`);
       return;
     }
-    const stagedImagesDir = dir;
 
     if (sendsDirectly) {
-      const uploaded =
-        isUploadAllowed && stagedImagesDir != null
-          ? await uploadIssueImages({
-              runner: tauriGhRunner,
-              slug: assetsRepoSlug,
-              dir: stagedImagesDir,
-              images: imageControl.images,
-            })
-          : null;
       try {
         const result = await tauriGhRunner.run(
           [
@@ -180,14 +160,7 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
             '--title',
             trimmedTitle,
             '--body',
-            buildIssueBody({
-              typeLabel,
-              version: version ?? '',
-              areaLabel,
-              notes: trimmedNotes,
-              imageNames,
-              uploadedImages: uploaded ?? [],
-            }),
+            directBody,
           ],
           {},
         );
@@ -200,23 +173,14 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
         const issueUrl = parsed.url;
         clearBugReportDraft();
         requestClose();
-        if (stagedImagesDir != null && uploaded != null) {
-          void discardBugReportImages({ dir: stagedImagesDir });
-        }
-        if (stagedImagesDir == null || uploaded != null) {
-          showToast(
-            'success',
-            uploaded == null
-              ? 'Filed on GitHub, under your account.'
-              : 'Filed on GitHub with your images, under your account.',
-            {
-              title: 'Issue sent',
-              action:
-                issueUrl == null
-                  ? undefined
-                  : { label: 'View issue', onClick: () => void openUrl(issueUrl) },
-            },
-          );
+        if (stagedImagesDir == null) {
+          showToast('success', 'Filed on GitHub, under your account.', {
+            title: 'Issue sent',
+            action:
+              issueUrl == null
+                ? undefined
+                : { label: 'View issue', onClick: () => void openUrl(issueUrl) },
+          });
           return;
         }
         const action =
@@ -264,37 +228,6 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
     }
   };
 
-  const onSend = async ({ requestClose }: Params) => {
-    if (!canSend) {
-      return;
-    }
-    if (!canAttachImages) {
-      await runSend({ requestClose, isUploadAllowed: false });
-      return;
-    }
-    setSendState('sending');
-    setErrorMessage(null);
-    if ((await knownIssueAssetsRepo()) === assetsRepoSlug) {
-      await runSend({ requestClose, isUploadAllowed: true });
-      return;
-    }
-    if (await hasIssueAssetsRepo({ runner: tauriGhRunner, slug: assetsRepoSlug })) {
-      await rememberIssueAssetsRepo({ slug: assetsRepoSlug });
-      await runSend({ requestClose, isUploadAllowed: true });
-      return;
-    }
-    setSendState('consent');
-  };
-
-  const onConsentAccept = async ({ requestClose }: Params) => {
-    setSendState('sending');
-    const isCreated = await createIssueAssetsRepo({ runner: tauriGhRunner });
-    if (isCreated) {
-      await rememberIssueAssetsRepo({ slug: assetsRepoSlug });
-    }
-    await runSend({ requestClose, isUploadAllowed: isCreated });
-  };
-
   return (
     <StudioShell
       icon={CONCEPT_ICONS.reportIssue}
@@ -336,11 +269,7 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                 />
                 <FieldRow
                   label="Images"
-                  help={
-                    sendsDirectly
-                      ? 'Uploaded to a repository on your account and shown inline in the issue. If that fails, one click opens the issue and the folder, so you can drag them in.'
-                      : 'A GitHub link cannot carry images. After you send, one click opens the issue and the folder, so you can drag them in.'
-                  }
+                  help="GitHub only takes images by hand. After you send, one click opens the issue and the folder, so you can drag them in."
                   layout="stacked"
                 >
                   <BugReportImages control={imageControl} />
@@ -396,19 +325,6 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                   ) : null}
                 </div>
               </SectionSurface>
-
-              {sendState === 'consent' ? (
-                <InlineConfirm
-                  role="primary"
-                  icon={<GithubIcon size={14} />}
-                  title={`Create ${assetsRepoSlug} to carry your images`}
-                  description="GitHub has no way to attach an image from an app. Goodboy can create this small public repository on your account, upload the screenshots there, and show them inside the issue. You are asked once."
-                  confirmLabel="Create and attach"
-                  cancelLabel="Send without them"
-                  onConfirm={() => void onConsentAccept({ requestClose })}
-                  onCancel={() => void runSend({ requestClose, isUploadAllowed: false })}
-                />
-              ) : null}
 
               <footer className="flex items-center gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-3">

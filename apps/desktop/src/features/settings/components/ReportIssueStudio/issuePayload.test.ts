@@ -22,51 +22,15 @@ describe('buildIssueBody', () => {
     );
   });
 
-  it('asks for a drag and drop when the images have nowhere to live', () => {
+  it('names the staged screenshots so the reporter can drag them in', () => {
     const body = buildIssueBody({
       typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
-      notes: 'Freezes on archive.',
-      imageNames: ['board.png', 'lane.png'],
+      notes: 'The board freezes after archiving a session.',
+      imageNames: ['board.png', 'console.png'],
     });
-    expect(body).toContain('Screenshots to drag into this issue: board.png, lane.png');
-  });
-
-  it('embeds the uploaded images instead of naming them', () => {
-    const body = buildIssueBody({
-      typeLabel: 'Bug',
-      version: '0.1.69',
-      areaLabel: 'Board and sessions',
-      notes: 'Freezes on archive.',
-      imageNames: ['board.png', 'lane.png'],
-      uploadedImages: [
-        { fileName: 'board.png', url: 'https://raw.githubusercontent.com/o/r/main/board.png' },
-        { fileName: 'lane.png', url: 'https://raw.githubusercontent.com/o/r/main/lane.png' },
-      ],
-    });
-    expect(body).toBe(
-      'Type: Bug\nArea: Board and sessions\nVersion: 0.1.69\n\nFreezes on archive.\n\n![board.png](https://raw.githubusercontent.com/o/r/main/board.png)\n![lane.png](https://raw.githubusercontent.com/o/r/main/lane.png)',
-    );
-    expect(body).not.toContain('drag');
-  });
-
-  it('escapes brackets and backslashes in the embedded alt text', () => {
-    const body = buildIssueBody({
-      typeLabel: 'Bug',
-      version: '0.1.69',
-      areaLabel: 'Board and sessions',
-      notes: 'Freezes on archive.',
-      uploadedImages: [
-        {
-          fileName: 'scr[een]sh\\ot.png',
-          url: 'https://raw.githubusercontent.com/o/r/main/board.png',
-        },
-      ],
-    });
-    expect(body).toContain(
-      '![scr\\[een\\]sh\\\\ot.png](https://raw.githubusercontent.com/o/r/main/board.png)',
-    );
+    expect(body).toContain('Screenshots to drag into this issue: board.png, console.png');
   });
 });
 

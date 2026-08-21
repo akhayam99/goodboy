@@ -22,37 +22,10 @@ export const stageBugReportImages = async ({ images }: Params): Promise<string |
   });
 };
 
-type DirParams = {
+type RevealParams = {
   readonly dir: string;
 };
 
-export const revealBugReportImages = async ({ dir }: DirParams): Promise<void> => {
+export const revealBugReportImages = async ({ dir }: RevealParams): Promise<void> => {
   await invoke('bug_report_reveal_images', { dir });
-};
-
-export type StagedUploadPayload = {
-  readonly fileName: string;
-  readonly payloadPath: string;
-};
-
-type StageUploadParams = DirParams & Params;
-
-export const stageBugReportUploadPayloads = async ({
-  dir,
-  images,
-}: StageUploadParams): Promise<ReadonlyArray<StagedUploadPayload>> =>
-  invoke<ReadonlyArray<StagedUploadPayload>>('bug_report_stage_upload_payloads', {
-    dir,
-    images: images.map((image) => ({
-      fileName: image.fileName,
-      dataBase64: base64FromDataUrl(image.dataUrl),
-    })),
-  });
-
-export const discardBugReportImages = async ({ dir }: DirParams): Promise<void> => {
-  try {
-    await invoke('bug_report_discard_images', { dir });
-  } catch {
-    return;
-  }
 };
