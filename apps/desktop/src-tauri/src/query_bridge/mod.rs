@@ -1,3 +1,4 @@
+mod cli;
 mod dispatch;
 pub mod protocol;
 
@@ -5,12 +6,14 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::OnceLock;
 
-use protocol::{QueryRequest, QueryResponse, SOCKET_ENV, SOCKET_FILE, WORKSPACE_ENV};
+use protocol::{QueryRequest, QueryResponse, BIN_ENV, SOCKET_ENV, SOCKET_FILE, WORKSPACE_ENV};
+
+pub(crate) use cli::dispatch as run_cli;
 
 const APP_DIR: &str = ".goodboy";
 
 static SOCKET_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
-static CLI_DIR: OnceLock<Option<PathBuf>> = OnceLock::new();
+static EXE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
 
 fn socket_path() -> Option<&'static Path> {
     SOCKET_PATH
@@ -18,14 +21,9 @@ fn socket_path() -> Option<&'static Path> {
         .as_deref()
 }
 
-fn cli_dir() -> Option<&'static Path> {
-    CLI_DIR
-        .get_or_init(|| {
-            let exe = std::env::current_exe().ok()?;
-            let dir = exe.parent()?;
-            let candidate = dir.join(protocol::BINARY_NAME);
-            candidate.is_file().then(|| dir.to_path_buf())
-        })
+fn exe_path() -> Option<&'static Path> {
+    EXE_PATH
+        .get_or_init(|| std::env::current_exe().ok())
         .as_deref()
 }
 
@@ -40,11 +38,8 @@ pub(crate) fn apply_env(command: &mut Command, workspace_id: Option<&str>) {
     if let Some(workspace_id) = workspace_id {
         command.env(WORKSPACE_ENV, workspace_id);
     }
-    if let Some(dir) = cli_dir() {
-        command.env(
-            "PATH",
-            format!("{}:{}", dir.display(), crate::path_env::resolved_path()),
-        );
+    if let Some(exe) = exe_path() {
+        command.env(BIN_ENV, exe);
     }
 }
 
@@ -156,6 +151,15 @@ mod tests {
             .collect();
         let live = socket_path().map(Path::exists).unwrap_or(false);
         assert_eq!(names.contains(&SOCKET_ENV.to_string()), live);
+        assert_eq!(names.contains(&BIN_ENV.to_string()), live);
+    }
+
+    #[test]
+    fn the_advertised_binary_is_the_running_executable_by_absolute_path() {
+        let exe = exe_path().expect("a current executable");
+
+        assert!(exe.is_absolute(), "{}", exe.display());
+        assert_eq!(exe, std::env::current_exe().expect("a current executable"));
     }
 
     #[test]

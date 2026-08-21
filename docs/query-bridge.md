@@ -63,8 +63,17 @@ Gemini or opencode. Nothing about it is provider-specific.
 ## Where it is reachable
 
 The socket is created when the app starts and removed when it stops, so an
-agent outliving the app fails loudly instead of hanging. The CLI is found next
-to the running executable, which covers both a development build and a bundled
-app once the binary is shipped alongside the main one; when it is not there,
-the environment is simply not injected and no prompt advertises a command that
-cannot run. Windows has no Unix socket and is not served.
+agent outliving the app fails loudly instead of hanging. Windows has no Unix
+socket and is not served.
+
+The CLI is not a second program. It is the same executable the user launched,
+entered through the `query` first argument, which is answered and exited before
+any window or plugin exists. One binary is what a macOS bundle actually ships,
+so nothing has to be packaged beside it or resolved on PATH.
+
+A spawned agent is told where that executable lives through `GOODBOY_BIN`, an
+absolute path injected only while the socket is live, next to the socket and
+workspace variables. The prompt advertises the call as
+`"$GOODBOY_BIN" query <provider> <verb>`, quoted because the path may contain a
+space. When the socket is down nothing is injected and no prompt advertises a
+command that cannot run.

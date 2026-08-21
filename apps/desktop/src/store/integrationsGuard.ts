@@ -68,10 +68,10 @@ export const buildIntegrationsGuard = ({ providers }: GuardParams): string => {
   const listed = order.filter((provider) => known.includes(provider));
   return [
     '[integrations]',
-    'This workspace has live connections you can query with the `goodboy-query` command, already on your PATH. Goodboy runs the call for you, so there is nothing to authenticate and no MCP server to reach.',
+    'This workspace has live connections you can query by running the Goodboy binary at $GOODBOY_BIN with its `query` subcommand. Goodboy runs the call for you, so there is nothing to authenticate and no MCP server to reach.',
     ...listed.map((provider) => `${provider}: ${QUERY_BRIDGE_VERBS[provider].join(', ')}`),
-    'Call it as `goodboy-query <provider> <verb> [arguments]`, for example `goodboy-query linear issue ENG-123`.',
-    'Run `goodboy-query <provider> --help` for the exact arguments of a verb. Output is plain text; add --json for the raw payload.',
+    'Call it as `"$GOODBOY_BIN" query <provider> <verb> [arguments]`, for example `"$GOODBOY_BIN" query linear issue ENG-123`. Keep the quotes around it: the path can contain spaces.',
+    'Run `"$GOODBOY_BIN" query <provider> --help` for the exact arguments of a verb. Output is plain text; add --json for the raw payload.',
     'Prefer it over scraping a web UI, and never invent a verb that is not listed here.',
     '[/integrations]',
   ].join('\n');

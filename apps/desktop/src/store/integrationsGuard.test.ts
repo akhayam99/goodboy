@@ -37,8 +37,15 @@ describe('buildIntegrationsGuard', () => {
   it('names the command an agent has to type', () => {
     const guard = buildIntegrationsGuard({ providers: ['linear'] });
 
-    expect(guard).toContain('goodboy-query linear issue ENG-123');
-    expect(guard).toContain('goodboy-query <provider> --help');
+    expect(guard).toContain('"$GOODBOY_BIN" query linear issue ENG-123');
+    expect(guard).toContain('"$GOODBOY_BIN" query <provider> --help');
+  });
+
+  it('quotes the binary so a path with a space still runs', () => {
+    const guard = buildIntegrationsGuard({ providers: ['linear'] });
+
+    expect(guard).not.toMatch(/[^"]\$GOODBOY_BIN" query/);
+    expect(guard).toContain('Keep the quotes');
   });
 
   it('never leaks a credential, a token or an MCP endpoint into the prompt', () => {
