@@ -95,6 +95,15 @@ const slugifyDir = (raw: string): string =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 40) || 'session';
 
+type ExternalTaskInput = {
+  provider: SessionExternalTaskProvider;
+  mountWorkspaceId?: WorkspaceId;
+  externalId: string;
+  identifier: string;
+  url: string;
+  title: string;
+};
+
 type Input = {
   workspaceId: WorkspaceId;
   goal: string;
@@ -109,14 +118,7 @@ type Input = {
   firstAgentKind?: AgentKind;
   firstAgentModel?: string;
   kickoffPrompt?: string;
-  externalTask?: {
-    provider: SessionExternalTaskProvider;
-    mountWorkspaceId?: WorkspaceId;
-    externalId: string;
-    identifier: string;
-    url: string;
-    title: string;
-  };
+  externalTasks?: ReadonlyArray<ExternalTaskInput>;
   attachmentInputs?: ReadonlyArray<AttachmentInput>;
   // TODO (@ak): origin marker for the pending sandbox-exec confinement. Marked
   // synchronously before any async kickoff so a turn fired during creation is
@@ -139,7 +141,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     firstAgentKind,
     firstAgentModel: requestedModel,
     kickoffPrompt,
-    externalTask,
+    externalTasks,
     attachmentInputs,
     mobileShared = false,
   }: Input): Promise<{ session: Session; worktree: CreatedWorktree }> => {
@@ -261,9 +263,9 @@ export const createSession = (set: SetFn, get: GetFn) => {
       updatedAt: now,
     };
     await insertSession(tauriDatabase, session);
-    let externalTaskRow: SessionExternalTask | null = null;
-    if (externalTask) {
-      externalTaskRow = {
+    const externalTaskRows: Array<SessionExternalTask> = [];
+    for (const externalTask of externalTasks ?? []) {
+      const row: SessionExternalTask = {
         sessionId: session.id,
         ...(externalTask.mountWorkspaceId != null
           ? { mountWorkspaceId: externalTask.mountWorkspaceId }
@@ -277,9 +279,10 @@ export const createSession = (set: SetFn, get: GetFn) => {
         createdAt: now,
       };
       try {
-        await upsertSessionExternalTask({ db: tauriDatabase, task: externalTaskRow });
+        await upsertSessionExternalTask({ db: tauriDatabase, task: row });
+        externalTaskRows.push(row);
       } catch {
-        externalTaskRow = null;
+        continue;
       }
     }
     await insertSessionWorktree(tauriDatabase, {
@@ -410,7 +413,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       sessionSummary: null,
       sessionExternalTasks: {
         ...state.sessionExternalTasks,
-        [session.id]: externalTaskRow ? [externalTaskRow] : [],
+        [session.id]: externalTaskRows,
       },
       sessionWorktrees: {
         ...state.sessionWorktrees,

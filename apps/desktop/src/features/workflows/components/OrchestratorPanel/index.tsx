@@ -9,7 +9,7 @@ import {
   Users,
   Wallet,
 } from 'lucide-react';
-import { Eyebrow, Markdown, StatusDot, cn, formatUsd, tintClasses } from '@goodboy/ui';
+import { Eyebrow, Markdown, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type {
   Agent,
@@ -263,15 +263,6 @@ export const OrchestratorPanel = ({
                 model
               </span>
             )}
-            {run.spendLimitUsd == null ? null : (
-              <span
-                data-testid="orchestrator-spend-limit"
-                className="font-normal text-muted-foreground"
-              >
-                · Spend limit {formatUsd(run.spendLimitUsd)} ·{' '}
-                {run.spendLimitMode === 'notify' ? 'notifies at the limit' : 'pauses at the limit'}
-              </span>
-            )}
           </p>
 
           {state.detail != null && state.detail !== '' ? (
@@ -310,19 +301,6 @@ export const OrchestratorPanel = ({
             expanded={rolesOpen}
             onClick={() => toggleDrawer('roles')}
           />
-          {state.phase === 'paused-budget' ? null : (
-            <RunSpendLimitPopover sessionId={sessionId} run={run} variant="ghost" />
-          )}
-          {state.phase === 'paused-budget' && sessionBudgetBlocked ? null : (
-            <OrchestratorAction
-              icon={Wallet}
-              label="Budget"
-              variant="ghost"
-              testId="orchestrator-budget"
-              title="Open the budget for this session"
-              onClick={() => openBudgetStudio({ scope: { kind: 'session', sessionId } })}
-            />
-          )}
         </div>
       </div>
 

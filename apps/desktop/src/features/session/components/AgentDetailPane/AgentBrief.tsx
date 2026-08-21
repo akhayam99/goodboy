@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { fallbackStepOutputSummary, stripControlMarkers } from '@goodboy/core';
-import { Markdown, SectionSurface, StatusDot, type Tone } from '@goodboy/ui';
-import type { Agent, Session, TurnEvent, TurnState } from '@goodboy/types';
+import { Markdown, SectionSurface, StatusDot } from '@goodboy/ui';
+import type { Agent, Session, TurnState } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useTranscript } from '../../../../store/transcript';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
@@ -14,6 +14,9 @@ import { AgentBriefChildren } from './AgentBriefChildren';
 import { AgentBriefPlans } from './AgentBriefPlans';
 import { AgentBriefQuestions } from './AgentBriefQuestions';
 import { AgentFollowUps } from './AgentFollowUps';
+import { agentFollowUpMoves } from './followUpMoves';
+import { selectFollowUpChildren } from './followUpChildren';
+import { agentNowState } from './agentNowState';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 
 type Props = {
@@ -49,6 +52,18 @@ export const AgentBrief = ({ session, agent }: Props) => {
     [agent.id, runs, turnStates],
   );
   const kind = classifyAgent(agent, kindOverride);
+  const followUps = useMemo(
+    () =>
+      selectFollowUpChildren({
+        spawned: children,
+        kinds: agentFollowUpMoves({ sourceKind: kind }).map((move) => move.kind),
+      }),
+    [children, kind],
+  );
+  const laneChildren = useMemo(() => {
+    const followUpIds = new Set(followUps.map((entry) => entry.child.agent.id));
+    return children.filter((child) => !followUpIds.has(child.agent.id));
+  }, [children, followUps]);
   const step = useMemo(() => {
     if (agent.workflowRunId == null || agent.stepId == null) {
       return null;
@@ -76,7 +91,7 @@ export const AgentBrief = ({ session, agent }: Props) => {
   const expectedOutput = step?.expectedOutput?.trim() ?? AGENT_KIND_META[kind].expectedOutput;
   const isTerminal =
     agent.status === 'completed' || agent.status === 'failed' || agent.status === 'skipped';
-  const now = nowState({ agent, turnState, transcript });
+  const now = agentNowState({ agent, turnState, transcript });
 
   return (
     <div className="flex flex-col gap-4">
@@ -113,8 +128,9 @@ export const AgentBrief = ({ session, agent }: Props) => {
         sourceKind={kind}
         summary={summary}
         sessionId={session.id}
+        followUps={followUps}
       />
-      <AgentBriefChildren session={session} kind={kind} children={children} />
+      <AgentBriefChildren session={session} kind={kind} children={laneChildren} />
       <AgentMetaLine
         aggregate={metrics.aggregatesByAgentId.get(agent.id) ?? null}
         contextUsage={metrics.providerUsageByAgentId.get(agent.id) ?? EMPTY_ARRAY}
@@ -122,52 +138,4 @@ export const AgentBrief = ({ session, agent }: Props) => {
       />
     </div>
   );
-};
-
-type NowStateParams = {
-  readonly agent: Agent;
-  readonly turnState: TurnState | null;
-  readonly transcript: ReadonlyArray<TurnEvent>;
-};
-
-type NowState = {
-  readonly tone: Tone;
-  readonly label: string;
-  readonly isPulsing: boolean;
-};
-
-const nowState = ({ agent, turnState, transcript }: NowStateParams): NowState => {
-  if (turnState?.kind === 'running') {
-    return { tone: 'info', label: runningLabel({ transcript }), isPulsing: true };
-  }
-  if (turnState?.kind === 'blocked') {
-    return { tone: 'warning', label: 'waiting on a permission decision', isPulsing: false };
-  }
-  if (turnState?.kind === 'error') {
-    return { tone: 'danger', label: turnState.message, isPulsing: false };
-  }
-  if (agent.status === 'pending') {
-    return { tone: 'neutral', label: 'queued', isPulsing: false };
-  }
-  return { tone: 'neutral', label: 'ready', isPulsing: false };
-};
-
-type RunningLabelParams = {
-  readonly transcript: ReadonlyArray<TurnEvent>;
-};
-
-const runningLabel = ({ transcript }: RunningLabelParams): string => {
-  const endedToolIds = new Set(
-    transcript.filter((event) => event.kind === 'tool_call_end').map((event) => event.toolUseId),
-  );
-  for (let index = transcript.length - 1; index >= 0; index -= 1) {
-    const event = transcript[index];
-    if (event?.kind === 'tool_call_start' && !endedToolIds.has(event.toolUseId)) {
-      return event.toolName;
-    }
-    if (event?.kind === 'assistant_text') {
-      return 'writing';
-    }
-  }
-  return 'thinking';
 };

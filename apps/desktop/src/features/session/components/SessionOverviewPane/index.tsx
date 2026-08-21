@@ -23,6 +23,7 @@ import { OverviewActions } from './OverviewActions';
 import { InspectorSplit } from '../SessionWorkspace/parts/InspectorSplit';
 import { SlotHistoryPanel } from '../SessionWorkspace/parts/SlotHistoryPanel';
 import { GoalOverviewRegion } from './GoalOverviewRegion';
+import { OverviewNextSteps } from './OverviewNextSteps';
 
 type Props = {
   readonly session: Session;
@@ -91,6 +92,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
             setIsGoalHistoryOpen(true);
           }}
         />
+        {isFresh ? null : <OverviewNextSteps session={session} agents={sessionAgents} />}
         {isFresh ? (
           <section aria-label="Start work" className="flex flex-col gap-2">
             <p className="text-sm text-muted-foreground">

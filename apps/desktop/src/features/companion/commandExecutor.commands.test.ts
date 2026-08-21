@@ -913,17 +913,19 @@ describe('createSessionFromIssue (security-gated write)', () => {
     );
     expect(res.ok).toBe(true);
     expect(res.data).toEqual({ sessionId: 'new-session-1' });
-    // Goal + externalTask are derived from the resolved issue, not the phone.
+    // Goal + externalTasks are derived from the resolved issue, not the phone.
     expect(h.createSession).toHaveBeenCalledWith({
       workspaceId: 'w1',
       goal: '[ENG-1] Fix the thing',
-      externalTask: {
-        provider: 'linear',
-        externalId: 'lin-uuid-1',
-        identifier: 'ENG-1',
-        url: 'https://linear.app/x/issue/ENG-1',
-        title: 'Fix the thing',
-      },
+      externalTasks: [
+        {
+          provider: 'linear',
+          externalId: 'lin-uuid-1',
+          identifier: 'ENG-1',
+          url: 'https://linear.app/x/issue/ENG-1',
+          title: 'Fix the thing',
+        },
+      ],
       // Origin marker: confines the new session before any kickoff turn.
       mobileShared: true,
     });
@@ -959,13 +961,15 @@ describe('createSessionFromIssue (security-gated write)', () => {
     expect(h.createSession).toHaveBeenCalledWith({
       workspaceId: 'w1',
       goal: '[PROJ-1] Fix the thing',
-      externalTask: {
-        provider: 'jira',
-        externalId: 'jira-10001',
-        identifier: 'PROJ-1',
-        url: 'https://example.atlassian.net/browse/PROJ-1',
-        title: 'Fix the thing',
-      },
+      externalTasks: [
+        {
+          provider: 'jira',
+          externalId: 'jira-10001',
+          identifier: 'PROJ-1',
+          url: 'https://example.atlassian.net/browse/PROJ-1',
+          title: 'Fix the thing',
+        },
+      ],
       mobileShared: true,
     });
     expect(integ.jiraGetFetch).toHaveBeenCalledWith({

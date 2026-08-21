@@ -47,13 +47,16 @@ type Props = {
   readonly noProviderConnected: boolean;
   readonly onOpenSettings: () => void;
   readonly issueSources: ReadonlyArray<IssueSource>;
-  readonly issue: IssueCandidate | null;
+  readonly issues: ReadonlyArray<IssueCandidate>;
   readonly onPickIssue: (candidate: IssueCandidate) => void;
-  readonly onClearIssue: () => void;
+  readonly onRemoveIssue: (candidate: IssueCandidate) => void;
   readonly goal: string;
   readonly onGoalChange: (value: string) => void;
   readonly onOpenGoalEditor: () => void;
   readonly goalEditorDirty: boolean;
+  readonly canDraftGoalFromTasks: boolean;
+  readonly goalDrafting: boolean;
+  readonly onDraftGoalFromTasks: () => void;
   readonly attachments: ReadonlyArray<PendingAttachment>;
   readonly isDragging: boolean;
   readonly composerRef: RefObject<HTMLDivElement | null>;
@@ -88,13 +91,16 @@ export const NewSessionForm = ({
   noProviderConnected,
   onOpenSettings,
   issueSources,
-  issue,
+  issues,
   onPickIssue,
-  onClearIssue,
+  onRemoveIssue,
   goal,
   onGoalChange,
   onOpenGoalEditor,
   goalEditorDirty,
+  canDraftGoalFromTasks,
+  goalDrafting,
+  onDraftGoalFromTasks,
   attachments,
   isDragging,
   composerRef,
@@ -175,10 +181,10 @@ export const NewSessionForm = ({
             <IssueSourceField
               workspaceId={workspaceId}
               sources={issueSources}
-              value={issue}
+              values={issues}
               disabled={busy}
               onPick={onPickIssue}
-              onClear={onClearIssue}
+              onRemove={onRemoveIssue}
             />
           </section>
         </>
@@ -216,6 +222,17 @@ export const NewSessionForm = ({
               disabled={busy}
               className={cn(busy && 'cursor-not-allowed text-muted-foreground/30')}
             />
+            {canDraftGoalFromTasks ? (
+              <IconButton
+                icon={CONCEPT_ICONS.enhance}
+                label="Draft goal from tasks"
+                tooltip="Write one goal covering every linked task"
+                data-testid="new-session-draft-goal-from-tasks"
+                onClick={onDraftGoalFromTasks}
+                busy={goalDrafting}
+                disabled={busy || goalDrafting}
+              />
+            ) : null}
             {goalEditorDirty ? <span className="text-2xs text-warning">Unsaved edits</span> : null}
           </div>
         </div>

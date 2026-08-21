@@ -11,7 +11,7 @@ export type NewSessionDraft = {
   readonly folderNameTouched: boolean;
   readonly branchMode: 'new' | 'existing';
   readonly existingBranch: string;
-  readonly issue: IssueCandidate | null;
+  readonly issues: ReadonlyArray<IssueCandidate>;
 };
 
 export type SetNewSessionDraftParams = {
