@@ -14,7 +14,7 @@ use protocol::{
 pub(crate) use cli::dispatch as run_cli;
 
 const APP_DIR: &str = ".goodboy";
-const SWEEP_SUFFIX: &str = "sweep-";
+const SWEEP_SUFFIX: &str = ".sweep-";
 
 static SOCKET_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
 static EXE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
@@ -50,6 +50,20 @@ fn abandoned_sockets<'a>(
     file_names
         .filter_map(|name| socket_pid(name).map(|pid| (name.to_string(), pid)))
         .filter(|(_, pid)| !is_alive(*pid))
+        .collect()
+}
+
+fn sweeper_pid(file_name: &str) -> Option<u32> {
+    file_name.rsplit_once(SWEEP_SUFFIX)?.1.parse::<u32>().ok()
+}
+
+fn abandoned_staged_files<'a>(
+    file_names: impl Iterator<Item = &'a str>,
+    is_alive: &dyn Fn(u32) -> bool,
+) -> Vec<String> {
+    file_names
+        .filter(|name| sweeper_pid(name).is_some_and(|pid| !is_alive(pid)))
+        .map(str::to_string)
         .collect()
 }
 
@@ -107,7 +121,9 @@ fn has_listener(path: &Path) -> bool {
 
 #[cfg(unix)]
 fn staged_name(path: &Path) -> PathBuf {
-    path.with_extension(format!("{}{}", SWEEP_SUFFIX, std::process::id()))
+    let mut name = path.as_os_str().to_os_string();
+    name.push(format!("{}{}", SWEEP_SUFFIX, std::process::id()));
+    PathBuf::from(name)
 }
 
 #[cfg(unix)]
@@ -134,6 +150,9 @@ fn sweep_abandoned_sockets(dir: &Path) {
         .collect();
     for (name, pid) in abandoned_sockets(file_names.iter().map(String::as_str), &is_pid_alive) {
         discard_unless_owned(&dir.join(name), &|_| is_pid_alive(pid));
+    }
+    for name in abandoned_staged_files(file_names.iter().map(String::as_str), &is_pid_alive) {
+        let _ = std::fs::remove_file(dir.join(name));
     }
     discard_unless_owned(&dir.join(protocol::LEGACY_SOCKET_FILE), &has_listener);
 }
@@ -286,6 +305,32 @@ mod tests {
         );
     }
 
+    #[test]
+    fn a_staged_file_belongs_to_the_sweeper_named_in_it() {
+        assert_eq!(sweeper_pid("query-9.sock.sweep-4321"), Some(4321));
+        assert_eq!(sweeper_pid("query.sock.sweep-7"), Some(7));
+        assert_eq!(sweeper_pid("query-9.sock"), None);
+        assert_eq!(sweeper_pid("query-9.sock.sweep-"), None);
+        assert_eq!(sweeper_pid("query-9.sock.sweep-abc"), None);
+        assert_eq!(sweeper_pid("data.db"), None);
+    }
+
+    #[test]
+    fn a_sweeper_that_died_mid_operation_leaves_nothing_behind() {
+        let names = [
+            "query-9.sock.sweep-11",
+            "query-9.sock.sweep-22",
+            "query.sock.sweep-33",
+            "query-9.sock",
+            "data.db",
+        ];
+        let alive = |pid: u32| pid == 22;
+
+        let taken = abandoned_staged_files(names.into_iter(), &alive);
+
+        assert_eq!(taken, vec!["query-9.sock.sweep-11", "query.sock.sweep-33"]);
+    }
+
     #[cfg(unix)]
     fn scratch_dir(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("goodboy-query-bridge-{}", name));
@@ -353,6 +398,34 @@ mod tests {
 
         assert!(!path.exists());
         assert_eq!(staged_leftovers(&dir), Vec::<String>::new());
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_staged_file_outlives_its_sweeper_only_while_that_sweeper_runs() {
+        let dir = scratch_dir("staged");
+        let mine = dir.join(format!(
+            "{}{}{}",
+            socket_file_name(7),
+            SWEEP_SUFFIX,
+            std::process::id()
+        ));
+        let orphan = dir.join(format!(
+            "{}{}{}",
+            socket_file_name(7),
+            SWEEP_SUFFIX,
+            0x7fff_fffe_u32
+        ));
+        for path in [&mine, &orphan] {
+            std::fs::write(path, b"").expect("a probe file");
+        }
+
+        sweep_abandoned_sockets(&dir);
+
+        assert!(mine.exists());
+        assert!(!orphan.exists());
 
         let _ = std::fs::remove_dir_all(&dir);
     }
