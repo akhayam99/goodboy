@@ -552,6 +552,12 @@ pub fn parse_argv(argv: &[String]) -> Result<ArgvOutcome, String> {
             continue;
         };
         if let Some((name, value)) = name.split_once('=') {
+            if is_valueless(name) {
+                return Err(format!(
+                    "--{} is a flag and takes no value: pass --{} to turn it on, or leave it out",
+                    name, name
+                ));
+            }
             flags.push((name, Some(value)));
             index += 1;
             continue;
@@ -782,6 +788,73 @@ mod tests {
 
         assert_eq!(with.args["all"], serde_json::json!(true));
         assert!(without.args.get("all").is_none());
+    }
+
+    #[test]
+    fn a_flag_written_as_an_assignment_is_refused_in_both_polarities() {
+        let off = vec![
+            "jira".to_string(),
+            "issues".to_string(),
+            "--all=false".to_string(),
+        ];
+        let on = vec![
+            "jira".to_string(),
+            "issues".to_string(),
+            "--all=true".to_string(),
+        ];
+
+        let off_error = parse_argv(&off).expect_err("--all=false is not a value");
+        let on_error = parse_argv(&on).expect_err("--all=true is not a value");
+
+        assert!(off_error.contains("--all is a flag and takes no value"));
+        assert!(off_error.contains("pass --all"));
+        assert_eq!(off_error, on_error);
+    }
+
+    #[test]
+    fn only_the_bare_spelling_of_a_flag_turns_it_on() {
+        let bare = vec![
+            "jira".to_string(),
+            "issues".to_string(),
+            "--all".to_string(),
+        ];
+
+        let ArgvOutcome::Parsed(parsed) = parse_argv(&bare).expect("parsed") else {
+            panic!("expected a parsed command");
+        };
+
+        assert_eq!(parsed.args["all"], serde_json::json!(true));
+    }
+
+    #[test]
+    fn the_output_switch_is_refused_when_it_carries_a_value() {
+        let argv = vec![
+            "linear".to_string(),
+            "issue".to_string(),
+            "ENG-1".to_string(),
+            "--json=false".to_string(),
+        ];
+
+        let error = parse_argv(&argv).expect_err("--json takes no value");
+
+        assert!(error.contains("--json is a flag and takes no value"));
+    }
+
+    #[test]
+    fn an_option_that_wants_a_value_still_accepts_the_inline_spelling() {
+        let argv = vec![
+            "linear".to_string(),
+            "comment-create".to_string(),
+            "--id=ENG-3".to_string(),
+            "--body=ship it".to_string(),
+        ];
+
+        let ArgvOutcome::Parsed(parsed) = parse_argv(&argv).expect("parsed") else {
+            panic!("expected a parsed command");
+        };
+
+        assert_eq!(parsed.args["id"], serde_json::json!("ENG-3"));
+        assert_eq!(parsed.args["body"], serde_json::json!("ship it"));
     }
 
     #[test]
