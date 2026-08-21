@@ -11,6 +11,7 @@ export type {
   PermissionRequestId,
   PermissionRuleId,
   ProviderRunId,
+  SessionEventId,
   SessionId,
   SkillId,
   StepDefId,
@@ -25,6 +26,8 @@ export type {
 export type { FileVersion, FileVersionChangeKind, FileVersionSnapshotSource } from './file-version';
 export type { IntegrationCredential, IntegrationCredentialUsage } from './integration-credential';
 export type { OpenQuestion, OpenQuestionSelectMode, OpenQuestionStatus } from './open-question';
+export { SESSION_EVENT_KINDS } from './session-event';
+export type { SessionEvent, SessionEventKind, SessionEventPayload } from './session-event';
 export type {
   BitbucketIntegrationConfig,
   BitbucketWorkspaceIntegration,
