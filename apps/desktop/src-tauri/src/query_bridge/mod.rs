@@ -127,13 +127,21 @@ fn staged_name(path: &Path) -> PathBuf {
 }
 
 #[cfg(unix)]
+fn restore_staged(staged: &Path, path: &Path) {
+    if std::fs::hard_link(staged, path).is_err() {
+        return;
+    }
+    let _ = std::fs::remove_file(staged);
+}
+
+#[cfg(unix)]
 fn discard_unless_owned(path: &Path, is_owned: &dyn Fn(&Path) -> bool) {
     let staged = staged_name(path);
     if std::fs::rename(path, &staged).is_err() {
         return;
     }
     if is_owned(&staged) {
-        let _ = std::fs::rename(&staged, path);
+        restore_staged(&staged, path);
         return;
     }
     let _ = std::fs::remove_file(&staged);
@@ -398,6 +406,44 @@ mod tests {
 
         assert!(!path.exists());
         assert_eq!(staged_leftovers(&dir), Vec::<String>::new());
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_restore_puts_the_very_same_file_back_under_its_own_name() {
+        let dir = scratch_dir("restore-back");
+        let path = dir.join(socket_file_name(std::process::id()));
+        std::fs::write(&path, b"owner").expect("a probe file");
+        let staged = staged_name(&path);
+        std::fs::rename(&path, &staged).expect("a staged file");
+
+        restore_staged(&staged, &path);
+
+        assert_eq!(std::fs::read_to_string(&path).expect("the file"), "owner");
+        assert!(!staged.exists());
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_restore_never_lands_on_a_name_another_process_took_meanwhile() {
+        let dir = scratch_dir("restore-taken");
+        let path = dir.join(socket_file_name(std::process::id()));
+        std::fs::write(&path, b"owner").expect("a probe file");
+        let staged = staged_name(&path);
+        std::fs::rename(&path, &staged).expect("a staged file");
+        std::fs::write(&path, b"newcomer").expect("a newcomer file");
+
+        restore_staged(&staged, &path);
+
+        assert_eq!(
+            std::fs::read_to_string(&path).expect("the file"),
+            "newcomer"
+        );
+        assert!(staged.exists());
 
         let _ = std::fs::remove_dir_all(&dir);
     }
