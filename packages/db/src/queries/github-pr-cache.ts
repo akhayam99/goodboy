@@ -1,11 +1,11 @@
-import type { CachedPullRequest, GithubPrCacheEntry } from '@goodboy/types';
+import type { CachedPullRequest, GithubPrCacheEntry, IsoDateTime } from '@goodboy/types';
 import type { Database } from '../client';
 
 type Row = {
   branch: string;
   repo_slug: string;
   pr_json: string | null;
-  fetched_at: string;
+  fetched_at: number;
 };
 
 function toDomain(row: Row): GithubPrCacheEntry {
@@ -16,7 +16,7 @@ function toDomain(row: Row): GithubPrCacheEntry {
       row.pr_json != null && row.pr_json.length > 0
         ? (JSON.parse(row.pr_json) as CachedPullRequest)
         : null,
-    fetchedAt: row.fetched_at,
+    fetchedAt: new Date(row.fetched_at).toISOString() as IsoDateTime,
   };
 }
 
@@ -43,7 +43,12 @@ export const upsertGithubPrCache = async (
      ON CONFLICT(repo_slug, branch) DO UPDATE SET
        pr_json = excluded.pr_json,
        fetched_at = excluded.fetched_at`,
-    [entry.branch, entry.repoSlug, entry.pr ? JSON.stringify(entry.pr) : null, entry.fetchedAt],
+    [
+      entry.branch,
+      entry.repoSlug,
+      entry.pr ? JSON.stringify(entry.pr) : null,
+      Date.parse(entry.fetchedAt),
+    ],
   );
 };
 

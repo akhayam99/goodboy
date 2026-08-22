@@ -122,6 +122,11 @@ import { m121ProjectSessionMounts } from './m121-project-session-mounts';
 import { m122RuntimeDeadWeight } from './m122-runtime-dead-weight';
 import { m123StorageCleanup } from './m123-storage-cleanup';
 import { m124TombstoneGc } from './m124-tombstone-gc';
+import { m125NormalizeTimestamps } from './m125-normalize-timestamps';
+import { m126UnconstrainProviderColumns } from './m126-unconstrain-provider-columns';
+import { m127AddWorkflowReferenceForeignKeys } from './m127-add-workflow-reference-foreign-keys';
+import { m128NormalizeGoalAttachmentOwners } from './m128-normalize-goal-attachment-owners';
+import { m129ImpactQueryIndexes } from './m129-impact-query-indexes';
 
 export type Migration = {
   readonly version: number;
@@ -253,4 +258,9 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 122, sql: m122RuntimeDeadWeight },
   { version: 123, sql: m123StorageCleanup },
   { version: 124, sql: m124TombstoneGc },
+  { version: 125, sql: m125NormalizeTimestamps },
+  { version: 126, sql: m126UnconstrainProviderColumns },
+  { version: 127, sql: m127AddWorkflowReferenceForeignKeys },
+  { version: 128, sql: m128NormalizeGoalAttachmentOwners },
+  { version: 129, sql: m129ImpactQueryIndexes },
 ];

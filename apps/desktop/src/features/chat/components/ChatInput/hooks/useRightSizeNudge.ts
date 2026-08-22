@@ -104,6 +104,7 @@ export const useRightSizeNudge = ({
     try {
       await insertNudgeEvent(tauriDatabase, {
         id,
+        sessionId,
         ts: new Date().toISOString() as IsoDateTime,
         kind: 'model-rightsize',
         contextJson: JSON.stringify({

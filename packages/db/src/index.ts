@@ -2,6 +2,7 @@ export type { Database } from './client';
 
 export { migrate, type MigrateResult } from './migrations/runner';
 export { migrations, type Migration } from './migrations';
+export { runDatabaseHygiene, type DatabaseHygieneResult } from './maintenance/runDatabaseHygiene';
 
 export { NotFoundError, UniqueViolationError } from './shared/errors';
 

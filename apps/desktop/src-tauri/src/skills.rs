@@ -166,8 +166,8 @@ pub fn skill_list(state: State<'_, Db>, workspace_id: String) -> Result<Vec<Skil
             file_path: row.get(4)?,
             body: row.get(5)?,
             frontmatter_json: row.get(6)?,
-            created_at: row.get(7)?,
-            updated_at: row.get(8)?,
+            created_at: crate::util::ms_to_iso(row.get(7)?),
+            updated_at: crate::util::ms_to_iso(row.get(8)?),
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(SkillError::Db)
@@ -192,8 +192,8 @@ pub fn skill_get(state: State<'_, Db>, skill_id: String) -> Result<Option<SkillR
             file_path: row.get(4)?,
             body: row.get(5)?,
             frontmatter_json: row.get(6)?,
-            created_at: row.get(7)?,
-            updated_at: row.get(8)?,
+            created_at: crate::util::ms_to_iso(row.get(7)?),
+            updated_at: crate::util::ms_to_iso(row.get(8)?),
         })
     })?;
     match rows.next() {
@@ -224,7 +224,8 @@ pub fn skill_upsert(state: State<'_, Db>, input: SkillUpsertInput) -> Result<Ski
     std::fs::write(&canonical, &input.markdown).map_err(|e| SkillError::Io(e.to_string()))?;
 
     let file_path_str = canonical.to_string_lossy().to_string();
-    let now = crate::util::iso_now();
+    let now_ms = crate::util::now_ms();
+    let now = crate::util::ms_to_iso(now_ms);
 
     // Upsert by (workspace_id, name); generate id if new.
     let existing_id: Option<String> = {
@@ -241,12 +242,12 @@ pub fn skill_upsert(state: State<'_, Db>, input: SkillUpsertInput) -> Result<Ski
     };
 
     let id = existing_id.unwrap_or_else(crate::util::uuid_v4);
-    let created_at: String = {
+    let created_at_ms: i64 = {
         let mut stmt = conn.prepare("SELECT created_at FROM skills WHERE id = ?1 LIMIT 1")?;
         let mut rows = stmt.query_map(rusqlite::params![id], |row| row.get(0))?;
         match rows.next() {
             Some(r) => r.map_err(SkillError::Db)?,
-            None => now.clone(),
+            None => now_ms,
         }
     };
 
@@ -270,8 +271,8 @@ pub fn skill_upsert(state: State<'_, Db>, input: SkillUpsertInput) -> Result<Ski
             file_path_str,
             input.body,
             input.frontmatter_json,
-            created_at,
-            now,
+            created_at_ms,
+            now_ms,
         ],
     )?;
 
@@ -283,7 +284,7 @@ pub fn skill_upsert(state: State<'_, Db>, input: SkillUpsertInput) -> Result<Ski
         file_path: file_path_str,
         body: input.body,
         frontmatter_json: input.frontmatter_json,
-        created_at,
+        created_at: crate::util::ms_to_iso(created_at_ms),
         updated_at: now,
     })
 }
@@ -377,7 +378,7 @@ pub fn skill_rescan(
         }
     }
 
-    let now = crate::util::iso_now();
+    let now_ms = crate::util::now_ms();
 
     // Existing skills in DB for this workspace.
     let existing: Vec<(String, String)> = {
@@ -415,12 +416,12 @@ pub fn skill_rescan(
             .cloned()
             .unwrap_or_else(crate::util::uuid_v4);
 
-        let created_at: String = {
+        let created_at_ms: i64 = {
             let mut stmt = conn.prepare("SELECT created_at FROM skills WHERE id = ?1 LIMIT 1")?;
             let mut rows = stmt.query_map(rusqlite::params![id], |row| row.get(0))?;
             match rows.next() {
                 Some(r) => r.map_err(SkillError::Db)?,
-                None => now.clone(),
+                None => now_ms,
             }
         };
 
@@ -444,8 +445,8 @@ pub fn skill_rescan(
                 fp_str,
                 body,
                 frontmatter_json,
-                created_at,
-                now,
+                created_at_ms,
+                now_ms,
             ],
         )?;
     }
@@ -474,8 +475,8 @@ pub fn skill_rescan(
             file_path: row.get(4)?,
             body: row.get(5)?,
             frontmatter_json: row.get(6)?,
-            created_at: row.get(7)?,
-            updated_at: row.get(8)?,
+            created_at: crate::util::ms_to_iso(row.get(7)?),
+            updated_at: crate::util::ms_to_iso(row.get(8)?),
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(SkillError::Db)

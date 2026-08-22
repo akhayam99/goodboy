@@ -548,19 +548,27 @@ export const captureScoutDomainsFromTurn = async ({
   }
 };
 
-async function recordNudgeShown(
-  kind: NudgeKind,
-  context: Record<string, unknown>,
-): Promise<string> {
+type RecordNudgeShownParams = {
+  readonly kind: NudgeKind;
+  readonly sessionId: SessionId;
+  readonly context: Record<string, unknown>;
+};
+
+const recordNudgeShown = async ({
+  kind,
+  sessionId,
+  context,
+}: RecordNudgeShownParams): Promise<string> => {
   const id = crypto.randomUUID();
-  const event: NudgeEvent = {
+  const event = {
     id,
+    sessionId,
     ts: new Date().toISOString() as IsoDateTime,
     kind,
     contextJson: JSON.stringify(context),
     outcome: null,
     outcomeTs: null,
-  };
+  } satisfies NudgeEvent;
   try {
     await insertNudgeEvent(tauriDatabase, event);
   } catch (err) {
@@ -569,7 +577,7 @@ async function recordNudgeShown(
     }
   }
   return id;
-}
+};
 
 export const emitTurnNudges = async (
   set: SetFn,
@@ -589,12 +597,16 @@ export const emitTurnNudges = async (
 
   const handoff: ExtractedHandoff | null = extractHandoff(assistantText);
   if (handoff && !inWorkflow) {
-    const id = await recordNudgeShown('handoff-suggested', {
+    const id = await recordNudgeShown({
+      kind: 'handoff-suggested',
       sessionId,
-      agentId,
-      targetKind: handoff.kind,
-      reason: handoff.reason,
-      planId: handoff.planId,
+      context: {
+        sessionId,
+        agentId,
+        targetKind: handoff.kind,
+        reason: handoff.reason,
+        planId: handoff.planId,
+      },
     });
     nextNudge = {
       kind: 'handoff-suggested',
@@ -610,10 +622,14 @@ export const emitTurnNudges = async (
       assistantText,
     });
     if (readiness.ready) {
-      const id = await recordNudgeShown('plan-ready', {
+      const id = await recordNudgeShown({
+        kind: 'plan-ready',
         sessionId,
-        agentId,
-        planId: capturedPlan.id,
+        context: {
+          sessionId,
+          agentId,
+          planId: capturedPlan.id,
+        },
       });
       nextNudge = {
         kind: 'plan-ready',

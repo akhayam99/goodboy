@@ -22,7 +22,7 @@ type PrReviewDraftRow = {
   readonly body: string;
   readonly status: string;
   readonly origin: string;
-  readonly created_at: string;
+  readonly created_at: number;
 };
 
 type ToDomainParams = {
@@ -43,7 +43,7 @@ const toDomain = ({ row }: ToDomainParams): PrReviewDraft => ({
   status: row.status as ReviewDraftStatus,
   stale: false,
   origin: row.origin as ReviewDraftOrigin,
-  createdAt: row.created_at as IsoDateTime,
+  createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
 });
 
 const SELECT_COLUMNS = `id, session_id, provider, repo, pr_number, path, line, start_line, side, body, status, origin, created_at`;
@@ -71,7 +71,7 @@ export const insertPrReviewDraft = async ({ db, draft }: InsertParams): Promise<
       draft.body,
       draft.status,
       draft.origin,
-      draft.createdAt,
+      Date.parse(draft.createdAt),
     ],
   );
 };

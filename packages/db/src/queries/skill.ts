@@ -9,8 +9,8 @@ type SkillRow = {
   file_path: string;
   body: string;
   frontmatter_json: string;
-  created_at: string;
-  updated_at: string;
+  created_at: number;
+  updated_at: number;
 };
 
 function toSkill(row: SkillRow): Skill {
@@ -22,8 +22,8 @@ function toSkill(row: SkillRow): Skill {
     filePath: row.file_path,
     body: row.body,
     frontmatter: JSON.parse(row.frontmatter_json) as SkillFrontmatter,
-    createdAt: row.created_at as IsoDateTime,
-    updatedAt: row.updated_at as IsoDateTime,
+    createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
+    updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
   };
 }
 
@@ -63,8 +63,8 @@ export const upsertSkill = async (db: Database, skill: Skill): Promise<void> => 
       skill.filePath,
       skill.body,
       JSON.stringify(skill.frontmatter),
-      skill.createdAt,
-      skill.updatedAt,
+      Date.parse(skill.createdAt),
+      Date.parse(skill.updatedAt),
     ],
   );
 };

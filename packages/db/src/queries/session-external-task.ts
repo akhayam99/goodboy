@@ -1,9 +1,10 @@
-import type {
-  IsoDateTime,
-  SessionExternalTask,
-  SessionExternalTaskProvider,
-  SessionId,
-  WorkspaceId,
+import {
+  isSessionExternalTaskProvider,
+  type IsoDateTime,
+  type SessionExternalTask,
+  type SessionExternalTaskProvider,
+  type SessionId,
+  type WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
 
@@ -23,19 +24,24 @@ type ToDomainParams = {
   readonly row: SessionExternalTaskRow;
 };
 
-const toDomain = ({ row }: ToDomainParams): SessionExternalTask => ({
-  sessionId: row.session_id as SessionId,
-  ...(row.mount_workspace_id != null
-    ? { mountWorkspaceId: row.mount_workspace_id as WorkspaceId }
-    : {}),
-  ...(row.branch != null ? { branch: row.branch } : {}),
-  provider: row.provider as SessionExternalTaskProvider,
-  externalId: row.external_id,
-  identifier: row.identifier,
-  url: row.url,
-  title: row.title,
-  createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
-});
+const toDomain = ({ row }: ToDomainParams): SessionExternalTask => {
+  if (isSessionExternalTaskProvider(row.provider) === false) {
+    throw new Error(`invalid external task provider: ${row.provider}`);
+  }
+  return {
+    sessionId: row.session_id as SessionId,
+    ...(row.mount_workspace_id != null
+      ? { mountWorkspaceId: row.mount_workspace_id as WorkspaceId }
+      : {}),
+    ...(row.branch != null ? { branch: row.branch } : {}),
+    provider: row.provider,
+    externalId: row.external_id,
+    identifier: row.identifier,
+    url: row.url,
+    title: row.title,
+    createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
+  };
+};
 
 type UpsertParams = {
   readonly db: Database;

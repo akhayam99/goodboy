@@ -431,7 +431,7 @@ const selectPullRequests = async ({
 }: PullRequestRangeParams): Promise<ReadonlyArray<PullRequestRow>> => {
   const startIso = startMs === null ? null : new Date(startMs).toISOString();
   const endIso = endMs === null ? null : new Date(endMs).toISOString();
-  const oldestCacheIso = new Date(Date.now() - PR_CACHE_MAX_READ_AGE_MS).toISOString();
+  const oldestCacheMs = Date.now() - PR_CACHE_MAX_READ_AGE_MS;
   return db.select<PullRequestRow>(
     `SELECT
        s.id AS session_id,
@@ -459,12 +459,12 @@ const selectPullRequests = async ({
     WHERE s.workspace_id = ?
       AND s.deleted_at IS NULL
       AND g.pr_json IS NOT NULL
-      AND julianday(g.fetched_at) >= julianday(?)
+      AND g.fetched_at >= ?
       AND (? IS NULL OR julianday(json_extract(g.pr_json, '$.updatedAt')) >= julianday(?))
       AND (? IS NULL OR julianday(json_extract(g.pr_json, '$.updatedAt')) < julianday(?))
     GROUP BY g.repo_slug, g.branch
     ORDER BY julianday(json_extract(g.pr_json, '$.updatedAt')) DESC`,
-    [workspaceId, oldestCacheIso, startIso, startIso, endIso, endIso],
+    [workspaceId, oldestCacheMs, startIso, startIso, endIso, endIso],
   );
 };
 
@@ -550,7 +550,6 @@ export const getReviewOutcomes = async ({
   sinceMs,
 }: ImpactQueryParams): Promise<ReviewOutcomes> => {
   const bounds = windowBounds({ sinceMs });
-  const startIso = sinceMs === null ? null : new Date(sinceMs).toISOString();
   const [durations, previousDurations, draftRows, resolutionRows, outcomeRows] = await Promise.all([
     selectReviewDurations({
       db,
@@ -575,8 +574,8 @@ export const getReviewOutcomes = async ({
         WHERE d.status = 'published'
           AND s.workspace_id = ?
           AND s.deleted_at IS NULL
-          AND (? IS NULL OR julianday(d.created_at) >= julianday(?))`,
-      [workspaceId, startIso, startIso],
+          AND (? IS NULL OR d.created_at >= ?)`,
+      [workspaceId, sinceMs, sinceMs],
     ),
     db.select<CountRow>(
       `SELECT COUNT(*) AS count
@@ -669,13 +668,11 @@ export const getAgentDurations = async ({
   workspaceId,
   sinceMs,
 }: ImpactQueryParams): Promise<AgentDurations> => {
-  const sinceIso = sinceMs === null ? null : new Date(sinceMs).toISOString();
   const rows = await db.select<AgentDurationRow>(
     `SELECT
        COALESCE(a.kind, 'agent') AS kind,
        MAX(
-         (julianday(COALESCE(a.done_at, a.last_finished_at))
-           - julianday(a.started_at)) * 24,
+         (COALESCE(a.done_at, a.last_finished_at) - a.started_at) / 3600000.0,
          0
        ) AS duration_hours
      FROM agents a
@@ -685,9 +682,9 @@ export const getAgentDurations = async ({
       AND a.deleted_at IS NULL
       AND a.started_at IS NOT NULL
       AND COALESCE(a.done_at, a.last_finished_at) IS NOT NULL
-      AND (? IS NULL OR julianday(a.started_at) >= julianday(?))
+      AND (? IS NULL OR a.started_at >= ?)
     ORDER BY a.started_at DESC`,
-    [workspaceId, sinceIso, sinceIso],
+    [workspaceId, sinceMs, sinceMs],
   );
   const grouped = new Map<string, number[]>();
   for (const row of rows) {
@@ -712,7 +709,6 @@ export const getFlowHealth = async ({
   workspaceId,
   sinceMs,
 }: ImpactQueryParams): Promise<FlowHealth> => {
-  const sinceIso = sinceMs === null ? null : new Date(sinceMs).toISOString();
   const [sessions, questions, blockedRows, staleRows, failedRows, alertRows] = await Promise.all([
     selectSessionDurations({
       db,
@@ -762,8 +758,8 @@ export const getFlowHealth = async ({
           AND a.deleted_at IS NULL
           AND s.workspace_id = ?
           AND s.deleted_at IS NULL
-          AND (? IS NULL OR julianday(a.started_at) >= julianday(?))`,
-      [workspaceId, sinceIso, sinceIso],
+          AND (? IS NULL OR a.started_at >= ?)`,
+      [workspaceId, sinceMs, sinceMs],
     ),
     db.select<CountRow>(
       `SELECT COUNT(*) AS count
@@ -772,8 +768,8 @@ export const getFlowHealth = async ({
         WHERE b.dismissed_at IS NULL
           AND s.workspace_id = ?
           AND s.deleted_at IS NULL
-          AND (? IS NULL OR julianday(b.created_at) >= julianday(?))`,
-      [workspaceId, sinceIso, sinceIso],
+          AND (? IS NULL OR b.created_at >= ?)`,
+      [workspaceId, sinceMs, sinceMs],
     ),
   ]);
   const sessionHours = sessions.map((row) => row.duration_hours);
@@ -887,17 +883,16 @@ export const getRightSizeNudgeOutcomes = async ({
   workspaceId,
   sinceMs,
 }: ImpactQueryParams): Promise<ReadonlyArray<NudgeOutcomeCount>> => {
-  const sinceIso = sinceMs === null ? null : new Date(sinceMs).toISOString();
   const rows = await db.select<NudgeOutcomeRow>(
     `SELECT n.outcome AS outcome, COUNT(*) AS outcome_count
        FROM nudge_events n
-       JOIN sessions s ON s.id = json_extract(n.context_json, '$.sessionId')
+       JOIN sessions s ON s.id = n.session_id
       WHERE n.kind = 'model-rightsize'
         AND s.workspace_id = ?
         AND s.deleted_at IS NULL
-        AND (? IS NULL OR julianday(n.ts) >= julianday(?))
+        AND (? IS NULL OR n.created_at >= ?)
       GROUP BY n.outcome`,
-    [workspaceId, sinceIso, sinceIso],
+    [workspaceId, sinceMs, sinceMs],
   );
   return rows.map((row) => ({
     outcome: row.outcome,

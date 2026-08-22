@@ -241,8 +241,8 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
                 file_path: row.get(4)?,
                 body: row.get(5)?,
                 frontmatter_json: row.get(6)?,
-                created_at: row.get(7)?,
-                updated_at: row.get(8)?,
+                created_at: ms_col_to_iso(row.get(7)?),
+                updated_at: ms_col_to_iso(row.get(8)?),
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>()?
@@ -261,13 +261,13 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
                 row.get::<_, String>(1)?,
                 row.get::<_, String>(2)?,
                 row.get::<_, String>(3)?,
-                row.get::<_, String>(4)?,
-                row.get::<_, String>(5)?,
+                row.get::<_, i64>(4)?,
+                row.get::<_, i64>(5)?,
             ))
         })?;
         let mut templates: Vec<PhaseTemplateBundle> = Vec::new();
         for row in template_rows {
-            let (id, workspace_id, name, description, created_at, updated_at) = row?;
+            let (id, workspace_id, name, description, created_at_ms, updated_at_ms) = row?;
             let mut def_stmt = conn.prepare(
                 "SELECT id, workflow_id, ordinal, name, prompt_prefix, provider_override, model_override
                  FROM steps
@@ -293,8 +293,8 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
                 name,
                 description,
                 steps: defs,
-                created_at,
-                updated_at,
+                created_at: ms_col_to_iso(created_at_ms),
+                updated_at: ms_col_to_iso(updated_at_ms),
             });
         }
         templates
@@ -319,8 +319,8 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
                 pattern_args_matcher: row.get(5)?,
                 decision: row.get(6)?,
                 priority: row.get(7)?,
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
+                created_at: ms_col_to_iso(row.get(8)?),
+                updated_at: ms_col_to_iso(row.get(9)?),
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>()?
@@ -340,7 +340,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
                 period: row.get(2)?,
                 cap_usd: row.get(3)?,
                 alert_threshold_pct: row.get(4)?,
-                created_at: row.get(5)?,
+                created_at: ms_col_to_iso(row.get(5)?),
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>()?
@@ -531,7 +531,8 @@ pub fn import_config(
                 rusqlite::params![
                     s.id, s.workspace_id, s.name, s.description,
                     s.file_path, s.body, s.frontmatter_json,
-                    s.created_at, s.updated_at,
+                    iso_to_ms(&s.created_at).unwrap_or(now_ms),
+                    iso_to_ms(&s.updated_at).unwrap_or(now_ms),
                 ],
             )?;
         }
@@ -547,7 +548,8 @@ pub fn import_config(
                    updated_at  = excluded.updated_at",
                 rusqlite::params![
                     t.id, t.workspace_id, t.name, t.description,
-                    t.created_at, t.updated_at,
+                    iso_to_ms(&t.created_at).unwrap_or(now_ms),
+                    iso_to_ms(&t.updated_at).unwrap_or(now_ms),
                 ],
             )?;
             for d in &t.steps {
@@ -593,8 +595,8 @@ pub fn import_config(
                     r.pattern_args_matcher,
                     r.decision,
                     r.priority,
-                    r.created_at,
-                    r.updated_at,
+                    iso_to_ms(&r.created_at).unwrap_or(now_ms),
+                    iso_to_ms(&r.updated_at).unwrap_or(now_ms),
                 ],
             )?;
         }
@@ -610,7 +612,12 @@ pub fn import_config(
                    cap_usd             = excluded.cap_usd,
                    alert_threshold_pct = excluded.alert_threshold_pct",
                 rusqlite::params![
-                    b.id, b.provider, b.period, b.cap_usd, b.alert_threshold_pct, b.created_at,
+                    b.id,
+                    b.provider,
+                    b.period,
+                    b.cap_usd,
+                    b.alert_threshold_pct,
+                    iso_to_ms(&b.created_at).unwrap_or(now_ms),
                 ],
             )?;
         }
@@ -672,55 +679,11 @@ pub fn import_config(
 // ---------------------------------------------------------------------------
 
 fn ms_col_to_iso(ms: i64) -> String {
-    let secs = ms / 1000;
-    let (year, month, day, hour, min, sec) = crate::util::epoch_secs_to_datetime(secs);
-    format!(
-        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
-        year, month, day, hour, min, sec
-    )
+    crate::util::ms_to_iso(ms)
 }
 
 fn iso_to_ms(s: &str) -> Option<i64> {
-    // Minimal ISO-8601 parse: YYYY-MM-DDTHH:MM:SSZ
-    if s.len() < 19 {
-        return None;
-    }
-    let year: i64 = s[0..4].parse().ok()?;
-    let month: u32 = s[5..7].parse().ok()?;
-    let day: u32 = s[8..10].parse().ok()?;
-    let hour: u32 = s[11..13].parse().ok()?;
-    let min: u32 = s[14..16].parse().ok()?;
-    let sec: u32 = s[17..19].parse().ok()?;
-
-    let mut days: i64 = 0;
-    for y in 1970..year {
-        days += if crate::util::is_leap_year(y) {
-            366
-        } else {
-            365
-        };
-    }
-    for m in 1..month {
-        days += days_in_month(year, m);
-    }
-    days += day as i64 - 1;
-    let total_secs = days * 86400 + hour as i64 * 3600 + min as i64 * 60 + sec as i64;
-    Some(total_secs * 1000)
-}
-
-fn days_in_month(y: i64, m: u32) -> i64 {
-    match m {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 => {
-            if crate::util::is_leap_year(y) {
-                29
-            } else {
-                28
-            }
-        }
-        _ => 30,
-    }
+    crate::util::iso_to_ms(s)
 }
 
 // ---------------------------------------------------------------------------
@@ -759,8 +722,7 @@ mod tests {
         let ms: i64 = 1_700_000_000_000;
         let iso = ms_col_to_iso(ms);
         let back = iso_to_ms(&iso).expect("parse failed");
-        // Allow ±1000ms rounding from second truncation.
-        assert!((back - ms).abs() < 1000, "ms={ms} iso={iso} back={back}");
+        assert_eq!(back, ms, "ms={ms} iso={iso} back={back}");
     }
 
     #[test]

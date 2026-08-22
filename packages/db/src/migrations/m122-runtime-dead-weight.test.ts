@@ -150,12 +150,12 @@ describe('m122 runtime dead weight', () => {
     const db = await seedThrough121();
     await migrate(db, migrations);
 
-    const rows = await db.select<{ readonly last_finished_at: string }>(
+    const rows = await db.select<{ readonly last_finished_at: number }>(
       "SELECT last_finished_at FROM agents WHERE id = 'agent-1'",
     );
     const columns = await columnsFor({ db, table: 'agents' });
 
-    expect(rows).toEqual([{ last_finished_at: ACTIVITY_AT }]);
+    expect(rows).toEqual([{ last_finished_at: Date.parse(ACTIVITY_AT) }]);
     expect(columns).not.toContain('completed_at');
     expect(columns).not.toContain('group_id');
     expect(columns).not.toContain('parallel_index');
@@ -215,7 +215,7 @@ describe('m122 runtime dead weight', () => {
         spend_limit_mode: 'stop',
         role_model_overrides:
           '{"planner":{"providerId":"codex","model":"gpt-5.6","effort":"high"}}',
-        created_at: ACTIVITY_AT,
+        created_at: Date.parse(ACTIVITY_AT),
       },
     ]);
   });

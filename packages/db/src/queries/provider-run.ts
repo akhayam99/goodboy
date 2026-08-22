@@ -1,18 +1,18 @@
-import type {
-  IsoDateTime,
-  ProviderName,
-  ProviderRun,
-  ProviderRunId,
-  ProviderRunStatus,
-  RoutingDecision,
-  SessionId,
+import {
+  isProviderName,
+  type IsoDateTime,
+  type ProviderRun,
+  type ProviderRunId,
+  type ProviderRunStatus,
+  type RoutingDecision,
+  type SessionId,
 } from '@goodboy/types';
 import type { Database } from '../client';
 
 type ProviderRunRow = {
   id: string;
   session_id: string;
-  provider: ProviderName;
+  provider: string;
   model: string;
   status_kind: ProviderRunStatus['kind'];
   status_payload: string;
@@ -27,6 +27,12 @@ type ParsedPayload = {
 function toStatus(kind: ProviderRunStatus['kind'], payload: string): ProviderRunStatus {
   const data = JSON.parse(payload) as Record<string, unknown>;
   const { routingDecision: _, ...statusData } = data;
+  if (typeof statusData.startedAt === 'number') {
+    statusData.startedAt = new Date(statusData.startedAt).toISOString();
+  }
+  if (typeof statusData.finishedAt === 'number') {
+    statusData.finishedAt = new Date(statusData.finishedAt).toISOString();
+  }
   return { kind, ...statusData } as ProviderRunStatus;
 }
 
@@ -43,11 +49,22 @@ function splitStatus(
   payload: string;
 } {
   const { kind, ...rest } = status;
-  const merged = routingDecision !== undefined ? { ...rest, routingDecision } : rest;
+  const storedStatus: Record<string, unknown> = { ...rest };
+  if (typeof storedStatus.startedAt === 'string') {
+    storedStatus.startedAt = Date.parse(storedStatus.startedAt);
+  }
+  if (typeof storedStatus.finishedAt === 'string') {
+    storedStatus.finishedAt = Date.parse(storedStatus.finishedAt);
+  }
+  const merged =
+    routingDecision !== undefined ? { ...storedStatus, routingDecision } : storedStatus;
   return { kind, payload: JSON.stringify(merged) };
 }
 
 function toDomain(row: ProviderRunRow): ProviderRun {
+  if (isProviderName(row.provider) === false) {
+    throw new Error(`invalid provider run provider: ${row.provider}`);
+  }
   const routingDecision = extractRoutingDecision(row.status_payload);
   return {
     id: row.id as ProviderRunId,
@@ -86,6 +103,32 @@ export const updateProviderRunStatus = async (
     payload,
     id,
   ]);
+};
+
+type UpdateProviderRunStatusIfInFlightParams = {
+  readonly db: Database;
+  readonly id: ProviderRunId;
+  readonly status: ProviderRunStatus;
+};
+
+export const updateProviderRunStatusIfInFlight = async ({
+  db,
+  id,
+  status,
+}: UpdateProviderRunStatusIfInFlightParams): Promise<number> => {
+  const rows = await db.select<Pick<ProviderRunRow, 'status_payload'>>(
+    'SELECT status_payload FROM provider_runs WHERE id = ?',
+    [id],
+  );
+  const existingRouting = rows[0] ? extractRoutingDecision(rows[0].status_payload) : undefined;
+  const { kind, payload } = splitStatus(status, existingRouting);
+  const result = await db.execute(
+    `UPDATE provider_runs
+     SET status_kind = ?, status_payload = ?
+     WHERE id = ? AND status_kind IN ('pending', 'streaming')`,
+    [kind, payload, id],
+  );
+  return result.rowsAffected;
 };
 
 export const getProviderRunById = async (

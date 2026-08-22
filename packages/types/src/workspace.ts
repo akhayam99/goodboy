@@ -264,6 +264,22 @@ export type WorkspaceIntegration =
 export type SessionExternalTaskProvider =
   'linear' | 'sentry' | 'gitlab' | 'github' | 'jira' | 'bitbucket' | 'slack';
 
+export const SESSION_EXTERNAL_TASK_PROVIDERS = [
+  'linear',
+  'sentry',
+  'gitlab',
+  'github',
+  'jira',
+  'bitbucket',
+  'slack',
+] satisfies ReadonlyArray<SessionExternalTaskProvider>;
+
+export const isSessionExternalTaskProvider = (
+  value: unknown,
+): value is SessionExternalTaskProvider =>
+  typeof value === 'string' &&
+  SESSION_EXTERNAL_TASK_PROVIDERS.some((provider) => provider === value);
+
 export type SessionExternalTask = Readonly<{
   sessionId: SessionId;
   mountWorkspaceId?: WorkspaceId;

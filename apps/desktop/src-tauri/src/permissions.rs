@@ -223,8 +223,8 @@ pub fn permission_rule_list(
             pattern_args_matcher: row.get(5)?,
             decision: row.get(6)?,
             priority: row.get(7)?,
-            created_at: row.get(8)?,
-            updated_at: row.get(9)?,
+            created_at: crate::util::ms_to_iso(row.get(8)?),
+            updated_at: crate::util::ms_to_iso(row.get(9)?),
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>()
@@ -254,8 +254,8 @@ pub fn permission_rule_get(
             pattern_args_matcher: row.get(5)?,
             decision: row.get(6)?,
             priority: row.get(7)?,
-            created_at: row.get(8)?,
-            updated_at: row.get(9)?,
+            created_at: crate::util::ms_to_iso(row.get(8)?),
+            updated_at: crate::util::ms_to_iso(row.get(9)?),
         })
     })?;
     match rows.next() {
@@ -305,16 +305,17 @@ pub fn permission_rule_upsert(
     }
 
     let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
-    let now = crate::util::iso_now();
+    let now_ms = crate::util::now_ms();
+    let now = crate::util::ms_to_iso(now_ms);
     let id = input.id.clone().unwrap_or_else(crate::util::uuid_v4);
 
-    let created_at: String = {
+    let created_at_ms: i64 = {
         let mut stmt =
             conn.prepare("SELECT created_at FROM permission_rules WHERE id = ?1 LIMIT 1")?;
         let mut rows = stmt.query_map(rusqlite::params![id], |row| row.get(0))?;
         match rows.next() {
             Some(r) => r.map_err(PermissionError::Db)?,
-            None => now.clone(),
+            None => now_ms,
         }
     };
 
@@ -341,8 +342,8 @@ pub fn permission_rule_upsert(
             input.pattern_args_matcher,
             input.decision,
             input.priority,
-            created_at,
-            now,
+            created_at_ms,
+            now_ms,
         ],
     )?;
 
@@ -355,7 +356,7 @@ pub fn permission_rule_upsert(
         pattern_args_matcher: input.pattern_args_matcher,
         decision: input.decision,
         priority: input.priority,
-        created_at,
+        created_at: crate::util::ms_to_iso(created_at_ms),
         updated_at: now,
     })
 }
@@ -408,8 +409,8 @@ pub fn permission_audit_insert(
             input.decision,
             input.rule_id,
             input.decided_by,
-            input.requested_at,
-            input.decided_at,
+            crate::util::iso_to_ms(&input.requested_at).unwrap_or_else(crate::util::now_ms),
+            crate::util::iso_to_ms(&input.decided_at).unwrap_or_else(crate::util::now_ms),
         ],
     )?;
 
@@ -455,11 +456,23 @@ pub fn permission_audit_list(
         param_idx += 1;
     }
     if input.from_at.is_some() {
-        params.push(input.from_at.clone());
+        params.push(
+            input
+                .from_at
+                .as_deref()
+                .and_then(crate::util::iso_to_ms)
+                .map(|value| value.to_string()),
+        );
         param_idx += 1;
     }
     if input.to_at.is_some() {
-        params.push(input.to_at.clone());
+        params.push(
+            input
+                .to_at
+                .as_deref()
+                .and_then(crate::util::iso_to_ms)
+                .map(|value| value.to_string()),
+        );
         param_idx += 1;
     }
     // limit as last param
@@ -483,8 +496,8 @@ pub fn permission_audit_list(
                 decision: row.get(6)?,
                 rule_id: row.get(7)?,
                 decided_by: row.get(8)?,
-                requested_at: row.get(9)?,
-                decided_at: row.get(10)?,
+                requested_at: crate::util::ms_to_iso(row.get(9)?),
+                decided_at: crate::util::ms_to_iso(row.get(10)?),
             })
         },
     )?;

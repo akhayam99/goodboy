@@ -157,7 +157,7 @@ function rowToWorkflow(row: RawWorkflowRow): Workflow {
     createdAt: row.createdAt as IsoDateTime,
     updatedAt: row.updatedAt as IsoDateTime,
     ...(row.deletedAt != null && {
-      deletedAt: new Date(row.deletedAt * 1000).toISOString() as IsoDateTime,
+      deletedAt: new Date(row.deletedAt).toISOString() as IsoDateTime,
     }),
   };
 }

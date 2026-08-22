@@ -22,8 +22,8 @@ type WorkflowRow = {
   description: string;
   goal: string | null;
   process_text: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at: number;
+  updated_at: number;
   is_preset: number | null;
   origin: string | null;
   deleted_at: number | null;
@@ -80,10 +80,10 @@ function toWorkflow(row: WorkflowRow, steps: ReadonlyArray<Step>): Workflow {
     isPreset: row.is_preset == null ? true : row.is_preset !== 0,
     ...(isWorkflowOrigin(row.origin) && { origin: row.origin }),
     ...(row.deleted_at != null && {
-      deletedAt: new Date(row.deleted_at * 1000).toISOString() as IsoDateTime,
+      deletedAt: new Date(row.deleted_at).toISOString() as IsoDateTime,
     }),
-    createdAt: row.created_at as IsoDateTime,
-    updatedAt: row.updated_at as IsoDateTime,
+    createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
+    updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
   };
 }
 
@@ -144,8 +144,8 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
       workflow.description,
       workflow.goal ?? null,
       workflow.processText ?? null,
-      workflow.createdAt,
-      workflow.updatedAt,
+      Date.parse(workflow.createdAt),
+      Date.parse(workflow.updatedAt),
       workflow.isPreset === false ? 0 : 1,
       workflow.origin ?? null,
     ],
@@ -192,5 +192,5 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
 };
 
 export const deleteWorkflow = async (db: Database, id: WorkflowId): Promise<void> => {
-  await db.execute("UPDATE workflows SET deleted_at = strftime('%s','now') WHERE id = ?", [id]);
+  await db.execute('UPDATE workflows SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
 };

@@ -64,6 +64,7 @@ export type {
   WorkspaceIntegrationProvider,
   WorkspaceScript,
 } from './workspace';
+export { isSessionExternalTaskProvider, SESSION_EXTERNAL_TASK_PROVIDERS } from './workspace';
 export type {
   AttachmentInput,
   GoalAttachment,
@@ -74,6 +75,7 @@ export type {
   MessageRole,
 } from './message';
 export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';
+export { isProviderName, PROVIDER_NAMES } from './provider';
 export type {
   DetectResult,
   PermissionMode,

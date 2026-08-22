@@ -1,9 +1,13 @@
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
+use tauri::State;
 use thiserror::Error;
+
+use crate::db::Db;
 
 /// Attachments live inside the worktree so the spawned provider CLI can read
 /// them with a path relative to its cwd. `.goodboy/` is gitignored, so they
@@ -27,6 +31,10 @@ pub enum AttachmentError {
     InvalidPath,
     #[error("unsupported attachment type: {0}")]
     UnsupportedMime(String),
+    #[error("sqlite error: {0}")]
+    Sqlite(#[from] rusqlite::Error),
+    #[error("connection mutex poisoned")]
+    Poisoned,
 }
 
 impl serde::Serialize for AttachmentError {
@@ -220,6 +228,72 @@ pub fn attachment_delete(worktree_dir: String, rel_path: String) -> Result<(), A
     }
 }
 
+#[tauri::command(async)]
+pub fn attachment_cleanup_orphans(state: State<'_, Db>) -> Result<u64, AttachmentError> {
+    let worktree_references = {
+        let conn = state.0.lock().map_err(|_| AttachmentError::Poisoned)?;
+        let mut stmt = conn.prepare(
+            "SELECT sw.worktree_path, ga.rel_path
+             FROM session_worktrees sw
+             LEFT JOIN goal_attachments ga
+               ON ga.session_id = sw.session_id
+               OR ga.workflow_run_id IN (
+                 SELECT workflow_run_id
+                 FROM session_workflows
+                 WHERE session_id = sw.session_id
+               )",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
+        })?;
+        let mut references = HashMap::<String, HashSet<String>>::new();
+        for row in rows {
+            let (worktree_path, rel_path) = row?;
+            let paths = references.entry(worktree_path).or_default();
+            if let Some(rel_path) = rel_path {
+                paths.insert(rel_path);
+            }
+        }
+        references
+    };
+
+    let mut removed = 0;
+    for (worktree_path, referenced_paths) in worktree_references {
+        removed += cleanup_orphans_for_worktree(Path::new(&worktree_path), &referenced_paths)?;
+    }
+
+    Ok(removed)
+}
+
+fn cleanup_orphans_for_worktree(
+    worktree_path: &Path,
+    referenced_paths: &HashSet<String>,
+) -> Result<u64, AttachmentError> {
+    let attachment_dir = worktree_path.join(ATTACH_SUBDIR);
+    let entries = match fs::read_dir(&attachment_dir) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(0),
+        Err(error) => return Err(AttachmentError::Io(error)),
+    };
+    let mut removed = 0;
+    for entry in entries {
+        let entry = entry?;
+        if !entry.file_type()?.is_file() {
+            continue;
+        }
+        let rel_path = Path::new(ATTACH_SUBDIR)
+            .join(entry.file_name())
+            .to_string_lossy()
+            .to_string();
+        if referenced_paths.contains(&rel_path) {
+            continue;
+        }
+        fs::remove_file(entry.path())?;
+        removed += 1;
+    }
+    Ok(removed)
+}
+
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BugReportImageInput {
@@ -385,6 +459,25 @@ mod tests {
         let err = attachment_delete("/tmp".to_string(), "etc/passwd".to_string());
         assert!(matches!(err, Err(AttachmentError::InvalidPath)));
 
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn cleanup_removes_only_unreferenced_attachment_files() {
+        let dir =
+            std::env::temp_dir().join(format!("goodboy-attach-cleanup-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        let attachment_dir = dir.join(ATTACH_SUBDIR);
+        fs::create_dir_all(&attachment_dir).unwrap();
+        fs::write(attachment_dir.join("keep.png"), b"keep").unwrap();
+        fs::write(attachment_dir.join("orphan.png"), b"orphan").unwrap();
+        let referenced = HashSet::from([format!("{ATTACH_SUBDIR}/keep.png")]);
+
+        let removed = cleanup_orphans_for_worktree(&dir, &referenced).unwrap();
+
+        assert_eq!(removed, 1);
+        assert!(attachment_dir.join("keep.png").is_file());
+        assert!(!attachment_dir.join("orphan.png").exists());
         let _ = fs::remove_dir_all(&dir);
     }
 

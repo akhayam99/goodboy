@@ -61,6 +61,49 @@ pub(crate) fn now_ms() -> i64 {
         .as_millis() as i64
 }
 
+pub(crate) fn ms_to_iso(ms: i64) -> String {
+    let secs = ms.div_euclid(1000);
+    let millis = ms.rem_euclid(1000);
+    let (year, month, day, hour, min, sec) = epoch_secs_to_datetime(secs);
+    format!("{year:04}-{month:02}-{day:02}T{hour:02}:{min:02}:{sec:02}.{millis:03}Z")
+}
+
+pub(crate) fn optional_ms_to_iso(ms: Option<i64>) -> Option<String> {
+    ms.map(ms_to_iso)
+}
+
+pub(crate) fn iso_to_ms(value: &str) -> Option<i64> {
+    if value.len() < 19 {
+        return None;
+    }
+    let year: i64 = value.get(0..4)?.parse().ok()?;
+    let month: u32 = value.get(5..7)?.parse().ok()?;
+    let day: u32 = value.get(8..10)?.parse().ok()?;
+    let hour: i64 = value.get(11..13)?.parse().ok()?;
+    let minute: i64 = value.get(14..16)?.parse().ok()?;
+    let second: i64 = value.get(17..19)?.parse().ok()?;
+    let millis = value
+        .get(19..)
+        .and_then(|suffix| suffix.strip_prefix('.'))
+        .map(|fraction| {
+            fraction
+                .chars()
+                .take_while(|character| character.is_ascii_digit())
+                .take(3)
+                .collect::<String>()
+        })
+        .filter(|fraction| !fraction.is_empty())
+        .and_then(|fraction| format!("{fraction:0<3}").parse::<i64>().ok())
+        .unwrap_or(0);
+    Some(
+        ymd_to_epoch_ms(year, month, day)
+            + hour * 3_600_000
+            + minute * 60_000
+            + second * 1000
+            + millis,
+    )
+}
+
 pub(crate) fn is_leap_year(y: i64) -> bool {
     (y % 4 == 0 && y % 100 != 0) || y % 400 == 0
 }

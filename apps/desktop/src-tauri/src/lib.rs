@@ -258,6 +258,7 @@ pub fn run() {
             attachment::attachment_read,
             attachment::attachment_delete,
             attachment::attachment_read_dropped,
+            attachment::attachment_cleanup_orphans,
             attachment::bug_report_stage_images,
             attachment::bug_report_discard_images,
             attachment::bug_report_reveal_images,

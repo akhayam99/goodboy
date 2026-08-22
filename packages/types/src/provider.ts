@@ -2,14 +2,21 @@ import type { IsoDateTime, ProviderRunId, SessionId } from './ids';
 import type { RoutingDecision } from './budget';
 
 export type ProviderName =
-  | 'anthropic'
-  | 'openai'
-  | 'cursor'
-  | 'codex'
-  | 'gemini'
-  | 'opencode'
-  | 'openrouter'
-  | 'moonshot';
+  'anthropic' | 'openai' | 'cursor' | 'codex' | 'gemini' | 'opencode' | 'openrouter' | 'moonshot';
+
+export const PROVIDER_NAMES = [
+  'anthropic',
+  'openai',
+  'cursor',
+  'codex',
+  'gemini',
+  'opencode',
+  'openrouter',
+  'moonshot',
+] satisfies ReadonlyArray<ProviderName>;
+
+export const isProviderName = (value: unknown): value is ProviderName =>
+  typeof value === 'string' && PROVIDER_NAMES.some((provider) => provider === value);
 
 export type ProviderRunStatus =
   | { kind: 'pending' }

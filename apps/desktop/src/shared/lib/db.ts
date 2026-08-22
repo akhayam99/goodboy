@@ -1,5 +1,10 @@
 import { invoke } from '@tauri-apps/api/core';
-import { migrate as runMigrations, type Database, type MigrateResult } from '@goodboy/db';
+import {
+  migrate as runMigrations,
+  runDatabaseHygiene,
+  type Database,
+  type MigrateResult,
+} from '@goodboy/db';
 
 const UNMANAGED_STATE_MARKER = 'state not managed';
 
@@ -56,7 +61,10 @@ export const tauriDatabase: Database = {
 };
 
 export const runDbMigrations = async (): Promise<MigrateResult> => {
-  return runMigrations(tauriDatabase);
+  const result = await runMigrations(tauriDatabase);
+  await runDatabaseHygiene({ db: tauriDatabase, now: Date.now() });
+  await invokeDb('attachment_cleanup_orphans', {});
+  return result;
 };
 
 export const wipeDb = async (): Promise<MigrateResult> => {
