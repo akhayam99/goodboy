@@ -19,7 +19,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { SessionWorktree } from '@goodboy/db';
-import { buildTimelineGroups } from './buildTimelineGroups';
+import { buildTimelineGroups, type TimelineAgentEntry } from './buildTimelineGroups';
 
 type TypedStringParams = {
   readonly value: string;
@@ -504,7 +504,7 @@ describe('buildTimelineGroups, session events', () => {
 });
 
 describe('buildTimelineGroups, agent chains', () => {
-  it('marks a standalone agent with descendants as a chain and names the path', () => {
+  it('marks a standalone agent with descendants as a chain without renaming it', () => {
     const model = build({
       agents: [
         agent({ id: 'planner', ordinal: 0, startedAt: '2026-08-17T09:00:00Z' }),
@@ -518,8 +518,8 @@ describe('buildTimelineGroups, agent chains', () => {
     });
     const root = model.entries.find((entry) => entry.kind === 'agent');
 
-    expect(root?.kind === 'agent' ? root.chain?.label : null).toBe('planner → implementer');
     expect(root?.kind === 'agent' ? root.chain?.identity.index : null).toEqual(expect.any(Number));
+    expect(root?.kind === 'agent' ? root.agent.name : null).toBe('planner');
   });
 
   it('leaves a childless agent without a chain', () => {
@@ -550,7 +550,7 @@ describe('buildTimelineGroups, agent chains', () => {
     expect(step?.kind === 'agent' ? step.chain : 'missing').toBeNull();
   });
 
-  it('truncates a chain longer than three agents', () => {
+  it('carries the same chain down every descendant, however deep', () => {
     const model = build({
       agents: [
         agent({ id: 'one', ordinal: 0, startedAt: '2026-08-17T09:00:00Z' }),
@@ -565,7 +565,39 @@ describe('buildTimelineGroups, agent chains', () => {
       ],
     });
     const root = model.entries.find((entry) => entry.kind === 'agent');
+    const indexes: Array<number | null> = [];
+    const walk = (entry: TimelineAgentEntry): void => {
+      indexes.push(entry.chain?.identity.index ?? null);
+      for (const child of entry.children) {
+        walk(child);
+      }
+    };
+    if (root?.kind === 'agent') {
+      walk(root);
+    }
 
-    expect(root?.kind === 'agent' ? root.chain?.label : null).toBe('one → two → three → …');
+    expect(indexes).toHaveLength(4);
+    expect(new Set(indexes).size).toBe(1);
+    expect(indexes[0]).toEqual(expect.any(Number));
+  });
+
+  it('leaves the descendants of a workflow step without a chain', () => {
+    const model = build({
+      workflows: [attachedWorkflow()],
+      agents: [
+        agent({ id: 'step', startedAt: '2026-08-17T09:00:00Z', workflowRunId: WORKFLOW_RUN_ID }),
+        agent({
+          id: 'child',
+          ordinal: 1,
+          parentAgentId: 'step',
+          startedAt: '2026-08-17T09:10:00Z',
+        }),
+      ],
+    });
+    const run = model.entries.find((entry) => entry.kind === 'run');
+    const step = run?.kind === 'run' ? run.children[0] : null;
+    const child = step?.kind === 'agent' ? step.children[0] : null;
+
+    expect(child == null ? 'missing' : child.chain).toBeNull();
   });
 });

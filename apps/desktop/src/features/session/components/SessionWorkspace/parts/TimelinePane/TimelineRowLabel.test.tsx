@@ -15,9 +15,10 @@ afterEach(cleanup);
 type AgentParams = {
   readonly agentKind: AgentKind;
   readonly name: string;
+  readonly isChained?: boolean;
 };
 
-const agentEntry = ({ agentKind, name }: AgentParams): TimelineStreamEntry =>
+const agentEntry = ({ agentKind, name, isChained = false }: AgentParams): TimelineStreamEntry =>
   ({
     kind: 'agent',
     id: `agent:${agentKind}`,
@@ -31,6 +32,7 @@ const agentEntry = ({ agentKind, name }: AgentParams): TimelineStreamEntry =>
     children: [],
     answers: [],
     hasDuration: true,
+    chain: isChained ? { identity: { index: 0, chip: 'text-accent' } } : null,
   }) as unknown as TimelineStreamEntry;
 
 type ItemParams = {
@@ -58,8 +60,8 @@ const itemOf = ({ entry, grade = 'entry' }: ItemParams): TimelineRowItem => ({
   gap: 'entry',
 });
 
-const renderKind = ({ agentKind, name }: AgentParams) =>
-  render(<TimelineRowLabel item={itemOf({ entry: agentEntry({ agentKind, name }) })} />);
+const renderKind = ({ agentKind, name, isChained }: AgentParams) =>
+  render(<TimelineRowLabel item={itemOf({ entry: agentEntry({ agentKind, name, isChained }) })} />);
 
 describe('TimelineRowLabel', () => {
   it('leads a resolver row with its role chip, like every other kind of agent', () => {
@@ -97,6 +99,48 @@ describe('TimelineRowLabel', () => {
     }
 
     expect(widths.size).toBe(1);
+  });
+
+  it('keeps a chained agent under its own name and its own role', () => {
+    renderKind({ agentKind: 'planner', name: 'Draft the migration', isChained: true });
+
+    expect(screen.getByText(AGENT_KIND_META.planner.label)).toBeDefined();
+    expect(screen.getByText('Draft the migration')).toBeDefined();
+  });
+
+  it('marks the role chip of a chain root with the chain glyph', () => {
+    const { container } = renderKind({
+      agentKind: 'planner',
+      name: 'Draft the migration',
+      isChained: true,
+    });
+
+    expect(container.querySelector('svg')).not.toBeNull();
+  });
+
+  it('marks a chained descendant too, on the step row it lives on', () => {
+    const { container } = render(
+      <TimelineRowLabel
+        item={itemOf({
+          entry: agentEntry({
+            agentKind: 'implementer',
+            name: 'Apply the migration',
+            isChained: true,
+          }),
+          grade: 'step',
+        })}
+      />,
+    );
+
+    expect(screen.getByText(AGENT_KIND_META.implementer.label)).toBeDefined();
+    expect(container.querySelector('svg')).not.toBeNull();
+  });
+
+  it('leaves the role chip unmarked when the agent belongs to no chain', () => {
+    const { container } = renderKind({ agentKind: 'planner', name: 'Draft the migration' });
+
+    expect(screen.getByText(AGENT_KIND_META.planner.label)).toBeDefined();
+    expect(container.querySelector('svg')).toBeNull();
   });
 
   it('keeps the chip off a step row, where the run already names the role', () => {

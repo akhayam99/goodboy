@@ -1,4 +1,5 @@
 import { Chip, cn } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { agentKindPalette } from '../../../../agent-kind';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import {
@@ -24,7 +25,7 @@ type EntryParams = {
 
 const titleOf = ({ entry }: EntryParams): string => {
   if (entry.kind === 'agent') {
-    return entry.chain?.label ?? entry.agent.name;
+    return entry.agent.name;
   }
   if (entry.kind === 'plan') {
     return entry.plan.title;
@@ -46,27 +47,19 @@ type ChipParams = EntryParams & {
 };
 
 const chipOf = ({ entry, grade }: ChipParams) => {
-  if (entry.kind !== 'agent' || grade !== 'entry') {
+  if (entry.kind !== 'agent') {
     return null;
   }
-  if (entry.chain != null) {
-    return (
-      <Chip
-        tone="neutral"
-        label="Chain"
-        shape="badge"
-        size="3xs"
-        width="md"
-        uppercase
-        className={cn('shrink-0', entry.chain.identity.chip)}
-      />
-    );
+  const isChained = entry.chain != null;
+  if (grade !== 'entry' && !isChained) {
+    return null;
   }
   const palette = agentKindPalette({ kind: entry.agentKind });
   return (
     <Chip
       tone="neutral"
       label={palette.label}
+      icon={isChained ? <CONCEPT_ICONS.chain size={10} aria-hidden /> : null}
       shape="badge"
       size="3xs"
       width="md"
