@@ -61,7 +61,7 @@ Goodboy runs entirely on your machine, no backend:
 - No telemetry, of any kind, ever. Adding it is refused whoever asks.
 
 Caveat: a personal API key you paste for an integration (GitHub, GitLab, Jira,
-Bitbucket, Linear, Sentry), or a Slack bot token, is stored locally but sent to
+Bitbucket, Linear, Sentry), or a Slack user token, is stored locally but sent to
 that provider on every request. Local-only storage does not mean the credential
 never travels.
 

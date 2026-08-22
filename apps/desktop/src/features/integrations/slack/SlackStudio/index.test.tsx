@@ -67,7 +67,7 @@ vi.mock('./ThreadDetailPanel', () => ({
 vi.mock('../SlackFormBody', () => ({
   SlackFormBody: () => (
     <label htmlFor="slack-token-test">
-      Bot token
+      User token
       <input id="slack-token-test" />
     </label>
   ),
@@ -119,7 +119,7 @@ describe('SlackStudio', () => {
     renderStudio();
 
     expect(screen.getByText('Connect Slack to read the threads a task came out of')).toBeDefined();
-    expect(screen.getByLabelText('Bot token')).toBeDefined();
+    expect(screen.getByLabelText('User token')).toBeDefined();
     expect(h.isEnabled).toBe(false);
     expect(screen.queryByRole('button', { name: 'Disconnect Slack' })).toBeNull();
   });
@@ -175,7 +175,7 @@ describe('SlackStudio', () => {
     );
   });
 
-  it('says nothing is there when the bot joined no channels', () => {
+  it('says nothing is there when you are in no channels', () => {
     h.integrations = { 'workspace-1': [{ provider: 'slack' }] };
 
     renderStudio();
@@ -183,7 +183,7 @@ describe('SlackStudio', () => {
     expect(screen.getByText('No channels yet')).toBeDefined();
     expect(
       screen.getByText(
-        'Invite the bot to a public channel in Slack and it shows up here. Goodboy only sees channels the bot has joined.',
+        'Join a public channel in Slack and it shows up here. Goodboy only reads the public channels you are in.',
       ),
     ).toBeDefined();
   });

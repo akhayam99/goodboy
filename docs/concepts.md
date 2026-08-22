@@ -87,7 +87,7 @@ Where each connected source stands, honestly:
   and team we read carry no id to send back. Linear is where the PM persona
   lives.
 - **Sentry.** Issues and events read; no write path yet.
-- **Slack.** Threads read and replied to (replies post as the connected bot),
+- **Slack.** Threads read and replied to (replies post as the connected user),
   routed into sessions with the goal pre-filled. The connection is per
   workspace; public bot-joined channels only, and no call has run against a
   live workspace yet, only contract tests.

@@ -89,7 +89,7 @@ export const SlackStudio = ({ workspaceId, workspaceName, initialThreadTs, onClo
             <Divider orientation="vertical" className="mx-0.5 h-5" />
             <IntegrationDisconnect
               label="Slack"
-              description="Unlinks this project from the Slack bot token. The token stays saved for your other projects."
+              description="Unlinks this project from the Slack token. The token stays saved for your other projects."
               onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'slack' })}
             />
           </div>

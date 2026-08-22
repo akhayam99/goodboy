@@ -42,7 +42,7 @@ const PROVIDERS = [
   ['gitlab', 'GitLab', 'Personal API key'],
   ['jira', 'Jira', 'Personal API key'],
   ['bitbucket', 'Bitbucket', 'Personal API key'],
-  ['slack', 'Slack', 'Bot token'],
+  ['slack', 'Slack', 'User token'],
 ] as const;
 
 afterEach(cleanup);
@@ -76,10 +76,11 @@ describe('ConnectIntegrationEmptyState', () => {
     },
   );
 
-  it('keeps the Slack credential a bot token, because it belongs to an app and not a person', () => {
+  it('asks Slack for a user token, so replies carry the person and not an app', () => {
     render(<ConnectIntegrationEmptyState provider="slack" workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByLabelText('Bot token')).toBeDefined();
+    expect(screen.getByLabelText('User token')).toBeDefined();
+    expect(screen.queryByLabelText('Bot token')).toBeNull();
     expect(screen.queryByLabelText('Personal API key')).toBeNull();
   });
 });

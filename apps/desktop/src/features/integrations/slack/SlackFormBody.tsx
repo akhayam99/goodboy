@@ -77,7 +77,7 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
           <dl className="grid grid-cols-[8rem_1fr] gap-y-1 text-xs">
             <dt className="text-muted-foreground">team</dt>
             <dd className="font-mono text-foreground">{slack.config.teamId}</dd>
-            <dt className="text-muted-foreground">bot user</dt>
+            <dt className="text-muted-foreground">connected as</dt>
             <dd className="font-mono text-foreground">
               {slack.config.botUserName ?? slack.config.botUserId}
             </dd>
@@ -87,7 +87,7 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
               role="danger"
               icon={<Unplug size={12} aria-hidden />}
               title="Disconnect Slack?"
-              description="Unlinks this project from the Slack bot token. The token stays saved for your other projects."
+              description="Unlinks this project from the Slack token. The token stays saved for your other projects."
               confirmLabel="Disconnect Slack"
               autoDisarmMs={4000}
               onConfirm={onDisconnect}
@@ -117,7 +117,7 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
             <>
               <div className="flex flex-col gap-2">
                 <label htmlFor="slack-token" className="text-xs font-semibold text-foreground">
-                  Bot token
+                  User token
                 </label>
                 <a
                   href={APP_URL}
@@ -125,13 +125,14 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
                 >
-                  Create a Slack app and copy its bot token <ExternalLink size={10} aria-hidden />
+                  Create a Slack app and copy its user OAuth token{' '}
+                  <ExternalLink size={10} aria-hidden />
                 </a>
                 <Input
                   id="slack-token"
                   type="password"
                   autoFocus={shouldAutoFocus}
-                  placeholder="xoxb-…"
+                  placeholder="xoxp-…"
                   value={botToken}
                   onChange={(event) => setBotToken(event.target.value)}
                   disabled={isBusy}
@@ -142,8 +143,8 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
               </div>
               <div className="flex flex-col gap-2">
                 <p className="text-2xs leading-relaxed text-muted-foreground">
-                  The bot token starts with <span className="font-mono">xoxb-</span> and needs these
-                  scopes:
+                  The user token starts with <span className="font-mono">xoxp-</span> and needs
+                  these scopes, granted under User Token Scopes and not Bot Token Scopes:
                 </p>
                 <ul className="flex flex-wrap gap-2">
                   {SCOPES.map((scope) => (
@@ -159,11 +160,13 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
             </>
           ) : null}
           <p className="text-2xs leading-relaxed text-muted-foreground">
-            Public channels only, and Goodboy sees only the ones the bot has joined. Invite it to a
-            channel in Slack to read that conversation here. Goodboy also pulls your
-            workspace&apos;s full member list, names and avatars, to show who posted in a thread.
-            Your token is checked against Slack over HTTPS before anything is stored, then kept in
-            your OS keychain, encrypted at rest. It never touches Goodboy&apos;s own servers.
+            Goodboy reads the public channels you have joined and asks Slack for nothing beyond the
+            five scopes it needs, so private channels and direct messages stay out. Replies and
+            reactions go out under your own name, the way they would if you typed them in Slack.
+            Goodboy also pulls your workspace&apos;s full member list, names and avatars, to show
+            who posted in a thread. Your token is checked against Slack over HTTPS before anything
+            is stored, then kept in your OS keychain, encrypted at rest. It never touches
+            Goodboy&apos;s own servers.
           </p>
         </>
       )}

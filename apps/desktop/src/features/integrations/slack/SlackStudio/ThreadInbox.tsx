@@ -98,7 +98,7 @@ export const ThreadInbox = ({
             description={
               hasQuery
                 ? 'Try a different search term.'
-                : 'Invite the bot to a public channel in Slack and it shows up here. Goodboy only sees channels the bot has joined.'
+                : 'Join a public channel in Slack and it shows up here. Goodboy only reads the public channels you are in.'
             }
             size="inline"
             action={
@@ -171,7 +171,7 @@ export const ThreadInbox = ({
             ))}
             {hiddenChannelCount > 0 && (
               <p className="px-1 text-2xs text-muted-foreground/60">
-                {`${hiddenChannelCount} more channels the bot joined are not read here, and each channel only reads its latest 200 messages.`}
+                {`${hiddenChannelCount} more of your channels are not read here, and each channel only reads its latest 200 messages.`}
               </p>
             )}
           </div>

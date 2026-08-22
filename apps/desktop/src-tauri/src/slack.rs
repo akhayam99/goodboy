@@ -29,7 +29,7 @@ const API_BASE: &str = "https://slack.com/api";
 const MAX_PAGES: u32 = 20;
 const PAGE_LEN: u32 = 200;
 
-const AUTH_HINT: &str = "slack rejected the token. goodboy signs every call with the bot token you pasted as a bearer token, so it has to start with xoxb- and belong to an app installed in this workspace. check that the app grants channels:read, channels:history, users:read, chat:write and reactions:write";
+const AUTH_HINT: &str = "slack rejected the token. goodboy signs every call with the user token you pasted as a bearer token, so it has to start with xoxp- and belong to an app installed in this workspace. check that the app grants channels:read, channels:history, users:read, chat:write and reactions:write under user token scopes";
 
 #[derive(Debug, Error)]
 pub enum SlackError {
@@ -45,7 +45,7 @@ pub enum SlackError {
     Api(String),
     #[error("invalid response shape: {0}")]
     InvalidShape(String),
-    #[error("no bot token stored for workspace {0}")]
+    #[error("no slack token stored for workspace {0}")]
     NoToken(String),
     #[error("credential store error: {0}")]
     Credential(#[from] IntegrationCredentialError),
@@ -1312,6 +1312,23 @@ mod tests {
     }
 
     #[test]
+    fn the_auth_hint_asks_for_a_user_token_and_names_every_scope() {
+        assert!(AUTH_HINT.contains("user token"));
+        assert!(AUTH_HINT.contains("xoxp-"));
+        assert!(!AUTH_HINT.contains("xoxb-"));
+        assert!(!AUTH_HINT.contains("bot"));
+        for scope in [
+            "channels:read",
+            "channels:history",
+            "users:read",
+            "chat:write",
+            "reactions:write",
+        ] {
+            assert!(AUTH_HINT.contains(scope), "the hint drops {scope}");
+        }
+    }
+
+    #[test]
     fn the_envelope_decoder_classifies_the_ok_false_error_tokens() {
         let auth =
             decode_slack_envelope(&serde_json::json!({"ok": false, "error": "invalid_auth"}))
@@ -1352,14 +1369,14 @@ mod tests {
         )])
         .await;
 
-        let connection = validate_connection(&server.base, "xoxb-secret")
+        let connection = validate_connection(&server.base, "xoxp-secret")
             .await
             .unwrap();
 
         let request = server.only();
         assert_eq!(request.method, "POST");
         assert_eq!(request.path(), "/auth.test");
-        assert_eq!(request.authorization.as_deref(), Some("Bearer xoxb-secret"));
+        assert_eq!(request.authorization.as_deref(), Some("Bearer xoxp-secret"));
         assert_eq!(connection.team_id, "T01");
         assert_eq!(connection.team_name, "Acme");
         assert_eq!(connection.bot_user_id, "U09");
@@ -1374,7 +1391,7 @@ mod tests {
         }])
         .await;
 
-        let error = validate_connection(&server.base, "xoxb-secret")
+        let error = validate_connection(&server.base, "xoxp-secret")
             .await
             .unwrap_err();
 
@@ -1393,7 +1410,7 @@ mod tests {
         }])
         .await;
 
-        let error = validate_connection(&server.base, "xoxb-secret")
+        let error = validate_connection(&server.base, "xoxp-secret")
             .await
             .unwrap_err();
 
@@ -1407,7 +1424,7 @@ mod tests {
         )])
         .await;
 
-        let error = list_channels(&server.base, "xoxb-secret")
+        let error = list_channels(&server.base, "xoxp-secret")
             .await
             .unwrap_err();
 
@@ -1425,7 +1442,7 @@ mod tests {
         )])
         .await;
 
-        let channels = list_channels(&server.base, "xoxb-secret").await.unwrap();
+        let channels = list_channels(&server.base, "xoxp-secret").await.unwrap();
 
         let request = server.only();
         assert_eq!(request.method, "GET");
@@ -1447,7 +1464,7 @@ mod tests {
         )])
         .await;
 
-        let heads = list_thread_heads(&server.base, "xoxb-secret", "C0EN")
+        let heads = list_thread_heads(&server.base, "xoxp-secret", "C0EN")
             .await
             .unwrap();
 
@@ -1470,7 +1487,7 @@ mod tests {
         )])
         .await;
 
-        let thread = get_thread(&server.base, "xoxb-secret", "C0EN", "1723456789.123456")
+        let thread = get_thread(&server.base, "xoxp-secret", "C0EN", "1723456789.123456")
             .await
             .unwrap();
 
@@ -1490,7 +1507,7 @@ mod tests {
         )])
         .await;
 
-        let permalink = get_permalink(&server.base, "xoxb-secret", "C0EN", "1723456789.123456")
+        let permalink = get_permalink(&server.base, "xoxp-secret", "C0EN", "1723456789.123456")
             .await
             .unwrap();
 
@@ -1514,7 +1531,7 @@ mod tests {
         )])
         .await;
 
-        let users = list_users(&server.base, "xoxb-secret").await.unwrap();
+        let users = list_users(&server.base, "xoxp-secret").await.unwrap();
 
         let request = server.only();
         assert_eq!(request.method, "GET");
@@ -1537,7 +1554,7 @@ mod tests {
 
         let message = post_reply(
             &server.base,
-            "xoxb-secret",
+            "xoxp-secret",
             "C0EN",
             "1723456789.123456",
             "on it",
@@ -1548,7 +1565,7 @@ mod tests {
         let request = server.only();
         assert_eq!(request.method, "POST");
         assert_eq!(request.path(), "/chat.postMessage");
-        assert_eq!(request.authorization.as_deref(), Some("Bearer xoxb-secret"));
+        assert_eq!(request.authorization.as_deref(), Some("Bearer xoxp-secret"));
         assert_eq!(request.json()["thread_ts"], "1723456789.123456");
         assert_eq!(request.json()["text"], "on it");
         assert_eq!(message.ts, "1723460000.000200");
@@ -1561,7 +1578,7 @@ mod tests {
 
         add_reaction(
             &server.base,
-            "xoxb-secret",
+            "xoxp-secret",
             "C0EN",
             "1723456789.123456",
             "eyes",
@@ -1583,7 +1600,7 @@ mod tests {
 
         let error = add_reaction(
             &server.base,
-            "xoxb-secret",
+            "xoxp-secret",
             "C0EN",
             "1723456789.123456",
             "eyes",
@@ -1606,7 +1623,7 @@ mod tests {
         ])
         .await;
 
-        let channels = list_channels(&server.base, "xoxb-secret").await.unwrap();
+        let channels = list_channels(&server.base, "xoxp-secret").await.unwrap();
 
         let taken = server.taken();
         assert_eq!(taken.len(), 2);

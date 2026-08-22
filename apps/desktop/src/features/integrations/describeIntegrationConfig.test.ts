@@ -119,7 +119,7 @@ describe('describeIntegrationConfig', () => {
     expect(description).toBe('bitbucket.org/serenis as Grace Hopper');
   });
 
-  it('names the Slack team and the bot the token belongs to', () => {
+  it('names the Slack team and the person the token belongs to', () => {
     const description = describeIntegrationConfig({
       integration: integration({
         provider: 'slack',
