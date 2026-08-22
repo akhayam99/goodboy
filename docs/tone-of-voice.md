@@ -112,8 +112,9 @@ being short. The lead line is the pitch; everything under it is plain fact.
   message, and nobody outside the team reads a changelog to learn them. The
   announcement post lives by this rule too.
 - **State a limit inside the sentence that promises the thing**, not in a
-  paragraph of its own. "Public channels the bot has joined" beats four
-  sentences of scope caveats.
+  paragraph of its own. "Goodboy reads the public channels you have joined and
+  asks Slack for nothing beyond the five scopes it needs" beats four sentences
+  of scope caveats.
 - **Work not yet exercised against a live service is a follow-up, never a
   confession.** Never write "not verified", "this has not run against a live
   X", or "proves nothing". Write what the work stands on and what the app does

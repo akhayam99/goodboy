@@ -966,12 +966,12 @@ describe('store contract', () => {
 
       const out = await store
         .getState()
-        .connectSlack({ workspaceId: WS_ID, botToken: ' xoxb-secret ', credentialId: null });
+        .connectSlack({ workspaceId: WS_ID, botToken: ' xoxp-secret ', credentialId: null });
 
       expect(out.teamId).toBe('T01');
       expect(slackValidateConnectionSpy).toHaveBeenCalledWith({
         credentialId: expect.any(String),
-        botToken: ' xoxb-secret ',
+        botToken: ' xoxp-secret ',
       });
       const cached = store
         .getState()
@@ -996,7 +996,7 @@ describe('store contract', () => {
 
       await store
         .getState()
-        .connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-secret', credentialId: null });
+        .connectSlack({ workspaceId: WS_ID, botToken: 'xoxp-secret', credentialId: null });
 
       const dbCallOrder = upsertWorkspaceIntegrationSpy.mock.invocationCallOrder[0];
       const keychainCallOrder = slackConnectSpy.mock.invocationCallOrder[0];
@@ -1018,7 +1018,7 @@ describe('store contract', () => {
       await expect(
         store
           .getState()
-          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-secret', credentialId: null }),
+          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxp-secret', credentialId: null }),
       ).rejects.toThrow(/keychain unavailable/);
 
       expect(upsertWorkspaceIntegrationSpy).toHaveBeenCalledTimes(1);
@@ -1050,7 +1050,7 @@ describe('store contract', () => {
       await expect(
         store
           .getState()
-          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-new', credentialId: CRED_ID }),
+          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxp-new', credentialId: CRED_ID }),
       ).rejects.toThrow(/keychain unavailable/);
 
       expect(deleteWorkspaceIntegrationSpy).not.toHaveBeenCalled();
@@ -1072,7 +1072,7 @@ describe('store contract', () => {
       await expect(
         store
           .getState()
-          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-secret', credentialId: null }),
+          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxp-secret', credentialId: null }),
       ).rejects.toThrow(/keychain unavailable/);
     });
 
@@ -1083,7 +1083,7 @@ describe('store contract', () => {
       await expect(
         store
           .getState()
-          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-bad', credentialId: null }),
+          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxp-bad', credentialId: null }),
       ).rejects.toThrow(/invalid_auth/);
 
       expect(slackConnectSpy).not.toHaveBeenCalled();
@@ -1113,7 +1113,7 @@ describe('store contract', () => {
 
       await store
         .getState()
-        .connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-secret', credentialId: CRED_ID });
+        .connectSlack({ workspaceId: WS_ID, botToken: 'xoxp-secret', credentialId: CRED_ID });
 
       const rows = (store.getState().workspaceIntegrations[WS_ID] ?? []).filter(
         (i) => i.provider === 'slack',

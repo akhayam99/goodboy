@@ -57,7 +57,7 @@ describe('SlackFormBody', () => {
     render(<SlackFormBody workspaceId={WS_ID} />);
 
     const link = screen.getByRole('link', { name: /create a Slack app/i });
-    const field = screen.getByLabelText(/bot token/i);
+    const field = screen.getByLabelText(/user token/i);
 
     expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
@@ -66,34 +66,43 @@ describe('SlackFormBody', () => {
     render(<SlackFormBody workspaceId={WS_ID} />);
     const connect = screen.getByRole('button', { name: /^connect$/i }) as HTMLButtonElement;
     expect(connect.disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText(/bot token/i), { target: { value: ' xoxb-secret ' } });
+    fireEvent.change(screen.getByLabelText(/user token/i), { target: { value: ' xoxp-secret ' } });
     expect(connect.disabled).toBe(false);
   });
 
   it('trims the pasted token before connecting', async () => {
     const onConnected = vi.fn();
     render(<SlackFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-    fireEvent.change(screen.getByLabelText(/bot token/i), { target: { value: ' xoxb-secret ' } });
+    fireEvent.change(screen.getByLabelText(/user token/i), { target: { value: ' xoxp-secret ' } });
     fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
     await waitFor(() =>
       expect(state.connectSlack).toHaveBeenCalledWith({
         workspaceId: WS_ID,
-        botToken: 'xoxb-secret',
+        botToken: 'xoxp-secret',
         credentialId: null,
       }),
     );
     await waitFor(() => expect(onConnected).toHaveBeenCalledOnce());
   });
 
-  it('names every scope the bot token needs and where the token travels', () => {
+  it('names every scope the user token needs and where the token travels', () => {
     render(<SlackFormBody workspaceId={WS_ID} />);
     expect(screen.getByText('channels:read')).toBeDefined();
     expect(screen.getByText('channels:history')).toBeDefined();
     expect(screen.getByText('users:read')).toBeDefined();
     expect(screen.getByText('chat:write')).toBeDefined();
     expect(screen.getByText('reactions:write')).toBeDefined();
+    expect(screen.getByText(/User Token Scopes and not Bot Token Scopes/i)).toBeDefined();
     expect(screen.getByText(/never touches Goodboy's own servers/i)).toBeDefined();
     expect(screen.queryByText(/never leaving this machine/i)).toBeNull();
+  });
+
+  it('promises the channels you are in and says replies go out under your name', () => {
+    render(<SlackFormBody workspaceId={WS_ID} />);
+    expect(screen.getByText(/public channels you have joined/i)).toBeDefined();
+    expect(screen.getByText(/under your own name/i)).toBeDefined();
+    expect(screen.queryByText(/the bot has joined/i)).toBeNull();
+    expect(screen.queryByText(/Public channels only/i)).toBeNull();
   });
 
   it('shows the failure and skips onConnected when the probe is rejected', async () => {
@@ -102,7 +111,7 @@ describe('SlackFormBody', () => {
       throw new Error('slack rejected the token');
     });
     render(<SlackFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-    fireEvent.change(screen.getByLabelText(/bot token/i), { target: { value: 'xoxb-bad' } });
+    fireEvent.change(screen.getByLabelText(/user token/i), { target: { value: 'xoxp-bad' } });
     fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
     expect(await screen.findByText(/slack rejected the token/i)).toBeDefined();
     expect(onConnected).not.toHaveBeenCalled();
@@ -113,11 +122,13 @@ describe('SlackFormBody', () => {
       state.workspaceIntegrations = { [WS_ID]: [slackIntegration] };
     });
 
-    it('shows the team and the bot user instead of the form', () => {
+    it('names the person the token belongs to, never a bot', () => {
       render(<SlackFormBody workspaceId={WS_ID} />);
       expect(screen.getByText(/Connected to Acme/i)).toBeDefined();
       expect(screen.getByText('T01')).toBeDefined();
+      expect(screen.getByText('connected as')).toBeDefined();
       expect(screen.getByText('goodboy')).toBeDefined();
+      expect(screen.queryByText(/bot user/i)).toBeNull();
       expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
     });
 

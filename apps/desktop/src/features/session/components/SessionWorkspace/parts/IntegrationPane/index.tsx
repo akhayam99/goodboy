@@ -91,8 +91,7 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
     noun: 'thread',
     nounPhrase: 'a thread',
     nounPlural: 'threads',
-    linkHint:
-      'Pick a thread from a channel the bot has joined, or paste a Slack permalink to link one.',
+    linkHint: 'Pick a thread from a channel you are in, or paste a Slack permalink to link one.',
   },
 };
 
