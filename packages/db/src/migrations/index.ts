@@ -114,6 +114,11 @@ import { m113WorkflowRunRoleModels } from './m113-workflow-run-role-models';
 import { m114IntegrationCredentials } from './m114-integration-credentials';
 import { m115SessionEvents } from './m115-session-events';
 import { m116SessionEventWorkflowRestored } from './m116-session-event-workflow-restored';
+import { m117RenameProjects } from './m117-rename-projects';
+import { m118WorkspaceContainers } from './m118-workspace-containers';
+import { m119ProjectSessionRelations } from './m119-project-session-relations';
+import { m120WorkspaceProfiles } from './m120-workspace-profiles';
+import { m121ProjectSessionMounts } from './m121-project-session-mounts';
 
 export type Migration = {
   readonly version: number;
@@ -237,4 +242,9 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 114, sql: m114IntegrationCredentials },
   { version: 115, sql: m115SessionEvents },
   { version: 116, sql: m116SessionEventWorkflowRestored },
+  { version: 117, sql: m117RenameProjects },
+  { version: 118, sql: m118WorkspaceContainers },
+  { version: 119, sql: m119ProjectSessionRelations },
+  { version: 120, sql: m120WorkspaceProfiles },
+  { version: 121, sql: m121ProjectSessionMounts },
 ];

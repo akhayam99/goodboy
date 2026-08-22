@@ -37,6 +37,7 @@ import {
 } from '../queries/parallel-group';
 
 const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
+const preProjectMigrations = migrations.filter((migration) => migration.version <= 116);
 
 type Params = {
   readonly database: Database;
@@ -388,7 +389,7 @@ describe('migrate', () => {
 
   it('round-trips a workspace through the schema', async () => {
     const db = makeTestDatabase();
-    await migrate(db);
+    await migrate(db, preProjectMigrations);
 
     const workspace: Workspace = {
       id: 'ws_1' as WorkspaceId,
@@ -407,7 +408,7 @@ describe('migrate', () => {
 
   it('round-trips a session with discriminated turn state', async () => {
     const db = makeTestDatabase();
-    await migrate(db);
+    await migrate(db, preProjectMigrations);
 
     const workspace: Workspace = {
       id: 'ws_2' as WorkspaceId,
@@ -442,7 +443,7 @@ describe('migrate', () => {
 
   it('round-trips session providerPreference columns', async () => {
     const db = makeTestDatabase();
-    await migrate(db);
+    await migrate(db, preProjectMigrations);
 
     const workspace: Workspace = {
       id: 'ws_3' as WorkspaceId,
@@ -476,7 +477,7 @@ describe('migrate', () => {
 
   it('round-trips workflows with steps and agents', async () => {
     const db = makeTestDatabase();
-    await migrate(db);
+    await migrate(db, preProjectMigrations);
 
     const workspace: Workspace = {
       id: 'ws_4' as WorkspaceId,
@@ -588,7 +589,7 @@ describe('migrate', () => {
 
   it('round-trips session_worktrees: insert, list, delete', async () => {
     const db = makeTestDatabase();
-    await migrate(db);
+    await migrate(db, preProjectMigrations);
 
     const workspace: Workspace = {
       id: 'ws_wt' as WorkspaceId,
@@ -646,7 +647,7 @@ describe('migrate', () => {
 
   it('round-trips parallel_groups: insert, list, get, update, delete', async () => {
     const db = makeTestDatabase();
-    await migrate(db);
+    await migrate(db, preProjectMigrations);
 
     const workspace: Workspace = {
       id: 'ws_pg' as WorkspaceId,

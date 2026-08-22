@@ -4,6 +4,8 @@ import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
 import { migrations } from './index';
 
+const preProjectMigrations = migrations.filter((migration) => migration.version <= 116);
+
 const workspaceId = 'ws-1';
 const sessionId = 's-1';
 
@@ -35,7 +37,7 @@ describe('m105 integration jira provider', () => {
       [sessionId, workspaceId, Date.now()],
     );
 
-    await migrate(db, migrations);
+    await migrate(db, preProjectMigrations);
 
     const rows = await db.select<{ mount_workspace_id: string | null; branch: string | null }>(
       'SELECT mount_workspace_id, branch FROM session_external_tasks',
@@ -46,7 +48,7 @@ describe('m105 integration jira provider', () => {
   it('keeps both external task indexes after the rebuild', async () => {
     const db = await seedThrough104();
 
-    await migrate(db, migrations);
+    await migrate(db, preProjectMigrations);
 
     const indexes = await db.select<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'session_external_tasks' AND sql IS NOT NULL ORDER BY name",
@@ -60,7 +62,7 @@ describe('m105 integration jira provider', () => {
   it('accepts a jira row in both widened tables', async () => {
     const db = await seedThrough104();
 
-    await migrate(db, migrations);
+    await migrate(db, preProjectMigrations);
 
     const now = Date.now();
     await db.execute(
@@ -89,7 +91,7 @@ describe('m105 integration jira provider', () => {
   it('still rejects a provider outside the widened check', async () => {
     const db = await seedThrough104();
 
-    await migrate(db, migrations);
+    await migrate(db, preProjectMigrations);
 
     await expect(
       db.execute(

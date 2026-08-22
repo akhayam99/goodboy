@@ -4,6 +4,8 @@ import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
 import { migrations } from './index';
 
+const through111 = migrations.filter((migration) => migration.version <= 111);
+
 const workspaceId = 'ws-1';
 const sessionId = 's-1';
 
@@ -58,7 +60,7 @@ describe('m111 session worktree repo slug', () => {
     const db = await seedThrough110();
     await insertWorktree({ db, id: 'wt-old', branch: 'ak/feature', parallelIndex: 0 });
 
-    await migrate(db, migrations);
+    await migrate(db, through111);
 
     expect(await slugRows({ db })).toEqual([{ id: 'wt-old', repo_slug: null }]);
   });
@@ -66,7 +68,7 @@ describe('m111 session worktree repo slug', () => {
   it('stores a slug written after the migration', async () => {
     const db = await seedThrough110();
 
-    await migrate(db, migrations);
+    await migrate(db, through111);
     await insertWorktree({ db, id: 'wt-new', branch: 'ak/feature', parallelIndex: 0 });
     await db.execute('UPDATE session_worktrees SET repo_slug = ? WHERE id = ?', [
       'org/repo',
@@ -80,7 +82,7 @@ describe('m111 session worktree repo slug', () => {
     const db = await seedThrough110();
     await insertWorktree({ db, id: 'wt-old', branch: 'ak/feature', parallelIndex: 0 });
 
-    await migrate(db, migrations);
+    await migrate(db, through111);
 
     const indexes = await db.select<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'session_worktrees' AND sql IS NOT NULL ORDER BY name",

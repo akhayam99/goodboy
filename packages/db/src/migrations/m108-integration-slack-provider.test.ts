@@ -4,6 +4,8 @@ import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
 import { migrations } from './index';
 
+const preProjectMigrations = migrations.filter((migration) => migration.version <= 116);
+
 const workspaceId = 'ws-1';
 const sessionId = 's-1';
 
@@ -29,7 +31,7 @@ describe('m108 integration slack provider', () => {
   it('accepts a slack row in both widened tables', async () => {
     const db = await seedThrough107();
 
-    await migrate(db, migrations);
+    await migrate(db, preProjectMigrations);
 
     const now = Date.now();
     await db.execute(
@@ -64,7 +66,7 @@ describe('m108 integration slack provider', () => {
       [workspaceId, now, now],
     );
 
-    await migrate(db, migrations);
+    await migrate(db, preProjectMigrations);
 
     const rows = await db.select<{ id: string; provider: string; config: string }>(
       'SELECT id, provider, config FROM workspace_integrations',
@@ -77,7 +79,7 @@ describe('m108 integration slack provider', () => {
   it('leaves the pr review draft check alone because slack is not a review host', async () => {
     const db = await seedThrough107();
 
-    await migrate(db, migrations);
+    await migrate(db, preProjectMigrations);
 
     await expect(
       db.execute(
@@ -92,7 +94,7 @@ describe('m108 integration slack provider', () => {
   it('still rejects a provider outside each widened check', async () => {
     const db = await seedThrough107();
 
-    await migrate(db, migrations);
+    await migrate(db, preProjectMigrations);
 
     await expect(
       db.execute(
@@ -114,7 +116,7 @@ describe('m108 integration slack provider', () => {
   it('keeps every rebuilt index after the two table swaps', async () => {
     const db = await seedThrough107();
 
-    await migrate(db, migrations);
+    await migrate(db, preProjectMigrations);
 
     const indexes = await db.select<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'index' AND sql IS NOT NULL AND tbl_name IN ('workspace_integrations', 'session_external_tasks') ORDER BY name",

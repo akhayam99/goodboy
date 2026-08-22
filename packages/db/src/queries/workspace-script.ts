@@ -3,7 +3,7 @@ import type { Database } from '../client';
 
 type WorkspaceScriptRow = {
   id: string;
-  workspace_id: string;
+  project_id: string;
   name: string;
   body: string;
   sort_order: number;
@@ -14,7 +14,7 @@ type WorkspaceScriptRow = {
 function toDomain(row: WorkspaceScriptRow): WorkspaceScript {
   return {
     id: row.id as WorkspaceScriptId,
-    workspaceId: row.workspace_id as WorkspaceId,
+    workspaceId: row.project_id as WorkspaceId,
     name: row.name,
     body: row.body,
     sortOrder: row.sort_order,
@@ -28,7 +28,7 @@ export const listWorkspaceScripts = async (
   workspaceId: WorkspaceId,
 ): Promise<ReadonlyArray<WorkspaceScript>> => {
   const rows = await db.select<WorkspaceScriptRow>(
-    'SELECT * FROM workspace_scripts WHERE workspace_id = ? ORDER BY sort_order ASC, created_at ASC',
+    'SELECT * FROM project_scripts WHERE project_id = ? ORDER BY sort_order ASC, created_at ASC',
     [workspaceId],
   );
   return rows.map(toDomain);
@@ -39,8 +39,8 @@ export const upsertWorkspaceScript = async (
   script: WorkspaceScript,
 ): Promise<void> => {
   await db.execute(
-    `INSERT INTO workspace_scripts
-      (id, workspace_id, name, body, sort_order, created_at, updated_at)
+    `INSERT INTO project_scripts
+      (id, project_id, name, body, sort_order, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        name = excluded.name,
@@ -63,5 +63,5 @@ export const deleteWorkspaceScript = async (
   db: Database,
   scriptId: WorkspaceScriptId,
 ): Promise<void> => {
-  await db.execute('DELETE FROM workspace_scripts WHERE id = ?', [scriptId]);
+  await db.execute('DELETE FROM project_scripts WHERE id = ?', [scriptId]);
 };

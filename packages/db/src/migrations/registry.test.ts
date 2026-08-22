@@ -39,7 +39,12 @@ const sampleIntermediateCounts = ({
   for (let count = offset; count <= highest; count += step) {
     sampled.add(count);
   }
-  return [...sampled].sort((a, b) => a - b);
+  const ordered = [...sampled].sort((a, b) => a - b);
+  if (ordered.length <= sampleSize + 1) {
+    return ordered;
+  }
+  const withoutHighest = ordered.filter((count) => count !== highest);
+  return [...withoutHighest.slice(0, sampleSize), highest];
 };
 
 const schemaOf = async (db: Database): Promise<ReadonlyArray<string>> => {
@@ -168,6 +173,11 @@ const SHIPPED_MIGRATION_SQL_SHA256: Readonly<Record<number, string>> = {
   114: '86327dd8477a5794fb649f7d1f8942968d3b79bc460b18a06488f2d1cbd8338f',
   115: '90bfd30d51404a38c56b621fc469b391b8681cee11af5e0d1d215da9fcc1e953',
   116: '6a646ecfa328bd0da37ad9efe6f7b89c8cd948dd408c745e87437ebf1f864da5',
+  117: 'f0e73d09d334350250486de1af1f3a3dc4881db65c89228e275997a1c7c12d3a',
+  118: 'ed08b6590796af049c95aba2fa783eb29c8c5e7fa99d7b71ca2033b07fc23230',
+  119: '7b83931a874181712d6b1df29ce0f39b6655f4e859a0473c42666debf593dce5',
+  120: '2d6b79811adaf0e97c6d3797aa430f49031d3b0679e1fdc6a44d3f645a3a0c19',
+  121: 'd96321d54ed0fa1e644f35a97381268785b85618c9a357c164dfac8429bb2c09',
 };
 
 const MIN_CONVERGENCE_SAMPLE_POINTS = 10;
