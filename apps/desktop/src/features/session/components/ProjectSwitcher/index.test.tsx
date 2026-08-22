@@ -2,13 +2,13 @@
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SessionMount, WorkspaceId } from '@goodboy/types';
+import type { ProjectId, SessionProjectMount } from '@goodboy/types';
 
 const { store } = vi.hoisted(() => ({
   store: {
-    sessionMounts: {} as Record<string, ReadonlyArray<SessionMount>>,
-    sessionActiveMount: {} as Record<string, string>,
-    setSessionActiveMount: vi.fn(),
+    sessionProjectMounts: {} as Record<string, ReadonlyArray<SessionProjectMount>>,
+    sessionActiveProject: {} as Record<string, string>,
+    setSessionActiveProject: vi.fn(),
   },
 }));
 
@@ -18,29 +18,29 @@ vi.mock('../../../../store', () => ({
 
 import { ProjectSwitcher } from '.';
 
-const API_WORKSPACE_ID = 'workspace-api' as WorkspaceId;
-const WEB_WORKSPACE_ID = 'workspace-web' as WorkspaceId;
+const API_PROJECT_ID = 'project-api' as ProjectId;
+const WEB_PROJECT_ID = 'project-web' as ProjectId;
 
 const API_MOUNT = {
-  workspaceId: API_WORKSPACE_ID,
+  projectId: API_PROJECT_ID,
   mountName: 'api',
   worktreePath: '/worktrees/api',
   repoRoot: '/repos/api',
   branch: 'ak/project-scope',
-} satisfies SessionMount;
+} satisfies SessionProjectMount;
 
 const WEB_MOUNT = {
-  workspaceId: WEB_WORKSPACE_ID,
+  projectId: WEB_PROJECT_ID,
   mountName: 'web',
   worktreePath: '/worktrees/web',
   repoRoot: '/repos/web',
   branch: 'ak/project-scope',
-} satisfies SessionMount;
+} satisfies SessionProjectMount;
 
 beforeEach(() => {
-  store.sessionMounts = { 'session-1': [API_MOUNT, WEB_MOUNT] };
-  store.sessionActiveMount = { 'session-1': WEB_WORKSPACE_ID };
-  store.setSessionActiveMount.mockReset();
+  store.sessionProjectMounts = { 'session-1': [API_MOUNT, WEB_MOUNT] };
+  store.sessionActiveProject = { 'session-1': WEB_PROJECT_ID };
+  store.setSessionActiveProject.mockReset();
 });
 
 afterEach(cleanup);
@@ -51,14 +51,14 @@ describe('ProjectSwitcher', () => {
 
     expect(screen.getByRole('tab', { name: 'web' }).getAttribute('aria-selected')).toBe('true');
     fireEvent.click(screen.getByRole('tab', { name: 'api' }));
-    expect(store.setSessionActiveMount).toHaveBeenCalledWith({
+    expect(store.setSessionActiveProject).toHaveBeenCalledWith({
       sessionId: 'session-1',
-      workspaceId: 'workspace-api',
+      projectId: 'project-api',
     });
   });
 
   it('stays hidden for a session with one mount', () => {
-    store.sessionMounts = { 'session-1': [API_MOUNT] };
+    store.sessionProjectMounts = { 'session-1': [API_MOUNT] };
 
     render(<ProjectSwitcher sessionId={'session-1' as never} />);
 

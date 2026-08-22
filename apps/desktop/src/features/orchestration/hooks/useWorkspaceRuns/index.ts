@@ -231,7 +231,6 @@ export const useWorkspaceRuns = (
   const stageBySession = useAppStore(
     useShallow((s) => {
       const out: Record<string, SessionStage> = {};
-      const workspaceKind = s.workspaces?.find((workspace) => workspace.id === workspaceId)?.kind;
       for (const session of sessions) {
         if (session.workspaceId !== workspaceId) {
           continue;
@@ -254,7 +253,7 @@ export const useWorkspaceRuns = (
           openQuestionCount,
           hasRunningAgent,
           isPrReview: isPrReviewSession({ agents: runs ?? [] }),
-          isBranchless: isBranchlessSession({ workspaceKind, branch: s.sessionBranches[id] }),
+          isBranchless: isBranchlessSession({ branch: s.sessionBranches[id] }),
         }).stage;
       }
       return out;

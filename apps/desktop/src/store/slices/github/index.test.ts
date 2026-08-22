@@ -14,6 +14,8 @@ import type {
   PlanConsumptionId,
   PlanId,
   PlanWithCount,
+  Project,
+  ProjectId,
   PendingResolution,
   PullRequestState,
   ProviderRunId,
@@ -30,8 +32,8 @@ import type {
   WorkspaceId,
   WorkspaceIntegration,
   WorkspaceIntegrationId,
-  WorkspaceScript,
-  WorkspaceScriptId,
+  ProjectScript,
+  ProjectScriptId,
 } from '@goodboy/types';
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -60,9 +62,9 @@ const listIntegrationsForWorkspaceSpy = vi.fn(
   async () => [] as ReadonlyArray<WorkspaceIntegration>,
 );
 const deleteWorkspaceIntegrationSpy = vi.fn(async () => undefined);
-const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>);
-const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
-const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
+const listProjectScriptsSpy = vi.fn(async () => [] as ReadonlyArray<ProjectScript>);
+const upsertProjectScriptSpy = vi.fn(async () => undefined);
+const deleteProjectScriptSpy = vi.fn(async () => undefined);
 const deletePendingResolutionSpy = vi.fn(async () => undefined);
 const listPendingResolutionsForSessionSpy = vi.fn<
   (db: unknown, sessionId: SessionId) => Promise<ReadonlyArray<PendingResolution>>
@@ -125,9 +127,9 @@ vi.mock('@goodboy/db', () => ({
   detachWorkflowFromSession: vi.fn(async () => undefined),
   updateWorkflowOrder: vi.fn(async () => undefined),
   updateSessionWorkflowStep: vi.fn(async () => undefined),
-  listWorkspaceScripts: listWorkspaceScriptsSpy,
-  upsertWorkspaceScript: upsertWorkspaceScriptSpy,
-  deleteWorkspaceScript: deleteWorkspaceScriptSpy,
+  listProjectScripts: listProjectScriptsSpy,
+  upsertProjectScript: upsertProjectScriptSpy,
+  deleteProjectScript: deleteProjectScriptSpy,
   deletePendingResolution: deletePendingResolutionSpy,
   listPendingResolutionsForSession: listPendingResolutionsForSessionSpy,
   queuePendingResolution: queuePendingResolutionSpy,
@@ -378,16 +380,55 @@ const AGENT_ID = 'agent-1' as AgentId;
 const AGENT_ID_2 = 'agent-2' as AgentId;
 const RUN_ID = 'run-1' as ProviderRunId;
 const PLAN_ID = 'plan-1' as PlanId;
+const PROJECT_ID = 'project-1' as ProjectId;
 const NOW = '2026-05-28T00:00:00.000Z' as IsoDateTime;
 
 function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {
     id: WS_ID,
     name: 'ws',
-    rootPath: '/tmp/repo',
+    slug: 'ws',
+    sessionsRoot: '/tmp/repo',
+    overrides: {
+      defaultProviderId: null,
+      defaultWorkflowId: null,
+      defaultBranchPrefix: null,
+      parallelEnabled: null,
+      defaultVerbosity: null,
+      providerBindings: null,
+      taskModels: null,
+      roleModels: null,
+      parallelAgents: null,
+      providerPool: null,
+    },
     createdAt: NOW,
     updatedAt: NOW,
     lastAccessedAt: NOW,
+    ...overrides,
+  };
+}
+
+function buildProject(overrides: Partial<Project> = {}): Project {
+  return {
+    id: PROJECT_ID,
+    workspaceId: WS_ID,
+    name: 'repo',
+    rootPath: '/tmp/repo',
+    kind: 'repo',
+    overrides: {
+      defaultProviderId: null,
+      defaultWorkflowId: null,
+      defaultBranchPrefix: null,
+      parallelEnabled: null,
+      defaultVerbosity: null,
+      providerBindings: null,
+      taskModels: null,
+      roleModels: null,
+      parallelAgents: null,
+      providerPool: null,
+    },
+    createdAt: NOW,
+    updatedAt: NOW,
     ...overrides,
   };
 }
@@ -396,6 +437,7 @@ function buildSession(overrides: Partial<Session> = {}): Session {
   return {
     id: SESSION_ID,
     workspaceId: WS_ID,
+    activeProjectId: PROJECT_ID,
     goal: 'do a thing',
     state: { kind: 'idle', lastActivityAt: NOW },
     contextSlots: [],
@@ -455,7 +497,7 @@ describe('store contract', () => {
     invokePlanListSpy.mockResolvedValue([]);
     invokeListConsumptionsForPlanSpy.mockResolvedValue([]);
     invokeWorkspacesWithUnreadSpy.mockResolvedValue([]);
-    listWorkspaceScriptsSpy.mockResolvedValue([]);
+    listProjectScriptsSpy.mockResolvedValue([]);
     listIntegrationsForWorkspaceSpy.mockResolvedValue([]);
     listDiffCommentsSpy.mockResolvedValue([]);
     dbGetSettingSpy.mockResolvedValue(null);
@@ -466,6 +508,7 @@ describe('store contract', () => {
       const snap = store.getState();
       resetState = {
         workspaces: [],
+        projects: [buildProject()],
         workspaceIntegrations: {},
         sessionExternalTasks: {},
         currentWorkspaceId: null,
@@ -485,6 +528,18 @@ describe('store contract', () => {
         transcripts: {},
         messages: {},
         sessionWorktrees: {},
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            {
+              projectId: PROJECT_ID,
+              mountName: 'repo',
+              worktreePath: '/tmp/repo',
+              repoRoot: '/tmp/repo',
+              branch: 'goodboy/topic',
+            },
+          ],
+        },
+        sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
         sessionBranches: {},
         sessionTelemetry: {},
         workspaceSummary: null,
@@ -497,7 +552,7 @@ describe('store contract', () => {
         budgetAlerts: [],
         systemAlerts: [],
         skills: {},
-        workspaceScripts: {},
+        projectScripts: {},
         scriptRuns: {},
         phaseTemplates: {},
         sessionWorkflows: {},
@@ -590,10 +645,11 @@ describe('store contract', () => {
       expect(store.getState().sessionGithub[SESSION_ID]).toBeUndefined();
     });
 
-    it('refreshSessionPr noops for a simple workspace even with a branch', async () => {
+    it('refreshSessionPr noops for a folder project even with a branch', async () => {
       const store = await getStore();
       store.setState({
-        workspaces: [{ ...buildWorkspace(), kind: 'simple' } as never],
+        workspaces: [buildWorkspace()],
+        projects: [buildProject({ kind: 'folder' })],
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
       });
@@ -623,6 +679,17 @@ describe('store contract', () => {
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
         sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/topic'] },
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            {
+              projectId: PROJECT_ID,
+              mountName: 'repo',
+              worktreePath: '/tmp/repo/.wt/topic',
+              repoRoot: '/tmp/repo',
+              branch: 'goodboy/topic',
+            },
+          ],
+        },
         sessionGithub: {
           [SESSION_ID]: {
             pr: selectedPr,
@@ -672,6 +739,17 @@ describe('store contract', () => {
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
         sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/topic'] },
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            {
+              projectId: PROJECT_ID,
+              mountName: 'repo',
+              worktreePath: '/tmp/repo/.wt/topic',
+              repoRoot: '/tmp/repo',
+              branch: 'goodboy/topic',
+            },
+          ],
+        },
       });
 
       await store.getState().refreshSessionPr(SESSION_ID, { force: true });
@@ -775,12 +853,23 @@ describe('store contract', () => {
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
         sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            {
+              projectId: PROJECT_ID,
+              mountName: 'repo',
+              worktreePath: '/tmp/repo/.wt/x',
+              repoRoot: '/tmp/repo',
+              branch: 'ak/feat-x',
+            },
+          ],
+        },
       });
       const ok = await store
         .getState()
         .resolveGithubThread(SESSION_ID, 'PRT_1', { commitSha: 'abcdef1234567890' });
       expect(ok).toBe(true);
-      expect(gitPushSpy).toHaveBeenCalledWith('/tmp/repo/.wt/x', 'ak/feat-x', WS_ID, WS_ID);
+      expect(gitPushSpy).toHaveBeenCalledWith('/tmp/repo/.wt/x', 'ak/feat-x', WS_ID, PROJECT_ID);
       const pushOrder = gitPushSpy.mock.invocationCallOrder[0] ?? 0;
       const replyOrder = addReplySpy.mock.invocationCallOrder[0] ?? 0;
       expect(pushOrder).toBeGreaterThan(0);

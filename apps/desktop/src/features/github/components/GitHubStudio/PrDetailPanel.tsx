@@ -482,7 +482,7 @@ export const PrDetailPanel = ({
         <PrReviewers
           detail={detail}
           workspaceRoot={workspaceRoot}
-          memberWorkspaceId={repo?.workspaceId}
+          memberWorkspaceId={repo?.projectId}
           onAddReviewers={onAddReviewers}
         />
       }

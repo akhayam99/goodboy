@@ -44,7 +44,7 @@ describe('workflow queries', () => {
     db = makeTestDatabase();
     await migrate(db);
     await db.execute(
-      'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
       [workspaceId, 'ws', '/tmp/ws', Date.now(), Date.now()],
     );
   });

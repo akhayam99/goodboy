@@ -2,14 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type {
-  IsoDateTime,
-  ProviderId,
-  Session,
-  SessionId,
-  WorkspaceId,
-  WorkspaceKind,
-} from '@goodboy/types';
+import type { IsoDateTime, ProviderId, Session, SessionId, WorkspaceId } from '@goodboy/types';
 
 type Store = {
   readonly spawnAgent: ReturnType<typeof vi.fn>;
@@ -44,7 +37,6 @@ const makeSession = (overrides: Partial<Session> = {}): Session => ({
 const h = vi.hoisted(() => ({
   spawnAgent: vi.fn(async () => 'a1'),
   providers: [{ id: 'anthropic' as ProviderId, connection: 'connected' }],
-  workspaceKind: 'repo' as WorkspaceKind,
   sessions: [] as ReadonlyArray<unknown>,
   providerConnect: {
     codex: {
@@ -75,7 +67,6 @@ vi.mock('../../../../store', () => ({
       cancelProviderConnect: h.cancelProviderConnect,
       dismissProviderConnect: h.dismissProviderConnect,
     }),
-  useCurrentWorkspace: () => ({ id: 'workspace-1' as WorkspaceId, kind: h.workspaceKind }),
 }));
 
 import { CreateAgentPopover } from './index';
@@ -96,7 +87,6 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   h.providers = [{ id: 'anthropic' as ProviderId, connection: 'connected' }];
-  h.workspaceKind = 'repo';
   h.sessions = [makeSession()];
   Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
 });
@@ -289,12 +279,11 @@ describe('CreateAgentPopover', () => {
     expect(screen.queryByRole('dialog', { name: 'Create agent' })).toBeNull();
   });
 
-  it('drops the type section entirely in a simple workspace', () => {
-    h.workspaceKind = 'simple';
+  it('keeps the type section available for a folder project', () => {
     renderControl();
     openPopover();
 
-    expect(screen.queryByText('Agent type')).toBeNull();
+    expect(screen.getByText('Agent type')).toBeDefined();
     confirm();
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
       kindOverride: 'generic',

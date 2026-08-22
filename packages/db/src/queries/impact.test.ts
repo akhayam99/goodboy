@@ -31,7 +31,7 @@ const seedDb = async (): Promise<Database> => {
   await migrate(db);
   for (const id of [workspaceId, otherWorkspaceId]) {
     await db.execute(
-      `INSERT INTO workspaces (id, name, root_path, created_at, updated_at)
+      `INSERT INTO workspaces (id, name, slug, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?)`,
       [id, id, `/tmp/${id}`, OLD, NOW],
     );
@@ -94,8 +94,8 @@ const addAgent = async ({
       seed.id,
       seed.status ?? 'completed',
       seed.runId ?? null,
-      iso(seed.startedAt),
-      seed.completedAt === undefined ? null : iso(seed.completedAt),
+      seed.startedAt,
+      seed.completedAt === undefined ? null : seed.completedAt,
       seed.kind ?? 'implementer',
       seed.parentId ?? null,
     ],
@@ -264,7 +264,7 @@ describe('pull request outcomes', () => {
           state: 'merged',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
         'feature/b',
         JSON.stringify({
           number: 9,
@@ -272,7 +272,7 @@ describe('pull request outcomes', () => {
           state: 'open',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
       ],
     );
 
@@ -303,7 +303,7 @@ describe('pull request outcomes', () => {
           state: 'merged',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
       ],
     );
     await addTelemetry({
@@ -342,7 +342,7 @@ describe('pull request outcomes', () => {
           state: 'open',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
       ],
     );
 
@@ -376,7 +376,7 @@ describe('pull request outcomes', () => {
           state: 'open',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
       ],
     );
     await addTelemetry({
@@ -413,7 +413,7 @@ describe('pull request outcomes', () => {
           state: 'open',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
       ],
     );
     await addTelemetry({
@@ -453,7 +453,7 @@ describe('pull request outcomes', () => {
           state: 'open',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
       ],
     );
 
@@ -485,7 +485,7 @@ describe('pull request outcomes', () => {
           state: 'open',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
       ],
     );
     await addTelemetry({
@@ -524,7 +524,7 @@ describe('pull request outcomes', () => {
           state: 'open',
           updatedAt: iso(RECENT),
         }),
-        iso(staleFetch),
+        staleFetch,
       ],
     );
 
@@ -553,7 +553,7 @@ describe('pull request outcomes', () => {
           state: 'merged',
           updatedAt: iso(RECENT),
         }),
-        iso(Date.now() - DAY_MS),
+        Date.now() - DAY_MS,
       ],
     );
 
@@ -578,7 +578,7 @@ describe('review outcomes', () => {
       `INSERT INTO pr_review_drafts
          (id, session_id, provider, repo, pr_number, path, line, body, status, created_at)
        VALUES ('draft', 's1', 'github', 'repo', 1, 'a.ts', 1, 'body', 'published', ?)`,
-      [iso(RECENT)],
+      [RECENT],
     );
     await db.execute(
       `INSERT INTO pending_resolutions
@@ -678,7 +678,7 @@ describe('flow health', () => {
       `INSERT INTO budget_alerts
          (id, kind, session_id, current_usd, cap_usd, created_at)
        VALUES ('b1', 'session-threshold', 's1', 8, 10, ?)`,
-      [iso(RECENT)],
+      [RECENT],
     );
 
     const result = await getFlowHealth(params({ db, sinceMs: SINCE }));
@@ -766,9 +766,9 @@ describe('right-size nudges', () => {
     const db = await seedDb();
     await addSession({ db, seed: { id: 's1', createdAt: RECENT } });
     await db.execute(
-      `INSERT INTO nudge_events (id, ts, kind, context_json, outcome, outcome_ts)
-       VALUES ('n1', ?, 'model-rightsize', ?, 'accepted', ?)`,
-      [iso(RECENT), JSON.stringify({ sessionId: 's1' }), iso(RECENT)],
+      `INSERT INTO nudge_events (id, session_id, created_at, kind, context_json, outcome, outcome_ts)
+       VALUES ('n1', 's1', ?, 'model-rightsize', ?, 'accepted', ?)`,
+      [RECENT, JSON.stringify({ sessionId: 's1' }), RECENT],
     );
 
     const result = await getRightSizeNudgeOutcomes(params({ db, sinceMs: SINCE }));

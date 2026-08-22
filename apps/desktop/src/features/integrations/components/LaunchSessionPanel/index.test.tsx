@@ -17,6 +17,9 @@ const h = vi.hoisted(() => ({
     workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'dev' }] as ReadonlyArray<
       Record<string, unknown>
     >,
+    projects: [
+      { id: 'project-1', workspaceId: 'workspace-1', rootPath: '/repo', kind: 'repo' },
+    ] as ReadonlyArray<Record<string, unknown>>,
   },
 }));
 
@@ -71,6 +74,9 @@ beforeEach(() => {
   h.simpleSessionDirExists.mockClear();
   h.showToast.mockClear();
   h.store.workspaces = [{ id: 'workspace-1', rootPath: '/repo', kind: 'dev' }];
+  h.store.projects = [
+    { id: 'project-1', workspaceId: 'workspace-1', rootPath: '/repo', kind: 'repo' },
+  ];
 });
 
 afterEach(cleanup);
@@ -169,7 +175,9 @@ describe('LaunchSessionPanel', () => {
   });
 
   it('blocks launch for invalid folder names in a repo-less workspace', () => {
-    h.store.workspaces = [{ id: 'workspace-1', rootPath: '/notes', kind: 'simple' }];
+    h.store.projects = [
+      { id: 'project-1', workspaceId: 'workspace-1', rootPath: '/notes', kind: 'folder' },
+    ];
 
     renderPanel();
     fireEvent.click(screen.getByRole('button', { name: /Session setup/ }));
@@ -183,7 +191,9 @@ describe('LaunchSessionPanel', () => {
   });
 
   it('blocks launch when the folder already exists in a repo-less workspace', async () => {
-    h.store.workspaces = [{ id: 'workspace-1', rootPath: '/notes', kind: 'simple' }];
+    h.store.projects = [
+      { id: 'project-1', workspaceId: 'workspace-1', rootPath: '/notes', kind: 'folder' },
+    ];
     h.simpleSessionDirExists.mockResolvedValueOnce(true);
 
     renderPanel();
@@ -208,7 +218,9 @@ describe('LaunchSessionPanel', () => {
   });
 
   it('drops the branch field and passes the typed folder name in a repo-less workspace', async () => {
-    h.store.workspaces = [{ id: 'workspace-1', rootPath: '/notes', kind: 'simple' }];
+    h.store.projects = [
+      { id: 'project-1', workspaceId: 'workspace-1', rootPath: '/notes', kind: 'folder' },
+    ];
 
     render(
       <LaunchSessionPanel

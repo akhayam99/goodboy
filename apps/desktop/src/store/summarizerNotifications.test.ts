@@ -159,9 +159,9 @@ vi.mock('@goodboy/db', () => ({
   detachWorkflowFromSession: vi.fn(async () => undefined),
   updateWorkflowOrder: vi.fn(async () => undefined),
   updateSessionWorkflowStep: vi.fn(async () => undefined),
-  listWorkspaceScripts: vi.fn(async () => []),
-  upsertWorkspaceScript: vi.fn(async () => undefined),
-  deleteWorkspaceScript: vi.fn(async () => undefined),
+  listProjectScripts: vi.fn(async () => []),
+  upsertProjectScript: vi.fn(async () => undefined),
+  deleteProjectScript: vi.fn(async () => undefined),
   upsertContextSlot: vi.fn(async () => undefined),
   listOpenQuestionsForSession: vi.fn(async () => []),
   insertNudgeEvent: vi.fn(async () => undefined),
@@ -240,7 +240,26 @@ describe('summarizer notifications', () => {
       sessionSlots: {},
       summarizerStatus: {},
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
 
@@ -290,7 +309,26 @@ describe('summarizer notifications', () => {
       sessionSlots: {},
       summarizerStatus: {},
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
 
@@ -342,7 +380,26 @@ describe('summarizer notifications', () => {
       sessionSlots: {},
       summarizerStatus: {},
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
 

@@ -141,7 +141,7 @@ describe('PreferencesStep', () => {
     });
 
     it('is hidden with repository-specific defaults for simple workspaces', () => {
-      render(<PreferencesStep workspaceId={WS_ID} workspaceKind="simple" />);
+      render(<PreferencesStep workspaceId={WS_ID} projectKind="folder" />);
       expect(screen.queryByLabelText(/branch prefix/i)).toBeNull();
       expect(screen.queryByRole('switch')).toBeNull();
     });

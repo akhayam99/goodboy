@@ -26,6 +26,8 @@ import type {
   PlanWithCount,
   PrDetail,
   PrReviewDraft,
+  Project,
+  ProjectId,
   ProviderCredential,
   ProviderId,
   ProviderRunId,
@@ -35,7 +37,7 @@ import type {
   SessionEvent,
   SessionExternalTask,
   SessionId,
-  SessionMount,
+  SessionProjectMount,
   SessionViewPrefs,
   Skill,
   StepDef,
@@ -48,8 +50,8 @@ import type {
   WorkspaceGitStatus,
   WorkspaceId,
   WorkspaceIntegration,
-  WorkspaceScript,
-  WorkspaceScriptId,
+  ProjectScript,
+  ProjectScriptId,
 } from '@goodboy/types';
 import type { SessionWorktree } from '@goodboy/db';
 import type { AgentKind } from '../features/session/agent-kind';
@@ -178,13 +180,14 @@ type AppSliceState = UpdaterState & ChangelogState & SlackThreadsSliceState & Bu
 
 export type AppState = AppSliceState & {
   readonly workspaces: ReadonlyArray<Workspace>;
+  readonly projects: ReadonlyArray<Project>;
   readonly workspaceIntegrations: Readonly<
     Record<WorkspaceId, ReadonlyArray<WorkspaceIntegration>>
   >;
   readonly integrationCredentials: ReadonlyArray<IntegrationCredential>;
   readonly integrationCredentialUsage: IntegrationCredentialUsage;
-  readonly workspaceGitStatus: Readonly<Record<WorkspaceId, WorkspaceGitStatus>>;
-  readonly workspaceCheckoutPulling: Readonly<Record<WorkspaceId, boolean>>;
+  readonly projectGitStatus: Readonly<Record<ProjectId, WorkspaceGitStatus>>;
+  readonly projectCheckoutPulling: Readonly<Record<ProjectId, boolean>>;
   readonly sessionExternalTasks: Readonly<Record<SessionId, ReadonlyArray<SessionExternalTask>>>;
   readonly sessionEvents: Readonly<Record<SessionId, ReadonlyArray<SessionEvent> | undefined>>;
   readonly currentWorkspaceId: WorkspaceId | null;
@@ -211,8 +214,8 @@ export type AppState = AppSliceState & {
   readonly sessionWorktrees: Readonly<Record<string, ReadonlyArray<string>>>;
   readonly sessionWorktreeRecords?: Readonly<Record<string, ReadonlyArray<SessionWorktree>>>;
   readonly orphanWorktrees: Readonly<Record<string, ReadonlyArray<OrphanWorktree>>>;
-  readonly sessionMounts: Readonly<Record<string, ReadonlyArray<SessionMount>>>;
-  readonly sessionActiveMount: Readonly<Record<string, WorkspaceId>>;
+  readonly sessionProjectMounts: Readonly<Record<string, ReadonlyArray<SessionProjectMount>>>;
+  readonly sessionActiveProject: Readonly<Record<string, ProjectId>>;
   readonly sessionBranches: Readonly<Record<string, string>>;
   readonly sessionTelemetry: Readonly<Record<string, ReadonlyArray<TelemetryRecord>>>;
   readonly workspaceSummary: TelemetrySummary | null;
@@ -231,9 +234,9 @@ export type AppState = AppSliceState & {
   readonly budgetAlerts: ReadonlyArray<BudgetAlert>;
   readonly systemAlerts: ReadonlyArray<SystemAlert>;
   readonly skills: Readonly<Record<WorkspaceId, ReadonlyArray<Skill>>>;
-  readonly workspaceScripts: Readonly<Record<WorkspaceId, ReadonlyArray<WorkspaceScript>>>;
+  readonly projectScripts: Readonly<Record<WorkspaceId, ReadonlyArray<ProjectScript>>>;
   readonly scriptRuns: Readonly<
-    Record<SessionId, Readonly<Record<WorkspaceScriptId, ScriptRunRecord>>>
+    Record<SessionId, Readonly<Record<ProjectScriptId, ScriptRunRecord>>>
   >;
   readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<Workflow>>>;
   readonly stepLibrary: Readonly<Record<WorkspaceId, ReadonlyArray<StepDef>>>;

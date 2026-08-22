@@ -25,9 +25,9 @@ const { hooks, remote, store } = vi.hoisted(() => {
       isGithubResolved: true,
     },
     store: {
-      sessionMounts: {},
-      sessionActiveMount: {},
-      setSessionActiveMount: vi.fn(async () => undefined),
+      sessionProjectMounts: {},
+      sessionActiveProject: {},
+      setSessionActiveProject: vi.fn(async () => undefined),
       agentKindOverride: {},
       activeLens: {} as Record<string, string | null>,
       setActiveLens: vi.fn(),

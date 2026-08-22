@@ -12,7 +12,9 @@ type Params = {
 export const useRemoteHostKind = ({ sessionId }: Params): RemoteHostKind | null => {
   const repo = useSessionRepo({ sessionId });
   const rootPath = repo?.repoRoot ?? null;
-  const workspaceId = repo?.workspaceId ?? null;
+  const workspaceId = useAppStore(
+    (state) => state.sessions.find((session) => session.id === sessionId)?.workspaceId ?? null,
+  );
   const gitlabHosts = useAppStore(
     useShallow((s) =>
       (workspaceId == null ? [] : (s.workspaceIntegrations[workspaceId] ?? []))

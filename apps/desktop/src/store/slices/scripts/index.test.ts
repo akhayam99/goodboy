@@ -14,6 +14,8 @@ import type {
   PlanConsumptionId,
   PlanId,
   PlanWithCount,
+  Project,
+  ProjectId,
   ProviderRunId,
   Session,
   SessionId,
@@ -28,8 +30,8 @@ import type {
   WorkspaceId,
   WorkspaceIntegration,
   WorkspaceIntegrationId,
-  WorkspaceScript,
-  WorkspaceScriptId,
+  ProjectScript,
+  ProjectScriptId,
 } from '@goodboy/types';
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -58,9 +60,9 @@ const listIntegrationsForWorkspaceSpy = vi.fn(
   async () => [] as ReadonlyArray<WorkspaceIntegration>,
 );
 const deleteWorkspaceIntegrationSpy = vi.fn(async () => undefined);
-const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>);
-const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
-const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
+const listProjectScriptsSpy = vi.fn(async () => [] as ReadonlyArray<ProjectScript>);
+const upsertProjectScriptSpy = vi.fn(async () => undefined);
+const deleteProjectScriptSpy = vi.fn(async () => undefined);
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
@@ -116,9 +118,9 @@ vi.mock('@goodboy/db', () => ({
   detachWorkflowFromSession: vi.fn(async () => undefined),
   updateWorkflowOrder: vi.fn(async () => undefined),
   updateSessionWorkflowStep: vi.fn(async () => undefined),
-  listWorkspaceScripts: listWorkspaceScriptsSpy,
-  upsertWorkspaceScript: upsertWorkspaceScriptSpy,
-  deleteWorkspaceScript: deleteWorkspaceScriptSpy,
+  listProjectScripts: listProjectScriptsSpy,
+  upsertProjectScript: upsertProjectScriptSpy,
+  deleteProjectScript: deleteProjectScriptSpy,
   upsertContextSlot: vi.fn(async () => undefined),
   listOpenQuestionsForSession: vi.fn(async () => []),
   insertNudgeEvent: insertNudgeEventSpy,
@@ -351,6 +353,7 @@ vi.mock('../../../features/settings/config-export', () => ({
 
 const WS_ID = 'workspace-1' as WorkspaceId;
 const WS_ID_2 = 'workspace-2' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 const SESSION_ID = 'session-1' as SessionId;
 const SESSION_ID_2 = 'session-2' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -363,13 +366,37 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {
     id: WS_ID,
     name: 'ws',
-    rootPath: '/tmp/repo',
+    slug: 'ws',
+    sessionsRoot: '/tmp/repo',
+    overrides: {
+      defaultProviderId: null,
+      defaultWorkflowId: null,
+      defaultBranchPrefix: null,
+      parallelEnabled: null,
+      defaultVerbosity: null,
+      providerBindings: null,
+      taskModels: null,
+      roleModels: null,
+      parallelAgents: null,
+      providerPool: null,
+    },
     createdAt: NOW,
     updatedAt: NOW,
     lastAccessedAt: NOW,
     ...overrides,
   };
 }
+
+const buildProject = (): Project => ({
+  id: PROJECT_ID,
+  workspaceId: WS_ID,
+  name: 'repo',
+  rootPath: '/tmp/repo',
+  kind: 'repo',
+  overrides: buildWorkspace().overrides,
+  createdAt: NOW,
+  updatedAt: NOW,
+});
 
 function buildSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -434,7 +461,7 @@ describe('store contract', () => {
     invokePlanListSpy.mockResolvedValue([]);
     invokeListConsumptionsForPlanSpy.mockResolvedValue([]);
     invokeWorkspacesWithUnreadSpy.mockResolvedValue([]);
-    listWorkspaceScriptsSpy.mockResolvedValue([]);
+    listProjectScriptsSpy.mockResolvedValue([]);
     listIntegrationsForWorkspaceSpy.mockResolvedValue([]);
     listDiffCommentsSpy.mockResolvedValue([]);
     dbGetSettingSpy.mockResolvedValue(null);
@@ -445,6 +472,7 @@ describe('store contract', () => {
       const snap = store.getState();
       resetState = {
         workspaces: [],
+        projects: [buildProject()],
         workspaceIntegrations: {},
         sessionExternalTasks: {},
         currentWorkspaceId: null,
@@ -476,7 +504,7 @@ describe('store contract', () => {
         budgetAlerts: [],
         systemAlerts: [],
         skills: {},
-        workspaceScripts: {},
+        projectScripts: {},
         scriptRuns: {},
         phaseTemplates: {},
         sessionWorkflows: {},
@@ -523,34 +551,34 @@ describe('store contract', () => {
   describe('scripts', () => {
     it('loadScripts caches workspace scripts', async () => {
       const store = await getStore();
-      const script: WorkspaceScript = {
-        id: 'sc-1' as WorkspaceScriptId,
-        workspaceId: WS_ID,
+      const script: ProjectScript = {
+        id: 'sc-1' as ProjectScriptId,
+        projectId: PROJECT_ID,
         name: 'test',
         body: 'echo',
         sortOrder: 0,
         createdAt: NOW,
         updatedAt: NOW,
       };
-      listWorkspaceScriptsSpy.mockResolvedValueOnce([script]);
+      listProjectScriptsSpy.mockResolvedValueOnce([script]);
       await store.getState().loadScripts(WS_ID);
-      expect(store.getState().workspaceScripts[WS_ID]).toEqual([script]);
+      expect(store.getState().projectScripts[WS_ID]).toEqual([script]);
     });
 
     it('deleteScript removes from cache immediately', async () => {
       const store = await getStore();
-      const script: WorkspaceScript = {
-        id: 'sc-1' as WorkspaceScriptId,
-        workspaceId: WS_ID,
+      const script: ProjectScript = {
+        id: 'sc-1' as ProjectScriptId,
+        projectId: PROJECT_ID,
         name: 'test',
         body: 'echo',
         sortOrder: 0,
         createdAt: NOW,
         updatedAt: NOW,
       };
-      store.setState({ workspaceScripts: { [WS_ID]: [script] } });
+      store.setState({ projectScripts: { [WS_ID]: [script] } });
       await store.getState().deleteScript(script.id, WS_ID);
-      expect(store.getState().workspaceScripts[WS_ID]).toEqual([]);
+      expect(store.getState().projectScripts[WS_ID]).toEqual([]);
     });
   });
 });

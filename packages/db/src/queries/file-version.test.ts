@@ -27,12 +27,18 @@ const seed = async () => {
   await migrate(db);
   const now = Date.now();
   await db.execute(
-    `INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+    `INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
     [workspaceId, 'ws', '/tmp/ws', now, now],
   );
   await db.execute(
     `INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
     [sessionId, workspaceId, 'goal', 'idle', now, now],
+  );
+  await db.execute(
+    `INSERT INTO provider_runs
+       (id, session_id, provider, model, status_kind, status_payload, created_at)
+     VALUES (?, ?, 'anthropic', 'model', 'succeeded', '{}', ?)`,
+    [providerRunId, sessionId, now],
   );
   return db;
 };

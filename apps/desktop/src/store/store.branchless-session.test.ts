@@ -13,7 +13,13 @@ const {
   changeWorktreeBranch: vi.fn(async () => undefined),
   removeWorktree: vi.fn(async () => undefined),
   listWorktreesForSession: vi.fn(async () => [
-    { worktreePath: '/root/sessions/study-plan', branch: '', parallelIndex: 0 },
+    {
+      worktreePath: '/root/sessions/study-plan',
+      branch: '',
+      parallelIndex: 0,
+      projectId: 'project-1',
+      mountName: 'project',
+    },
   ]),
   updateSessionWorktreeBranch: vi.fn(async () => undefined),
   deleteSession: vi.fn(async () => undefined),
@@ -65,13 +71,26 @@ type Store = {
   sessions: ReadonlyArray<{
     id: string;
     workspaceId: string;
+    activeProjectId: string;
     goal: string;
     state: { kind: string };
   }>;
   archivedSessions: Record<string, ReadonlyArray<unknown>>;
-  workspaces: ReadonlyArray<{ id: string; rootPath: string; kind: string }>;
+  workspaces: ReadonlyArray<{ id: string; sessionsRoot: string | null }>;
+  projects: ReadonlyArray<{ id: string; workspaceId: string; rootPath: string; kind: string }>;
   sessionBranches: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
+  sessionProjectMounts: Record<
+    string,
+    ReadonlyArray<{
+      projectId: string;
+      mountName: string;
+      repoRoot: string;
+      worktreePath: string;
+      branch: string;
+    }>
+  >;
+  sessionActiveProject: Record<string, string>;
   sessionGithub: Record<string, unknown>;
   sessionGithubPrs: Record<string, ReadonlyArray<unknown>>;
   sessionSelectedPrNumber: Record<string, number | null>;
@@ -83,11 +102,40 @@ type Store = {
 };
 
 const makeStore = (branch: string): Store => ({
-  sessions: [{ id: 'sess-1', workspaceId: 'ws-1', goal: 'plan a trip', state: { kind: 'idle' } }],
+  sessions: [
+    {
+      id: 'sess-1',
+      workspaceId: 'ws-1',
+      activeProjectId: 'project-1',
+      goal: 'plan a trip',
+      state: { kind: 'idle' },
+    },
+  ],
   archivedSessions: {},
-  workspaces: [{ id: 'ws-1', rootPath: '/root', kind: 'repo' }],
+  workspaces: [{ id: 'ws-1', sessionsRoot: null }],
+  projects: [
+    {
+      id: 'project-1',
+      workspaceId: 'ws-1',
+      rootPath: '/root',
+      kind: branch === '' ? 'folder' : 'repo',
+    },
+  ],
   sessionBranches: { 'sess-1': branch },
   sessionWorktrees: { 'sess-1': ['/root/sessions/study-plan'] },
+  sessionProjectMounts: {
+    'sess-1': [
+      {
+        projectId: 'project-1',
+        mountName: 'project',
+        repoRoot: '/root',
+        worktreePath:
+          branch === '' ? '/root/sessions/study-plan' : '/root/.goodboy/worktrees/gb-plan',
+        branch,
+      },
+    ],
+  },
+  sessionActiveProject: { 'sess-1': 'project-1' },
   sessionGithub: {},
   sessionGithubPrs: {},
   sessionSelectedPrNumber: {},
@@ -139,6 +187,8 @@ describe('a repo-backed session in the same workspace', () => {
         worktreePath: '/root/.goodboy/worktrees/gb-plan',
         branch: 'gb/plan-a-trip',
         parallelIndex: 0,
+        projectId: 'project-1',
+        mountName: 'project',
       },
     ]);
 

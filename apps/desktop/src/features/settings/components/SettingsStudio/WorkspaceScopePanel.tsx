@@ -83,7 +83,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
         taskModels: wsOverrides?.taskModels ?? null,
         roleModels: wsOverrides?.roleModels ?? null,
         parallelAgents,
-        enabledProviders: wsOverrides?.enabledProviders,
+        providerPool: wsOverrides?.providerPool ?? null,
         ...partial,
       });
       showToast('success', successMessage);
@@ -130,7 +130,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
         taskModels: wsOverrides?.taskModels ?? null,
         roleModels: wsOverrides?.roleModels ?? null,
         parallelAgents,
-        enabledProviders: wsOverrides?.enabledProviders,
+        providerPool: wsOverrides?.providerPool ?? null,
       });
       setBranchPrefix(next);
       setSavedBranchPrefix(next);
@@ -161,7 +161,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       .slice(0, 16);
 
   const folderName =
-    workspace?.rootPath.split('/').filter(Boolean).at(-1) ?? 'the workspace folder';
+    workspace?.sessionsRoot?.split('/').filter(Boolean).at(-1) ?? 'the workspace folder';
 
   const anchor = (id: string) => (el: HTMLElement | null) => {
     anchorsRef.current[id] = el;

@@ -29,7 +29,7 @@ const { state } = vi.hoisted(() => ({
 
 vi.mock('../../../../store', () => {
   const getStoreState = () => ({
-    workspaceScripts: { 'ws-1': state.scripts },
+    projectScripts: { 'ws-1': state.scripts },
     scriptRuns: { 'session-1': state.scriptRuns['session-1'] ?? {} },
     loadScripts: state.loadScripts,
     saveScript: state.saveScript,

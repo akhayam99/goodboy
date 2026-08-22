@@ -24,14 +24,14 @@ const {
       worktreePath: '/repos/api/.goodboy/worktrees/composite-task',
       branch: 'gb/api-task',
       parallelIndex: 1,
-      mountWorkspaceId: 'ws-api',
+      projectId: 'project-api',
       mountName: 'api',
     },
     {
       worktreePath: '/repos/web/.goodboy/worktrees/composite-task',
       branch: 'gb/web-task',
       parallelIndex: 2,
-      mountWorkspaceId: 'ws-web',
+      projectId: 'project-web',
       mountName: 'web',
     },
   ]),
@@ -77,10 +77,9 @@ import { deleteTask } from './slices/sessions/deleteTask';
 import { changeSessionBranch } from './slices/worktrees/changeSessionBranch';
 
 const SESSION_ID = 'sess-1' as never;
-const COMPOSITE_WORKSPACE_ID = 'ws-composite';
-const API_WORKSPACE_ID = 'ws-api';
-const WEB_WORKSPACE_ID = 'ws-web';
-const COMPOSITE_ROOT = '/projects/composite';
+const WORKSPACE_ID = 'workspace-1';
+const API_PROJECT_ID = 'project-api';
+const WEB_PROJECT_ID = 'project-web';
 const CONTAINER_PATH = '/projects/composite/sessions/composite-task';
 const API_REPO_ROOT = '/repos/api';
 const WEB_REPO_ROOT = '/repos/web';
@@ -93,33 +92,31 @@ type Store = {
   sessions: ReadonlyArray<{
     id: string;
     workspaceId: string;
+    activeProjectId: string;
     goal: string;
     state: { kind: string };
   }>;
   archivedSessions: Record<string, ReadonlyArray<unknown>>;
-  workspaces: ReadonlyArray<{
+  workspaces: ReadonlyArray<{ id: string; sessionsRoot: string }>;
+  projects: ReadonlyArray<{
     id: string;
+    workspaceId: string;
     rootPath: string;
     kind: string;
-    members: ReadonlyArray<{
-      workspaceId: string;
-      rootPath: string;
-      mountName: string;
-    }>;
   }>;
   sessionBranches: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
-  sessionMounts: Record<
+  sessionProjectMounts: Record<
     string,
     ReadonlyArray<{
-      workspaceId: string;
+      projectId: string;
       mountName: string;
       repoRoot: string;
       worktreePath: string;
       branch: string;
     }>
   >;
-  sessionActiveMount: Record<string, string>;
+  sessionActiveProject: Record<string, string>;
   sessionGithub: Record<string, unknown>;
   sessionGithubPrs: Record<string, ReadonlyArray<unknown>>;
   sessionSelectedPrNumber: Record<string, number | null>;
@@ -138,38 +135,33 @@ const makeStore = ({ activeMount }: MakeStoreParams): Store => ({
   sessions: [
     {
       id: SESSION_ID,
-      workspaceId: COMPOSITE_WORKSPACE_ID,
-      goal: 'ship composite task',
+      workspaceId: WORKSPACE_ID,
+      activeProjectId: API_PROJECT_ID,
+      goal: 'ship multi-project task',
       state: { kind: 'idle' },
     },
   ],
   archivedSessions: {},
-  workspaces: [
-    {
-      id: COMPOSITE_WORKSPACE_ID,
-      rootPath: COMPOSITE_ROOT,
-      kind: 'composite',
-      members: [
-        { workspaceId: API_WORKSPACE_ID, rootPath: API_REPO_ROOT, mountName: 'api' },
-        { workspaceId: WEB_WORKSPACE_ID, rootPath: WEB_REPO_ROOT, mountName: 'web' },
-      ],
-    },
+  workspaces: [{ id: WORKSPACE_ID, sessionsRoot: '/projects/multi/sessions' }],
+  projects: [
+    { id: API_PROJECT_ID, workspaceId: WORKSPACE_ID, rootPath: API_REPO_ROOT, kind: 'repo' },
+    { id: WEB_PROJECT_ID, workspaceId: WORKSPACE_ID, rootPath: WEB_REPO_ROOT, kind: 'repo' },
   ],
   sessionBranches: { [SESSION_ID]: API_BRANCH },
   sessionWorktrees: {
     [SESSION_ID]: [CONTAINER_PATH, API_WORKTREE_PATH, WEB_WORKTREE_PATH],
   },
-  sessionMounts: {
+  sessionProjectMounts: {
     [SESSION_ID]: [
       {
-        workspaceId: API_WORKSPACE_ID,
+        projectId: API_PROJECT_ID,
         mountName: 'api',
         repoRoot: API_REPO_ROOT,
         worktreePath: API_WORKTREE_PATH,
         branch: API_BRANCH,
       },
       {
-        workspaceId: WEB_WORKSPACE_ID,
+        projectId: WEB_PROJECT_ID,
         mountName: 'web',
         repoRoot: WEB_REPO_ROOT,
         worktreePath: WEB_WORKTREE_PATH,
@@ -177,7 +169,7 @@ const makeStore = ({ activeMount }: MakeStoreParams): Store => ({
       },
     ],
   },
-  sessionActiveMount: activeMount == null ? {} : { [SESSION_ID]: activeMount },
+  sessionActiveProject: activeMount == null ? {} : { [SESSION_ID]: activeMount },
   sessionGithub: {},
   sessionGithubPrs: {},
   sessionSelectedPrNumber: {},
@@ -192,7 +184,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('a composite workspace session', () => {
+describe('a multi-project workspace session', () => {
   it('pushes from the active mount worktree instead of the container directory', async () => {
     const store = makeStore({});
 
@@ -202,13 +194,13 @@ describe('a composite workspace session', () => {
     expect(gitPush).toHaveBeenCalledWith(
       API_WORKTREE_PATH,
       API_BRANCH,
-      COMPOSITE_WORKSPACE_ID,
-      API_WORKSPACE_ID,
+      WORKSPACE_ID,
+      API_PROJECT_ID,
     );
   });
 
   it('pushes from the second member worktree when it is the explicit active mount', async () => {
-    const store = makeStore({ activeMount: WEB_WORKSPACE_ID });
+    const store = makeStore({ activeMount: WEB_PROJECT_ID });
 
     await pushSessionBranch((() => store) as never, SESSION_ID);
 
@@ -216,26 +208,26 @@ describe('a composite workspace session', () => {
     expect(gitPush).toHaveBeenCalledWith(
       WEB_WORKTREE_PATH,
       WEB_BRANCH,
-      COMPOSITE_WORKSPACE_ID,
-      WEB_WORKSPACE_ID,
+      WORKSPACE_ID,
+      WEB_PROJECT_ID,
     );
   });
 
   it('resolves the pull request repo slug against the active member repo root', async () => {
-    const store = makeStore({ activeMount: WEB_WORKSPACE_ID });
+    const store = makeStore({ activeMount: WEB_PROJECT_ID });
 
     await refreshSessionPr(vi.fn(), (() => store) as never)(SESSION_ID);
 
     expect(detectRepoSlug).toHaveBeenCalledWith(
       tauriGhRunner,
       WEB_REPO_ROOT,
-      COMPOSITE_WORKSPACE_ID,
-      WEB_WORKSPACE_ID,
+      WORKSPACE_ID,
+      WEB_PROJECT_ID,
     );
   });
 
   it('changes the active member branch and updates its database row', async () => {
-    const store = makeStore({ activeMount: WEB_WORKSPACE_ID });
+    const store = makeStore({ activeMount: WEB_PROJECT_ID });
 
     await changeSessionBranch(vi.fn(), (() => store) as never)(SESSION_ID, {
       branch: 'gb/web-next',
@@ -257,7 +249,7 @@ describe('a composite workspace session', () => {
   });
 
   it('removes every member worktree from its repo and removes the container directory', async () => {
-    const store = makeStore({ activeMount: WEB_WORKSPACE_ID });
+    const store = makeStore({ activeMount: WEB_PROJECT_ID });
 
     await deleteTask(vi.fn(), (() => store) as never)(SESSION_ID);
 
@@ -265,20 +257,20 @@ describe('a composite workspace session', () => {
     expect(removeWorktree).toHaveBeenNthCalledWith(1, API_REPO_ROOT, API_WORKTREE_PATH);
     expect(removeWorktree).toHaveBeenNthCalledWith(2, WEB_REPO_ROOT, WEB_WORKTREE_PATH);
     expect(removeSessionDirectory).toHaveBeenCalledWith({
-      basePath: COMPOSITE_ROOT,
+      basePath: '/projects/multi/sessions',
       path: CONTAINER_PATH,
     });
     expect(deleteSession).toHaveBeenCalledOnce();
   });
 
-  it('keeps the container directory when a member worktree removal fails', async () => {
-    const store = makeStore({ activeMount: WEB_WORKSPACE_ID });
-    removeWorktree.mockRejectedValueOnce(new Error('member removal failed'));
+  it('continues container cleanup when a project worktree removal fails', async () => {
+    const store = makeStore({ activeMount: WEB_PROJECT_ID });
+    removeWorktree.mockRejectedValueOnce(new Error('project removal failed'));
 
     await deleteTask(vi.fn(), (() => store) as never)(SESSION_ID);
 
     expect(removeWorktree).toHaveBeenCalledTimes(2);
-    expect(removeSessionDirectory).not.toHaveBeenCalled();
+    expect(removeSessionDirectory).toHaveBeenCalledOnce();
     expect(store.emitNotification).toHaveBeenCalled();
   });
 });

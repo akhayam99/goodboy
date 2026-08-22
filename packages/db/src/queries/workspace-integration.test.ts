@@ -4,6 +4,7 @@ import type {
   IntegrationCredentialId,
   JiraIntegrationConfig,
   LinearIntegrationConfig,
+  ProjectId,
   SentryIntegrationConfig,
   WorkspaceId,
   WorkspaceIntegration,
@@ -21,14 +22,20 @@ import {
 import { disconnectWorkspace, listDisconnectedWorkspaces, reconnectWorkspace } from './workspace';
 
 const workspaceId = 'w1' as WorkspaceId;
+const projectId = 'p1' as ProjectId;
 
 async function seed() {
   const db = makeTestDatabase();
   await migrate(db);
   const now = Date.now();
   await db.execute(
-    `INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
-    [workspaceId, 'ws', '/tmp/ws', now, now],
+    `INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+    [workspaceId, 'ws', 'ws', now, now],
+  );
+  await db.execute(
+    `INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+     VALUES (?, ?, ?, ?, 'repo', ?, ?)`,
+    [projectId, workspaceId, 'Project', '/tmp/ws', now, now],
   );
   for (const provider of ['linear', 'sentry', 'gitlab', 'jira']) {
     await db.execute(
@@ -54,7 +61,7 @@ function makeIntegration(overrides: Partial<WorkspaceIntegration> = {}): Workspa
   const ts = new Date('2026-05-21T10:00:00Z').toISOString() as IsoDateTime;
   return {
     id: 'wi1' as WorkspaceIntegrationId,
-    workspaceId,
+    workspaceId: projectId,
     provider: 'linear',
     config,
     credentialId: 'cred-linear' as IntegrationCredentialId,
@@ -76,7 +83,7 @@ function makeSentryIntegration(
   const ts = new Date('2026-05-21T10:00:00Z').toISOString() as IsoDateTime;
   return {
     id: 'wi-sentry' as WorkspaceIntegrationId,
-    workspaceId,
+    workspaceId: projectId,
     provider: 'sentry',
     config,
     credentialId: 'cred-sentry' as IntegrationCredentialId,
@@ -92,7 +99,7 @@ describe('workspace_integrations queries', () => {
     const integration = makeIntegration();
     await upsertWorkspaceIntegration(db, integration);
 
-    const got = await getWorkspaceIntegration(db, workspaceId, 'linear');
+    const got = await getWorkspaceIntegration(db, projectId, 'linear');
     expect(got).not.toBeNull();
     expect(got!.id).toBe(integration.id);
     expect((got!.config as LinearIntegrationConfig).workspaceUrlKey).toBe('serenis');
@@ -117,7 +124,7 @@ describe('workspace_integrations queries', () => {
     });
     await upsertWorkspaceIntegration(db, updated);
 
-    const got = await getWorkspaceIntegration(db, workspaceId, 'linear');
+    const got = await getWorkspaceIntegration(db, projectId, 'linear');
     expect(got!.id).toBe(initial.id);
     expect((got!.config as LinearIntegrationConfig).viewerName).toBe('Amin Khayam');
     expect(got!.credentialId).toBe('cred-linear-rotated');
@@ -128,11 +135,11 @@ describe('workspace_integrations queries', () => {
     const db = await seed();
     await upsertWorkspaceIntegration(db, makeIntegration());
 
-    const before = await listIntegrationsForWorkspace(db, workspaceId);
+    const before = await listIntegrationsForWorkspace(db, projectId);
     expect(before).toHaveLength(1);
 
-    await deleteWorkspaceIntegration(db, workspaceId, 'linear');
-    const after = await listIntegrationsForWorkspace(db, workspaceId);
+    await deleteWorkspaceIntegration(db, projectId, 'linear');
+    const after = await listIntegrationsForWorkspace(db, projectId);
     expect(after).toHaveLength(0);
   });
 
@@ -152,13 +159,13 @@ describe('workspace_integrations queries', () => {
     await upsertWorkspaceIntegration(db, makeIntegration());
     await upsertWorkspaceIntegration(db, gitlab);
 
-    const got = await getWorkspaceIntegration(db, workspaceId, 'gitlab');
+    const got = await getWorkspaceIntegration(db, projectId, 'gitlab');
     expect(got).not.toBeNull();
     expect(got!.provider).toBe('gitlab');
     expect((got!.config as GitlabIntegrationConfig).host).toBe('https://gitlab.example.com');
     expect((got!.config as GitlabIntegrationConfig).userId).toBe('99');
 
-    const all = await listIntegrationsForWorkspace(db, workspaceId);
+    const all = await listIntegrationsForWorkspace(db, projectId);
     expect(all.map((i) => i.provider).sort()).toEqual(['gitlab', 'linear']);
   });
 
@@ -175,8 +182,8 @@ describe('workspace_integrations queries', () => {
       }),
     );
 
-    await deleteWorkspaceIntegration(db, workspaceId, 'gitlab');
-    const remaining = await listIntegrationsForWorkspace(db, workspaceId);
+    await deleteWorkspaceIntegration(db, projectId, 'gitlab');
+    const remaining = await listIntegrationsForWorkspace(db, projectId);
     expect(remaining.map((i) => i.provider)).toEqual(['linear']);
   });
 
@@ -185,15 +192,15 @@ describe('workspace_integrations queries', () => {
     await upsertWorkspaceIntegration(db, makeIntegration());
 
     const disconnectedAt = new Date('2026-05-21T11:00:00Z').toISOString() as IsoDateTime;
-    await disconnectWorkspace(db, workspaceId, disconnectedAt);
+    await disconnectWorkspace({ db, id: workspaceId, at: disconnectedAt });
 
-    const recents = await listDisconnectedWorkspaces(db);
+    const recents = await listDisconnectedWorkspaces({ db });
     expect(recents).toHaveLength(1);
 
     const reconnectedAt = new Date('2026-05-21T12:00:00Z').toISOString() as IsoDateTime;
-    await reconnectWorkspace(db, workspaceId, reconnectedAt);
+    await reconnectWorkspace({ db, id: workspaceId, at: reconnectedAt });
 
-    const got = await getWorkspaceIntegration(db, workspaceId, 'linear');
+    const got = await getWorkspaceIntegration(db, projectId, 'linear');
     expect(got).not.toBeNull();
     expect((got!.config as LinearIntegrationConfig).viewerUserId).toBe('u-abc');
   });
@@ -203,7 +210,7 @@ describe('workspace_integrations queries', () => {
     const integration = makeSentryIntegration();
     await upsertWorkspaceIntegration(db, integration);
 
-    const got = await getWorkspaceIntegration(db, workspaceId, 'sentry');
+    const got = await getWorkspaceIntegration(db, projectId, 'sentry');
     expect(got).not.toBeNull();
     expect(got!.provider).toBe('sentry');
     const config = got!.config as SentryIntegrationConfig;
@@ -221,7 +228,7 @@ describe('workspace_integrations queries', () => {
       makeSentryIntegration({ config: { org: 'o', project: 'p' } }),
     );
 
-    const got = await getWorkspaceIntegration(db, workspaceId, 'sentry');
+    const got = await getWorkspaceIntegration(db, projectId, 'sentry');
     const config = got!.config as SentryIntegrationConfig;
     expect(config.org).toBe('o');
     expect(config.project).toBe('p');
@@ -234,11 +241,11 @@ describe('workspace_integrations queries', () => {
     await upsertWorkspaceIntegration(db, makeIntegration());
     await upsertWorkspaceIntegration(db, makeSentryIntegration());
 
-    const all = await listIntegrationsForWorkspace(db, workspaceId);
+    const all = await listIntegrationsForWorkspace(db, projectId);
     expect(all.map((i) => i.provider).sort()).toEqual(['linear', 'sentry']);
 
-    const sentry = await getWorkspaceIntegration(db, workspaceId, 'sentry');
-    const linear = await getWorkspaceIntegration(db, workspaceId, 'linear');
+    const sentry = await getWorkspaceIntegration(db, projectId, 'sentry');
+    const linear = await getWorkspaceIntegration(db, projectId, 'linear');
     expect((sentry!.config as SentryIntegrationConfig).project).toBe('desktop');
     expect((linear!.config as LinearIntegrationConfig).workspaceUrlKey).toBe('serenis');
   });
@@ -248,12 +255,12 @@ describe('workspace_integrations queries', () => {
     await upsertWorkspaceIntegration(db, makeIntegration());
     await upsertWorkspaceIntegration(db, makeSentryIntegration());
 
-    await deleteWorkspaceIntegration(db, workspaceId, 'sentry');
+    await deleteWorkspaceIntegration(db, projectId, 'sentry');
 
-    const remaining = await listIntegrationsForWorkspace(db, workspaceId);
+    const remaining = await listIntegrationsForWorkspace(db, projectId);
     expect(remaining).toHaveLength(1);
     expect(remaining[0]?.provider).toBe('linear');
-    expect(await getWorkspaceIntegration(db, workspaceId, 'sentry')).toBeNull();
+    expect(await getWorkspaceIntegration(db, projectId, 'sentry')).toBeNull();
   });
 
   it('upsert on conflict rotates the sentry project without changing id', async () => {
@@ -270,7 +277,7 @@ describe('workspace_integrations queries', () => {
       }),
     );
 
-    const got = await getWorkspaceIntegration(db, workspaceId, 'sentry');
+    const got = await getWorkspaceIntegration(db, projectId, 'sentry');
     expect(got!.id).toBe(initial.id);
     expect((got!.config as SentryIntegrationConfig).project).toBe('mobile');
     expect(got!.createdAt).toBe(initial.createdAt);
@@ -302,7 +309,7 @@ describe('workspace_integrations queries', () => {
       }),
     );
 
-    const got = await getWorkspaceIntegration(db, workspaceId, 'jira');
+    const got = await getWorkspaceIntegration(db, projectId, 'jira');
     expect(got!.provider).toBe('jira');
     expect((got!.config as JiraIntegrationConfig).siteUrl).toBe('https://acme.atlassian.net');
     expect((got!.config as JiraIntegrationConfig).projectKey).toBe('GB');

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, type RefObject } from 'react';
 import { formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, Session, Skill, Workflow, WorkspaceScript } from '@goodboy/types';
+import type { Agent, Session, Skill, Workflow, ProjectScript } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { WORKSPACE_FEATURES } from '../../../../../../shared/lib/features';
 import type { ToastKind } from '../../../../../../app/components/Toast';
@@ -38,8 +38,8 @@ export const useChatPrefix = ({
   const workspaceSkills = useAppStore(
     useShallow((s) => s.skills[session.workspaceId] ?? EMPTY_ARRAY),
   );
-  const workspaceScripts = useAppStore(
-    useShallow((s) => s.workspaceScripts[session.workspaceId] ?? EMPTY_ARRAY),
+  const projectScripts = useAppStore(
+    useShallow((s) => s.projectScripts[session.workspaceId] ?? EMPTY_ARRAY),
   );
   const runScript = useAppStore((s) => s.runScript);
   const workspaceWorkflows = useAppStore(
@@ -64,7 +64,7 @@ export const useChatPrefix = ({
   };
 
   const onPickScript = useCallback(
-    (script: WorkspaceScript) => {
+    (script: ProjectScript) => {
       if (!sessionWorktree) {
         showToast('warning', `${script.name}, open a session worktree to run scripts`);
         return;
@@ -122,7 +122,7 @@ export const useChatPrefix = ({
   const quickItems = useMemo<ReadonlyArray<QuickActionItem> | null>(() => {
     const symbol = parsed.prefix?.symbol;
     if (symbol === '$') {
-      return buildScriptActions(workspaceScripts, (script) => void onPickScript(script));
+      return buildScriptActions(projectScripts, (script) => void onPickScript(script));
     }
     if (symbol === '~') {
       return buildWorkflowActions(workspaceWorkflows, (workflow) => void onPickWorkflow(workflow));
@@ -141,7 +141,7 @@ export const useChatPrefix = ({
     return null;
   }, [
     parsed.prefix,
-    workspaceScripts,
+    projectScripts,
     workspaceWorkflows,
     sessionAgents,
     sessionAgentKindOverrides,

@@ -86,7 +86,7 @@ export const OnboardingWizard = () => {
     hasWorkspace,
     workspace,
     workspaceId,
-    workspaceKind,
+    projectKind,
     githubConnected,
     gitlabConnected,
     bitbucketConnected,
@@ -104,7 +104,7 @@ export const OnboardingWizard = () => {
   const [stepRemovalNotice, setStepRemovalNotice] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const isSimple = workspaceKind === 'simple';
+  const isSimple = projectKind === 'folder';
   const availableSteps = isSimple ? SIMPLE_STEPS : ALL_STEPS;
   const steps = availableSteps.filter((candidate) =>
     mode === 'setup' ? candidate >= SETUP_START_STEP : true,
@@ -194,7 +194,7 @@ export const OnboardingWizard = () => {
     );
     cta = { label: 'Continue', onClick: goNext, variant: 'primary', disabled: !hasWorkspace };
   } else if (step === 3) {
-    body = <PreferencesStep workspaceId={workspaceId} workspaceKind={workspaceKind} />;
+    body = <PreferencesStep workspaceId={workspaceId} projectKind={projectKind} />;
     cta = { label: 'Continue', onClick: goNext, variant: 'primary' };
   } else if (step === 4) {
     body = (

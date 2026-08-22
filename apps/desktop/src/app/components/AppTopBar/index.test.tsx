@@ -1,13 +1,28 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Session, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
+import type { IsoDateTime, Session, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
 
 const { currentWorkspace, hooks, store } = vi.hoisted(() => {
   const workspace = {
     id: 'ws-1' as WorkspaceId,
     name: 'Test WS',
-    rootPath: '/code/test-ws',
-  } as Workspace;
+    slug: 'test-ws',
+    sessionsRoot: '/code/test-ws',
+    overrides: {
+      defaultProviderId: null,
+      defaultWorkflowId: null,
+      defaultBranchPrefix: null,
+      parallelEnabled: null,
+      defaultVerbosity: null,
+      providerBindings: null,
+      taskModels: null,
+      roleModels: null,
+      parallelAgents: null,
+      providerPool: null,
+    },
+    createdAt: '2026-08-02T08:00:00.000Z' as IsoDateTime,
+    updatedAt: '2026-08-02T08:00:00.000Z' as IsoDateTime,
+  } satisfies Workspace;
   return {
     currentWorkspace: workspace,
     hooks: {
@@ -24,7 +39,8 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
       setCurrentSession: vi.fn(async () => undefined),
       setActiveLens: vi.fn(),
       currentWorkspaceId: workspace.id,
-      workspaceScripts: {} as Record<string, ReadonlyArray<never>>,
+      projectScripts: {} as Record<string, ReadonlyArray<never>>,
+      projects: [] as ReadonlyArray<never>,
       scriptRuns: {} as Record<string, never>,
       sessions: [] as ReadonlyArray<Session>,
       updaterStatus: 'available',

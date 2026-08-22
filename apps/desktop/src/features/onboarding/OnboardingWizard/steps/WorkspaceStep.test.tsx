@@ -44,7 +44,20 @@ const Harness = ({ workspace }: { workspace: Workspace | null }) => {
 const REPOSITORY_WORKSPACE = {
   id: 'workspace-1' as WorkspaceId,
   name: 'Goodboy desktop',
-  rootPath: '/Users/dev/goodboy',
+  slug: 'goodboy-desktop',
+  sessionsRoot: '/Users/dev/goodboy',
+  overrides: {
+    defaultProviderId: null,
+    defaultWorkflowId: null,
+    defaultBranchPrefix: null,
+    parallelEnabled: null,
+    defaultVerbosity: null,
+    providerBindings: null,
+    taskModels: null,
+    roleModels: null,
+    parallelAgents: null,
+    providerPool: null,
+  },
   createdAt: '2026-08-02T08:00:00.000Z' as IsoDateTime,
   updatedAt: '2026-08-02T08:00:00.000Z' as IsoDateTime,
 } satisfies Workspace;
@@ -120,20 +133,20 @@ describe('WorkspaceStep', () => {
     expect(screen.getByRole('heading', { name: 'Workspace connected' })).toBeDefined();
     expect(screen.getByText('Goodboy desktop')).toBeDefined();
     expect(screen.getByText('/Users/dev/goodboy')).toBeDefined();
-    expect(screen.getByText('Repository')).toBeDefined();
+    expect(screen.getByText('Workspace')).toBeDefined();
   });
 
   it('treats an explicit repo kind the same as an undefined kind', () => {
     const { rerender } = render(<Harness workspace={REPOSITORY_WORKSPACE} />);
-    expect(screen.getByText('Repository')).toBeDefined();
+    expect(screen.getByText('Workspace')).toBeDefined();
 
-    rerender(<Harness workspace={{ ...REPOSITORY_WORKSPACE, kind: 'repo' }} />);
+    rerender(<Harness workspace={REPOSITORY_WORKSPACE} />);
 
-    expect(screen.getByText('Repository')).toBeDefined();
+    expect(screen.getByText('Workspace')).toBeDefined();
   });
 
   it('shows the standalone kind and lets the user change the workspace inline', () => {
-    render(<Harness workspace={{ ...REPOSITORY_WORKSPACE, kind: 'simple' }} />);
+    render(<Harness workspace={REPOSITORY_WORKSPACE} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Change workspace' }));
 
@@ -141,6 +154,6 @@ describe('WorkspaceStep', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    expect(screen.getByText('Standalone')).toBeDefined();
+    expect(screen.getByText('Workspace')).toBeDefined();
   });
 });

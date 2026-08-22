@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
+  OverrideSettings,
   Agent,
   AgentId,
   Session,
@@ -30,6 +31,18 @@ import {
 
 const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 const preProjectMigrations = migrations.filter((migration) => migration.version <= 116);
+const EMPTY_OVERRIDES: OverrideSettings = {
+  defaultProviderId: null,
+  defaultWorkflowId: null,
+  defaultBranchPrefix: null,
+  parallelEnabled: null,
+  defaultVerbosity: null,
+  providerBindings: null,
+  taskModels: null,
+  roleModels: null,
+  parallelAgents: null,
+  providerPool: null,
+};
 
 const insertCurrentWorkspace = async ({
   db,
@@ -46,7 +59,14 @@ const insertCurrentWorkspace = async ({
   await db.execute(
     `INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
      VALUES (?, ?, ?, ?, 'repo', ?, ?)`,
-    [workspace.id, workspace.id, workspace.name, workspace.rootPath, Date.now(), Date.now()],
+    [
+      workspace.id,
+      workspace.id,
+      workspace.name,
+      workspace.sessionsRoot ?? `/tmp/${workspace.slug}`,
+      Date.now(),
+      Date.now(),
+    ],
   );
 };
 
@@ -561,21 +581,23 @@ describe('migrate', () => {
 
   it('round-trips a workspace through the schema', async () => {
     const db = makeTestDatabase();
-    await migrate(db, preProjectMigrations);
+    await migrate(db);
 
     const workspace: Workspace = {
       id: 'ws_1' as WorkspaceId,
       name: 'demo',
-      rootPath: '/tmp/demo',
+      slug: 'demo',
+      sessionsRoot: '/tmp/demo',
+      overrides: EMPTY_OVERRIDES,
       createdAt: now(),
       updatedAt: now(),
     };
-    await insertWorkspace(db, workspace);
-    const fetched = await getWorkspaceById(db, workspace.id);
+    await insertWorkspace({ db, workspace });
+    const fetched = await getWorkspaceById({ db, id: workspace.id });
 
     expect(fetched).not.toBeNull();
     expect(fetched?.name).toBe('demo');
-    expect(fetched?.rootPath).toBe('/tmp/demo');
+    expect(fetched?.sessionsRoot).toBe('/tmp/demo');
   });
 
   it('round-trips a session with discriminated turn state', async () => {
@@ -585,7 +607,9 @@ describe('migrate', () => {
     const workspace: Workspace = {
       id: 'ws_2' as WorkspaceId,
       name: 'demo',
-      rootPath: '/tmp/demo2',
+      slug: 'demo-2',
+      sessionsRoot: '/tmp/demo2',
+      overrides: EMPTY_OVERRIDES,
       createdAt: now(),
       updatedAt: now(),
     };
@@ -620,7 +644,9 @@ describe('migrate', () => {
     const workspace: Workspace = {
       id: 'ws_3' as WorkspaceId,
       name: 'prov-test',
-      rootPath: '/tmp/demo3',
+      slug: 'prov-test',
+      sessionsRoot: '/tmp/demo3',
+      overrides: EMPTY_OVERRIDES,
       createdAt: now(),
       updatedAt: now(),
     };
@@ -654,7 +680,9 @@ describe('migrate', () => {
     const workspace: Workspace = {
       id: 'ws_4' as WorkspaceId,
       name: 'workflow-test',
-      rootPath: '/tmp/demo4',
+      slug: 'workflow-test',
+      sessionsRoot: '/tmp/demo4',
+      overrides: EMPTY_OVERRIDES,
       createdAt: now(),
       updatedAt: now(),
     };
@@ -774,16 +802,18 @@ describe('migrate', () => {
 
   it('round-trips session_worktrees: insert, list, delete', async () => {
     const db = makeTestDatabase();
-    await migrate(db, preProjectMigrations);
+    await migrate(db);
 
     const workspace: Workspace = {
       id: 'ws_wt' as WorkspaceId,
       name: 'wt-test',
-      rootPath: '/tmp/wt-test',
+      slug: 'wt-test',
+      sessionsRoot: '/tmp/wt-test',
+      overrides: EMPTY_OVERRIDES,
       createdAt: now(),
       updatedAt: now(),
     };
-    await insertWorkspace(db, workspace);
+    await insertCurrentWorkspace({ db, workspace });
 
     const session: Session = {
       id: 'session_wt' as SessionId,

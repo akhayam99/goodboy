@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OnboardingStepId } from '../../onboarding-store';
 
 let completed: Array<OnboardingStepId> = [];
-const workspaces: Array<{ id: string; kind?: 'repo' | 'simple' }> = [];
+const workspaces: Array<{ id: string }> = [];
 let currentWorkspaceId: string | null = null;
 let workspaceIntegrations: Record<string, Array<{ provider: string }>> = {};
 let sessions: Array<unknown> = [];
@@ -173,14 +173,13 @@ describe('useOnboardingProgress auto-mark', () => {
     expect(result.current.completed.has('palette')).toBe(false);
   });
 
-  it('removes the code host step but keeps the tracker step for a simple workspace', () => {
+  it('keeps the code host step for every workspace', () => {
     completed = ['workspace', 'tools', 'session', 'agent', 'plan', 'palette'];
-    workspaces.push({ id: 'w1', kind: 'simple' });
+    workspaces.push({ id: 'w1' });
     const { result } = renderHook(() => useOnboardingProgress());
-    expect(result.current.isSimple).toBe(true);
+    expect(result.current.isSimple).toBe(false);
     expect(result.current.completedCount).toBe(6);
-    expect(result.current.totalCount).toBe(6);
-    expect(result.current.isDone).toBe(true);
-    expect(ghStatusMock).not.toHaveBeenCalled();
+    expect(result.current.totalCount).toBe(7);
+    expect(result.current.isDone).toBe(false);
   });
 });

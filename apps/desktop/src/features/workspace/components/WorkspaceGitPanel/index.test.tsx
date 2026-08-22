@@ -2,7 +2,13 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { IsoDateTime, Workspace, WorkspaceGitStatus, WorkspaceId } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  ProjectId,
+  Workspace,
+  WorkspaceGitStatus,
+  WorkspaceId,
+} from '@goodboy/types';
 
 const { openInEditorSpy, writeTextSpy, invokeSpy, fastForwardSpy } = vi.hoisted(() => ({
   openInEditorSpy: vi.fn(async () => undefined),
@@ -23,12 +29,25 @@ import { WorkspaceGitPanel } from './index';
 const ROOT = '/tmp/fresh-idea';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 
 const workspace: Workspace = {
   id: WORKSPACE_ID,
   name: 'fresh-idea',
-  rootPath: ROOT,
-  kind: 'repo',
+  slug: 'fresh-idea',
+  sessionsRoot: ROOT,
+  overrides: {
+    defaultProviderId: null,
+    defaultWorkflowId: null,
+    defaultBranchPrefix: null,
+    parallelEnabled: null,
+    defaultVerbosity: null,
+    providerBindings: null,
+    taskModels: null,
+    roleModels: null,
+    parallelAgents: null,
+    providerPool: null,
+  },
   createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
   updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
 };
@@ -47,8 +66,20 @@ const status = (overrides: Partial<WorkspaceGitStatus>): WorkspaceGitStatus => (
 beforeEach(() => {
   useAppStore.setState({
     workspaces: [workspace],
-    workspaceCheckoutPulling: {},
-    fastForwardWorkspaceCheckout: fastForwardSpy,
+    projects: [
+      {
+        id: PROJECT_ID,
+        workspaceId: WORKSPACE_ID,
+        name: 'fresh-idea',
+        rootPath: ROOT,
+        kind: 'repo',
+        overrides: workspace.overrides,
+        createdAt: workspace.createdAt,
+        updatedAt: workspace.updatedAt,
+      },
+    ],
+    projectCheckoutPulling: {},
+    fastForwardProjectCheckout: fastForwardSpy,
   });
 });
 
@@ -217,7 +248,7 @@ describe('WorkspaceGitPanel main status', () => {
     fireEvent.click(control);
 
     expect(fastForwardSpy).toHaveBeenCalledTimes(1);
-    expect(fastForwardSpy).toHaveBeenCalledWith({ workspaceId: WORKSPACE_ID });
+    expect(fastForwardSpy).toHaveBeenCalledWith({ projectId: PROJECT_ID });
   });
 
   it('refuses the fast-forward when the working tree is unreadable even if the distance is known', () => {

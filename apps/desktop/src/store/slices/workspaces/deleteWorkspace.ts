@@ -19,9 +19,9 @@ export const deleteWorkspace = (set: SetFn, get: GetFn) => {
       const runningSessions = state.sessions.filter((s) => s.state.kind === 'running');
       await Promise.all(
         runningSessions.map((s) =>
-          cancelTurn((s.state as { kind: 'running'; runId: ProviderRunId }).runId).catch(() => {
-            // best-effort: registry may already be clean
-          }),
+          cancelTurn((s.state as { kind: 'running'; runId: ProviderRunId }).runId).catch(
+            () => undefined,
+          ),
         ),
       );
       const termSessions = state.sessions.filter(
@@ -40,10 +40,20 @@ export const deleteWorkspace = (set: SetFn, get: GetFn) => {
     }
     set((s) => {
       const nextArchived = { ...s.archivedSessions };
+      const workspaceIntegrations = { ...s.workspaceIntegrations };
+      const projectScripts = { ...s.projectScripts };
+      const workspaceOverrides = { ...s.workspaceOverrides };
       delete nextArchived[id];
+      delete workspaceIntegrations[id];
+      delete projectScripts[id];
+      delete workspaceOverrides[id];
       return {
         workspaces: s.workspaces.filter((w) => w.id !== id),
+        projects: s.projects.filter((project) => project.workspaceId !== id),
         archivedSessions: nextArchived,
+        workspaceIntegrations,
+        projectScripts,
+        workspaceOverrides,
         ...(wasCurrentWorkspace
           ? {
               currentWorkspaceId: null,
@@ -59,8 +69,8 @@ export const deleteWorkspace = (set: SetFn, get: GetFn) => {
               slotHistoryCounts: {},
               sessionSlotsLoad: {},
               sessionWorktrees: {},
-              sessionMounts: {},
-              sessionActiveMount: {},
+              sessionProjectMounts: {},
+              sessionActiveProject: {},
               sessionPhaseRuns: {},
               selectedAgentId: {},
               agentRunHistory: {},
@@ -76,7 +86,7 @@ export const deleteWorkspace = (set: SetFn, get: GetFn) => {
     });
 
     try {
-      await disconnectWorkspaceInDb(tauriDatabase, id, now);
+      await disconnectWorkspaceInDb({ db: tauriDatabase, id, at: now });
     } catch (err) {
       set((s) => ({
         workspaces: prevWorkspaces,

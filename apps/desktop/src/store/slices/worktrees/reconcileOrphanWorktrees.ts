@@ -6,20 +6,27 @@ import type { GetFn, SetFn } from './types';
 
 export const reconcileOrphanWorktrees = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {
-    const workspaces = get().workspaces.filter((w) => (w.kind ?? 'repo') === 'repo');
-    if (workspaces.length === 0) {
+    const projects = get().projects.filter((project) => project.kind === 'repo');
+    if (projects.length === 0) {
       return;
     }
     const knownPaths = (await listAllSessionWorktrees(tauriDatabase)).map(
       (row) => row.worktreePath,
     );
     const found: Array<[WorkspaceId, ReadonlyArray<OrphanWorktree>]> = [];
-    for (const workspace of workspaces) {
+    for (const project of projects) {
       const orphans = await scanOrphanWorktrees({
-        repoPath: workspace.rootPath,
+        repoPath: project.rootPath,
         knownPaths,
       }).catch(() => []);
-      found.push([workspace.id, orphans]);
+      const existingIndex = found.findIndex(([workspaceId]) => workspaceId === project.workspaceId);
+      if (existingIndex < 0) {
+        found.push([project.workspaceId, orphans]);
+      }
+      if (existingIndex >= 0) {
+        const existing = found[existingIndex]!;
+        found[existingIndex] = [existing[0], [...existing[1], ...orphans]];
+      }
     }
     set((state) => {
       const next = { ...state.orphanWorktrees };

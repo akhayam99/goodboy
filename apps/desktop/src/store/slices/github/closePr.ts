@@ -22,7 +22,7 @@ export const closePr = (_set: SetFn, get: GetFn) => {
     const res = await tauriGhRunner.run(['pr', 'close', String(num)], {
       cwd: repo.repoRoot,
       workspaceId: session.workspaceId,
-      memberWorkspaceId: repo.workspaceId,
+      memberWorkspaceId: repo.projectId,
     });
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr close exited with ${res.exitCode}`;

@@ -15,15 +15,26 @@ export {
   getWorkspaceById,
   listWorkspaces,
   listDisconnectedWorkspaces,
-  findWorkspaceByRootPath,
   disconnectWorkspace,
   reconnectWorkspace,
   renameWorkspace,
   touchWorkspaceLastAccessed,
-  updateWorkspaceKind,
   deleteWorkspace,
+  upsertWorkspaceProfile,
 } from './queries/workspace';
-export { insertWorkspaceMembers } from './queries/workspace-member';
+export {
+  insertProject,
+  getProjectById,
+  listProjectsForWorkspace,
+  listDisconnectedProjects,
+  findProjectByRootPath,
+  disconnectProject,
+  reconnectProject,
+  renameProject,
+  touchProjectLastAccessed,
+  updateProjectKind,
+  deleteProject,
+} from './queries/project';
 export {
   upsertWorkspaceIntegration,
   listIntegrationsForWorkspace,
@@ -48,7 +59,7 @@ export {
   updateSessionPermissionMode,
   updateSessionAutoRun,
   updateSessionTitleUserEdited,
-  updateSessionActiveMount,
+  updateSessionActiveProject,
   getSessionById,
   listSessionsForWorkspace,
   listArchivedSessionsForWorkspace,
@@ -176,7 +187,12 @@ export {
   listSessionEvents,
   deleteSessionEvents,
 } from './queries/session-event';
-export { getWorkspaceOverrides, setWorkspaceOverrides } from './queries/settings-overrides';
+export {
+  getWorkspaceOverrides,
+  setWorkspaceOverrides,
+  getProjectOverrides,
+  setProjectOverrides,
+} from './queries/settings-overrides';
 export {
   listProviderCredentials,
   insertProviderCredential,
@@ -272,10 +288,10 @@ export {
   type AddPlanConsumptionInput,
 } from './queries/plan';
 export {
-  listWorkspaceScripts,
-  upsertWorkspaceScript,
-  deleteWorkspaceScript,
-} from './queries/workspace-script';
+  listProjectScripts,
+  upsertProjectScript,
+  deleteProjectScript,
+} from './queries/project-script';
 export {
   insertOpenQuestion,
   listOpenQuestionsForSession,

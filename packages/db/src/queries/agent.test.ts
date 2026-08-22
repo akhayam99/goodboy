@@ -17,7 +17,7 @@ describe('agent queries', () => {
     await migrate(db);
     const now = Date.now();
     await db.execute(
-      'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
       [workspaceId, 'workspace', '/tmp/workspace', now, now],
     );
     await db.execute(

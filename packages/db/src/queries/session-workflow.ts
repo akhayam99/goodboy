@@ -44,7 +44,7 @@ export type SessionWorkflowRow = {
   chain_after_run_id: string | null;
   goal: string | null;
   discarded_at: number | null;
-  created_at: number;
+  created_at: number | string;
 };
 
 export const SESSION_WORKFLOW_COLS =
@@ -202,7 +202,16 @@ export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
     model: row.orchestrator_model,
     effort: row.orchestrator_effort,
   });
-  const createdAt = new Date(row.created_at).toISOString() as IsoDateTime;
+  const createdAt = (() => {
+    if (typeof row.created_at === 'number') {
+      return new Date(row.created_at).toISOString() as IsoDateTime;
+    }
+    if (row.created_at.trim() === '') {
+      return undefined;
+    }
+    const timestamp = Date.parse(`${row.created_at.replace(' ', 'T')}Z`);
+    return Number.isNaN(timestamp) ? undefined : (new Date(timestamp).toISOString() as IsoDateTime);
+  })();
   const roleModelOverrides = toRoleModelOverrides({ value: row.role_model_overrides });
   return {
     id: row.workflow_run_id as WorkflowRunId,
@@ -233,7 +242,7 @@ export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
     ...(row.discarded_at != null && {
       discardedAt: new Date(row.discarded_at).toISOString() as IsoDateTime,
     }),
-    createdAt,
+    ...(createdAt === undefined ? {} : { createdAt }),
   };
 };
 
@@ -340,44 +349,28 @@ export const updateWorkflowOrder = async (
     `SELECT ${SESSION_WORKFLOW_COLS} FROM session_workflows WHERE session_id = ?`,
     [sessionId],
   );
-  const byRun = new Map(existing.map((r) => [r.workflow_run_id, r]));
+  const existingRunIds = new Set(existing.map((run) => run.workflow_run_id));
 
   await db.exec('BEGIN');
   try {
-    await db.execute('DELETE FROM session_workflows WHERE session_id = ?', [sessionId]);
+    if (workflowRunIds.length === 0) {
+      await db.execute('DELETE FROM session_workflows WHERE session_id = ?', [sessionId]);
+    }
+    if (workflowRunIds.length > 0) {
+      const placeholders = workflowRunIds.map(() => '?').join(', ');
+      await db.execute(
+        `DELETE FROM session_workflows
+         WHERE session_id = ? AND workflow_run_id NOT IN (${placeholders})`,
+        [sessionId, ...workflowRunIds],
+      );
+    }
     for (const [ordinal, runId] of workflowRunIds.entries()) {
-      const prev = byRun.get(runId);
-      if (!prev) {
+      if (existingRunIds.has(runId) === false) {
         continue;
       }
       await db.execute(
-        'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, trigger_mode, chain_after_run_id, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hints, orchestrator_summary, orchestrator_provider, orchestrator_model, orchestrator_effort, role_model_overrides, spend_limit_usd, spend_limit_mode, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [
-          runId,
-          sessionId,
-          prev.workflow_id,
-          ordinal,
-          prev.current_step_ordinal,
-          prev.auto_run,
-          prev.goal,
-          prev.discarded_at,
-          prev.trigger_mode,
-          prev.chain_after_run_id,
-          prev.execution_mode,
-          prev.orchestration_outcome,
-          prev.orchestration_reason,
-          prev.orchestration_error,
-          prev.orchestration_stop_kind,
-          prev.orchestrator_hints,
-          prev.orchestrator_summary,
-          prev.orchestrator_provider,
-          prev.orchestrator_model,
-          prev.orchestrator_effort,
-          prev.role_model_overrides,
-          prev.spend_limit_usd,
-          prev.spend_limit_mode,
-          prev.created_at,
-        ],
+        'UPDATE session_workflows SET ordinal = ? WHERE workflow_run_id = ? AND session_id = ?',
+        [ordinal, runId, sessionId],
       );
     }
     await db.execute('UPDATE sessions SET updated_at = ? WHERE id = ?', [

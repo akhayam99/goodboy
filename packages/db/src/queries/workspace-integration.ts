@@ -1,7 +1,7 @@
 import type {
   IntegrationCredentialId,
   IsoDateTime,
-  WorkspaceId,
+  ProjectId,
   WorkspaceIntegration,
   WorkspaceIntegrationId,
   WorkspaceIntegrationProvider,
@@ -21,7 +21,7 @@ type WorkspaceIntegrationRow = {
 function toDomain(row: WorkspaceIntegrationRow): WorkspaceIntegration {
   return {
     id: row.id as WorkspaceIntegrationId,
-    workspaceId: row.workspace_id as WorkspaceId,
+    workspaceId: row.workspace_id as ProjectId,
     provider: row.provider as WorkspaceIntegrationProvider,
     config: JSON.parse(row.config),
     credentialId: row.credential_id as IntegrationCredentialId,
@@ -57,7 +57,7 @@ export const upsertWorkspaceIntegration = async (
 
 export const listIntegrationsForWorkspace = async (
   db: Database,
-  workspaceId: WorkspaceId,
+  workspaceId: ProjectId,
 ): Promise<ReadonlyArray<WorkspaceIntegration>> => {
   const rows = await db.select<WorkspaceIntegrationRow>(
     'SELECT * FROM workspace_integrations WHERE workspace_id = ? ORDER BY created_at ASC',
@@ -68,7 +68,7 @@ export const listIntegrationsForWorkspace = async (
 
 export const getWorkspaceIntegration = async (
   db: Database,
-  workspaceId: WorkspaceId,
+  workspaceId: ProjectId,
   provider: WorkspaceIntegrationProvider,
 ): Promise<WorkspaceIntegration | null> => {
   const rows = await db.select<WorkspaceIntegrationRow>(
@@ -81,7 +81,7 @@ export const getWorkspaceIntegration = async (
 
 export const deleteWorkspaceIntegration = async (
   db: Database,
-  workspaceId: WorkspaceId,
+  workspaceId: ProjectId,
   provider: WorkspaceIntegrationProvider,
 ): Promise<void> => {
   await db.execute('DELETE FROM workspace_integrations WHERE workspace_id = ? AND provider = ?', [

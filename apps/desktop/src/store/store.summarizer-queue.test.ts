@@ -255,7 +255,26 @@ describe('summarizer queue, coalescing and no-stack', () => {
       sessionSlots: {},
       summarizerStatus: {},
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
 
@@ -313,10 +332,30 @@ describe('summarizer queue, coalescing and no-stack', () => {
           },
           roleModels: null,
           parallelAgents: null,
+          providerPool: null,
         },
       },
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
 
@@ -402,7 +441,26 @@ describe('summarizer queue, coalescing and no-stack', () => {
       sessionTelemetry: { [SESSION_ID]: [staleRecord] },
       summarizerStatus: {},
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
 
@@ -514,7 +572,26 @@ describe('summarizer queue, coalescing and no-stack', () => {
       sessionSlots: { [SESSION_ID]: dbSlots },
       summarizerStatus: {},
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
 
@@ -574,7 +651,26 @@ describe('summarizer queue, coalescing and no-stack', () => {
       sessionSlots: { [SESSION_ID]: dbSlots },
       summarizerStatus: {},
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
 
@@ -613,7 +709,26 @@ describe('summarizer queue, coalescing and no-stack', () => {
       sessionSlots: { [SESSION_ID]: dbSlots },
       summarizerStatus: {},
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
 
@@ -643,7 +758,26 @@ describe('summarizer queue, coalescing and no-stack', () => {
       sessionSlots: { [SESSION_ID]: dbSlots },
       summarizerStatus: {},
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
 

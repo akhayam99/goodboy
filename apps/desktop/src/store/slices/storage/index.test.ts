@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SessionId, Workspace, WorkspaceId } from '@goodboy/types';
+import type { Project, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
 
 const {
@@ -46,19 +46,22 @@ import { pruneArchivedTranscripts } from './pruneArchivedTranscripts';
 import { removeArchivedWorktrees } from './removeArchivedWorktrees';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 const ARCHIVED_SESSION = 'session-archived' as SessionId;
 const LIVE_SESSION = 'session-live' as SessionId;
 
-const workspace = {
-  id: WORKSPACE_ID,
-  name: 'workspace',
+const project = {
+  id: PROJECT_ID,
+  workspaceId: WORKSPACE_ID,
+  name: 'project',
   rootPath: '/repo',
-  kind: 'standard',
-} as unknown as Workspace;
+  kind: 'repo',
+} as Project;
 
 const archivedWorktree = {
   id: 'wt-archived',
   sessionId: ARCHIVED_SESSION,
+  projectId: PROJECT_ID,
   worktreePath: '/repo/.goodboy/worktrees/archived',
   branch: 'ak/archived',
   parallelIndex: 0,
@@ -68,6 +71,7 @@ const archivedWorktree = {
 const liveWorktree = {
   id: 'wt-live',
   sessionId: LIVE_SESSION,
+  projectId: PROJECT_ID,
   worktreePath: '/repo/.goodboy/worktrees/live',
   branch: 'ak/live',
   parallelIndex: 0,
@@ -77,7 +81,7 @@ const liveWorktree = {
 const makeGet =
   (loadStats = vi.fn(async () => undefined)) =>
   () =>
-    ({ workspaces: [workspace], loadStorageStats: loadStats }) as unknown as AppStore;
+    ({ projects: [project], loadStorageStats: loadStats }) as unknown as AppStore;
 
 beforeEach(() => {
   listArchivedSessionRefs.mockReset();
@@ -115,7 +119,7 @@ beforeEach(() => {
 
 describe('collectArchivedWorktrees', () => {
   it('keeps only the worktrees of archived sessions', async () => {
-    const targets = await collectArchivedWorktrees({ workspaces: [workspace] });
+    const targets = await collectArchivedWorktrees({ projects: [project] });
 
     expect(targets).toEqual([
       {
@@ -129,7 +133,7 @@ describe('collectArchivedWorktrees', () => {
   it('drops worktrees git no longer reports', async () => {
     worktreeList.mockResolvedValue([{ path: '/repo', branch: 'main', head: 'a', isMain: true }]);
 
-    await expect(collectArchivedWorktrees({ workspaces: [workspace] })).resolves.toEqual([]);
+    await expect(collectArchivedWorktrees({ projects: [project] })).resolves.toEqual([]);
   });
 });
 

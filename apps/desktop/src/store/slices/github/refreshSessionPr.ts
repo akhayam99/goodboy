@@ -66,7 +66,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
     const repoRoot = repo.repoRoot;
     const repoBranch = repo.branch;
     const repoWorktreePath = repo.worktreePath;
-    const memberWorkspaceId = repo.workspaceId;
+    const memberWorkspaceId = repo.projectId;
     set((state) => ({
       sessionGithub: {
         ...state.sessionGithub,

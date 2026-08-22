@@ -15,15 +15,13 @@ export const linkSessionExternalTask = ({ set, get }: Params) => {
     task: Omit<SessionExternalTask, 'sessionId'>,
   ): Promise<void> => {
     const state = get();
-    const session = state.sessions.find((candidate) => candidate.id === sessionId);
-    const workspace = state.workspaces.find((candidate) => candidate.id === session?.workspaceId);
-    const repo = workspace?.kind === 'composite' ? resolveSessionRepo({ state, sessionId }) : null;
-    const mountWorkspaceId = task.mountWorkspaceId ?? repo?.workspaceId;
+    const repo = resolveSessionRepo({ state, sessionId });
+    const projectId = task.projectId ?? repo?.projectId;
     const branch = task.branch ?? repo?.branch ?? state.sessionBranches[sessionId] ?? null;
     const linkedTask: SessionExternalTask = {
       ...task,
       sessionId,
-      ...(mountWorkspaceId != null ? { mountWorkspaceId } : {}),
+      ...(projectId != null ? { projectId } : {}),
       ...(branch != null && branch !== '' ? { branch } : {}),
     };
     await upsertSessionExternalTask({ db: tauriDatabase, task: linkedTask });
@@ -33,7 +31,7 @@ export const linkSessionExternalTask = ({ set, get }: Params) => {
         (candidate) =>
           candidate.provider === linkedTask.provider &&
           candidate.externalId === linkedTask.externalId &&
-          candidate.mountWorkspaceId === linkedTask.mountWorkspaceId,
+          candidate.projectId === linkedTask.projectId,
       );
       const next =
         matchingIndex < 0

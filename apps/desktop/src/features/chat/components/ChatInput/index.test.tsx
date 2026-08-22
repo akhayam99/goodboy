@@ -39,7 +39,7 @@ const {
     workspaceOverrides: Record<string, never>;
     providers: ReadonlyArray<{ id: string; connection: string }>;
     skills: Record<string, never>;
-    workspaceScripts: Record<string, never>;
+    projectScripts: Record<string, never>;
     sessionWorktrees: Record<string, ReadonlyArray<string>>;
     providerSpendBreakdown: ReadonlyArray<never>;
     selectedAgentId: Record<string, string>;
@@ -84,7 +84,7 @@ const {
       { id: 'codex', connection: 'connected' },
     ],
     skills: {},
-    workspaceScripts: {},
+    projectScripts: {},
     sessionWorktrees: {},
     providerSpendBreakdown: [],
     selectedAgentId: { 'session-1': 'agent-1' },

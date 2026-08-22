@@ -1,21 +1,20 @@
 import type {
   IntegrationCredentialId,
   IsoDateTime,
+  ProjectId,
+  ProjectScriptId,
   ProviderRunId,
   SessionId,
   WorkflowId,
   WorkflowRunId,
   WorkspaceId,
   WorkspaceIntegrationId,
-  WorkspaceScriptId,
 } from './ids';
 import type { SessionProviderPreference } from './provider-preference';
 import type { ModelEffort, ProviderId } from './provider-registry';
 import type { ClaudePermissionMode } from './permission';
-import type { RoleModelPreferences } from './settings';
+import type { OverrideSettings, RoleModelPreferences } from './settings';
 import type { GitDistance, GitOperation, GitWorkingTree } from './worktree';
-
-export type WorkspaceKind = 'repo' | 'composite' | 'simple';
 
 export type WorkspaceGitState = 'missing' | 'absent' | 'unborn' | 'ready';
 
@@ -29,14 +28,28 @@ export type WorkspaceGitStatus = Readonly<{
   inProgress: GitOperation | null;
 }>;
 
-export type WorkspaceMember = Readonly<{
-  workspaceId: WorkspaceId;
-  rootPath: string;
-  mountName: string;
+export type WorkspaceProfile = Readonly<{
+  role: 'developer' | 'non-developer' | null;
+  discipline: string | null;
+  topics: ReadonlyArray<string>;
+  notes: string | null;
 }>;
 
-export type SessionMount = Readonly<{
+export type Project = Readonly<{
+  id: ProjectId;
   workspaceId: WorkspaceId;
+  name: string;
+  rootPath: string;
+  kind: 'repo' | 'folder';
+  overrides: OverrideSettings;
+  createdAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+  disconnectedAt?: IsoDateTime;
+  lastAccessedAt?: IsoDateTime;
+}>;
+
+export type SessionProjectMount = Readonly<{
+  projectId: ProjectId;
   mountName: string;
   worktreePath: string;
   repoRoot: string;
@@ -46,11 +59,13 @@ export type SessionMount = Readonly<{
 export type Workspace = Readonly<{
   id: WorkspaceId;
   name: string;
-  rootPath: string;
-  kind?: WorkspaceKind;
-  members?: ReadonlyArray<WorkspaceMember>;
+  slug: string;
+  sessionsRoot: string | null;
+  profile?: WorkspaceProfile;
+  overrides: OverrideSettings;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
+  deletedAt?: IsoDateTime;
   disconnectedAt?: IsoDateTime;
   lastAccessedAt?: IsoDateTime;
 }>;
@@ -135,7 +150,7 @@ export type Session = Readonly<{
   workflowRuns: ReadonlyArray<WorkflowRun>;
   autoRun: boolean;
   titleUserEdited: boolean;
-  activeMountWorkspaceId?: WorkspaceId;
+  activeProjectId?: ProjectId;
   archivedAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
   verbosity?: 'brief' | 'normal' | 'verbose';
@@ -146,9 +161,9 @@ export type Session = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
-export type WorkspaceScript = Readonly<{
-  id: WorkspaceScriptId;
-  workspaceId: WorkspaceId;
+export type ProjectScript = Readonly<{
+  id: ProjectScriptId;
+  projectId: ProjectId;
   name: string;
   body: string;
   sortOrder: number;
@@ -211,7 +226,7 @@ export type WorkspaceIntegrationConfig =
 
 type WorkspaceIntegrationBase = Readonly<{
   id: WorkspaceIntegrationId;
-  workspaceId: WorkspaceId;
+  workspaceId: ProjectId;
   credentialId: IntegrationCredentialId;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
@@ -282,7 +297,7 @@ export const isSessionExternalTaskProvider = (
 
 export type SessionExternalTask = Readonly<{
   sessionId: SessionId;
-  mountWorkspaceId?: WorkspaceId;
+  projectId?: ProjectId;
   branch?: string;
   provider: SessionExternalTaskProvider;
   externalId: string;

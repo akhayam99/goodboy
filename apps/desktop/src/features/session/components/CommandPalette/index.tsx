@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
-import type { Agent, AgentId, SessionId, WorkspaceScript } from '@goodboy/types';
+import type { Agent, AgentId, SessionId, ProjectScript } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -105,8 +105,8 @@ export const CommandPalette = ({
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const scripts = useAppStore((s) =>
-    currentWorkspace ? (s.workspaceScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
-  ) as ReadonlyArray<WorkspaceScript>;
+    currentWorkspace ? (s.projectScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
+  ) as ReadonlyArray<ProjectScript>;
   const agents = useAppStore((s) =>
     currentSession ? (s.sessionPhaseRuns[currentSession.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<Agent>;
@@ -128,7 +128,7 @@ export const CommandPalette = ({
       out.push({
         id: `workspace:${w.id}`,
         label: w.name,
-        sublabel: w.rootPath,
+        sublabel: w.sessionsRoot ?? '',
         group: 'workspace',
         onSelect: () => void openWorkspace(w.id, w.name),
       });

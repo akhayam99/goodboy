@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type {
   IntegrationCredentialId,
   SlackWorkspaceIntegration,
+  ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
 
@@ -28,10 +29,11 @@ const { openUrl } = vi.hoisted(() => ({ openUrl: vi.fn(async () => undefined) })
 vi.mock('../../../shared/lib/editor', () => ({ openUrl }));
 
 const WS_ID = 'ws-1' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 
 const slackIntegration: SlackWorkspaceIntegration = {
   id: 'wi-1' as never,
-  workspaceId: WS_ID,
+  workspaceId: PROJECT_ID,
   provider: 'slack',
   credentialId: 'cred-1' as IntegrationCredentialId,
   config: {

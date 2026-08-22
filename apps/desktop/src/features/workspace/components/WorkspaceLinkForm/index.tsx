@@ -73,7 +73,7 @@ type WorkspaceLinkDraft = {
   readonly mountNames: Record<string, string>;
   readonly containerPath: string;
   readonly containerEdited: boolean;
-  readonly compositeName: string;
+  readonly workspaceName: string;
   readonly simpleName: string;
   readonly simplePath: string;
   readonly simplePathEdited: boolean;
@@ -154,9 +154,9 @@ const readDraft = ({ storageKey }: { readonly storageKey: string }): WorkspaceLi
     if (containerEdited === null) {
       return null;
     }
-    const compositeName =
-      typeof record['compositeName'] === 'string' ? record['compositeName'] : null;
-    if (compositeName === null) {
+    const workspaceName =
+      typeof record['workspaceName'] === 'string' ? record['workspaceName'] : null;
+    if (workspaceName === null) {
       return null;
     }
     const simpleName = typeof record['simpleName'] === 'string' ? record['simpleName'] : null;
@@ -181,7 +181,7 @@ const readDraft = ({ storageKey }: { readonly storageKey: string }): WorkspaceLi
       mountNames,
       containerPath,
       containerEdited,
-      compositeName,
+      workspaceName,
       simpleName,
       simplePath,
       simplePathEdited,
@@ -220,17 +220,10 @@ export const WorkspaceLinkForm = ({
 }: Props) => {
   const formId = useId();
   const addWorkspace = useAppStore((state) => state.addWorkspace);
-  const addCompositeWorkspace = useAppStore((state) => state.addCompositeWorkspace);
   const addSimpleWorkspace = useAppStore((state) => state.addSimpleWorkspace);
   const setCurrentWorkspace = useAppStore((state) => state.setCurrentWorkspace);
   const workspaces = useWorkspaces();
-  const linkable = useMemo(
-    () =>
-      workspaces.filter(
-        (workspace) => workspace.kind !== 'composite' && workspace.kind !== 'simple',
-      ),
-    [workspaces],
-  );
+  const linkable = useMemo(() => workspaces.filter((workspace) => true && true), [workspaces]);
 
   const [mode, setMode] = useState<Mode>(modes[0] ?? 'single');
   const [path, setPath] = useState('');
@@ -243,7 +236,7 @@ export const WorkspaceLinkForm = ({
   const [mountNames, setMountNames] = useState<Record<string, string>>({});
   const [containerPath, setContainerPath] = useState('');
   const [containerEdited, setContainerEdited] = useState(false);
-  const [compositeName, setCompositeName] = useState('');
+  const [workspaceName, setWorkspaceName] = useState('');
   const [simpleName, setSimpleName] = useState(DEFAULT_SIMPLE_NAME);
   const [simplePath, setSimplePath] = useState('');
   const [simplePathEdited, setSimplePathEdited] = useState(false);
@@ -277,7 +270,7 @@ export const WorkspaceLinkForm = ({
     setMountNames(draft.mountNames);
     setContainerPath(draft.containerPath);
     setContainerEdited(draft.containerEdited);
-    setCompositeName(draft.compositeName);
+    setWorkspaceName(draft.workspaceName);
     setSimpleName(draft.simpleName);
     setSimplePath(draft.simplePath);
     setSimplePathEdited(draft.simplePathEdited);
@@ -297,7 +290,7 @@ export const WorkspaceLinkForm = ({
       mountNames,
       containerPath,
       containerEdited,
-      compositeName,
+      workspaceName,
       simpleName,
       simplePath,
       simplePathEdited,
@@ -317,7 +310,7 @@ export const WorkspaceLinkForm = ({
     mountNames,
     containerPath,
     containerEdited,
-    compositeName,
+    workspaceName,
     simpleName,
     simplePath,
     simplePathEdited,
@@ -418,14 +411,15 @@ export const WorkspaceLinkForm = ({
     }
 
     const parent = commonParentDirectory({
-      paths: selectedWorkspaces.map((workspace) => workspace.rootPath),
+      paths: selectedWorkspaces.map((workspace) => workspace.sessionsRoot ?? ''),
     });
     if (parent.length === 0) {
       return '';
     }
 
     const mounts = selectedWorkspaces.map(
-      (workspace) => mountNames[workspace.id] ?? lastPathSegment({ path: workspace.rootPath }),
+      (workspace) =>
+        mountNames[workspace.id] ?? lastPathSegment({ path: workspace.sessionsRoot ?? '' }),
     );
     return `${parent}/${mounts.join('+')}`;
   }, [selectedWorkspaces, mountNames]);
@@ -446,7 +440,7 @@ export const WorkspaceLinkForm = ({
     setMountNames((previous) =>
       (previous[workspace.id] ?? '').length > 0
         ? previous
-        : { ...previous, [workspace.id]: lastPathSegment({ path: workspace.rootPath }) },
+        : { ...previous, [workspace.id]: lastPathSegment({ path: workspace.sessionsRoot ?? '' }) },
     );
   }, []);
 
@@ -516,16 +510,9 @@ export const WorkspaceLinkForm = ({
     setBusy(true);
     setSubmitError(null);
     try {
-      const members = selectedWorkspaces.map((workspace) => ({
-        workspaceId: workspace.id,
-        mountName: (
-          mountNames[workspace.id] ?? lastPathSegment({ path: workspace.rootPath })
-        ).trim(),
-      }));
-      const workspace = await addCompositeWorkspace({
-        name: compositeName,
-        containerPath: containerPath.trim(),
-        members,
+      const workspace = await addWorkspace({
+        rootPath: containerPath.trim(),
+        name: workspaceName,
       });
       await setCurrentWorkspace(workspace.id);
       clearPersistedDraft();
@@ -538,9 +525,9 @@ export const WorkspaceLinkForm = ({
   }, [
     selectedWorkspaces,
     mountNames,
-    compositeName,
+    workspaceName,
     containerPath,
-    addCompositeWorkspace,
+    addWorkspace,
     setCurrentWorkspace,
     clearPersistedDraft,
     onComplete,
@@ -585,7 +572,7 @@ export const WorkspaceLinkForm = ({
   };
 
   const mountValues = selectedWorkspaces.map((workspace) =>
-    (mountNames[workspace.id] ?? lastPathSegment({ path: workspace.rootPath })).trim(),
+    (mountNames[workspace.id] ?? lastPathSegment({ path: workspace.sessionsRoot ?? '' })).trim(),
   );
   const mountsValid =
     mountValues.every((mount) => mount.length > 0) &&
@@ -597,7 +584,8 @@ export const WorkspaceLinkForm = ({
   const primaryDisabled =
     mode === 'single' ? singleDisabled : mode === 'multi' ? multiDisabled : simpleDisabled;
   const previewMounts = selectedWorkspaces.map(
-    (workspace) => mountNames[workspace.id] ?? lastPathSegment({ path: workspace.rootPath }),
+    (workspace) =>
+      mountNames[workspace.id] ?? lastPathSegment({ path: workspace.sessionsRoot ?? '' }),
   );
   const actionLabel =
     mode === 'single'
@@ -793,7 +781,7 @@ export const WorkspaceLinkForm = ({
                             </span>
                             <span className="font-medium text-foreground">{workspace.name}</span>
                             <span className="min-w-0 flex-1 truncate text-right text-muted-foreground">
-                              {workspace.rootPath}
+                              {workspace.sessionsRoot ?? ''}
                             </span>
                           </button>
                         </li>
@@ -821,7 +809,7 @@ export const WorkspaceLinkForm = ({
                         <Input
                           value={
                             mountNames[workspace.id] ??
-                            lastPathSegment({ path: workspace.rootPath })
+                            lastPathSegment({ path: workspace.sessionsRoot ?? '' })
                           }
                           onChange={(event) =>
                             setMountNames((previous) => ({
@@ -892,9 +880,9 @@ export const WorkspaceLinkForm = ({
               layout="stacked"
             >
               <Input
-                value={compositeName}
+                value={workspaceName}
                 placeholder={previewMounts.join(' + ')}
-                onChange={(event) => setCompositeName(event.target.value)}
+                onChange={(event) => setWorkspaceName(event.target.value)}
                 disabled={busy}
                 aria-label="Workspace name"
               />

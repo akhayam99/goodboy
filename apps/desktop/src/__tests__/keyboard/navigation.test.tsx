@@ -22,6 +22,7 @@ vi.mock('../../store', () => ({
       sessionTelemetry: {},
       sessionSummary: null,
       workspaces: [],
+      projects: [],
       workspaceIntegrations: {},
       newSessionDrafts: {},
       loadBudgetAlerts: vi.fn(),

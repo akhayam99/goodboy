@@ -68,7 +68,7 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
   const boardReady = useAppStore((s) => s.boardReady);
   const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
   const rootPath = useAppStore(
-    (s) => s.workspaces.find((candidate) => candidate.id === workspaceId)?.rootPath ?? null,
+    (s) => s.workspaces.find((candidate) => candidate.id === workspaceId)?.sessionsRoot ?? null,
   );
   const gitStatus = useWorkspaceGitStatus({ workspaceId });
   const [confirm, setConfirm] = useState<Confirm | null>(null);

@@ -2,8 +2,9 @@ import { detectRepoSlug, listOpenPrsForRepo } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type {
   GitlabWorkspaceIntegration,
+  Project,
+  ProjectId,
   ReviewablePr,
-  Workspace,
   WorkspaceId,
 } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
@@ -16,22 +17,17 @@ import type { GetFn, SetFn } from './types';
 
 type ReviewTarget = Readonly<{
   rootPath: string;
-  mountWorkspaceId?: WorkspaceId;
+  projectId: ProjectId;
 }>;
 
 type ReviewTargetsParams = {
-  readonly workspace: Workspace;
+  readonly projects: ReadonlyArray<Project>;
 };
 
-const reviewTargets = ({ workspace }: ReviewTargetsParams): ReadonlyArray<ReviewTarget> => {
-  if (workspace.kind === 'composite') {
-    return (workspace.members ?? []).map((member) => ({
-      rootPath: member.rootPath,
-      mountWorkspaceId: member.workspaceId,
-    }));
-  }
-  return [{ rootPath: workspace.rootPath }];
-};
+const reviewTargets = ({ projects }: ReviewTargetsParams): ReadonlyArray<ReviewTarget> =>
+  projects
+    .filter((project) => project.kind === 'repo')
+    .map((project) => ({ rootPath: project.rootPath, projectId: project.id }));
 
 type AttributeParams = {
   readonly pr: ReviewablePr;
@@ -39,13 +35,10 @@ type AttributeParams = {
 };
 
 const attributePr = ({ pr, target }: AttributeParams): ReviewablePr => {
-  if (target.mountWorkspaceId == null) {
-    return pr;
-  }
   return {
     ...pr,
-    id: `${pr.id}:${target.mountWorkspaceId}`,
-    mountWorkspaceId: target.mountWorkspaceId,
+    id: `${pr.id}:${target.projectId}`,
+    projectId: target.projectId,
   };
 };
 
@@ -56,9 +49,6 @@ export const refreshReviewPrs = (set: SetFn, get: GetFn) => {
     }
     const workspace = get().workspaces.find((w) => w.id === workspaceId);
     if (workspace == null) {
-      return;
-    }
-    if (workspace.kind === 'simple') {
       return;
     }
     set((state) => ({
@@ -74,7 +64,9 @@ export const refreshReviewPrs = (set: SetFn, get: GetFn) => {
     }));
     const items: ReviewablePr[] = [];
     const errors: string[] = [];
-    const targets = reviewTargets({ workspace });
+    const targets = reviewTargets({
+      projects: get().projects.filter((project) => project.workspaceId === workspaceId),
+    });
     const currentUser = get().githubStatus?.user ?? null;
     for (const target of targets) {
       try {
@@ -82,15 +74,13 @@ export const refreshReviewPrs = (set: SetFn, get: GetFn) => {
           tauriGhRunner,
           target.rootPath,
           workspaceId,
-          target.mountWorkspaceId,
+          target.projectId,
         );
         if (slug != null) {
           const prs = await listOpenPrsForRepo(tauriGhRunner, slug, {
             cwd: target.rootPath,
             workspaceId,
-            ...(target.mountWorkspaceId != null
-              ? { memberWorkspaceId: target.mountWorkspaceId }
-              : {}),
+            ...(target.projectId != null ? { memberWorkspaceId: target.projectId } : {}),
           });
           items.push(
             ...prs.map((pr) =>

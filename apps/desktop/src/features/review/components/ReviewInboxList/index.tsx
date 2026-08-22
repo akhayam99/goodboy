@@ -33,6 +33,7 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
   const workspace = useAppStore(
     (s) => s.workspaces.find((candidate) => candidate.id === workspaceId) ?? null,
   );
+  const projects = useAppStore((s) => s.projects);
   const items = reviewPrs?.items;
   const isLoading = reviewPrs?.loading === true;
   const error = reviewPrs?.error ?? null;
@@ -125,7 +126,8 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
               const isActive = pr.id === focusedPrId;
               const mountName = workspaceMountName({
                 workspace,
-                mountWorkspaceId: pr.mountWorkspaceId,
+                projects,
+                projectId: pr.projectId,
               });
               return (
                 <li key={pr.id}>

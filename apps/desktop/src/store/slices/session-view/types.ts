@@ -2,6 +2,7 @@ import type {
   AgentId,
   IsoDateTime,
   PlanId,
+  ProjectId,
   Session,
   SessionExternalTask,
   SessionExternalTaskProvider,
@@ -70,7 +71,7 @@ export type DiffFocus =
 export type FocusedExternalTask = {
   readonly provider: SessionExternalTaskProvider;
   readonly externalId: string;
-  readonly mountWorkspaceId: WorkspaceId | null;
+  readonly projectId: ProjectId | null;
 };
 
 export type SessionStudio =

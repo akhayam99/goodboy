@@ -1,276 +1,153 @@
-import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, WorkspaceId, WorkspaceKind } from '@goodboy/types';
+import { describe, expect, it, vi } from 'vitest';
+import type { IsoDateTime, OverrideSettings, Workspace, WorkspaceId } from '@goodboy/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from '../migrations/runner';
 import {
   deleteWorkspace,
   disconnectWorkspace,
-  findWorkspaceByRootPath,
   getWorkspaceById,
   insertWorkspace,
+  listDisconnectedWorkspaces,
   listWorkspaces,
   reconnectWorkspace,
   renameWorkspace,
   touchWorkspaceLastAccessed,
-  updateWorkspaceKind,
+  upsertWorkspaceProfile,
 } from './workspace';
 
-const iso = (ms: number): IsoDateTime => new Date(ms).toISOString() as IsoDateTime;
+const EMPTY_OVERRIDES: OverrideSettings = {
+  defaultProviderId: null,
+  defaultWorkflowId: null,
+  defaultBranchPrefix: null,
+  parallelEnabled: null,
+  defaultVerbosity: null,
+  providerBindings: null,
+  taskModels: null,
+  roleModels: null,
+  parallelAgents: null,
+  providerPool: null,
+};
 
-async function makeDb() {
+const at = ({ value }: { readonly value: string }): IsoDateTime =>
+  new Date(value).toISOString() as IsoDateTime;
+
+type MakeWorkspaceParams = {
+  readonly id?: string;
+  readonly overrides?: Partial<Workspace>;
+};
+
+const makeWorkspace = ({ id = 'workspace-1', overrides = {} }: MakeWorkspaceParams): Workspace => ({
+  id: id as WorkspaceId,
+  name: 'Serenis',
+  slug: id,
+  sessionsRoot: '/tmp/serenis-sessions',
+  overrides: EMPTY_OVERRIDES,
+  createdAt: at({ value: '2026-08-22T10:00:00Z' }),
+  updatedAt: at({ value: '2026-08-22T10:05:00Z' }),
+  ...overrides,
+});
+
+const makeDb = async () => {
   const db = makeTestDatabase();
   await migrate(db);
   return db;
-}
+};
 
-function makeWorkspace(
-  overrides: Partial<{
-    id: string;
-    name: string;
-    rootPath: string;
-    kind: WorkspaceKind;
-    lastAccessedAt?: IsoDateTime;
-  }> = {},
-) {
-  const now = iso(Date.now());
-  return {
-    id: (overrides.id ?? 'w1') as WorkspaceId,
-    name: overrides.name ?? 'my-repo',
-    rootPath: overrides.rootPath ?? '/tmp/my-repo',
-    ...(overrides.kind != null ? { kind: overrides.kind } : {}),
-    createdAt: now,
-    updatedAt: now,
-    ...(overrides.lastAccessedAt != null ? { lastAccessedAt: overrides.lastAccessedAt } : {}),
-  };
-}
-
-describe('insertWorkspace', () => {
-  it('round-trips all fields', async () => {
+describe('workspace queries', () => {
+  it('round-trips a container, its overrides, and its profile', async () => {
     const db = await makeDb();
-    const ws = makeWorkspace({ lastAccessedAt: iso(Date.now()) });
-    await insertWorkspace(db, ws);
-    const row = await getWorkspaceById(db, ws.id);
-    expect(row).not.toBeNull();
-    expect(row?.name).toBe(ws.name);
-    expect(row?.rootPath).toBe(ws.rootPath);
-    expect(row?.lastAccessedAt).toBeTruthy();
+    const workspace = makeWorkspace({
+      overrides: {
+        profile: {
+          role: 'developer',
+          discipline: 'platform',
+          topics: ['TypeScript', 'SQLite'],
+          notes: 'Local only',
+        },
+        overrides: {
+          ...EMPTY_OVERRIDES,
+          defaultProviderId: 'codex',
+          defaultBranchPrefix: 'ak/',
+          parallelEnabled: true,
+          providerPool: ['codex', 'anthropic'],
+        },
+      },
+    });
+
+    await insertWorkspace({ db, workspace });
+
+    expect(await getWorkspaceById({ db, id: workspace.id })).toEqual({
+      ...workspace,
+      lastAccessedAt: workspace.updatedAt,
+    });
   });
 
-  it('stores lastAccessedAt when provided', async () => {
+  it('keeps active and disconnected containers in separate lists', async () => {
     const db = await makeDb();
-    const t = iso(1_700_000_000_000);
-    const ws = makeWorkspace({ lastAccessedAt: t });
-    await insertWorkspace(db, ws);
-    const row = await getWorkspaceById(db, ws.id);
-    expect(row?.lastAccessedAt).toBeDefined();
-    expect(Date.parse(row!.lastAccessedAt!)).toBeCloseTo(Date.parse(t), -2);
+    const active = makeWorkspace({ id: 'active' });
+    const disconnected = makeWorkspace({
+      id: 'disconnected',
+      overrides: { disconnectedAt: at({ value: '2026-08-22T11:00:00Z' }) },
+    });
+    await insertWorkspace({ db, workspace: active });
+    await insertWorkspace({ db, workspace: disconnected });
+
+    expect((await listWorkspaces({ db })).map((workspace) => workspace.id)).toEqual([active.id]);
+    expect((await listDisconnectedWorkspaces({ db })).map((workspace) => workspace.id)).toEqual([
+      disconnected.id,
+    ]);
   });
 
-  it('falls back to updatedAt when lastAccessedAt absent', async () => {
+  it('updates container identity and presence timestamps', async () => {
+    vi.useFakeTimers();
     const db = await makeDb();
-    const ws = makeWorkspace();
-    await insertWorkspace(db, ws);
-    const row = await getWorkspaceById(db, ws.id);
-    expect(row?.lastAccessedAt).toBeDefined();
-    expect(Date.parse(row!.lastAccessedAt!)).toBeCloseTo(Date.parse(ws.updatedAt), -2);
+    const workspace = makeWorkspace({});
+    await insertWorkspace({ db, workspace });
+
+    vi.setSystemTime(new Date('2026-08-22T12:00:00Z'));
+    await renameWorkspace({ db, id: workspace.id, name: 'Goodboy' });
+    await touchWorkspaceLastAccessed({ db, id: workspace.id });
+    await disconnectWorkspace({
+      db,
+      id: workspace.id,
+      at: at({ value: '2026-08-22T12:10:00Z' }),
+    });
+    await reconnectWorkspace({
+      db,
+      id: workspace.id,
+      at: at({ value: '2026-08-22T12:20:00Z' }),
+    });
+
+    const stored = await getWorkspaceById({ db, id: workspace.id });
+    expect(stored?.name).toBe('Goodboy');
+    expect(stored?.disconnectedAt).toBeUndefined();
+    expect(stored?.lastAccessedAt).toBe(at({ value: '2026-08-22T12:20:00Z' }));
+    vi.useRealTimers();
   });
 
-  it('keeps simple kinds and coerces unknown kinds to repo', async () => {
+  it('upserts a profile independently', async () => {
     const db = await makeDb();
-    const simple = makeWorkspace({ id: 'simple', rootPath: '/tmp/simple', kind: 'simple' });
-    await insertWorkspace(db, simple);
-    await db.execute(
-      'INSERT INTO workspaces (id, name, root_path, kind, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-      ['unknown', 'unknown', '/tmp/unknown', 'future-kind', Date.now(), Date.now()],
-    );
+    const workspace = makeWorkspace({});
+    await insertWorkspace({ db, workspace });
+    await upsertWorkspaceProfile({
+      db,
+      workspaceId: workspace.id,
+      profile: { role: 'non-developer', discipline: null, topics: [], notes: null },
+    });
 
-    expect((await getWorkspaceById(db, simple.id))?.kind).toBe('simple');
-    expect((await getWorkspaceById(db, 'unknown' as WorkspaceId))?.kind).toBe('repo');
-  });
-});
-
-describe('listWorkspaces', () => {
-  it('returns only active workspaces', async () => {
-    const db = await makeDb();
-    const active = makeWorkspace({ id: 'active', rootPath: '/tmp/active' });
-    const disconnected = makeWorkspace({ id: 'dead', rootPath: '/tmp/dead' });
-    await insertWorkspace(db, active);
-    await insertWorkspace(db, disconnected);
-    await disconnectWorkspace(db, 'dead' as WorkspaceId, iso(Date.now()));
-    const list = await listWorkspaces(db);
-    expect(list.map((w) => w.id)).toEqual(['active']);
+    expect((await getWorkspaceById({ db, id: workspace.id }))?.profile).toEqual({
+      role: 'non-developer',
+      discipline: null,
+      topics: [],
+      notes: null,
+    });
   });
 
-  it('returns empty array when none exist', async () => {
+  it('hard-deletes a container', async () => {
     const db = await makeDb();
-    expect(await listWorkspaces(db)).toEqual([]);
-  });
-});
-
-describe('findWorkspaceByRootPath', () => {
-  it('finds active workspace by path', async () => {
-    const db = await makeDb();
-    const ws = makeWorkspace({ rootPath: '/projects/foo' });
-    await insertWorkspace(db, ws);
-    const found = await findWorkspaceByRootPath(db, '/projects/foo');
-    expect(found?.id).toBe(ws.id);
-  });
-
-  it('finds disconnected workspace by path', async () => {
-    const db = await makeDb();
-    const ws = makeWorkspace({ rootPath: '/projects/old' });
-    await insertWorkspace(db, ws);
-    await disconnectWorkspace(db, ws.id, iso(Date.now()));
-    const found = await findWorkspaceByRootPath(db, '/projects/old');
-    expect(found?.id).toBe(ws.id);
-    expect(found?.disconnectedAt).toBeDefined();
-  });
-
-  it('returns null for unknown path', async () => {
-    const db = await makeDb();
-    expect(await findWorkspaceByRootPath(db, '/nonexistent')).toBeNull();
-  });
-});
-
-describe('touchWorkspaceLastAccessed', () => {
-  it('updates last_accessed_at to now', async () => {
-    const db = await makeDb();
-    const old = iso(Date.now() - 1_000_000);
-    const ws = makeWorkspace({ lastAccessedAt: old });
-    await insertWorkspace(db, ws);
-
-    const before = Date.now();
-    await touchWorkspaceLastAccessed(db, ws.id);
-    const after = Date.now();
-
-    const row = await getWorkspaceById(db, ws.id);
-    const accessed = Date.parse(row!.lastAccessedAt!);
-    expect(accessed).toBeGreaterThanOrEqual(before);
-    expect(accessed).toBeLessThanOrEqual(after);
-  });
-
-  it('is idempotent — second touch advances timestamp', async () => {
-    const db = await makeDb();
-    const ws = makeWorkspace({ lastAccessedAt: iso(1_000_000) });
-    await insertWorkspace(db, ws);
-    await touchWorkspaceLastAccessed(db, ws.id);
-    const first = Date.parse((await getWorkspaceById(db, ws.id))!.lastAccessedAt!);
-    await touchWorkspaceLastAccessed(db, ws.id);
-    const second = Date.parse((await getWorkspaceById(db, ws.id))!.lastAccessedAt!);
-    expect(second).toBeGreaterThanOrEqual(first);
-  });
-});
-
-describe('disconnectWorkspace / reconnectWorkspace', () => {
-  it('soft-deletes: row stays, disconnectedAt set', async () => {
-    const db = await makeDb();
-    const ws = makeWorkspace();
-    await insertWorkspace(db, ws);
-    const at = iso(Date.now());
-    await disconnectWorkspace(db, ws.id, at);
-
-    const row = await getWorkspaceById(db, ws.id);
-    expect(row?.disconnectedAt).toBeDefined();
-    const list = await listWorkspaces(db);
-    expect(list).toHaveLength(0);
-  });
-
-  it('reconnect clears disconnectedAt and updates lastAccessedAt', async () => {
-    const db = await makeDb();
-    const ws = makeWorkspace();
-    await insertWorkspace(db, ws);
-    await disconnectWorkspace(db, ws.id, iso(Date.now() - 5000));
-
-    const reconnectAt = iso(Date.now());
-    await reconnectWorkspace(db, ws.id, reconnectAt);
-
-    const row = await getWorkspaceById(db, ws.id);
-    expect(row?.disconnectedAt).toBeUndefined();
-    expect(Date.parse(row!.lastAccessedAt!)).toBeCloseTo(Date.parse(reconnectAt), -2);
-
-    const list = await listWorkspaces(db);
-    expect(list).toHaveLength(1);
-  });
-
-  it('reconnecting a workspace that was never disconnected does not set disconnectedAt', async () => {
-    const db = await makeDb();
-    const ws = makeWorkspace();
-    await insertWorkspace(db, ws);
-    await reconnectWorkspace(db, ws.id, iso(Date.now()));
-    const row = await getWorkspaceById(db, ws.id);
-    expect(row?.disconnectedAt).toBeUndefined();
-  });
-});
-
-describe('updateWorkspaceKind', () => {
-  it('promotes a simple workspace to repo and leaves the others alone', async () => {
-    const db = await makeDb();
-    const simple = makeWorkspace({ id: 'simple', rootPath: '/tmp/simple', kind: 'simple' });
-    const other = makeWorkspace({ id: 'other', rootPath: '/tmp/other', kind: 'simple' });
-    await insertWorkspace(db, simple);
-    await insertWorkspace(db, other);
-
-    await updateWorkspaceKind({ db, id: simple.id, kind: 'repo' });
-
-    expect((await getWorkspaceById(db, simple.id))?.kind).toBe('repo');
-    expect((await getWorkspaceById(db, other.id))?.kind).toBe('simple');
-  });
-
-  it('stores the canonical root path alongside the kind', async () => {
-    const db = await makeDb();
-    const ws = makeWorkspace({ id: 'canonical', rootPath: '/tmp/link/space', kind: 'simple' });
-    await insertWorkspace(db, ws);
-
-    await updateWorkspaceKind({ db, id: ws.id, kind: 'repo', rootPath: '/private/tmp/link/space' });
-
-    const after = await getWorkspaceById(db, ws.id);
-    expect(after?.rootPath).toBe('/private/tmp/link/space');
-    expect(after?.kind).toBe('repo');
-  });
-
-  it('bumps updatedAt so the change is observable', async () => {
-    const db = await makeDb();
-    const ws = makeWorkspace({ id: 'bump', rootPath: '/tmp/bump', kind: 'simple' });
-    await insertWorkspace(db, ws);
-    const before = await getWorkspaceById(db, ws.id);
-
-    await updateWorkspaceKind({ db, id: ws.id, kind: 'repo' });
-
-    const after = await getWorkspaceById(db, ws.id);
-    expect(Date.parse(after!.updatedAt)).toBeGreaterThanOrEqual(Date.parse(before!.updatedAt));
-  });
-});
-
-describe('renameWorkspace', () => {
-  it('renames only the display name, never the path', async () => {
-    const db = await makeDb();
-    const ws = makeWorkspace({ id: 'named', name: 'billing-api', rootPath: '/tmp/billing-api' });
-    await insertWorkspace(db, ws);
-
-    await renameWorkspace(db, ws.id, 'Billing platform');
-
-    const after = await getWorkspaceById(db, ws.id);
-    expect(after?.name).toBe('Billing platform');
-    expect(after?.rootPath).toBe('/tmp/billing-api');
-  });
-});
-
-describe('deleteWorkspace', () => {
-  it('hard-deletes the row', async () => {
-    const db = await makeDb();
-    const ws = makeWorkspace();
-    await insertWorkspace(db, ws);
-    await deleteWorkspace(db, ws.id);
-    expect(await getWorkspaceById(db, ws.id)).toBeNull();
-  });
-});
-
-describe('duplicate path guard', () => {
-  it('inserting same rootPath twice throws a unique constraint', async () => {
-    const db = await makeDb();
-    const ws1 = makeWorkspace({ id: 'dup1', rootPath: '/dup' });
-    const ws2 = makeWorkspace({ id: 'dup2', rootPath: '/dup' });
-    await insertWorkspace(db, ws1);
-    await expect(insertWorkspace(db, ws2)).rejects.toThrow();
+    const workspace = makeWorkspace({});
+    await insertWorkspace({ db, workspace });
+    await deleteWorkspace({ db, id: workspace.id });
+    expect(await getWorkspaceById({ db, id: workspace.id })).toBeNull();
   });
 });

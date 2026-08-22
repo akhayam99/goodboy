@@ -3,6 +3,9 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type {
   GhTokenStatus,
   IsoDateTime,
+  OverrideSettings,
+  Project,
+  ProjectId,
   PullRequestState,
   Session,
   SessionExternalTask,
@@ -27,11 +30,12 @@ type Store = {
   readonly setFocusedGithubIssueNumber: ReturnType<typeof vi.fn>;
   readonly openExternalTaskLens: ReturnType<typeof vi.fn>;
   readonly sessionBranches: Record<string, string>;
-  sessionMounts: Record<string, ReadonlyArray<never>>;
-  sessionActiveMount: Record<string, WorkspaceId>;
+  sessionProjectMounts: Record<string, ReadonlyArray<never>>;
+  sessionActiveProject: Record<string, ProjectId>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   sessions: ReadonlyArray<Session>;
   workspaces: ReadonlyArray<Workspace>;
+  projects: ReadonlyArray<Project>;
 };
 
 const h = vi.hoisted(() => ({
@@ -51,11 +55,12 @@ const h = vi.hoisted(() => ({
     setFocusedGithubIssueNumber: vi.fn(),
     openExternalTaskLens: vi.fn(),
     sessionBranches: { 'session-1': 'ak/refactor-auth' },
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: {},
+    sessionActiveProject: {},
     sessionWorktrees: { 'session-1': ['/tmp/goodboy/.goodboy/worktrees/refactor-auth'] },
     sessions: [] as ReadonlyArray<Session>,
     workspaces: [] as ReadonlyArray<Workspace>,
+    projects: [] as ReadonlyArray<Project>,
   } satisfies Store,
   remoteKind: 'github' as 'github' | 'gitlab' | 'other' | null,
   onSelectLens: vi.fn(),
@@ -69,6 +74,19 @@ const h = vi.hoisted(() => ({
   ghSetToken: vi.fn(),
   openUrl: vi.fn(async () => undefined),
 }));
+
+const EMPTY_OVERRIDES: OverrideSettings = {
+  defaultProviderId: null,
+  defaultWorkflowId: null,
+  defaultBranchPrefix: null,
+  parallelEnabled: null,
+  defaultVerbosity: null,
+  providerBindings: null,
+  taskModels: null,
+  roleModels: null,
+  parallelAgents: null,
+  providerPool: null,
+};
 
 vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: [],
@@ -203,8 +221,21 @@ beforeEach(() => {
     {
       id: session.workspaceId,
       name: 'Goodboy',
+      slug: 'goodboy',
+      sessionsRoot: '/tmp/goodboy',
+      overrides: EMPTY_OVERRIDES,
+      createdAt: DATE,
+      updatedAt: DATE,
+    },
+  ];
+  h.store.projects = [
+    {
+      id: 'project-goodboy' as ProjectId,
+      workspaceId: session.workspaceId,
+      name: 'goodboy',
       rootPath: '/tmp/goodboy',
       kind: 'repo',
+      overrides: EMPTY_OVERRIDES,
       createdAt: DATE,
       updatedAt: DATE,
     },
@@ -724,16 +755,30 @@ describe('PrPane', () => {
   });
 
   it('shows repository attribution on composite linked rows', () => {
-    const memberId = 'workspace-web' as WorkspaceId;
+    const memberId = 'project-web' as ProjectId;
     h.store.workspaces = [
       {
         id: session.workspaceId,
         name: 'Product',
-        rootPath: '/tmp/product',
-        kind: 'composite',
-        members: [{ workspaceId: memberId, rootPath: '/tmp/web', mountName: 'web' }],
+        slug: 'product',
+        sessionsRoot: '/tmp/product',
+        overrides: EMPTY_OVERRIDES,
         createdAt: DATE,
         updatedAt: DATE,
+      },
+    ];
+    h.store.projects = [
+      {
+        ...h.store.projects[0]!,
+        id: memberId,
+        name: 'web',
+        rootPath: '/tmp/web',
+      },
+      {
+        ...h.store.projects[0]!,
+        id: 'project-api' as ProjectId,
+        name: 'api',
+        rootPath: '/tmp/api',
       },
     ];
     h.store.sessionGithub = {
@@ -748,7 +793,7 @@ describe('PrPane', () => {
       [SESSION_ID]: [
         {
           sessionId: SESSION_ID,
-          mountWorkspaceId: memberId,
+          projectId: memberId,
           provider: 'github',
           externalId: '42',
           identifier: '#42',

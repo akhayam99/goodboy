@@ -3,6 +3,7 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  ProjectId,
   ProviderId,
   ProviderRunId,
   Session,
@@ -350,7 +351,26 @@ describe('sendTurn, agent routing', () => {
         codex: { state: 'connected', identity: 'test' },
       } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
   }
@@ -419,18 +439,44 @@ describe('sendTurn, agent routing', () => {
   it('captures file versions for changed files in a simple session turn', async () => {
     const useAppStore = await importStore();
     setupTwoAgents(useAppStore, AGENT_A);
+    const projectId = 'project-folder' as ProjectId;
     useAppStore.setState({
       sessionWorktrees: { [SESSION_ID]: ['/tmp/simple-session'] },
-      workspaces: [
+      projects: [
         {
-          id: WORKSPACE_ID,
-          name: 'ws',
-          rootPath: '/tmp',
-          kind: 'simple',
+          id: projectId,
+          workspaceId: WORKSPACE_ID,
+          name: 'folder',
+          rootPath: '/tmp/simple-session',
+          kind: 'folder',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
           createdAt: NOW,
           updatedAt: NOW,
         },
-      ] as never,
+      ],
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            projectId,
+            mountName: 'folder',
+            worktreePath: '/tmp/simple-session',
+            repoRoot: '/tmp/simple-session',
+            branch: '',
+          },
+        ],
+      },
+      sessionActiveProject: { [SESSION_ID]: projectId },
     });
     fileVersionsBeginSnapshotSpy.mockResolvedValue({
       manifest: [
@@ -736,7 +782,26 @@ describe('sendTurn, workflow carry-forward', () => {
       ],
       authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
 
@@ -889,7 +954,26 @@ describe('sendTurn, workflow carry-forward', () => {
       ],
       authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
     stepSummaryDegraded.clear();
@@ -963,7 +1047,26 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
         codex: { state: 'connected', identity: 'test' },
       } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
   }
@@ -1142,7 +1245,26 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       ],
       authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
     runTurnSpy.mockReset();
@@ -1196,7 +1318,26 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       ],
       authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
     runTurnSpy.mockReset();
@@ -1257,7 +1398,26 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       ],
       authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
     runTurnSpy.mockReset();
@@ -1311,7 +1471,26 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       ],
       authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
     runTurnSpy.mockReset();
@@ -1688,7 +1867,26 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       ],
       authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
 
@@ -1747,7 +1945,26 @@ describe('sendTurn, budget routing notice', () => {
         cursor: { state: 'connected', identity: 'test' },
       } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
   }
@@ -1939,7 +2156,26 @@ describe('sendTurn, role fallback model', () => {
         anthropic: { state: 'connected', identity: 'test' },
       } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
       workspaceOverrides: {
         [WORKSPACE_ID]: {

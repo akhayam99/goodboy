@@ -6,6 +6,8 @@ export type {
   IsoDateTime,
   MessageId,
   OpenQuestionId,
+  ProjectId,
+  ProjectScriptId,
   PermissionRequestId,
   PermissionRuleId,
   ProviderRunId,
@@ -19,7 +21,6 @@ export type {
   WorkflowRunId,
   WorkspaceId,
   WorkspaceIntegrationId,
-  WorkspaceScriptId,
 } from './ids';
 export type { FileVersion, FileVersionChangeKind, FileVersionSnapshotSource } from './file-version';
 export type { IntegrationCredential, IntegrationCredentialUsage } from './integration-credential';
@@ -40,7 +41,9 @@ export type {
   LinearWorkspaceIntegration,
   OrchestratorRouting,
   Session,
-  SessionMount,
+  Project,
+  ProjectScript,
+  SessionProjectMount,
   SentryIntegrationConfig,
   SessionExternalTask,
   SessionExternalTaskProvider,
@@ -50,8 +53,7 @@ export type {
   Workspace,
   WorkspaceGitState,
   WorkspaceGitStatus,
-  WorkspaceKind,
-  WorkspaceMember,
+  WorkspaceProfile,
   WorkflowRun,
   WorkflowExecutionMode,
   WorkflowOrchestrationOutcome,
@@ -62,7 +64,6 @@ export type {
   WorkspaceIntegration,
   WorkspaceIntegrationConfig,
   WorkspaceIntegrationProvider,
-  WorkspaceScript,
 } from './workspace';
 export { isSessionExternalTaskProvider, SESSION_EXTERNAL_TASK_PROVIDERS } from './workspace';
 export type {

@@ -3,16 +3,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Session,
   SessionId,
+  ProjectId,
   WorkspaceId,
-  WorkspaceScript,
-  WorkspaceScriptId,
+  ProjectScript,
+  ProjectScriptId,
 } from '@goodboy/types';
 import type { ScriptRunRecord } from '../../scripts';
 
 type StoreState = {
   readonly scriptRuns: Readonly<Record<string, Readonly<Record<string, ScriptRunRecord>>>>;
   readonly sessions: ReadonlyArray<Session>;
-  readonly workspaceScripts: Readonly<Record<string, ReadonlyArray<WorkspaceScript>>>;
+  readonly projectScripts: Readonly<Record<string, ReadonlyArray<ProjectScript>>>;
 };
 
 const { store } = vi.hoisted(() => ({
@@ -20,7 +21,7 @@ const { store } = vi.hoisted(() => ({
     state: {
       scriptRuns: {},
       sessions: [],
-      workspaceScripts: {},
+      projectScripts: {},
     } as StoreState,
   },
 }));
@@ -35,13 +36,15 @@ const SESSION_A = 'session-a' as SessionId;
 const SESSION_B = 'session-b' as SessionId;
 const WORKSPACE_A = 'workspace-a' as WorkspaceId;
 const WORKSPACE_B = 'workspace-b' as WorkspaceId;
-const SHARED_SCRIPT = 'shared-script' as WorkspaceScriptId;
+const PROJECT_A = 'project-a' as ProjectId;
+const PROJECT_B = 'project-b' as ProjectId;
+const SHARED_SCRIPT = 'shared-script' as ProjectScriptId;
 
 beforeEach(() => {
   store.state = {
     scriptRuns: {},
     sessions: [],
-    workspaceScripts: {},
+    projectScripts: {},
   };
 });
 
@@ -65,20 +68,20 @@ describe('useRunningScripts', () => {
           goal: 'beta goal',
         } as Session,
       ],
-      workspaceScripts: {
+      projectScripts: {
         [WORKSPACE_A]: [
           {
             id: SHARED_SCRIPT,
-            workspaceId: WORKSPACE_A,
+            projectId: PROJECT_A,
             name: 'alpha setup',
-          } as WorkspaceScript,
+          } as ProjectScript,
         ],
         [WORKSPACE_B]: [
           {
             id: SHARED_SCRIPT,
-            workspaceId: WORKSPACE_B,
+            projectId: PROJECT_B,
             name: 'beta setup',
-          } as WorkspaceScript,
+          } as ProjectScript,
         ],
       },
       scriptRuns: {
@@ -118,14 +121,14 @@ describe('useRunningScripts', () => {
           goal: 'alpha goal',
         } as Session,
       ],
-      workspaceScripts: {
+      projectScripts: {
         [WORKSPACE_A]: [],
         [WORKSPACE_B]: [
           {
             id: SHARED_SCRIPT,
-            workspaceId: WORKSPACE_B,
+            projectId: PROJECT_B,
             name: 'other workspace setup',
-          } as WorkspaceScript,
+          } as ProjectScript,
         ],
       },
       scriptRuns: {
@@ -146,9 +149,9 @@ describe('useRunningScripts', () => {
   });
 
   it('sorts pending runs by startedAt and excludes finished runs', () => {
-    const EARLY_SCRIPT = 'early-script' as WorkspaceScriptId;
-    const LATE_SCRIPT = 'late-script' as WorkspaceScriptId;
-    const FINISHED_SCRIPT = 'finished-script' as WorkspaceScriptId;
+    const EARLY_SCRIPT = 'early-script' as ProjectScriptId;
+    const LATE_SCRIPT = 'late-script' as ProjectScriptId;
+    const FINISHED_SCRIPT = 'finished-script' as ProjectScriptId;
     store.state = {
       sessions: [
         {
@@ -157,23 +160,23 @@ describe('useRunningScripts', () => {
           goal: 'alpha goal',
         } as Session,
       ],
-      workspaceScripts: {
+      projectScripts: {
         [WORKSPACE_A]: [
           {
             id: EARLY_SCRIPT,
-            workspaceId: WORKSPACE_A,
+            projectId: PROJECT_A,
             name: 'early',
-          } as WorkspaceScript,
+          } as ProjectScript,
           {
             id: LATE_SCRIPT,
-            workspaceId: WORKSPACE_A,
+            projectId: PROJECT_A,
             name: 'late',
-          } as WorkspaceScript,
+          } as ProjectScript,
           {
             id: FINISHED_SCRIPT,
-            workspaceId: WORKSPACE_A,
+            projectId: PROJECT_A,
             name: 'finished',
-          } as WorkspaceScript,
+          } as ProjectScript,
         ],
       },
       scriptRuns: {

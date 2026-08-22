@@ -73,7 +73,7 @@ const fetchCurrentDiff = async ({
   target,
 }: FetchDiffParams): Promise<string> => {
   if (target.provider === 'github') {
-    return ghPrDiff(target.repo, target.prNumber, repo.repoRoot, workspace.id, repo.workspaceId);
+    return ghPrDiff(target.repo, target.prNumber, repo.repoRoot, workspace.id, repo.projectId);
   }
   return gitlabMrDiff(workspace.id, gitlabHost({ get, workspace }), target.repo, target.prNumber);
 };
@@ -106,7 +106,7 @@ const publishGithub = async ({
   const ghOpts = {
     cwd: repo.repoRoot,
     workspaceId: workspace.id,
-    memberWorkspaceId: repo.workspaceId,
+    memberWorkspaceId: repo.projectId,
   };
   try {
     const pullRequestId = await fetchPrNodeId(tauriGhRunner, target.repo, target.prNumber, ghOpts);

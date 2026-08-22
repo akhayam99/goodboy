@@ -10,8 +10,8 @@ type Store = {
   workspaces: ReadonlyArray<unknown>;
   sessionBranches: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
-  sessionMounts: Record<string, ReadonlyArray<never>>;
-  sessionActiveMount: Record<string, string>;
+  sessionProjectMounts: Record<string, ReadonlyArray<never>>;
+  sessionActiveProject: Record<string, string>;
   sessionGithub: Record<
     string,
     {
@@ -40,8 +40,8 @@ const { store, hooks } = vi.hoisted(() => ({
     workspaces: [] as ReadonlyArray<unknown>,
     sessionBranches: {} as Record<string, string>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
-    sessionMounts: {} as Record<string, ReadonlyArray<never>>,
-    sessionActiveMount: {} as Record<string, string>,
+    sessionProjectMounts: {} as Record<string, ReadonlyArray<never>>,
+    sessionActiveProject: {} as Record<string, string>,
     sessionGithub: {} as Store['sessionGithub'],
     sessionGitlabMr: {} as Record<string, { mr?: unknown }>,
     sessionExternalTasks: {} as Record<string, ReadonlyArray<unknown>>,
@@ -136,8 +136,8 @@ beforeEach(() => {
   store.workspaces = [];
   store.sessionBranches = {};
   store.sessionWorktrees = {};
-  store.sessionMounts = {};
-  store.sessionActiveMount = {};
+  store.sessionProjectMounts = {};
+  store.sessionActiveProject = {};
   store.sessionGithub = {};
   store.sessionGitlabMr = {};
   store.sessionExternalTasks = {};

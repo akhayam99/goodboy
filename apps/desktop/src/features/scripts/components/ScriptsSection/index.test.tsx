@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 type MockState = {
-  workspaceScripts: Record<string, ReadonlyArray<{ id: string; name: string; body: string }>>;
+  projectScripts: Record<string, ReadonlyArray<{ id: string; name: string; body: string }>>;
   scriptRuns: Record<string, Record<string, { status: string; result: unknown }>>;
   sessionPanelExpanded: Record<string, Partial<Record<string, boolean>>>;
   setPanelSectionExpanded: ReturnType<typeof vi.fn>;
@@ -16,7 +16,7 @@ type MockState = {
 
 const { state } = vi.hoisted<{ state: MockState }>(() => ({
   state: {
-    workspaceScripts: {},
+    projectScripts: {},
     scriptRuns: {},
     sessionPanelExpanded: {},
     setPanelSectionExpanded: vi.fn(),
@@ -34,7 +34,7 @@ vi.mock('../../../../store', () => ({
 import { ScriptsSection } from './index';
 
 beforeEach(() => {
-  state.workspaceScripts = {
+  state.projectScripts = {
     'ws-1': [{ id: 'sc-1', name: 'sync env', body: 'cp .env .env.local' }],
   };
   state.scriptRuns = {};
@@ -49,7 +49,7 @@ afterEach(cleanup);
 
 describe('ScriptsSection', () => {
   it('shows a create-script entry when the workspace has no scripts', () => {
-    state.workspaceScripts = {};
+    state.projectScripts = {};
     render(
       <ScriptsSection
         sessionId={'sess-1' as never}
@@ -61,7 +61,7 @@ describe('ScriptsSection', () => {
   });
 
   it('opens the session scripts lens from the create-script entry', () => {
-    state.workspaceScripts = {};
+    state.projectScripts = {};
     render(
       <ScriptsSection
         sessionId={'sess-1' as never}

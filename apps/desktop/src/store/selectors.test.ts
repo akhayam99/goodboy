@@ -6,6 +6,8 @@ import type {
   Session,
   SessionId,
   StepId,
+  Project,
+  ProjectId,
   TelemetryKind,
   TelemetryRecord,
   WorkflowRunId,
@@ -77,11 +79,13 @@ const createAgent = ({
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 
 const createSession = (id: SessionId): Session =>
   ({
     id,
     workspaceId: WORKSPACE_ID,
+    activeProjectId: PROJECT_ID,
     goal: 'ship the fix',
     state: { kind: 'idle', lastActivityAt: '2026-07-27T10:00:00.000Z' },
     createdAt: '2026-07-27T10:00:00.000Z',
@@ -89,8 +93,33 @@ const createSession = (id: SessionId): Session =>
     workflowRuns: [],
   }) as unknown as Session;
 
-const createWorkspace = (kind: string): Workspace =>
-  ({ id: WORKSPACE_ID, kind, rootPath: '/tmp/ws' }) as unknown as Workspace;
+const createWorkspace = (): Workspace => ({ id: WORKSPACE_ID }) as unknown as Workspace;
+
+const createProject = (kind: Project['kind'] = 'repo'): Project =>
+  ({
+    id: PROJECT_ID,
+    workspaceId: WORKSPACE_ID,
+    rootPath: '/tmp/ws',
+    name: 'project',
+    kind,
+  }) as unknown as Project;
+
+const setProjectScope = ({ kind = 'repo' }: { readonly kind?: Project['kind'] } = {}): void => {
+  store.state.workspaces = [createWorkspace()];
+  store.state.projects = [createProject(kind)];
+  store.state.sessionProjectMounts = {
+    [SESSION_ID]: [
+      {
+        projectId: PROJECT_ID,
+        mountName: 'project',
+        repoRoot: '/tmp/ws',
+        worktreePath: '/tmp/ws-worktree',
+        branch: kind === 'repo' ? 'ak/feat-thing' : '',
+      },
+    ],
+  };
+  store.state.sessionActiveProject = { [SESSION_ID]: PROJECT_ID };
+};
 
 beforeEach(() => {
   store.state = {
@@ -107,10 +136,11 @@ beforeEach(() => {
     getSessionViewPrefs: vi.fn(),
     sessions: [],
     workspaces: [],
+    projects: [],
     sessionBranches: {},
     sessionWorktrees: {},
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: {},
+    sessionActiveProject: {},
     githubStatus: null,
   };
 });
@@ -164,7 +194,7 @@ describe('useSessionStageInfo pull request freshness', () => {
   const repoSession = () => {
     const session = createSession(SESSION_ID);
     store.state.sessions = [session];
-    store.state.workspaces = [createWorkspace('repo')];
+    setProjectScope();
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/ws-worktree'] };
     return session;
@@ -226,6 +256,7 @@ describe('useSessionStageInfo pull request freshness', () => {
   it('claims no PR for a session whose worktree never landed', () => {
     const session = repoSession();
     store.state.sessionWorktrees = {};
+    store.state.sessionProjectMounts = {};
     store.state.githubStatus = { available: true };
 
     const { result } = renderHook(() => useSessionStageInfo(session));
@@ -238,7 +269,7 @@ describe('useSessionPrFetchState', () => {
   const fetchableSession = () => {
     const session = createSession(SESSION_ID);
     store.state.sessions = [session];
-    store.state.workspaces = [createWorkspace('repo')];
+    setProjectScope();
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/ws-worktree'] };
     store.state.githubStatus = { available: true };
@@ -275,10 +306,10 @@ describe('useSessionPrFetchState', () => {
     expect(result.current).toBe('unreachable');
   });
 
-  it('reports known for a simple workspace, which never gets a pull request fetched', () => {
+  it('reports known for a folder project, which never gets a pull request fetched', () => {
     const session = createSession(SESSION_ID);
     store.state.sessions = [session];
-    store.state.workspaces = [createWorkspace('simple')];
+    setProjectScope({ kind: 'folder' });
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/ws-worktree'] };
     store.state.githubStatus = { available: true };
@@ -440,7 +471,7 @@ describe('useSessionUnreadLens', () => {
 
 describe('useSortedGroupedSessions', () => {
   it('derives stages with the default stage grouping', () => {
-    store.state.workspaces = [createWorkspace('repo')];
+    store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     const sessions = [createSession(SESSION_ID)];
 
@@ -452,7 +483,7 @@ describe('useSortedGroupedSessions', () => {
 
 describe('useStageGroupedSessions', () => {
   it('groups a repo session by its pull request stage', () => {
-    store.state.workspaces = [createWorkspace('repo')];
+    store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     store.state.sessionGithub = {
       [SESSION_ID]: { pr: { number: 12, state: 'merged', isDraft: false } },
@@ -465,7 +496,7 @@ describe('useStageGroupedSessions', () => {
   });
 
   it('groups a GitLab-only session by its merge request stage', () => {
-    store.state.workspaces = [createWorkspace('repo')];
+    store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     store.state.sessionGitlabMr = {
       [SESSION_ID]: {
@@ -480,7 +511,7 @@ describe('useStageGroupedSessions', () => {
   });
 
   it('keeps a branchless simple-workspace session out of the pull request stages', () => {
-    store.state.workspaces = [createWorkspace('simple')];
+    store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: '' };
     store.state.sessionGithub = {
       [SESSION_ID]: { pr: { number: 12, state: 'merged', isDraft: false } },
@@ -493,7 +524,7 @@ describe('useStageGroupedSessions', () => {
   });
 
   it('keeps the same array reference when an unrelated store field changes', () => {
-    store.state.workspaces = [createWorkspace('repo')];
+    store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     const sessions = [createSession(SESSION_ID)];
 
@@ -507,7 +538,7 @@ describe('useStageGroupedSessions', () => {
   });
 
   it('returns a new reference when a session object is replaced under the same id', () => {
-    store.state.workspaces = [createWorkspace('repo')];
+    store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     let sessions = [createSession(SESSION_ID)];
 
@@ -523,7 +554,7 @@ describe('useStageGroupedSessions', () => {
 
   it('returns a new reference when a session is added', () => {
     const otherId = 'session-2' as SessionId;
-    store.state.workspaces = [createWorkspace('repo')];
+    store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing', [otherId]: 'ak/feat-two' };
     let sessions = [createSession(SESSION_ID)];
 

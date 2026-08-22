@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { PrDetail, WorkspaceId } from '@goodboy/types';
+import type { PrDetail, ProjectId } from '@goodboy/types';
 import { CircleDashed } from 'lucide-react';
 import { EmptyState } from '@goodboy/ui';
 import { RailBlock } from '@goodboy/ui';
@@ -12,7 +12,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 type Props = {
   readonly detail: PrDetail | null;
   readonly workspaceRoot: string | null;
-  readonly memberWorkspaceId?: WorkspaceId;
+  readonly memberWorkspaceId?: ProjectId;
   readonly onAddReviewers: (logins: ReadonlyArray<string>) => void;
 };
 

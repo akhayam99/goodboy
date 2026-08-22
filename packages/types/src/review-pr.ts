@@ -1,12 +1,12 @@
 import type { PullRequestStateKind } from './github';
-import type { WorkspaceId } from './ids';
+import type { ProjectId } from './ids';
 
 export type ReviewablePrProvider = 'github' | 'gitlab';
 
 export type ReviewablePr = {
   id: string;
   provider: ReviewablePrProvider;
-  mountWorkspaceId?: WorkspaceId;
+  projectId?: ProjectId;
   repo: string;
   number: number;
   title: string;

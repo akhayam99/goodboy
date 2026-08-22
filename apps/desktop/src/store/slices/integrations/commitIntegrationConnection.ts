@@ -10,6 +10,7 @@ import type {
   IntegrationCredential,
   IntegrationCredentialId,
   IsoDateTime,
+  ProjectId,
   WorkspaceId,
   WorkspaceIntegration,
   WorkspaceIntegrationConfig,
@@ -17,7 +18,7 @@ import type {
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import type { SetFn } from './types';
+import type { GetFn, SetFn } from './types';
 
 type NewCredential = {
   readonly label: string;
@@ -26,6 +27,7 @@ type NewCredential = {
 
 type Params = {
   readonly set: SetFn;
+  readonly get: GetFn;
   readonly workspaceId: WorkspaceId;
   readonly provider: WorkspaceIntegrationProvider;
   readonly credentialId: IntegrationCredentialId;
@@ -35,14 +37,14 @@ type Params = {
 };
 
 type RollbackParams = {
-  readonly workspaceId: WorkspaceId;
+  readonly projectId: ProjectId;
   readonly provider: WorkspaceIntegrationProvider;
   readonly existing: WorkspaceIntegration | null;
   readonly created: IntegrationCredential | null;
 };
 
 const rollback = async ({
-  workspaceId,
+  projectId,
   provider,
   existing,
   created,
@@ -51,7 +53,7 @@ const rollback = async ({
     await upsertWorkspaceIntegration(tauriDatabase, existing);
     return;
   }
-  await deleteWorkspaceIntegration(tauriDatabase, workspaceId, provider);
+  await deleteWorkspaceIntegration(tauriDatabase, projectId, provider);
   if (created !== null) {
     await deleteIntegrationCredential(tauriDatabase, created.id);
   }
@@ -59,6 +61,7 @@ const rollback = async ({
 
 export const commitIntegrationConnection = async ({
   set,
+  get,
   workspaceId,
   provider,
   credentialId,
@@ -66,6 +69,10 @@ export const commitIntegrationConnection = async ({
   newCredential,
   storeSecret,
 }: Params): Promise<void> => {
+  const project = get().projects.find((candidate) => candidate.workspaceId === workspaceId);
+  if (project === undefined) {
+    throw new Error(`workspace has no projects: ${workspaceId}`);
+  }
   const now = new Date().toISOString() as IsoDateTime;
   const label = newCredential === null ? '' : newCredential.label.trim();
   const created: IntegrationCredential | null =
@@ -83,10 +90,10 @@ export const commitIntegrationConnection = async ({
     await upsertIntegrationCredential(tauriDatabase, created);
   }
 
-  const existing = await getWorkspaceIntegration(tauriDatabase, workspaceId, provider);
+  const existing = await getWorkspaceIntegration(tauriDatabase, project.id, provider);
   const integration = {
     id: (existing?.id ?? crypto.randomUUID()) as WorkspaceIntegrationId,
-    workspaceId,
+    workspaceId: project.id,
     provider,
     config,
     credentialId,
@@ -99,7 +106,7 @@ export const commitIntegrationConnection = async ({
     await storeSecret();
   } catch (storeError) {
     try {
-      await rollback({ workspaceId, provider, existing, created });
+      await rollback({ projectId: project.id, provider, existing, created });
     } finally {
       throw storeError;
     }

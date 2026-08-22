@@ -54,7 +54,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const providers = useAppStore((state) => state.providers);
   const workspaceRoot = useAppStore(
     (state) =>
-      state.workspaces?.find((workspace) => workspace.id === workspaceId)?.rootPath ?? null,
+      state.workspaces?.find((workspace) => workspace.id === workspaceId)?.sessionsRoot ?? null,
   );
   const storedDraft = useAppStore((state) => state.workflowStudioDrafts[workspaceId]);
   const generation = useAppStore((state) => state.workflowGenerations[workspaceId]);

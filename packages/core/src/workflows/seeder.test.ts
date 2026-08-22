@@ -31,12 +31,28 @@ async function setup() {
   const db = makeDb();
   await migrate(db);
   const workspaceId = 'ws_seed_test' as WorkspaceId;
-  await insertWorkspace(db, {
-    id: workspaceId,
-    name: 'seed-test',
-    rootPath: '/tmp/seed-test',
-    createdAt: now(),
-    updatedAt: now(),
+  await insertWorkspace({
+    db,
+    workspace: {
+      id: workspaceId,
+      name: 'seed-test',
+      slug: 'seed-test',
+      sessionsRoot: '/tmp/seed-test',
+      overrides: {
+        defaultProviderId: null,
+        defaultWorkflowId: null,
+        defaultBranchPrefix: null,
+        parallelEnabled: null,
+        defaultVerbosity: null,
+        providerBindings: null,
+        taskModels: null,
+        roleModels: null,
+        parallelAgents: null,
+        providerPool: null,
+      },
+      createdAt: now(),
+      updatedAt: now(),
+    },
   });
   return { db, workspaceId };
 }

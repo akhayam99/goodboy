@@ -7,8 +7,9 @@ type State = Pick<
   AppState,
   | 'sessions'
   | 'workspaces'
-  | 'sessionMounts'
-  | 'sessionActiveMount'
+  | 'projects'
+  | 'sessionProjectMounts'
+  | 'sessionActiveProject'
   | 'sessionWorktrees'
   | 'sessionBranches'
 >;
@@ -33,7 +34,7 @@ export const resolveSessionPrFetch = ({ state, sessionId }: Params): SessionPrFe
     return null;
   }
   const workspace = state.workspaces.find((candidate) => candidate.id === session.workspaceId);
-  if (workspace == null || isBranchlessSession({ workspaceKind: workspace.kind, branch })) {
+  if (workspace == null || isBranchlessSession({ branch })) {
     return null;
   }
   const repo = resolveSessionRepo({ state, sessionId });

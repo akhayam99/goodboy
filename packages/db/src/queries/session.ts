@@ -3,6 +3,7 @@ import type {
   ClaudePermissionMode,
   IsoDateTime,
   ModelEffort,
+  ProjectId,
   ProviderId,
   Session,
   SessionId,
@@ -32,7 +33,7 @@ type SessionRow = {
   permission_mode: string | null;
   auto_run: number;
   title_user_edited: number;
-  active_mount_workspace_id: string | null;
+  active_project_id: string | null;
   archived_at: number | null;
   deleted_at: number | null;
   verbosity: string | null;
@@ -118,8 +119,8 @@ const toDomain = (
     workflowRuns,
     autoRun: row.auto_run !== 0,
     titleUserEdited: row.title_user_edited !== 0,
-    ...(row.active_mount_workspace_id != null && {
-      activeMountWorkspaceId: row.active_mount_workspace_id as WorkspaceId,
+    ...(row.active_project_id != null && {
+      activeProjectId: row.active_project_id as ProjectId,
     }),
     ...(row.archived_at != null && {
       archivedAt: new Date(row.archived_at).toISOString() as IsoDateTime,
@@ -204,8 +205,8 @@ const lastActivityAtFor = (state: TurnState, updatedAt: IsoDateTime): number =>
 export const insertSession = async (db: Database, session: Session): Promise<void> => {
   await db.execute(
     `INSERT INTO sessions
-      (id, workspace_id, goal, state_kind, last_activity_at, provider_default, provider_allow_override, provider_enabled, permission_mode, auto_run, title_user_edited, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, workspace_id, goal, state_kind, last_activity_at, provider_default, provider_allow_override, provider_enabled, permission_mode, auto_run, title_user_edited, active_project_id, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       session.id,
       session.workspaceId,
@@ -218,6 +219,7 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
       session.permissionMode,
       session.autoRun ? 1 : 0,
       session.titleUserEdited ? 1 : 0,
+      session.activeProjectId ?? null,
       Date.parse(session.createdAt),
       Date.parse(session.updatedAt),
     ],
@@ -271,21 +273,18 @@ export const updateSessionTitleUserEdited = async (
   ]);
 };
 
-type UpdateSessionActiveMountParams = {
+type UpdateSessionActiveProjectParams = {
   readonly db: Database;
   readonly id: SessionId;
-  readonly workspaceId: WorkspaceId | null;
+  readonly projectId: ProjectId | null;
 };
 
-export const updateSessionActiveMount = async ({
+export const updateSessionActiveProject = async ({
   db,
   id,
-  workspaceId,
-}: UpdateSessionActiveMountParams): Promise<void> => {
-  await db.execute('UPDATE sessions SET active_mount_workspace_id = ? WHERE id = ?', [
-    workspaceId,
-    id,
-  ]);
+  projectId,
+}: UpdateSessionActiveProjectParams): Promise<void> => {
+  await db.execute('UPDATE sessions SET active_project_id = ? WHERE id = ?', [projectId, id]);
 };
 
 export const updateSessionState = async (

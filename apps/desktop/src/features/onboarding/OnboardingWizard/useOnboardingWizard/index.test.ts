@@ -7,7 +7,7 @@ import { useOnboardingWizard } from './index';
 let wizardDone = false;
 let hydrated = true;
 const providers: Array<{ connection: ProviderConnectionState }> = [];
-const workspaces: Array<{ id: string; kind?: 'repo' | 'simple' }> = [];
+const workspaces: Array<{ id: string; kind?: 'repo' | 'folder' }> = [];
 let currentWorkspaceId: string | null = null;
 let workspaceIntegrations: Record<string, Array<{ provider: string }>> = {};
 
@@ -31,8 +31,19 @@ vi.mock('../../../../store', () => ({
       hydrated: boolean;
       currentWorkspaceId: string | null;
       workspaceIntegrations: typeof workspaceIntegrations;
+      projects: Array<{ workspaceId: string; kind: 'repo' | 'folder' }>;
     }) => unknown,
-  ) => selector({ providers, hydrated, currentWorkspaceId, workspaceIntegrations }),
+  ) =>
+    selector({
+      providers,
+      hydrated,
+      currentWorkspaceId,
+      workspaceIntegrations,
+      projects: workspaces.map((workspace) => ({
+        workspaceId: workspace.id,
+        kind: workspace.kind ?? 'repo',
+      })),
+    }),
   useWorkspaces: () => workspaces,
 }));
 
@@ -192,16 +203,16 @@ describe('useOnboardingWizard', () => {
       const { result } = renderHook(() => useOnboardingWizard());
       expect(result.current.workspace).toBe(workspaces[0]);
       expect(result.current.workspaceId).toBe('w1');
-      expect(result.current.workspaceKind).toBe('repo');
+      expect(result.current.projectKind).toBe('repo');
     });
 
     it('prefers the active workspace and exposes its kind', () => {
-      workspaces.push({ id: 'w1', kind: 'repo' }, { id: 'w2', kind: 'simple' });
+      workspaces.push({ id: 'w1', kind: 'repo' }, { id: 'w2', kind: 'folder' });
       currentWorkspaceId = 'w2';
       const { result } = renderHook(() => useOnboardingWizard());
       expect(result.current.workspace).toBe(workspaces[1]);
       expect(result.current.workspaceId).toBe('w2');
-      expect(result.current.workspaceKind).toBe('simple');
+      expect(result.current.projectKind).toBe('folder');
     });
   });
 
@@ -239,9 +250,9 @@ describe('useOnboardingWizard', () => {
     });
 
     it('does not query gh status for a simple workspace', () => {
-      workspaces.push({ id: 'w1', kind: 'simple' });
+      workspaces.push({ id: 'w1', kind: 'folder' });
       const { result } = renderHook(() => useOnboardingWizard());
-      expect(result.current.workspaceKind).toBe('simple');
+      expect(result.current.projectKind).toBe('folder');
       expect(result.current.hasCodeHost).toBe(false);
       expect(ghStatusMock).not.toHaveBeenCalled();
     });

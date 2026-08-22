@@ -179,10 +179,14 @@ const invokeMock = vi.mocked(invoke);
 
 function makeStore(over: Record<string, unknown> = {}) {
   return {
-    sessions: [{ id: 's1', workspaceId: 'w1', workflowRuns: [] }],
+    sessions: [{ id: 's1', workspaceId: 'w1', activeProjectId: 'project-1', workflowRuns: [] }],
     workspaces: [
       { id: 'w1', rootPath: '/repo/w1', kind: 'repo' },
       { id: 'w2', rootPath: '/repo/w2', kind: 'repo' },
+    ],
+    projects: [
+      { id: 'project-1', workspaceId: 'w1', rootPath: '/repo/w1', kind: 'repo' },
+      { id: 'project-2', workspaceId: 'w2', rootPath: '/repo/w2', kind: 'repo' },
     ],
     workspaceIntegrations: {
       w1: [{ provider: 'linear', config: { host: 'gitlab.com' } }],
@@ -191,8 +195,18 @@ function makeStore(over: Record<string, unknown> = {}) {
     phaseTemplates: {},
     sessionPhaseRuns: {},
     sessionGithub: {},
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: {
+      s1: [
+        {
+          projectId: 'project-1',
+          mountName: 'repo',
+          repoRoot: '/repo/w1',
+          worktreePath: '/wt/s1',
+          branch: 'feature/test',
+        },
+      ],
+    },
+    sessionActiveProject: { s1: 'project-1' },
     sessionWorktrees: {},
     sessionBranches: {},
     sendTurn: h.sendTurn,

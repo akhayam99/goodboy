@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronsUpDown, SlidersHorizontal } from 'lucide-react';
 import { StatusDot, Tooltip } from '@goodboy/ui';
-import { useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
+import { useAppStore, useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
 import { workspaceAccent } from '../../color';
 import { WorkspaceSwitcher } from '../WorkspaceSwitcher';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
@@ -12,6 +12,10 @@ const basenameOf = (path: string): string => path.replace(/\/+$/, '').split('/')
 
 export const WorkspaceIdentityRow = () => {
   const currentWorkspace = useCurrentWorkspace();
+  const projectCount = useAppStore(
+    (state) =>
+      state.projects.filter((project) => project.workspaceId === currentWorkspace?.id).length,
+  );
   const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -26,8 +30,8 @@ export const WorkspaceIdentityRow = () => {
     return null;
   }
   const accent = workspaceAccent(currentWorkspace.id);
-  const memberCount = currentWorkspace.members?.length ?? 0;
-  const subtitle = memberCount > 1 ? `${memberCount} repos` : basenameOf(currentWorkspace.rootPath);
+  const subtitle =
+    projectCount > 1 ? `${projectCount} projects` : basenameOf(currentWorkspace.sessionsRoot ?? '');
 
   return (
     <div className="flex w-full min-w-0 items-center gap-0.5">

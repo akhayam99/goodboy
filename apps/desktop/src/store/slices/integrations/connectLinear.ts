@@ -6,7 +6,7 @@ import {
 } from '../../../features/integrations/linear/client';
 import { commitIntegrationConnection } from './commitIntegrationConnection';
 import { configFromLinearViewer } from './configFromLinearViewer';
-import type { SetFn } from './types';
+import type { GetFn, SetFn } from './types';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -14,13 +14,14 @@ type Params = {
   readonly credentialId: IntegrationCredentialId | null;
 };
 
-export const connectLinear = (set: SetFn) => {
+export const connectLinear = (set: SetFn, get: GetFn) => {
   return async ({ workspaceId, token, credentialId }: Params): Promise<LinearViewer> => {
     const chosen = credentialId ?? (crypto.randomUUID() as IntegrationCredentialId);
     const supplied = credentialId === null ? token : null;
     const viewer = await linearValidateConnection(chosen, supplied);
     await commitIntegrationConnection({
       set,
+      get,
       workspaceId,
       provider: 'linear',
       credentialId: chosen,

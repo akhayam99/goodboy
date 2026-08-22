@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Dialog } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { isWizardDone, reopenWizard } from '../../../onboarding/onboarding-store';
+import { validateGitRepo } from '../../../../shared/lib/repo';
 import { WorkspaceLinkForm } from '../WorkspaceLinkForm';
 
 type Props = {
@@ -13,7 +14,7 @@ type Props = {
 export const WorkspaceLinkDialog = ({ open, onClose, onOfferRepo }: Props) => {
   const [footerContainer, setFooterContainer] = useState<HTMLElement | null>(null);
 
-  const onComplete = ({
+  const onComplete = async ({
     mode,
     workspace,
   }: {
@@ -25,7 +26,11 @@ export const WorkspaceLinkDialog = ({ open, onClose, onOfferRepo }: Props) => {
       reopenWizard('setup');
       return;
     }
-    if (mode === 'single' && workspace.kind === 'simple') {
+    if (mode !== 'single' || workspace.sessionsRoot === null) {
+      return;
+    }
+    const check = await validateGitRepo(workspace.sessionsRoot);
+    if (check.isRepo === false) {
       onOfferRepo();
     }
   };

@@ -18,11 +18,11 @@ export const useWorkspaceBitbucketRepo = ({
   isEnabled,
 }: Params): BitbucketRepo | null => {
   const rootPath = useAppStore((state) => {
-    const workspace = state.workspaces.find((candidate) => candidate.id === workspaceId) ?? null;
-    if (workspace == null || (workspace.kind ?? 'repo') !== 'repo') {
-      return null;
-    }
-    return workspace.rootPath;
+    return (
+      state.projects?.find(
+        (project) => project.workspaceId === workspaceId && project.kind === 'repo',
+      )?.rootPath ?? null
+    );
   });
   const config = useAppStore((state) => {
     const integration = (state.workspaceIntegrations[workspaceId] ?? EMPTY_ARRAY).find(

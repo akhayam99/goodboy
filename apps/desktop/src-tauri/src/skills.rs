@@ -53,15 +53,24 @@ pub struct SkillRunScriptResult {
 // ---------------------------------------------------------------------------
 
 /// Returns the workspace root_path for a given workspace id.
-fn workspace_root(conn: &rusqlite::Connection, workspace_id: &str) -> Result<String, SkillError> {
-    let root: String = conn
-        .query_row(
-            "SELECT root_path FROM workspaces WHERE id = ?1 LIMIT 1",
-            rusqlite::params![workspace_id],
-            |row| row.get(0),
-        )
-        .map_err(|_| SkillError::WorkspaceNotFound(workspace_id.to_string()))?;
-    Ok(root)
+fn workspace_roots(
+    conn: &rusqlite::Connection,
+    workspace_id: &str,
+) -> Result<Vec<PathBuf>, SkillError> {
+    let mut stmt = conn.prepare(
+        "SELECT root_path
+         FROM projects
+         WHERE workspace_id = ?1
+         ORDER BY created_at ASC, id ASC",
+    )?;
+    let rows = stmt.query_map(rusqlite::params![workspace_id], |row| {
+        row.get::<_, String>(0).map(PathBuf::from)
+    })?;
+    let roots = rows.collect::<Result<Vec<_>, _>>()?;
+    if roots.is_empty() {
+        return Err(SkillError::WorkspaceNotFound(workspace_id.to_string()));
+    }
+    Ok(roots)
 }
 
 /// Canonicalize `path` and verify it sits under `allowed_prefix`.
@@ -206,19 +215,27 @@ pub fn skill_get(state: State<'_, Db>, skill_id: String) -> Result<Option<SkillR
 pub fn skill_upsert(state: State<'_, Db>, input: SkillUpsertInput) -> Result<SkillRow, SkillError> {
     let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
 
-    let root = workspace_root(&conn, &input.workspace_id)?;
-    let skills_dir = PathBuf::from(&root).join(".kay").join("skills");
+    let roots = workspace_roots(&conn, &input.workspace_id)?;
+    let skills_dirs = roots
+        .iter()
+        .map(|root| root.join(".kay").join("skills"))
+        .collect::<Vec<_>>();
+    let default_skills_dir = skills_dirs
+        .first()
+        .ok_or_else(|| SkillError::WorkspaceNotFound(input.workspace_id.clone()))?;
 
     // Derive file path if not provided.
     let raw_path = match &input.file_path {
         Some(fp) => PathBuf::from(fp),
-        None => skills_dir.join(format!("{}.md", &input.name)),
+        None => default_skills_dir.join(format!("{}.md", &input.name)),
     };
 
-    // Ensure skills dir exists before guarding (guard needs dir to canonicalize).
-    std::fs::create_dir_all(&skills_dir).map_err(|e| SkillError::Io(e.to_string()))?;
-
-    let canonical = guard_path(&raw_path, &skills_dir)?;
+    let skills_dir = skills_dirs
+        .iter()
+        .find(|directory| raw_path.starts_with(directory))
+        .ok_or_else(|| SkillError::PathTraversal(raw_path.to_string_lossy().to_string()))?;
+    std::fs::create_dir_all(skills_dir).map_err(|e| SkillError::Io(e.to_string()))?;
+    let canonical = guard_path(&raw_path, skills_dir)?;
 
     // Write pre-serialized markdown to disk.
     std::fs::write(&canonical, &input.markdown).map_err(|e| SkillError::Io(e.to_string()))?;
@@ -296,9 +313,8 @@ pub fn skill_delete(state: State<'_, Db>, skill_id: String) -> Result<(), SkillE
     // Look up the row first to get file_path + workspace root for path guard.
     let row: Option<(String, String)> = {
         let mut stmt = conn.prepare(
-            "SELECT s.file_path, w.root_path
+            "SELECT s.file_path, s.workspace_id
              FROM skills s
-             JOIN workspaces w ON w.id = s.workspace_id
              WHERE s.id = ?1
              LIMIT 1",
         )?;
@@ -311,18 +327,30 @@ pub fn skill_delete(state: State<'_, Db>, skill_id: String) -> Result<(), SkillE
         }
     };
 
-    if let Some((file_path, root_path)) = row {
-        let skills_dir = PathBuf::from(&root_path).join(".kay").join("skills");
+    if let Some((file_path, workspace_id)) = row {
+        let roots = workspace_roots(&conn, &workspace_id)?;
         let path = PathBuf::from(&file_path);
-
-        // Only guard if the skills dir exists; if it's gone we skip file removal.
-        if skills_dir.exists() {
-            let canonical = guard_path(&path, &skills_dir)?;
+        let allowed_dirs = roots.iter().flat_map(|root| {
+            [
+                root.join(".kay").join("skills"),
+                root.join(".claude").join("skills"),
+            ]
+        });
+        let mut guarded_path = None;
+        for directory in allowed_dirs {
+            if !directory.exists() {
+                continue;
+            }
+            if let Ok(canonical) = guard_path(&path, &directory) {
+                guarded_path = Some(canonical);
+                break;
+            }
+        }
+        if let Some(canonical) = guarded_path {
             if canonical.exists() {
-                std::fs::remove_file(&canonical).map_err(|e| SkillError::Io(e.to_string()))?;
+                std::fs::remove_file(canonical).map_err(|e| SkillError::Io(e.to_string()))?;
             }
         } else if path.exists() {
-            // skills_dir gone — refuse to remove arbitrary path without guard
             return Err(SkillError::PathTraversal(file_path));
         }
     } else {
@@ -342,38 +370,39 @@ pub fn skill_rescan(
     workspace_id: String,
 ) -> Result<Vec<SkillRow>, SkillError> {
     let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
-    let root = workspace_root(&conn, &workspace_id)?;
-    let root_path = PathBuf::from(&root);
-    let kay_dir = root_path.join(".kay").join("skills");
-    let claude_dir = root_path.join(".claude").join("skills");
+    let roots = workspace_roots(&conn, &workspace_id)?;
 
     // Discover skill files from both layouts:
     //   - <root>/.kay/skills/*.md            (Goodboy native)
     //   - <root>/.claude/skills/<name>/SKILL.md  (claude-code convention)
     let mut md_files: Vec<PathBuf> = Vec::new();
 
-    if kay_dir.exists() {
-        let entries = std::fs::read_dir(&kay_dir).map_err(|e| SkillError::Io(e.to_string()))?;
-        for entry in entries {
-            let entry = entry.map_err(|e| SkillError::Io(e.to_string()))?;
-            let p = entry.path();
-            if p.extension().and_then(|s| s.to_str()) == Some("md") {
-                md_files.push(p);
+    for root in roots {
+        let kay_dir = root.join(".kay").join("skills");
+        let claude_dir = root.join(".claude").join("skills");
+        if kay_dir.exists() {
+            let entries = std::fs::read_dir(&kay_dir).map_err(|e| SkillError::Io(e.to_string()))?;
+            for entry in entries {
+                let entry = entry.map_err(|e| SkillError::Io(e.to_string()))?;
+                let p = entry.path();
+                if p.extension().and_then(|s| s.to_str()) == Some("md") {
+                    md_files.push(p);
+                }
             }
         }
-    }
-
-    if claude_dir.exists() {
-        let entries = std::fs::read_dir(&claude_dir).map_err(|e| SkillError::Io(e.to_string()))?;
-        for entry in entries {
-            let entry = entry.map_err(|e| SkillError::Io(e.to_string()))?;
-            let dir = entry.path();
-            if !dir.is_dir() {
-                continue;
-            }
-            let candidate = dir.join("SKILL.md");
-            if candidate.exists() {
-                md_files.push(candidate);
+        if claude_dir.exists() {
+            let entries =
+                std::fs::read_dir(&claude_dir).map_err(|e| SkillError::Io(e.to_string()))?;
+            for entry in entries {
+                let entry = entry.map_err(|e| SkillError::Io(e.to_string()))?;
+                let dir = entry.path();
+                if !dir.is_dir() {
+                    continue;
+                }
+                let candidate = dir.join("SKILL.md");
+                if candidate.exists() {
+                    md_files.push(candidate);
+                }
             }
         }
     }

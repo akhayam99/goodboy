@@ -11,8 +11,8 @@ type Store = {
   selectedAgentId: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   sessionBranches: Record<string, string>;
-  sessionMounts: Record<string, ReadonlyArray<never>>;
-  sessionActiveMount: Record<string, string>;
+  sessionProjectMounts: Record<string, ReadonlyArray<never>>;
+  sessionActiveProject: Record<string, string>;
   sessionStudio: Record<string, null>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   sessionPlans: Record<string, ReadonlyArray<unknown>>;
@@ -56,8 +56,8 @@ const { store, hooks } = vi.hoisted(() => ({
     selectedAgentId: {},
     sessionWorktrees: {},
     sessionBranches: {},
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: {},
+    sessionActiveProject: {},
     sessionStudio: {},
     sessionPhaseRuns: {},
     sessionPlans: {},
@@ -268,8 +268,8 @@ beforeEach(() => {
   store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
   store.sessionWorktrees = {};
   store.sessionBranches = {};
-  store.sessionMounts = {};
-  store.sessionActiveMount = {};
+  store.sessionProjectMounts = {};
+  store.sessionActiveProject = {};
   store.sessionStudio = { [SESSION_ID]: null };
   store.sessionPhaseRuns = { [SESSION_ID]: [selectedAgent] };
   store.sessionPlans = { [SESSION_ID]: [] };

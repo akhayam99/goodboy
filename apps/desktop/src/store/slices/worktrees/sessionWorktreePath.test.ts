@@ -1,18 +1,29 @@
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { describe, expect, it } from 'vitest';
 import { sessionWorktreePath } from './sessionWorktreePath';
 import type { GetFn } from './types';
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 
 const getFn = (worktrees: Record<string, ReadonlyArray<string>>): GetFn =>
   (() => ({
     sessions: [{ id: SESSION_ID, workspaceId: WORKSPACE_ID }],
-    workspaces: [{ id: WORKSPACE_ID, kind: 'repo', rootPath: '/tmp/repo' }],
+    projects: [{ id: PROJECT_ID, workspaceId: WORKSPACE_ID, kind: 'repo', rootPath: '/tmp/repo' }],
     sessionWorktrees: worktrees,
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: {
+      [SESSION_ID]: [
+        {
+          projectId: PROJECT_ID,
+          mountName: 'repo',
+          worktreePath: worktrees[SESSION_ID]?.[0] ?? '',
+          repoRoot: '/tmp/repo',
+          branch: 'ak/task',
+        },
+      ],
+    },
+    sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
     sessionBranches: {},
   })) as unknown as GetFn;
 

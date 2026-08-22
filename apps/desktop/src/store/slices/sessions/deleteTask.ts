@@ -5,7 +5,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { removeSessionDirectory, removeWorktree } from '../../../features/worktree/worktree';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { buildSessionMounts } from '../worktrees/buildSessionMounts';
+import { buildSessionProjectMounts } from '../worktrees/buildSessionMounts';
 import { purgeSessionFileVersions } from '../file-versions/persistFinalizedFileVersions';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
@@ -29,41 +29,38 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       );
     }
     const rows = await listWorktreesForSession(tauriDatabase, sessionId);
-    const paths = rows.map((row) => row.worktreePath);
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
     const isBranchless = isBranchlessSession({
-      workspaceKind: workspace?.kind,
       branch: get().sessionBranches[sessionId],
     });
     const cleanupFailures: unknown[] = [];
-    if (workspace?.kind === 'composite' && !isBranchless) {
-      const mounts = buildSessionMounts({ workspace, rows });
-      const memberCleanupFailures: unknown[] = [];
-      for (const mount of mounts) {
+    const projects = get().projects.filter(
+      (project) => project.workspaceId === session.workspaceId,
+    );
+    const mounts = buildSessionProjectMounts({ projects, rows });
+    for (const mount of mounts) {
+      const project = projects.find((candidate) => candidate.id === mount.projectId);
+      if (project?.kind === 'repo') {
         try {
           await removeWorktree(mount.repoRoot, mount.worktreePath);
         } catch (error) {
-          memberCleanupFailures.push(error);
           cleanupFailures.push(error);
         }
       }
-      const containerPath = rows.find((row) => row.mountWorkspaceId == null)?.worktreePath;
-      if (containerPath != null && memberCleanupFailures.length === 0) {
+      if (project?.kind === 'folder') {
         try {
-          await removeSessionDirectory({ basePath: workspace.rootPath, path: containerPath });
+          await removeSessionDirectory({ basePath: project.rootPath, path: mount.worktreePath });
         } catch (error) {
           cleanupFailures.push(error);
         }
       }
     }
-    if (workspace?.kind !== 'composite' && workspace != null && !isBranchless) {
-      const worktreePath = paths[0];
-      if (worktreePath != null) {
-        try {
-          await removeWorktree(workspace.rootPath, worktreePath);
-        } catch (error) {
-          cleanupFailures.push(error);
-        }
+    const containerPath = rows.find((row) => row.projectId === undefined)?.worktreePath;
+    if (containerPath !== undefined && workspace?.sessionsRoot != null) {
+      try {
+        await removeSessionDirectory({ basePath: workspace.sessionsRoot, path: containerPath });
+      } catch (error) {
+        cleanupFailures.push(error);
       }
     }
     if (cleanupFailures.length > 0) {
@@ -94,9 +91,9 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       }
       const nextWorktrees = { ...state.sessionWorktrees };
       delete nextWorktrees[sessionId];
-      const nextMounts = { ...state.sessionMounts };
+      const nextMounts = { ...state.sessionProjectMounts };
       delete nextMounts[sessionId];
-      const nextActiveMount = { ...state.sessionActiveMount };
+      const nextActiveMount = { ...state.sessionActiveProject };
       delete nextActiveMount[sessionId];
       const nextBranches = { ...state.sessionBranches };
       delete nextBranches[sessionId];
@@ -140,8 +137,8 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         transcripts: nextTranscripts,
         messages: nextMessages,
         sessionWorktrees: nextWorktrees,
-        sessionMounts: nextMounts,
-        sessionActiveMount: nextActiveMount,
+        sessionProjectMounts: nextMounts,
+        sessionActiveProject: nextActiveMount,
         sessionBranches: nextBranches,
         sessionPhaseRuns: nextPhaseRuns,
         sessionGithub: nextGithub,

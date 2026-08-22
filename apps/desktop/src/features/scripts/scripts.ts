@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import type { WorkspaceScriptId } from '@goodboy/types';
+import type { ProjectScriptId } from '@goodboy/types';
 
 export type ScriptRunResult = {
   readonly stdout: string;
@@ -28,7 +28,7 @@ export type ScriptExitPayload = {
 };
 
 export const invokeScriptRun = (
-  scriptId: WorkspaceScriptId,
+  scriptId: ProjectScriptId,
   runId: string,
   cwd: string,
   cols: number,

@@ -4,6 +4,7 @@ import { ArrowRight, GitBranch, GitFork, GitMerge, GitPullRequest, Unlink } from
 import { Button, Eyebrow, Skeleton } from '@goodboy/ui';
 import type {
   LinkedIssue,
+  Project,
   PullRequestState,
   Session,
   SessionExternalTask,
@@ -311,6 +312,7 @@ const GithubPrCard = ({
   const workspace = useAppStore(
     (s) => s.workspaces.find((candidate) => candidate.id === session.workspaceId) ?? null,
   );
+  const projects = useAppStore((state) => state.projects);
   const githubConnection = useGithubConnection({ workspaceId: session.workspaceId });
   const isGithubConnected = resolveIntegrationConnection({
     provider: 'github',
@@ -471,6 +473,7 @@ const GithubPrCard = ({
           <WorkItemsSections
             groups={workItems}
             workspace={workspace}
+            projects={projects}
             onOpenWorkItem={openWorkItem}
           />
           <LensEmptyState
@@ -533,7 +536,12 @@ const GithubPrCard = ({
         unlinkingNumber={unlinkingIssueNumber}
         onUnlink={(issueNumber) => void handleUnlinkIssue(issueNumber)}
       />
-      <WorkItemsSections groups={workItems} workspace={workspace} onOpenWorkItem={openWorkItem} />
+      <WorkItemsSections
+        groups={workItems}
+        workspace={workspace}
+        projects={projects}
+        onOpenWorkItem={openWorkItem}
+      />
       {error ? (
         <span className="text-2xs text-danger" title={error}>
           {error}
@@ -680,21 +688,29 @@ const LinkedIssuesSection = ({
 type WorkItemsSectionsProps = {
   readonly groups: WorkItemGroups;
   readonly workspace: Workspace | null;
+  readonly projects: ReadonlyArray<Project>;
   readonly onOpenWorkItem: (task: SessionExternalTask) => void;
 };
 
-const WorkItemsSections = ({ groups, workspace, onOpenWorkItem }: WorkItemsSectionsProps) => (
+const WorkItemsSections = ({
+  groups,
+  workspace,
+  projects,
+  onOpenWorkItem,
+}: WorkItemsSectionsProps) => (
   <>
     <WorkItemsSection
       label="Linked work"
       items={groups.current}
       workspace={workspace}
+      projects={projects}
       onOpenWorkItem={onOpenWorkItem}
     />
     <WorkItemsSection
       label={`Completed linked work (${groups.history.length})`}
       items={groups.history}
       workspace={workspace}
+      projects={projects}
       onOpenWorkItem={onOpenWorkItem}
     />
   </>
@@ -704,10 +720,17 @@ type WorkItemsSectionProps = {
   readonly label: string;
   readonly items: ReadonlyArray<WorkItem>;
   readonly workspace: Workspace | null;
+  readonly projects: ReadonlyArray<Project>;
   readonly onOpenWorkItem: (task: SessionExternalTask) => void;
 };
 
-const WorkItemsSection = ({ label, items, workspace, onOpenWorkItem }: WorkItemsSectionProps) => {
+const WorkItemsSection = ({
+  label,
+  items,
+  workspace,
+  projects,
+  onOpenWorkItem,
+}: WorkItemsSectionProps) => {
   if (items.length === 0) {
     return null;
   }
@@ -727,7 +750,8 @@ const WorkItemsSection = ({ label, items, workspace, onOpenWorkItem }: WorkItems
             repoLabel={
               workspaceMountName({
                 workspace,
-                mountWorkspaceId: task.mountWorkspaceId,
+                projects,
+                projectId: task.projectId,
               }) ?? undefined
             }
           />

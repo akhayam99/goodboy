@@ -39,6 +39,7 @@ vi.mock('../shared/lib/db', () => ({
 }));
 
 vi.mock('@goodboy/db', () => ({
+  listProjectsForWorkspace: vi.fn(async () => []),
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),

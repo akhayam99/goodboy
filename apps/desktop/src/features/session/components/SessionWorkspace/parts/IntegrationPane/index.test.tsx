@@ -14,7 +14,7 @@ import type {
 type FocusedExternalTask = {
   readonly provider: string;
   readonly externalId: string;
-  readonly mountWorkspaceId: string | null;
+  readonly projectId: string | null;
 };
 
 type Store = {
@@ -288,7 +288,7 @@ describe('IntegrationPane', () => {
     (provider, task, detailText) => {
       h.store.sessionExternalTasks = { [SESSION_ID]: [task] };
       h.store.focusedExternalTask = {
-        [SESSION_ID]: { provider, externalId: task.externalId, mountWorkspaceId: null },
+        [SESSION_ID]: { provider, externalId: task.externalId, projectId: null },
       };
 
       render(

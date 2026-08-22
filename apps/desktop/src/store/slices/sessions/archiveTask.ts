@@ -55,9 +55,9 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
       }
       const nextWorktrees = { ...state.sessionWorktrees };
       delete nextWorktrees[sessionId];
-      const nextMounts = { ...state.sessionMounts };
+      const nextMounts = { ...state.sessionProjectMounts };
       delete nextMounts[sessionId];
-      const nextActiveMount = { ...state.sessionActiveMount };
+      const nextActiveMount = { ...state.sessionActiveProject };
       delete nextActiveMount[sessionId];
       const nextBranches = { ...state.sessionBranches };
       delete nextBranches[sessionId];
@@ -81,8 +81,8 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
         transcripts: nextTranscripts,
         messages: nextMessages,
         sessionWorktrees: nextWorktrees,
-        sessionMounts: nextMounts,
-        sessionActiveMount: nextActiveMount,
+        sessionProjectMounts: nextMounts,
+        sessionActiveProject: nextActiveMount,
         sessionBranches: nextBranches,
         sessionPhaseRuns: nextPhaseRuns,
         sessionGithub: nextGithub,

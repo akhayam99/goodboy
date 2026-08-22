@@ -158,7 +158,7 @@ export const openExternalTaskLens = (set: SetFn, get: GetFn) => {
         [sessionId]: {
           provider: task.provider,
           externalId: task.externalId,
-          mountWorkspaceId: task.mountWorkspaceId ?? null,
+          projectId: task.projectId ?? null,
         },
       },
     }));

@@ -39,10 +39,12 @@ const branchSlugFor = ({ issue }: Params): string => {
 
 export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Props) => {
   const rootPath = useAppStore(
-    (s) => s.workspaces.find((w) => w.id === workspaceId)?.rootPath ?? null,
+    (state) =>
+      state.projects?.find((project) => project.workspaceId === workspaceId)?.rootPath ?? null,
   );
   const isBranchless = useAppStore(
-    (s) => s.workspaces.find((w) => w.id === workspaceId)?.kind === 'simple',
+    (state) =>
+      state.projects?.find((project) => project.workspaceId === workspaceId)?.kind === 'folder',
   );
 
   const adoptablePr =

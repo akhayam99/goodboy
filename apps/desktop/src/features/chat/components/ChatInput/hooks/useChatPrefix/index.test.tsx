@@ -58,7 +58,7 @@ beforeEach(() => {
   useAppStore.setState({
     ...initialState,
     skills: {},
-    workspaceScripts: {},
+    projectScripts: {},
     phaseTemplates: { [WS_ID]: [workflow] },
     sessionPhaseRuns: {},
     agentKindOverride: {},

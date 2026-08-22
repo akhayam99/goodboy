@@ -1,5 +1,5 @@
 import { deleteSessionExternalTask } from '@goodboy/db';
-import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
+import type { ProjectId, SessionExternalTaskProvider, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
 
@@ -13,21 +13,21 @@ export const unlinkSessionExternalTask = ({ set, get }: Params) => {
     sessionId: SessionId,
     provider: SessionExternalTaskProvider,
     externalId: string,
-    mountWorkspaceId?: WorkspaceId,
+    projectId?: ProjectId,
   ): Promise<void> => {
     const unlinked =
       (get().sessionExternalTasks[sessionId] ?? []).find(
         (task) =>
           task.provider === provider &&
           task.externalId === externalId &&
-          task.mountWorkspaceId === mountWorkspaceId,
+          task.projectId === projectId,
       ) ?? null;
     await deleteSessionExternalTask({
       db: tauriDatabase,
       sessionId,
       provider,
       externalId,
-      ...(mountWorkspaceId != null ? { mountWorkspaceId } : {}),
+      ...(projectId != null ? { projectId } : {}),
     });
     set((state) => ({
       sessionExternalTasks: {
@@ -36,7 +36,7 @@ export const unlinkSessionExternalTask = ({ set, get }: Params) => {
           (task) =>
             task.provider !== provider ||
             task.externalId !== externalId ||
-            task.mountWorkspaceId !== mountWorkspaceId,
+            task.projectId !== projectId,
         ),
       },
     }));

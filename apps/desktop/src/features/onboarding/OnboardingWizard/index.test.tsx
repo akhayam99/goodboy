@@ -61,7 +61,7 @@ const baseState: OnboardingWizardState = {
   hasWorkspace: false,
   workspace: null,
   workspaceId: null,
-  workspaceKind: null,
+  projectKind: null,
   githubConnected: false,
   gitlabConnected: false,
   bitbucketConnected: false,
@@ -76,7 +76,20 @@ const baseState: OnboardingWizardState = {
 const WORKSPACE = {
   id: 'workspace-1' as WorkspaceId,
   name: 'Goodboy desktop',
-  rootPath: '/Users/dev/goodboy',
+  slug: 'goodboy-desktop',
+  sessionsRoot: '/Users/dev/goodboy',
+  overrides: {
+    defaultProviderId: null,
+    defaultWorkflowId: null,
+    defaultBranchPrefix: null,
+    parallelEnabled: null,
+    defaultVerbosity: null,
+    providerBindings: null,
+    taskModels: null,
+    roleModels: null,
+    parallelAgents: null,
+    providerPool: null,
+  },
   createdAt: '2026-08-02T08:00:00.000Z' as IsoDateTime,
   updatedAt: '2026-08-02T08:00:00.000Z' as IsoDateTime,
 } satisfies Workspace;
@@ -197,7 +210,7 @@ describe('OnboardingWizard', () => {
       setHook({
         providersConnected: 1,
         hasWorkspace: true,
-        workspaceKind: 'repo',
+        projectKind: 'repo',
       });
       const { rerender } = render(<OnboardingWizard />);
       advance(/get started/i, 1);
@@ -207,7 +220,7 @@ describe('OnboardingWizard', () => {
       setHook({
         providersConnected: 1,
         hasWorkspace: true,
-        workspaceKind: 'simple',
+        projectKind: 'folder',
       });
       rerender(<OnboardingWizard />);
 
@@ -232,7 +245,7 @@ describe('OnboardingWizard', () => {
         mode: 'setup',
         hasWorkspace: true,
         workspaceId: 'simple-workspace' as never,
-        workspaceKind: 'simple',
+        projectKind: 'folder',
       });
       render(<OnboardingWizard />);
       expect(screen.getByTestId('PreferencesStep')).toBeDefined();
@@ -246,7 +259,7 @@ describe('OnboardingWizard', () => {
 
     it('passes the current step, filtered steps, and completed progress to the stepper', () => {
       progressState.completed = new Set(['workspace']);
-      setHook({ mode: 'setup', hasWorkspace: true, workspaceKind: 'simple' });
+      setHook({ mode: 'setup', hasWorkspace: true, projectKind: 'folder' });
       render(<OnboardingWizard />);
       fireEvent.click(screen.getByRole('button', { name: /continue/i }));
       expect(screen.getByTestId('stepper').textContent).toBe('5/3,5,7/workspace');

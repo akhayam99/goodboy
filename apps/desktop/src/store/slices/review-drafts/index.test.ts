@@ -136,16 +136,35 @@ type Harness = {
 const buildHarness = (initial: Record<string, unknown>): Harness => {
   let state = {
     reviewDrafts: {},
-    sessions: [{ id: SESSION_ID, workspaceId: WS_ID }],
-    workspaces: [{ id: WS_ID, name: 'ws', rootPath: '/tmp/repo' }],
+    sessions: [{ id: SESSION_ID, workspaceId: WS_ID, activeProjectId: 'project-1' }],
+    workspaces: [{ id: WS_ID, name: 'ws' }],
+    projects: [
+      {
+        id: 'project-1',
+        workspaceId: WS_ID,
+        name: 'repo',
+        rootPath: '/tmp/repo',
+        kind: 'repo',
+      },
+    ],
     workspaceIntegrations: {},
     sessionExternalTasks: { [SESSION_ID]: [githubTask] },
     sessionGithubPrs: {},
     sessionGitlabMr: {},
     sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.goodboy/worktrees/review'] },
     sessionBranches: { [SESSION_ID]: 'review' },
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: {
+      [SESSION_ID]: [
+        {
+          projectId: 'project-1',
+          mountName: 'repo',
+          repoRoot: '/tmp/repo',
+          worktreePath: '/tmp/repo/.goodboy/worktrees/review',
+          branch: 'review',
+        },
+      ],
+    },
+    sessionActiveProject: { [SESSION_ID]: 'project-1' },
     emitNotification: vi.fn(),
     ...initial,
   } as unknown as AppStore;

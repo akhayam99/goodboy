@@ -29,8 +29,8 @@ import type {
   WorkspaceId,
   WorkspaceIntegration,
   WorkspaceIntegrationId,
-  WorkspaceScript,
-  WorkspaceScriptId,
+  ProjectScript,
+  ProjectScriptId,
 } from '@goodboy/types';
 import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
 import { readPersistedLens } from './workSurfaceStorage';
@@ -64,9 +64,9 @@ const listIntegrationsForWorkspaceSpy = vi.fn(
   async () => [] as ReadonlyArray<WorkspaceIntegration>,
 );
 const deleteWorkspaceIntegrationSpy = vi.fn(async () => undefined);
-const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>);
-const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
-const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
+const listProjectScriptsSpy = vi.fn(async () => [] as ReadonlyArray<ProjectScript>);
+const upsertProjectScriptSpy = vi.fn(async () => undefined);
+const deleteProjectScriptSpy = vi.fn(async () => undefined);
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
@@ -122,9 +122,9 @@ vi.mock('@goodboy/db', () => ({
   detachWorkflowFromSession: vi.fn(async () => undefined),
   updateWorkflowOrder: vi.fn(async () => undefined),
   updateSessionWorkflowStep: vi.fn(async () => undefined),
-  listWorkspaceScripts: listWorkspaceScriptsSpy,
-  upsertWorkspaceScript: upsertWorkspaceScriptSpy,
-  deleteWorkspaceScript: deleteWorkspaceScriptSpy,
+  listProjectScripts: listProjectScriptsSpy,
+  upsertProjectScript: upsertProjectScriptSpy,
+  deleteProjectScript: deleteProjectScriptSpy,
   upsertContextSlot: vi.fn(async () => undefined),
   listOpenQuestionsForSession: vi.fn(async () => []),
   insertNudgeEvent: insertNudgeEventSpy,
@@ -369,7 +369,20 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {
     id: WS_ID,
     name: 'ws',
-    rootPath: '/tmp/repo',
+    slug: 'ws',
+    sessionsRoot: '/tmp/repo',
+    overrides: {
+      defaultProviderId: null,
+      defaultWorkflowId: null,
+      defaultBranchPrefix: null,
+      parallelEnabled: null,
+      defaultVerbosity: null,
+      providerBindings: null,
+      taskModels: null,
+      roleModels: null,
+      parallelAgents: null,
+      providerPool: null,
+    },
     createdAt: NOW,
     updatedAt: NOW,
     lastAccessedAt: NOW,
@@ -453,7 +466,7 @@ describe('store contract', () => {
     invokePlanListSpy.mockResolvedValue([]);
     invokeListConsumptionsForPlanSpy.mockResolvedValue([]);
     invokeWorkspacesWithUnreadSpy.mockResolvedValue([]);
-    listWorkspaceScriptsSpy.mockResolvedValue([]);
+    listProjectScriptsSpy.mockResolvedValue([]);
     listIntegrationsForWorkspaceSpy.mockResolvedValue([]);
     listDiffCommentsSpy.mockResolvedValue([]);
     dbGetSettingSpy.mockResolvedValue(null);
@@ -495,7 +508,7 @@ describe('store contract', () => {
         budgetAlerts: [],
         systemAlerts: [],
         skills: {},
-        workspaceScripts: {},
+        projectScripts: {},
         scriptRuns: {},
         phaseTemplates: {},
         sessionWorkflows: {},
@@ -800,7 +813,7 @@ describe('store contract', () => {
         expect(store.getState().focusedExternalTask[SESSION_ID]).toEqual({
           provider,
           externalId: `${provider}-7`,
-          mountWorkspaceId: null,
+          projectId: null,
         });
       },
     );

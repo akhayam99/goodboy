@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type {
   IntegrationCredentialId,
   JiraWorkspaceIntegration,
+  ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
 
@@ -24,10 +25,11 @@ vi.mock('../../../store', () => ({
 }));
 
 const WS_ID = 'ws-1' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 
 const jiraIntegration: JiraWorkspaceIntegration = {
   id: 'wi-1' as never,
-  workspaceId: WS_ID,
+  workspaceId: PROJECT_ID,
   provider: 'jira',
   credentialId: 'cred-1' as IntegrationCredentialId,
   config: {

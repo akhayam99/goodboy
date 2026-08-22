@@ -153,14 +153,14 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   });
 
   const handleUnlink = async ({ task }: UnlinkParams) => {
-    const mountWorkspaceId = task.mountWorkspaceId;
+    const projectId = task.projectId;
     setUnlinkError(null);
     setIsUnlinking(true);
     try {
       const unlink =
-        mountWorkspaceId == null
+        projectId == null
           ? () => unlinkSessionExternalTask(sessionId, provider, task.externalId)
-          : () => unlinkSessionExternalTask(sessionId, provider, task.externalId, mountWorkspaceId);
+          : () => unlinkSessionExternalTask(sessionId, provider, task.externalId, projectId);
       await unlink();
       setIsUnlinkArmed(false);
       setFocusedTaskKey(null);

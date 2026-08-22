@@ -6,7 +6,7 @@ import {
 } from '../../../features/integrations/slack/client';
 import { commitIntegrationConnection } from './commitIntegrationConnection';
 import { configFromSlackConnection } from './configFromSlackConnection';
-import type { SetFn } from './types';
+import type { GetFn, SetFn } from './types';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -14,13 +14,14 @@ type Params = {
   readonly credentialId: IntegrationCredentialId | null;
 };
 
-export const connectSlack = (set: SetFn) => {
+export const connectSlack = (set: SetFn, get: GetFn) => {
   return async ({ workspaceId, botToken, credentialId }: Params): Promise<SlackConnection> => {
     const chosen = credentialId ?? (crypto.randomUUID() as IntegrationCredentialId);
     const supplied = credentialId === null ? botToken : null;
     const connection = await slackValidateConnection({ credentialId: chosen, botToken: supplied });
     await commitIntegrationConnection({
       set,
+      get,
       workspaceId,
       provider: 'slack',
       credentialId: chosen,

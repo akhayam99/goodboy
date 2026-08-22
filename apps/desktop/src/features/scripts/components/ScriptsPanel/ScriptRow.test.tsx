@@ -2,15 +2,15 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { WorkspaceScript } from '@goodboy/types';
+import type { ProjectScript } from '@goodboy/types';
 import { ScriptRow } from './ScriptRow';
 
 const script = {
   id: 'script-1',
-  workspaceId: 'workspace-1',
+  projectId: 'project-1',
   name: 'setup',
   body: 'echo hi',
-} as WorkspaceScript;
+} as ProjectScript;
 
 afterEach(cleanup);
 

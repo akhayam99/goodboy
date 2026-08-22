@@ -2,13 +2,13 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import type { Workspace, WorkspaceGitStatus, WorkspaceId } from '@goodboy/types';
+import type { Project, ProjectId, WorkspaceGitStatus, WorkspaceId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   store: {
-    workspaces: [] as ReadonlyArray<Workspace>,
-    workspaceGitStatus: {} as Record<string, WorkspaceGitStatus | undefined>,
-    loadWorkspaceGitStatus: vi.fn(async () => undefined),
+    projects: [] as ReadonlyArray<Project>,
+    projectGitStatus: {} as Record<string, WorkspaceGitStatus | undefined>,
+    loadProjectGitStatus: vi.fn(async () => undefined),
   },
 }));
 
@@ -19,6 +19,7 @@ vi.mock('../../../../store', () => ({
 import { useWorkspaceGitStatus } from './index';
 
 const WS_ID = 'ws-1' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 
 const ready: WorkspaceGitStatus = {
   state: 'ready',
@@ -30,13 +31,13 @@ const ready: WorkspaceGitStatus = {
   inProgress: null,
 };
 
-const workspace = (kind: Workspace['kind']): Workspace =>
-  ({ id: WS_ID, name: 'ws', rootPath: '/repo', kind }) as Workspace;
+const project = (kind: Project['kind']): Project =>
+  ({ id: PROJECT_ID, workspaceId: WS_ID, name: 'ws', rootPath: '/repo', kind }) as Project;
 
 beforeEach(() => {
-  h.store.workspaces = [workspace('repo')];
-  h.store.workspaceGitStatus = {};
-  h.store.loadWorkspaceGitStatus.mockClear();
+  h.store.projects = [project('repo')];
+  h.store.projectGitStatus = {};
+  h.store.loadProjectGitStatus.mockClear();
   vi.spyOn(window, 'setInterval');
 });
 
@@ -46,28 +47,28 @@ afterEach(() => {
 
 describe('useWorkspaceGitStatus', () => {
   it('loads and polls the status of a git backed workspace', () => {
-    h.store.workspaceGitStatus = { [WS_ID]: ready };
+    h.store.projectGitStatus = { [PROJECT_ID]: ready };
 
     const { result } = renderHook(() => useWorkspaceGitStatus({ workspaceId: WS_ID }));
 
     expect(result.current).toEqual(ready);
-    expect(h.store.loadWorkspaceGitStatus).toHaveBeenCalledWith({ workspaceId: WS_ID });
+    expect(h.store.loadProjectGitStatus).toHaveBeenCalledWith({ projectId: PROJECT_ID });
     expect(window.setInterval).toHaveBeenCalledOnce();
   });
 
   it('mounts no timer and reports nothing for a standalone workspace', () => {
-    h.store.workspaces = [workspace('simple')];
-    h.store.workspaceGitStatus = { [WS_ID]: ready };
+    h.store.projects = [project('folder')];
+    h.store.projectGitStatus = { [PROJECT_ID]: ready };
 
     const { result } = renderHook(() => useWorkspaceGitStatus({ workspaceId: WS_ID }));
 
     expect(result.current).toBeNull();
-    expect(h.store.loadWorkspaceGitStatus).not.toHaveBeenCalled();
+    expect(h.store.loadProjectGitStatus).not.toHaveBeenCalled();
     expect(window.setInterval).not.toHaveBeenCalled();
   });
 
   it('mounts no timer for a multi project workspace', () => {
-    h.store.workspaces = [workspace('composite')];
+    h.store.projects = [];
 
     const { result } = renderHook(() => useWorkspaceGitStatus({ workspaceId: WS_ID }));
 

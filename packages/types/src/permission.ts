@@ -2,17 +2,14 @@ import type {
   IsoDateTime,
   PermissionRequestId,
   PermissionRuleId,
+  ProjectId,
   ProviderRunId,
   SessionId,
   WorkspaceId,
 } from './ids';
 
 export type ClaudePermissionMode =
-  | 'default'
-  | 'acceptEdits'
-  | 'bypassPermissions'
-  | 'dontAsk'
-  | 'plan';
+  'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan';
 
 export const CLAUDE_PERMISSION_MODES = [
   'default',
@@ -22,7 +19,7 @@ export const CLAUDE_PERMISSION_MODES = [
   'plan',
 ] as const satisfies readonly ClaudePermissionMode[];
 
-export type PermissionRuleScope = 'workspace' | 'session' | 'global';
+export type PermissionRuleScope = 'workspace' | 'project' | 'session' | 'global';
 
 export type PermissionScope = PermissionRuleScope | 'once' | 'deny';
 
@@ -37,6 +34,7 @@ export type PermissionRule = {
   readonly id: PermissionRuleId;
   readonly scope: PermissionRuleScope;
   readonly workspaceId?: WorkspaceId;
+  readonly projectId?: ProjectId;
   readonly sessionId?: SessionId;
   readonly pattern: PermissionRulePattern;
   readonly decision: PermissionDecisionKind;

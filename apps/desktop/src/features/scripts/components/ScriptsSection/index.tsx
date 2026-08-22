@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn, Divider, Popover, ScrollFade, SectionHeader, Tooltip } from '@goodboy/ui';
-import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
+import type { SessionId, WorkspaceId, ProjectScript, ProjectScriptId } from '@goodboy/types';
 import {
   ChevronDown,
   ChevronRight,
@@ -24,7 +24,7 @@ type ScriptsSectionProps = {
 };
 
 type LogTarget = {
-  readonly scriptId: WorkspaceScriptId;
+  readonly scriptId: ProjectScriptId;
   readonly anchor: DOMRect;
 };
 
@@ -39,7 +39,7 @@ export const ScriptsSection = ({
   const expanded = forceExpanded || storedExpanded;
   const setPanelSectionExpanded = useAppStore((s) => s.setPanelSectionExpanded);
   const [log, setLog] = useState<LogTarget | null>(null);
-  const scripts = useAppStore((s) => s.workspaceScripts[workspaceId]);
+  const scripts = useAppStore((s) => s.projectScripts[workspaceId]);
   const runs = useAppStore((s) => s.scriptRuns[sessionId]);
   const loadScripts = useAppStore((s) => s.loadScripts);
   const runScript = useAppStore((s) => s.runScript);
@@ -51,7 +51,7 @@ export const ScriptsSection = ({
   }, [workspaceId, loadScripts]);
 
   const onRun = useCallback(
-    (script: WorkspaceScript) => {
+    (script: ProjectScript) => {
       if (!worktreePath) {
         return;
       }
@@ -61,13 +61,13 @@ export const ScriptsSection = ({
   );
 
   const onCancel = useCallback(
-    (scriptId: WorkspaceScriptId) => {
+    (scriptId: ProjectScriptId) => {
       void cancelScript(sessionId, scriptId);
     },
     [cancelScript, sessionId],
   );
 
-  const onToggleLog = useCallback((scriptId: WorkspaceScriptId, anchor: DOMRect) => {
+  const onToggleLog = useCallback((scriptId: ProjectScriptId, anchor: DOMRect) => {
     setLog((prev) => (prev?.scriptId === scriptId ? null : { scriptId, anchor }));
   }, []);
 
@@ -152,7 +152,7 @@ export const ScriptsSection = ({
 };
 
 type ScriptRowProps = {
-  readonly script: WorkspaceScript;
+  readonly script: ProjectScript;
   readonly run: ScriptRunRecord | null;
   readonly disabled: boolean;
   readonly logOpen: boolean;
@@ -239,7 +239,7 @@ function ScriptRow({
 }
 
 type LogFlyoutProps = {
-  readonly script: WorkspaceScript;
+  readonly script: ProjectScript;
   readonly result: ScriptRunResult;
   readonly anchor: DOMRect;
   readonly onClose: () => void;

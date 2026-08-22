@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   IntegrationCredentialId,
   IsoDateTime,
+  ProjectId,
   WorkspaceId,
   WorkspaceIntegration,
   WorkspaceIntegrationConfig,
@@ -11,6 +12,7 @@ import type {
 import { describeIntegrationConfig } from './describeIntegrationConfig';
 
 const WS = 'workspace-app-web' as WorkspaceId;
+const PROJECT_ID = 'project-app-web' as ProjectId;
 
 type Params = {
   readonly provider: WorkspaceIntegrationProvider;
@@ -20,7 +22,7 @@ type Params = {
 const integration = ({ provider, config }: Params): WorkspaceIntegration =>
   ({
     id: 'integration-1' as WorkspaceIntegrationId,
-    workspaceId: WS,
+    workspaceId: PROJECT_ID,
     provider,
     config,
     credentialId: `goodboy.workspace.${WS}.${provider}` as IntegrationCredentialId,

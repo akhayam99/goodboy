@@ -109,7 +109,10 @@ describe('WorkspaceLinkDialog', () => {
   });
 
   it('offers a repository right after a folder with no git lands as a simple workspace', async () => {
-    state.addWorkspace = vi.fn(async () => ({ id: 'ws-new', kind: 'simple' }));
+    state.addWorkspace = vi.fn(async () => ({
+      id: 'ws-new',
+      sessionsRoot: '/some/fresh-idea',
+    }));
     validateMock.mockResolvedValue({ isRepo: false, resolvedPath: '/some/fresh-idea' });
     const onOfferRepo = vi.fn();
     render(<WorkspaceLinkDialog open onClose={vi.fn()} onOfferRepo={onOfferRepo} />);
@@ -124,7 +127,7 @@ describe('WorkspaceLinkDialog', () => {
   });
 
   it('leaves a git-backed folder alone instead of offering it a repository', async () => {
-    state.addWorkspace = vi.fn(async () => ({ id: 'ws-new', kind: 'repo' }));
+    state.addWorkspace = vi.fn(async () => ({ id: 'ws-new', sessionsRoot: '/some/repo' }));
     const onOfferRepo = vi.fn();
     render(<WorkspaceLinkDialog open onClose={vi.fn()} onOfferRepo={onOfferRepo} />);
 

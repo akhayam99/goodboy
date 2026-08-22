@@ -5,7 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
-  workspaces: [] as ReadonlyArray<{ id: string; rootPath: string; kind?: string }>,
+  projects: [] as ReadonlyArray<{
+    id: string;
+    workspaceId: string;
+    rootPath: string;
+    kind: 'repo' | 'folder';
+  }>,
   integrations: {} as Record<string, ReadonlyArray<{ provider: string; config?: unknown }>>,
   remoteUrl: null as string | null,
 }));
@@ -14,10 +19,10 @@ vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T>(
     selector: (state: {
-      workspaces: typeof h.workspaces;
+      projects: typeof h.projects;
       workspaceIntegrations: typeof h.integrations;
     }) => T,
-  ) => selector({ workspaces: h.workspaces, workspaceIntegrations: h.integrations }),
+  ) => selector({ projects: h.projects, workspaceIntegrations: h.integrations }),
 }));
 
 vi.mock('../../../worktree/worktree', () => ({
@@ -39,14 +44,21 @@ const settle = async () => {
 };
 
 beforeEach(() => {
-  h.workspaces = [];
+  h.projects = [];
   h.integrations = {};
   h.remoteUrl = null;
 });
 
 describe('useWorkspaceBitbucketRepo', () => {
   it('resolves the repo slug from the workspace remote', async () => {
-    h.workspaces = [{ id: 'workspace-1', rootPath: '/repos/goodboy', kind: 'repo' }];
+    h.projects = [
+      {
+        id: 'project-1',
+        workspaceId: 'workspace-1',
+        rootPath: '/repos/goodboy',
+        kind: 'repo',
+      },
+    ];
     h.integrations = { 'workspace-1': [bitbucketIntegration] };
     h.remoteUrl = 'git@bitbucket.org:acme/goodboy.git';
 
@@ -64,8 +76,15 @@ describe('useWorkspaceBitbucketRepo', () => {
     });
   });
 
-  it('resolves nothing for a composite workspace, which has no single repository', async () => {
-    h.workspaces = [{ id: 'workspace-2', rootPath: '/repos/container', kind: 'composite' }];
+  it('uses the first repository project in a multi-project workspace', async () => {
+    h.projects = [
+      {
+        id: 'project-2',
+        workspaceId: 'workspace-2',
+        rootPath: '/repos/container',
+        kind: 'repo',
+      },
+    ];
     h.integrations = { 'workspace-2': [bitbucketIntegration] };
     h.remoteUrl = 'git@bitbucket.org:acme/container.git';
 
@@ -74,11 +93,18 @@ describe('useWorkspaceBitbucketRepo', () => {
     );
     await settle();
 
-    expect(result.current).toBeNull();
+    expect(result.current?.repoSlug).toBe('container');
   });
 
   it('resolves nothing while the integration is missing', async () => {
-    h.workspaces = [{ id: 'workspace-3', rootPath: '/repos/other', kind: 'repo' }];
+    h.projects = [
+      {
+        id: 'project-3',
+        workspaceId: 'workspace-3',
+        rootPath: '/repos/other',
+        kind: 'repo',
+      },
+    ];
     h.remoteUrl = 'git@bitbucket.org:acme/other.git';
 
     const { result } = renderHook(() =>

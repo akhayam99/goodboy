@@ -56,7 +56,7 @@ export const CreatePrPanel = ({
   const repo = useSessionRepo({ sessionId });
   const branch = repo?.branch ?? null;
   const workspaceRoot = repo?.repoRoot ?? null;
-  const memberWorkspaceId = repo?.workspaceId;
+  const memberWorkspaceId = repo?.projectId;
   const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
   const workspaceId = session?.workspaceId;
   const workspaceOverrides = useAppStore((s) =>

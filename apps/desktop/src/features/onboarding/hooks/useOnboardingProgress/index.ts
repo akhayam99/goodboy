@@ -36,7 +36,7 @@ export const useOnboardingProgress = (): OnboardingProgress => {
   const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
   const workspace =
     workspaces.find((candidate) => candidate.id === currentWorkspaceId) ?? workspaces[0] ?? null;
-  const isSimple = workspace?.kind === 'simple';
+  const isSimple = false;
   const sessionCount = useAppStore((s) => s.sessions.length);
   const needsAgentDetect = !persistedCompleted.has('agent');
   const needsPlanDetect = !persistedCompleted.has('plan');

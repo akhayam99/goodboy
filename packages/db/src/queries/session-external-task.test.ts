@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  ProjectId,
+  SessionExternalTask,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrations } from '../migrations';
 import { migrate } from '../migrations/runner';
@@ -17,17 +23,24 @@ type SeedParams = {
   readonly throughVersion?: number;
 };
 
-const seed = async ({ throughVersion = 103 }: SeedParams) => {
+const seed = async ({ throughVersion = 129 }: SeedParams) => {
   const db = makeTestDatabase();
   await migrate(
     db,
     migrations.filter((migration) => migration.version <= throughVersion),
   );
   const now = Date.now();
-  await db.execute(
-    `INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
-    [workspaceId, 'ws', '/tmp/ws', now, now],
-  );
+  if (throughVersion < 118) {
+    await db.execute(
+      `INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+      [workspaceId, 'ws', '/tmp/ws', now, now],
+    );
+  } else {
+    await db.execute(
+      `INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+      [workspaceId, 'ws', 'ws', now, now],
+    );
+  }
   await db.execute(
     `INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
     [sessionId, workspaceId, 'goal', 'idle', now, now],
@@ -101,10 +114,18 @@ describe('session_external_tasks queries', () => {
 
   it('stores the same external id independently for different mounts', async () => {
     const db = await seed({});
-    const webId = 'workspace-web' as WorkspaceId;
-    const apiId = 'workspace-api' as WorkspaceId;
-    const web = makeTask({ overrides: { mountWorkspaceId: webId, title: 'Web issue' } });
-    const api = makeTask({ overrides: { mountWorkspaceId: apiId, title: 'API issue' } });
+    const webId = 'project-web' as ProjectId;
+    const apiId = 'project-api' as ProjectId;
+    const now = Date.now();
+    for (const projectId of [webId, apiId]) {
+      await db.execute(
+        `INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+         VALUES (?, ?, ?, ?, 'repo', ?, ?)`,
+        [projectId, workspaceId, projectId, `/tmp/${projectId}`, now, now],
+      );
+    }
+    const web = makeTask({ overrides: { projectId: webId, title: 'Web issue' } });
+    const api = makeTask({ overrides: { projectId: apiId, title: 'API issue' } });
 
     await upsertSessionExternalTask({ db, task: web });
     await upsertSessionExternalTask({ db, task: api });
@@ -116,7 +137,7 @@ describe('session_external_tasks queries', () => {
       sessionId,
       provider: web.provider,
       externalId: web.externalId,
-      mountWorkspaceId: webId,
+      projectId: webId,
     });
 
     expect(await listSessionExternalTasks({ db, sessionId })).toEqual([api]);
@@ -129,7 +150,7 @@ describe('session_external_tasks queries', () => {
         db,
         task: makeTask({ overrides: { provider: 'asana' as never } }),
       }),
-    ).rejects.toThrow(/CHECK constraint/);
+    ).rejects.toThrow(/invalid external task provider/);
   });
 
   it('deletes only the matching composite key', async () => {

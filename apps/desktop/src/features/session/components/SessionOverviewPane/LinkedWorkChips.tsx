@@ -86,7 +86,7 @@ export const LinkedWorkChips = ({ sessionId, onSelectLens }: Props) => {
       ))}
       {orderedTasks.map((task) => (
         <TaskChip
-          key={`${task.provider}:${task.externalId}:${task.mountWorkspaceId ?? ''}`}
+          key={`${task.provider}:${task.externalId}:${task.projectId ?? ''}`}
           task={task}
           onOpen={() => openExternalTaskLens(sessionId, task)}
         />

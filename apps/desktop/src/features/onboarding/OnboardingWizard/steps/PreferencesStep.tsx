@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { OverrideSettings, VerbosityLevel, WorkspaceId, WorkspaceKind } from '@goodboy/types';
+import type { OverrideSettings, Project, VerbosityLevel, WorkspaceId } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { Button, cn, EmptyState, FieldRow, formatError, Switch } from '@goodboy/ui';
 import { FolderGit2, GitBranch, SlidersHorizontal } from 'lucide-react';
@@ -12,7 +12,7 @@ import { ProviderPicker } from '../../../../shared/components/RoutingPicker/Prov
 
 type Props = {
   readonly workspaceId: WorkspaceId | null;
-  readonly workspaceKind?: WorkspaceKind | null;
+  readonly projectKind?: Project['kind'] | null;
 };
 
 const sanitizePrefix = (input: string): string =>
@@ -22,7 +22,7 @@ const sanitizePrefix = (input: string): string =>
     .replace(/^-+/, '')
     .slice(0, 16);
 
-export const PreferencesStep = ({ workspaceId, workspaceKind = 'repo' }: Props) => {
+export const PreferencesStep = ({ workspaceId, projectKind = 'repo' }: Props) => {
   return (
     <div className="flex flex-col items-center gap-6 text-center">
       <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 text-primary">
@@ -54,7 +54,7 @@ export const PreferencesStep = ({ workspaceId, workspaceKind = 'repo' }: Props) 
           }
         />
       ) : (
-        <PreferencesForm workspaceId={workspaceId} isSimple={workspaceKind === 'simple'} />
+        <PreferencesForm workspaceId={workspaceId} isSimple={projectKind === 'folder'} />
       )}
     </div>
   );
@@ -109,7 +109,7 @@ const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
         taskModels: wsOverrides?.taskModels ?? null,
         roleModels: wsOverrides?.roleModels ?? null,
         parallelAgents,
-        enabledProviders: wsOverrides?.enabledProviders,
+        providerPool: wsOverrides?.providerPool ?? null,
         ...partial,
       });
     } catch (err) {
@@ -138,7 +138,7 @@ const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
         taskModels: wsOverrides?.taskModels ?? null,
         roleModels: wsOverrides?.roleModels ?? null,
         parallelAgents,
-        enabledProviders: wsOverrides?.enabledProviders,
+        providerPool: wsOverrides?.providerPool ?? null,
       });
       setSavedBranchPrefix(next);
     } catch (err) {

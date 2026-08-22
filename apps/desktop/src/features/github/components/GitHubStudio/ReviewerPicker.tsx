@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 import { cn, EmptyState, Popover, ScrollFade, Skeleton, useDropdown } from '@goodboy/ui';
 import { Plus, Search } from 'lucide-react';
 import { useCurrentWorkspace } from '../../../../store';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId } from '@goodboy/types';
 import { ghRepoCollaborators } from '../../github';
 import { Avatar } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspaceRoot: string | null;
-  readonly memberWorkspaceId?: WorkspaceId;
+  readonly memberWorkspaceId?: ProjectId;
   readonly exclude: ReadonlySet<string>;
   readonly onAdd: (logins: ReadonlyArray<string>) => void;
 };

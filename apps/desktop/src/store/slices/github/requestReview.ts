@@ -27,7 +27,7 @@ export const requestReview = (_set: SetFn, get: GetFn) => {
       {
         cwd: repo.repoRoot,
         workspaceId: session.workspaceId,
-        memberWorkspaceId: repo.workspaceId,
+        memberWorkspaceId: repo.projectId,
       },
     );
     if (res.exitCode !== 0) {

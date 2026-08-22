@@ -9,33 +9,37 @@ type Params = {
 };
 
 export const useWorkspaceGitStatus = ({ workspaceId }: Params): WorkspaceGitStatus | null => {
-  const tracksGit = useAppStore((state) => {
-    const workspace = state.workspaces.find((candidate) => candidate.id === workspaceId);
-    return workspace != null && workspace.kind !== 'simple' && workspace.kind !== 'composite';
-  });
-  const status = useAppStore((state) => state.workspaceGitStatus?.[workspaceId] ?? null);
-  const loadWorkspaceGitStatus = useAppStore((state) => state.loadWorkspaceGitStatus);
+  const projectId = useAppStore(
+    (state) =>
+      state.projects.find(
+        (project) => project.workspaceId === workspaceId && project.kind === 'repo',
+      )?.id ?? null,
+  );
+  const status = useAppStore((state) =>
+    projectId === null ? null : (state.projectGitStatus[projectId] ?? null),
+  );
+  const loadProjectGitStatus = useAppStore((state) => state.loadProjectGitStatus);
 
   useEffect(() => {
-    if (!tracksGit) {
+    if (projectId === null) {
       return;
     }
     const refresh = (): void => {
       if (document.visibilityState !== 'visible') {
         return;
       }
-      void loadWorkspaceGitStatus({ workspaceId });
+      void loadProjectGitStatus({ projectId });
     };
-    void loadWorkspaceGitStatus({ workspaceId });
+    void loadProjectGitStatus({ projectId });
     const intervalId = window.setInterval(refresh, POLL_INTERVAL_MS);
     document.addEventListener('visibilitychange', refresh);
     return () => {
       window.clearInterval(intervalId);
       document.removeEventListener('visibilitychange', refresh);
     };
-  }, [workspaceId, tracksGit, loadWorkspaceGitStatus]);
+  }, [projectId, loadProjectGitStatus]);
 
-  if (!tracksGit) {
+  if (projectId === null) {
     return null;
   }
   return status;

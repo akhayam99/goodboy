@@ -7,7 +7,7 @@ import type { GetFn, SetFn } from './types';
 
 export const createScriptsSlice = (set: SetFn, get: GetFn) => {
   return {
-    loadScripts: loadScripts(set),
+    loadScripts: loadScripts(set, get),
     saveScript: saveScript(get),
     deleteScript: deleteScript(set),
     runScript: runScript(set, get),

@@ -1,10 +1,12 @@
 use std::collections::BTreeMap;
 
+use rusqlite::OptionalExtension;
 use serde::Serialize;
 use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
 use super::protocol::{spec_for, Access, QueryRequest};
+use crate::db::Db;
 
 type Args = BTreeMap<String, Value>;
 
@@ -51,17 +53,42 @@ fn config_field(provider: &str, workspace_id: &str, key: &str) -> Result<String,
         .ok_or_else(|| format!("the {} connection stores no {}", provider, key))
 }
 
+fn integration_project_id(
+    app: &AppHandle,
+    workspace_id: &str,
+    provider: &str,
+) -> Result<String, String> {
+    let state = app.state::<Db>();
+    let conn = state
+        .0
+        .lock()
+        .map_err(|_| "db mutex poisoned".to_string())?;
+    conn.query_row(
+        "SELECT wi.workspace_id
+         FROM workspace_integrations wi
+         JOIN projects p ON p.id = wi.workspace_id
+         WHERE p.workspace_id = ?1 AND wi.provider = ?2
+         ORDER BY p.created_at ASC, p.id ASC
+         LIMIT 1",
+        rusqlite::params![workspace_id, provider],
+        |row| row.get(0),
+    )
+    .optional()
+    .map_err(|error| error.to_string())?
+    .ok_or_else(|| format!("{} is not connected in this workspace", provider))
+}
+
 pub async fn dispatch(app: &AppHandle, request: &QueryRequest) -> Result<Value, String> {
     if request.workspace_id.is_empty() {
         return Err("no workspace: pass --workspace <id>".to_string());
     }
     let spec = spec_for(&request.provider, &request.verb)
         .ok_or_else(|| format!("unknown command: {} {}", request.provider, request.verb))?;
-    let workspace = request.workspace_id.as_str();
+    let workspace = integration_project_id(app, &request.workspace_id, &request.provider)?;
     let args = &request.args;
     match spec.access {
-        Access::Read => run_read(app, &request.provider, &request.verb, workspace, args).await,
-        Access::Write => run_write(app, &request.provider, &request.verb, workspace, args).await,
+        Access::Read => run_read(app, &request.provider, &request.verb, &workspace, args).await,
+        Access::Write => run_write(app, &request.provider, &request.verb, &workspace, args).await,
     }
 }
 

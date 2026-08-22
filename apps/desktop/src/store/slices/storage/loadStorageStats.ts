@@ -18,7 +18,7 @@ export const loadStorageStats = (set: SetFn, get: GetFn) => {
           db: tauriDatabase,
           sessionIds: refs.map((ref) => ref.sessionId),
         }),
-        collectArchivedWorktrees({ workspaces: get().workspaces }),
+        collectArchivedWorktrees({ projects: get().projects }),
       ]);
       set({
         storageStats: {

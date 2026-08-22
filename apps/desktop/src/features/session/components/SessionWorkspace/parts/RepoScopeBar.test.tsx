@@ -2,13 +2,13 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { SessionId, SessionMount, WorkspaceId } from '@goodboy/types';
+import type { ProjectId, SessionId, SessionProjectMount } from '@goodboy/types';
 
 const { store } = vi.hoisted(() => ({
   store: {
-    sessionMounts: {} as Record<string, ReadonlyArray<SessionMount>>,
-    sessionActiveMount: {} as Record<string, string>,
-    setSessionActiveMount: vi.fn(),
+    sessionProjectMounts: {} as Record<string, ReadonlyArray<SessionProjectMount>>,
+    sessionActiveProject: {} as Record<string, string>,
+    setSessionActiveProject: vi.fn(),
   },
 }));
 
@@ -19,11 +19,11 @@ vi.mock('../../../../../store', () => ({
 import { RepoScopeBar } from './RepoScopeBar';
 
 const SESSION_ID = 'session-1' as SessionId;
-const API_WORKSPACE_ID = 'workspace-api' as WorkspaceId;
-const WEB_WORKSPACE_ID = 'workspace-web' as WorkspaceId;
+const API_PROJECT_ID = 'project-api' as ProjectId;
+const WEB_PROJECT_ID = 'project-web' as ProjectId;
 
-const mount = (workspaceId: WorkspaceId, mountName: string): SessionMount => ({
-  workspaceId,
+const mount = (projectId: ProjectId, mountName: string): SessionProjectMount => ({
+  projectId,
   mountName,
   worktreePath: `/worktrees/${mountName}`,
   repoRoot: `/repos/${mountName}`,
@@ -31,11 +31,11 @@ const mount = (workspaceId: WorkspaceId, mountName: string): SessionMount => ({
 });
 
 beforeEach(() => {
-  store.sessionMounts = {
-    [SESSION_ID]: [mount(API_WORKSPACE_ID, 'api'), mount(WEB_WORKSPACE_ID, 'web')],
+  store.sessionProjectMounts = {
+    [SESSION_ID]: [mount(API_PROJECT_ID, 'api'), mount(WEB_PROJECT_ID, 'web')],
   };
-  store.sessionActiveMount = { [SESSION_ID]: WEB_WORKSPACE_ID };
-  store.setSessionActiveMount.mockReset();
+  store.sessionActiveProject = { [SESSION_ID]: WEB_PROJECT_ID };
+  store.setSessionActiveProject.mockReset();
 });
 
 afterEach(cleanup);
@@ -47,14 +47,14 @@ describe('RepoScopeBar', () => {
     expect(screen.getByTestId('repo-scope-bar').textContent).toContain('Scoped to');
     fireEvent.click(screen.getByRole('tab', { name: 'api' }));
 
-    expect(store.setSessionActiveMount).toHaveBeenCalledWith({
+    expect(store.setSessionActiveProject).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
-      workspaceId: API_WORKSPACE_ID,
+      projectId: API_PROJECT_ID,
     });
   });
 
   it('costs no row at all on a single-repo session', () => {
-    store.sessionMounts = { [SESSION_ID]: [mount(API_WORKSPACE_ID, 'api')] };
+    store.sessionProjectMounts = { [SESSION_ID]: [mount(API_PROJECT_ID, 'api')] };
 
     render(<RepoScopeBar sessionId={SESSION_ID} />);
 

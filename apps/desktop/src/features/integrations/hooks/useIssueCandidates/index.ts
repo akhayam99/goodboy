@@ -26,7 +26,8 @@ const EMPTY_ROWS: ReadonlyArray<IssueCandidate> = [];
 
 export const useIssueCandidates = ({ workspaceId, provider }: Params): Result => {
   const rootPath = useAppStore(
-    (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.rootPath ?? null,
+    (state) =>
+      state.workspaces.find((workspace) => workspace.id === workspaceId)?.sessionsRoot ?? null,
   );
   const gitlabHost = useAppStore((state) => {
     const integration = (state.workspaceIntegrations[workspaceId] ?? []).find(

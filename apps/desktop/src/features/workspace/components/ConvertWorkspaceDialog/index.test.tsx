@@ -11,7 +11,8 @@ const { state, listOwnedRepos, createGithubRepo } = vi.hoisted(() => ({
       user?: string;
     } | null,
     workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
-    convertWorkspaceToRepo: vi.fn(async () => undefined),
+    projects: [{ id: 'project-1', workspaceId: 'ws-1' }],
+    convertProjectToRepo: vi.fn(async () => undefined),
   },
   listOwnedRepos: vi.fn(),
   createGithubRepo: vi.fn(),
@@ -37,15 +38,14 @@ import { ConvertWorkspaceDialog } from './index';
 const workspace = {
   id: 'ws-1',
   name: 'Study space',
-  rootPath: '/tmp/study-space',
-  kind: 'simple',
+  sessionsRoot: '/tmp/study-space',
 } as unknown as Workspace;
 
 beforeEach(() => {
   state.githubStatus = { available: true, user: 'acme' };
   state.workspaceIntegrations = {};
-  state.convertWorkspaceToRepo.mockReset();
-  state.convertWorkspaceToRepo.mockResolvedValue(undefined);
+  state.convertProjectToRepo.mockReset();
+  state.convertProjectToRepo.mockResolvedValue(undefined);
   createGithubRepo.mockReset();
   createGithubRepo.mockResolvedValue({
     kind: 'ok',
@@ -82,8 +82,8 @@ describe('ConvertWorkspaceDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Convert to dev project' }));
 
     await waitFor(() =>
-      expect(state.convertWorkspaceToRepo).toHaveBeenCalledWith({
-        workspaceId: 'ws-1',
+      expect(state.convertProjectToRepo).toHaveBeenCalledWith({
+        projectId: 'project-1',
         remoteUrl: 'https://github.com/acme/widgets',
       }),
     );
@@ -113,8 +113,8 @@ describe('ConvertWorkspaceDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Convert to dev project' }));
 
     await waitFor(() =>
-      expect(state.convertWorkspaceToRepo).toHaveBeenCalledWith({
-        workspaceId: 'ws-1',
+      expect(state.convertProjectToRepo).toHaveBeenCalledWith({
+        projectId: 'project-1',
         remoteUrl: 'git@gitlab.com:acme/widgets.git',
       }),
     );
@@ -139,8 +139,8 @@ describe('ConvertWorkspaceDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Convert to dev project' }));
 
     await waitFor(() =>
-      expect(state.convertWorkspaceToRepo).toHaveBeenCalledWith({
-        workspaceId: 'ws-1',
+      expect(state.convertProjectToRepo).toHaveBeenCalledWith({
+        projectId: 'project-1',
         remoteUrl: 'git@gitlab.com:acme/widgets.git',
       }),
     );
@@ -221,8 +221,8 @@ describe('ConvertWorkspaceDialog', () => {
       }),
     );
     await waitFor(() =>
-      expect(state.convertWorkspaceToRepo).toHaveBeenCalledWith({
-        workspaceId: 'ws-1',
+      expect(state.convertProjectToRepo).toHaveBeenCalledWith({
+        projectId: 'project-1',
         remoteUrl: 'https://github.com/acme/study-space',
       }),
     );
@@ -258,7 +258,7 @@ describe('ConvertWorkspaceDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create repository' }));
 
     await waitFor(() => screen.getByText('GraphQL: Name already exists on this account'));
-    expect(state.convertWorkspaceToRepo).not.toHaveBeenCalled();
+    expect(state.convertProjectToRepo).not.toHaveBeenCalled();
   });
 
   it('sets no remote when what GitHub returned is not what was asked for', async () => {
@@ -279,11 +279,11 @@ describe('ConvertWorkspaceDialog', () => {
 
     await waitFor(() => screen.getByText(/GitHub returned acme\/study-space, a public repository/));
     expect(screen.getByText(/was not removed/)).toBeDefined();
-    expect(state.convertWorkspaceToRepo).not.toHaveBeenCalled();
+    expect(state.convertProjectToRepo).not.toHaveBeenCalled();
   });
 
   it('discloses the repository left on the account when the local half fails', async () => {
-    state.convertWorkspaceToRepo.mockRejectedValue(new Error('git init refused'));
+    state.convertProjectToRepo.mockRejectedValue(new Error('git init refused'));
     render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('radio', { name: 'Private' }));
@@ -309,6 +309,6 @@ describe('ConvertWorkspaceDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create repository' }));
 
     await waitFor(() => screen.getByText(/could not read it back/));
-    expect(state.convertWorkspaceToRepo).not.toHaveBeenCalled();
+    expect(state.convertProjectToRepo).not.toHaveBeenCalled();
   });
 });

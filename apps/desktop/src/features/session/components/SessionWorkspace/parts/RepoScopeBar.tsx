@@ -1,16 +1,16 @@
 import { FolderTree } from 'lucide-react';
-import type { SessionId, SessionMount } from '@goodboy/types';
+import type { SessionId, SessionProjectMount } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { ProjectSwitcher } from '../../ProjectSwitcher';
 
-const EMPTY_MOUNTS: ReadonlyArray<SessionMount> = [];
+const EMPTY_MOUNTS: ReadonlyArray<SessionProjectMount> = [];
 
 type Props = {
   readonly sessionId: SessionId;
 };
 
 export const RepoScopeBar = ({ sessionId }: Props) => {
-  const mounts = useAppStore((state) => state.sessionMounts[sessionId] ?? EMPTY_MOUNTS);
+  const mounts = useAppStore((state) => state.sessionProjectMounts[sessionId] ?? EMPTY_MOUNTS);
 
   if (mounts.length <= 1) {
     return null;

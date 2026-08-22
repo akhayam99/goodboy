@@ -1,5 +1,5 @@
-import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { updateSessionActiveMount } from '@goodboy/db';
+import type { ProjectId, SessionId } from '@goodboy/types';
+import { updateSessionActiveProject } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SetFn } from './types';
 
@@ -9,11 +9,11 @@ type Params = {
 
 type Input = {
   readonly sessionId: SessionId;
-  readonly workspaceId: WorkspaceId;
+  readonly projectId: ProjectId;
 };
 
-export const setSessionActiveMount = ({ set }: Params) => {
-  return async ({ sessionId, workspaceId }: Input): Promise<void> => {
+export const setSessionActiveProject = ({ set }: Params) => {
+  return async ({ sessionId, projectId }: Input): Promise<void> => {
     set((state) => {
       const nextGithub = { ...state.sessionGithub };
       const nextGithubPrs = { ...state.sessionGithubPrs };
@@ -25,15 +25,15 @@ export const setSessionActiveMount = ({ set }: Params) => {
       delete nextSelectedPrNumber[sessionId];
       return {
         sessions: state.sessions.map((session) =>
-          session.id === sessionId ? { ...session, activeMountWorkspaceId: workspaceId } : session,
+          session.id === sessionId ? { ...session, activeProjectId: projectId } : session,
         ),
-        sessionActiveMount: { ...state.sessionActiveMount, [sessionId]: workspaceId },
+        sessionActiveProject: { ...state.sessionActiveProject, [sessionId]: projectId },
         sessionGithub: nextGithub,
         sessionGithubPrs: nextGithubPrs,
         sessionGitlabMr: nextGitlab,
         sessionSelectedPrNumber: nextSelectedPrNumber,
       };
     });
-    await updateSessionActiveMount({ db: tauriDatabase, id: sessionId, workspaceId });
+    await updateSessionActiveProject({ db: tauriDatabase, id: sessionId, projectId });
   };
 };

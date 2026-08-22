@@ -17,6 +17,8 @@ import type {
   MessageId,
   PendingResolution,
   PlanWithCount,
+  Project,
+  ProjectId,
   ProviderRunId,
   Session,
   SessionExternalTask,
@@ -32,8 +34,8 @@ import type {
   WorkspaceId,
   WorkspaceIntegration,
   WorkspaceIntegrationId,
-  WorkspaceScript,
-  WorkspaceScriptId,
+  ProjectScript,
+  ProjectScriptId,
 } from '@goodboy/types';
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -62,13 +64,16 @@ const listIntegrationsForWorkspaceSpy = vi.fn(
   async () => [] as ReadonlyArray<WorkspaceIntegration>,
 );
 const deleteWorkspaceIntegrationSpy = vi.fn(async () => undefined);
-const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>);
-const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
-const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
+const listProjectScriptsSpy = vi.fn(async () => [] as ReadonlyArray<ProjectScript>);
+const upsertProjectScriptSpy = vi.fn(async () => undefined);
+const deleteProjectScriptSpy = vi.fn(async () => undefined);
 const deleteFileVersionsForSessionSpy = vi.fn(async () => undefined);
 const listPendingResolutionsForSessionSpy = vi.fn(
   async () => [] as ReadonlyArray<PendingResolution>,
 );
+const getWorkspaceByIdSpy = vi.fn();
+const listProjectsForWorkspaceSpy = vi.fn();
+const upsertSessionExternalTaskSpy = vi.fn(async () => undefined);
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
@@ -80,11 +85,13 @@ vi.mock('@goodboy/db', () => ({
   insertTelemetry: vi.fn(async () => undefined),
   insertTurnEventsBatch: vi.fn(async () => undefined),
   insertWorkspace: vi.fn(async () => undefined),
+  getWorkspaceById: getWorkspaceByIdSpy,
+  listProjectsForWorkspace: listProjectsForWorkspaceSpy,
   disconnectWorkspace: vi.fn(async () => undefined),
   reconnectWorkspace: vi.fn(async () => undefined),
   touchWorkspaceLastAccessed: vi.fn(async () => undefined),
   findWorkspaceByRootPath: vi.fn(async () => null),
-  upsertSessionExternalTask: vi.fn(async () => undefined),
+  upsertSessionExternalTask: upsertSessionExternalTaskSpy,
   deleteSessionExternalTask: vi.fn(async () => undefined),
   listExternalTasksForWorkspace: vi.fn(async () => []),
   listContextSlotsForSession: vi.fn(async () => []),
@@ -122,15 +129,15 @@ vi.mock('@goodboy/db', () => ({
   updateSessionPermissionMode: vi.fn(async () => undefined),
   updateSessionAutoRun: vi.fn(async () => undefined),
   updateSessionTitleUserEdited: vi.fn(async () => undefined),
-  updateSessionActiveMount: vi.fn(async () => undefined),
+  updateSessionActiveProject: vi.fn(async () => undefined),
   updateSessionState: vi.fn(async () => undefined),
   attachWorkflowToSession: vi.fn(async () => undefined),
   detachWorkflowFromSession: vi.fn(async () => undefined),
   updateWorkflowOrder: vi.fn(async () => undefined),
   updateSessionWorkflowStep: vi.fn(async () => undefined),
-  listWorkspaceScripts: listWorkspaceScriptsSpy,
-  upsertWorkspaceScript: upsertWorkspaceScriptSpy,
-  deleteWorkspaceScript: deleteWorkspaceScriptSpy,
+  listProjectScripts: listProjectScriptsSpy,
+  upsertProjectScript: upsertProjectScriptSpy,
+  deleteProjectScript: deleteProjectScriptSpy,
   upsertContextSlot: vi.fn(async () => undefined),
   listOpenQuestionsForSession: vi.fn(async () => []),
   insertNudgeEvent: insertNudgeEventSpy,
@@ -154,6 +161,7 @@ vi.mock('@goodboy/db', () => ({
   markOpenQuestionsResolvedByText: vi.fn(async () => 0),
   listResolvedQuestionTextsForSession: vi.fn(async () => []),
   insertTurnEvent: vi.fn(async () => undefined),
+  insertSessionEvent: vi.fn(async () => undefined),
   getGithubPrCache: vi.fn(async () => null),
   upsertGithubPrCache: vi.fn(async () => undefined),
   deleteGithubPrCache: vi.fn(async () => undefined),
@@ -369,6 +377,7 @@ vi.mock('../../../features/settings/config-export', () => ({
 
 const WS_ID = 'workspace-1' as WorkspaceId;
 const WS_ID_2 = 'workspace-2' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 const SESSION_ID = 'session-1' as SessionId;
 const SESSION_ID_2 = 'session-2' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -381,13 +390,38 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {
     id: WS_ID,
     name: 'ws',
-    rootPath: '/tmp/repo',
+    slug: 'ws',
+    sessionsRoot: '/tmp/repo',
+    overrides: {
+      defaultProviderId: null,
+      defaultWorkflowId: null,
+      defaultBranchPrefix: null,
+      parallelEnabled: null,
+      defaultVerbosity: null,
+      providerBindings: null,
+      taskModels: null,
+      roleModels: null,
+      parallelAgents: null,
+      providerPool: null,
+    },
     createdAt: NOW,
     updatedAt: NOW,
     lastAccessedAt: NOW,
     ...overrides,
   };
 }
+
+const buildProject = (overrides: Partial<Project> = {}): Project => ({
+  id: PROJECT_ID,
+  workspaceId: WS_ID,
+  name: 'repo',
+  rootPath: '/tmp/repo',
+  kind: 'repo',
+  overrides: buildWorkspace().overrides,
+  createdAt: NOW,
+  updatedAt: NOW,
+  ...overrides,
+});
 
 function buildSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -458,10 +492,13 @@ describe('store contract', () => {
     invokePlanListSpy.mockResolvedValue([]);
     invokeListConsumptionsForPlanSpy.mockResolvedValue([]);
     invokeWorkspacesWithUnreadSpy.mockResolvedValue([]);
-    listWorkspaceScriptsSpy.mockResolvedValue([]);
+    listProjectScriptsSpy.mockResolvedValue([]);
     listIntegrationsForWorkspaceSpy.mockResolvedValue([]);
     listDiffCommentsSpy.mockResolvedValue([]);
     listPendingResolutionsForSessionSpy.mockResolvedValue([]);
+    getWorkspaceByIdSpy.mockResolvedValue(buildWorkspace());
+    listProjectsForWorkspaceSpy.mockResolvedValue([buildProject()]);
+    upsertSessionExternalTaskSpy.mockResolvedValue(undefined);
     dbGetSettingSpy.mockResolvedValue(null);
     ghStatusSpy.mockResolvedValue({ available: true, mode: 'gh-cli', scopes: [] });
 
@@ -470,6 +507,7 @@ describe('store contract', () => {
       const snap = store.getState();
       resetState = {
         workspaces: [],
+        projects: [],
         workspaceIntegrations: {},
         sessionExternalTasks: {},
         currentWorkspaceId: null,
@@ -489,8 +527,8 @@ describe('store contract', () => {
         transcripts: {},
         messages: {},
         sessionWorktrees: {},
-        sessionMounts: {},
-        sessionActiveMount: {},
+        sessionProjectMounts: {},
+        sessionActiveProject: {},
         sessionBranches: {},
         sessionTelemetry: {},
         workspaceSummary: null,
@@ -503,7 +541,7 @@ describe('store contract', () => {
         budgetAlerts: [],
         systemAlerts: [],
         skills: {},
-        workspaceScripts: {},
+        projectScripts: {},
         scriptRuns: {},
         phaseTemplates: {},
         sessionWorkflows: {},
@@ -772,7 +810,7 @@ describe('store contract', () => {
       const store = await getStore();
       store.setState({
         sessions: [buildSession()],
-        workspaces: [buildWorkspace({ kind: 'simple', rootPath: '/tmp/simple-space' })],
+        workspaces: [buildWorkspace()],
         sessionBranches: { [SESSION_ID]: '' },
         sessionWorktrees: { [SESSION_ID]: ['/tmp/simple-space/sessions/test'] },
       });
@@ -966,11 +1004,9 @@ describe('store contract', () => {
     it('registers a simple session directory with the requested folder name and an empty branch', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');
-      vi.mocked(db.listWorkspaces).mockResolvedValueOnce([
-        buildWorkspace({
-          rootPath: '/tmp/study-space',
-          kind: 'simple',
-        }),
+      vi.mocked(db.getWorkspaceById).mockResolvedValueOnce(buildWorkspace());
+      vi.mocked(db.listProjectsForWorkspace).mockResolvedValueOnce([
+        buildProject({ kind: 'folder', rootPath: '/tmp/study-space' }),
       ]);
       createSessionDirSpy.mockResolvedValueOnce({
         worktreePath: '/tmp/study-space/sessions/MatchAnalysis_20260514',
@@ -1010,11 +1046,9 @@ describe('store contract', () => {
     it('seeds the workspace routing pool and includes its default provider', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');
-      vi.mocked(db.listWorkspaces).mockResolvedValueOnce([
-        buildWorkspace({
-          rootPath: '/tmp/study-space',
-          kind: 'simple',
-        }),
+      vi.mocked(db.getWorkspaceById).mockResolvedValueOnce(buildWorkspace());
+      vi.mocked(db.listProjectsForWorkspace).mockResolvedValueOnce([
+        buildProject({ kind: 'folder', rootPath: '/tmp/study-space' }),
       ]);
       createSessionDirSpy.mockResolvedValueOnce({
         worktreePath: '/tmp/study-space/sessions/Study plan',
@@ -1026,9 +1060,10 @@ describe('store contract', () => {
         currentWorkspaceId: WS_ID,
         workspaceOverrides: {
           [WS_ID]: {
+            ...buildWorkspace().overrides,
             defaultProviderId: 'codex',
-            enabledProviders: ['anthropic'],
-          } as never,
+            providerPool: ['anthropic'],
+          },
         },
       });
 
@@ -1053,17 +1088,12 @@ describe('store contract', () => {
     it('creates ordered member worktrees and hydrates their mounts', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');
-      const apiWorkspaceId = 'workspace-api' as WorkspaceId;
-      const webWorkspaceId = 'workspace-web' as WorkspaceId;
-      vi.mocked(db.listWorkspaces).mockResolvedValueOnce([
-        buildWorkspace({
-          rootPath: '/tmp/product',
-          kind: 'composite',
-          members: [
-            { workspaceId: apiWorkspaceId, rootPath: '/tmp/api', mountName: 'api' },
-            { workspaceId: webWorkspaceId, rootPath: '/tmp/web', mountName: 'web' },
-          ],
-        }),
+      const apiWorkspaceId = 'project-api' as ProjectId;
+      const webWorkspaceId = 'project-web' as ProjectId;
+      vi.mocked(db.getWorkspaceById).mockResolvedValueOnce(buildWorkspace());
+      vi.mocked(db.listProjectsForWorkspace).mockResolvedValueOnce([
+        buildProject({ id: apiWorkspaceId, name: 'api', rootPath: '/tmp/api' }),
+        buildProject({ id: webWorkspaceId, name: 'web', rootPath: '/tmp/web' }),
       ]);
       createWorktreeSpy
         .mockResolvedValueOnce({
@@ -1108,7 +1138,7 @@ describe('store contract', () => {
           sessionId: session.id,
           worktreePath: '/tmp/product/ship-scope/api',
           parallelIndex: 1,
-          mountWorkspaceId: apiWorkspaceId,
+          projectId: apiWorkspaceId,
           mountName: 'api',
         }),
       );
@@ -1119,27 +1149,27 @@ describe('store contract', () => {
           sessionId: session.id,
           worktreePath: '/tmp/product/ship-scope/web',
           parallelIndex: 2,
-          mountWorkspaceId: webWorkspaceId,
+          projectId: webWorkspaceId,
           mountName: 'web',
         }),
       );
-      expect(store.getState().sessionMounts[session.id]).toEqual([
+      expect(store.getState().sessionProjectMounts[session.id]).toEqual([
         {
-          workspaceId: apiWorkspaceId,
+          projectId: apiWorkspaceId,
           mountName: 'api',
           worktreePath: '/tmp/product/ship-scope/api',
           repoRoot: '/tmp/api',
           branch: 'ak/ship-scope-api',
         },
         {
-          workspaceId: webWorkspaceId,
+          projectId: webWorkspaceId,
           mountName: 'web',
           worktreePath: '/tmp/product/ship-scope/web',
           repoRoot: '/tmp/web',
           branch: 'ak/ship-scope-web',
         },
       ]);
-      expect(store.getState().sessionActiveMount[session.id]).toBeUndefined();
+      expect(store.getState().sessionActiveProject[session.id]).toBe(apiWorkspaceId);
     });
   });
 
@@ -1427,26 +1457,15 @@ describe('store contract', () => {
     it('attributes a linked task to the active composite mount', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');
-      const memberWorkspaceId = WS_ID_2;
+      const memberWorkspaceId = 'project-member' as ProjectId;
       store.setState({
         sessions: [buildSession()],
-        workspaces: [
-          buildWorkspace({
-            kind: 'composite',
-            members: [
-              { workspaceId: memberWorkspaceId, rootPath: '/tmp/member', mountName: 'member' },
-              {
-                workspaceId: 'workspace-3' as WorkspaceId,
-                rootPath: '/tmp/other',
-                mountName: 'other',
-              },
-            ],
-          }),
-        ],
-        sessionMounts: {
+        workspaces: [buildWorkspace()],
+        projects: [buildProject({ id: memberWorkspaceId, rootPath: '/tmp/member' })],
+        sessionProjectMounts: {
           [SESSION_ID]: [
             {
-              workspaceId: memberWorkspaceId,
+              projectId: memberWorkspaceId,
               mountName: 'member',
               worktreePath: '/tmp/member-worktree',
               repoRoot: '/tmp/member',
@@ -1454,7 +1473,7 @@ describe('store contract', () => {
             },
           ],
         },
-        sessionActiveMount: { [SESSION_ID]: memberWorkspaceId },
+        sessionActiveProject: { [SESSION_ID]: memberWorkspaceId },
       });
 
       await store.getState().linkSessionExternalTask(SESSION_ID, LINEAR_TASK);
@@ -1462,7 +1481,7 @@ describe('store contract', () => {
       const linkedTask = {
         ...LINEAR_TASK,
         sessionId: SESSION_ID,
-        mountWorkspaceId: memberWorkspaceId,
+        projectId: memberWorkspaceId,
         branch: 'ak/member',
       };
       expect(vi.mocked(db.upsertSessionExternalTask)).toHaveBeenCalledWith({

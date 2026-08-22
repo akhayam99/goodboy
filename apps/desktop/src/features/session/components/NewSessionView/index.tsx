@@ -59,8 +59,10 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const draft = useAppStore((s) => s.newSessionDrafts[workspaceId] ?? EMPTY_NEW_SESSION_DRAFT);
   const providers = useAppStore((s) => s.providers);
   const { showToast } = useToast();
-  const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId));
-  const isSimple = workspace?.kind === 'simple';
+  const project = useAppStore((state) =>
+    state.projects.find((candidate) => candidate.workspaceId === workspaceId),
+  );
+  const isSimple = project?.kind === 'folder';
   const gitStatus = useWorkspaceGitStatus({ workspaceId });
   const workspaceOverrides = useAppStore((s) => s.workspaceOverrides?.[workspaceId] ?? null);
 
@@ -174,18 +176,18 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   }, [workspaceId]);
 
   useEffect(() => {
-    if (isSimple || branchMode !== 'existing' || branchesLoaded || !workspace?.rootPath) {
+    if (isSimple || branchMode !== 'existing' || branchesLoaded || !project?.rootPath) {
       return;
     }
     setBranchesLoading(true);
-    listLocalBranches(workspace.rootPath)
+    listLocalBranches(project.rootPath)
       .then(setExistingBranches)
       .catch(() => setExistingBranches([]))
       .finally(() => {
         setBranchesLoading(false);
         setBranchesLoaded(true);
       });
-  }, [branchMode, branchesLoaded, isSimple, workspace?.rootPath]);
+  }, [branchMode, branchesLoaded, isSimple, project?.rootPath]);
 
   useEffect(() => {
     if (slugTouched) {
@@ -225,7 +227,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       ...taskModel,
       fallbackSlug: slugifyBranch({ input: trimmed, maxLength: SLUG_MAX_LEN }),
       invokeFn: invoke,
-      ...(workspace?.rootPath != null && { workingDir: workspace.rootPath }),
+      ...(project?.rootPath != null && { workingDir: project.rootPath }),
     })
       .then((result) => {
         if (result.accepted) {
@@ -302,7 +304,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       goal: goalEditorDraft,
       ...taskModel,
       invokeFn: invoke,
-      ...(workspace?.rootPath != null && { workingDir: workspace.rootPath }),
+      ...(project?.rootPath != null && { workingDir: project.rootPath }),
     })
       .then((result) => {
         if (goalPolishRequestId.current !== requestId) {
@@ -343,7 +345,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       fallbackGoal: goal,
       ...taskModel,
       invokeFn: invoke,
-      ...(workspace?.rootPath != null && { workingDir: workspace.rootPath }),
+      ...(project?.rootPath != null && { workingDir: project.rootPath }),
     })
       .then((result) => {
         if (goalDraftRequestId.current !== requestId) {
@@ -367,16 +369,16 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
 
   const conflict = useBranchConflict(
     !isSimple && branchMode === 'existing' ? existingBranch.trim() || null : null,
-    workspace?.rootPath ?? null,
+    project?.rootPath ?? null,
   );
   const conflictSessionId = conflict?.kind === 'session' ? conflict.sessionId : null;
   const conflictWorktreePath = conflict?.kind === 'worktree' ? conflict.path : null;
   const folderValidation = validateSessionDirectoryName({ name: folderName });
   const folderNameError = sessionDirectoryNameValidationMessage({ validation: folderValidation });
   const folderPathPreview =
-    isSimple && workspace?.rootPath != null
+    isSimple && project?.rootPath != null
       ? buildSimpleSessionDirectoryPath({
-          workspaceRoot: workspace.rootPath,
+          workspaceRoot: project.rootPath,
           folderName,
         })
       : null;
@@ -431,8 +433,8 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     setError(null);
     setBusy(true);
     try {
-      if (!isSimple && eraseWorktreePath && workspace?.rootPath) {
-        await removeWorktree(workspace.rootPath, eraseWorktreePath);
+      if (!isSimple && eraseWorktreePath && project?.rootPath) {
+        await removeWorktree(project.rootPath, eraseWorktreePath);
       }
       const useExisting =
         !isSimple && branchMode === 'existing' && existingBranch.trim().length > 0;
@@ -469,10 +471,8 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     }
   };
 
-  if (gitStatus !== null && gitStatus.state !== 'ready' && workspace?.rootPath != null) {
-    return (
-      <NewSessionBlocked rootPath={workspace.rootPath} status={gitStatus} onClose={onCancel} />
-    );
+  if (gitStatus !== null && gitStatus.state !== 'ready' && project?.rootPath != null) {
+    return <NewSessionBlocked rootPath={project.rootPath} status={gitStatus} onClose={onCancel} />;
   }
 
   return (

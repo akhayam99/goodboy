@@ -22,6 +22,6 @@ export const filterWorkspaces = (
     return list;
   }
   return list.filter(
-    (w) => w.name.toLowerCase().includes(q) || w.rootPath.toLowerCase().includes(q),
+    (w) => w.name.toLowerCase().includes(q) || (w.sessionsRoot ?? '').toLowerCase().includes(q),
   );
 };

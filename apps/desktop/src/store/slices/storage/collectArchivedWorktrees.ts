@@ -3,14 +3,13 @@ import {
   listWorktreesForSessions,
   type SessionWorktree,
 } from '@goodboy/db';
-import type { Workspace } from '@goodboy/types';
+import type { Project } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { worktreeList } from '../../../features/worktree/worktree';
-import { buildSessionMounts } from '../worktrees/buildSessionMounts';
 import type { ArchivedWorktreeTarget } from './types';
 
 type Params = {
-  readonly workspaces: ReadonlyArray<Workspace>;
+  readonly projects: ReadonlyArray<Project>;
 };
 
 const isBranchless = (row: SessionWorktree): boolean => row.branch.trim() === '';
@@ -41,13 +40,13 @@ const listLiveWorktrees = async (
 };
 
 export const collectArchivedWorktrees = async ({
-  workspaces,
+  projects,
 }: Params): Promise<ReadonlyArray<ArchivedWorktreeTarget>> => {
   const refs = await listArchivedSessionRefs({ db: tauriDatabase });
   if (refs.length === 0) {
     return [];
   }
-  const workspaceById = new Map(workspaces.map((workspace) => [workspace.id, workspace]));
+  const projectById = new Map(projects.map((project) => [project.id, project]));
   const rowsBySession = await listWorktreesForSessions(
     tauriDatabase,
     refs.map((ref) => ref.sessionId),
@@ -56,32 +55,15 @@ export const collectArchivedWorktrees = async ({
   const candidates: ArchivedWorktreeTarget[] = [];
   const branchByPath = new Map<string, string>();
   for (const ref of refs) {
-    const workspace = workspaceById.get(ref.workspaceId);
-    if (workspace == null || workspace.kind === 'simple') {
-      continue;
-    }
     const rows = rowsBySession.get(ref.sessionId) ?? [];
-    if (workspace.kind === 'composite') {
-      for (const mount of buildSessionMounts({ workspace, rows })) {
-        if (mount.branch.trim() === '') {
-          continue;
-        }
-        candidates.push({
-          sessionId: ref.sessionId,
-          repoPath: mount.repoRoot,
-          worktreePath: mount.worktreePath,
-        });
-        branchByPath.set(mount.worktreePath, mount.branch);
-      }
-      continue;
-    }
     for (const row of rows) {
-      if (isBranchless(row)) {
+      const project = row.projectId === undefined ? undefined : projectById.get(row.projectId);
+      if (isBranchless(row) || project?.kind !== 'repo') {
         continue;
       }
       candidates.push({
         sessionId: ref.sessionId,
-        repoPath: workspace.rootPath,
+        repoPath: project.rootPath,
         worktreePath: row.worktreePath,
       });
       branchByPath.set(row.worktreePath, row.branch);

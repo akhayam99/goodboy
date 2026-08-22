@@ -195,7 +195,6 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   );
   const isBranchless = useAppStore((s) =>
     isBranchlessSession({
-      workspaceKind: s.workspaces?.find((workspace) => workspace.id === session.workspaceId)?.kind,
       branch: s.sessionBranches[session.id],
     }),
   );

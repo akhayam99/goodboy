@@ -672,9 +672,7 @@ export const App = () => {
     if (session == null) {
       return false;
     }
-    const workspace = s.workspaces.find((candidate) => candidate.id === session.workspaceId);
     return isBranchlessSession({
-      workspaceKind: workspace?.kind,
       branch: s.sessionBranches[sessionId],
     });
   });
@@ -813,7 +811,7 @@ export const App = () => {
           currentWorkspace ? (
             <AppFooter
               activeStudio={activeStudio}
-              isSimpleWorkspace={currentWorkspace.kind === 'simple'}
+              isSimpleWorkspace={false}
               onConvertToDevProject={() => setConvertWorkspaceOpen(true)}
               githubEnabled={githubConnection.isAuthenticated}
               linearEnabled={hasLinear}
@@ -1026,7 +1024,7 @@ export const App = () => {
       {githubStudioOpen && currentWorkspace ? (
         <GitHubStudio
           workspaceId={currentWorkspace.id}
-          rootPath={currentWorkspace.rootPath}
+          rootPath={currentWorkspace.sessionsRoot ?? ''}
           workspaceName={currentWorkspace.name}
           initialSessionId={githubStudioSession}
           initialPrNumber={githubStudioPrNumber}

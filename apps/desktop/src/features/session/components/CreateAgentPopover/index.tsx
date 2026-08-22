@@ -62,8 +62,7 @@ export const CreateAgentPopover = ({
   const [kind, setKind] = useState<AgentKind>('generic');
   const [routing, setRouting] = useState<AgentKindRouting | null>(null);
   const spawnAgent = useAppStore((state) => state.spawnAgent);
-  const workspaceKind = useCurrentWorkspace()?.kind;
-  const agentKinds = visibleAgentKinds({ workspaceKind });
+  const agentKinds = visibleAgentKinds();
   const selectedKind = agentKinds.includes(kind) ? kind : (agentKinds[0] ?? 'generic');
   const connectedProviders = useAppStore(
     useShallow((state) =>

@@ -10,7 +10,8 @@ const { workspaceRef } = vi.hoisted(() => ({
     value: {
       id: 'ws-1' as WorkspaceId,
       name: 'Acme',
-      rootPath: '/code/monorepo',
+      slug: 'acme',
+      sessionsRoot: '/code/monorepo',
     } as Workspace | null,
   },
 }));
@@ -20,8 +21,12 @@ vi.mock('../../../../store', () => ({
   useHasUnreadElsewhere: () => false,
   useWorkspaces: () => (workspaceRef.value ? [workspaceRef.value] : []),
   useWorkspaceHasUnread: () => false,
-  useAppStore: (selector: (s: { openWorkspace: () => Promise<void> }) => unknown) =>
-    selector({ openWorkspace: async () => undefined }),
+  useAppStore: (
+    selector: (s: {
+      projects: ReadonlyArray<never>;
+      openWorkspace: () => Promise<void>;
+    }) => unknown,
+  ) => selector({ projects: [], openWorkspace: async () => undefined }),
 }));
 
 import { WorkspaceIdentityRow } from './index';
@@ -85,7 +90,8 @@ describe('WorkspaceIdentityRow', () => {
     workspaceRef.value = {
       id: 'ws-1' as WorkspaceId,
       name: 'Acme',
-      rootPath: '/code/monorepo',
+      slug: 'acme',
+      sessionsRoot: '/code/monorepo',
     } as Workspace;
   });
 });

@@ -60,8 +60,8 @@ describe('DeleteSessionConfirm branch-aware copy', () => {
   });
 
   it('warns about permanent file-version loss for a branchless session', () => {
-    state.workspaces = [{ id: 'workspace-1', kind: 'simple' }];
-    state.sessionBranches = {};
+    state.workspaces = [{ id: 'workspace-1', kind: 'repo' }];
+    state.sessionBranches = { 'session-1': '' };
     const session = { id: 'session-1', workspaceId: 'workspace-1', goal: 'Ship it' } as never;
 
     render(<DeleteSessionConfirm session={session} onClose={vi.fn()} />);

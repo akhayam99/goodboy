@@ -20,7 +20,6 @@ import {
   insertMessage,
   insertProviderRun,
   listContextSlotsForSession,
-  listWorktreesForSession,
   updateProviderRunStatus,
   updateSessionState,
   upsertContextSlot,
@@ -74,7 +73,6 @@ import { buildIntegrationsGuard } from '../../integrationsGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
 import { stepSummaryDegraded } from '../../summarizeAgentOutput';
 import { decisionsDelta } from '../session-events';
-import { relinkSimpleSessionDirectories } from '../workspaces/relinkSimpleSessionDirectories';
 import { flushTurnEvents } from '../transcripts/buffer';
 import {
   beginTurnFileVersionCapture,
@@ -153,44 +151,22 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (!session) {
       throw new Error(`session not found: ${sessionId}`);
     }
-    let workingDir = (before.sessionWorktrees[sessionId] ?? [])[0] ?? null;
-    if (!workingDir) {
+    const initialWorkingDir = (before.sessionWorktrees[sessionId] ?? [])[0] ?? null;
+    if (initialWorkingDir === null) {
       throw new Error(
         'session worktree not initialized. restart the app to reload persisted worktree paths',
       );
     }
-    const workspace =
-      before.workspaces.find((candidate) => candidate.id === session.workspaceId) ?? null;
+    const workingDir = initialWorkingDir;
     const isPlainSessionDir = isBranchlessSession({
-      workspaceKind: workspace?.kind,
       branch: before.sessionBranches[sessionId],
     });
-    if (workspace != null && isPlainSessionDir) {
+    if (isPlainSessionDir) {
       const exists = await simpleSessionDirExists({ path: workingDir });
-      if (!exists) {
-        const worktrees = await listWorktreesForSession(tauriDatabase, sessionId);
-        const resolved = await relinkSimpleSessionDirectories({
-          rootPath: workspace.rootPath,
-          workspaceId: workspace.id,
-          workspaceKind: workspace.kind,
-          worktreesBySession: new Map([[sessionId, worktrees]]),
-        });
-        const relinkedPath = resolved.get(sessionId)?.[0]?.worktreePath ?? workingDir;
-        const relinkedExists = await simpleSessionDirExists({ path: relinkedPath });
-        if (!relinkedExists) {
-          throw new Error(
-            'Session directory not found. It may have been moved outside the workspace folder.',
-          );
-        }
-        workingDir = relinkedPath;
-        set((state) => ({
-          sessionWorktrees: {
-            ...state.sessionWorktrees,
-            [sessionId]: resolved.get(sessionId)?.map((worktree) => worktree.worktreePath) ?? [
-              relinkedPath,
-            ],
-          },
-        }));
+      if (exists === false) {
+        throw new Error(
+          'Session directory not found. It may have been moved outside the workspace folder.',
+        );
       }
     }
 
@@ -710,12 +686,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
 
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
-    const scopeWorkspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    const isSessionDirScope = isBranchlessSession({
-      workspaceKind: scopeWorkspace?.kind,
-      branch: get().sessionBranches[sessionId],
-    });
-    const scopeMembers = scopeWorkspace?.kind === 'composite' ? (scopeWorkspace.members ?? []) : [];
+    const scopeMounts = get().sessionProjectMounts[sessionId] ?? [];
+    const activeProjectId = get().sessionActiveProject[sessionId] ?? session.activeProjectId;
+    const activeProject = get().projects.find((project) => project.id === activeProjectId);
+    const isSessionDirScope = activeProject?.kind === 'folder';
     const notifySnapshotFailure = async ({
       stage,
       message,
@@ -749,11 +723,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             'Prefer paths relative to your current working directory. If a request implies editing files outside this directory, stop and ask for explicit confirmation before touching them.',
             '[/session-directory-scope]',
           ]
-        : scopeMembers.length > 0
+        : scopeMounts.length > 1
           ? [
               '[multi-repo-scope]',
-              `You are operating across ${scopeMembers.length} linked git repositories mounted under: ${workingDir}`,
-              `Each repo lives in its own subfolder: ${scopeMembers.map((m) => m.mountName).join(', ')}.`,
+              `You are operating across ${scopeMounts.length} linked git repositories mounted under: ${workingDir}`,
+              `Each repo lives in its own subfolder: ${scopeMounts.map((mount) => mount.mountName).join(', ')}.`,
               'Each subfolder is a separate git repository with its own branch. Run git commands inside the relevant subfolder, never at the container root.',
               'ALL file operations MUST resolve inside one of these subfolders. Do NOT create files at the container root or outside it.',
               '[/multi-repo-scope]',

@@ -105,9 +105,7 @@ export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
               branch={branch}
               mountName={repo?.mountName ?? null}
               sessionId={sessionId}
-              canEdit={
-                workspace != null && !isBranchlessSession({ workspaceKind: workspace.kind, branch })
-              }
+              canEdit={workspace != null && !isBranchlessSession({ branch })}
             />
           ) : null}
         </div>

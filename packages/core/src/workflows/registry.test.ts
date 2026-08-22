@@ -29,12 +29,28 @@ function makeDb(): DbInterface {
 async function makeSeededDb(): Promise<DbInterface> {
   const db = makeDb();
   await migrate(db);
-  await insertWorkspace(db, {
-    id: WORKSPACE_ID,
-    name: 'test',
-    rootPath: '/fake/root',
-    createdAt: FIXED_NOW,
-    updatedAt: FIXED_NOW,
+  await insertWorkspace({
+    db,
+    workspace: {
+      id: WORKSPACE_ID,
+      name: 'test',
+      slug: 'test',
+      sessionsRoot: '/fake/root',
+      overrides: {
+        defaultProviderId: null,
+        defaultWorkflowId: null,
+        defaultBranchPrefix: null,
+        parallelEnabled: null,
+        defaultVerbosity: null,
+        providerBindings: null,
+        taskModels: null,
+        roleModels: null,
+        parallelAgents: null,
+        providerPool: null,
+      },
+      createdAt: FIXED_NOW,
+      updatedAt: FIXED_NOW,
+    },
   });
   return db;
 }

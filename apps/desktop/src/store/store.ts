@@ -36,6 +36,8 @@ import type {
   WorkflowExecutionMode,
   WorkflowSpendLimitMode,
   ProviderId,
+  Project,
+  ProjectId,
   ProviderCredential,
   CredentialId,
   FileVersionId,
@@ -53,8 +55,9 @@ import type {
   IntegrationCredentialId,
   Workspace,
   WorkspaceId,
+  WorkspaceProfile,
   WorkspaceIntegrationProvider,
-  WorkspaceScriptId,
+  ProjectScriptId,
   GhTokenStatus,
   PrMergeMethod,
   SessionViewPrefs,
@@ -163,6 +166,7 @@ import { createTranscriptsSlice } from './slices/transcripts';
 import { createSummariesSlice } from './slices/summaries';
 import { createSessionsSlice } from './slices/sessions';
 import { createWorkspacesSlice } from './slices/workspaces';
+import { createProjectsSlice } from './slices/projects';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
@@ -231,20 +235,22 @@ export type AppActions = {
   cancelProviderConnect(providerId: ProviderId): Promise<void>;
   dismissProviderConnect(providerId: ProviderId): void;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
-  addCompositeWorkspace(input: {
-    name?: string;
-    containerPath: string;
-    members: ReadonlyArray<{ workspaceId: WorkspaceId; mountName: string }>;
-  }): Promise<Workspace>;
   addSimpleWorkspace(input: { name: string; path: string }): Promise<Workspace>;
-  convertWorkspaceToRepo(input: {
+  addProject(input: {
     workspaceId: WorkspaceId;
-    remoteUrl: string;
-  }): Promise<Workspace>;
+    rootPath: string;
+    name?: string;
+  }): Promise<Project>;
+  removeProject(input: { projectId: ProjectId }): Promise<void>;
+  convertProjectToRepo(input: { projectId: ProjectId; remoteUrl: string }): Promise<Project>;
   renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;
+  updateWorkspaceProfile(input: {
+    workspaceId: WorkspaceId;
+    profile: WorkspaceProfile;
+  }): Promise<Workspace>;
   deleteWorkspace(id: WorkspaceId): Promise<void>;
-  loadWorkspaceGitStatus(input: { workspaceId: WorkspaceId }): Promise<void>;
-  fastForwardWorkspaceCheckout(input: { workspaceId: WorkspaceId }): Promise<void>;
+  loadProjectGitStatus(input: { projectId: ProjectId }): Promise<void>;
+  fastForwardProjectCheckout(input: { projectId: ProjectId }): Promise<void>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
   loadIntegrationCredentials(): Promise<void>;
   forgetIntegrationCredential(params: { credentialId: IntegrationCredentialId }): Promise<void>;
@@ -307,7 +313,7 @@ export type AppActions = {
     kickoffPrompt?: string;
     externalTasks?: ReadonlyArray<{
       provider: SessionExternalTaskProvider;
-      mountWorkspaceId?: WorkspaceId;
+      projectId?: ProjectId;
       externalId: string;
       identifier: string;
       url: string;
@@ -323,13 +329,13 @@ export type AppActions = {
     sessionId: SessionId,
     provider: SessionExternalTaskProvider,
     externalId: string,
-    mountWorkspaceId?: WorkspaceId,
+    projectId?: ProjectId,
   ): Promise<void>;
   changeSessionBranch(
     sessionId: SessionId,
     args: { branch: string; createNew: boolean },
   ): Promise<void>;
-  setSessionActiveMount(input: { sessionId: SessionId; workspaceId: WorkspaceId }): Promise<void>;
+  setSessionActiveProject(input: { sessionId: SessionId; projectId: ProjectId }): Promise<void>;
   reconcileSessionBranch(sessionId: SessionId, observedBranch: string): Promise<void>;
   amendSessionCommit(
     sessionId: SessionId,
@@ -465,19 +471,19 @@ export type AppActions = {
   loadScripts(workspaceId: WorkspaceId): Promise<void>;
   saveScript(input: {
     workspaceId: WorkspaceId;
-    id?: WorkspaceScriptId;
+    id?: ProjectScriptId;
     name: string;
     body: string;
   }): Promise<void>;
-  deleteScript(scriptId: WorkspaceScriptId, workspaceId: WorkspaceId): Promise<void>;
+  deleteScript(scriptId: ProjectScriptId, workspaceId: WorkspaceId): Promise<void>;
   runScript(
     sessionId: SessionId,
-    scriptId: WorkspaceScriptId,
+    scriptId: ProjectScriptId,
     cwd: string,
     cols?: number,
     rows?: number,
   ): Promise<ScriptRunResult>;
-  cancelScript(sessionId: SessionId, scriptId: WorkspaceScriptId): Promise<void>;
+  cancelScript(sessionId: SessionId, scriptId: ProjectScriptId): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
   savePhaseTemplate(template: WorkflowUpsertArgs): Promise<Workflow>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
@@ -822,11 +828,12 @@ export const initialState: AppState = {
   ...initialBugReportDraftState,
   ...createInitialSessionViewState({}),
   workspaces: [],
+  projects: [],
   workspaceIntegrations: {},
   integrationCredentials: [],
   integrationCredentialUsage: {},
-  workspaceGitStatus: {},
-  workspaceCheckoutPulling: {},
+  projectGitStatus: {},
+  projectCheckoutPulling: {},
   sessionExternalTasks: {},
   sessionEvents: {},
   currentWorkspaceId: null,
@@ -861,8 +868,8 @@ export const initialState: AppState = {
   sessionWorktrees: {},
   sessionWorktreeRecords: {},
   orphanWorktrees: {},
-  sessionMounts: {},
-  sessionActiveMount: {},
+  sessionProjectMounts: {},
+  sessionActiveProject: {},
   sessionBranches: {},
   sessionTelemetry: {},
   workspaceSummary: null,
@@ -878,7 +885,7 @@ export const initialState: AppState = {
   providerSpendBreakdown: [],
   budgetAlerts: [],
   skills: {},
-  workspaceScripts: {},
+  projectScripts: {},
   scriptRuns: {},
   phaseTemplates: {},
   stepLibrary: {},
@@ -989,6 +996,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSummariesSlice(set, get),
   ...createSessionsSlice(set, get),
   ...createWorkspacesSlice(set, get),
+  ...createProjectsSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),

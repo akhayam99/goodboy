@@ -77,7 +77,12 @@ const session = { id: 's-1' } as Session;
 const wsId = 'ws-a' as WorkspaceId;
 const onCreate = vi.fn();
 
-const workspace = { id: wsId, kind: 'repo', rootPath: '/tmp/fresh-idea' } as Workspace;
+const workspace = {
+  id: wsId,
+  name: 'fresh-idea',
+  slug: 'fresh-idea',
+  sessionsRoot: '/tmp/fresh-idea',
+} as Workspace;
 
 const boxOf = (left: number, top: number, width: number, height: number) =>
   ({

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Check, Code2, FolderGit2, RefreshCw } from 'lucide-react';
 import { Button, Chip } from '@goodboy/ui';
-import type { Workspace, WorkspaceKind } from '@goodboy/types';
+import type { Workspace } from '@goodboy/types';
 import type { WorkspaceLinkMode } from '../../../workspace/components/WorkspaceLinkForm';
 import { WorkspaceLinkForm } from '../../../workspace/components/WorkspaceLinkForm';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
@@ -15,12 +15,6 @@ type Props = {
   readonly onAudienceChange: (audience: WorkspaceAudience | null) => void;
   readonly isChanging: boolean;
   readonly onIsChangingChange: (isChanging: boolean) => void;
-};
-
-const WORKSPACE_KIND_LABELS: Record<WorkspaceKind, string> = {
-  repo: 'Repository',
-  composite: 'Composite',
-  simple: 'Standalone',
 };
 
 const AUDIENCE_MODES: Record<WorkspaceAudience, ReadonlyArray<WorkspaceLinkMode>> = {
@@ -68,12 +62,12 @@ export const WorkspaceStep = ({
                   tone="neutral"
                   size="3xs"
                   bordered={false}
-                  label={WORKSPACE_KIND_LABELS[workspace.kind ?? 'repo']}
+                  label="Workspace"
                   className="shrink-0"
                 />
               </span>
               <span className="block truncate font-mono text-xs text-muted-foreground/80">
-                {workspace.rootPath}
+                {workspace.sessionsRoot ?? ''}
               </span>
             </span>
           </div>

@@ -9,6 +9,7 @@ import type {
   TurnEvent,
   Workflow,
   WorkflowId,
+  ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
 import { ROLE_TO_KIND, kindRouting } from '../features/session/agent-kind';
@@ -39,6 +40,49 @@ vi.mock('../shared/lib/db', () => ({
 }));
 
 vi.mock('@goodboy/db', () => ({
+  getWorkspaceById: vi.fn(async ({ id }: { id: WorkspaceId }) => ({
+    id,
+    name: 'ws',
+    slug: 'ws',
+    sessionsRoot: '/tmp',
+    overrides: {
+      defaultProviderId: null,
+      defaultWorkflowId: null,
+      defaultBranchPrefix: null,
+      parallelEnabled: null,
+      defaultVerbosity: null,
+      providerBindings: null,
+      taskModels: null,
+      roleModels: null,
+      parallelAgents: null,
+      providerPool: null,
+    },
+    createdAt: '',
+    updatedAt: '',
+  })),
+  listProjectsForWorkspace: vi.fn(async ({ workspaceId }: { workspaceId: WorkspaceId }) => [
+    {
+      id: 'project-1' as ProjectId,
+      workspaceId,
+      name: 'repo',
+      rootPath: '/tmp',
+      kind: 'repo',
+      overrides: {
+        defaultProviderId: null,
+        defaultWorkflowId: null,
+        defaultBranchPrefix: null,
+        parallelEnabled: null,
+        defaultVerbosity: null,
+        providerBindings: null,
+        taskModels: null,
+        roleModels: null,
+        parallelAgents: null,
+        providerPool: null,
+      },
+      createdAt: '',
+      updatedAt: '',
+    },
+  ]),
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),

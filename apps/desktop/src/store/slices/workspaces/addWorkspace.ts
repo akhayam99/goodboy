@@ -1,10 +1,20 @@
-import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  OverrideSettings,
+  Project,
+  ProjectId,
+  Workspace,
+  WorkspaceId,
+} from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { seedWorkflowLibrary } from '@goodboy/core';
 import {
-  findWorkspaceByRootPath,
+  findProjectByRootPath,
+  getWorkspaceById,
+  insertProject,
   insertWorkspace,
-  reconnectWorkspace as reconnectWorkspaceInDb,
+  reconnectProject,
+  reconnectWorkspace,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { validateGitRepo } from '../../../shared/lib/repo';
@@ -13,82 +23,126 @@ import { invokeSkillRescan } from '../../../features/skills/skills';
 import type { GetFn, SetFn } from './types';
 
 type Input = {
-  rootPath: string;
-  name?: string;
+  readonly rootPath: string;
+  readonly name?: string;
+};
+
+const EMPTY_OVERRIDES: OverrideSettings = {
+  defaultProviderId: null,
+  defaultWorkflowId: null,
+  defaultBranchPrefix: null,
+  parallelEnabled: null,
+  defaultVerbosity: null,
+  providerBindings: null,
+  taskModels: null,
+  roleModels: null,
+  parallelAgents: null,
+  providerPool: null,
+};
+
+type SlugParams = {
+  readonly name: string;
+  readonly id: WorkspaceId;
+};
+
+const workspaceSlug = ({ name, id }: SlugParams): string => {
+  const prefix = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 32);
+  return `${prefix.length === 0 ? 'workspace' : prefix}-${id.slice(0, 8)}`;
 };
 
 export const addWorkspace = (set: SetFn, get: GetFn) => {
   return async ({ rootPath, name }: Input): Promise<Workspace> => {
     const check = await validateGitRepo(rootPath);
-    const gitRoot = check.isRepo && check.rootPath != null && check.rootPath !== '';
-    const resolvedRoot = gitRoot ? check.rootPath : check.resolvedPath;
+    const isRepo = check.isRepo && check.rootPath != null && check.rootPath !== '';
+    const resolvedRoot = isRepo ? check.rootPath : check.resolvedPath;
     if (resolvedRoot == null || resolvedRoot === '') {
       throw new Error(check.error ?? 'folder not found');
     }
 
-    const onDisk = await findWorkspaceByRootPath(tauriDatabase, resolvedRoot);
-    if (onDisk) {
-      if (!onDisk.disconnectedAt) {
-        throw new Error(`workspace already exists: ${onDisk.name}`);
+    const existingProject = await findProjectByRootPath({
+      db: tauriDatabase,
+      rootPath: resolvedRoot,
+    });
+    if (existingProject != null) {
+      if (existingProject.disconnectedAt === undefined) {
+        throw new Error(`project already exists: ${existingProject.name}`);
       }
       const now = new Date().toISOString() as IsoDateTime;
-      await reconnectWorkspaceInDb(tauriDatabase, onDisk.id, now);
-      const reactivated: Workspace = { ...onDisk, updatedAt: now, lastAccessedAt: now };
-      delete (reactivated as { disconnectedAt?: IsoDateTime }).disconnectedAt;
-      set((state) => ({ workspaces: [reactivated, ...state.workspaces] }));
-      await get()
-        .loadIntegrations(reactivated.id)
-        .catch(() => {});
-      try {
-        const templates = await invokeWorkflowList(reactivated.id);
-        set((state) => ({
-          phaseTemplates: { ...state.phaseTemplates, [reactivated.id]: templates },
-        }));
-      } catch {
-        // non-fatal: templates can be re-fetched on next workspace switch
+      await reconnectWorkspace({ db: tauriDatabase, id: existingProject.workspaceId, at: now });
+      await reconnectProject({ db: tauriDatabase, id: existingProject.id, at: now });
+      const workspace = await getWorkspaceById({
+        db: tauriDatabase,
+        id: existingProject.workspaceId,
+      });
+      if (workspace === null) {
+        throw new Error(`workspace not found: ${existingProject.workspaceId}`);
       }
-      return reactivated;
+      const project: Project = {
+        ...existingProject,
+        updatedAt: now,
+        lastAccessedAt: now,
+      };
+      set((state) => ({
+        workspaces: [workspace, ...state.workspaces.filter((item) => item.id !== workspace.id)],
+        projects: [project, ...state.projects.filter((item) => item.id !== project.id)],
+      }));
+      return workspace;
     }
 
     const inferredName =
-      name?.trim() || resolvedRoot.split('/').filter(Boolean).at(-1) || 'workspace';
+      name?.trim() ||
+      resolvedRoot
+        .split('/')
+        .filter((part) => part.length > 0)
+        .at(-1) ||
+      'workspace';
     const now = new Date().toISOString() as IsoDateTime;
+    const workspaceId = crypto.randomUUID() as WorkspaceId;
     const workspace: Workspace = {
-      id: crypto.randomUUID() as WorkspaceId,
+      id: workspaceId,
+      name: inferredName,
+      slug: workspaceSlug({ name: inferredName, id: workspaceId }),
+      sessionsRoot: resolvedRoot,
+      overrides: EMPTY_OVERRIDES,
+      createdAt: now,
+      updatedAt: now,
+      lastAccessedAt: now,
+    };
+    const project: Project = {
+      id: crypto.randomUUID() as ProjectId,
+      workspaceId,
       name: inferredName,
       rootPath: resolvedRoot,
-      kind: gitRoot ? 'repo' : 'simple',
+      kind: isRepo ? 'repo' : 'folder',
+      overrides: EMPTY_OVERRIDES,
       createdAt: now,
       updatedAt: now,
       lastAccessedAt: now,
     };
     try {
-      await insertWorkspace(tauriDatabase, workspace);
-    } catch (err) {
-      const msg = formatError(err);
-      if (msg.toLowerCase().includes('unique')) {
+      await insertWorkspace({ db: tauriDatabase, workspace });
+      await insertProject({ db: tauriDatabase, project });
+    } catch (error) {
+      const message = formatError(error);
+      if (message.toLowerCase().includes('unique')) {
         throw new Error(`workspace already exists at ${resolvedRoot}`);
       }
-      throw new Error(`failed to register workspace: ${msg}`);
+      throw new Error(`failed to register workspace: ${message}`);
     }
-    set((state) => ({ workspaces: [workspace, ...state.workspaces] }));
+    set((state) => ({
+      workspaces: [workspace, ...state.workspaces],
+      projects: [project, ...state.projects],
+    }));
 
-    try {
-      await seedWorkflowLibrary({ db: tauriDatabase }, workspace.id);
-      const templates = await invokeWorkflowList(workspace.id);
-      set((state) => ({
-        phaseTemplates: { ...state.phaseTemplates, [workspace.id]: templates },
-      }));
-    } catch {
-      // Workflow seeding must not block workspace creation; user can edit later.
-    }
-
-    try {
-      const skills = await invokeSkillRescan(workspace.id);
-      set((state) => ({ skills: { ...state.skills, [workspace.id]: skills } }));
-    } catch {
-      // Discovery failure must not block workspace creation; user can rescan from Settings.
-    }
+    await seedWorkflowLibrary({ db: tauriDatabase }, workspace.id).catch(() => undefined);
+    const templates = await invokeWorkflowList(workspace.id).catch(() => []);
+    set((state) => ({ phaseTemplates: { ...state.phaseTemplates, [workspace.id]: templates } }));
+    const skills = await invokeSkillRescan(workspace.id).catch(() => []);
+    set((state) => ({ skills: { ...state.skills, [workspace.id]: skills } }));
 
     return workspace;
   };

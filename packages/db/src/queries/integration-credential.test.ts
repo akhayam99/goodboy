@@ -3,7 +3,7 @@ import type {
   IntegrationCredential,
   IntegrationCredentialId,
   IsoDateTime,
-  WorkspaceId,
+  ProjectId,
   WorkspaceIntegration,
   WorkspaceIntegrationId,
 } from '@goodboy/types';
@@ -25,8 +25,13 @@ const seed = async () => {
   const now = Date.now();
   for (const id of ['w1', 'w2']) {
     await db.execute(
-      'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
       [id, id, `/tmp/${id}`, now, now],
+    );
+    await db.execute(
+      `INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+       VALUES (?, ?, ?, ?, 'repo', ?, ?)`,
+      [id, id, id, `/tmp/${id}`, now, now],
     );
   }
   return db;
@@ -49,7 +54,7 @@ const makeIntegration = (
 ): WorkspaceIntegration =>
   ({
     id: id as WorkspaceIntegrationId,
-    workspaceId: workspaceId as WorkspaceId,
+    workspaceId: workspaceId as ProjectId,
     provider: 'linear',
     config: { workspaceUrlKey: 'acme', viewerUserId: 'u-1', viewerName: 'Grace Hopper' },
     credentialId: credentialId as IntegrationCredentialId,
@@ -113,7 +118,7 @@ describe('integration_credentials queries', () => {
     await upsertWorkspaceIntegration(db, makeIntegration('w1', 'cred-1', 'wi-1'));
     await upsertWorkspaceIntegration(db, makeIntegration('w2', 'cred-1', 'wi-2'));
 
-    await deleteWorkspaceIntegration(db, 'w1' as WorkspaceId, 'linear');
+    await deleteWorkspaceIntegration(db, 'w1' as ProjectId, 'linear');
 
     await expect(
       deleteIntegrationCredential(db, 'cred-1' as IntegrationCredentialId),
@@ -126,7 +131,7 @@ describe('integration_credentials queries', () => {
     await upsertIntegrationCredential(db, makeCredential());
     await upsertWorkspaceIntegration(db, makeIntegration('w1', 'cred-1', 'wi-1'));
 
-    await deleteWorkspaceIntegration(db, 'w1' as WorkspaceId, 'linear');
+    await deleteWorkspaceIntegration(db, 'w1' as ProjectId, 'linear');
     await deleteIntegrationCredential(db, 'cred-1' as IntegrationCredentialId);
 
     expect(await listIntegrationCredentials(db)).toEqual([]);

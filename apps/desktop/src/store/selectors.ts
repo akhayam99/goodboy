@@ -102,10 +102,11 @@ type StageInfoState = Pick<
   AppState,
   | 'sessions'
   | 'workspaces'
+  | 'projects'
   | 'sessionBranches'
   | 'sessionWorktrees'
-  | 'sessionMounts'
-  | 'sessionActiveMount'
+  | 'sessionProjectMounts'
+  | 'sessionActiveProject'
   | 'sessionGithub'
   | 'sessionGitlabMr'
   | 'sessionOpenQuestions'
@@ -141,7 +142,6 @@ function sessionHasRunningAgentIn(state: StageInfoState, sessionId: SessionId): 
 function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo {
   const sessionId = session.id as SessionId;
   const isBranchless = isBranchlessSession({
-    workspaceKind: state.workspaces.find((workspace) => workspace.id === session.workspaceId)?.kind,
     branch: state.sessionBranches[sessionId],
   });
   const request = resolveSessionRequest({
@@ -207,26 +207,28 @@ export const useSortedGroupedSessions = (
   const currentSessionId = useAppStore((s) => (needsStage ? s.currentSessionId : null));
   const githubStatus = useAppStore((s) => (needsStage ? s.githubStatus : null));
   const workspaces = useAppStore((s) => (needsStage ? s.workspaces : EMPTY_WORKSPACES));
+  const projects = useAppStore((s) => (needsStage ? s.projects : []));
   const sessionBranches = useAppStore((s) =>
     needsStage ? s.sessionBranches : (EMPTY_GITHUB_STATE as typeof s.sessionBranches),
   );
   const sessionWorktrees = useAppStore((s) =>
     needsStage ? s.sessionWorktrees : (EMPTY_GITHUB_STATE as typeof s.sessionWorktrees),
   );
-  const sessionMounts = useAppStore((s) =>
-    needsStage ? s.sessionMounts : (EMPTY_GITHUB_STATE as typeof s.sessionMounts),
+  const sessionProjectMounts = useAppStore((s) =>
+    needsStage ? s.sessionProjectMounts : (EMPTY_GITHUB_STATE as typeof s.sessionProjectMounts),
   );
-  const sessionActiveMount = useAppStore((s) =>
-    needsStage ? s.sessionActiveMount : (EMPTY_GITHUB_STATE as typeof s.sessionActiveMount),
+  const sessionActiveProject = useAppStore((s) =>
+    needsStage ? s.sessionActiveProject : (EMPTY_GITHUB_STATE as typeof s.sessionActiveProject),
   );
   return useMemo(() => {
     const partial: StageInfoState = {
       sessions,
       workspaces,
+      projects,
       sessionBranches,
       sessionWorktrees,
-      sessionMounts,
-      sessionActiveMount,
+      sessionProjectMounts,
+      sessionActiveProject,
       sessionGithub,
       sessionGitlabMr,
       sessionOpenQuestions,
@@ -247,10 +249,11 @@ export const useSortedGroupedSessions = (
     prefs,
     needsStage,
     workspaces,
+    projects,
     sessionBranches,
     sessionWorktrees,
-    sessionMounts,
-    sessionActiveMount,
+    sessionProjectMounts,
+    sessionActiveProject,
     sessionGithub,
     sessionGitlabMr,
     sessionOpenQuestions,
@@ -302,19 +305,21 @@ export const useStageGroupedSessions = (
   const currentSessionId = useAppStore((s) => s.currentSessionId);
   const githubStatus = useAppStore((s) => s.githubStatus);
   const workspaces = useAppStore((s) => s.workspaces);
+  const projects = useAppStore((s) => s.projects);
   const sessionBranches = useAppStore((s) => s.sessionBranches);
   const sessionWorktrees = useAppStore((s) => s.sessionWorktrees);
-  const sessionMounts = useAppStore((s) => s.sessionMounts);
-  const sessionActiveMount = useAppStore((s) => s.sessionActiveMount);
+  const sessionProjectMounts = useAppStore((s) => s.sessionProjectMounts);
+  const sessionActiveProject = useAppStore((s) => s.sessionActiveProject);
   const previousRef = useRef<ReadonlyArray<GroupedSessions> | null>(null);
   const grouped = useMemo(() => {
     const partial: StageInfoState = {
       sessions,
       workspaces,
+      projects,
       sessionBranches,
       sessionWorktrees,
-      sessionMounts,
-      sessionActiveMount,
+      sessionProjectMounts,
+      sessionActiveProject,
       sessionGithub,
       sessionGitlabMr,
       sessionOpenQuestions,
@@ -337,10 +342,11 @@ export const useStageGroupedSessions = (
     sessions,
     prefs.sort,
     workspaces,
+    projects,
     sessionBranches,
     sessionWorktrees,
-    sessionMounts,
-    sessionActiveMount,
+    sessionProjectMounts,
+    sessionActiveProject,
     sessionGithub,
     sessionGitlabMr,
     sessionOpenQuestions,

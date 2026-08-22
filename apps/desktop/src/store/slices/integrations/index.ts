@@ -13,16 +13,16 @@ import type { GetFn, SetFn } from './types';
 
 export const createIntegrationsSlice = (set: SetFn, get: GetFn) => {
   return {
-    loadIntegrations: loadIntegrations(set),
+    loadIntegrations: loadIntegrations(set, get),
     loadIntegrationCredentials: loadIntegrationCredentials(set),
     forgetIntegrationCredential: forgetIntegrationCredential(set, get),
-    disconnectIntegration: disconnectIntegration(set),
-    connectLinear: connectLinear(set),
-    connectSentry: connectSentry(set),
+    disconnectIntegration: disconnectIntegration(set, get),
+    connectLinear: connectLinear(set, get),
+    connectSentry: connectSentry(set, get),
     connectGitlab: connectGitlab(set, get),
     connectJira: connectJira(set, get),
     connectBitbucket: connectBitbucket(set, get),
-    connectSlack: connectSlack(set),
+    connectSlack: connectSlack(set, get),
     disconnectGithub: disconnectGithub(),
   };
 };

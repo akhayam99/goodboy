@@ -1,4 +1,4 @@
-import type { SessionId, WorkflowId, WorkspaceId } from './ids';
+import type { ProjectId, SessionId, WorkflowId, WorkspaceId } from './ids';
 import type { ModelEffort, ProviderId } from './provider-registry';
 import type { AgentRole } from './workflow';
 
@@ -97,7 +97,7 @@ export type OverrideSettings = Readonly<{
   taskModels: TaskModelPreferences | null;
   roleModels: RoleModelPreferences | null;
   parallelAgents: boolean | null;
-  enabledProviders?: ReadonlyArray<ProviderId>;
+  providerPool: ReadonlyArray<ProviderId> | null;
 }>;
 
 export type ResolvedSettings = Readonly<{
@@ -119,4 +119,5 @@ export type GlobalSettings = Readonly<{
 export type SettingsScope =
   | { kind: 'global' }
   | { kind: 'workspace'; workspaceId: WorkspaceId }
+  | { kind: 'project'; projectId: ProjectId }
   | { kind: 'session'; sessionId: SessionId };

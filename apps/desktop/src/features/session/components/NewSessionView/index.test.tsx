@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { WorkspaceGitStatus, WorkspaceId, WorkspaceIntegration } from '@goodboy/types';
+import type {
+  ProjectId,
+  WorkspaceGitStatus,
+  WorkspaceId,
+  WorkspaceIntegration,
+} from '@goodboy/types';
 import type {
   ClearNewSessionDraftParams,
   NewSessionDraft,
@@ -18,13 +23,19 @@ const h = vi.hoisted(() => ({
     workspaces: [
       {
         id: 'workspace-1',
+      },
+    ],
+    projects: [
+      {
+        id: 'project-1',
+        workspaceId: 'workspace-1',
         rootPath: '/repo',
-        kind: 'repo' as 'repo' | 'simple',
+        kind: 'repo' as 'repo' | 'folder',
       },
     ],
     workspaceOverrides: {},
-    workspaceGitStatus: {} as Record<string, WorkspaceGitStatus | undefined>,
-    loadWorkspaceGitStatus: vi.fn(async () => undefined),
+    projectGitStatus: {} as Record<string, WorkspaceGitStatus | undefined>,
+    loadProjectGitStatus: vi.fn(async () => undefined),
     workspaceIntegrations: {} as Record<string, ReadonlyArray<WorkspaceIntegration>>,
     newSessionDrafts: {} as Record<string, NewSessionDraft | undefined>,
     sessionBranches: {},
@@ -79,11 +90,12 @@ vi.mock('../../../chat/components/ChatInput/hooks/usePendingAttachments', () => 
 import { NewSessionView } from './index';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 
 const integration = (provider: 'linear' | 'sentry' | 'gitlab'): WorkspaceIntegration =>
   ({
     id: `${provider}-1`,
-    workspaceId: WORKSPACE_ID,
+    workspaceId: PROJECT_ID,
     provider,
     config: { host: 'https://gitlab.com' },
   }) as WorkspaceIntegration;
@@ -110,10 +122,10 @@ const SENTRY_ISSUE = {
 
 beforeEach(() => {
   h.isGithubAuthenticated = true;
-  h.store.workspaces[0]!.kind = 'repo';
+  h.store.projects[0]!.kind = 'repo';
   h.store.workspaceIntegrations = {};
-  h.store.workspaceGitStatus = {};
-  h.store.loadWorkspaceGitStatus.mockClear();
+  h.store.projectGitStatus = {};
+  h.store.loadProjectGitStatus.mockClear();
   h.store.newSessionDrafts = {};
   h.store.createSession.mockReset();
   h.store.setNewSessionDraft.mockClear();
@@ -738,7 +750,7 @@ describe('NewSessionView issue sources', () => {
   });
 
   it('derives the folder name from the goal and stops following after manual edits', () => {
-    h.store.workspaces[0]!.kind = 'simple';
+    h.store.projects[0]!.kind = 'folder';
     const view = render(
       <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
     );
@@ -788,7 +800,7 @@ describe('NewSessionView issue sources', () => {
   });
 
   it('blocks creation when the folder name is invalid and explains why', () => {
-    h.store.workspaces[0]!.kind = 'simple';
+    h.store.projects[0]!.kind = 'folder';
     const view = render(
       <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
     );
@@ -809,7 +821,7 @@ describe('NewSessionView issue sources', () => {
   });
 
   it('blocks creation when the folder already exists', async () => {
-    h.store.workspaces[0]!.kind = 'simple';
+    h.store.projects[0]!.kind = 'folder';
     h.simpleSessionDirExists.mockResolvedValueOnce(true);
     const view = render(
       <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
@@ -838,7 +850,7 @@ describe('NewSessionView issue sources', () => {
   });
 
   it('hides issue and branch controls and creates with the typed folder name for simple workspaces', async () => {
-    h.store.workspaces[0]!.kind = 'simple';
+    h.store.projects[0]!.kind = 'folder';
     h.store.workspaceIntegrations = {
       [WORKSPACE_ID]: [integration('linear'), integration('sentry')],
     };
@@ -900,7 +912,7 @@ const gitStatus = (state: WorkspaceGitStatus['state']): WorkspaceGitStatus => ({
 
 describe('NewSessionView git gate', () => {
   it('explains the missing repository instead of a form when opened with no git', () => {
-    h.store.workspaceGitStatus = { [WORKSPACE_ID]: gitStatus('absent') };
+    h.store.projectGitStatus = { [PROJECT_ID]: gitStatus('absent') };
 
     render(
       <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
@@ -913,7 +925,7 @@ describe('NewSessionView git gate', () => {
   });
 
   it('explains the missing first commit instead of a form when the repository is unborn', () => {
-    h.store.workspaceGitStatus = { [WORKSPACE_ID]: gitStatus('unborn') };
+    h.store.projectGitStatus = { [PROJECT_ID]: gitStatus('unborn') };
 
     render(
       <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
@@ -925,7 +937,7 @@ describe('NewSessionView git gate', () => {
   });
 
   it('never reaches createSession from the blocked surface', () => {
-    h.store.workspaceGitStatus = { [WORKSPACE_ID]: gitStatus('absent') };
+    h.store.projectGitStatus = { [PROJECT_ID]: gitStatus('absent') };
     const onClose = vi.fn();
 
     render(
@@ -938,7 +950,7 @@ describe('NewSessionView git gate', () => {
   });
 
   it('renders the normal form once the repository is ready', () => {
-    h.store.workspaceGitStatus = { [WORKSPACE_ID]: gitStatus('ready') };
+    h.store.projectGitStatus = { [PROJECT_ID]: gitStatus('ready') };
 
     render(
       <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
@@ -949,8 +961,8 @@ describe('NewSessionView git gate', () => {
   });
 
   it('renders the normal form for a standalone workspace and never polls git', () => {
-    h.store.workspaces[0]!.kind = 'simple';
-    h.store.workspaceGitStatus = {};
+    h.store.projects[0]!.kind = 'folder';
+    h.store.projectGitStatus = {};
 
     render(
       <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
@@ -958,6 +970,6 @@ describe('NewSessionView git gate', () => {
 
     expect(screen.queryByText('A session needs a repository first')).toBeNull();
     expect(screen.getByRole('button', { name: 'Create session' })).toBeDefined();
-    expect(h.store.loadWorkspaceGitStatus).not.toHaveBeenCalled();
+    expect(h.store.loadProjectGitStatus).not.toHaveBeenCalled();
   });
 });

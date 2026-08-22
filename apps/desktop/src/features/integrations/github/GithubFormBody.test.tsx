@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type {
   GitlabWorkspaceIntegration,
   IntegrationCredentialId,
+  ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
 
@@ -29,10 +30,11 @@ vi.mock('../../github/github', () => ({
 }));
 
 const WS_ID = 'ws-1' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 
 const gitlabIntegration: GitlabWorkspaceIntegration = {
   id: 'wi-1' as never,
-  workspaceId: WS_ID,
+  workspaceId: PROJECT_ID,
   provider: 'gitlab',
   credentialId: 'cred-1' as IntegrationCredentialId,
   config: { userName: 'octo', userId: '42', host: 'https://gitlab.com' },

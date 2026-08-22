@@ -230,7 +230,26 @@ describe('sendTurn, provider failure fallback', () => {
       ],
       authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
   };

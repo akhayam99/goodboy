@@ -33,8 +33,8 @@ const anchored = (): RefObject<HTMLElement | null> => {
 
 beforeEach(() => {
   state.workspaces = [
-    { id: 'ws-a', name: 'alpha', rootPath: '/repos/alpha' } as Workspace,
-    { id: 'ws-b', name: 'bravo', rootPath: '/repos/bravo' } as Workspace,
+    { id: 'ws-a', name: 'alpha', slug: 'alpha', sessionsRoot: '/repos/alpha' } as Workspace,
+    { id: 'ws-b', name: 'bravo', slug: 'bravo', sessionsRoot: '/repos/bravo' } as Workspace,
   ];
   state.currentWorkspace = state.workspaces[0] ?? null;
   state.shown = new Set();

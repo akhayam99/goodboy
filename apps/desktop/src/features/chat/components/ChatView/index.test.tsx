@@ -22,8 +22,14 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
     sessionPlans: {} as Record<string, ReadonlyArray<unknown>>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     sessionBranches: {} as Record<string, string>,
-    sessionMounts: {} as Record<string, ReadonlyArray<never>>,
-    sessionActiveMount: {} as Record<string, string>,
+    sessionProjectMounts: {} as Record<string, ReadonlyArray<never>>,
+    sessionActiveProject: {} as Record<string, string>,
+    projects: [] as ReadonlyArray<{
+      id: string;
+      workspaceId: string;
+      rootPath: string;
+      kind: 'repo' | 'folder';
+    }>,
     workspaces: [] as ReadonlyArray<{ id: string; rootPath: string; kind: string }>,
     authResults: {} as Record<string, unknown>,
     refreshProviders: vi.fn(async () => undefined),
@@ -121,8 +127,9 @@ beforeEach(() => {
   state.sessionPhaseRuns = {};
   state.sessionWorktrees = {};
   state.sessionBranches = {};
-  state.sessionMounts = {};
-  state.sessionActiveMount = {};
+  state.sessionProjectMounts = {};
+  state.sessionActiveProject = {};
+  state.projects = [{ id: 'project-1', workspaceId: 'ws-1', rootPath: '/repo', kind: 'repo' }];
   state.workspaces = [{ id: 'ws-1', rootPath: '/repo', kind: 'repo' }];
   state.authResults = {};
   state.settings = {};
@@ -150,6 +157,18 @@ describe('ChatView', () => {
   it('offers the worktree diff to a session that owns a branch', () => {
     state.sessionWorktrees = { 'sess-1': ['/repo/.goodboy/worktrees/gb-1'] };
     state.sessionBranches = { 'sess-1': 'gb/thing' };
+    state.sessionProjectMounts = {
+      'sess-1': [
+        {
+          projectId: 'project-1',
+          mountName: 'repo',
+          repoRoot: '/repo',
+          worktreePath: '/repo/.goodboy/worktrees/gb-1',
+          branch: 'gb/thing',
+        },
+      ],
+    } as never;
+    state.sessionActiveProject = { 'sess-1': 'project-1' };
     render(<ChatView session={session} />);
     const props = diffViewerMock.mock.calls.at(-1)?.[0] as { loader?: unknown };
     expect(props.loader).toBeTypeOf('function');

@@ -56,11 +56,12 @@ export const LaunchSessionPanel = ({
     (state) => state.workspaceOverrides?.[workspaceId] ?? null,
   );
   const rootPath = useAppStore(
-    (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.rootPath ?? null,
+    (state) =>
+      state.projects?.find((project) => project.workspaceId === workspaceId)?.rootPath ?? null,
   );
   const isBranchless = useAppStore(
     (state) =>
-      state.workspaces.find((workspace) => workspace.id === workspaceId)?.kind === 'simple',
+      state.projects?.find((project) => project.workspaceId === workspaceId)?.kind === 'folder',
   );
   const adoptable = isBranchless ? null : adoptableInput;
   const { showToast } = useToast();

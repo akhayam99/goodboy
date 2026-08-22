@@ -7,11 +7,13 @@ const { state, currentWorkspace, activityBar } = vi.hoisted(() => ({
     archivedSessions: {} as Record<string, ReadonlyArray<unknown>>,
     setCurrentSession: vi.fn(),
     loadArchivedSessions: vi.fn(),
+    projects: [] as ReadonlyArray<never>,
   },
   currentWorkspace: {
     id: 'ws-1' as WorkspaceId,
     name: 'Test WS',
-    rootPath: '/code/test-ws',
+    slug: 'test-ws',
+    sessionsRoot: '/code/test-ws',
   } as Workspace,
   activityBar: { onSelectSession: vi.fn() as (id: SessionId) => void },
 }));

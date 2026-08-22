@@ -16,6 +16,8 @@ import type {
   PlanConsumptionId,
   PlanId,
   PlanWithCount,
+  Project,
+  ProjectId,
   ProviderRunId,
   Session,
   SessionId,
@@ -30,8 +32,8 @@ import type {
   WorkspaceId,
   WorkspaceIntegration,
   WorkspaceIntegrationId,
-  WorkspaceScript,
-  WorkspaceScriptId,
+  ProjectScript,
+  ProjectScriptId,
 } from '@goodboy/types';
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -67,9 +69,9 @@ const listIntegrationCredentialsSpy = vi.fn(async () => [] as ReadonlyArray<Inte
 const countWorkspacesPerIntegrationCredentialSpy = vi.fn(
   async () => ({}) as Record<string, number>,
 );
-const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>);
-const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
-const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
+const listProjectScriptsSpy = vi.fn(async () => [] as ReadonlyArray<ProjectScript>);
+const upsertProjectScriptSpy = vi.fn(async () => undefined);
+const deleteProjectScriptSpy = vi.fn(async () => undefined);
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
@@ -125,9 +127,9 @@ vi.mock('@goodboy/db', () => ({
   detachWorkflowFromSession: vi.fn(async () => undefined),
   updateWorkflowOrder: vi.fn(async () => undefined),
   updateSessionWorkflowStep: vi.fn(async () => undefined),
-  listWorkspaceScripts: listWorkspaceScriptsSpy,
-  upsertWorkspaceScript: upsertWorkspaceScriptSpy,
-  deleteWorkspaceScript: deleteWorkspaceScriptSpy,
+  listProjectScripts: listProjectScriptsSpy,
+  upsertProjectScript: upsertProjectScriptSpy,
+  deleteProjectScript: deleteProjectScriptSpy,
   upsertContextSlot: vi.fn(async () => undefined),
   listOpenQuestionsForSession: vi.fn(async () => []),
   insertNudgeEvent: insertNudgeEventSpy,
@@ -400,6 +402,7 @@ vi.mock('../../../features/settings/config-export', () => ({
 
 const WS_ID = 'workspace-1' as WorkspaceId;
 const WS_ID_2 = 'workspace-2' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 const SESSION_ID = 'session-1' as SessionId;
 const SESSION_ID_2 = 'session-2' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -412,13 +415,37 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {
     id: WS_ID,
     name: 'ws',
-    rootPath: '/tmp/repo',
+    slug: 'ws',
+    sessionsRoot: '/tmp/repo',
+    overrides: {
+      defaultProviderId: null,
+      defaultWorkflowId: null,
+      defaultBranchPrefix: null,
+      parallelEnabled: null,
+      defaultVerbosity: null,
+      providerBindings: null,
+      taskModels: null,
+      roleModels: null,
+      parallelAgents: null,
+      providerPool: null,
+    },
     createdAt: NOW,
     updatedAt: NOW,
     lastAccessedAt: NOW,
     ...overrides,
   };
 }
+
+const buildProject = (): Project => ({
+  id: PROJECT_ID,
+  workspaceId: WS_ID,
+  name: 'repo',
+  rootPath: '/tmp/repo',
+  kind: 'repo',
+  overrides: buildWorkspace().overrides,
+  createdAt: NOW,
+  updatedAt: NOW,
+});
 
 function buildSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -483,7 +510,7 @@ describe('store contract', () => {
     invokePlanListSpy.mockResolvedValue([]);
     invokeListConsumptionsForPlanSpy.mockResolvedValue([]);
     invokeWorkspacesWithUnreadSpy.mockResolvedValue([]);
-    listWorkspaceScriptsSpy.mockResolvedValue([]);
+    listProjectScriptsSpy.mockResolvedValue([]);
     listIntegrationsForWorkspaceSpy.mockResolvedValue([]);
     getWorkspaceIntegrationSpy.mockResolvedValue(null);
     listDiffCommentsSpy.mockResolvedValue([]);
@@ -495,6 +522,7 @@ describe('store contract', () => {
       const snap = store.getState();
       resetState = {
         workspaces: [],
+        projects: [buildProject()],
         workspaceIntegrations: {},
         integrationCredentials: [],
         integrationCredentialUsage: {},
@@ -528,7 +556,7 @@ describe('store contract', () => {
         budgetAlerts: [],
         systemAlerts: [],
         skills: {},
-        workspaceScripts: {},
+        projectScripts: {},
         scriptRuns: {},
         phaseTemplates: {},
         sessionWorkflows: {},
@@ -576,7 +604,7 @@ describe('store contract', () => {
 
     const linearRow = (): WorkspaceIntegration => ({
       id: 'i-1' as WorkspaceIntegrationId,
-      workspaceId: WS_ID,
+      workspaceId: PROJECT_ID,
       provider: 'linear',
       config: { workspaceUrlKey: 'k', viewerUserId: 'u', viewerName: 'n' },
       credentialId: CRED_ID,
@@ -662,7 +690,7 @@ describe('store contract', () => {
 
       expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(
         expect.anything(),
-        WS_ID,
+        PROJECT_ID,
         'linear',
       );
       expect(deleteIntegrationCredentialSpy).not.toHaveBeenCalled();
@@ -673,7 +701,7 @@ describe('store contract', () => {
       const store = await getStore();
       const sentry: WorkspaceIntegration = {
         id: 'sentry-1' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
+        workspaceId: PROJECT_ID,
         provider: 'sentry',
         config: { org: 'goodboy', project: 'desktop' },
         credentialId: 'cred-sentry' as IntegrationCredentialId,
@@ -754,7 +782,7 @@ describe('store contract', () => {
       const store = await getStore();
       const existing: WorkspaceIntegration = {
         id: 'sentry-old' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
+        workspaceId: PROJECT_ID,
         provider: 'sentry',
         config: { org: 'goodboy', project: 'old', projectName: 'Old' },
         credentialId: CRED_ID,
@@ -858,7 +886,7 @@ describe('store contract', () => {
       const store = await getStore();
       const existing: WorkspaceIntegration = {
         id: 'gl-keep' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
+        workspaceId: PROJECT_ID,
         provider: 'gitlab',
         config: { userName: 'old', userId: '1', host: 'https://gitlab.com' },
         credentialId: CRED_ID,
@@ -920,7 +948,7 @@ describe('store contract', () => {
       const store = await getStore();
       const existing: WorkspaceIntegration = {
         id: 'ji-keep' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
+        workspaceId: PROJECT_ID,
         provider: 'jira',
         config: {
           siteUrl: 'https://acme.atlassian.net',
@@ -1021,7 +1049,11 @@ describe('store contract', () => {
       ).rejects.toThrow(/keychain unavailable/);
 
       expect(upsertWorkspaceIntegrationSpy).toHaveBeenCalledTimes(1);
-      expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(expect.anything(), WS_ID, 'slack');
+      expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        PROJECT_ID,
+        'slack',
+      );
       expect(deleteIntegrationCredentialSpy).toHaveBeenCalledTimes(1);
       expect(store.getState().workspaceIntegrations[WS_ID] ?? []).toEqual([]);
     });
@@ -1030,7 +1062,7 @@ describe('store contract', () => {
       const store = await getStore();
       const existing: WorkspaceIntegration = {
         id: 'sl-db-existing' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
+        workspaceId: PROJECT_ID,
         provider: 'slack',
         config: { teamId: 'T00', teamName: 'Old', botUserId: 'U00' },
         credentialId: CRED_ID,
@@ -1094,7 +1126,7 @@ describe('store contract', () => {
       const store = await getStore();
       const existing: WorkspaceIntegration = {
         id: 'sl-keep' as WorkspaceIntegrationId,
-        workspaceId: WS_ID,
+        workspaceId: PROJECT_ID,
         provider: 'slack',
         config: { teamId: 'T00', teamName: 'Old', botUserId: 'U00' },
         credentialId: CRED_ID,

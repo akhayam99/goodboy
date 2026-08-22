@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import type { SessionId, WorkspaceScriptId } from '@goodboy/types';
+import type { SessionId, ProjectScriptId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
 export type RunningScript = {
   readonly sessionId: SessionId;
   readonly sessionGoal: string;
-  readonly scriptId: WorkspaceScriptId;
+  readonly scriptId: ProjectScriptId;
   readonly scriptName: string;
   readonly startedAt: number;
 };
@@ -13,7 +13,7 @@ export type RunningScript = {
 export const useRunningScripts = (): ReadonlyArray<RunningScript> => {
   const scriptRuns = useAppStore((state) => state.scriptRuns);
   const sessions = useAppStore((state) => state.sessions);
-  const workspaceScripts = useAppStore((state) => state.workspaceScripts);
+  const projectScripts = useAppStore((state) => state.projectScripts);
 
   return useMemo(() => {
     const running: RunningScript[] = [];
@@ -24,7 +24,7 @@ export const useRunningScripts = (): ReadonlyArray<RunningScript> => {
         continue;
       }
       const names = new Map(
-        (workspaceScripts[session.workspaceId] ?? []).map(
+        (projectScripts[session.workspaceId] ?? []).map(
           (script) => [script.id, script.name] as const,
         ),
       );
@@ -32,7 +32,7 @@ export const useRunningScripts = (): ReadonlyArray<RunningScript> => {
         if (record.status !== 'pending') {
           continue;
         }
-        const id = scriptId as WorkspaceScriptId;
+        const id = scriptId as ProjectScriptId;
         running.push({
           sessionId,
           sessionGoal: session.goal,
@@ -43,5 +43,5 @@ export const useRunningScripts = (): ReadonlyArray<RunningScript> => {
       }
     }
     return running.sort((a, b) => a.startedAt - b.startedAt);
-  }, [scriptRuns, workspaceScripts, sessions]);
+  }, [scriptRuns, projectScripts, sessions]);
 };

@@ -1,6 +1,7 @@
 import type {
   Agent,
   IsoDateTime,
+  ProjectId,
   ProviderRunId,
   SessionExternalTask,
   TurnState,
@@ -10,6 +11,7 @@ import type {
 import {
   listAgentsForSessions,
   listExternalTasksForWorkspace,
+  listProjectsForWorkspace,
   listSessionsForWorkspace,
   listWorktreesForSessions,
   setSetting as dbSetSetting,
@@ -17,7 +19,7 @@ import {
   summarizeWorkspaceTelemetry,
   touchWorkspaceLastAccessed,
   updateAgentStatus,
-  updateSessionActiveMount,
+  updateSessionActiveProject,
   updateSessionState,
 } from '@goodboy/db';
 import type { SessionWorktree } from '@goodboy/db';
@@ -37,9 +39,7 @@ import {
   SETTING_LAST_WORKSPACE_ID,
 } from '../../../features/settings/settings';
 import { buildProviderSpendBreakdown } from '../budget';
-import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { relinkSimpleSessionDirectories } from './relinkSimpleSessionDirectories';
-import { buildSessionMounts } from '../worktrees/buildSessionMounts';
+import { buildSessionProjectMounts } from '../worktrees/buildSessionMounts';
 import { clearPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 
@@ -68,8 +68,8 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       slotHistoryCounts: {},
       sessionSlotsLoad: {},
       sessionWorktrees: {},
-      sessionMounts: {},
-      sessionActiveMount: {},
+      sessionProjectMounts: {},
+      sessionActiveProject: {},
       sessionBranches: {},
       sessionExternalTasks: {},
       sessionPhaseRuns: {},
@@ -87,14 +87,21 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       boardReady: false,
     });
     if (id != null) {
-      const workspace = get().workspaces.find((candidate) => candidate.id === id) ?? null;
       const touchNow = new Date().toISOString() as IsoDateTime;
       set((state) => ({
         workspaces: state.workspaces.map((w) =>
           w.id === id ? { ...w, lastAccessedAt: touchNow } : w,
         ),
       }));
-      touchWorkspaceLastAccessed(tauriDatabase, id).catch(() => undefined);
+      touchWorkspaceLastAccessed({ db: tauriDatabase, id }).catch(() => undefined);
+
+      const projects = await listProjectsForWorkspace({ db: tauriDatabase, workspaceId: id });
+      set((state) => ({
+        projects: [...state.projects.filter((project) => project.workspaceId !== id), ...projects],
+      }));
+      await get()
+        .loadIntegrations(id)
+        .catch(() => undefined);
 
       const tWsLoad = performance.now();
       const loadedSessions = await listSessionsForWorkspace(tauriDatabase, id);
@@ -133,24 +140,11 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         listAgentsForSessions(tauriDatabase, sessionIds),
         listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId: id }),
       ]);
-      const hasPlainSessionDir = [...loadedWorktreesBySession.values()].some((rows) =>
-        rows.some((row) =>
-          isBranchlessSession({ workspaceKind: workspace?.kind, branch: row.branch }),
-        ),
-      );
-      const worktreesBySession =
-        workspace != null && hasPlainSessionDir
-          ? await relinkSimpleSessionDirectories({
-              rootPath: workspace.rootPath,
-              workspaceId: id,
-              workspaceKind: workspace.kind,
-              worktreesBySession: loadedWorktreesBySession,
-            })
-          : loadedWorktreesBySession;
+      const worktreesBySession = loadedWorktreesBySession;
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionWorktreeRecords: Record<string, ReadonlyArray<SessionWorktree>> = {};
-      const sessionMounts: Record<string, ReturnType<typeof buildSessionMounts>> = {};
-      const sessionActiveMount: Record<string, WorkspaceId> = {};
+      const sessionProjectMounts: Record<string, ReturnType<typeof buildSessionProjectMounts>> = {};
+      const sessionActiveProject: Record<string, ProjectId> = {};
       const sessionBranches: Record<string, string> = {};
       const sessionPhaseRuns: Record<string, ReadonlyArray<Agent>> = {};
       const kindOverridesFromDb: Record<string, AgentKind> = {};
@@ -158,23 +152,23 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       for (const s of sessions) {
         const rows = worktreesBySession.get(s.id) ?? [];
         sessionWorktreeRecords[s.id] = rows;
-        const mounts = buildSessionMounts({ workspace, rows });
-        sessionMounts[s.id] = mounts;
+        const mounts = buildSessionProjectMounts({ projects, rows });
+        sessionProjectMounts[s.id] = mounts;
         if (
-          s.activeMountWorkspaceId != null &&
-          mounts.some((mount) => mount.workspaceId === s.activeMountWorkspaceId)
+          s.activeProjectId != null &&
+          mounts.some((mount) => mount.projectId === s.activeProjectId)
         ) {
-          sessionActiveMount[s.id] = s.activeMountWorkspaceId;
+          sessionActiveProject[s.id] = s.activeProjectId;
         }
         if (
-          s.activeMountWorkspaceId != null &&
-          mounts.every((mount) => mount.workspaceId !== s.activeMountWorkspaceId)
+          s.activeProjectId != null &&
+          mounts.every((mount) => mount.projectId !== s.activeProjectId)
         ) {
           invalidActiveMountSessionIds.add(s.id);
-          await updateSessionActiveMount({
+          await updateSessionActiveProject({
             db: tauriDatabase,
             id: s.id,
-            workspaceId: null,
+            projectId: null,
           });
         }
         if (rows.length > 0) {
@@ -196,7 +190,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         if (!invalidActiveMountSessionIds.has(session.id)) {
           return session;
         }
-        const { activeMountWorkspaceId: _drop, ...validSession } = session;
+        const { activeProjectId: _drop, ...validSession } = session;
         return validSession;
       });
       const externalTasksMap: Record<string, SessionExternalTask[]> = {};
@@ -210,8 +204,8 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         sessions: sessionsWithValidActiveMounts,
         sessionWorktrees,
         sessionWorktreeRecords,
-        sessionMounts,
-        sessionActiveMount,
+        sessionProjectMounts,
+        sessionActiveProject,
         sessionBranches,
         sessionPhaseRuns,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
