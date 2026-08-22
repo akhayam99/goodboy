@@ -101,11 +101,11 @@ describe('TimelineRunLabel', () => {
     expect(screen.getAllByText('Ship it')).toHaveLength(1);
   });
 
-  it('keeps a live run at full-strength label ink', () => {
+  it('keeps a live run at full-strength label ink and a filled chip', () => {
     render(<TimelineRunLabel entry={entryOf()} />);
 
     expect(screen.getByText('Refactor (example)').className).toContain('text-foreground');
-    expect(screen.queryByText('Discarded')).toBeNull();
+    expect(chipOf().className).toContain(runIdentity({ runId: 'run-7' }).chip);
   });
 
   it('reads a discarded run in the muted register the discard event next to it uses', () => {
@@ -117,16 +117,21 @@ describe('TimelineRunLabel', () => {
     expect(name.className).not.toContain('text-foreground');
   });
 
-  it('says the state in words instead of leaving it to the ink alone', () => {
+  it('hollows the chip of a discarded run without spending a word on it', () => {
     render(<TimelineRunLabel entry={entryOf({ discardedAt: '2026-08-18T10:00:00Z' })} />);
 
-    expect(screen.getByText('Discarded')).toBeDefined();
+    expect(chipOf().className).toContain(runIdentity({ runId: 'run-7' }).mutedChip);
+    expect(chipOf().className).not.toContain(runIdentity({ runId: 'run-7' }).chip);
+    expect(screen.queryByText('Discarded')).toBeNull();
   });
 
-  it('leaves the run identity tint alone when the run is discarded', () => {
+  it('keeps the run identity hue on a discarded run so it stays that run', () => {
+    const { mutedChip } = runIdentity({ runId: 'run-7' });
+
     render(<TimelineRunLabel entry={entryOf({ discardedAt: '2026-08-18T10:00:00Z' })} />);
 
-    expect(chipOf().className).toContain(runIdentity({ runId: 'run-7' }).chip);
+    expect(mutedChip).toContain('text-run-');
+    expect(chipOf().className).toContain(mutedChip);
   });
 
   it('drops the title when the run carries no goal at all', () => {

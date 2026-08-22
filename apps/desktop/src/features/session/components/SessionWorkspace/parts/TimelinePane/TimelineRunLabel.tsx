@@ -23,6 +23,7 @@ export const TimelineRunLabel = ({ entry }: Props) => {
       <TimelineRunChip
         kind={runWorkflowKind({ workflow: entry.workflow })}
         identity={entry.identity}
+        muted={isDiscarded}
       />
       <span
         className={cn(
@@ -32,9 +33,6 @@ export const TimelineRunLabel = ({ entry }: Props) => {
       >
         {entry.workflow.name}
       </span>
-      {isDiscarded ? (
-        <span className="shrink-0 text-2xs text-muted-foreground">Discarded</span>
-      ) : null}
       {title == null ? null : (
         <span className="min-w-0 truncate text-sm leading-5 text-muted-foreground">{title}</span>
       )}

@@ -37,6 +37,7 @@ type GroupParams = {
   readonly shape?: RailGroupShape;
   readonly parentGroupId?: string | null;
   readonly identityIndex?: number | null;
+  readonly isMuted?: boolean;
 };
 
 const group = ({
@@ -45,7 +46,15 @@ const group = ({
   shape = 'merged',
   parentGroupId = null,
   identityIndex = 0,
-}: GroupParams): RailGroupInput => ({ id, originRowId, shape, parentGroupId, identityIndex });
+  isMuted = false,
+}: GroupParams): RailGroupInput => ({
+  id,
+  originRowId,
+  shape,
+  parentGroupId,
+  identityIndex,
+  isMuted,
+});
 
 const railRow = (layout: ReturnType<typeof layoutTimelineRail>, id: string) => {
   const found = layout.rows.find((candidate) => candidate.id === id);
@@ -107,6 +116,7 @@ describe('layoutTimelineRail', () => {
         spineColumn: 0,
         laneColumn: 1,
         identityIndex: 0,
+        isMuted: false,
         dash: 'solid',
         anchorY: 18,
         path: 'M 8 18 C 16.84 18, 24 9.9414, 24 0',
@@ -115,6 +125,27 @@ describe('layoutTimelineRail', () => {
     expect(railRow(layout, 'origin').markerColumn).toBe(0);
     expect(railRow(layout, 'step-1').markerColumn).toBe(1);
     expect(railRow(layout, 'step-2').markerColumn).toBe(0);
+  });
+
+  it('carries a muted lane onto every stroke it draws, spine excluded', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'step-2', groupId: 'lane' }),
+        row({ id: 'step-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [group({ id: 'lane', originRowId: 'origin', isMuted: true })],
+    });
+    const lanes = lanesOf(layout, 'step-1');
+
+    expect(lanes.length).toBeGreaterThan(0);
+    expect(lanes.every((segment) => segment.isMuted)).toBe(true);
+    expect(railRow(layout, 'origin').joins.every((join) => join.isMuted)).toBe(true);
+    expect(
+      railRow(layout, 'origin')
+        .segments.filter((segment) => segment.column === 0)
+        .every((segment) => segment.isMuted),
+    ).toBe(false);
   });
 
   it('builds a departure from the marker to a vertical lane edge with the reviewed quarter arc', () => {
@@ -218,10 +249,10 @@ describe('layoutTimelineRail', () => {
 
     expect(railRow(layout, 'step-1').joins).toEqual([]);
     expect(lanesOf(layout, 'newer-entry')).toEqual([
-      { column: 1, identityIndex: 0, dash: 'dashed', fromY: 0, toY: 36 },
+      { column: 1, identityIndex: 0, isMuted: false, dash: 'dashed', fromY: 0, toY: 36 },
     ]);
     expect(lanesOf(layout, 'now')).toEqual([
-      { column: 1, identityIndex: 0, dash: 'dashed', fromY: 12, toY: 48 },
+      { column: 1, identityIndex: 0, isMuted: false, dash: 'dashed', fromY: 12, toY: 48 },
     ]);
   });
 
@@ -242,6 +273,7 @@ describe('layoutTimelineRail', () => {
         spineColumn: 0,
         laneColumn: 1,
         identityIndex: 0,
+        isMuted: false,
         dash: 'dashed',
         anchorY: 18,
         path: 'M 24 36 C 24 27.16, 16.84 18, 8 18',
@@ -285,7 +317,7 @@ describe('layoutTimelineRail', () => {
 
     expect(railRow(layout, 'standalone').markerColumn).toBe(0);
     expect(lanesOf(layout, 'standalone')).toEqual([
-      { column: 1, identityIndex: 0, dash: 'solid', fromY: 0, toY: 36 },
+      { column: 1, identityIndex: 0, isMuted: false, dash: 'solid', fromY: 0, toY: 36 },
     ]);
   });
 
@@ -302,8 +334,8 @@ describe('layoutTimelineRail', () => {
     const dayRail = railRow(layout, 'day');
 
     expect(dayRail.segments).toEqual([
-      { column: 0, identityIndex: null, dash: 'solid', fromY: 0, toY: 48 },
-      { column: 1, identityIndex: 0, dash: 'solid', fromY: 0, toY: 48 },
+      { column: 0, identityIndex: null, isMuted: false, dash: 'solid', fromY: 0, toY: 48 },
+      { column: 1, identityIndex: 0, isMuted: false, dash: 'solid', fromY: 0, toY: 48 },
     ]);
   });
 
@@ -380,8 +412,8 @@ describe('layoutTimelineRail', () => {
     expect(railRow(layout, 'pending-2').joins.map((join) => join.dash)).toEqual(['dashed']);
     expect(lanesOf(layout, 'pending-2')).toEqual([]);
     expect(lanesOf(layout, 'running')).toEqual([
-      { column: 1, identityIndex: 0, dash: 'solid', fromY: 18, toY: 36 },
-      { column: 1, identityIndex: 0, dash: 'dashed', fromY: 0, toY: 18 },
+      { column: 1, identityIndex: 0, isMuted: false, dash: 'solid', fromY: 18, toY: 36 },
+      { column: 1, identityIndex: 0, isMuted: false, dash: 'dashed', fromY: 0, toY: 18 },
     ]);
     expect(lanesOf(layout, 'done-1').map((segment) => segment.dash)).toEqual(['solid']);
   });
@@ -461,7 +493,7 @@ describe('layoutTimelineRail', () => {
     });
 
     expect(lanesOf(layout, 'child-1')).toEqual([
-      { column: 1, identityIndex: 0, dash: 'dashed', fromY: 0, toY: 36 },
+      { column: 1, identityIndex: 0, isMuted: false, dash: 'dashed', fromY: 0, toY: 36 },
     ]);
   });
 
