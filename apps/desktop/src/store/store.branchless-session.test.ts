@@ -6,6 +6,7 @@ const {
   listWorktreesForSession,
   updateSessionWorktreeBranch,
   deleteSession,
+  deleteGithubPrCacheForWorktreePath,
   deleteFileVersionsForSession,
   fileVersionsPurgeSession,
   detectRepoSlug,
@@ -17,6 +18,7 @@ const {
   ]),
   updateSessionWorktreeBranch: vi.fn(async () => undefined),
   deleteSession: vi.fn(async () => undefined),
+  deleteGithubPrCacheForWorktreePath: vi.fn(async () => 1),
   deleteFileVersionsForSession: vi.fn(async () => undefined),
   fileVersionsPurgeSession: vi.fn(async () => undefined),
   detectRepoSlug: vi.fn(async () => 'acme/widgets'),
@@ -26,6 +28,7 @@ vi.mock('@goodboy/db', () => ({
   listWorktreesForSession,
   updateSessionWorktreeBranch,
   deleteSession,
+  deleteGithubPrCacheForWorktreePath,
   deleteFileVersionsForSession,
 }));
 

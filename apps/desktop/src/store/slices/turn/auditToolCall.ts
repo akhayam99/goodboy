@@ -9,11 +9,8 @@ import type {
   TurnEvent,
   WorkspaceId,
 } from '@goodboy/types';
-import {
-  invokePermissionAuditInsert,
-  invokeAuditRetryEnqueue,
-  type PermissionAuditInsertPayload,
-} from '../../../features/permissions/permissions';
+import type { PermissionAuditInsertPayload } from '../../../features/permissions/permissions';
+import { persistPermissionAudit } from './persistPermissionAudit';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -73,13 +70,5 @@ export const auditToolCall = async (
     requestedAt: event.at,
     decidedAt: decision.at,
   };
-  try {
-    await invokePermissionAuditInsert(auditPayload);
-  } catch {
-    try {
-      await invokeAuditRetryEnqueue(auditRequestId, JSON.stringify(auditPayload));
-    } catch (enqueueErr) {
-      console.error('permission audit retry enqueue failed', enqueueErr);
-    }
-  }
+  await persistPermissionAudit({ payload: auditPayload });
 };

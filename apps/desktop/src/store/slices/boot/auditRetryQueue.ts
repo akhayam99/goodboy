@@ -53,6 +53,11 @@ export const drainAuditRetryQueue = async (set: SetFn): Promise<void> => {
       continue;
     }
 
+    if (payload.decidedBy === 'default') {
+      await invokeAuditRetryDelete(entry.id).catch(() => undefined);
+      continue;
+    }
+
     try {
       await invokePermissionAuditInsert(payload);
       await invokeAuditRetryDelete(entry.id);

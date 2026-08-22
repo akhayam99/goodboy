@@ -189,7 +189,7 @@ function makeRetryEntry(overrides: { id?: string; payloadJson?: string; attempts
         toolName: 'Edit',
         inputJson: '{}',
         decision: 'allow',
-        decidedBy: 'engine',
+        decidedBy: 'rule',
         requestedAt: NOW,
         decidedAt: NOW,
       }),
@@ -266,7 +266,7 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
     });
   }
 
-  it('enqueues to retry queue when audit insert fails', async () => {
+  it('enqueues an explicit user decision when audit insert fails', async () => {
     permissionAuditInsertSpy.mockRejectedValue(new Error('db locked'));
 
     async function* toolStream(): AsyncIterable<TurnEvent> {
@@ -282,6 +282,7 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
 
     const useAppStore = await importStore();
     setupSession(useAppStore);
+    useAppStore.setState({ volatilePermissionAllows: new Set(['tu-1']) });
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
 
     expect(permissionAuditInsertSpy).toHaveBeenCalledTimes(1);
@@ -293,7 +294,7 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
     expect(typeof parsed.decision).toBe('string');
   });
 
-  it('does NOT enqueue when audit insert succeeds', async () => {
+  it('does not write or enqueue a default decision', async () => {
     permissionAuditInsertSpy.mockResolvedValue({});
 
     async function* toolStream(): AsyncIterable<TurnEvent> {
@@ -311,6 +312,7 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
     setupSession(useAppStore);
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
 
+    expect(permissionAuditInsertSpy).not.toHaveBeenCalled();
     expect(auditRetryEnqueueSpy).not.toHaveBeenCalled();
   });
 });
@@ -432,6 +434,33 @@ describe('audit retry queue, drain worker (happy path)', () => {
     await runHydrate();
 
     expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-bad-json');
+    expect(permissionAuditInsertSpy).not.toHaveBeenCalled();
+  });
+
+  it('drain deletes legacy default decisions without inserting them', async () => {
+    const entry = {
+      ...makeRetryEntry({
+        id: 'retry-default',
+        payloadJson: JSON.stringify({
+          id: 'req-default',
+          runId: 'run-1',
+          sessionId: SESSION_ID,
+          toolUseId: 'tu-default',
+          toolName: 'Read',
+          inputJson: '{}',
+          decision: 'deny',
+          decidedBy: 'default',
+          requestedAt: NOW,
+          decidedAt: NOW,
+        }),
+      }),
+      updatedAt: 0,
+    };
+    auditRetryDrainSpy.mockResolvedValue([entry]);
+
+    await runHydrate();
+
+    expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-default');
     expect(permissionAuditInsertSpy).not.toHaveBeenCalled();
   });
 

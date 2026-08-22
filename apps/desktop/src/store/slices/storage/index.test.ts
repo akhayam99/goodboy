@@ -9,6 +9,7 @@ const {
   getTurnEventStatsForSessions,
   getDatabaseSizeBytes,
   vacuumDatabase,
+  deleteGithubPrCacheForWorktreePath,
   removeWorktree,
   worktreeList,
 } = vi.hoisted(() => ({
@@ -18,6 +19,7 @@ const {
   getTurnEventStatsForSessions: vi.fn(),
   getDatabaseSizeBytes: vi.fn(),
   vacuumDatabase: vi.fn(),
+  deleteGithubPrCacheForWorktreePath: vi.fn(),
   removeWorktree: vi.fn(),
   worktreeList: vi.fn(),
 }));
@@ -29,6 +31,7 @@ vi.mock('@goodboy/db', () => ({
   getTurnEventStatsForSessions,
   getDatabaseSizeBytes,
   vacuumDatabase,
+  deleteGithubPrCacheForWorktreePath,
 }));
 
 vi.mock('../../../shared/lib/db', () => ({
@@ -86,6 +89,7 @@ beforeEach(() => {
   getTurnEventStatsForSessions.mockReset();
   getDatabaseSizeBytes.mockReset();
   vacuumDatabase.mockReset();
+  deleteGithubPrCacheForWorktreePath.mockReset();
   removeWorktree.mockReset();
   worktreeList.mockReset();
 
@@ -111,6 +115,7 @@ beforeEach(() => {
   getTurnEventStatsForSessions.mockResolvedValue({ rowCount: 12, payloadBytes: 4096 });
   getDatabaseSizeBytes.mockResolvedValue(233_000_000);
   deleteTurnEventsForSessions.mockResolvedValue(12);
+  deleteGithubPrCacheForWorktreePath.mockResolvedValue(1);
 });
 
 describe('collectArchivedWorktrees', () => {
@@ -139,6 +144,10 @@ describe('removeArchivedWorktrees', () => {
     const result = await removeArchivedWorktrees(vi.fn(), makeGet(loadStats))();
 
     expect(removeWorktree.mock.calls).toEqual([['/repo', archivedWorktree.worktreePath]]);
+    expect(deleteGithubPrCacheForWorktreePath).toHaveBeenCalledWith({
+      db: {},
+      worktreePath: archivedWorktree.worktreePath,
+    });
     expect(result).toEqual({ removed: 1, failed: 0 });
     expect(loadStats).toHaveBeenCalled();
   });
