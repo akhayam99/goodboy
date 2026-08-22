@@ -23,6 +23,10 @@ vi.mock('../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
+const { openUrl } = vi.hoisted(() => ({ openUrl: vi.fn(async () => undefined) }));
+
+vi.mock('../../../shared/lib/editor', () => ({ openUrl }));
+
 const WS_ID = 'ws-1' as WorkspaceId;
 
 const slackIntegration: SlackWorkspaceIntegration = {
@@ -47,19 +51,28 @@ beforeEach(() => {
   state.forgetIntegrationCredential = vi.fn(async () => undefined);
   state.integrationCredentials = [];
   state.integrationCredentialUsage = {};
+  openUrl.mockClear();
 });
 afterEach(cleanup);
 
 import { SlackFormBody } from './SlackFormBody';
+import { buildSlackManifestUrl, SLACK_USER_SCOPES } from './slackAppManifest';
 
 describe('SlackFormBody', () => {
-  it('offers the app link before the token field', () => {
+  it('walks the setup through before the token field', () => {
     render(<SlackFormBody workspaceId={WS_ID} />);
 
-    const link = screen.getByRole('link', { name: /create a Slack app/i });
+    const firstStep = screen.getByRole('button', { name: /open Slack with the scopes filled in/i });
     const field = screen.getByLabelText(/user token/i);
 
-    expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(firstStep.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.queryByRole('link', { name: /create a Slack app/i })).toBeNull();
+  });
+
+  it('opens Slack through the app rather than a raw anchor', () => {
+    render(<SlackFormBody workspaceId={WS_ID} />);
+    fireEvent.click(screen.getByRole('button', { name: /open Slack with the scopes filled in/i }));
+    expect(openUrl).toHaveBeenCalledWith(buildSlackManifestUrl({ userScopes: SLACK_USER_SCOPES }));
   });
 
   it('keeps Connect disabled until a token is pasted', () => {

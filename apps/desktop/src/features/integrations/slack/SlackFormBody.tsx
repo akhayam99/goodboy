@@ -6,9 +6,11 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
-import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
+import { CheckCircle2, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { IntegrationCredentialPicker } from '../components/IntegrationCredentialPicker';
+import { SlackConnectGuide } from './SlackConnectGuide';
+import { buildSlackManifestUrl, SLACK_USER_SCOPES } from './slackAppManifest';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -16,9 +18,7 @@ type Props = {
   readonly shouldAutoFocus?: boolean;
 };
 
-const APP_URL = 'https://api.slack.com/apps';
-
-const SCOPES = ['channels:read', 'channels:history', 'users:read', 'chat:write', 'reactions:write'];
+const MANIFEST_URL = buildSlackManifestUrl({ userScopes: SLACK_USER_SCOPES });
 
 export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {
   const integrations = useAppStore(
@@ -115,19 +115,11 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
           />
           {credentialId === null ? (
             <>
+              <SlackConnectGuide manifestUrl={MANIFEST_URL} />
               <div className="flex flex-col gap-2">
                 <label htmlFor="slack-token" className="text-xs font-semibold text-foreground">
                   User token
                 </label>
-                <a
-                  href={APP_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
-                >
-                  Create a Slack app and copy its user OAuth token{' '}
-                  <ExternalLink size={10} aria-hidden />
-                </a>
                 <Input
                   id="slack-token"
                   type="password"
@@ -140,22 +132,6 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
                   autoCorrect="off"
                   spellCheck={false}
                 />
-              </div>
-              <div className="flex flex-col gap-2">
-                <p className="text-2xs leading-relaxed text-muted-foreground">
-                  The user token starts with <span className="font-mono">xoxp-</span> and needs
-                  these scopes, granted under User Token Scopes and not Bot Token Scopes:
-                </p>
-                <ul className="flex flex-wrap gap-2">
-                  {SCOPES.map((scope) => (
-                    <li
-                      key={scope}
-                      className="rounded-full border border-border-soft px-2 py-0.5 font-mono text-2xs text-foreground"
-                    >
-                      {scope}
-                    </li>
-                  ))}
-                </ul>
               </div>
             </>
           ) : null}
