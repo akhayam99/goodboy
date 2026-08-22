@@ -26,6 +26,7 @@ type EntryParams = {
   readonly name?: string;
   readonly goal?: string;
   readonly runId?: string;
+  readonly discardedAt?: string | null;
 };
 
 const entryOf = ({
@@ -33,12 +34,13 @@ const entryOf = ({
   name = 'Refactor (example)',
   goal = 'Restructure the legacy module',
   runId = 'run-7',
+  discardedAt = null,
 }: EntryParams = {}) =>
   ({
     kind: 'run',
     id: `run:${runId}`,
     at: '2026-08-18T09:00:00Z',
-    run: { id: runId, goal },
+    run: { id: runId, goal, discardedAt },
     workflow: { name, origin: ORIGIN_OF[kind] },
     identity: runIdentity({ runId }),
     children: [],
@@ -97,6 +99,34 @@ describe('TimelineRunLabel', () => {
     render(<TimelineRunLabel entry={entryOf({ name: 'Ship it', goal: 'Ship it' })} />);
 
     expect(screen.getAllByText('Ship it')).toHaveLength(1);
+  });
+
+  it('keeps a live run at full-strength label ink', () => {
+    render(<TimelineRunLabel entry={entryOf()} />);
+
+    expect(screen.getByText('Refactor (example)').className).toContain('text-foreground');
+    expect(screen.queryByText('Discarded')).toBeNull();
+  });
+
+  it('reads a discarded run in the muted register the discard event next to it uses', () => {
+    render(<TimelineRunLabel entry={entryOf({ discardedAt: '2026-08-18T10:00:00Z' })} />);
+
+    const name = screen.getByText('Refactor (example)');
+
+    expect(name.className).toContain('text-muted-foreground');
+    expect(name.className).not.toContain('text-foreground');
+  });
+
+  it('says the state in words instead of leaving it to the ink alone', () => {
+    render(<TimelineRunLabel entry={entryOf({ discardedAt: '2026-08-18T10:00:00Z' })} />);
+
+    expect(screen.getByText('Discarded')).toBeDefined();
+  });
+
+  it('leaves the run identity tint alone when the run is discarded', () => {
+    render(<TimelineRunLabel entry={entryOf({ discardedAt: '2026-08-18T10:00:00Z' })} />);
+
+    expect(chipOf().className).toContain(runIdentity({ runId: 'run-7' }).chip);
   });
 
   it('drops the title when the run carries no goal at all', () => {

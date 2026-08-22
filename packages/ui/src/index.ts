@@ -6,6 +6,7 @@ export { useDropdown } from './useDropdown';
 export { DropdownBackdrop } from './useDropdown/DropdownBackdrop';
 export { DropdownPortal } from './useDropdown/DropdownPortal';
 export { PANE_RHYTHM } from './paneRhythm';
+export { TERMINAL_DIM } from './terminalDim';
 export { formatError } from './formatError';
 export { formatTokens, formatUsd, formatUsdPrecise } from './format-cost';
 export {

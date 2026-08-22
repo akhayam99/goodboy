@@ -15,6 +15,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import { TERMINAL_DIM } from '@goodboy/ui';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 
 const storeMocks = vi.hoisted(() => ({
@@ -614,5 +615,17 @@ describe('WorkflowRow dynamic runs', () => {
 
     expect(screen.getByText('Completed')).toBeDefined();
     expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
+  });
+
+  it('dims a discarded run with the same token the workflows lens card quotes', () => {
+    const { container } = renderDetail({ runOverride: { ...run, discardedAt: NOW } });
+
+    expect((container.firstChild as HTMLElement).className).toContain(TERMINAL_DIM);
+  });
+
+  it('leaves a live run undimmed', () => {
+    const { container } = renderDetail();
+
+    expect((container.firstChild as HTMLElement).className).not.toContain(TERMINAL_DIM);
   });
 });
