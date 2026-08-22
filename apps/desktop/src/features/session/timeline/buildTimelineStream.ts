@@ -182,6 +182,7 @@ type EmitAgentParams = {
   readonly entry: TimelineAgentEntry;
   readonly grade: TimelineRowGrade;
   readonly identity: RunIdentity | null;
+  readonly isMuted: boolean;
   readonly familyId: string | null;
   readonly groupId: string | null;
   readonly context: EmitContext;
@@ -191,6 +192,7 @@ const emitAgent = ({
   entry,
   grade,
   identity,
+  isMuted,
   familyId,
   groupId,
   context,
@@ -202,6 +204,7 @@ const emitAgent = ({
       id: childLaneId,
       parentGroupId: groupId,
       identityIndex: identity?.index ?? null,
+      isMuted,
       originRowId: entry.id,
       shape: entry.children.every((child) => isSettled({ agent: child.agent })) ? 'merged' : 'open',
     });
@@ -210,6 +213,7 @@ const emitAgent = ({
         entry: child,
         grade: 'step',
         identity,
+        isMuted,
         familyId,
         groupId: childLaneId,
         context,
@@ -264,11 +268,13 @@ const emitRun = ({ entry, context }: EmitRunParams): void => {
   const laneId = laneIdOf({ entryId: entry.id });
   const isFinished = isRunFinished({ entry });
   const needsUser = context.blockedRunIds.has(entry.run.id);
+  const isMuted = entry.run.discardedAt != null;
   const shape: RailGroupShape = isFinished ? 'merged' : 'open';
   context.groups.push({
     id: laneId,
     parentGroupId: null,
     identityIndex: entry.identity.index,
+    isMuted,
     originRowId: entry.id,
     shape,
   });
@@ -278,6 +284,7 @@ const emitRun = ({ entry, context }: EmitRunParams): void => {
         entry: child,
         grade: 'step',
         identity: entry.identity,
+        isMuted,
         familyId: entry.id,
         groupId: laneId,
         context,
@@ -451,6 +458,7 @@ export const buildTimelineStream = ({
         entry,
         grade: 'entry',
         identity: entry.chain?.identity ?? null,
+        isMuted: false,
         familyId: entry.id,
         groupId: null,
         context,

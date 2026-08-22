@@ -809,6 +809,61 @@ describe('buildTimelineStream, session events', () => {
     expect(rows).toEqual(['event:ev-merge', 'event:ev-worktree']);
   });
 
+  it('recedes the lane of a discarded run together with the lanes of its children', () => {
+    const attached = attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) });
+    const { groups } = stream({
+      workflows: [
+        {
+          ...attached,
+          run: {
+            ...attached.run,
+            discardedAt: typedString<IsoDateTime>({ value: localIso({ day: 18, hour: 11 }) }),
+          },
+        },
+      ],
+      agents: [
+        agent({
+          id: 'implement',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({
+          id: 'sub-a',
+          ordinal: 2,
+          parentAgentId: 'implement',
+          startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+        }),
+      ],
+    });
+
+    expect(groups.map((group) => group.id)).toEqual(['lane:run:run-1', 'lane:agent:implement']);
+    expect(groups.every((group) => group.isMuted)).toBe(true);
+    expect(new Set(groups.map((group) => group.identityIndex)).size).toBe(1);
+  });
+
+  it('leaves the lanes of a live run at full presence', () => {
+    const { groups } = stream({
+      workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
+      agents: [
+        agent({
+          id: 'implement',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({
+          id: 'sub-a',
+          ordinal: 2,
+          parentAgentId: 'implement',
+          startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+        }),
+      ],
+    });
+
+    expect(groups.some((group) => group.isMuted)).toBe(false);
+  });
+
   it('gives a chained agent group a colored lane', () => {
     const result = stream({
       agents: [

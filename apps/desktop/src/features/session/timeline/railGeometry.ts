@@ -12,6 +12,7 @@ export type RailGroupInput = {
   readonly id: string;
   readonly parentGroupId: string | null;
   readonly identityIndex: number | null;
+  readonly isMuted: boolean;
   readonly originRowId: string;
   readonly shape: RailGroupShape;
 };
@@ -29,6 +30,7 @@ export type RailRowInput = {
 export type RailSegment = {
   readonly column: number;
   readonly identityIndex: number | null;
+  readonly isMuted: boolean;
   readonly dash: RailDash;
   readonly fromY: number;
   readonly toY: number;
@@ -39,6 +41,7 @@ export type RailJoin = {
   readonly spineColumn: number;
   readonly laneColumn: number;
   readonly identityIndex: number | null;
+  readonly isMuted: boolean;
   readonly dash: RailDash;
   readonly anchorY: number;
   readonly path: string;
@@ -192,7 +195,11 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
     if (row === undefined) {
       return;
     }
-    const shared = { column: plan.column, identityIndex: plan.group.identityIndex };
+    const shared = {
+      column: plan.column,
+      identityIndex: plan.group.identityIndex,
+      isMuted: plan.group.isMuted,
+    };
     if (index > plan.boundaryIndex) {
       laneSegmentsByIndex[index]?.push({
         ...shared,
@@ -242,6 +249,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
         spineColumn: parentColumn,
         laneColumn: plan.column,
         identityIndex: plan.group.identityIndex,
+        isMuted: plan.group.isMuted,
         dash: plan.boundaryIndex === plan.originIndex ? 'dashed' : 'solid',
         anchorY: anchorOf({ row: originRow }),
       });
@@ -252,7 +260,11 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       continue;
     }
     const topAnchor = topAnchorOf({ row: topRow });
-    const shared = { column: plan.column, identityIndex: plan.group.identityIndex };
+    const shared = {
+      column: plan.column,
+      identityIndex: plan.group.identityIndex,
+      isMuted: plan.group.isMuted,
+    };
     const isTopPending = topIndex < plan.boundaryIndex;
 
     if (plan.group.shape === 'open' && !isTopPending) {
@@ -288,6 +300,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       spineColumn: parentColumn,
       laneColumn: plan.column,
       identityIndex: plan.group.identityIndex,
+      isMuted: plan.group.isMuted,
       dash: isTopPending ? 'dashed' : 'solid',
       anchorY: anchorOf({ row: topRow }),
     });
@@ -321,6 +334,7 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
         {
           column: 0,
           identityIndex: null,
+          isMuted: false,
           dash: 'solid',
           fromY: row.topY,
           toY: row.height,

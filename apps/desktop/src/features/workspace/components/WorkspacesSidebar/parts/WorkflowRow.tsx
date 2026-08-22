@@ -7,6 +7,7 @@ import {
   Input,
   MetaRow,
   StatusDot,
+  TERMINAL_DIM,
   Tooltip,
 } from '@goodboy/ui';
 import { ChevronDown, ChevronRight, ChevronUp, Pencil, Undo2 } from 'lucide-react';
@@ -205,7 +206,7 @@ export const WorkflowRow = ({
         isDetail && !expanded && 'grid-rows-[auto]',
         !isDetail && expanded && 'grid-rows-[auto_auto] gap-y-1.5',
         !isDetail && !expanded && 'grid-rows-[auto]',
-        isDiscarded && 'opacity-70',
+        isDiscarded && TERMINAL_DIM,
       )}
     >
       <div className="col-span-2 row-start-1 grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] items-start gap-2">

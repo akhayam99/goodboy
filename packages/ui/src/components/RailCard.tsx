@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '../cn';
+import { TERMINAL_DIM } from '../terminalDim';
 
 type Props = {
   readonly title: ReactNode;
@@ -29,7 +30,7 @@ export const RailCard = ({
     onClick={onSelect}
     className={cn(
       'flex w-full items-center gap-3 rounded-lg border border-border-soft bg-elevated/40 px-3 py-2.5 text-left transition-colors hover:border-border hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-      muted && 'opacity-70',
+      muted && ['border-border-soft/60 bg-transparent', TERMINAL_DIM],
       className,
     )}
   >

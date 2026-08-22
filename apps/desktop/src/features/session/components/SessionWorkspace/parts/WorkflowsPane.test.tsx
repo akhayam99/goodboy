@@ -125,6 +125,7 @@ vi.mock('./WorkflowRunDetail', () => ({
   ),
 }));
 
+import { TERMINAL_DIM } from '@goodboy/ui';
 import { WorkflowsPane } from './WorkflowsPane';
 
 const SESSION_ID = 'session-1';
@@ -402,6 +403,26 @@ describe('WorkflowsPane', () => {
     expect(screen.getByText('First workflow')).toBeDefined();
     expect(screen.getByText('Second workflow')).toBeDefined();
     expect(screen.getByText('Discarded')).toBeDefined();
+  });
+
+  it('sets the discarded card apart from the completed one it sits beside', () => {
+    render(
+      <WorkflowsPane
+        session={buildSession({
+          runIds: ['run-1', 'run-2'],
+          runOverrides: {
+            'run-1': { discardedAt: '2026-07-21T10:00:00.000Z' },
+            'run-2': { executionMode: 'dynamic', orchestrationOutcome: 'done' },
+          },
+        })}
+      />,
+    );
+
+    const discarded = screen.getByText('First workflow').closest('button');
+    const completed = screen.getByText('Second workflow').closest('button');
+
+    expect(discarded?.className).toContain(TERMINAL_DIM);
+    expect(completed?.className).not.toContain(TERMINAL_DIM);
   });
 
   it('keeps the finished list in ordinal order across completed and discarded runs', () => {

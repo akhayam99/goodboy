@@ -1,3 +1,4 @@
+import { TERMINAL_DIM } from '@goodboy/ui';
 import { runIdentityStroke } from '../../../../timeline/runIdentity';
 import { railColumnX, type RailRow, type RailSegment } from '../../../../timeline/railGeometry';
 
@@ -13,6 +14,9 @@ const DASH_PATTERN = '3 3';
 const strokeOf = ({ identityIndex }: { readonly identityIndex: number | null }): string =>
   identityIndex == null ? 'var(--color-border)' : runIdentityStroke({ index: identityIndex });
 
+const dimOf = ({ isMuted }: { readonly isMuted: boolean }): string | undefined =>
+  isMuted ? TERMINAL_DIM : undefined;
+
 const segmentKey = ({ segment }: { readonly segment: RailSegment }): string =>
   `${segment.column}:${segment.fromY}:${segment.toY}:${segment.dash}`;
 
@@ -27,6 +31,7 @@ export const TimelineRail = ({ rail, width }: Props) => (
     {rail.segments.map((segment) => (
       <line
         key={segmentKey({ segment })}
+        className={dimOf({ isMuted: segment.isMuted })}
         x1={railColumnX({ column: segment.column })}
         y1={segment.fromY}
         x2={railColumnX({ column: segment.column })}
@@ -41,6 +46,7 @@ export const TimelineRail = ({ rail, width }: Props) => (
     {rail.joins.map((join) => (
       <path
         key={`${join.kind}:${join.laneColumn}:${join.anchorY}`}
+        className={dimOf({ isMuted: join.isMuted })}
         d={join.path}
         fill="none"
         stroke={strokeOf({ identityIndex: join.identityIndex })}
