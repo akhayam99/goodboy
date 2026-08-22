@@ -69,6 +69,15 @@ describe('activityCategoryOf', () => {
     );
   });
 
+  it('files a restore with the discard it undoes', () => {
+    expect(activityCategoryOf({ entry: eventEntry({ id: 'f', kind: 'workflow_restored' }) })).toBe(
+      activityCategoryOf({ entry: eventEntry({ id: 'g', kind: 'workflow_discarded' }) }),
+    );
+    expect(activityCategoryOf({ entry: eventEntry({ id: 'h', kind: 'workflow_restored' }) })).toBe(
+      'workflows',
+    );
+  });
+
   it('separates a resolver agent from an ordinary one', () => {
     expect(activityCategoryOf({ entry: agentEntry({ id: 'a', agentKind: 'resolver' }) })).toBe(
       'resolver',
@@ -89,6 +98,19 @@ describe('filterTimelineEntries', () => {
     expect(
       filterTimelineEntries({ entries, filter: DEFAULT_ACTIVITY_FILTER }).map((entry) => entry.id),
     ).toEqual(['event:b']);
+  });
+
+  it('hides a discard and its restore together', () => {
+    const filter: ActivityFilter = { ...DEFAULT_ACTIVITY_FILTER, workflows: false };
+    const entries = [
+      eventEntry({ id: 'a', kind: 'workflow_discarded' }),
+      eventEntry({ id: 'b', kind: 'workflow_restored' }),
+      eventEntry({ id: 'c', kind: 'pr_merged' }),
+    ];
+
+    expect(filterTimelineEntries({ entries, filter }).map((entry) => entry.id)).toEqual([
+      'event:c',
+    ]);
   });
 
   it('drops every row of a disabled category', () => {

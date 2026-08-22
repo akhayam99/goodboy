@@ -5,7 +5,8 @@ import type { GetFn, SetFn } from './types';
 
 export const restoreWorkflow = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowRunId: WorkflowRunId) => {
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const state = get();
+    const session = state.sessions.find((s) => s.id === sessionId);
     if (!session) {
       return;
     }
@@ -34,5 +35,17 @@ export const restoreWorkflow = (set: SetFn, get: GetFn) => {
           : sess,
       ),
     }));
+
+    const restored = (state.sessionWorkflows?.[sessionId] ?? []).find(
+      (workflow) => workflow.id === run.workflowId,
+    );
+    await get().recordSessionEvent({
+      sessionId,
+      kind: 'workflow_restored',
+      payload: {
+        runId: workflowRunId,
+        ...(restored == null ? {} : { workflowName: restored.name }),
+      },
+    });
   };
 };

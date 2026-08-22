@@ -55,6 +55,16 @@ describe('sessionEventTitle', () => {
     ).toBe('#42 merged');
   });
 
+  it('pairs a discard with its restore', () => {
+    const payload = { workflowName: 'Orchestrated workflow 24' };
+    expect(sessionEventTitle({ event: event({ kind: 'workflow_discarded', payload }) })).toBe(
+      'Orchestrated workflow 24 discarded',
+    );
+    expect(sessionEventTitle({ event: event({ kind: 'workflow_restored', payload }) })).toBe(
+      'Orchestrated workflow 24 restored',
+    );
+  });
+
   it('counts decisions on both sides', () => {
     expect(
       sessionEventTitle({
@@ -89,6 +99,13 @@ describe('sessionEventEmphasis', () => {
     expect(sessionEventEmphasis({ kind: 'workflow_discarded' })).toBe('muted');
     expect(sessionEventEmphasis({ kind: 'workflow_deleted' })).toBe('muted');
     expect(sessionEventEmphasis({ kind: 'decisions_changed' })).toBe('muted');
+  });
+
+  it('brings a restored run back to full weight', () => {
+    expect(sessionEventEmphasis({ kind: 'workflow_restored' })).toBe('plain');
+    expect(sessionEventEmphasis({ kind: 'workflow_restored' })).toBe(
+      sessionEventEmphasis({ kind: 'workflow_started' }),
+    );
   });
 });
 

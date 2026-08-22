@@ -113,6 +113,7 @@ import { m112OpenQuestionsSelectMode } from './m112-open-questions-select-mode';
 import { m113WorkflowRunRoleModels } from './m113-workflow-run-role-models';
 import { m114IntegrationCredentials } from './m114-integration-credentials';
 import { m115SessionEvents } from './m115-session-events';
+import { m116SessionEventWorkflowRestored } from './m116-session-event-workflow-restored';
 
 export type Migration = {
   readonly version: number;
@@ -235,4 +236,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 113, sql: m113WorkflowRunRoleModels },
   { version: 114, sql: m114IntegrationCredentials },
   { version: 115, sql: m115SessionEvents },
+  { version: 116, sql: m116SessionEventWorkflowRestored },
 ];

@@ -50,6 +50,7 @@ const CATEGORY_BY_EVENT_KIND: Record<SessionEventKind, ActivityCategory> = {
   pr_closed: 'pullRequests',
   workflow_started: 'workflows',
   workflow_discarded: 'workflows',
+  workflow_restored: 'workflows',
   workflow_deleted: 'workflows',
   decisions_changed: 'decisions',
 };

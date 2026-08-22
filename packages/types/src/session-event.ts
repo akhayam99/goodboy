@@ -13,6 +13,7 @@ export const SESSION_EVENT_KINDS = [
   'pr_closed',
   'workflow_started',
   'workflow_discarded',
+  'workflow_restored',
   'workflow_deleted',
   'decisions_changed',
 ] as const;
