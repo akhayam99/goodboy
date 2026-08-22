@@ -257,6 +257,7 @@ pub fn run() {
             turn::turn_cancel,
             turn::turn_list_live,
             query_bridge::query_bridge_serving,
+            query_bridge::project::project_materialize_result,
             attachment::attachment_write,
             attachment::attachment_read,
             attachment::attachment_delete,

@@ -281,13 +281,21 @@ const createWorktreeSpy = vi.fn();
 const createSessionDirSpy = vi.fn();
 const removeWorktreeSpy = vi.fn(async () => undefined);
 const changeWorktreeBranchSpy = vi.fn(async () => undefined);
+const writeSimpleSessionMarkerSpy = vi.fn(async () => undefined);
+const prepareSimpleWorkspaceSpy = vi.fn(async ({ path }: { path: string }) => path);
 
 vi.mock('../../../features/worktree/worktree', () => ({
   createWorktree: createWorktreeSpy,
   createSessionDir: createSessionDirSpy,
   removeWorktree: removeWorktreeSpy,
   changeWorktreeBranch: changeWorktreeBranchSpy,
+  writeSimpleSessionMarker: writeSimpleSessionMarkerSpy,
+  simpleSessionDirExists: vi.fn(async () => true),
   worktreeChangedFiles: vi.fn(async () => []),
+}));
+
+vi.mock('../../../features/workspace/prepareSimpleWorkspace', () => ({
+  prepareSimpleWorkspace: prepareSimpleWorkspaceSpy,
 }));
 
 vi.mock('../../../shared/lib/repo', () => ({
@@ -1000,37 +1008,29 @@ describe('store contract', () => {
     });
   });
 
-  describe('createSession simple workspace', () => {
-    it('registers a simple session directory with the requested folder name and an empty branch', async () => {
+  describe('createSession lazy container', () => {
+    it('creates only the session container: no worktree, no branch, no mounts', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');
-      vi.mocked(db.getWorkspaceById).mockResolvedValueOnce(buildWorkspace());
-      vi.mocked(db.listProjectsForWorkspace).mockResolvedValueOnce([
-        buildProject({ kind: 'folder', rootPath: '/tmp/study-space' }),
-      ]);
-      createSessionDirSpy.mockResolvedValueOnce({
-        worktreePath: '/tmp/study-space/sessions/MatchAnalysis_20260514',
-        branchName: '',
-        slug: 'MatchAnalysis_20260514',
-        reused: false,
-      });
       store.setState({ currentWorkspaceId: WS_ID });
 
       const { session, worktree } = await store.getState().createSession({
         workspaceId: WS_ID,
         goal: 'Study plan',
-        folderName: 'MatchAnalysis_20260514',
       });
 
-      expect(createSessionDirSpy).toHaveBeenCalledWith({
-        basePath: '/tmp/study-space',
-        slug: expect.stringMatching(/^study-plan-[a-f0-9]{8}$/),
-        directoryName: 'MatchAnalysis_20260514',
+      expect(createWorktreeSpy).not.toHaveBeenCalled();
+      expect(createSessionDirSpy).not.toHaveBeenCalled();
+      expect(prepareSimpleWorkspaceSpy).toHaveBeenCalledWith({
+        path: expect.stringMatching(/^\/tmp\/repo\/study-plan-[a-f0-9]{8}$/),
+      });
+      expect(writeSimpleSessionMarkerSpy).toHaveBeenCalledWith({
+        path: worktree.worktreePath,
         sessionId: session.id,
         workspaceId: WS_ID,
       });
-      expect(createWorktreeSpy).not.toHaveBeenCalled();
       expect(worktree.branchName).toBe('');
+      expect(vi.mocked(db.insertSessionWorktree)).toHaveBeenCalledTimes(1);
       expect(vi.mocked(db.insertSessionWorktree)).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
@@ -1041,21 +1041,24 @@ describe('store contract', () => {
         }),
       );
       expect(store.getState().sessionBranches[session.id]).toBe('');
+      expect(store.getState().sessionProjectMounts[session.id]).toEqual([]);
+      expect(store.getState().sessionWorktrees[session.id]).toEqual([worktree.worktreePath]);
+    });
+
+    it('defaults the sessions root under the home state directory when the workspace has none', async () => {
+      const store = await getStore();
+      getWorkspaceByIdSpy.mockResolvedValueOnce(buildWorkspace({ sessionsRoot: null }));
+      store.setState({ currentWorkspaceId: WS_ID });
+
+      await store.getState().createSession({ workspaceId: WS_ID, goal: 'Study plan' });
+
+      expect(prepareSimpleWorkspaceSpy).toHaveBeenCalledWith({
+        path: expect.stringMatching(/^~\/\.goodboy\/sessions\/ws\/study-plan-[a-f0-9]{8}$/),
+      });
     });
 
     it('seeds the workspace routing pool and includes its default provider', async () => {
       const store = await getStore();
-      const db = await import('@goodboy/db');
-      vi.mocked(db.getWorkspaceById).mockResolvedValueOnce(buildWorkspace());
-      vi.mocked(db.listProjectsForWorkspace).mockResolvedValueOnce([
-        buildProject({ kind: 'folder', rootPath: '/tmp/study-space' }),
-      ]);
-      createSessionDirSpy.mockResolvedValueOnce({
-        worktreePath: '/tmp/study-space/sessions/Study plan',
-        branchName: '',
-        slug: 'Study plan',
-        reused: false,
-      });
       store.setState({
         currentWorkspaceId: WS_ID,
         workspaceOverrides: {
@@ -1071,157 +1074,221 @@ describe('store contract', () => {
         .getState()
         .createSession({ workspaceId: WS_ID, goal: 'Study plan' });
 
-      expect(createSessionDirSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          directoryName: 'Study plan',
-        }),
-      );
       expect(session.providerPreference).toEqual({
         defaultProvider: 'codex',
         allowTurnOverride: true,
         enabledProviders: ['anthropic', 'codex'],
       });
     });
-  });
 
-  describe('createSession composite workspace', () => {
-    it('creates ordered member worktrees and hydrates their mounts', async () => {
+    it('records the container event and one external_task_created per task', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');
-      const apiWorkspaceId = 'project-api' as ProjectId;
-      const webWorkspaceId = 'project-web' as ProjectId;
-      vi.mocked(db.getWorkspaceById).mockResolvedValueOnce(buildWorkspace());
-      vi.mocked(db.listProjectsForWorkspace).mockResolvedValueOnce([
-        buildProject({ id: apiWorkspaceId, name: 'api', rootPath: '/tmp/api' }),
-        buildProject({ id: webWorkspaceId, name: 'web', rootPath: '/tmp/web' }),
-      ]);
-      createWorktreeSpy
-        .mockResolvedValueOnce({
-          worktreePath: '/tmp/product/ship-scope/api',
-          branchName: 'ak/ship-scope-api',
-          slug: 'ship-scope',
-          reused: false,
-        })
-        .mockResolvedValueOnce({
-          worktreePath: '/tmp/product/ship-scope/web',
-          branchName: 'ak/ship-scope-web',
-          slug: 'ship-scope',
-          reused: false,
-        });
       store.setState({ currentWorkspaceId: WS_ID });
 
-      const { session, worktree } = await store
-        .getState()
-        .createSession({ workspaceId: WS_ID, goal: 'Ship scope' });
+      await store.getState().createSession({
+        workspaceId: WS_ID,
+        goal: 'do gitlab work',
+        externalTasks: [
+          {
+            provider: 'gitlab',
+            externalId: '101',
+            identifier: 'acme/web#7',
+            url: 'https://gitlab.com/acme/web/-/issues/7',
+            title: 'Fix the thing',
+          },
+        ],
+      });
 
-      expect(createWorktreeSpy).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({ repoPath: '/tmp/api', dirName: 'api' }),
-      );
-      expect(createWorktreeSpy).toHaveBeenNthCalledWith(
-        2,
-        expect.objectContaining({ repoPath: '/tmp/web', dirName: 'web' }),
-      );
-      expect(vi.mocked(db.insertSessionWorktree)).toHaveBeenNthCalledWith(
-        1,
-        expect.anything(),
-        expect.objectContaining({
-          sessionId: session.id,
-          worktreePath: worktree.worktreePath,
-          parallelIndex: 0,
-        }),
-      );
-      expect(vi.mocked(db.insertSessionWorktree)).toHaveBeenNthCalledWith(
-        2,
-        expect.anything(),
-        expect.objectContaining({
-          sessionId: session.id,
-          worktreePath: '/tmp/product/ship-scope/api',
-          parallelIndex: 1,
-          projectId: apiWorkspaceId,
-          mountName: 'api',
-        }),
-      );
-      expect(vi.mocked(db.insertSessionWorktree)).toHaveBeenNthCalledWith(
-        3,
-        expect.anything(),
-        expect.objectContaining({
-          sessionId: session.id,
-          worktreePath: '/tmp/product/ship-scope/web',
-          parallelIndex: 2,
-          projectId: webWorkspaceId,
-          mountName: 'web',
-        }),
-      );
-      expect(store.getState().sessionProjectMounts[session.id]).toEqual([
-        {
-          projectId: apiWorkspaceId,
-          mountName: 'api',
-          worktreePath: '/tmp/product/ship-scope/api',
-          repoRoot: '/tmp/api',
-          branch: 'ak/ship-scope-api',
-        },
-        {
-          projectId: webWorkspaceId,
-          mountName: 'web',
-          worktreePath: '/tmp/product/ship-scope/web',
-          repoRoot: '/tmp/web',
-          branch: 'ak/ship-scope-web',
-        },
-      ]);
-      expect(store.getState().sessionActiveProject[session.id]).toBe(apiWorkspaceId);
+      const kinds = vi.mocked(db.insertSessionEvent).mock.calls.map(([{ event }]) => event.kind);
+      expect(kinds).toContain('worktree_created');
+      expect(kinds).toContain('external_task_created');
     });
   });
 
-  describe('createSession repository slug', () => {
-    it('stamps the detected slug on the new worktree row', async () => {
+  describe('materializeProject', () => {
+    const API_PROJECT_ID = 'project-api' as ProjectId;
+    const WEB_PROJECT_ID = 'project-web' as ProjectId;
+
+    const seedMultiProjectSession = async () => {
       const store = await getStore();
+      const apiProject = buildProject({ id: API_PROJECT_ID, name: 'api', rootPath: '/tmp/api' });
+      const webProject = buildProject({ id: WEB_PROJECT_ID, name: 'web', rootPath: '/tmp/web' });
+      listProjectsForWorkspaceSpy.mockResolvedValueOnce([apiProject, webProject]);
+      store.setState({ currentWorkspaceId: WS_ID, projects: [apiProject, webProject] });
+      const { session } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'Ship scope' });
+      return { store, session };
+    };
+
+    it('mounts a declared project lazily under the session container', async () => {
+      const { store, session } = await seedMultiProjectSession();
+      const db = await import('@goodboy/db');
+      const containerDir = store.getState().sessionWorktrees[session.id]![0]!;
+      createWorktreeSpy.mockResolvedValueOnce({
+        worktreePath: `${containerDir}/api`,
+        branchName: 'goodboy/ship-scope-1234abcd',
+        slug: 'ship-scope-1234abcd',
+        reused: false,
+      });
+
+      const mount = await store.getState().materializeProject({
+        sessionId: session.id,
+        projectId: API_PROJECT_ID,
+        reason: 'the plan implements the api first',
+      });
+
+      expect(createWorktreeSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          repoPath: '/tmp/api',
+          parentDir: containerDir,
+          dirName: 'api',
+        }),
+      );
+      expect(vi.mocked(db.insertSessionWorktree)).toHaveBeenLastCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          sessionId: session.id,
+          worktreePath: `${containerDir}/api`,
+          branch: 'goodboy/ship-scope-1234abcd',
+          parallelIndex: 1,
+          projectId: API_PROJECT_ID,
+          mountName: 'api',
+        }),
+      );
+      expect(vi.mocked(db.updateSessionWorktreeBranch)).toHaveBeenCalledWith(
+        expect.anything(),
+        session.id,
+        0,
+        'goodboy/ship-scope-1234abcd',
+      );
+      expect(store.getState().sessionProjectMounts[session.id]).toEqual([mount]);
+      expect(store.getState().sessionBranches[session.id]).toBe('goodboy/ship-scope-1234abcd');
+      expect(store.getState().sessionActiveProject[session.id]).toBe(API_PROJECT_ID);
+      const kinds = vi.mocked(db.insertSessionEvent).mock.calls.map(([{ event }]) => event.kind);
+      expect(kinds).toContain('project_materialized');
+    });
+
+    it('is idempotent per session and project', async () => {
+      const { store, session } = await seedMultiProjectSession();
+      createWorktreeSpy.mockResolvedValueOnce({
+        worktreePath: '/tmp/container/api',
+        branchName: 'goodboy/ship-scope',
+        slug: 'ship-scope',
+        reused: false,
+      });
+
+      const first = await store.getState().materializeProject({
+        sessionId: session.id,
+        projectId: API_PROJECT_ID,
+        reason: 'first',
+      });
+      const second = await store.getState().materializeProject({
+        sessionId: session.id,
+        projectId: API_PROJECT_ID,
+        reason: 'second',
+      });
+
+      expect(second).toEqual(first);
+      expect(createWorktreeSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('refuses an empty reason before touching anything', async () => {
+      const { store, session } = await seedMultiProjectSession();
+
+      await expect(
+        store.getState().materializeProject({
+          sessionId: session.id,
+          projectId: API_PROJECT_ID,
+          reason: '   ',
+        }),
+      ).rejects.toThrow(/reason/);
+      expect(createWorktreeSpy).not.toHaveBeenCalled();
+    });
+
+    it('records a refusal event when the worktree cannot be created', async () => {
+      const { store, session } = await seedMultiProjectSession();
+      const db = await import('@goodboy/db');
+      createWorktreeSpy.mockRejectedValueOnce(new Error('git worktree add failed'));
+
+      await expect(
+        store.getState().materializeProject({
+          sessionId: session.id,
+          projectId: WEB_PROJECT_ID,
+          reason: 'the plan touches web',
+        }),
+      ).rejects.toThrow('git worktree add failed');
+
+      const refused = vi
+        .mocked(db.insertSessionEvent)
+        .mock.calls.map(([{ event }]) => event)
+        .find((event) => event.kind === 'project_materialization_refused');
+      expect(refused?.payload).toMatchObject({ projectId: WEB_PROJECT_ID });
+      expect(store.getState().sessionProjectMounts[session.id]).toEqual([]);
+    });
+
+    it('registers a folder project mount without a branch', async () => {
+      const store = await getStore();
+      const folderProject = buildProject({
+        id: API_PROJECT_ID,
+        name: 'notes',
+        kind: 'folder',
+        rootPath: '/tmp/notes',
+      });
+      const repoProject = buildProject({ id: WEB_PROJECT_ID, name: 'web', rootPath: '/tmp/web' });
+      listProjectsForWorkspaceSpy.mockResolvedValueOnce([folderProject, repoProject]);
+      store.setState({ currentWorkspaceId: WS_ID, projects: [folderProject, repoProject] });
+      const { session } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'Take notes' });
+      createSessionDirSpy.mockResolvedValueOnce({
+        worktreePath: '/tmp/notes/sessions/take-notes',
+        branchName: '',
+        slug: 'take-notes',
+        reused: false,
+      });
+
+      const mount = await store.getState().materializeProject({
+        sessionId: session.id,
+        projectId: API_PROJECT_ID,
+        reason: 'added manually by the user',
+      });
+
+      expect(createWorktreeSpy).not.toHaveBeenCalled();
+      expect(createSessionDirSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ basePath: '/tmp/notes', sessionId: session.id }),
+      );
+      expect(mount.branch).toBe('');
+      expect(store.getState().sessionBranches[session.id]).toBe('');
+    });
+
+    it('stamps the detected repo slug on the materialized worktree row', async () => {
+      const { store, session } = await seedMultiProjectSession();
       const db = await import('@goodboy/db');
       const core = await import('@goodboy/core');
-      vi.mocked(db.listWorkspaces).mockResolvedValueOnce([buildWorkspace()]);
+      vi.mocked(core.detectRepoSlug).mockResolvedValueOnce('acme/goodboy');
       createWorktreeSpy.mockResolvedValueOnce({
-        worktreePath: '/tmp/repo/wt-slug',
-        branchName: 'ak/slug',
+        worktreePath: '/tmp/container/api',
+        branchName: 'goodboy/slug',
         slug: 'slug',
         reused: false,
       });
-      vi.mocked(core.detectRepoSlug).mockResolvedValueOnce('acme/goodboy');
-      store.setState({ currentWorkspaceId: WS_ID });
 
-      const { session } = await store
-        .getState()
-        .createSession({ workspaceId: WS_ID, goal: 'Slug it' });
+      await store.getState().materializeProject({
+        sessionId: session.id,
+        projectId: API_PROJECT_ID,
+        reason: 'slug it',
+      });
 
       await vi.waitFor(() => {
         expect(vi.mocked(db.updateSessionWorktreeRepoSlug)).toHaveBeenCalledWith({
           db: expect.anything(),
           sessionId: session.id,
-          worktreePath: '/tmp/repo/wt-slug',
+          worktreePath: '/tmp/container/api',
           repoSlug: 'acme/goodboy',
         });
       });
-    });
-
-    it('creates the session anyway when the slug cannot be detected', async () => {
-      const store = await getStore();
-      const db = await import('@goodboy/db');
-      const core = await import('@goodboy/core');
-      vi.mocked(db.listWorkspaces).mockResolvedValueOnce([buildWorkspace()]);
-      createWorktreeSpy.mockResolvedValueOnce({
-        worktreePath: '/tmp/repo/wt-offline',
-        branchName: 'ak/offline',
-        slug: 'offline',
-        reused: false,
-      });
-      vi.mocked(core.detectRepoSlug).mockResolvedValueOnce(null);
-      store.setState({ currentWorkspaceId: WS_ID });
-
-      const { session } = await store
-        .getState()
-        .createSession({ workspaceId: WS_ID, goal: 'Offline' });
-
-      expect(session.id).toBeDefined();
-      expect(vi.mocked(db.updateSessionWorktreeRepoSlug)).not.toHaveBeenCalled();
     });
   });
 

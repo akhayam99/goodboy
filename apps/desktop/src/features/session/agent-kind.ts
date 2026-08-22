@@ -76,6 +76,19 @@ export const kindConsumesPlan = (kind: AgentKind): boolean => {
   return PLAN_CONSUMING_KINDS.has(kind);
 };
 
+const WRITE_CAPABLE_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>([
+  'implementer',
+  'debugger',
+  'tester',
+  'docs',
+  'resolver',
+  'generic',
+]);
+
+export const kindWritesFiles = (kind: AgentKind): boolean => {
+  return WRITE_CAPABLE_KINDS.has(kind);
+};
+
 export const AGENT_KIND_META: Record<
   AgentKind,
   { label: string; hint: string; persona: string; expectedOutput: string | null }

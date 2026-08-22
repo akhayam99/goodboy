@@ -3,6 +3,9 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { WorkspaceIntegrationProvider } from '@goodboy/types';
 import { QUERY_BRIDGE_VERBS, buildIntegrationsGuard } from './integrationsGuard';
+import { buildWorkspaceScopeGuard } from './workspaceScopeGuard';
+
+const SESSION_SCOPED_PROVIDERS: ReadonlyArray<string> = ['project'];
 
 const catalogSource = (): string =>
   readFileSync(resolve(process.cwd(), 'src-tauri/src/query_bridge/protocol.rs'), 'utf8');
@@ -114,10 +117,33 @@ describe('buildIntegrationsGuard', () => {
 describe('the advertised verbs', () => {
   it('match the catalog the Rust bridge dispatches', () => {
     const rust = catalogVerbs();
+    const integrationProviders = Object.keys(rust).filter(
+      (provider) => !SESSION_SCOPED_PROVIDERS.includes(provider),
+    );
 
-    expect(Object.keys(rust).sort()).toEqual(Object.keys(QUERY_BRIDGE_VERBS).sort());
+    expect(integrationProviders.sort()).toEqual(Object.keys(QUERY_BRIDGE_VERBS).sort());
     for (const [provider, verbs] of Object.entries(QUERY_BRIDGE_VERBS)) {
       expect([...verbs].sort()).toEqual([...(rust[provider] ?? [])].sort());
     }
+  });
+
+  it('advertise the session-scoped project verbs through the workspace scope guard instead', () => {
+    const rust = catalogVerbs();
+
+    expect(rust['project']).toEqual(['materialize']);
+    const guard = buildWorkspaceScopeGuard({
+      containerDir: '/tmp/container',
+      projects: [],
+      mounts: [],
+      isBridgeServing: true,
+    });
+    expect(guard).toContain('query project materialize');
+    const silent = buildWorkspaceScopeGuard({
+      containerDir: '/tmp/container',
+      projects: [],
+      mounts: [],
+      isBridgeServing: false,
+    });
+    expect(silent).not.toContain('GOODBOY_BIN');
   });
 });

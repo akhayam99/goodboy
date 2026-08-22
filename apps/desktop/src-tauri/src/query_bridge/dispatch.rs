@@ -84,6 +84,9 @@ pub async fn dispatch(app: &AppHandle, request: &QueryRequest) -> Result<Value, 
     }
     let spec = spec_for(&request.provider, &request.verb)
         .ok_or_else(|| format!("unknown command: {} {}", request.provider, request.verb))?;
+    if request.provider == "project" {
+        return super::project::materialize(app, request).await;
+    }
     let workspace = integration_project_id(app, &request.workspace_id, &request.provider)?;
     let args = &request.args;
     match spec.access {
@@ -808,6 +811,7 @@ mod tests {
     ];
 
     const WRITE_VERBS: &[(&str, &str)] = &[
+        ("project", "materialize"),
         ("linear", "comment-create"),
         ("linear", "issue-update"),
         ("gitlab", "issue-update"),

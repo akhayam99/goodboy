@@ -6,6 +6,7 @@ import { bulkUnarchiveTask } from './bulkUnarchiveTask';
 import { createSession } from './createSession';
 import { deleteTask } from './deleteTask';
 import { linkSessionExternalTask } from './linkSessionExternalTask';
+import { materializeProject } from './materializeProject';
 import { renameTask } from './renameTask';
 import { setAgentConfig } from './setAgentConfig';
 import { setAgentVerbosity } from './setAgentVerbosity';
@@ -31,6 +32,7 @@ export const createSessionsSlice = (set: SetFn, get: GetFn) => {
     unarchiveTask: unarchiveTask(set, get),
     bulkUnarchiveTask: bulkUnarchiveTask(set, get),
     createSession: createSession(set, get),
+    materializeProject: materializeProject(set, get),
     linkSessionExternalTask: linkSessionExternalTask({ set, get }),
     unlinkSessionExternalTask: unlinkSessionExternalTask({ set, get }),
     setCurrentSession: setCurrentSession(set, get),

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 pub const SOCKET_ENV: &str = "GOODBOY_QUERY_SOCKET";
 pub const WORKSPACE_ENV: &str = "GOODBOY_WORKSPACE_ID";
+pub const SESSION_ENV: &str = "GOODBOY_SESSION_ID";
 pub const LEGACY_SOCKET_FILE: &str = "query.sock";
 pub const SOCKET_PREFIX: &str = "query-";
 pub const SOCKET_SUFFIX: &str = ".sock";
@@ -16,6 +17,8 @@ pub const INVOCATION: &str = "\"$GOODBOY_BIN\" query";
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct QueryRequest {
     pub workspace_id: String,
+    #[serde(default)]
+    pub session_id: String,
     pub provider: String,
     pub verb: String,
     #[serde(default)]
@@ -111,6 +114,13 @@ const fn flag(name: &'static str) -> Param {
 }
 
 pub const CATALOG: &[VerbSpec] = &[
+    VerbSpec {
+        provider: "project",
+        verb: "materialize",
+        params: &[req("name"), req("reason")],
+        access: Access::Write,
+        summary: "mount a workspace project into this session as a worktree and branch",
+    },
     VerbSpec {
         provider: "linear",
         verb: "issue",
@@ -943,10 +953,12 @@ mod tests {
     }
 
     #[test]
-    fn the_catalog_covers_every_credential_backed_provider() {
+    fn the_catalog_covers_every_credential_backed_provider_and_the_session_verbs() {
         assert_eq!(
             providers(),
-            vec!["linear", "sentry", "gitlab", "jira", "bitbucket", "slack"]
+            vec![
+                "project", "linear", "sentry", "gitlab", "jira", "bitbucket", "slack"
+            ]
         );
     }
 

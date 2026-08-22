@@ -8,6 +8,8 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { buildSessionProjectMounts } from '../worktrees/buildSessionMounts';
 import { purgeSessionFileVersions } from '../file-versions/persistFinalizedFileVersions';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
+import { forgetMaterializationSeed } from './materializationSeeds';
+import { resolveSessionsRoot } from './sessionsRoot';
 import type { GetFn, SetFn } from './types';
 
 export const deleteTask = (set: SetFn, get: GetFn) => {
@@ -56,13 +58,17 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       }
     }
     const containerPath = rows.find((row) => row.projectId === undefined)?.worktreePath;
-    if (containerPath !== undefined && workspace?.sessionsRoot != null) {
+    if (containerPath !== undefined && workspace !== undefined) {
       try {
-        await removeSessionDirectory({ basePath: workspace.sessionsRoot, path: containerPath });
+        await removeSessionDirectory({
+          basePath: resolveSessionsRoot({ workspace }),
+          path: containerPath,
+        });
       } catch (error) {
         cleanupFailures.push(error);
       }
     }
+    forgetMaterializationSeed({ sessionId });
     if (cleanupFailures.length > 0) {
       void get().emitNotification(
         'error',

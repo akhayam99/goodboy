@@ -1,5 +1,6 @@
 mod cli;
 mod dispatch;
+pub mod project;
 pub mod protocol;
 
 use std::path::{Path, PathBuf};
@@ -8,7 +9,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
 
 use protocol::{
-    QueryRequest, QueryResponse, BIN_ENV, SOCKET_ENV, SOCKET_PREFIX, SOCKET_SUFFIX, WORKSPACE_ENV,
+    QueryRequest, QueryResponse, BIN_ENV, SESSION_ENV, SOCKET_ENV, SOCKET_PREFIX, SOCKET_SUFFIX,
+    WORKSPACE_ENV,
 };
 
 pub(crate) use cli::dispatch as run_cli;
@@ -86,7 +88,7 @@ pub fn query_bridge_serving() -> bool {
     is_serving()
 }
 
-pub(crate) fn apply_env(command: &mut Command, workspace_id: Option<&str>) {
+pub(crate) fn apply_env(command: &mut Command, workspace_id: Option<&str>, session_id: Option<&str>) {
     if !is_serving() {
         return;
     }
@@ -96,6 +98,9 @@ pub(crate) fn apply_env(command: &mut Command, workspace_id: Option<&str>) {
     command.env(SOCKET_ENV, socket);
     if let Some(workspace_id) = workspace_id {
         command.env(WORKSPACE_ENV, workspace_id);
+    }
+    if let Some(session_id) = session_id {
+        command.env(SESSION_ENV, session_id);
     }
     if let Some(exe) = exe_path() {
         command.env(BIN_ENV, exe);
@@ -501,7 +506,7 @@ mod tests {
 
     fn injected_names(workspace_id: Option<&str>) -> Vec<String> {
         let mut command = Command::new("true");
-        apply_env(&mut command, workspace_id);
+        apply_env(&mut command, workspace_id, Some("session-1"));
         command
             .get_envs()
             .filter_map(|(key, _)| key.to_str().map(str::to_string))
@@ -515,12 +520,13 @@ mod tests {
         assert_eq!(names.contains(&SOCKET_ENV.to_string()), is_serving());
         assert_eq!(names.contains(&BIN_ENV.to_string()), is_serving());
         assert_eq!(names.contains(&WORKSPACE_ENV.to_string()), is_serving());
+        assert_eq!(names.contains(&SESSION_ENV.to_string()), is_serving());
     }
 
     #[test]
     fn the_socket_a_child_is_handed_is_the_one_this_instance_binds() {
         let mut command = Command::new("true");
-        apply_env(&mut command, Some("ws-1"));
+        apply_env(&mut command, Some("ws-1"), Some("session-1"));
         let injected = command
             .get_envs()
             .find(|(key, _)| *key == std::ffi::OsStr::new(SOCKET_ENV))

@@ -11,8 +11,15 @@ type Props = {
 
 export const RepoScopeBar = ({ sessionId }: Props) => {
   const mounts = useAppStore((state) => state.sessionProjectMounts[sessionId] ?? EMPTY_MOUNTS);
+  const workspaceProjectCount = useAppStore((state) => {
+    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    if (session === undefined) {
+      return 0;
+    }
+    return state.projects.filter((project) => project.workspaceId === session.workspaceId).length;
+  });
 
-  if (mounts.length <= 1) {
+  if (mounts.length <= 1 && workspaceProjectCount <= 1) {
     return null;
   }
 

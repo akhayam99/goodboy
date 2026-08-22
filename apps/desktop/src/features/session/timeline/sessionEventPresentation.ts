@@ -1,4 +1,5 @@
 import {
+  FolderGit2,
   FolderPlus,
   GitBranch,
   GitMerge,
@@ -31,6 +32,9 @@ const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
   workflow_restored: 'plain',
   workflow_deleted: 'muted',
   decisions_changed: 'muted',
+  project_materialized: 'plain',
+  project_materialization_refused: 'muted',
+  external_task_created: 'plain',
 };
 
 export type SessionEventGlyph = {
@@ -55,6 +59,9 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   workflow_restored: { icon: CONCEPT_ICONS.workflows, tone: 'accent', label: 'Workflow' },
   workflow_deleted: { icon: Trash2, tone: 'neutral', label: 'Workflow' },
   decisions_changed: { icon: CONCEPT_ICONS.decisions, tone: 'neutral', label: 'Decisions' },
+  project_materialized: { icon: FolderGit2, tone: 'info', label: 'Project' },
+  project_materialization_refused: { icon: FolderGit2, tone: 'warning', label: 'Project' },
+  external_task_created: { icon: Link2, tone: 'neutral', label: 'Issue' },
 };
 
 type PayloadParams = {
@@ -119,6 +126,14 @@ export const sessionEventTitle = ({ event }: TitleParams): string => {
       return `${workflowLabel({ payload })} deleted`;
     case 'decisions_changed':
       return `${decisionCount({ count: payload?.added ?? 0 })} added, ${payload?.removed ?? 0} removed`;
+    case 'project_materialized':
+      return payload?.branch == null || payload.branch === ''
+        ? `Project mounted: ${payload?.reason ?? 'no reason recorded'}`
+        : `Project mounted on ${payload.branch}: ${payload?.reason ?? 'no reason recorded'}`;
+    case 'project_materialization_refused':
+      return `Project mount refused: ${payload?.reason ?? 'unknown failure'}`;
+    case 'external_task_created':
+      return `Created ${issueLabel({ payload })}`;
     default: {
       const exhaustive: never = event.kind;
       return exhaustive;

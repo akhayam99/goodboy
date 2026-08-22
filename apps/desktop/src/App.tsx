@@ -57,6 +57,7 @@ import { OnboardingCard } from './features/onboarding/OnboardingCard';
 import { OnboardingWizard } from './features/onboarding/OnboardingWizard';
 import { CompanionStudio } from './features/companion/CompanionStudio';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
+import { listenProjectMaterializeRequests } from './features/session/projectMaterializeBridge';
 import { markStepComplete } from './features/onboarding/onboarding-store';
 import { OPEN_COMMAND_PALETTE_EVENT } from './features/onboarding/openCommandPaletteEvent';
 import { useShortcut } from './shared/keyboard/useShortcut';
@@ -490,6 +491,22 @@ export const App = () => {
     let off: (() => void) | undefined;
     let cancelled = false;
     void listenBridgeCommands().then((fn) => {
+      if (cancelled) {
+        fn();
+        return;
+      }
+      off = fn;
+    });
+    return () => {
+      cancelled = true;
+      off?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    let off: (() => void) | undefined;
+    let cancelled = false;
+    void listenProjectMaterializeRequests().then((fn) => {
       if (cancelled) {
         fn();
         return;

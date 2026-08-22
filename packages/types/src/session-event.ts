@@ -16,6 +16,9 @@ export const SESSION_EVENT_KINDS = [
   'workflow_restored',
   'workflow_deleted',
   'decisions_changed',
+  'project_materialized',
+  'project_materialization_refused',
+  'external_task_created',
 ] as const;
 
 export type SessionEventKind = (typeof SESSION_EVENT_KINDS)[number];
@@ -34,6 +37,9 @@ export type SessionEventPayload = Readonly<{
   runId?: string;
   added?: number;
   removed?: number;
+  projectId?: string;
+  reason?: string;
+  externalId?: string;
 }>;
 
 export type SessionEvent = Readonly<{

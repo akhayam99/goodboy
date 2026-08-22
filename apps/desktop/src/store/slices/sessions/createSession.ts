@@ -3,12 +3,10 @@ import type {
   AttachmentInput,
   IsoDateTime,
   ModelEffort,
-  Project,
   ProjectId,
   ProviderId,
   Session,
   SessionId,
-  SessionProjectMount,
   SessionExternalTask,
   SessionExternalTaskProvider,
   SessionProviderPreference,
@@ -23,19 +21,16 @@ import {
   insertSessionWorktree,
   getWorkspaceById,
   listProjectsForWorkspace,
-  updateSessionWorktreeRepoSlug,
   upsertSessionExternalTask,
   setSetting as dbSetSetting,
   upsertContextSlot,
 } from '@goodboy/db';
-import { detectRepoSlug } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { tauriGhRunner } from '../../../features/github/github';
 import {
-  createSessionDir,
-  createWorktree,
+  writeSimpleSessionMarker,
   type CreatedWorktree,
 } from '../../../features/worktree/worktree';
+import { prepareSimpleWorkspace } from '../../../features/workspace/prepareSimpleWorkspace';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 import { kindRouting, AGENT_KIND_META, type AgentKind } from '../../../features/session/agent-kind';
 import {
@@ -46,48 +41,9 @@ import { markSessionMobileShared } from '../../../features/companion/mobileConfi
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import { clampTitle } from './titleLimit';
 import { preSpawnWorkflowAgents } from '../workflows/preSpawnWorkflowAgents';
-import { deriveDefaultSessionDirectoryNameFromGoal } from '../../../shared/utils/deriveDefaultSessionDirectoryNameFromGoal';
+import { rememberMaterializationSeed } from './materializationSeeds';
+import { resolveSessionsRoot } from './sessionsRoot';
 import type { GetFn, SetFn } from './types';
-
-type RepoSlugTarget = {
-  readonly repoRoot: string;
-  readonly worktreePath: string;
-  readonly projectId?: ProjectId;
-};
-
-type PopulateRepoSlugsParams = {
-  readonly sessionId: SessionId;
-  readonly workspaceId: WorkspaceId;
-  readonly targets: ReadonlyArray<RepoSlugTarget>;
-};
-
-const populateWorktreeRepoSlugs = async ({
-  sessionId,
-  workspaceId,
-  targets,
-}: PopulateRepoSlugsParams): Promise<void> => {
-  for (const target of targets) {
-    try {
-      const slug = await detectRepoSlug(
-        tauriGhRunner,
-        target.repoRoot,
-        workspaceId,
-        target.projectId,
-      );
-      if (slug == null) {
-        continue;
-      }
-      await updateSessionWorktreeRepoSlug({
-        db: tauriDatabase,
-        sessionId,
-        worktreePath: target.worktreePath,
-        repoSlug: slug,
-      });
-    } catch {
-      continue;
-    }
-  }
-};
 
 const slugifyDir = (raw: string): string =>
   raw
@@ -125,11 +81,6 @@ type Input = {
   mobileShared?: boolean;
 };
 
-type MaterializedProject = {
-  readonly project: Project;
-  readonly worktree: CreatedWorktree;
-};
-
 export const createSession = (set: SetFn, get: GetFn) => {
   return async ({
     workspaceId,
@@ -163,50 +114,37 @@ export const createSession = (set: SetFn, get: GetFn) => {
       branchSlug?.trim() || (goal.trim().length > 0 ? goal : `session-${Date.now()}`);
     const trimmedExisting = existingBranch?.trim();
     const trimmedFallbackRef = fallbackRef?.trim();
+    const trimmedFolderName = folderName?.trim();
     const sessionId = crypto.randomUUID() as SessionId;
     if (mobileShared) {
       markSessionMobileShared(sessionId);
     }
     const dirSlug = `${slugifyDir(slugSeed)}-${sessionId.slice(0, 8)}`;
-    const isMultiProject = projects.length > 1;
-    const sessionRoot = workspace.sessionsRoot ?? projects[0]!.rootPath;
-    const containerDir = `${sessionRoot}/${dirSlug}`;
-    const materializedProjects: Array<MaterializedProject> = [];
-    // TODO (@ak): lazy in phase 3
-    for (const project of projects) {
-      const directoryName = isMultiProject
-        ? project.name
-        : (folderName ?? deriveDefaultSessionDirectoryNameFromGoal({ goal: goal.trim() }));
-      const projectWorktree =
-        project.kind === 'repo'
-          ? await createWorktree({
-              repoPath: project.rootPath,
-              branchPrefix: prefix,
-              slug: isMultiProject ? dirSlug : slugSeed,
-              ...(isMultiProject ? { parentDir: containerDir, dirName: project.name } : {}),
-              ...(trimmedExisting !== undefined ? { existingBranch: trimmedExisting } : {}),
-              ...(trimmedExisting !== undefined && trimmedFallbackRef !== undefined
-                ? { fallbackRef: trimmedFallbackRef }
-                : {}),
-            })
-          : await createSessionDir({
-              basePath: isMultiProject ? containerDir : project.rootPath,
-              slug: dirSlug,
-              directoryName,
-              sessionId,
-              workspaceId,
-            });
-      materializedProjects.push({ project, worktree: projectWorktree });
-    }
-    const firstMaterialized = materializedProjects[0]!;
-    const worktree: CreatedWorktree = isMultiProject
-      ? {
-          worktreePath: containerDir,
-          branchName: firstMaterialized.worktree.branchName,
-          slug: dirSlug,
-          reused: false,
-        }
-      : firstMaterialized.worktree;
+    const sessionsRoot = resolveSessionsRoot({ workspace });
+    const containerDir = await prepareSimpleWorkspace({ path: `${sessionsRoot}/${dirSlug}` });
+    await writeSimpleSessionMarker({ path: containerDir, sessionId, workspaceId });
+    rememberMaterializationSeed({
+      sessionId,
+      seed: {
+        branchPrefix: prefix,
+        sessionSlug: branchSlug?.trim() ? slugifyDir(branchSlug) : dirSlug,
+        ...(trimmedExisting !== undefined && trimmedExisting !== ''
+          ? { existingBranch: trimmedExisting }
+          : {}),
+        ...(trimmedFallbackRef !== undefined && trimmedFallbackRef !== ''
+          ? { fallbackRef: trimmedFallbackRef }
+          : {}),
+        ...(trimmedFolderName !== undefined && trimmedFolderName !== ''
+          ? { folderName: trimmedFolderName }
+          : {}),
+      },
+    });
+    const worktree: CreatedWorktree = {
+      worktreePath: containerDir,
+      branchName: '',
+      slug: dirSlug,
+      reused: false,
+    };
 
     if (!get().workspaceOverrides[workspaceId]) {
       await get()
@@ -235,7 +173,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
     const session: Session = {
       id: sessionId,
       workspaceId,
-      activeProjectId: firstMaterialized.project.id,
       goal: clampTitle(goal.trim() || worktree.slug),
       state: initialState,
       contextSlots: [],
@@ -267,7 +204,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
       const row: SessionExternalTask = {
         sessionId: session.id,
         ...(externalTask.projectId != null ? { projectId: externalTask.projectId } : {}),
-        ...(worktree.branchName !== '' ? { branch: worktree.branchName } : {}),
         provider: externalTask.provider,
         externalId: externalTask.externalId,
         identifier: externalTask.identifier,
@@ -282,54 +218,33 @@ export const createSession = (set: SetFn, get: GetFn) => {
         continue;
       }
     }
-    if (isMultiProject) {
-      await insertSessionWorktree(tauriDatabase, {
-        id: crypto.randomUUID(),
-        sessionId: session.id,
-        worktreePath: worktree.worktreePath,
-        branch: worktree.branchName,
-        parallelIndex: 0,
-        createdAt: Date.now(),
-      });
-    }
-    for (let index = 0; index < materializedProjects.length; index += 1) {
-      const materialized = materializedProjects[index]!;
-      await insertSessionWorktree(tauriDatabase, {
-        id: crypto.randomUUID(),
-        sessionId: session.id,
-        worktreePath: materialized.worktree.worktreePath,
-        branch: materialized.worktree.branchName,
-        parallelIndex: isMultiProject ? index + 1 : 0,
-        projectId: materialized.project.id,
-        mountName: materialized.project.name,
-        createdAt: Date.now(),
-      });
-    }
+    await insertSessionWorktree(tauriDatabase, {
+      id: crypto.randomUUID(),
+      sessionId: session.id,
+      worktreePath: containerDir,
+      branch: '',
+      parallelIndex: 0,
+      createdAt: Date.now(),
+    });
     await get().recordSessionEvent({
       sessionId: session.id,
       kind: 'worktree_created',
-      payload: { worktreePath: worktree.worktreePath },
+      payload: { worktreePath: containerDir },
     });
-    if (worktree.branchName.length > 0) {
+    for (const row of externalTaskRows) {
       await get().recordSessionEvent({
         sessionId: session.id,
-        kind: 'branch_created',
-        payload: { branch: worktree.branchName },
+        kind: 'external_task_created',
+        payload: {
+          provider: row.provider,
+          externalId: row.externalId,
+          identifier: row.identifier,
+          title: row.title,
+          url: row.url,
+          ...(row.projectId != null ? { projectId: row.projectId } : {}),
+        },
       });
     }
-    const repoSlugTargets: ReadonlyArray<RepoSlugTarget> = materializedProjects.flatMap(
-      (materialized) =>
-        materialized.project.kind === 'folder'
-          ? []
-          : [
-              {
-                repoRoot: materialized.project.rootPath,
-                worktreePath: materialized.worktree.worktreePath,
-                projectId: materialized.project.id,
-              },
-            ],
-    );
-    void populateWorktreeRepoSlugs({ sessionId, workspaceId, targets: repoSlugTargets });
 
     const goalText = goal.trim() || worktree.slug;
     if (goalText.length > 0) {
@@ -404,15 +319,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
     }
 
     const firstAgent = prespawnedRuns[0] ?? null;
-    const sessionProjectMounts: ReadonlyArray<SessionProjectMount> = materializedProjects.map(
-      (materialized) => ({
-        projectId: materialized.project.id,
-        mountName: materialized.project.name,
-        worktreePath: materialized.worktree.worktreePath,
-        repoRoot: materialized.project.rootPath,
-        branch: materialized.worktree.branchName,
-      }),
-    );
     const transcriptEntries: Record<string, ReadonlyArray<never>> = {};
     const turnStateEntries: Record<string, { kind: 'draft' }> = {};
     for (const agent of prespawnedRuns) {
@@ -431,24 +337,15 @@ export const createSession = (set: SetFn, get: GetFn) => {
       },
       sessionWorktrees: {
         ...state.sessionWorktrees,
-        [session.id]: isMultiProject
-          ? [
-              worktree.worktreePath,
-              ...materializedProjects.map((materialized) => materialized.worktree.worktreePath),
-            ]
-          : [worktree.worktreePath],
+        [session.id]: [containerDir],
       },
       sessionProjectMounts: {
         ...state.sessionProjectMounts,
-        [session.id]: sessionProjectMounts,
-      },
-      sessionActiveProject: {
-        ...state.sessionActiveProject,
-        [session.id]: firstMaterialized.project.id,
+        [session.id]: [],
       },
       sessionBranches: {
         ...state.sessionBranches,
-        [session.id]: worktree.branchName,
+        [session.id]: '',
       },
       sessionSlots: {
         ...state.sessionSlots,
@@ -488,6 +385,21 @@ export const createSession = (set: SetFn, get: GetFn) => {
       agentEffortOverride: { ...get().agentEffortOverride, ...agentEffortOverrides },
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
+
+    if (trimmedExisting !== undefined && trimmedExisting !== '') {
+      const adoptionProjectId =
+        externalTasks?.find((task) => task.projectId != null)?.projectId ??
+        projects.find((project) => project.kind === 'repo')?.id;
+      if (adoptionProjectId !== undefined) {
+        await get()
+          .materializeProject({
+            sessionId: session.id,
+            projectId: adoptionProjectId,
+            reason: `adopted existing branch ${trimmedExisting}`,
+          })
+          .catch(() => undefined);
+      }
+    }
 
     if (attachmentInputs && attachmentInputs.length > 0) {
       await get().addGoalAttachments({ type: 'session', id: session.id }, attachmentInputs);

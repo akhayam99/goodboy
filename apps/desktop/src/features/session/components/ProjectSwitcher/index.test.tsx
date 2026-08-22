@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectId, SessionProjectMount } from '@goodboy/types';
 
@@ -8,7 +8,14 @@ const { store } = vi.hoisted(() => ({
   store: {
     sessionProjectMounts: {} as Record<string, ReadonlyArray<SessionProjectMount>>,
     sessionActiveProject: {} as Record<string, string>,
+    sessions: [{ id: 'session-1', workspaceId: 'workspace-1' }] as ReadonlyArray<{
+      id: string;
+      workspaceId: string;
+    }>,
+    projects: [] as ReadonlyArray<{ id: string; workspaceId: string; name: string; kind: string }>,
     setSessionActiveProject: vi.fn(),
+    materializeProject: vi.fn(),
+    emitNotification: vi.fn(),
   },
 }));
 
@@ -63,5 +70,38 @@ describe('ProjectSwitcher', () => {
     render(<ProjectSwitcher sessionId={'session-1' as never} />);
 
     expect(screen.queryByRole('tablist', { name: 'Active project' })).toBeNull();
+  });
+
+  it('offers the unmaterialized projects and materializes the picked one manually', async () => {
+    store.projects = [
+      { id: 'project-api', workspaceId: 'workspace-1', name: 'api', kind: 'repo' },
+      { id: 'project-web', workspaceId: 'workspace-1', name: 'web', kind: 'repo' },
+      { id: 'project-docs', workspaceId: 'workspace-1', name: 'docs', kind: 'folder' },
+    ];
+    store.materializeProject.mockResolvedValue(API_MOUNT);
+
+    render(<ProjectSwitcher sessionId={'session-1' as never} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add a project to this session' }));
+    fireEvent.click(screen.getByText('docs'));
+
+    await waitFor(() =>
+      expect(store.materializeProject).toHaveBeenCalledWith({
+        sessionId: 'session-1',
+        projectId: 'project-docs',
+        reason: 'added manually by the user',
+      }),
+    );
+  });
+
+  it('shows no add control when every workspace project is already mounted', () => {
+    store.projects = [
+      { id: 'project-api', workspaceId: 'workspace-1', name: 'api', kind: 'repo' },
+      { id: 'project-web', workspaceId: 'workspace-1', name: 'web', kind: 'repo' },
+    ];
+
+    render(<ProjectSwitcher sessionId={'session-1' as never} />);
+
+    expect(screen.queryByRole('button', { name: 'Add a project to this session' })).toBeNull();
   });
 });

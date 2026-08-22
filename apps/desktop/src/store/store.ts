@@ -50,6 +50,7 @@ import type {
   TurnProviderOverride,
   SessionExternalTaskProvider,
   SessionExternalTask,
+  SessionProjectMount,
   SessionEventKind,
   SessionEventPayload,
   IntegrationCredentialId,
@@ -321,6 +322,11 @@ export type AppActions = {
     }>;
     mobileShared?: boolean;
   }): Promise<{ session: Session; worktree: CreatedWorktree }>;
+  materializeProject(input: {
+    sessionId: SessionId;
+    projectId: ProjectId;
+    reason: string;
+  }): Promise<SessionProjectMount>;
   linkSessionExternalTask(
     sessionId: SessionId,
     task: Omit<SessionExternalTask, 'sessionId'>,

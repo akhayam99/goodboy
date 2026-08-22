@@ -145,6 +145,8 @@ function buildHarness(opts: {
   const state = {
     sessionPhaseRuns: { [SESSION_ID]: [opts.agent] },
     sessions: [session],
+    projects: [],
+    sessionProjectMounts: {},
     phaseTemplates: { [WS_ID]: [opts.workflow] },
     sessionPlans: { [SESSION_ID]: opts.plans },
     planConsumptions: {},

@@ -70,6 +70,8 @@ pub struct SpawnArgs {
     #[serde(default)]
     pub workspace_id: Option<String>,
     #[serde(default)]
+    pub session_id: Option<String>,
+    #[serde(default)]
     pub api_key_env: Option<String>,
     #[serde(default)]
     pub credential_id: Option<String>,
@@ -271,6 +273,7 @@ struct SpawnOneArgs<'a> {
     pub api_key_env: Option<&'a str>,
     pub credential_id: Option<&'a str>,
     pub workspace_id: Option<&'a str>,
+    pub session_id: Option<&'a str>,
     pub cursor_max_mode: bool,
 }
 
@@ -308,7 +311,7 @@ fn spawn_one(
         command.env("GITHUB_TOKEN", &token);
     }
 
-    crate::query_bridge::apply_env(&mut command, args.workspace_id);
+    crate::query_bridge::apply_env(&mut command, args.workspace_id, args.session_id);
 
     let cli_args = build_provider_cli_args(args.binary, &args);
     for a in &cli_args {
@@ -395,6 +398,7 @@ pub fn turn_spawn(
             api_key_env: args.api_key_env.as_deref(),
             credential_id: args.credential_id.as_deref(),
             workspace_id: args.workspace_id.as_deref(),
+            session_id: args.session_id.as_deref(),
             cursor_max_mode: args.cursor_max_mode,
         },
     )
@@ -515,6 +519,7 @@ mod tests {
             api_key_env: None,
             credential_id: None,
             workspace_id: None,
+            session_id: None,
             cursor_max_mode: false,
         };
         assert_eq!(args.run_id, "run-1");
@@ -542,6 +547,7 @@ mod tests {
             api_key_env: None,
             credential_id: None,
             workspace_id: None,
+            session_id: None,
             cursor_max_mode: false,
         }
     }
@@ -786,6 +792,7 @@ mod tests {
             api_key_env: None,
             credential_id: None,
             workspace_id: None,
+            session_id: None,
             cursor_max_mode: false,
         };
         let cli = build_provider_cli_args("codex", &args);

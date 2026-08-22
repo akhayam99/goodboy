@@ -92,6 +92,7 @@ type SpawnArgs = {
   readonly systemPrompt?: string;
   readonly effort?: string;
   readonly workspaceId?: string;
+  readonly sessionId?: string;
   readonly apiKeyEnv?: string;
   readonly credentialId?: string;
   readonly cursorMaxMode?: boolean;

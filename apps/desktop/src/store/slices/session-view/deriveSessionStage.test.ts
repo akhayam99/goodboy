@@ -103,3 +103,19 @@ describe('deriveSessionStage pull request freshness', () => {
     expect(info.stage).toBe('review');
   });
 });
+
+describe('deriveSessionStage lazy session', () => {
+  it('places a freshly created branchless draft session as building and ready for work', () => {
+    const draftSession: Session = { ...session, state: { kind: 'draft' } };
+
+    const info = deriveSessionStage({
+      session: draftSession,
+      pr: null,
+      ...signals,
+      isBranchless: true,
+    });
+
+    expect(info.stage).toBe('building');
+    expect(info.reason).toBe('ready for work');
+  });
+});

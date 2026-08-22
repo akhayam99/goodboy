@@ -182,6 +182,12 @@ vi.mock('../features/worktree/worktree', () => ({
     slug: 'test',
   })),
   removeWorktree: vi.fn(),
+  writeSimpleSessionMarker: vi.fn(async () => undefined),
+  simpleSessionDirExists: vi.fn(async () => true),
+}));
+
+vi.mock('../features/workspace/prepareSimpleWorkspace', () => ({
+  prepareSimpleWorkspace: vi.fn(async ({ path }: { path: string }) => path),
 }));
 
 vi.mock('../shared/lib/repo', () => ({ validateGitRepo: vi.fn() }));

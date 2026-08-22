@@ -7,6 +7,7 @@ import type { LensKind } from '../../../../store';
 type Store = {
   sessions: ReadonlyArray<Session>;
   workspaces: ReadonlyArray<{ id: string; rootPath: string; kind: string }>;
+  projects: ReadonlyArray<{ id: string; workspaceId: string; name: string; kind: string }>;
   activeLens: Record<string, LensKind | null>;
   selectedAgentId: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
@@ -52,6 +53,7 @@ const { store, hooks } = vi.hoisted(() => ({
   store: {
     sessions: [] as ReadonlyArray<Session>,
     workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'repo' }],
+    projects: [],
     activeLens: {},
     selectedAgentId: {},
     sessionWorktrees: {},

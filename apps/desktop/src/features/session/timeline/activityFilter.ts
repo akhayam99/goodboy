@@ -53,6 +53,9 @@ const CATEGORY_BY_EVENT_KIND: Record<SessionEventKind, ActivityCategory> = {
   workflow_restored: 'workflows',
   workflow_deleted: 'workflows',
   decisions_changed: 'decisions',
+  project_materialized: 'worktree',
+  project_materialization_refused: 'worktree',
+  external_task_created: 'issues',
 };
 
 type EntryParams = {

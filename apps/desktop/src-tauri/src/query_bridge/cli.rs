@@ -1,6 +1,6 @@
 use super::protocol::{
-    self, help_text, parse_argv, ArgvOutcome, QueryRequest, QueryResponse, SOCKET_ENV, SUBCOMMAND,
-    WORKSPACE_ENV,
+    self, help_text, parse_argv, ArgvOutcome, QueryRequest, QueryResponse, SESSION_ENV, SOCKET_ENV,
+    SUBCOMMAND, WORKSPACE_ENV,
 };
 
 pub(crate) fn dispatch() -> Option<i32> {
@@ -39,6 +39,10 @@ fn run(argv: &[String]) -> Result<String, String> {
     }
     let request = QueryRequest {
         workspace_id: workspace_id.trim().to_string(),
+        session_id: std::env::var(SESSION_ENV)
+            .unwrap_or_default()
+            .trim()
+            .to_string(),
         provider: parsed.provider,
         verb: parsed.verb,
         args: parsed.args,

@@ -70,6 +70,7 @@ import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } fro
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from '../../integrationsGuard';
+import { buildWorkspaceScopeGuard } from '../../workspaceScopeGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
 import { stepSummaryDegraded } from '../../summarizeAgentOutput';
 import { decisionsDelta } from '../session-events';
@@ -151,7 +152,23 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (!session) {
       throw new Error(`session not found: ${sessionId}`);
     }
-    const initialWorkingDir = (before.sessionWorktrees[sessionId] ?? [])[0] ?? null;
+    const workspaceProjects = before.projects.filter(
+      (project) => project.workspaceId === session.workspaceId,
+    );
+    const onlyProject = workspaceProjects.length === 1 ? workspaceProjects[0]! : null;
+    if (onlyProject !== null && (before.sessionProjectMounts[sessionId] ?? []).length === 0) {
+      await get()
+        .materializeProject({
+          sessionId,
+          projectId: onlyProject.id,
+          reason: 'first turn on the only project of this workspace',
+        })
+        .catch(() => undefined);
+    }
+    const mountedState = get();
+    const turnMounts = mountedState.sessionProjectMounts[sessionId] ?? [];
+    const containerDir = (mountedState.sessionWorktrees[sessionId] ?? [])[0] ?? null;
+    const initialWorkingDir = turnMounts.length === 1 ? turnMounts[0]!.worktreePath : containerDir;
     if (initialWorkingDir === null) {
       throw new Error(
         'session worktree not initialized. restart the app to reload persisted worktree paths',
@@ -159,7 +176,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     }
     const workingDir = initialWorkingDir;
     const isPlainSessionDir = isBranchlessSession({
-      branch: before.sessionBranches[sessionId],
+      branch: mountedState.sessionBranches[sessionId],
     });
     if (isPlainSessionDir) {
       const exists = await simpleSessionDirExists({ path: workingDir });
@@ -713,34 +730,43 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           onFailure: notifySnapshotFailure,
         })
       : null;
-    const scopeGuard = (
-      isSessionDirScope
-        ? [
-            '[session-directory-scope]',
-            `You are operating inside this session directory: ${workingDir}`,
-            'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this directory.',
-            'NEVER write to absolute paths that exit this directory.',
-            'Prefer paths relative to your current working directory. If a request implies editing files outside this directory, stop and ask for explicit confirmation before touching them.',
-            '[/session-directory-scope]',
-          ]
-        : scopeMounts.length > 1
+    const isBridgeServing = await isQueryBridgeServing();
+    const isWorkspaceScope =
+      workspaceProjects.length > 1 || (workspaceProjects.length === 1 && scopeMounts.length === 0);
+    const scopeGuard = isWorkspaceScope
+      ? buildWorkspaceScopeGuard({
+          containerDir: containerDir ?? workingDir,
+          projects: workspaceProjects,
+          mounts: scopeMounts,
+          isBridgeServing,
+        })
+      : (isSessionDirScope
           ? [
-              '[multi-repo-scope]',
-              `You are operating across ${scopeMounts.length} linked git repositories mounted under: ${workingDir}`,
-              `Each repo lives in its own subfolder: ${scopeMounts.map((mount) => mount.mountName).join(', ')}.`,
-              'Each subfolder is a separate git repository with its own branch. Run git commands inside the relevant subfolder, never at the container root.',
-              'ALL file operations MUST resolve inside one of these subfolders. Do NOT create files at the container root or outside it.',
-              '[/multi-repo-scope]',
+              '[session-directory-scope]',
+              `You are operating inside this session directory: ${workingDir}`,
+              'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this directory.',
+              'NEVER write to absolute paths that exit this directory.',
+              'Prefer paths relative to your current working directory. If a request implies editing files outside this directory, stop and ask for explicit confirmation before touching them.',
+              '[/session-directory-scope]',
             ]
-          : [
-              '[worktree-scope]',
-              `You are operating inside an isolated git worktree at: ${workingDir}`,
-              'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this worktree.',
-              'NEVER write to absolute paths that exit this directory, especially not to the parent project checkout.',
-              'Prefer paths relative to your current working directory. If a user request implies editing files outside the worktree, stop and ask for explicit confirmation before touching them.',
-              '[/worktree-scope]',
-            ]
-    ).join('\n');
+          : scopeMounts.length > 1
+            ? [
+                '[multi-repo-scope]',
+                `You are operating across ${scopeMounts.length} linked git repositories mounted under: ${workingDir}`,
+                `Each repo lives in its own subfolder: ${scopeMounts.map((mount) => mount.mountName).join(', ')}.`,
+                'Each subfolder is a separate git repository with its own branch. Run git commands inside the relevant subfolder, never at the container root.',
+                'ALL file operations MUST resolve inside one of these subfolders. Do NOT create files at the container root or outside it.',
+                '[/multi-repo-scope]',
+              ]
+            : [
+                '[worktree-scope]',
+                `You are operating inside an isolated git worktree at: ${workingDir}`,
+                'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this worktree.',
+                'NEVER write to absolute paths that exit this directory, especially not to the parent project checkout.',
+                'Prefer paths relative to your current working directory. If a user request implies editing files outside the worktree, stop and ask for explicit confirmation before touching them.',
+                '[/worktree-scope]',
+              ]
+        ).join('\n');
     const languageGuard = buildSessionLanguageGuard({
       goal: resolveSessionLanguageGoal({
         session,
@@ -754,7 +780,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       providers: (get().workspaceIntegrations[session.workspaceId] ?? []).map(
         (integration) => integration.provider,
       ),
-      isBridgeServing: await isQueryBridgeServing(),
+      isBridgeServing,
     });
     const guards = [scopeGuard, languageGuard, integrationsGuard]
       .filter((block) => block.length > 0)
@@ -780,6 +806,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         prompt: resolvedPrompt,
         binary: providerInfo?.binary,
         workspaceId: session.workspaceId,
+        sessionId,
         ...(resumeSessionId !== undefined && { resumeSessionId }),
         systemPrompt: fullSystemPrompt,
         ...(effortFlag !== undefined && { effort: effortFlag }),

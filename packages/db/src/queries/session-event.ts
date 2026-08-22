@@ -66,6 +66,9 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
   const url = stringAt({ source, key: 'url' });
   const workflowName = stringAt({ source, key: 'workflowName' });
   const runId = stringAt({ source, key: 'runId' });
+  const projectId = stringAt({ source, key: 'projectId' });
+  const reason = stringAt({ source, key: 'reason' });
+  const externalId = stringAt({ source, key: 'externalId' });
   const number = numberAt({ source, key: 'number' });
   const added = numberAt({ source, key: 'added' });
   const removed = numberAt({ source, key: 'removed' });
@@ -80,6 +83,9 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
     ...(url != null ? { url } : {}),
     ...(workflowName != null ? { workflowName } : {}),
     ...(runId != null ? { runId } : {}),
+    ...(projectId != null ? { projectId } : {}),
+    ...(reason != null ? { reason } : {}),
+    ...(externalId != null ? { externalId } : {}),
     ...(number != null ? { number } : {}),
     ...(added != null ? { added } : {}),
     ...(removed != null ? { removed } : {}),
