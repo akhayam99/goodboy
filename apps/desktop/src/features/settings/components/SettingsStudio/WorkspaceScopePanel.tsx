@@ -14,6 +14,7 @@ import { Check, GitBranch, Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { WorkspaceProfileSection } from './WorkspaceProfileSection';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
+import { WorkspaceMergeSection } from './WorkspaceMergeSection';
 import { OrphanWorktreesSection } from '../../../../features/worktree/components/OrphanWorktreesSection';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 import { DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
@@ -215,6 +216,12 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
               <div ref={anchor('projects')}>
                 <WorkspaceProjectsSection workspaceId={workspaceId} />
+              </div>
+
+              <Divider />
+
+              <div ref={anchor('merge')}>
+                <WorkspaceMergeSection workspaceId={workspaceId} />
               </div>
 
               <Divider />

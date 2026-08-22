@@ -176,7 +176,7 @@ import { NoWorkspaceScreen } from '../../app/components/AppEmptyState';
 import { ChatEmptyState } from '../../features/chat/components/ChatView/ChatEmptyState';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';
-import { QuickCreateSession } from '../../features/session/components/QuickCreateSession';
+import { InlineSessionCreate } from '../../features/session/components/InlineSessionCreate';
 import { DeleteSessionConfirm } from '../../features/session/components/DeleteSessionConfirm';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';
@@ -223,8 +223,8 @@ describe('snapshot, empty states', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('QuickCreateSession: empty title', () => {
-    const { container } = render(<QuickCreateSession workspaceId={WS_ID} onClose={vi.fn()} />);
+  it('InlineSessionCreate: empty title', () => {
+    const { container } = render(<InlineSessionCreate workspaceId={WS_ID} onDone={vi.fn()} />);
     expect(container.firstChild).toMatchSnapshot();
   });
 
@@ -260,12 +260,12 @@ describe('snapshot, error states', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('QuickCreateSession: create error', async () => {
+  it('InlineSessionCreate: create error', async () => {
     mockStore({
       createSession: vi.fn().mockRejectedValue(new Error('workspace git repo not found')),
     });
     const { container, getByRole, findByRole } = render(
-      <QuickCreateSession workspaceId={WS_ID} onClose={vi.fn()} />,
+      <InlineSessionCreate workspaceId={WS_ID} onDone={vi.fn()} />,
     );
     fireEvent.change(getByRole('textbox', { name: /session title/i }), {
       target: { value: 'ship it' },

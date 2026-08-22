@@ -17,7 +17,7 @@ that story as they go.
 ### The workspace holds projects
 
 What used to be a workspace, one repository, is now a project. A workspace is
-the container above it: name it after the company or the context (Serenis),
+the container above it: name it after the company or the context,
 link the projects that belong there (api, app-web, website, infra). A single
 repository still works exactly as before, as a workspace with one project.
 The old composite workspaces dissolve into this model; existing data is

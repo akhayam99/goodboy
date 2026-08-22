@@ -49,3 +49,11 @@ export const initRepoWithRemote = async ({
 }: InitRepoParams): Promise<InitializedRepo> => {
   return invoke<InitializedRepo>('repo_init_with_remote', { args: { path, remoteUrl } });
 };
+
+type InitPlainRepoParams = {
+  readonly path: string;
+};
+
+export const initRepo = async ({ path }: InitPlainRepoParams): Promise<InitializedRepo> => {
+  return invoke<InitializedRepo>('repo_init', { path });
+};

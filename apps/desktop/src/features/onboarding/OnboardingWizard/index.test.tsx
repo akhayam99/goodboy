@@ -6,7 +6,7 @@ import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
 import type { OnboardingWizardState } from './useOnboardingWizard';
 import type { ProfileDraft } from './steps/ProfileStep';
 
-const { hookState, progressState, finishWizard, storeActions } = vi.hoisted(() => ({
+const { hookState, progressState, finishWizard, storeActions, repoLib } = vi.hoisted(() => ({
   hookState: {} as OnboardingWizardState,
   progressState: { completed: new Set<string>() },
   finishWizard: vi.fn(),
@@ -15,12 +15,20 @@ const { hookState, progressState, finishWizard, storeActions } = vi.hoisted(() =
     renameWorkspace: vi.fn(),
     setCurrentWorkspace: vi.fn(),
     updateWorkspaceProfile: vi.fn(),
+    addProject: vi.fn(),
+    adoptWorkspaceSessionsRoot: vi.fn(),
+  },
+  repoLib: {
+    initRepo: vi.fn(),
+    validateGitRepo: vi.fn(),
   },
 }));
 
 vi.mock('../../../store', () => ({
   useAppStore: (selector: (state: typeof storeActions) => unknown) => selector(storeActions),
 }));
+
+vi.mock('../../../shared/lib/repo', () => repoLib);
 
 vi.mock('../hooks/useOnboardingProgress', () => ({
   useOnboardingProgress: () => progressState,
@@ -52,18 +60,43 @@ vi.mock('./steps/WelcomeStep', () => ({ WelcomeStep: () => <div data-testid="Wel
 vi.mock('./steps/ProvidersStep', () => ({
   ProvidersStep: () => <div data-testid="ProvidersStep" />,
 }));
-vi.mock('./steps/WorkspaceNameStep', () => ({
-  WorkspaceNameStep: ({
+vi.mock('./steps/ShapeStep', () => ({
+  ShapeStep: ({
     workspace,
+    shape,
+    onShapeChange,
     name,
     onNameChange,
+    onSingleProject,
   }: {
     workspace: Workspace | null;
+    shape: 'workspace' | 'single' | null;
+    onShapeChange: (shape: 'workspace' | 'single') => void;
     name: string;
     onNameChange: (name: string) => void;
+    onSingleProject: (pick: { path: string; initialize: boolean }) => void;
   }) => (
-    <div data-testid="WorkspaceNameStep">
+    <div data-testid="ShapeStep">
       <span data-testid="existing-name">{workspace?.name}</span>
+      <span data-testid="shape">{shape ?? 'none'}</span>
+      <button type="button" onClick={() => onShapeChange('workspace')}>
+        pick workspace shape
+      </button>
+      <button type="button" onClick={() => onShapeChange('single')}>
+        pick single shape
+      </button>
+      <button
+        type="button"
+        onClick={() => onSingleProject({ path: '/tmp/solo', initialize: false })}
+      >
+        pick single folder
+      </button>
+      <button
+        type="button"
+        onClick={() => onSingleProject({ path: '/tmp/fresh', initialize: true })}
+      >
+        create single folder
+      </button>
       <input
         aria-label="Workspace name"
         value={name}
@@ -153,6 +186,17 @@ beforeEach(() => {
   storeActions.renameWorkspace.mockReset().mockResolvedValue(WORKSPACE);
   storeActions.setCurrentWorkspace.mockReset().mockResolvedValue(undefined);
   storeActions.updateWorkspaceProfile.mockReset().mockResolvedValue(WORKSPACE);
+  storeActions.addProject.mockReset().mockResolvedValue({ rootPath: '/tmp/solo' });
+  storeActions.adoptWorkspaceSessionsRoot.mockReset().mockResolvedValue(undefined);
+  repoLib.initRepo
+    .mockReset()
+    .mockResolvedValue({ rootPath: '/tmp/fresh', remoteUrl: '', branch: 'main' });
+  repoLib.validateGitRepo.mockReset().mockResolvedValue({
+    isRepo: true,
+    rootPath: '/tmp/solo',
+    resolvedPath: '/tmp/solo',
+    error: null,
+  });
 });
 afterEach(cleanup);
 
@@ -180,7 +224,7 @@ const continueTo = async (testId: string) => {
 
 const reachProfileStep = async () => {
   advance(/get started/i, 1);
-  await continueTo('WorkspaceNameStep');
+  await continueTo('ShapeStep');
   await continueTo('ProjectsStep');
   await continueTo('ProfileStep');
 };
@@ -213,15 +257,17 @@ describe('OnboardingWizard', () => {
       ).toBe(true);
     });
 
-    it('keeps Create workspace disabled until a name is typed', () => {
+    it('keeps Create workspace disabled until a shape is chosen and a name is typed', () => {
       setHook({ providersConnected: 1, hasWorkspace: false });
       render(<OnboardingWizard />);
       advance(/get started/i, 1);
       advance(/continue/i, 1);
-      expect(screen.getByTestId('WorkspaceNameStep')).toBeDefined();
+      expect(screen.getByTestId('ShapeStep')).toBeDefined();
       const cta = screen.getByRole('button', { name: /create workspace/i }) as HTMLButtonElement;
       expect(cta.disabled).toBe(true);
-      fireEvent.change(screen.getByLabelText('Workspace name'), { target: { value: 'Serenis' } });
+      fireEvent.change(screen.getByLabelText('Workspace name'), { target: { value: 'Demo Team' } });
+      expect(cta.disabled).toBe(true);
+      fireEvent.click(screen.getByRole('button', { name: /pick workspace shape/i }));
       expect(cta.disabled).toBe(false);
     });
 
@@ -234,12 +280,82 @@ describe('OnboardingWizard', () => {
       render(<OnboardingWizard />);
       advance(/get started/i, 1);
       advance(/continue/i, 1);
-      fireEvent.change(screen.getByLabelText('Workspace name'), { target: { value: 'Serenis' } });
+      fireEvent.click(screen.getByRole('button', { name: /pick workspace shape/i }));
+      fireEvent.change(screen.getByLabelText('Workspace name'), { target: { value: 'Demo Team' } });
       fireEvent.click(screen.getByRole('button', { name: /create workspace/i }));
 
       await waitFor(() => expect(screen.getByTestId('ProjectsStep')).toBeDefined());
-      expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'Serenis' });
+      expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'Demo Team' });
       expect(storeActions.setCurrentWorkspace).toHaveBeenCalledWith(WORKSPACE.id);
+    });
+
+    it('creates the container implicitly from a picked git folder and skips the projects step', async () => {
+      setHook({ providersConnected: 1, hasWorkspace: false });
+      storeActions.createWorkspace.mockImplementation(async ({ name }: { name: string }) => {
+        setHook(connectedWorkspaceState);
+        return { ...WORKSPACE, name };
+      });
+      render(<OnboardingWizard />);
+      advance(/get started/i, 1);
+      advance(/continue/i, 1);
+      fireEvent.click(screen.getByRole('button', { name: /pick single shape/i }));
+      fireEvent.click(screen.getByRole('button', { name: /pick single folder/i }));
+
+      await waitFor(() => expect(screen.getByTestId('ProfileStep')).toBeDefined());
+      expect(screen.queryByTestId('ProjectsStep')).toBeNull();
+      expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'solo' });
+      expect(storeActions.addProject).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE.id,
+        rootPath: '/tmp/solo',
+        requireRepo: true,
+      });
+      expect(storeActions.adoptWorkspaceSessionsRoot).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE.id,
+        rootPath: '/tmp/solo',
+      });
+    });
+
+    it('refuses a picked folder without a git repository and stays on the shape step', async () => {
+      setHook({ providersConnected: 1, hasWorkspace: false });
+      repoLib.validateGitRepo.mockResolvedValue({
+        isRepo: false,
+        rootPath: null,
+        resolvedPath: '/tmp/solo',
+        error: 'not a git repository',
+      });
+      render(<OnboardingWizard />);
+      advance(/get started/i, 1);
+      advance(/continue/i, 1);
+      fireEvent.click(screen.getByRole('button', { name: /pick single shape/i }));
+      fireEvent.click(screen.getByRole('button', { name: /pick single folder/i }));
+
+      await waitFor(() => expect(screen.getByRole('alert')).toBeDefined());
+      expect(screen.getByRole('alert').textContent).toMatch(/no git repository/i);
+      expect(storeActions.createWorkspace).not.toHaveBeenCalled();
+      expect(screen.getByTestId('ShapeStep')).toBeDefined();
+    });
+
+    it('initializes a fresh repository for New project and links it', async () => {
+      setHook({ providersConnected: 1, hasWorkspace: false });
+      storeActions.createWorkspace.mockImplementation(async ({ name }: { name: string }) => {
+        setHook(connectedWorkspaceState);
+        return { ...WORKSPACE, name };
+      });
+      storeActions.addProject.mockResolvedValue({ rootPath: '/tmp/fresh' });
+      render(<OnboardingWizard />);
+      advance(/get started/i, 1);
+      advance(/continue/i, 1);
+      fireEvent.click(screen.getByRole('button', { name: /pick single shape/i }));
+      fireEvent.click(screen.getByRole('button', { name: /create single folder/i }));
+
+      await waitFor(() => expect(screen.getByTestId('ProfileStep')).toBeDefined());
+      expect(repoLib.initRepo).toHaveBeenCalledWith({ path: '/tmp/fresh' });
+      expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'fresh' });
+      expect(storeActions.addProject).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE.id,
+        rootPath: '/tmp/fresh',
+        requireRepo: true,
+      });
     });
 
     it('prefills the existing workspace name and renames only on change', async () => {
@@ -247,6 +363,7 @@ describe('OnboardingWizard', () => {
       render(<OnboardingWizard />);
       advance(/get started/i, 1);
       advance(/continue/i, 1);
+      expect(screen.getByTestId('shape').textContent).toBe('workspace');
       const input = screen.getByLabelText('Workspace name') as HTMLInputElement;
       expect(input.value).toBe('Goodboy desktop');
       fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));

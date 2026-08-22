@@ -82,7 +82,7 @@ mod tests {
     #[test]
     fn renders_frontmatter_with_notes_body() {
         let rendered = render_profile(&ProfileProjectArgs {
-            workspace_slug: "serenis".into(),
+            workspace_slug: "demo-team".into(),
             role: Some("developer".into()),
             discipline: Some("frontend".into()),
             topics: vec!["design systems".into(), "a11y".into()],
@@ -97,7 +97,7 @@ mod tests {
     #[test]
     fn renders_null_fields_and_no_body_when_empty() {
         let rendered = render_profile(&ProfileProjectArgs {
-            workspace_slug: "serenis".into(),
+            workspace_slug: "demo-team".into(),
             role: None,
             discipline: Some("  ".into()),
             topics: vec![],

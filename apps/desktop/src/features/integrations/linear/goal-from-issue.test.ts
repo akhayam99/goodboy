@@ -8,7 +8,7 @@ function makeIssue(overrides: Partial<LinearIssue> = {}): LinearIssue {
     identifier: 'SER-123',
     title: 'Add user signup',
     description: 'Users should be able to sign up with email and password.',
-    url: 'https://linear.app/serenis/issue/SER-123',
+    url: 'https://linear.app/demo-team/issue/SER-123',
     state: { name: 'In Progress', type: 'started' },
     team: { key: 'SER' },
     updatedAt: '2026-05-21T10:00:00Z',

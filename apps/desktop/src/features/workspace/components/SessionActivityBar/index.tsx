@@ -37,6 +37,7 @@ import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { sessionCardShell } from '../../../session/components/sessionCardShell';
+import { InlineSessionCreate } from '../../../session/components/InlineSessionCreate';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { BulkActionBar } from '../BulkActionBar';
 import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
@@ -72,7 +73,6 @@ type Props = {
   archivedSessions: ReadonlyArray<Session>;
   currentSessionId: SessionId | null;
   onSelectSession: (id: SessionId) => void;
-  onNewSession: () => void;
   onArchivedTabOpen?: () => void;
 };
 
@@ -82,10 +82,19 @@ export const SessionActivityBar = ({
   archivedSessions,
   currentSessionId,
   onSelectSession,
-  onNewSession,
   onArchivedTabOpen,
 }: Props) => {
   const [tab, setTab] = useState<ActivityTab>('active');
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    const onNewSessionRequest = () => {
+      setTab('active');
+      setCreating(true);
+    };
+    window.addEventListener('goodboy:new-session', onNewSessionRequest);
+    return () => window.removeEventListener('goodboy:new-session', onNewSessionRequest);
+  }, []);
   const [expandedOverrides, setExpandedOverrides] = useState<ReadonlyMap<string, boolean>>(
     new Map(),
   );
@@ -190,11 +199,11 @@ export const SessionActivityBar = ({
             </div>
           </div>
 
-          {!isArchivedView && (
+          {!isArchivedView && !creating && (
             <Button
               variant="secondary"
               size="sm"
-              onClick={onNewSession}
+              onClick={() => setCreating(true)}
               aria-label="Create new session"
               title={`Create new session (${shortcutGlyphs('session.new')})`}
               className="group relative mb-1 w-full justify-center gap-1.5 px-2 text-xs"
@@ -208,6 +217,14 @@ export const SessionActivityBar = ({
                 {shortcutGlyphs('session.new')}
               </KbdPill>
             </Button>
+          )}
+
+          {!isArchivedView && creating && (
+            <InlineSessionCreate
+              workspaceId={workspaceId}
+              onDone={() => setCreating(false)}
+              className="mb-1"
+            />
           )}
 
           {displayGroups.map((group) => {

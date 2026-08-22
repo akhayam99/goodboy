@@ -32,7 +32,6 @@ import { ConvertWorkspaceDialog } from './features/workspace/components/ConvertW
 import { WorkspaceLauncher } from './features/workspace/components/WorkspaceLauncher';
 import { isMainWindow } from './features/workspace/window';
 import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
-import { QuickCreateSession } from './features/session/components/QuickCreateSession';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
 import { SentryStudio } from './features/integrations/sentry/SentryStudio';
@@ -181,7 +180,6 @@ export const App = () => {
       useAppStore.getState().setSessionStudio(id, null);
     }
   }, []);
-  const [newSessionOpen, setNewSessionOpen] = useState(false);
   const { commitDiff, setCommitDiff } = useCommitLinkInterceptor();
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
 
@@ -255,7 +253,6 @@ export const App = () => {
       if (!detail?.sessionId) {
         return;
       }
-      setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
       const state = useAppStore.getState();
@@ -268,7 +265,6 @@ export const App = () => {
       if (resolved === null) {
         return;
       }
-      setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
       useAppStore.getState().openDiffLens(resolved.sessionId, resolved.focus);
@@ -313,7 +309,6 @@ export const App = () => {
       setJiraStudioOpen(true);
     };
     const onRevealChat = () => {
-      setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
       const state = useAppStore.getState();
@@ -397,7 +392,6 @@ export const App = () => {
         return;
       }
       setWorkspaceSettingsFocus(detail?.section);
-      setNewSessionOpen(false);
       clearSessionStudio();
       setWorkspaceSettingsOpen(true);
     };
@@ -413,7 +407,6 @@ export const App = () => {
       if (!detail?.sessionId) {
         return;
       }
-      setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
       setSessionStudio(detail.sessionId, {
@@ -432,7 +425,6 @@ export const App = () => {
       if (!detail?.sessionId) {
         return;
       }
-      setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
       setSessionStudio(detail.sessionId, { kind: 'mr' });
@@ -447,7 +439,6 @@ export const App = () => {
       if (!detail?.sessionId) {
         return;
       }
-      setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
       setSessionStudio(detail.sessionId, { kind: 'bitbucket' });
@@ -462,7 +453,6 @@ export const App = () => {
       if (detail?.sessionId) {
         setWorkspaceSettingsOpen(false);
         setWorkspaceSettingsFocus(undefined);
-        setNewSessionOpen(false);
         setSessionStudio(detail.sessionId, { kind: 'workflow' });
       }
     };
@@ -479,11 +469,13 @@ export const App = () => {
       setWorkspaceSettingsFocus(undefined);
       clearSessionStudio();
       setGithubStudioOpen(false);
-      setNewSessionOpen(true);
+      if (hasActiveSession && sessionSidebar.isCollapsed) {
+        sessionSidebar.pin();
+      }
     };
     window.addEventListener('goodboy:new-session', handler);
     return () => window.removeEventListener('goodboy:new-session', handler);
-  }, [currentWorkspace, clearSessionStudio]);
+  }, [currentWorkspace, clearSessionStudio, hasActiveSession, sessionSidebar]);
 
   useEffect(() => {
     let off: (() => void) | undefined;
@@ -523,7 +515,6 @@ export const App = () => {
 
   useEffect(() => {
     setWorkspaceSettingsOpen(false);
-    setNewSessionOpen(false);
   }, [currentWorkspace?.id]);
 
   useEffect(() => {
@@ -936,11 +927,7 @@ export const App = () => {
                 ))}
               </div>
             ) : currentWorkspace ? (
-              <StageBoard
-                workspaceId={currentWorkspace.id}
-                sessions={currentWorkspaceSessions}
-                onCreateSession={openNewSession}
-              />
+              <StageBoard workspaceId={currentWorkspace.id} sessions={currentWorkspaceSessions} />
             ) : (
               <NoWorkspaceScreen onAddWorkspace={() => setAddWorkspaceOpen(true)} />
             )}
@@ -950,12 +937,7 @@ export const App = () => {
         }
         rightSidebar={null}
         overlay={
-          newSessionOpen && currentWorkspace ? (
-            <QuickCreateSession
-              workspaceId={currentWorkspace.id}
-              onClose={() => setNewSessionOpen(false)}
-            />
-          ) : workspaceSettingsOpen && currentWorkspace ? (
+          workspaceSettingsOpen && currentWorkspace ? (
             <WorkspaceSettingsPane
               workspaceId={currentWorkspace.id}
               workspaceName={currentWorkspace.name}

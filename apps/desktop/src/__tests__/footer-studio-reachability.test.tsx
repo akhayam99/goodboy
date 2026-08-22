@@ -190,8 +190,8 @@ vi.mock('../features/workspace/components/WorkspaceSwitcher', () => ({
 }));
 vi.mock('../features/workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('../features/workflows/components/WorkflowStudio', () => ({ WorkflowStudio: () => null }));
-vi.mock('../features/session/components/QuickCreateSession', () => ({
-  QuickCreateSession: () => null,
+vi.mock('../features/session/components/InlineSessionCreate', () => ({
+  InlineSessionCreate: () => null,
 }));
 vi.mock('../features/github/components/GitHubStudio', () => ({
   GitHubStudio: ({ workspaceName }: { workspaceName: string }) => (

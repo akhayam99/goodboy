@@ -12,6 +12,7 @@ import { WorkspaceGitPanel } from '../WorkspaceGitPanel';
 import { BulkActionBar } from '../BulkActionBar';
 import { useWorkspaceGitStatus } from '../../hooks/useWorkspaceGitStatus';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
+import { InlineSessionCreate } from '../../../session/components/InlineSessionCreate';
 import { StageColumn } from './StageColumn';
 import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
@@ -58,10 +59,9 @@ const BoardSkeleton = () => (
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly sessions: ReadonlyArray<Session>;
-  readonly onCreateSession: () => void;
 };
 
-export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) => {
+export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const groups = useStageGroupedSessions(workspaceId, sessions);
   const nav = useBoardNavigation();
   const archived = useAppStore((s) => s.archivedSessions[workspaceId] ?? EMPTY_ARRAY);
@@ -72,6 +72,7 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
   );
   const gitStatus = useWorkspaceGitStatus({ workspaceId });
   const [confirm, setConfirm] = useState<Confirm | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const onArchive = useCallback((session: Session) => setConfirm({ kind: 'archive', session }), []);
   const onDelete = useCallback((session: Session) => setConfirm({ kind: 'delete', session }), []);
@@ -79,6 +80,12 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
   useEffect(() => {
     void loadArchivedSessions(workspaceId);
   }, [loadArchivedSessions, workspaceId]);
+
+  useEffect(() => {
+    const onNewSessionRequest = () => setCreating(true);
+    window.addEventListener('goodboy:new-session', onNewSessionRequest);
+    return () => window.removeEventListener('goodboy:new-session', onNewSessionRequest);
+  }, []);
 
   const byStage = useMemo(() => {
     const map = new Map<string, ReadonlyArray<Session>>();
@@ -109,8 +116,13 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
   );
   const lasso = useDragLasso<SessionId>({ containerRef: columnsRef, onSelect: onLassoSelect });
 
+  useEffect(() => {
+    setCreating(false);
+  }, [workspaceId]);
+
   const empty = sessions.length === 0;
   const gitReady = gitStatus === null || gitStatus.state === 'ready';
+  const showInlineCreate = creating && gitReady;
   const blockedReason =
     gitStatus?.state === 'missing'
       ? 'The project folder is unreachable'
@@ -141,15 +153,31 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
                 </span>
               )}
             </span>
-            <Button
-              size="sm"
-              onClick={onCreateSession}
-              disabled={!gitReady}
-              title={gitReady ? undefined : blockedReason}
-            >
-              <Plus size={14} aria-hidden />
-              New session
-            </Button>
+            <span className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent('goodboy:open-workspace-settings', {
+                      detail: { section: 'projects' },
+                    }),
+                  )
+                }
+                title="Manage the projects linked to this workspace"
+                className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+              >
+                + Add project
+              </button>
+              <Button
+                size="sm"
+                onClick={() => setCreating(true)}
+                disabled={!gitReady}
+                title={gitReady ? undefined : blockedReason}
+              >
+                <Plus size={14} aria-hidden />
+                New session
+              </Button>
+            </span>
           </div>
           <Divider />
         </>
@@ -164,10 +192,18 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
             title="Start your first session"
             description="Describe an outcome. An agent picks it up in its own worktree and branch; your main checkout stays untouched."
             action={
-              <Button size="md" onClick={onCreateSession}>
-                <Plus size={16} aria-hidden />
-                New session
-              </Button>
+              showInlineCreate ? (
+                <InlineSessionCreate
+                  workspaceId={workspaceId}
+                  onDone={() => setCreating(false)}
+                  className="w-80 text-left"
+                />
+              ) : (
+                <Button size="md" onClick={() => setCreating(true)}>
+                  <Plus size={16} aria-hidden />
+                  New session
+                </Button>
+              )
             }
             size="lg"
             headingLevel={2}
@@ -186,7 +222,7 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
               PANE_RHYTHM.board.colGap,
             )}
           >
-            {STAGES.map((stage) => (
+            {STAGES.map((stage, index) => (
               <StageColumn
                 key={stage}
                 spec={{ kind: 'stage', stage }}
@@ -196,6 +232,14 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
                 onArchive={onArchive}
                 onDelete={onDelete}
                 onRestore={nav.restore}
+                leading={
+                  index === 0 && showInlineCreate ? (
+                    <InlineSessionCreate
+                      workspaceId={workspaceId}
+                      onDone={() => setCreating(false)}
+                    />
+                  ) : undefined
+                }
               />
             ))}
             <StageColumn

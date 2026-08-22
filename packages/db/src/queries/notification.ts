@@ -10,6 +10,7 @@ export type NotificationKind =
   | 'agent-auto-spawn'
   | 'pr-created'
   | 'workspace-deleted'
+  | 'workspace-merged'
   | 'boundary-drift'
   | 'branch-changed'
   | 'budget-cap'

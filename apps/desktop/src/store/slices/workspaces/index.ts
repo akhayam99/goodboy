@@ -3,6 +3,7 @@ import { addSimpleWorkspace } from './addSimpleWorkspace';
 import { adoptWorkspaceSessionsRoot } from './adoptWorkspaceSessionsRoot';
 import { createWorkspace } from './createWorkspace';
 import { deleteWorkspace } from './deleteWorkspace';
+import { mergeWorkspaces } from './mergeWorkspaces';
 import { renameWorkspace } from './renameWorkspace';
 import { setCurrentWorkspace } from './setCurrentWorkspace';
 import { updateWorkspaceProfile } from './updateWorkspaceProfile';
@@ -16,6 +17,7 @@ export const createWorkspacesSlice = (set: SetFn, get: GetFn) => {
     adoptWorkspaceSessionsRoot: adoptWorkspaceSessionsRoot(set, get),
     createWorkspace: createWorkspace(set, get),
     deleteWorkspace: deleteWorkspace(set, get),
+    mergeWorkspaces: mergeWorkspaces(set, get),
     renameWorkspace: renameWorkspace(set, get),
     updateWorkspaceProfile: updateWorkspaceProfile(set, get),
     setCurrentWorkspace: setCurrentWorkspace(set, get),

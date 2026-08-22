@@ -38,9 +38,9 @@ type MakeWorkspaceParams = {
 
 const makeWorkspace = ({ id = 'workspace-1', overrides = {} }: MakeWorkspaceParams): Workspace => ({
   id: id as WorkspaceId,
-  name: 'Serenis',
+  name: 'Demo Team',
   slug: id,
-  sessionsRoot: '/tmp/serenis-sessions',
+  sessionsRoot: '/tmp/demo-team-sessions',
   overrides: EMPTY_OVERRIDES,
   createdAt: at({ value: '2026-08-22T10:00:00Z' }),
   updatedAt: at({ value: '2026-08-22T10:05:00Z' }),

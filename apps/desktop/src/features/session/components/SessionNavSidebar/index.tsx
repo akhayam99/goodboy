@@ -63,7 +63,6 @@ export const SessionNavSidebar = ({
               archivedSessions={archivedSessions}
               currentSessionId={session.id}
               onSelectSession={onSelectSession}
-              onNewSession={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}
               onArchivedTabOpen={onArchivedTabOpen}
             />
           ) : null}

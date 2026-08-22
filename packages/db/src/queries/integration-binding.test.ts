@@ -55,7 +55,7 @@ const makeBinding = ({
   id = 'binding-1',
   projectId: scope = null,
   credentialId = 'cred-linear',
-  urlKey = 'serenis',
+  urlKey = 'demo-team',
 }: MakeBindingParams = {}): IntegrationBinding => {
   const config: LinearIntegrationConfig = {
     workspaceUrlKey: urlKey,

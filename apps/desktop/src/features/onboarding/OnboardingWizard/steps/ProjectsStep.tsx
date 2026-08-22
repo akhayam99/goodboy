@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Folder, FolderGit2, Plus, X } from 'lucide-react';
+import { Folder, FolderGit2, FolderPlus, Plus, X } from 'lucide-react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Chip, Input, Tooltip, formatError } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { initRepo } from '../../../../shared/lib/repo';
 import { defaultSimpleWorkspacePath } from '../../../workspace/defaultSimpleWorkspacePath';
 import { prepareSimpleWorkspace } from '../../../workspace/prepareSimpleWorkspace';
 
@@ -25,11 +26,17 @@ export const ProjectsStep = ({ workspace }: Props) => {
     [projects, workspace.id],
   );
 
-  const link = async (rootPath: string) => {
+  const link = async ({
+    rootPath,
+    requireRepo = true,
+  }: {
+    readonly rootPath: string;
+    readonly requireRepo?: boolean;
+  }) => {
     setBusy(true);
     setError(null);
     try {
-      const project = await addProject({ workspaceId: workspace.id, rootPath });
+      const project = await addProject({ workspaceId: workspace.id, rootPath, requireRepo });
       await adoptWorkspaceSessionsRoot({ workspaceId: workspace.id, rootPath: project.rootPath });
       setPath('');
     } catch (linkError) {
@@ -46,13 +53,29 @@ export const ProjectsStep = ({ workspace }: Props) => {
     }
   };
 
+  const onNewProject = async () => {
+    const picked = await openDialog({ directory: true, multiple: false });
+    if (typeof picked !== 'string' || picked.length === 0) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const initialized = await initRepo({ path: picked });
+      await link({ rootPath: initialized.rootPath });
+    } catch (createError) {
+      setError(formatError(createError));
+      setBusy(false);
+    }
+  };
+
   const onCreateFolder = async () => {
     setBusy(true);
     setError(null);
     try {
       const suggested = await defaultSimpleWorkspacePath({ name: workspace.name });
       const prepared = await prepareSimpleWorkspace({ path: suggested });
-      await link(prepared);
+      await link({ rootPath: prepared, requireRepo: false });
     } catch (createError) {
       setError(formatError(createError));
     } finally {
@@ -71,8 +94,8 @@ export const ProjectsStep = ({ workspace }: Props) => {
           Link your projects
         </h2>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          Add the repositories and folders {workspace.name} works on. Git repositories get branches
-          and pull requests; plain folders work for notes, docs, and agent output.
+          Add the repositories {workspace.name} works on. Each linked project needs a git
+          repository; New project takes an empty folder and runs git init for you.
         </p>
       </div>
 
@@ -128,13 +151,13 @@ export const ProjectsStep = ({ workspace }: Props) => {
           <Input
             aria-label="Project path"
             value={path}
-            placeholder="/path/to/repo-or-folder"
+            placeholder="/path/to/repository"
             disabled={busy}
             onChange={(event) => setPath(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter' && path.trim().length > 0) {
                 event.preventDefault();
-                void link(path.trim());
+                void link({ rootPath: path.trim() });
               }
             }}
           />
@@ -143,10 +166,13 @@ export const ProjectsStep = ({ workspace }: Props) => {
           </Button>
           <Button
             variant="primary"
-            onClick={() => void link(path.trim())}
+            onClick={() => void link({ rootPath: path.trim() })}
             disabled={busy || path.trim().length === 0}
           >
             <Plus size={14} aria-hidden /> Add
+          </Button>
+          <Button variant="secondary" onClick={() => void onNewProject()} disabled={busy}>
+            <FolderPlus size={14} aria-hidden /> New project
           </Button>
         </div>
 

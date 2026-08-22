@@ -57,7 +57,7 @@ const makeTask = ({ overrides = {} }: MakeTaskParams): SessionExternalTask => ({
   provider: 'linear',
   externalId: 'lin-uuid-1',
   identifier: 'SER-123',
-  url: 'https://linear.app/serenis/issue/SER-123',
+  url: 'https://linear.app/demo-team/issue/SER-123',
   title: 'Add user signup',
   createdAt: new Date('2026-05-21T10:00:00Z').toISOString() as IsoDateTime,
   ...overrides,

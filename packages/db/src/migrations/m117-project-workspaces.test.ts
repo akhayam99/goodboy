@@ -150,7 +150,7 @@ const seedThrough116 = async (): Promise<Database> => {
   await insertWorkspace({
     db,
     id: 'composite-primary',
-    name: 'Serenis Platform',
+    name: 'Demo Platform',
     kind: 'composite',
     lastAccessedAt: 900,
     branchPrefix: 'platform/',

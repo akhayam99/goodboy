@@ -280,6 +280,7 @@ pub fn run() {
             repo::validate_git_repo,
             repo::workspace_git_status,
             repo::repo_init_with_remote,
+            repo::repo_init,
             budget::budget_rule_upsert,
             budget::budget_rule_list,
             budget::budget_rule_delete,

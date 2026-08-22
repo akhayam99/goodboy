@@ -14,6 +14,7 @@ type Input = {
   readonly workspaceId: WorkspaceId;
   readonly rootPath: string;
   readonly name?: string;
+  readonly requireRepo?: boolean;
 };
 
 const EMPTY_OVERRIDES: OverrideSettings = {
@@ -30,12 +31,17 @@ const EMPTY_OVERRIDES: OverrideSettings = {
 };
 
 export const addProject = (set: SetFn, get: GetFn) => {
-  return async ({ workspaceId, rootPath, name }: Input): Promise<Project> => {
+  return async ({ workspaceId, rootPath, name, requireRepo = false }: Input): Promise<Project> => {
     if (get().workspaces.every((workspace) => workspace.id !== workspaceId)) {
       throw new Error(`workspace not found: ${workspaceId}`);
     }
     const check = await validateGitRepo(rootPath);
     const isRepo = check.isRepo && check.rootPath != null && check.rootPath !== '';
+    if (requireRepo && !isRepo) {
+      throw new Error(
+        `no git repository at ${rootPath}. pick a folder with a .git directory, or use New project to initialize one`,
+      );
+    }
     const resolvedRoot = isRepo ? check.rootPath : check.resolvedPath;
     if (resolvedRoot == null || resolvedRoot === '') {
       throw new Error(check.error ?? 'folder not found');

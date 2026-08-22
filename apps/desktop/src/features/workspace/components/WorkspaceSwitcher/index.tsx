@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus } from 'lucide-react';
+import { FolderGit2, Plus } from 'lucide-react';
 import { Divider, EmptyState, Popover, ScrollFade } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
@@ -166,6 +166,21 @@ export const WorkspaceSwitcher = ({ anchorRef, onClose }: Props) => {
         >
           <Plus size={13} aria-hidden />
           New workspace
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            window.dispatchEvent(
+              new CustomEvent('goodboy:open-workspace-settings', {
+                detail: { section: 'projects' },
+              }),
+            );
+            onClose();
+          }}
+          className={actionClass}
+        >
+          <FolderGit2 size={13} aria-hidden />
+          Manage projects
         </button>
       </Popover>
     </>,

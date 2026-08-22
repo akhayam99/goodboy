@@ -61,7 +61,7 @@ const makeDb = async () => {
   const now = Date.now();
   await db.execute(
     `INSERT INTO workspaces (id, name, slug, created_at, updated_at)
-     VALUES (?, 'Serenis', 'serenis', ?, ?)`,
+     VALUES (?, 'Demo Team', 'demo-team', ?, ?)`,
     [workspaceId, now, now],
   );
   return db;

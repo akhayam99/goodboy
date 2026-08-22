@@ -72,8 +72,8 @@ const overrides = {
 
 const workspace = (): Workspace => ({
   id: WORKSPACE_ID,
-  name: 'Serenis',
-  slug: 'serenis',
+  name: 'Demo Team',
+  slug: 'demo-team',
   sessionsRoot: '/repos/api',
   overrides,
   createdAt: NOW,
@@ -172,6 +172,51 @@ describe('workspace and project slices', () => {
     expect(h.insertProject).not.toHaveBeenCalled();
     expect(result.disconnectedAt).toBeUndefined();
     expect(store.state.projects).toEqual([result]);
+  });
+
+  it('refuses a non-repo folder when the caller requires a repository', async () => {
+    h.validateGitRepo.mockResolvedValueOnce({
+      isRepo: false,
+      rootPath: null,
+      resolvedPath: '/repos/plain',
+      error: 'not a git repository',
+    });
+    const store = harness({ workspaces: [workspace()] });
+
+    await expect(
+      addProject(
+        store.set,
+        store.get,
+      )({
+        workspaceId: WORKSPACE_ID,
+        rootPath: '/repos/plain',
+        requireRepo: true,
+      }),
+    ).rejects.toThrow(/no git repository/);
+
+    expect(h.insertProject).not.toHaveBeenCalled();
+    expect(store.state.projects).toEqual([]);
+  });
+
+  it('still links a plain folder when a repository is not required', async () => {
+    h.validateGitRepo.mockResolvedValueOnce({
+      isRepo: false,
+      rootPath: null,
+      resolvedPath: '/repos/plain',
+      error: 'not a git repository',
+    });
+    const store = harness({ workspaces: [workspace()] });
+
+    const created = await addProject(
+      store.set,
+      store.get,
+    )({
+      workspaceId: WORKSPACE_ID,
+      rootPath: '/repos/plain',
+    });
+
+    expect(created.kind).toBe('folder');
+    expect(h.insertProject).toHaveBeenCalledOnce();
   });
 
   it('persists a container profile and updates the cached workspace', async () => {

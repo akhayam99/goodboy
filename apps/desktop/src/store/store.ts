@@ -243,6 +243,7 @@ export type AppActions = {
     workspaceId: WorkspaceId;
     rootPath: string;
     name?: string;
+    requireRepo?: boolean;
   }): Promise<Project>;
   removeProject(input: { projectId: ProjectId }): Promise<void>;
   convertProjectToRepo(input: { projectId: ProjectId; remoteUrl: string }): Promise<Project>;
@@ -252,6 +253,10 @@ export type AppActions = {
     profile: WorkspaceProfile;
   }): Promise<Workspace>;
   deleteWorkspace(id: WorkspaceId): Promise<void>;
+  mergeWorkspaces(input: {
+    sourceWorkspaceIds: ReadonlyArray<WorkspaceId>;
+    targetWorkspaceId: WorkspaceId;
+  }): Promise<void>;
   loadProjectGitStatus(input: { projectId: ProjectId }): Promise<void>;
   fastForwardProjectCheckout(input: { projectId: ProjectId }): Promise<void>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;

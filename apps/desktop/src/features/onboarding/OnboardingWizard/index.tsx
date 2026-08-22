@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, ScrollFade, cn, formatError, type ButtonVariant } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
+import { initRepo, validateGitRepo } from '../../../shared/lib/repo';
 import { finishWizard } from '../onboarding-store';
 import { useOnboardingProgress } from '../hooks/useOnboardingProgress';
 import { useOnboardingWizard } from './useOnboardingWizard';
 import { Stepper } from './Stepper';
 import { WelcomeStep } from './steps/WelcomeStep';
 import { ProvidersStep } from './steps/ProvidersStep';
-import { WorkspaceNameStep } from './steps/WorkspaceNameStep';
+import { ShapeStep, type WorkspaceShape } from './steps/ShapeStep';
 import { ProjectsStep } from './steps/ProjectsStep';
 import { ProfileStep, type ProfileDraft } from './steps/ProfileStep';
 import { PreferencesStep } from './steps/PreferencesStep';
@@ -51,7 +52,10 @@ export const OnboardingWizard = () => {
   const renameWorkspace = useAppStore((s) => s.renameWorkspace);
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const updateWorkspaceProfile = useAppStore((s) => s.updateWorkspaceProfile);
+  const addProject = useAppStore((s) => s.addProject);
+  const adoptWorkspaceSessionsRoot = useAppStore((s) => s.adoptWorkspaceSessionsRoot);
   const [step, setStep] = useState(0);
+  const [shape, setShape] = useState<WorkspaceShape | null>(null);
   const [workspaceName, setWorkspaceName] = useState('');
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(EMPTY_PROFILE_DRAFT);
   const [busy, setBusy] = useState(false);
@@ -59,8 +63,9 @@ export const OnboardingWizard = () => {
   const [closing, setClosing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const steps =
-    mode === 'setup' ? ALL_STEPS.filter((candidate) => candidate >= SETUP_START_STEP) : ALL_STEPS;
+  const steps = (
+    mode === 'setup' ? ALL_STEPS.filter((candidate) => candidate >= SETUP_START_STEP) : ALL_STEPS
+  ).filter((candidate) => candidate !== 3 || shape !== 'single');
   const minStep = steps[0] ?? 0;
   const last = STEP_COUNT - 1;
 
@@ -69,6 +74,7 @@ export const OnboardingWizard = () => {
       return;
     }
     setStep(minStep);
+    setShape(null);
     setClosing(false);
     setStepError(null);
     setBusy(false);
@@ -79,6 +85,7 @@ export const OnboardingWizard = () => {
     if (!open) {
       return;
     }
+    setShape((current) => current ?? (workspace === null ? null : 'workspace'));
     setWorkspaceName(workspace?.name ?? '');
     setProfileDraft(
       workspace?.profile === undefined
@@ -140,6 +147,41 @@ export const OnboardingWizard = () => {
       }
     });
 
+  const commitSingleProject = ({
+    path,
+    initialize,
+  }: {
+    readonly path: string;
+    readonly initialize: boolean;
+  }) =>
+    runStepAction(async () => {
+      let rootPath = path;
+      if (initialize) {
+        rootPath = (await initRepo({ path })).rootPath;
+      } else {
+        const check = await validateGitRepo(path);
+        if (!check.isRepo || check.rootPath == null || check.rootPath === '') {
+          throw new Error(
+            `no git repository at ${path}. pick a folder with a .git directory, or use New project to initialize one`,
+          );
+        }
+        rootPath = check.rootPath;
+      }
+      const folderName =
+        rootPath
+          .split('/')
+          .filter((part) => part.length > 0)
+          .at(-1) ?? 'project';
+      const created = await createWorkspace({ name: folderName });
+      await setCurrentWorkspace(created.id);
+      const project = await addProject({
+        workspaceId: created.id,
+        rootPath,
+        requireRepo: true,
+      });
+      await adoptWorkspaceSessionsRoot({ workspaceId: created.id, rootPath: project.rootPath });
+    });
+
   const commitProfile = () =>
     runStepAction(async () => {
       if (workspace === null) {
@@ -178,18 +220,30 @@ export const OnboardingWizard = () => {
     };
   } else if (step === 2) {
     body = (
-      <WorkspaceNameStep
+      <ShapeStep
         workspace={workspace}
+        shape={shape}
+        onShapeChange={setShape}
         name={workspaceName}
         onNameChange={setWorkspaceName}
+        busy={busy}
+        onSingleProject={commitSingleProject}
       />
     );
-    cta = {
-      label: workspace === null ? 'Create workspace' : 'Continue',
-      onClick: commitWorkspaceName,
-      variant: 'primary',
-      disabled: busy || workspaceName.trim().length === 0,
-    };
+    cta =
+      shape === 'single' && workspace === null
+        ? {
+            label: 'Continue',
+            onClick: goNext,
+            variant: 'primary',
+            disabled: true,
+          }
+        : {
+            label: workspace === null ? 'Create workspace' : 'Continue',
+            onClick: commitWorkspaceName,
+            variant: 'primary',
+            disabled: busy || shape === null || workspaceName.trim().length === 0,
+          };
   } else if (step === 3) {
     body = workspace === null ? <WelcomeStep /> : <ProjectsStep workspace={workspace} />;
     cta = {

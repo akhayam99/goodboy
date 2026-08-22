@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Folder, FolderGit2, Plus, X } from 'lucide-react';
+import { Folder, FolderGit2, FolderPlus, Plus, X } from 'lucide-react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import type { WorkspaceId } from '@goodboy/types';
 import { Button, Chip, SectionHeader, Tooltip, cn, formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
+import { initRepo } from '../../../../shared/lib/repo';
 import { useToast } from '../../../../app/components/Toast';
 
 type Props = {
@@ -17,9 +18,15 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
   const addProject = useAppStore((s) => s.addProject);
   const removeProject = useAppStore((s) => s.removeProject);
   const adoptWorkspaceSessionsRoot = useAppStore((s) => s.adoptWorkspaceSessionsRoot);
+  const requireRepo = useAppStore(
+    (s) =>
+      s.workspaces.find((workspace) => workspace.id === workspaceId)?.profile?.role !==
+      'non-developer',
+  );
   const { showToast } = useToast();
   const [path, setPath] = useState('');
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const linked = useMemo(
     () => projects.filter((project) => project.workspaceId === workspaceId),
@@ -28,13 +35,14 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
 
   const link = async (rootPath: string) => {
     setBusy(true);
+    setError(null);
     try {
-      const project = await addProject({ workspaceId, rootPath });
+      const project = await addProject({ workspaceId, rootPath, requireRepo });
       await adoptWorkspaceSessionsRoot({ workspaceId, rootPath: project.rootPath });
       setPath('');
       showToast('success', `linked ${project.name}`);
-    } catch (error) {
-      showToast('error', formatError(error));
+    } catch (linkError) {
+      setError(formatError(linkError));
     } finally {
       setBusy(false);
     }
@@ -47,13 +55,29 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
     }
   };
 
+  const onNewProject = async () => {
+    const picked = await openDialog({ directory: true, multiple: false });
+    if (typeof picked !== 'string' || picked.length === 0) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const initialized = await initRepo({ path: picked });
+      await link(initialized.rootPath);
+    } catch (initError) {
+      setError(formatError(initError));
+      setBusy(false);
+    }
+  };
+
   const onUnlink = async (projectId: (typeof linked)[number]['id'], name: string) => {
     setBusy(true);
     try {
       await removeProject({ projectId });
       showToast('success', `disconnected ${name}`);
-    } catch (error) {
-      showToast('error', formatError(error));
+    } catch (unlinkError) {
+      showToast('error', formatError(unlinkError));
     } finally {
       setBusy(false);
     }
@@ -68,7 +92,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
       <div className="flex flex-col gap-2">
         {linked.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No projects linked yet. Add a repository or folder below.
+            No projects linked yet. Add a repository below.
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -122,7 +146,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
             type="text"
             value={path}
             aria-label="Project path"
-            placeholder="/path/to/repo-or-folder"
+            placeholder={requireRepo ? '/path/to/repository' : '/path/to/repo-or-folder'}
             disabled={busy}
             onChange={(event) => setPath(event.target.value)}
             onKeyDown={(event) => {
@@ -148,7 +172,15 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
           >
             <Plus size={13} aria-hidden /> Add
           </Button>
+          <Button variant="secondary" size="sm" onClick={() => void onNewProject()} disabled={busy}>
+            <FolderPlus size={13} aria-hidden /> New project
+          </Button>
         </div>
+        {error !== null ? (
+          <p role="alert" className="text-xs text-danger">
+            {error}
+          </p>
+        ) : null}
         <p className="text-xs text-muted-foreground">
           Disconnecting hides a project from this workspace. Nothing on disk is deleted.
         </p>
