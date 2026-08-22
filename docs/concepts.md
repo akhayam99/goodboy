@@ -89,8 +89,8 @@ Where each connected source stands, honestly:
 - **Sentry.** Issues and events read; no write path yet.
 - **Slack.** Threads read and replied to (replies post as the connected user),
   routed into sessions with the goal pre-filled. The connection is per
-  workspace; public bot-joined channels only, and no call has run against a
-  live workspace yet, only contract tests.
+  workspace; only the public channels the connected person has joined, and no
+  call has run against a live workspace yet, only contract tests.
 
 The rule for every integration: share the layout, never the logic. A Sentry
 issue and a GitHub pull request look coherent side by side because the page
