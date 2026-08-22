@@ -22,6 +22,7 @@ const { hooks, remote, store } = vi.hoisted(() => {
     remote: {
       kind: 'github' as 'github' | 'gitlab' | 'other' | null,
       isGithubAuthenticated: true,
+      isGithubResolved: true,
     },
     store: {
       sessionMounts: {},
@@ -124,7 +125,7 @@ vi.mock('../../../../../worktree/useRemoteHostKind', () => ({
 vi.mock('../../../../../integrations/github/useGithubConnection', () => ({
   useGithubConnection: () => ({
     isAuthenticated: remote.isGithubAuthenticated,
-    isResolved: true,
+    isResolved: remote.isGithubResolved,
     refresh: vi.fn(async () => undefined),
   }),
 }));
@@ -141,6 +142,7 @@ const SESSION = {
 beforeEach(() => {
   remote.kind = 'github';
   remote.isGithubAuthenticated = true;
+  remote.isGithubResolved = true;
   hooks.agentCount = 0;
   hooks.doneAgentCount = 0;
   hooks.planCount = 0;
@@ -154,6 +156,7 @@ beforeEach(() => {
   store.sessionWorkflows = { 'session-1': [] };
   store.reviewDrafts = { 'session-1': [] };
   store.sessionGithub = {};
+  store.sessionGitlabMr = {};
   store.sessionExternalTasks = { 'session-1': [] };
   store.workspaceIntegrations = {
     'workspace-1': [{ provider: 'linear' }, { provider: 'sentry' }],
@@ -221,11 +224,61 @@ describe('LensNav', () => {
     expect(inactiveIcon?.className).toContain('opacity-55');
   });
 
-  it('marks a disconnected integration and leaves connected ones unmarked', () => {
+  it('drops the integrations the workspace never connected', () => {
     const { container } = render(<LensNav session={SESSION} filesCount={0} />);
 
-    expect(container.querySelector('[title="GitLab disconnected"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Linear' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'GitLab' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Jira' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Slack' })).toBeNull();
     expect(container.querySelector('[title="Linear disconnected"]')).toBeNull();
+  });
+
+  it('keeps a disconnected provider that still holds linked work, degraded', () => {
+    store.workspaceIntegrations = { 'workspace-1': [] };
+    store.sessionExternalTasks = { 'session-1': [{ provider: 'linear' }] };
+
+    const { container } = render(<LensNav session={SESSION} filesCount={0} />);
+
+    const linear = screen.getByRole('button', { name: 'Linear 1' });
+    expect(linear.className).toContain('opacity-40');
+    expect(container.querySelector('[title="Linear disconnected"]')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Sentry' })).toBeNull();
+  });
+
+  it('keeps a disconnected GitLab row while a merge request stays linked', () => {
+    store.workspaceIntegrations = { 'workspace-1': [] };
+    store.sessionGitlabMr = { 'session-1': { mr: { iid: 7 } } };
+
+    const { container } = render(<LensNav session={SESSION} filesCount={0} />);
+
+    expect(screen.getByRole('button', { name: 'GitLab' })).toBeDefined();
+    expect(container.querySelector('[title="GitLab disconnected"]')).not.toBeNull();
+  });
+
+  it('hides the integrations group entirely when nothing survives the filter', () => {
+    store.workspaceIntegrations = { 'workspace-1': [] };
+    remote.isGithubAuthenticated = false;
+
+    render(<LensNav session={SESSION} filesCount={0} />);
+
+    expect(screen.queryByText('Integrations')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'GitHub' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Terminal' })).toBeDefined();
+  });
+
+  it('waits for the github connection to resolve before listing its row', () => {
+    remote.isGithubResolved = false;
+    const { container, rerender } = render(<LensNav session={SESSION} filesCount={0} />);
+
+    expect(screen.queryByRole('button', { name: 'GitHub' })).toBeNull();
+    expect(container.querySelector('[title="GitHub disconnected"]')).toBeNull();
+
+    remote.isGithubResolved = true;
+    rerender(<LensNav session={SESSION} filesCount={1} />);
+
+    expect(screen.getByRole('button', { name: 'GitHub' })).toBeDefined();
+    expect(container.querySelector('[title="GitHub disconnected"]')).toBeNull();
   });
 
   it('orders the regrouped lens sections and rows', () => {
@@ -260,9 +313,6 @@ describe('LensNav', () => {
       'GitHub',
       'Linear',
       'Sentry',
-      'GitLab',
-      'Jira',
-      'Slack',
     ]);
     expect(screen.queryByRole('button', { name: 'Explore' })).toBeNull();
   });
@@ -489,21 +539,22 @@ describe('LensNav', () => {
   });
 
   it.each([
-    ['GitHub', 'pr', 'goodboy:open-github-studio'],
-    ['GitLab', 'gitlab_issues', 'goodboy:open-gitlab-studio'],
-    ['Linear', 'linear', 'goodboy:open-linear-studio'],
-    ['Sentry', 'sentry', 'goodboy:open-sentry-studio'],
+    ['GitHub', 'github', 'pr', 'goodboy:open-github-studio'],
+    ['GitLab', 'gitlab', 'gitlab_issues', 'goodboy:open-gitlab-studio'],
+    ['Linear', 'linear', 'linear', 'goodboy:open-linear-studio'],
+    ['Sentry', 'sentry', 'sentry', 'goodboy:open-sentry-studio'],
   ] as const)(
     'selects the inline %s pane when disconnected instead of opening the studio',
-    (label, lens, studioEvent) => {
+    (label, provider, lens, studioEvent) => {
       store.workspaceIntegrations = {};
+      store.sessionExternalTasks = { 'session-1': [{ provider }] };
       remote.kind = null;
       remote.isGithubAuthenticated = false;
       const listener = vi.fn();
       window.addEventListener(studioEvent, listener);
 
       render(<LensNav session={SESSION} filesCount={0} />);
-      const row = screen.getByRole('button', { name: label });
+      const row = screen.getByRole('button', { name: `${label} 1` });
       fireEvent.click(row);
 
       expect(row.className).toContain('opacity-40');

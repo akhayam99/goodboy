@@ -206,65 +206,92 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
     externalTasks,
     isGithubAuthenticated: false,
   });
+  const isGithubListed =
+    githubAuthentication.isResolved && (githubConnection.isAvailable || hasGithubPr);
+  const isGitlabListed = gitlabConnection.isAvailable || hasGitlabMr;
   const integrationRows: ReadonlyArray<LensRow> = [
-    {
-      kind: 'pr',
-      label: 'GitHub',
-      glyph: 'github',
-      tone: CONCEPT_TONE.pr,
-      count: githubCount,
-      isCountLoading: isCountUnknown(areExternalTasksLoaded),
-      secondaryDot: hasGithubPr,
-      secondaryDotLabel: 'Pull request linked',
-      isConnected: githubConnection.isConnected,
-    },
-    {
-      kind: 'gitlab_issues',
-      label: 'GitLab',
-      glyph: 'gitlab',
-      tone: CONCEPT_TONE.gitlab,
-      count: gitlabCount,
-      isCountLoading: isCountUnknown(areExternalTasksLoaded),
-      secondaryDot: hasGitlabMr,
-      secondaryDotLabel: 'Merge request linked',
-      isConnected: gitlabConnection.isConnected,
-    },
-    {
-      kind: 'jira_issues',
-      label: 'Jira',
-      glyph: 'jira',
-      tone: CONCEPT_TONE.jira,
-      count: jiraCount,
-      isCountLoading: isCountUnknown(areExternalTasksLoaded),
-      isConnected: jiraConnection.isConnected,
-    },
-    {
-      kind: 'linear',
-      label: 'Linear',
-      glyph: 'linear',
-      tone: CONCEPT_TONE.linear,
-      count: linearCount,
-      isCountLoading: isCountUnknown(areExternalTasksLoaded),
-      isConnected: linearConnection.isConnected,
-    },
-    {
-      kind: 'sentry',
-      label: 'Sentry',
-      glyph: 'sentry',
-      tone: CONCEPT_TONE.sentry,
-      count: sentryCount,
-      isCountLoading: isCountUnknown(areExternalTasksLoaded),
-      isConnected: sentryConnection.isConnected,
-    },
-    {
-      kind: 'slack_threads',
-      label: 'Slack',
-      glyph: 'slack',
-      tone: CONCEPT_TONE.slack,
-      count: slackCount,
-      isCountLoading: isCountUnknown(areExternalTasksLoaded),
-      isConnected: slackConnection.isConnected,
-    },
+    ...(isGithubListed
+      ? [
+          {
+            kind: 'pr',
+            label: 'GitHub',
+            glyph: 'github',
+            tone: CONCEPT_TONE.pr,
+            count: githubCount,
+            isCountLoading: isCountUnknown(areExternalTasksLoaded),
+            secondaryDot: hasGithubPr,
+            secondaryDotLabel: 'Pull request linked',
+            isConnected: githubConnection.isConnected,
+          } satisfies LensRow,
+        ]
+      : []),
+    ...(isGitlabListed
+      ? [
+          {
+            kind: 'gitlab_issues',
+            label: 'GitLab',
+            glyph: 'gitlab',
+            tone: CONCEPT_TONE.gitlab,
+            count: gitlabCount,
+            isCountLoading: isCountUnknown(areExternalTasksLoaded),
+            secondaryDot: hasGitlabMr,
+            secondaryDotLabel: 'Merge request linked',
+            isConnected: gitlabConnection.isConnected,
+          } satisfies LensRow,
+        ]
+      : []),
+    ...(jiraConnection.isAvailable
+      ? [
+          {
+            kind: 'jira_issues',
+            label: 'Jira',
+            glyph: 'jira',
+            tone: CONCEPT_TONE.jira,
+            count: jiraCount,
+            isCountLoading: isCountUnknown(areExternalTasksLoaded),
+            isConnected: jiraConnection.isConnected,
+          } satisfies LensRow,
+        ]
+      : []),
+    ...(linearConnection.isAvailable
+      ? [
+          {
+            kind: 'linear',
+            label: 'Linear',
+            glyph: 'linear',
+            tone: CONCEPT_TONE.linear,
+            count: linearCount,
+            isCountLoading: isCountUnknown(areExternalTasksLoaded),
+            isConnected: linearConnection.isConnected,
+          } satisfies LensRow,
+        ]
+      : []),
+    ...(sentryConnection.isAvailable
+      ? [
+          {
+            kind: 'sentry',
+            label: 'Sentry',
+            glyph: 'sentry',
+            tone: CONCEPT_TONE.sentry,
+            count: sentryCount,
+            isCountLoading: isCountUnknown(areExternalTasksLoaded),
+            isConnected: sentryConnection.isConnected,
+          } satisfies LensRow,
+        ]
+      : []),
+    ...(slackConnection.isAvailable
+      ? [
+          {
+            kind: 'slack_threads',
+            label: 'Slack',
+            glyph: 'slack',
+            tone: CONCEPT_TONE.slack,
+            count: slackCount,
+            isCountLoading: isCountUnknown(areExternalTasksLoaded),
+            isConnected: slackConnection.isConnected,
+          } satisfies LensRow,
+        ]
+      : []),
   ];
   const sortedIntegrationRows: ReadonlyArray<LensRow> = [...integrationRows].sort((a, b) => {
     if (a.isConnected === false && b.isConnected !== false) {
@@ -356,29 +383,31 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
               />
             ))}
           </div>
-          {groups.map((group) => (
-            <div key={group.label} className="flex flex-col gap-0.5">
-              <span
-                className={cn(
-                  'pb-1 text-3xs font-medium uppercase tracking-[0.12em] transition-colors',
-                  PANE_RHYTHM.navRail.inset,
-                  rowsWantAttention({ rows: group.rows })
-                    ? 'text-foreground/80'
-                    : 'text-muted-foreground/60',
-                )}
-              >
-                {group.label}
-              </span>
-              {group.rows.map((row) => (
-                <LensNavRow
-                  key={row.kind}
-                  row={row}
-                  isActive={activeSurface === row.kind}
-                  onSelect={() => setActiveLens(sessionId, row.kind)}
-                />
-              ))}
-            </div>
-          ))}
+          {groups
+            .filter((group) => group.rows.length > 0)
+            .map((group) => (
+              <div key={group.label} className="flex flex-col gap-0.5">
+                <span
+                  className={cn(
+                    'pb-1 text-3xs font-medium uppercase tracking-[0.12em] transition-colors',
+                    PANE_RHYTHM.navRail.inset,
+                    rowsWantAttention({ rows: group.rows })
+                      ? 'text-foreground/80'
+                      : 'text-muted-foreground/60',
+                  )}
+                >
+                  {group.label}
+                </span>
+                {group.rows.map((row) => (
+                  <LensNavRow
+                    key={row.kind}
+                    row={row}
+                    isActive={activeSurface === row.kind}
+                    onSelect={() => setActiveLens(sessionId, row.kind)}
+                  />
+                ))}
+              </div>
+            ))}
         </nav>
       </ScrollFade>
     </div>
