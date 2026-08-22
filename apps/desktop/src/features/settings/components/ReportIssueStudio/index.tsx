@@ -31,7 +31,12 @@ import { guessArea } from './guessArea';
 import { buildFallbackIssue, buildIssueBody, isOpenableUrl } from './issuePayload';
 import { parseIssueCreateResult } from './parseIssueCreateResult';
 import { previewHint } from './previewHint';
-import { revealBugReportImages, stageBugReportImages, type StagedBugReport } from './stageImages';
+import {
+  discardBugReportImages,
+  revealBugReportImages,
+  stageBugReportImages,
+  type StagedBugReport,
+} from './stageImages';
 import { truncationNotice } from './truncationNotice';
 import { uploadIssueAttachments } from './uploadIssueAttachments';
 
@@ -191,6 +196,9 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
         const issueUrl = parsed.url;
         clearBugReportDraft();
         requestClose();
+        if (stagedImagesDir != null && uploaded != null) {
+          void discardBugReportImages({ dir: stagedImagesDir });
+        }
         if (stagedImagesDir == null || uploaded != null) {
           showToast(
             'success',
@@ -293,7 +301,11 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                 />
                 <FieldRow
                   label="Images"
-                  help="Attached to the issue when you send. If GitHub turns them away, one click opens the issue and the folder, so you can drag them in."
+                  help={
+                    sendsDirectly
+                      ? 'Attached to the issue when you send. If GitHub turns them away, one click opens the issue and the folder, so you can drag them in.'
+                      : 'The GitHub form cannot carry them. It opens with the folder beside it, so you can drag them in.'
+                  }
                   layout="stacked"
                 >
                   <BugReportImages control={imageControl} />

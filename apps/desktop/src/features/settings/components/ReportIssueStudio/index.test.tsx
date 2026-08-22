@@ -302,6 +302,9 @@ describe('ReportIssueStudio', () => {
       'Filed on GitHub with your images, under your account.',
       expect.objectContaining({ title: 'Issue sent' }),
     );
+    expect(mocks.invoke).toHaveBeenCalledWith('bug_report_discard_images', {
+      dir: '/tmp/goodboy-report-1',
+    });
   });
 
   it('falls back to the drag reminder when the upload does not go through', async () => {
@@ -336,6 +339,14 @@ describe('ReportIssueStudio', () => {
       "Your images aren't on it yet. GitHub only takes them by drag and drop.",
       expect.objectContaining({ persist: true }),
     );
+    expect(mocks.invoke).not.toHaveBeenCalledWith('bug_report_discard_images', expect.anything());
+  });
+
+  it('does not promise an upload the browser path cannot make', () => {
+    setGithubStatus({ available: false, mode: 'absent' });
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    expect(screen.getByText(/The GitHub form cannot carry them/)).toBeDefined();
   });
 
   it('writes the attached image bytes out to a folder before the issue is filed', async () => {

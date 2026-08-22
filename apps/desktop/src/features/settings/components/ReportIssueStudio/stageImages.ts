@@ -41,3 +41,11 @@ type RevealParams = {
 export const revealBugReportImages = async ({ dir }: RevealParams): Promise<void> => {
   await invoke('bug_report_reveal_images', { dir });
 };
+
+export const discardBugReportImages = async ({ dir }: RevealParams): Promise<void> => {
+  try {
+    await invoke('bug_report_discard_images', { dir });
+  } catch {
+    return;
+  }
+};

@@ -289,9 +289,11 @@ pub fn bug_report_stage_images(
     })
 }
 
-#[tauri::command]
-pub fn bug_report_reveal_images(dir: String) -> Result<(), AttachmentError> {
-    let canonical_dir = Path::new(&dir).canonicalize()?;
+/// Resolves a caller-supplied path back to a report staging folder. Anything
+/// outside the temp directory and anything not named like a report folder is
+/// refused before it can be opened or deleted.
+fn resolve_bug_report_dir(dir: &str) -> Result<std::path::PathBuf, AttachmentError> {
+    let canonical_dir = Path::new(dir).canonicalize()?;
     let canonical_temp_dir = std::env::temp_dir().canonicalize()?;
     let is_report_dir = canonical_dir
         .file_name()
@@ -300,8 +302,24 @@ pub fn bug_report_reveal_images(dir: String) -> Result<(), AttachmentError> {
     if !canonical_dir.starts_with(canonical_temp_dir) || !is_report_dir {
         return Err(AttachmentError::InvalidPath);
     }
+    Ok(canonical_dir)
+}
+
+#[tauri::command]
+pub fn bug_report_reveal_images(dir: String) -> Result<(), AttachmentError> {
+    let canonical_dir = resolve_bug_report_dir(&dir)?;
     crate::explore::spawn_open(&canonical_dir, false)?;
     Ok(())
+}
+
+#[tauri::command]
+pub fn bug_report_discard_images(dir: String) -> Result<(), AttachmentError> {
+    let canonical_dir = resolve_bug_report_dir(&dir)?;
+    match fs::remove_dir_all(&canonical_dir) {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(AttachmentError::Io(e)),
+    }
 }
 
 #[cfg(test)]
@@ -464,6 +482,26 @@ mod tests {
         assert!(matches!(err, Err(AttachmentError::Decode(_))));
 
         let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn bug_report_discard_removes_a_staged_folder_and_refuses_anything_else() {
+        let dir = std::env::temp_dir().join(format!("goodboy-report-drop-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("01-shot.png"), b"bytes").unwrap();
+
+        bug_report_discard_images(dir.to_string_lossy().to_string()).unwrap();
+        assert!(!dir.exists());
+
+        let other = std::env::temp_dir().join(format!("goodboy-keep-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&other);
+        fs::create_dir_all(&other).unwrap();
+        let err = bug_report_discard_images(other.to_string_lossy().to_string());
+        assert!(matches!(err, Err(AttachmentError::InvalidPath)));
+        assert!(other.exists());
+
+        let _ = fs::remove_dir_all(&other);
     }
 
     #[test]
