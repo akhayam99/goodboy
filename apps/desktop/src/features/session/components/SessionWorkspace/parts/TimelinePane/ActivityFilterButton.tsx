@@ -51,15 +51,17 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onCategory }: Props)
           className={cn(popupClassName, 'bg-subtle')}
           style={popupStyle}
         >
-          <PopoverBody className="flex flex-col gap-2 px-3 py-2.5">
-            {ACTIVITY_CATEGORIES.map((category) => (
-              <Checkbox
-                key={category}
-                checked={filter[category]}
-                label={ACTIVITY_CATEGORY_LABEL[category]}
-                onChange={(enabled) => onCategory({ category, enabled })}
-              />
-            ))}
+          <PopoverBody>
+            <div className="flex flex-col gap-2 px-3 py-2.5">
+              {ACTIVITY_CATEGORIES.map((category) => (
+                <Checkbox
+                  key={category}
+                  checked={filter[category]}
+                  label={ACTIVITY_CATEGORY_LABEL[category]}
+                  onChange={(enabled) => onCategory({ category, enabled })}
+                />
+              ))}
+            </div>
           </PopoverBody>
         </Popover>
       ) : null}
