@@ -132,4 +132,125 @@ describe('useDropdown', () => {
     expect(result.current.popupStyle).toMatchObject({ left: 96, top: 234 });
     scrollAncestor.remove();
   });
+  it('bounds an absolute popup to the space left under the trigger', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+    const trigger = document.createElement('div');
+    document.body.append(trigger);
+    trigger.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 40, y: 100, width: 60, height: 28 });
+    const { result } = renderHook(() => useDropdown({ expectedHeight: 220 }));
+
+    act(() => {
+      result.current.containerRef.current = trigger;
+      result.current.toggle();
+    });
+
+    expect(result.current.popupClassName).toContain('top-[calc(100%+0.25rem)]');
+    expect(result.current.popupStyle).toBeUndefined();
+    expect(trigger.style.getPropertyValue('--dropdown-max-height')).toBe('628px');
+    trigger.remove();
+  });
+
+  it('bounds an absolute popup to its clipping ancestor', () => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+    const clipper = document.createElement('div');
+    clipper.style.overflowY = 'auto';
+    const trigger = document.createElement('div');
+    clipper.append(trigger);
+    document.body.append(clipper);
+    clipper.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 0, y: 60, width: 400, height: 340 });
+    trigger.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 40, y: 100, width: 60, height: 28 });
+    const { result } = renderHook(() => useDropdown({ expectedHeight: 220 }));
+
+    act(() => {
+      result.current.containerRef.current = trigger;
+      result.current.toggle();
+    });
+
+    expect(trigger.style.getPropertyValue('--dropdown-max-height')).toBe('260px');
+    clipper.remove();
+  });
+
+  it('bounds an absolute popup opening upwards to the space above the trigger', () => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+    const trigger = document.createElement('div');
+    document.body.append(trigger);
+    trigger.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 40, y: 620, width: 60, height: 28 });
+    const { result } = renderHook(() => useDropdown({ expectedHeight: 220 }));
+
+    act(() => {
+      result.current.containerRef.current = trigger;
+      result.current.toggle();
+    });
+
+    expect(result.current.popupClassName).toContain('bottom-[calc(100%+0.25rem)]');
+    expect(trigger.style.getPropertyValue('--dropdown-max-height')).toBe('608px');
+    trigger.remove();
+  });
+
+  it('drops the absolute bound once the popup closes', () => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+    const trigger = document.createElement('div');
+    document.body.append(trigger);
+    trigger.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 40, y: 100, width: 60, height: 28 });
+    const { result } = renderHook(() => useDropdown({}));
+
+    act(() => {
+      result.current.containerRef.current = trigger;
+      result.current.toggle();
+    });
+    expect(trigger.style.getPropertyValue('--dropdown-max-height')).not.toBe('');
+
+    act(() => result.current.close());
+
+    expect(trigger.style.getPropertyValue('--dropdown-max-height')).toBe('');
+    trigger.remove();
+  });
+
+  it('leaves a fixed popup on its own inline bound', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+    const trigger = document.createElement('div');
+    document.body.append(trigger);
+    trigger.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 40, y: 100, width: 60, height: 28 });
+    const { result } = renderHook(() =>
+      useDropdown({ expectedHeight: 220, expectedWidth: 240, strategy: 'fixed' }),
+    );
+
+    act(() => {
+      result.current.containerRef.current = trigger;
+      result.current.toggle();
+    });
+
+    expect(result.current.popupStyle).toMatchObject({ top: 132, maxHeight: 628 });
+    expect(trigger.style.getPropertyValue('--dropdown-max-height')).toBe('');
+    trigger.remove();
+  });
+  it('keeps a usable bound when the clipping ancestor hugs the trigger', () => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+    const clipper = document.createElement('div');
+    clipper.style.overflowY = 'hidden';
+    const trigger = document.createElement('div');
+    clipper.append(trigger);
+    document.body.append(clipper);
+    clipper.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 0, y: 100, width: 400, height: 28 });
+    trigger.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 40, y: 100, width: 60, height: 28 });
+    const { result } = renderHook(() => useDropdown({ expectedHeight: 220 }));
+
+    act(() => {
+      result.current.containerRef.current = trigger;
+      result.current.toggle();
+    });
+
+    expect(trigger.style.getPropertyValue('--dropdown-max-height')).toBe('160px');
+    clipper.remove();
+  });
 });

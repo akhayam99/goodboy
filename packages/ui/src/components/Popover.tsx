@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode, Ref } from 'react';
 import { cn } from '../cn';
+import { DROPDOWN_MAX_HEIGHT_VARIABLE } from '../dropdownMaxHeight';
 import { ScrollFade } from './ScrollFade';
 
 export type PopoverProps = {
@@ -37,9 +38,9 @@ export const Popover = ({
       role={role}
       aria-label={ariaLabel}
       tabIndex={tabIndex}
-      style={style}
+      style={{ maxHeight: `var(${DROPDOWN_MAX_HEIGHT_VARIABLE}, 100%)`, ...style }}
       className={cn(
-        'flex max-h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-border bg-elevated text-xs shadow-lg',
+        'flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-border bg-elevated text-xs shadow-lg',
         className,
       )}
     >
@@ -49,7 +50,12 @@ export const Popover = ({
 };
 
 export const PopoverBody = ({ children, className }: PopoverBodyProps) => (
-  <ScrollFade className={cn('min-h-0 flex-1', className)} fadeSize={12} fadeFrom="elevated">
+  <ScrollFade
+    className={cn('flex min-h-0 flex-1 flex-col', className)}
+    viewportClassName="h-auto min-h-0 flex-1"
+    fadeSize={12}
+    fadeFrom="elevated"
+  >
     {children}
   </ScrollFade>
 );

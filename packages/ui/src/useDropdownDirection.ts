@@ -1,5 +1,6 @@
 import { useLayoutEffect, useState } from 'react';
 import type { CSSProperties, RefObject } from 'react';
+import { DROPDOWN_MAX_HEIGHT_VARIABLE } from './dropdownMaxHeight';
 
 type Direction = 'up' | 'down';
 
@@ -32,6 +33,13 @@ type ResolveDesiredLeftParams = {
   readonly align: Align;
 };
 
+type ResolveBoundedMaxHeightParams = {
+  readonly rect: DOMRect;
+  readonly direction: Direction;
+  readonly bottomBound: number;
+  readonly topBound: number;
+};
+
 const VIEWPORT_MARGIN = 8;
 const DROPDOWN_GAP = 4;
 const MIN_DROPDOWN_HEIGHT = 160;
@@ -44,6 +52,22 @@ const resolveDesiredLeft = ({ rect, popupWidth, align }: ResolveDesiredLeftParam
     return rect.left + rect.width / 2 - popupWidth / 2;
   }
   return rect.left;
+};
+
+const resolveBoundedMaxHeight = ({
+  rect,
+  direction,
+  bottomBound,
+  topBound,
+}: ResolveBoundedMaxHeightParams): number => {
+  const inset = DROPDOWN_GAP + VIEWPORT_MARGIN;
+  const clipped =
+    direction === 'down'
+      ? Math.min(bottomBound, window.innerHeight) - rect.bottom
+      : rect.top - Math.max(topBound, 0);
+  const onScreen = direction === 'down' ? window.innerHeight - rect.bottom : rect.top;
+  const wanted = Math.max(clipped - inset, MIN_DROPDOWN_HEIGHT);
+  return Math.max(Math.min(wanted, onScreen - inset), 0);
 };
 
 const findClippingAncestor = ({ element }: FindClippingAncestorParams): HTMLElement | null => {
@@ -88,9 +112,12 @@ export const useDropdownDirection = ({
         const topBound = clipperRect?.top ?? 0;
         const spaceBelow = bottomBound - rect.bottom;
         const spaceAbove = rect.top - topBound;
-        setPosition({
-          direction: spaceBelow < expectedHeight && spaceAbove > spaceBelow ? 'up' : 'down',
-        });
+        const direction = spaceBelow < expectedHeight && spaceAbove > spaceBelow ? 'up' : 'down';
+        trigger.style.setProperty(
+          DROPDOWN_MAX_HEIGHT_VARIABLE,
+          `${resolveBoundedMaxHeight({ rect, direction, bottomBound, topBound })}px`,
+        );
+        setPosition({ direction });
         return;
       }
 
@@ -130,7 +157,11 @@ export const useDropdownDirection = ({
 
     updatePosition();
     if (strategy === 'absolute') {
-      return;
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('resize', updatePosition);
+        triggerRef.current?.style.removeProperty(DROPDOWN_MAX_HEIGHT_VARIABLE);
+      };
     }
     window.addEventListener('resize', updatePosition);
     window.addEventListener('scroll', updatePosition, true);
