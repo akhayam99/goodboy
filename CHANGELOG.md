@@ -7,7 +7,59 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
-## Goodboy v0.1.85
+## Goodboy v0.2.0
+
+Goodboy changes shape: the workspace is now the place where a whole context
+lives, with the repositories and folders you work on as projects inside it.
+Sessions start empty and grow into the projects they actually touch, telling
+that story as they go.
+
+### The workspace holds projects
+
+What used to be a workspace, one repository, is now a project. A workspace is
+the container above it: name it after the company or the context (Serenis),
+link the projects that belong there (api, app-web, website, infra). A single
+repository still works exactly as before, as a workspace with one project.
+The old composite workspaces dissolve into this model; existing data is
+migrated in place, and the active composite becomes a workspace with its
+members as projects.
+
+### Sessions start empty and explain themselves
+
+Creating a session asks for a title, nothing else. No branch, no worktree, no
+upfront choice of repositories. When work needs to write into a project, that
+project is materialized: a worktree and a branch appear, and the session
+records why, in plain words, in its activity timeline. Agents can request a
+project themselves, with a reason, while planning or mid-conversation; you can
+add one by hand with the "+ project" chip. Pull requests are tracked per
+project, and the session page shows the whole story in one document: goal,
+linked work, plan, workflows, PRs, activity. The lens sidebar is gone; the
+left panel is your sessions, the rest happens on the page.
+
+### Integrations connect once per workspace
+
+Linear, Sentry, Slack, Jira, Bitbucket, GitLab and GitHub now bind at the
+workspace, so every project inside shares the connection; a project can carry
+its own config where that matters. GitHub tokens join the same credential
+system as everyone else, with the gh CLI still available as a fallback.
+Secrets stay in the OS keychain, unchanged.
+
+### Goodboy knows who you are here
+
+Each workspace keeps a profile: your role, discipline and topics, asked once
+during onboarding and editable in Settings. Agents read it and adapt: a
+non-developer gets outcomes instead of raw diffs, a platform engineer gets
+cross-project reasoning. The profile is also written to a PROFILE.md file
+under ~/.goodboy for your own reference, never with secrets in it.
+
+### One-way door, with a copy of the key
+
+First boot on 0.2.0 migrates the database to the new shape, and 0.1.x cannot
+read it afterwards. Before migrating, Goodboy saves a snapshot of the database
+next to the original; restoring that file is the way back if anything goes
+wrong. The migration also clears years of accumulated dead weight: unused
+columns, an unreachable parallel-groups feature, mixed timestamp formats, and
+missing foreign keys.
 
 Slack connects as you instead of as a bot, the activity feed stops rewriting
 what it shows, and a popover that opened as a sliver opens at full height

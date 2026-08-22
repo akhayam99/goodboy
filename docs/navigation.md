@@ -95,10 +95,12 @@ is a choice to state: one mount in a one-project workspace needs no bar.
 Sessions are created lazily on the workspace ([concepts.md](concepts.md) →
 Lazy sessions), so the bar is also where a session's footprint grows.
 
-**Inside a session the sidebar is two steps, not two columns.** One mode lists
-the workspace's sessions grouped by stage, the other lists the open session's
-lenses; a back row switches between them and selecting a session lands on its
-lenses. Board → session is the whole depth of the navigation.
+**Inside a session the sidebar stays the sessions list.** There is no second
+mode: the sidebar lists the workspace's sessions grouped by stage, and the open
+session tells its own story in the main pane. Lens surfaces still exist, but
+they are reached from rows and chips inside the overview (expand-in-place or
+side panel), never from sidebar navigation. Board → session is the whole depth
+of the navigation.
 
 **Peek is a display of the sidebar, not a second sidebar.** The overlay renders
 the same sidebar component; there is one sessions list in the codebase. It is
@@ -110,9 +112,10 @@ edge, because a deliberate anchor is not a graze.
 grammar on one screen; read it before designing a new one. Its rhythm: section
 eyebrow, at most one action in a section header and one primary
 button per section, a `<Divider />` between sections and never a border on one.
-An empty section renders an inline empty state rather than hiding, since a
-section that vanishes teaches nothing, and finished work collapses into one
-summary row per category. Urgency is carried by the surface, never by a badge
+A section appears when its fact exists (a plan, a workflow run, a PR on a
+project) and stays away before that, so the empty session reads as a blank
+document with a title and an intent composer instead of a wall of placeholders;
+finished work collapses into one summary row per category. Urgency is carried by the surface, never by a badge
 parked beside it.
 
 ## Breadcrumbs
