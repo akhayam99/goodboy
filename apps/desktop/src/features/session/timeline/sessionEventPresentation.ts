@@ -28,6 +28,7 @@ const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
   pr_closed: 'muted',
   workflow_started: 'plain',
   workflow_discarded: 'muted',
+  workflow_restored: 'plain',
   workflow_deleted: 'muted',
   decisions_changed: 'muted',
 };
@@ -51,6 +52,7 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   pr_closed: { icon: GitPullRequestClosed, tone: 'neutral', label: 'Pull request' },
   workflow_started: { icon: CONCEPT_ICONS.workflows, tone: 'accent', label: 'Workflow' },
   workflow_discarded: { icon: CONCEPT_ICONS.workflows, tone: 'neutral', label: 'Workflow' },
+  workflow_restored: { icon: CONCEPT_ICONS.workflows, tone: 'accent', label: 'Workflow' },
   workflow_deleted: { icon: Trash2, tone: 'neutral', label: 'Workflow' },
   decisions_changed: { icon: CONCEPT_ICONS.decisions, tone: 'neutral', label: 'Decisions' },
 };
@@ -111,6 +113,8 @@ export const sessionEventTitle = ({ event }: TitleParams): string => {
       return `${workflowLabel({ payload })} started`;
     case 'workflow_discarded':
       return `${workflowLabel({ payload })} discarded`;
+    case 'workflow_restored':
+      return `${workflowLabel({ payload })} restored`;
     case 'workflow_deleted':
       return `${workflowLabel({ payload })} deleted`;
     case 'decisions_changed':

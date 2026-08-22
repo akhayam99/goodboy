@@ -23,6 +23,7 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget> = {
   pr_closed: { lens: 'pr', label: 'Open PR' },
   workflow_started: { lens: 'workflows', label: 'Open workflows' },
   workflow_discarded: { lens: 'workflows', label: 'Open workflows' },
+  workflow_restored: { lens: 'workflows', label: 'Open workflows' },
   workflow_deleted: { lens: 'workflows', label: 'Open workflows' },
   decisions_changed: { lens: 'decisions', label: 'Open decisions' },
 };
