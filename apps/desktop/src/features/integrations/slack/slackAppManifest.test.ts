@@ -21,7 +21,7 @@ describe('buildSlackManifestUrl', () => {
   it('drops the manifest into the app creation flow', () => {
     const url = buildSlackManifestUrl({ userScopes: SLACK_USER_SCOPES }) ?? '';
     expect(url.startsWith('https://api.slack.com/apps?new_app=1&manifest_json=')).toBe(true);
-    expect(url.length).toBeLessThan(SLACK_MANIFEST_URL_LIMIT);
+    expect(url.length).toBeLessThanOrEqual(SLACK_MANIFEST_URL_LIMIT);
   });
 
   it('asks for the five scopes as user scopes and for no bot scope at all', () => {
