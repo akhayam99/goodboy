@@ -22,6 +22,25 @@ describe('buildIssueBody', () => {
     );
   });
 
+  it('embeds the uploaded screenshots and escapes what would break the markdown', () => {
+    const body = buildIssueBody({
+      typeLabel: 'Bug',
+      version: '0.1.69',
+      areaLabel: 'Board and sessions',
+      notes: 'Freezes on archive.',
+      imageNames: ['a]b\\c.png'],
+      uploadedImages: [
+        { name: 'a]b\\c.png', url: 'https://github.com/user-attachments/assets/aaa' },
+        { name: 'plain.png', url: 'https://github.com/user-attachments/assets/bbb' },
+      ],
+    });
+
+    expect(body).toContain(
+      '![a\\]b\\\\c.png](https://github.com/user-attachments/assets/aaa)\n![plain.png](https://github.com/user-attachments/assets/bbb)',
+    );
+    expect(body).not.toContain('Screenshots to drag into this issue');
+  });
+
   it('names the staged screenshots so the reporter can drag them in', () => {
     const body = buildIssueBody({
       typeLabel: 'Bug',

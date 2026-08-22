@@ -224,6 +224,7 @@ pub fn attachment_delete(worktree_dir: String, rel_path: String) -> Result<(), A
 #[serde(rename_all = "camelCase")]
 pub struct BugReportImageInput {
     file_name: String,
+    mime_type: String,
     data_base64: String,
 }
 
@@ -235,37 +236,64 @@ fn bug_report_dir_name() -> String {
     format!("goodboy-report-{}-{}", std::process::id(), stamp)
 }
 
-/// GitHub has no public endpoint for issue-body image uploads, so the images
-/// are written to a throwaway folder and the file manager is opened on it: the
-/// reporter drags them straight into the issue the app just opened.
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StagedBugReportImage {
+    file_name: String,
+    mime_type: String,
+    path: String,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StagedBugReport {
+    dir: String,
+    images: Vec<StagedBugReportImage>,
+}
+
+/// Writes the images to a throwaway folder and reports where each one landed.
+/// The upload reads them back from there, and the folder is what the file
+/// manager opens when the reporter has to drag them in by hand instead.
 fn write_bug_report_images(
     dir: &Path,
     images: &[BugReportImageInput],
-) -> Result<(), AttachmentError> {
+) -> Result<Vec<StagedBugReportImage>, AttachmentError> {
     fs::create_dir_all(dir)?;
+    let mut staged = Vec::with_capacity(images.len());
     for (index, image) in images.iter().enumerate() {
         let bytes = STANDARD.decode(image.data_base64.as_bytes())?;
         if bytes.len() > MAX_BYTES {
             return Err(AttachmentError::TooLarge(MAX_BYTES));
         }
         let stored = format!("{:02}-{}", index + 1, sanitize_segment(&image.file_name));
-        fs::write(dir.join(stored), &bytes)?;
+        let path = dir.join(stored);
+        fs::write(&path, &bytes)?;
+        staged.push(StagedBugReportImage {
+            file_name: image.file_name.clone(),
+            mime_type: image.mime_type.clone(),
+            path: path.to_string_lossy().to_string(),
+        });
     }
-    Ok(())
+    Ok(staged)
 }
 
 #[tauri::command]
 pub fn bug_report_stage_images(
     images: Vec<BugReportImageInput>,
-) -> Result<String, AttachmentError> {
+) -> Result<StagedBugReport, AttachmentError> {
     let dir = std::env::temp_dir().join(bug_report_dir_name());
-    write_bug_report_images(&dir, &images)?;
-    Ok(dir.to_string_lossy().to_string())
+    let staged = write_bug_report_images(&dir, &images)?;
+    Ok(StagedBugReport {
+        dir: dir.to_string_lossy().to_string(),
+        images: staged,
+    })
 }
 
-#[tauri::command]
-pub fn bug_report_reveal_images(dir: String) -> Result<(), AttachmentError> {
-    let canonical_dir = Path::new(&dir).canonicalize()?;
+/// Resolves a caller-supplied path back to a report staging folder. Anything
+/// outside the temp directory and anything not named like a report folder is
+/// refused before it can be opened or deleted.
+fn resolve_bug_report_dir(dir: &str) -> Result<std::path::PathBuf, AttachmentError> {
+    let canonical_dir = Path::new(dir).canonicalize()?;
     let canonical_temp_dir = std::env::temp_dir().canonicalize()?;
     let is_report_dir = canonical_dir
         .file_name()
@@ -274,8 +302,24 @@ pub fn bug_report_reveal_images(dir: String) -> Result<(), AttachmentError> {
     if !canonical_dir.starts_with(canonical_temp_dir) || !is_report_dir {
         return Err(AttachmentError::InvalidPath);
     }
+    Ok(canonical_dir)
+}
+
+#[tauri::command]
+pub fn bug_report_reveal_images(dir: String) -> Result<(), AttachmentError> {
+    let canonical_dir = resolve_bug_report_dir(&dir)?;
     crate::explore::spawn_open(&canonical_dir, false)?;
     Ok(())
+}
+
+#[tauri::command]
+pub fn bug_report_discard_images(dir: String) -> Result<(), AttachmentError> {
+    let canonical_dir = resolve_bug_report_dir(&dir)?;
+    match fs::remove_dir_all(&canonical_dir) {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(AttachmentError::Io(e)),
+    }
 }
 
 #[cfg(test)]
@@ -388,15 +432,17 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
 
         let png_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
-        write_bug_report_images(
+        let staged = write_bug_report_images(
             &dir,
             &[
                 BugReportImageInput {
                     file_name: "../../board freeze.png".to_string(),
+                    mime_type: "image/png".to_string(),
                     data_base64: png_b64.to_string(),
                 },
                 BugReportImageInput {
                     file_name: "second.png".to_string(),
+                    mime_type: "image/png".to_string(),
                     data_base64: png_b64.to_string(),
                 },
             ],
@@ -405,6 +451,13 @@ mod tests {
 
         assert!(dir.join("01-board_freeze.png").is_file());
         assert!(dir.join("02-second.png").is_file());
+        assert_eq!(staged.len(), 2);
+        assert_eq!(staged[0].file_name, "../../board freeze.png");
+        assert_eq!(staged[0].mime_type, "image/png");
+        assert_eq!(
+            staged[0].path,
+            dir.join("01-board_freeze.png").to_string_lossy()
+        );
         assert_eq!(
             fs::read(dir.join("02-second.png")).unwrap(),
             STANDARD.decode(png_b64).unwrap()
@@ -422,12 +475,33 @@ mod tests {
             &dir,
             &[BugReportImageInput {
                 file_name: "shot.png".to_string(),
+                mime_type: "image/png".to_string(),
                 data_base64: "not base64!!".to_string(),
             }],
         );
         assert!(matches!(err, Err(AttachmentError::Decode(_))));
 
         let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn bug_report_discard_removes_a_staged_folder_and_refuses_anything_else() {
+        let dir = std::env::temp_dir().join(format!("goodboy-report-drop-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("01-shot.png"), b"bytes").unwrap();
+
+        bug_report_discard_images(dir.to_string_lossy().to_string()).unwrap();
+        assert!(!dir.exists());
+
+        let other = std::env::temp_dir().join(format!("goodboy-keep-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&other);
+        fs::create_dir_all(&other).unwrap();
+        let err = bug_report_discard_images(other.to_string_lossy().to_string());
+        assert!(matches!(err, Err(AttachmentError::InvalidPath)));
+        assert!(other.exists());
+
+        let _ = fs::remove_dir_all(&other);
     }
 
     #[test]

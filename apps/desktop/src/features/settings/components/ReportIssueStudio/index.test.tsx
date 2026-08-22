@@ -7,14 +7,22 @@ import type { GhTokenStatus } from '@goodboy/types';
 type GhRunResult = { stdout: string; stderr: string; exitCode: number };
 type DragHandler = (event: { payload: unknown }) => void;
 
+const STAGED_REPORT = {
+  dir: '/tmp/goodboy-report-1',
+  images: [
+    { fileName: 'board.png', mimeType: 'image/png', path: '/tmp/goodboy-report-1/01-board.png' },
+  ],
+};
+
 const mocks = vi.hoisted(() => ({
   run: vi.fn<
     (args: ReadonlyArray<string>, opts: Readonly<Record<string, unknown>>) => Promise<GhRunResult>
   >(async () => ({ stdout: '', stderr: '', exitCode: 0 })),
   openUrl: vi.fn<(url: string) => Promise<void>>(async () => undefined),
-  invoke: vi.fn<(cmd: string, args: Record<string, unknown>) => Promise<unknown>>(
-    async () => '/tmp/goodboy-report-1',
-  ),
+  invoke: vi.fn<(cmd: string, args: Record<string, unknown>) => Promise<unknown>>(async () => ({
+    dir: '/tmp/goodboy-report-1',
+    images: [],
+  })),
   showToast: vi.fn(),
   dragHandlers: Array<DragHandler>(),
 }));
@@ -96,7 +104,7 @@ beforeEach(() => {
   mocks.openUrl.mockReset();
   mocks.openUrl.mockImplementation(async () => undefined);
   mocks.invoke.mockReset();
-  mocks.invoke.mockImplementation(async () => '/tmp/goodboy-report-1');
+  mocks.invoke.mockImplementation(async () => STAGED_REPORT);
   mocks.showToast.mockReset();
   mocks.dragHandlers = [];
 });
@@ -187,7 +195,7 @@ describe('ReportIssueStudio', () => {
             mimeType: 'image/png',
             dataBase64: 'aGk=',
           }
-        : '/tmp/goodboy-report-1',
+        : STAGED_REPORT,
     );
     render(<ReportIssueStudio onClose={vi.fn()} />);
 
@@ -218,6 +226,9 @@ describe('ReportIssueStudio', () => {
     expect(measure?.contains(footer as Node)).toBe(true);
     expect(preview.nextElementSibling).toBe(footer);
   });
+
+  const issueCreateArgs = (): ReadonlyArray<string> =>
+    mocks.run.mock.calls.map((call) => call[0]).find((args) => args[0] === 'issue') ?? [];
 
   const attachOneImage = () => {
     useAppStore.getState().addBugReportImages({
@@ -250,9 +261,92 @@ describe('ReportIssueStudio', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     });
 
-    expect(mocks.run.mock.calls[0]?.[0]).toContain(
+    expect(issueCreateArgs()).toContain(
       'Type: Bug\nArea: Board and sessions\nVersion: 0.1.69\n\nFreezes on archive.\n\nScreenshots to drag into this issue: board.png',
     );
+  });
+
+  it('embeds the uploaded screenshots in the issue and drops the drag reminder', async () => {
+    setGithubStatus({ available: true, mode: 'gh-cli' });
+    attachOneImage();
+    mocks.invoke.mockImplementation(async () => STAGED_REPORT);
+    mocks.run.mockImplementation(async (args) => {
+      if (args[0] === 'api' && args[1] === 'repos/akhayam99/goodboy') {
+        return { stdout: '1231334462\n', stderr: '', exitCode: 0 };
+      }
+      if (args[0] === 'api') {
+        return {
+          stdout: '{"url":"https://github.com/user-attachments/assets/aaa"}',
+          stderr: '',
+          exitCode: 0,
+        };
+      }
+      return {
+        stdout: 'https://github.com/akhayam99/goodboy/issues/99\n',
+        stderr: '',
+        exitCode: 0,
+      };
+    });
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'Freezes on archive.' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    });
+
+    const body = issueCreateArgs().at(-1) ?? '';
+    expect(body).toContain('![board.png](https://github.com/user-attachments/assets/aaa)');
+    expect(body).not.toContain('Screenshots to drag into this issue');
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      'success',
+      'Filed on GitHub with your images, under your account.',
+      expect.objectContaining({ title: 'Issue sent' }),
+    );
+    expect(mocks.invoke).toHaveBeenCalledWith('bug_report_discard_images', {
+      dir: '/tmp/goodboy-report-1',
+    });
+  });
+
+  it('falls back to the drag reminder when the upload does not go through', async () => {
+    setGithubStatus({ available: true, mode: 'gh-cli' });
+    attachOneImage();
+    mocks.invoke.mockImplementation(async () => STAGED_REPORT);
+    mocks.run.mockImplementation(async (args) => {
+      if (args[0] === 'api' && args[1] === 'repos/akhayam99/goodboy') {
+        return { stdout: '1231334462\n', stderr: '', exitCode: 0 };
+      }
+      if (args[0] === 'api') {
+        return { stdout: '', stderr: 'gone', exitCode: 1 };
+      }
+      return {
+        stdout: 'https://github.com/akhayam99/goodboy/issues/99\n',
+        stderr: '',
+        exitCode: 0,
+      };
+    });
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'Freezes on archive.' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    });
+
+    expect(issueCreateArgs().at(-1) ?? '').toContain(
+      'Screenshots to drag into this issue: board.png',
+    );
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      'success',
+      "Your images aren't on it yet. GitHub only takes them by drag and drop.",
+      expect.objectContaining({ persist: true }),
+    );
+    expect(mocks.invoke).not.toHaveBeenCalledWith('bug_report_discard_images', expect.anything());
+  });
+
+  it('does not promise an upload the browser path cannot make', () => {
+    setGithubStatus({ available: false, mode: 'absent' });
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    expect(screen.getByText(/The GitHub form cannot carry them/)).toBeDefined();
   });
 
   it('writes the attached image bytes out to a folder before the issue is filed', async () => {
@@ -271,7 +365,7 @@ describe('ReportIssueStudio', () => {
     });
 
     expect(mocks.invoke).toHaveBeenCalledWith('bug_report_stage_images', {
-      images: [{ fileName: 'board.png', dataBase64: 'AAAA' }],
+      images: [{ fileName: 'board.png', mimeType: 'image/png', dataBase64: 'AAAA' }],
     });
   });
 
@@ -312,7 +406,7 @@ describe('ReportIssueStudio', () => {
     });
 
     expect(mocks.invoke).toHaveBeenCalledWith('bug_report_stage_images', {
-      images: [{ fileName: 'board.png', dataBase64: 'AAAA' }],
+      images: [{ fileName: 'board.png', mimeType: 'image/png', dataBase64: 'AAAA' }],
     });
     expect(mocks.openUrl).toHaveBeenCalledTimes(1);
   });

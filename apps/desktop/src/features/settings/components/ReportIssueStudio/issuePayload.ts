@@ -6,6 +6,7 @@ import {
   MAX_ISSUE_URL_BYTES,
   withoutLoneSurrogates,
 } from '../../issueUrl';
+import type { UploadedIssueImage } from './uploadIssueAttachments';
 
 const TRUNCATION_NOTICE =
   '\n\n[Notes truncated to fit the GitHub link. Finish writing after the issue opens.]';
@@ -16,7 +17,10 @@ type BuildIssueBodyParams = {
   readonly areaLabel: string;
   readonly notes: string;
   readonly imageNames?: ReadonlyArray<string>;
+  readonly uploadedImages?: ReadonlyArray<UploadedIssueImage>;
 };
+
+const escapeAltText = (name: string): string => name.replace(/[[\]\\]/g, (match) => `\\${match}`);
 
 export const buildIssueBody = ({
   typeLabel,
@@ -24,8 +28,15 @@ export const buildIssueBody = ({
   areaLabel,
   notes,
   imageNames = [],
+  uploadedImages = [],
 }: BuildIssueBodyParams): string => {
   const head = `Type: ${typeLabel}\nArea: ${areaLabel}\nVersion: ${version}\n\n${notes}`;
+  if (uploadedImages.length > 0) {
+    const embeds = uploadedImages
+      .map((image) => `![${escapeAltText(image.name)}](${image.url})`)
+      .join('\n');
+    return `${head}\n\n${embeds}`;
+  }
   if (imageNames.length === 0) {
     return head;
   }

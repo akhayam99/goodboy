@@ -31,8 +31,14 @@ import { guessArea } from './guessArea';
 import { buildFallbackIssue, buildIssueBody, isOpenableUrl } from './issuePayload';
 import { parseIssueCreateResult } from './parseIssueCreateResult';
 import { previewHint } from './previewHint';
-import { revealBugReportImages, stageBugReportImages } from './stageImages';
+import {
+  discardBugReportImages,
+  revealBugReportImages,
+  stageBugReportImages,
+  type StagedBugReport,
+} from './stageImages';
 import { truncationNotice } from './truncationNotice';
+import { uploadIssueAttachments } from './uploadIssueAttachments';
 
 type Props = {
   readonly onClose: () => void;
@@ -140,16 +146,25 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
     setSendState('sending');
     setErrorMessage(null);
 
-    let stagedImagesDir: string | null;
+    let staged: StagedBugReport | null;
     try {
-      stagedImagesDir = await stageBugReportImages({ images: imageControl.images });
+      staged = await stageBugReportImages({ images: imageControl.images });
     } catch (err) {
       setSendState('error');
       setErrorMessage(`Could not prepare the images to attach. ${formatError(err)}`);
       return;
     }
+    const stagedImagesDir = staged?.dir ?? null;
 
     if (sendsDirectly) {
+      const uploaded =
+        staged == null
+          ? null
+          : await uploadIssueAttachments({
+              runner: tauriGhRunner,
+              repo: REPORT_ISSUE_REPO,
+              images: staged.images,
+            });
       try {
         const result = await tauriGhRunner.run(
           [
@@ -160,7 +175,15 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
             '--title',
             trimmedTitle,
             '--body',
-            directBody,
+            uploaded == null
+              ? directBody
+              : buildIssueBody({
+                  typeLabel,
+                  version: version ?? '',
+                  areaLabel,
+                  notes: trimmedNotes,
+                  uploadedImages: uploaded,
+                }),
           ],
           {},
         );
@@ -173,14 +196,23 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
         const issueUrl = parsed.url;
         clearBugReportDraft();
         requestClose();
-        if (stagedImagesDir == null) {
-          showToast('success', 'Filed on GitHub, under your account.', {
-            title: 'Issue sent',
-            action:
-              issueUrl == null
-                ? undefined
-                : { label: 'View issue', onClick: () => void openUrl(issueUrl) },
-          });
+        if (stagedImagesDir != null && uploaded != null) {
+          void discardBugReportImages({ dir: stagedImagesDir });
+        }
+        if (stagedImagesDir == null || uploaded != null) {
+          showToast(
+            'success',
+            uploaded == null
+              ? 'Filed on GitHub, under your account.'
+              : 'Filed on GitHub with your images, under your account.',
+            {
+              title: 'Issue sent',
+              action:
+                issueUrl == null
+                  ? undefined
+                  : { label: 'View issue', onClick: () => void openUrl(issueUrl) },
+            },
+          );
           return;
         }
         const action =
@@ -269,7 +301,11 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                 />
                 <FieldRow
                   label="Images"
-                  help="GitHub only takes images by hand. After you send, one click opens the issue and the folder, so you can drag them in."
+                  help={
+                    sendsDirectly
+                      ? 'Attached to the issue when you send. If GitHub turns them away, one click opens the issue and the folder, so you can drag them in.'
+                      : 'The GitHub form cannot carry them. It opens with the folder beside it, so you can drag them in.'
+                  }
                   layout="stacked"
                 >
                   <BugReportImages control={imageControl} />

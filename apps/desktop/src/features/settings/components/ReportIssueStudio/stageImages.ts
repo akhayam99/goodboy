@@ -10,13 +10,25 @@ const base64FromDataUrl = (dataUrl: string): string => {
   return comma === -1 ? dataUrl : dataUrl.slice(comma + 1);
 };
 
-export const stageBugReportImages = async ({ images }: Params): Promise<string | null> => {
+export type StagedBugReportImage = {
+  readonly fileName: string;
+  readonly mimeType: string;
+  readonly path: string;
+};
+
+export type StagedBugReport = {
+  readonly dir: string;
+  readonly images: ReadonlyArray<StagedBugReportImage>;
+};
+
+export const stageBugReportImages = async ({ images }: Params): Promise<StagedBugReport | null> => {
   if (images.length === 0) {
     return null;
   }
-  return invoke<string>('bug_report_stage_images', {
+  return invoke<StagedBugReport>('bug_report_stage_images', {
     images: images.map((image) => ({
       fileName: image.fileName,
+      mimeType: image.mimeType,
       dataBase64: base64FromDataUrl(image.dataUrl),
     })),
   });
@@ -28,4 +40,12 @@ type RevealParams = {
 
 export const revealBugReportImages = async ({ dir }: RevealParams): Promise<void> => {
   await invoke('bug_report_reveal_images', { dir });
+};
+
+export const discardBugReportImages = async ({ dir }: RevealParams): Promise<void> => {
+  try {
+    await invoke('bug_report_discard_images', { dir });
+  } catch {
+    return;
+  }
 };
