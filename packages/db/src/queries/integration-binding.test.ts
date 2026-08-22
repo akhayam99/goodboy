@@ -5,8 +5,8 @@ import type {
   LinearIntegrationConfig,
   ProjectId,
   WorkspaceId,
-  WorkspaceIntegration,
-  WorkspaceIntegrationId,
+  IntegrationBinding,
+  IntegrationBindingId,
 } from '@goodboy/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from '../migrations/runner';
@@ -56,7 +56,7 @@ const makeBinding = ({
   projectId: scope = null,
   credentialId = 'cred-linear',
   urlKey = 'serenis',
-}: MakeBindingParams = {}): WorkspaceIntegration => {
+}: MakeBindingParams = {}): IntegrationBinding => {
   const config: LinearIntegrationConfig = {
     workspaceUrlKey: urlKey,
     viewerUserId: 'u-abc',
@@ -64,7 +64,7 @@ const makeBinding = ({
   };
   const now = new Date().toISOString() as IsoDateTime;
   return {
-    id: id as WorkspaceIntegrationId,
+    id: id as IntegrationBindingId,
     workspaceId,
     projectId: scope,
     provider: 'linear',
@@ -170,7 +170,7 @@ describe('integration bindings', () => {
     await upsertIntegrationBinding({
       db,
       binding: {
-        id: 'binding-github' as WorkspaceIntegrationId,
+        id: 'binding-github' as IntegrationBindingId,
         workspaceId,
         projectId: null,
         provider: 'github',

@@ -1,4 +1,4 @@
-import type { SessionExternalTaskProvider, WorkspaceIntegration } from '@goodboy/types';
+import type { SessionExternalTaskProvider, IntegrationBinding } from '@goodboy/types';
 import { resolveIntegrationConnection } from './connection';
 
 export type IssueSource = {
@@ -7,7 +7,7 @@ export type IssueSource = {
 };
 
 type Params = {
-  readonly integrations: ReadonlyArray<WorkspaceIntegration>;
+  readonly integrations: ReadonlyArray<IntegrationBinding>;
   readonly isGithubAuthenticated: boolean;
 };
 

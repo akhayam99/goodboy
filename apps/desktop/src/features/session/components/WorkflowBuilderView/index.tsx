@@ -65,6 +65,7 @@ import type {
   WorkflowTriggerMode,
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace, useSessionSlots } from '../../../../store';
+import { buildProfileGuard } from '../../../../store/profileGuard';
 import type {
   EditableStep,
   Mode,
@@ -711,7 +712,15 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         invokeFn: invoke,
         ...(sessionWorktree != null && { workingDir: sessionWorktree }),
       });
-      const result = await client.plan({ process });
+      const profileBlock = buildProfileGuard({
+        profile: useAppStore
+          .getState()
+          .workspaces.find((candidate) => candidate.id === session.workspaceId)?.profile,
+      });
+      const result = await client.plan({
+        process,
+        ...(profileBlock.length > 0 && { repoContext: profileBlock }),
+      });
       setPlan(result.output);
       setSteps(stepsFromPlan({ plan: result.output, roleModels }));
     } catch (err) {

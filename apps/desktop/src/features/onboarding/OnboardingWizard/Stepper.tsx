@@ -1,15 +1,15 @@
 import { cn } from '@goodboy/ui';
 import type { OnboardingStepId } from '../onboarding-store';
 
-const CHECKLIST_ID_BY_WIZARD_STEP: Readonly<Record<number, OnboardingStepId | null>> = {
-  0: null,
-  1: null,
-  2: 'workspace',
-  3: null,
-  4: 'codeHost',
-  5: 'tools',
-  6: 'tools',
-  7: null,
+const CHECKLIST_IDS_BY_WIZARD_STEP: Readonly<Record<number, ReadonlyArray<OnboardingStepId>>> = {
+  0: [],
+  1: [],
+  2: ['workspace'],
+  3: ['workspace'],
+  4: [],
+  5: [],
+  6: ['codeHost', 'tools'],
+  7: [],
 };
 
 type DotState = 'done' | 'current' | 'pending';
@@ -33,8 +33,8 @@ const dotState = ({
   if (position < currentPosition) {
     return 'done';
   }
-  const checklistId = CHECKLIST_ID_BY_WIZARD_STEP[wizardStep] ?? null;
-  if (checklistId !== null && completed.has(checklistId)) {
+  const checklistIds = CHECKLIST_IDS_BY_WIZARD_STEP[wizardStep] ?? [];
+  if (checklistIds.length > 0 && checklistIds.some((id) => completed.has(id))) {
     return 'done';
   }
   return 'pending';

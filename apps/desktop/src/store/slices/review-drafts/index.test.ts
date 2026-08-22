@@ -7,7 +7,7 @@ import type {
   SessionExternalTask,
   SessionId,
   WorkspaceId,
-  WorkspaceIntegrationId,
+  IntegrationBindingId,
 } from '@goodboy/types';
 import type { AppStore } from '../../store';
 import type { SetFn } from './types';
@@ -308,7 +308,7 @@ describe('review-drafts slice', () => {
       workspaceIntegrations: {
         [WS_ID]: [
           {
-            id: 'wi-1' as WorkspaceIntegrationId,
+            id: 'wi-1' as IntegrationBindingId,
             workspaceId: WS_ID,
             provider: 'gitlab',
             credentialId: 'k' as IntegrationCredentialId,

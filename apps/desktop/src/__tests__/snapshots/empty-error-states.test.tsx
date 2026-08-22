@@ -135,7 +135,7 @@ vi.mock('../../routing', () => ({
 }));
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import type { AppStore } from '../../store/store';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../store';
@@ -176,7 +176,7 @@ import { NoWorkspaceScreen } from '../../app/components/AppEmptyState';
 import { ChatEmptyState } from '../../features/chat/components/ChatView/ChatEmptyState';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';
-import { NewSessionView } from '../../features/session/components/NewSessionView';
+import { QuickCreateSession } from '../../features/session/components/QuickCreateSession';
 import { DeleteSessionConfirm } from '../../features/session/components/DeleteSessionConfirm';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';
@@ -223,12 +223,8 @@ describe('snapshot, empty states', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('NewSessionView: no workflows', () => {
-    const { container } = render(
-      <ToastProvider>
-        <NewSessionView onClose={vi.fn()} workspaceId={WS_ID} onOpenSettings={vi.fn()} />
-      </ToastProvider>,
-    );
+  it('QuickCreateSession: empty title', () => {
+    const { container } = render(<QuickCreateSession workspaceId={WS_ID} onClose={vi.fn()} />);
     expect(container.firstChild).toMatchSnapshot();
   });
 
@@ -264,25 +260,18 @@ describe('snapshot, error states', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('NewSessionView: form error', () => {
+  it('QuickCreateSession: create error', async () => {
     mockStore({
-      providers: [],
-      skills: {},
-      settings: {},
-      phaseTemplates: {},
-      sessionBudgets: {},
-      workspaces: [],
-      projects: [],
-      workspaceIntegrations: {},
-      loadSetting: vi.fn().mockResolvedValue(null),
       createSession: vi.fn().mockRejectedValue(new Error('workspace git repo not found')),
-      setSessionBudget: vi.fn(),
     });
-    const { container } = render(
-      <ToastProvider>
-        <NewSessionView onClose={vi.fn()} workspaceId={WS_ID} onOpenSettings={vi.fn()} />
-      </ToastProvider>,
+    const { container, getByRole, findByRole } = render(
+      <QuickCreateSession workspaceId={WS_ID} onClose={vi.fn()} />,
     );
+    fireEvent.change(getByRole('textbox', { name: /session title/i }), {
+      target: { value: 'ship it' },
+    });
+    fireEvent.keyDown(getByRole('textbox', { name: /session title/i }), { key: 'Enter' });
+    await findByRole('alert');
     expect(container.firstChild).toMatchSnapshot();
   });
 

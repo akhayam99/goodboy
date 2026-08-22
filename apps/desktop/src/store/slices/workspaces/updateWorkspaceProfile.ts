@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core';
 import type { Workspace, WorkspaceId, WorkspaceProfile } from '@goodboy/types';
 import { upsertWorkspaceProfile } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -8,6 +9,28 @@ type Input = {
   readonly profile: WorkspaceProfile;
 };
 
+const projectProfileFile = async ({
+  workspace,
+  profile,
+}: {
+  readonly workspace: Workspace;
+  readonly profile: WorkspaceProfile;
+}): Promise<void> => {
+  try {
+    await invoke('workspace_profile_project', {
+      args: {
+        workspaceSlug: workspace.slug,
+        role: profile.role,
+        discipline: profile.discipline,
+        topics: profile.topics,
+        notes: profile.notes,
+      },
+    });
+  } catch {
+    return;
+  }
+};
+
 export const updateWorkspaceProfile = (set: SetFn, get: GetFn) => {
   return async ({ workspaceId, profile }: Input): Promise<Workspace> => {
     const workspace = get().workspaces.find((candidate) => candidate.id === workspaceId);
@@ -15,6 +38,7 @@ export const updateWorkspaceProfile = (set: SetFn, get: GetFn) => {
       throw new Error(`workspace not found: ${workspaceId}`);
     }
     await upsertWorkspaceProfile({ db: tauriDatabase, workspaceId, profile });
+    void projectProfileFile({ workspace, profile });
     const updated: Workspace = { ...workspace, profile };
     set((state) => ({
       workspaces: state.workspaces.map((candidate) =>

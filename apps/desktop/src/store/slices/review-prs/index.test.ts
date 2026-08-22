@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RepoPullRequest } from '@goodboy/core';
 import type {
-  GitlabWorkspaceIntegration,
+  GitlabIntegrationBinding,
   IntegrationCredentialId,
   IsoDateTime,
   Project,
   ProjectId,
   Workspace,
   WorkspaceId,
-  WorkspaceIntegrationId,
+  IntegrationBindingId,
 } from '@goodboy/types';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
 import type { AppStore } from '../../store';
@@ -80,9 +80,9 @@ const buildProject = (overrides: Partial<Project> = {}): Project => ({
   ...overrides,
 });
 
-const buildGitlabIntegration = (): GitlabWorkspaceIntegration => {
+const buildGitlabIntegration = (): GitlabIntegrationBinding => {
   return {
-    id: 'wi-1' as WorkspaceIntegrationId,
+    id: 'wi-1' as IntegrationBindingId,
     workspaceId: WS_ID,
     projectId: null,
     provider: 'gitlab',

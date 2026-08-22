@@ -27,8 +27,8 @@ function makeDb(): DbInterface {
 async function seedSession(db: DbInterface, sessionId: SessionId): Promise<void> {
   const workspaceId = 'ws_ctx' as WorkspaceId;
   await db.execute(
-    'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-    [workspaceId, 'demo', '/tmp/demo', 0, 0],
+    'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    [workspaceId, 'demo', workspaceId, 0, 0],
   );
   await db.execute(
     `INSERT INTO sessions

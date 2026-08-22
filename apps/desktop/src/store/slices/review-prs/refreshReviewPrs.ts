@@ -1,7 +1,7 @@
 import { detectRepoSlug, listOpenPrsForRepo } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type {
-  GitlabWorkspaceIntegration,
+  GitlabIntegrationBinding,
   Project,
   ProjectId,
   ReviewablePr,
@@ -93,7 +93,7 @@ export const refreshReviewPrs = (set: SetFn, get: GetFn) => {
       }
     }
     const integration = (get().workspaceIntegrations[workspaceId] ?? []).find(
-      (i): i is GitlabWorkspaceIntegration => i.provider === 'gitlab',
+      (i): i is GitlabIntegrationBinding => i.provider === 'gitlab',
     );
     if (integration != null) {
       for (const target of targets) {

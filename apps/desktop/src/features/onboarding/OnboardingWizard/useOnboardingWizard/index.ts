@@ -12,6 +12,7 @@ export type OnboardingWizardState = {
   readonly workspace: Workspace | null;
   readonly workspaceId: WorkspaceId | null;
   readonly projectKind: Project['kind'] | null;
+  readonly projectCount: number;
   readonly githubConnected: boolean;
   readonly gitlabConnected: boolean;
   readonly bitbucketConnected: boolean;
@@ -34,6 +35,9 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
   const workspaceId = workspace?.id ?? null;
   const projectKind = useAppStore(
     (state) => state.projects.find((project) => project.workspaceId === workspaceId)?.kind ?? null,
+  );
+  const projectCount = useAppStore(
+    (state) => state.projects.filter((project) => project.workspaceId === workspaceId).length,
   );
   const hasWorkspace = workspace !== null;
   const hydrated = useAppStore((s) => s.hydrated);
@@ -136,6 +140,7 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
     workspace,
     workspaceId,
     projectKind,
+    projectCount,
     githubConnected: githubScoped,
     gitlabConnected,
     bitbucketConnected,

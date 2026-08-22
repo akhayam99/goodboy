@@ -6,7 +6,7 @@ import type {
   WorkflowId,
   Workspace,
   WorkspaceId,
-  WorkspaceIntegration,
+  IntegrationBinding,
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 
@@ -142,7 +142,7 @@ export const evaluateMobileCreateSession = (args: {
   readonly workspaceId: unknown;
   readonly provider: unknown;
   readonly workspaces: ReadonlyArray<Pick<Workspace, 'id'>>;
-  readonly integrations: ReadonlyArray<Pick<WorkspaceIntegration, 'provider'>>;
+  readonly integrations: ReadonlyArray<Pick<IntegrationBinding, 'provider'>>;
   readonly now?: number;
 }): CreateSessionGate => {
   const { workspaceId, provider, workspaces, integrations } = args;

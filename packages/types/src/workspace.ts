@@ -8,7 +8,7 @@ import type {
   WorkflowId,
   WorkflowRunId,
   WorkspaceId,
-  WorkspaceIntegrationId,
+  IntegrationBindingId,
 } from './ids';
 import type { SessionProviderPreference } from './provider-preference';
 import type { ModelEffort, ProviderId } from './provider-registry';
@@ -233,7 +233,7 @@ export type SlackIntegrationConfig = Readonly<{
 
 export type GithubIntegrationConfig = Readonly<Record<string, never>>;
 
-export type WorkspaceIntegrationConfig =
+export type IntegrationBindingConfig =
   | LinearIntegrationConfig
   | SentryIntegrationConfig
   | GitlabIntegrationConfig
@@ -242,8 +242,8 @@ export type WorkspaceIntegrationConfig =
   | SlackIntegrationConfig
   | GithubIntegrationConfig;
 
-type WorkspaceIntegrationBase = Readonly<{
-  id: WorkspaceIntegrationId;
+type IntegrationBindingBase = Readonly<{
+  id: IntegrationBindingId;
   workspaceId: WorkspaceId;
   projectId: ProjectId | null;
   credentialId: IntegrationCredentialId;
@@ -251,56 +251,56 @@ type WorkspaceIntegrationBase = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
-export type LinearWorkspaceIntegration = WorkspaceIntegrationBase &
+export type LinearIntegrationBinding = IntegrationBindingBase &
   Readonly<{
     provider: 'linear';
     config: LinearIntegrationConfig;
   }>;
 
-export type SentryWorkspaceIntegration = WorkspaceIntegrationBase &
+export type SentryIntegrationBinding = IntegrationBindingBase &
   Readonly<{
     provider: 'sentry';
     config: SentryIntegrationConfig;
   }>;
 
-export type GitlabWorkspaceIntegration = WorkspaceIntegrationBase &
+export type GitlabIntegrationBinding = IntegrationBindingBase &
   Readonly<{
     provider: 'gitlab';
     config: GitlabIntegrationConfig;
   }>;
 
-export type JiraWorkspaceIntegration = WorkspaceIntegrationBase &
+export type JiraIntegrationBinding = IntegrationBindingBase &
   Readonly<{
     provider: 'jira';
     config: JiraIntegrationConfig;
   }>;
 
-export type BitbucketWorkspaceIntegration = WorkspaceIntegrationBase &
+export type BitbucketIntegrationBinding = IntegrationBindingBase &
   Readonly<{
     provider: 'bitbucket';
     config: BitbucketIntegrationConfig;
   }>;
 
-export type SlackWorkspaceIntegration = WorkspaceIntegrationBase &
+export type SlackIntegrationBinding = IntegrationBindingBase &
   Readonly<{
     provider: 'slack';
     config: SlackIntegrationConfig;
   }>;
 
-export type GithubWorkspaceIntegration = WorkspaceIntegrationBase &
+export type GithubIntegrationBinding = IntegrationBindingBase &
   Readonly<{
     provider: 'github';
     config: GithubIntegrationConfig;
   }>;
 
-export type WorkspaceIntegration =
-  | LinearWorkspaceIntegration
-  | SentryWorkspaceIntegration
-  | GitlabWorkspaceIntegration
-  | JiraWorkspaceIntegration
-  | BitbucketWorkspaceIntegration
-  | SlackWorkspaceIntegration
-  | GithubWorkspaceIntegration;
+export type IntegrationBinding =
+  | LinearIntegrationBinding
+  | SentryIntegrationBinding
+  | GitlabIntegrationBinding
+  | JiraIntegrationBinding
+  | BitbucketIntegrationBinding
+  | SlackIntegrationBinding
+  | GithubIntegrationBinding;
 
 export type SessionExternalTaskProvider =
   'linear' | 'sentry' | 'gitlab' | 'github' | 'jira' | 'bitbucket' | 'slack';

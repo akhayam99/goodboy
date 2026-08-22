@@ -1,5 +1,5 @@
 import type {
-  BitbucketWorkspaceIntegration,
+  BitbucketIntegrationBinding,
   IntegrationCredentialId,
   WorkspaceId,
 } from '@goodboy/types';
@@ -37,7 +37,7 @@ export const connectBitbucket = (set: SetFn, get: GetFn) => {
       apiToken: supplied,
     });
     const existing = get().workspaceIntegrations[workspaceId]?.find(
-      (integration): integration is BitbucketWorkspaceIntegration =>
+      (integration): integration is BitbucketIntegrationBinding =>
         integration.provider === 'bitbucket',
     );
     await commitIntegrationConnection({

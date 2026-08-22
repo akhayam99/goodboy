@@ -19,6 +19,7 @@ mod linear;
 mod path_env;
 mod permissions;
 mod planner;
+mod profile_file;
 mod provider_credentials;
 mod provider_lifecycle;
 mod providers;
@@ -206,6 +207,7 @@ pub fn run() {
             bridge::bridge_status,
             bridge::bridge_command_result,
             bridge::bridge_revoke,
+            profile_file::workspace_profile_project,
             session_dir::simple_workspace_default_path,
             session_dir::simple_workspace_prepare,
             session_dir::session_dir_create,

@@ -29,10 +29,8 @@ vi.mock('./store', () => ({
 import {
   sumSessionCost,
   useIsSessionCollectionLoaded,
-  useLiveTerminalCount,
   useSessionPrFetchState,
   useSessionStageInfo,
-  useSessionUnreadLens,
   useSortedGroupedSessions,
   useStageGroupedSessions,
 } from './selectors';
@@ -329,35 +327,6 @@ describe('useSessionPrFetchState', () => {
   });
 });
 
-describe('useLiveTerminalCount', () => {
-  it('counts dock tabs that have not exited', () => {
-    store.state.terminalTabs = {
-      [SESSION_ID]: [{ status: 'running' }, { status: 'attention' }, { status: 'exited' }],
-    };
-
-    const { result } = renderHook(() => useLiveTerminalCount(SESSION_ID));
-
-    expect(result.current).toBe(2);
-  });
-
-  it('counts the scripts-panel terminal as a live terminal too', () => {
-    store.state.terminalSessions = { [SESSION_ID]: 'open' };
-
-    const { result } = renderHook(() => useLiveTerminalCount(SESSION_ID));
-
-    expect(result.current).toBe(1);
-  });
-
-  it('returns zero once every terminal is gone', () => {
-    store.state.terminalTabs = { [SESSION_ID]: [{ status: 'exited' }] };
-    store.state.terminalSessions = { [SESSION_ID]: 'closed' };
-
-    const { result } = renderHook(() => useLiveTerminalCount(SESSION_ID));
-
-    expect(result.current).toBe(0);
-  });
-});
-
 describe('sumSessionCost', () => {
   it('sums turn costs and skips summarizer costs', () => {
     const records = [
@@ -367,105 +336,6 @@ describe('sumSessionCost', () => {
     ];
 
     expect(sumSessionCost(records)).toBe(1.75);
-  });
-});
-
-describe('useSessionUnreadLens', () => {
-  it('routes a workflow-step agent reply to workflows', () => {
-    store.state.sessionPhaseRuns = {
-      [SESSION_ID]: [
-        createAgent({
-          id: AGENT_ID,
-          kind: 'resolver',
-          workflowRunId: 'workflow-1' as WorkflowRunId,
-          stepId: 'step-1' as StepId,
-        }),
-      ],
-    };
-
-    const { result } = renderHook(() => useSessionUnreadLens(SESSION_ID));
-
-    expect(result.current).toBe('workflows');
-  });
-
-  it('routes a cluster child reply through its workflow-step parent', () => {
-    const parentId = 'parent' as AgentId;
-    store.state.sessionPhaseRuns = {
-      [SESSION_ID]: [
-        createAgent({
-          id: parentId,
-          kind: 'implementer',
-          workflowRunId: 'workflow-1' as WorkflowRunId,
-          stepId: 'step-1' as StepId,
-          lastFinishedAt: '2026-07-21T09:00:00.000Z',
-        }),
-        createAgent({
-          id: AGENT_ID,
-          kind: 'scout',
-          parentAgentId: parentId,
-          workflowRunId: 'workflow-1' as WorkflowRunId,
-        }),
-      ],
-    };
-
-    const { result } = renderHook(() => useSessionUnreadLens(SESSION_ID));
-
-    expect(result.current).toBe('workflows');
-  });
-
-  it('routes a resolver reply to resolve', () => {
-    store.state.sessionPhaseRuns = {
-      [SESSION_ID]: [createAgent({ id: AGENT_ID, kind: 'resolver' })],
-    };
-
-    const { result } = renderHook(() => useSessionUnreadLens(SESSION_ID));
-
-    expect(result.current).toBe('resolve');
-  });
-
-  it('routes a standalone agent reply to agents', () => {
-    store.state.sessionPhaseRuns = {
-      [SESSION_ID]: [createAgent({ id: AGENT_ID, kind: 'implementer' })],
-    };
-
-    const { result } = renderHook(() => useSessionUnreadLens(SESSION_ID));
-
-    expect(result.current).toBe('agents');
-  });
-
-  it('returns null when the unread agent is selected in the current session', () => {
-    store.state.sessionPhaseRuns = {
-      [SESSION_ID]: [createAgent({ id: AGENT_ID, kind: 'implementer' })],
-    };
-    store.state.selectedAgentId = { [SESSION_ID]: AGENT_ID };
-    store.state.currentSessionId = SESSION_ID;
-
-    const { result } = renderHook(() => useSessionUnreadLens(SESSION_ID));
-
-    expect(result.current).toBeNull();
-  });
-
-  it('routes to the most recently finished unread agent lens', () => {
-    store.state.sessionPhaseRuns = {
-      [SESSION_ID]: [
-        createAgent({
-          id: 'older-resolver' as AgentId,
-          kind: 'resolver',
-          lastFinishedAt: '2026-07-21T10:00:00.000Z',
-        }),
-        createAgent({
-          id: 'newer-workflow' as AgentId,
-          kind: 'implementer',
-          workflowRunId: 'workflow-1' as WorkflowRunId,
-          stepId: 'step-1' as StepId,
-          lastFinishedAt: '2026-07-21T11:00:00.000Z',
-        }),
-      ],
-    };
-
-    const { result } = renderHook(() => useSessionUnreadLens(SESSION_ID));
-
-    expect(result.current).toBe('workflows');
   });
 });
 

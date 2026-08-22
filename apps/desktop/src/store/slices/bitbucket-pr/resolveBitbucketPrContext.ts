@@ -1,4 +1,4 @@
-import type { BitbucketWorkspaceIntegration, SessionId } from '@goodboy/types';
+import type { BitbucketIntegrationBinding, SessionId } from '@goodboy/types';
 import type { BitbucketRepo } from '../../../features/integrations/bitbucket/client';
 import { worktreeRemoteUrl } from '../../../features/worktree/worktree';
 import { projectPathFromRemoteUrl } from '../../../shared/lib/remoteHost';
@@ -27,7 +27,7 @@ export const resolveBitbucketPrContext = async ({
     return null;
   }
   const integration = (get().workspaceIntegrations[session.workspaceId] ?? []).find(
-    (candidate): candidate is BitbucketWorkspaceIntegration => candidate.provider === 'bitbucket',
+    (candidate): candidate is BitbucketIntegrationBinding => candidate.provider === 'bitbucket',
   );
   if (integration == null) {
     return null;

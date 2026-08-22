@@ -12,9 +12,9 @@ import type {
   IsoDateTime,
   ProjectId,
   WorkspaceId,
-  WorkspaceIntegration,
-  WorkspaceIntegrationConfig,
-  WorkspaceIntegrationId,
+  IntegrationBinding,
+  IntegrationBindingConfig,
+  IntegrationBindingId,
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -31,7 +31,7 @@ type Params = {
   readonly projectId?: ProjectId;
   readonly provider: WorkspaceIntegrationProvider;
   readonly credentialId: IntegrationCredentialId;
-  readonly config: WorkspaceIntegrationConfig;
+  readonly config: IntegrationBindingConfig;
   readonly newCredential: NewCredential | null;
   readonly storeSecret: () => Promise<void>;
 };
@@ -40,7 +40,7 @@ type RollbackParams = {
   readonly workspaceId: WorkspaceId;
   readonly projectId: ProjectId | null;
   readonly provider: WorkspaceIntegrationProvider;
-  readonly existing: WorkspaceIntegration | null;
+  readonly existing: IntegrationBinding | null;
   readonly created: IntegrationCredential | null;
 };
 
@@ -96,7 +96,7 @@ export const commitIntegrationConnection = async ({
     projectId: scope,
   });
   const binding = {
-    id: (existing?.id ?? crypto.randomUUID()) as WorkspaceIntegrationId,
+    id: (existing?.id ?? crypto.randomUUID()) as IntegrationBindingId,
     workspaceId,
     projectId: scope,
     provider,
@@ -104,7 +104,7 @@ export const commitIntegrationConnection = async ({
     credentialId,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
-  } as WorkspaceIntegration;
+  } as IntegrationBinding;
   await upsertIntegrationBinding({ db: tauriDatabase, binding });
 
   try {

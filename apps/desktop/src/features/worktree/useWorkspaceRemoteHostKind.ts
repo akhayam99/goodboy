@@ -1,5 +1,5 @@
 import { useShallow } from 'zustand/react/shallow';
-import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import type { GitlabIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 import type { RemoteHostKind } from '../../shared/lib/remoteHost';
 import { useRootRemoteHostKind } from './useRootRemoteHostKind';
@@ -21,7 +21,7 @@ export const useWorkspaceRemoteHostKind = ({ workspaceId }: Params): RemoteHostK
     useShallow((state) =>
       (workspaceId == null ? [] : (state.workspaceIntegrations[workspaceId] ?? []))
         .filter(
-          (integration): integration is GitlabWorkspaceIntegration =>
+          (integration): integration is GitlabIntegrationBinding =>
             integration.provider === 'gitlab',
         )
         .map((integration) => integration.config.host),

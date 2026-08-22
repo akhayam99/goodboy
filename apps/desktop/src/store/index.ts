@@ -7,7 +7,6 @@ export {
   useCurrentWorkspace,
   useDiffComments,
   useFilesTouched,
-  useLiveTerminalCount,
   useSessionAnsweredQuestions,
   useSessionById,
   useSessionCost,
@@ -21,7 +20,6 @@ export {
   useSessionSlots,
   useSessionSlotsLoad,
   useSessionStageInfo,
-  useSessionUnreadLens,
   useSessionViewPrefs,
   useSlotHistory,
   useSlotHistoryCount,
@@ -37,7 +35,7 @@ export {
   type FilesTouched,
 } from './selectors';
 export { useTranscript } from './transcript';
-export { readPersistedLens, LENS_KINDS } from './slices/session-view';
+export { readPersistedLens } from './slices/session-view';
 export type { SessionStudio, LensKind, DiffFocus } from './slices/session-view';
 
 export const EMPTY_ARRAY: readonly never[] = [];

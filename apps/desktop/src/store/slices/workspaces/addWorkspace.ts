@@ -20,6 +20,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { validateGitRepo } from '../../../shared/lib/repo';
 import { invokeWorkflowList } from '../../../features/workflows/workflows';
 import { invokeSkillRescan } from '../../../features/skills/skills';
+import { workspaceSlug } from './slug';
 import type { GetFn, SetFn } from './types';
 
 type Input = {
@@ -38,20 +39,6 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   roleModels: null,
   parallelAgents: null,
   providerPool: null,
-};
-
-type SlugParams = {
-  readonly name: string;
-  readonly id: WorkspaceId;
-};
-
-const workspaceSlug = ({ name, id }: SlugParams): string => {
-  const prefix = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 32);
-  return `${prefix.length === 0 ? 'workspace' : prefix}-${id.slice(0, 8)}`;
 };
 
 export const addWorkspace = (set: SetFn, get: GetFn) => {

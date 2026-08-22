@@ -257,6 +257,24 @@ export const renameWorkspace = async ({ db, id, name }: RenameWorkspaceParams): 
   ]);
 };
 
+type UpdateWorkspaceSessionsRootParams = {
+  readonly db: Database;
+  readonly id: WorkspaceId;
+  readonly sessionsRoot: string;
+};
+
+export const updateWorkspaceSessionsRoot = async ({
+  db,
+  id,
+  sessionsRoot,
+}: UpdateWorkspaceSessionsRootParams): Promise<void> => {
+  await db.execute('UPDATE workspaces SET sessions_root = ?, updated_at = ? WHERE id = ?', [
+    sessionsRoot,
+    Date.now(),
+    id,
+  ]);
+};
+
 type WorkspaceIdParams = {
   readonly db: Database;
   readonly id: WorkspaceId;

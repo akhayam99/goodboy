@@ -1,4 +1,4 @@
-import type { GitlabWorkspaceIntegration, SessionId, WorkspaceId } from '@goodboy/types';
+import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { worktreeRemoteUrl } from '../../../features/worktree/worktree';
 import { projectPathFromRemoteUrl } from '../../../shared/lib/remoteHost';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
@@ -28,7 +28,7 @@ export const resolveMrContext = async (
     return null;
   }
   const integration = (get().workspaceIntegrations[session.workspaceId] ?? []).find(
-    (i): i is GitlabWorkspaceIntegration => i.provider === 'gitlab',
+    (i): i is GitlabIntegrationBinding => i.provider === 'gitlab',
   );
   if (!integration) {
     return null;

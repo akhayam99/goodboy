@@ -1,5 +1,5 @@
 import type {
-  GitlabWorkspaceIntegration,
+  GitlabIntegrationBinding,
   IntegrationCredentialId,
   WorkspaceId,
 } from '@goodboy/types';
@@ -25,7 +25,7 @@ export const connectGitlab = (set: SetFn, get: GetFn) => {
     const supplied = credentialId === null ? token : null;
     const user = await gitlabValidateConnection(chosen, host, supplied);
     const existing = get().workspaceIntegrations[workspaceId]?.find(
-      (integration): integration is GitlabWorkspaceIntegration => integration.provider === 'gitlab',
+      (integration): integration is GitlabIntegrationBinding => integration.provider === 'gitlab',
     );
     await commitIntegrationConnection({
       set,

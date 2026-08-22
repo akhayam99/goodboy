@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type {
-  GitlabWorkspaceIntegration,
+  GitlabIntegrationBinding,
   IntegrationCredentialId,
   WorkspaceId,
 } from '@goodboy/types';
@@ -38,7 +38,7 @@ function normalizeHost(input: string): string {
 export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
   const gitlab =
-    integrations.find((i): i is GitlabWorkspaceIntegration => i.provider === 'gitlab') ?? null;
+    integrations.find((i): i is GitlabIntegrationBinding => i.provider === 'gitlab') ?? null;
   const config = gitlab ? gitlab.config : null;
   const connectGitlab = useAppStore((s) => s.connectGitlab);
   const disconnectIntegration = useAppStore((s) => s.disconnectIntegration);

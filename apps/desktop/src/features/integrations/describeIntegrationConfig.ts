@@ -1,7 +1,7 @@
-import type { WorkspaceIntegration } from '@goodboy/types';
+import type { IntegrationBinding } from '@goodboy/types';
 
 type Params = {
-  readonly integration: WorkspaceIntegration;
+  readonly integration: IntegrationBinding;
 };
 
 export const describeIntegrationConfig = ({ integration }: Params): string => {

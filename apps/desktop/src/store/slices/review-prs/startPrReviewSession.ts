@@ -1,5 +1,5 @@
 import type {
-  GitlabWorkspaceIntegration,
+  GitlabIntegrationBinding,
   ProjectId,
   ReviewablePr,
   SessionId,
@@ -29,7 +29,7 @@ const fetchDiff = async ({
     return ghPrDiff(pr.repo, pr.number, rootPath, workspaceId, projectId);
   }
   const integration = (get().workspaceIntegrations[workspaceId] ?? []).find(
-    (i): i is GitlabWorkspaceIntegration => i.provider === 'gitlab',
+    (i): i is GitlabIntegrationBinding => i.provider === 'gitlab',
   );
   if (integration == null) {
     throw new Error(`gitlab integration not connected for workspace ${workspaceId}`);

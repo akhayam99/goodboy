@@ -28,8 +28,8 @@ import type {
   WorkflowId,
   Workspace,
   WorkspaceId,
-  WorkspaceIntegration,
-  WorkspaceIntegrationId,
+  IntegrationBinding,
+  IntegrationBindingId,
   ProjectScript,
   ProjectScriptId,
 } from '@goodboy/types';
@@ -57,7 +57,7 @@ const consumeDiffCommentsDbSpy = vi.fn(async () => undefined);
 const deleteDiffCommentDbSpy = vi.fn(async () => undefined);
 const upsertIntegrationBindingSpy = vi.fn(async () => undefined);
 const listIntegrationBindingsForWorkspaceSpy = vi.fn(
-  async () => [] as ReadonlyArray<WorkspaceIntegration>,
+  async () => [] as ReadonlyArray<IntegrationBinding>,
 );
 const deleteIntegrationBindingSpy = vi.fn(async () => undefined);
 const listProjectScriptsSpy = vi.fn(async () => [] as ReadonlyArray<ProjectScript>);

@@ -20,7 +20,7 @@ export type {
   WorkflowId,
   WorkflowRunId,
   WorkspaceId,
-  WorkspaceIntegrationId,
+  IntegrationBindingId,
 } from './ids';
 export type { FileVersion, FileVersionChangeKind, FileVersionSnapshotSource } from './file-version';
 export type { IntegrationCredential, IntegrationCredentialUsage } from './integration-credential';
@@ -29,19 +29,19 @@ export { SESSION_EVENT_KINDS } from './session-event';
 export type { SessionEvent, SessionEventKind, SessionEventPayload } from './session-event';
 export type {
   BitbucketIntegrationConfig,
-  BitbucketWorkspaceIntegration,
+  BitbucketIntegrationBinding,
   ContextSlot,
   ContextSlotAuthor,
   ContextSlotHistoryEntry,
   GithubIntegrationConfig,
-  GithubWorkspaceIntegration,
+  GithubIntegrationBinding,
   GitlabIntegrationConfig,
-  GitlabWorkspaceIntegration,
+  GitlabIntegrationBinding,
   IntegrationBindingProvider,
   JiraIntegrationConfig,
-  JiraWorkspaceIntegration,
+  JiraIntegrationBinding,
   LinearIntegrationConfig,
-  LinearWorkspaceIntegration,
+  LinearIntegrationBinding,
   OrchestratorRouting,
   Session,
   Project,
@@ -51,7 +51,7 @@ export type {
   SessionExternalTask,
   SessionExternalTaskProvider,
   SlackIntegrationConfig,
-  SlackWorkspaceIntegration,
+  SlackIntegrationBinding,
   TurnState,
   Workspace,
   WorkspaceGitState,
@@ -64,8 +64,8 @@ export type {
   WorkflowOrchestrationStopKind,
   WorkflowSpendLimitMode,
   WorkflowTriggerMode,
-  WorkspaceIntegration,
-  WorkspaceIntegrationConfig,
+  IntegrationBinding,
+  IntegrationBindingConfig,
   WorkspaceIntegrationProvider,
 } from './workspace';
 export {

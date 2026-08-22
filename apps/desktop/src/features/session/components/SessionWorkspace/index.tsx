@@ -20,12 +20,14 @@ import { AgentsPane } from './parts/AgentsPane';
 import { Pane } from './parts/Pane';
 import { SessionStudioLayer } from './parts/SessionStudioLayer';
 import { QuestionsPane } from './parts/QuestionsPane';
+import { ZoneToggle } from './parts/ZoneToggle';
 import { ContextPane } from './parts/ContextPane';
 import { ResolvePane } from './parts/ResolvePane';
 import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useSelectedAgentHome } from '../../hooks/useSelectedAgentHome';
+import { useSessionBranchSync } from '../../hooks/useSessionBranchSync';
 import { resolveOverlayHome } from './resolveOverlayHome';
 import { WorkflowsPane } from './parts/WorkflowsPane';
 import { IntegrationPane } from './parts/IntegrationPane';
@@ -50,6 +52,7 @@ type SessionWorkspaceProps = {
 
 export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) => {
   const sessionId = session.id as SessionId;
+  useSessionBranchSync({ session, isActive });
   const [inspectedResolverId, setInspectedResolverId] = useState<AgentId | null>(null);
   const hasInitializedResolverInspector = useRef(false);
   const storedActiveLens = useAppStore((s) => s.activeLens[sessionId]);
@@ -210,7 +213,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   return (
     <div className="relative flex h-full w-full min-w-0 flex-col">
       <div>
-        <SessionCrumbBar />
+        <div className="flex items-center gap-2 pr-2">
+          <div className="min-w-0 flex-1">
+            <SessionCrumbBar />
+          </div>
+          <ZoneToggle sessionId={sessionId} />
+        </div>
         <RepoScopeBar sessionId={sessionId} />
       </div>
       <div className="relative min-h-0 flex-1">

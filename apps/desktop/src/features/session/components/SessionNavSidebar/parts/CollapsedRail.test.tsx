@@ -1,17 +1,12 @@
 import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
-    activeLens: {} as Record<string, string | null>,
-    sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionBranches: {} as Record<string, string | undefined>,
     workspaces: [{ id: 'ws-1', kind: 'repo', name: 'Acme', rootPath: '/code/acme' }],
     openWorkspace: vi.fn(),
     setCurrentSession: vi.fn(),
-    setActiveLens: vi.fn(),
   },
 }));
 
@@ -25,23 +20,15 @@ vi.mock('../../../../../store', () => ({
 
 afterEach(() => {
   cleanup();
-  state.activeLens = {};
   state.setCurrentSession.mockClear();
-  state.setActiveLens.mockClear();
 });
 
 import { CollapsedRail } from './CollapsedRail';
 
-const session = {
-  id: 'session-1' as SessionId,
-  workspaceId: 'ws-1' as WorkspaceId,
-  goal: 'ship the rail',
-} as Session;
-
 describe('CollapsedRail', () => {
   it('keeps expand, board and new session reachable without labels', () => {
     const onExpand = vi.fn();
-    render(<CollapsedRail session={session} onExpand={onExpand} />);
+    render(<CollapsedRail onExpand={onExpand} />);
 
     fireEvent.click(screen.getByRole('button', { name: /show session sidebar/i }));
     expect(onExpand).toHaveBeenCalledOnce();
@@ -57,7 +44,7 @@ describe('CollapsedRail', () => {
   });
 
   it('keeps the workspace switcher reachable from the rail badge', () => {
-    render(<CollapsedRail session={session} onExpand={vi.fn()} />);
+    render(<CollapsedRail onExpand={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: /switch workspace/i }));
 
@@ -65,7 +52,7 @@ describe('CollapsedRail', () => {
   });
 
   it('answers the global switcher shortcut while collapsed', () => {
-    render(<CollapsedRail session={session} onExpand={vi.fn()} />);
+    render(<CollapsedRail onExpand={vi.fn()} />);
 
     act(() => {
       window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'));
@@ -74,20 +61,10 @@ describe('CollapsedRail', () => {
     expect(screen.getByText('New workspace')).toBeDefined();
   });
 
-  it('switches lens from the rail without expanding it', () => {
-    render(<CollapsedRail session={session} onExpand={vi.fn()} />);
+  it('offers no lens navigation, per the session-list-only sidebar', () => {
+    render(<CollapsedRail onExpand={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /^questions/i }));
-
-    expect(state.setActiveLens).toHaveBeenCalledWith('session-1', 'questions');
-  });
-
-  it('marks the current lens on the rail', () => {
-    state.activeLens = { 'session-1': 'plans' };
-    render(<CollapsedRail session={session} onExpand={vi.fn()} />);
-
-    expect(screen.getByRole('button', { name: /^plans/i }).getAttribute('aria-current')).toBe(
-      'page',
-    );
+    expect(screen.queryByRole('navigation')).toBeNull();
+    expect(screen.getAllByRole('button')).toHaveLength(4);
   });
 });

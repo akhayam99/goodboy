@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
   IntegrationCredentialId,
-  SlackWorkspaceIntegration,
+  SlackIntegrationBinding,
   ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
@@ -31,7 +31,7 @@ vi.mock('../../../shared/lib/editor', () => ({ openUrl }));
 const WS_ID = 'ws-1' as WorkspaceId;
 const PROJECT_ID = 'project-1' as ProjectId;
 
-const slackIntegration: SlackWorkspaceIntegration = {
+const slackIntegration: SlackIntegrationBinding = {
   id: 'wi-1' as never,
   workspaceId: WS_ID,
   projectId: null,

@@ -12,6 +12,8 @@ import {
 } from '@goodboy/ui';
 import { Check, GitBranch, Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
+import { WorkspaceProfileSection } from './WorkspaceProfileSection';
+import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
 import { OrphanWorktreesSection } from '../../../../features/worktree/components/OrphanWorktreesSection';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 import { DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
@@ -208,6 +210,18 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   />
                 </FieldRow>
               </section>
+
+              <Divider />
+
+              <div ref={anchor('projects')}>
+                <WorkspaceProjectsSection workspaceId={workspaceId} />
+              </div>
+
+              <Divider />
+
+              <div ref={anchor('profile')}>
+                <WorkspaceProfileSection workspaceId={workspaceId} />
+              </div>
 
               <Divider />
             </>

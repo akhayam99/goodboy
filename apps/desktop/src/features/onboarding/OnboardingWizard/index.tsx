@@ -1,74 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, ScrollFade, cn, type ButtonVariant } from '@goodboy/ui';
+import { Button, ScrollFade, cn, formatError, type ButtonVariant } from '@goodboy/ui';
+import { useAppStore } from '../../../store';
 import { finishWizard } from '../onboarding-store';
 import { useOnboardingProgress } from '../hooks/useOnboardingProgress';
 import { useOnboardingWizard } from './useOnboardingWizard';
 import { Stepper } from './Stepper';
 import { WelcomeStep } from './steps/WelcomeStep';
 import { ProvidersStep } from './steps/ProvidersStep';
-import { WorkspaceStep, type WorkspaceAudience } from './steps/WorkspaceStep';
+import { WorkspaceNameStep } from './steps/WorkspaceNameStep';
+import { ProjectsStep } from './steps/ProjectsStep';
+import { ProfileStep, type ProfileDraft } from './steps/ProfileStep';
 import { PreferencesStep } from './steps/PreferencesStep';
-import { CodeHostStep } from './steps/CodeHostStep';
-import { TrackerStep } from './steps/TrackerStep';
-import { SentryStep } from './steps/SentryStep';
+import { IntegrationsStep } from './steps/IntegrationsStep';
 import { ReadyStep } from './steps/ReadyStep';
 
 const STEP_COUNT = 8;
-const SETUP_START_STEP = 3;
+const SETUP_START_STEP = 4;
 const EXIT_MS = 200;
 const ALL_STEPS = Array.from({ length: STEP_COUNT }, (_, index) => index);
-const SIMPLE_STEPS = [0, 1, 2, 3, 5, 7];
-const STEP_LABELS = {
-  4: 'Code host',
-  6: 'Sentry',
-} as const;
-
-const joinStepLabels = ({ labels }: { readonly labels: ReadonlyArray<string> }): string => {
-  if (labels.length === 0) {
-    return '';
-  }
-  if (labels.length === 1) {
-    const first = labels[0];
-    if (first === undefined) {
-      return '';
-    }
-    return first;
-  }
-  if (labels.length === 2) {
-    const first = labels[0];
-    const second = labels[1];
-    if (first === undefined || second === undefined) {
-      return '';
-    }
-    return `${first} and ${second}`;
-  }
-  const head = labels.slice(0, -1).join(', ');
-  const tail = labels[labels.length - 1];
-  if (tail === undefined) {
-    return head;
-  }
-  return `${head}, and ${tail}`;
-};
-
-const buildStepRemovalNotice = ({
-  removed,
-}: {
-  readonly removed: ReadonlyArray<number>;
-}): string | null => {
-  const labels: string[] = [];
-  for (const candidate of removed) {
-    if (candidate === 4) {
-      labels.push(STEP_LABELS[4]);
-    }
-    if (candidate === 6) {
-      labels.push(STEP_LABELS[6]);
-    }
-  }
-  if (labels.length === 0) {
-    return null;
-  }
-  return `${joinStepLabels({ labels })} ${labels.length === 1 ? 'is' : 'are'} skipped for standalone workspaces.`;
-};
+const EMPTY_PROFILE_DRAFT: ProfileDraft = { role: null, discipline: null, topics: [] };
 
 type Cta = {
   readonly label: string;
@@ -87,31 +37,32 @@ export const OnboardingWizard = () => {
     workspace,
     workspaceId,
     projectKind,
+    projectCount,
     githubConnected,
     gitlabConnected,
     bitbucketConnected,
-    hasCodeHost,
     hasLinear,
     hasJira,
     hasSlack,
     hasSentry,
     refreshGithubStatus,
   } = useOnboardingWizard();
+  const createWorkspace = useAppStore((s) => s.createWorkspace);
+  const renameWorkspace = useAppStore((s) => s.renameWorkspace);
+  const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
+  const updateWorkspaceProfile = useAppStore((s) => s.updateWorkspaceProfile);
   const [step, setStep] = useState(0);
-  const [workspaceAudience, setWorkspaceAudience] = useState<WorkspaceAudience | null>(null);
-  const [changingWorkspace, setChangingWorkspace] = useState(false);
+  const [workspaceName, setWorkspaceName] = useState('');
+  const [profileDraft, setProfileDraft] = useState<ProfileDraft>(EMPTY_PROFILE_DRAFT);
+  const [busy, setBusy] = useState(false);
+  const [stepError, setStepError] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
-  const [stepRemovalNotice, setStepRemovalNotice] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const isSimple = projectKind === 'folder';
-  const availableSteps = isSimple ? SIMPLE_STEPS : ALL_STEPS;
-  const steps = availableSteps.filter((candidate) =>
-    mode === 'setup' ? candidate >= SETUP_START_STEP : true,
-  );
+  const steps =
+    mode === 'setup' ? ALL_STEPS.filter((candidate) => candidate >= SETUP_START_STEP) : ALL_STEPS;
   const minStep = steps[0] ?? 0;
   const last = STEP_COUNT - 1;
-  const previousStepsRef = useRef<ReadonlyArray<number>>(steps);
 
   useEffect(() => {
     if (!open) {
@@ -119,34 +70,26 @@ export const OnboardingWizard = () => {
     }
     setStep(minStep);
     setClosing(false);
-    setStepRemovalNotice(null);
-    previousStepsRef.current = steps;
+    setStepError(null);
+    setBusy(false);
     containerRef.current?.focus();
   }, [open, minStep]);
 
   useEffect(() => {
     if (!open) {
-      previousStepsRef.current = steps;
       return;
     }
-    const previousSteps = previousStepsRef.current;
-    previousStepsRef.current = steps;
-    const removed = previousSteps.filter((candidate) => !steps.includes(candidate));
-    const notice = buildStepRemovalNotice({ removed });
-    if (notice !== null) {
-      setStepRemovalNotice(notice);
-    }
-    if (steps.includes(step)) {
-      return;
-    }
-    const nextStep = steps.find((candidate) => candidate > step);
-    if (nextStep !== undefined) {
-      setStep(nextStep);
-      return;
-    }
-    const fallbackStep = [...steps].reverse().find((candidate) => candidate < step);
-    setStep(fallbackStep ?? minStep);
-  }, [open, steps, step, minStep]);
+    setWorkspaceName(workspace?.name ?? '');
+    setProfileDraft(
+      workspace?.profile === undefined
+        ? EMPTY_PROFILE_DRAFT
+        : {
+            role: workspace.profile.role,
+            discipline: workspace.profile.discipline,
+            topics: workspace.profile.topics,
+          },
+    );
+  }, [open, workspace?.id]);
 
   if (!open) {
     return null;
@@ -164,12 +107,63 @@ export const OnboardingWizard = () => {
     });
   const canSkipSetup = hasWorkspace;
   const canDismiss = step < last && canSkipSetup;
-  const stepOwnsActions =
-    step === 2 && (workspace === null ? workspaceAudience !== null : changingWorkspace);
   const dismiss = () => {
     setClosing(true);
     window.setTimeout(finishWizard, EXIT_MS);
   };
+
+  const runStepAction = (action: () => Promise<void>) => {
+    setBusy(true);
+    setStepError(null);
+    void action()
+      .then(() => {
+        goNext();
+      })
+      .catch((error: unknown) => {
+        setStepError(formatError(error));
+      })
+      .finally(() => {
+        setBusy(false);
+      });
+  };
+
+  const commitWorkspaceName = () =>
+    runStepAction(async () => {
+      const name = workspaceName.trim();
+      if (workspace === null) {
+        const created = await createWorkspace({ name });
+        await setCurrentWorkspace(created.id);
+        return;
+      }
+      if (name !== workspace.name) {
+        await renameWorkspace({ workspaceId: workspace.id, name });
+      }
+    });
+
+  const commitProfile = () =>
+    runStepAction(async () => {
+      if (workspace === null) {
+        return;
+      }
+      await updateWorkspaceProfile({
+        workspaceId: workspace.id,
+        profile: {
+          role: profileDraft.role,
+          discipline: profileDraft.discipline,
+          topics: profileDraft.topics,
+          notes: workspace.profile?.notes ?? null,
+        },
+      });
+    });
+
+  const anyIntegration =
+    githubConnected ||
+    gitlabConnected ||
+    bitbucketConnected ||
+    hasLinear ||
+    hasJira ||
+    hasSlack ||
+    hasSentry;
 
   let body = <WelcomeStep />;
   let cta: Cta = { label: 'Get started', onClick: goNext, variant: 'primary' };
@@ -184,47 +178,55 @@ export const OnboardingWizard = () => {
     };
   } else if (step === 2) {
     body = (
-      <WorkspaceStep
+      <WorkspaceNameStep
         workspace={workspace}
-        audience={workspaceAudience}
-        onAudienceChange={setWorkspaceAudience}
-        isChanging={changingWorkspace}
-        onIsChangingChange={setChangingWorkspace}
+        name={workspaceName}
+        onNameChange={setWorkspaceName}
       />
     );
-    cta = { label: 'Continue', onClick: goNext, variant: 'primary', disabled: !hasWorkspace };
+    cta = {
+      label: workspace === null ? 'Create workspace' : 'Continue',
+      onClick: commitWorkspaceName,
+      variant: 'primary',
+      disabled: busy || workspaceName.trim().length === 0,
+    };
   } else if (step === 3) {
+    body = workspace === null ? <WelcomeStep /> : <ProjectsStep workspace={workspace} />;
+    cta = {
+      label: 'Continue',
+      onClick: goNext,
+      variant: 'primary',
+      disabled: projectCount === 0,
+    };
+  } else if (step === 4) {
+    body = <ProfileStep draft={profileDraft} onDraftChange={setProfileDraft} />;
+    cta = {
+      label: 'Continue',
+      onClick: commitProfile,
+      variant: 'primary',
+      disabled: busy || profileDraft.role === null,
+    };
+  } else if (step === 5) {
     body = <PreferencesStep workspaceId={workspaceId} projectKind={projectKind} />;
     cta = { label: 'Continue', onClick: goNext, variant: 'primary' };
-  } else if (step === 4) {
-    body = (
-      <CodeHostStep
-        workspaceId={workspaceId}
-        githubConnected={githubConnected}
-        gitlabConnected={gitlabConnected}
-        bitbucketConnected={bitbucketConnected}
-        onConnected={refreshGithubStatus}
-      />
-    );
-    cta = hasCodeHost
-      ? { label: 'Continue', onClick: goNext, variant: 'primary' }
-      : { label: 'Skip for now', onClick: goNext, variant: 'secondary' };
-  } else if (step === 5) {
-    body = (
-      <TrackerStep
-        workspaceId={workspaceId}
-        linearConnected={hasLinear}
-        jiraConnected={hasJira}
-        slackConnected={hasSlack}
-      />
-    );
-    cta =
-      hasLinear || hasJira || hasSlack
-        ? { label: 'Continue', onClick: goNext, variant: 'primary' }
-        : { label: 'Skip for now', onClick: goNext, variant: 'secondary' };
   } else if (step === 6) {
-    body = <SentryStep workspaceId={workspaceId} />;
-    cta = hasSentry
+    body =
+      workspaceId === null ? (
+        <WelcomeStep />
+      ) : (
+        <IntegrationsStep
+          workspaceId={workspaceId}
+          githubConnected={githubConnected}
+          gitlabConnected={gitlabConnected}
+          bitbucketConnected={bitbucketConnected}
+          linearConnected={hasLinear}
+          jiraConnected={hasJira}
+          slackConnected={hasSlack}
+          sentryConnected={hasSentry}
+          onConnected={refreshGithubStatus}
+        />
+      );
+    cta = anyIntegration
       ? { label: 'Continue', onClick: goNext, variant: 'primary' }
       : { label: 'Skip for now', onClick: goNext, variant: 'secondary' };
   } else if (step === 7) {
@@ -286,31 +288,29 @@ export const OnboardingWizard = () => {
       <ScrollFade className="min-h-0 flex-1">
         <div className="flex min-h-full items-center justify-center px-6 py-10">
           <div className="flex w-full max-w-xl flex-col gap-8">
-            {stepRemovalNotice !== null ? (
-              <p role="status" className="text-center text-xs text-muted-foreground">
-                {stepRemovalNotice}
-              </p>
-            ) : null}
             <div key={step} className="motion-safe:animate-fade-in">
               {body}
             </div>
-            {!stepOwnsActions && (
-              <div
-                className={cn(
-                  'flex items-center pt-2',
-                  step > minStep ? 'justify-between' : 'justify-center',
-                )}
-              >
-                {step > minStep && (
-                  <Button variant="ghost" size="sm" onClick={goBack}>
-                    Back
-                  </Button>
-                )}
-                <Button variant={cta.variant} onClick={cta.onClick} disabled={cta.disabled}>
-                  {cta.label}
+            {stepError !== null ? (
+              <p role="alert" className="text-center text-xs text-danger">
+                {stepError}
+              </p>
+            ) : null}
+            <div
+              className={cn(
+                'flex items-center pt-2',
+                step > minStep ? 'justify-between' : 'justify-center',
+              )}
+            >
+              {step > minStep && (
+                <Button variant="ghost" size="sm" onClick={goBack} disabled={busy}>
+                  Back
                 </Button>
-              </div>
-            )}
+              )}
+              <Button variant={cta.variant} onClick={cta.onClick} disabled={cta.disabled}>
+                {cta.label}
+              </Button>
+            </div>
           </div>
         </div>
       </ScrollFade>

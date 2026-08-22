@@ -4,8 +4,8 @@ import type {
   IsoDateTime,
   ProjectId,
   WorkspaceId,
-  WorkspaceIntegration,
-  WorkspaceIntegrationId,
+  IntegrationBinding,
+  IntegrationBindingId,
 } from '@goodboy/types';
 import type { Database } from '../client';
 
@@ -20,9 +20,9 @@ type IntegrationBindingRow = {
   updated_at: number;
 };
 
-const toDomain = (row: IntegrationBindingRow): WorkspaceIntegration =>
+const toDomain = (row: IntegrationBindingRow): IntegrationBinding =>
   ({
-    id: row.id as WorkspaceIntegrationId,
+    id: row.id as IntegrationBindingId,
     workspaceId: row.workspace_id as WorkspaceId,
     projectId: (row.project_id as ProjectId | null) ?? null,
     provider: row.provider as IntegrationBindingProvider,
@@ -30,11 +30,11 @@ const toDomain = (row: IntegrationBindingRow): WorkspaceIntegration =>
     credentialId: row.credential_id as IntegrationCredentialId,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
-  }) as WorkspaceIntegration;
+  }) as IntegrationBinding;
 
 type UpsertParams = {
   readonly db: Database;
-  readonly binding: WorkspaceIntegration;
+  readonly binding: IntegrationBinding;
 };
 
 export const upsertIntegrationBinding = async ({ db, binding }: UpsertParams): Promise<void> => {
@@ -66,7 +66,7 @@ type ListParams = {
 export const listIntegrationBindingsForWorkspace = async ({
   db,
   workspaceId,
-}: ListParams): Promise<ReadonlyArray<WorkspaceIntegration>> => {
+}: ListParams): Promise<ReadonlyArray<IntegrationBinding>> => {
   const rows = await db.select<IntegrationBindingRow>(
     `SELECT * FROM integration_bindings
      WHERE workspace_id = ?
@@ -88,7 +88,7 @@ export const getIntegrationBinding = async ({
   workspaceId,
   provider,
   projectId,
-}: GetParams): Promise<WorkspaceIntegration | null> => {
+}: GetParams): Promise<IntegrationBinding | null> => {
   const rows = await db.select<IntegrationBindingRow>(
     `SELECT * FROM integration_bindings
      WHERE workspace_id = ? AND provider = ? AND COALESCE(project_id, '') = COALESCE(?, '')

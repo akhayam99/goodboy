@@ -37,9 +37,6 @@ export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props)
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
           <span className="truncate text-sm font-medium text-foreground">{workspace.name}</span>
-          {false ? (
-            <Chip tone="neutral" size="3xs" bordered={false} label="simple" className="shrink-0" />
-          ) : null}
           {hasUnread ? (
             <Chip tone="warning" size="3xs" bordered={false} label="unread" className="shrink-0" />
           ) : null}

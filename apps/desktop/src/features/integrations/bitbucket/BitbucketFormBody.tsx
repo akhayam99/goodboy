@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type {
-  BitbucketWorkspaceIntegration,
+  BitbucketIntegrationBinding,
   IntegrationCredentialId,
   WorkspaceId,
 } from '@goodboy/types';
@@ -25,7 +25,7 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
   );
   const bitbucket =
     integrations.find(
-      (integration): integration is BitbucketWorkspaceIntegration =>
+      (integration): integration is BitbucketIntegrationBinding =>
         integration.provider === 'bitbucket',
     ) ?? null;
   const connectBitbucket = useAppStore((state) => state.connectBitbucket);

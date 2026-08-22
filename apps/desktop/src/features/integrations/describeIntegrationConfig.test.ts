@@ -4,9 +4,9 @@ import type {
   IsoDateTime,
   ProjectId,
   WorkspaceId,
-  WorkspaceIntegration,
-  WorkspaceIntegrationConfig,
-  WorkspaceIntegrationId,
+  IntegrationBinding,
+  IntegrationBindingConfig,
+  IntegrationBindingId,
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 import { describeIntegrationConfig } from './describeIntegrationConfig';
@@ -16,12 +16,12 @@ const PROJECT_ID = 'project-app-web' as ProjectId;
 
 type Params = {
   readonly provider: WorkspaceIntegrationProvider;
-  readonly config: WorkspaceIntegrationConfig;
+  readonly config: IntegrationBindingConfig;
 };
 
-const integration = ({ provider, config }: Params): WorkspaceIntegration =>
+const integration = ({ provider, config }: Params): IntegrationBinding =>
   ({
-    id: 'integration-1' as WorkspaceIntegrationId,
+    id: 'integration-1' as IntegrationBindingId,
     workspaceId: WS,
     projectId: null,
     provider,
@@ -29,7 +29,7 @@ const integration = ({ provider, config }: Params): WorkspaceIntegration =>
     credentialId: `goodboy.workspace.${WS}.${provider}` as IntegrationCredentialId,
     createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
     updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
-  }) as WorkspaceIntegration;
+  }) as IntegrationBinding;
 
 describe('describeIntegrationConfig', () => {
   it('names the Linear account and workspace', () => {

@@ -1,13 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { worktreeChangedFiles } from '../features/worktree/worktree';
-import {
-  agentHomeLens,
-  classifyAgent,
-  resolveRootAgent,
-  selectNonResolverStandaloneAgents,
-  type AgentKind,
-} from '../features/session/agent-kind';
+import { selectNonResolverStandaloneAgents, type AgentKind } from '../features/session/agent-kind';
 import type {
   Agent,
   ContextSlot,
@@ -26,7 +20,6 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { Workspace } from '@goodboy/types';
-import type { TerminalTab } from '../shared/types/terminal';
 import { isBranchlessSession } from '../shared/utils/isBranchlessSession';
 import { useAppStore } from './store';
 import type {
@@ -52,7 +45,6 @@ export { agentHasUnread } from './slices/agents/agentHasUnread';
 const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
 const EMPTY_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
-const EMPTY_TERMINAL_TABS: ReadonlyArray<TerminalTab> = [];
 
 export const sumSessionCost = (records: readonly TelemetryRecord[]): number => {
   let sum = 0;
@@ -528,16 +520,6 @@ export const useSessionAnsweredQuestions = (
       : EMPTY_OPEN_QUESTIONS,
   );
 
-export const useLiveTerminalCount = (sessionId: SessionId | null): number =>
-  useAppStore((s) => {
-    if (sessionId == null) {
-      return 0;
-    }
-    const tabs = s.terminalTabs[sessionId] ?? EMPTY_TERMINAL_TABS;
-    const liveTabs = tabs.filter((tab) => tab.status !== 'exited').length;
-    return liveTabs + (s.terminalSessions[sessionId] === 'open' ? 1 : 0);
-  });
-
 const IDLE_STATUS: SummarizerSessionStatus = {
   status: 'idle',
   lastUpdate: null,
@@ -669,39 +651,6 @@ export const useNonResolverStandaloneAgents = (sessionId: SessionId): ReadonlyAr
     () => selectNonResolverStandaloneAgents(phaseRuns, agentKindOverride),
     [phaseRuns, agentKindOverride],
   );
-};
-
-export type SessionUnreadLens = 'agents' | 'resolve' | 'workflows' | null;
-
-export const useSessionUnreadLens = (sessionId: SessionId): SessionUnreadLens => {
-  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS);
-  const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
-  const isCurrentSession = useAppStore((s) => s.currentSessionId === sessionId);
-  const agentKindOverride = useSessionAgentKindOverrides(sessionId);
-  return useMemo(() => {
-    let unreadAgent: Agent | null = null;
-    for (const agent of phaseRuns) {
-      if (!agentHasUnread(agent, isCurrentSession && agent.id === selectedAgentId)) {
-        continue;
-      }
-      if (
-        unreadAgent != null &&
-        (agent.lastFinishedAt ?? '') <= (unreadAgent.lastFinishedAt ?? '')
-      ) {
-        continue;
-      }
-      unreadAgent = agent;
-    }
-    if (unreadAgent == null) {
-      return null;
-    }
-    const rootAgent = resolveRootAgent({ agents: phaseRuns, agentId: unreadAgent.id });
-    if (rootAgent == null) {
-      return null;
-    }
-    const kind = classifyAgent(rootAgent, agentKindOverride[rootAgent.id] ?? null);
-    return agentHomeLens(rootAgent, kind);
-  }, [phaseRuns, selectedAgentId, isCurrentSession, agentKindOverride]);
 };
 
 export const useSessionHasUnread = (sessionId: SessionId | null): boolean => {

@@ -58,7 +58,7 @@ import type {
   Workspace,
   WorkspaceId,
   WorkspaceProfile,
-  WorkspaceIntegration,
+  IntegrationBinding,
   WorkspaceIntegrationProvider,
   ProjectScriptId,
   GhTokenStatus,
@@ -153,11 +153,6 @@ import type {
   StartWorkflowGenerationParams,
   WorkflowStudioDraft,
 } from './slices/workflowStudio/types';
-import { createNewSessionDraftsSlice } from './slices/newSessionDrafts';
-import type {
-  ClearNewSessionDraftParams,
-  SetNewSessionDraftParams,
-} from './slices/newSessionDrafts/types';
 import { createSlotsSlice } from './slices/slots';
 import { createOverridesSlice } from './slices/overrides';
 import { createCredentialsSlice } from './slices/credentials';
@@ -239,6 +234,11 @@ export type AppActions = {
   dismissProviderConnect(providerId: ProviderId): void;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
   addSimpleWorkspace(input: { name: string; path: string }): Promise<Workspace>;
+  adoptWorkspaceSessionsRoot(input: {
+    workspaceId: WorkspaceId;
+    rootPath: string;
+  }): Promise<Workspace>;
+  createWorkspace(input: { name: string }): Promise<Workspace>;
   addProject(input: {
     workspaceId: WorkspaceId;
     rootPath: string;
@@ -265,7 +265,7 @@ export type AppActions = {
     workspaceId: WorkspaceId;
     provider: IntegrationBindingProvider;
     projectId?: ProjectId;
-  }): WorkspaceIntegration | null;
+  }): IntegrationBinding | null;
   connectLinear(params: {
     workspaceId: WorkspaceId;
     token: string | null;
@@ -552,8 +552,6 @@ export type AppActions = {
   setAgentEffortOverride(agentId: AgentId, effort: string): void;
   setAgentDraft(agentId: AgentId, value: string): void;
   clearAgentDraft(agentId: AgentId): void;
-  setNewSessionDraft(params: SetNewSessionDraftParams): void;
-  clearNewSessionDraft(params: ClearNewSessionDraftParams): void;
   setWorkflowDraft(sessionId: SessionId, draft: WorkflowBuilderDraft): void;
   clearWorkflowDraft(sessionId: SessionId): void;
   setWorkflowStudioDraft(params: { workspaceId: WorkspaceId; draft: WorkflowStudioDraft }): void;
@@ -924,6 +922,7 @@ export const initialState: AppState = {
   githubStatus: null,
   sessionGithub: {},
   sessionGithubPrs: {},
+  sessionProjectPrs: {},
   sessionSelectedPrNumber: {},
   sessionGitlabMr: {},
   ...initialBitbucketPrState,
@@ -941,7 +940,6 @@ export const initialState: AppState = {
   resolverState: {},
   resolverThreadOutcomes: {},
   agentDraft: {},
-  newSessionDrafts: {},
   workflowDrafts: {},
   ...initialWorkflowStudioState,
   agentAttachments: {},
@@ -997,7 +995,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createPermissionsSlice(set, get),
   ...createProvidersSlice(set, get),
   ...createAgentsSlice(set, get),
-  ...createNewSessionDraftsSlice({ set }),
   ...createWorkflowDraftsSlice(set, get),
   ...createWorkflowStudioSlice(set, get),
   ...createSlotsSlice(set, get),

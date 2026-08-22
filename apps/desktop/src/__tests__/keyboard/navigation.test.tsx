@@ -82,7 +82,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { DeleteSessionConfirm } from '../../features/session/components/DeleteSessionConfirm';
-import { NewSessionView } from '../../features/session/components/NewSessionView';
+import { QuickCreateSession } from '../../features/session/components/QuickCreateSession';
 import { QuickActionsPopover, type QuickActionItem } from '../../features/quick-actions';
 import { ToastProvider } from '../../app/components/Toast';
 
@@ -140,44 +140,19 @@ describe('keyboard, DeleteSessionConfirm', () => {
   });
 });
 
-describe('keyboard, NewSessionView', () => {
-  it('renders without crash (multiple textbox inputs present)', () => {
-    render(
-      <ToastProvider>
-        <NewSessionView onClose={vi.fn()} workspaceId={WS_ID} onOpenSettings={vi.fn()} />
-      </ToastProvider>,
-    );
-    const textboxes = screen.getAllByRole('textbox');
-    expect(textboxes.length).toBeGreaterThan(0);
+describe('keyboard, QuickCreateSession', () => {
+  it('focuses the title input on open', () => {
+    render(<QuickCreateSession workspaceId={WS_ID} onClose={vi.fn()} />);
+    const input = screen.getByRole('textbox', { name: /session title/i });
+    expect(document.activeElement).toBe(input);
   });
 
-  it('goal input is reachable via Tab', async () => {
+  it('dismisses on Escape', async () => {
+    const onClose = vi.fn();
     const user = userEvent.setup();
-    render(
-      <ToastProvider>
-        <NewSessionView onClose={vi.fn()} workspaceId={WS_ID} onOpenSettings={vi.fn()} />
-      </ToastProvider>,
-    );
-    let foundInput = false;
-    for (let i = 0; i < 10; i++) {
-      await user.tab();
-      const tag = document.activeElement?.tagName.toLowerCase();
-      if (tag === 'input' || tag === 'textarea') {
-        foundInput = true;
-        break;
-      }
-    }
-    expect(foundInput).toBe(true);
-  });
-
-  it('view contains a submit button', () => {
-    render(
-      <ToastProvider>
-        <NewSessionView onClose={vi.fn()} workspaceId={WS_ID} onOpenSettings={vi.fn()} />
-      </ToastProvider>,
-    );
-    const createBtn = screen.getByRole('button', { name: /create/i });
-    expect(createBtn).toBeDefined();
+    render(<QuickCreateSession workspaceId={WS_ID} onClose={onClose} />);
+    await user.keyboard('{Escape}');
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });
 

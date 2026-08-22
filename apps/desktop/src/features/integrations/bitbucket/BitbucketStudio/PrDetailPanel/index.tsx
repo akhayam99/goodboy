@@ -2,7 +2,7 @@ import { StudioDetailLayout } from '../../../../../shared/components/StudioDetai
 import { useMemo, useState } from 'react';
 import { EmptyState, Markdown } from '@goodboy/ui';
 import { FileDiff, FileText, ListChecks, MessageSquare } from 'lucide-react';
-import type { BitbucketWorkspaceIntegration, SessionId, WorkspaceId } from '@goodboy/types';
+import type { BitbucketIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { StudioWidget, HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import {
   bitbucketPullRequestFields,
@@ -74,7 +74,7 @@ export const PrDetailPanel = ({
   const diff = useBitbucketPrDiff({ target, isEnabled: section === 'changes' });
   const config = useAppStore((state) => {
     const integration = (state.workspaceIntegrations[workspaceId] ?? []).find(
-      (candidate): candidate is BitbucketWorkspaceIntegration => candidate.provider === 'bitbucket',
+      (candidate): candidate is BitbucketIntegrationBinding => candidate.provider === 'bitbucket',
     );
     return integration?.config ?? null;
   });

@@ -30,8 +30,8 @@ import type {
   WorkflowId,
   Workspace,
   WorkspaceId,
-  WorkspaceIntegration,
-  WorkspaceIntegrationId,
+  IntegrationBinding,
+  IntegrationBindingId,
   ProjectScript,
   ProjectScriptId,
 } from '@goodboy/types';
@@ -58,9 +58,9 @@ const reopenDiffCommentDbSpy = vi.fn(async () => undefined);
 const consumeDiffCommentsDbSpy = vi.fn(async () => undefined);
 const deleteDiffCommentDbSpy = vi.fn(async () => undefined);
 const upsertIntegrationBindingSpy = vi.fn(async () => undefined);
-const getIntegrationBindingSpy = vi.fn(async () => null as WorkspaceIntegration | null);
+const getIntegrationBindingSpy = vi.fn(async () => null as IntegrationBinding | null);
 const listIntegrationBindingsForWorkspaceSpy = vi.fn(
-  async () => [] as ReadonlyArray<WorkspaceIntegration>,
+  async () => [] as ReadonlyArray<IntegrationBinding>,
 );
 const deleteIntegrationBindingSpy = vi.fn(async () => undefined);
 const deleteIntegrationBindingsForProviderSpy = vi.fn(async () => undefined);
@@ -604,8 +604,8 @@ describe('store contract', () => {
   describe('integrations', () => {
     const CRED_ID = 'cred-1' as IntegrationCredentialId;
 
-    const linearRow = (): WorkspaceIntegration => ({
-      id: 'i-1' as WorkspaceIntegrationId,
+    const linearRow = (): IntegrationBinding => ({
+      id: 'i-1' as IntegrationBindingId,
       workspaceId: WS_ID,
       projectId: null,
       provider: 'linear',
@@ -700,8 +700,8 @@ describe('store contract', () => {
 
     it('disconnectIntegration leaves the other providers of the workspace alone', async () => {
       const store = await getStore();
-      const sentry: WorkspaceIntegration = {
-        id: 'sentry-1' as WorkspaceIntegrationId,
+      const sentry: IntegrationBinding = {
+        id: 'sentry-1' as IntegrationBindingId,
         workspaceId: WS_ID,
         projectId: null,
         provider: 'sentry',
@@ -782,8 +782,8 @@ describe('store contract', () => {
 
     it('connectSentry reuses an existing row id and createdAt on reconnect', async () => {
       const store = await getStore();
-      const existing: WorkspaceIntegration = {
-        id: 'sentry-old' as WorkspaceIntegrationId,
+      const existing: IntegrationBinding = {
+        id: 'sentry-old' as IntegrationBindingId,
         workspaceId: WS_ID,
         projectId: null,
         provider: 'sentry',
@@ -887,8 +887,8 @@ describe('store contract', () => {
 
     it('connectGitlab preserves id + createdAt and refreshes host on reconnect', async () => {
       const store = await getStore();
-      const existing: WorkspaceIntegration = {
-        id: 'gl-keep' as WorkspaceIntegrationId,
+      const existing: IntegrationBinding = {
+        id: 'gl-keep' as IntegrationBindingId,
         workspaceId: WS_ID,
         projectId: null,
         provider: 'gitlab',
@@ -950,8 +950,8 @@ describe('store contract', () => {
 
     it('connectJira keeps the row identity and refreshes the project on reconnect', async () => {
       const store = await getStore();
-      const existing: WorkspaceIntegration = {
-        id: 'ji-keep' as WorkspaceIntegrationId,
+      const existing: IntegrationBinding = {
+        id: 'ji-keep' as IntegrationBindingId,
         workspaceId: WS_ID,
         projectId: null,
         provider: 'jira',
@@ -1063,8 +1063,8 @@ describe('store contract', () => {
 
     it('connectSlack restores the database row when the in-memory store is stale', async () => {
       const store = await getStore();
-      const existing: WorkspaceIntegration = {
-        id: 'sl-db-existing' as WorkspaceIntegrationId,
+      const existing: IntegrationBinding = {
+        id: 'sl-db-existing' as IntegrationBindingId,
         workspaceId: WS_ID,
         projectId: null,
         provider: 'slack',
@@ -1130,8 +1130,8 @@ describe('store contract', () => {
 
     it('connectSlack keeps the row identity when the same workspace reconnects', async () => {
       const store = await getStore();
-      const existing: WorkspaceIntegration = {
-        id: 'sl-keep' as WorkspaceIntegrationId,
+      const existing: IntegrationBinding = {
+        id: 'sl-keep' as IntegrationBindingId,
         workspaceId: WS_ID,
         projectId: null,
         provider: 'slack',
@@ -1165,9 +1165,9 @@ describe('store contract', () => {
     it('resolveBinding prefers the project override over the workspace binding', async () => {
       const store = await getStore();
       const workspaceLevel = linearRow();
-      const override: WorkspaceIntegration = {
+      const override: IntegrationBinding = {
         ...linearRow(),
-        id: 'i-override' as WorkspaceIntegrationId,
+        id: 'i-override' as IntegrationBindingId,
         projectId: PROJECT_ID,
         credentialId: 'cred-override' as IntegrationCredentialId,
       };

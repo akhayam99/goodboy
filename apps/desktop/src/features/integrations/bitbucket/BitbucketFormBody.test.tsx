@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
-  BitbucketWorkspaceIntegration,
+  BitbucketIntegrationBinding,
   IntegrationCredentialId,
   ProjectId,
   WorkspaceId,
@@ -27,7 +27,7 @@ vi.mock('../../../store', () => ({
 const WS_ID = 'ws-1' as WorkspaceId;
 const PROJECT_ID = 'project-1' as ProjectId;
 
-const bitbucketIntegration: BitbucketWorkspaceIntegration = {
+const bitbucketIntegration: BitbucketIntegrationBinding = {
   id: 'wi-1' as never,
   workspaceId: WS_ID,
   projectId: null,

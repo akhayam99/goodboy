@@ -41,6 +41,7 @@ import { markSessionMobileShared } from '../../../features/companion/mobileConfi
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import { clampTitle } from './titleLimit';
 import { preSpawnWorkflowAgents } from '../workflows/preSpawnWorkflowAgents';
+import { preferredProject } from '../projects/preferredProject';
 import { rememberMaterializationSeed } from './materializationSeeds';
 import { resolveSessionsRoot } from './sessionsRoot';
 import type { GetFn, SetFn } from './types';
@@ -389,7 +390,10 @@ export const createSession = (set: SetFn, get: GetFn) => {
     if (trimmedExisting !== undefined && trimmedExisting !== '') {
       const adoptionProjectId =
         externalTasks?.find((task) => task.projectId != null)?.projectId ??
-        projects.find((project) => project.kind === 'repo')?.id;
+        preferredProject({
+          projects: projects.filter((project) => project.kind === 'repo'),
+          profile: workspace.profile,
+        })?.id;
       if (adoptionProjectId !== undefined) {
         await get()
           .materializeProject({

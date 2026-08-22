@@ -26,14 +26,13 @@ import { WorkflowFollowToastBridge } from './features/workflows/components/Workf
 import { SessionNavSidebar } from './features/session/components/SessionNavSidebar';
 import { CollapsedRail } from './features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
-import { useSessionNavMode } from './features/workspace/hooks/useSessionNavMode';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
 import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
 import { ConvertWorkspaceDialog } from './features/workspace/components/ConvertWorkspaceDialog';
 import { WorkspaceLauncher } from './features/workspace/components/WorkspaceLauncher';
 import { isMainWindow } from './features/workspace/window';
 import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
-import { NewSessionView } from './features/session/components/NewSessionView';
+import { QuickCreateSession } from './features/session/components/QuickCreateSession';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
 import { SentryStudio } from './features/integrations/sentry/SentryStudio';
@@ -98,7 +97,6 @@ export const App = () => {
   const currentSession = useCurrentSession();
   const hasActiveSession = currentSession != null;
   const sessionSidebar = useSessionSidebarVisibility({ hasActiveSession });
-  const sessionNav = useSessionNavMode();
   const githubConnection = useGithubConnection({ workspaceId: currentWorkspace?.id ?? null });
   const hasLinear = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
@@ -894,14 +892,9 @@ export const App = () => {
         leftSidebar={
           currentSession ? (
             sessionSidebar.isCollapsed ? (
-              <CollapsedRail session={currentSession} onExpand={sessionSidebar.pin} />
+              <CollapsedRail onExpand={sessionSidebar.pin} />
             ) : (
-              <SessionNavSidebar
-                session={currentSession}
-                mode={sessionNav.mode}
-                onModeChange={sessionNav.setMode}
-                onCollapse={sessionSidebar.toggle}
-              />
+              <SessionNavSidebar session={currentSession} onCollapse={sessionSidebar.toggle} />
             )
           ) : undefined
         }
@@ -921,8 +914,6 @@ export const App = () => {
             >
               <SessionNavSidebar
                 session={currentSession}
-                mode={sessionNav.mode}
-                onModeChange={sessionNav.setMode}
                 onCollapse={sessionSidebar.pin}
                 collapseAction="pin"
                 onNavigate={sessionSidebar.closePeek}
@@ -960,13 +951,9 @@ export const App = () => {
         rightSidebar={null}
         overlay={
           newSessionOpen && currentWorkspace ? (
-            <NewSessionView
+            <QuickCreateSession
               workspaceId={currentWorkspace.id}
               onClose={() => setNewSessionOpen(false)}
-              onOpenSettings={() => {
-                setNewSessionOpen(false);
-                openSettings();
-              }}
             />
           ) : workspaceSettingsOpen && currentWorkspace ? (
             <WorkspaceSettingsPane

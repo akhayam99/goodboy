@@ -1,8 +1,4 @@
-import type {
-  IntegrationCredentialId,
-  JiraWorkspaceIntegration,
-  WorkspaceId,
-} from '@goodboy/types';
+import type { IntegrationCredentialId, JiraIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import {
   jiraConnect,
   jiraValidateConnection,
@@ -39,7 +35,7 @@ export const connectJira = (set: SetFn, get: GetFn) => {
       apiToken: supplied,
     });
     const existing = get().workspaceIntegrations[workspaceId]?.find(
-      (integration): integration is JiraWorkspaceIntegration => integration.provider === 'jira',
+      (integration): integration is JiraIntegrationBinding => integration.provider === 'jira',
     );
     await commitIntegrationConnection({
       set,

@@ -70,6 +70,7 @@ import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } fro
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from '../../integrationsGuard';
+import { buildProfileGuard } from '../../profileGuard';
 import { buildWorkspaceScopeGuard } from '../../workspaceScopeGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
 import { stepSummaryDegraded } from '../../summarizeAgentOutput';
@@ -782,7 +783,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       ),
       isBridgeServing,
     });
-    const guards = [scopeGuard, languageGuard, integrationsGuard]
+    const profileGuard = buildProfileGuard({
+      profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)?.profile,
+    });
+    const guards = [scopeGuard, languageGuard, integrationsGuard, profileGuard]
       .filter((block) => block.length > 0)
       .join('\n\n');
     const fullSystemPrompt = kindSystemPrompt ? `${guards}\n\n${kindSystemPrompt}` : guards;

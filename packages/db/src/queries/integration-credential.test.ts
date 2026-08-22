@@ -4,8 +4,8 @@ import type {
   IntegrationCredentialId,
   IsoDateTime,
   WorkspaceId,
-  WorkspaceIntegration,
-  WorkspaceIntegrationId,
+  IntegrationBinding,
+  IntegrationBindingId,
 } from '@goodboy/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from '../migrations/runner';
@@ -54,8 +54,8 @@ const makeBinding = (
   workspaceId: string,
   credentialId: string,
   id: string,
-): WorkspaceIntegration => ({
-  id: id as WorkspaceIntegrationId,
+): IntegrationBinding => ({
+  id: id as IntegrationBindingId,
   workspaceId: workspaceId as WorkspaceId,
   projectId: null,
   provider: 'linear',

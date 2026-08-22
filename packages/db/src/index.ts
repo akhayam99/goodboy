@@ -19,6 +19,7 @@ export {
   reconnectWorkspace,
   renameWorkspace,
   touchWorkspaceLastAccessed,
+  updateWorkspaceSessionsRoot,
   deleteWorkspace,
   upsertWorkspaceProfile,
 } from './queries/workspace';

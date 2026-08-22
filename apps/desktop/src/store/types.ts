@@ -49,7 +49,7 @@ import type {
   Workspace,
   WorkspaceGitStatus,
   WorkspaceId,
-  WorkspaceIntegration,
+  IntegrationBinding,
   ProjectScript,
   ProjectScriptId,
 } from '@goodboy/types';
@@ -87,7 +87,6 @@ import type { PanelSection } from './slices/sidebar/types';
 import type { UpdaterState } from './slices/updater/state';
 import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
 import type { WorkflowGeneration, WorkflowStudioDraft } from './slices/workflowStudio/types';
-import type { NewSessionDraft } from './slices/newSessionDrafts/types';
 
 export type ResolverThreadOutcome =
   | { readonly kind: 'resolved'; readonly commitSha: string; readonly reply?: string }
@@ -181,9 +180,7 @@ type AppSliceState = UpdaterState & ChangelogState & SlackThreadsSliceState & Bu
 export type AppState = AppSliceState & {
   readonly workspaces: ReadonlyArray<Workspace>;
   readonly projects: ReadonlyArray<Project>;
-  readonly workspaceIntegrations: Readonly<
-    Record<WorkspaceId, ReadonlyArray<WorkspaceIntegration>>
-  >;
+  readonly workspaceIntegrations: Readonly<Record<WorkspaceId, ReadonlyArray<IntegrationBinding>>>;
   readonly integrationCredentials: ReadonlyArray<IntegrationCredential>;
   readonly integrationCredentialUsage: IntegrationCredentialUsage;
   readonly projectGitStatus: Readonly<Record<ProjectId, WorkspaceGitStatus>>;
@@ -263,6 +260,9 @@ export type AppState = AppSliceState & {
   readonly githubStatus: GhTokenStatus | null;
   readonly sessionGithub: Readonly<Record<SessionId, SessionGithubState>>;
   readonly sessionGithubPrs: Readonly<Record<SessionId, ReadonlyArray<PullRequestState>>>;
+  readonly sessionProjectPrs: Readonly<
+    Record<SessionId, Readonly<Record<ProjectId, ReadonlyArray<PullRequestState>>>>
+  >;
   readonly sessionSelectedPrNumber: Readonly<Record<SessionId, number | null>>;
   readonly sessionGitlabMr: Readonly<Record<SessionId, SessionGitlabMrState>>;
   readonly sessionBitbucketPr: Readonly<Record<SessionId, SessionBitbucketPrEntry>>;
@@ -283,7 +283,6 @@ export type AppState = AppSliceState & {
     Record<AgentId, Readonly<Record<string, ResolverThreadOutcome>>>
   >;
   readonly agentDraft: Readonly<Record<AgentId, string>>;
-  readonly newSessionDrafts: Readonly<Record<WorkspaceId, NewSessionDraft | undefined>>;
   readonly workflowDrafts: Readonly<Record<SessionId, WorkflowBuilderDraft | undefined>>;
   readonly workflowStudioDrafts: Readonly<Record<WorkspaceId, WorkflowStudioDraft | undefined>>;
   readonly workflowGenerations: Readonly<Record<WorkspaceId, WorkflowGeneration | undefined>>;

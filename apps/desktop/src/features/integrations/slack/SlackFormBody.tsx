@@ -1,10 +1,6 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type {
-  IntegrationCredentialId,
-  SlackWorkspaceIntegration,
-  WorkspaceId,
-} from '@goodboy/types';
+import type { IntegrationCredentialId, SlackIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
@@ -26,7 +22,7 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
   );
   const slack =
     integrations.find(
-      (integration): integration is SlackWorkspaceIntegration => integration.provider === 'slack',
+      (integration): integration is SlackIntegrationBinding => integration.provider === 'slack',
     ) ?? null;
   const connectSlack = useAppStore((state) => state.connectSlack);
   const disconnectIntegration = useAppStore((state) => state.disconnectIntegration);

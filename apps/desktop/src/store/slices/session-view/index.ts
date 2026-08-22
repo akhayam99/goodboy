@@ -22,7 +22,6 @@ export { deriveSessionStage } from './deriveSessionStage';
 export { resolveSessionRequest } from './resolveSessionRequest';
 export { isPrReviewSession } from './isPrReviewSession';
 export { readPersistedLens } from './workSurfaceStorage';
-export { LENS_KINDS } from './types';
 export type { GroupedSessions, SessionViewSlice } from './types';
 export type {
   FocusedExternalTask,

@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
-  GitlabWorkspaceIntegration,
+  GitlabIntegrationBinding,
   IntegrationCredentialId,
   ProjectId,
   WorkspaceId,
@@ -32,7 +32,7 @@ vi.mock('../../github/github', () => ({
 const WS_ID = 'ws-1' as WorkspaceId;
 const PROJECT_ID = 'project-1' as ProjectId;
 
-const gitlabIntegration: GitlabWorkspaceIntegration = {
+const gitlabIntegration: GitlabIntegrationBinding = {
   id: 'wi-1' as never,
   workspaceId: WS_ID,
   projectId: null,

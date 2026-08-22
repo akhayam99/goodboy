@@ -97,6 +97,15 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
         if (!slug) {
           set((state) => ({
             sessionGithubPrs: { ...state.sessionGithubPrs, [sessionId]: [] },
+            ...(memberWorkspaceId != null && {
+              sessionProjectPrs: {
+                ...state.sessionProjectPrs,
+                [sessionId]: {
+                  ...state.sessionProjectPrs[sessionId],
+                  [memberWorkspaceId]: [],
+                },
+              },
+            }),
             sessionSelectedPrNumber: {
               ...state.sessionSelectedPrNumber,
               [sessionId]: null,
@@ -157,6 +166,15 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
           const hasDisplayedPrChanged = previousDisplayedNumber !== displayedPr?.number;
           return {
             sessionGithubPrs: { ...state.sessionGithubPrs, [sessionId]: prs },
+            ...(memberWorkspaceId != null && {
+              sessionProjectPrs: {
+                ...state.sessionProjectPrs,
+                [sessionId]: {
+                  ...state.sessionProjectPrs[sessionId],
+                  [memberWorkspaceId]: prs,
+                },
+              },
+            }),
             sessionSelectedPrNumber: {
               ...state.sessionSelectedPrNumber,
               [sessionId]: nextSelectedNumber,

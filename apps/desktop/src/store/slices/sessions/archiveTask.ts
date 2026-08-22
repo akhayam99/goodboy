@@ -67,6 +67,8 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
       delete nextGithub[sessionId];
       const nextGithubPrs = { ...state.sessionGithubPrs };
       delete nextGithubPrs[sessionId];
+      const nextProjectPrs = { ...state.sessionProjectPrs };
+      delete nextProjectPrs[sessionId];
       const nextSelectedPrNumber = { ...state.sessionSelectedPrNumber };
       delete nextSelectedPrNumber[sessionId];
       const nextLoading = { ...state.sessionLoading };
@@ -87,6 +89,7 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
         sessionPhaseRuns: nextPhaseRuns,
         sessionGithub: nextGithub,
         sessionGithubPrs: nextGithubPrs,
+        sessionProjectPrs: nextProjectPrs,
         sessionSelectedPrNumber: nextSelectedPrNumber,
         sessionLoading: nextLoading,
         selectedAgentId: nextSelected,
