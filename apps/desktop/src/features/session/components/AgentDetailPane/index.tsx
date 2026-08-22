@@ -81,7 +81,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack }: Props)
           meta={
             <>
               <AgentStatusBadge status={status} />
-              <AgentKindChip kind={kind} muted />
+              <AgentKindChip kind={kind} />
               <RoutingBadge
                 provider={telemetry?.provider ?? providerOverride}
                 model={telemetry?.model ?? modelOverride}
