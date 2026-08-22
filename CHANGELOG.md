@@ -7,6 +7,93 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.85
+
+Slack connects as you instead of as a bot, the activity feed stops rewriting
+what it shows, and a popover that opened as a sliver opens at full height
+again.
+
+### [#1522, #1528] Slack connects as you, not as a bot
+
+Slack asked for a bot token, which meant a second identity in your workspace:
+Goodboy could only read the channels that bot had been invited to, and every
+reply and reaction it sent arrived under the bot's name.
+
+The connection now takes your own user token. It reads the public channels you
+have joined, with no invitations to hand out, and replies and reactions go out
+under your name. The five permissions it asks for are unchanged.
+
+Getting that token used to be four steps on Slack's own site, with one of them
+easy to get wrong. Goodboy now carries a ready app into Slack's creation flow:
+one button, then install and paste. If you already made an app for Goodboy,
+a second path adds the permissions to the one you have rather than starting
+another. A connection you made with a bot token keeps working exactly as it
+did until you choose to replace it.
+
+Follow-up: the app description and the permission names come from Slack's
+published reference, and no connection has been made from Goodboy to a live
+workspace with a user token yet. If Slack rejects one, its own message comes
+back on the connect form with what you pasted still in it.
+
+### [#1518, #1526] Popovers open at their full height
+
+A popover anchored to a small control was capped at the height of the control
+itself, so it opened as a sliver a few pixels tall with its contents cut off,
+and the Activity filter looked like it refused to open. Twelve popovers were
+affected, among them the branch chip, the reviewer picker, the pull request
+switcher, the Jira transition and assignee menus and the run spend limit.
+
+They now take the room actually available between the control and the edge of
+what encloses them, scroll inside themselves when the content is taller than
+that, and flip above the control when there is more room up there. The Activity
+filter also lists its seven categories one per row again, instead of two abreast.
+
+### [#1524] A chain marks the agents in it, it does not rename them
+
+An agent that had spawned others lost both its role and its name in the
+activity feed: the role chip was replaced by a neutral `Chain` badge, and the
+name by an arrow path of up to three descendants. The row said it was a chain
+and stopped saying what it was.
+
+The role and the name are back. The coloured lane still draws the tree, and
+every agent in a chain, the one that started it and the ones it spawned, now
+carries a small chain link on its role chip.
+
+### [#1525] A discarded run reads as discarded
+
+A discarded workflow run was drawn like a live one in the activity feed, and
+merely a little pale everywhere else, sitting next to completed runs at almost
+the same weight. Its lane, the lanes of everything under it, and its chip now
+recede together while keeping the run's own colour, so the run stays
+recognisable and reads as over. The cards and rows that show it elsewhere all
+quote one shared value now, instead of each carrying its own.
+
+### [#1523] The sidebar lists the integrations you have
+
+The session sidebar offered all six integrations whether or not they were
+connected, with the unconnected ones dimmed and badged. It now lists the ones
+this session can reach. A provider you never connected is simply not there, and
+the footer keeps offering the full set when you want to add one. A provider
+that went away but still holds work here, a linked issue or an open pull
+request, keeps its row.
+
+### [#1527] Restoring a run is written down
+
+The feed recorded a workflow being discarded and said nothing when it was
+brought back, so it kept reporting a run as discarded after it was live again.
+A restore is now part of the trace, filed under the same filter as the discard.
+
+### [#1519, #1521] Report screenshots attach to the issue
+
+Reporting an issue with screenshots offered to create a public repository on
+your GitHub account to host them. That offer is gone, and nothing was ever
+created by it.
+
+The screenshots now go to the same place they land when you drag them into a
+comment, attached to the issue Goodboy files and visible in its body. If that
+upload does not go through, the report is still filed and the images are still
+staged on disk, with one click to open the issue and the folder side by side.
+
 ## Goodboy v0.1.84
 
 The activity feed becomes a full trace of everything the session did, and
