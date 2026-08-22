@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type {
   IsoDateTime,
-  ParallelGroup,
-  ParallelGroupId,
   Agent,
   AgentId,
   Session,
@@ -22,22 +20,34 @@ import { migrations, type Migration } from './index';
 import { getWorkspaceById, insertWorkspace } from '../queries/workspace';
 import { getSessionById, insertSession } from '../queries/session';
 import { listWorkflows, getWorkflow, upsertWorkflow, deleteWorkflow } from '../queries/workflow';
-import { listAgentsForSession, insertAgent, updateAgentStatus } from '../queries/agent';
+import { listAgentsForSession, updateAgentStatus } from '../queries/agent';
 import {
   insertSessionWorktree,
   listWorktreesForSession,
   deleteWorktreesForSession,
 } from '../queries/session-worktree';
-import {
-  insertGroup,
-  listGroupsForSession,
-  getGroupById,
-  deleteGroup,
-  updateGroupCompletedAt,
-} from '../queries/parallel-group';
 
 const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 const preProjectMigrations = migrations.filter((migration) => migration.version <= 116);
+
+const insertCurrentWorkspace = async ({
+  db,
+  workspace,
+}: {
+  readonly db: Database;
+  readonly workspace: Workspace;
+}): Promise<void> => {
+  await db.execute(
+    `INSERT INTO workspaces (id, name, slug, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?)`,
+    [workspace.id, workspace.name, workspace.id, Date.now(), Date.now()],
+  );
+  await db.execute(
+    `INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+     VALUES (?, ?, ?, ?, 'repo', ?, ?)`,
+    [workspace.id, workspace.id, workspace.name, workspace.rootPath, Date.now(), Date.now()],
+  );
+};
 
 type Params = {
   readonly database: Database;
@@ -408,7 +418,7 @@ describe('migrate', () => {
 
   it('round-trips a session with discriminated turn state', async () => {
     const db = makeTestDatabase();
-    await migrate(db, preProjectMigrations);
+    await migrate(db);
 
     const workspace: Workspace = {
       id: 'ws_2' as WorkspaceId,
@@ -417,7 +427,7 @@ describe('migrate', () => {
       createdAt: now(),
       updatedAt: now(),
     };
-    await insertWorkspace(db, workspace);
+    await insertCurrentWorkspace({ db, workspace });
 
     const session: Session = {
       id: 'session_1' as SessionId,
@@ -443,7 +453,7 @@ describe('migrate', () => {
 
   it('round-trips session providerPreference columns', async () => {
     const db = makeTestDatabase();
-    await migrate(db, preProjectMigrations);
+    await migrate(db);
 
     const workspace: Workspace = {
       id: 'ws_3' as WorkspaceId,
@@ -452,7 +462,7 @@ describe('migrate', () => {
       createdAt: now(),
       updatedAt: now(),
     };
-    await insertWorkspace(db, workspace);
+    await insertCurrentWorkspace({ db, workspace });
 
     const session: Session = {
       id: 'session_2' as SessionId,
@@ -477,7 +487,7 @@ describe('migrate', () => {
 
   it('round-trips workflows with steps and agents', async () => {
     const db = makeTestDatabase();
-    await migrate(db, preProjectMigrations);
+    await migrate(db);
 
     const workspace: Workspace = {
       id: 'ws_4' as WorkspaceId,
@@ -486,7 +496,7 @@ describe('migrate', () => {
       createdAt: now(),
       updatedAt: now(),
     };
-    await insertWorkspace(db, workspace);
+    await insertCurrentWorkspace({ db, workspace });
 
     const session: Session = {
       id: 'session_3' as SessionId,
@@ -557,7 +567,20 @@ describe('migrate', () => {
       domains: ['auth', 'db'],
     };
 
-    await insertAgent(db, agent);
+    await db.execute(
+      `INSERT INTO agents (
+         id, session_id, step_id, ordinal, name, status, domains_json
+       ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        agent.id,
+        agent.sessionId,
+        agent.stepId ?? null,
+        agent.ordinal,
+        agent.name,
+        agent.status,
+        JSON.stringify(agent.domains),
+      ],
+    );
     const agents = await listAgentsForSession(db, session.id);
 
     expect(agents).toHaveLength(1);
@@ -614,7 +637,11 @@ describe('migrate', () => {
       createdAt: now(),
       updatedAt: now(),
     };
-    await insertSession(db, session);
+    await db.execute(
+      `INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [session.id, session.workspaceId, session.goal, session.state.kind, Date.now(), Date.now()],
+    );
 
     await insertSessionWorktree(db, {
       id: 'wt_1',
@@ -643,86 +670,5 @@ describe('migrate', () => {
     await deleteWorktreesForSession(db, session.id);
     const afterDelete = await listWorktreesForSession(db, session.id);
     expect(afterDelete).toHaveLength(0);
-  });
-
-  it('round-trips parallel_groups: insert, list, get, update, delete', async () => {
-    const db = makeTestDatabase();
-    await migrate(db, preProjectMigrations);
-
-    const workspace: Workspace = {
-      id: 'ws_pg' as WorkspaceId,
-      name: 'pg-test',
-      rootPath: '/tmp/pg-test',
-      createdAt: now(),
-      updatedAt: now(),
-    };
-    await insertWorkspace(db, workspace);
-
-    const session: Session = {
-      id: 'session_pg' as SessionId,
-      workspaceId: workspace.id,
-      goal: 'parallel group test',
-      state: { kind: 'draft' },
-      contextSlots: [],
-      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
-      permissionMode: 'bypassPermissions',
-      autoRun: false,
-      titleUserEdited: false,
-      workflowRuns: [],
-      createdAt: now(),
-      updatedAt: now(),
-    };
-    await insertSession(db, session);
-
-    const group1: ParallelGroup = {
-      id: 'pg_1' as ParallelGroupId,
-      sessionId: session.id,
-      ordinal: 0,
-      mergeStrategy: 'last_write_wins',
-      createdAt: now(),
-      completedAt: null,
-    };
-
-    const group2: ParallelGroup = {
-      id: 'pg_2' as ParallelGroupId,
-      sessionId: session.id,
-      ordinal: 1,
-      mergeStrategy: 'manual',
-      createdAt: now(),
-      completedAt: null,
-    };
-
-    await insertGroup(db, group1);
-    await insertGroup(db, group2);
-
-    const groups = await listGroupsForSession(db, session.id);
-    expect(groups).toHaveLength(2);
-    expect(groups[0]!.ordinal).toBe(0);
-    expect(groups[0]!.mergeStrategy).toBe('last_write_wins');
-    expect(groups[1]!.ordinal).toBe(1);
-    expect(groups[1]!.mergeStrategy).toBe('manual');
-
-    const fetched = await getGroupById(db, group1.id);
-    expect(fetched).not.toBeNull();
-    if (!fetched) {
-      throw new Error('fetched should not be null');
-    }
-    expect(fetched.id).toBe(group1.id);
-    expect(fetched.mergeStrategy).toBe('last_write_wins');
-    expect(fetched.completedAt).toBeNull();
-
-    const completedAt = now();
-    await updateGroupCompletedAt(db, group1.id, completedAt);
-    const updated = await getGroupById(db, group1.id);
-    expect(updated).not.toBeNull();
-    if (!updated) {
-      throw new Error('updated should not be null');
-    }
-    expect(updated.completedAt).toBe(completedAt);
-
-    await deleteGroup(db, group1.id);
-    const afterDelete = await listGroupsForSession(db, session.id);
-    expect(afterDelete).toHaveLength(1);
-    expect(afterDelete[0]!.id).toBe(group2.id);
   });
 });

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { type FileConflict, type SlotKey } from '@goodboy/core';
+import { type SlotKey } from '@goodboy/core';
 import {
   type SessionConfigUpdate,
   type AgentConfigUpdate,
@@ -159,7 +159,6 @@ import { createWorkflowsSlice } from './slices/workflows';
 import type { OrchestrateOptions } from './slices/workflows/orchestrateNextStep';
 import type { ActivateWorkflowAgentParams } from './slices/workflows/activateWorkflowAgent';
 import { createSettingsSlice } from './slices/settings';
-import { createConflictsSlice } from './slices/conflicts';
 import { createTranscriptsSlice } from './slices/transcripts';
 import { createSummariesSlice } from './slices/summaries';
 import { createSessionsSlice } from './slices/sessions';
@@ -551,12 +550,6 @@ export type AppActions = {
   deleteAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
   wipeLocalDatabase(): Promise<void>;
   dismissSystemAlert(id: string): void;
-  setSessionMergeConflicts(sessionId: SessionId, conflicts: ReadonlyArray<FileConflict>): void;
-  resolveMergeConflicts(
-    sessionId: SessionId,
-    picks: Record<string, string>,
-    runStatuses: ReadonlyArray<{ runId: string; completedAt: string; status: string }>,
-  ): Promise<void>;
   loadWorkspaceOverrides(workspaceId: WorkspaceId): Promise<void>;
   setWorkspaceOverrides(workspaceId: WorkspaceId, overrides: OverrideSettings): Promise<void>;
   setWorkspaceProviderBinding(
@@ -897,7 +890,6 @@ export const initialState: AppState = {
   selectedAgentId: {},
   agentRunHistory: {},
   agentTurnState: {},
-  sessionMergeConflicts: {},
   unknownPayloadCounts: {},
   detectedEditors: [],
   systemAlerts: [],
@@ -993,7 +985,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createCredentialsSlice(set, get),
   ...createWorkflowsSlice(set, get),
   ...createSettingsSlice(set, get),
-  ...createConflictsSlice(set, get),
   ...createTranscriptsSlice(set, get),
   ...createSummariesSlice(set, get),
   ...createSessionsSlice(set, get),

@@ -14,7 +14,7 @@ import { Check, GitBranch, Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { OrphanWorktreesSection } from '../../../../features/worktree/components/OrphanWorktreesSection';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
-import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
+import { DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -26,8 +26,6 @@ type Props = {
 };
 
 export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose }: Props) => {
-  const loadSetting = useAppStore((s) => s.loadSetting);
-  const saveSetting = useAppStore((s) => s.saveSetting);
   const disconnect = useAppStore((s) => s.deleteWorkspace);
   const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId) ?? null);
   const renameWorkspace = useAppStore((s) => s.renameWorkspace);
@@ -49,12 +47,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
   const parallelAgents = wsOverrides?.parallelAgents ?? false;
 
   useEffect(() => {
-    void loadSetting(settingBranchPrefix(workspaceId)).then((v) => {
-      const value = v ?? DEFAULT_BRANCH_PREFIX;
-      setBranchPrefix(value);
-      setSavedBranchPrefix(value);
-    });
-  }, [workspaceId, loadSetting]);
+    const value = wsOverrides?.defaultBranchPrefix ?? DEFAULT_BRANCH_PREFIX;
+    setBranchPrefix(value);
+    setSavedBranchPrefix(value);
+  }, [workspaceId, wsOverrides?.defaultBranchPrefix]);
 
   useEffect(() => {
     setDisplayName(workspace?.name ?? '');
@@ -71,6 +67,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
     partial: Partial<{
       defaultVerbosity: VerbosityLevel;
       parallelAgents: boolean;
+      defaultBranchPrefix: string;
     }>,
     successMessage: string,
   ) => {
@@ -123,7 +120,18 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
     }
     setBusy(true);
     try {
-      await saveSetting(settingBranchPrefix(workspaceId), next);
+      await storeSetWorkspaceOverrides(workspaceId, {
+        defaultProviderId: wsOverrides?.defaultProviderId ?? null,
+        defaultWorkflowId: wsOverrides?.defaultWorkflowId ?? null,
+        defaultBranchPrefix: next,
+        parallelEnabled: wsOverrides?.parallelEnabled ?? null,
+        defaultVerbosity: verbosity,
+        providerBindings: wsOverrides?.providerBindings ?? null,
+        taskModels: wsOverrides?.taskModels ?? null,
+        roleModels: wsOverrides?.roleModels ?? null,
+        parallelAgents,
+        enabledProviders: wsOverrides?.enabledProviders,
+      });
       setBranchPrefix(next);
       setSavedBranchPrefix(next);
       showToast('success', 'branch prefix saved');

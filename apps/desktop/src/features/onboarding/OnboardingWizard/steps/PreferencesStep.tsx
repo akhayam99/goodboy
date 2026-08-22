@@ -5,7 +5,7 @@ import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { Button, cn, EmptyState, FieldRow, formatError, Switch } from '@goodboy/ui';
 import { FolderGit2, GitBranch, SlidersHorizontal } from 'lucide-react';
 import { VerbositySelect } from '../../../session/components/VerbositySelect';
-import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
+import { DEFAULT_BRANCH_PREFIX } from '../../../settings/settings';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ProviderPicker } from '../../../../shared/components/RoutingPicker/ProviderPicker';
@@ -66,8 +66,6 @@ type FormProps = {
 };
 
 const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
-  const loadSetting = useAppStore((s) => s.loadSetting);
-  const saveSetting = useAppStore((s) => s.saveSetting);
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
   const setWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
   const connectedProviderIds = useAppStore(
@@ -85,19 +83,17 @@ const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
   const parallelAgents = wsOverrides?.parallelAgents ?? false;
 
   useEffect(() => {
-    if (isSimple) {
-      return;
-    }
-    void loadSetting(settingBranchPrefix(workspaceId)).then((v) => {
-      const value = v ?? DEFAULT_BRANCH_PREFIX;
-      setBranchPrefix(value);
-      setSavedBranchPrefix(value);
-    });
-  }, [isSimple, workspaceId, loadSetting]);
+    const value = wsOverrides?.defaultBranchPrefix ?? DEFAULT_BRANCH_PREFIX;
+    setBranchPrefix(value);
+    setSavedBranchPrefix(value);
+  }, [isSimple, workspaceId, wsOverrides?.defaultBranchPrefix]);
 
   const persistOverrides = async (
     partial: Partial<
-      Pick<OverrideSettings, 'defaultProviderId' | 'defaultVerbosity' | 'parallelAgents'>
+      Pick<
+        OverrideSettings,
+        'defaultProviderId' | 'defaultVerbosity' | 'parallelAgents' | 'defaultBranchPrefix'
+      >
     >,
   ) => {
     setBusy(true);
@@ -132,7 +128,18 @@ const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
     setBusy(true);
     setError(null);
     try {
-      await saveSetting(settingBranchPrefix(workspaceId), next);
+      await setWorkspaceOverrides(workspaceId, {
+        defaultProviderId: wsOverrides?.defaultProviderId ?? null,
+        defaultWorkflowId: wsOverrides?.defaultWorkflowId ?? null,
+        defaultBranchPrefix: next,
+        parallelEnabled: wsOverrides?.parallelEnabled ?? null,
+        defaultVerbosity: verbosity,
+        providerBindings: wsOverrides?.providerBindings ?? null,
+        taskModels: wsOverrides?.taskModels ?? null,
+        roleModels: wsOverrides?.roleModels ?? null,
+        parallelAgents,
+        enabledProviders: wsOverrides?.enabledProviders,
+      });
       setSavedBranchPrefix(next);
     } catch (err) {
       setError(formatError(err));

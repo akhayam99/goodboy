@@ -3,7 +3,6 @@ import type {
   ProviderBindings,
   ProviderId,
   RoleModelPreferences,
-  SessionId,
   TaskModelPreferences,
   VerbosityLevel,
   WorkflowId,
@@ -20,16 +19,8 @@ type WorkspaceOverrideRow = {
   provider_bindings: string | null;
   task_models: string | null;
   role_models: string | null;
-  scout_fanout: number | null;
+  parallel_agents: number | null;
   provider_pool: string | null;
-};
-
-type SessionOverrideRow = {
-  default_provider_id: string | null;
-  default_workflow_id: string | null;
-  default_branch_prefix: string | null;
-  parallel_enabled: number | null;
-  provider_bindings: string | null;
 };
 
 function parseBindings(raw: string | null): ProviderBindings | null {
@@ -126,23 +117,8 @@ function workspaceRowToOverride(row: WorkspaceOverrideRow): OverrideSettings {
     providerBindings: parseBindings(row.provider_bindings),
     taskModels: parseTaskModels(row.task_models),
     roleModels: parseRoleModels(row.role_models),
-    parallelAgents: row.scout_fanout === null ? null : row.scout_fanout !== 0,
+    parallelAgents: row.parallel_agents === null ? null : row.parallel_agents !== 0,
     enabledProviders: parseProviderPool({ raw: row.provider_pool }),
-  };
-}
-
-function sessionRowToOverride(row: SessionOverrideRow): OverrideSettings {
-  return {
-    defaultProviderId: row.default_provider_id as ProviderId | null,
-    defaultWorkflowId: row.default_workflow_id as WorkflowId | null,
-    defaultBranchPrefix: row.default_branch_prefix,
-    parallelEnabled: row.parallel_enabled === null ? null : row.parallel_enabled !== 0,
-    defaultVerbosity: null,
-    providerBindings: parseBindings(row.provider_bindings),
-    taskModels: null,
-    roleModels: null,
-    parallelAgents: null,
-    enabledProviders: undefined,
   };
 }
 
@@ -151,7 +127,7 @@ export const getWorkspaceOverrides = async (
   workspaceId: WorkspaceId,
 ): Promise<OverrideSettings | null> => {
   const rows = await db.select<WorkspaceOverrideRow>(
-    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, scout_fanout, provider_pool
+    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool
      FROM workspaces WHERE id = ?`,
     [workspaceId],
   );
@@ -174,7 +150,7 @@ export const setWorkspaceOverrides = async (
          provider_bindings = ?,
          task_models = ?,
          role_models = ?,
-         scout_fanout = ?,
+         parallel_agents = ?,
          provider_pool = ?,
          updated_at = ?
      WHERE id = ?`,
@@ -191,45 +167,6 @@ export const setWorkspaceOverrides = async (
       serializeProviderPool({ enabledProviders: overrides.enabledProviders }),
       Date.now(),
       workspaceId,
-    ],
-  );
-};
-
-export const getSessionOverrides = async (
-  db: Database,
-  sessionId: SessionId,
-): Promise<OverrideSettings | null> => {
-  const rows = await db.select<SessionOverrideRow>(
-    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, provider_bindings
-     FROM sessions WHERE id = ?`,
-    [sessionId],
-  );
-  const row = rows[0];
-  return row ? sessionRowToOverride(row) : null;
-};
-
-export const setSessionOverrides = async (
-  db: Database,
-  sessionId: SessionId,
-  overrides: OverrideSettings,
-): Promise<void> => {
-  await db.execute(
-    `UPDATE sessions
-     SET default_provider_id = ?,
-         default_workflow_id = ?,
-         default_branch_prefix = ?,
-         parallel_enabled = ?,
-         provider_bindings = ?,
-         updated_at = ?
-     WHERE id = ?`,
-    [
-      overrides.defaultProviderId,
-      overrides.defaultWorkflowId,
-      overrides.defaultBranchPrefix,
-      overrides.parallelEnabled === null ? null : overrides.parallelEnabled ? 1 : 0,
-      serializeBindings(overrides.providerBindings),
-      Date.now(),
-      sessionId,
     ],
   );
 };

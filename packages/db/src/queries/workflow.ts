@@ -42,7 +42,6 @@ type StepRow = {
   model_override: string | null;
   effort: string | null;
   verbosity: string | null;
-  parallel_group: number | null;
   orchestrator_reason: string | null;
 };
 
@@ -61,7 +60,6 @@ function toStep(row: StepRow): Step {
     ...(row.model_override && { modelOverride: row.model_override }),
     ...(row.effort && { effort: row.effort as AgentEffort }),
     ...(row.verbosity && { verbosity: row.verbosity as VerbosityLevel }),
-    ...(row.parallel_group != null && { parallelGroup: row.parallel_group }),
     ...(row.orchestrator_reason != null &&
       row.orchestrator_reason !== '' && { orchestratorReason: row.orchestrator_reason }),
   };
@@ -157,9 +155,9 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
     await db.execute(
       `INSERT INTO steps
         (id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix, expected_output,
-         provider_override, model_override, effort, verbosity, parallel_group,
+         provider_override, model_override, effort, verbosity,
          orchestrator_reason, deleted_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
        ON CONFLICT(id) DO UPDATE SET
          workflow_id      = excluded.workflow_id,
          library_step_id  = excluded.library_step_id,
@@ -172,7 +170,6 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
          model_override   = excluded.model_override,
          effort           = excluded.effort,
          verbosity        = excluded.verbosity,
-         parallel_group   = excluded.parallel_group,
          orchestrator_reason = excluded.orchestrator_reason,
          deleted_at       = NULL`,
       [
@@ -188,7 +185,6 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
         step.modelOverride ?? null,
         step.effort ?? null,
         step.verbosity ?? null,
-        step.parallelGroup ?? null,
         step.orchestratorReason ?? null,
       ],
     );

@@ -112,8 +112,6 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       delete nextLoading[sessionId];
       const nextSelected = { ...state.selectedAgentId };
       delete nextSelected[sessionId];
-      const nextConflicts = { ...state.sessionMergeConflicts };
-      delete nextConflicts[sessionId];
       const nextOpenQs = { ...state.sessionOpenQuestions };
       delete nextOpenQs[sessionId];
       const nextWorkflows = { ...state.sessionWorkflows };
@@ -151,7 +149,6 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         sessionSelectedPrNumber: nextSelectedPrNumber,
         sessionLoading: nextLoading,
         selectedAgentId: nextSelected,
-        sessionMergeConflicts: nextConflicts,
         sessionOpenQuestions: nextOpenQs,
         sessionWorkflows: nextWorkflows,
         workflowDrafts: nextWorkflowDrafts,

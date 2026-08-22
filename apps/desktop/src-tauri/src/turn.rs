@@ -256,8 +256,7 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
     }
 }
 
-/// Per-run spawn parameters used by both `turn_spawn` and `parallel_agent_spawn`.
-pub struct SpawnOneArgs<'a> {
+struct SpawnOneArgs<'a> {
     pub run_id: &'a str,
     pub binary: &'a str,
     pub model: &'a str,
@@ -285,12 +284,7 @@ fn max_mode_config_dir_for(binary: &str, cursor_max_mode: bool) -> Option<std::p
     crate::cursor_config::max_mode_config_dir()
 }
 
-/// Spawns one child process, registers it in the registry, and starts the
-/// forwarding thread. Returns `run_id` on success.
-///
-/// Extracted so that `turn_spawn` (single run) and `parallel_agent_spawn`
-/// (N runs) share the same logic without copy-paste.
-pub(crate) fn spawn_one(
+fn spawn_one(
     app: &AppHandle,
     registry: &ChildRegistry,
     args: SpawnOneArgs<'_>,
@@ -427,25 +421,6 @@ pub fn turn_cancel(state: State<'_, TurnRegistry>, run_id: String) -> Result<(),
         }
     }
     Ok(())
-}
-
-/// Kill the child registered under `run_id`, if present. No-op when the run is
-/// unknown or already reaped. Used by `parallel_agent_spawn` to roll back a
-/// partially-spawned batch so a mid-batch failure can't orphan live children.
-pub(crate) fn kill_run(registry: &ChildRegistry, run_id: &str) {
-    let slot = {
-        let Ok(map) = registry.lock() else {
-            return;
-        };
-        map.get(run_id).cloned()
-    };
-    if let Some(slot) = slot {
-        if let Ok(mut guard) = slot.lock() {
-            if let Some(child) = guard.as_mut() {
-                let _ = child.kill();
-            }
-        }
-    }
 }
 
 fn forward_lines(app: &AppHandle, run_id: &str, stdout: ChildStdout) {

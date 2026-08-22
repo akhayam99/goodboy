@@ -6,7 +6,7 @@ import type { SessionId, WorkspaceId, WorkspaceIntegration } from '@goodboy/type
 import { resolveTaskModel } from '@goodboy/core';
 import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';
 import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
-import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
+import { DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import {
@@ -54,13 +54,11 @@ const EMPTY_INTEGRATIONS: ReadonlyArray<WorkspaceIntegration> = [];
 export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) => {
   const createSession = useAppStore((s) => s.createSession);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const loadSetting = useAppStore((s) => s.loadSetting);
   const setNewSessionDraft = useAppStore((s) => s.setNewSessionDraft);
   const clearNewSessionDraft = useAppStore((s) => s.clearNewSessionDraft);
   const draft = useAppStore((s) => s.newSessionDrafts[workspaceId] ?? EMPTY_NEW_SESSION_DRAFT);
   const providers = useAppStore((s) => s.providers);
   const { showToast } = useToast();
-  const settingKey = settingBranchPrefix(workspaceId);
   const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId));
   const isSimple = workspace?.kind === 'simple';
   const gitStatus = useWorkspaceGitStatus({ workspaceId });
@@ -123,13 +121,8 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       : (PROVIDER_ORDER.find((id) => connectedProviderIds.has(id)) ?? 'anthropic');
 
   useEffect(() => {
-    if (isSimple) {
-      return;
-    }
-    void loadSetting(settingKey).then((value) => {
-      setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
-    });
-  }, [isSimple, settingKey, loadSetting]);
+    setBranchPrefix(workspaceOverrides?.defaultBranchPrefix ?? DEFAULT_BRANCH_PREFIX);
+  }, [isSimple, workspaceOverrides?.defaultBranchPrefix]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

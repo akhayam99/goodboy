@@ -76,7 +76,6 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       selectedAgentId: {},
       agentRunHistory: {},
       agentTurnState: {},
-      sessionMergeConflicts: {},
       sessionBudgets: {},
       summarizerStatus: {},
       budgetAlerts: [],

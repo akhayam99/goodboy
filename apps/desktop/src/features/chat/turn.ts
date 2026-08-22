@@ -273,31 +273,3 @@ export const readAttachment = async (worktreeDir: string, relPath: string): Prom
 export const deleteAttachment = async (worktreeDir: string, relPath: string): Promise<void> => {
   await invoke('attachment_delete', { worktreeDir, relPath });
 };
-
-type ParallelRunSpec = {
-  readonly runId: ProviderRunId;
-  readonly workingDir: string;
-  readonly parallelIndex: number;
-};
-
-export type ParallelSpawnArgs = {
-  readonly groupId: string;
-  readonly runs: ReadonlyArray<ParallelRunSpec>;
-  readonly binary?: string;
-  readonly model: string;
-  readonly effort?: string;
-  readonly prompt: string;
-  readonly permissionMode?: ClaudePermissionMode;
-  readonly allowedTools?: ReadonlyArray<string>;
-  readonly disallowedTools?: ReadonlyArray<string>;
-  readonly workspaceId?: string;
-  readonly apiKeyEnv?: string;
-  readonly credentialId?: string;
-  readonly cursorMaxMode?: boolean;
-};
-
-export const invokeParallelPhaseRunSpawn = async (
-  args: ParallelSpawnArgs,
-): Promise<ReadonlyArray<ProviderRunId>> => {
-  return invoke<string[]>('parallel_agent_spawn', { args }).then((ids) => ids as ProviderRunId[]);
-};

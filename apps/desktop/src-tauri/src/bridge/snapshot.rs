@@ -168,7 +168,7 @@ pub fn build() -> Result<Snapshot, BridgeError> {
     )?;
     let sessions = rows(
         &conn,
-        "SELECT id, workspace_id, goal, state_kind, user_status, workflow_id, current_step_ordinal, \
+        "SELECT id, workspace_id, goal, state_kind, last_activity_at, \
          provider_allow_override, permission_mode, \
          archived_at, deleted_at, created_at, updated_at \
          FROM sessions WHERE deleted_at IS NULL AND archived_at IS NULL",
@@ -177,7 +177,7 @@ pub fn build() -> Result<Snapshot, BridgeError> {
         &conn,
         "SELECT id, session_id, step_id, ordinal, name, kind, status, provider_run_id, output_summary, \
          effort, model_override, provider_override, \
-         group_id, parallel_index, parent_agent_id, workflow_run_id, started_at, completed_at, deleted_at \
+         parent_agent_id, workflow_run_id, started_at, last_finished_at, deleted_at \
          FROM agents WHERE deleted_at IS NULL",
     )?;
     let messages = rows(
@@ -209,7 +209,7 @@ pub fn build() -> Result<Snapshot, BridgeError> {
     )?;
     let steps = rows(
         &conn,
-        "SELECT id, workflow_id, ordinal, name, role, parallel_group, deleted_at \
+        "SELECT id, workflow_id, ordinal, name, role, deleted_at \
          FROM steps WHERE deleted_at IS NULL",
     )?;
     let session_workflows = rows(

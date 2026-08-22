@@ -30,12 +30,9 @@ describe('openDiffComments', () => {
     expect(result).toEqual([]);
   });
 
-  it('drops resolved and deleted notes', () => {
+  it('drops resolved notes', () => {
     const result = openDiffComments({
-      comments: [
-        buildComment({ id: 'r', status: 'resolved' }),
-        buildComment({ id: 'k', status: 'deleted' }),
-      ],
+      comments: [buildComment({ id: 'r', status: 'resolved' })],
     });
     expect(result).toEqual([]);
   });

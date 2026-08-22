@@ -31,9 +31,9 @@ async function seed(db: DbInterface, sessionId: SessionId): Promise<void> {
     [workspaceId, 'demo', '/tmp/demo', 0, 0],
   );
   await db.execute(
-    `INSERT INTO sessions (id, workspace_id, goal, state_kind, state_payload, created_at, updated_at)
+    `INSERT INTO sessions (id, workspace_id, goal, state_kind, last_activity_at, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [sessionId, workspaceId, 'demo', 'idle', '{}', 0, 0],
+    [sessionId, workspaceId, 'demo', 'idle', 0, 0, 0],
   );
 }
 

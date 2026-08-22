@@ -1,16 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type {
-  Agent,
-  AgentId,
-  IsoDateTime,
-  ProviderRunId,
-  SessionId,
-  WorkspaceId,
-} from '@goodboy/types';
+import type { AgentId, IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
 import { migrate } from '../migrations/runner';
 import { makeTestDatabase } from '../test-helpers/test-db';
-import { insertAgent } from './agent';
 import { countUserTextEvents, insertTurnEvent, listTurnEventsForAgent } from './turn-event';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
@@ -35,25 +27,22 @@ describe('turn event queries', () => {
       'INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
       [sessionId, workspaceId, 'goal', 'idle', now, now],
     );
-    const agents: ReadonlyArray<Agent> = [
-      {
-        id: agentId,
+    await db.execute(
+      `INSERT INTO agents (id, session_id, ordinal, name, status)
+       VALUES (?, ?, ?, ?, ?), (?, ?, ?, ?, ?)`,
+      [
+        agentId,
         sessionId,
-        ordinal: 0,
-        name: 'agent one',
-        status: 'pending',
-      },
-      {
-        id: otherAgentId,
+        0,
+        'agent one',
+        'pending',
+        otherAgentId,
         sessionId,
-        ordinal: 1,
-        name: 'agent two',
-        status: 'pending',
-      },
-    ];
-    for (const agent of agents) {
-      await insertAgent(db, agent);
-    }
+        1,
+        'agent two',
+        'pending',
+      ],
+    );
   });
 
   it('counts only user_text payloads for the requested agent', async () => {

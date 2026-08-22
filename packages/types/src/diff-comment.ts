@@ -1,6 +1,6 @@
 import type { AgentId, IsoDateTime, SessionId } from './ids';
 
-export type DiffCommentStatus = 'open' | 'resolved' | 'consumed' | 'deleted';
+export type DiffCommentStatus = 'open' | 'resolved' | 'consumed';
 
 export type DiffCommentSide = 'old' | 'new';
 

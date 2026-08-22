@@ -11,8 +11,6 @@ export type WorkflowRunId = string & { readonly __brand: 'WorkflowRunId' };
 export type StepId = string & { readonly __brand: 'StepId' };
 export type StepDefId = string & { readonly __brand: 'StepDefId' };
 export type AgentId = string & { readonly __brand: 'AgentId' };
-export type ParallelGroupId = string & { readonly __brand: 'ParallelGroupId' };
-export type ParallelAgentId = string & { readonly __brand: 'ParallelAgentId' };
 
 export type IsoDateTime = string & { readonly __brand: 'IsoDateTime' };
 

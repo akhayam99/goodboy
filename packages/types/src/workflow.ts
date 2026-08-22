@@ -1,8 +1,6 @@
 import type {
   AgentId,
   IsoDateTime,
-  ParallelAgentId,
-  ParallelGroupId,
   ProviderRunId,
   SessionId,
   StepDefId,
@@ -17,24 +15,15 @@ import type { VerbosityLevel } from './settings';
 export type AgentEffort = ModelEffort;
 
 export type AgentRole =
-  | 'scout'
-  | 'planner'
-  | 'implementer'
-  | 'reviewer'
-  | 'investigator'
-  | 'tester'
-  | 'custom';
+  'scout' | 'planner' | 'implementer' | 'reviewer' | 'investigator' | 'tester' | 'custom';
 
 export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
 export type AgentSourceKind = 'review_comment' | 'issue_comment' | 'diff_comment';
 
-export type ParallelMergeStrategy = 'last_write_wins' | 'manual' | 'synthesizer_driven';
-
 export type StepDef = Readonly<{
   id: StepDefId;
   workspaceId: WorkspaceId | null;
-  baseStepId?: StepDefId;
   role: AgentRole;
   name: string;
   promptPrefix: string;
@@ -60,7 +49,6 @@ export type Step = Readonly<{
   modelOverride?: string;
   effort?: AgentEffort;
   verbosity?: VerbosityLevel;
-  parallelGroup?: number;
   orchestratorReason?: string;
   deletedAt?: IsoDateTime;
 }>;
@@ -118,26 +106,3 @@ export type Agent = Readonly<{
   sourceKind?: AgentSourceKind;
   domains?: ReadonlyArray<string>;
 }>;
-
-export type ParallelGroup = {
-  readonly id: ParallelGroupId;
-  readonly sessionId: SessionId;
-  readonly ordinal: number;
-  readonly mergeStrategy: ParallelMergeStrategy;
-  readonly createdAt: IsoDateTime;
-  readonly completedAt: IsoDateTime | null;
-};
-
-export type ParallelAgent = {
-  readonly id: ParallelAgentId;
-  readonly groupId: ParallelGroupId;
-  readonly stepId: StepId;
-  readonly workflowRunId?: WorkflowRunId;
-  readonly parallelIndex: number;
-  readonly runId: ProviderRunId;
-  readonly status: AgentStatus;
-  readonly worktreePath: string;
-  readonly outputSummary: string | null;
-  readonly startedAt: IsoDateTime;
-  readonly completedAt: IsoDateTime | null;
-};

@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type {
-  Agent,
   AgentId,
   IsoDateTime,
   MessageId,
@@ -11,7 +10,7 @@ import type {
 import type { Database } from '../client';
 import { migrate } from '../migrations/runner';
 import { makeTestDatabase } from '../test-helpers/test-db';
-import { insertAgent, listAgentsForSession } from './agent';
+import { listAgentsForSession } from './agent';
 import { insertMessage, listMessagesForSession } from './message';
 import { archiveSession, listArchivedSessionRefs, softDeleteSession } from './session';
 import {
@@ -39,14 +38,11 @@ const insertSessionRow = async (db: Database, sessionId: SessionId) => {
 };
 
 const insertAgentRow = async (db: Database, sessionId: SessionId, agentId: AgentId) => {
-  const agent: Agent = {
-    id: agentId,
-    sessionId,
-    ordinal: 0,
-    name: 'agent',
-    status: 'pending',
-  };
-  await insertAgent(db, agent);
+  await db.execute(
+    `INSERT INTO agents (id, session_id, ordinal, name, status)
+     VALUES (?, ?, 0, 'agent', 'pending')`,
+    [agentId, sessionId],
+  );
 };
 
 describe('archived storage queries', () => {

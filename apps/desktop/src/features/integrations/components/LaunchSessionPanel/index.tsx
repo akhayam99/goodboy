@@ -12,7 +12,7 @@ import { validateSessionDirectoryName } from '../../../../shared/utils/validateS
 import { deriveDefaultSessionDirectoryNameFromGoal } from '../../../../shared/utils/deriveDefaultSessionDirectoryNameFromGoal';
 import { buildSimpleSessionDirectoryPath } from '../../../../shared/utils/buildSimpleSessionDirectoryPath';
 import { sessionDirectoryNameValidationMessage } from '../../../../shared/utils/sessionDirectoryNameValidationMessage';
-import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
+import { DEFAULT_BRANCH_PREFIX } from '../../../settings/settings';
 import { removeWorktree } from '../../../worktree/worktree';
 import { useBranchConflict } from '../../../worktree/useBranchConflict';
 import { useSimpleSessionDirectoryConflict } from '../../../worktree/useSimpleSessionDirectoryConflict';
@@ -52,7 +52,9 @@ export const LaunchSessionPanel = ({
   onClose,
 }: Props) => {
   const createSession = useAppStore((state) => state.createSession);
-  const loadSetting = useAppStore((state) => state.loadSetting);
+  const workspaceOverrides = useAppStore(
+    (state) => state.workspaceOverrides?.[workspaceId] ?? null,
+  );
   const rootPath = useAppStore(
     (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.rootPath ?? null,
   );
@@ -94,10 +96,8 @@ export const LaunchSessionPanel = ({
   }, [folderName, folderNameTouched, goal, isBranchless]);
 
   useEffect(() => {
-    void loadSetting(settingBranchPrefix(workspaceId)).then((value) => {
-      setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
-    });
-  }, [loadSetting, workspaceId]);
+    setBranchPrefix(workspaceOverrides?.defaultBranchPrefix ?? DEFAULT_BRANCH_PREFIX);
+  }, [workspaceId, workspaceOverrides?.defaultBranchPrefix]);
 
   const mode = modeChoice ?? (adoptable == null ? 'fresh' : 'adopt');
   const prefix = sanitizeBranchPrefix({ input: branchPrefix }) || DEFAULT_BRANCH_PREFIX;

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
-import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
+import { DEFAULT_BRANCH_PREFIX } from '../../../settings/settings';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -121,7 +121,10 @@ describe('PreferencesStep', () => {
       fireEvent.change(input, { target: { value: 'feat' } });
       fireEvent.blur(input);
       await waitFor(() =>
-        expect(state.saveSetting).toHaveBeenCalledWith(settingBranchPrefix(WS_ID), 'feat'),
+        expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+          WS_ID,
+          expect.objectContaining({ defaultBranchPrefix: 'feat' }),
+        ),
       );
     });
 
@@ -130,8 +133,8 @@ describe('PreferencesStep', () => {
       const input = screen.getByLabelText(/branch prefix/i) as HTMLInputElement;
       fireEvent.change(input, { target: { value: 'feat' } });
       fireEvent.blur(input);
-      await waitFor(() => expect(state.saveSetting).toHaveBeenCalled());
-      state.saveSetting = vi.fn(async () => undefined);
+      await waitFor(() => expect(state.setWorkspaceOverrides).toHaveBeenCalled());
+      state.setWorkspaceOverrides = vi.fn(async () => undefined);
       fireEvent.change(input, { target: { value: '' } });
       fireEvent.blur(input);
       await waitFor(() => expect(input.value).toBe(DEFAULT_BRANCH_PREFIX));
@@ -141,7 +144,6 @@ describe('PreferencesStep', () => {
       render(<PreferencesStep workspaceId={WS_ID} workspaceKind="simple" />);
       expect(screen.queryByLabelText(/branch prefix/i)).toBeNull();
       expect(screen.queryByRole('switch')).toBeNull();
-      expect(state.loadSetting).not.toHaveBeenCalled();
     });
   });
 

@@ -820,20 +820,6 @@ describe('session_workflows trigger-mode queries', () => {
       ).toBeUndefined();
     });
 
-    it('reads a run that still carries the retired step routing columns', async () => {
-      await attachDynamic();
-      await db.execute(
-        'UPDATE session_workflows SET step_provider = ?, step_model = ?, step_effort = ? WHERE workflow_run_id = ?',
-        ['codex', 'gpt-5.6-terra', 'high', 'run-1' as WorkflowRunId],
-      );
-
-      const run = (await listWorkflowsForSession(db, sessionId))[0]!;
-
-      expect(run.id).toBe('run-1');
-      expect(run.executionMode).toBe('dynamic');
-      expect(Object.keys(run)).not.toContain('stepRouting');
-    });
-
     it('carries the reason and the routing through a reorder', async () => {
       await attachDynamic();
       await attachWorkflowToSession({

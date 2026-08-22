@@ -5,6 +5,7 @@ import { migrations } from './index';
 import { migrate } from './runner';
 
 const NOW = 1_775_000_000_000;
+const projectMigrations = migrations.filter((migration) => migration.version <= 121);
 
 type InsertWorkspaceParams = {
   readonly db: Database;
@@ -385,7 +386,7 @@ const seedThrough116 = async (): Promise<Database> => {
 
 const migrateFixture = async (): Promise<Database> => {
   const db = await seedThrough116();
-  await migrate(db, migrations);
+  await migrate(db, projectMigrations);
   return db;
 };
 
@@ -501,7 +502,7 @@ describe('project workspace migration', () => {
       ],
     );
 
-    await migrate(db, migrations);
+    await migrate(db, projectMigrations);
     const live = await db.select<{
       readonly id: string;
       readonly name: string;

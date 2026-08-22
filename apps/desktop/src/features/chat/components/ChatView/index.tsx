@@ -1,5 +1,4 @@
 import {
-  Fragment,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -31,24 +30,17 @@ import {
   useSessionOpenQuestions,
   useTranscript,
 } from '../../../../store';
-import { detectParallelRunIds, reduceTranscript } from '../../utils/transcript-items';
+import { reduceTranscript } from '../../utils/transcript-items';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { clusterOperations } from '../../utils/cluster-operations';
 import { classifyThinkingContext } from '../../utils/thinking-context';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { ChatBreadcrumb } from '../ChatBreadcrumb';
 import { ChatInput } from '../ChatInput';
-import {
-  MergeDialog,
-  type MergeConflict,
-  type MergeResolution,
-  type RunMeta,
-} from '../../../../features/permissions/components/MergeDialog';
 import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
 import { worktreeDiff } from '../../../../features/worktree/worktree';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { ChatEmptyState } from './ChatEmptyState';
-import { ParallelColumn } from './ParallelColumn';
 import { TranscriptRows } from './TranscriptRows';
 import { useScrollPin } from './useScrollPin';
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
@@ -61,8 +53,6 @@ type Props = {
   readonly isActive?: boolean;
   readonly header?: ReactNode;
 };
-
-const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled']);
 
 type RetrySource = {
   readonly content: string;
@@ -211,7 +201,6 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   );
   const authResults = useAppStore((s) => s.authResults);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
-  const flagOn = useAppStore((s) => s.settings['experimental.enable_parallel_agents'] === 'true');
   const { scrollerRef, pinned, onScroll } = useScrollPin([deferredItems], selectedAgentId);
   const fadeHostRef = useRef<HTMLDivElement>(null);
 
@@ -235,32 +224,9 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
     !lastClusterRunning;
   const thinkingContext = useMemo(() => classifyThinkingContext({ lastItem }), [lastItem]);
 
-  const parallelRunIds = useMemo<ReadonlyArray<ProviderRunId>>(
-    () => (flagOn ? detectParallelRunIds(events) : []),
-    [events, flagOn],
-  );
-
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
-  const sessionWorkflows = useAppStore((s) => s.sessionWorkflows[session.id] ?? EMPTY_ARRAY);
-  const rawMergeConflicts = useAppStore((s) => s.sessionMergeConflicts[session.id] ?? EMPTY_ARRAY);
-  const resolveMergeConflicts = useAppStore((s) => s.resolveMergeConflicts);
-
-  const allParallelTerminal = useMemo(() => {
-    if (parallelRunIds.length === 0) {
-      return false;
-    }
-    return parallelRunIds.every((rid) => {
-      const run = phaseRuns.find((r) => r.runId === rid);
-      return run ? TERMINAL_STATUSES.has(run.status) : false;
-    });
-  }, [parallelRunIds, phaseRuns]);
-
-  const isSplitView = flagOn && parallelRunIds.length > 1;
 
   useLayoutEffect(() => {
-    if (isSplitView) {
-      return;
-    }
     const viewport = fadeHostRef.current?.querySelector<HTMLDivElement>('.overflow-y-auto');
     if (!viewport) {
       return;
@@ -268,7 +234,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
     scrollerRef.current = viewport;
     viewport.addEventListener('scroll', onScroll, { passive: true });
     return () => viewport.removeEventListener('scroll', onScroll);
-  }, [scrollerRef, onScroll, isSplitView]);
+  }, [scrollerRef, onScroll]);
 
   const onSelectRun = (runId: ProviderRunId) => {
     document
@@ -276,10 +242,8 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
   const [diffJumpFile, setDiffJumpFile] = useState<string | null>(null);
   useEffect(() => {
-    setMergeDialogOpen(false);
     setDiffJumpFile(null);
   }, [selectedAgentId]);
   const diffLoader = useMemo(
@@ -419,125 +383,6 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
     clearOpenQuestionScroll,
     scrollerRef,
   ]);
-
-  const mergeConflicts = useMemo<ReadonlyArray<MergeConflict>>(
-    () => rawMergeConflicts as ReadonlyArray<MergeConflict>,
-    [rawMergeConflicts],
-  );
-
-  const mergeRunMeta = useMemo<ReadonlyMap<ProviderRunId, RunMeta>>(() => {
-    const map = new Map<ProviderRunId, RunMeta>();
-    const stepNameById = new Map<string, string>();
-    for (const workflow of sessionWorkflows ?? EMPTY_ARRAY) {
-      for (const step of workflow.steps) {
-        stepNameById.set(step.id, step.name);
-      }
-    }
-    for (const run of phaseRuns) {
-      if (!run.runId) {
-        continue;
-      }
-      const stepName = run.stepId ? stepNameById.get(run.stepId) : undefined;
-      map.set(run.runId as ProviderRunId, {
-        agentName: run.name,
-        ...(stepName ? { stepName } : {}),
-      });
-    }
-    return map;
-  }, [phaseRuns, sessionWorkflows]);
-
-  const terminalRunStatuses = useMemo(
-    () =>
-      phaseRuns
-        .filter((r) => r.completedAt !== undefined && r.runId !== undefined)
-        .map((r) => ({
-          runId: r.runId as string,
-          completedAt: r.completedAt as string,
-          status: r.status,
-        })),
-    [phaseRuns],
-  );
-
-  const onMergeResolve = (picks: Record<string, MergeResolution>) => {
-    const resolvedPicks: Record<string, string> = {};
-    for (const [file, pick] of Object.entries(picks)) {
-      if (pick !== '__skip__') {
-        resolvedPicks[file] = pick;
-      }
-    }
-    void resolveMergeConflicts(session.id, resolvedPicks, terminalRunStatuses);
-    setMergeDialogOpen(false);
-  };
-
-  if (isSplitView) {
-    return (
-      <div className="flex h-full flex-col">
-        <div className="flex flex-1 overflow-hidden">
-          {parallelRunIds.map((runId, i) => (
-            <Fragment key={runId}>
-              {i > 0 ? <Divider orientation="vertical" /> : null}
-              <ParallelColumn
-                runId={runId}
-                index={i}
-                events={events}
-                workingDir={worktreePath}
-                onRefreshAuth={() => void refreshProviders()}
-                onOpenDiff={handleOpenDiff}
-                onRetryError={(item) => void handleRetryError({ item })}
-                retryingErrorRunId={retryingErrorRunId}
-              />
-            </Fragment>
-          ))}
-        </div>
-        {allParallelTerminal ? (
-          <>
-            <Divider />
-            <div className="flex items-center justify-between bg-muted/40 px-4 py-2">
-              <span className="text-xs text-muted-foreground">merge pending. review conflicts</span>
-              <Button
-                variant="secondary"
-                size="sm"
-                data-testid="merge-dialog-trigger"
-                onClick={() => setMergeDialogOpen(true)}
-              >
-                Merge
-              </Button>
-            </div>
-          </>
-        ) : null}
-        <MergeDialog
-          open={mergeDialogOpen}
-          conflicts={mergeConflicts}
-          runMeta={mergeRunMeta}
-          onResolve={onMergeResolve}
-          onCancel={() => setMergeDialogOpen(false)}
-        />
-        {isEnded ? (
-          <>
-            <Divider />
-            <div className="px-6 py-3 text-center text-xs text-muted-foreground">
-              Session ended. The branch is preserved.
-            </div>
-          </>
-        ) : (
-          <ChatInput
-            key={session.id}
-            session={session}
-            providerDisconnected={isProviderDisconnected}
-          />
-        )}
-        <DiffViewerDialog
-          open={diffJumpFile !== null}
-          onClose={() => setDiffJumpFile(null)}
-          sessionId={session.id}
-          title="Worktree diff"
-          loader={diffLoader}
-          workingDir={diffWorktreePath ?? undefined}
-          jumpToFile={diffJumpFile ?? undefined}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-full flex-col">

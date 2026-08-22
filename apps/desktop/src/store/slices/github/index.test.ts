@@ -505,7 +505,6 @@ describe('store contract', () => {
         selectedAgentId: {},
         agentRunHistory: {},
         agentTurnState: {},
-        sessionMergeConflicts: {},
         unknownPayloadCounts: {},
         detectedEditors: [],
         workspaceOverrides: {},

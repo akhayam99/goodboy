@@ -128,9 +128,7 @@ export {
 } from './queries/telemetry';
 export { getSetting, setSetting } from './queries/settings';
 export {
-  insertBudgetRule,
   listBudgetRules,
-  deleteBudgetRule,
   upsertSessionBudget,
   getSessionBudget,
   insertBudgetAlert,
@@ -149,7 +147,6 @@ export { listWorkflows, getWorkflow, upsertWorkflow, deleteWorkflow } from './qu
 export {
   listAgentsForSession,
   listAgentsForSessions,
-  insertAgent,
   updateAgentStatus,
   softDeleteAgent,
   restoreAgent,
@@ -174,26 +171,7 @@ export {
   listSessionEvents,
   deleteSessionEvents,
 } from './queries/session-event';
-export {
-  enqueueAuditRetry,
-  drainOldest,
-  updateAuditRetryAttempts,
-  deleteAuditRetry,
-  type AuditRetryRow,
-} from './queries/permission-audit-retry';
-export {
-  insertGroup,
-  listGroupsForSession,
-  getGroupById,
-  deleteGroup,
-  updateGroupCompletedAt,
-} from './queries/parallel-group';
-export {
-  getWorkspaceOverrides,
-  setWorkspaceOverrides,
-  getSessionOverrides,
-  setSessionOverrides,
-} from './queries/settings-overrides';
+export { getWorkspaceOverrides, setWorkspaceOverrides } from './queries/settings-overrides';
 export {
   listProviderCredentials,
   insertProviderCredential,

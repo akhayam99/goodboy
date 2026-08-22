@@ -16,7 +16,6 @@ mod gitlab;
 mod integration_credentials;
 mod jira;
 mod linear;
-mod parallel_groups;
 mod path_env;
 mod permissions;
 mod planner;
@@ -315,12 +314,6 @@ pub fn run() {
             workflows::agent_mark_viewed,
             workflows::agent_set_done,
             workflows::workspaces_with_unread,
-            parallel_groups::parallel_group_create,
-            parallel_groups::parallel_group_list,
-            parallel_groups::parallel_group_get,
-            parallel_groups::parallel_group_delete,
-            parallel_groups::parallel_group_update_completed_at,
-            parallel_groups::parallel_agent_spawn,
             permissions::permission_rule_list,
             permissions::permission_rule_get,
             permissions::permission_rule_upsert,

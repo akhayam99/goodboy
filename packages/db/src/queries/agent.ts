@@ -25,7 +25,6 @@ type AgentRow = {
   provider_run_id: string | null;
   output_summary: string | null;
   started_at: string | null;
-  completed_at: string | null;
   provider_session_id: string | null;
   provider_session_provider_id: string | null;
   last_finished_at: string | null;
@@ -83,12 +82,14 @@ const toAgent = ({ row }: ToAgentParams): Agent => {
     ...(row.provider_run_id && { runId: row.provider_run_id as ProviderRunId }),
     ...(row.output_summary && { outputSummary: row.output_summary }),
     ...(row.started_at && { startedAt: row.started_at as IsoDateTime }),
-    ...(row.completed_at && { completedAt: row.completed_at as IsoDateTime }),
     ...(row.provider_session_id && { providerSessionId: row.provider_session_id }),
     ...(row.provider_session_provider_id != null && {
       providerSessionProviderId: row.provider_session_provider_id as ProviderId,
     }),
-    ...(row.last_finished_at && { lastFinishedAt: row.last_finished_at as IsoDateTime }),
+    ...(row.last_finished_at && {
+      completedAt: row.last_finished_at as IsoDateTime,
+      lastFinishedAt: row.last_finished_at as IsoDateTime,
+    }),
     ...(row.last_viewed_at && { lastViewedAt: row.last_viewed_at as IsoDateTime }),
     ...(row.done_at && { doneAt: row.done_at as IsoDateTime }),
     ...(row.deleted_at != null && {
@@ -144,31 +145,6 @@ export const getAgentById = async (db: Database, id: AgentId): Promise<Agent | n
   return row ? toAgent({ row }) : null;
 };
 
-export const insertAgent = async (db: Database, agent: Agent): Promise<void> => {
-  await db.execute(
-    `INSERT INTO agents
-      (id, session_id, step_id, workflow_run_id, parent_agent_id, ordinal, name, status, provider_run_id, output_summary, started_at, completed_at, provider_session_id, provider_session_provider_id, domains_json)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      agent.id,
-      agent.sessionId,
-      agent.stepId ?? null,
-      agent.workflowRunId ?? null,
-      agent.parentAgentId ?? null,
-      agent.ordinal,
-      agent.name,
-      agent.status,
-      agent.runId ?? null,
-      agent.outputSummary ?? null,
-      agent.startedAt ?? null,
-      agent.completedAt ?? null,
-      agent.providerSessionId ?? null,
-      agent.providerSessionProviderId ?? null,
-      agent.domains !== undefined ? JSON.stringify(agent.domains) : null,
-    ],
-  );
-};
-
 export const updateAgentDomains = async ({
   db,
   id,
@@ -211,7 +187,7 @@ export const updateAgentStatus = async (
     values.push(fields.startedAt);
   }
   if (fields.completedAt !== undefined) {
-    updates.push('completed_at = ?');
+    updates.push('last_finished_at = ?');
     values.push(fields.completedAt);
   }
 

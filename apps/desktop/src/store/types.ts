@@ -1,4 +1,3 @@
-import type { FileConflict } from '@goodboy/core';
 import type { OrphanWorktree } from '../features/worktree/worktree';
 import type { StorageStats } from './slices/storage';
 import type { Notification, NotificationCounts, TelemetrySummary } from '@goodboy/db';
@@ -246,7 +245,6 @@ export type AppState = AppSliceState & {
   readonly selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly agentRunHistory: Readonly<Record<AgentId, ReadonlyArray<ProviderRunId>>>;
   readonly agentTurnState: Readonly<Record<AgentId, TurnState>>;
-  readonly sessionMergeConflicts: Readonly<Record<SessionId, ReadonlyArray<FileConflict>>>;
   readonly unknownPayloadCounts: Readonly<Record<string, number>>;
   readonly detectedEditors: ReadonlyArray<DetectedEditor>;
   readonly workspaceOverrides: Readonly<Record<WorkspaceId, OverrideSettings>>;

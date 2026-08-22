@@ -63,12 +63,10 @@ import {
   inferAgentKindFromName,
 } from '../../../features/session/agent-kind';
 import { slotsForKind } from '../../../features/providers/slot-routing';
-import { AGENT_FEATURES } from '../../../shared/lib/features';
 import { formatInteger } from '../../../shared/utils/formatInteger';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { detectParallelGroup } from '../../parallel-turn';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
@@ -97,7 +95,6 @@ import { completeResolvedAgent } from './completeResolvedAgent';
 import { resolvePhaseAgent } from './resolvePhaseAgent';
 import { resolveSkillPrompt } from './resolveSkillPrompt';
 import { persistAttachments } from './persistAttachments';
-import { dispatchParallelTurn } from './dispatchParallelTurn';
 import { auditToolCall } from './auditToolCall';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { fallbackNoticeMessage } from './fallbackNoticeMessage';
@@ -256,13 +253,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     let phaseWorkflowRunId: WorkflowRunId | null = null;
     let phasePromptCarryForward = '';
     let phaseTransitionEvent: Extract<TurnEvent, { kind: 'step_transition' }> | null = null;
-    let parallelDispatch: {
-      template: Workflow;
-      currentDef: Step;
-      groupDefs: ReadonlyArray<Step>;
-    } | null = null;
-    const userPromptForPhase = resolvedPrompt;
-
     if (session.workflowRuns.length > 0) {
       const freshRuns = await invokeAgentList(sessionId);
       set((state) => ({
@@ -288,44 +278,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           const predecessorDefinitions = sortedDefs.filter(
             (definition) => definition.ordinal < nextDef.ordinal,
           );
-          const completedPredecessors = predecessorDefinitions.flatMap(
-            (definition, _index, definitions) => {
-              if (definition.parallelGroup !== undefined) {
-                const groupDefinitions = definitions.filter(
-                  (candidate) => candidate.parallelGroup === definition.parallelGroup,
-                );
-                if (groupDefinitions.at(-1)?.id !== definition.id) {
-                  return [];
-                }
-                const representative = groupDefinitions
-                  .map((groupDefinition) =>
-                    runAgents.find(
-                      (agent) =>
-                        agent.stepId === groupDefinition.id && agent.status === 'completed',
-                    ),
-                  )
-                  .find((agent) => agent != null);
-                if (representative == null) {
-                  return [];
-                }
-                const groupSummary = representative.outputSummary ?? '';
-                return [
-                  {
-                    ...representative,
-                    ordinal: groupDefinitions.at(-1)?.ordinal ?? definition.ordinal,
-                    name: groupDefinitions[0]?.name ?? definition.name,
-                    outputSummary: groupSummary.startsWith('## workflow handoff\n')
-                      ? groupSummary.slice('## workflow handoff\n'.length)
-                      : groupSummary,
-                  },
-                ];
-              }
-              const completedAgent = runAgents.find(
-                (agent) => agent.stepId === definition.id && agent.status === 'completed',
-              );
-              return completedAgent == null ? [] : [completedAgent];
-            },
-          );
+          const completedPredecessors = predecessorDefinitions.flatMap((definition) => {
+            const completedAgent = runAgents.find(
+              (agent) => agent.stepId === definition.id && agent.status === 'completed',
+            );
+            return completedAgent == null ? [] : [completedAgent];
+          });
           const immediatePredecessor = completedPredecessors.at(-1) ?? null;
           const hasAssistantTurn = (before.transcripts[activeAgentId] ?? []).some(
             (event) => event.kind === 'assistant_text',
@@ -369,26 +327,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           phaseDefinition = nextDef;
           phaseWorkflowRunId = activeRun?.id ?? null;
 
-          if (AGENT_FEATURES.parallelAgents) {
-            const detection = detectParallelGroup(template, nextDef);
-            if (detection !== null) {
-              parallelDispatch = {
-                template,
-                currentDef: detection.currentDef,
-                groupDefs: detection.groupDefs,
-              };
-            }
-          }
-
-          if (parallelDispatch === null) {
-            const prefix = nextDef.promptPrefix.trim();
-            const hasPrefixAlready = prefix.length > 0 && resolvedPrompt.includes(prefix);
-            resolvedPrompt = buildStepPrompt({
-              definition: hasPrefixAlready ? { ...nextDef, promptPrefix: '' } : nextDef,
-              carryForwardContext: phasePromptCarryForward,
-              userMessage: resolvedPrompt,
-            });
-          }
+          const prefix = nextDef.promptPrefix.trim();
+          const hasPrefixAlready = prefix.length > 0 && resolvedPrompt.includes(prefix);
+          resolvedPrompt = buildStepPrompt({
+            definition: hasPrefixAlready ? { ...nextDef, promptPrefix: '' } : nextDef,
+            carryForwardContext: phasePromptCarryForward,
+            userMessage: resolvedPrompt,
+          });
         }
       }
     }
@@ -547,52 +492,50 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const runId = crypto.randomUUID() as ProviderRunId;
     const isFirstTurn = (get().agentRunHistory[activeAgentId] ?? []).length === 0;
 
-    if (parallelDispatch === null) {
-      set((state) => {
-        const prev = state.agentRunHistory[activeAgentId] ?? [];
-        if (prev.includes(runId)) {
-          return state;
-        }
-        return {
-          agentRunHistory: { ...state.agentRunHistory, [activeAgentId]: [...prev, runId] },
-        };
-      });
-      if (retry == null) {
-        const userMessage: Message = {
-          id: crypto.randomUUID() as MessageId,
-          sessionId,
-          agentId: activeAgentId,
-          role: 'user',
-          content: userTurnText,
-          createdAt: now(),
-          ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
-        };
-        await insertMessage(tauriDatabase, userMessage);
-        get().appendTurnEvent(activeAgentId, sessionId, {
-          kind: 'user_text',
-          runId,
-          text: userTurnText,
-          ...(attachmentRefs.length > 0 ? { attachments: attachmentRefs } : {}),
-          provider,
-          model,
-          at: userMessage.createdAt,
-        });
+    set((state) => {
+      const prev = state.agentRunHistory[activeAgentId] ?? [];
+      if (prev.includes(runId)) {
+        return state;
       }
-
-      const run: ProviderRun = {
-        id: runId,
-        sessionId,
-        provider,
-        model: spawnModel,
-        status: { kind: 'streaming', startedAt: now() },
-        routingDecision,
-        createdAt: now(),
+      return {
+        agentRunHistory: { ...state.agentRunHistory, [activeAgentId]: [...prev, runId] },
       };
-      await insertProviderRun(tauriDatabase, run);
+    });
+    if (retry == null) {
+      const userMessage: Message = {
+        id: crypto.randomUUID() as MessageId,
+        sessionId,
+        agentId: activeAgentId,
+        role: 'user',
+        content: userTurnText,
+        createdAt: now(),
+        ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
+      };
+      await insertMessage(tauriDatabase, userMessage);
+      get().appendTurnEvent(activeAgentId, sessionId, {
+        kind: 'user_text',
+        runId,
+        text: userTurnText,
+        ...(attachmentRefs.length > 0 ? { attachments: attachmentRefs } : {}),
+        provider,
+        model,
+        at: userMessage.createdAt,
+      });
     }
 
+    const providerRun: ProviderRun = {
+      id: runId,
+      sessionId,
+      provider,
+      model: spawnModel,
+      status: { kind: 'streaming', startedAt: now() },
+      routingDecision,
+      createdAt: now(),
+    };
+    await insertProviderRun(tauriDatabase, providerRun);
+
     let resolvedAgentId: AgentId | null = null;
-    if (phaseDefinition && parallelDispatch === null) {
+    if (phaseDefinition) {
       const runsForSession = get().sessionPhaseRuns[sessionId] ?? [];
       const scopedRuns = phaseWorkflowRunId
         ? runsForWorkflowRun(runsForSession, phaseWorkflowRunId)
@@ -615,7 +558,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         get().appendTurnEvent(activeAgentId, sessionId, { ...phaseTransitionEvent, runId });
       }
     }
-    if (!phaseDefinition && parallelDispatch === null) {
+    if (!phaseDefinition) {
       await invokeAgentUpdateStatus(activeAgentId, {
         status: 'running',
         providerRunId: runId,
@@ -628,21 +571,19 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }));
     }
 
-    if (parallelDispatch === null) {
-      let nextAgentState: TurnState = get().agentTurnState[activeAgentId] ?? {
-        kind: 'idle',
-        lastActivityAt: now(),
-      };
-      if (nextAgentState.kind === 'draft') {
-        nextAgentState = turnReducer(nextAgentState, { kind: 'start', at: now() });
-      }
-      if (nextAgentState.kind === 'error' || nextAgentState.kind === 'blocked') {
-        nextAgentState = turnReducer(nextAgentState, { kind: 'retry', at: now() });
-      }
-      nextAgentState = turnReducer(nextAgentState, { kind: 'send', runId, at: now() });
-      const derived = applyAgentTurnState(set, sessionId, activeAgentId, nextAgentState, now());
-      await updateSessionState(tauriDatabase, sessionId, derived, now());
+    let nextAgentState: TurnState = get().agentTurnState[activeAgentId] ?? {
+      kind: 'idle',
+      lastActivityAt: now(),
+    };
+    if (nextAgentState.kind === 'draft') {
+      nextAgentState = turnReducer(nextAgentState, { kind: 'start', at: now() });
     }
+    if (nextAgentState.kind === 'error' || nextAgentState.kind === 'blocked') {
+      nextAgentState = turnReducer(nextAgentState, { kind: 'retry', at: now() });
+    }
+    nextAgentState = turnReducer(nextAgentState, { kind: 'send', runId, at: now() });
+    const derived = applyAgentTurnState(set, sessionId, activeAgentId, nextAgentState, now());
+    await updateSessionState(tauriDatabase, sessionId, derived, now());
 
     const providerInfo = get().providers.find((p) => p.id === provider);
 
@@ -677,29 +618,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           permissionMode: session.permissionMode,
         };
       }
-    }
-
-    if (parallelDispatch !== null) {
-      await dispatchParallelTurn(set, get, {
-        session,
-        sessionId,
-        activeAgentId,
-        provider,
-        model: spawnModel,
-        effort: effortFlag,
-        cursorMaxMode: resolvedModel.maxMode,
-        parallelDispatch,
-        claudeFlags,
-        apiKeyBinding,
-        providerBinary: providerInfo?.binary,
-        workingDir,
-        userTurnText,
-        userPromptForPhase,
-        phasePromptCarryForward,
-        phaseWorkflowRunId,
-        now,
-      });
-      return NOT_BLOCKED;
     }
 
     const sharedSlots = get().sessionSlots[sessionId] ?? [];

@@ -21,7 +21,7 @@ pub struct SettingsOverrides {
     pub task_models: Option<serde_json::Value>,
     #[serde(rename = "roleModels")]
     pub role_models: Option<serde_json::Value>,
-    #[serde(rename = "parallelAgents", alias = "scoutFanout")]
+    #[serde(rename = "parallelAgents")]
     pub parallel_agents: Option<bool>,
     #[serde(rename = "enabledProviders")]
     pub enabled_providers: Option<Vec<String>>,
@@ -55,7 +55,7 @@ pub fn get_workspace_overrides(
 ) -> Result<Option<SettingsOverrides>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, scout_fanout, provider_pool
+        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool
          FROM workspaces WHERE id = ?1",
     )?;
     let mut rows = stmt.query_map(rusqlite::params![workspace_id], |row| {
@@ -100,7 +100,7 @@ pub fn set_workspace_overrides(
              provider_bindings = ?6,
              task_models = ?7,
              role_models = ?8,
-             scout_fanout = ?9,
+             parallel_agents = ?9,
              provider_pool = ?10,
              updated_at = ?11
          WHERE id = ?12",

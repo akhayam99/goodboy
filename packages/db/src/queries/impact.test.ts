@@ -86,7 +86,7 @@ const addAgent = async ({
 }): Promise<void> => {
   await db.execute(
     `INSERT INTO agents
-       (id, session_id, ordinal, name, status, provider_run_id, started_at, completed_at, kind, parent_agent_id)
+       (id, session_id, ordinal, name, status, provider_run_id, started_at, last_finished_at, kind, parent_agent_id)
      VALUES (?, ?, 0, ?, ?, ?, ?, ?, ?, ?)`,
     [
       seed.id,

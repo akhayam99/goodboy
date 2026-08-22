@@ -31,7 +31,6 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
     agentTurnState: {} as Record<string, unknown>,
     agentKindOverride: {} as Record<string, string>,
     sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionMergeConflicts: {} as Record<string, ReadonlyArray<unknown>>,
     resolveMergeConflicts: vi.fn(async () => undefined),
     loadSessionOpenQuestions: vi.fn(async () => undefined),
     loadSessionAnsweredQuestions: vi.fn(async () => undefined),
@@ -61,7 +60,6 @@ vi.mock('./OpenQuestionCluster', () => ({
 }));
 
 vi.mock('../../utils/transcript-items', () => ({
-  detectParallelRunIds: () => [],
   filterEventsByRunId: () => [],
   reduceTranscript: () => transcriptItems.current,
 }));
@@ -83,10 +81,6 @@ vi.mock('../ChatBreadcrumb', () => ({
 
 vi.mock('../ChatInput', () => ({
   ChatInput: () => null,
-}));
-
-vi.mock('../../../../features/permissions/components/MergeDialog', () => ({
-  MergeDialog: () => null,
 }));
 
 vi.mock('../../../../features/permissions/components/DiffViewerDialog', () => ({
@@ -135,7 +129,6 @@ beforeEach(() => {
   state.agentTurnState = {};
   state.agentKindOverride = {};
   state.sessionWorkflows = {};
-  state.sessionMergeConflicts = {};
   state.openQuestionScrollTarget = null;
   state.loadSessionOpenQuestions.mockClear();
   state.loadSessionAnsweredQuestions.mockClear();

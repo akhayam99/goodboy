@@ -25,30 +25,9 @@ function toBudgetRule(row: BudgetRuleRow): BudgetRule {
   };
 }
 
-export const insertBudgetRule = async (db: Database, rule: BudgetRule): Promise<void> => {
-  await db.execute(
-    `INSERT INTO budget_rules
-      (id, provider, period, cap_usd, alert_threshold_pct, extra_tokens_budget, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [
-      rule.id,
-      rule.provider,
-      rule.period,
-      rule.capUsd,
-      rule.alertThresholdPct,
-      rule.extraTokensBudget ?? null,
-      rule.createdAt,
-    ],
-  );
-};
-
 export const listBudgetRules = async (db: Database): Promise<ReadonlyArray<BudgetRule>> => {
   const rows = await db.select<BudgetRuleRow>('SELECT * FROM budget_rules ORDER BY created_at ASC');
   return rows.map(toBudgetRule);
-};
-
-export const deleteBudgetRule = async (db: Database, id: string): Promise<void> => {
-  await db.execute('DELETE FROM budget_rules WHERE id = ?', [id]);
 };
 
 type SessionBudgetRow = {

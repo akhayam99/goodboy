@@ -27,8 +27,6 @@ pub struct StepRow {
     pub model_override: Option<String>,
     pub effort: Option<String>,
     pub verbosity: Option<String>,
-    #[serde(rename = "parallelGroup")]
-    pub parallel_group: Option<i64>,
     #[serde(rename = "orchestratorReason")]
     pub orchestrator_reason: Option<String>,
 }
@@ -38,8 +36,6 @@ pub struct StepDefRow {
     pub id: String,
     #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
-    #[serde(rename = "baseStepId")]
-    pub base_step_id: Option<String>,
     pub role: String,
     pub name: String,
     #[serde(rename = "promptPrefix")]
@@ -63,8 +59,6 @@ pub struct StepDefUpsertInput {
     pub id: Option<String>,
     #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
-    #[serde(rename = "baseStepId")]
-    pub base_step_id: Option<String>,
     pub role: String,
     pub name: String,
     #[serde(rename = "promptPrefix")]
@@ -127,8 +121,6 @@ pub struct StepInput {
     pub model_override: Option<String>,
     pub effort: Option<String>,
     pub verbosity: Option<String>,
-    #[serde(rename = "parallelGroup")]
-    pub parallel_group: Option<i64>,
     #[serde(rename = "orchestratorReason")]
     pub orchestrator_reason: Option<String>,
 }
@@ -310,7 +302,7 @@ fn load_steps(
     let mut stmt = conn.prepare(
         "SELECT id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
                 expected_output, provider_override, model_override, effort, verbosity,
-                parallel_group, orchestrator_reason
+                orchestrator_reason
          FROM steps
          WHERE workflow_id = ?1 AND deleted_at IS NULL
          ORDER BY ordinal ASC",
@@ -329,8 +321,7 @@ fn load_steps(
             model_override: row.get(9)?,
             effort: row.get(10)?,
             verbosity: row.get(11)?,
-            parallel_group: row.get(12)?,
-            orchestrator_reason: row.get(13)?,
+            orchestrator_reason: row.get(12)?,
         })
     })?;
     rows.collect()
@@ -603,8 +594,8 @@ pub fn workflow_upsert(
             "INSERT INTO steps
                (id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
                 expected_output, provider_override, model_override, effort, verbosity,
-                parallel_group, orchestrator_reason, deleted_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, NULL)
+                orchestrator_reason, deleted_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, NULL)
              ON CONFLICT(id) DO UPDATE SET
                workflow_id      = excluded.workflow_id,
                library_step_id  = excluded.library_step_id,
@@ -617,7 +608,6 @@ pub fn workflow_upsert(
                model_override   = excluded.model_override,
                effort           = excluded.effort,
                verbosity        = excluded.verbosity,
-               parallel_group   = excluded.parallel_group,
                orchestrator_reason = excluded.orchestrator_reason,
                deleted_at       = NULL",
             rusqlite::params![
@@ -633,7 +623,6 @@ pub fn workflow_upsert(
                 def.model_override,
                 def.effort,
                 def.verbosity,
-                def.parallel_group,
                 def.orchestrator_reason,
             ],
         )?;
@@ -651,7 +640,6 @@ pub fn workflow_upsert(
             model_override: def.model_override.clone(),
             effort: def.effort.clone(),
             verbosity: def.verbosity.clone(),
-            parallel_group: def.parallel_group,
             orchestrator_reason: def.orchestrator_reason.clone(),
         });
     }
@@ -821,27 +809,21 @@ fn map_step_def_row(row: &rusqlite::Row<'_>) -> Result<StepDefRow, rusqlite::Err
     Ok(StepDefRow {
         id: row.get(0)?,
         workspace_id: row.get(1)?,
-        base_step_id: row.get(2)?,
-        role: row.get(3)?,
-        name: row.get(4)?,
-        prompt_prefix: row.get(5)?,
-        provider_default: row.get(6)?,
-        model_default: row.get(7)?,
-        effort_default: row.get(8)?,
-        verbosity_default: row.get(9)?,
-        created_at: row.get(10)?,
-        updated_at: row.get(11)?,
+        role: row.get(2)?,
+        name: row.get(3)?,
+        prompt_prefix: row.get(4)?,
+        provider_default: row.get(5)?,
+        model_default: row.get(6)?,
+        effort_default: row.get(7)?,
+        verbosity_default: row.get(8)?,
+        created_at: row.get(9)?,
+        updated_at: row.get(10)?,
     })
 }
 
-const STEP_DEF_COLS: &str =
-    "id, workspace_id, base_step_id, role, name, prompt_prefix, provider_default, \
+const STEP_DEF_COLS: &str = "id, workspace_id, role, name, prompt_prefix, provider_default, \
      model_default, effort_default, verbosity_default, created_at, updated_at";
 
-/// The effective library for a workspace: every non-deleted global seed plus the
-/// workspace's own non-deleted steps. A workspace override (a local row with
-/// `base_step_id` pointing at a global) shadows that global, so the global is
-/// filtered out when an override exists.
 #[tauri::command]
 pub fn step_def_list(
     state: State<'_, Db>,
@@ -851,16 +833,7 @@ pub fn step_def_list(
     let sql = format!(
         "SELECT {cols} FROM step_library
          WHERE deleted_at IS NULL
-           AND (
-             workspace_id = ?1
-             OR (
-               workspace_id IS NULL
-               AND id NOT IN (
-                 SELECT base_step_id FROM step_library
-                 WHERE workspace_id = ?1 AND base_step_id IS NOT NULL AND deleted_at IS NULL
-               )
-             )
-           )
+           AND (workspace_id = ?1 OR workspace_id IS NULL)
          ORDER BY (workspace_id IS NULL) DESC, name ASC",
         cols = STEP_DEF_COLS
     );
@@ -888,13 +861,12 @@ pub fn step_def_upsert(
 
     conn.execute(
         "INSERT INTO step_library
-           (id, workspace_id, base_step_id, role, name, prompt_prefix,
+           (id, workspace_id, role, name, prompt_prefix,
             provider_default, model_default, effort_default, verbosity_default,
             created_at, updated_at, deleted_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, NULL)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, NULL)
          ON CONFLICT(id) DO UPDATE SET
            workspace_id      = excluded.workspace_id,
-           base_step_id      = excluded.base_step_id,
            role              = excluded.role,
            name              = excluded.name,
            prompt_prefix     = excluded.prompt_prefix,
@@ -907,7 +879,6 @@ pub fn step_def_upsert(
         rusqlite::params![
             id,
             input.workspace_id,
-            input.base_step_id,
             input.role,
             input.name,
             input.prompt_prefix,
@@ -923,7 +894,6 @@ pub fn step_def_upsert(
     Ok(StepDefRow {
         id,
         workspace_id: input.workspace_id,
-        base_step_id: input.base_step_id,
         role: input.role,
         name: input.name,
         prompt_prefix: input.prompt_prefix,
@@ -958,7 +928,7 @@ pub fn step_def_delete(state: State<'_, Db>, id: String) -> Result<(), PhaseErro
 
 const AGENT_SESSION_COLS: &str =
     "id, session_id, step_id, ordinal, name, status, \
-     provider_run_id, output_summary, started_at, completed_at, \
+     provider_run_id, output_summary, started_at, last_finished_at, \
      provider_session_id, provider_session_provider_id, last_finished_at, last_viewed_at, done_at, kind, verbosity, \
      effort, model_override, provider_override, \
      parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url, \
@@ -1013,7 +983,7 @@ pub fn agent_list_for_session(
 
 const AGENT_INSERT_SQL: &str = "INSERT INTO agents
    (id, session_id, step_id, ordinal, name, status,
-    provider_run_id, output_summary, started_at, completed_at, kind, verbosity,
+    provider_run_id, output_summary, started_at, last_finished_at, kind, verbosity,
     effort, model_override, provider_override,
     parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url, source_kind,
     domains_json)
@@ -1065,10 +1035,10 @@ pub fn agent_insert(
         provider_run_id: input.provider_run_id,
         output_summary: input.output_summary,
         started_at: input.started_at,
-        completed_at: input.completed_at,
+        completed_at: input.completed_at.clone(),
         provider_session_id: None,
         provider_session_provider_id: None,
-        last_finished_at: None,
+        last_finished_at: input.completed_at,
         last_viewed_at: None,
         done_at: None,
         kind: input.kind,
@@ -1103,7 +1073,6 @@ pub fn agent_update_status(
            provider_run_id = COALESCE(?3, provider_run_id),
            output_summary  = COALESCE(?4, output_summary),
            started_at      = COALESCE(?5, started_at),
-           completed_at    = COALESCE(?6, completed_at),
            last_finished_at = CASE WHEN ?7 = 1
              THEN COALESCE(?6, last_finished_at, CURRENT_TIMESTAMP)
              ELSE last_finished_at END
@@ -1119,7 +1088,6 @@ pub fn agent_update_status(
         ],
     )?;
 
-    // Fetch updated row.
     let sql = format!(
         "SELECT {cols} FROM agents WHERE id = ?1 LIMIT 1",
         cols = AGENT_SESSION_COLS
@@ -1252,7 +1220,7 @@ mod tests {
         conn.execute_batch(
             "CREATE TABLE agents (
                 id TEXT, session_id TEXT, step_id TEXT, ordinal INTEGER, name TEXT, status TEXT,
-                provider_run_id TEXT, output_summary TEXT, started_at TEXT, completed_at TEXT,
+                provider_run_id TEXT, output_summary TEXT, started_at TEXT,
                 provider_session_id TEXT, provider_session_provider_id TEXT, last_finished_at TEXT, last_viewed_at TEXT, done_at TEXT,
                 kind TEXT, verbosity TEXT, effort TEXT, model_override TEXT, provider_override TEXT,
                 parent_agent_id TEXT, workflow_run_id TEXT, source_thread_id TEXT,

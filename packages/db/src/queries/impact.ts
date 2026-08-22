@@ -674,7 +674,7 @@ export const getAgentDurations = async ({
     `SELECT
        COALESCE(a.kind, 'agent') AS kind,
        MAX(
-         (julianday(COALESCE(a.done_at, a.completed_at, a.last_finished_at))
+         (julianday(COALESCE(a.done_at, a.last_finished_at))
            - julianday(a.started_at)) * 24,
          0
        ) AS duration_hours
@@ -684,7 +684,7 @@ export const getAgentDurations = async ({
       AND s.deleted_at IS NULL
       AND a.deleted_at IS NULL
       AND a.started_at IS NOT NULL
-      AND COALESCE(a.done_at, a.completed_at, a.last_finished_at) IS NOT NULL
+      AND COALESCE(a.done_at, a.last_finished_at) IS NOT NULL
       AND (? IS NULL OR julianday(a.started_at) >= julianday(?))
     ORDER BY a.started_at DESC`,
     [workspaceId, sinceIso, sinceIso],

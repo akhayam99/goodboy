@@ -119,6 +119,9 @@ import { m118WorkspaceContainers } from './m118-workspace-containers';
 import { m119ProjectSessionRelations } from './m119-project-session-relations';
 import { m120WorkspaceProfiles } from './m120-workspace-profiles';
 import { m121ProjectSessionMounts } from './m121-project-session-mounts';
+import { m122RuntimeDeadWeight } from './m122-runtime-dead-weight';
+import { m123StorageCleanup } from './m123-storage-cleanup';
+import { m124TombstoneGc } from './m124-tombstone-gc';
 
 export type Migration = {
   readonly version: number;
@@ -247,4 +250,7 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 119, sql: m119ProjectSessionRelations },
   { version: 120, sql: m120WorkspaceProfiles },
   { version: 121, sql: m121ProjectSessionMounts },
+  { version: 122, sql: m122RuntimeDeadWeight },
+  { version: 123, sql: m123StorageCleanup },
+  { version: 124, sql: m124TombstoneGc },
 ];
