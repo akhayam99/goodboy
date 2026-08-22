@@ -88,6 +88,18 @@ grid, so no column resize, no hide animation and no overlay can move it.
 **The pane** is the work: the only surface that scrolls its own body, mounts
 editors and takes a title.
 
+**The scope bar states which projects a session has materialized.** It sits
+above the session pane, lists the mounted projects, and carries the
+**+ project** chip that materializes another one. It renders only when there
+is a choice to state: one mount in a one-project workspace needs no bar.
+Sessions are created lazily on the workspace ([concepts.md](concepts.md) →
+Lazy sessions), so the bar is also where a session's footprint grows.
+
+**Inside a session the sidebar is two steps, not two columns.** One mode lists
+the workspace's sessions grouped by stage, the other lists the open session's
+lenses; a back row switches between them and selecting a session lands on its
+lenses. Board → session is the whole depth of the navigation.
+
 **Peek is a display of the sidebar, not a second sidebar.** The overlay renders
 the same sidebar component; there is one sessions list in the codebase. It is
 wider than the pinned column, applied at read time so widening the peek never
@@ -212,8 +224,8 @@ breadcrumb IA, exit on close or Esc, and only one is open at a time.
   still be cleared.
 - **A code-host studio mounted outside a session is browse-and-launch only.**
   The write verbs (approve, request changes, comment, merge, decline) are keyed
-  to a session and stay disabled; a composite workspace has no single
-  repository, so that mount stops at an empty state.
+  to a session and stay disabled; the mount reads through the workspace's first
+  repo project, so a workspace with no repo project stops at an empty state.
 
 ## Lenses
 
@@ -248,3 +260,6 @@ before the session exists: the kind is a choice inside a session, not a
 precondition for having one. Its issue sources are a curated allowlist, not the
 union of connected providers, because a connected code host does not imply an
 issue picker; the section hides when none of the allowed sources is connected.
+Creating a session picks no project either: the session is born on the
+workspace with a container directory only, and projects are materialized when
+the work reaches them ([concepts.md](concepts.md) → Lazy sessions).

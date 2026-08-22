@@ -82,6 +82,9 @@ one only when the current task reaches its trigger.
   ask a connected integration, or how it asks.
 - [workflows.md](workflows.md): when touching workflow tables, run advance
   logic, or the post-step summarizer.
+- [adr/001-workspace-project-rename.md](adr/001-workspace-project-rename.md):
+  when you need why the schema calls the old workspaces table `projects`, or
+  what the 0.2.0 migrations did to existing data.
 - [release.md](release.md): when you need the technical detail of a release:
   signing, notarization, updater, or Homebrew.
 - [release-command.md](release-command.md): when an agent is executing a

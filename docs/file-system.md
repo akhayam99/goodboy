@@ -2,7 +2,9 @@
 
 > **Read this when** deciding where UI or shared code belongs between
 > `apps/desktop/src/` and `packages/ui`. **Not for** runtime systems around
-> the app like subprocess env or DB migrations (see `docs/architecture.md`).
+> the app like subprocess env or DB migrations, nor the on-disk data the app
+> writes under `~/.goodboy` (see `docs/architecture.md` → On-disk data
+> layout).
 
 Owns the file and folder layout of `apps/desktop/src/` and the boundary between
 desktop reuse and `packages/ui`. Naming: [AGENTS.md](../AGENTS.md) → Naming.

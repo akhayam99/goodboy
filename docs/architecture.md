@@ -17,7 +17,7 @@ Never skip hooks (`git push --no-verify`) to dodge a missing-env failure; replay
 ## Provider system
 
 - **The model registry is compiled, not stored.** Ids, family, cost tier, effort ladder, context window, routing weight and price are authored in the provider catalogs under `packages/core/src/providers/`. A model the app can run therefore ships with the app; there is no row to edit and no migration to write when the registry changes.
-- **SQLite holds the overrides on top of that registry and nothing else**, at workspace and session scope. A stored value is a pin, never the definition of the thing it pins.
+- **SQLite holds the overrides on top of that registry and nothing else**, at workspace, project and session scope. A stored value is a pin, never the definition of the thing it pins.
 - **A stored pin is validated against the registry at read time.** A provider or model id the registry no longer carries falls back to the compiled default instead of reaching a spawn, so deleting a model from a catalog can never brick a workspace that pinned it.
 
 ## Database migrations
@@ -33,3 +33,18 @@ Each migration is split into segments at `PRAGMA foreign_keys` boundaries. Every
 A statement that fails with "already exists" or "duplicate column name" is treated as already applied: warned, not fatal.
 
 `registry.test.ts` is the guard. It fails CI on a duplicate version, a gap in the range, or a filename that disagrees with its registered version, and it asserts that upgrading from every intermediate version reaches the exact schema of a fresh install.
+
+When a file database has pending migrations at boot, the runner first writes a snapshot next to the database via `VACUUM INTO`: `data.db.pre-m<version>-<timestamp>.bak`, where `<version>` is the highest applied version at that moment. The two newest snapshots are kept, older ones are removed, and a snapshot failure aborts the migrations before any of them runs. This is the rollback path for irreversible migrations: from m117 onward the schema is unreadable by 0.1.x builds ([ADR 001](adr/001-workspace-project-rename.md)), so going back means restoring the snapshot file, not downgrading the app in place.
+
+## On-disk data layout
+
+Everything the app writes for itself lives under `~/.goodboy`:
+
+- `data.db` is the SQLite database; its pre-migration snapshots (`data.db.pre-m*.bak`) sit next to it.
+- `sessions/<workspace-slug>/<session-slug>-<id>/` is a session's container directory, for workspaces that did not configure their own sessions root. Repo projects materialized into the session mount as git worktrees inside the container, one directory per project.
+- `workspaces/<slug>/PROFILE.md` is the one-way projection of a workspace's profile; the database row is the source of truth and the file is never read back.
+- `file-versions/` holds the captured file version blobs.
+- `query-<pid>.sock` is the query bridge socket of a running instance ([query-bridge.md](query-bridge.md)).
+- `boot-breadcrumbs.log` records boot phase timings.
+
+Two things live with the user's code instead: a folder project's session directories under `<project-root>/sessions/`, and skills under `<project-root>/.kay/skills/` or `<project-root>/.claude/skills/`.

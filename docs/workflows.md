@@ -89,19 +89,14 @@ truncation with no model involved. The step still completes, the result is
 flagged `degraded`, and a notification offers the retry. Either way the summary
 becomes the next step's carry-forward context.
 
-## Parallel execution is still unreachable
+## Parallel step execution does not exist
 
-**Do not read the parallel plumbing as a shipped feature.** The tables, the
-Rust commands, the branch runner and the runtime gate all exist, but no
-authoring surface writes a step into a parallel group, so detection always
-returns nothing and a normal run can never route there. Its settings override
-persists and nothing reads it. A grep hit here proves the code exists, not that
-a user can reach it.
-
-The limits that would bite the moment it were reachable, and that any work to
-finish it has to answer: each branch runs on its own worktree, the merge
-strategy is fixed at last-write-wins, conflicts surface with no resolution UI,
-and the batch aborts when projected spend would cross the session soft cap.
+There is no parallel step execution. The 0.1.x plumbing that hinted at one
+(the `parallel_groups` table and its runtime) was unreachable from any
+authoring surface and was dropped in migration m122. The `parallel_agents`
+override that survives is a different feature: it gates scout fan-out, not
+step parallelism. Do not design against the dropped shape; a future parallel
+feature starts from a decision, not from that residue.
 
 ## Known limits
 
