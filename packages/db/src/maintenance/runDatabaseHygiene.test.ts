@@ -58,14 +58,62 @@ describe('runDatabaseHygiene', () => {
     });
   });
 
+  it('does not cancel a stale run that finishes after zombie selection', async () => {
+    const sourceDb = makeTestDatabase();
+    await migrate(sourceDb);
+    await seedSession({ db: sourceDb });
+    await sourceDb.execute(
+      `INSERT INTO provider_runs
+         (id, session_id, provider, model, status_kind, status_payload, created_at)
+       VALUES
+         ('racing-run', 'session-1', 'anthropic', 'model', 'streaming', '{}', ?)`,
+      [NOW - 2 * DAY_MS],
+    );
+    let hasFinishedRun = false;
+    const db: Database = {
+      exec: (sql) => sourceDb.exec(sql),
+      execute: (sql, params) => sourceDb.execute(sql, params),
+      select: async <Row>(sql: string, params?: ReadonlyArray<unknown>) => {
+        const rows = await sourceDb.select<Row>(sql, params);
+        if (sql.includes('SELECT id FROM provider_runs') && hasFinishedRun === false) {
+          hasFinishedRun = true;
+          await sourceDb.execute(
+            `UPDATE provider_runs
+             SET status_kind = 'succeeded', status_payload = '{"finishedAt":"provider-finished"}'
+             WHERE id = 'racing-run'`,
+          );
+        }
+        return rows;
+      },
+    };
+
+    const result = await runDatabaseHygiene({ db, now: NOW });
+    const rows = await sourceDb.select<{ status_kind: string; status_payload: string }>(
+      "SELECT status_kind, status_payload FROM provider_runs WHERE id = 'racing-run'",
+    );
+
+    expect(result.providerRunsCancelled).toBe(0);
+    expect(rows).toEqual([
+      { status_kind: 'succeeded', status_payload: '{"finishedAt":"provider-finished"}' },
+    ]);
+  });
+
   it('removes expired audit events, old turn events, and orphaned PR cache rows', async () => {
     const db = makeTestDatabase();
     await migrate(db);
     await seedSession({ db });
     await db.execute(
       `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, created_at)
-       VALUES ('worktree-1', 'session-1', '/tmp/worktree', 'ak/live', 0, ?)`,
+         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
+       VALUES
+         ('worktree-1', 'session-1', '/tmp/worktree', 'ak/live', 0, 'acme/repo', ?),
+         ('worktree-2', 'session-1', '/tmp/unknown-repo', 'ak/unknown-repo', 1, NULL, ?)`,
+      [NOW, NOW],
+    );
+    await db.execute(
+      `INSERT INTO session_worktrees
+         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
+       VALUES ('worktree-3', 'session-1', '/tmp/other-repo', 'ak/other-live', 2, 'other/repo', ?)`,
       [NOW],
     );
     await db.execute(
@@ -92,23 +140,34 @@ describe('runDatabaseHygiene', () => {
       `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
        VALUES
          ('ak/live', 'acme/repo', NULL, ?),
+         ('ak/live', 'other/repo', NULL, ?),
+         ('ak/unknown-repo', 'acme/repo', NULL, ?),
+         ('ak/other-live', 'acme/repo', NULL, ?),
          ('ak/orphan', 'acme/repo', NULL, ?)`,
-      [new Date(NOW).toISOString(), new Date(NOW).toISOString()],
+      [
+        new Date(NOW).toISOString(),
+        new Date(NOW).toISOString(),
+        new Date(NOW).toISOString(),
+        new Date(NOW).toISOString(),
+        new Date(NOW).toISOString(),
+      ],
     );
 
     const result = await runDatabaseHygiene({ db, now: NOW });
     const auditRows = await db.select<{ id: string }>('SELECT id FROM permission_audit_log');
     const eventRows = await db.select<{ id: string }>('SELECT id FROM turn_events');
-    const cacheRows = await db.select<{ branch: string }>('SELECT branch FROM github_pr_cache');
+    const cacheRows = await db.select<{ branch: string; repo_slug: string }>(
+      'SELECT branch, repo_slug FROM github_pr_cache',
+    );
 
     expect(result).toMatchObject({
       permissionAuditRowsDeleted: 1,
       turnEventRowsDeleted: 1,
-      githubPrCacheRowsDeleted: 1,
+      githubPrCacheRowsDeleted: 4,
     });
     expect(auditRows).toEqual([{ id: 'new-audit' }]);
     expect(eventRows).toEqual([{ id: 'new-event' }]);
-    expect(cacheRows).toEqual([{ branch: 'ak/live' }]);
+    expect(cacheRows).toEqual([{ branch: 'ak/live', repo_slug: 'acme/repo' }]);
   });
 
   it('caps audit and turn event tables to their newest rows', async () => {

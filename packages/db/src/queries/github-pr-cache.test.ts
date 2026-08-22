@@ -94,4 +94,31 @@ describe('GitHub PR cache', () => {
       { branch: 'ak/branch', repo_slug: 'other/repo' },
     ]);
   });
+
+  it('does not use a worktree with an unknown repo as a branch wildcard', async () => {
+    const db = await seed();
+    await insertSessionWorktree(db, {
+      id: 'worktree-1',
+      sessionId,
+      worktreePath: '/tmp/worktree',
+      branch: 'ak/branch',
+      parallelIndex: 0,
+      createdAt: NOW,
+    });
+    await db.execute(
+      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
+       VALUES
+         ('ak/branch', 'acme/repo', NULL, ?),
+         ('ak/branch', 'other/repo', NULL, ?)`,
+      [new Date(NOW).toISOString(), new Date(NOW).toISOString()],
+    );
+
+    await expect(
+      deleteGithubPrCacheForWorktreePath({ db, worktreePath: '/tmp/worktree' }),
+    ).resolves.toBe(0);
+    const rows = await db.select<{ repo_slug: string }>(
+      'SELECT repo_slug FROM github_pr_cache ORDER BY repo_slug',
+    );
+    expect(rows).toEqual([{ repo_slug: 'acme/repo' }, { repo_slug: 'other/repo' }]);
+  });
 });

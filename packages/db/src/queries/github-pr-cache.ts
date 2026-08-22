@@ -83,7 +83,7 @@ export const deleteGithubPrCacheForWorktreePath = async ({
        FROM session_worktrees sw
        WHERE sw.worktree_path = ?
          AND sw.branch = github_pr_cache.branch
-         AND (sw.repo_slug IS NULL OR sw.repo_slug = github_pr_cache.repo_slug)
+         AND sw.repo_slug IS github_pr_cache.repo_slug
      )`,
     [worktreePath],
   );

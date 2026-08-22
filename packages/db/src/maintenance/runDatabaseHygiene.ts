@@ -1,6 +1,6 @@
 import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import type { Database } from '../client';
-import { updateProviderRunStatus } from '../queries/provider-run';
+import { updateProviderRunStatusIfInFlight } from '../queries/provider-run';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PERMISSION_AUDIT_MAX_ROWS = 5000;
@@ -57,6 +57,7 @@ export const runDatabaseHygiene = async ({ db, now }: Params): Promise<DatabaseH
        FROM session_worktrees sw
        JOIN sessions s ON s.id = sw.session_id
        WHERE sw.branch = github_pr_cache.branch
+         AND sw.repo_slug IS github_pr_cache.repo_slug
          AND s.deleted_at IS NULL
          AND s.archived_at IS NULL
      )`,
@@ -69,14 +70,19 @@ export const runDatabaseHygiene = async ({ db, now }: Params): Promise<DatabaseH
     [providerRunCutoff],
   );
   const finishedAt = new Date(now).toISOString() as IsoDateTime;
+  let providerRunsCancelled = 0;
   for (const run of zombieProviderRuns) {
-    await updateProviderRunStatus(db, run.id, { kind: 'cancelled', finishedAt });
+    providerRunsCancelled += await updateProviderRunStatusIfInFlight({
+      db,
+      id: run.id,
+      status: { kind: 'cancelled', finishedAt },
+    });
   }
 
   return {
     permissionAuditRowsDeleted: oldPermissionRows.rowsAffected + excessPermissionRows.rowsAffected,
     turnEventRowsDeleted: oldTurnEvents.rowsAffected + excessTurnEvents.rowsAffected,
     githubPrCacheRowsDeleted: githubPrCacheRows.rowsAffected,
-    providerRunsCancelled: zombieProviderRuns.length,
+    providerRunsCancelled,
   };
 };

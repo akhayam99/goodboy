@@ -88,6 +88,32 @@ export const updateProviderRunStatus = async (
   ]);
 };
 
+type UpdateProviderRunStatusIfInFlightParams = {
+  readonly db: Database;
+  readonly id: ProviderRunId;
+  readonly status: ProviderRunStatus;
+};
+
+export const updateProviderRunStatusIfInFlight = async ({
+  db,
+  id,
+  status,
+}: UpdateProviderRunStatusIfInFlightParams): Promise<number> => {
+  const rows = await db.select<Pick<ProviderRunRow, 'status_payload'>>(
+    'SELECT status_payload FROM provider_runs WHERE id = ?',
+    [id],
+  );
+  const existingRouting = rows[0] ? extractRoutingDecision(rows[0].status_payload) : undefined;
+  const { kind, payload } = splitStatus(status, existingRouting);
+  const result = await db.execute(
+    `UPDATE provider_runs
+     SET status_kind = ?, status_payload = ?
+     WHERE id = ? AND status_kind IN ('pending', 'streaming')`,
+    [kind, payload, id],
+  );
+  return result.rowsAffected;
+};
+
 export const getProviderRunById = async (
   db: Database,
   id: ProviderRunId,
