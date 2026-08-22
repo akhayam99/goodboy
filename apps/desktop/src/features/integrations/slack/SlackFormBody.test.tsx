@@ -33,7 +33,8 @@ const PROJECT_ID = 'project-1' as ProjectId;
 
 const slackIntegration: SlackWorkspaceIntegration = {
   id: 'wi-1' as never,
-  workspaceId: PROJECT_ID,
+  workspaceId: WS_ID,
+  projectId: null,
   provider: 'slack',
   credentialId: 'cred-1' as IntegrationCredentialId,
   config: {

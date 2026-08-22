@@ -1,10 +1,10 @@
 import {
   countWorkspacesPerIntegrationCredential,
+  deleteIntegrationBinding,
   deleteIntegrationCredential,
-  deleteWorkspaceIntegration,
-  getWorkspaceIntegration,
+  getIntegrationBinding,
+  upsertIntegrationBinding,
   upsertIntegrationCredential,
-  upsertWorkspaceIntegration,
 } from '@goodboy/db';
 import type {
   IntegrationCredential,
@@ -18,7 +18,7 @@ import type {
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import type { GetFn, SetFn } from './types';
+import type { SetFn } from './types';
 
 type NewCredential = {
   readonly label: string;
@@ -27,8 +27,8 @@ type NewCredential = {
 
 type Params = {
   readonly set: SetFn;
-  readonly get: GetFn;
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
   readonly provider: WorkspaceIntegrationProvider;
   readonly credentialId: IntegrationCredentialId;
   readonly config: WorkspaceIntegrationConfig;
@@ -37,23 +37,25 @@ type Params = {
 };
 
 type RollbackParams = {
-  readonly projectId: ProjectId;
+  readonly workspaceId: WorkspaceId;
+  readonly projectId: ProjectId | null;
   readonly provider: WorkspaceIntegrationProvider;
   readonly existing: WorkspaceIntegration | null;
   readonly created: IntegrationCredential | null;
 };
 
 const rollback = async ({
+  workspaceId,
   projectId,
   provider,
   existing,
   created,
 }: RollbackParams): Promise<void> => {
   if (existing !== null) {
-    await upsertWorkspaceIntegration(tauriDatabase, existing);
+    await upsertIntegrationBinding({ db: tauriDatabase, binding: existing });
     return;
   }
-  await deleteWorkspaceIntegration(tauriDatabase, projectId, provider);
+  await deleteIntegrationBinding({ db: tauriDatabase, workspaceId, provider, projectId });
   if (created !== null) {
     await deleteIntegrationCredential(tauriDatabase, created.id);
   }
@@ -61,18 +63,15 @@ const rollback = async ({
 
 export const commitIntegrationConnection = async ({
   set,
-  get,
   workspaceId,
+  projectId,
   provider,
   credentialId,
   config,
   newCredential,
   storeSecret,
 }: Params): Promise<void> => {
-  const project = get().projects.find((candidate) => candidate.workspaceId === workspaceId);
-  if (project === undefined) {
-    throw new Error(`workspace has no projects: ${workspaceId}`);
-  }
+  const scope = projectId ?? null;
   const now = new Date().toISOString() as IsoDateTime;
   const label = newCredential === null ? '' : newCredential.label.trim();
   const created: IntegrationCredential | null =
@@ -90,23 +89,29 @@ export const commitIntegrationConnection = async ({
     await upsertIntegrationCredential(tauriDatabase, created);
   }
 
-  const existing = await getWorkspaceIntegration(tauriDatabase, project.id, provider);
-  const integration = {
+  const existing = await getIntegrationBinding({
+    db: tauriDatabase,
+    workspaceId,
+    provider,
+    projectId: scope,
+  });
+  const binding = {
     id: (existing?.id ?? crypto.randomUUID()) as WorkspaceIntegrationId,
-    workspaceId: project.id,
+    workspaceId,
+    projectId: scope,
     provider,
     config,
     credentialId,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   } as WorkspaceIntegration;
-  await upsertWorkspaceIntegration(tauriDatabase, integration);
+  await upsertIntegrationBinding({ db: tauriDatabase, binding });
 
   try {
     await storeSecret();
   } catch (storeError) {
     try {
-      await rollback({ projectId: project.id, provider, existing, created });
+      await rollback({ workspaceId, projectId: scope, provider, existing, created });
     } finally {
       throw storeError;
     }
@@ -115,7 +120,9 @@ export const commitIntegrationConnection = async ({
   const usage = await countWorkspacesPerIntegrationCredential(tauriDatabase);
   set((state) => {
     const current = state.workspaceIntegrations[workspaceId] ?? [];
-    const rest = current.filter((candidate) => candidate.provider !== provider);
+    const rest = current.filter(
+      (candidate) => candidate.provider !== provider || candidate.projectId !== scope,
+    );
     const credentials =
       created === null
         ? state.integrationCredentials
@@ -123,7 +130,7 @@ export const commitIntegrationConnection = async ({
     return {
       workspaceIntegrations: {
         ...state.workspaceIntegrations,
-        [workspaceId]: [...rest, integration],
+        [workspaceId]: [...rest, binding],
       },
       integrationCredentials: credentials,
       integrationCredentialUsage: usage,

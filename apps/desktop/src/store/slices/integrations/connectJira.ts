@@ -43,7 +43,6 @@ export const connectJira = (set: SetFn, get: GetFn) => {
     );
     await commitIntegrationConnection({
       set,
-      get,
       workspaceId,
       provider: 'jira',
       credentialId: chosen,

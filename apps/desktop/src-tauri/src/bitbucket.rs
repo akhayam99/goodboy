@@ -297,7 +297,7 @@ async fn send_no_content(
 }
 
 fn read_token(workspace_id: &str, cache: &BitbucketTokenCache) -> Result<String, BitbucketError> {
-    integration_credentials::read_for_workspace(PROVIDER, workspace_id, &cache.0)?
+    integration_credentials::read_for_binding(PROVIDER, workspace_id, None, &cache.0)?
         .ok_or_else(|| BitbucketError::NoToken(workspace_id.to_string()))
 }
 

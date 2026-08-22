@@ -174,6 +174,21 @@ export type ProjectScript = Readonly<{
 export type WorkspaceIntegrationProvider =
   'linear' | 'sentry' | 'gitlab' | 'jira' | 'bitbucket' | 'slack';
 
+export type IntegrationBindingProvider = WorkspaceIntegrationProvider | 'github';
+
+export const INTEGRATION_BINDING_PROVIDERS = [
+  'linear',
+  'sentry',
+  'gitlab',
+  'jira',
+  'bitbucket',
+  'slack',
+  'github',
+] satisfies ReadonlyArray<IntegrationBindingProvider>;
+
+export const isIntegrationBindingProvider = (value: unknown): value is IntegrationBindingProvider =>
+  typeof value === 'string' && INTEGRATION_BINDING_PROVIDERS.some((provider) => provider === value);
+
 export type LinearIntegrationConfig = Readonly<{
   workspaceUrlKey: string;
   viewerUserId: string;
@@ -216,17 +231,21 @@ export type SlackIntegrationConfig = Readonly<{
   botUserName?: string;
 }>;
 
+export type GithubIntegrationConfig = Readonly<Record<string, never>>;
+
 export type WorkspaceIntegrationConfig =
   | LinearIntegrationConfig
   | SentryIntegrationConfig
   | GitlabIntegrationConfig
   | JiraIntegrationConfig
   | BitbucketIntegrationConfig
-  | SlackIntegrationConfig;
+  | SlackIntegrationConfig
+  | GithubIntegrationConfig;
 
 type WorkspaceIntegrationBase = Readonly<{
   id: WorkspaceIntegrationId;
-  workspaceId: ProjectId;
+  workspaceId: WorkspaceId;
+  projectId: ProjectId | null;
   credentialId: IntegrationCredentialId;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
@@ -268,13 +287,20 @@ export type SlackWorkspaceIntegration = WorkspaceIntegrationBase &
     config: SlackIntegrationConfig;
   }>;
 
+export type GithubWorkspaceIntegration = WorkspaceIntegrationBase &
+  Readonly<{
+    provider: 'github';
+    config: GithubIntegrationConfig;
+  }>;
+
 export type WorkspaceIntegration =
   | LinearWorkspaceIntegration
   | SentryWorkspaceIntegration
   | GitlabWorkspaceIntegration
   | JiraWorkspaceIntegration
   | BitbucketWorkspaceIntegration
-  | SlackWorkspaceIntegration;
+  | SlackWorkspaceIntegration
+  | GithubWorkspaceIntegration;
 
 export type SessionExternalTaskProvider =
   'linear' | 'sentry' | 'gitlab' | 'github' | 'jira' | 'bitbucket' | 'slack';

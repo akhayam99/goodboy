@@ -53,10 +53,12 @@ import type {
   SessionProjectMount,
   SessionEventKind,
   SessionEventPayload,
+  IntegrationBindingProvider,
   IntegrationCredentialId,
   Workspace,
   WorkspaceId,
   WorkspaceProfile,
+  WorkspaceIntegration,
   WorkspaceIntegrationProvider,
   ProjectScriptId,
   GhTokenStatus,
@@ -259,6 +261,11 @@ export type AppActions = {
     workspaceId: WorkspaceId;
     provider: WorkspaceIntegrationProvider;
   }): Promise<void>;
+  resolveBinding(params: {
+    workspaceId: WorkspaceId;
+    provider: IntegrationBindingProvider;
+    projectId?: ProjectId;
+  }): WorkspaceIntegration | null;
   connectLinear(params: {
     workspaceId: WorkspaceId;
     token: string | null;

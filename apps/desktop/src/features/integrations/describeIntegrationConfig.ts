@@ -26,6 +26,8 @@ export const describeIntegrationConfig = ({ integration }: Params): string => {
       return `${integration.config.teamName} as ${
         integration.config.botUserName ?? integration.config.botUserId
       }`;
+    case 'github':
+      return 'github.com';
     default: {
       const unreachable: never = integration;
       return unreachable;

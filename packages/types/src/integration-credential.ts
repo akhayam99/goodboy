@@ -1,9 +1,9 @@
 import type { IntegrationCredentialId, IsoDateTime } from './ids';
-import type { WorkspaceIntegrationProvider } from './workspace';
+import type { IntegrationBindingProvider } from './workspace';
 
 export type IntegrationCredential = Readonly<{
   id: IntegrationCredentialId;
-  provider: WorkspaceIntegrationProvider;
+  provider: IntegrationBindingProvider;
   label: string;
   account: string;
   createdAt: IsoDateTime;

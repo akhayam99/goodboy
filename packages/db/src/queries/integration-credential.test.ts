@@ -3,7 +3,7 @@ import type {
   IntegrationCredential,
   IntegrationCredentialId,
   IsoDateTime,
-  ProjectId,
+  WorkspaceId,
   WorkspaceIntegration,
   WorkspaceIntegrationId,
 } from '@goodboy/types';
@@ -15,7 +15,10 @@ import {
   listIntegrationCredentials,
   upsertIntegrationCredential,
 } from './integration-credential';
-import { deleteWorkspaceIntegration, upsertWorkspaceIntegration } from './workspace-integration';
+import {
+  deleteIntegrationBindingsForProvider,
+  upsertIntegrationBinding,
+} from './integration-binding';
 
 const at = (iso: string): IsoDateTime => new Date(iso).toISOString() as IsoDateTime;
 
@@ -47,20 +50,20 @@ const makeCredential = (overrides: Partial<IntegrationCredential> = {}): Integra
   ...overrides,
 });
 
-const makeIntegration = (
+const makeBinding = (
   workspaceId: string,
   credentialId: string,
   id: string,
-): WorkspaceIntegration =>
-  ({
-    id: id as WorkspaceIntegrationId,
-    workspaceId: workspaceId as ProjectId,
-    provider: 'linear',
-    config: { workspaceUrlKey: 'acme', viewerUserId: 'u-1', viewerName: 'Grace Hopper' },
-    credentialId: credentialId as IntegrationCredentialId,
-    createdAt: at('2026-05-21T10:00:00Z'),
-    updatedAt: at('2026-05-21T10:00:00Z'),
-  }) as WorkspaceIntegration;
+): WorkspaceIntegration => ({
+  id: id as WorkspaceIntegrationId,
+  workspaceId: workspaceId as WorkspaceId,
+  projectId: null,
+  provider: 'linear',
+  config: { workspaceUrlKey: 'acme', viewerUserId: 'u-1', viewerName: 'Grace Hopper' },
+  credentialId: credentialId as IntegrationCredentialId,
+  createdAt: at('2026-05-21T10:00:00Z'),
+  updatedAt: at('2026-05-21T10:00:00Z'),
+});
 
 describe('integration_credentials queries', () => {
   it('lists every stored credential regardless of which workspace uses it', async () => {
@@ -106,8 +109,8 @@ describe('integration_credentials queries', () => {
       db,
       makeCredential({ id: 'cred-2' as IntegrationCredentialId }),
     );
-    await upsertWorkspaceIntegration(db, makeIntegration('w1', 'cred-1', 'wi-1'));
-    await upsertWorkspaceIntegration(db, makeIntegration('w2', 'cred-1', 'wi-2'));
+    await upsertIntegrationBinding({ db, binding: makeBinding('w1', 'cred-1', 'wi-1') });
+    await upsertIntegrationBinding({ db, binding: makeBinding('w2', 'cred-1', 'wi-2') });
 
     expect(await countWorkspacesPerIntegrationCredential(db)).toEqual({ 'cred-1': 2 });
   });
@@ -115,10 +118,14 @@ describe('integration_credentials queries', () => {
   it('refuses to delete a credential another workspace still references', async () => {
     const db = await seed();
     await upsertIntegrationCredential(db, makeCredential());
-    await upsertWorkspaceIntegration(db, makeIntegration('w1', 'cred-1', 'wi-1'));
-    await upsertWorkspaceIntegration(db, makeIntegration('w2', 'cred-1', 'wi-2'));
+    await upsertIntegrationBinding({ db, binding: makeBinding('w1', 'cred-1', 'wi-1') });
+    await upsertIntegrationBinding({ db, binding: makeBinding('w2', 'cred-1', 'wi-2') });
 
-    await deleteWorkspaceIntegration(db, 'w1' as ProjectId, 'linear');
+    await deleteIntegrationBindingsForProvider({
+      db,
+      workspaceId: 'w1' as WorkspaceId,
+      provider: 'linear',
+    });
 
     await expect(
       deleteIntegrationCredential(db, 'cred-1' as IntegrationCredentialId),
@@ -129,9 +136,13 @@ describe('integration_credentials queries', () => {
   it('deletes a credential once the last workspace has let it go', async () => {
     const db = await seed();
     await upsertIntegrationCredential(db, makeCredential());
-    await upsertWorkspaceIntegration(db, makeIntegration('w1', 'cred-1', 'wi-1'));
+    await upsertIntegrationBinding({ db, binding: makeBinding('w1', 'cred-1', 'wi-1') });
 
-    await deleteWorkspaceIntegration(db, 'w1' as ProjectId, 'linear');
+    await deleteIntegrationBindingsForProvider({
+      db,
+      workspaceId: 'w1' as WorkspaceId,
+      provider: 'linear',
+    });
     await deleteIntegrationCredential(db, 'cred-1' as IntegrationCredentialId);
 
     expect(await listIntegrationCredentials(db)).toEqual([]);
@@ -168,8 +179,8 @@ describe('integration_credentials queries', () => {
   it('keeps the credential when a workspace is deleted out from under it', async () => {
     const db = await seed();
     await upsertIntegrationCredential(db, makeCredential());
-    await upsertWorkspaceIntegration(db, makeIntegration('w1', 'cred-1', 'wi-1'));
-    await upsertWorkspaceIntegration(db, makeIntegration('w2', 'cred-1', 'wi-2'));
+    await upsertIntegrationBinding({ db, binding: makeBinding('w1', 'cred-1', 'wi-1') });
+    await upsertIntegrationBinding({ db, binding: makeBinding('w2', 'cred-1', 'wi-2') });
 
     await db.execute("DELETE FROM workspaces WHERE id = 'w1'");
 

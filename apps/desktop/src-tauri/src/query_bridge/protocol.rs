@@ -19,6 +19,8 @@ pub struct QueryRequest {
     pub workspace_id: String,
     #[serde(default)]
     pub session_id: String,
+    #[serde(default)]
+    pub project: String,
     pub provider: String,
     pub verb: String,
     #[serde(default)]
@@ -644,6 +646,7 @@ pub fn parse_argv(argv: &[String]) -> Result<ArgvOutcome, String> {
     for (name, _) in &flags {
         let known = spec.params.iter().any(|param| param.name == *name)
             || *name == "workspace"
+            || *name == "project"
             || *name == "json";
         if !known {
             return Err(format!("unknown option --{}\nusage: {}", name, usage(spec)));
@@ -704,6 +707,9 @@ pub fn help_text(provider: Option<&str>) -> String {
                 "the workspace comes from {}; override it with --workspace <id>",
                 WORKSPACE_ENV
             ));
+            lines.push(
+                "scope a verb to one project of the workspace with --project <name>".to_string(),
+            );
         }
     }
     lines.join("\n")
@@ -902,6 +908,23 @@ mod tests {
         };
 
         assert!(parsed.args.get("workspace").is_none());
+    }
+
+    #[test]
+    fn the_project_scope_override_is_accepted_on_a_verb_without_that_argument() {
+        let argv = vec![
+            "linear".to_string(),
+            "issue".to_string(),
+            "ENG-1".to_string(),
+            "--project".to_string(),
+            "app".to_string(),
+        ];
+
+        let ArgvOutcome::Parsed(parsed) = parse_argv(&argv).expect("parsed") else {
+            panic!("expected a parsed command");
+        };
+
+        assert!(parsed.args.get("project").is_none());
     }
 
     #[test]

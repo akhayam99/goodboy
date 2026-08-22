@@ -6,7 +6,7 @@ import {
 } from '../../../features/integrations/sentry/client';
 import { commitIntegrationConnection } from './commitIntegrationConnection';
 import { configFromSentry } from './configFromSentry';
-import type { GetFn, SetFn } from './types';
+import type { SetFn } from './types';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -16,7 +16,7 @@ type Params = {
   readonly credentialId: IntegrationCredentialId | null;
 };
 
-export const connectSentry = (set: SetFn, get: GetFn) => {
+export const connectSentry = (set: SetFn) => {
   return async ({
     workspaceId,
     token,
@@ -30,7 +30,6 @@ export const connectSentry = (set: SetFn, get: GetFn) => {
     const config = configFromSentry(projectInfo);
     await commitIntegrationConnection({
       set,
-      get,
       workspaceId,
       provider: 'sentry',
       credentialId: chosen,

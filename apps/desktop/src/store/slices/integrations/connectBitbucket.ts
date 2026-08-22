@@ -42,7 +42,6 @@ export const connectBitbucket = (set: SetFn, get: GetFn) => {
     );
     await commitIntegrationConnection({
       set,
-      get,
       workspaceId,
       provider: 'bitbucket',
       credentialId: chosen,

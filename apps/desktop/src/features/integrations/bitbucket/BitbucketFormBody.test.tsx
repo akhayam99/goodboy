@@ -29,7 +29,8 @@ const PROJECT_ID = 'project-1' as ProjectId;
 
 const bitbucketIntegration: BitbucketWorkspaceIntegration = {
   id: 'wi-1' as never,
-  workspaceId: PROJECT_ID,
+  workspaceId: WS_ID,
+  projectId: null,
   provider: 'bitbucket',
   credentialId: 'cred-1' as IntegrationCredentialId,
   config: {

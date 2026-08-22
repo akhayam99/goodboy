@@ -36,11 +36,12 @@ export {
   deleteProject,
 } from './queries/project';
 export {
-  upsertWorkspaceIntegration,
-  listIntegrationsForWorkspace,
-  getWorkspaceIntegration,
-  deleteWorkspaceIntegration,
-} from './queries/workspace-integration';
+  upsertIntegrationBinding,
+  listIntegrationBindingsForWorkspace,
+  getIntegrationBinding,
+  deleteIntegrationBinding,
+  deleteIntegrationBindingsForProvider,
+} from './queries/integration-binding';
 export {
   listIntegrationCredentials,
   upsertIntegrationCredential,

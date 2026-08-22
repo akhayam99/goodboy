@@ -1,4 +1,4 @@
-import type { WorkspaceIntegrationProvider } from '@goodboy/types';
+import type { IntegrationBindingProvider, WorkspaceIntegrationProvider } from '@goodboy/types';
 
 export const QUERY_BRIDGE_VERBS: Readonly<
   Record<WorkspaceIntegrationProvider, ReadonlyArray<string>>
@@ -53,7 +53,7 @@ export const QUERY_BRIDGE_VERBS: Readonly<
 };
 
 type GuardParams = {
-  readonly providers: ReadonlyArray<WorkspaceIntegrationProvider>;
+  readonly providers: ReadonlyArray<IntegrationBindingProvider>;
   readonly isBridgeServing: boolean;
 };
 

@@ -227,7 +227,7 @@ fn encode_project_path(project_path: &str) -> String {
 }
 
 fn read_token(workspace_id: &str, cache: &GitlabTokenCache) -> Result<String, GitlabError> {
-    integration_credentials::read_for_workspace(PROVIDER, workspace_id, &cache.0)?
+    integration_credentials::read_for_binding(PROVIDER, workspace_id, None, &cache.0)?
         .ok_or_else(|| GitlabError::NoToken(workspace_id.to_string()))
 }
 

@@ -33,8 +33,11 @@ export type {
   ContextSlot,
   ContextSlotAuthor,
   ContextSlotHistoryEntry,
+  GithubIntegrationConfig,
+  GithubWorkspaceIntegration,
   GitlabIntegrationConfig,
   GitlabWorkspaceIntegration,
+  IntegrationBindingProvider,
   JiraIntegrationConfig,
   JiraWorkspaceIntegration,
   LinearIntegrationConfig,
@@ -65,7 +68,12 @@ export type {
   WorkspaceIntegrationConfig,
   WorkspaceIntegrationProvider,
 } from './workspace';
-export { isSessionExternalTaskProvider, SESSION_EXTERNAL_TASK_PROVIDERS } from './workspace';
+export {
+  isIntegrationBindingProvider,
+  isSessionExternalTaskProvider,
+  INTEGRATION_BINDING_PROVIDERS,
+  SESSION_EXTERNAL_TASK_PROVIDERS,
+} from './workspace';
 export type {
   AttachmentInput,
   GoalAttachment,

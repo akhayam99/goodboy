@@ -128,6 +128,7 @@ import { m127AddWorkflowReferenceForeignKeys } from './m127-add-workflow-referen
 import { m128NormalizeGoalAttachmentOwners } from './m128-normalize-goal-attachment-owners';
 import { m129ImpactQueryIndexes } from './m129-impact-query-indexes';
 import { m130SessionEventLazyProjects } from './m130-session-event-lazy-projects';
+import { m131IntegrationBindings } from './m131-integration-bindings';
 
 export type Migration = {
   readonly version: number;
@@ -265,4 +266,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 128, sql: m128NormalizeGoalAttachmentOwners },
   { version: 129, sql: m129ImpactQueryIndexes },
   { version: 130, sql: m130SessionEventLazyProjects },
+  { version: 131, sql: m131IntegrationBindings },
 ];

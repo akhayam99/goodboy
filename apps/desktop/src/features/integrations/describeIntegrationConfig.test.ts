@@ -22,7 +22,8 @@ type Params = {
 const integration = ({ provider, config }: Params): WorkspaceIntegration =>
   ({
     id: 'integration-1' as WorkspaceIntegrationId,
-    workspaceId: PROJECT_ID,
+    workspaceId: WS,
+    projectId: null,
     provider,
     config,
     credentialId: `goodboy.workspace.${WS}.${provider}` as IntegrationCredentialId,

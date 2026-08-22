@@ -95,7 +95,8 @@ const PROJECT_ID = 'project-1' as ProjectId;
 const integration = (provider: 'linear' | 'sentry' | 'gitlab'): WorkspaceIntegration =>
   ({
     id: `${provider}-1`,
-    workspaceId: PROJECT_ID,
+    workspaceId: WORKSPACE_ID,
+    projectId: null,
     provider,
     config: { host: 'https://gitlab.com' },
   }) as WorkspaceIntegration;

@@ -1,16 +1,11 @@
-import { listIntegrationsForWorkspace } from '@goodboy/db';
+import { listIntegrationBindingsForWorkspace } from '@goodboy/db';
 import type { WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import type { GetFn, SetFn } from './types';
+import type { SetFn } from './types';
 
-export const loadIntegrations = (set: SetFn, get: GetFn) => {
+export const loadIntegrations = (set: SetFn) => {
   return async (workspaceId: WorkspaceId) => {
-    const projects = get().projects.filter((project) => project.workspaceId === workspaceId);
-    const rows = (
-      await Promise.all(
-        projects.map((project) => listIntegrationsForWorkspace(tauriDatabase, project.id)),
-      )
-    ).flat();
+    const rows = await listIntegrationBindingsForWorkspace({ db: tauriDatabase, workspaceId });
     set((state) => ({
       workspaceIntegrations: { ...state.workspaceIntegrations, [workspaceId]: rows },
     }));

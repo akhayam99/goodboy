@@ -9,20 +9,22 @@ import { disconnectIntegration } from './disconnectIntegration';
 import { forgetIntegrationCredential } from './forgetIntegrationCredential';
 import { loadIntegrationCredentials } from './loadIntegrationCredentials';
 import { loadIntegrations } from './loadIntegrations';
+import { resolveBinding } from './resolveBinding';
 import type { GetFn, SetFn } from './types';
 
 export const createIntegrationsSlice = (set: SetFn, get: GetFn) => {
   return {
-    loadIntegrations: loadIntegrations(set, get),
+    loadIntegrations: loadIntegrations(set),
     loadIntegrationCredentials: loadIntegrationCredentials(set),
     forgetIntegrationCredential: forgetIntegrationCredential(set, get),
-    disconnectIntegration: disconnectIntegration(set, get),
-    connectLinear: connectLinear(set, get),
-    connectSentry: connectSentry(set, get),
+    disconnectIntegration: disconnectIntegration(set),
+    resolveBinding: resolveBinding(get),
+    connectLinear: connectLinear(set),
+    connectSentry: connectSentry(set),
     connectGitlab: connectGitlab(set, get),
     connectJira: connectJira(set, get),
     connectBitbucket: connectBitbucket(set, get),
-    connectSlack: connectSlack(set, get),
+    connectSlack: connectSlack(set),
     disconnectGithub: disconnectGithub(),
   };
 };

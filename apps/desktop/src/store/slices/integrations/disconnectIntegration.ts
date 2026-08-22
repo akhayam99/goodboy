@@ -1,19 +1,19 @@
-import { countWorkspacesPerIntegrationCredential, deleteWorkspaceIntegration } from '@goodboy/db';
+import {
+  countWorkspacesPerIntegrationCredential,
+  deleteIntegrationBindingsForProvider,
+} from '@goodboy/db';
 import type { WorkspaceId, WorkspaceIntegrationProvider } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import type { GetFn, SetFn } from './types';
+import type { SetFn } from './types';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
   readonly provider: WorkspaceIntegrationProvider;
 };
 
-export const disconnectIntegration = (set: SetFn, get: GetFn) => {
+export const disconnectIntegration = (set: SetFn) => {
   return async ({ workspaceId, provider }: Params): Promise<void> => {
-    const projects = get().projects.filter((project) => project.workspaceId === workspaceId);
-    await Promise.all(
-      projects.map((project) => deleteWorkspaceIntegration(tauriDatabase, project.id, provider)),
-    );
+    await deleteIntegrationBindingsForProvider({ db: tauriDatabase, workspaceId, provider });
     const integrationCredentialUsage = await countWorkspacesPerIntegrationCredential(tauriDatabase);
     set((state) => ({
       workspaceIntegrations: {

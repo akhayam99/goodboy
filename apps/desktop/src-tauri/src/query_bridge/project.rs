@@ -187,6 +187,7 @@ mod tests {
         QueryRequest {
             workspace_id: "ws-1".to_string(),
             session_id: "session-1".to_string(),
+            project: String::new(),
             provider: "project".to_string(),
             verb: "materialize".to_string(),
             args: args

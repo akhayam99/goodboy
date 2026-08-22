@@ -36,7 +36,8 @@ const PROJECT_ID = 'project-1' as ProjectId;
 
 const gitlabIntegration: GitlabWorkspaceIntegration = {
   id: 'wi-1' as never,
-  workspaceId: PROJECT_ID,
+  workspaceId: WS_ID,
+  projectId: null,
   provider: 'gitlab',
   credentialId: 'cred-1' as IntegrationCredentialId,
   config: { userName: 'octo', userId: '42', host: 'https://gitlab.example.com' },

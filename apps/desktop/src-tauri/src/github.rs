@@ -5,9 +5,10 @@ use std::time::{Duration, Instant};
 use serde::Serialize;
 use thiserror::Error;
 
+use crate::integration_credentials;
 use crate::secrets;
 
-const TOKEN_KEY: &str = "github.pat";
+const GITHUB_PROVIDER: &str = "github";
 
 const EMPTY_TOKEN_MESSAGE: &str = "Paste a personal API key first.";
 const BAD_CREDENTIALS_MESSAGE: &str =
@@ -134,6 +135,8 @@ pub enum GithubError {
     Spawn(#[from] std::io::Error),
     #[error("secret store error: {0}")]
     Secret(#[from] secrets::SecretError),
+    #[error("{0}")]
+    Credential(String),
     #[error("gh validation failed: {0}")]
     Validation(String),
     #[error("{0}")]
@@ -286,39 +289,41 @@ fn parse_version(stdout: &str) -> Option<String> {
         .and_then(|rest| rest.split_whitespace().next().map(|s| s.to_string()))
 }
 
-fn token_key(workspace_id: Option<&str>) -> String {
-    match workspace_id {
-        Some(id) if !id.is_empty() => format!("{TOKEN_KEY}.{id}"),
-        _ => TOKEN_KEY.to_string(),
-    }
-}
-
 fn read_token_from<F>(
     workspace_id: Option<&str>,
     member_workspace_id: Option<&str>,
-    mut reader: F,
+    mut resolve: F,
 ) -> Option<String>
 where
-    F: FnMut(&str) -> Option<String>,
+    F: FnMut(Option<&str>) -> Option<String>,
 {
-    let mut keys = Vec::new();
+    let mut scopes: Vec<&str> = Vec::new();
     for id in [workspace_id, member_workspace_id]
         .into_iter()
         .flatten()
         .filter(|id| !id.is_empty())
     {
-        let key = token_key(Some(id));
-        if !keys.contains(&key) {
-            keys.push(key);
+        if !scopes.contains(&id) {
+            scopes.push(id);
         }
     }
-    keys.push(TOKEN_KEY.to_string());
-    keys.into_iter().find_map(|key| reader(&key))
+    for scope in scopes {
+        if let Some(token) = resolve(Some(scope)) {
+            return Some(token);
+        }
+    }
+    resolve(None)
 }
 
 fn read_token(workspace_id: Option<&str>, member_workspace_id: Option<&str>) -> Option<String> {
-    read_token_from(workspace_id, member_workspace_id, |key| {
-        secrets::read(key).ok().flatten()
+    let cache = integration_credentials::SecretCache::default();
+    read_token_from(workspace_id, member_workspace_id, |scope| match scope {
+        Some(id) => integration_credentials::read_for_binding(GITHUB_PROVIDER, id, None, &cache)
+            .ok()
+            .flatten(),
+        None => integration_credentials::read_global(GITHUB_PROVIDER, &cache)
+            .ok()
+            .flatten(),
     })
 }
 
@@ -349,7 +354,7 @@ fn status_blocking(workspace_id: Option<String>, member_workspace_id: Option<Str
     let token_ref = pat.as_deref();
     let scoped = ws
         .filter(|s| !s.is_empty())
-        .map(|id| matches!(secrets::read(&token_key(Some(id))), Ok(Some(_))))
+        .map(integration_credentials::github_scoped)
         .unwrap_or(false);
 
     let user = run_gh(&["api", "user", "-q", ".login"], None, token_ref)
@@ -410,7 +415,8 @@ pub async fn gh_set_token(
         validate_token_with(&token, |candidate| {
             run_gh(&["api", "user", "-q", ".login"], None, Some(candidate))
         })?;
-        secrets::set(&token_key(workspace_id.as_deref()), &token)?;
+        integration_credentials::github_store_token(workspace_id.as_deref(), &token)
+            .map_err(|e| GithubError::Credential(e.to_string()))?;
         Ok(status_blocking(workspace_id, None))
     })
     .await
@@ -419,7 +425,8 @@ pub async fn gh_set_token(
 
 #[tauri::command]
 pub fn gh_clear_token(workspace_id: Option<String>) -> Result<(), GithubError> {
-    secrets::clear(&token_key(workspace_id.as_deref()))?;
+    integration_credentials::github_clear_token(workspace_id.as_deref())
+        .map_err(|e| GithubError::Credential(e.to_string()))?;
     Ok(())
 }
 
@@ -488,9 +495,9 @@ pub async fn gh_pr_diff(
 mod tests {
     use super::{
         command_succeeds, read_token_from, run_binary, run_with_timeout, token_failure_message,
-        token_key, validate_token_with, GhRunResult, GithubError, BAD_CREDENTIALS_MESSAGE,
+        validate_token_with, GhRunResult, GithubError, BAD_CREDENTIALS_MESSAGE,
         CERTIFICATE_MESSAGE, EMPTY_TOKEN_MESSAGE, EXPIRED_MESSAGE, GH_PROBE_TIMEOUT, GH_TIMEOUT,
-        MISSING_SCOPE_MESSAGE, NETWORK_MESSAGE, RATE_LIMIT_MESSAGE, TOKEN_KEY, UNVERIFIED_MESSAGE,
+        MISSING_SCOPE_MESSAGE, NETWORK_MESSAGE, RATE_LIMIT_MESSAGE, UNVERIFIED_MESSAGE,
     };
     use std::process::Command;
     use std::time::{Duration, Instant};
@@ -819,57 +826,75 @@ mod tests {
 
     #[test]
     fn token_fallback_prefers_workspace_then_member_then_global() {
-        let workspace_key = token_key(Some("composite"));
-        let member_key = token_key(Some("member"));
-        let mut reads = Vec::new();
-        let token = read_token_from(Some("composite"), Some("member"), |key| {
-            reads.push(key.to_string());
-            (key == member_key).then(|| "member-token".to_string())
+        let mut reads: Vec<Option<String>> = Vec::new();
+        let token = read_token_from(Some("composite"), Some("member"), |scope| {
+            reads.push(scope.map(str::to_string));
+            (scope == Some("member")).then(|| "member-token".to_string())
         });
 
         assert_eq!(token.as_deref(), Some("member-token"));
-        assert_eq!(reads, vec![workspace_key, member_key]);
+        assert_eq!(
+            reads,
+            vec![Some("composite".to_string()), Some("member".to_string())]
+        );
 
-        let mut global_reads = Vec::new();
-        let global = read_token_from(Some("composite"), Some("member"), |key| {
-            global_reads.push(key.to_string());
-            (key == TOKEN_KEY).then(|| "global-token".to_string())
+        let mut global_reads: Vec<Option<String>> = Vec::new();
+        let global = read_token_from(Some("composite"), Some("member"), |scope| {
+            global_reads.push(scope.map(str::to_string));
+            scope.is_none().then(|| "global-token".to_string())
         });
 
         assert_eq!(global.as_deref(), Some("global-token"));
         assert_eq!(
             global_reads,
             vec![
-                token_key(Some("composite")),
-                token_key(Some("member")),
-                TOKEN_KEY.to_string(),
+                Some("composite".to_string()),
+                Some("member".to_string()),
+                None,
             ]
         );
     }
 
     #[test]
-    fn clearing_one_workspace_token_leaves_the_global_key_serving_that_workspace() {
-        let cleared = token_key(Some("composite"));
-        let mut reads = Vec::new();
-        let token = read_token_from(Some("composite"), None, |key| {
-            reads.push(key.to_string());
-            (key == TOKEN_KEY).then(|| "global-token".to_string())
+    fn clearing_one_workspace_binding_leaves_the_global_credential_serving_it() {
+        let mut reads: Vec<Option<String>> = Vec::new();
+        let token = read_token_from(Some("composite"), None, |scope| {
+            reads.push(scope.map(str::to_string));
+            scope.is_none().then(|| "global-token".to_string())
         });
 
         assert_eq!(token.as_deref(), Some("global-token"));
-        assert_eq!(reads, vec![cleared, TOKEN_KEY.to_string()]);
+        assert_eq!(reads, vec![Some("composite".to_string()), None]);
     }
 
     #[test]
     fn explicit_workspace_token_wins_before_member() {
-        let workspace_key = token_key(Some("composite"));
-        let mut reads = Vec::new();
-        let token = read_token_from(Some("composite"), Some("member"), |key| {
-            reads.push(key.to_string());
-            (key == workspace_key).then(|| "workspace-token".to_string())
+        let mut reads: Vec<Option<String>> = Vec::new();
+        let token = read_token_from(Some("composite"), Some("member"), |scope| {
+            reads.push(scope.map(str::to_string));
+            (scope == Some("composite")).then(|| "workspace-token".to_string())
         });
 
         assert_eq!(token.as_deref(), Some("workspace-token"));
-        assert_eq!(reads, vec![workspace_key]);
+        assert_eq!(reads, vec![Some("composite".to_string())]);
+    }
+
+    #[test]
+    fn a_blank_or_repeated_scope_never_reaches_the_resolver() {
+        let mut reads: Vec<Option<String>> = Vec::new();
+        let token = read_token_from(Some(""), Some("member"), |scope| {
+            reads.push(scope.map(str::to_string));
+            None
+        });
+
+        assert_eq!(token, None);
+        assert_eq!(reads, vec![Some("member".to_string()), None]);
+
+        let mut dedup_reads: Vec<Option<String>> = Vec::new();
+        read_token_from(Some("same"), Some("same"), |scope| {
+            dedup_reads.push(scope.map(str::to_string));
+            None
+        });
+        assert_eq!(dedup_reads, vec![Some("same".to_string()), None]);
     }
 }

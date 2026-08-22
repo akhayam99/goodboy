@@ -33,6 +33,7 @@ import type {
   JiraIntegrationConfig,
   SessionExternalTaskProvider,
   WorkspaceId,
+  IntegrationBindingProvider,
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 import { linearFetchAssignedIssues, type LinearIssue } from '../integrations/linear/client';
@@ -256,7 +257,7 @@ function jiraConfigFor(workspaceId: WorkspaceId): JiraIntegrationConfig | undefi
   return row && row.provider === 'jira' ? row.config : undefined;
 }
 
-function connectedProviders(workspaceId: WorkspaceId): ReadonlySet<WorkspaceIntegrationProvider> {
+function connectedProviders(workspaceId: WorkspaceId): ReadonlySet<IntegrationBindingProvider> {
   const rows = useAppStore.getState().workspaceIntegrations[workspaceId] ?? [];
   return new Set(rows.map((r) => r.provider));
 }

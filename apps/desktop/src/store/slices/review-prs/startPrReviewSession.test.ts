@@ -88,7 +88,8 @@ const buildProject = (overrides: Partial<Project> = {}): Project => ({
 const buildGitlabIntegration = (): GitlabWorkspaceIntegration => {
   return {
     id: 'wi-1' as WorkspaceIntegrationId,
-    workspaceId: PROJECT_ID,
+    workspaceId: WS_ID,
+    projectId: null,
     provider: 'gitlab',
     credentialId: 'k' as IntegrationCredentialId,
     config: { userName: 'nbro', userId: '1', host: 'https://gitlab.com' },
