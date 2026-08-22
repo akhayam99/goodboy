@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
   Agent,
@@ -16,6 +16,7 @@ import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import type { Database } from '../client';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
+import { runRuntimeMigrations, type MigrationSnapshotStorage } from './runRuntimeMigrations';
 import { migrations, type Migration } from './index';
 import { getWorkspaceById, insertWorkspace } from '../queries/workspace';
 import { getSessionById, insertSession } from '../queries/session';
@@ -84,6 +85,167 @@ const makeForwardingDatabase = ({
       database.select<T>(sql, params),
   };
 };
+
+type MakeSnapshotDatabaseParams = {
+  readonly database: Database;
+  readonly onVacuum?: (sql: string) => Promise<void>;
+  readonly statements?: string[];
+};
+
+const makeSnapshotDatabase = ({
+  database,
+  onVacuum = async () => undefined,
+  statements = [],
+}: MakeSnapshotDatabaseParams): Database => ({
+  exec: async (sql) => {
+    statements.push(sql);
+    if (sql.startsWith('VACUUM INTO')) {
+      await onVacuum(sql);
+      return;
+    }
+    await database.exec(sql);
+  },
+  execute: async (sql, params) => {
+    statements.push(sql);
+    return database.execute(sql, params);
+  },
+  select: async <T>(sql: string, params?: ReadonlyArray<unknown>) =>
+    database.select<T>(sql, params),
+});
+
+describe('runRuntimeMigrations', () => {
+  const migration = {
+    version: 1,
+    sql: 'CREATE TABLE snapshot_test (id INTEGER PRIMARY KEY);',
+  } satisfies Migration;
+
+  it('creates a versioned snapshot before the first pending migration', async () => {
+    const database = makeTestDatabase();
+    await migrate(database, [migration]);
+    const pendingMigration = {
+      version: 2,
+      sql: 'CREATE TABLE pending_snapshot_test (id INTEGER PRIMARY KEY);',
+    } satisfies Migration;
+    const statements: string[] = [];
+    const db = makeSnapshotDatabase({ database, statements });
+    const storage = {
+      list: vi.fn(async () => ['/tmp/data.db.pre-m1-20260822T120000000Z.bak']),
+      remove: vi.fn(async () => undefined),
+    } satisfies MigrationSnapshotStorage;
+
+    await runRuntimeMigrations({
+      databasePath: '/tmp/data.db',
+      db,
+      migrations: [migration, pendingMigration],
+      now: () => new Date('2026-08-22T12:00:00.000Z'),
+      storage,
+    });
+
+    const snapshotIndex = statements.findIndex((statement) => statement.startsWith('VACUUM INTO'));
+    const migrationIndex = statements.findIndex((statement) =>
+      statement.includes('CREATE TABLE pending_snapshot_test'),
+    );
+    expect(statements[snapshotIndex]).toBe(
+      "VACUUM INTO '/tmp/data.db.pre-m1-20260822T120000000Z.bak'",
+    );
+    expect(snapshotIndex).toBeLessThan(migrationIndex);
+  });
+
+  it('skips snapshots when there are no pending migrations', async () => {
+    const database = makeTestDatabase();
+    await migrate(database, [migration]);
+    const statements: string[] = [];
+    const storage = {
+      list: vi.fn(async () => []),
+      remove: vi.fn(async () => undefined),
+    } satisfies MigrationSnapshotStorage;
+
+    await runRuntimeMigrations({
+      databasePath: '/tmp/data.db',
+      db: makeSnapshotDatabase({ database, statements }),
+      migrations: [migration],
+      storage,
+    });
+
+    expect(statements.some((statement) => statement.startsWith('VACUUM INTO'))).toBe(false);
+    expect(storage.list).not.toHaveBeenCalled();
+  });
+
+  it.each([null, '', ':memory:'])(
+    'skips snapshots for the non-file path %s',
+    async (databasePath) => {
+      const database = makeTestDatabase();
+      const statements: string[] = [];
+      const storage = {
+        list: vi.fn(async () => []),
+        remove: vi.fn(async () => undefined),
+      } satisfies MigrationSnapshotStorage;
+
+      await runRuntimeMigrations({
+        databasePath,
+        db: makeSnapshotDatabase({ database, statements }),
+        migrations: [migration],
+        storage,
+      });
+
+      expect(statements.some((statement) => statement.startsWith('VACUUM INTO'))).toBe(false);
+      expect(storage.list).not.toHaveBeenCalled();
+    },
+  );
+
+  it('aborts before applying migrations when snapshot creation fails', async () => {
+    const database = makeTestDatabase();
+    const db = makeSnapshotDatabase({
+      database,
+      onVacuum: async () => {
+        throw new Error('disk full');
+      },
+    });
+    const storage = {
+      list: vi.fn(async () => []),
+      remove: vi.fn(async () => undefined),
+    } satisfies MigrationSnapshotStorage;
+
+    await expect(
+      runRuntimeMigrations({
+        databasePath: '/tmp/data.db',
+        db,
+        migrations: [migration],
+        storage,
+      }),
+    ).rejects.toThrow('Database migration snapshot failed; migrations were not started: disk full');
+    const tables = await database.select<{ name: string }>(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'snapshot_test'",
+    );
+    expect(tables).toEqual([]);
+  });
+
+  it('retains the two newest migration snapshots', async () => {
+    const database = makeTestDatabase();
+    const remove = vi.fn(async () => undefined);
+    const storage = {
+      list: vi.fn(async () => [
+        '/tmp/data.db.pre-m120-20260820T120000000Z.bak',
+        '/tmp/data.db.pre-m9-20260821T120000000Z.bak',
+        '/tmp/data.db.pre-m0-20260822T120000000Z.bak',
+      ]),
+      remove,
+    } satisfies MigrationSnapshotStorage;
+
+    await runRuntimeMigrations({
+      databasePath: '/tmp/data.db',
+      db: makeSnapshotDatabase({ database }),
+      migrations: [migration],
+      now: () => new Date('2026-08-22T12:00:00.000Z'),
+      storage,
+    });
+
+    expect(remove).toHaveBeenCalledOnce();
+    expect(remove).toHaveBeenCalledWith({
+      path: '/tmp/data.db.pre-m120-20260820T120000000Z.bak',
+    });
+  });
+});
 
 describe('migrate', () => {
   it('applies all migrations on a fresh db', async () => {

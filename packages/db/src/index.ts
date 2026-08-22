@@ -1,6 +1,10 @@
 export type { Database } from './client';
 
 export { migrate, type MigrateResult } from './migrations/runner';
+export {
+  runRuntimeMigrations,
+  type MigrationSnapshotStorage,
+} from './migrations/runRuntimeMigrations';
 export { migrations, type Migration } from './migrations';
 export { runDatabaseHygiene, type DatabaseHygieneResult } from './maintenance/runDatabaseHygiene';
 
