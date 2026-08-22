@@ -1,6 +1,10 @@
 import type { ProviderRunId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { deleteSession as deleteSessionFromDb, listWorktreesForSession } from '@goodboy/db';
+import {
+  deleteGithubPrCacheForWorktreePath,
+  deleteSession as deleteSessionFromDb,
+  listWorktreesForSession,
+} from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { removeSessionDirectory, removeWorktree } from '../../../features/worktree/worktree';
@@ -45,6 +49,15 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         } catch (error) {
           memberCleanupFailures.push(error);
           cleanupFailures.push(error);
+          continue;
+        }
+        try {
+          await deleteGithubPrCacheForWorktreePath({
+            db: tauriDatabase,
+            worktreePath: mount.worktreePath,
+          });
+        } catch (error) {
+          cleanupFailures.push(error);
         }
       }
       const containerPath = rows.find((row) => row.mountWorkspaceId == null)?.worktreePath;
@@ -59,10 +72,19 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
     if (workspace?.kind !== 'composite' && workspace != null && !isBranchless) {
       const worktreePath = paths[0];
       if (worktreePath != null) {
+        let isWorktreeRemoved = false;
         try {
           await removeWorktree(workspace.rootPath, worktreePath);
+          isWorktreeRemoved = true;
         } catch (error) {
           cleanupFailures.push(error);
+        }
+        if (isWorktreeRemoved) {
+          try {
+            await deleteGithubPrCacheForWorktreePath({ db: tauriDatabase, worktreePath });
+          } catch (error) {
+            cleanupFailures.push(error);
+          }
         }
       }
     }

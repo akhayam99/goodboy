@@ -8,6 +8,8 @@ type Row = {
   fetched_at: string;
 };
 
+const CACHE_TTL_MS = 10 * 60 * 1000;
+
 function toDomain(row: Row): GithubPrCacheEntry {
   return {
     branch: row.branch,
@@ -30,7 +32,14 @@ export const getGithubPrCache = async (
     [repoSlug, branch],
   );
   const first = rows[0];
-  return first ? toDomain(first) : null;
+  if (first === undefined) {
+    return null;
+  }
+  const fetchedAt = Date.parse(first.fetched_at);
+  if (Number.isNaN(fetchedAt) || Date.now() - fetchedAt > CACHE_TTL_MS) {
+    return null;
+  }
+  return toDomain(first);
 };
 
 export const upsertGithubPrCache = async (
@@ -56,4 +65,27 @@ export const deleteGithubPrCache = async (
     repoSlug,
     branch,
   ]);
+};
+
+type DeleteForWorktreePathParams = {
+  readonly db: Database;
+  readonly worktreePath: string;
+};
+
+export const deleteGithubPrCacheForWorktreePath = async ({
+  db,
+  worktreePath,
+}: DeleteForWorktreePathParams): Promise<number> => {
+  const result = await db.execute(
+    `DELETE FROM github_pr_cache
+     WHERE EXISTS (
+       SELECT 1
+       FROM session_worktrees sw
+       WHERE sw.worktree_path = ?
+         AND sw.branch = github_pr_cache.branch
+         AND (sw.repo_slug IS NULL OR sw.repo_slug = github_pr_cache.repo_slug)
+     )`,
+    [worktreePath],
+  );
+  return result.rowsAffected;
 };

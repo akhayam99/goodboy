@@ -7,6 +7,7 @@ const {
   listWorktreesForSession,
   updateSessionWorktreeBranch,
   deleteSession,
+  deleteGithubPrCacheForWorktreePath,
   detectRepoSlug,
   gitPush,
   tauriGhRunner,
@@ -37,6 +38,7 @@ const {
   ]),
   updateSessionWorktreeBranch: vi.fn(async () => undefined),
   deleteSession: vi.fn(async () => undefined),
+  deleteGithubPrCacheForWorktreePath: vi.fn(async () => 1),
   detectRepoSlug: vi.fn(async () => 'acme/web'),
   gitPush: vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 })),
   tauriGhRunner: {},
@@ -46,6 +48,7 @@ vi.mock('@goodboy/db', () => ({
   listWorktreesForSession,
   updateSessionWorktreeBranch,
   deleteSession,
+  deleteGithubPrCacheForWorktreePath,
 }));
 
 vi.mock('@goodboy/core', () => ({

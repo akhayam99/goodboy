@@ -502,7 +502,7 @@ fn build_audit_list_sql(input: &PermissionAuditQueryInput) -> String {
     }
     if input.workspace_id.is_some() {
         conditions.push(format!(
-            "pal.session_id IN (SELECT id FROM agents WHERE session_id IN (SELECT id FROM sessions WHERE workspace_id = ?{idx}))"
+            "pal.session_id IN (SELECT id FROM sessions WHERE workspace_id = ?{idx})"
         ));
         idx += 1;
     }
@@ -537,23 +537,29 @@ pub fn permission_audit_clear(
     state: State<'_, Db>,
     input: PermissionAuditClearInput,
 ) -> Result<(), PermissionError> {
-    if input.session_id.is_none() && input.workspace_id.is_none() {
-        return Err(PermissionError::ClearScopeRequired);
-    }
-
     let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
+    clear_permission_audit(&conn, input)
+}
 
-    if let Some(sid) = input.session_id {
-        conn.execute(
-            "DELETE FROM permission_audit_log WHERE session_id = ?1",
-            rusqlite::params![sid],
-        )?;
-    } else if let Some(wid) = input.workspace_id {
-        conn.execute(
-            "DELETE FROM permission_audit_log
-             WHERE session_id IN (SELECT id FROM agents WHERE session_id IN (SELECT id FROM sessions WHERE workspace_id = ?1))",
-            rusqlite::params![wid],
-        )?;
+fn clear_permission_audit(
+    conn: &rusqlite::Connection,
+    input: PermissionAuditClearInput,
+) -> Result<(), PermissionError> {
+    match (input.session_id, input.workspace_id) {
+        (Some(session_id), _) => {
+            conn.execute(
+                "DELETE FROM permission_audit_log WHERE session_id = ?1",
+                rusqlite::params![session_id],
+            )?;
+        }
+        (None, Some(workspace_id)) => {
+            conn.execute(
+                "DELETE FROM permission_audit_log
+             WHERE session_id IN (SELECT id FROM sessions WHERE workspace_id = ?1)",
+                rusqlite::params![workspace_id],
+            )?;
+        }
+        (None, None) => return Err(PermissionError::ClearScopeRequired),
     }
 
     Ok(())
@@ -661,4 +667,46 @@ pub fn permission_audit_retry_delete(
         rusqlite::params![id],
     )?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use rusqlite::Connection;
+
+    use super::{clear_permission_audit, PermissionAuditClearInput};
+
+    #[test]
+    fn workspace_clear_matches_audit_session_ids_to_sessions() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE sessions (id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL);
+             CREATE TABLE agents (id TEXT PRIMARY KEY, session_id TEXT NOT NULL);
+             CREATE TABLE permission_audit_log (id TEXT PRIMARY KEY, session_id TEXT NOT NULL);
+             INSERT INTO sessions VALUES ('session-a', 'workspace-a');
+             INSERT INTO sessions VALUES ('session-b', 'workspace-b');
+             INSERT INTO agents VALUES ('agent-a', 'session-a');
+             INSERT INTO agents VALUES ('agent-b', 'session-b');
+             INSERT INTO permission_audit_log VALUES ('audit-a', 'session-a');
+             INSERT INTO permission_audit_log VALUES ('audit-b', 'session-b');",
+        )
+        .unwrap();
+
+        clear_permission_audit(
+            &conn,
+            PermissionAuditClearInput {
+                session_id: None,
+                workspace_id: Some("workspace-a".to_string()),
+            },
+        )
+        .unwrap();
+
+        let remaining: Vec<String> = conn
+            .prepare("SELECT id FROM permission_audit_log ORDER BY id")
+            .unwrap()
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        assert_eq!(remaining, vec!["audit-b"]);
+    }
 }
