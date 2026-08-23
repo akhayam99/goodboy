@@ -42,8 +42,8 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onCategory }: Props)
           className={cn(
             'inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-2xs motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             hiddenCount > 0
-              ? 'text-foreground hover:bg-foreground/10'
-              : 'text-muted-foreground/70 hover:bg-foreground/10 hover:text-foreground',
+              ? 'text-foreground hover:bg-muted/60'
+              : 'text-muted-foreground/70 hover:bg-muted/60 hover:text-foreground',
           )}
         >
           <ListFilter size={13} aria-hidden className="shrink-0" />

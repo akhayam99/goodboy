@@ -16,6 +16,7 @@ import { SessionBudgetContent } from '../../../budget/components/BudgetStudio/Se
 import type { WorkspaceTurn } from '../../../budget/components/BudgetStudio/lib';
 import { EMPTY_ARRAY, useAppStore, useSessionCost } from '../../../../store';
 import { manageDialogFocus } from './manageDialogFocus';
+import { VITAL_CHIP_FOCUS, VITAL_CHIP_FRAME, VITAL_CHIP_HOVER } from './vitalChip';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -137,9 +138,10 @@ export const SessionCostChip = ({ sessionId }: Props) => {
           title={title}
           onAnimationEnd={() => setPulse(false)}
           className={cn(
-            'inline-flex shrink-0 items-center rounded-md border px-2 py-1 font-mono text-2xs tabular-nums transition-colors',
-            capState === 'clear' &&
-              'border-border-soft bg-muted text-muted-foreground hover:border-border hover:text-foreground',
+            VITAL_CHIP_FRAME,
+            VITAL_CHIP_FOCUS,
+            'px-2 font-mono tabular-nums',
+            capState === 'clear' && VITAL_CHIP_HOVER,
             capTint != null && `${capTint.borderSoft} ${capTint.bg} ${capTint.text}`,
             pulse && 'cost-chip-pulse',
           )}

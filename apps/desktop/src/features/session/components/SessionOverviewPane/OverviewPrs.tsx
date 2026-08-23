@@ -39,7 +39,7 @@ export const OverviewPrs = ({ session, onSelectLens }: Props) => {
 
   return (
     <section aria-label="Pull requests" className="flex flex-col gap-2">
-      <Eyebrow label="Pull requests" />
+      <Eyebrow label="Pull requests" className="px-0.5" />
       <div className="flex flex-col gap-2">
         {groups.map(({ mount, prs }) => (
           <div key={mount.projectId} className="flex flex-col gap-1">

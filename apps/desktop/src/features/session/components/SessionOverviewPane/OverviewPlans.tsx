@@ -1,8 +1,8 @@
-import { NotebookPen } from 'lucide-react';
 import { Eyebrow } from '@goodboy/ui';
 import type { Plan, Session } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
@@ -22,7 +22,7 @@ export const OverviewPlans = ({ session, onSelectLens }: Props) => {
 
   return (
     <section aria-label="Plan" className="flex flex-col gap-2">
-      <Eyebrow label="Plan" />
+      <Eyebrow label="Plan" className="px-0.5" />
       <ul className="flex flex-col gap-1">
         {active.map((plan) => (
           <li key={plan.id}>
@@ -34,7 +34,11 @@ export const OverviewPlans = ({ session, onSelectLens }: Props) => {
               }}
               className="flex w-full items-center gap-2 rounded-lg border-l-2 border-border-soft px-3 py-1.5 text-left hover:bg-muted/40"
             >
-              <NotebookPen size={13} aria-hidden className="shrink-0 text-muted-foreground" />
+              <CONCEPT_ICONS.plans
+                size={13}
+                aria-hidden
+                className="shrink-0 text-muted-foreground"
+              />
               <span className="min-w-0 flex-1 truncate text-sm text-foreground">{plan.title}</span>
             </button>
           </li>

@@ -41,7 +41,7 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
   const costPill = (
     <span
       title={costTooltip}
-      className="rounded-full bg-subtle px-2 py-0.5 text-2xs tabular-nums text-muted-foreground"
+      className="inline-flex h-6 shrink-0 items-center text-2xs tabular-nums text-muted-foreground"
     >
       Σ {formatUsd(totals.estimatedCostUsd)}
     </span>
@@ -72,7 +72,7 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
           title={canRetry ? `${errorTitle}, click to retry` : errorTitle}
           aria-label={canRetry ? 'Retry summarizer' : 'Summarizer failed'}
           className={cn(
-            'inline-flex items-center gap-1 rounded-full bg-danger/10 px-2 py-0.5 text-2xs uppercase tracking-wide text-danger transition-colors',
+            'inline-flex h-6 shrink-0 items-center gap-1 rounded-md bg-danger/10 px-2 text-2xs text-danger motion-safe:transition-colors',
             retrying && 'animate-border-pulse',
             canRetry
               ? 'hover:bg-danger/15 hover:text-danger-foreground/90'

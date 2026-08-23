@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
 import { History } from 'lucide-react';
-import { CopyButton, Textarea, Tooltip, cn } from '@goodboy/ui';
+import { CopyButton, Eyebrow, Textarea, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
@@ -74,9 +74,7 @@ export const GoalOverviewRegion = ({
   return (
     <section aria-label="Goal" className="flex min-w-0 flex-col gap-2">
       <div className="flex min-w-0 items-center gap-2 px-0.5">
-        <span className="shrink-0 text-3xs font-medium uppercase tracking-eyebrow text-muted-foreground">
-          Goal
-        </span>
+        <Eyebrow label="Goal" className="shrink-0" />
         {isLoading ? (
           <span className="h-4 min-w-0 flex-1 rounded bg-muted/50" aria-label="Loading goal" />
         ) : isEditing ? (
@@ -132,7 +130,7 @@ export const GoalOverviewRegion = ({
               value={value}
               label="copy goal"
               size={13}
-              className="rounded-md p-1 text-muted-foreground/60 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
+              className="rounded-md p-1 text-muted-foreground/60 motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground"
             />
           ) : null}
           {historyCount > 0 ? (
@@ -143,7 +141,7 @@ export const GoalOverviewRegion = ({
                 type="button"
                 onClick={onOpenHistory}
                 aria-label={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of Goal`}
-                className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground/60 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
+                className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground/60 motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
               >
                 <History size={13} aria-hidden />
               </button>

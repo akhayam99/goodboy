@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Folder, FolderGit2, GitBranch } from 'lucide-react';
-import { Button, cn, formatError } from '@goodboy/ui';
+import { Button, Chip, cn, formatError } from '@goodboy/ui';
 import type { Project, SessionId, SessionProjectMount } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
 
@@ -70,11 +70,7 @@ export const ProjectRow = ({ sessionId, project, mount, isActive, canSwitch }: P
               <span className="font-mono">{mount.branch}</span>
             </span>
           ) : null}
-          {isActive ? (
-            <span className="shrink-0 rounded-full border border-primary/50 bg-primary/10 px-1.5 text-2xs text-foreground">
-              Active
-            </span>
-          ) : null}
+          {isActive ? <Chip tone="primary" size="xs" label="Active" className="shrink-0" /> : null}
         </div>
         {mount != null ? (
           <span className="truncate text-xs text-muted-foreground/70">{mount.worktreePath}</span>

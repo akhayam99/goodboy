@@ -121,9 +121,7 @@ export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
               content={`${SESSION_STAGE_META[stage.stage].label} · ${stage.reason}`}
               side="top"
             >
-              <span className="min-w-0 truncate text-xs text-muted-foreground/70">
-                {stage.reason}
-              </span>
+              <span className="min-w-0 truncate text-xs text-muted-foreground">{stage.reason}</span>
             </Tooltip>
           ) : null}
           <SummarizerBadge sessionId={sessionId} />

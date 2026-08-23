@@ -4,6 +4,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useRemoteHostKind } from '../../../worktree/useRemoteHostKind';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
+import { VITAL_CHIP } from './vitalChip';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -25,8 +26,7 @@ const openGitlabStudio = ({ sessionId }: OpenGitlabStudioParams) => {
   window.dispatchEvent(new CustomEvent('goodboy:open-gitlab-mr', { detail: { sessionId } }));
 };
 
-const CTA_CLASSES =
-  'inline-flex shrink-0 items-center gap-1.5 rounded-md border border-dashed border-border px-2 py-0.5 text-2xs font-medium text-muted-foreground motion-safe:transition-colors hover:border-border-strong hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]';
+const CTA_CLASSES = cn(VITAL_CHIP, 'border-dashed border-border bg-transparent');
 
 export const StatusRowRequest = ({ sessionId }: Props) => {
   const pr = useAppStore((s) => s.sessionGithub[sessionId]?.pr ?? null);
@@ -40,11 +40,11 @@ export const StatusRowRequest = ({ sessionId }: Props) => {
         onClick={() => openGitlabStudio({ sessionId })}
         title={`Open merge request !${mr.iid}`}
         aria-label={`Open merge request !${mr.iid}`}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-0.5 text-2xs font-medium text-foreground motion-safe:transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
+        className={VITAL_CHIP}
       >
         <GitMerge size={11} aria-hidden className="text-provider-gitlab" />
         <span className="font-mono">!{mr.iid}</span>
-        <span className="text-muted-foreground">{mr.draft ? 'draft' : mr.state}</span>
+        <span>{mr.draft ? 'draft' : mr.state}</span>
       </button>
     );
   }
@@ -63,10 +63,10 @@ export const StatusRowRequest = ({ sessionId }: Props) => {
         }
         title={`Open PR #${pr.number}`}
         aria-label={`Open PR #${pr.number}`}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-0.5 text-2xs font-medium motion-safe:transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
+        className={VITAL_CHIP}
       >
         <PullRequestChip state={pillState} variant="badge" iconSize={9} />
-        <span className="font-mono text-foreground">#{pr.number}</span>
+        <span className="font-mono">#{pr.number}</span>
         {pr.checks === 'failure' ? (
           <X size={11} aria-hidden className="text-danger" />
         ) : pr.checks === 'success' ? (
@@ -75,7 +75,7 @@ export const StatusRowRequest = ({ sessionId }: Props) => {
           <StatusDot tone="info" pulsing size="sm" ariaLabel="Checks running" role="status" />
         ) : null}
         {pr.reviewDecision === 'changes_requested' ? (
-          <span className={cn('text-2xs', 'text-warning')}>changes requested</span>
+          <span className="text-warning">changes requested</span>
         ) : null}
       </button>
     );

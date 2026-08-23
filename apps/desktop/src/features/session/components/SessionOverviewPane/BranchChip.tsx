@@ -4,6 +4,7 @@ import { AnchoredPopover, cn, Tooltip, useCopyLink, useDropdown } from '@goodboy
 import type { SessionId } from '@goodboy/types';
 import { useToast } from '../../../../app/components/Toast';
 import { BranchSwitchPanel } from '../../../worktree/BranchSwitchPanel';
+import { VITAL_CHIP_FOCUS, VITAL_CHIP_FRAME, VITAL_CHIP_HOVER } from './vitalChip';
 
 type Props = {
   readonly branch: string;
@@ -40,10 +41,9 @@ export const BranchChip = ({ branch, mountName = null, sessionId, canEdit }: Pro
       role="dialog"
       ariaLabel="Switch branch"
       anchorClassName={cn(
-        'group/branch inline-flex min-w-0 max-w-full shrink items-center rounded-md border font-mono text-2xs transition-colors',
-        copied
-          ? 'border-success/30 bg-success/10 text-success'
-          : 'border-border-soft bg-muted/30 text-foreground/80 hover:border-border hover:bg-muted/50 hover:text-foreground',
+        VITAL_CHIP_FRAME,
+        'group/branch min-w-0 max-w-full shrink font-mono',
+        copied ? 'border-success/30 bg-success/10 text-success' : VITAL_CHIP_HOVER,
       )}
       trigger={
         <>
@@ -52,20 +52,17 @@ export const BranchChip = ({ branch, mountName = null, sessionId, canEdit }: Pro
               type="button"
               onClick={() => void copy(branch)}
               aria-label={`Copy branch ${branch}`}
-              className="inline-flex min-w-0 items-center gap-1.5 px-2 py-1"
+              className={cn(
+                'inline-flex min-w-0 items-center gap-1.5 rounded-md px-2',
+                VITAL_CHIP_FOCUS,
+              )}
             >
               {copied ? (
-                <Check size={10} aria-hidden className="shrink-0" />
+                <Check size={11} aria-hidden className="shrink-0" />
               ) : (
-                <GitBranch
-                  size={10}
-                  aria-hidden
-                  className="shrink-0 text-muted-foreground group-hover/branch:text-foreground"
-                />
+                <GitBranch size={11} aria-hidden className="shrink-0" />
               )}
-              {mountName != null ? (
-                <span className="text-muted-foreground">{mountName}:</span>
-              ) : null}
+              {mountName != null ? <span className="shrink-0">{mountName}:</span> : null}
               <span className="truncate">{branch}</span>
             </button>
           </Tooltip>
@@ -81,7 +78,8 @@ export const BranchChip = ({ branch, mountName = null, sessionId, canEdit }: Pro
                 className={cn(
                   'inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50',
                   'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
-                  'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+                  'focus-visible:opacity-100',
+                  VITAL_CHIP_FOCUS,
                   'group-hover/branch:opacity-100 motion-reduce:opacity-60',
                 )}
               >

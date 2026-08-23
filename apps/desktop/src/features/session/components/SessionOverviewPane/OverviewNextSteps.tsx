@@ -30,7 +30,7 @@ export const OverviewNextSteps = ({ session, agents }: Props) => {
 
   return (
     <section aria-label="Up next" className="flex flex-col gap-2">
-      <Eyebrow label="Up next" muted className="px-0.5 font-medium" />
+      <Eyebrow label="Up next" className="px-0.5" />
       <div className="flex flex-col items-start gap-1.5">
         {waiting.map(({ run, workflow }) => {
           const state = advanceByRunId.get(run.id);

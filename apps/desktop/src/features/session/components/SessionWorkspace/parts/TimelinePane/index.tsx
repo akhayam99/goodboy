@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
-import { Button, Eyebrow, useCopyLink } from '@goodboy/ui';
+import { Button, SectionHeader, useCopyLink } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -194,28 +194,26 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
 
   return (
     <section aria-label="Activity" className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-4 px-0.5">
-        <Eyebrow label="Activity" muted className="font-medium" />
-        <div className="flex items-center gap-1">
-          {hasUnreadAgents ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7"
-              onClick={() => void markAllAgentsSeen(sessionId)}
-            >
-              <CheckCheck size={13} aria-hidden />
-              Mark all seen
-            </Button>
-          ) : null}
-          <ActivityFilterButton
-            filter={activity.filter}
-            hiddenCount={activity.hiddenCount}
-            onCategory={activity.setCategory}
-          />
-          {actions}
-        </div>
-      </div>
+      <SectionHeader
+        label="Activity"
+        className="px-0.5"
+        action={
+          <div className="flex items-center gap-1">
+            {hasUnreadAgents ? (
+              <Button variant="ghost" size="sm" onClick={() => void markAllAgentsSeen(sessionId)}>
+                <CheckCheck size={13} aria-hidden />
+                Mark all seen
+              </Button>
+            ) : null}
+            <ActivityFilterButton
+              filter={activity.filter}
+              hiddenCount={activity.hiddenCount}
+              onCategory={activity.setCategory}
+            />
+            {actions}
+          </div>
+        }
+      />
       {model.entries.length === 0 ? (
         <p className="px-0.5 py-2 text-xs text-muted-foreground">
           Nothing yet. Agents, workflows, and session facts land here as they happen.

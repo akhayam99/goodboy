@@ -10,7 +10,7 @@ type Props = {
 
 export const OverviewActions = ({ sessionId, onOpenWorkflowBuilder }: Props) => {
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-2">
+    <div className="flex shrink-0 flex-wrap items-center gap-1">
       <Button variant="ghost" size="sm" onClick={onOpenWorkflowBuilder}>
         <CONCEPT_ICONS.workflows size={13} aria-hidden />
         Add workflow
