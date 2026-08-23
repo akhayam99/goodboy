@@ -93,7 +93,7 @@ export const addWorkspace = (set: SetFn, get: GetFn) => {
       id: workspaceId,
       name: inferredName,
       slug: workspaceSlug({ name: inferredName, id: workspaceId }),
-      sessionsRoot: resolvedRoot,
+      sessionsRoot: null,
       overrides: EMPTY_OVERRIDES,
       createdAt: now,
       updatedAt: now,

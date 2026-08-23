@@ -14,9 +14,8 @@ const { state, repoMocks, dialogMock, onboarding } = vi.hoisted(() => ({
     addProject: vi.fn(async () => ({ id: 'proj-1', rootPath: '/some/repo' })),
     addProjects: vi.fn(async () => []),
     removeProject: vi.fn(async () => undefined),
-    adoptWorkspaceSessionsRoot: vi.fn(async () => undefined),
     setCurrentWorkspace: vi.fn(async () => undefined),
-    projects: [] as ReadonlyArray<{ id: string; workspaceId: string }>,
+    projects: [] as ReadonlyArray<{ id: string; workspaceId: string; kind: string }>,
   },
   repoMocks: {
     validateGitRepo: vi.fn<
@@ -39,9 +38,12 @@ const { state, repoMocks, dialogMock, onboarding } = vi.hoisted(() => ({
   onboarding: { wizardDone: true, reopenWizard: vi.fn() },
 }));
 
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
-}));
+vi.mock('../../../../store', () => {
+  const useAppStore = Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
+    getState: () => state,
+  });
+  return { useAppStore };
+});
 
 vi.mock('../../../../shared/lib/repo', () => repoMocks);
 
@@ -127,6 +129,7 @@ describe('WorkspaceLinkDialog', () => {
       resolvedPath: '/some/fresh-idea',
       error: null,
     });
+    state.projects = [{ id: 'proj-folder', workspaceId: 'ws-new', kind: 'folder' }];
     const onOfferRepo = vi.fn();
     render(<WorkspaceLinkDialog open onClose={vi.fn()} onOfferRepo={onOfferRepo} />);
 
@@ -137,6 +140,7 @@ describe('WorkspaceLinkDialog', () => {
   });
 
   it('leaves a git-backed folder alone instead of offering it a repository', async () => {
+    state.projects = [{ id: 'proj-repo', workspaceId: 'ws-new', kind: 'repo' }];
     const onOfferRepo = vi.fn();
     render(<WorkspaceLinkDialog open onClose={vi.fn()} onOfferRepo={onOfferRepo} />);
 

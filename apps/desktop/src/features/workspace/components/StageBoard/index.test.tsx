@@ -10,7 +10,12 @@ const { state, gitStatus, groups } = vi.hoisted(() => ({
     archivedSessions: {} as Record<string, ReadonlyArray<Session>>,
     loadArchivedSessions: vi.fn(),
     workspaces: [] as ReadonlyArray<Workspace>,
-    projects: [] as ReadonlyArray<{ id: string; workspaceId: string }>,
+    projects: [] as ReadonlyArray<{
+      id: string;
+      workspaceId: string;
+      kind: string;
+      rootPath: string;
+    }>,
     bulkUnarchiveTask: vi.fn(async () => undefined),
   },
   gitStatus: { current: null as WorkspaceGitStatus | null },
@@ -117,7 +122,7 @@ beforeEach(() => {
   state.archivedSessions = {};
   state.loadArchivedSessions = vi.fn();
   state.workspaces = [workspace];
-  state.projects = [{ id: 'proj-1', workspaceId: wsId }];
+  state.projects = [{ id: 'proj-1', workspaceId: wsId, kind: 'repo', rootPath: '/tmp/fresh-idea' }];
   gitStatus.current = null;
   groups.current = [];
 });
@@ -173,7 +178,9 @@ describe('StageBoard empty-projects gate', () => {
     const { rerender } = render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.getByTestId('projects-step')).toBeDefined();
 
-    state.projects = [{ id: 'proj-1', workspaceId: wsId }];
+    state.projects = [
+      { id: 'proj-1', workspaceId: wsId, kind: 'repo', rootPath: '/tmp/fresh-idea' },
+    ];
     rerender(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.queryByTestId('projects-step')).toBeNull();
     expect(screen.getByText('Start your first session')).toBeDefined();

@@ -55,6 +55,7 @@ const CATEGORY_BY_EVENT_KIND: Record<SessionEventKind, ActivityCategory> = {
   decisions_changed: 'decisions',
   project_materialized: 'worktree',
   project_materialization_refused: 'worktree',
+  project_detached: 'worktree',
   external_task_created: 'issues',
 };
 

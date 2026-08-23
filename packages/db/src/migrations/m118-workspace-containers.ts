@@ -184,7 +184,7 @@ SELECT
   workspace_backfill.workspace_id,
   projects.name,
   resolved.slug,
-  projects.root_path,
+  NULL,
   projects.default_provider_id,
   projects.default_workflow_id,
   projects.default_branch_prefix,

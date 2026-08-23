@@ -11,7 +11,9 @@ const { state, listOwnedRepos, createGithubRepo } = vi.hoisted(() => ({
       user?: string;
     } | null,
     workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
-    projects: [{ id: 'project-1', workspaceId: 'ws-1' }],
+    projects: [
+      { id: 'project-1', workspaceId: 'ws-1', kind: 'folder', rootPath: '/tmp/study-space' },
+    ],
     convertProjectToRepo: vi.fn(async () => undefined),
   },
   listOwnedRepos: vi.fn(),

@@ -216,47 +216,53 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
           {actions}
         </div>
       </div>
-      <div className="flex flex-col">
-        {stream.items.map((item, index) => {
-          const railRow = rail.rows[index];
-          if (railRow === undefined) {
-            return null;
-          }
-          if (item.kind === 'now') {
+      {model.entries.length === 0 ? (
+        <p className="px-0.5 py-2 text-xs text-muted-foreground">
+          Nothing yet. Agents, workflows, and session facts land here as they happen.
+        </p>
+      ) : (
+        <div className="flex flex-col">
+          {stream.items.map((item, index) => {
+            const railRow = rail.rows[index];
+            if (railRow === undefined) {
+              return null;
+            }
+            if (item.kind === 'now') {
+              return (
+                <TimelineNowRule key={item.id} item={item} rail={railRow} railWidth={rail.width} />
+              );
+            }
+            if (item.kind === 'day') {
+              return (
+                <TimelineDayRule key={item.id} item={item} rail={railRow} railWidth={rail.width} />
+              );
+            }
+            if (item.kind === 'cluster') {
+              return (
+                <TimelinePendingCluster
+                  key={item.id}
+                  item={item}
+                  rail={railRow}
+                  railWidth={rail.width}
+                />
+              );
+            }
+            const target = openTargetFor({ entry: item.entry });
             return (
-              <TimelineNowRule key={item.id} item={item} rail={railRow} railWidth={rail.width} />
-            );
-          }
-          if (item.kind === 'day') {
-            return (
-              <TimelineDayRule key={item.id} item={item} rail={railRow} railWidth={rail.width} />
-            );
-          }
-          if (item.kind === 'cluster') {
-            return (
-              <TimelinePendingCluster
+              <TimelineStreamRow
                 key={item.id}
                 item={item}
                 rail={railRow}
                 railWidth={rail.width}
+                sessionId={sessionId}
+                openLabel={target.label}
+                action={actionFor({ item })}
+                onOpen={target.open}
               />
             );
-          }
-          const target = openTargetFor({ entry: item.entry });
-          return (
-            <TimelineStreamRow
-              key={item.id}
-              item={item}
-              rail={railRow}
-              railWidth={rail.width}
-              sessionId={sessionId}
-              openLabel={target.label}
-              action={actionFor({ item })}
-              onOpen={target.open}
-            />
-          );
-        })}
-      </div>
+          })}
+        </div>
+      )}
     </section>
   );
 };

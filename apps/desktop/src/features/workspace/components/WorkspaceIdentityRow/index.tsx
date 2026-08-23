@@ -3,6 +3,7 @@ import { ChevronsUpDown, SlidersHorizontal } from 'lucide-react';
 import { StatusDot, Tooltip } from '@goodboy/ui';
 import { useAppStore, useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
 import { workspaceAccent } from '../../color';
+import { primaryProjectRoot } from '../../primaryProjectRoot';
 import { WorkspaceSwitcher } from '../WorkspaceSwitcher';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
@@ -15,6 +16,11 @@ export const WorkspaceIdentityRow = () => {
   const projectCount = useAppStore(
     (state) =>
       state.projects.filter((project) => project.workspaceId === currentWorkspace?.id).length,
+  );
+  const projectRoot = useAppStore((state) =>
+    currentWorkspace == null
+      ? null
+      : primaryProjectRoot({ projects: state.projects, workspaceId: currentWorkspace.id }),
   );
   const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -30,8 +36,7 @@ export const WorkspaceIdentityRow = () => {
     return null;
   }
   const accent = workspaceAccent(currentWorkspace.id);
-  const subtitle =
-    projectCount > 1 ? `${projectCount} projects` : basenameOf(currentWorkspace.sessionsRoot ?? '');
+  const subtitle = projectCount > 1 ? `${projectCount} projects` : basenameOf(projectRoot ?? '');
 
   return (
     <div className="flex w-full min-w-0 items-center gap-0.5">

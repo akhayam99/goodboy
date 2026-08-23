@@ -166,16 +166,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         })
         .catch(() => undefined);
     }
+    const containerDir = await get().ensureSessionContainer({ sessionId });
     const mountedState = get();
     const turnMounts = mountedState.sessionProjectMounts[sessionId] ?? [];
-    const containerDir = (mountedState.sessionWorktrees[sessionId] ?? [])[0] ?? null;
-    const initialWorkingDir = turnMounts.length === 1 ? turnMounts[0]!.worktreePath : containerDir;
-    if (initialWorkingDir === null) {
-      throw new Error(
-        'session worktree not initialized. restart the app to reload persisted worktree paths',
-      );
-    }
-    const workingDir = initialWorkingDir;
+    const workingDir = turnMounts.length === 1 ? turnMounts[0]!.worktreePath : containerDir;
     const isPlainSessionDir = isBranchlessSession({
       branch: mountedState.sessionBranches[sessionId],
     });

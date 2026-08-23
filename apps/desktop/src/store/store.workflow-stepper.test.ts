@@ -110,6 +110,7 @@ vi.mock('@goodboy/db', () => ({
   listResolvedQuestionTextsForSession: vi.fn(async () => []),
   insertTurnEvent: vi.fn(async () => undefined),
   insertTurnEventsBatch: vi.fn(async () => undefined),
+  listWorktreesForSession: vi.fn(async () => []),
   listWorktreesForSessions: vi.fn(async () => new Map()),
   listAgentsForSessions: vi.fn(async () => new Map()),
   listTurnEventsForAgent: vi.fn(async () => []),

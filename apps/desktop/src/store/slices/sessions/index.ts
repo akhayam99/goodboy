@@ -6,6 +6,7 @@ import { bulkUnarchiveTask } from './bulkUnarchiveTask';
 import { createSession } from './createSession';
 import { createUntitledSession } from './createUntitledSession';
 import { deleteTask } from './deleteTask';
+import { ensureSessionContainer } from './ensureSessionContainer';
 import { linkSessionExternalTask } from './linkSessionExternalTask';
 import { materializeProject } from './materializeProject';
 import { renameTask } from './renameTask';
@@ -35,6 +36,7 @@ export const createSessionsSlice = (set: SetFn, get: GetFn) => {
     createSession: createSession(set, get),
     createUntitledSession: createUntitledSession(set, get),
     clearPendingTitleFocus: () => set({ pendingTitleFocusSessionId: null }),
+    ensureSessionContainer: ensureSessionContainer(set, get),
     materializeProject: materializeProject(set, get),
     linkSessionExternalTask: linkSessionExternalTask({ set, get }),
     unlinkSessionExternalTask: unlinkSessionExternalTask({ set, get }),

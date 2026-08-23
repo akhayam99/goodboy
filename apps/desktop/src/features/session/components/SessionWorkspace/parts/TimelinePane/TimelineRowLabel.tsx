@@ -4,6 +4,7 @@ import { agentKindPalette } from '../../../../agent-kind';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import {
   sessionEventEmphasis,
+  sessionEventSecondary,
   sessionEventTitle,
 } from '../../../../timeline/sessionEventPresentation';
 import type {
@@ -78,6 +79,7 @@ export const TimelineRowLabel = ({ item }: Props) => {
   const emphasis =
     entry.kind === 'event' ? sessionEventEmphasis({ kind: entry.event.kind }) : 'plain';
   const isPath = entry.kind === 'event' && entry.event.kind === 'worktree_created';
+  const secondary = entry.kind === 'event' ? sessionEventSecondary({ event: entry.event }) : null;
   return (
     <>
       {chipOf({ entry, grade })}
@@ -107,6 +109,9 @@ export const TimelineRowLabel = ({ item }: Props) => {
       >
         {titleOf({ entry })}
       </span>
+      {secondary != null ? (
+        <span className="min-w-0 truncate text-2xs text-muted-foreground">{secondary}</span>
+      ) : null}
     </>
   );
 };

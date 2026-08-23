@@ -151,6 +151,7 @@ describe('workspace and project slices', () => {
     const insertedWorkspace = store.state.workspaces[0]!;
     const insertedProject = store.state.projects[0]!;
     expect(String(insertedWorkspace.id)).not.toBe(String(insertedProject.id));
+    expect(insertedWorkspace.sessionsRoot).toBeNull();
     expect(insertedProject.workspaceId).toBe(insertedWorkspace.id);
     expect(store.state.workspaces).toEqual([insertedWorkspace]);
     expect(store.state.projects).toEqual([insertedProject]);

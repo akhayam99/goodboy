@@ -4,6 +4,7 @@ import { SESSION_EVENT_KINDS } from '@goodboy/types';
 import {
   sessionEventEmphasis,
   sessionEventGlyph,
+  sessionEventSecondary,
   sessionEventTitle,
 } from './sessionEventPresentation';
 
@@ -79,6 +80,62 @@ describe('sessionEventTitle', () => {
         event: event({ kind: 'decisions_changed', payload: { added: 1, removed: 0 } }),
       }),
     ).toBe('1 decision added, 0 removed');
+  });
+
+  it('names the mounted project first when the payload carries it', () => {
+    expect(
+      sessionEventTitle({
+        event: event({
+          kind: 'project_materialized',
+          payload: { projectName: 'api', branch: 'goodboy/untitled', reason: 'added manually' },
+        }),
+      }),
+    ).toBe('Mounted api on goodboy/untitled');
+  });
+
+  it('falls back to the old mount copy without a project name', () => {
+    expect(
+      sessionEventTitle({
+        event: event({
+          kind: 'project_materialized',
+          payload: { branch: 'goodboy/untitled', reason: 'added manually by the user' },
+        }),
+      }),
+    ).toBe('Project mounted on goodboy/untitled: added manually by the user');
+  });
+
+  it('names the detached project and whether the worktree survived', () => {
+    expect(
+      sessionEventTitle({
+        event: event({ kind: 'project_detached', payload: { projectName: 'api', kept: true } }),
+      }),
+    ).toBe('Detached api');
+    expect(
+      sessionEventSecondary({
+        event: event({ kind: 'project_detached', payload: { projectName: 'api', kept: true } }),
+      }),
+    ).toBe('worktree kept on disk');
+    expect(
+      sessionEventSecondary({
+        event: event({ kind: 'project_detached', payload: { projectName: 'api', kept: false } }),
+      }),
+    ).toBeNull();
+  });
+
+  it('keeps the mount rationale as the quiet secondary part', () => {
+    expect(
+      sessionEventSecondary({
+        event: event({
+          kind: 'project_materialized',
+          payload: { projectName: 'api', reason: 'added manually by the user' },
+        }),
+      }),
+    ).toBe('added manually by the user');
+    expect(
+      sessionEventSecondary({
+        event: event({ kind: 'project_materialized', payload: { reason: 'added manually' } }),
+      }),
+    ).toBeNull();
   });
 
   it('stays readable when the payload is missing', () => {

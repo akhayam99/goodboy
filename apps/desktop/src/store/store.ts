@@ -77,7 +77,7 @@ import type { ExtractedReviewComment } from '@goodboy/core';
 import { buildProviderList, type ProviderStatus } from '../features/providers/providers';
 import { DEFAULT_BRANCH_PREFIX } from '../features/settings/settings';
 import { AGENT_FEATURES } from '../shared/lib/features';
-import { type CreatedWorktree, type RewrittenHead } from '../features/worktree/worktree';
+import { type RewrittenHead } from '../features/worktree/worktree';
 import { type SkillUpsertArgs } from '../features/skills/skills';
 import type { ScriptRunResult } from '../features/scripts/scripts';
 import { type WorkflowUpsertArgs, type StepDefUpsertArgs } from '../features/workflows/workflows';
@@ -165,6 +165,7 @@ import { createSummariesSlice } from './slices/summaries';
 import { createSessionsSlice } from './slices/sessions';
 import { createWorkspacesSlice } from './slices/workspaces';
 import { createProjectsSlice } from './slices/projects';
+import { createProjectMountsSlice } from './slices/project-mounts';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
@@ -233,10 +234,6 @@ export type AppActions = {
   cancelProviderConnect(providerId: ProviderId): Promise<void>;
   dismissProviderConnect(providerId: ProviderId): void;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
-  adoptWorkspaceSessionsRoot(input: {
-    workspaceId: WorkspaceId;
-    rootPath: string;
-  }): Promise<Workspace>;
   createWorkspace(input: { name: string }): Promise<Workspace>;
   addProject(input: {
     workspaceId: WorkspaceId;
@@ -337,16 +334,16 @@ export type AppActions = {
     }>;
     mobileShared?: boolean;
     omitGoalSlot?: boolean;
-  }): Promise<{ session: Session; worktree: CreatedWorktree }>;
-  createUntitledSession(input: {
-    workspaceId: WorkspaceId;
-  }): Promise<{ session: Session; worktree: CreatedWorktree }>;
+  }): Promise<{ session: Session }>;
+  createUntitledSession(input: { workspaceId: WorkspaceId }): Promise<{ session: Session }>;
   clearPendingTitleFocus(): void;
+  ensureSessionContainer(input: { sessionId: SessionId }): Promise<string>;
   materializeProject(input: {
     sessionId: SessionId;
     projectId: ProjectId;
     reason: string;
   }): Promise<SessionProjectMount>;
+  detachProject(input: { sessionId: SessionId; projectId: ProjectId }): Promise<void>;
   linkSessionExternalTask(
     sessionId: SessionId,
     task: Omit<SessionExternalTask, 'sessionId'>,
@@ -1021,6 +1018,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSessionsSlice(set, get),
   ...createWorkspacesSlice(set, get),
   ...createProjectsSlice(set, get),
+  ...createProjectMountsSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),

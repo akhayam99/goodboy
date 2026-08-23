@@ -117,13 +117,13 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
     setReposState({ kind: 'idle' });
     setSelectedRepo(MANUAL_REPO);
     setManualUrl('');
-    setRepoName(lastPathSegment({ path: workspace.sessionsRoot ?? '' }));
+    setRepoName(lastPathSegment({ path: project?.rootPath ?? '' }));
     setVisibility(null);
     setIsBusy(false);
     setError(null);
     setOrphan(null);
     setIsConverted(false);
-  }, [open, workspace.sessionsRoot ?? '']);
+  }, [open, project?.rootPath ?? '']);
 
   useEffect(() => {
     if (!open || host !== 'github' || !isGithubCliAvailable) {
@@ -351,7 +351,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
                 <span className="text-xs font-semibold text-foreground">repository name</span>
                 <Input
                   value={repoName}
-                  placeholder={lastPathSegment({ path: workspace.sessionsRoot ?? '' })}
+                  placeholder={lastPathSegment({ path: project?.rootPath ?? '' })}
                   onChange={(event) => setRepoName(event.target.value)}
                   disabled={isBusy}
                   aria-label="Repository name"
@@ -448,7 +448,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
             <ul className="flex flex-col gap-1 text-xs leading-relaxed text-muted-foreground">
               <li className="flex items-center gap-1.5">
                 <GitBranch size={11} aria-hidden className="shrink-0" />
-                git starts tracking {workspace.sessionsRoot ?? ''}
+                git starts tracking {project?.rootPath ?? ''}
               </li>
               <li>the first commit holds a .gitignore and nothing else</li>
               <li>your files stay untracked until you add them yourself</li>

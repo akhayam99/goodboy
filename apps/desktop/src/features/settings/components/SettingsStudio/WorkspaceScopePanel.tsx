@@ -20,6 +20,7 @@ import { VerbositySelect } from '../../../../features/session/components/Verbosi
 import { DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore } from '../../../../store';
+import { primaryProjectRoot } from '../../../../features/workspace/primaryProjectRoot';
 import { useToast } from '../../../../app/components/Toast';
 
 type Props = {
@@ -31,6 +32,7 @@ type Props = {
 export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose }: Props) => {
   const disconnect = useAppStore((s) => s.deleteWorkspace);
   const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId) ?? null);
+  const projectRoot = useAppStore((s) => primaryProjectRoot({ projects: s.projects, workspaceId }));
   const renameWorkspace = useAppStore((s) => s.renameWorkspace);
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
   const storeSetWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
@@ -163,8 +165,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       .replace(/^-+/, '')
       .slice(0, 16);
 
-  const folderName =
-    workspace?.sessionsRoot?.split('/').filter(Boolean).at(-1) ?? 'the workspace folder';
+  const folderName = projectRoot?.split('/').filter(Boolean).at(-1) ?? 'the workspace folder';
 
   const anchor = (id: string) => (el: HTMLElement | null) => {
     anchorsRef.current[id] = el;

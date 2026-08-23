@@ -8,6 +8,12 @@ import type { Workspace, WorkspaceId } from '@goodboy/types';
 const { state } = vi.hoisted(() => ({
   state: {
     workspaces: [] as ReadonlyArray<Workspace>,
+    projects: [] as ReadonlyArray<{
+      id: string;
+      workspaceId: string;
+      kind: string;
+      rootPath: string;
+    }>,
     currentWorkspace: null as Workspace | null,
     shown: new Set<WorkspaceId>(),
     openWorkspace: vi.fn(async () => undefined),
@@ -17,8 +23,12 @@ const { state } = vi.hoisted(() => ({
 vi.mock('../../../../store', () => ({
   useWorkspaces: () => state.workspaces,
   useWorkspaceHasUnread: () => false,
-  useAppStore: (selector: (s: { openWorkspace: typeof state.openWorkspace }) => unknown) =>
-    selector({ openWorkspace: state.openWorkspace }),
+  useAppStore: (
+    selector: (s: {
+      openWorkspace: typeof state.openWorkspace;
+      projects: typeof state.projects;
+    }) => unknown,
+  ) => selector({ openWorkspace: state.openWorkspace, projects: state.projects }),
 }));
 
 import { WorkspaceSwitcher } from './index';
@@ -35,6 +45,10 @@ beforeEach(() => {
   state.workspaces = [
     { id: 'ws-a', name: 'alpha', slug: 'alpha', sessionsRoot: '/repos/alpha' } as Workspace,
     { id: 'ws-b', name: 'bravo', slug: 'bravo', sessionsRoot: '/repos/bravo' } as Workspace,
+  ];
+  state.projects = [
+    { id: 'proj-a', workspaceId: 'ws-a', kind: 'repo', rootPath: '/repos/alpha' },
+    { id: 'proj-b', workspaceId: 'ws-b', kind: 'repo', rootPath: '/repos/bravo' },
   ];
   state.currentWorkspace = state.workspaces[0] ?? null;
   state.shown = new Set();

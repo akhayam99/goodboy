@@ -14,7 +14,6 @@ const { hookState, finishWizard, storeActions, repoLib } = vi.hoisted(() => ({
     setCurrentWorkspace: vi.fn(),
     updateWorkspaceProfile: vi.fn(),
     addProjects: vi.fn(),
-    adoptWorkspaceSessionsRoot: vi.fn(),
   },
   repoLib: {
     initRepo: vi.fn(),
@@ -174,7 +173,6 @@ beforeEach(() => {
     .mockImplementation(async ({ rootPaths }: { rootPaths: ReadonlyArray<string> }) =>
       rootPaths.map((rootPath) => ({ rootPath })),
     );
-  storeActions.adoptWorkspaceSessionsRoot.mockReset().mockResolvedValue(undefined);
   repoLib.initRepo
     .mockReset()
     .mockResolvedValue({ rootPath: '/tmp/fresh', remoteUrl: '', branch: 'main' });
@@ -295,10 +293,6 @@ describe('OnboardingWizard', () => {
         workspaceId: WORKSPACE.id,
         rootPaths: ['/tmp/solo'],
       });
-      expect(storeActions.adoptWorkspaceSessionsRoot).toHaveBeenCalledWith({
-        workspaceId: WORKSPACE.id,
-        rootPath: '/tmp/solo',
-      });
     });
 
     it('refuses a picked folder without a git repository and stays on the shape step', async () => {
@@ -376,7 +370,6 @@ describe('OnboardingWizard', () => {
         workspaceId: WORKSPACE.id,
         rootPaths: ['/tmp/parent/api', '/tmp/parent/web'],
       });
-      expect(storeActions.adoptWorkspaceSessionsRoot).toHaveBeenCalledTimes(2);
     });
 
     it('clears an offered detection when the user dismisses it', async () => {

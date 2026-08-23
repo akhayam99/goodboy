@@ -31,6 +31,11 @@ const numberAt = ({ source, key }: FieldParams): number | null => {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 };
 
+const booleanAt = ({ source, key }: FieldParams): boolean | null => {
+  const value = source[key];
+  return typeof value === 'boolean' ? value : null;
+};
+
 type DecodePayloadParams = {
   readonly raw: string;
 };
@@ -67,7 +72,9 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
   const workflowName = stringAt({ source, key: 'workflowName' });
   const runId = stringAt({ source, key: 'runId' });
   const projectId = stringAt({ source, key: 'projectId' });
+  const projectName = stringAt({ source, key: 'projectName' });
   const reason = stringAt({ source, key: 'reason' });
+  const kept = booleanAt({ source, key: 'kept' });
   const externalId = stringAt({ source, key: 'externalId' });
   const number = numberAt({ source, key: 'number' });
   const added = numberAt({ source, key: 'added' });
@@ -84,7 +91,9 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
     ...(workflowName != null ? { workflowName } : {}),
     ...(runId != null ? { runId } : {}),
     ...(projectId != null ? { projectId } : {}),
+    ...(projectName != null ? { projectName } : {}),
     ...(reason != null ? { reason } : {}),
+    ...(kept != null ? { kept } : {}),
     ...(externalId != null ? { externalId } : {}),
     ...(number != null ? { number } : {}),
     ...(added != null ? { added } : {}),

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Dialog } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { isWizardDone, reopenWizard } from '../../../onboarding/onboarding-store';
-import { validateGitRepo } from '../../../../shared/lib/repo';
+import { useAppStore } from '../../../../store';
 import { WorkspaceLinkForm, type WorkspaceLinkMode } from '../WorkspaceLinkForm';
 
 type Props = {
@@ -26,11 +26,13 @@ export const WorkspaceLinkDialog = ({ open, onClose, onOfferRepo }: Props) => {
       reopenWizard('setup');
       return;
     }
-    if (mode !== 'project' || workspace.sessionsRoot === null) {
+    if (mode !== 'project') {
       return;
     }
-    const check = await validateGitRepo(workspace.sessionsRoot);
-    if (check.isRepo === false) {
+    const project = useAppStore
+      .getState()
+      .projects.find((candidate) => candidate.workspaceId === workspace.id);
+    if (project?.kind === 'folder') {
       onOfferRepo();
     }
   };

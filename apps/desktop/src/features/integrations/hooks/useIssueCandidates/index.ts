@@ -6,6 +6,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { primaryProjectRoot } from '../../../workspace/primaryProjectRoot';
 import { fetchIssueCandidates, type IssueCandidate } from '../../fetchIssueCandidates';
 import { useJiraConfig } from '../../jira/useJiraConfig';
 
@@ -25,9 +26,8 @@ type Result = {
 const EMPTY_ROWS: ReadonlyArray<IssueCandidate> = [];
 
 export const useIssueCandidates = ({ workspaceId, provider }: Params): Result => {
-  const rootPath = useAppStore(
-    (state) =>
-      state.workspaces.find((workspace) => workspace.id === workspaceId)?.sessionsRoot ?? null,
+  const rootPath = useAppStore((state) =>
+    primaryProjectRoot({ projects: state.projects, workspaceId }),
   );
   const gitlabHost = useAppStore((state) => {
     const integration = (state.workspaceIntegrations[workspaceId] ?? []).find(

@@ -33,7 +33,6 @@ export const OnboardingWizard = () => {
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const updateWorkspaceProfile = useAppStore((s) => s.updateWorkspaceProfile);
   const addProjects = useAppStore((s) => s.addProjects);
-  const adoptWorkspaceSessionsRoot = useAppStore((s) => s.adoptWorkspaceSessionsRoot);
   const [step, setStep] = useState(0);
   const [shape, setShape] = useState<WorkspaceShape | null>(null);
   const [singleDetection, setSingleDetection] = useState<DetectedChildRepos | null>(null);
@@ -138,10 +137,7 @@ export const OnboardingWizard = () => {
   }) => {
     const created = await createWorkspace({ name });
     await setCurrentWorkspace(created.id);
-    const linked = await addProjects({ workspaceId: created.id, rootPaths });
-    for (const project of linked) {
-      await adoptWorkspaceSessionsRoot({ workspaceId: created.id, rootPath: project.rootPath });
-    }
+    await addProjects({ workspaceId: created.id, rootPaths });
   };
 
   const commitSingleProject = ({

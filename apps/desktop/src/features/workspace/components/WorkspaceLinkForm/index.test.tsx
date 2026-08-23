@@ -21,7 +21,6 @@ const { state, repoMocks, dialogMock } = vi.hoisted(() => ({
       { id: 'proj-2', rootPath: '/parent/beta' },
     ]),
     removeProject: vi.fn(async () => undefined),
-    adoptWorkspaceSessionsRoot: vi.fn(async () => undefined),
     setCurrentWorkspace: vi.fn(async () => undefined),
     projects: [] as ReadonlyArray<{
       id: string;
@@ -140,10 +139,6 @@ describe('WorkspaceLinkForm', () => {
     expect(state.addProjects).toHaveBeenCalledWith({
       workspaceId: 'ws-created',
       rootPaths: ['/parent/alpha', '/parent/beta'],
-    });
-    expect(state.adoptWorkspaceSessionsRoot).toHaveBeenCalledWith({
-      workspaceId: 'ws-created',
-      rootPath: '/parent/alpha',
     });
     await waitFor(() => screen.getByRole('button', { name: 'Done' }));
   });

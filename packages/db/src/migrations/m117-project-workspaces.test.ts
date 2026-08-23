@@ -395,7 +395,7 @@ describe('project workspace migration', () => {
     const db = await migrateFixture();
     const workspaces = await db.select<{
       readonly id: string;
-      readonly sessions_root: string;
+      readonly sessions_root: string | null;
       readonly default_branch_prefix: string | null;
     }>(
       "SELECT id, sessions_root, default_branch_prefix FROM workspaces WHERE id LIKE 'composite-%' ORDER BY id",
@@ -413,12 +413,12 @@ describe('project workspace migration', () => {
     expect(workspaces).toEqual([
       {
         id: 'composite-primary',
-        sessions_root: '/fixture/composite-primary',
+        sessions_root: null,
         default_branch_prefix: 'platform/',
       },
       {
         id: 'composite-secondary',
-        sessions_root: '/fixture/composite-secondary',
+        sessions_root: null,
         default_branch_prefix: null,
       },
     ]);

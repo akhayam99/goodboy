@@ -17,7 +17,6 @@ export const ProjectsStep = ({ workspace }: Props) => {
   const addProject = useAppStore((state) => state.addProject);
   const addProjects = useAppStore((state) => state.addProjects);
   const removeProject = useAppStore((state) => state.removeProject);
-  const adoptWorkspaceSessionsRoot = useAppStore((state) => state.adoptWorkspaceSessionsRoot);
   const { detected, detect, clear } = useChildRepoDetection();
   const [path, setPath] = useState('');
   const [busy, setBusy] = useState(false);
@@ -42,8 +41,7 @@ export const ProjectsStep = ({ workspace }: Props) => {
       if (requireRepo && (await detect({ path: rootPath }))) {
         return;
       }
-      const project = await addProject({ workspaceId: workspace.id, rootPath, requireRepo });
-      await adoptWorkspaceSessionsRoot({ workspaceId: workspace.id, rootPath: project.rootPath });
+      await addProject({ workspaceId: workspace.id, rootPath, requireRepo });
       setPath('');
     } catch (linkError) {
       setError(formatError(linkError));
@@ -56,10 +54,7 @@ export const ProjectsStep = ({ workspace }: Props) => {
     setBusy(true);
     setError(null);
     try {
-      const linkedProjects = await addProjects({ workspaceId: workspace.id, rootPaths: paths });
-      for (const project of linkedProjects) {
-        await adoptWorkspaceSessionsRoot({ workspaceId: workspace.id, rootPath: project.rootPath });
-      }
+      await addProjects({ workspaceId: workspace.id, rootPaths: paths });
       clear();
       setPath('');
     } catch (linkError) {

@@ -1,5 +1,6 @@
 import {
   FolderGit2,
+  FolderMinus,
   FolderPlus,
   GitBranch,
   GitMerge,
@@ -34,6 +35,7 @@ const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
   decisions_changed: 'muted',
   project_materialized: 'plain',
   project_materialization_refused: 'muted',
+  project_detached: 'muted',
   external_task_created: 'plain',
 };
 
@@ -61,6 +63,7 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   decisions_changed: { icon: CONCEPT_ICONS.decisions, tone: 'neutral', label: 'Decisions' },
   project_materialized: { icon: FolderGit2, tone: 'info', label: 'Project' },
   project_materialization_refused: { icon: FolderGit2, tone: 'warning', label: 'Project' },
+  project_detached: { icon: FolderMinus, tone: 'neutral', label: 'Project' },
   external_task_created: { icon: Link2, tone: 'neutral', label: 'Issue' },
 };
 
@@ -126,12 +129,20 @@ export const sessionEventTitle = ({ event }: TitleParams): string => {
       return `${workflowLabel({ payload })} deleted`;
     case 'decisions_changed':
       return `${decisionCount({ count: payload?.added ?? 0 })} added, ${payload?.removed ?? 0} removed`;
-    case 'project_materialized':
-      return payload?.branch == null || payload.branch === ''
-        ? `Project mounted: ${payload?.reason ?? 'no reason recorded'}`
-        : `Project mounted on ${payload.branch}: ${payload?.reason ?? 'no reason recorded'}`;
+    case 'project_materialized': {
+      if (payload?.projectName == null) {
+        return payload?.branch == null || payload.branch === ''
+          ? `Project mounted: ${payload?.reason ?? 'no reason recorded'}`
+          : `Project mounted on ${payload.branch}: ${payload?.reason ?? 'no reason recorded'}`;
+      }
+      return payload.branch == null || payload.branch === ''
+        ? `Mounted ${payload.projectName}`
+        : `Mounted ${payload.projectName} on ${payload.branch}`;
+    }
     case 'project_materialization_refused':
       return `Project mount refused: ${payload?.reason ?? 'unknown failure'}`;
+    case 'project_detached':
+      return `Detached ${payload?.projectName ?? 'a project'}`;
     case 'external_task_created':
       return `Created ${issueLabel({ payload })}`;
     default: {
@@ -139,6 +150,20 @@ export const sessionEventTitle = ({ event }: TitleParams): string => {
       return exhaustive;
     }
   }
+};
+
+export const sessionEventSecondary = ({ event }: TitleParams): string | null => {
+  const { payload } = event;
+  if (event.kind === 'project_materialized') {
+    return payload?.projectName == null ? null : (payload.reason ?? null);
+  }
+  if (event.kind === 'project_detached') {
+    if (payload?.kept !== true) {
+      return null;
+    }
+    return payload.reason ?? 'worktree kept on disk';
+  }
+  return null;
 };
 
 type KindParams = {

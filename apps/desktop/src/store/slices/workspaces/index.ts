@@ -1,5 +1,4 @@
 import { addWorkspace } from './addWorkspace';
-import { adoptWorkspaceSessionsRoot } from './adoptWorkspaceSessionsRoot';
 import { createWorkspace } from './createWorkspace';
 import { deleteWorkspace } from './deleteWorkspace';
 import { mergeWorkspaces } from './mergeWorkspaces';
@@ -12,7 +11,6 @@ import type { GetFn, SetFn } from './types';
 export const createWorkspacesSlice = (set: SetFn, get: GetFn) => {
   return {
     addWorkspace: addWorkspace(set, get),
-    adoptWorkspaceSessionsRoot: adoptWorkspaceSessionsRoot(set, get),
     createWorkspace: createWorkspace(set, get),
     deleteWorkspace: deleteWorkspace(set, get),
     mergeWorkspaces: mergeWorkspaces(set, get),

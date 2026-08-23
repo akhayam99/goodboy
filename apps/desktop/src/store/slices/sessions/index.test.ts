@@ -1011,48 +1011,105 @@ describe('store contract', () => {
   });
 
   describe('createSession lazy container', () => {
-    it('creates only the session container: no worktree, no branch, no mounts', async () => {
+    it('touches no filesystem and records no session event at creation', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');
       store.setState({ currentWorkspaceId: WS_ID });
 
-      const { session, worktree } = await store.getState().createSession({
+      const { session } = await store.getState().createSession({
         workspaceId: WS_ID,
         goal: 'Study plan',
       });
 
       expect(createWorktreeSpy).not.toHaveBeenCalled();
       expect(createSessionDirSpy).not.toHaveBeenCalled();
-      expect(prepareSessionContainerSpy).toHaveBeenCalledWith({
-        path: expect.stringMatching(/^\/tmp\/repo\/study-plan-[a-f0-9]{8}$/),
+      expect(prepareSessionContainerSpy).not.toHaveBeenCalled();
+      expect(writeSessionMarkerSpy).not.toHaveBeenCalled();
+      expect(vi.mocked(db.insertSessionWorktree)).not.toHaveBeenCalled();
+      expect(vi.mocked(db.insertSessionEvent)).not.toHaveBeenCalled();
+      expect(vi.mocked(db.insertSession)).toHaveBeenCalledTimes(1);
+      expect(store.getState().sessionBranches[session.id]).toBe('');
+      expect(store.getState().sessionProjectMounts[session.id]).toEqual([]);
+      expect(store.getState().sessionWorktrees[session.id]).toEqual([]);
+    });
+
+    it('materializes the container exactly once through ensureSessionContainer', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      store.setState({ currentWorkspaceId: WS_ID, workspaces: [buildWorkspace()] });
+
+      const { session } = await store.getState().createSession({
+        workspaceId: WS_ID,
+        goal: 'Study plan',
       });
+      const containerDir = await store.getState().ensureSessionContainer({
+        sessionId: session.id,
+      });
+      const again = await store.getState().ensureSessionContainer({ sessionId: session.id });
+
+      expect(containerDir).toMatch(/^\/tmp\/repo\/study-plan-[a-f0-9]{8}$/);
+      expect(again).toBe(containerDir);
+      expect(prepareSessionContainerSpy).toHaveBeenCalledTimes(1);
+      expect(writeSessionMarkerSpy).toHaveBeenCalledTimes(1);
       expect(writeSessionMarkerSpy).toHaveBeenCalledWith({
-        path: worktree.worktreePath,
+        path: containerDir,
         sessionId: session.id,
         workspaceId: WS_ID,
       });
-      expect(worktree.branchName).toBe('');
       expect(vi.mocked(db.insertSessionWorktree)).toHaveBeenCalledTimes(1);
       expect(vi.mocked(db.insertSessionWorktree)).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
           sessionId: session.id,
-          worktreePath: worktree.worktreePath,
+          worktreePath: containerDir,
           branch: '',
           parallelIndex: 0,
         }),
       );
-      expect(store.getState().sessionBranches[session.id]).toBe('');
-      expect(store.getState().sessionProjectMounts[session.id]).toEqual([]);
-      expect(store.getState().sessionWorktrees[session.id]).toEqual([worktree.worktreePath]);
+      const kinds = vi.mocked(db.insertSessionEvent).mock.calls.map(([{ event }]) => event.kind);
+      expect(kinds).toEqual(['worktree_created']);
+      expect(store.getState().sessionWorktrees[session.id]).toEqual([containerDir]);
+    });
+
+    it('adopts a persisted container row without recording another event', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      store.setState({ currentWorkspaceId: WS_ID, workspaces: [buildWorkspace()] });
+      const { session } = await store.getState().createSession({
+        workspaceId: WS_ID,
+        goal: 'Study plan',
+      });
+      vi.mocked(db.listWorktreesForSession).mockResolvedValueOnce([
+        {
+          id: 'row-1',
+          sessionId: session.id,
+          worktreePath: '/tmp/repo/persisted-container',
+          branch: '',
+          parallelIndex: 0,
+          createdAt: Date.now(),
+        },
+      ]);
+
+      const containerDir = await store.getState().ensureSessionContainer({
+        sessionId: session.id,
+      });
+
+      expect(containerDir).toBe('/tmp/repo/persisted-container');
+      expect(prepareSessionContainerSpy).not.toHaveBeenCalled();
+      expect(vi.mocked(db.insertSessionEvent)).not.toHaveBeenCalled();
+      expect(store.getState().sessionWorktrees[session.id]).toEqual([containerDir]);
     });
 
     it('defaults the sessions root under the home state directory when the workspace has none', async () => {
       const store = await getStore();
-      getWorkspaceByIdSpy.mockResolvedValueOnce(buildWorkspace({ sessionsRoot: null }));
+      getWorkspaceByIdSpy.mockResolvedValue(buildWorkspace({ sessionsRoot: null }));
       store.setState({ currentWorkspaceId: WS_ID });
 
-      await store.getState().createSession({ workspaceId: WS_ID, goal: 'Study plan' });
+      const { session } = await store.getState().createSession({
+        workspaceId: WS_ID,
+        goal: 'Study plan',
+      });
+      await store.getState().ensureSessionContainer({ sessionId: session.id });
 
       expect(prepareSessionContainerSpy).toHaveBeenCalledWith({
         path: expect.stringMatching(/^~\/\.goodboy\/sessions\/ws\/study-plan-[a-f0-9]{8}$/),
@@ -1083,7 +1140,7 @@ describe('store contract', () => {
       });
     });
 
-    it('records the container event and one external_task_created per task', async () => {
+    it('records only external_task_created for a seeded creation', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');
       store.setState({ currentWorkspaceId: WS_ID });
@@ -1103,8 +1160,7 @@ describe('store contract', () => {
       });
 
       const kinds = vi.mocked(db.insertSessionEvent).mock.calls.map(([{ event }]) => event.kind);
-      expect(kinds).toContain('worktree_created');
-      expect(kinds).toContain('external_task_created');
+      expect(kinds).toEqual(['external_task_created']);
     });
   });
 
@@ -1127,7 +1183,9 @@ describe('store contract', () => {
     it('mounts a declared project lazily under the session container', async () => {
       const { store, session } = await seedMultiProjectSession();
       const db = await import('@goodboy/db');
-      const containerDir = store.getState().sessionWorktrees[session.id]![0]!;
+      const containerDir = await store.getState().ensureSessionContainer({
+        sessionId: session.id,
+      });
       createWorktreeSpy.mockResolvedValueOnce({
         worktreePath: `${containerDir}/api`,
         branchName: 'goodboy/ship-scope-1234abcd',
@@ -1168,8 +1226,15 @@ describe('store contract', () => {
       expect(store.getState().sessionProjectMounts[session.id]).toEqual([mount]);
       expect(store.getState().sessionBranches[session.id]).toBe('goodboy/ship-scope-1234abcd');
       expect(store.getState().sessionActiveProject[session.id]).toBe(API_PROJECT_ID);
-      const kinds = vi.mocked(db.insertSessionEvent).mock.calls.map(([{ event }]) => event.kind);
-      expect(kinds).toContain('project_materialized');
+      const materialized = vi
+        .mocked(db.insertSessionEvent)
+        .mock.calls.map(([{ event }]) => event)
+        .find((event) => event.kind === 'project_materialized');
+      expect(materialized?.payload).toMatchObject({
+        projectId: API_PROJECT_ID,
+        projectName: 'api',
+        branch: 'goodboy/ship-scope-1234abcd',
+      });
     });
 
     it('is idempotent per session and project', async () => {
@@ -1194,6 +1259,36 @@ describe('store contract', () => {
 
       expect(second).toEqual(first);
       expect(createWorktreeSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('re-adopts a persisted mount row without a second event, even without projectId', async () => {
+      const { store, session } = await seedMultiProjectSession();
+      const db = await import('@goodboy/db');
+      const containerDir = await store.getState().ensureSessionContainer({
+        sessionId: session.id,
+      });
+      vi.mocked(db.insertSessionEvent).mockClear();
+      vi.mocked(db.listWorktreesForSession).mockResolvedValueOnce([
+        {
+          id: 'row-mount',
+          sessionId: session.id,
+          worktreePath: `${containerDir}/api`,
+          branch: 'goodboy/persisted',
+          parallelIndex: 1,
+          mountName: 'api',
+          createdAt: Date.now(),
+        },
+      ]);
+
+      const mount = await store.getState().materializeProject({
+        sessionId: session.id,
+        projectId: API_PROJECT_ID,
+        reason: 'mounted again after a reload',
+      });
+
+      expect(createWorktreeSpy).not.toHaveBeenCalled();
+      expect(mount.worktreePath).toBe(`${containerDir}/api`);
+      expect(vi.mocked(db.insertSessionEvent)).not.toHaveBeenCalled();
     });
 
     it('refuses an empty reason before touching anything', async () => {
@@ -1226,7 +1321,7 @@ describe('store contract', () => {
         .mocked(db.insertSessionEvent)
         .mock.calls.map(([{ event }]) => event)
         .find((event) => event.kind === 'project_materialization_refused');
-      expect(refused?.payload).toMatchObject({ projectId: WEB_PROJECT_ID });
+      expect(refused?.payload).toMatchObject({ projectId: WEB_PROJECT_ID, projectName: 'web' });
       expect(store.getState().sessionProjectMounts[session.id]).toEqual([]);
     });
 

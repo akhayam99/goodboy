@@ -101,6 +101,23 @@ export const deleteWorktreesForSession = async (
   await db.execute('DELETE FROM session_worktrees WHERE session_id = ?', [sessionId]);
 };
 
+type DeleteSessionWorktreeForProjectParams = {
+  readonly db: Database;
+  readonly sessionId: SessionId;
+  readonly projectId: ProjectId;
+};
+
+export const deleteSessionWorktreeForProject = async ({
+  db,
+  sessionId,
+  projectId,
+}: DeleteSessionWorktreeForProjectParams): Promise<void> => {
+  await db.execute('DELETE FROM session_worktrees WHERE session_id = ? AND project_id = ?', [
+    sessionId,
+    projectId,
+  ]);
+};
+
 export const updateSessionWorktreeBranch = async (
   db: Database,
   sessionId: SessionId,

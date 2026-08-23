@@ -91,9 +91,15 @@ export const TimelineStreamRow = ({
           </span>
         </button>
         {action == null ? null : (
-          <Button variant="ghost" size="sm" className="h-6 shrink-0" onClick={action.onAct}>
-            {action.label}
-          </Button>
+          <span
+            data-testid="timeline-row-action"
+            className="flex shrink-0 items-center"
+            style={{ height: boxHeight }}
+          >
+            <Button variant="ghost" size="sm" className="h-6" onClick={action.onAct}>
+              {action.label}
+            </Button>
+          </span>
         )}
       </div>
     </div>

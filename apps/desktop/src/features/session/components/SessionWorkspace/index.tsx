@@ -20,7 +20,6 @@ import { AgentsPane } from './parts/AgentsPane';
 import { Pane } from './parts/Pane';
 import { SessionStudioLayer } from './parts/SessionStudioLayer';
 import { QuestionsPane } from './parts/QuestionsPane';
-import { ZoneToggle } from './parts/ZoneToggle';
 import { ContextPane } from './parts/ContextPane';
 import { ResolvePane } from './parts/ResolvePane';
 import { PrPane } from './parts/PrPane';
@@ -213,12 +212,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   return (
     <div className="relative flex h-full w-full min-w-0 flex-col">
       <div>
-        <div className="flex items-center gap-2 pr-2">
-          <div className="min-w-0 flex-1">
-            <SessionCrumbBar />
-          </div>
-          <ZoneToggle sessionId={sessionId} />
-        </div>
+        <SessionCrumbBar />
         <ScopeBar sessionId={sessionId} />
       </div>
       <div className="relative min-h-0 flex-1">

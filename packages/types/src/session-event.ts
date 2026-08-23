@@ -18,6 +18,7 @@ export const SESSION_EVENT_KINDS = [
   'decisions_changed',
   'project_materialized',
   'project_materialization_refused',
+  'project_detached',
   'external_task_created',
 ] as const;
 
@@ -38,7 +39,9 @@ export type SessionEventPayload = Readonly<{
   added?: number;
   removed?: number;
   projectId?: string;
+  projectName?: string;
   reason?: string;
+  kept?: boolean;
   externalId?: string;
 }>;
 

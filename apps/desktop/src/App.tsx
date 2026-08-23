@@ -32,6 +32,7 @@ import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLi
 import { ConvertWorkspaceDialog } from './features/workspace/components/ConvertWorkspaceDialog';
 import { WorkspaceLauncher } from './features/workspace/components/WorkspaceLauncher';
 import { isMainWindow } from './features/workspace/window';
+import { primaryProjectRoot } from './features/workspace/primaryProjectRoot';
 import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
@@ -94,6 +95,12 @@ export const App = () => {
   const workspaces = useWorkspaces();
   const hasWorkspaces = workspaces.length > 0;
   const currentWorkspace = useCurrentWorkspace();
+  const currentWorkspaceId = currentWorkspace?.id ?? null;
+  const workspaceProjectRoot = useAppStore((s) =>
+    currentWorkspaceId == null
+      ? null
+      : primaryProjectRoot({ projects: s.projects, workspaceId: currentWorkspaceId }),
+  );
   const currentSession = useCurrentSession();
   const hasActiveSession = currentSession != null;
   const sessionSidebar = useSessionSidebarVisibility({ hasActiveSession });
@@ -1010,7 +1017,7 @@ export const App = () => {
       {githubStudioOpen && currentWorkspace ? (
         <GitHubStudio
           workspaceId={currentWorkspace.id}
-          rootPath={currentWorkspace.sessionsRoot ?? ''}
+          rootPath={workspaceProjectRoot ?? ''}
           workspaceName={currentWorkspace.name}
           initialSessionId={githubStudioSession}
           initialPrNumber={githubStudioPrNumber}

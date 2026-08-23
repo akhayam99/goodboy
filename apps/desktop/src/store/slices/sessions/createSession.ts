@@ -18,7 +18,6 @@ import type {
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import {
   insertSession,
-  insertSessionWorktree,
   getWorkspaceById,
   listProjectsForWorkspace,
   upsertSessionExternalTask,
@@ -26,8 +25,6 @@ import {
   upsertContextSlot,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { writeSessionMarker, type CreatedWorktree } from '../../../features/worktree/worktree';
-import { prepareSessionContainer } from '../../../features/workspace/prepareSessionContainer';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 import { kindRouting, AGENT_KIND_META, type AgentKind } from '../../../features/session/agent-kind';
 import {
@@ -39,16 +36,8 @@ import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import { clampTitle } from './titleLimit';
 import { preSpawnWorkflowAgents } from '../workflows/preSpawnWorkflowAgents';
 import { rememberMaterializationSeed } from './materializationSeeds';
-import { resolveSessionsRoot } from './sessionsRoot';
+import { slugifyDir } from './slugifyDir';
 import type { GetFn, SetFn } from './types';
-
-const slugifyDir = (raw: string): string =>
-  raw
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40) || 'session';
 
 type ExternalTaskInput = {
   provider: SessionExternalTaskProvider;
@@ -98,7 +87,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     attachmentInputs,
     mobileShared = false,
     omitGoalSlot = false,
-  }: Input): Promise<{ session: Session; worktree: CreatedWorktree }> => {
+  }: Input): Promise<{ session: Session }> => {
     const workspace = await getWorkspaceById({ db: tauriDatabase, id: workspaceId });
     if (workspace === null) {
       throw new Error(`workspace not found: ${workspaceId}`);
@@ -119,9 +108,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
       markSessionMobileShared(sessionId);
     }
     const dirSlug = `${slugifyDir(slugSeed)}-${sessionId.slice(0, 8)}`;
-    const sessionsRoot = resolveSessionsRoot({ workspace });
-    const containerDir = await prepareSessionContainer({ path: `${sessionsRoot}/${dirSlug}` });
-    await writeSessionMarker({ path: containerDir, sessionId, workspaceId });
     rememberMaterializationSeed({
       sessionId,
       seed: {
@@ -138,12 +124,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
           : {}),
       },
     });
-    const worktree: CreatedWorktree = {
-      worktreePath: containerDir,
-      branchName: '',
-      slug: dirSlug,
-      reused: false,
-    };
 
     if (!get().workspaceOverrides[workspaceId]) {
       await get()
@@ -172,7 +152,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     const session: Session = {
       id: sessionId,
       workspaceId,
-      goal: clampTitle(goal.trim() || worktree.slug),
+      goal: clampTitle(goal.trim() || dirSlug),
       state: initialState,
       contextSlots: [],
       providerPreference: providerPreference ?? inheritedPreference,
@@ -217,19 +197,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
         continue;
       }
     }
-    await insertSessionWorktree(tauriDatabase, {
-      id: crypto.randomUUID(),
-      sessionId: session.id,
-      worktreePath: containerDir,
-      branch: '',
-      parallelIndex: 0,
-      createdAt: Date.now(),
-    });
-    await get().recordSessionEvent({
-      sessionId: session.id,
-      kind: 'worktree_created',
-      payload: { worktreePath: containerDir },
-    });
     for (const row of externalTaskRows) {
       await get().recordSessionEvent({
         sessionId: session.id,
@@ -245,7 +212,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       });
     }
 
-    const goalText = omitGoalSlot ? '' : goal.trim() || worktree.slug;
+    const goalText = omitGoalSlot ? '' : goal.trim() || dirSlug;
     if (goalText.length > 0) {
       await upsertContextSlot(tauriDatabase, session.id, {
         key: 'goal',
@@ -336,7 +303,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       },
       sessionWorktrees: {
         ...state.sessionWorktrees,
-        [session.id]: [containerDir],
+        [session.id]: [],
       },
       sessionProjectMounts: {
         ...state.sessionProjectMounts,
@@ -425,6 +392,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
       { sessionId: session.id, workspaceId: session.workspaceId },
     );
 
-    return { session, worktree };
+    return { session };
   };
 };

@@ -28,6 +28,7 @@ const actionClass =
 
 export const WorkspaceSwitcher = ({ anchorRef, onClose }: Props) => {
   const workspaces = useWorkspaces();
+  const projects = useAppStore((s) => s.projects);
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
@@ -39,8 +40,8 @@ export const WorkspaceSwitcher = ({ anchorRef, onClose }: Props) => {
   }, []);
 
   const filtered = useMemo(
-    () => filterWorkspaces(sortWorkspacesByRecent(workspaces), query),
-    [workspaces, query],
+    () => filterWorkspaces({ workspaces: sortWorkspacesByRecent(workspaces), projects, query }),
+    [workspaces, projects, query],
   );
 
   useEffect(() => {

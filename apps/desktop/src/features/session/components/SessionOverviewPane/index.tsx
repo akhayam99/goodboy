@@ -12,7 +12,6 @@ import {
 } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
-import { selectStandaloneAgents } from '../../agent-kind';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { HeaderBand } from './HeaderBand';
 import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';
@@ -23,10 +22,7 @@ import { GoalOverviewRegion } from './GoalOverviewRegion';
 import { OverviewNextSteps } from './OverviewNextSteps';
 import { OverviewPlans } from './OverviewPlans';
 import { OverviewPrs } from './OverviewPrs';
-import { OverviewWorkflows } from './OverviewWorkflows';
 import { OverviewLinkedWork } from './OverviewLinkedWork';
-import { OverviewStartAgent } from './OverviewStartAgent';
-import { OverviewProjects } from './OverviewProjects';
 
 type Props = {
   readonly session: Session;
@@ -48,14 +44,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const sessionList = useMemo(() => [session], [session]);
   const runs = useWorkspaceRuns(session.workspaceId, sessionList);
   const sessionAgents = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
-  const rawStandalone = selectStandaloneAgents(sessionAgents);
-
-  const activeRuns = useMemo(
-    () => session.workflowRuns.filter((run) => run.discardedAt == null),
-    [session.workflowRuns],
-  );
-  const hasWorkflows = activeRuns.length > 0;
-  const hasStandaloneAgents = rawStandalone.length > 0;
 
   const openWorkflowBuilder = () => {
     window.dispatchEvent(
@@ -99,26 +87,12 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         <OverviewNextSteps session={session} agents={sessionAgents} />
         <OverviewPlans session={session} onSelectLens={onSelectLens} />
         <OverviewLinkedWork session={session} />
-        {!hasStandaloneAgents && !hasWorkflows ? (
-          <OverviewStartAgent sessionId={sessionId} />
-        ) : null}
-        <OverviewWorkflows
-          session={session}
-          onSelectLens={onSelectLens}
-          onAttachWorkflow={openWorkflowBuilder}
-        />
-        <OverviewProjects session={session} />
         <OverviewPrs session={session} onSelectLens={onSelectLens} />
         <TimelinePane
           session={session}
           runs={runs}
           actions={
-            <OverviewActions
-              sessionId={sessionId}
-              onOpenWorkflowBuilder={openWorkflowBuilder}
-              showNewWorkflow={hasWorkflows}
-              showCreateAgent={hasStandaloneAgents || hasWorkflows}
-            />
+            <OverviewActions sessionId={sessionId} onOpenWorkflowBuilder={openWorkflowBuilder} />
           }
         />
       </PaneShell>

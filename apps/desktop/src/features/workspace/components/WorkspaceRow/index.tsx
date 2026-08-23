@@ -1,8 +1,9 @@
 import { Chip, cn } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
-import { useWorkspaceHasUnread } from '../../../../store';
+import { useAppStore, useWorkspaceHasUnread } from '../../../../store';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { workspaceAccent } from '../../color';
+import { primaryProjectRoot } from '../../primaryProjectRoot';
 
 type Props = {
   workspace: Workspace;
@@ -13,6 +14,9 @@ type Props = {
 
 export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props) => {
   const hasUnread = useWorkspaceHasUnread(workspace.id);
+  const projectRoot = useAppStore((state) =>
+    primaryProjectRoot({ projects: state.projects, workspaceId: workspace.id }),
+  );
   const accent = workspaceAccent(workspace.id);
   const lastSeen = workspace.lastAccessedAt ? formatRelativeDuration(workspace.lastAccessedAt) : '';
 
@@ -42,7 +46,7 @@ export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props)
           ) : null}
         </span>
         <span className="block truncate font-mono text-xs text-muted-foreground/80">
-          {workspace.sessionsRoot ?? ''}
+          {projectRoot ?? ''}
         </span>
       </span>
       {lastSeen ? (

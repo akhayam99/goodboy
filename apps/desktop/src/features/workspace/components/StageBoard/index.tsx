@@ -11,6 +11,7 @@ import { DeleteSessionConfirm } from '../../../session/components/DeleteSessionC
 import { WorkspaceGitPanel } from '../WorkspaceGitPanel';
 import { BulkActionBar } from '../BulkActionBar';
 import { useWorkspaceGitStatus } from '../../hooks/useWorkspaceGitStatus';
+import { primaryProjectRoot } from '../../primaryProjectRoot';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { ProjectsStep } from '../../../onboarding/OnboardingWizard/steps/ProjectsStep';
 import { StageColumn } from './StageColumn';
@@ -67,9 +68,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const archived = useAppStore((s) => s.archivedSessions[workspaceId] ?? EMPTY_ARRAY);
   const boardReady = useAppStore((s) => s.boardReady);
   const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
-  const rootPath = useAppStore(
-    (s) => s.workspaces.find((candidate) => candidate.id === workspaceId)?.sessionsRoot ?? null,
-  );
+  const rootPath = useAppStore((s) => primaryProjectRoot({ projects: s.projects, workspaceId }));
   const workspace = useAppStore(
     (s) => s.workspaces.find((candidate) => candidate.id === workspaceId) ?? null,
   );

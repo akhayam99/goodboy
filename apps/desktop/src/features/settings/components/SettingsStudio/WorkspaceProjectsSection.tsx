@@ -20,7 +20,6 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
   const addProject = useAppStore((s) => s.addProject);
   const addProjects = useAppStore((s) => s.addProjects);
   const removeProject = useAppStore((s) => s.removeProject);
-  const adoptWorkspaceSessionsRoot = useAppStore((s) => s.adoptWorkspaceSessionsRoot);
   const { detected, detect, clear } = useChildRepoDetection();
   const { showToast } = useToast();
   const [path, setPath] = useState('');
@@ -41,7 +40,6 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
         return;
       }
       const project = await addProject({ workspaceId, rootPath, requireRepo });
-      await adoptWorkspaceSessionsRoot({ workspaceId, rootPath: project.rootPath });
       setPath('');
       showToast('success', `linked ${project.name}`);
     } catch (linkError) {
@@ -56,9 +54,6 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
     setError(null);
     try {
       const linkedProjects = await addProjects({ workspaceId, rootPaths: paths });
-      for (const project of linkedProjects) {
-        await adoptWorkspaceSessionsRoot({ workspaceId, rootPath: project.rootPath });
-      }
       clear();
       setPath('');
       showToast(

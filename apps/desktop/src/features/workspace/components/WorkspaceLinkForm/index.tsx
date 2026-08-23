@@ -51,7 +51,6 @@ export const WorkspaceLinkForm = ({
   const addProject = useAppStore((state) => state.addProject);
   const addProjects = useAppStore((state) => state.addProjects);
   const removeProject = useAppStore((state) => state.removeProject);
-  const adoptWorkspaceSessionsRoot = useAppStore((state) => state.adoptWorkspaceSessionsRoot);
   const setCurrentWorkspace = useAppStore((state) => state.setCurrentWorkspace);
   const projects = useAppStore((state) => state.projects);
   const { detected, detect, clear } = useChildRepoDetection();
@@ -86,10 +85,7 @@ export const WorkspaceLinkForm = ({
   }) => {
     const workspace = await createWorkspace({ name });
     await setCurrentWorkspace(workspace.id);
-    const linkedProjects = await addProjects({ workspaceId: workspace.id, rootPaths });
-    for (const project of linkedProjects) {
-      await adoptWorkspaceSessionsRoot({ workspaceId: workspace.id, rootPath: project.rootPath });
-    }
+    await addProjects({ workspaceId: workspace.id, rootPaths });
     return workspace;
   };
 
@@ -150,12 +146,11 @@ export const WorkspaceLinkForm = ({
       }
       clear();
       if (created !== null) {
-        const project = await addProject({
+        await addProject({
           workspaceId: created.id,
           rootPath: picked,
           requireRepo: false,
         });
-        await adoptWorkspaceSessionsRoot({ workspaceId: created.id, rootPath: project.rootPath });
         return;
       }
       const workspace = await addWorkspace({ rootPath: picked });
@@ -171,8 +166,7 @@ export const WorkspaceLinkForm = ({
       if (await detect({ path: rootPath })) {
         return;
       }
-      const project = await addProject({ workspaceId: created.id, rootPath });
-      await adoptWorkspaceSessionsRoot({ workspaceId: created.id, rootPath: project.rootPath });
+      await addProject({ workspaceId: created.id, rootPath });
       setProjectPath('');
     });
 
@@ -187,8 +181,7 @@ export const WorkspaceLinkForm = ({
       }
       clear();
       const initialized = await initRepo({ path: picked });
-      const project = await addProject({ workspaceId: created.id, rootPath: initialized.rootPath });
-      await adoptWorkspaceSessionsRoot({ workspaceId: created.id, rootPath: project.rootPath });
+      await addProject({ workspaceId: created.id, rootPath: initialized.rootPath });
       setProjectPath('');
     });
 
@@ -213,10 +206,7 @@ export const WorkspaceLinkForm = ({
         setCreated(workspace);
         return;
       }
-      const linkedProjects = await addProjects({ workspaceId: created.id, rootPaths: paths });
-      for (const project of linkedProjects) {
-        await adoptWorkspaceSessionsRoot({ workspaceId: created.id, rootPath: project.rootPath });
-      }
+      await addProjects({ workspaceId: created.id, rootPaths: paths });
       clear();
       setProjectPath('');
     });

@@ -82,12 +82,13 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
     if (project === undefined || project.workspaceId !== session.workspaceId) {
       throw new Error(`project not found in this workspace: ${projectId}`);
     }
-    const containerDir = (get().sessionWorktrees[sessionId] ?? [])[0] ?? null;
-    if (containerDir === null) {
-      throw new Error('session container not initialized. restart the app to reload it');
-    }
+    const containerDir = await get().ensureSessionContainer({ sessionId });
     const rows = await listWorktreesForSession(tauriDatabase, sessionId);
-    const persistedRow = rows.find((row) => row.projectId === projectId);
+    const persistedRow = rows.find(
+      (row) =>
+        row.projectId === projectId ||
+        (row.projectId === undefined && row.parallelIndex > 0 && row.mountName === project.name),
+    );
     if (persistedRow !== undefined) {
       const persistedMount: SessionProjectMount = {
         projectId,
@@ -134,7 +135,7 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
       await get().recordSessionEvent({
         sessionId,
         kind: 'project_materialization_refused',
-        payload: { projectId, reason: formatError(error) },
+        payload: { projectId, projectName: project.name, reason: formatError(error) },
       });
       throw error;
     }
@@ -167,7 +168,12 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
     await get().recordSessionEvent({
       sessionId,
       kind: 'project_materialized',
-      payload: { projectId, branch: created.branchName, reason: trimmedReason },
+      payload: {
+        projectId,
+        projectName: project.name,
+        branch: created.branchName,
+        reason: trimmedReason,
+      },
     });
     const mount: SessionProjectMount = {
       projectId,

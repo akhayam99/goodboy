@@ -23,10 +23,14 @@ vi.mock('../../../../store', () => ({
   useWorkspaceHasUnread: () => false,
   useAppStore: (
     selector: (s: {
-      projects: ReadonlyArray<never>;
+      projects: ReadonlyArray<{ id: string; workspaceId: string; kind: string; rootPath: string }>;
       openWorkspace: () => Promise<void>;
     }) => unknown,
-  ) => selector({ projects: [], openWorkspace: async () => undefined }),
+  ) =>
+    selector({
+      projects: [{ id: 'proj-1', workspaceId: 'ws-1', kind: 'repo', rootPath: '/code/monorepo' }],
+      openWorkspace: async () => undefined,
+    }),
 }));
 
 import { WorkspaceIdentityRow } from './index';

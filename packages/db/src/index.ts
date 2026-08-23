@@ -19,7 +19,6 @@ export {
   reconnectWorkspace,
   renameWorkspace,
   touchWorkspaceLastAccessed,
-  updateWorkspaceSessionsRoot,
   deleteWorkspace,
   upsertWorkspaceProfile,
 } from './queries/workspace';
@@ -183,6 +182,7 @@ export {
   listWorktreesForSession,
   listWorktreesForSessions,
   deleteWorktreesForSession,
+  deleteSessionWorktreeForProject,
   updateSessionWorktreeBranch,
   updateSessionWorktreePath,
   updateSessionWorktreeRepoSlug,
