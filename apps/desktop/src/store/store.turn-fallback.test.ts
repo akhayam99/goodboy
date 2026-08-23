@@ -1,200 +1,67 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, AgentId, IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AgentId, IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
+import {
+  buildStoryAgent,
+  buildStorySession,
+  buildStoryWorkspace,
+  connectedAnthropicState,
+  emptyTurnStream,
+  resetStorySpies,
+  storySpies,
+} from './storyHarness';
 
-const runTurnSpy = vi.fn();
-const invokeSpy = vi.fn();
-const invokeAgentListSpy = vi.fn(async () => [] as ReadonlyArray<Agent>);
-const writeAttachmentSpy = vi.fn(async () => '.goodboy/attachments/spec.pdf');
-
-vi.mock('../features/chat/turn', () => ({
-  runTurn: (args: unknown) => runTurnSpy(args),
-  cancelTurn: vi.fn(),
-  encodeAuthRequiredMessage: () => '',
-  isAuthErrorMessage: () => false,
-  writeAttachment: () => writeAttachmentSpy(),
-}));
-
-vi.mock('../features/permissions/permissions', () => ({
-  invokePermissionRuleList: vi.fn(async () => []),
-  invokePermissionAuditInsert: vi.fn(),
-  invokeAuditRetryEnqueue: vi.fn(async () => undefined),
-  invokeAuditRetryDrain: vi.fn(async () => []),
-  invokeAuditRetryUpdate: vi.fn(async () => undefined),
-  invokeAuditRetryDelete: vi.fn(async () => undefined),
-  useEffectivePermissionRules: () => [],
-}));
-
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: invokeSpy,
-}));
-
-vi.mock('@tauri-apps/api/event', () => ({
-  listen: vi.fn(),
-}));
-
-vi.mock('../shared/lib/db', () => ({
-  runDbMigrations: vi.fn(),
-  tauriDatabase: { execute: vi.fn(), select: vi.fn() },
-}));
-
-vi.mock('@goodboy/db', () => ({
-  getSetting: vi.fn(),
-  insertMessage: vi.fn(),
-  insertProviderRun: vi.fn(async () => undefined),
-  insertSession: vi.fn(),
-  insertSessionWorktree: vi.fn(),
-  insertTelemetry: vi.fn(),
-  insertWorkspace: vi.fn(),
-  listContextSlotsForSession: vi.fn(async () => []),
-  listMessagesForSession: vi.fn(async () => []),
-  listSessionsForWorkspace: vi.fn(async () => []),
-  listTelemetryForSession: vi.fn(async () => []),
-  listWorkspaces: vi.fn(async () => []),
-  listWorktreesForTask: vi.fn(async () => []),
-  deleteWorktreesForSession: vi.fn(),
-  setSetting: vi.fn(),
-  summarizeSessionTelemetry: vi.fn(async () => null),
-  summarizeWorkspaceTelemetry: vi.fn(async () => null),
-  summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
-  updateProviderRunStatus: vi.fn(),
-  updateSessionState: vi.fn(),
-  upsertContextSlot: vi.fn(),
-  insertOpenQuestion: vi.fn(async () => undefined),
-  markOpenQuestionsResolvedByText: vi.fn(async () => 0),
-  listResolvedQuestionTextsForSession: vi.fn(async () => []),
-  insertTurnEvent: vi.fn(async () => undefined),
-  insertTurnEventsBatch: vi.fn(async () => undefined),
-  listWorktreesForSessions: vi.fn(async () => new Map()),
-  listAgentsForSessions: vi.fn(async () => new Map()),
-  listTurnEventsForAgent: vi.fn(async () => []),
-  listTurnEventsForTask: vi.fn(async () => []),
-  listMessagesForAgent: vi.fn(async () => []),
-  insertNotification: vi.fn(async () => undefined),
-  listNotifications: vi.fn(async () => []),
-  countNotifications: vi.fn(async () => ({ total: 0, unread: 0 })),
-  NOTIFICATION_LIST_LIMIT: 200,
-  markAllNotificationsRead: vi.fn(async () => undefined),
-  clearAllNotifications: vi.fn(async () => undefined),
-  updateSessionWorkflowStep: vi.fn(),
-  attachWorkflowToSession: vi.fn(),
-  detachWorkflowFromSession: vi.fn(),
-  updateWorkflowOrder: vi.fn(),
-}));
-
-vi.mock('../features/providers/providers', () => ({
-  buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
-  checkProviderAuth: vi.fn(),
-  getCursorStatus: vi.fn(),
-  getCodexStatus: vi.fn(),
-  getProviderStatus: vi.fn(),
-}));
-
-vi.mock('../features/providers/routing', () => ({
-  resolveProviderForTurn: vi.fn(async () => ({
-    selectedProvider: 'anthropic',
-    selectedModel: 'claude-sonnet-4-5',
-    reason: 'preference',
-    fallbackUsed: false,
-  })),
-}));
-
-vi.mock('../features/budget/budget', () => ({
-  invokeBudgetRuleList: vi.fn(async () => []),
-  invokeBudgetRuleUpsert: vi.fn(),
-  invokeBudgetRuleDelete: vi.fn(),
-  invokeBudgetAlertsList: vi.fn(async () => []),
-  invokeBudgetAlertDismiss: vi.fn(),
-  invokeSessionBudgetGet: vi.fn(),
-  invokeSessionBudgetSet: vi.fn(),
-  invokeCheckProviderBudget: vi.fn(),
-}));
-
-vi.mock('../features/skills/skills', () => ({
-  invokeSkillList: vi.fn(async () => []),
-  invokeSkillUpsert: vi.fn(),
-  invokeSkillDelete: vi.fn(),
-  invokeSkillRescan: vi.fn(),
-  resolveSkillInvocation: vi.fn(),
-}));
-
-vi.mock('../features/workflows/workflows', () => ({
-  invokeWorkflowList: vi.fn(async () => []),
-  invokeWorkflowUpsert: vi.fn(),
-  invokeWorkflowDelete: vi.fn(),
-  invokeAgentList: invokeAgentListSpy,
-  invokeAgentInsert: vi.fn(),
-  invokeAgentUpdateStatus: vi.fn(async () => undefined),
-  invokeAgentMarkViewed: vi.fn(async () => undefined),
-  invokeAgentSetDone: vi.fn(async () => undefined),
-}));
-
-vi.mock('../features/worktree/worktree', () => ({
-  createWorktree: vi.fn(),
-  removeWorktree: vi.fn(),
-  worktreeChangedFiles: vi.fn(async () => ({ files: [], numstat: '' })),
-}));
-
-vi.mock('../shared/lib/repo', () => ({
-  validateGitRepo: vi.fn(),
-}));
-
-vi.mock('../features/plans/plans', () => ({
-  listPlansForSession: vi.fn(async () => []),
-  upsertPlan: vi.fn(),
-  setPlanStatus: vi.fn(),
-  setPlanBody: vi.fn(),
-  deletePlan: vi.fn(),
-  addPlanConsumption: vi.fn(),
-  listConsumptionsForPlan: vi.fn(async () => []),
-}));
+vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('./storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('../shared/lib/db', async () => (await import('./storyHarness')).dbLibModuleMock());
+vi.mock('@goodboy/db', async () => (await import('./storyHarness')).dbModuleMock());
+vi.mock('../features/chat/turn', async () => (await import('./storyHarness')).turnModuleMock());
+vi.mock('../features/permissions/permissions', async () =>
+  (await import('./storyHarness')).permissionsModuleMock(),
+);
+vi.mock('../features/providers/providers', async () =>
+  (await import('./storyHarness')).providersModuleMock(),
+);
+vi.mock('../features/providers/routing', async () =>
+  (await import('./storyHarness')).routingModuleMock(),
+);
+vi.mock('../features/budget/budget', async () =>
+  (await import('./storyHarness')).budgetModuleMock(),
+);
+vi.mock('../features/skills/skills', async () =>
+  (await import('./storyHarness')).skillsModuleMock(),
+);
+vi.mock('../features/workflows/workflows', async () =>
+  (await import('./storyHarness')).workflowsModuleMock(),
+);
+vi.mock('../features/worktree/worktree', async () =>
+  (await import('./storyHarness')).worktreeModuleMock(),
+);
+vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
+vi.mock('../features/plans/plans', async () => (await import('./storyHarness')).plansModuleMock());
 
 const SESSION_ID = 'session-fallback-1' as SessionId;
 const AGENT_A = 'agent-fallback-a' as AgentId;
 const WORKSPACE_ID = 'workspace-fallback' as WorkspaceId;
 const NOW = '2026-07-30T00:00:00.000Z' as IsoDateTime;
 
-const buildSession = (): Session => ({
-  id: SESSION_ID,
-  workspaceId: WORKSPACE_ID,
-  goal: 'test turn fallback',
-  state: { kind: 'idle', lastActivityAt: NOW },
-  contextSlots: [],
-  providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
-  permissionMode: 'bypassPermissions' as const,
-  autoRun: false,
-  titleUserEdited: false,
-  workflowRuns: [],
-  createdAt: NOW,
-  updatedAt: NOW,
-});
+type StoreModule = typeof import('./store');
+let useAppStore: StoreModule['useAppStore'];
 
-const buildAgent = (): Agent => ({
-  id: AGENT_A,
-  sessionId: SESSION_ID,
-  ordinal: 0,
-  name: 'agent 0',
-  status: 'pending',
-});
-
-async function* emptyStream() {}
-
-const importStore = async () => {
-  const mod = await import('./store');
-  return mod.useAppStore;
-};
+beforeAll(async () => {
+  ({ useAppStore } = await import('./store'));
+}, 60_000);
 
 describe('sendTurn, provider failure fallback', () => {
   beforeEach(async () => {
-    runTurnSpy.mockReset();
-    invokeSpy.mockReset();
-    invokeAgentListSpy.mockReset();
-    invokeAgentListSpy.mockResolvedValue([]);
-    runTurnSpy.mockImplementation(() => emptyStream());
-    invokeSpy.mockResolvedValue({
+    resetStorySpies();
+    storySpies.runTurn.mockImplementation(() => emptyTurnStream());
+    storySpies.tauriInvoke.mockResolvedValue({
       stdout: JSON.stringify({ result: JSON.stringify({ upserts: [] }) }),
       stderr: '',
       exitCode: 0,
-    });
+    } as never);
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
@@ -206,58 +73,38 @@ describe('sendTurn, provider failure fallback', () => {
 
   afterEach(async () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
-    vi.clearAllMocks();
   });
 
-  const setup = (useAppStore: Awaited<ReturnType<typeof importStore>>) => {
+  const setup = () => {
     useAppStore.setState({
-      sessions: [buildSession()],
+      sessions: [
+        buildStorySession({
+          id: SESSION_ID,
+          workspaceId: WORKSPACE_ID,
+          goal: 'test turn fallback',
+          state: { kind: 'idle', lastActivityAt: NOW },
+        }),
+      ],
+      projects: [],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
-      sessionPhaseRuns: { [SESSION_ID]: [buildAgent()] },
+      sessionPhaseRuns: {
+        [SESSION_ID]: [buildStoryAgent({ id: AGENT_A, sessionId: SESSION_ID, name: 'agent 0' })],
+      },
       selectedAgentId: { [SESSION_ID]: AGENT_A },
       transcripts: { [AGENT_A]: [] },
       agentEffortOverride: {},
       agentProviderOverride: {},
       agentModelOverride: {},
-      providers: [
-        {
-          id: 'anthropic',
-          binary: 'claude',
-          connection: 'connected',
-          name: 'Claude',
-          installation: 'installed',
-        } as never,
-      ],
-      authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        {
-          id: WORKSPACE_ID,
-          name: 'ws',
-          slug: 'ws',
-          sessionsRoot: '/tmp',
-          overrides: {
-            defaultProviderId: null,
-            defaultWorkflowId: null,
-            defaultBranchPrefix: null,
-            parallelEnabled: null,
-            defaultVerbosity: null,
-            providerBindings: null,
-            taskModels: null,
-            roleModels: null,
-            parallelAgents: null,
-            providerPool: null,
-          },
-          createdAt: NOW,
-          updatedAt: NOW,
-        },
+        buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws', sessionsRoot: '/tmp' }),
       ],
+      ...connectedAnthropicState(),
     });
   };
 
   it('retries a usage-limit failure once on a cheaper model of the same provider', async () => {
-    const useAppStore = await importStore();
-    setup(useAppStore);
-    runTurnSpy.mockImplementationOnce(async function* () {
+    setup();
+    storySpies.runTurn.mockImplementationOnce(async function* () {
       throw new Error('rate limit exceeded for this account');
     });
 
@@ -265,9 +112,9 @@ describe('sendTurn, provider failure fallback', () => {
       .getState()
       .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
 
-    expect(runTurnSpy).toHaveBeenCalledTimes(2);
-    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-sonnet-4-5');
-    expect(runTurnSpy.mock.calls[1]?.[0]).toEqual(
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(2);
+    expect(storySpies.runTurn.mock.calls[0]?.[0]?.model).toBe('claude-sonnet-4-5');
+    expect(storySpies.runTurn.mock.calls[1]?.[0]).toEqual(
       expect.objectContaining({ provider: 'anthropic', model: 'claude-haiku-4-5' }),
     );
     const transcript = useAppStore.getState().transcripts[AGENT_A] ?? [];
@@ -280,9 +127,8 @@ describe('sendTurn, provider failure fallback', () => {
   });
 
   it('reuses the attachments of the first attempt instead of writing them again', async () => {
-    const useAppStore = await importStore();
-    setup(useAppStore);
-    runTurnSpy.mockImplementationOnce(async function* () {
+    setup();
+    storySpies.runTurn.mockImplementationOnce(async function* () {
       throw new Error('rate limit exceeded for this account');
     });
 
@@ -300,17 +146,18 @@ describe('sendTurn, provider failure fallback', () => {
       ],
     });
 
-    expect(writeAttachmentSpy).toHaveBeenCalledOnce();
-    expect(runTurnSpy).toHaveBeenCalledTimes(2);
-    expect(runTurnSpy.mock.calls[1]?.[0]?.prompt).toContain('.goodboy/attachments/spec.pdf');
+    expect(storySpies.writeAttachment).toHaveBeenCalledOnce();
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(2);
+    expect(storySpies.runTurn.mock.calls[1]?.[0]?.prompt).toContain(
+      '.goodboy/attachments/spec.pdf',
+    );
     const transcript = useAppStore.getState().transcripts[AGENT_A] ?? [];
     expect(transcript.filter((event) => event.kind === 'user_text')).toHaveLength(1);
   });
 
   it('leaves an unclassified failure in the error state without retrying', async () => {
-    const useAppStore = await importStore();
-    setup(useAppStore);
-    runTurnSpy.mockImplementation(async function* () {
+    setup();
+    storySpies.runTurn.mockImplementation(async function* () {
       throw new Error('connection reset by peer');
     });
 
@@ -318,7 +165,7 @@ describe('sendTurn, provider failure fallback', () => {
       useAppStore.getState().sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' }),
     ).rejects.toThrow('connection reset by peer');
 
-    expect(runTurnSpy).toHaveBeenCalledOnce();
+    expect(storySpies.runTurn).toHaveBeenCalledOnce();
     expect(useAppStore.getState().agentTurnState[AGENT_A]?.kind).toBe('error');
   });
 
@@ -339,9 +186,8 @@ describe('sendTurn, provider failure fallback', () => {
     };
 
   it('surfaces a git index.lock tool failure as a retryable transcript error', async () => {
-    const useAppStore = await importStore();
-    setup(useAppStore);
-    runTurnSpy.mockImplementation(streamToolCallEnd({ output: LOCK_OUTPUT }));
+    setup();
+    storySpies.runTurn.mockImplementation(streamToolCallEnd({ output: LOCK_OUTPUT }));
 
     await useAppStore
       .getState()
@@ -356,9 +202,8 @@ describe('sendTurn, provider failure fallback', () => {
   });
 
   it('leaves an ordinary tool failure out of the transcript', async () => {
-    const useAppStore = await importStore();
-    setup(useAppStore);
-    runTurnSpy.mockImplementation(streamToolCallEnd({ output: 'command not found: foo' }));
+    setup();
+    storySpies.runTurn.mockImplementation(streamToolCallEnd({ output: 'command not found: foo' }));
 
     await useAppStore
       .getState()
