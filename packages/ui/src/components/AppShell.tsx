@@ -68,7 +68,7 @@ function buildLayout(opts: {
     rightWidthPx,
   } = opts;
 
-  const rows = hasFooter ? 'minmax(0,1fr) 2.25rem' : 'minmax(0,1fr)';
+  const rows = hasFooter ? 'minmax(0,1fr) auto' : 'minmax(0,1fr)';
 
   if (!hasLeftSidebar) {
     if (!hasRightSidebar) {
