@@ -19,41 +19,16 @@ type WorkspaceRow = OverrideRow & {
   readonly disconnected_at: number | null;
   readonly last_accessed_at: number | null;
   readonly profile_workspace_id: string | null;
-  readonly profile_role: string | null;
-  readonly profile_discipline: string | null;
-  readonly profile_topics: string | null;
-  readonly profile_notes: string | null;
+  readonly profile_bio: string | null;
 };
 
 const WORKSPACE_SELECT = `
   SELECT
     w.*,
     wp.workspace_id AS profile_workspace_id,
-    wp.role AS profile_role,
-    wp.discipline AS profile_discipline,
-    wp.topics AS profile_topics,
-    wp.notes AS profile_notes
+    wp.bio AS profile_bio
   FROM workspaces w
   LEFT JOIN workspace_profiles wp ON wp.workspace_id = w.id`;
-
-type ParseTopicsParams = {
-  readonly raw: string | null;
-};
-
-const parseTopics = ({ raw }: ParseTopicsParams): ReadonlyArray<string> => {
-  if (raw === null) {
-    return [];
-  }
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (Array.isArray(parsed) === false) {
-      return [];
-    }
-    return parsed.filter((value): value is string => typeof value === 'string');
-  } catch {
-    return [];
-  }
-};
 
 type ProfileParams = {
   readonly row: WorkspaceRow;
@@ -63,16 +38,7 @@ const profileFromRow = ({ row }: ProfileParams): WorkspaceProfile | undefined =>
   if (row.profile_workspace_id === null) {
     return undefined;
   }
-  const role =
-    row.profile_role === 'developer' || row.profile_role === 'non-developer'
-      ? row.profile_role
-      : null;
-  return {
-    role,
-    discipline: row.profile_discipline,
-    topics: parseTopics({ raw: row.profile_topics }),
-    notes: row.profile_notes,
-  };
+  return { bio: row.profile_bio };
 };
 
 type ToDomainParams = {
@@ -300,21 +266,11 @@ export const upsertWorkspaceProfile = async ({
   profile,
 }: UpsertWorkspaceProfileParams): Promise<void> => {
   await db.execute(
-    `INSERT INTO workspace_profiles (workspace_id, role, discipline, topics, notes, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?)
+    `INSERT INTO workspace_profiles (workspace_id, bio, updated_at)
+     VALUES (?, ?, ?)
      ON CONFLICT(workspace_id) DO UPDATE SET
-       role = excluded.role,
-       discipline = excluded.discipline,
-       topics = excluded.topics,
-       notes = excluded.notes,
+       bio = excluded.bio,
        updated_at = excluded.updated_at`,
-    [
-      workspaceId,
-      profile.role,
-      profile.discipline,
-      JSON.stringify(profile.topics),
-      profile.notes,
-      Date.now(),
-    ],
+    [workspaceId, profile.bio, Date.now()],
   );
 };

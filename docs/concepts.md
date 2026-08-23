@@ -120,15 +120,13 @@ reason, is refused rather than recorded blank.
 
 ### The workspace profile
 
-Each workspace carries at most one profile: a role (developer or
-non-developer), a discipline, topics, and free notes. The profile is injected
-into every agent prompt as a guard block, so agents know who they are working
-with: a non-developer profile suppresses raw diffs and code blocks in favor of
-outcome language, and a platform discipline invites cross-project reasoning.
-Saving the profile also projects it one way to
-`~/.goodboy/workspaces/<slug>/PROFILE.md`, a markdown file with the fields as
-frontmatter and the notes as body; the database row is the source of truth
-and the file is never read back.
+Each workspace carries at most one profile: a single free-form bio the person
+writes in their own words, prompted as "Tell agents who you are and what you
+do here". The bio is injected verbatim into every agent prompt as a guard
+block, framed as what the person says about themselves; an empty bio injects
+nothing. Saving the profile also projects it one way to
+`~/.goodboy/workspaces/<slug>/PROFILE.md` as plain text; the database row is
+the source of truth and the file is never read back.
 
 ### Integration bindings
 

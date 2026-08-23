@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
 import type { OnboardingWizardState } from './useOnboardingWizard';
-import type { ProfileDraft } from './steps/ProfileStep';
 
 const { hookState, progressState, finishWizard, storeActions, repoLib } = vi.hoisted(() => ({
   hookState: {} as OnboardingWizardState,
@@ -109,20 +108,13 @@ vi.mock('./steps/ProjectsStep', () => ({
   ProjectsStep: () => <div data-testid="ProjectsStep" />,
 }));
 vi.mock('./steps/ProfileStep', () => ({
-  ProfileStep: ({
-    draft,
-    onDraftChange,
-  }: {
-    draft: ProfileDraft;
-    onDraftChange: (draft: ProfileDraft) => void;
-  }) => (
+  ProfileStep: ({ bio, onBioChange }: { bio: string; onBioChange: (bio: string) => void }) => (
     <div data-testid="ProfileStep">
-      <button
-        type="button"
-        onClick={() => onDraftChange({ ...draft, role: 'developer', discipline: 'frontend' })}
-      >
-        pick developer
-      </button>
+      <input
+        aria-label="Profile bio"
+        value={bio}
+        onChange={(event) => onBioChange(event.target.value)}
+      />
     </div>
   ),
 }));
@@ -386,26 +378,34 @@ describe('OnboardingWizard', () => {
   });
 
   describe('profile step', () => {
-    it('keeps Continue disabled until a role is chosen, then persists the profile', async () => {
+    it('continues past an empty bio without spending a profile write', async () => {
       setHook(connectedWorkspaceState);
       render(<OnboardingWizard />);
       await reachProfileStep();
       expect(
         (screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled,
-      ).toBe(true);
+      ).toBe(false);
 
-      fireEvent.click(screen.getByRole('button', { name: /pick developer/i }));
+      fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+
+      await waitFor(() => expect(screen.getByTestId('PreferencesStep')).toBeDefined());
+      expect(storeActions.updateWorkspaceProfile).not.toHaveBeenCalled();
+    });
+
+    it('persists the typed bio as the whole profile', async () => {
+      setHook(connectedWorkspaceState);
+      render(<OnboardingWizard />);
+      await reachProfileStep();
+
+      fireEvent.change(screen.getByLabelText('Profile bio'), {
+        target: { value: '  I lead design for the checkout team.  ' },
+      });
       fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
       await waitFor(() => expect(screen.getByTestId('PreferencesStep')).toBeDefined());
       expect(storeActions.updateWorkspaceProfile).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
-        profile: {
-          role: 'developer',
-          discipline: 'frontend',
-          topics: [],
-          notes: null,
-        },
+        profile: { bio: 'I lead design for the checkout team.' },
       });
     });
   });
@@ -415,7 +415,6 @@ describe('OnboardingWizard', () => {
       setHook(connectedWorkspaceState);
       render(<OnboardingWizard />);
       await reachProfileStep();
-      fireEvent.click(screen.getByRole('button', { name: /pick developer/i }));
       await continueTo('PreferencesStep');
       await continueTo('IntegrationsStep');
       expect(screen.getByRole('button', { name: /skip for now/i })).toBeDefined();
@@ -425,7 +424,6 @@ describe('OnboardingWizard', () => {
       setHook({ ...connectedWorkspaceState, hasSlack: true });
       render(<OnboardingWizard />);
       await reachProfileStep();
-      fireEvent.click(screen.getByRole('button', { name: /pick developer/i }));
       await continueTo('PreferencesStep');
       await continueTo('IntegrationsStep');
       expect(screen.getByRole('button', { name: /^continue$/i })).toBeDefined();
@@ -446,7 +444,6 @@ describe('OnboardingWizard', () => {
       progressState.completed = new Set(['workspace']);
       setHook({ ...connectedWorkspaceState, mode: 'setup' });
       render(<OnboardingWizard />);
-      fireEvent.click(screen.getByRole('button', { name: /pick developer/i }));
       fireEvent.click(screen.getByRole('button', { name: /continue/i }));
       await waitFor(() =>
         expect(screen.getByTestId('stepper').textContent).toBe('5/4,5,6,7/workspace'),
@@ -483,7 +480,6 @@ describe('OnboardingWizard', () => {
       setHook({ ...connectedWorkspaceState, hasSlack: true });
       render(<OnboardingWizard />);
       await reachProfileStep();
-      fireEvent.click(screen.getByRole('button', { name: /pick developer/i }));
       await continueTo('PreferencesStep');
       await continueTo('IntegrationsStep');
       await continueTo('ReadyStep');

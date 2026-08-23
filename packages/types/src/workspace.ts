@@ -29,10 +29,7 @@ export type WorkspaceGitStatus = Readonly<{
 }>;
 
 export type WorkspaceProfile = Readonly<{
-  role: 'developer' | 'non-developer' | null;
-  discipline: string | null;
-  topics: ReadonlyArray<string>;
-  notes: string | null;
+  bio: string | null;
 }>;
 
 export type Project = Readonly<{

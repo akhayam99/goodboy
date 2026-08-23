@@ -24,44 +24,19 @@ impl ProfileFileError {
 pub struct ProfileProjectArgs {
     #[serde(rename = "workspaceSlug")]
     pub workspace_slug: String,
-    pub role: Option<String>,
-    pub discipline: Option<String>,
-    pub topics: Vec<String>,
-    pub notes: Option<String>,
-}
-
-fn frontmatter_value(value: Option<&str>) -> String {
-    match value {
-        Some(text) if !text.trim().is_empty() => text.trim().to_string(),
-        _ => "null".to_string(),
-    }
+    pub bio: Option<String>,
 }
 
 fn render_profile(args: &ProfileProjectArgs) -> String {
-    let topics = args
-        .topics
-        .iter()
-        .map(|topic| format!("\"{}\"", topic.replace('"', "'")))
-        .collect::<Vec<_>>()
-        .join(", ");
-    let notes = args
-        .notes
+    let bio = args
+        .bio
         .as_deref()
         .map(str::trim)
-        .filter(|text| !text.is_empty())
-        .unwrap_or("");
-    let mut out = format!(
-        "---\nrole: {}\ndiscipline: {}\ntopics: [{}]\n---\n",
-        frontmatter_value(args.role.as_deref()),
-        frontmatter_value(args.discipline.as_deref()),
-        topics,
-    );
-    if !notes.is_empty() {
-        out.push('\n');
-        out.push_str(notes);
-        out.push('\n');
+        .filter(|text| !text.is_empty());
+    match bio {
+        Some(text) => format!("{text}\n"),
+        None => String::new(),
     }
-    out
 }
 
 #[tauri::command]
@@ -80,29 +55,25 @@ mod tests {
     use super::*;
 
     #[test]
-    fn renders_frontmatter_with_notes_body() {
+    fn renders_the_bio_as_plain_text() {
         let rendered = render_profile(&ProfileProjectArgs {
             workspace_slug: "demo-team".into(),
-            role: Some("developer".into()),
-            discipline: Some("frontend".into()),
-            topics: vec!["design systems".into(), "a11y".into()],
-            notes: Some("prefers short answers".into()),
+            bio: Some("  I lead design for the checkout team.  ".into()),
         });
-        assert_eq!(
-            rendered,
-            "---\nrole: developer\ndiscipline: frontend\ntopics: [\"design systems\", \"a11y\"]\n---\n\nprefers short answers\n"
-        );
+        assert_eq!(rendered, "I lead design for the checkout team.\n");
     }
 
     #[test]
-    fn renders_null_fields_and_no_body_when_empty() {
+    fn renders_nothing_when_the_bio_is_empty() {
         let rendered = render_profile(&ProfileProjectArgs {
             workspace_slug: "demo-team".into(),
-            role: None,
-            discipline: Some("  ".into()),
-            topics: vec![],
-            notes: None,
+            bio: Some("   ".into()),
         });
-        assert_eq!(rendered, "---\nrole: null\ndiscipline: null\ntopics: []\n---\n");
+        assert_eq!(rendered, "");
+        let missing = render_profile(&ProfileProjectArgs {
+            workspace_slug: "demo-team".into(),
+            bio: None,
+        });
+        assert_eq!(missing, "");
     }
 }

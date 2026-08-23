@@ -3,7 +3,6 @@ import { cn, formatError, Popover, useDropdown } from '@goodboy/ui';
 import { FolderGit2, Plus } from 'lucide-react';
 import type { ProjectId, SessionId, SessionProjectMount } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { preferredProject } from '../../../../store/slices/projects/preferredProject';
 
 const EMPTY_MOUNTS: ReadonlyArray<SessionProjectMount> = [];
 
@@ -18,18 +17,13 @@ export const AddProjectChip = ({ sessionId }: Props) => {
     (state) => state.sessions.find((candidate) => candidate.id === sessionId) ?? null,
   );
   const projects = useAppStore((state) => state.projects);
-  const profile = useAppStore((state) =>
-    session === null
-      ? undefined
-      : state.workspaces?.find((candidate) => candidate.id === session.workspaceId)?.profile,
-  );
   const mounts = useAppStore((state) => state.sessionProjectMounts[sessionId] ?? EMPTY_MOUNTS);
   const materializeProject = useAppStore((state) => state.materializeProject);
   const emitNotification = useAppStore((state) => state.emitNotification);
   const { open, close, toggle, containerRef, popupClassName } = useDropdown({ disabled: false });
   const [busyProjectId, setBusyProjectId] = useState<ProjectId | null>(null);
 
-  const unmaterialized =
+  const ordered =
     session === null
       ? []
       : projects.filter(
@@ -37,11 +31,6 @@ export const AddProjectChip = ({ sessionId }: Props) => {
             project.workspaceId === session.workspaceId &&
             !mounts.some((mount) => mount.projectId === project.id),
         );
-  const preferred = preferredProject({ projects: unmaterialized, profile });
-  const ordered =
-    preferred === null
-      ? unmaterialized
-      : [preferred, ...unmaterialized.filter((project) => project.id !== preferred.id)];
 
   if (session === null || ordered.length === 0) {
     return null;

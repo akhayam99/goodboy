@@ -20,10 +20,7 @@ const projectProfileFile = async ({
     await invoke('workspace_profile_project', {
       args: {
         workspaceSlug: workspace.slug,
-        role: profile.role,
-        discipline: profile.discipline,
-        topics: profile.topics,
-        notes: profile.notes,
+        bio: profile.bio,
       },
     });
   } catch {

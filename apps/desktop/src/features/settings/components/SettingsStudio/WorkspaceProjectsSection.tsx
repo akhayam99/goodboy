@@ -18,11 +18,6 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
   const addProject = useAppStore((s) => s.addProject);
   const removeProject = useAppStore((s) => s.removeProject);
   const adoptWorkspaceSessionsRoot = useAppStore((s) => s.adoptWorkspaceSessionsRoot);
-  const requireRepo = useAppStore(
-    (s) =>
-      s.workspaces.find((workspace) => workspace.id === workspaceId)?.profile?.role !==
-      'non-developer',
-  );
   const { showToast } = useToast();
   const [path, setPath] = useState('');
   const [busy, setBusy] = useState(false);
@@ -33,7 +28,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
     [projects, workspaceId],
   );
 
-  const link = async (rootPath: string) => {
+  const link = async (rootPath: string, requireRepo = true) => {
     setBusy(true);
     setError(null);
     try {
@@ -69,6 +64,14 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
       setError(formatError(initError));
       setBusy(false);
     }
+  };
+
+  const onLinkPlainFolder = async () => {
+    const picked = await openDialog({ directory: true, multiple: false });
+    if (typeof picked !== 'string' || picked.length === 0) {
+      return;
+    }
+    await link(picked, false);
   };
 
   const onUnlink = async (projectId: (typeof linked)[number]['id'], name: string) => {
@@ -146,7 +149,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
             type="text"
             value={path}
             aria-label="Project path"
-            placeholder={requireRepo ? '/path/to/repository' : '/path/to/repo-or-folder'}
+            placeholder="/path/to/repository"
             disabled={busy}
             onChange={(event) => setPath(event.target.value)}
             onKeyDown={(event) => {
@@ -176,14 +179,19 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
             <FolderPlus size={13} aria-hidden /> New project
           </Button>
         </div>
+        <button
+          type="button"
+          onClick={() => void onLinkPlainFolder()}
+          disabled={busy}
+          className="self-start text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          Link a plain folder (no git)
+        </button>
         {error !== null ? (
           <p role="alert" className="text-xs text-danger">
             {error}
           </p>
         ) : null}
-        <p className="text-xs text-muted-foreground">
-          Disconnecting hides a project from this workspace. Nothing on disk is deleted.
-        </p>
       </div>
     </section>
   );

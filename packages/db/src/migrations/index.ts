@@ -129,6 +129,7 @@ import { m128NormalizeGoalAttachmentOwners } from './m128-normalize-goal-attachm
 import { m129ImpactQueryIndexes } from './m129-impact-query-indexes';
 import { m130SessionEventLazyProjects } from './m130-session-event-lazy-projects';
 import { m131IntegrationBindings } from './m131-integration-bindings';
+import { m132WorkspaceProfileBio } from './m132-workspace-profile-bio';
 
 export type Migration = {
   readonly version: number;
@@ -267,4 +268,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 129, sql: m129ImpactQueryIndexes },
   { version: 130, sql: m130SessionEventLazyProjects },
   { version: 131, sql: m131IntegrationBindings },
+  { version: 132, sql: m132WorkspaceProfileBio },
 ];

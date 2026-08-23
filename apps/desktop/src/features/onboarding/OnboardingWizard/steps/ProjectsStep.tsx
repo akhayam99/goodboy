@@ -5,8 +5,6 @@ import { Button, Chip, Input, Tooltip, formatError } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { initRepo } from '../../../../shared/lib/repo';
-import { defaultSimpleWorkspacePath } from '../../../workspace/defaultSimpleWorkspacePath';
-import { prepareSimpleWorkspace } from '../../../workspace/prepareSimpleWorkspace';
 
 type Props = {
   readonly workspace: Workspace;
@@ -69,18 +67,12 @@ export const ProjectsStep = ({ workspace }: Props) => {
     }
   };
 
-  const onCreateFolder = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const suggested = await defaultSimpleWorkspacePath({ name: workspace.name });
-      const prepared = await prepareSimpleWorkspace({ path: suggested });
-      await link({ rootPath: prepared, requireRepo: false });
-    } catch (createError) {
-      setError(formatError(createError));
-    } finally {
-      setBusy(false);
+  const onLinkPlainFolder = async () => {
+    const picked = await openDialog({ directory: true, multiple: false });
+    if (typeof picked !== 'string' || picked.length === 0) {
+      return;
     }
+    await link({ rootPath: picked, requireRepo: false });
   };
 
   return (
@@ -94,8 +86,8 @@ export const ProjectsStep = ({ workspace }: Props) => {
           Link your projects
         </h2>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          Add the repositories {workspace.name} works on. Each linked project needs a git
-          repository; New project takes an empty folder and runs git init for you.
+          Add the repositories {workspace.name} works on. New project takes an empty folder and runs
+          git init for you.
         </p>
       </div>
 
@@ -176,16 +168,14 @@ export const ProjectsStep = ({ workspace }: Props) => {
           </Button>
         </div>
 
-        {linked.length === 0 ? (
-          <button
-            type="button"
-            onClick={() => void onCreateFolder()}
-            disabled={busy}
-            className="self-start text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-          >
-            No repository? Create a fresh folder for this workspace
-          </button>
-        ) : null}
+        <button
+          type="button"
+          onClick={() => void onLinkPlainFolder()}
+          disabled={busy}
+          className="self-start text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          Link a plain folder (no git)
+        </button>
 
         {error !== null ? (
           <p role="alert" className="text-xs text-danger">

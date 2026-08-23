@@ -47,10 +47,11 @@ describe('WorkspaceMergeSection', () => {
     expect(screen.getByText('2 projects · 0 sessions')).toBeDefined();
   });
 
-  it('shows an empty hint when there is nothing to group', async () => {
+  it('renders nothing at all when there is no workspace to group', async () => {
     dbMocks.listWorkspaceMergeCandidates = vi.fn(async () => []);
-    render(<WorkspaceMergeSection workspaceId={TARGET} />);
-    await waitFor(() => expect(screen.getByText(/no other workspaces to group/i)).toBeDefined());
+    const { container } = render(<WorkspaceMergeSection workspaceId={TARGET} />);
+    await waitFor(() => expect(dbMocks.listWorkspaceMergeCandidates).toHaveBeenCalled());
+    await waitFor(() => expect(container.firstChild).toBeNull());
   });
 
   it('keeps the group action disabled until a workspace is selected', async () => {

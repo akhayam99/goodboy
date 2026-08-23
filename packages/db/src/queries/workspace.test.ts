@@ -59,10 +59,7 @@ describe('workspace queries', () => {
     const workspace = makeWorkspace({
       overrides: {
         profile: {
-          role: 'developer',
-          discipline: 'platform',
-          topics: ['TypeScript', 'SQLite'],
-          notes: 'Local only',
+          bio: 'I build the platform tooling for this team.',
         },
         overrides: {
           ...EMPTY_OVERRIDES,
@@ -132,14 +129,11 @@ describe('workspace queries', () => {
     await upsertWorkspaceProfile({
       db,
       workspaceId: workspace.id,
-      profile: { role: 'non-developer', discipline: null, topics: [], notes: null },
+      profile: { bio: 'I review outcomes, not diffs.' },
     });
 
     expect((await getWorkspaceById({ db, id: workspace.id }))?.profile).toEqual({
-      role: 'non-developer',
-      discipline: null,
-      topics: [],
-      notes: null,
+      bio: 'I review outcomes, not diffs.',
     });
   });
 

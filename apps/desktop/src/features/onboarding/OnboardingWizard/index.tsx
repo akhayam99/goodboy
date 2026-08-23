@@ -10,7 +10,7 @@ import { WelcomeStep } from './steps/WelcomeStep';
 import { ProvidersStep } from './steps/ProvidersStep';
 import { ShapeStep, type WorkspaceShape } from './steps/ShapeStep';
 import { ProjectsStep } from './steps/ProjectsStep';
-import { ProfileStep, type ProfileDraft } from './steps/ProfileStep';
+import { ProfileStep } from './steps/ProfileStep';
 import { PreferencesStep } from './steps/PreferencesStep';
 import { IntegrationsStep } from './steps/IntegrationsStep';
 import { ReadyStep } from './steps/ReadyStep';
@@ -19,7 +19,6 @@ const STEP_COUNT = 8;
 const SETUP_START_STEP = 4;
 const EXIT_MS = 200;
 const ALL_STEPS = Array.from({ length: STEP_COUNT }, (_, index) => index);
-const EMPTY_PROFILE_DRAFT: ProfileDraft = { role: null, discipline: null, topics: [] };
 
 type Cta = {
   readonly label: string;
@@ -57,7 +56,7 @@ export const OnboardingWizard = () => {
   const [step, setStep] = useState(0);
   const [shape, setShape] = useState<WorkspaceShape | null>(null);
   const [workspaceName, setWorkspaceName] = useState('');
-  const [profileDraft, setProfileDraft] = useState<ProfileDraft>(EMPTY_PROFILE_DRAFT);
+  const [bioDraft, setBioDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
@@ -87,15 +86,7 @@ export const OnboardingWizard = () => {
     }
     setShape((current) => current ?? (workspace === null ? null : 'workspace'));
     setWorkspaceName(workspace?.name ?? '');
-    setProfileDraft(
-      workspace?.profile === undefined
-        ? EMPTY_PROFILE_DRAFT
-        : {
-            role: workspace.profile.role,
-            discipline: workspace.profile.discipline,
-            topics: workspace.profile.topics,
-          },
-    );
+    setBioDraft(workspace?.profile?.bio ?? '');
   }, [open, workspace?.id]);
 
   if (!open) {
@@ -187,14 +178,13 @@ export const OnboardingWizard = () => {
       if (workspace === null) {
         return;
       }
+      const bio = bioDraft.trim();
+      if (bio === (workspace.profile?.bio ?? '')) {
+        return;
+      }
       await updateWorkspaceProfile({
         workspaceId: workspace.id,
-        profile: {
-          role: profileDraft.role,
-          discipline: profileDraft.discipline,
-          topics: profileDraft.topics,
-          notes: workspace.profile?.notes ?? null,
-        },
+        profile: { bio: bio === '' ? null : bio },
       });
     });
 
@@ -253,12 +243,12 @@ export const OnboardingWizard = () => {
       disabled: projectCount === 0,
     };
   } else if (step === 4) {
-    body = <ProfileStep draft={profileDraft} onDraftChange={setProfileDraft} />;
+    body = <ProfileStep bio={bioDraft} onBioChange={setBioDraft} />;
     cta = {
       label: 'Continue',
       onClick: commitProfile,
       variant: 'primary',
-      disabled: busy || profileDraft.role === null,
+      disabled: busy,
     };
   } else if (step === 5) {
     body = <PreferencesStep workspaceId={workspaceId} projectKind={projectKind} />;

@@ -4,16 +4,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session, Workspace, WorkspaceGitStatus, WorkspaceId } from '@goodboy/types';
 
-const { state, gitStatus, groups } = vi.hoisted(() => ({
+const { state, gitStatus, groups, toastMock } = vi.hoisted(() => ({
   state: {
     boardReady: true,
     archivedSessions: {} as Record<string, ReadonlyArray<Session>>,
     loadArchivedSessions: vi.fn(),
     workspaces: [] as ReadonlyArray<Workspace>,
+    projects: [] as ReadonlyArray<{ id: string; workspaceId: string }>,
     bulkUnarchiveTask: vi.fn(async () => undefined),
   },
   gitStatus: { current: null as WorkspaceGitStatus | null },
   groups: { current: [] as ReadonlyArray<{ key: string; sessions: ReadonlyArray<Session> }> },
+  toastMock: vi.fn(),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -24,6 +26,16 @@ vi.mock('../../../../store', () => ({
 
 vi.mock('../../hooks/useWorkspaceGitStatus', () => ({
   useWorkspaceGitStatus: () => gitStatus.current,
+}));
+
+vi.mock('../../../../app/components/Toast', () => ({
+  useToast: () => ({ showToast: toastMock }),
+}));
+
+vi.mock('../../../onboarding/OnboardingWizard/steps/ProjectsStep', () => ({
+  ProjectsStep: ({ workspace }: { workspace: Workspace }) => (
+    <div data-testid="projects-step">{workspace.name}</div>
+  ),
 }));
 
 vi.mock('../WorkspaceGitPanel', () => ({
@@ -116,8 +128,10 @@ beforeEach(() => {
   state.archivedSessions = {};
   state.loadArchivedSessions = vi.fn();
   state.workspaces = [workspace];
+  state.projects = [{ id: 'proj-1', workspaceId: wsId }];
   gitStatus.current = null;
   groups.current = [];
+  toastMock.mockReset();
 });
 afterEach(cleanup);
 
@@ -144,6 +158,45 @@ describe('StageBoard loading gate', () => {
     expect(screen.getAllByTestId('stage-column').length).toBeGreaterThan(0);
     expect(screen.getByText('Stage board')).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
+  });
+});
+
+describe('StageBoard empty-projects gate', () => {
+  it('leads with the add-projects surface instead of session creation when no project exists', () => {
+    state.projects = [];
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.getByTestId('projects-step').textContent).toBe('fresh-idea');
+    expect(screen.queryByText('Start your first session')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'New session' })).toBeNull();
+  });
+
+  it('disables New session with the reason while sessions exist but no project does', () => {
+    state.projects = [];
+    groups.current = [{ key: 'building', sessions: [session] }];
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
+    const button = screen.getByRole('button', { name: 'New session' });
+    expect(button.hasAttribute('disabled')).toBe(true);
+    expect(button.getAttribute('title')).toBe('Link a project first');
+    expect(screen.queryByTestId('projects-step')).toBeNull();
+  });
+
+  it('turns the new-session event into a notice instead of the inline input', () => {
+    state.projects = [];
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+    fireEvent(window, new CustomEvent('goodboy:new-session'));
+    expect(screen.queryByTestId('inline-session-create')).toBeNull();
+    expect(toastMock).toHaveBeenCalledWith('info', 'Link a project first, then start a session');
+  });
+
+  it('flips back to the session-first empty state once a project lands', () => {
+    state.projects = [];
+    const { rerender } = render(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.getByTestId('projects-step')).toBeDefined();
+
+    state.projects = [{ id: 'proj-1', workspaceId: wsId }];
+    rerender(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.queryByTestId('projects-step')).toBeNull();
+    expect(screen.getByText('Start your first session')).toBeDefined();
   });
 });
 

@@ -220,12 +220,6 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
               <Divider />
 
-              <div ref={anchor('merge')}>
-                <WorkspaceMergeSection workspaceId={workspaceId} />
-              </div>
-
-              <Divider />
-
               <div ref={anchor('profile')}>
                 <WorkspaceProfileSection workspaceId={workspaceId} />
               </div>
@@ -280,28 +274,24 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   />
                 </div>
               </FieldRow>
+
+              <FieldRow
+                label="Parallel agents"
+                help="Lets eligible agents split independent work and reconcile it in one output."
+              >
+                <Switch
+                  label={parallelAgents ? 'On' : 'Off'}
+                  checked={parallelAgents}
+                  disabled={busy}
+                  onChange={(next) =>
+                    void persistOverrides(
+                      { parallelAgents: next },
+                      next ? 'parallel agents on' : 'parallel agents off',
+                    )
+                  }
+                />
+              </FieldRow>
             </div>
-          </section>
-
-          <Divider />
-
-          <section id="agents" ref={anchor('agents')} className="flex flex-col">
-            <FieldRow
-              label="Parallel agents"
-              help="Allow role-eligible agents to split independent work and reconcile it in one output."
-            >
-              <Switch
-                label={parallelAgents ? 'On' : 'Off'}
-                checked={parallelAgents}
-                disabled={busy}
-                onChange={(next) =>
-                  void persistOverrides(
-                    { parallelAgents: next },
-                    next ? 'parallel agents on' : 'parallel agents off',
-                  )
-                }
-              />
-            </FieldRow>
           </section>
 
           {WORKSPACE_FEATURES.skills ? (
@@ -313,11 +303,17 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
             </>
           ) : null}
 
-          <Divider />
-
           <div ref={anchor('orphans')}>
             <OrphanWorktreesSection workspaceId={workspaceId} />
           </div>
+
+          {workspace == null ? null : (
+            <div ref={anchor('merge')}>
+              <WorkspaceMergeSection workspaceId={workspaceId} />
+            </div>
+          )}
+
+          <Divider />
 
           <section id="danger" ref={anchor('danger')} className="flex flex-col gap-4">
             <SectionHeader label="Danger zone" hint="Destructive workspace controls." />

@@ -13,6 +13,8 @@ import { BulkActionBar } from '../BulkActionBar';
 import { useWorkspaceGitStatus } from '../../hooks/useWorkspaceGitStatus';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { InlineSessionCreate } from '../../../session/components/InlineSessionCreate';
+import { ProjectsStep } from '../../../onboarding/OnboardingWizard/steps/ProjectsStep';
+import { useToast } from '../../../../app/components/Toast';
 import { StageColumn } from './StageColumn';
 import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
@@ -70,6 +72,13 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const rootPath = useAppStore(
     (s) => s.workspaces.find((candidate) => candidate.id === workspaceId)?.sessionsRoot ?? null,
   );
+  const workspace = useAppStore(
+    (s) => s.workspaces.find((candidate) => candidate.id === workspaceId) ?? null,
+  );
+  const hasProjects = useAppStore((s) =>
+    s.projects.some((project) => project.workspaceId === workspaceId),
+  );
+  const { showToast } = useToast();
   const gitStatus = useWorkspaceGitStatus({ workspaceId });
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [creating, setCreating] = useState(false);
@@ -82,10 +91,16 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   }, [loadArchivedSessions, workspaceId]);
 
   useEffect(() => {
-    const onNewSessionRequest = () => setCreating(true);
+    const onNewSessionRequest = () => {
+      if (!hasProjects) {
+        showToast('info', 'Link a project first, then start a session');
+        return;
+      }
+      setCreating(true);
+    };
     window.addEventListener('goodboy:new-session', onNewSessionRequest);
     return () => window.removeEventListener('goodboy:new-session', onNewSessionRequest);
-  }, []);
+  }, [hasProjects, showToast]);
 
   const byStage = useMemo(() => {
     const map = new Map<string, ReadonlyArray<Session>>();
@@ -122,9 +137,10 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
 
   const empty = sessions.length === 0;
   const gitReady = gitStatus === null || gitStatus.state === 'ready';
-  const showInlineCreate = creating && gitReady;
-  const blockedReason =
-    gitStatus?.state === 'missing'
+  const showInlineCreate = creating && gitReady && hasProjects;
+  const blockedReason = !hasProjects
+    ? 'Link a project first'
+    : gitStatus?.state === 'missing'
       ? 'The project folder is unreachable'
       : 'This project needs a git repository with one commit first';
 
@@ -171,8 +187,8 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
               <Button
                 size="sm"
                 onClick={() => setCreating(true)}
-                disabled={!gitReady}
-                title={gitReady ? undefined : blockedReason}
+                disabled={!gitReady || !hasProjects}
+                title={gitReady && hasProjects ? undefined : blockedReason}
               >
                 <Plus size={14} aria-hidden />
                 New session
@@ -185,7 +201,15 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
 
       {!boardReady && <BoardSkeleton />}
 
-      {boardReady && empty && gitReady && (
+      {boardReady && empty && !hasProjects && workspace !== null && (
+        <div className="flex flex-1 items-center justify-center overflow-y-auto">
+          <div className="w-full max-w-xl py-6">
+            <ProjectsStep workspace={workspace} />
+          </div>
+        </div>
+      )}
+
+      {boardReady && hasProjects && empty && gitReady && (
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
             illustration={<DogMascot size={72} className="text-primary" />}
