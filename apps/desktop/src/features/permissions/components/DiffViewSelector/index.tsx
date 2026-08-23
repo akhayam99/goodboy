@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, GitCommit } from 'lucide-react';
-import { Chip, cn, Divider, DropdownPortal, Popover, ScrollFade, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Chip, cn, Divider, ScrollFade, useDropdown } from '@goodboy/ui';
 import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
@@ -118,22 +118,12 @@ export const DiffViewSelector = ({
   filesCount,
   loading,
 }: Props) => {
-  const {
-    open,
-    close,
-    toggle,
-    containerRef,
-    popupRef,
-    popupClassName,
-    popupStyle,
-    portal,
-    portalTarget,
-  } = useDropdown({
+  const dropdown = useDropdown({
     expectedHeight: 440,
     expectedWidth: 440,
     width: 'w-[440px] max-w-[calc(100vw-2rem)]',
-    strategy: 'fixed',
   });
+  const { open, close, toggle } = dropdown;
   const [query, setQuery] = useState('');
   const [focusIndex, setFocusIndex] = useState(-1);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -281,134 +271,125 @@ export const DiffViewSelector = ({
   let optionIndex = -1;
 
   return (
-    <div ref={containerRef} className="relative">
-      <button
-        type="button"
-        onClick={toggle}
-        className={cn(
-          'inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs',
-          'hover:border-foreground/30 hover:bg-muted/30',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-        )}
-        title="Change diff view"
-      >
-        <GitCommit size={11} aria-hidden className="text-muted-foreground" />
-        <span className="font-medium">{label}</span>
-        {loading ? (
-          <span className="text-muted-foreground/60">…</span>
-        ) : (
-          <span className="text-muted-foreground/70 tabular-nums">{countLabel}</span>
-        )}
-        <ChevronDown size={11} aria-hidden className="text-muted-foreground/70" />
-      </button>
+    <AnchoredPopover
+      dropdown={dropdown}
+      role="dialog"
+      ariaLabel="Diff view"
+      className="flex flex-col bg-subtle"
+      trigger={
+        <button
+          type="button"
+          onClick={toggle}
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs',
+            'hover:border-foreground/30 hover:bg-muted/30',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+          )}
+          title="Change diff view"
+        >
+          <GitCommit size={11} aria-hidden className="text-muted-foreground" />
+          <span className="font-medium">{label}</span>
+          {loading ? (
+            <span className="text-muted-foreground/60">…</span>
+          ) : (
+            <span className="text-muted-foreground/70 tabular-nums">{countLabel}</span>
+          )}
+          <ChevronDown size={11} aria-hidden className="text-muted-foreground/70" />
+        </button>
+      }
+    >
+      <div className="px-2.5 py-2">
+        <input
+          ref={searchRef}
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setFocusIndex(-1);
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder="filter commits by sha or subject…"
+          className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground/60"
+          aria-label="Filter commits"
+        />
+      </div>
+      <Divider />
+      <ScrollFade fadeFrom="subtle" className="max-h-[400px]">
+        <div className="flex flex-col gap-0.5 py-1" onKeyDown={handleKeyDown}>
+          {sections.map((section) => (
+            <PickerSection key={section.label} label={section.label}>
+              <div className="flex flex-col gap-0.5 px-1">
+                {section.rows.map((row) => {
+                  if (row.kind === 'placeholder') {
+                    return (
+                      <span
+                        key={`${section.label}-${row.label}`}
+                        className="px-1.5 py-1 text-2xs italic text-muted-foreground/50"
+                      >
+                        {row.label}
+                      </span>
+                    );
+                  }
 
-      <DropdownPortal portal={portal} portalTarget={portalTarget}>
-        {open && (
-          <Popover
-            innerRef={popupRef}
-            role="dialog"
-            ariaLabel="Diff view"
-            className={cn(popupClassName, 'flex flex-col bg-subtle')}
-            style={popupStyle}
-          >
-            <div className="px-2.5 py-2">
-              <input
-                ref={searchRef}
-                value={query}
-                onChange={(event) => {
-                  setQuery(event.target.value);
-                  setFocusIndex(-1);
-                }}
-                onKeyDown={handleKeyDown}
-                placeholder="filter commits by sha or subject…"
-                className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground/60"
-                aria-label="Filter commits"
-              />
-            </div>
-            <Divider />
-            <ScrollFade fadeFrom="subtle" className="max-h-[400px]">
-              <div className="flex flex-col gap-0.5 py-1" onKeyDown={handleKeyDown}>
-                {sections.map((section) => (
-                  <PickerSection key={section.label} label={section.label}>
-                    <div className="flex flex-col gap-0.5 px-1">
-                      {section.rows.map((row) => {
-                        if (row.kind === 'placeholder') {
-                          return (
-                            <span
-                              key={`${section.label}-${row.label}`}
-                              className="px-1.5 py-1 text-2xs italic text-muted-foreground/50"
-                            >
-                              {row.label}
-                            </span>
-                          );
-                        }
-
-                        optionIndex += 1;
-                        const currentOptionIndex = optionIndex;
-                        const isActive = viewEquals({ left: view, right: row.view });
-                        const isFocused = currentOptionIndex === focusIndex;
-                        return (
-                          <button
-                            key={`${section.label}-${row.label}-${currentOptionIndex}`}
-                            type="button"
-                            aria-pressed={isActive}
-                            onMouseEnter={() => setFocusIndex(currentOptionIndex)}
-                            onClick={() => selectView({ next: row.view })}
-                            className={cn(
-                              'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors',
-                              isActive
-                                ? 'bg-background text-foreground shadow-sm ring-1 ring-inset ring-border-soft'
-                                : 'text-foreground/85 hover:bg-background/60',
-                              isFocused && !isActive && 'bg-background/60 text-foreground',
-                            )}
-                          >
-                            <span
-                              aria-hidden
-                              className={cn(
-                                'size-1.5 shrink-0 rounded-full ring-1 ring-inset',
-                                isActive
-                                  ? 'bg-primary ring-primary/40'
-                                  : 'bg-transparent ring-transparent',
-                              )}
+                  optionIndex += 1;
+                  const currentOptionIndex = optionIndex;
+                  const isActive = viewEquals({ left: view, right: row.view });
+                  const isFocused = currentOptionIndex === focusIndex;
+                  return (
+                    <button
+                      key={`${section.label}-${row.label}-${currentOptionIndex}`}
+                      type="button"
+                      aria-pressed={isActive}
+                      onMouseEnter={() => setFocusIndex(currentOptionIndex)}
+                      onClick={() => selectView({ next: row.view })}
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors',
+                        isActive
+                          ? 'bg-background text-foreground shadow-sm ring-1 ring-inset ring-border-soft'
+                          : 'text-foreground/85 hover:bg-background/60',
+                        isFocused && !isActive && 'bg-background/60 text-foreground',
+                      )}
+                    >
+                      <span
+                        aria-hidden
+                        className={cn(
+                          'size-1.5 shrink-0 rounded-full ring-1 ring-inset',
+                          isActive
+                            ? 'bg-primary ring-primary/40'
+                            : 'bg-transparent ring-transparent',
+                        )}
+                      />
+                      {row.commit != null ? (
+                        <>
+                          <span className="shrink-0 font-mono text-2xs text-muted-foreground">
+                            {row.commit.shortSha}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate" title={row.commit.subject}>
+                            {row.commit.subject}
+                          </span>
+                          {row.commit.pushed && (
+                            <Chip
+                              tone="neutral"
+                              size="3xs"
+                              bordered={false}
+                              label="pushed"
+                              className="shrink-0"
                             />
-                            {row.commit != null ? (
-                              <>
-                                <span className="shrink-0 font-mono text-2xs text-muted-foreground">
-                                  {row.commit.shortSha}
-                                </span>
-                                <span
-                                  className="min-w-0 flex-1 truncate"
-                                  title={row.commit.subject}
-                                >
-                                  {row.commit.subject}
-                                </span>
-                                {row.commit.pushed && (
-                                  <Chip
-                                    tone="neutral"
-                                    size="3xs"
-                                    bordered={false}
-                                    label="pushed"
-                                    className="shrink-0"
-                                  />
-                                )}
-                                <span className="shrink-0 text-3xs tabular-nums text-muted-foreground/70">
-                                  {formatAdaptiveAge({ iso: row.commit.timestamp * 1000 })}
-                                </span>
-                              </>
-                            ) : (
-                              <span className="min-w-0 flex-1 truncate">{row.label}</span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </PickerSection>
-                ))}
+                          )}
+                          <span className="shrink-0 text-3xs tabular-nums text-muted-foreground/70">
+                            {formatAdaptiveAge({ iso: row.commit.timestamp * 1000 })}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="min-w-0 flex-1 truncate">{row.label}</span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-            </ScrollFade>
-          </Popover>
-        )}
-      </DropdownPortal>
-    </div>
+            </PickerSection>
+          ))}
+        </div>
+      </ScrollFade>
+    </AnchoredPopover>
   );
 };

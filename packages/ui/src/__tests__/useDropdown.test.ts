@@ -43,25 +43,14 @@ describe('useDropdown', () => {
     expect(result.current.open).toBe(true);
   });
 
-  it('aligns the popup to the requested edge', () => {
-    const { result } = renderHook(() => useDropdown({ align: 'end', width: 'w-80' }));
-    expect(result.current.popupClassName).toContain('right-0');
+  it('always positions the popup on the fixed popover layer', () => {
+    const { result } = renderHook(() => useDropdown({ width: 'w-80' }));
+    expect(result.current.popupClassName).toContain('fixed');
+    expect(result.current.popupClassName).toContain('z-popover');
     expect(result.current.popupClassName).toContain('w-80');
   });
 
-  it('keeps a backdrop-less dropdown off the app-global scale', () => {
-    const { result } = renderHook(() => useDropdown({}));
-    expect(result.current.popupClassName).toContain('z-50');
-    expect(result.current.popupClassName).not.toContain('z-popover');
-  });
-
-  it('lifts a dropdown that renders a backdrop onto the named popover layer', () => {
-    const { result } = renderHook(() => useDropdown({ hasBackdrop: true }));
-    expect(result.current.popupClassName).toContain('z-popover');
-    expect(result.current.popupClassName).not.toContain('z-50');
-  });
-
-  it('centres a fixed popup on its trigger when asked', () => {
+  it('centres the popup on its trigger when asked', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
     const trigger = document.createElement('div');
@@ -69,11 +58,11 @@ describe('useDropdown', () => {
     trigger.getBoundingClientRect = () =>
       DOMRect.fromRect({ x: 500, y: 40, width: 40, height: 24 });
     const { result } = renderHook(() =>
-      useDropdown({ align: 'center', expectedWidth: 384, strategy: 'fixed' }),
+      useDropdown({ align: 'center', expectedWidth: 384, width: 'w-96' }),
     );
 
     act(() => {
-      result.current.containerRef.current = trigger;
+      result.current.containerRef.current = trigger as HTMLDivElement;
       result.current.toggle();
     });
 
@@ -81,7 +70,7 @@ describe('useDropdown', () => {
     trigger.remove();
   });
 
-  it('clamps a fixed popup within the viewport and updates on ancestor scroll', () => {
+  it('clamps the popup within the viewport and updates on ancestor scroll', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
     let rect = DOMRect.fromRect({ x: 940, y: 500, width: 80, height: 30 });
@@ -95,18 +84,16 @@ describe('useDropdown', () => {
         align: 'end',
         expectedHeight: 320,
         expectedWidth: 384,
-        strategy: 'fixed',
         width: 'w-96',
       }),
     );
 
     act(() => {
-      result.current.containerRef.current = trigger;
+      result.current.containerRef.current = trigger as HTMLDivElement;
       result.current.toggle();
     });
 
     expect(result.current.popupClassName).toContain('fixed');
-    expect(result.current.popupClassName).not.toContain('right-0');
     expect(result.current.popupStyle).toMatchObject({
       bottom: 272,
       left: 632,
@@ -132,67 +119,47 @@ describe('useDropdown', () => {
     expect(result.current.popupStyle).toMatchObject({ left: 96, top: 234 });
     scrollAncestor.remove();
   });
-  it('bounds an absolute popup to the space left under the trigger', () => {
+
+  it('bounds the popup to the space left under the trigger', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
     const trigger = document.createElement('div');
     document.body.append(trigger);
     trigger.getBoundingClientRect = () =>
       DOMRect.fromRect({ x: 40, y: 100, width: 60, height: 28 });
-    const { result } = renderHook(() => useDropdown({ expectedHeight: 220 }));
+    const { result } = renderHook(() =>
+      useDropdown({ expectedHeight: 220, expectedWidth: 240, width: 'w-60' }),
+    );
 
     act(() => {
-      result.current.containerRef.current = trigger;
+      result.current.containerRef.current = trigger as HTMLDivElement;
       result.current.toggle();
     });
 
-    expect(result.current.popupClassName).toContain('top-[calc(100%+0.25rem)]');
-    expect(result.current.popupStyle).toBeUndefined();
-    expect(trigger.style.getPropertyValue('--dropdown-max-height')).toBe('628px');
+    expect(result.current.popupStyle).toMatchObject({ top: 132, maxHeight: 628 });
     trigger.remove();
   });
 
-  it('bounds an absolute popup to its clipping ancestor', () => {
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
-    const clipper = document.createElement('div');
-    clipper.style.overflowY = 'auto';
-    const trigger = document.createElement('div');
-    clipper.append(trigger);
-    document.body.append(clipper);
-    clipper.getBoundingClientRect = () =>
-      DOMRect.fromRect({ x: 0, y: 60, width: 400, height: 340 });
-    trigger.getBoundingClientRect = () =>
-      DOMRect.fromRect({ x: 40, y: 100, width: 60, height: 28 });
-    const { result } = renderHook(() => useDropdown({ expectedHeight: 220 }));
-
-    act(() => {
-      result.current.containerRef.current = trigger;
-      result.current.toggle();
-    });
-
-    expect(trigger.style.getPropertyValue('--dropdown-max-height')).toBe('260px');
-    clipper.remove();
-  });
-
-  it('bounds an absolute popup opening upwards to the space above the trigger', () => {
+  it('matches the trigger width when no width class is given', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
     const trigger = document.createElement('div');
     document.body.append(trigger);
     trigger.getBoundingClientRect = () =>
-      DOMRect.fromRect({ x: 40, y: 620, width: 60, height: 28 });
-    const { result } = renderHook(() => useDropdown({ expectedHeight: 220 }));
+      DOMRect.fromRect({ x: 40, y: 100, width: 240, height: 28 });
+    const { result } = renderHook(() => useDropdown({}));
 
     act(() => {
-      result.current.containerRef.current = trigger;
+      result.current.containerRef.current = trigger as HTMLDivElement;
       result.current.toggle();
     });
 
-    expect(result.current.popupClassName).toContain('bottom-[calc(100%+0.25rem)]');
-    expect(trigger.style.getPropertyValue('--dropdown-max-height')).toBe('608px');
+    expect(result.current.popupStyle).toMatchObject({ width: 240, left: 40 });
     trigger.remove();
   });
 
-  it('drops the absolute bound once the popup closes', () => {
+  it('keeps a usable width when the trigger is narrower than the floor', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
     const trigger = document.createElement('div');
     document.body.append(trigger);
@@ -201,56 +168,11 @@ describe('useDropdown', () => {
     const { result } = renderHook(() => useDropdown({}));
 
     act(() => {
-      result.current.containerRef.current = trigger;
+      result.current.containerRef.current = trigger as HTMLDivElement;
       result.current.toggle();
     });
-    expect(trigger.style.getPropertyValue('--dropdown-max-height')).not.toBe('');
 
-    act(() => result.current.close());
-
-    expect(trigger.style.getPropertyValue('--dropdown-max-height')).toBe('');
+    expect(result.current.popupStyle).toMatchObject({ width: 160 });
     trigger.remove();
-  });
-
-  it('leaves a fixed popup on its own inline bound', () => {
-    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
-    const trigger = document.createElement('div');
-    document.body.append(trigger);
-    trigger.getBoundingClientRect = () =>
-      DOMRect.fromRect({ x: 40, y: 100, width: 60, height: 28 });
-    const { result } = renderHook(() =>
-      useDropdown({ expectedHeight: 220, expectedWidth: 240, strategy: 'fixed' }),
-    );
-
-    act(() => {
-      result.current.containerRef.current = trigger;
-      result.current.toggle();
-    });
-
-    expect(result.current.popupStyle).toMatchObject({ top: 132, maxHeight: 628 });
-    expect(trigger.style.getPropertyValue('--dropdown-max-height')).toBe('');
-    trigger.remove();
-  });
-  it('keeps a usable bound when the clipping ancestor hugs the trigger', () => {
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
-    const clipper = document.createElement('div');
-    clipper.style.overflowY = 'hidden';
-    const trigger = document.createElement('div');
-    clipper.append(trigger);
-    document.body.append(clipper);
-    clipper.getBoundingClientRect = () =>
-      DOMRect.fromRect({ x: 0, y: 100, width: 400, height: 28 });
-    trigger.getBoundingClientRect = () =>
-      DOMRect.fromRect({ x: 40, y: 100, width: 60, height: 28 });
-    const { result } = renderHook(() => useDropdown({ expectedHeight: 220 }));
-
-    act(() => {
-      result.current.containerRef.current = trigger;
-      result.current.toggle();
-    });
-
-    expect(trigger.style.getPropertyValue('--dropdown-max-height')).toBe('160px');
-    clipper.remove();
   });
 });

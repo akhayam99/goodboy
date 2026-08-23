@@ -121,11 +121,12 @@ describe('IssuePicker', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
-  it('anchors the list by measured direction instead of a hardcoded offset', () => {
+  it('escapes clipping ancestors through a fixed body portal', () => {
     renderPicker();
     fireEvent.focus(input());
-    const popup = screen.getByRole('listbox').closest('div.absolute');
-    expect(popup?.className).toContain('top-[calc(100%+0.25rem)]');
+    const popup = screen.getByRole('listbox').closest('div.fixed');
+    expect(popup?.className).toContain('z-popover');
+    expect(popup?.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
   });
 
   it('closes on a mousedown outside the picker', () => {

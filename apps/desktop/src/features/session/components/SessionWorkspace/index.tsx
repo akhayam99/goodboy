@@ -14,7 +14,6 @@ import {
 import type { LensKind } from '../../../../store';
 import { SessionOverviewPane } from '../SessionOverviewPane';
 import { SessionCrumbBar } from '../SessionCrumbBar';
-import { ScopeBar } from './parts/ScopeBar';
 import { AgentOverlay } from './parts/AgentOverlay';
 import { AgentsPane } from './parts/AgentsPane';
 import { Pane } from './parts/Pane';
@@ -24,6 +23,7 @@ import { ContextPane } from './parts/ContextPane';
 import { ResolvePane } from './parts/ResolvePane';
 import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
+import { ProjectsPane } from './parts/ProjectsPane';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useSelectedAgentHome } from '../../hooks/useSelectedAgentHome';
 import { useSessionBranchSync } from '../../hooks/useSessionBranchSync';
@@ -213,7 +213,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     <div className="relative flex h-full w-full min-w-0 flex-col">
       <div>
         <SessionCrumbBar />
-        <ScopeBar sessionId={sessionId} />
       </div>
       <div className="relative min-h-0 flex-1">
         <div
@@ -231,6 +230,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             )
           ) : null}
           {lens === 'questions' ? <QuestionsPane session={session} /> : null}
+          {lens === 'projects' ? <ProjectsPane session={session} /> : null}
           {lens === 'plans' ? <PlanStudio sessionId={sessionId} /> : null}
           {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
           {lens === 'resolve' ? (

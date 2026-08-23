@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cn, DropdownPortal, ScrollFade, Tooltip, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, cn, ScrollFade, Tooltip, useDropdown } from '@goodboy/ui';
 import { ChevronDown } from 'lucide-react';
 import type { LocalBranchInfo } from './worktree';
 
@@ -28,22 +28,11 @@ export const BranchCombobox = ({
   const [highlightIdx, setHighlightIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
-  const {
-    open,
-    close,
-    toggle,
-    containerRef,
-    popupRef,
-    popupClassName,
-    popupStyle,
-    portal,
-    portalTarget,
-  } = useDropdown({
+  const dropdown = useDropdown({
     disabled: disabled || branches.length === 0,
     expectedHeight: 224,
-    strategy: 'fixed',
-    width: '',
   });
+  const { open, close, toggle } = dropdown;
 
   const excludeSet = useMemo(() => new Set(excludeNames ?? []), [excludeNames]);
 
@@ -132,122 +121,105 @@ export const BranchCombobox = ({
   const isListVisible = open && filtered.length > 0;
   const isNoMatchesVisible = open && !loading && filtered.length === 0 && query !== '';
   const isPopupVisible = isListVisible || isNoMatchesVisible;
-  const triggerWidth = containerRef.current?.getBoundingClientRect().width;
-  const constrainedPopupStyle = {
-    ...popupStyle,
-    width: triggerWidth,
-    maxHeight:
-      popupStyle?.maxHeight == null ? '14rem' : `min(14rem, ${String(popupStyle.maxHeight)}px)`,
-  };
 
   return (
-    <div ref={containerRef} className="relative w-full">
-      <div
-        className={cn(
-          'flex h-9 w-full items-center gap-1 rounded-md border border-border bg-background px-1 motion-safe:transition-colors focus-within:border-primary hover:border-border-strong',
-          disabled && 'cursor-not-allowed opacity-50',
-        )}
-      >
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          placeholder={placeholder}
-          disabled={disabled || branches.length === 0}
-          aria-label="Branch"
-          role="combobox"
-          aria-expanded={open}
-          aria-autocomplete="list"
-          autoComplete="off"
-          className="flex-1 truncate bg-transparent px-2 text-sm font-mono text-foreground outline-none placeholder:text-muted-foreground/50 disabled:cursor-not-allowed"
-          onChange={(e) => {
-            setQuery(e.target.value);
-            if (!open) {
-              toggle();
-            }
-            if (e.target.value === '') {
-              onChange('');
-            }
-          }}
-          onFocus={() => {
-            if (!open) {
-              toggle();
-            }
-          }}
-          onKeyDown={onKeyDown}
-        />
-        <Tooltip content={open ? 'Close branch list' : 'Open branch list'}>
-          <button
-            type="button"
-            tabIndex={-1}
-            onClick={() => {
-              if (disabled || branches.length === 0) {
-                return;
+    <AnchoredPopover
+      dropdown={dropdown}
+      className={cn('bg-subtle', isNoMatchesVisible && 'px-2 py-2 text-xs text-muted-foreground')}
+      anchorClassName="w-full"
+      trigger={
+        <div
+          className={cn(
+            'flex h-9 w-full items-center gap-1 rounded-md border border-border bg-background px-1 motion-safe:transition-colors focus-within:border-primary hover:border-border-strong',
+            disabled && 'cursor-not-allowed opacity-50',
+          )}
+        >
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            placeholder={placeholder}
+            disabled={disabled || branches.length === 0}
+            aria-label="Branch"
+            role="combobox"
+            aria-expanded={open}
+            aria-autocomplete="list"
+            autoComplete="off"
+            className="flex-1 truncate bg-transparent px-2 text-sm font-mono text-foreground outline-none placeholder:text-muted-foreground/50 disabled:cursor-not-allowed"
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (!open) {
+                toggle();
               }
-              toggle();
-              if (open) {
-                inputRef.current?.focus();
+              if (e.target.value === '') {
+                onChange('');
               }
             }}
-            aria-label={open ? 'Close branch list' : 'Open branch list'}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <ChevronDown
-              size={13}
-              aria-hidden
-              className={cn('motion-safe:transition-transform', open && 'rotate-180')}
-            />
-          </button>
-        </Tooltip>
-      </div>
-      <DropdownPortal portal={portal} portalTarget={portalTarget}>
-        {isPopupVisible ? (
-          <div
-            ref={popupRef}
-            className={cn(
-              popupClassName,
-              'rounded-md border border-border bg-subtle shadow-lg',
-              isNoMatchesVisible && 'px-2 py-2 text-xs text-muted-foreground',
-            )}
-            style={constrainedPopupStyle}
-          >
-            {isListVisible ? (
-              <ScrollFade className="max-h-[inherit]" viewportClassName="py-0.5" fadeFrom="subtle">
-                <ul ref={listRef} role="listbox">
-                  {filtered.map((b, i) => (
-                    <li
-                      key={b.name}
-                      role="option"
-                      aria-selected={highlightIdx === i}
-                      onMouseEnter={() => setHighlightIdx(i)}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        select({ name: b.name });
-                      }}
-                      className={cn(
-                        'flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-sm font-mono',
-                        highlightIdx === i
-                          ? 'bg-primary/10 text-foreground'
-                          : 'text-muted-foreground',
-                      )}
-                    >
-                      <span className="min-w-0 flex-1 truncate">{b.name}</span>
-                      {b.inUse ? (
-                        <span className="shrink-0 text-2xs text-warning">in use</span>
-                      ) : null}
-                      {b.hasUncommitted ? (
-                        <span className="shrink-0 text-2xs text-warning">dirty</span>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              </ScrollFade>
-            ) : (
-              'No matching branches'
-            )}
-          </div>
-        ) : null}
-      </DropdownPortal>
-    </div>
+            onFocus={() => {
+              if (!open) {
+                toggle();
+              }
+            }}
+            onKeyDown={onKeyDown}
+          />
+          <Tooltip content={open ? 'Close branch list' : 'Open branch list'}>
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => {
+                if (disabled || branches.length === 0) {
+                  return;
+                }
+                toggle();
+                if (open) {
+                  inputRef.current?.focus();
+                }
+              }}
+              aria-label={open ? 'Close branch list' : 'Open branch list'}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <ChevronDown
+                size={13}
+                aria-hidden
+                className={cn('motion-safe:transition-transform', open && 'rotate-180')}
+              />
+            </button>
+          </Tooltip>
+        </div>
+      }
+    >
+      {isPopupVisible ? (
+        isListVisible ? (
+          <ScrollFade className="max-h-56" viewportClassName="py-0.5" fadeFrom="subtle">
+            <ul ref={listRef} role="listbox">
+              {filtered.map((b, i) => (
+                <li
+                  key={b.name}
+                  role="option"
+                  aria-selected={highlightIdx === i}
+                  onMouseEnter={() => setHighlightIdx(i)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    select({ name: b.name });
+                  }}
+                  className={cn(
+                    'flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-sm font-mono',
+                    highlightIdx === i ? 'bg-primary/10 text-foreground' : 'text-muted-foreground',
+                  )}
+                >
+                  <span className="min-w-0 flex-1 truncate">{b.name}</span>
+                  {b.inUse ? <span className="shrink-0 text-2xs text-warning">in use</span> : null}
+                  {b.hasUncommitted ? (
+                    <span className="shrink-0 text-2xs text-warning">dirty</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </ScrollFade>
+        ) : (
+          'No matching branches'
+        )
+      ) : null}
+    </AnchoredPopover>
   );
 };

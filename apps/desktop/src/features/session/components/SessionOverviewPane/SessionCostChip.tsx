@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AnchoredPopover,
   Button,
   cn,
   Divider,
-  DropdownPortal,
   formatUsd,
   formatUsdPrecise,
-  Popover,
   ScrollFade,
   tintClasses,
   useDropdown,
@@ -52,14 +51,13 @@ export const SessionCostChip = ({ sessionId }: Props) => {
   const loadSessionTelemetry = useAppStore((state) => state.loadSessionTelemetry);
   const loadSessionBudget = useAppStore((state) => state.loadSessionBudget);
   const setSessionBudget = useAppStore((state) => state.setSessionBudget);
-  const { open, toggle, containerRef, popupRef, popupClassName, popupStyle, portal, portalTarget } =
-    useDropdown({
-      align: 'end',
-      expectedHeight: 520,
-      expectedWidth: 640,
-      width: 'w-[40rem] max-w-[calc(100vw-2rem)]',
-      strategy: 'fixed',
-    });
+  const dropdown = useDropdown({
+    align: 'end',
+    expectedHeight: 520,
+    expectedWidth: 640,
+    width: 'w-[40rem] max-w-[calc(100vw-2rem)]',
+  });
+  const { open, toggle, popupRef } = dropdown;
   const capTint = capState === 'clear' ? null : tintClasses(CAP_TONE[capState]);
   const spent = formatUsd(sessionCost);
   const label = sessionBudget != null ? `${spent} / ${formatUsd(sessionBudget)}` : spent;
@@ -123,59 +121,54 @@ export const SessionCostChip = ({ sessionId }: Props) => {
   };
 
   return (
-    <div ref={containerRef} className="relative">
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={toggle}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        title={title}
-        onAnimationEnd={() => setPulse(false)}
-        className={cn(
-          'inline-flex shrink-0 items-center rounded-md border px-2 py-1 font-mono text-2xs tabular-nums transition-colors',
-          capState === 'clear' &&
-            'border-border-soft bg-muted text-muted-foreground hover:border-border hover:text-foreground',
-          capTint != null && `${capTint.borderSoft} ${capTint.bg} ${capTint.text}`,
-          pulse && 'cost-chip-pulse',
-        )}
-      >
-        {label}
-      </button>
-      <DropdownPortal portal={portal} portalTarget={portalTarget}>
-        {open ? (
-          <Popover
-            innerRef={popupRef}
-            role="dialog"
-            ariaLabel="Session budget details"
-            tabIndex={-1}
-            className={cn(popupClassName, 'flex max-h-[32rem] flex-col bg-subtle')}
-            style={popupStyle}
-          >
-            <div className="flex flex-col gap-0.5 px-4 py-3">
-              <span className="text-sm font-semibold text-foreground">Session budget</span>
-              <span className="truncate text-2xs text-muted-foreground">
-                {session?.goal ?? 'Untitled session'}
-              </span>
-            </div>
-            <Divider />
-            <ScrollFade className="min-h-0 flex-1" viewportClassName="p-4">
-              <SessionBudgetContent
-                turns={turns}
-                softCapUsd={sessionBudget}
-                onSaveCap={(nextCapUsd) => setSessionBudget(sessionId, nextCapUsd)}
-                density="glance"
-              />
-            </ScrollFade>
-            <Divider />
-            <div className="p-3">
-              <Button variant="ghost" size="sm" onClick={openBudgetStudio}>
-                Open full budget details
-              </Button>
-            </div>
-          </Popover>
-        ) : null}
-      </DropdownPortal>
-    </div>
+    <AnchoredPopover
+      dropdown={dropdown}
+      role="dialog"
+      ariaLabel="Session budget details"
+      tabIndex={-1}
+      className="flex max-h-[32rem] flex-col bg-subtle"
+      trigger={
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={toggle}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          title={title}
+          onAnimationEnd={() => setPulse(false)}
+          className={cn(
+            'inline-flex shrink-0 items-center rounded-md border px-2 py-1 font-mono text-2xs tabular-nums transition-colors',
+            capState === 'clear' &&
+              'border-border-soft bg-muted text-muted-foreground hover:border-border hover:text-foreground',
+            capTint != null && `${capTint.borderSoft} ${capTint.bg} ${capTint.text}`,
+            pulse && 'cost-chip-pulse',
+          )}
+        >
+          {label}
+        </button>
+      }
+    >
+      <div className="flex flex-col gap-0.5 px-4 py-3">
+        <span className="text-sm font-semibold text-foreground">Session budget</span>
+        <span className="truncate text-2xs text-muted-foreground">
+          {session?.goal ?? 'Untitled session'}
+        </span>
+      </div>
+      <Divider />
+      <ScrollFade className="min-h-0 flex-1" viewportClassName="p-4">
+        <SessionBudgetContent
+          turns={turns}
+          softCapUsd={sessionBudget}
+          onSaveCap={(nextCapUsd) => setSessionBudget(sessionId, nextCapUsd)}
+          density="glance"
+        />
+      </ScrollFade>
+      <Divider />
+      <div className="p-3">
+        <Button variant="ghost" size="sm" onClick={openBudgetStudio}>
+          Open full budget details
+        </Button>
+      </div>
+    </AnchoredPopover>
   );
 };

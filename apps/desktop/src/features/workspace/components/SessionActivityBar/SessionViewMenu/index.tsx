@@ -1,15 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Check, SlidersHorizontal } from 'lucide-react';
-import {
-  cn,
-  Divider,
-  DropdownBackdrop,
-  DropdownPortal,
-  Eyebrow,
-  Popover,
-  Tooltip,
-  useDropdown,
-} from '@goodboy/ui';
+import { AnchoredPopover, cn, Divider, Eyebrow, Tooltip, useDropdown } from '@goodboy/ui';
 import type { SessionGroupKey, SessionSortKey, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useSessionViewPrefs } from '../../../../../store';
 import { useSidebarPeekHold } from '../../SidebarPeekOverlay/hold';
@@ -51,25 +42,14 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
 
   const { hold, release } = useSidebarPeekHold();
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const {
-    open,
-    close,
-    toggle,
-    containerRef,
-    popupRef,
-    popupStyle,
-    popupClassName,
-    portal,
-    portalTarget,
-  } = useDropdown({
+  const dropdown = useDropdown({
     align: 'start',
     width: 'w-[200px]',
     expectedWidth: MENU_WIDTH,
     expectedHeight: 220,
-    strategy: 'fixed',
     isEscapeEnabled: false,
-    hasBackdrop: true,
   });
+  const { open, close, toggle } = dropdown;
 
   useEffect(() => {
     if (!open) {
@@ -95,69 +75,61 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
   }, [hold, open, release]);
 
   return (
-    <div ref={containerRef} className="relative">
-      <Tooltip content="Display options" side="bottom">
-        <button
-          ref={triggerRef}
-          type="button"
-          onClick={toggle}
-          aria-haspopup="menu"
-          aria-expanded={open}
-          aria-label="Display options"
-          className={cn(
-            'inline-flex shrink-0 items-center justify-center rounded p-1 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
-            open
-              ? 'bg-foreground/10 text-foreground'
-              : 'text-muted-foreground/70 hover:bg-foreground/10 hover:text-foreground',
-          )}
-        >
-          <SlidersHorizontal size={11} aria-hidden />
-        </button>
-      </Tooltip>
-
-      <DropdownPortal portal={portal} portalTarget={portalTarget}>
-        {open && (
-          <>
-            <DropdownBackdrop onClose={close} />
-            <Popover
-              innerRef={popupRef}
-              role="menu"
-              ariaLabel="Session display options"
-              className={cn(popupClassName, 'py-1')}
-              style={popupStyle}
-            >
-              <MenuSection title="Sort by">
-                {SORT_OPTIONS.map((opt) => (
-                  <MenuItem
-                    key={opt.key}
-                    label={opt.label}
-                    hint={opt.hint}
-                    selected={prefs.sort === opt.key}
-                    onClick={() => {
-                      setSessionSort(workspaceId, opt.key);
-                    }}
-                  />
-                ))}
-              </MenuSection>
-              <Divider />
-              <MenuSection title="Group by">
-                {GROUP_OPTIONS.map((opt) => (
-                  <MenuItem
-                    key={opt.key}
-                    label={opt.label}
-                    hint={opt.hint}
-                    selected={prefs.group === opt.key}
-                    onClick={() => {
-                      setSessionGroup(workspaceId, opt.key);
-                    }}
-                  />
-                ))}
-              </MenuSection>
-            </Popover>
-          </>
-        )}
-      </DropdownPortal>
-    </div>
+    <AnchoredPopover
+      dropdown={dropdown}
+      role="menu"
+      ariaLabel="Session display options"
+      className="py-1"
+      hasBackdrop
+      trigger={
+        <Tooltip content="Display options" side="bottom">
+          <button
+            ref={triggerRef}
+            type="button"
+            onClick={toggle}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            aria-label="Display options"
+            className={cn(
+              'inline-flex shrink-0 items-center justify-center rounded p-1 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
+              open
+                ? 'bg-foreground/10 text-foreground'
+                : 'text-muted-foreground/70 hover:bg-foreground/10 hover:text-foreground',
+            )}
+          >
+            <SlidersHorizontal size={11} aria-hidden />
+          </button>
+        </Tooltip>
+      }
+    >
+      <MenuSection title="Sort by">
+        {SORT_OPTIONS.map((opt) => (
+          <MenuItem
+            key={opt.key}
+            label={opt.label}
+            hint={opt.hint}
+            selected={prefs.sort === opt.key}
+            onClick={() => {
+              setSessionSort(workspaceId, opt.key);
+            }}
+          />
+        ))}
+      </MenuSection>
+      <Divider />
+      <MenuSection title="Group by">
+        {GROUP_OPTIONS.map((opt) => (
+          <MenuItem
+            key={opt.key}
+            label={opt.label}
+            hint={opt.hint}
+            selected={prefs.group === opt.key}
+            onClick={() => {
+              setSessionGroup(workspaceId, opt.key);
+            }}
+          />
+        ))}
+      </MenuSection>
+    </AnchoredPopover>
   );
 };
 

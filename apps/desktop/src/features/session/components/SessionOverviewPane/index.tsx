@@ -22,7 +22,6 @@ import { GoalOverviewRegion } from './GoalOverviewRegion';
 import { OverviewNextSteps } from './OverviewNextSteps';
 import { OverviewPlans } from './OverviewPlans';
 import { OverviewPrs } from './OverviewPrs';
-import { OverviewLinkedWork } from './OverviewLinkedWork';
 
 type Props = {
   readonly session: Session;
@@ -86,7 +85,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         />
         <OverviewNextSteps session={session} agents={sessionAgents} />
         <OverviewPlans session={session} onSelectLens={onSelectLens} />
-        <OverviewLinkedWork session={session} />
         <OverviewPrs session={session} onSelectLens={onSelectLens} />
         <TimelinePane
           session={session}

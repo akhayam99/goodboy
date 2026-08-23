@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Bell, Trash2 } from 'lucide-react';
 import {
+  AnchoredPopover,
   Button,
   cn,
   Divider,
-  DropdownBackdrop,
-  DropdownPortal,
   EmptyState,
-  Popover,
   ScrollFade,
   Skeleton,
   tintClasses,
@@ -41,26 +39,15 @@ export const NotificationCenter = () => {
   const loadNotifications = useAppStore((s) => s.loadNotifications);
   const markNotificationsRead = useAppStore((s) => s.markNotificationsRead);
   const clearNotifications = useAppStore((s) => s.clearNotifications);
-  const {
-    open,
-    close,
-    toggle,
-    containerRef,
-    popupRef,
-    popupStyle,
-    popupClassName,
-    portal,
-    portalTarget,
-  } = useDropdown({
+  const dropdown = useDropdown({
     align: 'center',
     width: 'w-96',
     expectedWidth: DROPDOWN_WIDTH,
     expectedHeight: DROPDOWN_MAX_HEIGHT,
-    strategy: 'fixed',
     openEvent: OPEN_EVENT,
     isEscapeEnabled: false,
-    hasBackdrop: true,
   });
+  const { open, close, toggle } = dropdown;
   const openRef = useRef(open);
 
   useEffect(() => {
@@ -94,131 +81,128 @@ export const NotificationCenter = () => {
   const { total, unread } = notificationCounts;
 
   return (
-    <div ref={containerRef} role="region" aria-label="Notifications" aria-live="polite">
-      <Tooltip content="notifications" side="top">
-        <button
-          type="button"
-          onClick={handleOpen}
-          className={cn(
-            'relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors',
-            open
-              ? 'bg-muted text-foreground'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
-          )}
-          aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ''}`}
-        >
-          <Bell size={14} aria-hidden />
-          {unread > 0 && (
-            <span
+    <div role="region" aria-label="Notifications" aria-live="polite">
+      <AnchoredPopover
+        dropdown={dropdown}
+        hasBackdrop
+        trigger={
+          <Tooltip content="notifications" side="top">
+            <button
+              type="button"
+              onClick={handleOpen}
               className={cn(
-                'absolute -right-1.5 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-warning px-1 font-bold leading-none text-warning-foreground tabular-nums',
-                unread > 9 ? 'text-3xs' : 'text-2xs',
+                'relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors',
+                open
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
               )}
+              aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ''}`}
             >
-              {unread > 99 ? '99+' : unread}
-            </span>
-          )}
-        </button>
-      </Tooltip>
-
-      <DropdownPortal portal={portal} portalTarget={portalTarget}>
-        {open && (
-          <>
-            <DropdownBackdrop onClose={close} />
-            <Popover innerRef={popupRef} className={popupClassName} style={popupStyle}>
-              <header className="flex items-center justify-between gap-2 px-3 py-2">
-                <span className="text-xs font-semibold text-foreground">
-                  {total} {total === 1 ? 'notification' : 'notifications'}
-                </span>
-                {notifications.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => void clearNotifications()}
-                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
-                    aria-label="Clear all notifications"
-                    title="Clear all notifications"
-                  >
-                    <Trash2 size={11} aria-hidden />
-                    Clear all
-                  </button>
-                )}
-              </header>
-              <Divider />
-              {notificationsLoading && notifications.length === 0 ? (
-                <div
-                  className="flex flex-col gap-3 px-3 py-2.5"
-                  role="status"
-                  aria-label="Loading notifications"
+              <Bell size={14} aria-hidden />
+              {unread > 0 && (
+                <span
+                  className={cn(
+                    'absolute -right-1.5 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-warning px-1 font-bold leading-none text-warning-foreground tabular-nums',
+                    unread > 9 ? 'text-3xs' : 'text-2xs',
+                  )}
                 >
-                  {Array.from({ length: 4 }).map((_, index) => (
-                    <div key={index} className="flex items-start gap-2">
-                      <Skeleton className="mt-0.5 size-3.5 shrink-0 rounded-full" />
-                      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                        <Skeleton className="h-3 w-2/3 rounded" />
-                        <Skeleton className="h-2.5 w-1/3 rounded" />
-                      </div>
-                    </div>
-                  ))}
+                  {unread > 99 ? '99+' : unread}
+                </span>
+              )}
+            </button>
+          </Tooltip>
+        }
+      >
+        <header className="flex items-center justify-between gap-2 px-3 py-2">
+          <span className="text-xs font-semibold text-foreground">
+            {total} {total === 1 ? 'notification' : 'notifications'}
+          </span>
+          {notifications.length > 0 && (
+            <button
+              type="button"
+              onClick={() => void clearNotifications()}
+              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
+              aria-label="Clear all notifications"
+              title="Clear all notifications"
+            >
+              <Trash2 size={11} aria-hidden />
+              Clear all
+            </button>
+          )}
+        </header>
+        <Divider />
+        {notificationsLoading && notifications.length === 0 ? (
+          <div
+            className="flex flex-col gap-3 px-3 py-2.5"
+            role="status"
+            aria-label="Loading notifications"
+          >
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="flex items-start gap-2">
+                <Skeleton className="mt-0.5 size-3.5 shrink-0 rounded-full" />
+                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                  <Skeleton className="h-3 w-2/3 rounded" />
+                  <Skeleton className="h-2.5 w-1/3 rounded" />
                 </div>
-              ) : notifications.length === 0 ? (
-                <EmptyState
-                  icon={CONCEPT_ICONS.notifications}
-                  tone={CONCEPT_TONE.notifications}
-                  title="Nothing to catch up on"
-                  description="Session milestones, retries, and budget alerts land here as they happen, so you don't have to babysit a running session."
-                  size="inline"
-                  action={
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => {
-                        close();
-                        window.dispatchEvent(new CustomEvent('goodboy:new-session'));
-                      }}
-                    >
-                      Start a session
-                    </Button>
-                  }
-                  className="px-3 py-6"
-                />
-              ) : (
-                <ScrollFade className="max-h-[25rem]" fadeSize={16} fadeFrom="elevated">
-                  <ul>
-                    {notifications.map((n, i) => (
-                      <Fragment key={n.id}>
-                        {i > 0 && (
-                          <li aria-hidden className="px-3">
-                            <Divider />
-                          </li>
-                        )}
-                        <NotificationItem notification={n} onNavigated={close} />
-                      </Fragment>
-                    ))}
-                  </ul>
-                </ScrollFade>
-              )}
-              {notifications.length > 0 && (
-                <>
-                  <Divider />
-                  <footer className="flex items-center justify-end px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        close();
-                        window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT));
-                      }}
-                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    >
-                      Show more
-                      <ArrowRight size={11} aria-hidden />
-                    </button>
-                  </footer>
-                </>
-              )}
-            </Popover>
+              </div>
+            ))}
+          </div>
+        ) : notifications.length === 0 ? (
+          <EmptyState
+            icon={CONCEPT_ICONS.notifications}
+            tone={CONCEPT_TONE.notifications}
+            title="Nothing to catch up on"
+            description="Session milestones, retries, and budget alerts land here as they happen, so you don't have to babysit a running session."
+            size="inline"
+            action={
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  close();
+                  window.dispatchEvent(new CustomEvent('goodboy:new-session'));
+                }}
+              >
+                Start a session
+              </Button>
+            }
+            className="px-3 py-6"
+          />
+        ) : (
+          <ScrollFade className="max-h-[25rem]" fadeSize={16} fadeFrom="elevated">
+            <ul>
+              {notifications.map((n, i) => (
+                <Fragment key={n.id}>
+                  {i > 0 && (
+                    <li aria-hidden className="px-3">
+                      <Divider />
+                    </li>
+                  )}
+                  <NotificationItem notification={n} onNavigated={close} />
+                </Fragment>
+              ))}
+            </ul>
+          </ScrollFade>
+        )}
+        {notifications.length > 0 && (
+          <>
+            <Divider />
+            <footer className="flex items-center justify-end px-3 py-2">
+              <button
+                type="button"
+                onClick={() => {
+                  close();
+                  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT));
+                }}
+                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                Show more
+                <ArrowRight size={11} aria-hidden />
+              </button>
+            </footer>
           </>
         )}
-      </DropdownPortal>
+      </AnchoredPopover>
     </div>
   );
 };

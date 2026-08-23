@@ -60,12 +60,13 @@ describe('ReviewerPicker', () => {
     expect(screen.queryByPlaceholderText('filter collaborators')).toBeNull();
   });
 
-  it('anchors the panel by measured direction instead of a hardcoded offset', async () => {
+  it('escapes clipping ancestors through a fixed body portal', async () => {
     renderPicker();
     openPanel();
     const panel = await screen.findByPlaceholderText('filter collaborators');
-    const popup = panel.closest('div.absolute');
-    expect(popup?.className).toContain('top-[calc(100%+0.25rem)]');
+    const popup = panel.closest('div.fixed');
+    expect(popup?.className).toContain('z-popover');
+    expect(popup?.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
   });
 
   it('closes on a mousedown outside the picker', async () => {

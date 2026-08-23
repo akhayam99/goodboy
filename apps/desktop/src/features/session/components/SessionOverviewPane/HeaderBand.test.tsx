@@ -8,9 +8,10 @@ import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
 type Store = {
   sessions: ReadonlyArray<Session>;
   workspaces: ReadonlyArray<unknown>;
+  projects: ReadonlyArray<{ id: string; workspaceId: string }>;
   sessionBranches: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
-  sessionProjectMounts: Record<string, ReadonlyArray<never>>;
+  sessionProjectMounts: Record<string, ReadonlyArray<unknown>>;
   sessionActiveProject: Record<string, string>;
   sessionGithub: Record<
     string,
@@ -40,9 +41,10 @@ const { store, hooks } = vi.hoisted(() => ({
   store: {
     sessions: [] as ReadonlyArray<Session>,
     workspaces: [] as ReadonlyArray<unknown>,
+    projects: [] as ReadonlyArray<{ id: string; workspaceId: string }>,
     sessionBranches: {} as Record<string, string>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
-    sessionProjectMounts: {} as Record<string, ReadonlyArray<never>>,
+    sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
     sessionActiveProject: {} as Record<string, string>,
     sessionGithub: {} as Store['sessionGithub'],
     sessionGitlabMr: {} as Record<string, { mr?: unknown }>,
@@ -101,6 +103,10 @@ vi.mock('../SessionWorkspace/parts/SessionGitActions', () => ({
   },
 }));
 
+vi.mock('./LinkIssueAction', () => ({
+  LinkIssueAction: () => <button type="button" aria-label="Link an issue" />,
+}));
+
 vi.mock('./SessionDestructiveActions', () => ({
   SessionDestructiveActions: ({ session }: { session: { id: string } }) => {
     sessionDestructiveActionsCalls.push({ sessionId: session.id });
@@ -138,6 +144,7 @@ const stageWith = (over: Partial<SessionStageInfo> = {}): SessionStageInfo =>
 beforeEach(() => {
   store.sessions = [];
   store.workspaces = [];
+  store.projects = [];
   store.sessionBranches = {};
   store.sessionWorktrees = {};
   store.sessionProjectMounts = {};
@@ -311,6 +318,58 @@ describe('HeaderBand', () => {
     render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />);
 
     expect(screen.queryByRole('button', { name: /mark all seen/i })).toBeNull();
+  });
+
+  it('keeps the scope entry out of a workspace with no projects', () => {
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />);
+
+    expect(screen.queryByRole('button', { name: /No projects mounted|Scoped to/ })).toBeNull();
+  });
+
+  it('says no projects are mounted yet still opens the projects lens', () => {
+    store.projects = [{ id: 'project-1', workspaceId: 'ws-1' }];
+    const onSelectLens = vi.fn();
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={onSelectLens} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'No projects mounted' }));
+    expect(onSelectLens).toHaveBeenCalledWith('projects');
+  });
+
+  it('counts the mounted projects with a singular label for one', () => {
+    store.projects = [
+      { id: 'project-1', workspaceId: 'ws-1' },
+      { id: 'project-2', workspaceId: 'ws-1' },
+    ];
+    store.sessionProjectMounts = { [SESSION_ID]: [{ projectId: 'project-1' }] };
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'Scoped to 1 project' })).toBeDefined();
+  });
+
+  it('counts the mounted projects with a plural label and opens the projects lens', () => {
+    store.projects = [
+      { id: 'project-1', workspaceId: 'ws-1' },
+      { id: 'project-2', workspaceId: 'ws-1' },
+    ];
+    store.sessionProjectMounts = {
+      [SESSION_ID]: [{ projectId: 'project-1' }, { projectId: 'project-2' }],
+    };
+    const onSelectLens = vi.fn();
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={onSelectLens} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Scoped to 2 projects' }));
+    expect(onSelectLens).toHaveBeenCalledWith('projects');
+  });
+
+  it('seats the link-issue action in the icon cluster of the title row', () => {
+    const { container } = render(
+      <HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />,
+    );
+    const titleRow = container.firstElementChild?.firstElementChild;
+    const cluster = titleRow?.lastElementChild;
+
+    expect(cluster?.querySelector('[aria-label="Link an issue"]')).not.toBeNull();
+    expect(cluster?.firstElementChild?.getAttribute('aria-label')).toBe('Link an issue');
   });
 
   it('mounts the editor menu, git actions and destructive actions at compact density for this session', () => {

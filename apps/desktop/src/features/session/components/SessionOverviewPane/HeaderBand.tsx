@@ -12,6 +12,8 @@ import { EditorMenu } from './EditorMenu';
 import { SessionGitActions } from '../SessionWorkspace/parts/SessionGitActions';
 import { SessionDestructiveActions } from './SessionDestructiveActions';
 import { BranchChip } from './BranchChip';
+import { LinkIssueAction } from './LinkIssueAction';
+import { ScopeSummary } from './ScopeSummary';
 import { SessionCostChip } from './SessionCostChip';
 import { StatusRowRequest } from './StatusRowRequest';
 import { LinkedWorkChips } from './LinkedWorkChips';
@@ -102,6 +104,7 @@ export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
           </Tooltip>
         )}
         <div className="flex shrink-0 items-center gap-1">
+          <LinkIssueAction session={session} />
           <EditorMenu sessionId={sessionId} density="compact" />
           <SessionGitActions session={session} density="compact" />
           <SessionDestructiveActions session={session} />
@@ -133,6 +136,11 @@ export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
               canEdit={workspace != null && !isBranchlessSession({ branch })}
             />
           ) : null}
+          <ScopeSummary
+            sessionId={sessionId}
+            workspaceId={session.workspaceId}
+            onSelectLens={onSelectLens}
+          />
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />

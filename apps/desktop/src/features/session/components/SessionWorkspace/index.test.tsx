@@ -215,6 +215,9 @@ vi.mock('./parts/ContextPane', () => ({
   ),
 }));
 vi.mock('./parts/PrPane', () => ({ PrPane: () => null }));
+vi.mock('./parts/ProjectsPane', () => ({
+  ProjectsPane: () => <div data-testid="projects-pane" />,
+}));
 vi.mock('./parts/FilesPane', () => ({ FilesPane: () => null }));
 vi.mock('./parts/IntegrationPane', () => ({
   IntegrationPane: ({ provider }: { provider: string }) => (
@@ -613,6 +616,26 @@ describe('SessionWorkspace pane metadata', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.queryByTestId('pane-meta-agents')).toBeNull();
+  });
+});
+
+describe('SessionWorkspace projects lens', () => {
+  it('mounts the projects pane for the projects lens', () => {
+    store.activeLens = { [SESSION_ID]: 'projects' };
+    store.selectedAgentId = {};
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('projects-pane')).toBeDefined();
+  });
+
+  it('leaves no scope strip between the crumb bar and the lens', () => {
+    store.activeLens = { [SESSION_ID]: null };
+    store.selectedAgentId = {};
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.queryByTestId('repo-scope-bar')).toBeNull();
   });
 });
 

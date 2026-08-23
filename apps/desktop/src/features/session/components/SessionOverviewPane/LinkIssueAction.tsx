@@ -1,0 +1,121 @@
+import { useState } from 'react';
+import { ChevronLeft, Link2 } from 'lucide-react';
+import { AnchoredPopover, Tooltip, useDropdown } from '@goodboy/ui';
+import type { Session, SessionExternalTaskProvider } from '@goodboy/types';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
+import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
+import { LinkIssueForm } from '../SessionWorkspace/parts/IntegrationPane/LinkIssueForm';
+
+type Tracker = {
+  readonly provider: Exclude<SessionExternalTaskProvider, 'sentry' | 'bitbucket' | 'slack'>;
+  readonly label: string;
+};
+
+const INTEGRATION_TRACKERS: ReadonlyArray<Tracker> = [
+  { provider: 'linear', label: 'Linear' },
+  { provider: 'jira', label: 'Jira' },
+  { provider: 'gitlab', label: 'GitLab' },
+];
+
+const TRIGGER_BUTTON =
+  'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
+
+type Props = {
+  readonly session: Session;
+};
+
+export const LinkIssueAction = ({ session }: Props) => {
+  const integrations = useAppStore(
+    (s) => s.workspaceIntegrations[session.workspaceId] ?? EMPTY_ARRAY,
+  );
+  const github = useGithubConnection({ workspaceId: session.workspaceId });
+  const [pickedTracker, setPickedTracker] = useState<Tracker | null>(null);
+  const dropdown = useDropdown({
+    align: 'end',
+    expectedHeight: 280,
+    expectedWidth: 384,
+    width: 'w-96 max-w-[calc(100vw-2rem)]',
+  });
+
+  const connected: ReadonlyArray<Tracker> = [
+    ...INTEGRATION_TRACKERS.filter(({ provider }) =>
+      integrations.some((integration) => integration.provider === provider),
+    ),
+    ...(github.isAuthenticated ? [{ provider: 'github', label: 'GitHub' } as const] : []),
+  ];
+  const tracker = pickedTracker ?? (connected.length === 1 ? (connected[0] ?? null) : null);
+
+  const onToggle = () => {
+    setPickedTracker(null);
+    dropdown.toggle();
+  };
+  const onLinked = () => {
+    setPickedTracker(null);
+    dropdown.close();
+  };
+
+  return (
+    <AnchoredPopover
+      dropdown={dropdown}
+      role="dialog"
+      ariaLabel="Link an issue"
+      className="p-3"
+      trigger={
+        <Tooltip content="Link an issue">
+          <button
+            type="button"
+            aria-label="Link an issue"
+            onClick={onToggle}
+            className={TRIGGER_BUTTON}
+          >
+            <Link2 size={13} aria-hidden />
+          </button>
+        </Tooltip>
+      }
+    >
+      {connected.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          No tracker connected yet. Connect Linear, Jira, GitLab or GitHub from the integrations
+          studios in the footer, then link issues here.
+        </p>
+      ) : tracker != null ? (
+        <div className="flex flex-col gap-2">
+          {connected.length > 1 ? (
+            <button
+              type="button"
+              onClick={() => setPickedTracker(null)}
+              className="flex items-center gap-1 self-start text-xs text-muted-foreground motion-safe:transition-colors hover:text-foreground"
+            >
+              <ChevronLeft size={12} aria-hidden />
+              All trackers
+            </button>
+          ) : null}
+          <LinkIssueForm
+            sessionId={session.id}
+            workspaceId={session.workspaceId}
+            provider={tracker.provider}
+            providerLabel={tracker.label}
+            nounPhrase="an issue"
+            nounPlural="issues"
+            onLinked={onLinked}
+          />
+        </div>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {connected.map((candidate) => (
+            <button
+              key={candidate.provider}
+              type="button"
+              onClick={() => setPickedTracker(candidate)}
+              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-foreground motion-safe:transition-colors hover:bg-muted/60"
+            >
+              <IntegrationGlyph provider={candidate.provider} size="xs" />
+              {candidate.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </AnchoredPopover>
+  );
+};

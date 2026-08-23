@@ -87,12 +87,13 @@ describe('ResolverOverflowMenu', () => {
     );
   });
 
-  it('anchors the menu by measured direction instead of a hardcoded offset', () => {
+  it('escapes clipping ancestors through a fixed body portal', () => {
     renderMenu();
     fireEvent.click(trigger());
     const menu = screen.getByRole('menu', { name: /more resolver actions/i });
-    expect(menu.className).toContain('top-[calc(100%+0.25rem)]');
-    expect(menu.className).toContain('right-0');
+    expect(menu.className).toContain('fixed');
+    expect(menu.className).toContain('z-popover');
+    expect(menu.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
   });
 
   it('closes on Escape and drops the armed action', () => {

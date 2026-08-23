@@ -9,11 +9,10 @@ import {
   resolveStoredModelSelection,
 } from '@goodboy/core';
 import {
+  AnchoredPopover,
   Button,
   cn,
   Divider,
-  DropdownPortal,
-  Popover,
   ScrollFade,
   Tooltip,
   useDropdown,
@@ -110,26 +109,16 @@ export const RoutingPicker = ({
   availability = 'run',
 }: Props) => {
   const [isProviderConnectionInFlight, setIsProviderConnectionInFlight] = useState(false);
-  const {
-    open,
-    close,
-    toggle,
-    containerRef,
-    popupRef,
-    popupClassName,
-    popupStyle,
-    portal,
-    portalTarget,
-  } = useDropdown({
+  const dropdown = useDropdown({
     disabled,
     align,
     openEvent,
     expectedHeight: 320,
     expectedWidth: 384,
     width: 'w-96 max-w-[calc(100vw-2rem)]',
-    strategy: 'fixed',
     isEscapeEnabled: isProviderConnectionInFlight === false,
   });
+  const { open, close, toggle } = dropdown;
   const editableEffort = effort.editable ? effort : null;
   const effortValue = effort.value ?? 'medium';
   const recommendedProvider = recommendation?.provider;
@@ -222,12 +211,12 @@ export const RoutingPicker = ({
     if (open === false || isViewProviderConnected === false) {
       return;
     }
-    popupRef.current
+    dropdown.popupRef.current
       ?.querySelector<HTMLButtonElement>(
         '[role="group"][aria-label="Model"] button[aria-pressed="true"]',
       )
       ?.focus();
-  }, [isViewProviderConnected, open, popupRef]);
+  }, [isViewProviderConnected, open, dropdown.popupRef]);
 
   const onPickSelection = ({ next, provider: nextProvider }: PickSelectionParams) => {
     const resolved = resolvePickerSelection({
@@ -282,245 +271,236 @@ export const RoutingPicker = ({
   };
 
   return (
-    <div
-      ref={containerRef}
-      className={cn('relative flex items-center gap-1', variant === 'field' && 'w-full')}
-    >
-      {onReset != null && isOverridden && !disabled && (
-        <Tooltip
-          content={
-            defaultSummary != null ? `reset to default (${defaultSummary})` : 'reset to default'
-          }
-        >
-          <button
-            type="button"
-            onClick={onReset}
-            aria-label="Reset routing override"
-            className="shrink-0 rounded-full p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <RotateCcw size={10} aria-hidden />
-          </button>
-        </Tooltip>
-      )}
-      <Tooltip
-        content={disabled ? (disabledTitle ?? summary) : `${summary}. Click to change.`}
-        anchorClassName={variant === 'field' ? 'w-full' : undefined}
-      >
-        <button
-          type="button"
-          onClick={toggle}
-          disabled={disabled}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          aria-label={ariaLabel != null ? `${ariaLabel}: ${summary}` : summary}
-          className={cn(
-            'items-center gap-1.5 text-xs transition-colors',
-            variant === 'pill'
-              ? 'inline-flex rounded-full px-2.5 py-0.5'
-              : 'flex w-full rounded-md border px-2 py-1.5 text-left',
-            variant === 'field' &&
-              (open
-                ? 'border-primary bg-primary/5'
-                : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50'),
-            variant === 'pill' &&
-              (isOverridden
-                ? 'bg-warning/10 ring-1 ring-warning/30 hover:bg-warning/15'
-                : 'bg-subtle hover:bg-muted'),
-            disabled && 'cursor-not-allowed opacity-60',
+    <AnchoredPopover
+      dropdown={dropdown}
+      role="dialog"
+      ariaLabel={ariaLabel ?? 'model routing'}
+      className="flex max-h-[calc(100vh-1rem)] flex-col bg-subtle"
+      anchorClassName={cn('flex items-center gap-1', variant === 'field' && 'w-full')}
+      trigger={
+        <>
+          {onReset != null && isOverridden && !disabled && (
+            <Tooltip
+              content={
+                defaultSummary != null ? `reset to default (${defaultSummary})` : 'reset to default'
+              }
+            >
+              <button
+                type="button"
+                onClick={onReset}
+                aria-label="Reset routing override"
+                className="shrink-0 rounded-full p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <RotateCcw size={10} aria-hidden />
+              </button>
+            </Tooltip>
           )}
-        >
-          <span className="flex min-w-0 flex-1 items-center gap-1.5">
-            <TriggerLabel
-              provider={routing.provider}
-              model={routing.model}
-              modelDetail={routingVariant?.label}
-              effort={routing.effort}
-              showEffort={showEffort}
-              verbosity={verbosity}
-            />
-          </span>
-          <ChevronDown
-            size={11}
-            aria-hidden
-            className={cn(
-              'shrink-0 text-muted-foreground transition-transform',
-              open && 'rotate-180',
-            )}
-          />
-        </button>
-      </Tooltip>
-      <DropdownPortal portal={portal} portalTarget={portalTarget}>
-        {open && (
-          <Popover
-            innerRef={popupRef}
-            role="dialog"
-            ariaLabel={ariaLabel ?? 'model routing'}
-            className={cn(popupClassName, 'flex max-h-[calc(100vh-1rem)] flex-col bg-subtle')}
-            style={popupStyle}
+          <Tooltip
+            content={disabled ? (disabledTitle ?? summary) : `${summary}. Click to change.`}
+            anchorClassName={variant === 'field' ? 'w-full' : undefined}
           >
-            {defaultSummary != null && (
-              <div className="flex items-start gap-1.5 px-2.5 py-2 text-2xs leading-relaxed">
-                <span
-                  className={cn('flex-1', isOverridden ? 'text-warning' : 'text-muted-foreground')}
-                >
-                  {isOverridden ? 'Overriding default' : 'Using default'} ·{' '}
-                  {isOverridden ? summary : defaultSummary}
-                </span>
-                {onReset != null && isOverridden && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onReset();
-                      close();
-                    }}
-                    className="font-medium text-warning underline-offset-2 hover:underline"
-                  >
-                    reset
-                  </button>
+            <button
+              type="button"
+              onClick={toggle}
+              disabled={disabled}
+              aria-haspopup="dialog"
+              aria-expanded={open}
+              aria-label={ariaLabel != null ? `${ariaLabel}: ${summary}` : summary}
+              className={cn(
+                'items-center gap-1.5 text-xs transition-colors',
+                variant === 'pill'
+                  ? 'inline-flex rounded-full px-2.5 py-0.5'
+                  : 'flex w-full rounded-md border px-2 py-1.5 text-left',
+                variant === 'field' &&
+                  (open
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50'),
+                variant === 'pill' &&
+                  (isOverridden
+                    ? 'bg-warning/10 ring-1 ring-warning/30 hover:bg-warning/15'
+                    : 'bg-subtle hover:bg-muted'),
+                disabled && 'cursor-not-allowed opacity-60',
+              )}
+            >
+              <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                <TriggerLabel
+                  provider={routing.provider}
+                  model={routing.model}
+                  modelDetail={routingVariant?.label}
+                  effort={routing.effort}
+                  showEffort={showEffort}
+                  verbosity={verbosity}
+                />
+              </span>
+              <ChevronDown
+                size={11}
+                aria-hidden
+                className={cn(
+                  'shrink-0 text-muted-foreground transition-transform',
+                  open && 'rotate-180',
                 )}
-              </div>
-            )}
-            {recommendedProvider != null && (
-              <>
-                <RecommendationRow
-                  summary={recommendationSummary({
-                    provider: recommendedProvider,
-                    model: recommendedModel,
-                  })}
-                  active={isViewingAuto}
-                  onSelect={() => onPickProvider({ next: '', viewedProvider: routing.provider })}
-                />
-                <Divider />
-              </>
-            )}
-            <PickerSection label="Provider">
-              {connectedProviders.length === 0 && availability === 'run' ? (
-                <NoConnectedProviders onNavigate={close} />
-              ) : (
-                <ProviderGrid
-                  connectedProviders={connectedProviders}
-                  activeProvider={isViewingAuto ? null : viewProvider}
-                  secondaryProvider={isViewingAuto ? (recommendedProvider ?? null) : null}
-                  showDisconnected={availability === 'setup'}
-                  onNavigateProviders={close}
-                  onSelect={(id) => {
-                    const isConnected = connectedProviders.includes(id);
-                    setViewProvider(id);
-                    setIsViewingAuto(false);
-                    setConnectProvider(null);
-                    if (isConnected === false) {
-                      const preview = remapModelSelection({
-                        sourceProvider: viewProvider,
-                        targetProvider: id,
-                        selection: viewedRouting.selection,
-                      });
-                      setDraftSelection(
-                        id === 'gemini'
-                          ? { ...preview.selection, effort: viewedRouting.effort }
-                          : preview.selection,
-                      );
-                      return;
-                    }
-                    onPickProvider({ next: id, viewedProvider: id });
-                  }}
-                />
-              )}
-            </PickerSection>
-            <Divider />
-            {connectProvider != null ? (
-              <section aria-label="Connect provider" className="min-h-0">
-                <ProviderInlineConnect
-                  providerId={connectProvider}
-                  onDone={() => setConnectProvider(null)}
-                  onInFlightChange={setIsProviderConnectionInFlight}
-                />
-              </section>
-            ) : null}
-            {connectedProviders.length > 0 &&
-              !isViewProviderConnected &&
-              connectProvider == null && (
-                <section aria-label="Models" className="flex items-center gap-2 p-3">
-                  <p className="flex-1 text-xs text-muted-foreground">
-                    {PROVIDER_LABEL[viewProvider]} is not connected
-                  </p>
-                  <Button size="sm" onClick={() => setConnectProvider(viewProvider)}>
-                    Connect {PROVIDER_LABEL[viewProvider]}
-                  </Button>
-                </section>
-              )}
-            {isViewProviderConnected && connectProvider == null && (
-              <>
-                <Divider />
-                <AxesSection
-                  axes={axes}
-                  effortValue={viewedRouting.effort}
-                  canEditEffort={editableEffort != null}
-                  notice={clampNotice}
-                  hasMaxModeAdvisory={hasMaxModeAdvisory}
-                  onModel={(modelKey) => {
-                    const nextModel = viewedRouting.catalog.find(
-                      (candidate) => candidate.key === modelKey,
-                    );
-                    if (nextModel == null) {
-                      return;
-                    }
-                    onPickModel(nextModel);
-                  }}
-                  onEffort={(level) =>
-                    onPickSelection({
-                      next: { ...viewedRouting.selection, effort: level },
-                      provider: viewProvider,
-                    })
-                  }
-                  onVariant={(id) =>
-                    onPickSelection({
-                      next: { ...viewedRouting.selection, variant: id },
-                      provider: viewProvider,
-                    })
-                  }
-                  onToggle={(id) =>
-                    onPickSelection({
-                      next: {
-                        ...viewedRouting.selection,
-                        toggles: {
-                          ...viewedRouting.selection.toggles,
-                          [id]: !(viewedRouting.selection.toggles?.[id] ?? false),
-                        },
-                      },
-                      provider: viewProvider,
-                    })
-                  }
-                />
-              </>
-            )}
-            {isViewProviderConnected &&
-              connectProvider == null &&
-              verbosity != null &&
-              onVerbosity != null && (
-                <>
-                  <Divider />
-                  <PickerSection label="Replies" hint="How detailed the answers should be">
-                    <div className={CHIP_GROUP_CLASS_NAME}>
-                      {VERBOSITY_LEVELS.map((level) => (
-                        <PickerChip
-                          key={level}
-                          label={VERBOSITY_LABEL[level]}
-                          active={verbosity === level}
-                          tone={verbosityTone(level)}
-                          onSelect={() => onVerbosity(level)}
-                        />
-                      ))}
-                    </div>
-                  </PickerSection>
-                </>
-              )}
-            <Divider />
-            <footer className="px-3 py-2 font-mono text-2xs text-muted-foreground">
-              {viewedResolved.args.join(' ')}
-            </footer>
-          </Popover>
+              />
+            </button>
+          </Tooltip>
+        </>
+      }
+    >
+      {defaultSummary != null && (
+        <div className="flex items-start gap-1.5 px-2.5 py-2 text-2xs leading-relaxed">
+          <span className={cn('flex-1', isOverridden ? 'text-warning' : 'text-muted-foreground')}>
+            {isOverridden ? 'Overriding default' : 'Using default'} ·{' '}
+            {isOverridden ? summary : defaultSummary}
+          </span>
+          {onReset != null && isOverridden && (
+            <button
+              type="button"
+              onClick={() => {
+                onReset();
+                close();
+              }}
+              className="font-medium text-warning underline-offset-2 hover:underline"
+            >
+              reset
+            </button>
+          )}
+        </div>
+      )}
+      {recommendedProvider != null && (
+        <>
+          <RecommendationRow
+            summary={recommendationSummary({
+              provider: recommendedProvider,
+              model: recommendedModel,
+            })}
+            active={isViewingAuto}
+            onSelect={() => onPickProvider({ next: '', viewedProvider: routing.provider })}
+          />
+          <Divider />
+        </>
+      )}
+      <PickerSection label="Provider">
+        {connectedProviders.length === 0 && availability === 'run' ? (
+          <NoConnectedProviders onNavigate={close} />
+        ) : (
+          <ProviderGrid
+            connectedProviders={connectedProviders}
+            activeProvider={isViewingAuto ? null : viewProvider}
+            secondaryProvider={isViewingAuto ? (recommendedProvider ?? null) : null}
+            showDisconnected={availability === 'setup'}
+            onNavigateProviders={close}
+            onSelect={(id) => {
+              const isConnected = connectedProviders.includes(id);
+              setViewProvider(id);
+              setIsViewingAuto(false);
+              setConnectProvider(null);
+              if (isConnected === false) {
+                const preview = remapModelSelection({
+                  sourceProvider: viewProvider,
+                  targetProvider: id,
+                  selection: viewedRouting.selection,
+                });
+                setDraftSelection(
+                  id === 'gemini'
+                    ? { ...preview.selection, effort: viewedRouting.effort }
+                    : preview.selection,
+                );
+                return;
+              }
+              onPickProvider({ next: id, viewedProvider: id });
+            }}
+          />
         )}
-      </DropdownPortal>
-    </div>
+      </PickerSection>
+      <Divider />
+      {connectProvider != null ? (
+        <section aria-label="Connect provider" className="min-h-0">
+          <ProviderInlineConnect
+            providerId={connectProvider}
+            onDone={() => setConnectProvider(null)}
+            onInFlightChange={setIsProviderConnectionInFlight}
+          />
+        </section>
+      ) : null}
+      {connectedProviders.length > 0 && !isViewProviderConnected && connectProvider == null && (
+        <section aria-label="Models" className="flex items-center gap-2 p-3">
+          <p className="flex-1 text-xs text-muted-foreground">
+            {PROVIDER_LABEL[viewProvider]} is not connected
+          </p>
+          <Button size="sm" onClick={() => setConnectProvider(viewProvider)}>
+            Connect {PROVIDER_LABEL[viewProvider]}
+          </Button>
+        </section>
+      )}
+      {isViewProviderConnected && connectProvider == null && (
+        <>
+          <Divider />
+          <AxesSection
+            axes={axes}
+            effortValue={viewedRouting.effort}
+            canEditEffort={editableEffort != null}
+            notice={clampNotice}
+            hasMaxModeAdvisory={hasMaxModeAdvisory}
+            onModel={(modelKey) => {
+              const nextModel = viewedRouting.catalog.find(
+                (candidate) => candidate.key === modelKey,
+              );
+              if (nextModel == null) {
+                return;
+              }
+              onPickModel(nextModel);
+            }}
+            onEffort={(level) =>
+              onPickSelection({
+                next: { ...viewedRouting.selection, effort: level },
+                provider: viewProvider,
+              })
+            }
+            onVariant={(id) =>
+              onPickSelection({
+                next: { ...viewedRouting.selection, variant: id },
+                provider: viewProvider,
+              })
+            }
+            onToggle={(id) =>
+              onPickSelection({
+                next: {
+                  ...viewedRouting.selection,
+                  toggles: {
+                    ...viewedRouting.selection.toggles,
+                    [id]: !(viewedRouting.selection.toggles?.[id] ?? false),
+                  },
+                },
+                provider: viewProvider,
+              })
+            }
+          />
+        </>
+      )}
+      {isViewProviderConnected &&
+        connectProvider == null &&
+        verbosity != null &&
+        onVerbosity != null && (
+          <>
+            <Divider />
+            <PickerSection label="Replies" hint="How detailed the answers should be">
+              <div className={CHIP_GROUP_CLASS_NAME}>
+                {VERBOSITY_LEVELS.map((level) => (
+                  <PickerChip
+                    key={level}
+                    label={VERBOSITY_LABEL[level]}
+                    active={verbosity === level}
+                    tone={verbosityTone(level)}
+                    onSelect={() => onVerbosity(level)}
+                  />
+                ))}
+              </div>
+            </PickerSection>
+          </>
+        )}
+      <Divider />
+      <footer className="px-3 py-2 font-mono text-2xs text-muted-foreground">
+        {viewedResolved.args.join(' ')}
+      </footer>
+    </AnchoredPopover>
   );
 };

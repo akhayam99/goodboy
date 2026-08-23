@@ -1,6 +1,5 @@
 // @vitest-environment happy-dom
 
-import { createRef, type RefObject } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
@@ -33,14 +32,6 @@ vi.mock('../../../../store', () => ({
 
 import { WorkspaceSwitcher } from './index';
 
-const anchored = (): RefObject<HTMLElement | null> => {
-  const ref = createRef<HTMLElement>();
-  const anchor = document.createElement('button');
-  document.body.appendChild(anchor);
-  ref.current = anchor;
-  return ref;
-};
-
 beforeEach(() => {
   state.workspaces = [
     { id: 'ws-a', name: 'alpha', slug: 'alpha', sessionsRoot: '/repos/alpha' } as Workspace,
@@ -62,14 +53,14 @@ afterEach(() => {
 describe('WorkspaceSwitcher', () => {
   it('lists workspaces and opens one on click', () => {
     const onClose = vi.fn();
-    render(<WorkspaceSwitcher anchorRef={anchored()} onClose={onClose} />);
+    render(<WorkspaceSwitcher onClose={onClose} />);
     fireEvent.click(screen.getByText('bravo'));
     expect(state.openWorkspace).toHaveBeenCalledWith('ws-b', 'bravo');
     expect(onClose).toHaveBeenCalledOnce();
   });
 
   it('filters by query', () => {
-    render(<WorkspaceSwitcher anchorRef={anchored()} onClose={vi.fn()} />);
+    render(<WorkspaceSwitcher onClose={vi.fn()} />);
     fireEvent.change(screen.getByPlaceholderText(/switch or open/i), {
       target: { value: 'brav' },
     });
@@ -81,7 +72,7 @@ describe('WorkspaceSwitcher', () => {
     const onClose = vi.fn();
     const spy = vi.fn();
     window.addEventListener('goodboy:add-workspace', spy);
-    render(<WorkspaceSwitcher anchorRef={anchored()} onClose={onClose} />);
+    render(<WorkspaceSwitcher onClose={onClose} />);
     fireEvent.click(screen.getByText('New workspace'));
     expect(spy).toHaveBeenCalledOnce();
     expect(onClose).toHaveBeenCalledOnce();
@@ -89,15 +80,13 @@ describe('WorkspaceSwitcher', () => {
   });
 
   it('does not duplicate workspace settings inside the selector', () => {
-    render(<WorkspaceSwitcher anchorRef={anchored()} onClose={vi.fn()} />);
+    render(<WorkspaceSwitcher onClose={vi.fn()} />);
     expect(screen.queryByText('Workspace settings')).toBeNull();
   });
 
-  it('anchors to the trigger instead of covering the app', () => {
-    render(<WorkspaceSwitcher anchorRef={anchored()} onClose={vi.fn()} />);
-    const panel = screen.getByRole('dialog', { name: 'Switch or open a workspace' });
-    expect(panel.className).toContain('fixed');
-    expect(panel.className).toContain('z-popover');
-    expect(panel.style.width).toBe('340px');
+  it('renders panel content only, leaving anchoring to the popover primitive', () => {
+    const { container } = render(<WorkspaceSwitcher onClose={vi.fn()} />);
+    expect(container.querySelector('.fixed')).toBeNull();
+    expect(screen.getByPlaceholderText(/switch or open/i)).toBeDefined();
   });
 });
