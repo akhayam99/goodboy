@@ -2,6 +2,8 @@ import { FolderGit2, FolderPlus, Layers } from 'lucide-react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Input, cn } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
+import type { DetectedChildRepos } from '../../../../shared/hooks/useChildRepoDetection';
+import { DetectedRepoList } from '../../../../shared/components/DetectedRepoList';
 
 export type WorkspaceShape = 'workspace' | 'single';
 
@@ -18,6 +20,9 @@ type Props = {
   readonly onNameChange: (name: string) => void;
   readonly busy: boolean;
   readonly onSingleProject: (pick: SingleProjectPick) => void;
+  readonly detection: DetectedChildRepos | null;
+  readonly onConfirmDetection: (params: { readonly paths: ReadonlyArray<string> }) => void;
+  readonly onDismissDetection: () => void;
 };
 
 const SHAPE_OPTIONS = [
@@ -43,6 +48,9 @@ export const ShapeStep = ({
   onNameChange,
   busy,
   onSingleProject,
+  detection,
+  onConfirmDetection,
+  onDismissDetection,
 }: Props) => {
   const pickFolder = async (initialize: boolean) => {
     const picked = await openDialog({ directory: true, multiple: false });
@@ -161,6 +169,14 @@ export const ShapeStep = ({
             <p className="text-xs leading-relaxed text-muted-foreground">
               Pick a folder with a git repository, or let New project run git init in an empty one.
             </p>
+            {detection !== null ? (
+              <DetectedRepoList
+                repos={detection.repos}
+                busy={busy}
+                onConfirm={onConfirmDetection}
+                onDismiss={onDismissDetection}
+              />
+            ) : null}
           </div>
         ) : null}
       </div>

@@ -32,6 +32,21 @@ export const checkoutFastForward = async ({
   return invoke<FastForwardResult>('checkout_fast_forward', { checkoutPath });
 };
 
+export type ChildRepo = {
+  readonly name: string;
+  readonly path: string;
+};
+
+type ScanChildReposParams = {
+  readonly path: string;
+};
+
+export const scanChildRepos = async ({
+  path,
+}: ScanChildReposParams): Promise<ReadonlyArray<ChildRepo>> => {
+  return invoke<ReadonlyArray<ChildRepo>>('scan_child_repos', { path });
+};
+
 export type InitializedRepo = {
   readonly rootPath: string;
   readonly remoteUrl: string;

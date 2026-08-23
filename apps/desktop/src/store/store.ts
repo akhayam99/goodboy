@@ -245,6 +245,10 @@ export type AppActions = {
     name?: string;
     requireRepo?: boolean;
   }): Promise<Project>;
+  addProjects(input: {
+    workspaceId: WorkspaceId;
+    rootPaths: ReadonlyArray<string>;
+  }): Promise<ReadonlyArray<Project>>;
   removeProject(input: { projectId: ProjectId }): Promise<void>;
   convertProjectToRepo(input: { projectId: ProjectId; remoteUrl: string }): Promise<Project>;
   renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;
@@ -333,7 +337,12 @@ export type AppActions = {
       title: string;
     }>;
     mobileShared?: boolean;
+    omitGoalSlot?: boolean;
   }): Promise<{ session: Session; worktree: CreatedWorktree }>;
+  createUntitledSession(input: {
+    workspaceId: WorkspaceId;
+  }): Promise<{ session: Session; worktree: CreatedWorktree }>;
+  clearPendingTitleFocus(): void;
   materializeProject(input: {
     sessionId: SessionId;
     projectId: ProjectId;
@@ -857,6 +866,7 @@ export const initialState: AppState = {
   sessions: [],
   archivedSessions: {},
   currentSessionId: null,
+  pendingTitleFocusSessionId: null,
   settings: {},
   sessionSummary: null,
   providerStatus: null,

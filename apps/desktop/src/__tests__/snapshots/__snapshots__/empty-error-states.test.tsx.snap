@@ -109,31 +109,6 @@ exports[`snapshot, empty states > ChatEmptyState: fresh session, set-up-a-workfl
 </div>
 `;
 
-exports[`snapshot, empty states > InlineSessionCreate: empty title 1`] = `
-<div
-  aria-label="New session"
-  class="flex w-full flex-col gap-1.5 rounded-lg border border-primary/40 bg-elevated px-2.5 py-2 focus-within:border-primary/70"
-  role="group"
->
-  <input
-    aria-label="Session title"
-    class="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
-    placeholder="Name the session, everything else happens inside"
-    type="text"
-    value=""
-  />
-  <div
-    class="flex items-center justify-between gap-2"
-  >
-    <span
-      class="text-2xs text-muted-foreground/70"
-    >
-      Enter to create · Esc to dismiss
-    </span>
-  </div>
-</div>
-`;
-
 exports[`snapshot, empty states > NoWorkspaceScreen: no workspace, add-workspace CTA 1`] = `
 <div
   class="relative flex h-full w-full items-center justify-center overflow-hidden px-6"
@@ -617,37 +592,6 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
     >
       Delete
     </button>
-  </div>
-</div>
-`;
-
-exports[`snapshot, error states > InlineSessionCreate: create error 1`] = `
-<div
-  aria-label="New session"
-  class="flex w-full flex-col gap-1.5 rounded-lg border border-primary/40 bg-elevated px-2.5 py-2 focus-within:border-primary/70"
-  role="group"
->
-  <input
-    aria-label="Session title"
-    class="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
-    placeholder="Name the session, everything else happens inside"
-    type="text"
-    value="ship it"
-  />
-  <div
-    class="flex items-center justify-between gap-2"
-  >
-    <span
-      class="text-2xs text-muted-foreground/70"
-    >
-      Enter to create · Esc to dismiss
-    </span>
-    <span
-      class="truncate text-2xs text-danger"
-      role="alert"
-    >
-      workspace git repo not found
-    </span>
   </div>
 </div>
 `;

@@ -1,15 +1,17 @@
-import { Eyebrow, Chip } from '@goodboy/ui';
+import { Button, Eyebrow, Chip } from '@goodboy/ui';
 import type { Session, SessionProjectMount } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 
 type Props = {
   readonly session: Session;
   readonly onSelectLens: (lens: LensKind) => void;
+  readonly onAttachWorkflow: () => void;
 };
 
-export const OverviewWorkflows = ({ session, onSelectLens }: Props) => {
+export const OverviewWorkflows = ({ session, onSelectLens, onAttachWorkflow }: Props) => {
   const attached = useAttachedWorkflowRuns({ session });
   const mounts = useAppStore(
     (s) =>
@@ -19,7 +21,20 @@ export const OverviewWorkflows = ({ session, onSelectLens }: Props) => {
 
   const active = attached.filter(({ run }) => run.discardedAt == null);
   if (active.length === 0) {
-    return null;
+    return (
+      <section aria-label="Workflows" className="flex flex-col gap-2">
+        <Eyebrow label="Workflows" />
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={onAttachWorkflow}>
+            <CONCEPT_ICONS.workflows size={13} aria-hidden />
+            Attach a workflow
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            Agents then move through its steps in order.
+          </span>
+        </div>
+      </section>
+    );
   }
 
   return (

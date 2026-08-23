@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, ScrollFade, cn, formatError, type ButtonVariant } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
-import { initRepo, validateGitRepo } from '../../../shared/lib/repo';
+import { initRepo, scanChildRepos, validateGitRepo } from '../../../shared/lib/repo';
+import type { DetectedChildRepos } from '../../../shared/hooks/useChildRepoDetection';
 import { finishWizard } from '../onboarding-store';
 import { useOnboardingWizard } from './useOnboardingWizard';
 import { Stepper } from './Stepper';
@@ -31,10 +32,11 @@ export const OnboardingWizard = () => {
   const renameWorkspace = useAppStore((s) => s.renameWorkspace);
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const updateWorkspaceProfile = useAppStore((s) => s.updateWorkspaceProfile);
-  const addProject = useAppStore((s) => s.addProject);
+  const addProjects = useAppStore((s) => s.addProjects);
   const adoptWorkspaceSessionsRoot = useAppStore((s) => s.adoptWorkspaceSessionsRoot);
   const [step, setStep] = useState(0);
   const [shape, setShape] = useState<WorkspaceShape | null>(null);
+  const [singleDetection, setSingleDetection] = useState<DetectedChildRepos | null>(null);
   const [workspaceName, setWorkspaceName] = useState('');
   const [bioDraft, setBioDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -54,6 +56,7 @@ export const OnboardingWizard = () => {
     }
     setStep(minStep);
     setShape(null);
+    setSingleDetection(null);
     setClosing(false);
     setStepError(null);
     setBusy(false);
@@ -90,12 +93,14 @@ export const OnboardingWizard = () => {
     window.setTimeout(finishWizard, EXIT_MS);
   };
 
-  const runStepAction = (action: () => Promise<void>) => {
+  const runStepAction = (action: () => Promise<void | 'stay'>) => {
     setBusy(true);
     setStepError(null);
     void action()
-      .then(() => {
-        goNext();
+      .then((outcome) => {
+        if (outcome !== 'stay') {
+          goNext();
+        }
       })
       .catch((error: unknown) => {
         setStepError(formatError(error));
@@ -118,6 +123,27 @@ export const OnboardingWizard = () => {
       }
     });
 
+  const folderName = ({ rootPath }: { readonly rootPath: string }) =>
+    rootPath
+      .split('/')
+      .filter((part) => part.length > 0)
+      .at(-1) ?? 'project';
+
+  const createWorkspaceWithProjects = async ({
+    name,
+    rootPaths,
+  }: {
+    readonly name: string;
+    readonly rootPaths: ReadonlyArray<string>;
+  }) => {
+    const created = await createWorkspace({ name });
+    await setCurrentWorkspace(created.id);
+    const linked = await addProjects({ workspaceId: created.id, rootPaths });
+    for (const project of linked) {
+      await adoptWorkspaceSessionsRoot({ workspaceId: created.id, rootPath: project.rootPath });
+    }
+  };
+
   const commitSingleProject = ({
     path,
     initialize,
@@ -126,31 +152,46 @@ export const OnboardingWizard = () => {
     readonly initialize: boolean;
   }) =>
     runStepAction(async () => {
-      let rootPath = path;
+      setSingleDetection(null);
       if (initialize) {
-        rootPath = (await initRepo({ path })).rootPath;
-      } else {
-        const check = await validateGitRepo(path);
-        if (!check.isRepo || check.rootPath == null || check.rootPath === '') {
-          throw new Error(
-            `no git repository at ${path}. pick a folder with a .git directory, or use New project to initialize one`,
-          );
-        }
-        rootPath = check.rootPath;
+        const rootPath = (await initRepo({ path })).rootPath;
+        await createWorkspaceWithProjects({
+          name: folderName({ rootPath }),
+          rootPaths: [rootPath],
+        });
+        return;
       }
-      const folderName =
-        rootPath
-          .split('/')
-          .filter((part) => part.length > 0)
-          .at(-1) ?? 'project';
-      const created = await createWorkspace({ name: folderName });
-      await setCurrentWorkspace(created.id);
-      const project = await addProject({
-        workspaceId: created.id,
-        rootPath,
-        requireRepo: true,
-      });
-      await adoptWorkspaceSessionsRoot({ workspaceId: created.id, rootPath: project.rootPath });
+      const check = await validateGitRepo(path);
+      if (check.isRepo && check.rootPath != null && check.rootPath !== '') {
+        await createWorkspaceWithProjects({
+          name: folderName({ rootPath: check.rootPath }),
+          rootPaths: [check.rootPath],
+        });
+        return;
+      }
+      const parentPath = check.resolvedPath ?? path;
+      const repos = await scanChildRepos({ path: parentPath });
+      if (repos.length === 0) {
+        throw new Error(
+          `no git repository at ${path}. pick a folder with a .git directory, or use New project to initialize one`,
+        );
+      }
+      setSingleDetection({ parentPath, repos });
+      return 'stay';
+    });
+
+  const commitDetectedProjects = ({ paths }: { readonly paths: ReadonlyArray<string> }) =>
+    runStepAction(async () => {
+      if (singleDetection === null) {
+        return 'stay';
+      }
+      const name = folderName({ rootPath: singleDetection.parentPath });
+      await createWorkspaceWithProjects({ name, rootPaths: paths });
+      setSingleDetection(null);
+      setShape('workspace');
+      setWorkspaceName(name);
+      setStep(3);
+      return 'stay';
     });
 
   const commitProfile = () =>
@@ -189,6 +230,9 @@ export const OnboardingWizard = () => {
         onNameChange={setWorkspaceName}
         busy={busy}
         onSingleProject={commitSingleProject}
+        detection={singleDetection}
+        onConfirmDetection={commitDetectedProjects}
+        onDismissDetection={() => setSingleDetection(null)}
       />
     );
     cta =

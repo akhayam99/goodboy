@@ -159,6 +159,42 @@ pub(crate) fn is_inside_repo(path: &Path) -> bool {
         .is_some_and(|found| !found.is_empty())
 }
 
+#[derive(Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ChildRepo {
+    pub name: String,
+    pub path: String,
+}
+
+#[tauri::command]
+pub fn scan_child_repos(path: String) -> Vec<ChildRepo> {
+    let parent = Path::new(path.trim());
+    let Ok(entries) = std::fs::read_dir(parent) else {
+        return Vec::new();
+    };
+    let mut repos: Vec<ChildRepo> = Vec::new();
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if name.starts_with('.') {
+            continue;
+        }
+        let Ok(resolved) = std::fs::canonicalize(entry.path()) else {
+            continue;
+        };
+        if !resolved.is_dir() || !resolved.join(".git").exists() {
+            continue;
+        }
+        if !is_repo_root(&resolved) {
+            continue;
+        }
+        repos.push(ChildRepo {
+            name,
+            path: resolved.to_string_lossy().into_owned(),
+        });
+    }
+    repos.sort();
+    repos
+}
+
 #[tauri::command]
 pub fn workspace_git_status(workspace_path: String) -> WorkspaceGitStatus {
     let root = Path::new(workspace_path.trim());
@@ -893,5 +929,64 @@ mod tests {
             "git@-oProxyCommand=x:acme/widgets.git"
         ));
         assert!(!is_supported_remote_url("https:///acme/widgets.git"));
+    }
+
+    #[test]
+    fn scans_only_direct_visible_children_for_repositories() {
+        let root = test_root("scan-children");
+        for name in ["beta", "alpha"] {
+            let child = root.join(name);
+            std::fs::create_dir_all(&child).unwrap();
+            git_run(&child, &["init"]);
+        }
+        let plain = root.join("plain");
+        std::fs::create_dir_all(&plain).unwrap();
+        let deep = plain.join("deep");
+        std::fs::create_dir_all(&deep).unwrap();
+        git_run(&deep, &["init"]);
+        let hidden = root.join(".hidden");
+        std::fs::create_dir_all(&hidden).unwrap();
+        git_run(&hidden, &["init"]);
+        std::fs::write(root.join("notes.md"), "hello").unwrap();
+
+        let found = super::scan_child_repos(root.to_string_lossy().into_owned());
+
+        let names: Vec<&str> = found.iter().map(|repo| repo.name.as_str()).collect();
+        assert_eq!(names, vec!["alpha", "beta"]);
+        let canonical_alpha = std::fs::canonicalize(root.join("alpha")).unwrap();
+        assert_eq!(found[0].path, canonical_alpha.to_string_lossy());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn scan_returns_nothing_for_a_missing_or_repo_free_folder() {
+        let root = test_root("scan-empty");
+        std::fs::create_dir_all(root.join("plain")).unwrap();
+
+        let empty = super::scan_child_repos(root.to_string_lossy().into_owned());
+        let missing = super::scan_child_repos(root.join("gone").to_string_lossy().into_owned());
+
+        assert!(empty.is_empty());
+        assert!(missing.is_empty());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn scan_resolves_a_symlinked_repository_and_skips_a_broken_link() {
+        let root = test_root("scan-symlink");
+        let target = test_root("scan-symlink-target");
+        git_run(&target, &["init"]);
+        std::os::unix::fs::symlink(&target, root.join("linked")).unwrap();
+        std::os::unix::fs::symlink(root.join("gone"), root.join("broken")).unwrap();
+
+        let found = super::scan_child_repos(root.to_string_lossy().into_owned());
+
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].name, "linked");
+        let canonical_target = std::fs::canonicalize(&target).unwrap();
+        assert_eq!(found[0].path, canonical_target.to_string_lossy());
+        std::fs::remove_dir_all(root).unwrap();
+        std::fs::remove_dir_all(target).unwrap();
     }
 }

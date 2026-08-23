@@ -82,7 +82,6 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { DeleteSessionConfirm } from '../../features/session/components/DeleteSessionConfirm';
-import { InlineSessionCreate } from '../../features/session/components/InlineSessionCreate';
 import { QuickActionsPopover, type QuickActionItem } from '../../features/quick-actions';
 import { ToastProvider } from '../../app/components/Toast';
 
@@ -137,22 +136,6 @@ describe('keyboard, DeleteSessionConfirm', () => {
     expect(first).not.toBe(second);
     expect(first?.tagName.toLowerCase()).toBe('button');
     expect(second?.tagName.toLowerCase()).toBe('button');
-  });
-});
-
-describe('keyboard, InlineSessionCreate', () => {
-  it('focuses the title input on reveal', () => {
-    render(<InlineSessionCreate workspaceId={WS_ID} onDone={vi.fn()} />);
-    const input = screen.getByRole('textbox', { name: /session title/i });
-    expect(document.activeElement).toBe(input);
-  });
-
-  it('dismisses on Escape', async () => {
-    const onDone = vi.fn();
-    const user = userEvent.setup();
-    render(<InlineSessionCreate workspaceId={WS_ID} onDone={onDone} />);
-    await user.keyboard('{Escape}');
-    expect(onDone).toHaveBeenCalledOnce();
   });
 });
 

@@ -172,6 +172,9 @@ vi.mock('../app/components/Toast', () => ({
 vi.mock('../features/notifications/components/NotificationToastBridge', () => ({
   NotificationToastBridge: () => null,
 }));
+vi.mock('../features/session/components/NewSessionBridge', () => ({
+  NewSessionBridge: () => null,
+}));
 vi.mock('../features/workflows/components/WorkflowFollowToastBridge', () => ({
   WorkflowFollowToastBridge: () => null,
 }));
@@ -190,9 +193,6 @@ vi.mock('../features/workspace/components/WorkspaceSwitcher', () => ({
 }));
 vi.mock('../features/workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('../features/workflows/components/WorkflowStudio', () => ({ WorkflowStudio: () => null }));
-vi.mock('../features/session/components/InlineSessionCreate', () => ({
-  InlineSessionCreate: () => null,
-}));
 vi.mock('../features/github/components/GitHubStudio', () => ({
   GitHubStudio: ({ workspaceName }: { workspaceName: string }) => (
     <div data-testid="github-studio">{workspaceName}</div>

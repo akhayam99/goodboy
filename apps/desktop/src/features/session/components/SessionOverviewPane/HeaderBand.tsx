@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Input, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
@@ -31,6 +32,30 @@ const REASON_HIDDEN: ReadonlySet<string> = new Set([
 export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
   const sessionId = session.id as SessionId;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
+  const pendingTitleFocus = useAppStore((s) => s.pendingTitleFocusSessionId);
+  const clearPendingTitleFocus = useAppStore((s) => s.clearPendingTitleFocus);
+  const titleFieldRef = useRef<HTMLDivElement | null>(null);
+  const selectOnEditRef = useRef(false);
+  const startRenameRef = useRef(rename.start);
+  startRenameRef.current = rename.start;
+
+  useEffect(() => {
+    if (pendingTitleFocus !== sessionId) {
+      return;
+    }
+    clearPendingTitleFocus();
+    selectOnEditRef.current = true;
+    startRenameRef.current();
+  }, [pendingTitleFocus, sessionId, clearPendingTitleFocus]);
+
+  useEffect(() => {
+    if (!rename.editing || !selectOnEditRef.current) {
+      return;
+    }
+    selectOnEditRef.current = false;
+    titleFieldRef.current?.querySelector('input')?.select();
+  }, [rename.editing]);
+
   const workspace = useCurrentWorkspace();
   const repo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const storedBranch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
@@ -42,7 +67,7 @@ export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-2">
         {rename.editing ? (
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div ref={titleFieldRef} className="flex min-w-0 flex-1 flex-col gap-1">
             <Input
               autoFocus
               value={rename.draft}

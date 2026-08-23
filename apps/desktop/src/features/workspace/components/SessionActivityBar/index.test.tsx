@@ -117,19 +117,14 @@ describe('SessionActivityBar, baseline', () => {
     expect(screen.queryByRole('button', { name: 'hide sessions' })).toBeNull();
   });
 
-  it('swaps the New button for the inline title input when clicked', () => {
+  it('dispatches the new-session event when the New button is clicked', () => {
+    const listener = vi.fn();
+    window.addEventListener('goodboy:new-session', listener);
     renderBar([]);
     fireEvent.click(screen.getByRole('button', { name: /create new session/i }));
-    expect(screen.getByRole('textbox', { name: /session title/i })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /create new session/i })).toBeNull();
-  });
-
-  it('reveals the inline title input above the session rows on the goodboy:new-session event', () => {
-    renderBar([], [makeSession('a-1', 'existing one')]);
-    fireEvent(window, new CustomEvent('goodboy:new-session'));
-    const input = screen.getByRole('textbox', { name: /session title/i });
-    const firstRow = rowAt(0);
-    expect(input.compareDocumentPosition(firstRow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(listener).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('textbox')).toBeNull();
+    window.removeEventListener('goodboy:new-session', listener);
   });
 
   it('switches back from the archived tab when a new session is requested', () => {
@@ -137,7 +132,7 @@ describe('SessionActivityBar, baseline', () => {
     toggleArchivedTab();
     expect(screen.queryByRole('button', { name: /create new session/i })).toBeNull();
     fireEvent(window, new CustomEvent('goodboy:new-session'));
-    expect(screen.getByRole('textbox', { name: /session title/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /create new session/i })).toBeDefined();
   });
 });
 

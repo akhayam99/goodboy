@@ -24,7 +24,9 @@ import { OverviewNextSteps } from './OverviewNextSteps';
 import { OverviewPlans } from './OverviewPlans';
 import { OverviewPrs } from './OverviewPrs';
 import { OverviewWorkflows } from './OverviewWorkflows';
-import { IntentComposer } from './IntentComposer';
+import { OverviewLinkedWork } from './OverviewLinkedWork';
+import { OverviewStartAgent } from './OverviewStartAgent';
+import { OverviewProjects } from './OverviewProjects';
 
 type Props = {
   readonly session: Session;
@@ -52,7 +54,8 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     () => session.workflowRuns.filter((run) => run.discardedAt == null),
     [session.workflowRuns],
   );
-  const isFresh = activeRuns.length === 0 && rawStandalone.length === 0;
+  const hasWorkflows = activeRuns.length > 0;
+  const hasStandaloneAgents = rawStandalone.length > 0;
 
   const openWorkflowBuilder = () => {
     window.dispatchEvent(
@@ -82,48 +85,42 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         header={<HeaderBand session={session} stage={stage} onSelectLens={onSelectLens} />}
         animationClassName="animate-fade-in"
       >
-        {isFresh ? (
-          <>
-            <IntentComposer sessionId={sessionId} />
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={openWorkflowBuilder}
-                className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-              >
-                Attach a workflow instead
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <GoalOverviewRegion
+        <GoalOverviewRegion
+          sessionId={sessionId}
+          value={goalSlot?.value ?? ''}
+          historyCount={goalHistoryCount}
+          isLoading={goalSlot == null && slotLoading.slots}
+          isSummarizing={summarizer.status === 'running'}
+          onOpenHistory={() => {
+            void loadSlotHistory(sessionId, 'goal');
+            setIsGoalHistoryOpen(true);
+          }}
+        />
+        <OverviewNextSteps session={session} agents={sessionAgents} />
+        <OverviewPlans session={session} onSelectLens={onSelectLens} />
+        <OverviewLinkedWork session={session} />
+        {!hasStandaloneAgents && !hasWorkflows ? (
+          <OverviewStartAgent sessionId={sessionId} />
+        ) : null}
+        <OverviewWorkflows
+          session={session}
+          onSelectLens={onSelectLens}
+          onAttachWorkflow={openWorkflowBuilder}
+        />
+        <OverviewProjects session={session} />
+        <OverviewPrs session={session} onSelectLens={onSelectLens} />
+        <TimelinePane
+          session={session}
+          runs={runs}
+          actions={
+            <OverviewActions
               sessionId={sessionId}
-              value={goalSlot?.value ?? ''}
-              historyCount={goalHistoryCount}
-              isLoading={goalSlot == null && slotLoading.slots}
-              isSummarizing={summarizer.status === 'running'}
-              onOpenHistory={() => {
-                void loadSlotHistory(sessionId, 'goal');
-                setIsGoalHistoryOpen(true);
-              }}
+              onOpenWorkflowBuilder={openWorkflowBuilder}
+              showNewWorkflow={hasWorkflows}
+              showCreateAgent={hasStandaloneAgents || hasWorkflows}
             />
-            <OverviewNextSteps session={session} agents={sessionAgents} />
-            <OverviewPlans session={session} onSelectLens={onSelectLens} />
-            <OverviewWorkflows session={session} onSelectLens={onSelectLens} />
-            <OverviewPrs session={session} onSelectLens={onSelectLens} />
-            <TimelinePane
-              session={session}
-              runs={runs}
-              actions={
-                <OverviewActions
-                  sessionId={sessionId}
-                  onOpenWorkflowBuilder={openWorkflowBuilder}
-                />
-              }
-            />
-          </>
-        )}
+          }
+        />
       </PaneShell>
     </InspectorSplit>
   );

@@ -135,7 +135,7 @@ vi.mock('../../routing', () => ({
 }));
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render } from '@testing-library/react';
+import { act, cleanup, render } from '@testing-library/react';
 import type { AppStore } from '../../store/store';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../store';
@@ -176,7 +176,6 @@ import { NoWorkspaceScreen } from '../../app/components/AppEmptyState';
 import { ChatEmptyState } from '../../features/chat/components/ChatView/ChatEmptyState';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';
-import { InlineSessionCreate } from '../../features/session/components/InlineSessionCreate';
 import { DeleteSessionConfirm } from '../../features/session/components/DeleteSessionConfirm';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';
@@ -223,11 +222,6 @@ describe('snapshot, empty states', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('InlineSessionCreate: empty title', () => {
-    const { container } = render(<InlineSessionCreate workspaceId={WS_ID} onDone={vi.fn()} />);
-    expect(container.firstChild).toMatchSnapshot();
-  });
-
   it('NotificationCenter: no notifications', () => {
     const { container } = render(<NotificationCenter />);
     expect(container.firstChild).toMatchSnapshot();
@@ -257,21 +251,6 @@ describe('snapshot, empty states', () => {
 describe('snapshot, error states', () => {
   it('App init error, BootSplash with error message', () => {
     const { container } = render(<BootSplash phase="error" error="database migration failed" />);
-    expect(container.firstChild).toMatchSnapshot();
-  });
-
-  it('InlineSessionCreate: create error', async () => {
-    mockStore({
-      createSession: vi.fn().mockRejectedValue(new Error('workspace git repo not found')),
-    });
-    const { container, getByRole, findByRole } = render(
-      <InlineSessionCreate workspaceId={WS_ID} onDone={vi.fn()} />,
-    );
-    fireEvent.change(getByRole('textbox', { name: /session title/i }), {
-      target: { value: 'ship it' },
-    });
-    fireEvent.keyDown(getByRole('textbox', { name: /session title/i }), { key: 'Enter' });
-    await findByRole('alert');
     expect(container.firstChild).toMatchSnapshot();
   });
 

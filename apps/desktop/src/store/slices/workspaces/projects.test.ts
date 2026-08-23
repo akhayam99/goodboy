@@ -52,6 +52,7 @@ import { addWorkspace } from './addWorkspace';
 import { deleteWorkspace } from './deleteWorkspace';
 import { updateWorkspaceProfile } from './updateWorkspaceProfile';
 import { addProject } from '../projects/addProject';
+import { addProjects } from '../projects/addProjects';
 
 const NOW = '2026-08-22T00:00:00.000Z' as IsoDateTime;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -196,6 +197,51 @@ describe('workspace and project slices', () => {
 
     expect(h.insertProject).not.toHaveBeenCalled();
     expect(store.state.projects).toEqual([]);
+  });
+
+  it('links every selected child repository through the single-project flow', async () => {
+    h.validateGitRepo.mockImplementation(async (path: string) => ({
+      isRepo: true,
+      rootPath: path,
+      resolvedPath: path,
+      error: null,
+    }));
+    const store = harness({ workspaces: [workspace()] });
+
+    const linked = await addProjects(
+      store.set,
+      store.get,
+    )({
+      workspaceId: WORKSPACE_ID,
+      rootPaths: ['/repos/api', '/repos/web'],
+    });
+
+    expect(linked.map((created) => created.rootPath)).toEqual(['/repos/api', '/repos/web']);
+    expect(linked.every((created) => created.kind === 'repo')).toBe(true);
+    expect(h.insertProject).toHaveBeenCalledTimes(2);
+    expect(store.state.projects.length).toBe(2);
+  });
+
+  it('refuses a selected child that is not a repository', async () => {
+    h.validateGitRepo.mockResolvedValue({
+      isRepo: false,
+      rootPath: null,
+      resolvedPath: '/repos/plain',
+      error: 'not a git repository',
+    });
+    const store = harness({ workspaces: [workspace()] });
+
+    await expect(
+      addProjects(
+        store.set,
+        store.get,
+      )({
+        workspaceId: WORKSPACE_ID,
+        rootPaths: ['/repos/plain'],
+      }),
+    ).rejects.toThrow(/no git repository/);
+
+    expect(h.insertProject).not.toHaveBeenCalled();
   });
 
   it('still links a plain folder when a repository is not required', async () => {

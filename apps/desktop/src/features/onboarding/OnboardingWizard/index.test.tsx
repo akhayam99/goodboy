@@ -13,12 +13,13 @@ const { hookState, finishWizard, storeActions, repoLib } = vi.hoisted(() => ({
     renameWorkspace: vi.fn(),
     setCurrentWorkspace: vi.fn(),
     updateWorkspaceProfile: vi.fn(),
-    addProject: vi.fn(),
+    addProjects: vi.fn(),
     adoptWorkspaceSessionsRoot: vi.fn(),
   },
   repoLib: {
     initRepo: vi.fn(),
     validateGitRepo: vi.fn(),
+    scanChildRepos: vi.fn(),
   },
 }));
 
@@ -54,6 +55,9 @@ vi.mock('./steps/ShapeStep', () => ({
     name,
     onNameChange,
     onSingleProject,
+    detection,
+    onConfirmDetection,
+    onDismissDetection,
   }: {
     workspace: Workspace | null;
     shape: 'workspace' | 'single' | null;
@@ -61,6 +65,9 @@ vi.mock('./steps/ShapeStep', () => ({
     name: string;
     onNameChange: (name: string) => void;
     onSingleProject: (pick: { path: string; initialize: boolean }) => void;
+    detection: { parentPath: string; repos: ReadonlyArray<{ name: string; path: string }> } | null;
+    onConfirmDetection: (params: { paths: ReadonlyArray<string> }) => void;
+    onDismissDetection: () => void;
   }) => (
     <div data-testid="ShapeStep">
       <span data-testid="existing-name">{workspace?.name}</span>
@@ -88,6 +95,20 @@ vi.mock('./steps/ShapeStep', () => ({
         value={name}
         onChange={(event) => onNameChange(event.target.value)}
       />
+      <span data-testid="detection-count">
+        {detection === null ? 'none' : String(detection.repos.length)}
+      </span>
+      <button
+        type="button"
+        onClick={() =>
+          onConfirmDetection({ paths: (detection?.repos ?? []).map((repo) => repo.path) })
+        }
+      >
+        confirm detected
+      </button>
+      <button type="button" onClick={onDismissDetection}>
+        dismiss detected
+      </button>
     </div>
   ),
 }));
@@ -148,11 +169,16 @@ beforeEach(() => {
   storeActions.renameWorkspace.mockReset().mockResolvedValue(WORKSPACE);
   storeActions.setCurrentWorkspace.mockReset().mockResolvedValue(undefined);
   storeActions.updateWorkspaceProfile.mockReset().mockResolvedValue(WORKSPACE);
-  storeActions.addProject.mockReset().mockResolvedValue({ rootPath: '/tmp/solo' });
+  storeActions.addProjects
+    .mockReset()
+    .mockImplementation(async ({ rootPaths }: { rootPaths: ReadonlyArray<string> }) =>
+      rootPaths.map((rootPath) => ({ rootPath })),
+    );
   storeActions.adoptWorkspaceSessionsRoot.mockReset().mockResolvedValue(undefined);
   repoLib.initRepo
     .mockReset()
     .mockResolvedValue({ rootPath: '/tmp/fresh', remoteUrl: '', branch: 'main' });
+  repoLib.scanChildRepos.mockReset().mockResolvedValue([]);
   repoLib.validateGitRepo.mockReset().mockResolvedValue({
     isRepo: true,
     rootPath: '/tmp/solo',
@@ -265,10 +291,9 @@ describe('OnboardingWizard', () => {
       await waitFor(() => expect(screen.getByTestId('ProfileStep')).toBeDefined());
       expect(screen.queryByTestId('ProjectsStep')).toBeNull();
       expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'solo' });
-      expect(storeActions.addProject).toHaveBeenCalledWith({
+      expect(storeActions.addProjects).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
-        rootPath: '/tmp/solo',
-        requireRepo: true,
+        rootPaths: ['/tmp/solo'],
       });
       expect(storeActions.adoptWorkspaceSessionsRoot).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
@@ -302,7 +327,6 @@ describe('OnboardingWizard', () => {
         setHook(connectedWorkspaceState);
         return { ...WORKSPACE, name };
       });
-      storeActions.addProject.mockResolvedValue({ rootPath: '/tmp/fresh' });
       render(<OnboardingWizard />);
       advance(/get started/i, 1);
       advance(/continue/i, 1);
@@ -312,11 +336,70 @@ describe('OnboardingWizard', () => {
       await waitFor(() => expect(screen.getByTestId('ProfileStep')).toBeDefined());
       expect(repoLib.initRepo).toHaveBeenCalledWith({ path: '/tmp/fresh' });
       expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'fresh' });
-      expect(storeActions.addProject).toHaveBeenCalledWith({
+      expect(storeActions.addProjects).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
-        rootPath: '/tmp/fresh',
-        requireRepo: true,
+        rootPaths: ['/tmp/fresh'],
       });
+    });
+
+    it('offers detected child repositories and links the selection into a workspace named after the parent', async () => {
+      setHook({ providersConnected: 1, hasWorkspace: false });
+      repoLib.validateGitRepo.mockResolvedValue({
+        isRepo: false,
+        rootPath: null,
+        resolvedPath: '/tmp/parent',
+        error: 'not a git repository',
+      });
+      repoLib.scanChildRepos.mockResolvedValue([
+        { name: 'api', path: '/tmp/parent/api' },
+        { name: 'web', path: '/tmp/parent/web' },
+      ]);
+      storeActions.createWorkspace.mockImplementation(async ({ name }: { name: string }) => {
+        setHook({ ...connectedWorkspaceState, projectCount: 2 });
+        return { ...WORKSPACE, name };
+      });
+      render(<OnboardingWizard />);
+      advance(/get started/i, 1);
+      advance(/continue/i, 1);
+      fireEvent.click(screen.getByRole('button', { name: /pick single shape/i }));
+      fireEvent.click(screen.getByRole('button', { name: /pick single folder/i }));
+
+      await waitFor(() => expect(screen.getByTestId('detection-count').textContent).toBe('2'));
+      expect(storeActions.createWorkspace).not.toHaveBeenCalled();
+      expect(screen.queryByRole('alert')).toBeNull();
+
+      fireEvent.click(screen.getByRole('button', { name: /confirm detected/i }));
+
+      await waitFor(() => expect(screen.getByTestId('ProjectsStep')).toBeDefined());
+      expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'parent' });
+      expect(storeActions.addProjects).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE.id,
+        rootPaths: ['/tmp/parent/api', '/tmp/parent/web'],
+      });
+      expect(storeActions.adoptWorkspaceSessionsRoot).toHaveBeenCalledTimes(2);
+    });
+
+    it('clears an offered detection when the user dismisses it', async () => {
+      setHook({ providersConnected: 1, hasWorkspace: false });
+      repoLib.validateGitRepo.mockResolvedValue({
+        isRepo: false,
+        rootPath: null,
+        resolvedPath: '/tmp/parent',
+        error: 'not a git repository',
+      });
+      repoLib.scanChildRepos.mockResolvedValue([{ name: 'api', path: '/tmp/parent/api' }]);
+      render(<OnboardingWizard />);
+      advance(/get started/i, 1);
+      advance(/continue/i, 1);
+      fireEvent.click(screen.getByRole('button', { name: /pick single shape/i }));
+      fireEvent.click(screen.getByRole('button', { name: /pick single folder/i }));
+
+      await waitFor(() => expect(screen.getByTestId('detection-count').textContent).toBe('1'));
+
+      fireEvent.click(screen.getByRole('button', { name: /dismiss detected/i }));
+
+      await waitFor(() => expect(screen.getByTestId('detection-count').textContent).toBe('none'));
+      expect(storeActions.createWorkspace).not.toHaveBeenCalled();
     });
 
     it('prefills the existing workspace name and renames only on change', async () => {

@@ -5,6 +5,8 @@ import { Button, Chip, Input, Tooltip, formatError } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { initRepo } from '../../../../shared/lib/repo';
+import { useChildRepoDetection } from '../../../../shared/hooks/useChildRepoDetection';
+import { DetectedRepoList } from '../../../../shared/components/DetectedRepoList';
 
 type Props = {
   readonly workspace: Workspace;
@@ -13,8 +15,10 @@ type Props = {
 export const ProjectsStep = ({ workspace }: Props) => {
   const projects = useAppStore((state) => state.projects);
   const addProject = useAppStore((state) => state.addProject);
+  const addProjects = useAppStore((state) => state.addProjects);
   const removeProject = useAppStore((state) => state.removeProject);
   const adoptWorkspaceSessionsRoot = useAppStore((state) => state.adoptWorkspaceSessionsRoot);
+  const { detected, detect, clear } = useChildRepoDetection();
   const [path, setPath] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,9 +37,30 @@ export const ProjectsStep = ({ workspace }: Props) => {
   }) => {
     setBusy(true);
     setError(null);
+    clear();
     try {
+      if (requireRepo && (await detect({ path: rootPath }))) {
+        return;
+      }
       const project = await addProject({ workspaceId: workspace.id, rootPath, requireRepo });
       await adoptWorkspaceSessionsRoot({ workspaceId: workspace.id, rootPath: project.rootPath });
+      setPath('');
+    } catch (linkError) {
+      setError(formatError(linkError));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const linkDetected = async ({ paths }: { readonly paths: ReadonlyArray<string> }) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const linkedProjects = await addProjects({ workspaceId: workspace.id, rootPaths: paths });
+      for (const project of linkedProjects) {
+        await adoptWorkspaceSessionsRoot({ workspaceId: workspace.id, rootPath: project.rootPath });
+      }
+      clear();
       setPath('');
     } catch (linkError) {
       setError(formatError(linkError));
@@ -166,6 +191,15 @@ export const ProjectsStep = ({ workspace }: Props) => {
             <FolderPlus size={14} aria-hidden /> New project
           </Button>
         </div>
+
+        {detected !== null ? (
+          <DetectedRepoList
+            repos={detected.repos}
+            busy={busy}
+            onConfirm={({ paths }) => void linkDetected({ paths })}
+            onDismiss={clear}
+          />
+        ) : null}
 
         <button
           type="button"

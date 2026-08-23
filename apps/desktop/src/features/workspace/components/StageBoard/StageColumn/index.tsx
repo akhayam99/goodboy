@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn, Eyebrow, ScrollFade, type Tone } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
@@ -56,7 +56,6 @@ type StageColumnProps = {
   readonly onArchive: (session: Session) => void;
   readonly onDelete: (session: Session) => void;
   readonly onRestore: (session: Session) => void;
-  readonly leading?: ReactNode;
 };
 
 export const StageColumn = ({
@@ -67,7 +66,6 @@ export const StageColumn = ({
   onArchive,
   onDelete,
   onRestore,
-  leading,
 }: StageColumnProps) => {
   const view = viewFor(spec);
   const [collapsed, setCollapsed] = useState(false);
@@ -122,8 +120,7 @@ export const StageColumn = ({
       {!collapsed && (
         <ScrollFade orientation="vertical" className="flex-1">
           <div className={cn('flex flex-col', PANE_RHYTHM.board.cardGap)}>
-            {leading}
-            {empty && leading == null ? (
+            {empty ? (
               <p className="flex items-center gap-2 px-1 py-2 text-xs text-muted-foreground/70">
                 <CONCEPT_ICONS.sessions
                   size={13}

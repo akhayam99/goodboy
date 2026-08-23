@@ -281,6 +281,7 @@ pub fn run() {
             repo::workspace_git_status,
             repo::repo_init_with_remote,
             repo::repo_init,
+            repo::scan_child_repos,
             budget::budget_rule_upsert,
             budget::budget_rule_list,
             budget::budget_rule_delete,

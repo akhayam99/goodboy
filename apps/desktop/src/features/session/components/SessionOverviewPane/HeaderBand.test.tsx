@@ -28,10 +28,12 @@ type Store = {
   sessionGitlabMr: Record<string, { mr?: unknown }>;
   sessionExternalTasks: Record<string, ReadonlyArray<unknown>>;
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
+  pendingTitleFocusSessionId: string | null;
   markAllAgentsSeen: ReturnType<typeof vi.fn>;
   renameTask: ReturnType<typeof vi.fn>;
   setFocusedGithubIssueNumber: ReturnType<typeof vi.fn>;
   openExternalTaskLens: ReturnType<typeof vi.fn>;
+  clearPendingTitleFocus: ReturnType<typeof vi.fn>;
 };
 
 const { store, hooks } = vi.hoisted(() => ({
@@ -46,10 +48,12 @@ const { store, hooks } = vi.hoisted(() => ({
     sessionGitlabMr: {} as Record<string, { mr?: unknown }>,
     sessionExternalTasks: {} as Record<string, ReadonlyArray<unknown>>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    pendingTitleFocusSessionId: null as string | null,
     markAllAgentsSeen: vi.fn(async () => undefined),
     renameTask: vi.fn(async () => undefined),
     setFocusedGithubIssueNumber: vi.fn(),
     openExternalTaskLens: vi.fn(),
+    clearPendingTitleFocus: vi.fn(),
   } as Store,
   hooks: {
     remoteKind: { current: 'github' as 'github' | 'gitlab' | 'other' | 'none' | null },
@@ -142,10 +146,12 @@ beforeEach(() => {
   store.sessionGitlabMr = {};
   store.sessionExternalTasks = {};
   store.sessionPhaseRuns = {};
+  store.pendingTitleFocusSessionId = null;
   store.markAllAgentsSeen.mockReset();
   store.renameTask.mockReset();
   store.setFocusedGithubIssueNumber.mockReset();
   store.openExternalTaskLens.mockReset();
+  store.clearPendingTitleFocus.mockReset();
   hooks.remoteKind.current = 'github';
   editorMenuCalls.length = 0;
   sessionGitActionsCalls.length = 0;
@@ -270,6 +276,25 @@ describe('HeaderBand', () => {
     expect(screen.queryByRole('button', { name: /edit goal/i })).toBeNull();
     fireEvent.click(screen.getByText('refactor auth'));
     expect(screen.getByRole('textbox', { name: 'Session title' })).toBeDefined();
+  });
+
+  it('opens rename with the whole title selected when creation flags this session', () => {
+    store.pendingTitleFocusSessionId = SESSION_ID;
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />);
+
+    const input = screen.getByRole('textbox', { name: 'Session title' }) as HTMLInputElement;
+    expect(store.clearPendingTitleFocus).toHaveBeenCalledOnce();
+    expect(input.value).toBe('refactor auth');
+    expect(input.selectionStart).toBe(0);
+    expect(input.selectionEnd).toBe('refactor auth'.length);
+  });
+
+  it('leaves the title alone when the pending focus names another session', () => {
+    store.pendingTitleFocusSessionId = 'sess-other';
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />);
+
+    expect(screen.queryByRole('textbox', { name: 'Session title' })).toBeNull();
+    expect(store.clearPendingTitleFocus).not.toHaveBeenCalled();
   });
 
   it('reaches rename from the keyboard as well as the mouse', () => {

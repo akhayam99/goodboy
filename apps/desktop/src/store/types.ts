@@ -192,6 +192,7 @@ export type AppState = AppSliceState & {
   readonly sessions: ReadonlyArray<Session>;
   readonly archivedSessions: Readonly<Record<WorkspaceId, ReadonlyArray<Session>>>;
   readonly currentSessionId: SessionId | null;
+  readonly pendingTitleFocusSessionId: SessionId | null;
   readonly settings: Readonly<Record<string, string>>;
   readonly sessionSummary: TelemetrySummary | null;
   readonly providerStatus: ProviderStatus | null;

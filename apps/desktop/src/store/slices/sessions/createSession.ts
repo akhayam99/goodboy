@@ -79,6 +79,7 @@ type Input = {
   externalTasks?: ReadonlyArray<ExternalTaskInput>;
   attachmentInputs?: ReadonlyArray<AttachmentInput>;
   mobileShared?: boolean;
+  omitGoalSlot?: boolean;
 };
 
 export const createSession = (set: SetFn, get: GetFn) => {
@@ -99,6 +100,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     externalTasks,
     attachmentInputs,
     mobileShared = false,
+    omitGoalSlot = false,
   }: Input): Promise<{ session: Session; worktree: CreatedWorktree }> => {
     const workspace = await getWorkspaceById({ db: tauriDatabase, id: workspaceId });
     if (workspace === null) {
@@ -246,7 +248,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       });
     }
 
-    const goalText = goal.trim() || worktree.slug;
+    const goalText = omitGoalSlot ? '' : goal.trim() || worktree.slug;
     if (goalText.length > 0) {
       await upsertContextSlot(tauriDatabase, session.id, {
         key: 'goal',

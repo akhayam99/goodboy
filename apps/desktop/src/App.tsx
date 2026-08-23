@@ -24,6 +24,7 @@ import { ToastProvider } from './app/components/Toast';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
 import { WorkflowFollowToastBridge } from './features/workflows/components/WorkflowFollowToastBridge';
 import { SessionNavSidebar } from './features/session/components/SessionNavSidebar';
+import { NewSessionBridge } from './features/session/components/NewSessionBridge';
 import { CollapsedRail } from './features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
@@ -810,6 +811,7 @@ export const App = () => {
     <ToastProvider>
       <NotificationToastBridge />
       <WorkflowFollowToastBridge />
+      <NewSessionBridge />
       <ReleaseToast onOpenChangelog={openChangelog} />
       <AppShell
         topBar={<AppTopBar onOpenBudget={openBudget} showWorkspaceIdentity={!hasActiveSession} />}

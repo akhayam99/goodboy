@@ -37,7 +37,6 @@ import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { sessionCardShell } from '../../../session/components/sessionCardShell';
-import { InlineSessionCreate } from '../../../session/components/InlineSessionCreate';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { BulkActionBar } from '../BulkActionBar';
 import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
@@ -85,12 +84,10 @@ export const SessionActivityBar = ({
   onArchivedTabOpen,
 }: Props) => {
   const [tab, setTab] = useState<ActivityTab>('active');
-  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     const onNewSessionRequest = () => {
       setTab('active');
-      setCreating(true);
     };
     window.addEventListener('goodboy:new-session', onNewSessionRequest);
     return () => window.removeEventListener('goodboy:new-session', onNewSessionRequest);
@@ -199,11 +196,11 @@ export const SessionActivityBar = ({
             </div>
           </div>
 
-          {!isArchivedView && !creating && (
+          {!isArchivedView && (
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => setCreating(true)}
+              onClick={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}
               aria-label="Create new session"
               title={`Create new session (${shortcutGlyphs('session.new')})`}
               className="group relative mb-1 w-full justify-center gap-1.5 px-2 text-xs"
@@ -217,14 +214,6 @@ export const SessionActivityBar = ({
                 {shortcutGlyphs('session.new')}
               </KbdPill>
             </Button>
-          )}
-
-          {!isArchivedView && creating && (
-            <InlineSessionCreate
-              workspaceId={workspaceId}
-              onDone={() => setCreating(false)}
-              className="mb-1"
-            />
           )}
 
           {displayGroups.map((group) => {

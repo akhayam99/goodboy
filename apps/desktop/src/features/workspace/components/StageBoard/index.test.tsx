@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session, Workspace, WorkspaceGitStatus, WorkspaceId } from '@goodboy/types';
 
-const { state, gitStatus, groups, toastMock } = vi.hoisted(() => ({
+const { state, gitStatus, groups } = vi.hoisted(() => ({
   state: {
     boardReady: true,
     archivedSessions: {} as Record<string, ReadonlyArray<Session>>,
@@ -15,7 +15,6 @@ const { state, gitStatus, groups, toastMock } = vi.hoisted(() => ({
   },
   gitStatus: { current: null as WorkspaceGitStatus | null },
   groups: { current: [] as ReadonlyArray<{ key: string; sessions: ReadonlyArray<Session> }> },
-  toastMock: vi.fn(),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -26,10 +25,6 @@ vi.mock('../../../../store', () => ({
 
 vi.mock('../../hooks/useWorkspaceGitStatus', () => ({
   useWorkspaceGitStatus: () => gitStatus.current,
-}));
-
-vi.mock('../../../../app/components/Toast', () => ({
-  useToast: () => ({ showToast: toastMock }),
 }));
 
 vi.mock('../../../onboarding/OnboardingWizard/steps/ProjectsStep', () => ({
@@ -53,17 +48,14 @@ vi.mock('./StageColumn', () => ({
     spec,
     sessions,
     selection,
-    leading,
   }: {
     spec: { kind: string; stage?: string };
     sessions: ReadonlyArray<Session>;
     selection: {
       handleItemClick: (id: string, event: { altKey: boolean }) => void;
     };
-    leading?: React.ReactNode;
   }) => (
     <div data-testid="stage-column">
-      {leading}
       {spec.kind === 'stage' ? spec.stage : 'archived'}
       {sessions.map((entry) => (
         <button
@@ -85,9 +77,6 @@ vi.mock('../../../session/components/DeleteSessionConfirm', () => ({
   DeleteSessionConfirm: () => null,
 }));
 vi.mock('../../../../shared/components/DogMascot', () => ({ DogMascot: () => <div /> }));
-vi.mock('../../../session/components/InlineSessionCreate', () => ({
-  InlineSessionCreate: () => <div data-testid="inline-session-create" />,
-}));
 
 import { StageBoard } from './index';
 
@@ -131,7 +120,6 @@ beforeEach(() => {
   state.projects = [{ id: 'proj-1', workspaceId: wsId }];
   gitStatus.current = null;
   groups.current = [];
-  toastMock.mockReset();
 });
 afterEach(cleanup);
 
@@ -178,14 +166,6 @@ describe('StageBoard empty-projects gate', () => {
     expect(button.hasAttribute('disabled')).toBe(true);
     expect(button.getAttribute('title')).toBe('Link a project first');
     expect(screen.queryByTestId('projects-step')).toBeNull();
-  });
-
-  it('turns the new-session event into a notice instead of the inline input', () => {
-    state.projects = [];
-    render(<StageBoard workspaceId={wsId} sessions={[]} />);
-    fireEvent(window, new CustomEvent('goodboy:new-session'));
-    expect(screen.queryByTestId('inline-session-create')).toBeNull();
-    expect(toastMock).toHaveBeenCalledWith('info', 'Link a project first, then start a session');
   });
 
   it('flips back to the session-first empty state once a project lands', () => {
@@ -239,30 +219,29 @@ describe('StageBoard git gate', () => {
   });
 });
 
-describe('StageBoard inline create', () => {
-  it('reveals the inline title input in the first column slot on New session', () => {
+describe('StageBoard instant create', () => {
+  it('dispatches the new-session event from the board header button', () => {
+    const listener = vi.fn();
+    window.addEventListener('goodboy:new-session', listener);
     groups.current = [{ key: 'building', sessions: [session] }];
     render(<StageBoard workspaceId={wsId} sessions={[session]} />);
-    expect(screen.queryByTestId('inline-session-create')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'New session' }));
 
-    expect(screen.getAllByTestId('inline-session-create')).toHaveLength(1);
-    const firstColumn = screen.getAllByTestId('stage-column')[0]!;
-    expect(firstColumn.querySelector('[data-testid="inline-session-create"]')).not.toBeNull();
+    expect(listener).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('textbox')).toBeNull();
+    window.removeEventListener('goodboy:new-session', listener);
   });
 
-  it('reveals the inline title input on the goodboy:new-session event', () => {
+  it('dispatches the new-session event from the empty-board button', () => {
+    const listener = vi.fn();
+    window.addEventListener('goodboy:new-session', listener);
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
-    fireEvent(window, new CustomEvent('goodboy:new-session'));
-    expect(screen.getByTestId('inline-session-create')).toBeDefined();
-  });
 
-  it('ignores the create request while the repository is not ready', () => {
-    gitStatus.current = statusOf('unborn');
-    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
-    fireEvent(window, new CustomEvent('goodboy:new-session'));
-    expect(screen.queryByTestId('inline-session-create')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'New session' }));
+
+    expect(listener).toHaveBeenCalledOnce();
+    window.removeEventListener('goodboy:new-session', listener);
   });
 });
 
