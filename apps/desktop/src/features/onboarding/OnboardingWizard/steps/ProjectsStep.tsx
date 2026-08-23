@@ -86,8 +86,7 @@ export const ProjectsStep = ({ workspace }: Props) => {
           Link your projects
         </h2>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          Add the repositories {workspace.name} works on. New project takes an empty folder and runs
-          git init for you.
+          Add the repositories {workspace.name} works on.
         </p>
       </div>
 

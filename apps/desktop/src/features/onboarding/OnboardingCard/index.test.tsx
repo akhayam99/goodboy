@@ -12,6 +12,7 @@ const { finishMock, progress } = vi.hoisted(() => ({
     finished: false,
     isDone: false,
     isSimple: false,
+    hasProjects: true,
   },
 }));
 

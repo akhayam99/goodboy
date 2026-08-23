@@ -181,10 +181,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   label="Workspace"
                   hint="How this workspace is labelled across the app."
                 />
-                <FieldRow
-                  label="Display name"
-                  help={`Presentation only. The folder on disk stays ${folderName}.`}
-                >
+                <FieldRow label="Display name" help={`The folder on disk stays ${folderName}.`}>
                   <input
                     type="text"
                     value={displayName}
@@ -323,10 +320,11 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
             >
               {!confirmDisconnect ? (
                 <Button
-                  variant="danger"
+                  variant="ghost"
                   size="sm"
                   onClick={() => setConfirmDisconnect(true)}
                   disabled={disconnecting}
+                  className="text-danger hover:bg-danger/10 hover:text-danger"
                 >
                   <Unplug size={13} aria-hidden />
                   Disconnect

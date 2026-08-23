@@ -64,10 +64,10 @@ describe('SettingsStudio', () => {
     render(<SettingsStudio onClose={vi.fn()} />);
 
     expect(
-      ['Editor', 'Shortcuts', 'GitHub', 'Config backup', 'Danger zone'].map(
+      ['Editor', 'Shortcuts', 'GitHub', 'Config backup', 'Help', 'Danger zone'].map(
         (label) => screen.getByText(label).textContent,
       ),
-    ).toEqual(['Editor', 'Shortcuts', 'GitHub', 'Config backup', 'Danger zone']);
+    ).toEqual(['Editor', 'Shortcuts', 'GitHub', 'Config backup', 'Help', 'Danger zone']);
     expect(screen.queryByRole('navigation', { name: /settings sections/i })).toBeNull();
   });
 
@@ -95,13 +95,13 @@ describe('SettingsStudio', () => {
     expect(scrollIntoViewMock.mock.contexts.at(-1)).toBe(document.getElementById('shortcuts'));
   });
 
-  it('explains the scope of the GitHub token', () => {
+  it('explains the scope of the GitHub token in one line', () => {
     render(<SettingsStudio onClose={vi.fn()} />);
 
     expect(screen.getByText('Global fallback token used by every workspace.')).toBeDefined();
     expect(
-      screen.getByText('Per-workspace overrides live in Workspace settings, Integrations.'),
-    ).toBeDefined();
+      screen.queryByText('Per-workspace overrides live in Workspace settings, Integrations.'),
+    ).toBeNull();
   });
 
   it('opens the report issue studio through the shared studio event', () => {

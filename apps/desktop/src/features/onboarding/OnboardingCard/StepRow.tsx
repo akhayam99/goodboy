@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import { OPEN_WIZARD_EVENT, type OnboardingStepId } from '../onboarding-store';
+import type { OnboardingStepId } from '../onboarding-store';
 import { OPEN_COMMAND_PALETTE_EVENT } from '../openCommandPaletteEvent';
 
 type Props = {
@@ -14,7 +14,7 @@ export const StepRow = ({ id, title, why, done }: Props) => {
   const actionByStep: Readonly<Partial<Record<OnboardingStepId, string>>> = {
     workspace: 'goodboy:add-workspace',
     codeHost: 'goodboy:open-github-studio',
-    tools: OPEN_WIZARD_EVENT,
+    tools: 'goodboy:open-linear-studio',
     session: 'goodboy:new-session',
     palette: OPEN_COMMAND_PALETTE_EVENT,
   };

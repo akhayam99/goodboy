@@ -3,7 +3,6 @@ import { Button, ScrollFade, cn, formatError, type ButtonVariant } from '@goodbo
 import { useAppStore } from '../../../store';
 import { initRepo, validateGitRepo } from '../../../shared/lib/repo';
 import { finishWizard } from '../onboarding-store';
-import { useOnboardingProgress } from '../hooks/useOnboardingProgress';
 import { useOnboardingWizard } from './useOnboardingWizard';
 import { Stepper } from './Stepper';
 import { WelcomeStep } from './steps/WelcomeStep';
@@ -11,11 +10,9 @@ import { ProvidersStep } from './steps/ProvidersStep';
 import { ShapeStep, type WorkspaceShape } from './steps/ShapeStep';
 import { ProjectsStep } from './steps/ProjectsStep';
 import { ProfileStep } from './steps/ProfileStep';
-import { PreferencesStep } from './steps/PreferencesStep';
-import { IntegrationsStep } from './steps/IntegrationsStep';
 import { ReadyStep } from './steps/ReadyStep';
 
-const STEP_COUNT = 8;
+const STEP_COUNT = 6;
 const SETUP_START_STEP = 4;
 const EXIT_MS = 200;
 const ALL_STEPS = Array.from({ length: STEP_COUNT }, (_, index) => index);
@@ -28,25 +25,8 @@ type Cta = {
 };
 
 export const OnboardingWizard = () => {
-  const progress = useOnboardingProgress();
-  const {
-    open,
-    mode,
-    providersConnected,
-    hasWorkspace,
-    workspace,
-    workspaceId,
-    projectKind,
-    projectCount,
-    githubConnected,
-    gitlabConnected,
-    bitbucketConnected,
-    hasLinear,
-    hasJira,
-    hasSlack,
-    hasSentry,
-    refreshGithubStatus,
-  } = useOnboardingWizard();
+  const { open, mode, providersConnected, hasWorkspace, workspace, projectCount } =
+    useOnboardingWizard();
   const createWorkspace = useAppStore((s) => s.createWorkspace);
   const renameWorkspace = useAppStore((s) => s.renameWorkspace);
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
@@ -188,15 +168,6 @@ export const OnboardingWizard = () => {
       });
     });
 
-  const anyIntegration =
-    githubConnected ||
-    gitlabConnected ||
-    bitbucketConnected ||
-    hasLinear ||
-    hasJira ||
-    hasSlack ||
-    hasSentry;
-
   let body = <WelcomeStep />;
   let cta: Cta = { label: 'Get started', onClick: goNext, variant: 'primary' };
 
@@ -251,29 +222,6 @@ export const OnboardingWizard = () => {
       disabled: busy,
     };
   } else if (step === 5) {
-    body = <PreferencesStep workspaceId={workspaceId} projectKind={projectKind} />;
-    cta = { label: 'Continue', onClick: goNext, variant: 'primary' };
-  } else if (step === 6) {
-    body =
-      workspaceId === null ? (
-        <WelcomeStep />
-      ) : (
-        <IntegrationsStep
-          workspaceId={workspaceId}
-          githubConnected={githubConnected}
-          gitlabConnected={gitlabConnected}
-          bitbucketConnected={bitbucketConnected}
-          linearConnected={hasLinear}
-          jiraConnected={hasJira}
-          slackConnected={hasSlack}
-          sentryConnected={hasSentry}
-          onConnected={refreshGithubStatus}
-        />
-      );
-    cta = anyIntegration
-      ? { label: 'Continue', onClick: goNext, variant: 'primary' }
-      : { label: 'Skip for now', onClick: goNext, variant: 'secondary' };
-  } else if (step === 7) {
     body = <ReadyStep />;
     cta = { label: 'Start building', onClick: dismiss, variant: 'primary' };
   }
@@ -312,9 +260,7 @@ export const OnboardingWizard = () => {
       <header className="relative grid min-h-[3.25rem] shrink-0 grid-cols-3 items-center px-6 pt-5">
         <span aria-hidden />
         <div className="flex justify-center">
-          {step > minStep && (
-            <Stepper current={step} steps={steps} completed={progress.completed} />
-          )}
+          {step > minStep && <Stepper current={step} steps={steps} />}
         </div>
         <div className="flex justify-end">
           {canDismiss && (

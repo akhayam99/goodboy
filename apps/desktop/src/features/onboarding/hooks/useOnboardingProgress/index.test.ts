@@ -49,6 +49,7 @@ vi.mock('../../../../store', () => ({
       sessionPlans: Record<string, unknown[]>;
       currentWorkspaceId: string | null;
       workspaceIntegrations: typeof workspaceIntegrations;
+      projects: Array<{ workspaceId: string }>;
     }) => unknown,
   ) =>
     selector({
@@ -57,6 +58,7 @@ vi.mock('../../../../store', () => ({
       sessionPlans,
       currentWorkspaceId,
       workspaceIntegrations,
+      projects: [],
     }),
   useCurrentSession: () => null,
   useWorkspaces: () => workspaces,

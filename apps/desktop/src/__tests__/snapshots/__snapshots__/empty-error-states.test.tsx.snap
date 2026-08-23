@@ -162,14 +162,14 @@ exports[`snapshot, empty states > NoWorkspaceScreen: no workspace, add-workspace
       <p
         class="max-w-md text-sm leading-relaxed text-muted-foreground"
       >
-        Point at a project folder to create your first workspace. With git already set up, every session spins up its own worktree and branch and your main checkout stays untouched. Without it, Goodboy shows you the commands to set git up.
+        Point at a project folder to create your first workspace.
       </p>
     </div>
     <div
       class=""
     >
       <button
-        class="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm motion-safe:transition-colors hover:bg-primary/90"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
         type="button"
       >
         Add workspace

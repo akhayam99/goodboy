@@ -151,7 +151,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
           <Divider />
 
           <section id="editor" ref={anchor('editor')} className="flex flex-col gap-4">
-            <SectionHeader label="Editor" hint="Default tools and first-run preferences." />
+            <SectionHeader label="Editor" hint="How session worktrees open." />
             <div className="flex flex-col">
               <FieldRow label="Default editor" help="Opens session worktrees.">
                 <Select
@@ -167,7 +167,56 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                   ))}
                 </Select>
               </FieldRow>
+            </div>
+          </section>
 
+          <Divider />
+
+          <section id="shortcuts" ref={anchor('shortcuts')}>
+            <ShortcutsSection initiallyExpanded={initialSection === 'shortcuts'} />
+          </section>
+
+          <Divider />
+
+          <section id="integrations" ref={anchor('integrations')} className="flex flex-col gap-4">
+            <SectionHeader label="GitHub" hint="Global fallback token used by every workspace." />
+            <GithubPanel hideSectionHeader />
+          </section>
+
+          <Divider />
+
+          <section id="advanced" ref={anchor('advanced')} className="flex flex-col gap-4">
+            <SectionHeader
+              label="Config backup"
+              hint="Export or import workspaces, skills, workflows, rules, and settings as JSON."
+            />
+            <FieldRow label="Backup file" help="API keys are never included.">
+              <span className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => void onExport()}
+                  disabled={exportState === 'busy'}
+                  className={exportState === 'busy' ? 'animate-border-pulse' : undefined}
+                >
+                  {exportState === 'busy'
+                    ? 'Exporting…'
+                    : exportState === 'done'
+                      ? 'Exported'
+                      : 'Export'}
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => void onImport()}>
+                  Import
+                </Button>
+              </span>
+            </FieldRow>
+          </section>
+
+          <Divider />
+
+          <section id="report-issue" ref={anchor('report-issue')} className="flex flex-col gap-4">
+            <SectionHeader label="Help" hint="Guides, your phone, and feedback." />
+            <div className="flex flex-col">
               <FieldRow label="Setup guide" help="Replay the first-run walkthrough.">
                 <Button
                   variant="secondary"
@@ -206,73 +255,20 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                   <Smartphone size={14} aria-hidden /> Pair your iPhone
                 </Button>
               </FieldRow>
-            </div>
-          </section>
 
-          <Divider />
-
-          <section id="shortcuts" ref={anchor('shortcuts')}>
-            <ShortcutsSection initiallyExpanded={initialSection === 'shortcuts'} />
-          </section>
-
-          <Divider />
-
-          <section id="integrations" ref={anchor('integrations')} className="flex flex-col gap-4">
-            <SectionHeader label="GitHub" hint="Global fallback token used by every workspace." />
-            <GithubPanel hideSectionHeader />
-            <p className="text-2xs text-muted-foreground">
-              Per-workspace overrides live in Workspace settings, Integrations.
-            </p>
-          </section>
-
-          <Divider />
-
-          <section id="advanced" ref={anchor('advanced')} className="flex flex-col gap-4">
-            <SectionHeader
-              label="Config backup"
-              hint="Export or import workspaces, skills, workflows, rules, and settings as JSON."
-            />
-            <FieldRow label="Backup file" help="API keys are never included.">
-              <span className="flex items-center gap-2">
+              <FieldRow label="Feedback" help="You see exactly what gets sent before you send it.">
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => void onExport()}
-                  disabled={exportState === 'busy'}
-                  className={exportState === 'busy' ? 'animate-border-pulse' : undefined}
+                  onClick={() => {
+                    requestClose();
+                    window.dispatchEvent(new CustomEvent(REPORT_ISSUE_STUDIO_EVENT));
+                  }}
                 >
-                  {exportState === 'busy'
-                    ? 'Exporting…'
-                    : exportState === 'done'
-                      ? 'Exported'
-                      : 'Export'}
+                  <CONCEPT_ICONS.reportIssue size={14} aria-hidden /> Report an issue
                 </Button>
-                <Button variant="secondary" size="sm" onClick={() => void onImport()}>
-                  Import
-                </Button>
-              </span>
-            </FieldRow>
-          </section>
-
-          <Divider />
-
-          <section id="report-issue" ref={anchor('report-issue')} className="flex flex-col gap-4">
-            <SectionHeader label="Feedback" hint="Tell us what's broken or missing." />
-            <FieldRow
-              label="Report an issue"
-              help="Opens a form. You see exactly what gets sent before you send it."
-            >
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  requestClose();
-                  window.dispatchEvent(new CustomEvent(REPORT_ISSUE_STUDIO_EVENT));
-                }}
-              >
-                <CONCEPT_ICONS.reportIssue size={14} aria-hidden /> Report an issue
-              </Button>
-            </FieldRow>
+              </FieldRow>
+            </div>
           </section>
 
           <Divider />

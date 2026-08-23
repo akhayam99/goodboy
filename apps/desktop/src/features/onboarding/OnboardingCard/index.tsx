@@ -11,6 +11,9 @@ export const OnboardingCard = () => {
   if (progress.finished) {
     return null;
   }
+  if (!progress.hasProjects) {
+    return null;
+  }
   if (!progress.isDone && progress.collapsed) {
     return null;
   }
@@ -26,7 +29,7 @@ export const OnboardingCard = () => {
 
 export const OnboardingChip = () => {
   const progress = useOnboardingProgress();
-  if (progress.finished) {
+  if (progress.finished || !progress.hasProjects) {
     return null;
   }
 

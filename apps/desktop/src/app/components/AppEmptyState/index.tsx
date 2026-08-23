@@ -1,4 +1,4 @@
-import { EmptyState } from '@goodboy/ui';
+import { Button, EmptyState } from '@goodboy/ui';
 import { DogMascot } from '../../../shared/components/DogMascot';
 
 type Props = {
@@ -20,15 +20,11 @@ export const NoWorkspaceScreen = ({ onAddWorkspace }: Props) => {
       <EmptyState
         illustration={<DogMascot size={96} className="text-primary" />}
         title="Welcome to Goodboy"
-        description="Point at a project folder to create your first workspace. With git already set up, every session spins up its own worktree and branch and your main checkout stays untouched. Without it, Goodboy shows you the commands to set git up."
+        description="Point at a project folder to create your first workspace."
         action={
-          <button
-            type="button"
-            onClick={onAddWorkspace}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm motion-safe:transition-colors hover:bg-primary/90"
-          >
+          <Button size="md" onClick={onAddWorkspace}>
             Add workspace
-          </button>
+          </Button>
         }
         size="xl"
         headingLevel={2}

@@ -18,6 +18,7 @@ export type OnboardingProgress = {
   readonly finished: boolean;
   readonly isDone: boolean;
   readonly isSimple: boolean;
+  readonly hasProjects: boolean;
 };
 
 export const useOnboardingProgress = (): OnboardingProgress => {
@@ -65,6 +66,9 @@ export const useOnboardingProgress = (): OnboardingProgress => {
   const currentSession = useCurrentSession();
 
   const workspaceId = workspace?.id ?? null;
+  const hasProjects = useAppStore((s) =>
+    workspaceId ? s.projects.some((project) => project.workspaceId === workspaceId) : false,
+  );
   const needsCodeHostDetect = !isSimple && !persistedCompleted.has('codeHost');
   const gitlabConnected = useAppStore((s) =>
     workspaceId
@@ -183,5 +187,6 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     finished,
     isDone: completedCount >= totalCount,
     isSimple,
+    hasProjects,
   };
 };

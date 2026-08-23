@@ -5,9 +5,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
 import type { OnboardingWizardState } from './useOnboardingWizard';
 
-const { hookState, progressState, finishWizard, storeActions, repoLib } = vi.hoisted(() => ({
+const { hookState, finishWizard, storeActions, repoLib } = vi.hoisted(() => ({
   hookState: {} as OnboardingWizardState,
-  progressState: { completed: new Set<string>() },
   finishWizard: vi.fn(),
   storeActions: {
     createWorkspace: vi.fn(),
@@ -29,10 +28,6 @@ vi.mock('../../../store', () => ({
 
 vi.mock('../../../shared/lib/repo', () => repoLib);
 
-vi.mock('../hooks/useOnboardingProgress', () => ({
-  useOnboardingProgress: () => progressState,
-}));
-
 vi.mock('./useOnboardingWizard', () => ({
   useOnboardingWizard: () => hookState,
 }));
@@ -42,16 +37,8 @@ vi.mock('../onboarding-store', () => ({
 }));
 
 vi.mock('./Stepper', () => ({
-  Stepper: ({
-    current,
-    steps,
-    completed,
-  }: {
-    current: number;
-    steps: ReadonlyArray<number>;
-    completed: ReadonlySet<string>;
-  }) => (
-    <div data-testid="stepper">{`${current}/${steps.join(',')}/${[...completed].join(',')}`}</div>
+  Stepper: ({ current, steps }: { current: number; steps: ReadonlyArray<number> }) => (
+    <div data-testid="stepper">{`${current}/${steps.join(',')}`}</div>
   ),
 }));
 
@@ -118,12 +105,6 @@ vi.mock('./steps/ProfileStep', () => ({
     </div>
   ),
 }));
-vi.mock('./steps/PreferencesStep', () => ({
-  PreferencesStep: () => <div data-testid="PreferencesStep" />,
-}));
-vi.mock('./steps/IntegrationsStep', () => ({
-  IntegrationsStep: () => <div data-testid="IntegrationsStep" />,
-}));
 vi.mock('./steps/ReadyStep', () => ({ ReadyStep: () => <div data-testid="ReadyStep" /> }));
 
 const baseState: OnboardingWizardState = {
@@ -133,17 +114,7 @@ const baseState: OnboardingWizardState = {
   hasWorkspace: false,
   workspace: null,
   workspaceId: null,
-  projectKind: null,
   projectCount: 0,
-  githubConnected: false,
-  gitlabConnected: false,
-  bitbucketConnected: false,
-  hasCodeHost: false,
-  hasLinear: false,
-  hasJira: false,
-  hasSlack: false,
-  hasSentry: false,
-  refreshGithubStatus: vi.fn(),
 };
 
 const WORKSPACE = {
@@ -172,7 +143,6 @@ const setHook = (partial: Partial<OnboardingWizardState>) =>
 
 beforeEach(() => {
   finishWizard.mockClear();
-  progressState.completed = new Set();
   Object.assign(hookState, baseState);
   storeActions.createWorkspace.mockReset().mockResolvedValue(WORKSPACE);
   storeActions.renameWorkspace.mockReset().mockResolvedValue(WORKSPACE);
@@ -205,7 +175,6 @@ const connectedWorkspaceState: Partial<OnboardingWizardState> = {
   hasWorkspace: true,
   workspace: WORKSPACE,
   workspaceId: WORKSPACE.id,
-  projectKind: 'repo',
   projectCount: 1,
 };
 
@@ -388,7 +357,7 @@ describe('OnboardingWizard', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
-      await waitFor(() => expect(screen.getByTestId('PreferencesStep')).toBeDefined());
+      await waitFor(() => expect(screen.getByTestId('ReadyStep')).toBeDefined());
       expect(storeActions.updateWorkspaceProfile).not.toHaveBeenCalled();
     });
 
@@ -402,32 +371,11 @@ describe('OnboardingWizard', () => {
       });
       fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
-      await waitFor(() => expect(screen.getByTestId('PreferencesStep')).toBeDefined());
+      await waitFor(() => expect(screen.getByTestId('ReadyStep')).toBeDefined());
       expect(storeActions.updateWorkspaceProfile).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
         profile: { bio: 'I lead design for the checkout team.' },
       });
-    });
-  });
-
-  describe('optional steps', () => {
-    it('offers Skip for now on the integrations step when nothing is connected', async () => {
-      setHook(connectedWorkspaceState);
-      render(<OnboardingWizard />);
-      await reachProfileStep();
-      await continueTo('PreferencesStep');
-      await continueTo('IntegrationsStep');
-      expect(screen.getByRole('button', { name: /skip for now/i })).toBeDefined();
-    });
-
-    it('offers Continue on the integrations step once anything is connected', async () => {
-      setHook({ ...connectedWorkspaceState, hasSlack: true });
-      render(<OnboardingWizard />);
-      await reachProfileStep();
-      await continueTo('PreferencesStep');
-      await continueTo('IntegrationsStep');
-      expect(screen.getByRole('button', { name: /^continue$/i })).toBeDefined();
-      expect(screen.queryByRole('button', { name: /skip for now/i })).toBeNull();
     });
   });
 
@@ -440,14 +388,11 @@ describe('OnboardingWizard', () => {
       expect(screen.queryByTestId('stepper')).toBeNull();
     });
 
-    it('passes the current step, filtered steps, and completed progress to the stepper', async () => {
-      progressState.completed = new Set(['workspace']);
+    it('passes the current step and filtered steps to the stepper', async () => {
       setHook({ ...connectedWorkspaceState, mode: 'setup' });
       render(<OnboardingWizard />);
       fireEvent.click(screen.getByRole('button', { name: /continue/i }));
-      await waitFor(() =>
-        expect(screen.getByTestId('stepper').textContent).toBe('5/4,5,6,7/workspace'),
-      );
+      await waitFor(() => expect(screen.getByTestId('stepper').textContent).toBe('5/4,5'));
     });
   });
 
@@ -477,11 +422,9 @@ describe('OnboardingWizard', () => {
     });
 
     it('finishes the wizard from the ready step', async () => {
-      setHook({ ...connectedWorkspaceState, hasSlack: true });
+      setHook(connectedWorkspaceState);
       render(<OnboardingWizard />);
       await reachProfileStep();
-      await continueTo('PreferencesStep');
-      await continueTo('IntegrationsStep');
       await continueTo('ReadyStep');
       expect(screen.queryByRole('button', { name: /skip setup/i })).toBeNull();
       fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });

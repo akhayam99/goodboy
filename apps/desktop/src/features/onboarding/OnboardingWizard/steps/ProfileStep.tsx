@@ -17,8 +17,7 @@ export const ProfileStep = ({ bio, onBioChange }: Props) => (
         Tell agents who you are and what you do here
       </h2>
       <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-        A few sentences in your own words. Agents read this before they talk to you. Optional, and
-        editable any time in workspace settings.
+        Agents read this before they talk to you; it is optional and editable in settings.
       </p>
     </div>
 

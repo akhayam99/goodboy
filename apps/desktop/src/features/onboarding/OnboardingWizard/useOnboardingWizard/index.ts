@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Project, Workspace, WorkspaceId } from '@goodboy/types';
+import { useEffect, useRef, useState } from 'react';
+import type { Workspace, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
-import { ghStatus } from '../../../github/github';
 import { isWizardDone, OPEN_WIZARD_EVENT, type WizardMode } from '../../onboarding-store';
 
 export type OnboardingWizardState = {
@@ -11,17 +10,7 @@ export type OnboardingWizardState = {
   readonly hasWorkspace: boolean;
   readonly workspace: Workspace | null;
   readonly workspaceId: WorkspaceId | null;
-  readonly projectKind: Project['kind'] | null;
   readonly projectCount: number;
-  readonly githubConnected: boolean;
-  readonly gitlabConnected: boolean;
-  readonly bitbucketConnected: boolean;
-  readonly hasCodeHost: boolean;
-  readonly hasLinear: boolean;
-  readonly hasJira: boolean;
-  readonly hasSlack: boolean;
-  readonly hasSentry: boolean;
-  readonly refreshGithubStatus: () => void;
 };
 
 export const useOnboardingWizard = (): OnboardingWizardState => {
@@ -33,62 +22,11 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
   const workspace =
     workspaces.find((candidate) => candidate.id === currentWorkspaceId) ?? workspaces[0] ?? null;
   const workspaceId = workspace?.id ?? null;
-  const projectKind = useAppStore(
-    (state) => state.projects.find((project) => project.workspaceId === workspaceId)?.kind ?? null,
-  );
   const projectCount = useAppStore(
     (state) => state.projects.filter((project) => project.workspaceId === workspaceId).length,
   );
   const hasWorkspace = workspace !== null;
   const hydrated = useAppStore((s) => s.hydrated);
-
-  const gitlabConnected = useAppStore((s) =>
-    workspaceId
-      ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'gitlab')
-      : false,
-  );
-  const bitbucketConnected = useAppStore((s) =>
-    workspaceId
-      ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'bitbucket')
-      : false,
-  );
-  const hasLinear = useAppStore((s) =>
-    workspaceId
-      ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'linear')
-      : false,
-  );
-  const hasJira = useAppStore((s) =>
-    workspaceId
-      ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'jira')
-      : false,
-  );
-  const hasSlack = useAppStore((s) =>
-    workspaceId
-      ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'slack')
-      : false,
-  );
-  const hasSentry = useAppStore((s) =>
-    workspaceId
-      ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'sentry')
-      : false,
-  );
-
-  const [githubScoped, setGithubScoped] = useState(false);
-  const refreshGithubStatus = useCallback(() => {
-    if (!workspaceId || projectKind === 'folder') {
-      setGithubScoped(false);
-      return;
-    }
-    void ghStatus(workspaceId)
-      .then((status) => setGithubScoped(status.scoped ?? false))
-      .catch(() => setGithubScoped(false));
-  }, [workspaceId, projectKind]);
-
-  useEffect(() => {
-    refreshGithubStatus();
-  }, [refreshGithubStatus]);
-
-  const hasCodeHost = githubScoped || gitlabConnected || bitbucketConnected;
 
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<WizardMode>('full');
@@ -139,16 +77,6 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
     hasWorkspace,
     workspace,
     workspaceId,
-    projectKind,
     projectCount,
-    githubConnected: githubScoped,
-    gitlabConnected,
-    bitbucketConnected,
-    hasCodeHost,
-    hasLinear,
-    hasJira,
-    hasSlack,
-    hasSentry,
-    refreshGithubStatus,
   };
 };

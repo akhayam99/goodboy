@@ -94,9 +94,6 @@ export const ShapeStep = ({
         <h2 className="text-2xl font-semibold tracking-tight text-foreground">
           What are you setting up?
         </h2>
-        <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          Do you work across a workspace of projects, or on a single project?
-        </p>
       </div>
 
       <div className="flex w-full flex-col gap-5 text-left">
@@ -162,8 +159,7 @@ export const ShapeStep = ({
               </Button>
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              The folder needs a .git directory. New project takes an empty folder and runs git init
-              for you.
+              Pick a folder with a git repository, or let New project run git init in an empty one.
             </p>
           </div>
         ) : null}

@@ -137,6 +137,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
 
   const empty = sessions.length === 0;
   const gitReady = gitStatus === null || gitStatus.state === 'ready';
+  const showGitPanel = rootPath != null && gitStatus !== null && (!gitReady || !empty);
   const showInlineCreate = creating && gitReady && hasProjects;
   const blockedReason = !hasProjects
     ? 'Link a project first'
@@ -146,7 +147,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
 
   return (
     <div className={cn('flex h-full w-full flex-col gap-4', PANE_RHYTHM.board.pad)}>
-      {rootPath != null && gitStatus !== null && (
+      {showGitPanel && rootPath != null && gitStatus !== null && (
         <>
           <div className="shrink-0">
             <WorkspaceGitPanel rootPath={rootPath} status={gitStatus} />
@@ -214,7 +215,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           <EmptyState
             illustration={<DogMascot size={72} className="text-primary" />}
             title="Start your first session"
-            description="Describe an outcome. An agent picks it up in its own worktree and branch; your main checkout stays untouched."
+            description="Describe an outcome; an agent picks it up in its own worktree and branch."
             action={
               showInlineCreate ? (
                 <InlineSessionCreate

@@ -15,8 +15,7 @@ export const ReadyStep = () => {
       <div className="flex flex-col gap-2">
         <h2 className="text-2xl font-semibold tracking-tight text-foreground">You are all set</h2>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          Jump in and start your first session from the workspace, or explore from the sidebar. The
-          checklist in the corner covers whatever is left.
+          Start your first session; code hosts and tools connect any time from their studios.
         </p>
       </div>
 

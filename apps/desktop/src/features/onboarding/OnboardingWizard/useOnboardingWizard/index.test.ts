@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProviderConnectionState } from '@goodboy/types';
 import { OPEN_WIZARD_EVENT } from '../../onboarding-store';
@@ -7,21 +7,13 @@ import { useOnboardingWizard } from './index';
 let wizardDone = false;
 let hydrated = true;
 const providers: Array<{ connection: ProviderConnectionState }> = [];
-const workspaces: Array<{ id: string; kind?: 'repo' | 'folder' }> = [];
+const workspaces: Array<{ id: string }> = [];
 let currentWorkspaceId: string | null = null;
-let workspaceIntegrations: Record<string, Array<{ provider: string }>> = {};
-
-const { ghStatusMock } = vi.hoisted(() => ({
-  ghStatusMock: vi.fn(async () => ({ scoped: false }) as unknown),
-}));
+let projects: Array<{ workspaceId: string }> = [];
 
 vi.mock('../../onboarding-store', () => ({
   OPEN_WIZARD_EVENT: 'goodboy:open-onboarding-wizard',
   isWizardDone: () => wizardDone,
-}));
-
-vi.mock('../../../github/github', () => ({
-  ghStatus: ghStatusMock,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -30,19 +22,14 @@ vi.mock('../../../../store', () => ({
       providers: typeof providers;
       hydrated: boolean;
       currentWorkspaceId: string | null;
-      workspaceIntegrations: typeof workspaceIntegrations;
-      projects: Array<{ workspaceId: string; kind: 'repo' | 'folder' }>;
+      projects: Array<{ workspaceId: string }>;
     }) => unknown,
   ) =>
     selector({
       providers,
       hydrated,
       currentWorkspaceId,
-      workspaceIntegrations,
-      projects: workspaces.map((workspace) => ({
-        workspaceId: workspace.id,
-        kind: workspace.kind ?? 'repo',
-      })),
+      projects,
     }),
   useWorkspaces: () => workspaces,
 }));
@@ -53,9 +40,7 @@ function reset() {
   providers.length = 0;
   workspaces.length = 0;
   currentWorkspaceId = null;
-  workspaceIntegrations = {};
-  ghStatusMock.mockReset();
-  ghStatusMock.mockResolvedValue({ scoped: false });
+  projects = [];
 }
 
 describe('useOnboardingWizard', () => {
@@ -196,120 +181,24 @@ describe('useOnboardingWizard', () => {
       const { result } = renderHook(() => useOnboardingWizard());
       expect(result.current.workspace).toBeNull();
       expect(result.current.workspaceId).toBeNull();
+      expect(result.current.projectCount).toBe(0);
     });
 
-    it('resolves the first workspace and normalizes its missing kind to repo', () => {
+    it('resolves the first workspace and counts its projects', () => {
       workspaces.push({ id: 'w1' });
+      projects = [{ workspaceId: 'w1' }, { workspaceId: 'w2' }];
       const { result } = renderHook(() => useOnboardingWizard());
       expect(result.current.workspace).toBe(workspaces[0]);
       expect(result.current.workspaceId).toBe('w1');
-      expect(result.current.projectKind).toBe('repo');
+      expect(result.current.projectCount).toBe(1);
     });
 
-    it('prefers the active workspace and exposes its kind', () => {
-      workspaces.push({ id: 'w1', kind: 'repo' }, { id: 'w2', kind: 'folder' });
+    it('prefers the active workspace', () => {
+      workspaces.push({ id: 'w1' }, { id: 'w2' });
       currentWorkspaceId = 'w2';
       const { result } = renderHook(() => useOnboardingWizard());
       expect(result.current.workspace).toBe(workspaces[1]);
       expect(result.current.workspaceId).toBe('w2');
-      expect(result.current.projectKind).toBe('folder');
-    });
-  });
-
-  describe('hasCodeHost', () => {
-    it('is false without a workspace and never queries gh status', () => {
-      const { result } = renderHook(() => useOnboardingWizard());
-      expect(result.current.hasCodeHost).toBe(false);
-      expect(ghStatusMock).not.toHaveBeenCalled();
-    });
-
-    it('is true when GitLab is connected for the workspace', () => {
-      workspaces.push({ id: 'w1' });
-      workspaceIntegrations = { w1: [{ provider: 'gitlab' }] };
-      const { result } = renderHook(() => useOnboardingWizard());
-      expect(result.current.hasCodeHost).toBe(true);
-      expect(result.current.gitlabConnected).toBe(true);
-      expect(result.current.githubConnected).toBe(false);
-    });
-
-    it('becomes true once gh status reports a scoped token', async () => {
-      workspaces.push({ id: 'w1' });
-      ghStatusMock.mockResolvedValue({ scoped: true });
-      const { result } = renderHook(() => useOnboardingWizard());
-      await waitFor(() => expect(result.current.hasCodeHost).toBe(true));
-      expect(result.current.githubConnected).toBe(true);
-      expect(ghStatusMock).toHaveBeenCalledWith('w1');
-    });
-
-    it('stays false when gh status check rejects', async () => {
-      workspaces.push({ id: 'w1' });
-      ghStatusMock.mockRejectedValue(new Error('offline'));
-      const { result } = renderHook(() => useOnboardingWizard());
-      await waitFor(() => expect(ghStatusMock).toHaveBeenCalledWith('w1'));
-      expect(result.current.hasCodeHost).toBe(false);
-    });
-
-    it('does not query gh status for a simple workspace', () => {
-      workspaces.push({ id: 'w1', kind: 'folder' });
-      const { result } = renderHook(() => useOnboardingWizard());
-      expect(result.current.projectKind).toBe('folder');
-      expect(result.current.hasCodeHost).toBe(false);
-      expect(ghStatusMock).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('hasLinear / hasSentry', () => {
-    it('are both false without a workspace', () => {
-      const { result } = renderHook(() => useOnboardingWizard());
-      expect(result.current.hasLinear).toBe(false);
-      expect(result.current.hasSentry).toBe(false);
-    });
-
-    it('flags Linear independently of Sentry', () => {
-      workspaces.push({ id: 'w1' });
-      workspaceIntegrations = { w1: [{ provider: 'linear' }] };
-      const { result } = renderHook(() => useOnboardingWizard());
-      expect(result.current.hasLinear).toBe(true);
-      expect(result.current.hasSentry).toBe(false);
-    });
-
-    it('flags Sentry independently of Linear', () => {
-      workspaces.push({ id: 'w1' });
-      workspaceIntegrations = { w1: [{ provider: 'sentry' }] };
-      const { result } = renderHook(() => useOnboardingWizard());
-      expect(result.current.hasSentry).toBe(true);
-      expect(result.current.hasLinear).toBe(false);
-    });
-
-    it('leaves both false when only a code host is connected', () => {
-      workspaces.push({ id: 'w1' });
-      workspaceIntegrations = { w1: [{ provider: 'gitlab' }] };
-      const { result } = renderHook(() => useOnboardingWizard());
-      expect(result.current.hasLinear).toBe(false);
-      expect(result.current.hasSentry).toBe(false);
-    });
-
-    it('flags Slack independently of Linear and Sentry', () => {
-      workspaces.push({ id: 'w1' });
-      workspaceIntegrations = { w1: [{ provider: 'slack' }] };
-      const { result } = renderHook(() => useOnboardingWizard());
-      expect(result.current.hasSlack).toBe(true);
-      expect(result.current.hasLinear).toBe(false);
-      expect(result.current.hasSentry).toBe(false);
-    });
-  });
-
-  describe('refreshGithubStatus', () => {
-    it('re-queries gh status and flips hasCodeHost after a fresh connect', async () => {
-      workspaces.push({ id: 'w1' });
-      const { result } = renderHook(() => useOnboardingWizard());
-      await waitFor(() => expect(ghStatusMock).toHaveBeenCalledWith('w1'));
-      expect(result.current.hasCodeHost).toBe(false);
-      ghStatusMock.mockResolvedValue({ scoped: true });
-      act(() => {
-        result.current.refreshGithubStatus();
-      });
-      await waitFor(() => expect(result.current.hasCodeHost).toBe(true));
     });
   });
 });
