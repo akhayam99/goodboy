@@ -707,7 +707,7 @@ describe('buildTimelineStream', () => {
     expect(layout.columnByGroupId.get('lane:agent:implement')).toBe(2);
   });
 
-  it('interleaves a standalone agent between two steps without breaking the run', () => {
+  it('keeps a run whole when a standalone agent ran between two of its steps', () => {
     const { items, groups } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
       agents: [
@@ -732,14 +732,59 @@ describe('buildTimelineStream', () => {
     expect(items.map(labelOf)).toEqual([
       'now',
       'step:agent:step-two',
-      'entry:agent:loose',
       'step:agent:step-one',
       'entry:run:run-1',
+      'entry:agent:loose',
     ]);
     expect(layout.rows[looseIndex]?.markerColumn).toBe(0);
-    expect(
-      layout.rows[looseIndex]?.segments.filter((segment) => segment.column === 1),
-    ).toHaveLength(1);
+    expect(layout.rows[looseIndex]?.segments.filter((segment) => segment.column > 0)).toEqual([]);
+  });
+
+  it('keeps a chain with its parent when the children landed a day later', () => {
+    const { items, groups } = stream({
+      agents: [
+        agent({
+          id: 'cluster-parent',
+          ordinal: 1,
+          startedAt: localIso({ day: 17, hour: 21, minute: 35 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 40 }),
+        }),
+        agent({ id: 'elenca', ordinal: 2, startedAt: localIso({ day: 17, hour: 21, minute: 37 }) }),
+        agent({
+          id: 'cluster-child',
+          ordinal: 3,
+          parentAgentId: 'cluster-parent',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+        }),
+      ],
+      events: [
+        sessionEvent({
+          id: 'ev-decision',
+          kind: 'decisions_changed',
+          at: localIso({ day: 17, hour: 23, minute: 27 }),
+        }),
+      ],
+    });
+    const layout = layoutTimelineRail({ rows: items, groups });
+    const laneSegmentsOf = ({ id }: { readonly id: string }) =>
+      layout.rows[items.findIndex((item) => item.id === id)]?.segments.filter(
+        (segment) => segment.column > 0,
+      ) ?? [];
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'step:agent:cluster-child',
+      'day:Yesterday',
+      'entry:agent:cluster-parent',
+      'entry:event:ev-decision',
+      'entry:agent:elenca',
+    ]);
+    expect(laneSegmentsOf({ id: 'event:ev-decision' })).toEqual([]);
+    expect(laneSegmentsOf({ id: 'agent:elenca' })).toEqual([]);
+    const dayIndex = items.findIndex((item) => item.kind === 'day');
+
+    expect(layout.rows[dayIndex]?.segments.filter((segment) => segment.column > 0)).toHaveLength(1);
   });
 
   it('centres a marker on its label line, not on a row box carrying leading air', () => {

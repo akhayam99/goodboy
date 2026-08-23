@@ -175,12 +175,39 @@ const isRunFinished = ({ entry }: { readonly entry: TimelineRunEntry }): boolean
   });
 };
 
+type DraftBlock = {
+  readonly key: Sortable;
+  readonly rows: ReadonlyArray<DraftRow>;
+};
+
 type EmitContext = {
   readonly unreadAgentIds: ReadonlySet<string>;
   readonly blockedRunIds: ReadonlySet<string>;
-  readonly drafts: Array<DraftRow>;
   readonly groups: RailGroupInput[];
 };
+
+const sortableOf = ({ row }: { readonly row: DraftRow }): Sortable => ({
+  at: row.at,
+  sortOrdinal: row.sortOrdinal,
+  id: row.id,
+});
+
+const blockOf = ({
+  rows,
+  origin,
+}: {
+  readonly rows: ReadonlyArray<DraftRow>;
+  readonly origin: DraftRow;
+}): DraftBlock => ({ key: sortableOf({ row: rows[0] ?? origin }), rows });
+
+const nestedFirst = ({
+  blocks,
+}: {
+  readonly blocks: ReadonlyArray<DraftBlock>;
+}): ReadonlyArray<DraftRow> =>
+  [...blocks]
+    .sort((first, second) => compareNewestFirst({ first: first.key, second: second.key }))
+    .flatMap((block) => block.rows);
 
 type EmitAgentParams = {
   readonly entry: TimelineAgentEntry;
@@ -192,7 +219,7 @@ type EmitAgentParams = {
   readonly context: EmitContext;
 };
 
-const emitAgent = ({
+const agentBlock = ({
   entry,
   grade,
   identity,
@@ -200,10 +227,10 @@ const emitAgent = ({
   familyId,
   groupId,
   context,
-}: EmitAgentParams): void => {
+}: EmitAgentParams): DraftBlock => {
   const childLaneId = laneIdOf({ entryId: entry.id });
-  const hasChildren = entry.children.length > 0;
-  if (hasChildren) {
+  const nested: DraftBlock[] = [];
+  if (entry.children.length > 0) {
     context.groups.push({
       id: childLaneId,
       parentGroupId: groupId,
@@ -217,19 +244,21 @@ const emitAgent = ({
           : 'open',
     });
     for (const child of entry.children) {
-      emitAgent({
-        entry: child,
-        grade: 'step',
-        identity,
-        isMuted,
-        familyId,
-        groupId: childLaneId,
-        context,
-      });
+      nested.push(
+        agentBlock({
+          entry: child,
+          grade: 'step',
+          identity,
+          isMuted,
+          familyId,
+          groupId: childLaneId,
+          context,
+        }),
+      );
     }
   }
   for (const answer of entry.answers) {
-    context.drafts.push({
+    const row: DraftRow = {
       kind: 'row',
       id: answer.id,
       at: answer.at,
@@ -243,10 +272,10 @@ const emitAgent = ({
       markerState: 'done',
       hasUnread: false,
       isPending: false,
-    });
+    };
+    nested.push({ key: sortableOf({ row }), rows: [row] });
   }
-  const hasUnread = context.unreadAgentIds.has(entry.agent.id);
-  context.drafts.push({
+  const origin: DraftRow = {
     kind: 'row',
     id: entry.id,
     at: entry.at,
@@ -262,9 +291,10 @@ const emitAgent = ({
       hasOpenQuestion: entry.openQuestions.length > 0,
       needsUser: false,
     }),
-    hasUnread,
+    hasUnread: context.unreadAgentIds.has(entry.agent.id),
     isPending: entry.agent.status === 'pending',
-  });
+  };
+  return blockOf({ rows: [...nestedFirst({ blocks: nested }), origin], origin });
 };
 
 type EmitRunParams = {
@@ -272,7 +302,7 @@ type EmitRunParams = {
   readonly context: EmitContext;
 };
 
-const emitRun = ({ entry, context }: EmitRunParams): void => {
+const runBlock = ({ entry, context }: EmitRunParams): DraftBlock => {
   const laneId = laneIdOf({ entryId: entry.id });
   const isFinished = isRunFinished({ entry });
   const needsUser = context.blockedRunIds.has(entry.run.id);
@@ -286,20 +316,23 @@ const emitRun = ({ entry, context }: EmitRunParams): void => {
     originRowId: entry.id,
     shape,
   });
+  const nested: DraftBlock[] = [];
   for (const child of entry.children) {
     if (child.kind === 'agent') {
-      emitAgent({
-        entry: child,
-        grade: 'step',
-        identity: entry.identity,
-        isMuted,
-        familyId: entry.id,
-        groupId: laneId,
-        context,
-      });
+      nested.push(
+        agentBlock({
+          entry: child,
+          grade: 'step',
+          identity: entry.identity,
+          isMuted,
+          familyId: entry.id,
+          groupId: laneId,
+          context,
+        }),
+      );
       continue;
     }
-    context.drafts.push({
+    const row: DraftRow = {
       kind: 'row',
       id: child.id,
       at: child.at,
@@ -313,10 +346,11 @@ const emitRun = ({ entry, context }: EmitRunParams): void => {
       markerState: 'done',
       hasUnread: false,
       isPending: false,
-    });
+    };
+    nested.push({ key: sortableOf({ row }), rows: [row] });
   }
   const steps = stepAgentsOf({ entry });
-  context.drafts.push({
+  const origin: DraftRow = {
     kind: 'row',
     id: entry.id,
     at: entry.at,
@@ -340,11 +374,17 @@ const emitRun = ({ entry, context }: EmitRunParams): void => {
     }),
     hasUnread: steps.some((agent) => context.unreadAgentIds.has(agent.id)),
     isPending: false,
-  });
+  };
+  return blockOf({ rows: [...nestedFirst({ blocks: nested }), origin], origin });
 };
 
 const isPendingStep = ({ draft }: { readonly draft: DraftRow }): boolean =>
   draft.grade === 'step' && draft.markerState === 'pending';
+
+const blockKeyOf = ({ block }: { readonly block: DraftBlock }): Sortable => {
+  const dated = block.rows.find((row) => !isPendingStep({ draft: row }));
+  return dated === undefined ? block.key : sortableOf({ row: dated });
+};
 
 type HeadParams = {
   readonly drafts: ReadonlyArray<DraftRow>;
@@ -452,28 +492,30 @@ export const buildTimelineStream = ({
   const context: EmitContext = {
     unreadAgentIds,
     blockedRunIds,
-    drafts: [],
     groups: [],
   };
+  const blocks: DraftBlock[] = [];
 
   for (const entry of entries) {
     if (entry.kind === 'run') {
-      emitRun({ entry, context });
+      blocks.push(runBlock({ entry, context }));
       continue;
     }
     if (entry.kind === 'agent') {
-      emitAgent({
-        entry,
-        grade: 'entry',
-        identity: entry.chain?.identity ?? null,
-        isMuted: false,
-        familyId: entry.id,
-        groupId: null,
-        context,
-      });
+      blocks.push(
+        agentBlock({
+          entry,
+          grade: 'entry',
+          identity: entry.chain?.identity ?? null,
+          isMuted: false,
+          familyId: entry.id,
+          groupId: null,
+          context,
+        }),
+      );
       continue;
     }
-    context.drafts.push({
+    const row: DraftRow = {
       kind: 'row',
       id: entry.id,
       at: entry.at,
@@ -487,10 +529,18 @@ export const buildTimelineStream = ({
       markerState: 'done',
       hasUnread: false,
       isPending: false,
-    });
+    };
+    blocks.push({ key: sortableOf({ row }), rows: [row] });
   }
 
-  const sorted = [...context.drafts].sort((first, second) => compareNewestFirst({ first, second }));
+  const sorted = [...blocks]
+    .sort((first, second) =>
+      compareNewestFirst({
+        first: blockKeyOf({ block: first }),
+        second: blockKeyOf({ block: second }),
+      }),
+    )
+    .flatMap((block) => block.rows);
   const withDays = withDayBreaks({
     drafts: withPendingClusters({ drafts: withPendingAtHead({ drafts: sorted }) }),
     dayLabelFor,
