@@ -97,9 +97,12 @@ const headLines = ({
     return [`You are operating inside this session directory: ${workingDir}`];
   }
   return [
-    `You are operating across ${mounts.length} materialized projects under: ${workingDir}`,
-    `Each project lives in its own subfolder: ${mounts.map((mount) => mount.mountName).join(', ')}.`,
-    'Each subfolder is a separate git repository with its own branch. Run git commands inside the relevant subfolder, never at the session directory root.',
+    `You are operating across ${mounts.length} materialized project mounts from this session folder: ${workingDir}`,
+    ...mounts.map(
+      (mount) =>
+        `- ${mount.mountName} at ${mount.worktreePath}${mount.branch === '' ? '' : ` (branch ${mount.branch})`}`,
+    ),
+    'Each mount is a separate git repository on its own branch. Run git commands inside the relevant mount, never at the session folder root.',
   ];
 };
 
@@ -113,7 +116,7 @@ const strictBoundaryLines = ({ tag }: StrictParams): ReadonlyArray<string> => {
   }
   if (tag === 'projects-scope') {
     return [
-      'ALL file operations MUST resolve inside one of these subfolders. Do NOT create files at the session directory root or outside it.',
+      'ALL file operations MUST resolve inside one of these mounts. Do NOT create files at the session folder root or outside the mounts.',
     ];
   }
   return STRICT_DIR_LINES;
@@ -132,6 +135,12 @@ export const buildScopeGuard = ({
     (project) => !mounts.some((mount) => mount.projectId === project.id),
   );
   const tag = guardTag({ mounts, projects, isSessionDirScope });
+  const mountedLines =
+    tag === 'projects-scope'
+      ? []
+      : projects
+          .filter((project) => mounts.some((mount) => mount.projectId === project.id))
+          .map((project) => projectLine({ project, mounts }));
   const teachingLines =
     unmounted.length > 0
       ? [
@@ -142,7 +151,7 @@ export const buildScopeGuard = ({
           ...(mounts.length === 0 ? [SCOUTING_LINE] : []),
           ...(canWrite ? [materializeLine({ isBridgeServing })] : []),
         ]
-      : strictBoundaryLines({ tag });
+      : [...mountedLines, ...strictBoundaryLines({ tag })];
   return [
     `[${tag}]`,
     ...headLines({ tag, containerDir, workingDir, mounts }),

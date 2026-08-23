@@ -1,4 +1,5 @@
 import type { Agent, SessionEventKind } from '@goodboy/types';
+import { isWorkflowRunComplete } from '../../workflows/isWorkflowRunComplete';
 import type {
   TimelineAgentEntry,
   TimelineAnswerEntry,
@@ -164,11 +165,14 @@ const isSettled = ({ agent }: { readonly agent: Agent }): boolean =>
   agent.status === 'completed' || agent.status === 'skipped';
 
 const isRunFinished = ({ entry }: { readonly entry: TimelineRunEntry }): boolean => {
-  const steps = stepAgentsOf({ entry });
-  if (steps.length === 0) {
-    return entry.run.discardedAt != null;
+  if (entry.run.discardedAt != null) {
+    return true;
   }
-  return steps.every((agent) => isSettled({ agent }));
+  return isWorkflowRunComplete({
+    run: entry.run,
+    workflow: entry.workflow,
+    agents: stepAgentsOf({ entry }),
+  });
 };
 
 type EmitContext = {
@@ -206,7 +210,11 @@ const emitAgent = ({
       identityIndex: identity?.index ?? null,
       isMuted,
       originRowId: entry.id,
-      shape: entry.children.every((child) => isSettled({ agent: child.agent })) ? 'merged' : 'open',
+      shape:
+        isSettled({ agent: entry.agent }) &&
+        entry.children.every((child) => isSettled({ agent: child.agent }))
+          ? 'merged'
+          : 'open',
     });
     for (const child of entry.children) {
       emitAgent({

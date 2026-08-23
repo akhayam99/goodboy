@@ -37,6 +37,19 @@ type OpenQuestion = {
 const { store } = vi.hoisted(() => {
   return {
     store: {
+      sessionProjectMounts: {} as Record<
+        string,
+        ReadonlyArray<{
+          projectId: string;
+          mountName: string;
+          worktreePath: string;
+          repoRoot: string;
+          branch: string;
+        }>
+      >,
+      projects: [] as ReadonlyArray<{ id: string; kind: 'repo' | 'folder' }>,
+      sessionActiveProject: {} as Record<string, string>,
+      workspaces: [] as ReadonlyArray<{ id: string; profile?: { bio: string | null } }>,
       sessionSlots: {
         'session-1': [
           { key: 'goal', value: 'ship the feature', enabled: true },
@@ -213,7 +226,7 @@ describe('ContextPane', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Context' })).toBeDefined();
     expect(
       screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
-    ).toEqual(['Session summary', 'Decisions']);
+    ).toEqual(['Working set', 'Session summary', 'Decisions']);
   });
 
   it('offers the way into each empty region rather than a placeholder', () => {

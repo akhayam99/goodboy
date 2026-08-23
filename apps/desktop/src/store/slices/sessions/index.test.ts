@@ -1180,14 +1180,16 @@ describe('store contract', () => {
       return { store, session };
     };
 
-    it('mounts a declared project lazily under the session container', async () => {
+    it('mounts a declared project lazily inside the project repo', async () => {
       const { store, session } = await seedMultiProjectSession();
       const db = await import('@goodboy/db');
       const containerDir = await store.getState().ensureSessionContainer({
         sessionId: session.id,
       });
+      const sessionSlug = containerDir.split('/').pop() ?? '';
+      const mountPath = `/tmp/api/.goodboy/worktrees/${sessionSlug}`;
       createWorktreeSpy.mockResolvedValueOnce({
-        worktreePath: `${containerDir}/api`,
+        worktreePath: mountPath,
         branchName: 'goodboy/ship-scope-1234abcd',
         slug: 'ship-scope-1234abcd',
         reused: false,
@@ -1202,15 +1204,15 @@ describe('store contract', () => {
       expect(createWorktreeSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           repoPath: '/tmp/api',
-          parentDir: containerDir,
-          dirName: 'api',
+          parentDir: '/tmp/api/.goodboy/worktrees',
+          dirName: sessionSlug,
         }),
       );
       expect(vi.mocked(db.insertSessionWorktree)).toHaveBeenLastCalledWith(
         expect.anything(),
         expect.objectContaining({
           sessionId: session.id,
-          worktreePath: `${containerDir}/api`,
+          worktreePath: mountPath,
           branch: 'goodboy/ship-scope-1234abcd',
           parallelIndex: 1,
           projectId: API_PROJECT_ID,

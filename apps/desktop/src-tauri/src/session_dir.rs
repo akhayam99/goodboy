@@ -215,9 +215,9 @@ pub fn session_dir_remove(args: RemoveArgs) -> Result<(), SessionDirError> {
     let target = absolute_path(expand_home(&args.path)?)?;
     let is_contained = match (std::fs::canonicalize(&base), std::fs::canonicalize(&target)) {
         (Ok(resolved_base), Ok(resolved_target)) => {
-            resolved_target.parent() == Some(resolved_base.as_path())
+            resolved_target.starts_with(&resolved_base) && resolved_target != resolved_base
         }
-        _ => target.parent() == Some(base.as_path()),
+        _ => target.starts_with(&base) && target != base,
     };
     if !is_contained {
         return Err(SessionDirError::OutsideWorkspace);
@@ -293,6 +293,39 @@ mod tests {
             serde_json::from_slice::<SessionMarker>(&marker_after_reuse).unwrap();
         assert_eq!(marker_after_reuse.created_at, first_created_at);
         assert_eq!(marker_after_reuse.workspace_id, "workspace-1");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn removes_a_nested_session_directory_and_refuses_anything_else() {
+        let root = test_root("simple-session-remove");
+        let created = session_dir_create(CreateArgs {
+            base_path: root.to_string_lossy().into_owned(),
+            slug: "Study Plan".to_string(),
+            directory_name: None,
+            session_id: "session-1".to_string(),
+            workspace_id: "workspace-1".to_string(),
+        })
+        .unwrap();
+
+        super::session_dir_remove(super::RemoveArgs {
+            base_path: root.to_string_lossy().into_owned(),
+            path: created.worktree_path.clone(),
+        })
+        .unwrap();
+        assert!(!Path::new(&created.worktree_path).exists());
+
+        let outside = super::session_dir_remove(super::RemoveArgs {
+            base_path: root.to_string_lossy().into_owned(),
+            path: std::env::temp_dir().to_string_lossy().into_owned(),
+        });
+        assert!(matches!(outside, Err(SessionDirError::OutsideWorkspace)));
+
+        let base_itself = super::session_dir_remove(super::RemoveArgs {
+            base_path: root.to_string_lossy().into_owned(),
+            path: root.to_string_lossy().into_owned(),
+        });
+        assert!(matches!(base_itself, Err(SessionDirError::OutsideWorkspace)));
         std::fs::remove_dir_all(root).unwrap();
     }
 

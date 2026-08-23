@@ -54,7 +54,7 @@ const AGENT_ID = 'agent-story' as AgentId;
 const APP_PROJECT_ID = 'project-app' as ProjectId;
 const WEB_PROJECT_ID = 'project-web' as ProjectId;
 const CONTAINER = '/tmp/sessions/goal-12345678';
-const WEB_MOUNT_PATH = `${CONTAINER}/web`;
+const WEB_MOUNT_PATH = '/tmp/web/.goodboy/worktrees/goal-12345678';
 const WEB_BRANCH = 'goodboy/goal-12345678';
 
 const workspace = buildStoryWorkspace({ id: WORKSPACE_ID });
@@ -167,7 +167,11 @@ describe('story: an agent asks for write access with the materialize marker', ()
 
     expect(spawnedArgs()['workingDir']).toBe(CONTAINER);
     expect(storySpies.createWorktree).toHaveBeenCalledWith(
-      expect.objectContaining({ repoPath: '/tmp/web', parentDir: CONTAINER, dirName: 'web' }),
+      expect.objectContaining({
+        repoPath: '/tmp/web',
+        parentDir: '/tmp/web/.goodboy/worktrees',
+        dirName: 'goal-12345678',
+      }),
     );
     const mounts = useAppStore.getState().sessionProjectMounts[SESSION_ID] ?? [];
     expect(mounts.map((mount) => mount.projectId)).toEqual([WEB_PROJECT_ID]);

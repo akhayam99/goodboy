@@ -30,8 +30,29 @@ const DECISIONS = [
   '- soft delete',
 ].join('\n');
 
+type StoreMount = {
+  projectId: string;
+  mountName: string;
+  worktreePath: string;
+  repoRoot: string;
+  branch: string;
+};
+
 const { store } = vi.hoisted(() => ({
   store: {
+    sessionProjectMounts: {} as Record<
+      string,
+      ReadonlyArray<{
+        projectId: string;
+        mountName: string;
+        worktreePath: string;
+        repoRoot: string;
+        branch: string;
+      }>
+    >,
+    projects: [] as ReadonlyArray<{ id: string; kind: 'repo' | 'folder' }>,
+    sessionActiveProject: {} as Record<string, string>,
+    workspaces: [] as ReadonlyArray<{ id: string; profile?: { bio: string | null } }>,
     sessionSlots: {} as Record<string, Array<{ key: string; value: string; enabled: boolean }>>,
     sessionLoading: {
       'session-1': {
@@ -129,6 +150,10 @@ const sectionFor = (name: string): HTMLElement => {
 };
 
 beforeEach(() => {
+  store.sessionProjectMounts = {};
+  store.projects = [];
+  store.sessionActiveProject = {};
+  store.workspaces = [{ id: 'workspace-1' }];
   store.sessionSlots['session-1'] = slots();
   store.sessionSlotsLoad['session-1'] = 'loaded';
   store.sessionLoading['session-1'] = {
@@ -186,7 +211,7 @@ describe('Context regions', () => {
 
     expect(
       screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
-    ).toEqual(['Session summary', 'Decisions']);
+    ).toEqual(['Working set', 'Session summary', 'Decisions']);
     expect(screen.queryByRole('tablist')).toBeNull();
   });
 
@@ -528,5 +553,78 @@ describe('Decisions rows', () => {
       (within(decisions).getByRole('button', { name: 'Edit decision 1' }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
+  });
+});
+
+describe('Working set', () => {
+  const appMount: StoreMount = {
+    projectId: 'project-app',
+    mountName: 'app',
+    worktreePath: '/tmp/app/.goodboy/worktrees/goal-12345678',
+    repoRoot: '/tmp/app',
+    branch: 'goodboy/goal',
+  };
+  const notesMount: StoreMount = {
+    projectId: 'project-notes',
+    mountName: 'notes',
+    worktreePath: '/tmp/notes/goal-12345678',
+    repoRoot: '/tmp/notes',
+    branch: '',
+  };
+
+  const seedMounts = () => {
+    store.sessionProjectMounts = { 'session-1': [appMount, notesMount] };
+    store.projects = [
+      { id: 'project-app', kind: 'repo' },
+      { id: 'project-notes', kind: 'folder' },
+    ];
+    store.sessionActiveProject = { 'session-1': 'project-app' };
+  };
+
+  it('says quietly that nothing is mounted yet on a fresh session', () => {
+    render(<ContextPane session={SESSION} />);
+    const workingSet = sectionFor('Working set');
+
+    expect(within(workingSet).getByText('This session has no mounted projects yet.')).toBeDefined();
+  });
+
+  it('lists each mounted project with branch, path, and the active marker', () => {
+    seedMounts();
+    render(<ContextPane session={SESSION} />);
+    const workingSet = sectionFor('Working set');
+
+    expect(within(workingSet).getByText('app')).toBeDefined();
+    expect(within(workingSet).getByText('goodboy/goal')).toBeDefined();
+    expect(within(workingSet).getByText('/tmp/app/.goodboy/worktrees/goal-12345678')).toBeDefined();
+    expect(within(workingSet).getByText('notes')).toBeDefined();
+    expect(within(workingSet).getByText('/tmp/notes/goal-12345678')).toBeDefined();
+    expect(within(workingSet).getAllByText('Active')).toHaveLength(1);
+    expect(within(workingSet).queryByText('This session has no mounted projects yet.')).toBeNull();
+  });
+
+  it('shows the workspace identity line only when the profile has a bio', () => {
+    store.workspaces = [
+      { id: 'workspace-1', profile: { bio: 'A tiny consultancy shipping CLIs' } },
+    ];
+    const { unmount } = render(<ContextPane session={SESSION} />);
+
+    expect(
+      within(sectionFor('Working set')).getByText('A tiny consultancy shipping CLIs'),
+    ).toBeDefined();
+
+    unmount();
+    store.workspaces = [{ id: 'workspace-1' }];
+    render(<ContextPane session={SESSION} />);
+
+    expect(within(sectionFor('Working set')).queryByText(/consultancy/)).toBeNull();
+  });
+
+  it('stays derived and read-only, with no controls to edit it', () => {
+    seedMounts();
+    render(<ContextPane session={SESSION} />);
+    const workingSet = sectionFor('Working set');
+
+    expect(within(workingSet).queryAllByRole('button')).toHaveLength(0);
+    expect(within(workingSet).queryAllByRole('textbox')).toHaveLength(0);
   });
 });

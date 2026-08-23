@@ -34,7 +34,7 @@ export const ProjectsPane = ({ session }: Props) => {
   return (
     <PaneShell
       title="Projects"
-      description="Mounting a project checks it out into this session so agents can work on its code."
+      description="Mounting a project checks it out into this session so agents can work on its code. Agents mount projects on their own when a task needs to write into one. Mounting manually pins the project up front."
     >
       {projects.length === 0 ? (
         <LensEmptyState

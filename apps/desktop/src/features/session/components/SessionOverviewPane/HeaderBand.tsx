@@ -1,23 +1,21 @@
 import { useEffect, useRef } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import { Input, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
-import { useAppStore, useCurrentWorkspace } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../session-stage';
-import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { SummarizerBadge } from '../SummarizerBadge';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { EditorMenu } from './EditorMenu';
 import { SessionGitActions } from '../SessionWorkspace/parts/SessionGitActions';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { VITAL_CHIP } from './vitalChip';
 import { SessionDestructiveActions } from './SessionDestructiveActions';
-import { BranchChip } from './BranchChip';
 import { LinkIssueAction } from './LinkIssueAction';
-import { ScopeSummary } from './ScopeSummary';
+import { ProjectScopeChip } from './ProjectScopeChip';
 import { SessionCostChip } from './SessionCostChip';
 import { StatusRowRequest } from './StatusRowRequest';
 import { LinkedWorkChips } from './LinkedWorkChips';
-import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 
 type Props = {
   readonly session: Session;
@@ -58,10 +56,6 @@ export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
     titleFieldRef.current?.querySelector('input')?.select();
   }, [rename.editing]);
 
-  const workspace = useCurrentWorkspace();
-  const repo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
-  const storedBranch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
-  const branch = repo != null && repo.mountName != null ? repo.branch : storedBranch;
   const goalText = session.goal === '' ? 'Untitled session' : session.goal;
   const reasonVisible = stage.reason !== '' && !REASON_HIDDEN.has(stage.reason);
 
@@ -126,19 +120,17 @@ export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
           ) : null}
           <SummarizerBadge sessionId={sessionId} />
           <SessionCostChip sessionId={sessionId} />
-          {branch != null ? (
-            <BranchChip
-              branch={branch}
-              mountName={repo?.mountName ?? null}
-              sessionId={sessionId}
-              canEdit={workspace != null && !isBranchlessSession({ branch })}
-            />
-          ) : null}
-          <ScopeSummary
+          <ProjectScopeChip
             sessionId={sessionId}
             workspaceId={session.workspaceId}
             onSelectLens={onSelectLens}
           />
+          <Tooltip content="Decisions and session summary">
+            <button type="button" onClick={() => onSelectLens('context')} className={VITAL_CHIP}>
+              <CONCEPT_ICONS.decisions size={11} aria-hidden />
+              <span>Context</span>
+            </button>
+          </Tooltip>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />

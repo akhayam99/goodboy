@@ -46,7 +46,7 @@ export type SessionEventGlyph = {
 };
 
 const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
-  worktree_created: { icon: FolderPlus, tone: 'neutral', label: 'Worktree' },
+  worktree_created: { icon: FolderPlus, tone: 'neutral', label: 'Session folder' },
   branch_created: { icon: GitBranch, tone: 'info', label: 'Branch' },
   branch_switched: { icon: GitBranch, tone: 'info', label: 'Branch' },
   issue_linked: { icon: Link2, tone: 'neutral', label: 'Issue' },
@@ -96,7 +96,9 @@ export const sessionEventTitle = ({ event }: TitleParams): string => {
   const { payload } = event;
   switch (event.kind) {
     case 'worktree_created':
-      return payload?.worktreePath ?? 'Worktree created';
+      return payload?.worktreePath == null
+        ? 'Session folder created'
+        : `Session folder created at ${payload.worktreePath}`;
     case 'branch_created':
       return payload?.branch == null ? 'Branch created' : `Branch created: ${payload.branch}`;
     case 'branch_switched':

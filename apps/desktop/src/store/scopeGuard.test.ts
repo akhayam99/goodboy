@@ -40,7 +40,7 @@ const web = buildProject({ id: 'project-web' as ProjectId, name: 'web', rootPath
 const appMount: SessionProjectMount = {
   projectId: app.id,
   mountName: 'app',
-  worktreePath: '/tmp/sessions/goal/app',
+  worktreePath: '/tmp/app/.goodboy/worktrees/goal',
   repoRoot: '/tmp/app',
   branch: 'goodboy/goal',
 };
@@ -48,7 +48,7 @@ const appMount: SessionProjectMount = {
 const webMount: SessionProjectMount = {
   projectId: web.id,
   mountName: 'web',
-  worktreePath: '/tmp/sessions/goal/web',
+  worktreePath: '/tmp/web/.goodboy/worktrees/goal',
   repoRoot: '/tmp/web',
   branch: 'goodboy/goal-web',
 };
@@ -109,15 +109,17 @@ describe('buildScopeGuard', () => {
 
     expect(guard).toContain('[worktree-scope]');
     expect(guard).toContain(
-      'You are operating inside an isolated git worktree at: /tmp/sessions/goal/app',
+      'You are operating inside an isolated git worktree at: /tmp/app/.goodboy/worktrees/goal',
     );
-    expect(guard).toContain('- app (repo) root: /tmp/app | materialized at /tmp/sessions/goal/app');
+    expect(guard).toContain(
+      '- app (repo) root: /tmp/app | materialized at /tmp/app/.goodboy/worktrees/goal',
+    );
     expect(guard).toContain('- web (repo) root: /tmp/web | NOT materialized');
     expect(guard).toContain('<<materialize: <project name> | <why you need it>>>');
     expect(guard).not.toContain('No project is materialized yet');
   });
 
-  it('drops the inventory and materialize teaching once every project is mounted', () => {
+  it('keeps the mount inventory but drops the teaching once every project is mounted', () => {
     const guard = buildScopeGuard({
       ...base,
       workingDir: appMount.worktreePath,
@@ -126,12 +128,16 @@ describe('buildScopeGuard', () => {
     });
 
     expect(guard).toContain('[worktree-scope]');
+    expect(guard).toContain(
+      '- app (repo) root: /tmp/app | materialized at /tmp/app/.goodboy/worktrees/goal (branch goodboy/goal)',
+    );
     expect(guard).toContain('ALL file operations (Read/Write/Edit/Bash file paths)');
     expect(guard).not.toContain('NOT materialized');
-    expect(guard).not.toContain('materialize');
+    expect(guard).not.toContain('<<materialize:');
+    expect(guard.split('\n')).toHaveLength(7);
   });
 
-  it('keeps the projects-scope grammar when every mount exists', () => {
+  it('lists every mount with its path and branch when every mount exists', () => {
     const guard = buildScopeGuard({
       ...base,
       projects: [app, web],
@@ -139,9 +145,15 @@ describe('buildScopeGuard', () => {
     });
 
     expect(guard).toContain('[projects-scope]');
-    expect(guard).toContain('Each project lives in its own subfolder: app, web.');
-    expect(guard).toContain('ALL file operations MUST resolve inside one of these subfolders.');
+    expect(guard).toContain(
+      'You are operating across 2 materialized project mounts from this session folder: /tmp/sessions/goal',
+    );
+    expect(guard).toContain('- app at /tmp/app/.goodboy/worktrees/goal (branch goodboy/goal)');
+    expect(guard).toContain('- web at /tmp/web/.goodboy/worktrees/goal (branch goodboy/goal-web)');
+    expect(guard).not.toContain('subfolder');
+    expect(guard).toContain('ALL file operations MUST resolve inside one of these mounts.');
     expect(guard).not.toContain('NOT materialized');
+    expect(guard.split('\n')).toHaveLength(7);
   });
 
   it('keeps the session-directory grammar for a mounted folder project', () => {
@@ -168,7 +180,10 @@ describe('buildScopeGuard', () => {
 
     expect(guard).toContain('[session-directory-scope]');
     expect(guard).toContain('You are operating inside this session directory: /tmp/notes/goal');
-    expect(guard).not.toContain('materialize');
+    expect(guard).toContain(
+      '- notes (folder) root: /tmp/notes | materialized at /tmp/notes/goal (no branch)',
+    );
+    expect(guard).not.toContain('<<materialize:');
   });
 
   it('falls back to the strict worktree grammar for a session without projects', () => {

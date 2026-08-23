@@ -20,6 +20,7 @@ vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/worktree/worktree', () => ({
   removeWorktree,
   removeSessionDirectory: vi.fn(async () => undefined),
+  tidyRepoGoodboyDir: vi.fn(async () => undefined),
 }));
 vi.mock('../../../features/chat/turn', () => ({ cancelTurn: vi.fn(async () => undefined) }));
 

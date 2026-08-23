@@ -7,9 +7,12 @@ import type {
   SessionEventId,
   SessionEventKind,
   SessionId,
+  Step,
   StepId,
   Workflow,
+  WorkflowExecutionMode,
   WorkflowId,
+  WorkflowOrchestrationOutcome,
   WorkflowRun,
   WorkflowRunId,
   WorkspaceId,
@@ -89,14 +92,27 @@ type WorkflowParams = {
   readonly runId?: WorkflowRunId;
   readonly name?: string;
   readonly createdAt: string;
+  readonly stepIds?: ReadonlyArray<string>;
+  readonly executionMode?: WorkflowExecutionMode;
+  readonly orchestrationOutcome?: WorkflowOrchestrationOutcome;
 };
 
 const attachedWorkflow = ({
   runId = RUN_ID,
   name = 'Release workflow',
   createdAt,
+  stepIds = [],
+  executionMode = 'static',
+  orchestrationOutcome,
 }: WorkflowParams): { readonly run: WorkflowRun; readonly workflow: Workflow } => {
   const workflowId = typedString<WorkflowId>({ value: `workflow-${runId}` });
+  const steps: ReadonlyArray<Step> = stepIds.map((stepId, index) => ({
+    id: typedString<StepId>({ value: `step-${stepId}` }),
+    workflowId,
+    ordinal: index,
+    name: stepId,
+    promptPrefix: '',
+  }));
   return {
     run: {
       id: runId,
@@ -105,7 +121,8 @@ const attachedWorkflow = ({
       currentStep: 0,
       autoRun: false,
       triggerMode: 'manual',
-      executionMode: 'static',
+      executionMode,
+      ...(orchestrationOutcome != null ? { orchestrationOutcome } : {}),
       createdAt: typedString<IsoDateTime>({ value: createdAt }),
     },
     workflow: {
@@ -113,7 +130,7 @@ const attachedWorkflow = ({
       workspaceId: typedString<WorkspaceId>({ value: 'workspace-1' }),
       name,
       description: '',
-      steps: [],
+      steps,
       createdAt: typedString<IsoDateTime>({ value: createdAt }),
       updatedAt: typedString<IsoDateTime>({ value: createdAt }),
     },
@@ -862,6 +879,172 @@ describe('buildTimelineStream, session events', () => {
     });
 
     expect(groups.some((group) => group.isMuted)).toBe(false);
+  });
+
+  it('keeps the lane of a live dynamic run open when its spawned steps have settled', () => {
+    const { items, groups } = stream({
+      workflows: [
+        attachedWorkflow({
+          createdAt: localIso({ day: 18, hour: 8 }),
+          stepIds: ['one', 'two'],
+          executionMode: 'dynamic',
+        }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({
+          id: 'two',
+          ordinal: 2,
+          startedAt: localIso({ day: 18, hour: 10 }),
+          completedAt: localIso({ day: 18, hour: 10, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:run:run-1');
+    const runRow = items.find((item) => item.id === 'run:run-1');
+
+    expect(lane?.shape).toBe('open');
+    expect(runRow?.kind === 'row' ? runRow.markerState : null).toBe('pending');
+  });
+
+  it('closes the lane of a dynamic run once the orchestrator declares it done', () => {
+    const { items, groups } = stream({
+      workflows: [
+        attachedWorkflow({
+          createdAt: localIso({ day: 18, hour: 8 }),
+          stepIds: ['one', 'two'],
+          executionMode: 'dynamic',
+          orchestrationOutcome: 'done',
+        }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({
+          id: 'two',
+          ordinal: 2,
+          startedAt: localIso({ day: 18, hour: 10 }),
+          completedAt: localIso({ day: 18, hour: 10, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:run:run-1');
+    const runRow = items.find((item) => item.id === 'run:run-1');
+
+    expect(lane?.shape).toBe('merged');
+    expect(runRow?.kind === 'row' ? runRow.markerState : null).toBe('done');
+  });
+
+  it('keeps the lane of a static run open while planned steps are still unspawned', () => {
+    const { groups } = stream({
+      workflows: [
+        attachedWorkflow({
+          createdAt: localIso({ day: 18, hour: 8 }),
+          stepIds: ['one', 'two', 'three'],
+        }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:run:run-1');
+
+    expect(lane?.shape).toBe('open');
+  });
+
+  it('closes the lane of a static run when every planned step has settled', () => {
+    const { groups } = stream({
+      workflows: [
+        attachedWorkflow({
+          createdAt: localIso({ day: 18, hour: 8 }),
+          stepIds: ['one', 'two'],
+        }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({
+          id: 'two',
+          ordinal: 2,
+          startedAt: localIso({ day: 18, hour: 10 }),
+          completedAt: localIso({ day: 18, hour: 10, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:run:run-1');
+
+    expect(lane?.shape).toBe('merged');
+  });
+
+  it('keeps a parent agent group open while the parent still runs over settled children', () => {
+    const { groups } = stream({
+      agents: [
+        agent({
+          id: 'parent',
+          ordinal: 1,
+          status: 'running',
+          startedAt: localIso({ day: 18, hour: 9 }),
+        }),
+        agent({
+          id: 'child',
+          ordinal: 2,
+          parentAgentId: 'parent',
+          startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 40 }),
+        }),
+      ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:agent:parent');
+
+    expect(lane?.shape).toBe('open');
+  });
+
+  it('closes a parent agent group only when parent and children have all settled', () => {
+    const { groups } = stream({
+      agents: [
+        agent({
+          id: 'parent',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 10 }),
+        }),
+        agent({
+          id: 'child',
+          ordinal: 2,
+          parentAgentId: 'parent',
+          startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 40 }),
+        }),
+      ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:agent:parent');
+
+    expect(lane?.shape).toBe('merged');
   });
 
   it('gives a chained agent group a colored lane', () => {

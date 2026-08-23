@@ -93,6 +93,14 @@ export const removeWorktree = async (repoPath: string, worktreePath: string): Pr
   await invoke('worktree_remove', { repoPath, worktreePath });
 };
 
+type TidyRepoGoodboyDirParams = {
+  readonly repoPath: string;
+};
+
+export const tidyRepoGoodboyDir = async ({ repoPath }: TidyRepoGoodboyDirParams): Promise<void> => {
+  await invoke('worktree_tidy_goodboy', { repoPath });
+};
+
 export type OrphanWorktree = {
   readonly path: string;
   readonly name: string;

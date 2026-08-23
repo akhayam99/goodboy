@@ -23,12 +23,12 @@ const event = ({ kind, payload }: MakeParams): SessionEvent =>
   }) as unknown as SessionEvent;
 
 describe('sessionEventTitle', () => {
-  it('shows the worktree path so it can be copied', () => {
+  it('reads the container event as the session folder, path included', () => {
     expect(
       sessionEventTitle({
         event: event({ kind: 'worktree_created', payload: { worktreePath: '/repo/wt/gb-trace' } }),
       }),
-    ).toBe('/repo/wt/gb-trace');
+    ).toBe('Session folder created at /repo/wt/gb-trace');
   });
 
   it('names both branches of a switch', () => {

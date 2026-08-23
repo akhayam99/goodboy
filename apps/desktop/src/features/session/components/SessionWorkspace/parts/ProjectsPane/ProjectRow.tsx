@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Folder, FolderGit2, GitBranch } from 'lucide-react';
-import { Button, Chip, cn, formatError } from '@goodboy/ui';
+import { AnchoredPopover, Button, Chip, cn, formatError, useDropdown } from '@goodboy/ui';
 import type { Project, SessionId, SessionProjectMount } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
+import { BranchSwitchPanel } from '../../../../../worktree/BranchSwitchPanel';
 
 const MANUAL_REASON = 'added manually by the user';
 
@@ -21,7 +22,10 @@ export const ProjectRow = ({ sessionId, project, mount, isActive, canSwitch }: P
   const emitNotification = useAppStore((state) => state.emitNotification);
   const [isBusy, setIsBusy] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  const branchDropdown = useDropdown({ width: 'w-96', expectedHeight: 360 });
   const GlyphIcon = project.kind === 'repo' ? FolderGit2 : Folder;
+  const canSwitchBranch =
+    mount != null && isActive && project.kind === 'repo' && mount.branch !== '';
 
   const notifyFailure = (title: string, error: unknown) => {
     void emitNotification('error', 'warning', title, formatError(error), {
@@ -102,6 +106,26 @@ export const ProjectRow = ({ sessionId, project, mount, isActive, canSwitch }: P
         </div>
       ) : (
         <div className="flex shrink-0 items-center gap-1.5">
+          {canSwitchBranch ? (
+            <AnchoredPopover
+              dropdown={branchDropdown}
+              role="dialog"
+              ariaLabel="Switch branch"
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-haspopup="dialog"
+                  aria-expanded={branchDropdown.open}
+                  onClick={branchDropdown.toggle}
+                >
+                  Switch branch
+                </Button>
+              }
+            >
+              <BranchSwitchPanel sessionId={sessionId} onDone={branchDropdown.close} />
+            </AnchoredPopover>
+          ) : null}
           {canSwitch && !isActive ? (
             <Button
               variant="ghost"

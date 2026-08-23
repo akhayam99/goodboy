@@ -44,6 +44,14 @@ vi.mock('../../../../../../shared/components/PaneShell', () => ({
   ),
 }));
 
+vi.mock('../../../../../worktree/BranchSwitchPanel', () => ({
+  BranchSwitchPanel: ({ onDone }: { onDone: () => void }) => (
+    <button type="button" onClick={onDone}>
+      Complete switch
+    </button>
+  ),
+}));
+
 import { ProjectsPane } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -176,6 +184,31 @@ describe('ProjectsPane', () => {
       'worktree busy',
       { sessionId: SESSION_ID, workspaceId: 'ws-1' },
     );
+  });
+
+  it('offers branch switching on the active mounted row only', () => {
+    render(<ProjectsPane session={session} />);
+
+    const switches = screen.getAllByRole('button', { name: 'Switch branch' });
+    expect(switches).toHaveLength(1);
+    expect(switches[0]?.closest('[class*="rounded-lg"]')?.textContent).toContain('web');
+
+    fireEvent.click(switches[0]!);
+    expect(screen.getByRole('dialog', { name: 'Switch branch' })).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Complete switch' }));
+    expect(screen.queryByRole('dialog', { name: 'Switch branch' })).toBeNull();
+  });
+
+  it('keeps branch switching off a branchless mounted row', () => {
+    store.sessionProjectMounts = {
+      [SESSION_ID]: [{ ...mount(API_PROJECT_ID, 'api'), branch: '' }],
+    };
+    store.sessionActiveProject = { [SESSION_ID]: API_PROJECT_ID };
+
+    render(<ProjectsPane session={session} />);
+
+    expect(screen.queryByRole('button', { name: 'Switch branch' })).toBeNull();
   });
 
   it('shows an empty state when the workspace has no projects', () => {

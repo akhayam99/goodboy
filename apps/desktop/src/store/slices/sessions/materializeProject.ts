@@ -119,8 +119,8 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
               repoPath: project.rootPath,
               branchPrefix: prefix,
               slug: sessionSlug,
-              parentDir: containerDir,
-              dirName: project.name,
+              parentDir: `${project.rootPath}/.goodboy/worktrees`,
+              dirName: sessionSlug,
               ...(adoptedBranch !== undefined ? { existingBranch: adoptedBranch } : {}),
               ...(adoptedFallbackRef !== undefined ? { fallbackRef: adoptedFallbackRef } : {}),
             })

@@ -2,13 +2,13 @@
 
 import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
 
 type Store = {
   sessions: ReadonlyArray<Session>;
   workspaces: ReadonlyArray<unknown>;
-  projects: ReadonlyArray<{ id: string; workspaceId: string }>;
+  projects: ReadonlyArray<{ id: string; workspaceId: string; kind?: string }>;
   sessionBranches: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   sessionProjectMounts: Record<string, ReadonlyArray<unknown>>;
@@ -41,7 +41,7 @@ const { store, hooks } = vi.hoisted(() => ({
   store: {
     sessions: [] as ReadonlyArray<Session>,
     workspaces: [] as ReadonlyArray<unknown>,
-    projects: [] as ReadonlyArray<{ id: string; workspaceId: string }>,
+    projects: [] as ReadonlyArray<{ id: string; workspaceId: string; kind?: string }>,
     sessionBranches: {} as Record<string, string>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
@@ -73,9 +73,10 @@ vi.mock('../SummarizerBadge', () => ({
   SummarizerBadge: () => <span data-testid="summarizer-badge" />,
 }));
 
-vi.mock('./BranchChip', () => ({
-  BranchChip: () => <span data-testid="branch-chip" />,
-}));
+vi.mock('../../../../app/components/Toast', () => {
+  const showToast = vi.fn();
+  return { useToast: () => ({ showToast }) };
+});
 
 vi.mock('./SessionCostChip', () => ({
   SessionCostChip: () => <span data-testid="cost-chip" />,
@@ -323,11 +324,11 @@ describe('HeaderBand', () => {
   it('keeps the scope entry out of a workspace with no projects', () => {
     render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />);
 
-    expect(screen.queryByRole('button', { name: /No projects mounted|Scoped to/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /No projects mounted/ })).toBeNull();
   });
 
   it('says no projects are mounted yet still opens the projects lens', () => {
-    store.projects = [{ id: 'project-1', workspaceId: 'ws-1' }];
+    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo' }];
     const onSelectLens = vi.fn();
     render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={onSelectLens} />);
 
@@ -335,30 +336,76 @@ describe('HeaderBand', () => {
     expect(onSelectLens).toHaveBeenCalledWith('projects');
   });
 
-  it('counts the mounted projects with a singular label for one', () => {
-    store.projects = [
-      { id: 'project-1', workspaceId: 'ws-1' },
-      { id: 'project-2', workspaceId: 'ws-1' },
-    ];
-    store.sessionProjectMounts = { [SESSION_ID]: [{ projectId: 'project-1' }] };
-    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />);
-
-    expect(screen.getByRole('button', { name: 'Scoped to 1 project' })).toBeDefined();
-  });
-
-  it('counts the mounted projects with a plural label and opens the projects lens', () => {
-    store.projects = [
-      { id: 'project-1', workspaceId: 'ws-1' },
-      { id: 'project-2', workspaceId: 'ws-1' },
-    ];
+  it('shows the active mount with its branch and opens the projects lens', () => {
+    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo' }];
     store.sessionProjectMounts = {
-      [SESSION_ID]: [{ projectId: 'project-1' }, { projectId: 'project-2' }],
+      [SESSION_ID]: [{ projectId: 'project-1', mountName: 'api', branch: 'goodboy/x' }],
     };
     const onSelectLens = vi.fn();
     render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={onSelectLens} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Scoped to 2 projects' }));
+    fireEvent.click(screen.getByRole('button', { name: 'api goodboy/x' }));
     expect(onSelectLens).toHaveBeenCalledWith('projects');
+  });
+
+  it('omits the branch part and the copy affordance on a branchless mount', () => {
+    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo' }];
+    store.sessionProjectMounts = {
+      [SESSION_ID]: [{ projectId: 'project-1', mountName: 'api', branch: '' }],
+    };
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'api' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /Copy branch/ })).toBeNull();
+  });
+
+  it('suffixes the mounts beyond the active one with a count', () => {
+    store.projects = [
+      { id: 'project-1', workspaceId: 'ws-1', kind: 'repo' },
+      { id: 'project-2', workspaceId: 'ws-1', kind: 'repo' },
+      { id: 'project-3', workspaceId: 'ws-1', kind: 'repo' },
+    ];
+    store.sessionProjectMounts = {
+      [SESSION_ID]: [
+        { projectId: 'project-1', mountName: 'api', branch: 'goodboy/x' },
+        { projectId: 'project-2', mountName: 'web', branch: 'goodboy/y' },
+        { projectId: 'project-3', mountName: 'docs', branch: 'goodboy/z' },
+      ],
+    };
+    store.sessionActiveProject = { [SESSION_ID]: 'project-2' };
+    const onSelectLens = vi.fn();
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={onSelectLens} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'web goodboy/y +2' }));
+    expect(onSelectLens).toHaveBeenCalledWith('projects');
+    expect(screen.queryByText('goodboy/x')).toBeNull();
+  });
+
+  it('copies the active branch from the chip without leaving the overview', async () => {
+    const writeText = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo' }];
+    store.sessionProjectMounts = {
+      [SESSION_ID]: [{ projectId: 'project-1', mountName: 'api', branch: 'goodboy/x' }],
+    };
+    const onSelectLens = vi.fn();
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={onSelectLens} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy branch goodboy/x' }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith('goodboy/x'));
+    expect(onSelectLens).not.toHaveBeenCalled();
+  });
+
+  it('offers a context shortcut in the vitals row that opens the context lens', () => {
+    const onSelectLens = vi.fn();
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={onSelectLens} />);
+
+    const chip = screen.getByRole('button', { name: 'Context' });
+    expect(chip.closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe(
+      'Decisions and session summary',
+    );
+    fireEvent.click(chip);
+    expect(onSelectLens).toHaveBeenCalledWith('context');
   });
 
   it('seats the link-issue action in the icon cluster of the title row', () => {
