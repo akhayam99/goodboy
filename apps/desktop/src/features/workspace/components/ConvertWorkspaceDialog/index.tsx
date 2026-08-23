@@ -73,9 +73,10 @@ type Orphan = {
 
 export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
   const convertProjectToRepo = useAppStore((state) => state.convertProjectToRepo);
-  const projectId = useAppStore(
-    (state) => state.projects?.find((project) => project.workspaceId === workspace.id)?.id ?? null,
+  const project = useAppStore(
+    (state) => state.projects?.find((candidate) => candidate.workspaceId === workspace.id) ?? null,
   );
+  const projectId = project?.id ?? null;
   const isGithubCliAvailable = useAppStore((s) => s.githubStatus?.available === true);
   const isGitlabConnected = useAppStore((s) =>
     (s.workspaceIntegrations[workspace.id] ?? []).some(
@@ -254,7 +255,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
       description={
         isConverted
           ? undefined
-          : 'Add a git repository to this workspace so sessions get their own branch and pull requests.'
+          : 'Give this project a git repository so sessions get their own branch and pull requests.'
       }
       footer={
         isConverted ? (
@@ -281,7 +282,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
         <div className="flex flex-col gap-3">
           <span className="flex items-center gap-1.5 text-xs text-success">
             <Check size={12} aria-hidden />
-            {workspace.name} is backed by git
+            {project?.name ?? workspace.name} is backed by git
           </span>
           <p className="text-xs leading-relaxed text-muted-foreground">
             New sessions get their own branch and worktree. The sessions you already have keep

@@ -101,7 +101,7 @@ const publishGithub = async ({
   const ghOpts = {
     cwd: repo.repoRoot,
     workspaceId: workspace.id,
-    memberWorkspaceId: repo.projectId,
+    projectId: repo.projectId,
   };
   try {
     const pullRequestId = await fetchPrNodeId(tauriGhRunner, target.repo, target.prNumber, ghOpts);

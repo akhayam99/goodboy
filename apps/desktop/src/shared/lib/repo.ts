@@ -12,14 +12,14 @@ export const validateGitRepo = async (path: string): Promise<GitRepoCheck> => {
   return invoke<GitRepoCheck>('validate_git_repo', { path });
 };
 
-type WorkspaceGitStatusParams = {
-  readonly workspacePath: string;
+type ProjectGitStatusParams = {
+  readonly projectPath: string;
 };
 
-export const workspaceGitStatus = async ({
-  workspacePath,
-}: WorkspaceGitStatusParams): Promise<WorkspaceGitStatus> => {
-  return invoke<WorkspaceGitStatus>('workspace_git_status', { workspacePath });
+export const projectGitStatus = async ({
+  projectPath,
+}: ProjectGitStatusParams): Promise<WorkspaceGitStatus> => {
+  return invoke<WorkspaceGitStatus>('project_git_status', { projectPath });
 };
 
 type CheckoutFastForwardParams = {

@@ -67,44 +67,26 @@ export const removeSessionDirectory = async ({
   await invoke('session_dir_remove', { args: { basePath, path } });
 };
 
-export type SimpleSessionScanEntry = {
-  readonly sessionId: SessionId;
-  readonly workspaceId: WorkspaceId;
-  readonly path: string;
-};
-
-type ScanSimpleSessionsParams = {
-  readonly rootPath: string;
-};
-
-export const scanSimpleSessions = async ({
-  rootPath,
-}: ScanSimpleSessionsParams): Promise<ReadonlyArray<SimpleSessionScanEntry>> => {
-  return invoke<ReadonlyArray<SimpleSessionScanEntry>>('simple_sessions_scan', { rootPath });
-};
-
-type WriteSimpleSessionMarkerParams = {
+type WriteSessionMarkerParams = {
   readonly path: string;
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
 };
 
-export const writeSimpleSessionMarker = async ({
+export const writeSessionMarker = async ({
   path,
   sessionId,
   workspaceId,
-}: WriteSimpleSessionMarkerParams): Promise<void> => {
-  await invoke('simple_session_marker_write', { path, sessionId, workspaceId });
+}: WriteSessionMarkerParams): Promise<void> => {
+  await invoke('session_marker_write', { path, sessionId, workspaceId });
 };
 
-type SimpleSessionDirExistsParams = {
+type SessionDirExistsParams = {
   readonly path: string;
 };
 
-export const simpleSessionDirExists = async ({
-  path,
-}: SimpleSessionDirExistsParams): Promise<boolean> => {
-  return invoke<boolean>('simple_session_dir_exists', { path });
+export const sessionDirExists = async ({ path }: SessionDirExistsParams): Promise<boolean> => {
+  return invoke<boolean>('session_dir_exists', { path });
 };
 
 export const removeWorktree = async (repoPath: string, worktreePath: string): Promise<void> => {

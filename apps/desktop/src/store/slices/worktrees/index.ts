@@ -3,7 +3,7 @@ import { changeSessionBranch } from './changeSessionBranch';
 import { reconcileOrphanWorktrees } from './reconcileOrphanWorktrees';
 import { reconcileSessionBranch } from './reconcileSessionBranch';
 import { removeOrphanWorktrees } from './removeOrphanWorktrees';
-import { setSessionActiveProject } from './setSessionActiveMount';
+import { setSessionActiveProject } from './setSessionActiveProject';
 import { squashSessionCommits } from './squashSessionCommits';
 import type { GetFn, SetFn } from './types';
 

@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { IntegrationCredentialId, SentryIntegrationConfig, WorkspaceId } from '@goodboy/types';
-import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
-import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
+import type { SentryIntegrationConfig, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { IntegrationCredentialPicker } from '../components/IntegrationCredentialPicker';
+import { ConnectForm } from '../components/ConnectForm';
+import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
 
 type Props = {
   workspaceId: WorkspaceId;
@@ -19,177 +18,68 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
   const connectSentry = useAppStore((s) => s.connectSentry);
   const disconnectIntegration = useAppStore((s) => s.disconnectIntegration);
 
-  const [token, setToken] = useState('');
   const [org, setOrg] = useState('');
   const [project, setProject] = useState('');
-  const [credentialId, setCredentialId] = useState<IntegrationCredentialId | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isDisconnectArmed, setIsDisconnectArmed] = useState(false);
 
-  const onConnect = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await connectSentry({
-        workspaceId,
-        token: token.trim(),
-        org: org.trim(),
-        project: project.trim(),
-        credentialId,
-      });
-      setToken('');
-      setOrg('');
-      setProject('');
-      onConnected?.();
-    } catch (err) {
-      setError(formatError(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onDisconnect = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await disconnectIntegration({ workspaceId, provider: 'sentry' });
-    } catch (err) {
-      setError(formatError(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const canConnect =
-    (credentialId !== null || token.trim().length > 0) &&
-    org.trim().length > 0 &&
-    project.trim().length > 0;
+  if (sentry != null && sentryConfig != null) {
+    return (
+      <IntegrationConnectedRow
+        provider="sentry"
+        primary={`Connected to ${sentryConfig.projectName ?? sentryConfig.project}`}
+        secondary={`${sentryConfig.org}/${sentryConfig.project}`}
+        disconnectDescription="Unlinks this project from the Sentry personal API key. The key stays saved for your other projects."
+        onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'sentry' })}
+      />
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-5">
-      {sentry && sentryConfig ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle/40 p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <CheckCircle2 size={14} aria-hidden className="text-success" />
-            Connected to {sentryConfig.projectName ?? sentryConfig.project}
-          </div>
-          <dl className="grid grid-cols-[8rem_1fr] gap-y-1 text-xs">
-            <dt className="text-muted-foreground">organization</dt>
-            <dd className="font-mono text-foreground">{sentryConfig.org}</dd>
-            <dt className="text-muted-foreground">project</dt>
-            <dd className="font-mono text-foreground">{sentryConfig.project}</dd>
-          </dl>
-          {isDisconnectArmed ? (
-            <InlineConfirm
-              role="danger"
-              icon={<Unplug size={12} aria-hidden />}
-              title="Disconnect Sentry?"
-              description="Unlinks this project from the Sentry personal API key. The key stays saved for your other projects."
-              confirmLabel="Disconnect Sentry"
-              autoDisarmMs={4000}
-              onConfirm={onDisconnect}
-              onCancel={() => setIsDisconnectArmed(false)}
-            />
-          ) : (
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={() => setIsDisconnectArmed(true)}
-              disabled={busy}
-            >
-              <Unplug size={12} aria-hidden />
-              Disconnect
-            </Button>
-          )}
-        </div>
-      ) : (
-        <>
-          <IntegrationCredentialPicker
-            provider="sentry"
-            selectedCredentialId={credentialId}
-            onSelect={(credential) => setCredentialId(credential?.id ?? null)}
-            isDisabled={busy}
-          />
-          {credentialId === null ? (
-            <div className="flex flex-col gap-2">
-              <label htmlFor="sentry-token" className="text-xs font-semibold text-foreground">
-                Personal API key
-              </label>
-              <a
-                href="https://sentry.io/settings/account/api/auth-tokens/"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
-              >
-                Create a user auth token in Sentry settings <ExternalLink size={10} aria-hidden />
-              </a>
-              <Input
-                id="sentry-token"
-                type="password"
-                autoFocus={shouldAutoFocus}
-                placeholder="sntryu_…"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                disabled={busy}
-              />
-            </div>
-          ) : null}
-          <div className="flex flex-col gap-2">
-            <label htmlFor="sentry-org" className="text-xs font-semibold text-foreground">
-              Organization slug
-            </label>
-            <Input
-              id="sentry-org"
-              placeholder="my-org"
-              value={org}
-              onChange={(e) => setOrg(e.target.value)}
-              disabled={busy}
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <label htmlFor="sentry-project" className="text-xs font-semibold text-foreground">
-              Project slug
-            </label>
-            <Input
-              id="sentry-project"
-              placeholder="my-project"
-              value={project}
-              onChange={(e) => setProject(e.target.value)}
-              disabled={busy}
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-          </div>
-          <p className="text-2xs leading-relaxed text-muted-foreground">
-            A key with issue read scope is enough. It is stored encrypted in your operating system
-            keychain. Goodboy sends it directly to Sentry over HTTPS; it never touches
-            Goodboy&apos;s own servers.
-          </p>
-        </>
-      )}
-
-      {error ? (
-        <div className="rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-xs text-danger">
-          {error}
-        </div>
-      ) : null}
-
-      {sentry ? null : (
-        <div className="flex justify-end">
-          <Button
-            onClick={() => void onConnect()}
-            disabled={busy || !canConnect}
-            className={busy ? 'animate-border-pulse' : undefined}
-          >
-            {busy ? 'Verifying…' : 'Connect'}
-          </Button>
-        </div>
-      )}
-    </div>
+    <ConnectForm
+      tokenId="sentry-token"
+      tokenLabel="Personal API key"
+      tokenPlaceholder="sntryu_…"
+      tokenLink={{
+        label: 'Get a user auth token from Sentry',
+        href: 'https://sentry.io/settings/account/api/auth-tokens/',
+      }}
+      credentialProvider="sentry"
+      config={{
+        presentation: 'after-token',
+        fields: [
+          {
+            id: 'sentry-org',
+            label: 'Organization slug',
+            placeholder: 'my-org',
+            value: org,
+            onValueChange: setOrg,
+          },
+          {
+            id: 'sentry-project',
+            label: 'Project slug',
+            placeholder: 'my-project',
+            value: project,
+            onValueChange: setProject,
+          },
+        ],
+      }}
+      isConfigComplete={org.trim() !== '' && project.trim() !== ''}
+      note={{
+        label: 'Where your key goes',
+        body: "A key with issue read scope is enough. It is stored encrypted in your operating system keychain and sent directly to Sentry over HTTPS; it never touches Goodboy's own servers.",
+      }}
+      shouldAutoFocus={shouldAutoFocus}
+      onSubmit={async ({ token, credentialId }) => {
+        await connectSentry({
+          workspaceId,
+          token,
+          org: org.trim(),
+          project: project.trim(),
+          credentialId,
+        });
+        setOrg('');
+        setProject('');
+        onConnected?.();
+      }}
+    />
   );
 };

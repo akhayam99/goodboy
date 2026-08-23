@@ -142,7 +142,7 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     >
       {(requestClose) =>
         !isConnected ? (
-          <div className="flex min-h-0 flex-1 items-center justify-center p-5">
+          <div className="flex min-h-0 flex-1 overflow-y-auto p-5">
             <ConnectIntegrationEmptyState
               provider="gitlab"
               workspaceId={workspaceId}

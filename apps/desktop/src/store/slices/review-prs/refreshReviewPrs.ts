@@ -80,7 +80,7 @@ export const refreshReviewPrs = (set: SetFn, get: GetFn) => {
           const prs = await listOpenPrsForRepo(tauriGhRunner, slug, {
             cwd: target.rootPath,
             workspaceId,
-            ...(target.projectId != null ? { memberWorkspaceId: target.projectId } : {}),
+            ...(target.projectId != null ? { projectId: target.projectId } : {}),
           });
           items.push(
             ...prs.map((pr) =>

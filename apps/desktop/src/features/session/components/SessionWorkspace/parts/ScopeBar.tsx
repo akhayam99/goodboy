@@ -9,7 +9,7 @@ type Props = {
   readonly sessionId: SessionId;
 };
 
-export const RepoScopeBar = ({ sessionId }: Props) => {
+export const ScopeBar = ({ sessionId }: Props) => {
   const mounts = useAppStore((state) => state.sessionProjectMounts[sessionId] ?? EMPTY_MOUNTS);
   const workspaceProjectCount = useAppStore((state) => {
     const session = state.sessions.find((candidate) => candidate.id === sessionId);

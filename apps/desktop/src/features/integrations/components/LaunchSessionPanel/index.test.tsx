@@ -11,7 +11,7 @@ const h = vi.hoisted(() => ({
     session: { id: 'session-9', goal: 'Fix the flake' },
   })),
   loadSetting: vi.fn(async () => null),
-  simpleSessionDirExists: vi.fn(async () => false),
+  sessionDirExists: vi.fn(async () => false),
   showToast: vi.fn(),
   store: {
     workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'dev' }] as ReadonlyArray<
@@ -41,7 +41,7 @@ vi.mock('../../../../app/components/Toast', () => ({
 vi.mock('../../../worktree/useBranchConflict', () => ({ useBranchConflict: () => null }));
 vi.mock('../../../worktree/worktree', () => ({
   removeWorktree: vi.fn(),
-  simpleSessionDirExists: h.simpleSessionDirExists,
+  sessionDirExists: h.sessionDirExists,
 }));
 
 import { LaunchSessionPanel } from './index';
@@ -71,7 +71,7 @@ const renderPanel = () =>
 beforeEach(() => {
   localStorage.clear();
   h.createSession.mockClear();
-  h.simpleSessionDirExists.mockClear();
+  h.sessionDirExists.mockClear();
   h.showToast.mockClear();
   h.store.workspaces = [{ id: 'workspace-1', rootPath: '/repo', kind: 'dev' }];
   h.store.projects = [
@@ -194,7 +194,7 @@ describe('LaunchSessionPanel', () => {
     h.store.projects = [
       { id: 'project-1', workspaceId: 'workspace-1', rootPath: '/notes', kind: 'folder' },
     ];
-    h.simpleSessionDirExists.mockResolvedValueOnce(true);
+    h.sessionDirExists.mockResolvedValueOnce(true);
 
     renderPanel();
     fireEvent.click(screen.getByRole('button', { name: /Session setup/ }));
@@ -203,7 +203,7 @@ describe('LaunchSessionPanel', () => {
     });
 
     await waitFor(() =>
-      expect(h.simpleSessionDirExists).toHaveBeenCalledWith({
+      expect(h.sessionDirExists).toHaveBeenCalledWith({
         path: '/notes/sessions/Existing folder',
       }),
     );
@@ -249,7 +249,7 @@ describe('LaunchSessionPanel', () => {
       target: { value: 'Issue 7 follow-up' },
     });
     await waitFor(() =>
-      expect(h.simpleSessionDirExists).toHaveBeenCalledWith({
+      expect(h.sessionDirExists).toHaveBeenCalledWith({
         path: '/notes/sessions/Issue 7 follow-up',
       }),
     );

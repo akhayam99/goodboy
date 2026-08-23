@@ -137,7 +137,7 @@ exports[`snapshot, empty states > NoWorkspaceScreen: no workspace, add-workspace
       <p
         class="max-w-md text-sm leading-relaxed text-muted-foreground"
       >
-        Point at a project folder to create your first workspace.
+        Start from a project folder, or create a workspace and add the projects it works on.
       </p>
     </div>
     <div

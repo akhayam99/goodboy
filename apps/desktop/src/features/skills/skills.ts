@@ -7,7 +7,7 @@ export type ResolveSkillInvocationArgs = {
   readonly skill: Skill;
   readonly args: ReadonlyArray<string>;
   readonly workingDir: string;
-  readonly workspaceRoot: string;
+  readonly projectRoot: string;
 };
 
 export type ResolveSkillInvocationResult = {
@@ -23,7 +23,7 @@ export const resolveSkillInvocation = async (
     skillId: input.skill.id,
     args: input.args,
     workingDir: input.workingDir,
-    workspaceRoot: input.workspaceRoot,
+    projectRoot: input.projectRoot,
   });
   return { resolvedPrompt, skillName: input.skill.name, args: input.args };
 };
@@ -97,7 +97,7 @@ type SkillInvokeArgs = {
   readonly skillId: SkillId;
   readonly args: ReadonlyArray<string>;
   readonly workingDir: string;
-  readonly workspaceRoot: string;
+  readonly projectRoot: string;
 };
 
 type SkillInvokeResult = {
@@ -123,7 +123,7 @@ async function invokeSkillInvoke(args: SkillInvokeArgs): Promise<SkillInvokeResu
     updatedAt: rawRow.updatedAt as IsoDateTime,
   };
 
-  const workspaceRoot = args.workspaceRoot;
+  const projectRoot = args.projectRoot;
 
   const tauriRunner: SkillScriptRunner = {
     async runScript(
@@ -136,7 +136,7 @@ async function invokeSkillInvoke(args: SkillInvokeArgs): Promise<SkillInvokeResu
           scriptPath,
           args: [...runArgs],
           workingDir: cwd,
-          workspaceRoot,
+          projectRoot,
         },
       });
       return result.stdout;

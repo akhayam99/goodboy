@@ -26,14 +26,14 @@ import { useAppStore } from '../../store';
 import { useRemoteHostKind } from './useRemoteHostKind';
 
 const SESSION_ID = 'remote-host-session' as SessionId;
-const COMPOSITE_WORKSPACE_ID = 'remote-host-composite' as WorkspaceId;
+const MULTI_PROJECT_WORKSPACE_ID = 'remote-host-multi-project' as WorkspaceId;
 const API_PROJECT_ID = 'remote-host-api' as ProjectId;
 const WEB_PROJECT_ID = 'remote-host-web' as ProjectId;
 const NOW = '2026-08-01T00:00:00.000Z' as IsoDateTime;
 
 const SESSION = {
   id: SESSION_ID,
-  workspaceId: COMPOSITE_WORKSPACE_ID,
+  workspaceId: MULTI_PROJECT_WORKSPACE_ID,
   goal: 'Resolve the active remote',
   state: { kind: 'draft' },
   contextSlots: [],
@@ -73,10 +73,10 @@ beforeEach(() => {
     sessions: [SESSION],
     workspaces: [
       {
-        id: COMPOSITE_WORKSPACE_ID,
+        id: MULTI_PROJECT_WORKSPACE_ID,
         name: 'Composite',
-        slug: 'composite',
-        sessionsRoot: '/remote-host/composite',
+        slug: 'multi-project',
+        sessionsRoot: '/remote-host/multi-project',
         overrides: {
           defaultProviderId: null,
           defaultWorkflowId: null,
@@ -96,7 +96,7 @@ beforeEach(() => {
     projects: [
       {
         id: API_PROJECT_ID,
-        workspaceId: COMPOSITE_WORKSPACE_ID,
+        workspaceId: MULTI_PROJECT_WORKSPACE_ID,
         name: 'api',
         rootPath: API_MOUNT.repoRoot,
         kind: 'repo',
@@ -117,7 +117,7 @@ beforeEach(() => {
       },
       {
         id: WEB_PROJECT_ID,
-        workspaceId: COMPOSITE_WORKSPACE_ID,
+        workspaceId: MULTI_PROJECT_WORKSPACE_ID,
         name: 'web',
         rootPath: WEB_MOUNT.repoRoot,
         kind: 'repo',

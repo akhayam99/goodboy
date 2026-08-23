@@ -291,14 +291,14 @@ fn parse_version(stdout: &str) -> Option<String> {
 
 fn read_token_from<F>(
     workspace_id: Option<&str>,
-    member_workspace_id: Option<&str>,
+    project_id: Option<&str>,
     mut resolve: F,
 ) -> Option<String>
 where
     F: FnMut(Option<&str>) -> Option<String>,
 {
     let mut scopes: Vec<&str> = Vec::new();
-    for id in [workspace_id, member_workspace_id]
+    for id in [workspace_id, project_id]
         .into_iter()
         .flatten()
         .filter(|id| !id.is_empty())
@@ -315,9 +315,9 @@ where
     resolve(None)
 }
 
-fn read_token(workspace_id: Option<&str>, member_workspace_id: Option<&str>) -> Option<String> {
+fn read_token(workspace_id: Option<&str>, project_id: Option<&str>) -> Option<String> {
     let cache = integration_credentials::SecretCache::default();
-    read_token_from(workspace_id, member_workspace_id, |scope| match scope {
+    read_token_from(workspace_id, project_id, |scope| match scope {
         Some(id) => integration_credentials::read_for_binding(GITHUB_PROVIDER, id, None, &cache)
             .ok()
             .flatten(),
@@ -342,7 +342,7 @@ fn absent_status() -> GhStatus {
     }
 }
 
-fn status_blocking(workspace_id: Option<String>, member_workspace_id: Option<String>) -> GhStatus {
+fn status_blocking(workspace_id: Option<String>, project_id: Option<String>) -> GhStatus {
     let ws = workspace_id.as_deref();
     let version = match run_gh(&["--version"], None, None) {
         Ok(res) => parse_version(&res.stdout),
@@ -350,7 +350,7 @@ fn status_blocking(workspace_id: Option<String>, member_workspace_id: Option<Str
         Err(_) => None,
     };
 
-    let pat = read_token(ws, member_workspace_id.as_deref());
+    let pat = read_token(ws, project_id.as_deref());
     let token_ref = pat.as_deref();
     let scoped = ws
         .filter(|s| !s.is_empty())
@@ -382,9 +382,9 @@ fn status_blocking(workspace_id: Option<String>, member_workspace_id: Option<Str
 #[tauri::command]
 pub async fn gh_status(
     workspace_id: Option<String>,
-    member_workspace_id: Option<String>,
+    project_id: Option<String>,
 ) -> GhStatus {
-    tauri::async_runtime::spawn_blocking(move || status_blocking(workspace_id, member_workspace_id))
+    tauri::async_runtime::spawn_blocking(move || status_blocking(workspace_id, project_id))
         .await
         .unwrap_or_else(|_| absent_status())
 }
@@ -435,10 +435,10 @@ pub async fn gh_run(
     args: Vec<String>,
     cwd: Option<String>,
     workspace_id: Option<String>,
-    member_workspace_id: Option<String>,
+    project_id: Option<String>,
 ) -> Result<GhRunResult, GithubError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let token = read_token(workspace_id.as_deref(), member_workspace_id.as_deref());
+        let token = read_token(workspace_id.as_deref(), project_id.as_deref());
         let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
         run_gh(&arg_refs, cwd.as_deref(), token.as_deref())
     })
@@ -451,10 +451,10 @@ pub async fn git_push(
     cwd: String,
     branch: Option<String>,
     workspace_id: Option<String>,
-    member_workspace_id: Option<String>,
+    project_id: Option<String>,
 ) -> Result<GhRunResult, GithubError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let token = read_token(workspace_id.as_deref(), member_workspace_id.as_deref());
+        let token = read_token(workspace_id.as_deref(), project_id.as_deref());
         let mut args: Vec<&str> = vec!["push"];
         if let Some(b) = branch.as_deref().filter(|b| !b.is_empty()) {
             args.push("origin");
@@ -472,10 +472,10 @@ pub async fn gh_pr_diff(
     pr: u32,
     cwd: Option<String>,
     workspace_id: Option<String>,
-    member_workspace_id: Option<String>,
+    project_id: Option<String>,
 ) -> Result<String, GithubError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let token = read_token(workspace_id.as_deref(), member_workspace_id.as_deref());
+        let token = read_token(workspace_id.as_deref(), project_id.as_deref());
         let pr_str = pr.to_string();
         let res = run_gh(
             &["pr", "diff", &pr_str, "--repo", &repo],

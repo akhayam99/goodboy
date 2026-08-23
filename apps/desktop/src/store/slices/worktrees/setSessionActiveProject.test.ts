@@ -9,7 +9,7 @@ const { updateSessionActiveProject, tauriDatabase } = vi.hoisted(() => ({
 vi.mock('@goodboy/db', () => ({ updateSessionActiveProject }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase }));
 
-import { setSessionActiveProject } from './setSessionActiveMount';
+import { setSessionActiveProject } from './setSessionActiveProject';
 
 const SESSION_ID = 'session-1' as SessionId;
 const PROJECT_ID = 'project-web' as ProjectId;

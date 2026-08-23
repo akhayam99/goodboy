@@ -6,7 +6,7 @@ import {
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList } from '../../../features/workflows/workflows';
-import { buildSessionProjectMounts } from '../worktrees/buildSessionMounts';
+import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMounts';
 import type { GetFn, SetFn } from './types';
 
 export const unarchiveTask = (set: SetFn, get: GetFn) => {
@@ -58,14 +58,15 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
       ]);
       const projects = get().projects.filter((project) => project.workspaceId === workspaceId);
       const mounts = buildSessionProjectMounts({ projects, rows: worktreeRows });
-      const storedActiveMount = restoredSession.activeProjectId;
-      const hasStoredActiveMount =
-        storedActiveMount != null && mounts.some((mount) => mount.projectId === storedActiveMount);
-      if (storedActiveMount != null && !hasStoredActiveMount) {
+      const storedActiveProjectId = restoredSession.activeProjectId;
+      const hasStoredActiveProjectId =
+        storedActiveProjectId != null &&
+        mounts.some((mount) => mount.projectId === storedActiveProjectId);
+      if (storedActiveProjectId != null && !hasStoredActiveProjectId) {
         await updateSessionActiveProject({ db: tauriDatabase, id: sessionId, projectId: null });
       }
       let restoredWithValidActiveMount = restoredSession;
-      if (storedActiveMount != null && !hasStoredActiveMount) {
+      if (storedActiveProjectId != null && !hasStoredActiveProjectId) {
         const { activeProjectId: _drop, ...validSession } = restoredSession;
         restoredWithValidActiveMount = validSession;
       }
@@ -73,8 +74,8 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
         const nextWorktrees = { ...state.sessionWorktrees };
         const nextBranches = { ...state.sessionBranches };
         const nextActiveMount = { ...state.sessionActiveProject };
-        if (hasStoredActiveMount) {
-          nextActiveMount[sessionId] = storedActiveMount;
+        if (hasStoredActiveProjectId) {
+          nextActiveMount[sessionId] = storedActiveProjectId;
         } else {
           delete nextActiveMount[sessionId];
         }

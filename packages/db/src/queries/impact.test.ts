@@ -282,14 +282,14 @@ describe('pull request outcomes', () => {
     expect(result.entries[0]).toMatchObject({ number: 8, sessionId: 's1' });
   });
 
-  it('does not double-count spend when a composite session has two worktree rows on one branch', async () => {
+  it('does not double-count spend when a multi-project session has two worktree rows on one branch', async () => {
     const db = await seedDb();
-    await addSession({ db, seed: { id: 'composite', createdAt: RECENT } });
+    await addSession({ db, seed: { id: 'multi-project', createdAt: RECENT } });
     await db.execute(
       `INSERT INTO session_worktrees
          (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
-       VALUES ('wt-a', 'composite', '/tmp/repo-a', 'shared/branch', 0, 'repo', ?),
-              ('wt-b', 'composite', '/tmp/repo-b', 'shared/branch', 1, 'repo', ?)`,
+       VALUES ('wt-a', 'multi-project', '/tmp/repo-a', 'shared/branch', 0, 'repo', ?),
+              ('wt-b', 'multi-project', '/tmp/repo-b', 'shared/branch', 1, 'repo', ?)`,
       [RECENT, RECENT],
     );
     await db.execute(
@@ -299,7 +299,7 @@ describe('pull request outcomes', () => {
         'shared/branch',
         JSON.stringify({
           number: 21,
-          title: 'composite ship',
+          title: 'multi-project ship',
           state: 'merged',
           updatedAt: iso(RECENT),
         }),
@@ -309,9 +309,9 @@ describe('pull request outcomes', () => {
     await addTelemetry({
       db,
       seed: {
-        id: 't-composite',
-        runId: 'r-composite',
-        sessionId: 'composite',
+        id: 't-multi-project',
+        runId: 'r-multi-project',
+        sessionId: 'multi-project',
         at: RECENT,
         cost: 5,
       },

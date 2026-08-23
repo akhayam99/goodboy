@@ -49,7 +49,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { invokePermissionRuleList } from '../../../features/permissions/permissions';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { resolveProviderForTurn } from '../../../features/providers/routing';
-import { simpleSessionDirExists, worktreeChangedFiles } from '../../../features/worktree/worktree';
+import { sessionDirExists, worktreeChangedFiles } from '../../../features/worktree/worktree';
 import { encodeAuthRequiredMessage, runTurn } from '../../../features/chat/turn';
 import { classifyProviderError } from '../../../features/chat/classifyProviderError';
 import { createTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
@@ -180,7 +180,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       branch: mountedState.sessionBranches[sessionId],
     });
     if (isPlainSessionDir) {
-      const exists = await simpleSessionDirExists({ path: workingDir });
+      const exists = await sessionDirExists({ path: workingDir });
       if (exists === false) {
         throw new Error(
           'Session directory not found. It may have been moved outside the workspace folder.',
@@ -752,12 +752,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             ]
           : scopeMounts.length > 1
             ? [
-                '[multi-repo-scope]',
-                `You are operating across ${scopeMounts.length} linked git repositories mounted under: ${workingDir}`,
-                `Each repo lives in its own subfolder: ${scopeMounts.map((mount) => mount.mountName).join(', ')}.`,
-                'Each subfolder is a separate git repository with its own branch. Run git commands inside the relevant subfolder, never at the container root.',
-                'ALL file operations MUST resolve inside one of these subfolders. Do NOT create files at the container root or outside it.',
-                '[/multi-repo-scope]',
+                '[projects-scope]',
+                `You are operating across ${scopeMounts.length} materialized projects under: ${workingDir}`,
+                `Each project lives in its own subfolder: ${scopeMounts.map((mount) => mount.mountName).join(', ')}.`,
+                'Each subfolder is a separate git repository with its own branch. Run git commands inside the relevant subfolder, never at the session directory root.',
+                'ALL file operations MUST resolve inside one of these subfolders. Do NOT create files at the session directory root or outside it.',
+                '[/projects-scope]',
               ]
             : [
                 '[worktree-scope]',

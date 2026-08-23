@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentType } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { IntegrationConnectPanel } from './components/IntegrationConnectPanel';
 import { BitbucketFormBody } from './bitbucket/BitbucketFormBody';
@@ -8,39 +8,37 @@ import { LinearFormBody } from './linear/LinearFormBody';
 import { SentryFormBody } from './sentry/SentryFormBody';
 import { SlackFormBody } from './slack/SlackFormBody';
 
+type Provider = 'linear' | 'sentry' | 'gitlab' | 'jira' | 'bitbucket' | 'slack';
+
 type Props = {
-  readonly provider: 'linear' | 'sentry' | 'gitlab' | 'jira' | 'bitbucket' | 'slack';
+  readonly provider: Provider;
   readonly workspaceId: WorkspaceId;
   readonly compact?: boolean;
   readonly shouldAutoFocus?: boolean;
   readonly wrapped?: boolean;
 };
 
-const PROVIDER_DESCRIPTIONS: Record<Props['provider'], string> = {
-  linear: 'Connect Linear to review issues from this workspace',
-  sentry: 'Connect Sentry to review errors from this workspace',
-  gitlab: 'Connect GitLab to review merge requests from this workspace',
-  jira: 'Connect Jira to review issues from this workspace',
-  bitbucket: 'Connect Bitbucket to review pull requests from this workspace',
+type FormBodyProps = {
+  readonly workspaceId: WorkspaceId;
+  readonly shouldAutoFocus?: boolean;
+};
+
+const PROVIDER_DESCRIPTIONS: Record<Provider, string> = {
+  linear: 'Connect Linear to review issues from this project',
+  sentry: 'Connect Sentry to review errors from this project',
+  gitlab: 'Connect GitLab to review merge requests from this project',
+  jira: 'Connect Jira to review issues from this project',
+  bitbucket: 'Connect Bitbucket to review pull requests from this project',
   slack: 'Connect Slack to read the threads a task came out of',
 };
 
-const renderWrapped = ({
-  panel,
-  compact,
-  wrapped,
-}: {
-  readonly panel: ReactNode;
-  readonly compact: boolean;
-  readonly wrapped: boolean;
-}) => {
-  if (!wrapped) {
-    return panel;
-  }
-
-  return (
-    <div className={compact ? 'flex justify-center py-5' : 'flex justify-center'}>{panel}</div>
-  );
+const FORM_BODIES: Record<Provider, ComponentType<FormBodyProps>> = {
+  linear: LinearFormBody,
+  sentry: SentryFormBody,
+  gitlab: GitlabFormBody,
+  jira: JiraFormBody,
+  bitbucket: BitbucketFormBody,
+  slack: SlackFormBody,
 };
 
 export const ConnectIntegrationEmptyState = ({
@@ -50,103 +48,22 @@ export const ConnectIntegrationEmptyState = ({
   shouldAutoFocus = false,
   wrapped = true,
 }: Props) => {
-  if (provider === 'linear') {
-    return renderWrapped({
-      compact,
-      wrapped,
-      panel: (
-        <IntegrationConnectPanel
-          provider={provider}
-          description={PROVIDER_DESCRIPTIONS[provider]}
-          size={compact ? 'sm' : 'lg'}
-          headingLevel={compact ? undefined : 2}
-        >
-          <LinearFormBody workspaceId={workspaceId} shouldAutoFocus={shouldAutoFocus} />
-        </IntegrationConnectPanel>
-      ),
-    });
+  const FormBody = FORM_BODIES[provider];
+  const panel = (
+    <IntegrationConnectPanel
+      provider={provider}
+      description={PROVIDER_DESCRIPTIONS[provider]}
+      headingLevel={compact ? undefined : 2}
+    >
+      <FormBody workspaceId={workspaceId} shouldAutoFocus={shouldAutoFocus} />
+    </IntegrationConnectPanel>
+  );
+
+  if (!wrapped) {
+    return panel;
   }
 
-  if (provider === 'sentry') {
-    return renderWrapped({
-      compact,
-      wrapped,
-      panel: (
-        <IntegrationConnectPanel
-          provider={provider}
-          description={PROVIDER_DESCRIPTIONS[provider]}
-          size={compact ? 'sm' : 'lg'}
-          headingLevel={compact ? undefined : 2}
-        >
-          <SentryFormBody workspaceId={workspaceId} shouldAutoFocus={shouldAutoFocus} />
-        </IntegrationConnectPanel>
-      ),
-    });
-  }
-
-  if (provider === 'bitbucket') {
-    return renderWrapped({
-      compact,
-      wrapped,
-      panel: (
-        <IntegrationConnectPanel
-          provider={provider}
-          description={PROVIDER_DESCRIPTIONS[provider]}
-          size={compact ? 'sm' : 'lg'}
-          headingLevel={compact ? undefined : 2}
-        >
-          <BitbucketFormBody workspaceId={workspaceId} shouldAutoFocus={shouldAutoFocus} />
-        </IntegrationConnectPanel>
-      ),
-    });
-  }
-
-  if (provider === 'slack') {
-    return renderWrapped({
-      compact,
-      wrapped,
-      panel: (
-        <IntegrationConnectPanel
-          provider={provider}
-          description={PROVIDER_DESCRIPTIONS[provider]}
-          size={compact ? 'sm' : 'lg'}
-          headingLevel={compact ? undefined : 2}
-        >
-          <SlackFormBody workspaceId={workspaceId} shouldAutoFocus={shouldAutoFocus} />
-        </IntegrationConnectPanel>
-      ),
-    });
-  }
-
-  if (provider === 'jira') {
-    return renderWrapped({
-      compact,
-      wrapped,
-      panel: (
-        <IntegrationConnectPanel
-          provider={provider}
-          description={PROVIDER_DESCRIPTIONS[provider]}
-          size={compact ? 'sm' : 'lg'}
-          headingLevel={compact ? undefined : 2}
-        >
-          <JiraFormBody workspaceId={workspaceId} shouldAutoFocus={shouldAutoFocus} />
-        </IntegrationConnectPanel>
-      ),
-    });
-  }
-
-  return renderWrapped({
-    compact,
-    wrapped,
-    panel: (
-      <IntegrationConnectPanel
-        provider={provider}
-        description={PROVIDER_DESCRIPTIONS[provider]}
-        size={compact ? 'sm' : 'lg'}
-        headingLevel={compact ? undefined : 2}
-      >
-        <GitlabFormBody workspaceId={workspaceId} shouldAutoFocus={shouldAutoFocus} />
-      </IntegrationConnectPanel>
-    ),
-  });
+  return (
+    <div className={compact ? 'flex justify-center py-5' : 'flex justify-center'}>{panel}</div>
+  );
 };

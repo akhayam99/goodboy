@@ -50,16 +50,27 @@ afterEach(cleanup);
 import { SentryFormBody } from './SentryFormBody';
 
 describe('SentryFormBody', () => {
-  it('offers the token link before the token field', () => {
+  it('shows the token field first and the get-a-token link right under it', () => {
     render(<SentryFormBody workspaceId={WS_ID} />);
 
-    const link = screen.getByRole('link', { name: /create a user auth token/i });
     const field = screen.getByLabelText(/personal API key/i);
+    const link = screen.getByRole('link', { name: /get a user auth token/i });
 
-    expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(field.compareDocumentPosition(link)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   describe('connect form (happy path)', () => {
+    it('keeps org and project out of sight until the token is pasted', () => {
+      render(<SentryFormBody workspaceId={WS_ID} />);
+      expect(screen.queryByLabelText(/organization slug/i)).toBeNull();
+      expect(screen.queryByLabelText(/project slug/i)).toBeNull();
+      fireEvent.change(screen.getByLabelText(/personal API key/i), {
+        target: { value: 'sntryu_x' },
+      });
+      expect(screen.getByLabelText(/organization slug/i)).toBeDefined();
+      expect(screen.getByLabelText(/project slug/i)).toBeDefined();
+    });
+
     it('keeps Connect disabled until token, org and project are all filled', () => {
       render(<SentryFormBody workspaceId={WS_ID} />);
       const btn = screen.getByRole('button', { name: /^connect$/i }) as HTMLButtonElement;
@@ -68,16 +79,18 @@ describe('SentryFormBody', () => {
         target: { value: 'sntryu_x' },
       });
       expect(btn.disabled).toBe(true);
-      fireEvent.change(screen.getByLabelText(/organization slug/i), { target: { value: 'org' } });
+      fireEvent.change(screen.getByLabelText(/organization slug/i), {
+        target: { value: 'my-org' },
+      });
       expect(btn.disabled).toBe(true);
-      fireEvent.change(screen.getByLabelText(/project slug/i), { target: { value: 'proj' } });
+      fireEvent.change(screen.getByLabelText(/project slug/i), { target: { value: 'my-proj' } });
       expect(btn.disabled).toBe(false);
     });
 
     it('connects with all trimmed fields and fires onConnected', async () => {
       const onConnected = vi.fn();
       render(<SentryFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fillForm({ token: '  sntryu_x  ', org: '  my-org  ', project: '  my-proj  ' });
+      fillForm({ token: '  sntryu_x  ', org: ' my-org ', project: ' my-proj ' });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
       await waitFor(() =>
         expect(state.connectSentry).toHaveBeenCalledWith({
@@ -94,12 +107,12 @@ describe('SentryFormBody', () => {
     it('shows the formatted error and skips onConnected when the connect fails', async () => {
       const onConnected = vi.fn();
       state.connectSentry = vi.fn(async () => {
-        throw new Error('project not found');
+        throw new Error('org not found');
       });
       render(<SentryFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fillForm({ token: 'sntryu_x', org: 'org', project: 'proj' });
+      fillForm({ token: 'sntryu_x', org: 'nope', project: 'my-proj' });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
-      expect(await screen.findByText(/project not found/i)).toBeDefined();
+      expect(await screen.findByText(/org not found/i)).toBeDefined();
       expect(onConnected).not.toHaveBeenCalled();
     });
   });
@@ -109,36 +122,38 @@ describe('SentryFormBody', () => {
       state.workspaceIntegrations = { [WS_ID]: [sentryIntegration] };
     });
 
-    it('renders the connected state with project name, org and project', () => {
+    it('renders one connected row with project name, org and project', () => {
       render(<SentryFormBody workspaceId={WS_ID} />);
       expect(screen.getByText(/Connected to My Project/i)).toBeDefined();
-      expect(screen.getByText('my-org')).toBeDefined();
-      expect(screen.getByText('my-proj')).toBeDefined();
+      expect(screen.getByText('my-org/my-proj')).toBeDefined();
       expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
     });
 
     it('arms the disconnect confirm instead of disconnecting immediately', () => {
       render(<SentryFormBody workspaceId={WS_ID} />);
-      fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /disconnect sentry/i }));
       expect(screen.getByText(/Disconnect Sentry\?/i)).toBeDefined();
       expect(state.disconnectIntegration).not.toHaveBeenCalled();
     });
 
-    it('disconnects Sentry for the workspace once the confirm is confirmed', () => {
+    it('disconnects Sentry for the workspace once the confirm is confirmed', async () => {
       render(<SentryFormBody workspaceId={WS_ID} />);
-      fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /disconnect sentry/i }));
       fireEvent.click(screen.getByRole('button', { name: /^disconnect sentry$/i }));
-      expect(state.disconnectIntegration).toHaveBeenCalledWith({
-        workspaceId: WS_ID,
-        provider: 'sentry',
-      });
+      await waitFor(() =>
+        expect(state.disconnectIntegration).toHaveBeenCalledWith({
+          workspaceId: WS_ID,
+          provider: 'sentry',
+        }),
+      );
     });
   });
 
-  it('says where the token travels instead of claiming it never leaves', () => {
+  it('keeps the keychain note behind a quiet disclosure and says where the token travels', () => {
     render(<SentryFormBody workspaceId={WS_ID} />);
+    expect(screen.queryByText(/never touches Goodboy's own servers/i)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /where your key goes/i }));
     expect(screen.getByText(/never touches Goodboy's own servers/i)).toBeDefined();
     expect(screen.queryByText(/never leaves this machine/i)).toBeNull();
-    expect(screen.queryByText(/never leaving this machine/i)).toBeNull();
   });
 });

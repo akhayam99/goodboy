@@ -140,7 +140,7 @@ describe('BitbucketWorkspaceStudio', () => {
     renderStudio();
 
     expect(
-      screen.getByText('Connect Bitbucket to review pull requests from this workspace'),
+      screen.getByText('Connect Bitbucket to review pull requests from this project'),
     ).toBeDefined();
     expect(screen.getByLabelText('App password')).toBeDefined();
     expect(h.repoHookEnabled).toBe(false);

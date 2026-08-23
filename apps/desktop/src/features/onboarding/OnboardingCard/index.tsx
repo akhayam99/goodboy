@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import { cn, Tooltip } from '@goodboy/ui';
-import { finish, reopen, visibleOnboardingSteps } from '../onboarding-store';
+import { finish, ONBOARDING_STEPS, reopen } from '../onboarding-store';
 import { useOnboardingProgress } from '../hooks/useOnboardingProgress';
 import { ChecklistBody } from './ChecklistBody';
 import { CompletedBody } from './CompletedBody';
@@ -33,8 +33,6 @@ export const OnboardingChip = () => {
     return null;
   }
 
-  const visibleSteps = visibleOnboardingSteps({ isSimple: progress.isSimple });
-
   return (
     <div className="group inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle/60 px-1.5 py-1 motion-safe:transition-colors hover:border-border">
       <button
@@ -44,7 +42,7 @@ export const OnboardingChip = () => {
         aria-label="Open onboarding checklist"
         className="inline-flex items-center gap-1"
       >
-        {visibleSteps.map((step) => (
+        {ONBOARDING_STEPS.map((step) => (
           <span
             key={step.id}
             aria-hidden

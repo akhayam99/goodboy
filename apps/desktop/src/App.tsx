@@ -819,8 +819,6 @@ export const App = () => {
           currentWorkspace ? (
             <AppFooter
               activeStudio={activeStudio}
-              isSimpleWorkspace={false}
-              onConvertToDevProject={() => setConvertWorkspaceOpen(true)}
               githubEnabled={githubConnection.isAuthenticated}
               linearEnabled={hasLinear}
               jiraEnabled={hasJira}

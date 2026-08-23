@@ -14,7 +14,7 @@ export const SessionsSection = ({}: Props) => (
       size="page"
       icon={<GitBranch size={14} aria-hidden className="text-success" />}
       label="Sessions"
-      hint="One focused unit of work. Owns a git worktree, a branch, transcripts, and a goal. It is a card on the board until you open it."
+      hint="One focused unit of work. Materializes a worktree for each project, with a branch, transcripts, and a goal. It is a card on the board until you open it."
     />
 
     <Block title="What gets created">
@@ -22,7 +22,7 @@ export const SessionsSection = ({}: Props) => (
         rows={[
           {
             term: 'worktree',
-            desc: 'A separate working directory cut from your repo root.',
+            desc: 'A separate working directory materialized per project in the session.',
             icon: <FolderGit2 size={11} aria-hidden />,
             tone: 'primary',
           },

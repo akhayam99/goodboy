@@ -3,334 +3,231 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-const { state, validateMock } = vi.hoisted(() => ({
+const { state, repoMocks, dialogMock } = vi.hoisted(() => ({
   state: {
-    addWorkspace: vi.fn(async () => ({ id: 'ws-new' })),
-    addCompositeWorkspace: vi.fn(async () => ({ id: 'ws-composite' })),
-    addSimpleWorkspace: vi.fn(async () => ({ id: 'ws-simple' })),
+    addWorkspace: vi.fn(async () => ({
+      id: 'ws-direct',
+      name: 'alpha',
+      sessionsRoot: '/repos/alpha',
+    })),
+    createWorkspace: vi.fn(async ({ name }: { name: string }) => ({
+      id: 'ws-created',
+      name,
+      sessionsRoot: null,
+    })),
+    addProject: vi.fn(async () => ({ id: 'proj-1', rootPath: '/repos/alpha' })),
+    addProjects: vi.fn(async () => [
+      { id: 'proj-1', rootPath: '/parent/alpha' },
+      { id: 'proj-2', rootPath: '/parent/beta' },
+    ]),
+    removeProject: vi.fn(async () => undefined),
+    adoptWorkspaceSessionsRoot: vi.fn(async () => undefined),
     setCurrentWorkspace: vi.fn(async () => undefined),
-    workspaces: [] as ReadonlyArray<{
+    projects: [] as ReadonlyArray<{
       id: string;
+      workspaceId: string;
       name: string;
       rootPath: string;
-      kind?: 'repo' | 'composite' | 'simple';
+      kind: 'repo' | 'folder';
     }>,
   },
-  validateMock: vi.fn<
-    (path: string) => Promise<{
-      isRepo: boolean;
-      rootPath: string | null;
-      resolvedPath: string | null;
-      error: string | null;
-    }>
-  >(async () => ({
-    isRepo: true,
-    rootPath: '/some/repo',
-    resolvedPath: '/some/repo',
-    error: null,
-  })),
+  repoMocks: {
+    validateGitRepo: vi.fn<
+      (path: string) => Promise<{
+        isRepo: boolean;
+        rootPath: string | null;
+        resolvedPath: string | null;
+        error: string | null;
+      }>
+    >(async () => ({
+      isRepo: true,
+      rootPath: '/repos/alpha',
+      resolvedPath: '/repos/alpha',
+      error: null,
+    })),
+    scanChildRepos: vi.fn(async (): Promise<ReadonlyArray<{ name: string; path: string }>> => []),
+    initRepo: vi.fn(async () => ({ rootPath: '/picked/path' })),
+  },
+  dialogMock: { open: vi.fn(async (): Promise<string | null> => '/picked/path') },
 }));
 
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(
-    selector: (s: {
-      addWorkspace: typeof state.addWorkspace;
-      addCompositeWorkspace: typeof state.addCompositeWorkspace;
-      addSimpleWorkspace: typeof state.addSimpleWorkspace;
-      setCurrentWorkspace: typeof state.setCurrentWorkspace;
-    }) => T,
-  ) =>
-    selector({
-      addWorkspace: state.addWorkspace,
-      addCompositeWorkspace: state.addCompositeWorkspace,
-      addSimpleWorkspace: state.addSimpleWorkspace,
-      setCurrentWorkspace: state.setCurrentWorkspace,
-    }),
-  useWorkspaces: () => state.workspaces,
+  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
-vi.mock('../../../../shared/lib/repo', () => ({
-  validateGitRepo: validateMock,
-}));
+vi.mock('../../../../shared/lib/repo', () => repoMocks);
 
 vi.mock('@tauri-apps/plugin-dialog', () => ({
-  open: vi.fn(async () => '/picked/path'),
+  open: dialogMock.open,
 }));
 
-vi.mock('../../defaultSimpleWorkspacePath', () => ({
-  defaultSimpleWorkspacePath: vi.fn(async () => '/home/test/Documents/Goodboy/my-workspace'),
-}));
-
-import { WorkspaceLinkForm, type WorkspaceLinkMode } from './index';
-
-const ALL_MODES: ReadonlyArray<WorkspaceLinkMode> = ['single', 'multi', 'simple'];
-const DRAFT_KEY = 'goodboy:test-workspace-link-draft';
+import { WorkspaceLinkForm } from './index';
 
 beforeEach(() => {
-  state.addWorkspace = vi.fn(async () => ({ id: 'ws-new' }));
-  state.addCompositeWorkspace = vi.fn(async () => ({ id: 'ws-composite' }));
-  state.addSimpleWorkspace = vi.fn(async () => ({ id: 'ws-simple' }));
-  state.setCurrentWorkspace = vi.fn(async () => undefined);
-  state.workspaces = [];
-  localStorage.clear();
-  validateMock.mockClear();
-  validateMock.mockResolvedValue({
+  vi.clearAllMocks();
+  state.projects = [];
+  repoMocks.validateGitRepo.mockResolvedValue({
     isRepo: true,
-    rootPath: '/some/repo',
-    resolvedPath: '/some/repo',
+    rootPath: '/repos/alpha',
+    resolvedPath: '/repos/alpha',
     error: null,
   });
+  repoMocks.scanChildRepos.mockResolvedValue([]);
+  dialogMock.open.mockResolvedValue('/picked/path');
 });
 afterEach(cleanup);
 
+type FormProps = Parameters<typeof WorkspaceLinkForm>[0];
+
+const renderForm = (props: Partial<FormProps> = {}) =>
+  render(
+    <WorkspaceLinkForm onComplete={vi.fn()} onCancel={vi.fn()} showBreadcrumb={false} {...props} />,
+  );
+
 describe('WorkspaceLinkForm', () => {
-  it('renders the workspace modes and repository helper hint without dialog chrome', () => {
-    render(
-      <WorkspaceLinkForm
-        onComplete={vi.fn()}
-        onCancel={vi.fn()}
-        showBreadcrumb={false}
-        modes={ALL_MODES}
-      />,
-    );
-    expect(screen.getByRole('tab', { name: 'Single project' })).toBeDefined();
-    expect(
-      screen.getByText(/a git repository, or a folder you have not turned into one yet/i),
-    ).toBeDefined();
+  it('renders the two setup choices without dialog chrome', () => {
+    renderForm();
+    expect(screen.getByRole('radio', { name: /start from a project/i })).toBeDefined();
+    expect(screen.getByRole('radio', { name: /a workspace with several projects/i })).toBeDefined();
     expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByText(/standalone/i)).toBeNull();
+    expect(screen.queryByText(/mount names/i)).toBeNull();
   });
 
   it('renders a Cancel button that calls the form cancellation handler', () => {
     const onCancel = vi.fn();
-    render(
-      <WorkspaceLinkForm
-        onComplete={vi.fn()}
-        onCancel={onCancel}
-        showBreadcrumb={false}
-        modes={ALL_MODES}
-      />,
-    );
+    renderForm({ onCancel });
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
     expect(onCancel).toHaveBeenCalledOnce();
   });
 
-  it('hides the type picker when only one mode is allowed', () => {
-    render(
-      <WorkspaceLinkForm
-        onComplete={vi.fn()}
-        onCancel={vi.fn()}
-        showBreadcrumb={false}
-        modes={['simple']}
-      />,
-    );
-    expect(screen.queryByRole('tab')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Create workspace' })).toBeDefined();
-  });
-
-  it('validates the typed path and surfaces a valid-repo confirmation', async () => {
-    render(
-      <WorkspaceLinkForm
-        onComplete={vi.fn()}
-        onCancel={vi.fn()}
-        showBreadcrumb={false}
-        modes={ALL_MODES}
-      />,
-    );
-    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
-      target: { value: '/some/repo' },
-    });
-    await waitFor(() => screen.getByText(/valid git repository/i), { timeout: 2000 });
-    expect(validateMock).toHaveBeenCalledWith('/some/repo');
-  });
-
-  it('accepts a folder with no repository and promises the offer instead of a dead end', async () => {
-    validateMock.mockResolvedValue({
-      isRepo: false,
-      rootPath: null,
-      resolvedPath: '/some/fresh-idea',
-      error: 'not a git repository',
-    });
+  it('links a picked git repository directly as a project-shaped workspace', async () => {
     const onComplete = vi.fn();
-    render(
-      <WorkspaceLinkForm
-        onComplete={onComplete}
-        onCancel={vi.fn()}
-        showBreadcrumb={false}
-        modes={ALL_MODES}
-      />,
-    );
-    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
-      target: { value: '/some/fresh-idea' },
-    });
-
-    await waitFor(
-      () => screen.getByText(/goodboy adds the folder as it is and offers to create or link one/i),
-      { timeout: 2000 },
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Add workspace' }));
+    renderForm({ onComplete });
+    fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
+    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
 
     await waitFor(() =>
-      expect(state.addWorkspace).toHaveBeenCalledWith({ rootPath: '/some/fresh-idea' }),
+      expect(state.addWorkspace).toHaveBeenCalledWith({ rootPath: '/repos/alpha' }),
     );
-    expect(onComplete).toHaveBeenCalledOnce();
-    expect(screen.queryByText(/sessions stay unavailable/i)).toBeNull();
+    expect(state.setCurrentWorkspace).toHaveBeenCalledWith('ws-direct');
+    expect(onComplete).toHaveBeenCalledWith({
+      mode: 'project',
+      workspace: expect.objectContaining({ id: 'ws-direct' }),
+    });
   });
 
-  it('keeps the submit action blocked while the path does not exist', async () => {
-    validateMock.mockResolvedValue({
+  it('offers detected child repositories and creates a workspace named after the folder', async () => {
+    repoMocks.validateGitRepo.mockResolvedValue({
       isRepo: false,
       rootPath: null,
-      resolvedPath: null,
-      error: 'path does not exist: /nope',
+      resolvedPath: '/parent',
+      error: null,
     });
-    render(
-      <WorkspaceLinkForm
-        onComplete={vi.fn()}
-        onCancel={vi.fn()}
-        showBreadcrumb={false}
-        modes={ALL_MODES}
-      />,
-    );
-    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
-      target: { value: '/nope' },
-    });
+    repoMocks.scanChildRepos.mockResolvedValue([
+      { name: 'alpha', path: '/parent/alpha' },
+      { name: 'beta', path: '/parent/beta' },
+    ]);
+    dialogMock.open.mockResolvedValue('/parent');
+    renderForm();
+    fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
+    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
 
-    await waitFor(() => screen.getByText(/path does not exist/i), { timeout: 2000 });
-    expect(screen.getByRole('button', { name: 'Add workspace' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    await waitFor(() => screen.getByText(/2 repositories found in this folder/i));
+    fireEvent.click(screen.getByRole('button', { name: /link 2 projects/i }));
+
+    await waitFor(() => expect(state.createWorkspace).toHaveBeenCalledWith({ name: 'parent' }));
+    expect(state.addProjects).toHaveBeenCalledWith({
+      workspaceId: 'ws-created',
+      rootPaths: ['/parent/alpha', '/parent/beta'],
+    });
+    expect(state.adoptWorkspaceSessionsRoot).toHaveBeenCalledWith({
+      workspaceId: 'ws-created',
+      rootPath: '/parent/alpha',
+    });
+    await waitFor(() => screen.getByRole('button', { name: 'Done' }));
   });
 
-  it('creates a simple workspace from a prefilled editable directory', async () => {
-    const onComplete = vi.fn();
-    render(
-      <WorkspaceLinkForm
-        onComplete={onComplete}
-        onCancel={vi.fn()}
-        showBreadcrumb={false}
-        modes={ALL_MODES}
-      />,
-    );
-    fireEvent.click(screen.getByRole('tab', { name: 'Standalone' }));
-    const directory = await screen.findByDisplayValue('/home/test/Documents/Goodboy/my-workspace');
-    fireEvent.change(screen.getByDisplayValue('My workspace'), {
-      target: { value: 'History notes' },
+  it('surfaces an error when the picked folder has no git anywhere', async () => {
+    repoMocks.validateGitRepo.mockResolvedValue({
+      isRepo: false,
+      rootPath: null,
+      resolvedPath: '/empty',
+      error: null,
     });
-    fireEvent.change(directory, { target: { value: '/tmp/history-notes' } });
+    dialogMock.open.mockResolvedValue('/empty');
+    renderForm();
+    fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
+    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
+
+    await waitFor(() => screen.getByRole('alert'));
+    expect(screen.getByRole('alert').textContent).toContain('no git repository at /empty');
+    expect(state.addWorkspace).not.toHaveBeenCalled();
+  });
+
+  it('links a plain folder without git through the quiet escape', async () => {
+    const onComplete = vi.fn();
+    dialogMock.open.mockResolvedValue('/notes');
+    renderForm({ onComplete });
+    fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
+    fireEvent.click(screen.getByRole('button', { name: /link a plain folder/i }));
+
+    await waitFor(() => expect(state.addWorkspace).toHaveBeenCalledWith({ rootPath: '/notes' }));
+    expect(onComplete).toHaveBeenCalledWith({
+      mode: 'project',
+      workspace: expect.objectContaining({ id: 'ws-direct' }),
+    });
+  });
+
+  it('creates a named workspace and then adds projects before Done unlocks', async () => {
+    const onComplete = vi.fn();
+    renderForm({ onComplete });
+    fireEvent.click(screen.getByRole('radio', { name: /a workspace with several projects/i }));
+    fireEvent.change(screen.getByLabelText('Workspace name'), { target: { value: 'Acme' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create workspace' }));
 
+    await waitFor(() => expect(state.createWorkspace).toHaveBeenCalledWith({ name: 'Acme' }));
+    expect(state.setCurrentWorkspace).toHaveBeenCalledWith('ws-created');
+
+    const done = await screen.findByRole('button', { name: 'Done' });
+    expect(done.hasAttribute('disabled')).toBe(true);
+
+    fireEvent.change(screen.getByLabelText('Project path'), {
+      target: { value: '/repos/alpha' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /add/i }));
     await waitFor(() =>
-      expect(state.addSimpleWorkspace).toHaveBeenCalledWith({
-        name: 'History notes',
-        path: '/tmp/history-notes',
+      expect(state.addProject).toHaveBeenCalledWith({
+        workspaceId: 'ws-created',
+        rootPath: '/repos/alpha',
       }),
     );
-    expect(validateMock).not.toHaveBeenCalled();
-    expect(state.setCurrentWorkspace).toHaveBeenCalledWith('ws-simple');
-    expect(onComplete).toHaveBeenCalledOnce();
-  });
 
-  it('restores a draft across unmount and remount', async () => {
-    state.workspaces = [
-      { id: 'ws-1', name: 'alpha', rootPath: '/repos/alpha', kind: 'repo' },
-      { id: 'ws-2', name: 'beta', rootPath: '/repos/beta', kind: 'repo' },
+    state.projects = [
+      {
+        id: 'proj-1',
+        workspaceId: 'ws-created',
+        name: 'alpha',
+        rootPath: '/repos/alpha',
+        kind: 'repo',
+      },
     ];
-
-    const firstRender = render(
-      <WorkspaceLinkForm
-        onComplete={vi.fn()}
-        onCancel={vi.fn()}
-        showBreadcrumb={false}
-        modes={ALL_MODES}
-        draftStorageKey={DRAFT_KEY}
-      />,
+    fireEvent.change(screen.getByLabelText('Project path'), { target: { value: '/next' } });
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Done' }).hasAttribute('disabled')).toBe(false),
     );
-
-    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
-      target: { value: '/repos/solo' },
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(onComplete).toHaveBeenCalledWith({
+      mode: 'workspace',
+      workspace: expect.objectContaining({ id: 'ws-created' }),
     });
-    fireEvent.click(screen.getByRole('tab', { name: /multi project/i }));
-    fireEvent.click(screen.getByRole('button', { name: /alpha/i }));
-    fireEvent.click(screen.getByRole('button', { name: /beta/i }));
-    fireEvent.change(screen.getByLabelText('alpha mount name'), { target: { value: 'main' } });
-    fireEvent.change(screen.getByLabelText('beta mount name'), { target: { value: 'docs' } });
-    fireEvent.change(screen.getByLabelText('Container path'), { target: { value: '/tmp/work' } });
-    fireEvent.change(screen.getByLabelText('Workspace name'), { target: { value: 'My fleet' } });
-    await waitFor(() =>
-      expect(localStorage.getItem(DRAFT_KEY)).toContain('"containerPath":"/tmp/work"'),
-    );
-    await waitFor(() =>
-      expect(localStorage.getItem(DRAFT_KEY)).toContain('"selected":["ws-1","ws-2"]'),
-    );
-    await waitFor(() =>
-      expect(localStorage.getItem(DRAFT_KEY)).toContain('"containerEdited":true'),
-    );
-    firstRender.unmount();
-
-    render(
-      <WorkspaceLinkForm
-        onComplete={vi.fn()}
-        onCancel={vi.fn()}
-        showBreadcrumb={false}
-        modes={ALL_MODES}
-        draftStorageKey={DRAFT_KEY}
-      />,
-    );
-
-    await waitFor(() =>
-      expect(screen.getByRole('tab', { name: /multi project/i, selected: true })).toBeDefined(),
-    );
-    await waitFor(() =>
-      expect((screen.getByLabelText('Container path') as HTMLInputElement).value).toBe('/tmp/work'),
-    );
-    expect((screen.getByLabelText('Workspace name') as HTMLInputElement).value).toBe('My fleet');
-    expect((screen.getByLabelText('alpha mount name') as HTMLInputElement).value).toBe('main');
-    expect((screen.getByLabelText('beta mount name') as HTMLInputElement).value).toBe('docs');
   });
 
-  it('clears the persisted draft when cancelled', async () => {
-    const onCancel = vi.fn();
-    render(
-      <WorkspaceLinkForm
-        onComplete={vi.fn()}
-        onCancel={onCancel}
-        showBreadcrumb={false}
-        modes={ALL_MODES}
-        draftStorageKey={DRAFT_KEY}
-      />,
+  it('keeps Create workspace blocked while the name is empty', () => {
+    renderForm();
+    fireEvent.click(screen.getByRole('radio', { name: /a workspace with several projects/i }));
+    expect(screen.getByRole('button', { name: 'Create workspace' }).hasAttribute('disabled')).toBe(
+      true,
     );
-
-    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
-      target: { value: '/repos/solo' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-
-    expect(onCancel).toHaveBeenCalledOnce();
-    expect(localStorage.getItem(DRAFT_KEY)).toBeNull();
-  });
-
-  it('clears the persisted draft when submitted', async () => {
-    const onComplete = vi.fn();
-    render(
-      <WorkspaceLinkForm
-        onComplete={onComplete}
-        onCancel={vi.fn()}
-        showBreadcrumb={false}
-        modes={ALL_MODES}
-        draftStorageKey={DRAFT_KEY}
-      />,
-    );
-
-    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
-      target: { value: '/repos/solo' },
-    });
-    await waitFor(() => screen.getByText(/valid git repository/i), { timeout: 2000 });
-    fireEvent.click(screen.getByRole('button', { name: 'Add workspace' }));
-
-    await waitFor(() =>
-      expect(state.addWorkspace).toHaveBeenCalledWith({ rootPath: '/repos/solo' }),
-    );
-    expect(onComplete).toHaveBeenCalledOnce();
-    expect(localStorage.getItem(DRAFT_KEY)).toBeNull();
   });
 });

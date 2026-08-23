@@ -66,7 +66,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
     const repoRoot = repo.repoRoot;
     const repoBranch = repo.branch;
     const repoWorktreePath = repo.worktreePath;
-    const memberWorkspaceId = repo.projectId;
+    const projectId = repo.projectId;
     set((state) => ({
       sessionGithub: {
         ...state.sessionGithub,
@@ -88,21 +88,16 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
     let lastErr: unknown = null;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        const slug = await detectRepoSlug(
-          tauriGhRunner,
-          repoRoot,
-          session.workspaceId,
-          memberWorkspaceId,
-        );
+        const slug = await detectRepoSlug(tauriGhRunner, repoRoot, session.workspaceId, projectId);
         if (!slug) {
           set((state) => ({
             sessionGithubPrs: { ...state.sessionGithubPrs, [sessionId]: [] },
-            ...(memberWorkspaceId != null && {
+            ...(projectId != null && {
               sessionProjectPrs: {
                 ...state.sessionProjectPrs,
                 [sessionId]: {
                   ...state.sessionProjectPrs[sessionId],
-                  [memberWorkspaceId]: [],
+                  [projectId]: [],
                 },
               },
             }),
@@ -131,7 +126,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
         const prs = await listPrsForBranch(tauriGhRunner, slug, repoBranch, {
           cwd: repoRoot,
           workspaceId: session.workspaceId,
-          ...(memberWorkspaceId != null ? { memberWorkspaceId } : {}),
+          ...(projectId != null ? { projectId } : {}),
         });
         const canonicalPr = prs[0] ?? null;
         const observedFrom = get().sessionGithub[sessionId]?.pr ?? null;
@@ -145,7 +140,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
           ? await fetchLinkedIssues(tauriGhRunner, slug, displayedPr, {
               cwd: repoRoot,
               workspaceId: session.workspaceId,
-              ...(memberWorkspaceId != null ? { memberWorkspaceId } : {}),
+              ...(projectId != null ? { projectId } : {}),
             })
           : [];
         set((state) => {
@@ -166,12 +161,12 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
           const hasDisplayedPrChanged = previousDisplayedNumber !== displayedPr?.number;
           return {
             sessionGithubPrs: { ...state.sessionGithubPrs, [sessionId]: prs },
-            ...(memberWorkspaceId != null && {
+            ...(projectId != null && {
               sessionProjectPrs: {
                 ...state.sessionProjectPrs,
                 [sessionId]: {
                   ...state.sessionProjectPrs[sessionId],
-                  [memberWorkspaceId]: prs,
+                  [projectId]: prs,
                 },
               },
             }),

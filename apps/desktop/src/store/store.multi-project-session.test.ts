@@ -16,19 +16,19 @@ const {
   removeWorktree: vi.fn(async () => undefined),
   listWorktreesForSession: vi.fn(async () => [
     {
-      worktreePath: '/projects/composite/sessions/composite-task',
+      worktreePath: '/projects/multi/sessions/multi-project-task',
       branch: 'gb/api-task',
       parallelIndex: 0,
     },
     {
-      worktreePath: '/repos/api/.goodboy/worktrees/composite-task',
+      worktreePath: '/repos/api/.goodboy/worktrees/multi-project-task',
       branch: 'gb/api-task',
       parallelIndex: 1,
       projectId: 'project-api',
       mountName: 'api',
     },
     {
-      worktreePath: '/repos/web/.goodboy/worktrees/composite-task',
+      worktreePath: '/repos/web/.goodboy/worktrees/multi-project-task',
       branch: 'gb/web-task',
       parallelIndex: 2,
       projectId: 'project-web',
@@ -80,11 +80,11 @@ const SESSION_ID = 'sess-1' as never;
 const WORKSPACE_ID = 'workspace-1';
 const API_PROJECT_ID = 'project-api';
 const WEB_PROJECT_ID = 'project-web';
-const CONTAINER_PATH = '/projects/composite/sessions/composite-task';
+const CONTAINER_PATH = '/projects/multi/sessions/multi-project-task';
 const API_REPO_ROOT = '/repos/api';
 const WEB_REPO_ROOT = '/repos/web';
-const API_WORKTREE_PATH = '/repos/api/.goodboy/worktrees/composite-task';
-const WEB_WORKTREE_PATH = '/repos/web/.goodboy/worktrees/composite-task';
+const API_WORKTREE_PATH = '/repos/api/.goodboy/worktrees/multi-project-task';
+const WEB_WORKTREE_PATH = '/repos/web/.goodboy/worktrees/multi-project-task';
 const API_BRANCH = 'gb/api-task';
 const WEB_BRANCH = 'gb/web-task';
 

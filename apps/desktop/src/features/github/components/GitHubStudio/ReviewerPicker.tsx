@@ -8,13 +8,13 @@ import { Avatar } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
-  readonly workspaceRoot: string | null;
-  readonly memberWorkspaceId?: ProjectId;
+  readonly projectRoot: string | null;
+  readonly projectId?: ProjectId;
   readonly exclude: ReadonlySet<string>;
   readonly onAdd: (logins: ReadonlyArray<string>) => void;
 };
 
-export const ReviewerPicker = ({ workspaceRoot, memberWorkspaceId, exclude, onAdd }: Props) => {
+export const ReviewerPicker = ({ projectRoot, projectId, exclude, onAdd }: Props) => {
   const [query, setQuery] = useState('');
   const [logins, setLogins] = useState<ReadonlyArray<string> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,16 +29,16 @@ export const ReviewerPicker = ({ workspaceRoot, memberWorkspaceId, exclude, onAd
   } = useDropdown({ width: 'w-52', expectedHeight: 220 });
 
   useEffect(() => {
-    if (isOpen === false || logins !== null || workspaceRoot == null || workspaceRoot === '') {
+    if (isOpen === false || logins !== null || projectRoot == null || projectRoot === '') {
       return;
     }
 
     setIsLoading(true);
-    void ghRepoCollaborators(workspaceRoot, workspaceId, memberWorkspaceId)
+    void ghRepoCollaborators(projectRoot, workspaceId, projectId)
       .then(setLogins)
       .catch(() => setLogins([]))
       .finally(() => setIsLoading(false));
-  }, [isOpen, logins, memberWorkspaceId, workspaceRoot, workspaceId]);
+  }, [isOpen, logins, projectId, projectRoot, workspaceId]);
 
   const candidates = (logins ?? [])
     .filter((login) => exclude.has(login.toLowerCase()) === false)

@@ -29,8 +29,6 @@ const { STEPS } = vi.hoisted(() => ({
 
 vi.mock('../../onboarding-store', () => ({
   ONBOARDING_STEPS: STEPS,
-  visibleOnboardingSteps: ({ isSimple }: { readonly isSimple: boolean }) =>
-    isSimple ? STEPS.filter((step) => step.id !== 'codeHost') : STEPS,
   getCompleted: () => completed,
   isCollapsed: () => false,
   isFinished: () => false,
@@ -179,7 +177,6 @@ describe('useOnboardingProgress auto-mark', () => {
     completed = ['workspace', 'tools', 'session', 'agent', 'plan', 'palette'];
     workspaces.push({ id: 'w1' });
     const { result } = renderHook(() => useOnboardingProgress());
-    expect(result.current.isSimple).toBe(false);
     expect(result.current.completedCount).toBe(6);
     expect(result.current.totalCount).toBe(7);
     expect(result.current.isDone).toBe(false);

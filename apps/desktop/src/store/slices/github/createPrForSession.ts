@@ -58,7 +58,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     const res = await tauriGhRunner.run(args, {
       cwd: repo.repoRoot,
       workspaceId: session.workspaceId,
-      memberWorkspaceId: repo.projectId,
+      projectId: repo.projectId,
     });
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr create exited with ${res.exitCode}`;

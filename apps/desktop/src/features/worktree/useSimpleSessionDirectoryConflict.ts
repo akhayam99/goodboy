@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { simpleSessionDirExists } from './worktree';
+import { sessionDirExists } from './worktree';
 
 type Params = {
   readonly path: string | null;
@@ -30,7 +30,7 @@ export const useSimpleSessionDirectoryConflict = ({
     let cancelled = false;
     setChecking(true);
     const timerId = window.setTimeout(() => {
-      simpleSessionDirExists({ path })
+      sessionDirExists({ path })
         .then((directoryExists) => {
           if (cancelled) {
             return;

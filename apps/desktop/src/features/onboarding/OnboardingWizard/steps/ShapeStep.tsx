@@ -30,7 +30,7 @@ const SHAPE_OPTIONS = [
     value: 'workspace',
     icon: Layers,
     label: 'A workspace with several projects',
-    hint: 'Name it after your company or team, then link the repositories that belong there.',
+    hint: 'Name it after your company or team, then add the projects that belong there.',
   },
   {
     value: 'single',

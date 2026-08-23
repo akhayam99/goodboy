@@ -141,13 +141,13 @@ vi.mock('../features/worktree/worktree', () => ({
   createWorktree: (args: unknown) => createWorktreeSpy(args),
   createSessionDir: vi.fn(),
   removeWorktree: vi.fn(),
-  writeSimpleSessionMarker: vi.fn(async () => undefined),
-  simpleSessionDirExists: vi.fn(async () => true),
+  writeSessionMarker: vi.fn(async () => undefined),
+  sessionDirExists: vi.fn(async () => true),
   worktreeChangedFiles: vi.fn(async () => []),
 }));
 
-vi.mock('../features/workspace/prepareSimpleWorkspace', () => ({
-  prepareSimpleWorkspace: vi.fn(async ({ path }: { path: string }) => path),
+vi.mock('../features/workspace/prepareSessionContainer', () => ({
+  prepareSessionContainer: vi.fn(async ({ path }: { path: string }) => path),
 }));
 
 vi.mock('../shared/lib/repo', () => ({ validateGitRepo: vi.fn() }));

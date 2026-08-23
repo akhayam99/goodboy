@@ -10,7 +10,6 @@ export const MissingGithubRemoteEmptyState = ({ compact = false, wrapped = true 
     <IntegrationConnectPanel
       provider="github"
       description="This repository does not have a GitHub remote. Add one with Git before reviewing pull requests and issues here."
-      size={compact ? 'sm' : 'lg'}
       headingLevel={compact ? undefined : 2}
     >
       <p className="text-xs leading-relaxed text-muted-foreground">

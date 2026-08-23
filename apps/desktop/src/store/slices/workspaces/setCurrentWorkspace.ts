@@ -39,7 +39,7 @@ import {
   SETTING_LAST_WORKSPACE_ID,
 } from '../../../features/settings/settings';
 import { buildProviderSpendBreakdown } from '../budget';
-import { buildSessionProjectMounts } from '../worktrees/buildSessionMounts';
+import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMounts';
 import { clearPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 

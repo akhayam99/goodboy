@@ -11,11 +11,11 @@ type Props = {
 
 export const ProjectSwitcher = ({ sessionId }: Props) => {
   const mounts = useAppStore((state) => state.sessionProjectMounts[sessionId] ?? EMPTY_MOUNTS);
-  const activeWorkspaceId = useAppStore((state) => state.sessionActiveProject[sessionId] ?? null);
+  const activeProjectId = useAppStore((state) => state.sessionActiveProject[sessionId] ?? null);
   const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
 
   const activeMount =
-    mounts.find((mount) => mount.projectId === activeWorkspaceId) ?? mounts[0] ?? null;
+    mounts.find((mount) => mount.projectId === activeProjectId) ?? mounts[0] ?? null;
   const options: ReadonlyArray<SegmentedTabOption<ProjectId>> = mounts.map((mount) => ({
     value: mount.projectId,
     label: mount.mountName,

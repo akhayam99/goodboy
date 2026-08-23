@@ -2,12 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type {
-  IntegrationCredentialId,
-  SlackIntegrationBinding,
-  ProjectId,
-  WorkspaceId,
-} from '@goodboy/types';
+import type { IntegrationCredentialId, SlackIntegrationBinding, WorkspaceId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -29,7 +24,6 @@ const { openUrl } = vi.hoisted(() => ({ openUrl: vi.fn(async () => undefined) })
 vi.mock('../../../shared/lib/editor', () => ({ openUrl }));
 
 const WS_ID = 'ws-1' as WorkspaceId;
-const PROJECT_ID = 'project-1' as ProjectId;
 
 const slackIntegration: SlackIntegrationBinding = {
   id: 'wi-1' as never,
@@ -62,13 +56,15 @@ import { SlackFormBody } from './SlackFormBody';
 import { buildSlackManifestUrl, SLACK_USER_SCOPES } from './slackAppManifest';
 
 describe('SlackFormBody', () => {
-  it('walks the setup through before the token field', () => {
+  it('walks the setup one step at a time before the token field', () => {
     render(<SlackFormBody workspaceId={WS_ID} />);
 
     const firstStep = screen.getByRole('button', { name: /open Slack with the scopes filled in/i });
     const field = screen.getByLabelText(/user token/i);
 
     expect(firstStep.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.getByText('Step 1 of 3')).toBeDefined();
+    expect(screen.queryByText(/Copy the User OAuth Token/i)).toBeNull();
     expect(screen.queryByRole('link', { name: /create a Slack app/i })).toBeNull();
   });
 
@@ -101,20 +97,22 @@ describe('SlackFormBody', () => {
     await waitFor(() => expect(onConnected).toHaveBeenCalledOnce());
   });
 
-  it('names every scope the user token needs and where the token travels', () => {
+  it('keeps the scope list behind a quiet disclosure and names every scope there', () => {
     render(<SlackFormBody workspaceId={WS_ID} />);
+    expect(screen.queryByText('channels:read')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /what Goodboy does with the token/i }));
     expect(screen.getByText('channels:read')).toBeDefined();
     expect(screen.getByText('channels:history')).toBeDefined();
     expect(screen.getByText('users:read')).toBeDefined();
     expect(screen.getByText('chat:write')).toBeDefined();
     expect(screen.getByText('reactions:write')).toBeDefined();
-    expect(screen.getByText(/User Token Scopes and not Bot Token Scopes/i)).toBeDefined();
     expect(screen.getByText(/never touches Goodboy's own servers/i)).toBeDefined();
     expect(screen.queryByText(/never leaving this machine/i)).toBeNull();
   });
 
   it('promises the channels you are in and says replies go out under your name', () => {
     render(<SlackFormBody workspaceId={WS_ID} />);
+    fireEvent.click(screen.getByRole('button', { name: /what Goodboy does with the token/i }));
     expect(screen.getByText(/public channels you have joined/i)).toBeDefined();
     expect(screen.getByText(/under your own name/i)).toBeDefined();
     expect(screen.queryByText(/the bot has joined/i)).toBeNull();
@@ -141,28 +139,28 @@ describe('SlackFormBody', () => {
     it('names the person the token belongs to, never a bot', () => {
       render(<SlackFormBody workspaceId={WS_ID} />);
       expect(screen.getByText(/Connected to Acme/i)).toBeDefined();
-      expect(screen.getByText('T01')).toBeDefined();
-      expect(screen.getByText('connected as')).toBeDefined();
-      expect(screen.getByText('goodboy')).toBeDefined();
+      expect(screen.getByText('as goodboy')).toBeDefined();
       expect(screen.queryByText(/bot user/i)).toBeNull();
       expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
     });
 
     it('arms the disconnect confirm instead of disconnecting immediately', () => {
       render(<SlackFormBody workspaceId={WS_ID} />);
-      fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /disconnect slack/i }));
       expect(screen.getByText(/Disconnect Slack\?/i)).toBeDefined();
       expect(state.disconnectIntegration).not.toHaveBeenCalled();
     });
 
-    it('disconnects Slack for the workspace once the confirm is confirmed', () => {
+    it('disconnects Slack for the workspace once the confirm is confirmed', async () => {
       render(<SlackFormBody workspaceId={WS_ID} />);
-      fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /disconnect slack/i }));
       fireEvent.click(screen.getByRole('button', { name: /^disconnect slack$/i }));
-      expect(state.disconnectIntegration).toHaveBeenCalledWith({
-        workspaceId: WS_ID,
-        provider: 'slack',
-      });
+      await waitFor(() =>
+        expect(state.disconnectIntegration).toHaveBeenCalledWith({
+          workspaceId: WS_ID,
+          provider: 'slack',
+        }),
+      );
     });
   });
 });

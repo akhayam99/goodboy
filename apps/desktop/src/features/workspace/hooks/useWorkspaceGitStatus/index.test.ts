@@ -56,7 +56,7 @@ describe('useWorkspaceGitStatus', () => {
     expect(window.setInterval).toHaveBeenCalledOnce();
   });
 
-  it('mounts no timer and reports nothing for a standalone workspace', () => {
+  it('mounts no timer and reports nothing for a folder project', () => {
     h.store.projects = [project('folder')];
     h.store.projectGitStatus = { [PROJECT_ID]: ready };
 

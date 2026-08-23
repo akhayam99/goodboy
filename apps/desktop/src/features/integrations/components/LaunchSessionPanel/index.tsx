@@ -59,11 +59,11 @@ export const LaunchSessionPanel = ({
     (state) =>
       state.projects?.find((project) => project.workspaceId === workspaceId)?.rootPath ?? null,
   );
-  const isBranchless = useAppStore(
+  const isFolderProject = useAppStore(
     (state) =>
       state.projects?.find((project) => project.workspaceId === workspaceId)?.kind === 'folder',
   );
-  const adoptable = isBranchless ? null : adoptableInput;
+  const adoptable = isFolderProject ? null : adoptableInput;
   const { showToast } = useToast();
   const configId = useId();
   const [goal, setGoal] = useState(goalSeed);
@@ -86,7 +86,7 @@ export const LaunchSessionPanel = ({
   }, [goalSeed]);
 
   useEffect(() => {
-    if (!isBranchless || folderNameTouched) {
+    if (!isFolderProject || folderNameTouched) {
       return;
     }
     const nextFolderName = deriveDefaultSessionDirectoryNameFromGoal({ goal });
@@ -94,7 +94,7 @@ export const LaunchSessionPanel = ({
       return;
     }
     setFolderName(nextFolderName);
-  }, [folderName, folderNameTouched, goal, isBranchless]);
+  }, [folderName, folderNameTouched, goal, isFolderProject]);
 
   useEffect(() => {
     setBranchPrefix(workspaceOverrides?.defaultBranchPrefix ?? DEFAULT_BRANCH_PREFIX);
@@ -106,18 +106,18 @@ export const LaunchSessionPanel = ({
   const folderValidation = validateSessionDirectoryName({ name: folderName });
   const folderNameError = sessionDirectoryNameValidationMessage({ validation: folderValidation });
   const folderPathPreview =
-    isBranchless && rootPath != null
+    isFolderProject && rootPath != null
       ? buildSimpleSessionDirectoryPath({
-          workspaceRoot: rootPath,
+          projectRoot: rootPath,
           folderName,
         })
       : null;
   const folderConflictPath =
-    isBranchless && folderValidation.ok && folderPathPreview != null ? folderPathPreview : null;
+    isFolderProject && folderValidation.ok && folderPathPreview != null ? folderPathPreview : null;
   const folderConflict = useSimpleSessionDirectoryConflict({ path: folderConflictPath });
   const isAdopting = mode === 'adopt' && adoptable != null;
   const adoptedBranch = isAdopting ? adoptable.branch : null;
-  const effectiveBranch = isBranchless
+  const effectiveBranch = isFolderProject
     ? null
     : isAdopting
       ? adoptedBranch
@@ -129,21 +129,21 @@ export const LaunchSessionPanel = ({
   const conflictPath = conflict?.kind === 'worktree' ? conflict.path : null;
   const openableSessionId = linkedSessionId ?? conflictSessionId;
   const isMissingBase = error != null && isMissingBaseRefError(error);
-  const isBranchReady = isBranchless
+  const isBranchReady = isFolderProject
     ? true
     : isAdopting
       ? adoptedBranch != null && !adoptable.isResolving
       : isSlugValid;
   const isFolderReady =
-    !isBranchless || (folderValidation.ok && !folderConflict.exists && !folderConflict.checking);
+    !isFolderProject || (folderValidation.ok && !folderConflict.exists && !folderConflict.checking);
   const canLaunch =
     goal.trim() !== '' && isBranchReady && isFolderReady && !busy && conflictPath == null;
   const isResolvingAdopted = isAdopting && adoptable.isResolving;
   const needsConfig =
     conflictPath != null ||
     isMissingBase ||
-    (isBranchless && (folderNameError != null || folderConflict.exists)) ||
-    (!isBranchless && !isBranchReady && !isResolvingAdopted);
+    (isFolderProject && (folderNameError != null || folderConflict.exists)) ||
+    (!isFolderProject && !isBranchReady && !isResolvingAdopted);
 
   useEffect(() => {
     if (!needsConfig) {
@@ -153,7 +153,7 @@ export const LaunchSessionPanel = ({
   }, [needsConfig]);
 
   const isConfigOpen = isConfigRevealed || needsConfig;
-  const configLabel = isBranchless
+  const configLabel = isFolderProject
     ? `sessions/${folderName}`
     : isAdopting
       ? isResolvingAdopted
@@ -171,7 +171,7 @@ export const LaunchSessionPanel = ({
       const { session } = await createSession({
         workspaceId,
         goal,
-        ...(isBranchless
+        ...(isFolderProject
           ? { folderName }
           : { branchPrefix: prefix, branchSlug: branchSlug.trim() || undefined }),
         ...(adoptedBranch != null ? { existingBranch: adoptedBranch } : {}),
@@ -215,7 +215,7 @@ export const LaunchSessionPanel = ({
       <div id={configId} className={cn('flex flex-col', isConfigOpen && 'gap-3 px-1')}>
         {isConfigOpen ? (
           <>
-            {isBranchless ? (
+            {isFolderProject ? (
               <FolderDetails
                 folderName={folderName}
                 onFolderNameChange={(next) => {
@@ -273,7 +273,7 @@ export const LaunchSessionPanel = ({
       <footer className="flex items-center justify-between gap-3 px-1">
         <ConfigToggle
           icon={
-            isBranchless ? <Folder size={11} aria-hidden /> : <GitBranch size={11} aria-hidden />
+            isFolderProject ? <Folder size={11} aria-hidden /> : <GitBranch size={11} aria-hidden />
           }
           label={configLabel}
           controls={configId}

@@ -26,11 +26,8 @@ import {
   upsertContextSlot,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import {
-  writeSimpleSessionMarker,
-  type CreatedWorktree,
-} from '../../../features/worktree/worktree';
-import { prepareSimpleWorkspace } from '../../../features/workspace/prepareSimpleWorkspace';
+import { writeSessionMarker, type CreatedWorktree } from '../../../features/worktree/worktree';
+import { prepareSessionContainer } from '../../../features/workspace/prepareSessionContainer';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 import { kindRouting, AGENT_KIND_META, type AgentKind } from '../../../features/session/agent-kind';
 import {
@@ -123,8 +120,8 @@ export const createSession = (set: SetFn, get: GetFn) => {
     }
     const dirSlug = `${slugifyDir(slugSeed)}-${sessionId.slice(0, 8)}`;
     const sessionsRoot = resolveSessionsRoot({ workspace });
-    const containerDir = await prepareSimpleWorkspace({ path: `${sessionsRoot}/${dirSlug}` });
-    await writeSimpleSessionMarker({ path: containerDir, sessionId, workspaceId });
+    const containerDir = await prepareSessionContainer({ path: `${sessionsRoot}/${dirSlug}` });
+    await writeSessionMarker({ path: containerDir, sessionId, workspaceId });
     rememberMaterializationSeed({
       sessionId,
       seed: {

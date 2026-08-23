@@ -20,7 +20,7 @@ export const NoWorkspaceScreen = ({ onAddWorkspace }: Props) => {
       <EmptyState
         illustration={<DogMascot size={96} className="text-primary" />}
         title="Welcome to Goodboy"
-        description="Point at a project folder to create your first workspace."
+        description="Start from a project folder, or create a workspace and add the projects it works on."
         action={
           <Button size="md" onClick={onAddWorkspace}>
             Add workspace

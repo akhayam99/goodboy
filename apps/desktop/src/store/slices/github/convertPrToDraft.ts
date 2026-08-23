@@ -21,7 +21,7 @@ export const convertPrToDraft = (_set: SetFn, get: GetFn) => {
     const res = await tauriGhRunner.run(['pr', 'ready', String(num), '--undo'], {
       cwd: repo.repoRoot,
       workspaceId: session.workspaceId,
-      memberWorkspaceId: repo.projectId,
+      projectId: repo.projectId,
     });
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr ready --undo exited with ${res.exitCode}`;

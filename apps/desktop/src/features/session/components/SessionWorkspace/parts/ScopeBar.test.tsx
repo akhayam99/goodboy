@@ -20,7 +20,7 @@ vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
 }));
 
-import { RepoScopeBar } from './RepoScopeBar';
+import { ScopeBar } from './ScopeBar';
 
 const SESSION_ID = 'session-1' as SessionId;
 const API_PROJECT_ID = 'project-api' as ProjectId;
@@ -44,9 +44,9 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-describe('RepoScopeBar', () => {
+describe('ScopeBar', () => {
   it('scopes the content below from its own row', () => {
-    render(<RepoScopeBar sessionId={SESSION_ID} />);
+    render(<ScopeBar sessionId={SESSION_ID} />);
 
     expect(screen.getByTestId('repo-scope-bar').textContent).toContain('Scoped to');
     fireEvent.click(screen.getByRole('tab', { name: 'api' }));
@@ -60,7 +60,7 @@ describe('RepoScopeBar', () => {
   it('costs no row at all on a single-repo session', () => {
     store.sessionProjectMounts = { [SESSION_ID]: [mount(API_PROJECT_ID, 'api')] };
 
-    render(<RepoScopeBar sessionId={SESSION_ID} />);
+    render(<ScopeBar sessionId={SESSION_ID} />);
 
     expect(screen.queryByTestId('repo-scope-bar')).toBeNull();
   });

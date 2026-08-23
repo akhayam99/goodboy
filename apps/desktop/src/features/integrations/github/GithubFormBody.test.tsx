@@ -5,7 +5,6 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type {
   GitlabIntegrationBinding,
   IntegrationCredentialId,
-  ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
 
@@ -13,6 +12,9 @@ const { state, ghStatusMock, ghSetTokenMock, ghClearTokenMock } = vi.hoisted(() 
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     disconnectGitlab: vi.fn(async () => undefined),
+    integrationCredentials: [] as ReadonlyArray<unknown>,
+    integrationCredentialUsage: {} as Record<string, number>,
+    forgetIntegrationCredential: vi.fn(async () => undefined),
   },
   ghStatusMock: vi.fn(async () => ({ scoped: false, user: null }) as unknown),
   ghSetTokenMock: vi.fn(async () => ({ scoped: true }) as unknown),
@@ -30,7 +32,6 @@ vi.mock('../../github/github', () => ({
 }));
 
 const WS_ID = 'ws-1' as WorkspaceId;
-const PROJECT_ID = 'project-1' as ProjectId;
 
 const gitlabIntegration: GitlabIntegrationBinding = {
   id: 'wi-1' as never,
@@ -46,6 +47,8 @@ const gitlabIntegration: GitlabIntegrationBinding = {
 beforeEach(() => {
   state.workspaceIntegrations = {};
   state.disconnectGitlab = vi.fn(async () => undefined);
+  state.integrationCredentials = [];
+  state.integrationCredentialUsage = {};
   ghStatusMock.mockResolvedValue({ scoped: false, user: null });
   ghSetTokenMock.mockResolvedValue({ scoped: true });
   ghClearTokenMock.mockResolvedValue(undefined);
@@ -55,24 +58,24 @@ afterEach(cleanup);
 import { GithubFormBody } from './GithubFormBody';
 
 describe('GithubFormBody', () => {
-  it('offers the token link before the token field', async () => {
+  it('shows the token field first and the get-a-token link right under it', async () => {
     render(<GithubFormBody workspaceId={WS_ID} />);
 
-    const link = await screen.findByRole('link', { name: /create a personal access token/i });
-    const field = screen.getByLabelText(/GitHub personal API key/i);
+    const field = await screen.findByLabelText(/personal API key/i);
+    const link = screen.getByRole('link', { name: /get a personal access token from GitHub/i });
 
-    expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(field.compareDocumentPosition(link)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   describe('token form (happy path)', () => {
     it('only focuses the token field when the containing surface opts in', async () => {
       const view = render(<GithubFormBody workspaceId={WS_ID} />);
-      const inlineField = await screen.findByLabelText(/GitHub personal API key/i);
+      const inlineField = await screen.findByLabelText(/personal API key/i);
       expect(inlineField).not.toBe(document.activeElement);
 
       view.unmount();
       render(<GithubFormBody workspaceId={WS_ID} shouldAutoFocus />);
-      expect(await screen.findByLabelText(/GitHub personal API key/i)).toBe(document.activeElement);
+      expect(await screen.findByLabelText(/personal API key/i)).toBe(document.activeElement);
     });
 
     it('queries gh status for the workspace on mount', async () => {
@@ -80,11 +83,23 @@ describe('GithubFormBody', () => {
       await waitFor(() => expect(ghStatusMock).toHaveBeenCalledWith(WS_ID));
     });
 
+    it('mentions the system gh fallback only when one is signed in', async () => {
+      ghStatusMock.mockResolvedValue({ scoped: false, user: 'octocat' });
+      render(<GithubFormBody workspaceId={WS_ID} />);
+      expect(await screen.findByText(/system gh CLI, connected as octocat/i)).toBeDefined();
+
+      cleanup();
+      ghStatusMock.mockResolvedValue({ scoped: false, user: null });
+      render(<GithubFormBody workspaceId={WS_ID} />);
+      await screen.findByLabelText(/personal API key/i);
+      expect(screen.queryByText(/system gh CLI/i)).toBeNull();
+    });
+
     it('disables Connect until a non-empty token is entered', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
       const btn = (await screen.findByRole('button', { name: /^connect$/i })) as HTMLButtonElement;
       expect(btn.disabled).toBe(true);
-      fireEvent.change(screen.getByLabelText(/GitHub personal API key/i), {
+      fireEvent.change(screen.getByLabelText(/personal API key/i), {
         target: { value: 'ghp_abc' },
       });
       expect(btn.disabled).toBe(false);
@@ -92,8 +107,8 @@ describe('GithubFormBody', () => {
 
     it('keeps Connect disabled for a whitespace-only token', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
-      await screen.findByLabelText(/GitHub personal API key/i);
-      fireEvent.change(screen.getByLabelText(/GitHub personal API key/i), {
+      await screen.findByLabelText(/personal API key/i);
+      fireEvent.change(screen.getByLabelText(/personal API key/i), {
         target: { value: '   ' },
       });
       expect(
@@ -104,7 +119,7 @@ describe('GithubFormBody', () => {
     it('sets the trimmed token and fires onConnected on a successful connect', async () => {
       const onConnected = vi.fn();
       render(<GithubFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fireEvent.change(await screen.findByLabelText(/GitHub personal API key/i), {
+      fireEvent.change(await screen.findByLabelText(/personal API key/i), {
         target: { value: '  ghp_abc  ' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -116,7 +131,7 @@ describe('GithubFormBody', () => {
       const onConnected = vi.fn();
       ghSetTokenMock.mockRejectedValueOnce(new Error('bad credentials'));
       render(<GithubFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fireEvent.change(await screen.findByLabelText(/GitHub personal API key/i), {
+      fireEvent.change(await screen.findByLabelText(/personal API key/i), {
         target: { value: 'ghp_bad' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -129,7 +144,7 @@ describe('GithubFormBody', () => {
         'GitHub rejected this personal API key. Check you pasted the whole value, then try again.',
       );
       render(<GithubFormBody workspaceId={WS_ID} />);
-      fireEvent.change(await screen.findByLabelText(/GitHub personal API key/i), {
+      fireEvent.change(await screen.findByLabelText(/personal API key/i), {
         target: { value: 'ghp_bad' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -151,7 +166,7 @@ describe('GithubFormBody', () => {
       for (const cause of causes) {
         ghSetTokenMock.mockRejectedValueOnce(cause);
         const view = render(<GithubFormBody workspaceId={WS_ID} />);
-        fireEvent.change(await screen.findByLabelText(/GitHub personal API key/i), {
+        fireEvent.change(await screen.findByLabelText(/personal API key/i), {
           target: { value: 'ghp_bad' },
         });
         fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -169,22 +184,23 @@ describe('GithubFormBody', () => {
       ghStatusMock.mockResolvedValue({ scoped: true, user: 'octocat' });
     });
 
-    it('renders the connected state with the gh user', async () => {
+    it('renders one connected row with the gh user and the scope badge', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
       expect(await screen.findByText(/Connected as octocat/i)).toBeDefined();
+      expect(screen.getByText('workspace key')).toBeDefined();
       expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
     });
 
     it('arms the disconnect confirm instead of clearing the token immediately', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
-      fireEvent.click(await screen.findByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(await screen.findByRole('button', { name: /disconnect github/i }));
       expect(await screen.findByText(/Disconnect GitHub\?/i)).toBeDefined();
       expect(ghClearTokenMock).not.toHaveBeenCalled();
     });
 
     it('clears the token for the workspace once the confirm is confirmed', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
-      fireEvent.click(await screen.findByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(await screen.findByRole('button', { name: /disconnect github/i }));
       fireEvent.click(await screen.findByRole('button', { name: /^disconnect github$/i }));
       await waitFor(() => expect(ghClearTokenMock).toHaveBeenCalledWith(WS_ID));
     });
@@ -197,14 +213,14 @@ describe('GithubFormBody', () => {
 
     it('still offers the token form so both hosts can coexist', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
-      expect(await screen.findByLabelText(/GitHub personal API key/i)).toBeDefined();
+      expect(await screen.findByLabelText(/personal API key/i)).toBeDefined();
       expect(screen.getByRole('button', { name: /^connect$/i })).toBeDefined();
       expect(screen.queryByText(/Disconnect GitLab/i)).toBeNull();
     });
 
     it('connects GitHub without touching the GitLab integration', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
-      fireEvent.change(await screen.findByLabelText(/GitHub personal API key/i), {
+      fireEvent.change(await screen.findByLabelText(/personal API key/i), {
         target: { value: 'ghp_abc' },
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
@@ -213,9 +229,13 @@ describe('GithubFormBody', () => {
     });
   });
 
-  it('does not claim the token never leaves this machine', async () => {
+  it('keeps the keychain note behind a quiet disclosure and says where the token travels', async () => {
     render(<GithubFormBody workspaceId={WS_ID} />);
-    await screen.findByLabelText(/GitHub personal API key/i);
+    await screen.findByLabelText(/personal API key/i);
+    expect(screen.queryByText(/never touches Goodboy's own servers/i)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /scope and where your key goes/i }));
+    expect(screen.getByText(/never touches Goodboy's own servers/i)).toBeDefined();
+    expect(screen.getByRole('link', { name: /configure SSO/i })).toBeDefined();
     expect(screen.queryByText(/never leaves this machine/i)).toBeNull();
   });
 });

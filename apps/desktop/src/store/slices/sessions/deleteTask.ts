@@ -5,7 +5,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { removeSessionDirectory, removeWorktree } from '../../../features/worktree/worktree';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { buildSessionProjectMounts } from '../worktrees/buildSessionMounts';
+import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMounts';
 import { purgeSessionFileVersions } from '../file-versions/persistFinalizedFileVersions';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
 import { forgetMaterializationSeed } from './materializationSeeds';

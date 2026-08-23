@@ -11,17 +11,12 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 
 type Props = {
   readonly detail: PrDetail | null;
-  readonly workspaceRoot: string | null;
-  readonly memberWorkspaceId?: ProjectId;
+  readonly projectRoot: string | null;
+  readonly projectId?: ProjectId;
   readonly onAddReviewers: (logins: ReadonlyArray<string>) => void;
 };
 
-export const PrReviewers = ({
-  detail,
-  workspaceRoot,
-  memberWorkspaceId,
-  onAddReviewers,
-}: Props) => {
+export const PrReviewers = ({ detail, projectRoot, projectId, onAddReviewers }: Props) => {
   const requests = detail?.reviewRequests ?? [];
   const reviewed = useMemo(
     () => latestTerminalReviewsByAuthor(detail?.reviews ?? []),
@@ -39,8 +34,8 @@ export const PrReviewers = ({
   return (
     <RailBlock label="Reviewers">
       <ReviewerPicker
-        workspaceRoot={workspaceRoot}
-        memberWorkspaceId={memberWorkspaceId}
+        projectRoot={projectRoot}
+        projectId={projectId}
         exclude={known}
         onAdd={onAddReviewers}
       />

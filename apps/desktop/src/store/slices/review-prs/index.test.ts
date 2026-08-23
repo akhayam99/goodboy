@@ -272,7 +272,7 @@ describe('review-prs slice', () => {
     expect(result.loading).toBe(false);
   });
 
-  it('collects attributed PRs from every resolvable composite member', async () => {
+  it('collects attributed PRs from every resolvable member project', async () => {
     const webId = 'project-web' as ProjectId;
     const apiId = 'project-api' as ProjectId;
     const brokenId = 'project-broken' as ProjectId;

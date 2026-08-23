@@ -1,5 +1,4 @@
 import { Divider } from '@goodboy/ui';
-import { FolderGit2 } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
@@ -32,7 +31,6 @@ type Props = {
   onOpenGitlab: () => void;
   onOpenBitbucket: () => void;
   onOpenSlack: () => void;
-  onConvertToDevProject: () => void;
   githubEnabled: boolean;
   linearEnabled: boolean;
   jiraEnabled: boolean;
@@ -40,7 +38,6 @@ type Props = {
   gitlabEnabled: boolean;
   bitbucketEnabled: boolean;
   slackEnabled: boolean;
-  isSimpleWorkspace: boolean;
 };
 
 export const AppFooter = ({
@@ -58,7 +55,6 @@ export const AppFooter = ({
   onOpenGitlab,
   onOpenBitbucket,
   onOpenSlack,
-  onConvertToDevProject,
   githubEnabled,
   linearEnabled,
   jiraEnabled,
@@ -66,7 +62,6 @@ export const AppFooter = ({
   gitlabEnabled,
   bitbucketEnabled,
   slackEnabled,
-  isSimpleWorkspace,
 }: Props) => {
   const noProviderConnected = useAppStore(
     (s) => !s.providers.some((p) => p.connection === 'connected'),
@@ -90,27 +85,13 @@ export const AppFooter = ({
     sentry: onOpenSentry,
     slack: onOpenSlack,
   } satisfies Record<IntegrationGlyphProvider, () => void>;
-  const members = FOOTER_INTEGRATIONS.filter(
-    (member) => !isSimpleWorkspace || member.availableInSimpleWorkspace,
-  );
-  const connectedMembers = members.filter((member) => enabled[member.provider]);
+  const connectedMembers = FOOTER_INTEGRATIONS.filter((member) => enabled[member.provider]);
 
   return (
     <div className="flex shrink-0 flex-col">
       <Divider />
       <div className="grid h-9 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 bg-background px-2 [&>*:last-child]:justify-self-end">
         <div className="flex min-w-0 items-center gap-2 overflow-hidden">
-          {isSimpleWorkspace ? (
-            <FooterButton
-              icon={<FolderGit2 size={12} aria-hidden />}
-              label="Add a repo"
-              title="Turn this workspace into a dev project backed by a git repository"
-              onClick={onConvertToDevProject}
-            />
-          ) : null}
-          {isSimpleWorkspace ? (
-            <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
-          ) : null}
           <div
             role="group"
             aria-label="Connected integrations"
@@ -135,11 +116,11 @@ export const AppFooter = ({
             <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
           ) : null}
           <IntegrationAddPopover
-            members={members}
+            members={FOOTER_INTEGRATIONS}
             enabled={enabled}
             openers={openers}
             isEmpty={connectedMembers.length === 0}
-            active={members.some(
+            active={FOOTER_INTEGRATIONS.some(
               (member) => member.provider === activeStudio && !enabled[member.provider],
             )}
           />

@@ -283,21 +283,21 @@ const createWorktreeSpy = vi.fn();
 const createSessionDirSpy = vi.fn();
 const removeWorktreeSpy = vi.fn(async () => undefined);
 const changeWorktreeBranchSpy = vi.fn(async () => undefined);
-const writeSimpleSessionMarkerSpy = vi.fn(async () => undefined);
-const prepareSimpleWorkspaceSpy = vi.fn(async ({ path }: { path: string }) => path);
+const writeSessionMarkerSpy = vi.fn(async () => undefined);
+const prepareSessionContainerSpy = vi.fn(async ({ path }: { path: string }) => path);
 
 vi.mock('../../../features/worktree/worktree', () => ({
   createWorktree: createWorktreeSpy,
   createSessionDir: createSessionDirSpy,
   removeWorktree: removeWorktreeSpy,
   changeWorktreeBranch: changeWorktreeBranchSpy,
-  writeSimpleSessionMarker: writeSimpleSessionMarkerSpy,
-  simpleSessionDirExists: vi.fn(async () => true),
+  writeSessionMarker: writeSessionMarkerSpy,
+  sessionDirExists: vi.fn(async () => true),
   worktreeChangedFiles: vi.fn(async () => []),
 }));
 
-vi.mock('../../../features/workspace/prepareSimpleWorkspace', () => ({
-  prepareSimpleWorkspace: prepareSimpleWorkspaceSpy,
+vi.mock('../../../features/workspace/prepareSessionContainer', () => ({
+  prepareSessionContainer: prepareSessionContainerSpy,
 }));
 
 vi.mock('../../../shared/lib/repo', () => ({
@@ -1023,10 +1023,10 @@ describe('store contract', () => {
 
       expect(createWorktreeSpy).not.toHaveBeenCalled();
       expect(createSessionDirSpy).not.toHaveBeenCalled();
-      expect(prepareSimpleWorkspaceSpy).toHaveBeenCalledWith({
+      expect(prepareSessionContainerSpy).toHaveBeenCalledWith({
         path: expect.stringMatching(/^\/tmp\/repo\/study-plan-[a-f0-9]{8}$/),
       });
-      expect(writeSimpleSessionMarkerSpy).toHaveBeenCalledWith({
+      expect(writeSessionMarkerSpy).toHaveBeenCalledWith({
         path: worktree.worktreePath,
         sessionId: session.id,
         workspaceId: WS_ID,
@@ -1054,7 +1054,7 @@ describe('store contract', () => {
 
       await store.getState().createSession({ workspaceId: WS_ID, goal: 'Study plan' });
 
-      expect(prepareSimpleWorkspaceSpy).toHaveBeenCalledWith({
+      expect(prepareSessionContainerSpy).toHaveBeenCalledWith({
         path: expect.stringMatching(/^~\/\.goodboy\/sessions\/ws\/study-plan-[a-f0-9]{8}$/),
       });
     });
@@ -1523,18 +1523,18 @@ describe('store contract', () => {
       expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual([linkedTask]);
     });
 
-    it('attributes a linked task to the active composite mount', async () => {
+    it('attributes a linked task to the active project mount', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');
-      const memberWorkspaceId = 'project-member' as ProjectId;
+      const projectId = 'project-member' as ProjectId;
       store.setState({
         sessions: [buildSession()],
         workspaces: [buildWorkspace()],
-        projects: [buildProject({ id: memberWorkspaceId, rootPath: '/tmp/member' })],
+        projects: [buildProject({ id: projectId, rootPath: '/tmp/member' })],
         sessionProjectMounts: {
           [SESSION_ID]: [
             {
-              projectId: memberWorkspaceId,
+              projectId: projectId,
               mountName: 'member',
               worktreePath: '/tmp/member-worktree',
               repoRoot: '/tmp/member',
@@ -1542,7 +1542,7 @@ describe('store contract', () => {
             },
           ],
         },
-        sessionActiveProject: { [SESSION_ID]: memberWorkspaceId },
+        sessionActiveProject: { [SESSION_ID]: projectId },
       });
 
       await store.getState().linkSessionExternalTask(SESSION_ID, LINEAR_TASK);
@@ -1550,7 +1550,7 @@ describe('store contract', () => {
       const linkedTask = {
         ...LINEAR_TASK,
         sessionId: SESSION_ID,
-        projectId: memberWorkspaceId,
+        projectId: projectId,
         branch: 'ak/member',
       };
       expect(vi.mocked(db.upsertSessionExternalTask)).toHaveBeenCalledWith({

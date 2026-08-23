@@ -3,49 +3,50 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-const { state, validateMock } = vi.hoisted(() => ({
+const { state, repoMocks, dialogMock, onboarding } = vi.hoisted(() => ({
   state: {
-    addWorkspace: vi.fn(async () => ({ id: 'ws-new' })),
-    addCompositeWorkspace: vi.fn(async () => ({ id: 'ws-composite' })),
-    addSimpleWorkspace: vi.fn(async () => ({ id: 'ws-simple' })),
+    addWorkspace: vi.fn(async () => ({ id: 'ws-new', name: 'repo', sessionsRoot: '/some/repo' })),
+    createWorkspace: vi.fn(async ({ name }: { name: string }) => ({
+      id: 'ws-created',
+      name,
+      sessionsRoot: null,
+    })),
+    addProject: vi.fn(async () => ({ id: 'proj-1', rootPath: '/some/repo' })),
+    addProjects: vi.fn(async () => []),
+    removeProject: vi.fn(async () => undefined),
+    adoptWorkspaceSessionsRoot: vi.fn(async () => undefined),
     setCurrentWorkspace: vi.fn(async () => undefined),
-    workspaces: [] as ReadonlyArray<{ id: string }>,
+    projects: [] as ReadonlyArray<{ id: string; workspaceId: string }>,
   },
-  validateMock: vi.fn(async () => ({ isRepo: true, resolvedPath: '/some/repo' })),
+  repoMocks: {
+    validateGitRepo: vi.fn<
+      (path: string) => Promise<{
+        isRepo: boolean;
+        rootPath: string | null;
+        resolvedPath: string | null;
+        error: string | null;
+      }>
+    >(async () => ({
+      isRepo: true,
+      rootPath: '/some/repo',
+      resolvedPath: '/some/repo',
+      error: null,
+    })),
+    scanChildRepos: vi.fn(async (): Promise<ReadonlyArray<{ name: string; path: string }>> => []),
+    initRepo: vi.fn(async () => ({ rootPath: '/picked/path' })),
+  },
+  dialogMock: { open: vi.fn(async (): Promise<string | null> => '/some/repo') },
+  onboarding: { wizardDone: true, reopenWizard: vi.fn() },
 }));
 
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(
-    selector: (s: {
-      addWorkspace: typeof state.addWorkspace;
-      addCompositeWorkspace: typeof state.addCompositeWorkspace;
-      addSimpleWorkspace: typeof state.addSimpleWorkspace;
-      setCurrentWorkspace: typeof state.setCurrentWorkspace;
-    }) => T,
-  ) =>
-    selector({
-      addWorkspace: state.addWorkspace,
-      addCompositeWorkspace: state.addCompositeWorkspace,
-      addSimpleWorkspace: state.addSimpleWorkspace,
-      setCurrentWorkspace: state.setCurrentWorkspace,
-    }),
-  useWorkspaces: () => state.workspaces,
+  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
-vi.mock('../../../../shared/lib/repo', () => ({
-  validateGitRepo: validateMock,
-}));
+vi.mock('../../../../shared/lib/repo', () => repoMocks);
 
 vi.mock('@tauri-apps/plugin-dialog', () => ({
-  open: vi.fn(async () => '/picked/path'),
-}));
-
-vi.mock('../../defaultSimpleWorkspacePath', () => ({
-  defaultSimpleWorkspacePath: vi.fn(async () => '/home/test/Documents/Goodboy/my-workspace'),
-}));
-
-const { onboarding } = vi.hoisted(() => ({
-  onboarding: { wizardDone: true, reopenWizard: vi.fn() },
+  open: dialogMock.open,
 }));
 
 vi.mock('../../../onboarding/onboarding-store', () => ({
@@ -56,15 +57,22 @@ vi.mock('../../../onboarding/onboarding-store', () => ({
 import { WorkspaceLinkDialog } from './index';
 
 beforeEach(() => {
-  state.addWorkspace = vi.fn(async () => ({ id: 'ws-new' }));
-  state.addCompositeWorkspace = vi.fn(async () => ({ id: 'ws-composite' }));
-  state.addSimpleWorkspace = vi.fn(async () => ({ id: 'ws-simple' }));
-  state.setCurrentWorkspace = vi.fn(async () => undefined);
-  state.workspaces = [];
-  validateMock.mockClear();
-  validateMock.mockResolvedValue({ isRepo: true, resolvedPath: '/some/repo' });
+  vi.clearAllMocks();
+  state.addWorkspace = vi.fn(async () => ({
+    id: 'ws-new',
+    name: 'repo',
+    sessionsRoot: '/some/repo',
+  }));
+  state.projects = [];
+  repoMocks.validateGitRepo.mockResolvedValue({
+    isRepo: true,
+    rootPath: '/some/repo',
+    resolvedPath: '/some/repo',
+    error: null,
+  });
+  repoMocks.scanChildRepos.mockResolvedValue([]);
+  dialogMock.open.mockResolvedValue('/some/repo');
   onboarding.wizardDone = true;
-  onboarding.reopenWizard.mockClear();
 });
 afterEach(cleanup);
 
@@ -73,17 +81,18 @@ describe('WorkspaceLinkDialog', () => {
     const { rerender } = render(
       <WorkspaceLinkDialog open={false} onClose={vi.fn()} onOfferRepo={vi.fn()} />,
     );
-    expect(screen.queryByRole('tab', { name: 'Single project' })).toBeNull();
+    expect(screen.queryByRole('radio', { name: /start from a project/i })).toBeNull();
 
     rerender(<WorkspaceLinkDialog open onClose={vi.fn()} onOfferRepo={vi.fn()} />);
-    expect(screen.getByRole('tab', { name: 'Single project' })).toBeDefined();
+    expect(screen.getByRole('radio', { name: /start from a project/i })).toBeDefined();
   });
 
   it('pins the form actions in the dialog footer instead of the scrolling body', () => {
     render(<WorkspaceLinkDialog open onClose={vi.fn()} onOfferRepo={vi.fn()} />);
+    fireEvent.click(screen.getByRole('radio', { name: /a workspace with several projects/i }));
 
-    const submit = screen.getByRole('button', { name: 'Add workspace' });
-    const form = screen.getByRole('tab', { name: 'Single project' }).closest('form');
+    const submit = screen.getByRole('button', { name: 'Create workspace' });
+    const form = screen.getByRole('radio', { name: /start from a project/i }).closest('form');
 
     expect(submit.closest('footer')).not.toBeNull();
     expect(form).not.toBeNull();
@@ -91,15 +100,12 @@ describe('WorkspaceLinkDialog', () => {
     expect(submit.getAttribute('form')).toBe(form?.getAttribute('id'));
   });
 
-  it('submits the form from the footer action and closes on success', async () => {
+  it('links a picked repository and closes on success', async () => {
     const onClose = vi.fn();
     render(<WorkspaceLinkDialog open onClose={onClose} onOfferRepo={vi.fn()} />);
 
-    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
-      target: { value: '/some/repo' },
-    });
-    await waitFor(() => screen.getByText(/valid git repository/i), { timeout: 2000 });
-    fireEvent.click(screen.getByRole('button', { name: 'Add workspace' }));
+    fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
+    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
 
     await waitFor(() =>
       expect(state.addWorkspace).toHaveBeenCalledWith({ rootPath: '/some/repo' }),
@@ -108,34 +114,34 @@ describe('WorkspaceLinkDialog', () => {
     expect(onboarding.reopenWizard).not.toHaveBeenCalled();
   });
 
-  it('offers a repository right after a folder with no git lands as a simple workspace', async () => {
+  it('offers a repository right after a plain folder without git lands', async () => {
     state.addWorkspace = vi.fn(async () => ({
       id: 'ws-new',
+      name: 'fresh-idea',
       sessionsRoot: '/some/fresh-idea',
     }));
-    validateMock.mockResolvedValue({ isRepo: false, resolvedPath: '/some/fresh-idea' });
+    dialogMock.open.mockResolvedValue('/some/fresh-idea');
+    repoMocks.validateGitRepo.mockResolvedValue({
+      isRepo: false,
+      rootPath: null,
+      resolvedPath: '/some/fresh-idea',
+      error: null,
+    });
     const onOfferRepo = vi.fn();
     render(<WorkspaceLinkDialog open onClose={vi.fn()} onOfferRepo={onOfferRepo} />);
 
-    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
-      target: { value: '/some/fresh-idea' },
-    });
-    await waitFor(() => screen.getByText(/no git repository here yet/i), { timeout: 2000 });
-    fireEvent.click(screen.getByRole('button', { name: 'Add workspace' }));
-
+    fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
+    fireEvent.click(screen.getByRole('button', { name: /link a plain folder/i }));
+    await waitFor(() => expect(state.addWorkspace).toHaveBeenCalled());
     await waitFor(() => expect(onOfferRepo).toHaveBeenCalledOnce());
   });
 
   it('leaves a git-backed folder alone instead of offering it a repository', async () => {
-    state.addWorkspace = vi.fn(async () => ({ id: 'ws-new', sessionsRoot: '/some/repo' }));
     const onOfferRepo = vi.fn();
     render(<WorkspaceLinkDialog open onClose={vi.fn()} onOfferRepo={onOfferRepo} />);
 
-    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
-      target: { value: '/some/repo' },
-    });
-    await waitFor(() => screen.getByText(/valid git repository/i), { timeout: 2000 });
-    fireEvent.click(screen.getByRole('button', { name: 'Add workspace' }));
+    fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
+    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
 
     await waitFor(() => expect(state.addWorkspace).toHaveBeenCalled());
     expect(onOfferRepo).not.toHaveBeenCalled();
@@ -145,11 +151,8 @@ describe('WorkspaceLinkDialog', () => {
     onboarding.wizardDone = false;
     render(<WorkspaceLinkDialog open onClose={vi.fn()} onOfferRepo={vi.fn()} />);
 
-    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
-      target: { value: '/some/repo' },
-    });
-    await waitFor(() => screen.getByText(/valid git repository/i), { timeout: 2000 });
-    fireEvent.click(screen.getByRole('button', { name: 'Add workspace' }));
+    fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
+    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
 
     await waitFor(() => expect(onboarding.reopenWizard).toHaveBeenCalledWith('setup'));
   });

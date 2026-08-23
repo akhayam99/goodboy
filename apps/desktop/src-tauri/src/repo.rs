@@ -196,8 +196,8 @@ pub fn scan_child_repos(path: String) -> Vec<ChildRepo> {
 }
 
 #[tauri::command]
-pub fn workspace_git_status(workspace_path: String) -> WorkspaceGitStatus {
-    let root = Path::new(workspace_path.trim());
+pub fn project_git_status(project_path: String) -> WorkspaceGitStatus {
+    let root = Path::new(project_path.trim());
     if !root.is_dir() {
         return blank_status("missing");
     }
@@ -567,7 +567,7 @@ fn run_git(cwd: &Path, args: &[&str]) -> Result<String, RepoInitError> {
 #[cfg(test)]
 mod tests {
     use super::{
-        is_supported_remote_url, repo_init_with_remote, workspace_git_status, RepoInitArgs,
+        is_supported_remote_url, project_git_status, repo_init_with_remote, RepoInitArgs,
         RepoInitError,
     };
     use crate::worktree::{GitDistance, GitWorkingTree};
@@ -816,7 +816,7 @@ mod tests {
     }
 
     fn status_of(root: &std::path::Path) -> super::WorkspaceGitStatus {
-        workspace_git_status(root.to_string_lossy().into_owned())
+        project_git_status(root.to_string_lossy().into_owned())
     }
 
     #[test]
@@ -825,7 +825,7 @@ mod tests {
         std::fs::write(root.join("notes.md"), "hello").unwrap();
 
         let absent = status_of(&root);
-        let missing = workspace_git_status(root.join("gone").to_string_lossy().into_owned());
+        let missing = project_git_status(root.join("gone").to_string_lossy().into_owned());
 
         assert_eq!(absent.state, "absent");
         assert_eq!(absent.branch, None);

@@ -205,26 +205,26 @@ describe('startPrReviewSession', () => {
     expect(input.kickoffPrompt).not.toContain('```diff');
   });
 
-  it('uses and activates the attributed member for a composite review', async () => {
-    const memberWorkspaceId = 'workspace-api' as ProjectId;
+  it('uses and activates the attributed member for a multi-project review', async () => {
+    const projectId = 'workspace-api' as ProjectId;
     const setSessionActiveProjectSpy = vi.fn();
     const { action, createSessionSpy } = buildHarness({
       projects: [
         buildProject({ id: 'project-web' as ProjectId, name: 'web', rootPath: '/tmp/web' }),
-        buildProject({ id: memberWorkspaceId, name: 'api', rootPath: '/tmp/api' }),
+        buildProject({ id: projectId, name: 'api', rootPath: '/tmp/api' }),
       ],
       setSessionActiveProject: setSessionActiveProjectSpy,
     });
 
-    await action(WS_ID, buildPr({ projectId: memberWorkspaceId }));
+    await action(WS_ID, buildPr({ projectId: projectId }));
 
-    expect(ghPrDiffSpy).toHaveBeenCalledWith('org/repo', 7, '/tmp/api', WS_ID, memberWorkspaceId);
+    expect(ghPrDiffSpy).toHaveBeenCalledWith('org/repo', 7, '/tmp/api', WS_ID, projectId);
     expect(createSessionSpy.mock.calls[0]![0].externalTasks?.[0]).toMatchObject({
-      projectId: memberWorkspaceId,
+      projectId: projectId,
     });
     expect(setSessionActiveProjectSpy).toHaveBeenCalledWith({
       sessionId: 'sess-1',
-      projectId: memberWorkspaceId,
+      projectId: projectId,
     });
   });
 

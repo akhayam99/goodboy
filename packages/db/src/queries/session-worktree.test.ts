@@ -32,7 +32,7 @@ const seed = async (): Promise<Database> => {
 };
 
 describe('updateSessionWorktreeRepoSlug', () => {
-  it('stamps only the addressed mount of a composite session', async () => {
+  it('stamps only the addressed mount of a multi-project session', async () => {
     const db = await seed();
     await insertSessionWorktree(db, {
       id: 'wt-api',

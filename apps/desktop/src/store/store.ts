@@ -233,7 +233,6 @@ export type AppActions = {
   cancelProviderConnect(providerId: ProviderId): Promise<void>;
   dismissProviderConnect(providerId: ProviderId): void;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
-  addSimpleWorkspace(input: { name: string; path: string }): Promise<Workspace>;
   adoptWorkspaceSessionsRoot(input: {
     workspaceId: WorkspaceId;
     rootPath: string;

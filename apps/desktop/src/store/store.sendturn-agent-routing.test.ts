@@ -224,7 +224,7 @@ vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
   worktreeChangedFiles: vi.fn(async () => ({ files: [], numstat: '' })),
-  simpleSessionDirExists: vi.fn(async () => true),
+  sessionDirExists: vi.fn(async () => true),
 }));
 
 vi.mock('../shared/lib/repo', () => ({

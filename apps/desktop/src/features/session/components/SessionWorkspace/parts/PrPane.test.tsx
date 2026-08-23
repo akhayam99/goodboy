@@ -754,7 +754,7 @@ describe('PrPane', () => {
     expect(screen.getAllByRole('link', { name: 'Open in GitHub' })).toHaveLength(3);
   });
 
-  it('shows repository attribution on composite linked rows', () => {
+  it('shows repository attribution on multi-project linked rows', () => {
     const memberId = 'project-web' as ProjectId;
     h.store.workspaces = [
       {
@@ -977,9 +977,9 @@ describe('PrPane', () => {
     h.remoteKind = null;
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
-    expect(screen.getByRole('heading', { name: 'GitHub', level: 2 })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Connect GitHub', level: 2 })).toBeDefined();
     expect(screen.getByText(/does not have a GitHub remote/i)).toBeDefined();
-    expect(screen.queryByLabelText('GitHub personal API key')).toBeNull();
+    expect(screen.queryByLabelText('Personal API key')).toBeNull();
     expect(screen.queryByRole('button', { name: /Draft a pull request/i })).toBeNull();
   });
 
@@ -991,12 +991,12 @@ describe('PrPane', () => {
     };
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
-    const tokenInput = await screen.findByLabelText('GitHub personal API key');
+    const tokenInput = await screen.findByLabelText('Personal API key');
     fireEvent.change(tokenInput, { target: { value: 'ghp_valid' } });
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
 
     await waitFor(() => {
-      expect(screen.queryByLabelText('GitHub personal API key')).toBeNull();
+      expect(screen.queryByLabelText('Personal API key')).toBeNull();
     });
     expect(screen.getByRole('button', { name: /Draft a pull request/i })).toBeDefined();
   });

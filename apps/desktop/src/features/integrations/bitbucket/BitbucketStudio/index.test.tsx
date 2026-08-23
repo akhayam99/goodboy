@@ -103,7 +103,7 @@ describe('BitbucketStudio', () => {
     renderStudio();
 
     expect(
-      screen.getByText('Connect Bitbucket to review pull requests from this workspace'),
+      screen.getByText('Connect Bitbucket to review pull requests from this project'),
     ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Disconnect Bitbucket' })).toBeNull();
   });
@@ -140,7 +140,7 @@ describe('BitbucketStudio', () => {
     rerender(studioElement());
 
     expect(
-      screen.getByText('Connect Bitbucket to review pull requests from this workspace'),
+      screen.getByText('Connect Bitbucket to review pull requests from this project'),
     ).toBeDefined();
     expect(screen.queryByText('Pull request inbox')).toBeNull();
   });

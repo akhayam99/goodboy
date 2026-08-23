@@ -95,7 +95,7 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
         const detail = await fetchPrDetail(tauriGhRunner, slug, pr.number, {
           cwd: repo.repoRoot,
           workspaceId: session.workspaceId,
-          memberWorkspaceId: repo.projectId,
+          projectId: repo.projectId,
         });
         set((state) => ({
           sessionGithub: {

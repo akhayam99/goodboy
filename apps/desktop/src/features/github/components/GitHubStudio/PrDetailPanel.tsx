@@ -72,7 +72,7 @@ export const PrDetailPanel = ({
     sessionId != null ? (state.sessionSelectedPrNumber[sessionId] ?? null) : null,
   );
   const repo = useSessionRepo({ sessionId: (sessionId ?? '') as SessionId });
-  const workspaceRoot = repo?.repoRoot ?? null;
+  const projectRoot = repo?.repoRoot ?? null;
   const roleModels = useSessionRoleModels({ sessionId });
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);
@@ -481,8 +481,8 @@ export const PrDetailPanel = ({
       rail={
         <PrReviewers
           detail={detail}
-          workspaceRoot={workspaceRoot}
-          memberWorkspaceId={repo?.projectId}
+          projectRoot={projectRoot}
+          projectId={repo?.projectId}
           onAddReviewers={onAddReviewers}
         />
       }

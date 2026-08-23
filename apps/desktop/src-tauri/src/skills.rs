@@ -522,14 +522,14 @@ pub struct SkillRunScriptInput {
     pub args: Vec<String>,
     #[serde(rename = "workingDir")]
     pub working_dir: String,
-    /// Workspace root — used to derive the allowed prefix for path guard.
-    #[serde(rename = "workspaceRoot")]
-    pub workspace_root: String,
+    /// Project root, used to derive the allowed prefix for path guard.
+    #[serde(rename = "projectRoot")]
+    pub project_root: String,
 }
 
 #[tauri::command]
 pub fn skill_run_script(input: SkillRunScriptInput) -> Result<SkillRunScriptResult, SkillError> {
-    let allowed_prefix = PathBuf::from(&input.workspace_root)
+    let allowed_prefix = PathBuf::from(&input.project_root)
         .join(".kay")
         .join("skills");
 

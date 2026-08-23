@@ -1,39 +1,18 @@
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type FormEvent,
-} from 'react';
+import { useId, useMemo, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import {
-  Button,
-  Chip,
-  cn,
-  Divider,
-  FieldRow,
-  formatError,
-  Input,
-  ScrollFade,
-  SectionHeader,
-  SegmentedTabs,
-  StatusDot,
-} from '@goodboy/ui';
+import { Button, Chip, cn, Divider, formatError, Input, SectionHeader, Tooltip } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
-import { AlertTriangle, Boxes, Check, Folder, FolderGit2 } from 'lucide-react';
-import { useAppStore, useWorkspaces } from '../../../../store';
+import { AlertTriangle, Folder, FolderGit2, FolderPlus, Layers, Plus, X } from 'lucide-react';
+import { useAppStore } from '../../../../store';
 import { AppBreadcrumb } from '../../../../app/components/AppBreadcrumb';
 import { buildBreadcrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
-import { validateGitRepo } from '../../../../shared/lib/repo';
-import { defaultSimpleWorkspacePath } from '../../defaultSimpleWorkspacePath';
-import { commonParentDirectory } from './commonParentDirectory';
+import { initRepo, validateGitRepo } from '../../../../shared/lib/repo';
+import { useChildRepoDetection } from '../../../../shared/hooks/useChildRepoDetection';
+import { DetectedRepoList } from '../../../../shared/components/DetectedRepoList';
 import { lastPathSegment } from './lastPathSegment';
 
-export type WorkspaceLinkMode = 'single' | 'multi' | 'simple';
+export type WorkspaceLinkMode = 'project' | 'workspace';
 
 type Props = {
   readonly onComplete: (params: {
@@ -41,600 +20,275 @@ type Props = {
     readonly workspace: Workspace;
   }) => void;
   readonly onCancel: () => void;
-  readonly cancelLabel?: string;
   readonly showBreadcrumb: boolean;
-  readonly modes: ReadonlyArray<WorkspaceLinkMode>;
   readonly footerContainer?: HTMLElement | null;
-  readonly draftStorageKey?: string;
 };
 
-type Mode = WorkspaceLinkMode;
-
-type PathProbe =
-  | { readonly kind: 'repo' }
-  | { readonly kind: 'folder' }
-  | { readonly kind: 'invalid'; readonly message: string };
-
-const DEFAULT_SIMPLE_NAME = 'My workspace';
-const WORKSPACE_LINK_DRAFT_VERSION = 2;
-
-const MODE_OPTIONS = [
-  { value: 'single', label: 'Single project', icon: FolderGit2 },
-  { value: 'multi', label: 'Multi project', icon: Boxes },
-  { value: 'simple', label: 'Standalone', icon: Folder },
+const CHOICE_OPTIONS = [
+  {
+    value: 'project',
+    icon: FolderGit2,
+    label: 'Start from a project',
+    hint: 'Point at one folder. Its git repository links directly, and a folder of repositories becomes a workspace named after it.',
+  },
+  {
+    value: 'workspace',
+    icon: Layers,
+    label: 'A workspace with several projects',
+    hint: 'Name it after your company or team, then add the projects it works on.',
+  },
 ] as const;
-
-type WorkspaceLinkDraft = {
-  readonly v: number;
-  readonly mode: WorkspaceLinkMode;
-  readonly path: string;
-  readonly singleName: string;
-  readonly selected: ReadonlyArray<string>;
-  readonly mountNames: Record<string, string>;
-  readonly containerPath: string;
-  readonly containerEdited: boolean;
-  readonly workspaceName: string;
-  readonly simpleName: string;
-  readonly simplePath: string;
-  readonly simplePathEdited: boolean;
-};
-
-const readMode = ({ value }: { readonly value: unknown }): WorkspaceLinkMode | null => {
-  if (value === 'single' || value === 'multi' || value === 'simple') {
-    return value;
-  }
-  return null;
-};
-
-const readStringArray = ({ value }: { readonly value: unknown }): ReadonlyArray<string> | null => {
-  if (!Array.isArray(value)) {
-    return null;
-  }
-  if (!value.every((item) => typeof item === 'string')) {
-    return null;
-  }
-  return value;
-};
-
-const readStringRecord = ({
-  value,
-}: {
-  readonly value: unknown;
-}): Record<string, string> | null => {
-  if (typeof value !== 'object' || value === null) {
-    return null;
-  }
-  if (!Object.values(value).every((item) => typeof item === 'string')) {
-    return null;
-  }
-  return value as Record<string, string>;
-};
-
-const readDraft = ({ storageKey }: { readonly storageKey: string }): WorkspaceLinkDraft | null => {
-  try {
-    const raw = localStorage.getItem(storageKey);
-    if (raw === null) {
-      return null;
-    }
-    const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed !== 'object' || parsed === null) {
-      return null;
-    }
-    const record = parsed as Record<string, unknown>;
-    if (record['v'] !== WORKSPACE_LINK_DRAFT_VERSION) {
-      return null;
-    }
-    const mode = readMode({ value: record['mode'] });
-    if (mode === null) {
-      return null;
-    }
-    const path = typeof record['path'] === 'string' ? record['path'] : null;
-    if (path === null) {
-      return null;
-    }
-    const singleName = typeof record['singleName'] === 'string' ? record['singleName'] : null;
-    if (singleName === null) {
-      return null;
-    }
-    const selected = readStringArray({ value: record['selected'] });
-    if (selected === null) {
-      return null;
-    }
-    const mountNames = readStringRecord({ value: record['mountNames'] });
-    if (mountNames === null) {
-      return null;
-    }
-    const containerPath =
-      typeof record['containerPath'] === 'string' ? record['containerPath'] : null;
-    if (containerPath === null) {
-      return null;
-    }
-    const containerEdited =
-      typeof record['containerEdited'] === 'boolean' ? record['containerEdited'] : null;
-    if (containerEdited === null) {
-      return null;
-    }
-    const workspaceName =
-      typeof record['workspaceName'] === 'string' ? record['workspaceName'] : null;
-    if (workspaceName === null) {
-      return null;
-    }
-    const simpleName = typeof record['simpleName'] === 'string' ? record['simpleName'] : null;
-    if (simpleName === null) {
-      return null;
-    }
-    const simplePath = typeof record['simplePath'] === 'string' ? record['simplePath'] : null;
-    if (simplePath === null) {
-      return null;
-    }
-    const simplePathEdited =
-      typeof record['simplePathEdited'] === 'boolean' ? record['simplePathEdited'] : null;
-    if (simplePathEdited === null) {
-      return null;
-    }
-    return {
-      v: WORKSPACE_LINK_DRAFT_VERSION,
-      mode,
-      path,
-      singleName,
-      selected,
-      mountNames,
-      containerPath,
-      containerEdited,
-      workspaceName,
-      simpleName,
-      simplePath,
-      simplePathEdited,
-    };
-  } catch {
-    return null;
-  }
-};
-
-const writeDraft = ({
-  storageKey,
-  draft,
-}: {
-  readonly storageKey: string;
-  readonly draft: WorkspaceLinkDraft;
-}): void => {
-  try {
-    localStorage.setItem(storageKey, JSON.stringify(draft));
-  } catch {}
-};
-
-const clearDraft = ({ storageKey }: { readonly storageKey: string }): void => {
-  try {
-    localStorage.removeItem(storageKey);
-  } catch {}
-};
 
 export const WorkspaceLinkForm = ({
   onComplete,
   onCancel,
-  cancelLabel = 'Cancel',
   showBreadcrumb,
-  modes,
   footerContainer,
-  draftStorageKey,
 }: Props) => {
   const formId = useId();
   const addWorkspace = useAppStore((state) => state.addWorkspace);
-  const addSimpleWorkspace = useAppStore((state) => state.addSimpleWorkspace);
+  const createWorkspace = useAppStore((state) => state.createWorkspace);
+  const addProject = useAppStore((state) => state.addProject);
+  const addProjects = useAppStore((state) => state.addProjects);
+  const removeProject = useAppStore((state) => state.removeProject);
+  const adoptWorkspaceSessionsRoot = useAppStore((state) => state.adoptWorkspaceSessionsRoot);
   const setCurrentWorkspace = useAppStore((state) => state.setCurrentWorkspace);
-  const workspaces = useWorkspaces();
-  const linkable = useMemo(() => workspaces.filter((workspace) => true && true), [workspaces]);
+  const projects = useAppStore((state) => state.projects);
+  const { detected, detect, clear } = useChildRepoDetection();
 
-  const [mode, setMode] = useState<Mode>(modes[0] ?? 'single');
-  const [path, setPath] = useState('');
-  const [singleName, setSingleName] = useState('');
-  const [validating, setValidating] = useState(false);
-  const [probe, setProbe] = useState<PathProbe | null>(null);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [selected, setSelected] = useState<ReadonlyArray<string>>([]);
-  const [mountNames, setMountNames] = useState<Record<string, string>>({});
-  const [containerPath, setContainerPath] = useState('');
-  const [containerEdited, setContainerEdited] = useState(false);
+  const [choice, setChoice] = useState<WorkspaceLinkMode | null>(null);
   const [workspaceName, setWorkspaceName] = useState('');
-  const [simpleName, setSimpleName] = useState(DEFAULT_SIMPLE_NAME);
-  const [simplePath, setSimplePath] = useState('');
-  const [simplePathEdited, setSimplePathEdited] = useState(false);
-  const [draftLoaded, setDraftLoaded] = useState(draftStorageKey == null);
-  const persistDraftRef = useRef(true);
-  const latestDraftRef = useRef<WorkspaceLinkDraft | null>(null);
-  const pathInputRef = useRef<HTMLInputElement>(null);
+  const [created, setCreated] = useState<Workspace | null>(null);
+  const [projectPath, setProjectPath] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (modes.includes(mode)) {
-      return;
-    }
-    setMode(modes[0] ?? 'single');
-  }, [mode, modes]);
-
-  useEffect(() => {
-    persistDraftRef.current = true;
-    if (draftStorageKey == null) {
-      setDraftLoaded(true);
-      return;
-    }
-    const draft = readDraft({ storageKey: draftStorageKey });
-    if (draft === null) {
-      setDraftLoaded(true);
-      return;
-    }
-    setMode(modes.includes(draft.mode) ? draft.mode : (modes[0] ?? 'single'));
-    setPath(draft.path);
-    setSingleName(draft.singleName);
-    setSelected(draft.selected);
-    setMountNames(draft.mountNames);
-    setContainerPath(draft.containerPath);
-    setContainerEdited(draft.containerEdited);
-    setWorkspaceName(draft.workspaceName);
-    setSimpleName(draft.simpleName);
-    setSimplePath(draft.simplePath);
-    setSimplePathEdited(draft.simplePathEdited);
-    setDraftLoaded(true);
-  }, [draftStorageKey, modes]);
-
-  useLayoutEffect(() => {
-    if (!draftLoaded || draftStorageKey == null || !persistDraftRef.current) {
-      return;
-    }
-    const draft: WorkspaceLinkDraft = {
-      v: WORKSPACE_LINK_DRAFT_VERSION,
-      mode,
-      path,
-      singleName,
-      selected,
-      mountNames,
-      containerPath,
-      containerEdited,
-      workspaceName,
-      simpleName,
-      simplePath,
-      simplePathEdited,
-    };
-    latestDraftRef.current = draft;
-    writeDraft({
-      storageKey: draftStorageKey,
-      draft,
-    });
-  }, [
-    draftLoaded,
-    draftStorageKey,
-    mode,
-    path,
-    singleName,
-    selected,
-    mountNames,
-    containerPath,
-    containerEdited,
-    workspaceName,
-    simpleName,
-    simplePath,
-    simplePathEdited,
-  ]);
-
-  useEffect(() => {
-    return () => {
-      if (draftStorageKey == null || !persistDraftRef.current) {
-        return;
-      }
-      const draft = latestDraftRef.current;
-      if (draft === null) {
-        return;
-      }
-      writeDraft({ storageKey: draftStorageKey, draft });
-    };
-  }, [draftStorageKey]);
-
-  useEffect(() => {
-    if (mode !== 'simple' || simplePathEdited) {
-      return;
-    }
-
-    let cancelled = false;
-    void defaultSimpleWorkspacePath({ name: simpleName })
-      .then((suggestedPath) => {
-        if (!cancelled) {
-          setSimplePath(suggestedPath);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setSimplePath('');
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [mode, simpleName, simplePathEdited]);
-
-  useEffect(() => {
-    if (path.length === 0) {
-      setValidating(false);
-      setProbe(null);
-      return;
-    }
-
-    setValidating(true);
-    setProbe(null);
-    let cancelled = false;
-    const timer = window.setTimeout(() => {
-      void validateGitRepo(path)
-        .then((result) => {
-          if (cancelled) {
-            return;
-          }
-          if (result.isRepo) {
-            setProbe({ kind: 'repo' });
-            return;
-          }
-          if (result.resolvedPath != null && result.resolvedPath !== '') {
-            setProbe({ kind: 'folder' });
-            return;
-          }
-          setProbe({ kind: 'invalid', message: result.error ?? 'Folder not found.' });
-        })
-        .catch(() => {
-          if (cancelled) {
-            return;
-          }
-          setProbe({ kind: 'invalid', message: 'Could not check that path.' });
-        })
-        .finally(() => {
-          if (!cancelled) {
-            setValidating(false);
-          }
-        });
-    }, 400);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [path]);
-
-  const selectedWorkspaces = useMemo(
+  const linked = useMemo(
     () =>
-      selected
-        .map((id) => linkable.find((workspace) => workspace.id === id))
-        .filter((workspace): workspace is Workspace => workspace !== undefined),
-    [selected, linkable],
+      created === null ? [] : projects.filter((project) => project.workspaceId === created.id),
+    [projects, created],
   );
 
-  const suggestedContainer = useMemo(() => {
-    if (selectedWorkspaces.length < 2) {
-      return '';
-    }
+  const run = (action: () => Promise<void>) => {
+    setBusy(true);
+    setError(null);
+    void action()
+      .catch((cause: unknown) => setError(formatError(cause)))
+      .finally(() => setBusy(false));
+  };
 
-    const parent = commonParentDirectory({
-      paths: selectedWorkspaces.map((workspace) => workspace.sessionsRoot ?? ''),
+  const createWorkspaceWithProjects = async ({
+    name,
+    rootPaths,
+  }: {
+    readonly name: string;
+    readonly rootPaths: ReadonlyArray<string>;
+  }) => {
+    const workspace = await createWorkspace({ name });
+    await setCurrentWorkspace(workspace.id);
+    const linkedProjects = await addProjects({ workspaceId: workspace.id, rootPaths });
+    for (const project of linkedProjects) {
+      await adoptWorkspaceSessionsRoot({ workspaceId: workspace.id, rootPath: project.rootPath });
+    }
+    return workspace;
+  };
+
+  const completeWithWorkspace = async ({
+    mode,
+    workspace,
+  }: {
+    readonly mode: WorkspaceLinkMode;
+    readonly workspace: Workspace;
+  }) => {
+    await setCurrentWorkspace(workspace.id);
+    onComplete({ mode, workspace });
+  };
+
+  const pickDirectory = async (): Promise<string | null> => {
+    const picked = await openDialog({ directory: true, multiple: false });
+    return typeof picked === 'string' && picked.length > 0 ? picked : null;
+  };
+
+  const onPickProjectFolder = () =>
+    run(async () => {
+      const picked = await pickDirectory();
+      if (picked === null) {
+        return;
+      }
+      clear();
+      const check = await validateGitRepo(picked);
+      if (check.isRepo && check.rootPath != null && check.rootPath !== '') {
+        const workspace = await addWorkspace({ rootPath: check.rootPath });
+        await completeWithWorkspace({ mode: 'project', workspace });
+        return;
+      }
+      if (await detect({ path: picked })) {
+        return;
+      }
+      throw new Error(
+        `no git repository at ${picked}. pick a folder with a .git directory, use New project to initialize one, or link it without git below`,
+      );
     });
-    if (parent.length === 0) {
-      return '';
-    }
 
-    const mounts = selectedWorkspaces.map(
-      (workspace) =>
-        mountNames[workspace.id] ?? lastPathSegment({ path: workspace.sessionsRoot ?? '' }),
-    );
-    return `${parent}/${mounts.join('+')}`;
-  }, [selectedWorkspaces, mountNames]);
+  const onNewProject = () =>
+    run(async () => {
+      const picked = await pickDirectory();
+      if (picked === null) {
+        return;
+      }
+      clear();
+      const initialized = await initRepo({ path: picked });
+      const workspace = await addWorkspace({ rootPath: initialized.rootPath });
+      await completeWithWorkspace({ mode: 'project', workspace });
+    });
 
-  useEffect(() => {
-    if (!draftLoaded || containerEdited) {
-      return;
-    }
-    setContainerPath(suggestedContainer);
-  }, [suggestedContainer, containerEdited, draftLoaded]);
+  const onLinkPlainFolder = () =>
+    run(async () => {
+      const picked = await pickDirectory();
+      if (picked === null) {
+        return;
+      }
+      clear();
+      if (created !== null) {
+        const project = await addProject({
+          workspaceId: created.id,
+          rootPath: picked,
+          requireRepo: false,
+        });
+        await adoptWorkspaceSessionsRoot({ workspaceId: created.id, rootPath: project.rootPath });
+        return;
+      }
+      const workspace = await addWorkspace({ rootPath: picked });
+      await completeWithWorkspace({ mode: 'project', workspace });
+    });
 
-  const toggleMember = useCallback(({ workspace }: { readonly workspace: Workspace }) => {
-    setSelected((previous) =>
-      previous.includes(workspace.id)
-        ? previous.filter((id) => id !== workspace.id)
-        : [...previous, workspace.id],
-    );
-    setMountNames((previous) =>
-      (previous[workspace.id] ?? '').length > 0
-        ? previous
-        : { ...previous, [workspace.id]: lastPathSegment({ path: workspace.sessionsRoot ?? '' }) },
-    );
-  }, []);
+  const linkProject = ({ rootPath }: { readonly rootPath: string }) =>
+    run(async () => {
+      if (created === null) {
+        return;
+      }
+      clear();
+      if (await detect({ path: rootPath })) {
+        return;
+      }
+      const project = await addProject({ workspaceId: created.id, rootPath });
+      await adoptWorkspaceSessionsRoot({ workspaceId: created.id, rootPath: project.rootPath });
+      setProjectPath('');
+    });
 
-  const onPick = useCallback(async () => {
-    const picked = await openDialog({ directory: true, multiple: false });
-    if (typeof picked !== 'string') {
-      return;
-    }
-    setPath(picked);
-    pathInputRef.current?.focus();
-  }, []);
+  const onNewLinkedProject = () =>
+    run(async () => {
+      if (created === null) {
+        return;
+      }
+      const picked = await pickDirectory();
+      if (picked === null) {
+        return;
+      }
+      clear();
+      const initialized = await initRepo({ path: picked });
+      const project = await addProject({ workspaceId: created.id, rootPath: initialized.rootPath });
+      await adoptWorkspaceSessionsRoot({ workspaceId: created.id, rootPath: project.rootPath });
+      setProjectPath('');
+    });
 
-  const onPickContainer = useCallback(async () => {
-    const picked = await openDialog({ directory: true, multiple: false });
-    if (typeof picked !== 'string') {
-      return;
-    }
-    setContainerEdited(true);
-    setContainerPath(picked);
-  }, []);
+  const onBrowseProject = () =>
+    run(async () => {
+      const picked = await pickDirectory();
+      if (picked !== null) {
+        setProjectPath(picked);
+      }
+    });
 
-  const onPickSimple = useCallback(async () => {
-    const picked = await openDialog({ directory: true, multiple: false });
-    if (typeof picked !== 'string') {
-      return;
-    }
-    setSimplePathEdited(true);
-    setSimplePath(picked);
-  }, []);
+  const onConfirmDetected = ({ paths }: { readonly paths: ReadonlyArray<string> }) =>
+    run(async () => {
+      if (detected === null) {
+        return;
+      }
+      if (created === null) {
+        const name = lastPathSegment({ path: detected.parentPath });
+        const workspace = await createWorkspaceWithProjects({ name, rootPaths: paths });
+        clear();
+        setWorkspaceName(workspace.name);
+        setCreated(workspace);
+        return;
+      }
+      const linkedProjects = await addProjects({ workspaceId: created.id, rootPaths: paths });
+      for (const project of linkedProjects) {
+        await adoptWorkspaceSessionsRoot({ workspaceId: created.id, rootPath: project.rootPath });
+      }
+      clear();
+      setProjectPath('');
+    });
 
-  const clearPersistedDraft = useCallback(() => {
-    if (draftStorageKey == null) {
-      return;
-    }
-    persistDraftRef.current = false;
-    clearDraft({ storageKey: draftStorageKey });
-  }, [draftStorageKey]);
-
-  const onCancelClick = useCallback(() => {
-    clearPersistedDraft();
-    onCancel();
-  }, [clearPersistedDraft, onCancel]);
-
-  const onSubmitSingle = useCallback(async () => {
-    setBusy(true);
-    setSubmitError(null);
-    try {
-      const trimmedName = singleName.trim();
-      const workspace = await addWorkspace({
-        rootPath: path,
-        ...(trimmedName === '' ? {} : { name: trimmedName }),
-      });
+  const onCreateWorkspace = () =>
+    run(async () => {
+      const workspace = await createWorkspace({ name: workspaceName.trim() });
       await setCurrentWorkspace(workspace.id);
-      clearPersistedDraft();
-      setPath('');
-      setSingleName('');
-      setProbe(null);
-      onComplete({ mode: 'single', workspace });
-    } catch (error) {
-      setSubmitError(formatError(error));
-    } finally {
-      setBusy(false);
-    }
-  }, [path, singleName, addWorkspace, setCurrentWorkspace, clearPersistedDraft, onComplete]);
+      setCreated(workspace);
+    });
 
-  const onSubmitMulti = useCallback(async () => {
-    setBusy(true);
-    setSubmitError(null);
-    try {
-      const workspace = await addWorkspace({
-        rootPath: containerPath.trim(),
-        name: workspaceName,
-      });
-      await setCurrentWorkspace(workspace.id);
-      clearPersistedDraft();
-      onComplete({ mode: 'multi', workspace });
-    } catch (error) {
-      setSubmitError(formatError(error));
-    } finally {
-      setBusy(false);
+  const onDone = () => {
+    if (created !== null) {
+      onComplete({ mode: 'workspace', workspace: created });
     }
-  }, [
-    selectedWorkspaces,
-    mountNames,
-    workspaceName,
-    containerPath,
-    addWorkspace,
-    setCurrentWorkspace,
-    clearPersistedDraft,
-    onComplete,
-  ]);
-
-  const onSubmitSimple = useCallback(async () => {
-    setBusy(true);
-    setSubmitError(null);
-    try {
-      const workspace = await addSimpleWorkspace({
-        name: simpleName.trim(),
-        path: simplePath.trim(),
-      });
-      await setCurrentWorkspace(workspace.id);
-      clearPersistedDraft();
-      onComplete({ mode: 'simple', workspace });
-    } catch (error) {
-      setSubmitError(formatError(error));
-    } finally {
-      setBusy(false);
-    }
-  }, [
-    addSimpleWorkspace,
-    clearPersistedDraft,
-    onComplete,
-    setCurrentWorkspace,
-    simpleName,
-    simplePath,
-  ]);
+  };
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (mode === 'single') {
-      void onSubmitSingle();
+    if (created !== null) {
+      onDone();
       return;
     }
-    if (mode === 'multi') {
-      void onSubmitMulti();
-      return;
+    if (choice === 'workspace') {
+      onCreateWorkspace();
     }
-    void onSubmitSimple();
   };
 
-  const mountValues = selectedWorkspaces.map((workspace) =>
-    (mountNames[workspace.id] ?? lastPathSegment({ path: workspace.sessionsRoot ?? '' })).trim(),
-  );
-  const mountsValid =
-    mountValues.every((mount) => mount.length > 0) &&
-    new Set(mountValues).size === mountValues.length;
-  const multiDisabled =
-    busy || selectedWorkspaces.length < 2 || containerPath.trim().length === 0 || !mountsValid;
-  const simpleDisabled = busy || simpleName.trim().length === 0 || simplePath.trim().length === 0;
-  const singleDisabled = busy || probe === null || probe.kind === 'invalid';
-  const primaryDisabled =
-    mode === 'single' ? singleDisabled : mode === 'multi' ? multiDisabled : simpleDisabled;
-  const previewMounts = selectedWorkspaces.map(
-    (workspace) =>
-      mountNames[workspace.id] ?? lastPathSegment({ path: workspace.sessionsRoot ?? '' }),
-  );
-  const actionLabel =
-    mode === 'single'
-      ? busy
-        ? 'Adding workspace…'
-        : 'Add workspace'
-      : mode === 'multi'
-        ? busy
-          ? 'Linking projects…'
-          : 'Link projects'
-        : busy
-          ? 'Creating workspace…'
-          : 'Create workspace';
-  const sectionHint =
-    mode === 'single'
-      ? 'Work in one project folder, with or without git already set up.'
-      : mode === 'multi'
-        ? 'Link related repositories so one session can work across all of them.'
-        : 'Use agents, workflows, and shared context in a standalone project space.';
   const breadcrumbCrumbs = buildBreadcrumb({
     workspace: null,
     session: null,
     chrome: { kind: 'workspace-create' },
     handlers: {
-      toOverview: onCancelClick,
+      toOverview: onCancel,
       toWorkspaceLauncher: () => {
-        onCancelClick();
+        onCancel();
         window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'));
       },
-      toWorkspaceBoard: onCancelClick,
+      toWorkspaceBoard: onCancel,
     },
   });
 
+  const primary =
+    created !== null
+      ? { label: 'Done', disabled: busy || linked.length === 0 }
+      : choice === 'workspace'
+        ? {
+            label: busy ? 'Creating workspace…' : 'Create workspace',
+            disabled: busy || workspaceName.trim().length === 0,
+          }
+        : null;
+
   const actions = (
     <>
-      {submitError != null ? (
+      {error != null ? (
         <span role="alert" className="flex min-w-0 flex-1 items-center gap-1 text-xs text-danger">
           <AlertTriangle size={12} aria-hidden className="shrink-0" />
-          {submitError}
+          {error}
         </span>
       ) : (
         <span className="min-w-0 flex-1" aria-hidden />
       )}
-      <Button type="button" variant="ghost" onClick={onCancelClick} disabled={busy}>
-        {cancelLabel}
-      </Button>
-      <Button type="submit" form={formId} disabled={primaryDisabled} aria-busy={busy}>
-        {actionLabel}
-      </Button>
+      {created === null ? (
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
+          Cancel
+        </Button>
+      ) : null}
+      {primary !== null ? (
+        <Button type="submit" form={formId} disabled={primary.disabled} aria-busy={busy}>
+          {primary.label}
+        </Button>
+      ) : null}
     </>
   );
 
@@ -642,290 +296,209 @@ export const WorkspaceLinkForm = ({
     <form id={formId} onSubmit={onSubmit} className="flex w-full flex-col gap-6">
       {showBreadcrumb ? <AppBreadcrumb crumbs={breadcrumbCrumbs} /> : null}
 
-      <section className="flex flex-col">
-        <SectionHeader
-          icon={<FolderGit2 size={12} aria-hidden />}
-          label="Workspace details"
-          hint={sectionHint}
-        />
-        {modes.length > 1 ? (
-          <>
-            <FieldRow
-              label="Workspace type"
-              help="Choose a repository, linked projects, or a standalone workspace."
-              layout="stacked"
-            >
-              <SegmentedTabs
-                ariaLabel="Workspace type"
-                options={MODE_OPTIONS.filter((option) => modes.includes(option.value))}
-                value={mode}
-                onChange={(nextMode) => {
-                  setMode(nextMode);
-                  setSubmitError(null);
+      {created === null ? (
+        <section className="flex flex-col gap-4">
+          <SectionHeader
+            icon={<FolderGit2 size={12} aria-hidden />}
+            label="Workspace details"
+            hint="A workspace groups the projects, sessions, and connections of one product or team."
+          />
+          <div className="flex flex-col gap-2" role="radiogroup" aria-label="Setup shape">
+            {CHOICE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={choice === option.value}
+                disabled={busy}
+                onClick={() => {
+                  setChoice(option.value);
+                  setError(null);
+                  clear();
                 }}
-                fill
-              />
-            </FieldRow>
-            <Divider />
-          </>
-        ) : null}
+                className={cn(
+                  'flex items-start gap-3 rounded-lg border px-3 py-3 text-left motion-safe:transition-colors',
+                  choice === option.value
+                    ? 'border-primary/60 bg-primary/5'
+                    : 'border-border hover:border-primary/50 hover:bg-primary/5',
+                )}
+              >
+                <span className="mt-0.5 shrink-0 text-primary">
+                  <option.icon size={16} aria-hidden />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium text-foreground">{option.label}</span>
+                  <span className="block text-xs leading-relaxed text-muted-foreground">
+                    {option.hint}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
 
-        {mode === 'single' ? (
-          <FieldRow
-            label="Project path"
-            help="A git repository, or a folder you have not turned into one yet."
-            layout="stacked"
-          >
-            <div className="flex w-full gap-2">
-              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                <Input
-                  ref={pathInputRef}
-                  autoFocus
-                  value={path}
-                  placeholder="/path/to/project"
-                  onChange={(event) => setPath(event.target.value)}
+          {choice === 'project' ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="primary"
                   disabled={busy}
-                  aria-label="Project path"
-                />
-                {validating && (
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <StatusDot tone="info" size="sm" pulsing />
-                    Checking…
-                  </span>
-                )}
-                {!validating && probe?.kind === 'repo' && (
-                  <span className="flex items-center gap-1 text-xs text-success">
-                    <Check size={11} aria-hidden />
-                    Valid git repository
-                  </span>
-                )}
-                {!validating && probe?.kind === 'folder' && (
-                  <span className="flex items-start gap-1 text-xs leading-relaxed text-muted-foreground">
-                    <Folder size={11} aria-hidden className="mt-0.5 shrink-0" />
-                    No git repository here yet. Goodboy adds the folder as it is and offers to
-                    create or link one next, and you can start sessions either way.
-                  </span>
-                )}
-                {!validating && probe?.kind === 'invalid' && path.length > 0 && (
-                  <span role="alert" className="text-xs text-danger">
-                    {probe.message}
-                  </span>
-                )}
+                  onClick={onPickProjectFolder}
+                >
+                  <FolderGit2 size={14} aria-hidden />
+                  Choose a folder
+                </Button>
+                <Button type="button" variant="secondary" disabled={busy} onClick={onNewProject}>
+                  <FolderPlus size={14} aria-hidden />
+                  New project
+                </Button>
               </div>
-              <Button variant="secondary" onClick={() => void onPick()} disabled={busy}>
-                Browse
-              </Button>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Pick a folder with a git repository, or let New project run git init in an empty
+                one.
+              </p>
+              {detected !== null ? (
+                <DetectedRepoList
+                  repos={detected.repos}
+                  busy={busy}
+                  onConfirm={onConfirmDetected}
+                  onDismiss={clear}
+                />
+              ) : null}
+              <button
+                type="button"
+                onClick={onLinkPlainFolder}
+                disabled={busy}
+                className="self-start text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              >
+                Link a plain folder (no git)
+              </button>
             </div>
-          </FieldRow>
-        ) : null}
+          ) : null}
 
-        {mode === 'single' ? (
-          <>
-            <Divider />
-            <FieldRow
-              label="Display name"
-              help="Optional. Presentation only, the folder on disk keeps its own name."
-              layout="stacked"
-            >
+          {choice === 'workspace' ? (
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor={`${formId}-workspace-name`}
+                className="text-xs font-medium text-foreground"
+              >
+                Workspace name
+              </label>
               <Input
-                value={singleName}
-                placeholder={path === '' ? 'Folder name' : lastPathSegment({ path })}
-                onChange={(event) => setSingleName(event.target.value)}
-                disabled={busy}
-                aria-label="Display name"
-              />
-            </FieldRow>
-          </>
-        ) : null}
-
-        {mode === 'multi' ? (
-          <>
-            <FieldRow
-              label="Projects"
-              help="Select at least two repository-backed workspaces."
-              layout="stacked"
-            >
-              {linkable.length < 2 ? (
-                <div
-                  role="alert"
-                  className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground"
-                >
-                  Add at least two single-project workspaces first, then link them here.
-                </div>
-              ) : (
-                <ScrollFade className="max-h-44">
-                  <ul className="flex flex-col gap-0.5">
-                    {linkable.map((workspace) => {
-                      const isSelected = selected.includes(workspace.id);
-                      return (
-                        <li key={workspace.id}>
-                          <button
-                            type="button"
-                            onClick={() => toggleMember({ workspace })}
-                            className={cn(
-                              'flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-xs motion-safe:transition-colors',
-                              isSelected
-                                ? 'border-primary/50 bg-primary/5'
-                                : 'border-transparent hover:bg-muted/50',
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                'flex size-4 shrink-0 items-center justify-center rounded border',
-                                isSelected
-                                  ? 'border-primary bg-primary text-primary-foreground'
-                                  : 'border-border',
-                              )}
-                            >
-                              {isSelected ? <Check size={11} aria-hidden /> : null}
-                            </span>
-                            <span className="font-medium text-foreground">{workspace.name}</span>
-                            <span className="min-w-0 flex-1 truncate text-right text-muted-foreground">
-                              {workspace.sessionsRoot ?? ''}
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </ScrollFade>
-              )}
-            </FieldRow>
-
-            {selectedWorkspaces.length > 0 ? (
-              <>
-                <Divider />
-                <FieldRow
-                  label="Mount names"
-                  help="Each selected project needs a unique directory name."
-                  layout="stacked"
-                >
-                  <div className="flex flex-col gap-2">
-                    {selectedWorkspaces.map((workspace) => (
-                      <div key={workspace.id} className="flex items-center gap-2">
-                        <span className="w-28 shrink-0 truncate text-xs text-muted-foreground">
-                          {workspace.name}
-                        </span>
-                        <Input
-                          value={
-                            mountNames[workspace.id] ??
-                            lastPathSegment({ path: workspace.sessionsRoot ?? '' })
-                          }
-                          onChange={(event) =>
-                            setMountNames((previous) => ({
-                              ...previous,
-                              [workspace.id]: event.target.value,
-                            }))
-                          }
-                          disabled={busy}
-                          aria-label={`${workspace.name} mount name`}
-                          className="min-w-0 flex-1"
-                        />
-                      </div>
-                    ))}
-                    {!mountsValid ? (
-                      <span role="alert" className="text-xs text-danger">
-                        Mount names must be non-empty and unique.
-                      </span>
-                    ) : null}
-                  </div>
-                </FieldRow>
-              </>
-            ) : null}
-
-            <Divider />
-            <FieldRow
-              label="Save into folder"
-              help="Sessions create their linked project directories inside this folder."
-              layout="stacked"
-            >
-              <div className="flex w-full gap-2">
-                <Input
-                  value={containerPath}
-                  placeholder="/path/to/container"
-                  onChange={(event) => {
-                    setContainerEdited(true);
-                    setContainerPath(event.target.value);
-                  }}
-                  disabled={busy}
-                  aria-label="Container path"
-                  className="min-w-0 flex-1"
-                />
-                <Button variant="secondary" onClick={() => void onPickContainer()} disabled={busy}>
-                  Browse
-                </Button>
-              </div>
-            </FieldRow>
-
-            {selectedWorkspaces.length >= 2 && containerPath.trim().length > 0 ? (
-              <>
-                <Divider />
-                <FieldRow label="Preview" layout="stacked">
-                  <pre className="overflow-x-auto rounded-md border border-border bg-muted/30 px-3 py-2 text-2xs leading-relaxed text-muted-foreground">
-                    {`${lastPathSegment({ path: containerPath })}/\n└── <session>/\n${previewMounts
-                      .map(
-                        (mount, index) =>
-                          `    ${index === previewMounts.length - 1 ? '└──' : '├──'} ${mount}/`,
-                      )
-                      .join('\n')}`}
-                  </pre>
-                </FieldRow>
-              </>
-            ) : null}
-
-            <Divider />
-            <FieldRow
-              label="Name"
-              help="Name the linked workspace or keep the suggested project names."
-              layout="stacked"
-            >
-              <Input
+                id={`${formId}-workspace-name`}
                 value={workspaceName}
-                placeholder={previewMounts.join(' + ')}
-                onChange={(event) => setWorkspaceName(event.target.value)}
-                disabled={busy}
-                aria-label="Workspace name"
-              />
-            </FieldRow>
-          </>
-        ) : mode === 'simple' ? (
-          <>
-            <FieldRow label="Name" help="Name the standalone workspace." layout="stacked">
-              <Input
                 autoFocus
-                value={simpleName}
-                placeholder="My workspace"
-                onChange={(event) => setSimpleName(event.target.value)}
+                placeholder="Your company or team name"
                 disabled={busy}
-                aria-label="Workspace name"
+                onChange={(event) => setWorkspaceName(event.target.value)}
               />
-            </FieldRow>
-            <Divider />
-            <FieldRow
-              label="Directory"
-              help="The directory is created when it does not exist."
-              layout="stacked"
+            </div>
+          ) : null}
+        </section>
+      ) : (
+        <section className="flex flex-col gap-4">
+          <SectionHeader
+            icon={<FolderGit2 size={12} aria-hidden />}
+            label="Projects"
+            hint={`Add the repositories ${created.name} works on.`}
+          />
+
+          {linked.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {linked.map((project) => (
+                <li
+                  key={project.id}
+                  className="flex items-center gap-3 rounded-lg border border-border-soft/60 bg-subtle/20 px-3 py-2"
+                >
+                  <span className="shrink-0 text-muted-foreground">
+                    {project.kind === 'repo' ? (
+                      <FolderGit2 size={16} aria-hidden />
+                    ) : (
+                      <Folder size={16} aria-hidden />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium text-foreground">
+                        {project.name}
+                      </span>
+                      <Chip
+                        tone="neutral"
+                        size="3xs"
+                        bordered={false}
+                        label={project.kind === 'repo' ? 'Repository' : 'Folder'}
+                        className="shrink-0"
+                      />
+                    </span>
+                    <span className="block truncate font-mono text-xs text-muted-foreground/80">
+                      {project.rootPath}
+                    </span>
+                  </span>
+                  <Tooltip content={`Unlink ${project.name}`} anchorClassName="shrink-0">
+                    <button
+                      type="button"
+                      aria-label={`Unlink ${project.name}`}
+                      disabled={busy}
+                      onClick={() => void removeProject({ projectId: project.id })}
+                      className="rounded-md p-1 text-muted-foreground/70 hover:bg-foreground/5 hover:text-foreground"
+                    >
+                      <X size={14} aria-hidden />
+                    </button>
+                  </Tooltip>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          <div className="flex items-center gap-2">
+            <Input
+              aria-label="Project path"
+              value={projectPath}
+              placeholder="/path/to/repository"
+              disabled={busy}
+              onChange={(event) => setProjectPath(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && projectPath.trim().length > 0) {
+                  event.preventDefault();
+                  linkProject({ rootPath: projectPath.trim() });
+                }
+              }}
+            />
+            <Button type="button" variant="secondary" onClick={onBrowseProject} disabled={busy}>
+              Browse
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => linkProject({ rootPath: projectPath.trim() })}
+              disabled={busy || projectPath.trim().length === 0}
             >
-              <div className="flex w-full gap-2">
-                <Input
-                  value={simplePath}
-                  placeholder="/path/to/workspace"
-                  onChange={(event) => {
-                    setSimplePathEdited(true);
-                    setSimplePath(event.target.value);
-                  }}
-                  disabled={busy}
-                  aria-label="Workspace directory"
-                  className="min-w-0 flex-1"
-                />
-                <Button variant="secondary" onClick={() => void onPickSimple()} disabled={busy}>
-                  Browse
-                </Button>
-              </div>
-            </FieldRow>
-          </>
-        ) : null}
-      </section>
+              <Plus size={14} aria-hidden /> Add
+            </Button>
+            <Button type="button" variant="secondary" onClick={onNewLinkedProject} disabled={busy}>
+              <FolderPlus size={14} aria-hidden /> New project
+            </Button>
+          </div>
+
+          {detected !== null ? (
+            <DetectedRepoList
+              repos={detected.repos}
+              busy={busy}
+              onConfirm={onConfirmDetected}
+              onDismiss={clear}
+            />
+          ) : null}
+
+          <button
+            type="button"
+            onClick={onLinkPlainFolder}
+            disabled={busy}
+            className="self-start text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            Link a plain folder (no git)
+          </button>
+        </section>
+      )}
 
       {footerContainer == null ? (
         <>

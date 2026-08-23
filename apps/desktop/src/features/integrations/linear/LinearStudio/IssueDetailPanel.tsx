@@ -42,13 +42,13 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     (state) =>
       state.projects?.find((project) => project.workspaceId === workspaceId)?.rootPath ?? null,
   );
-  const isBranchless = useAppStore(
+  const isFolderProject = useAppStore(
     (state) =>
       state.projects?.find((project) => project.workspaceId === workspaceId)?.kind === 'folder',
   );
 
   const adoptablePr =
-    issue != null && !isBranchless
+    issue != null && !isFolderProject
       ? (issuePullRequests(issue).find((pr) => pr.repo != null && pr.repo !== '') ?? null)
       : null;
 

@@ -1,5 +1,5 @@
 import type { ProjectId, WorkspaceGitStatus } from '@goodboy/types';
-import { workspaceGitStatus } from '../../../shared/lib/repo';
+import { projectGitStatus } from '../../../shared/lib/repo';
 import type { GetFn, SetFn } from './types';
 
 type Input = {
@@ -22,7 +22,7 @@ export const loadProjectGitStatus = (set: SetFn, get: GetFn) => {
     if (project === undefined || project.kind !== 'repo') {
       return;
     }
-    const status = await workspaceGitStatus({ workspacePath: project.rootPath }).catch(
+    const status = await projectGitStatus({ projectPath: project.rootPath }).catch(
       () => UNREACHABLE,
     );
     set((state) => ({ projectGitStatus: { ...state.projectGitStatus, [projectId]: status } }));

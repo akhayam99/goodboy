@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
-import { CheckCircle2, Unplug } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import type { GhTokenStatus, WorkspaceId } from '@goodboy/types';
 import { ghClearToken, ghSetToken, ghStatus } from '../../github/github';
-import { CreateTokenLink } from './CreateTokenLink';
+import { ConnectForm } from '../components/ConnectForm';
+import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
 import { notifyGithubConnectionChanged } from './useGithubConnection';
 
 type Props = {
@@ -12,12 +12,11 @@ type Props = {
   shouldAutoFocus?: boolean;
 };
 
+const TOKEN_CREATE_URL = 'https://github.com/settings/tokens/new?scopes=repo&description=Goodboy';
+const TOKEN_LIST_URL = 'https://github.com/settings/tokens';
+
 export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {
   const [status, setStatus] = useState<GhTokenStatus | null>(null);
-  const [token, setToken] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isDisconnectArmed, setIsDisconnectArmed] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -31,115 +30,61 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
     void refresh();
   }, [refresh]);
 
-  const onConnect = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await ghSetToken(token.trim(), workspaceId);
-      setToken('');
-      await refresh();
-      notifyGithubConnectionChanged();
-      onConnected?.();
-    } catch (err) {
-      setError(formatError(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onDisconnect = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await ghClearToken(workspaceId);
-      await refresh();
-      notifyGithubConnectionChanged();
-    } catch (err) {
-      setError(formatError(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const scoped = status?.scoped ?? false;
+  if (status?.scoped === true) {
+    return (
+      <IntegrationConnectedRow
+        provider="github"
+        primary={`Connected as ${status.user ?? '(unknown user)'}`}
+        badge="workspace key"
+        disconnectDescription="Deletes this workspace's GitHub personal API key from your keychain. This does not sign you out of the system gh CLI."
+        onDisconnect={async () => {
+          await ghClearToken(workspaceId);
+          await refresh();
+          notifyGithubConnectionChanged();
+        }}
+      />
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-5">
-      {scoped ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle/40 p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <CheckCircle2 size={14} aria-hidden className="text-success" />
-            Connected as {status?.user ?? '(unknown user)'}
-          </div>
+    <ConnectForm
+      tokenId="github-pat"
+      tokenLabel="Personal API key"
+      tokenPlaceholder="ghp_…"
+      tokenLink={{ label: 'Get a personal access token from GitHub', href: TOKEN_CREATE_URL }}
+      guide={
+        status?.user != null ? (
           <p className="text-2xs leading-relaxed text-muted-foreground">
-            This workspace uses its own personal API key for every gh call.
+            Already covered by your system gh CLI, connected as {status.user}. A key pasted here
+            overrides it for this workspace only.
           </p>
-          {isDisconnectArmed ? (
-            <InlineConfirm
-              role="danger"
-              icon={<Unplug size={12} aria-hidden />}
-              title="Disconnect GitHub?"
-              description="Deletes this workspace's GitHub personal API key from your keychain. This does not sign you out of the system gh CLI."
-              confirmLabel="Disconnect GitHub"
-              autoDisarmMs={4000}
-              onConfirm={onDisconnect}
-              onCancel={() => setIsDisconnectArmed(false)}
-            />
-          ) : (
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={() => setIsDisconnectArmed(true)}
-              disabled={busy}
+        ) : null
+      }
+      note={{
+        label: 'Scope and where your key goes',
+        body: (
+          <>
+            The repo scope is enough;{' '}
+            <a
+              href={TOKEN_LIST_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 underline underline-offset-2 hover:text-foreground"
             >
-              <Unplug size={12} aria-hidden />
-              Disconnect
-            </Button>
-          )}
-        </div>
-      ) : (
-        <>
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            {status?.user
-              ? `This workspace falls back to your system gh (connected as ${status.user}). Connect a personal API key to override it, e.g. one authorized for this repo's org via SSO.`
-              : 'Connect a personal API key so Goodboy can resolve PRs for this workspace.'}
-          </p>
-          <div className="flex flex-col gap-2">
-            <CreateTokenLink />
-            <Input
-              type="password"
-              autoFocus={shouldAutoFocus}
-              placeholder="ghp_…"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              disabled={busy}
-              aria-label="GitHub personal API key"
-            />
-          </div>
-          <p className="text-2xs leading-relaxed text-muted-foreground">
-            The key is stored encrypted in your operating system keychain. Goodboy sends it directly
-            to GitHub over HTTPS; it never touches Goodboy&apos;s own servers.
-          </p>
-        </>
-      )}
-
-      {error ? (
-        <div className="rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-xs text-danger">
-          {error}
-        </div>
-      ) : null}
-
-      {scoped ? null : (
-        <div className="flex justify-end">
-          <Button
-            onClick={() => void onConnect()}
-            disabled={busy || token.trim().length === 0}
-            className={busy ? 'animate-border-pulse' : undefined}
-          >
-            {busy ? 'Verifying…' : 'Connect'}
-          </Button>
-        </div>
-      )}
-    </div>
+              configure SSO <ExternalLink size={10} aria-hidden />
+            </a>{' '}
+            if your org requires it. The key is stored encrypted in your operating system keychain
+            and sent directly to GitHub over HTTPS; it never touches Goodboy&apos;s own servers.
+          </>
+        ),
+      }}
+      shouldAutoFocus={shouldAutoFocus}
+      onSubmit={async ({ token }) => {
+        await ghSetToken(token, workspaceId);
+        await refresh();
+        notifyGithubConnectionChanged();
+        onConnected?.();
+      }}
+    />
   );
 };

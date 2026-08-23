@@ -3,7 +3,7 @@ import { Dialog } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { isWizardDone, reopenWizard } from '../../../onboarding/onboarding-store';
 import { validateGitRepo } from '../../../../shared/lib/repo';
-import { WorkspaceLinkForm } from '../WorkspaceLinkForm';
+import { WorkspaceLinkForm, type WorkspaceLinkMode } from '../WorkspaceLinkForm';
 
 type Props = {
   readonly open: boolean;
@@ -18,7 +18,7 @@ export const WorkspaceLinkDialog = ({ open, onClose, onOfferRepo }: Props) => {
     mode,
     workspace,
   }: {
-    readonly mode: 'single' | 'multi' | 'simple';
+    readonly mode: WorkspaceLinkMode;
     readonly workspace: Workspace;
   }) => {
     onClose();
@@ -26,7 +26,7 @@ export const WorkspaceLinkDialog = ({ open, onClose, onOfferRepo }: Props) => {
       reopenWizard('setup');
       return;
     }
-    if (mode !== 'single' || workspace.sessionsRoot === null) {
+    if (mode !== 'project' || workspace.sessionsRoot === null) {
       return;
     }
     const check = await validateGitRepo(workspace.sessionsRoot);
@@ -41,7 +41,7 @@ export const WorkspaceLinkDialog = ({ open, onClose, onOfferRepo }: Props) => {
       onClose={onClose}
       size="md"
       title="Add workspace"
-      description="Add a project, link projects, or create a standalone workspace."
+      description="Create a workspace, then add the projects it works on."
       footer={<div ref={setFooterContainer} className="contents" />}
     >
       {open ? (
@@ -49,7 +49,6 @@ export const WorkspaceLinkDialog = ({ open, onClose, onOfferRepo }: Props) => {
           onComplete={onComplete}
           onCancel={onClose}
           showBreadcrumb
-          modes={['single', 'multi', 'simple']}
           footerContainer={footerContainer}
         />
       ) : null}

@@ -13,7 +13,7 @@ export const useWorkspaceRemoteHostKind = ({ workspaceId }: Params): RemoteHostK
     (state) =>
       state.projects.find((project) => project.workspaceId === workspaceId)?.rootPath ?? null,
   );
-  const isSimple = useAppStore(
+  const isFolderProject = useAppStore(
     (state) =>
       state.projects.find((project) => project.workspaceId === workspaceId)?.kind === 'folder',
   );
@@ -27,5 +27,5 @@ export const useWorkspaceRemoteHostKind = ({ workspaceId }: Params): RemoteHostK
         .map((integration) => integration.config.host),
     ),
   );
-  return useRootRemoteHostKind({ rootPath, gitlabHosts, isEnabled: !isSimple });
+  return useRootRemoteHostKind({ rootPath, gitlabHosts, isEnabled: !isFolderProject });
 };

@@ -176,7 +176,7 @@ describe('ReviewInboxList', () => {
     expect(rows[1]).toContain('Newer plain');
   });
 
-  it('shows repository attribution only for a composite workspace', () => {
+  it('shows repository attribution only for a multi-project workspace', () => {
     const projectId = 'project-web' as ProjectId;
     h.state.workspaces = [
       {

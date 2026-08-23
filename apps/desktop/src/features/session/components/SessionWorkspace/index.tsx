@@ -14,7 +14,7 @@ import {
 import type { LensKind } from '../../../../store';
 import { SessionOverviewPane } from '../SessionOverviewPane';
 import { SessionCrumbBar } from '../SessionCrumbBar';
-import { RepoScopeBar } from './parts/RepoScopeBar';
+import { ScopeBar } from './parts/ScopeBar';
 import { AgentOverlay } from './parts/AgentOverlay';
 import { AgentsPane } from './parts/AgentsPane';
 import { Pane } from './parts/Pane';
@@ -219,7 +219,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
           </div>
           <ZoneToggle sessionId={sessionId} />
         </div>
-        <RepoScopeBar sessionId={sessionId} />
+        <ScopeBar sessionId={sessionId} />
       </div>
       <div className="relative min-h-0 flex-1">
         <div
