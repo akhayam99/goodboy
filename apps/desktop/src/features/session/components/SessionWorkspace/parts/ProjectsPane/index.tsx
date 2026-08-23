@@ -4,6 +4,7 @@ import type { Session, SessionId, SessionProjectMount } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
 import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
+import { MountProjectPopover } from './MountProjectPopover';
 import { ProjectRow } from './ProjectRow';
 
 const EMPTY_MOUNTS: ReadonlyArray<SessionProjectMount> = [];
@@ -26,9 +27,12 @@ export const ProjectsPane = ({ session }: Props) => {
     mounts.find((mount) => mount.projectId === activeProjectId)?.projectId ??
     mounts[0]?.projectId ??
     null;
-  const mountedIds = new Set(mounts.map((mount) => mount.projectId));
-  const ordered = [...projects].sort(
-    (a, b) => (mountedIds.has(a.id) ? 0 : 1) - (mountedIds.has(b.id) ? 0 : 1),
+  const mounted = projects.flatMap((project) => {
+    const mount = mounts.find((candidate) => candidate.projectId === project.id);
+    return mount == null ? [] : [{ project, mount }];
+  });
+  const unmounted = projects.filter((project) =>
+    mounts.every((mount) => mount.projectId !== project.id),
   );
 
   return (
@@ -45,16 +49,23 @@ export const ProjectsPane = ({ session }: Props) => {
         />
       ) : (
         <div className="flex flex-col gap-1.5">
-          {ordered.map((project) => (
-            <ProjectRow
-              key={project.id}
-              sessionId={sessionId}
-              project={project}
-              mount={mounts.find((mount) => mount.projectId === project.id) ?? null}
-              isActive={project.id === activeMountedId}
-              canSwitch={mounts.length > 1}
-            />
-          ))}
+          {mounted.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No projects mounted yet</p>
+          ) : (
+            mounted.map(({ project, mount }) => (
+              <ProjectRow
+                key={project.id}
+                sessionId={sessionId}
+                project={project}
+                mount={mount}
+                isActive={project.id === activeMountedId}
+                canSwitch={mounts.length > 1}
+              />
+            ))
+          )}
+          {unmounted.length > 0 ? (
+            <MountProjectPopover sessionId={sessionId} projects={unmounted} />
+          ) : null}
         </div>
       )}
     </PaneShell>

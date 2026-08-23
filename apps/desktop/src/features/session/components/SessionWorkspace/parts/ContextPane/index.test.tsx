@@ -307,6 +307,28 @@ describe('Session summary blocks', () => {
     expect(summary.textContent).not.toContain('####');
   });
 
+  it('leads each canonical block header with a small icon on the eyebrow tone', () => {
+    render(<ContextPane session={SESSION} />);
+    const summary = sectionFor('Session summary');
+
+    for (const title of ['Problem', 'Learned', 'State', 'Next']) {
+      const region = within(summary).getByRole('region', { name: title });
+      const icon = region.querySelector('h3 svg');
+      expect(icon).not.toBeNull();
+      expect(icon?.getAttribute('width')).toBe('12');
+    }
+  });
+
+  it('keeps the icon off a non-canonical block header', () => {
+    store.sessionSlots['session-1'] = slots({
+      last_output_summary: `${SUMMARY}\n\n#### Risks\n- a heading we do not know.`,
+    });
+    render(<ContextPane session={SESSION} />);
+    const risks = within(sectionFor('Session summary')).getByRole('region', { name: 'Risks' });
+
+    expect(risks.querySelector('h3 svg')).toBeNull();
+  });
+
   it('labels each block without drawing a box around it', () => {
     render(<ContextPane session={SESSION} />);
     const problem = within(sectionFor('Session summary')).getByRole('region', { name: 'Problem' });
@@ -588,16 +610,19 @@ describe('Working set', () => {
     expect(within(workingSet).getByText('This session has no mounted projects yet.')).toBeDefined();
   });
 
-  it('lists each mounted project with branch, path, and the active marker', () => {
+  it('lists each mounted project on one line, with the path held as a tooltip', () => {
     seedMounts();
     render(<ContextPane session={SESSION} />);
     const workingSet = sectionFor('Working set');
 
     expect(within(workingSet).getByText('app')).toBeDefined();
     expect(within(workingSet).getByText('goodboy/goal')).toBeDefined();
-    expect(within(workingSet).getByText('/tmp/app/.goodboy/worktrees/goal-12345678')).toBeDefined();
+    expect(
+      within(workingSet).getByTitle('/tmp/app/.goodboy/worktrees/goal-12345678'),
+    ).toBeDefined();
     expect(within(workingSet).getByText('notes')).toBeDefined();
-    expect(within(workingSet).getByText('/tmp/notes/goal-12345678')).toBeDefined();
+    expect(within(workingSet).getByTitle('/tmp/notes/goal-12345678')).toBeDefined();
+    expect(within(workingSet).queryByText('/tmp/app/.goodboy/worktrees/goal-12345678')).toBeNull();
     expect(within(workingSet).getAllByText('Active')).toHaveLength(1);
     expect(within(workingSet).queryByText('This session has no mounted projects yet.')).toBeNull();
   });

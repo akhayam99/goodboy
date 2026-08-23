@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import type { Tone } from '@goodboy/ui';
 import {
+  ArrowRight,
   Bell,
   Blocks,
   Bot,
@@ -78,6 +79,7 @@ export const CONCEPT_ICONS = {
   issues: CircleDot,
   jira: JiraIcon,
   linear: LinearIcon,
+  nextSteps: ArrowRight,
   notifications: Bell,
   orchestrator: Network,
   plans: ClipboardList,
@@ -132,6 +134,7 @@ export const CONCEPT_TONE = {
   issues: 'info',
   jira: 'primary',
   linear: 'primary',
+  nextSteps: 'neutral',
   notifications: 'warning',
   orchestrator: 'accent',
   plans: 'draft',
