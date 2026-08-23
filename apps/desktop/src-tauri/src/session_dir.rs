@@ -106,6 +106,25 @@ fn create_absolute_dir(path: PathBuf) -> Result<PathBuf, SessionDirError> {
     Ok(std::fs::canonicalize(absolute)?)
 }
 
+const MARKER_DIR: &str = ".goodboy";
+const MARKER_FILE: &str = "session.json";
+
+fn marker_path(path: &Path) -> PathBuf {
+    path.join(MARKER_DIR).join(MARKER_FILE)
+}
+
+pub fn migrate_legacy_marker(path: &Path) -> std::io::Result<()> {
+    let legacy = path.join(MARKER_DIR);
+    if !legacy.is_file() {
+        return Ok(());
+    }
+    let bytes = std::fs::read(&legacy)?;
+    std::fs::remove_file(&legacy)?;
+    std::fs::create_dir_all(path.join(MARKER_DIR))?;
+    std::fs::write(marker_path(path), bytes)?;
+    Ok(())
+}
+
 fn marker_write(
     path: &Path,
     session_id: String,
@@ -116,12 +135,19 @@ fn marker_write(
         workspace_id,
         created_at: crate::util::iso_now(),
     };
-    std::fs::write(path.join(".goodboy"), serde_json::to_vec(&marker)?)?;
+    migrate_legacy_marker(path)?;
+    std::fs::create_dir_all(path.join(MARKER_DIR))?;
+    std::fs::write(marker_path(path), serde_json::to_vec(&marker)?)?;
     Ok(())
 }
 
 fn marker_read(path: &Path) -> Result<SessionMarker, SessionDirError> {
-    let marker = std::fs::read(path.join(".goodboy"))?;
+    let modern = marker_path(path);
+    let marker = if modern.is_file() {
+        std::fs::read(modern)?
+    } else {
+        std::fs::read(path.join(MARKER_DIR))?
+    };
     Ok(serde_json::from_slice::<SessionMarker>(&marker)?)
 }
 
@@ -279,7 +305,7 @@ mod tests {
         assert_eq!(created.slug, "study-plan");
         assert!(!created.reused);
         assert!(Path::new(&created.worktree_path).is_dir());
-        let marker = std::fs::read(Path::new(&created.worktree_path).join(".goodboy")).unwrap();
+        let marker = std::fs::read(Path::new(&created.worktree_path).join(".goodboy").join("session.json")).unwrap();
         let marker = serde_json::from_slice::<SessionMarker>(&marker).unwrap();
         assert_eq!(marker.session_id, "session-1");
         assert_eq!(marker.workspace_id, "workspace-1");
@@ -288,11 +314,33 @@ mod tests {
         let reused = session_dir_create(args()).unwrap();
         assert!(reused.reused);
         let marker_after_reuse =
-            std::fs::read(Path::new(&created.worktree_path).join(".goodboy")).unwrap();
+            std::fs::read(Path::new(&created.worktree_path).join(".goodboy").join("session.json")).unwrap();
         let marker_after_reuse =
             serde_json::from_slice::<SessionMarker>(&marker_after_reuse).unwrap();
         assert_eq!(marker_after_reuse.created_at, first_created_at);
         assert_eq!(marker_after_reuse.workspace_id, "workspace-1");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn reuses_a_directory_marked_with_the_legacy_marker_file() {
+        let root = test_root("legacy-marker");
+        let target = root.join("sessions").join("study-plan");
+        std::fs::create_dir_all(&target).unwrap();
+        std::fs::write(
+            target.join(".goodboy"),
+            br#"{"sessionId":"session-1","workspaceId":"workspace-1","createdAt":"2026-01-01T00:00:00Z"}"#,
+        )
+        .unwrap();
+        let created = session_dir_create(CreateArgs {
+            base_path: root.to_string_lossy().into_owned(),
+            slug: "Study Plan".to_string(),
+            directory_name: None,
+            session_id: "session-1".to_string(),
+            workspace_id: "workspace-1".to_string(),
+        })
+        .unwrap();
+        assert!(created.reused);
         std::fs::remove_dir_all(root).unwrap();
     }
 

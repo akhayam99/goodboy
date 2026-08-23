@@ -130,6 +130,7 @@ pub fn attachment_write(
         return Err(AttachmentError::TooLarge(MAX_BYTES));
     }
 
+    crate::session_dir::migrate_legacy_marker(Path::new(&worktree_dir))?;
     let dir = Path::new(&worktree_dir).join(ATTACH_SUBDIR);
     fs::create_dir_all(&dir)?;
 
@@ -270,6 +271,9 @@ fn cleanup_orphans_for_worktree(
     referenced_paths: &HashSet<String>,
 ) -> Result<u64, AttachmentError> {
     let attachment_dir = worktree_path.join(ATTACH_SUBDIR);
+    if !attachment_dir.is_dir() {
+        return Ok(0);
+    }
     let entries = match fs::read_dir(&attachment_dir) {
         Ok(entries) => entries,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(0),
@@ -407,6 +411,52 @@ mod tests {
         assert_eq!(sanitize_segment(".."), "image");
         assert_eq!(sanitize_segment(""), "image");
         assert_eq!(sanitize_segment("my shot!.PNG"), "my_shot_.PNG");
+    }
+
+    #[test]
+    fn cleanup_tolerates_a_legacy_marker_file_at_the_goodboy_path() {
+        let dir = std::env::temp_dir().join(format!(
+            "goodboy-attach-marker-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join(".goodboy"), b"{}").unwrap();
+        let removed = cleanup_orphans_for_worktree(&dir, &HashSet::new()).unwrap();
+        assert_eq!(removed, 0);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn write_migrates_a_legacy_marker_file_before_storing() {
+        let dir = std::env::temp_dir().join(format!(
+            "goodboy-attach-migrate-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join(".goodboy"), b"{\"sessionId\":\"s\"}").unwrap();
+        let png_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+        let rel = attachment_write(
+            dir.to_string_lossy().to_string(),
+            "att-1".to_string(),
+            "shot.png".to_string(),
+            png_b64.to_string(),
+        )
+        .unwrap();
+        assert_eq!(rel, ".goodboy/attachments/att-1-shot.png");
+        assert!(dir.join(".goodboy").is_dir());
+        assert_eq!(
+            fs::read(dir.join(".goodboy").join("session.json")).unwrap(),
+            b"{\"sessionId\":\"s\"}"
+        );
+        let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]
