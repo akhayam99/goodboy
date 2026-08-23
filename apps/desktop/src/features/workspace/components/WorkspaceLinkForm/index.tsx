@@ -9,7 +9,10 @@ import { AppBreadcrumb } from '../../../../app/components/AppBreadcrumb';
 import { buildBreadcrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
 import { initRepo, validateGitRepo } from '../../../../shared/lib/repo';
 import { useChildRepoDetection } from '../../../../shared/hooks/useChildRepoDetection';
+import { useProjectAdoption } from '../../../../shared/hooks/useProjectAdoption';
 import { DetectedRepoList } from '../../../../shared/components/DetectedRepoList';
+import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
+import type { ProjectAttachConflict } from '../../../../store/slices/projects/addProject';
 import { lastPathSegment } from './lastPathSegment';
 
 export type WorkspaceLinkMode = 'project' | 'workspace';
@@ -50,6 +53,7 @@ export const WorkspaceLinkForm = ({
   const createWorkspace = useAppStore((state) => state.createWorkspace);
   const addProject = useAppStore((state) => state.addProject);
   const addProjects = useAppStore((state) => state.addProjects);
+  const adoptProject = useAppStore((state) => state.adoptProject);
   const removeProject = useAppStore((state) => state.removeProject);
   const setCurrentWorkspace = useAppStore((state) => state.setCurrentWorkspace);
   const projects = useAppStore((state) => state.projects);
@@ -61,6 +65,8 @@ export const WorkspaceLinkForm = ({
   const [projectPath, setProjectPath] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const detectedPaths = useMemo(() => detected?.repos.map((repo) => repo.path) ?? [], [detected]);
+  const adoption = useProjectAdoption({ workspaceId: created?.id ?? null, detectedPaths });
 
   const linked = useMemo(
     () =>
@@ -85,8 +91,15 @@ export const WorkspaceLinkForm = ({
   }) => {
     const workspace = await createWorkspace({ name });
     await setCurrentWorkspace(workspace.id);
-    await addProjects({ workspaceId: workspace.id, rootPaths });
+    const result = await addProjects({ workspaceId: workspace.id, rootPaths });
+    adoption.noteConflicts(result.conflicts);
     return workspace;
+  };
+
+  const handleLinkResult = (result: Awaited<ReturnType<typeof addProject>>) => {
+    if (result.kind === 'conflict') {
+      adoption.noteConflicts([result.conflict]);
+    }
   };
 
   const completeWithWorkspace = async ({
@@ -146,11 +159,13 @@ export const WorkspaceLinkForm = ({
       }
       clear();
       if (created !== null) {
-        await addProject({
-          workspaceId: created.id,
-          rootPath: picked,
-          requireRepo: false,
-        });
+        handleLinkResult(
+          await addProject({
+            workspaceId: created.id,
+            rootPath: picked,
+            requireRepo: false,
+          }),
+        );
         return;
       }
       const workspace = await addWorkspace({ rootPath: picked });
@@ -166,7 +181,7 @@ export const WorkspaceLinkForm = ({
       if (await detect({ path: rootPath })) {
         return;
       }
-      await addProject({ workspaceId: created.id, rootPath });
+      handleLinkResult(await addProject({ workspaceId: created.id, rootPath }));
       setProjectPath('');
     });
 
@@ -181,7 +196,9 @@ export const WorkspaceLinkForm = ({
       }
       clear();
       const initialized = await initRepo({ path: picked });
-      await addProject({ workspaceId: created.id, rootPath: initialized.rootPath });
+      handleLinkResult(
+        await addProject({ workspaceId: created.id, rootPath: initialized.rootPath }),
+      );
       setProjectPath('');
     });
 
@@ -198,17 +215,34 @@ export const WorkspaceLinkForm = ({
       if (detected === null) {
         return;
       }
+      const knownConflicts = paths.flatMap((entry) => {
+        const conflict = adoption.knownConflicts[entry];
+        return conflict === undefined ? [] : [conflict];
+      });
+      const freshPaths = paths.filter((entry) => adoption.knownConflicts[entry] === undefined);
       if (created === null) {
         const name = lastPathSegment({ path: detected.parentPath });
-        const workspace = await createWorkspaceWithProjects({ name, rootPaths: paths });
+        const workspace = await createWorkspaceWithProjects({ name, rootPaths: freshPaths });
+        for (const conflict of knownConflicts) {
+          await adoptProject({ projectId: conflict.project.id, targetWorkspaceId: workspace.id });
+        }
         clear();
         setWorkspaceName(workspace.name);
         setCreated(workspace);
         return;
       }
-      await addProjects({ workspaceId: created.id, rootPaths: paths });
+      const result = await addProjects({ workspaceId: created.id, rootPaths: freshPaths });
+      for (const conflict of knownConflicts) {
+        await adoption.adoptConflict(conflict);
+      }
+      adoption.noteConflicts(result.conflicts);
       clear();
       setProjectPath('');
+    });
+
+  const onMoveConflict = (conflict: ProjectAttachConflict) =>
+    run(async () => {
+      await adoption.adoptConflict(conflict);
     });
 
   const onCreateWorkspace = () =>
@@ -351,6 +385,7 @@ export const WorkspaceLinkForm = ({
                 <DetectedRepoList
                   repos={detected.repos}
                   busy={busy}
+                  known={adoption.knownRepos}
                   onConfirm={onConfirmDetected}
                   onDismiss={clear}
                 />
@@ -474,10 +509,21 @@ export const WorkspaceLinkForm = ({
             <DetectedRepoList
               repos={detected.repos}
               busy={busy}
+              known={adoption.knownRepos}
               onConfirm={onConfirmDetected}
               onDismiss={clear}
             />
           ) : null}
+
+          {adoption.conflicts.map((conflict) => (
+            <ProjectAdoptionNotice
+              key={conflict.project.id}
+              conflict={conflict}
+              busy={busy}
+              onMove={onMoveConflict}
+              onKeep={(entry) => adoption.dismissConflict(entry.project.id)}
+            />
+          ))}
 
           <button
             type="button"

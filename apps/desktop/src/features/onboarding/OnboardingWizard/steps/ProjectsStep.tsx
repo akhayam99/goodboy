@@ -6,13 +6,17 @@ import type { Workspace } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { initRepo } from '../../../../shared/lib/repo';
 import { useChildRepoDetection } from '../../../../shared/hooks/useChildRepoDetection';
+import { useProjectAdoption } from '../../../../shared/hooks/useProjectAdoption';
 import { DetectedRepoList } from '../../../../shared/components/DetectedRepoList';
+import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
+import type { ProjectAttachConflict } from '../../../../store/slices/projects/addProject';
 
 type Props = {
   readonly workspace: Workspace;
+  readonly initialConflicts?: ReadonlyArray<ProjectAttachConflict>;
 };
 
-export const ProjectsStep = ({ workspace }: Props) => {
+export const ProjectsStep = ({ workspace, initialConflicts }: Props) => {
   const projects = useAppStore((state) => state.projects);
   const addProject = useAppStore((state) => state.addProject);
   const addProjects = useAppStore((state) => state.addProjects);
@@ -21,6 +25,12 @@ export const ProjectsStep = ({ workspace }: Props) => {
   const [path, setPath] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const detectedPaths = useMemo(() => detected?.repos.map((repo) => repo.path) ?? [], [detected]);
+  const adoption = useProjectAdoption({
+    workspaceId: workspace.id,
+    detectedPaths,
+    initialConflicts,
+  });
 
   const linked = useMemo(
     () => projects.filter((project) => project.workspaceId === workspace.id),
@@ -41,8 +51,11 @@ export const ProjectsStep = ({ workspace }: Props) => {
       if (requireRepo && (await detect({ path: rootPath }))) {
         return;
       }
-      await addProject({ workspaceId: workspace.id, rootPath, requireRepo });
+      const result = await addProject({ workspaceId: workspace.id, rootPath, requireRepo });
       setPath('');
+      if (result.kind === 'conflict') {
+        adoption.noteConflicts([result.conflict]);
+      }
     } catch (linkError) {
       setError(formatError(linkError));
     } finally {
@@ -54,11 +67,32 @@ export const ProjectsStep = ({ workspace }: Props) => {
     setBusy(true);
     setError(null);
     try {
-      await addProjects({ workspaceId: workspace.id, rootPaths: paths });
+      const knownConflicts = paths.flatMap((entry) => {
+        const conflict = adoption.knownConflicts[entry];
+        return conflict === undefined ? [] : [conflict];
+      });
+      const freshPaths = paths.filter((entry) => adoption.knownConflicts[entry] === undefined);
+      const result = await addProjects({ workspaceId: workspace.id, rootPaths: freshPaths });
+      for (const conflict of knownConflicts) {
+        await adoption.adoptConflict(conflict);
+      }
+      adoption.noteConflicts(result.conflicts);
       clear();
       setPath('');
     } catch (linkError) {
       setError(formatError(linkError));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const moveConflict = async (conflict: ProjectAttachConflict) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await adoption.adoptConflict(conflict);
+    } catch (moveError) {
+      setError(formatError(moveError));
     } finally {
       setBusy(false);
     }
@@ -191,10 +225,21 @@ export const ProjectsStep = ({ workspace }: Props) => {
           <DetectedRepoList
             repos={detected.repos}
             busy={busy}
+            known={adoption.knownRepos}
             onConfirm={({ paths }) => void linkDetected({ paths })}
             onDismiss={clear}
           />
         ) : null}
+
+        {adoption.conflicts.map((conflict) => (
+          <ProjectAdoptionNotice
+            key={conflict.project.id}
+            conflict={conflict}
+            busy={busy}
+            onMove={(entry) => void moveConflict(entry)}
+            onKeep={(entry) => adoption.dismissConflict(entry.project.id)}
+          />
+        ))}
 
         <button
           type="button"

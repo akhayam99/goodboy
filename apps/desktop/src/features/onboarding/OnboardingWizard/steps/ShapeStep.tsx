@@ -3,7 +3,9 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Input, cn } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import type { DetectedChildRepos } from '../../../../shared/hooks/useChildRepoDetection';
-import { DetectedRepoList } from '../../../../shared/components/DetectedRepoList';
+import { DetectedRepoList, type KnownRepo } from '../../../../shared/components/DetectedRepoList';
+import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
+import type { ProjectAttachConflict } from '../../../../store/slices/projects/addProject';
 
 export type WorkspaceShape = 'workspace' | 'single';
 
@@ -21,6 +23,10 @@ type Props = {
   readonly busy: boolean;
   readonly onSingleProject: (pick: SingleProjectPick) => void;
   readonly detection: DetectedChildRepos | null;
+  readonly knownRepos: Readonly<Record<string, KnownRepo>>;
+  readonly singleConflict: ProjectAttachConflict | null;
+  readonly onMoveSingleConflict: () => void;
+  readonly onKeepSingleConflict: () => void;
   readonly onConfirmDetection: (params: { readonly paths: ReadonlyArray<string> }) => void;
   readonly onDismissDetection: () => void;
 };
@@ -49,6 +55,10 @@ export const ShapeStep = ({
   busy,
   onSingleProject,
   detection,
+  knownRepos,
+  singleConflict,
+  onMoveSingleConflict,
+  onKeepSingleConflict,
   onConfirmDetection,
   onDismissDetection,
 }: Props) => {
@@ -173,8 +183,17 @@ export const ShapeStep = ({
               <DetectedRepoList
                 repos={detection.repos}
                 busy={busy}
+                known={knownRepos}
                 onConfirm={onConfirmDetection}
                 onDismiss={onDismissDetection}
+              />
+            ) : null}
+            {singleConflict !== null ? (
+              <ProjectAdoptionNotice
+                conflict={singleConflict}
+                busy={busy}
+                onMove={onMoveSingleConflict}
+                onKeep={onKeepSingleConflict}
               />
             ) : null}
           </div>

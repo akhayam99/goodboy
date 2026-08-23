@@ -41,6 +41,12 @@ export {
   deleteProject,
 } from './queries/project';
 export {
+  describeProjectAdoption,
+  moveProjectToWorkspace,
+  type ProjectAdoptionInfo,
+  type ProjectMoveResult,
+} from './queries/project-adoption';
+export {
   upsertIntegrationBinding,
   listIntegrationBindingsForWorkspace,
   getIntegrationBinding,

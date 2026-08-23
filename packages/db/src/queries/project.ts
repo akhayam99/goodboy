@@ -139,6 +139,18 @@ export const listDisconnectedProjects = async ({
   return rows.map((row) => toDomain({ row }));
 };
 
+type NormalizeRootPathParams = {
+  readonly path: string;
+};
+
+const normalizeRootPath = ({ path }: NormalizeRootPathParams): string => {
+  let normalized = path;
+  while (normalized.length > 1 && normalized.endsWith('/')) {
+    normalized = normalized.slice(0, -1);
+  }
+  return normalized;
+};
+
 type FindProjectByRootPathParams = {
   readonly db: Database;
   readonly rootPath: string;
@@ -148,10 +160,9 @@ export const findProjectByRootPath = async ({
   db,
   rootPath,
 }: FindProjectByRootPathParams): Promise<Project | null> => {
-  const rows = await db.select<ProjectRow>('SELECT * FROM projects WHERE root_path = ? LIMIT 1', [
-    rootPath,
-  ]);
-  const row = rows[0];
+  const target = normalizeRootPath({ path: rootPath });
+  const rows = await db.select<ProjectRow>('SELECT * FROM projects', []);
+  const row = rows.find((entry) => normalizeRootPath({ path: entry.root_path }) === target);
   return row === undefined ? null : toDomain({ row });
 };
 

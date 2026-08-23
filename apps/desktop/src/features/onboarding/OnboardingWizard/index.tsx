@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, ScrollFade, cn, formatError, type ButtonVariant } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
+import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
 import { initRepo, scanChildRepos, validateGitRepo } from '../../../shared/lib/repo';
 import type { DetectedChildRepos } from '../../../shared/hooks/useChildRepoDetection';
+import { useProjectAdoption } from '../../../shared/hooks/useProjectAdoption';
 import { finishWizard } from '../onboarding-store';
 import { useOnboardingWizard } from './useOnboardingWizard';
 import { Stepper } from './Stepper';
@@ -33,15 +35,26 @@ export const OnboardingWizard = () => {
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const updateWorkspaceProfile = useAppStore((s) => s.updateWorkspaceProfile);
   const addProjects = useAppStore((s) => s.addProjects);
+  const adoptProject = useAppStore((s) => s.adoptProject);
+  const previewProjectAdoption = useAppStore((s) => s.previewProjectAdoption);
   const [step, setStep] = useState(0);
   const [shape, setShape] = useState<WorkspaceShape | null>(null);
   const [singleDetection, setSingleDetection] = useState<DetectedChildRepos | null>(null);
+  const [singleConflict, setSingleConflict] = useState<ProjectAttachConflict | null>(null);
+  const [pendingConflicts, setPendingConflicts] = useState<ReadonlyArray<ProjectAttachConflict>>(
+    [],
+  );
   const [workspaceName, setWorkspaceName] = useState('');
   const [bioDraft, setBioDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const detectedPaths = useMemo(
+    () => singleDetection?.repos.map((repo) => repo.path) ?? [],
+    [singleDetection],
+  );
+  const adoption = useProjectAdoption({ workspaceId: workspace?.id ?? null, detectedPaths });
 
   const steps = (
     mode === 'setup' ? ALL_STEPS.filter((candidate) => candidate >= SETUP_START_STEP) : ALL_STEPS
@@ -137,7 +150,8 @@ export const OnboardingWizard = () => {
   }) => {
     const created = await createWorkspace({ name });
     await setCurrentWorkspace(created.id);
-    await addProjects({ workspaceId: created.id, rootPaths });
+    const result = await addProjects({ workspaceId: created.id, rootPaths });
+    return { created, conflicts: result.conflicts };
   };
 
   const commitSingleProject = ({
@@ -149,6 +163,7 @@ export const OnboardingWizard = () => {
   }) =>
     runStepAction(async () => {
       setSingleDetection(null);
+      setSingleConflict(null);
       if (initialize) {
         const rootPath = (await initRepo({ path })).rootPath;
         await createWorkspaceWithProjects({
@@ -159,6 +174,14 @@ export const OnboardingWizard = () => {
       }
       const check = await validateGitRepo(path);
       if (check.isRepo && check.rootPath != null && check.rootPath !== '') {
+        const conflict = await previewProjectAdoption({
+          workspaceId: null,
+          rootPath: check.rootPath,
+        });
+        if (conflict !== null) {
+          setSingleConflict(conflict);
+          return 'stay';
+        }
         await createWorkspaceWithProjects({
           name: folderName({ rootPath: check.rootPath }),
           rootPaths: [check.rootPath],
@@ -181,13 +204,37 @@ export const OnboardingWizard = () => {
       if (singleDetection === null) {
         return 'stay';
       }
+      const knownConflicts = paths.flatMap((entry) => {
+        const conflict = adoption.knownConflicts[entry];
+        return conflict === undefined ? [] : [conflict];
+      });
+      const freshPaths = paths.filter((entry) => adoption.knownConflicts[entry] === undefined);
       const name = folderName({ rootPath: singleDetection.parentPath });
-      await createWorkspaceWithProjects({ name, rootPaths: paths });
+      const { created, conflicts } = await createWorkspaceWithProjects({
+        name,
+        rootPaths: freshPaths,
+      });
+      for (const conflict of knownConflicts) {
+        await adoptProject({ projectId: conflict.project.id, targetWorkspaceId: created.id });
+      }
+      setPendingConflicts(conflicts);
       setSingleDetection(null);
       setShape('workspace');
       setWorkspaceName(name);
       setStep(3);
       return 'stay';
+    });
+
+  const commitSingleConflict = () =>
+    runStepAction(async () => {
+      if (singleConflict === null) {
+        return 'stay';
+      }
+      const name = folderName({ rootPath: singleConflict.project.rootPath });
+      const created = await createWorkspace({ name });
+      await setCurrentWorkspace(created.id);
+      await adoptProject({ projectId: singleConflict.project.id, targetWorkspaceId: created.id });
+      setSingleConflict(null);
     });
 
   const commitProfile = () =>
@@ -227,6 +274,10 @@ export const OnboardingWizard = () => {
         busy={busy}
         onSingleProject={commitSingleProject}
         detection={singleDetection}
+        knownRepos={adoption.knownRepos}
+        singleConflict={singleConflict}
+        onMoveSingleConflict={commitSingleConflict}
+        onKeepSingleConflict={() => setSingleConflict(null)}
         onConfirmDetection={commitDetectedProjects}
         onDismissDetection={() => setSingleDetection(null)}
       />
@@ -246,7 +297,12 @@ export const OnboardingWizard = () => {
             disabled: busy || shape === null || workspaceName.trim().length === 0,
           };
   } else if (step === 3) {
-    body = workspace === null ? <WelcomeStep /> : <ProjectsStep workspace={workspace} />;
+    body =
+      workspace === null ? (
+        <WelcomeStep />
+      ) : (
+        <ProjectsStep workspace={workspace} initialConflicts={pendingConflicts} />
+      );
     cta = {
       label: 'Continue',
       onClick: goNext,

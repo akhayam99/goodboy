@@ -14,6 +14,8 @@ const { hookState, finishWizard, storeActions, repoLib } = vi.hoisted(() => ({
     setCurrentWorkspace: vi.fn(),
     updateWorkspaceProfile: vi.fn(),
     addProjects: vi.fn(),
+    adoptProject: vi.fn(),
+    previewProjectAdoption: vi.fn(),
   },
   repoLib: {
     initRepo: vi.fn(),
@@ -170,9 +172,16 @@ beforeEach(() => {
   storeActions.updateWorkspaceProfile.mockReset().mockResolvedValue(WORKSPACE);
   storeActions.addProjects
     .mockReset()
-    .mockImplementation(async ({ rootPaths }: { rootPaths: ReadonlyArray<string> }) =>
-      rootPaths.map((rootPath) => ({ rootPath })),
-    );
+    .mockImplementation(async ({ rootPaths }: { rootPaths: ReadonlyArray<string> }) => ({
+      linked: rootPaths.map((rootPath) => ({ rootPath })),
+      conflicts: [],
+    }));
+  storeActions.adoptProject.mockReset().mockResolvedValue({
+    movedSessionCount: 0,
+    ambiguousSessionCount: 0,
+    mergedWorkspace: true,
+  });
+  storeActions.previewProjectAdoption.mockReset().mockResolvedValue(null);
   repoLib.initRepo
     .mockReset()
     .mockResolvedValue({ rootPath: '/tmp/fresh', remoteUrl: '', branch: 'main' });

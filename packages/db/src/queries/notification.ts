@@ -11,6 +11,7 @@ export type NotificationKind =
   | 'pr-created'
   | 'workspace-deleted'
   | 'workspace-merged'
+  | 'project-adopted'
   | 'boundary-drift'
   | 'branch-changed'
   | 'budget-cap'

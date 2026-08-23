@@ -52,6 +52,23 @@ describe('DetectedRepoList', () => {
     ).toBe(true);
   });
 
+  it('notes the move consequence inline on a repository another workspace owns', () => {
+    render(
+      <DetectedRepoList
+        repos={REPOS}
+        busy={false}
+        known={{ '/repos/parent/api': { workspaceName: 'api', sessionCount: 5 } }}
+        onConfirm={vi.fn()}
+        onDismiss={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText('already in api with 5 sessions, moves here when linked'),
+    ).toBeDefined();
+    expect(screen.queryAllByText(/moves here when linked/)).toHaveLength(1);
+  });
+
   it('dismisses through the quiet cancel action', () => {
     const onDismiss = vi.fn();
     render(

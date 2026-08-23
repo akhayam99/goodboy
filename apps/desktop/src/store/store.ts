@@ -165,6 +165,9 @@ import { createSummariesSlice } from './slices/summaries';
 import { createSessionsSlice } from './slices/sessions';
 import { createWorkspacesSlice } from './slices/workspaces';
 import { createProjectsSlice } from './slices/projects';
+import type { AddProjectResult, ProjectAttachConflict } from './slices/projects/addProject';
+import type { AddProjectsResult } from './slices/projects/addProjects';
+import type { AdoptProjectResult } from './slices/projects/adoptProject';
 import { createProjectMountsSlice } from './slices/project-mounts';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
@@ -240,11 +243,19 @@ export type AppActions = {
     rootPath: string;
     name?: string;
     requireRepo?: boolean;
-  }): Promise<Project>;
+  }): Promise<AddProjectResult>;
   addProjects(input: {
     workspaceId: WorkspaceId;
     rootPaths: ReadonlyArray<string>;
-  }): Promise<ReadonlyArray<Project>>;
+  }): Promise<AddProjectsResult>;
+  adoptProject(input: {
+    projectId: ProjectId;
+    targetWorkspaceId: WorkspaceId;
+  }): Promise<AdoptProjectResult>;
+  previewProjectAdoption(input: {
+    workspaceId: WorkspaceId | null;
+    rootPath: string;
+  }): Promise<ProjectAttachConflict | null>;
   removeProject(input: { projectId: ProjectId }): Promise<void>;
   convertProjectToRepo(input: { projectId: ProjectId; remoteUrl: string }): Promise<Project>;
   renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;

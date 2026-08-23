@@ -3,12 +3,29 @@ import type {
   OverrideSettings,
   Project,
   ProjectId,
+  Workspace,
   WorkspaceId,
 } from '@goodboy/types';
-import { findProjectByRootPath, insertProject, reconnectProject } from '@goodboy/db';
+import {
+  describeProjectAdoption,
+  findProjectByRootPath,
+  insertProject,
+  reconnectProject,
+} from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { validateGitRepo } from '../../../shared/lib/repo';
 import type { GetFn, SetFn } from './types';
+
+export type ProjectAttachConflict = {
+  readonly project: Project;
+  readonly sourceWorkspace: Workspace;
+  readonly sessionCount: number;
+  readonly isShell: boolean;
+};
+
+export type AddProjectResult =
+  | { readonly kind: 'linked'; readonly project: Project }
+  | { readonly kind: 'conflict'; readonly conflict: ProjectAttachConflict };
 
 type Input = {
   readonly workspaceId: WorkspaceId;
@@ -30,8 +47,37 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   providerPool: null,
 };
 
+type BuildConflictParams = {
+  readonly get: GetFn;
+  readonly project: Project;
+};
+
+export const buildAttachConflict = async ({
+  get,
+  project,
+}: BuildConflictParams): Promise<ProjectAttachConflict> => {
+  const sourceWorkspace = get().workspaces.find(
+    (workspace) => workspace.id === project.workspaceId,
+  );
+  if (sourceWorkspace === undefined) {
+    throw new Error(`workspace not found: ${project.workspaceId}`);
+  }
+  const info = await describeProjectAdoption({ db: tauriDatabase, projectId: project.id });
+  return {
+    project,
+    sourceWorkspace,
+    sessionCount: info?.sessionCount ?? 0,
+    isShell: info?.isShell ?? false,
+  };
+};
+
 export const addProject = (set: SetFn, get: GetFn) => {
-  return async ({ workspaceId, rootPath, name, requireRepo = false }: Input): Promise<Project> => {
+  return async ({
+    workspaceId,
+    rootPath,
+    name,
+    requireRepo = false,
+  }: Input): Promise<AddProjectResult> => {
     if (get().workspaces.every((workspace) => workspace.id !== workspaceId)) {
       throw new Error(`workspace not found: ${workspaceId}`);
     }
@@ -48,7 +94,11 @@ export const addProject = (set: SetFn, get: GetFn) => {
     }
     const existing = await findProjectByRootPath({ db: tauriDatabase, rootPath: resolvedRoot });
     if (existing !== null) {
-      if (existing.workspaceId === workspaceId && existing.disconnectedAt !== undefined) {
+      if (existing.workspaceId !== workspaceId) {
+        const conflict = await buildAttachConflict({ get, project: existing });
+        return { kind: 'conflict', conflict };
+      }
+      if (existing.disconnectedAt !== undefined) {
         const at = new Date().toISOString() as IsoDateTime;
         await reconnectProject({ db: tauriDatabase, id: existing.id, at });
         const reconnected: Project = {
@@ -63,9 +113,9 @@ export const addProject = (set: SetFn, get: GetFn) => {
             reconnected,
           ],
         }));
-        return reconnected;
+        return { kind: 'linked', project: reconnected };
       }
-      throw new Error(`project already exists: ${existing.name}`);
+      throw new Error(`${existing.name} is already linked to this workspace`);
     }
     const projectName =
       name?.trim() ||
@@ -88,6 +138,6 @@ export const addProject = (set: SetFn, get: GetFn) => {
     };
     await insertProject({ db: tauriDatabase, project });
     set((state) => ({ projects: [...state.projects, project] }));
-    return project;
+    return { kind: 'linked', project };
   };
 };

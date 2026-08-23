@@ -20,6 +20,7 @@ const h = vi.hoisted(() => ({
   reconnectWorkspace: vi.fn(async () => undefined),
   disconnectWorkspace: vi.fn(async () => undefined),
   upsertWorkspaceProfile: vi.fn(async () => undefined),
+  describeProjectAdoption: vi.fn(async () => null),
   seedWorkflowLibrary: vi.fn(async () => undefined),
   invokeWorkflowList: vi.fn(async () => []),
   invokeSkillRescan: vi.fn(async () => []),
@@ -34,6 +35,7 @@ vi.mock('@goodboy/db', () => ({
   reconnectWorkspace: h.reconnectWorkspace,
   disconnectWorkspace: h.disconnectWorkspace,
   upsertWorkspaceProfile: h.upsertWorkspaceProfile,
+  describeProjectAdoption: h.describeProjectAdoption,
 }));
 
 vi.mock('@goodboy/core', () => ({ seedWorkflowLibrary: h.seedWorkflowLibrary }));
@@ -172,8 +174,64 @@ describe('workspace and project slices', () => {
 
     expect(h.reconnectProject).toHaveBeenCalledOnce();
     expect(h.insertProject).not.toHaveBeenCalled();
-    expect(result.disconnectedAt).toBeUndefined();
-    expect(store.state.projects).toEqual([result]);
+    expect(result.kind).toBe('linked');
+    if (result.kind !== 'linked') {
+      throw new Error('expected linked result');
+    }
+    expect(result.project.disconnectedAt).toBeUndefined();
+    expect(store.state.projects).toEqual([result.project]);
+  });
+
+  it('returns a typed conflict when the path already belongs to another workspace', async () => {
+    const otherWorkspace: Workspace = {
+      ...workspace(),
+      id: 'workspace-2' as WorkspaceId,
+      name: 'Other Team',
+    };
+    const owned = project({ workspaceId: otherWorkspace.id });
+    h.findProjectByRootPath.mockResolvedValueOnce(owned);
+    h.describeProjectAdoption.mockResolvedValueOnce({
+      sourceWorkspaceId: otherWorkspace.id,
+      isShell: true,
+      sessionCount: 4,
+    } as never);
+    const store = harness({ workspaces: [workspace(), otherWorkspace] });
+
+    const result = await addProject(
+      store.set,
+      store.get,
+    )({
+      workspaceId: WORKSPACE_ID,
+      rootPath: '/repos/api',
+    });
+
+    expect(result.kind).toBe('conflict');
+    if (result.kind !== 'conflict') {
+      throw new Error('expected conflict result');
+    }
+    expect(result.conflict.project).toEqual(owned);
+    expect(result.conflict.sourceWorkspace).toEqual(otherWorkspace);
+    expect(result.conflict.sessionCount).toBe(4);
+    expect(result.conflict.isShell).toBe(true);
+    expect(h.insertProject).not.toHaveBeenCalled();
+    expect(store.state.projects).toEqual([]);
+  });
+
+  it('refuses a path already linked to the same workspace with plain copy', async () => {
+    h.findProjectByRootPath.mockResolvedValueOnce(project());
+    const store = harness({ workspaces: [workspace()] });
+
+    await expect(
+      addProject(
+        store.set,
+        store.get,
+      )({
+        workspaceId: WORKSPACE_ID,
+        rootPath: '/repos/api',
+      }),
+    ).rejects.toThrow('api is already linked to this workspace');
+
+    expect(h.insertProject).not.toHaveBeenCalled();
   });
 
   it('refuses a non-repo folder when the caller requires a repository', async () => {
@@ -209,7 +267,7 @@ describe('workspace and project slices', () => {
     }));
     const store = harness({ workspaces: [workspace()] });
 
-    const linked = await addProjects(
+    const result = await addProjects(
       store.set,
       store.get,
     )({
@@ -217,8 +275,9 @@ describe('workspace and project slices', () => {
       rootPaths: ['/repos/api', '/repos/web'],
     });
 
-    expect(linked.map((created) => created.rootPath)).toEqual(['/repos/api', '/repos/web']);
-    expect(linked.every((created) => created.kind === 'repo')).toBe(true);
+    expect(result.linked.map((created) => created.rootPath)).toEqual(['/repos/api', '/repos/web']);
+    expect(result.linked.every((created) => created.kind === 'repo')).toBe(true);
+    expect(result.conflicts).toEqual([]);
     expect(h.insertProject).toHaveBeenCalledTimes(2);
     expect(store.state.projects.length).toBe(2);
   });
@@ -262,7 +321,11 @@ describe('workspace and project slices', () => {
       rootPath: '/repos/plain',
     });
 
-    expect(created.kind).toBe('folder');
+    expect(created.kind).toBe('linked');
+    if (created.kind !== 'linked') {
+      throw new Error('expected linked result');
+    }
+    expect(created.project.kind).toBe('folder');
     expect(h.insertProject).toHaveBeenCalledOnce();
   });
 

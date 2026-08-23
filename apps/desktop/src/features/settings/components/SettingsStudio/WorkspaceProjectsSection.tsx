@@ -6,7 +6,9 @@ import { Button, Chip, SectionHeader, Tooltip, cn, formatError } from '@goodboy/
 import { useAppStore } from '../../../../store';
 import { initRepo } from '../../../../shared/lib/repo';
 import { useChildRepoDetection } from '../../../../shared/hooks/useChildRepoDetection';
+import { useProjectAdoption } from '../../../../shared/hooks/useProjectAdoption';
 import { DetectedRepoList } from '../../../../shared/components/DetectedRepoList';
+import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
 import { useToast } from '../../../../app/components/Toast';
 
 type Props = {
@@ -25,6 +27,8 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
   const [path, setPath] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const detectedPaths = useMemo(() => detected?.repos.map((repo) => repo.path) ?? [], [detected]);
+  const adoption = useProjectAdoption({ workspaceId, detectedPaths });
 
   const linked = useMemo(
     () => projects.filter((project) => project.workspaceId === workspaceId),
@@ -39,9 +43,13 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
       if (requireRepo && (await detect({ path: rootPath }))) {
         return;
       }
-      const project = await addProject({ workspaceId, rootPath, requireRepo });
+      const result = await addProject({ workspaceId, rootPath, requireRepo });
       setPath('');
-      showToast('success', `linked ${project.name}`);
+      if (result.kind === 'conflict') {
+        adoption.noteConflicts([result.conflict]);
+        return;
+      }
+      showToast('success', `linked ${result.project.name}`);
     } catch (linkError) {
       setError(formatError(linkError));
     } finally {
@@ -53,17 +61,37 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
     setBusy(true);
     setError(null);
     try {
-      const linkedProjects = await addProjects({ workspaceId, rootPaths: paths });
+      const knownConflicts = paths.flatMap((entry) => {
+        const conflict = adoption.knownConflicts[entry];
+        return conflict === undefined ? [] : [conflict];
+      });
+      const freshPaths = paths.filter((entry) => adoption.knownConflicts[entry] === undefined);
+      const result = await addProjects({ workspaceId, rootPaths: freshPaths });
+      for (const conflict of knownConflicts) {
+        await adoption.adoptConflict(conflict);
+      }
+      adoption.noteConflicts(result.conflicts);
       clear();
       setPath('');
-      showToast(
-        'success',
-        linkedProjects.length === 1
-          ? `linked ${linkedProjects[0]?.name ?? '1 project'}`
-          : `linked ${linkedProjects.length} projects`,
-      );
+      const total = result.linked.length + knownConflicts.length;
+      if (total > 0) {
+        showToast('success', total === 1 ? 'linked 1 project' : `linked ${total} projects`);
+      }
     } catch (linkError) {
       setError(formatError(linkError));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const moveConflict = async (conflict: (typeof adoption.conflicts)[number]) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await adoption.adoptConflict(conflict);
+      showToast('success', `moved ${conflict.project.name} here`);
+    } catch (moveError) {
+      setError(formatError(moveError));
     } finally {
       setBusy(false);
     }
@@ -209,10 +237,20 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
           <DetectedRepoList
             repos={detected.repos}
             busy={busy}
+            known={adoption.knownRepos}
             onConfirm={({ paths }) => void linkDetected({ paths })}
             onDismiss={clear}
           />
         ) : null}
+        {adoption.conflicts.map((conflict) => (
+          <ProjectAdoptionNotice
+            key={conflict.project.id}
+            conflict={conflict}
+            busy={busy}
+            onMove={(entry) => void moveConflict(entry)}
+            onKeep={(entry) => adoption.dismissConflict(entry.project.id)}
+          />
+        ))}
         <button
           type="button"
           onClick={() => void onLinkPlainFolder()}

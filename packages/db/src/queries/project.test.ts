@@ -83,6 +83,21 @@ describe('project queries', () => {
     expect(await findProjectByRootPath({ db, rootPath: project.rootPath })).not.toBeNull();
   });
 
+  it('finds a project by root path regardless of trailing slashes on either side', async () => {
+    const db = await makeDb();
+    const clean = makeProject({ id: 'clean' });
+    const slashed = makeProject({
+      id: 'slashed',
+      overrides: { rootPath: '/tmp/slashed/' },
+    });
+    await insertProject({ db, project: clean });
+    await insertProject({ db, project: slashed });
+
+    expect((await findProjectByRootPath({ db, rootPath: '/tmp/clean/' }))?.id).toBe(clean.id);
+    expect((await findProjectByRootPath({ db, rootPath: '/tmp/slashed' }))?.id).toBe(slashed.id);
+    expect(await findProjectByRootPath({ db, rootPath: '/tmp/ghost/' })).toBeNull();
+  });
+
   it('lists active and disconnected projects for one container', async () => {
     const db = await makeDb();
     const active = makeProject({ id: 'active' });

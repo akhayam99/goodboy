@@ -56,7 +56,12 @@ export const addWorkspace = (set: SetFn, get: GetFn) => {
     });
     if (existingProject != null) {
       if (existingProject.disconnectedAt === undefined) {
-        throw new Error(`project already exists: ${existingProject.name}`);
+        const owner = get().workspaces.find(
+          (workspace) => workspace.id === existingProject.workspaceId,
+        );
+        throw new Error(
+          `${existingProject.name} is already linked in ${owner?.name ?? 'another workspace'}`,
+        );
       }
       const now = new Date().toISOString() as IsoDateTime;
       await reconnectWorkspace({ db: tauriDatabase, id: existingProject.workspaceId, at: now });

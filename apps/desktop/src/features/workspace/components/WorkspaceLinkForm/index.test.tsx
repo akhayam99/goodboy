@@ -15,11 +15,23 @@ const { state, repoMocks, dialogMock } = vi.hoisted(() => ({
       name,
       sessionsRoot: null,
     })),
-    addProject: vi.fn(async () => ({ id: 'proj-1', rootPath: '/repos/alpha' })),
-    addProjects: vi.fn(async () => [
-      { id: 'proj-1', rootPath: '/parent/alpha' },
-      { id: 'proj-2', rootPath: '/parent/beta' },
-    ]),
+    addProject: vi.fn(async (): Promise<Record<string, unknown>> => ({
+      kind: 'linked',
+      project: { id: 'proj-1', rootPath: '/repos/alpha' },
+    })),
+    addProjects: vi.fn(async () => ({
+      linked: [
+        { id: 'proj-1', rootPath: '/parent/alpha' },
+        { id: 'proj-2', rootPath: '/parent/beta' },
+      ],
+      conflicts: [],
+    })),
+    adoptProject: vi.fn(async () => ({
+      movedSessionCount: 5,
+      ambiguousSessionCount: 0,
+      mergedWorkspace: true,
+    })),
+    previewProjectAdoption: vi.fn(async (): Promise<Record<string, unknown> | null> => null),
     removeProject: vi.fn(async () => undefined),
     setCurrentWorkspace: vi.fn(async () => undefined),
     projects: [] as ReadonlyArray<{
@@ -216,6 +228,60 @@ describe('WorkspaceLinkForm', () => {
       mode: 'workspace',
       workspace: expect.objectContaining({ id: 'ws-created' }),
     });
+  });
+
+  it('offers to move a project another workspace already owns instead of failing', async () => {
+    const conflict = {
+      project: { id: 'proj-known', name: 'api', rootPath: '/repos/api', kind: 'repo' },
+      sourceWorkspace: { id: 'ws-legacy', name: 'Legacy' },
+      sessionCount: 5,
+      isShell: true,
+    };
+    state.addProject.mockResolvedValueOnce({ kind: 'conflict', conflict });
+    renderForm();
+    fireEvent.click(screen.getByRole('radio', { name: /a workspace with several projects/i }));
+    fireEvent.change(screen.getByLabelText('Workspace name'), { target: { value: 'Acme' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create workspace' }));
+    await waitFor(() => expect(state.createWorkspace).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByLabelText('Project path'), { target: { value: '/repos/api' } });
+    fireEvent.click(screen.getByRole('button', { name: /add/i }));
+
+    await waitFor(() => screen.getByText('already in Legacy with 5 sessions'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move it here' }));
+
+    await waitFor(() =>
+      expect(state.adoptProject).toHaveBeenCalledWith({
+        projectId: 'proj-known',
+        targetWorkspaceId: 'ws-created',
+      }),
+    );
+    await waitFor(() => expect(screen.queryByText('already in Legacy with 5 sessions')).toBeNull());
+  });
+
+  it('drops the conflict notice quietly through Keep there', async () => {
+    const conflict = {
+      project: { id: 'proj-known', name: 'api', rootPath: '/repos/api', kind: 'repo' },
+      sourceWorkspace: { id: 'ws-legacy', name: 'Legacy' },
+      sessionCount: 5,
+      isShell: true,
+    };
+    state.addProject.mockResolvedValueOnce({ kind: 'conflict', conflict });
+    renderForm();
+    fireEvent.click(screen.getByRole('radio', { name: /a workspace with several projects/i }));
+    fireEvent.change(screen.getByLabelText('Workspace name'), { target: { value: 'Acme' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create workspace' }));
+    await waitFor(() => expect(state.createWorkspace).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByLabelText('Project path'), { target: { value: '/repos/api' } });
+    fireEvent.click(screen.getByRole('button', { name: /add/i }));
+    await waitFor(() => screen.getByText('already in Legacy with 5 sessions'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Keep there' }));
+
+    expect(screen.queryByText('already in Legacy with 5 sessions')).toBeNull();
+    expect(state.adoptProject).not.toHaveBeenCalled();
   });
 
   it('keeps Create workspace blocked while the name is empty', () => {
