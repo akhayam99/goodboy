@@ -115,7 +115,7 @@ export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
       <span
         title={segmentsToText({ segments })}
         className={cn(
-          'min-w-0 truncate',
+          'flex min-w-0 items-center overflow-hidden',
           isStep ? 'text-xs leading-4' : 'text-sm leading-5',
           emphasis === 'success'
             ? 'text-success'
@@ -132,7 +132,12 @@ export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
           segment.kind === 'value' ? (
             <ValueToken key={`${segment.variant}:${index}`} value={segment.text} />
           ) : (
-            <span key={`text:${index}`}>{segment.text}</span>
+            <span
+              key={`text:${index}`}
+              className="min-w-0 overflow-hidden text-ellipsis whitespace-pre"
+            >
+              {segment.text}
+            </span>
           ),
         )}
       </span>
