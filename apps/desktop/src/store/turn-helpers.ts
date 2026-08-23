@@ -4,6 +4,7 @@ import {
   assessPlanReadiness,
   extractClustersFromMarker,
   extractHandoff,
+  extractMaterializeRequests,
   extractPlanFromMarker,
   extractScoutDomains,
   resolveTaskModel,
@@ -545,6 +546,69 @@ export const captureScoutDomainsFromTurn = async ({
       console.warn(`[scout-domains] failed for agent ${agentId}: ${formatError(err)}`);
     }
     return null;
+  }
+};
+
+type CaptureMaterializeParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly runId: ProviderRunId;
+  readonly assistantText: string;
+};
+
+export const captureMaterializeRequestsFromTurn = async ({
+  get,
+  sessionId,
+  agentId,
+  runId,
+  assistantText,
+}: CaptureMaterializeParams): Promise<void> => {
+  const requests = extractMaterializeRequests(assistantText);
+  if (requests.length === 0) {
+    return;
+  }
+  const session = get().sessions.find((candidate) => candidate.id === sessionId);
+  if (session === undefined) {
+    return;
+  }
+  const projects = get().projects.filter((project) => project.workspaceId === session.workspaceId);
+  const note = (message: string) => {
+    get().appendTurnEvent(agentId, sessionId, {
+      kind: 'error',
+      runId,
+      message,
+      at: new Date().toISOString() as IsoDateTime,
+    });
+  };
+  for (const request of requests) {
+    const project = projects.find(
+      (candidate) => candidate.name.toLowerCase() === request.projectName.toLowerCase(),
+    );
+    if (project === undefined) {
+      await get().recordSessionEvent({
+        sessionId,
+        kind: 'project_materialization_refused',
+        payload: {
+          projectName: request.projectName,
+          reason: `no project named "${request.projectName}" in this workspace`,
+        },
+      });
+      const known = projects.map((candidate) => candidate.name).join(', ');
+      note(
+        `materialize refused: no project named "${request.projectName}" in this workspace.${known.length > 0 ? ` Known projects: ${known}.` : ''}`,
+      );
+      continue;
+    }
+    try {
+      await get().materializeProject({
+        sessionId,
+        projectId: project.id,
+        reason: request.reason,
+      });
+    } catch (error) {
+      note(`materialize failed for ${project.name}: ${formatError(error)}`);
+    }
   }
 };
 

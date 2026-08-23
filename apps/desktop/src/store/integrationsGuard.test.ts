@@ -1,9 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { WorkspaceIntegrationProvider } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  Project,
+  ProjectId,
+  WorkspaceId,
+  WorkspaceIntegrationProvider,
+} from '@goodboy/types';
 import { QUERY_BRIDGE_VERBS, buildIntegrationsGuard } from './integrationsGuard';
-import { buildWorkspaceScopeGuard } from './workspaceScopeGuard';
+import { buildScopeGuard } from './scopeGuard';
 
 const SESSION_SCOPED_PROVIDERS: ReadonlyArray<string> = ['project'];
 
@@ -127,23 +133,44 @@ describe('the advertised verbs', () => {
     }
   });
 
-  it('advertise the session-scoped project verbs through the workspace scope guard instead', () => {
+  it('advertise the session-scoped project verbs through the scope guard instead', () => {
     const rust = catalogVerbs();
 
     expect(rust['project']).toEqual(['materialize']);
-    const guard = buildWorkspaceScopeGuard({
+    const now = '2026-08-22T00:00:00.000Z' as IsoDateTime;
+    const project: Project = {
+      id: 'project-guard' as ProjectId,
+      workspaceId: 'workspace-guard' as WorkspaceId,
+      name: 'app',
+      rootPath: '/tmp/app',
+      kind: 'repo',
+      overrides: {
+        defaultProviderId: null,
+        defaultWorkflowId: null,
+        defaultBranchPrefix: null,
+        parallelEnabled: null,
+        defaultVerbosity: null,
+        providerBindings: null,
+        taskModels: null,
+        roleModels: null,
+        parallelAgents: null,
+        providerPool: null,
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+    const base = {
       containerDir: '/tmp/container',
-      projects: [],
+      workingDir: '/tmp/container',
+      projects: [project],
       mounts: [],
-      isBridgeServing: true,
-    });
+      isSessionDirScope: false,
+      canWrite: true,
+    };
+    const guard = buildScopeGuard({ ...base, isBridgeServing: true });
     expect(guard).toContain('query project materialize');
-    const silent = buildWorkspaceScopeGuard({
-      containerDir: '/tmp/container',
-      projects: [],
-      mounts: [],
-      isBridgeServing: false,
-    });
+    const silent = buildScopeGuard({ ...base, isBridgeServing: false });
     expect(silent).not.toContain('GOODBOY_BIN');
+    expect(silent).toContain('<<materialize:');
   });
 });

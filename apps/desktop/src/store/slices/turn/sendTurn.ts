@@ -60,6 +60,7 @@ import {
   AGENT_KIND_DEFAULTS,
   KIND_TO_ROLE,
   inferAgentKindFromName,
+  kindWritesFiles,
 } from '../../../features/session/agent-kind';
 import { slotsForKind } from '../../../features/providers/slot-routing';
 import { formatInteger } from '../../../shared/utils/formatInteger';
@@ -71,7 +72,7 @@ import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from '../../integrationsGuard';
 import { buildProfileGuard } from '../../profileGuard';
-import { buildWorkspaceScopeGuard } from '../../workspaceScopeGuard';
+import { buildScopeGuard } from '../../scopeGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
 import { stepSummaryDegraded } from '../../summarizeAgentOutput';
 import { decisionsDelta } from '../session-events';
@@ -83,6 +84,7 @@ import {
 import {
   buildAttachmentPromptBlock,
   buildGoalAttachmentsBlock,
+  captureMaterializeRequestsFromTurn,
   capturePlanFromTurn,
   captureScoutDomainsFromTurn,
   emitTurnNudges,
@@ -156,16 +158,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const workspaceProjects = before.projects.filter(
       (project) => project.workspaceId === session.workspaceId,
     );
-    const onlyProject = workspaceProjects.length === 1 ? workspaceProjects[0]! : null;
-    if (onlyProject !== null && (before.sessionProjectMounts[sessionId] ?? []).length === 0) {
-      await get()
-        .materializeProject({
-          sessionId,
-          projectId: onlyProject.id,
-          reason: 'first turn on the only project of this workspace',
-        })
-        .catch(() => undefined);
-    }
     const containerDir = await get().ensureSessionContainer({ sessionId });
     const mountedState = get();
     const turnMounts = mountedState.sessionProjectMounts[sessionId] ?? [];
@@ -726,42 +718,15 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         })
       : null;
     const isBridgeServing = await isQueryBridgeServing();
-    const isWorkspaceScope =
-      workspaceProjects.length > 1 || (workspaceProjects.length === 1 && scopeMounts.length === 0);
-    const scopeGuard = isWorkspaceScope
-      ? buildWorkspaceScopeGuard({
-          containerDir: containerDir ?? workingDir,
-          projects: workspaceProjects,
-          mounts: scopeMounts,
-          isBridgeServing,
-        })
-      : (isSessionDirScope
-          ? [
-              '[session-directory-scope]',
-              `You are operating inside this session directory: ${workingDir}`,
-              'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this directory.',
-              'NEVER write to absolute paths that exit this directory.',
-              'Prefer paths relative to your current working directory. If a request implies editing files outside this directory, stop and ask for explicit confirmation before touching them.',
-              '[/session-directory-scope]',
-            ]
-          : scopeMounts.length > 1
-            ? [
-                '[projects-scope]',
-                `You are operating across ${scopeMounts.length} materialized projects under: ${workingDir}`,
-                `Each project lives in its own subfolder: ${scopeMounts.map((mount) => mount.mountName).join(', ')}.`,
-                'Each subfolder is a separate git repository with its own branch. Run git commands inside the relevant subfolder, never at the session directory root.',
-                'ALL file operations MUST resolve inside one of these subfolders. Do NOT create files at the session directory root or outside it.',
-                '[/projects-scope]',
-              ]
-            : [
-                '[worktree-scope]',
-                `You are operating inside an isolated git worktree at: ${workingDir}`,
-                'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this worktree.',
-                'NEVER write to absolute paths that exit this directory, especially not to the parent project checkout.',
-                'Prefer paths relative to your current working directory. If a user request implies editing files outside the worktree, stop and ask for explicit confirmation before touching them.',
-                '[/worktree-scope]',
-              ]
-        ).join('\n');
+    const scopeGuard = buildScopeGuard({
+      containerDir,
+      workingDir,
+      projects: workspaceProjects,
+      mounts: scopeMounts,
+      isBridgeServing,
+      isSessionDirScope,
+      canWrite: kindWritesFiles(earlyAgentKind),
+    });
     const languageGuard = buildSessionLanguageGuard({
       goal: resolveSessionLanguageGoal({
         session,
@@ -1220,6 +1185,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         sessionId,
         agentId: activeAgentId,
         agentKind: earlyAgentKind,
+        assistantText,
+      });
+      await captureMaterializeRequestsFromTurn({
+        get,
+        sessionId,
+        agentId: activeAgentId,
+        runId,
         assistantText,
       });
       void emitTurnNudges(set, get, sessionId, activeAgentId, assistantText, capturedPlan);

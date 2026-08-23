@@ -208,6 +208,16 @@ const agent: Agent = {
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {}
 
+const assistantStream = (text: string) =>
+  async function* stream(): AsyncIterable<TurnEvent> {
+    yield {
+      kind: 'assistant_text',
+      runId: 'run-lazy' as never,
+      delta: text,
+      at: NOW,
+    };
+  };
+
 const spawnedArgs = (): Record<string, unknown> =>
   (runTurnSpy.mock.calls[0]?.[0] ?? {}) as Record<string, unknown>;
 
@@ -249,29 +259,20 @@ describe('sendTurn lazy materialization', () => {
     return useAppStore;
   };
 
-  it('materializes the only project on the first turn and runs inside its worktree', async () => {
+  it('keeps a single-project first turn in the container without a branch or worktree', async () => {
     const useAppStore = await setup([buildProject()]);
-    createWorktreeSpy.mockResolvedValueOnce({
-      worktreePath: `${CONTAINER}/app`,
-      branchName: 'goodboy/goal-12345678',
-      slug: 'goal-12345678',
-      reused: false,
-    });
 
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
 
-    expect(createWorktreeSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        repoPath: '/tmp/app',
-        parentDir: CONTAINER,
-        dirName: 'app',
-      }),
-    );
-    expect(spawnedArgs()['workingDir']).toBe(`${CONTAINER}/app`);
-    expect(String(spawnedArgs()['systemPrompt'])).toContain('[worktree-scope]');
-    expect(useAppStore.getState().sessionBranches[SESSION_ID]).toBe('goodboy/goal-12345678');
+    expect(createWorktreeSpy).not.toHaveBeenCalled();
+    expect(spawnedArgs()['workingDir']).toBe(CONTAINER);
+    const systemPrompt = String(spawnedArgs()['systemPrompt']);
+    expect(systemPrompt).toContain('[workspace-scope]');
+    expect(systemPrompt).toContain('app (repo) root: /tmp/app');
+    expect(systemPrompt).toContain('NOT materialized');
+    expect(useAppStore.getState().sessionBranches[SESSION_ID]).toBe('');
     const kinds = insertSessionEventSpy.mock.calls.map(([{ event }]) => event.kind);
-    expect(kinds).toContain('project_materialized');
+    expect(kinds).not.toContain('project_materialized');
   });
 
   it('keeps a multi-project session lazy and ships the workspace scope guard instead', async () => {
@@ -288,17 +289,61 @@ describe('sendTurn lazy materialization', () => {
     expect(systemPrompt).toContain('[workspace-scope]');
     expect(systemPrompt).toContain('app (repo) root: /tmp/app');
     expect(systemPrompt).toContain('NOT materialized');
+    expect(systemPrompt).toContain('<<materialize: <project name> | <why you need it>>>');
   });
 
-  it('still runs the turn in the container when the single-project materialization fails', async () => {
-    const useAppStore = await setup([buildProject()]);
-    createWorktreeSpy.mockRejectedValue(new Error('git is on fire'));
+  it('materializes a project when the agent emits the marker and keeps the current turn cwd', async () => {
+    const useAppStore = await setup([
+      buildProject(),
+      buildProject({ id: SECOND_PROJECT_ID, name: 'web', rootPath: '/tmp/web' }),
+    ]);
+    createWorktreeSpy.mockResolvedValueOnce({
+      worktreePath: `${CONTAINER}/web`,
+      branchName: 'goodboy/goal-12345678',
+      slug: 'goal-12345678',
+      reused: false,
+    });
+    runTurnSpy.mockImplementation(
+      assistantStream('scanning done\n<<materialize: Web | need to patch the router>>\nnext'),
+    );
 
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
 
     expect(spawnedArgs()['workingDir']).toBe(CONTAINER);
-    expect(String(spawnedArgs()['systemPrompt'])).toContain('[workspace-scope]');
-    const kinds = insertSessionEventSpy.mock.calls.map(([{ event }]) => event.kind);
-    expect(kinds).toContain('project_materialization_refused');
+    expect(createWorktreeSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        repoPath: '/tmp/web',
+        parentDir: CONTAINER,
+        dirName: 'web',
+      }),
+    );
+    const mounts = useAppStore.getState().sessionProjectMounts[SESSION_ID] ?? [];
+    expect(mounts.map((mount) => mount.projectId)).toEqual([SECOND_PROJECT_ID]);
+    const materialized = insertSessionEventSpy.mock.calls
+      .map(([{ event }]) => event)
+      .find((event) => event.kind === 'project_materialized');
+    expect(materialized).toBeDefined();
+    expect((materialized as { payload?: { reason?: string } }).payload?.reason).toBe(
+      'need to patch the router',
+    );
+  });
+
+  it('refuses an unknown project name from the marker and notes it inline', async () => {
+    const useAppStore = await setup([buildProject()]);
+    runTurnSpy.mockImplementation(assistantStream('<<materialize: ghost | poking around>>'));
+
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
+
+    expect(createWorktreeSpy).not.toHaveBeenCalled();
+    const refused = insertSessionEventSpy.mock.calls
+      .map(([{ event }]) => event)
+      .find((event) => event.kind === 'project_materialization_refused');
+    expect(refused).toBeDefined();
+    expect((refused as { payload?: { projectName?: string } }).payload?.projectName).toBe('ghost');
+    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
+    const noteEvent = transcript.find(
+      (event) => event.kind === 'error' && event.message.includes('no project named "ghost"'),
+    );
+    expect(noteEvent).toBeDefined();
   });
 });
