@@ -65,4 +65,22 @@ describe('ActivityFilterButton', () => {
     const row = screen.getByRole('menuitemcheckbox', { name: 'Decisions' });
     expect(row.querySelector('svg')?.getAttribute('class')).toContain('text-muted-foreground/50');
   });
+
+  it('closes a visible row with an open eye at the trailing edge', () => {
+    open();
+    const row = screen.getByRole('menuitemcheckbox', { name: 'Workflows' });
+    const eye = row.querySelector('.lucide-eye');
+    expect(eye).not.toBeNull();
+    expect(row.querySelector('.lucide-eye-off')).toBeNull();
+    expect(row.lastElementChild?.classList.contains('lucide-eye')).toBe(true);
+  });
+
+  it('marks a hidden row with a dimmer closed eye', () => {
+    open();
+    const row = screen.getByRole('menuitemcheckbox', { name: 'Decisions' });
+    const eye = row.querySelector('.lucide-eye-off');
+    expect(eye).not.toBeNull();
+    expect(row.querySelector('.lucide-eye')).toBeNull();
+    expect(eye?.getAttribute('class')).toContain('text-muted-foreground/40');
+  });
 });

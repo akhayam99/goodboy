@@ -36,7 +36,7 @@ export const TimelineRowMarker = ({ item }: Props) => {
   if (entry.kind === 'issue') {
     return (
       <TimelineGlyphMarker tone="neutral" grade={grade}>
-        <IntegrationGlyph provider={entry.task.provider} size="xs" />
+        <IntegrationGlyph provider={entry.task.provider} size={glyphSize} />
       </TimelineGlyphMarker>
     );
   }

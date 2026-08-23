@@ -1,4 +1,4 @@
-import { ListFilter } from 'lucide-react';
+import { Eye, EyeOff, ListFilter } from 'lucide-react';
 import { AnchoredPopover, cn, tintClasses, useDropdown } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import {
@@ -96,6 +96,11 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onCategory }: Props)
             >
               {ACTIVITY_CATEGORY_LABEL[category]}
             </span>
+            {isActive ? (
+              <Eye size={12} aria-hidden className="shrink-0 text-muted-foreground" />
+            ) : (
+              <EyeOff size={12} aria-hidden className="shrink-0 text-muted-foreground/40" />
+            )}
           </button>
         );
       })}

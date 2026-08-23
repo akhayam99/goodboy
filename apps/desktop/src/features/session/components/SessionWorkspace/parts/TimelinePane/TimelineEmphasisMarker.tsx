@@ -13,20 +13,21 @@ type Props = {
   readonly children?: ReactNode;
 };
 
-const EMPHASIS_GROWTH = 4;
 const HALO_OPACITY = 0.18;
 
 export const TimelineEmphasisMarker = ({ icon: Icon, tone, label, grade, children }: Props) => {
-  const emphasisSize = TIMELINE_RHYTHM.grade[grade].markerSize + EMPHASIS_GROWTH;
+  const { markerSize, glyphSize } = TIMELINE_RHYTHM.grade[grade];
   return (
-    <span className="relative inline-flex items-center justify-center">
-      <span
-        aria-hidden
-        className={cn('absolute rounded-full', TIMELINE_SURFACE_FILL)}
-        style={{ width: emphasisSize, height: emphasisSize }}
-      />
+    <span
+      className={cn(
+        'relative inline-flex items-center justify-center rounded-full ring-1',
+        TIMELINE_SURFACE_FILL,
+        tintClasses(tone).ring,
+      )}
+      style={{ width: markerSize, height: markerSize }}
+    >
       <Icon
-        size={emphasisSize}
+        size={glyphSize}
         strokeWidth={2}
         fill="currentColor"
         fillOpacity={HALO_OPACITY}
