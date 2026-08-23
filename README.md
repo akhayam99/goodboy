@@ -39,9 +39,11 @@ one of six columns: building, running, needs you, in review, done, archived. A
 card carries the goal, a status line, when it last moved, and how many agents
 are on it. From the card you open the session in your editor or in a terminal.
 
-**Every session gets its own git worktree and branch.** Your main checkout is
-never the thing an agent edits, so several sessions run at once without
-fighting over the same files.
+**A session grows a git worktree and branch per project it touches.** A
+session starts with only its own directory; when the work reaches a project, a
+worktree and branch appear for it, on demand and with a recorded reason. Your
+main checkout is never the thing an agent edits, so several sessions run at
+once without fighting over the same files.
 
 **Context is a record, not scrollback.** The goal, the decisions, the open
 questions, the plans and the running summary are rows in a SQLite file on your
@@ -81,8 +83,7 @@ GitHub is the code host Goodboy expects, and six services connect on top of it:
 Linear, Sentry, GitLab, Jira, Bitbucket and Slack. Pull requests from GitHub
 and merge requests from GitLab collect in one review list, and Bitbucket brings
 its own pull request view. An issue from a tracker becomes a session with the
-goal and the branch name already filled in, and a Slack thread starts one the
-same way.
+goal already filled in, and a Slack thread starts one the same way.
 
 Every connection is optional, and each holds its personal API key in your OS
 credential store. Each one covers a slice of its service rather than the whole API, and

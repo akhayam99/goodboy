@@ -26,8 +26,9 @@ members as projects.
 
 ### Sessions start empty and explain themselves
 
-Creating a session asks for a title, nothing else. No branch, no worktree, no
-upfront choice of repositories. When work needs to write into a project, that
+Creating a session asks for nothing at all: it opens untitled, and the title
+writes itself from your first message unless you set one by hand. No branch,
+no worktree, no upfront choice of repositories. When work needs to write into a project, that
 project is materialized: a worktree and a branch appear, and the session
 records why, in plain words, in its activity timeline. Agents can request a
 project themselves, with a reason, while planning or mid-conversation; you can
@@ -46,7 +47,7 @@ Secrets stay in the OS keychain, unchanged.
 
 ### Goodboy knows who you are here
 
-Each workspace keeps a profile: your role, discipline and topics, asked once
+Each workspace keeps a profile: a short bio in your own words, asked once
 during onboarding and editable in Settings. Agents read it and adapt: a
 non-developer gets outcomes instead of raw diffs, a platform engineer gets
 cross-project reasoning. The profile is also written to a PROFILE.md file

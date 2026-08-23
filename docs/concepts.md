@@ -149,8 +149,8 @@ has to be readable inside Goodboy, not linked out to a browser tab.
   shared page anatomy.
 - **Act on it**: comment, reply, assign, transition, approve, merge, resolve,
   from the same screen.
-- **Route it**: turn it into a session with the goal written and the branch
-  named, and follow it back out when the work ships.
+- **Route it**: turn it into a session with the goal written, and follow it
+  back out when the work ships.
 
 Where each connected source stands, honestly:
 
@@ -216,18 +216,19 @@ goal, overridable per run.
 ### Shared context
 
 Agents inside the same session do **not** share their conversation history.
-What they share is the **lens column**, a left rail that lists every view onto
-the session, grouped Context / Work / Infra / Integrations above a session
-Overview. Context opens one surface with three ordered regions: goal, decisions,
-and session summary. The LLM auto-populates them after every turn; you can also
-edit them by hand. Work holds what the session produces (workflows, agents,
-resolve, questions, diff, plans).
+What they share is the **session record**, surfaced on the session overview:
+goal, decisions and session summary as ordered regions, with what the session
+produces (workflows, agents, resolve, questions, diff, plans) as sections of
+the same page. The LLM auto-populates goal, decisions and summary after every
+turn; you can also edit them by hand.
 
-Each lens opens as the main view, rendered as markdown where it is prose, and
-slots maintain history. Chat is one destination among the lenses, not the
-frame around them: switching agents swaps the transcript, the lens column does
-not move, because it belongs to the session and not to the agent. This is the
-layer that lets independent agents collaborate on the same goal without
+Each of those surfaces is a **lens**: a view onto the session, reached from
+rows and chips on the overview, expanding in place or opening a side panel,
+and rendered as markdown where it is prose.
+Chat is one destination among them, not the frame around them: switching
+agents swaps the transcript, the overview stays where it is, because the
+record belongs to the session and not to the agent. This is the layer that
+lets independent agents collaborate on the same goal without
 cross-contaminating their threads.
 
 Context is a resource, not a dump.

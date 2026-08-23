@@ -1,7 +1,7 @@
 # Navigation and information architecture
 
-> **Read this when** deciding what surface exists and where it lives: lens,
-> pane, strip, footer, breadcrumb. **Not for** spacing/scroll/overlay
+> **Read this when** deciding what surface exists and where it lives: pane,
+> sidebar, strip, footer, breadcrumb. **Not for** spacing/scroll/overlay
 > mechanics (`docs/styling.md`) or design intent and tone (`DESIGN.md`).
 
 ## The model
@@ -113,16 +113,17 @@ grammar on one screen; read it before designing a new one. Its rhythm: section
 eyebrow, at most one action in a section header and one primary
 button per section, a `<Divider />` between sections and never a border on one.
 A section appears when its fact exists (a plan, a workflow run, a PR on a
-project) and stays away before that, so the empty session reads as a blank
-document with a title and an intent composer instead of a wall of placeholders;
-finished work collapses into one summary row per category. Urgency is carried by the surface, never by a badge
+project); before that it stands as one quiet action row (link an issue, start
+an agent, attach a workflow), so the empty session reads as a young version of
+the same document instead of a wall of placeholders; finished work collapses
+into one summary row per category. Urgency is carried by the surface, never by a badge
 parked beside it.
 
 ## Breadcrumbs
 
-- **The trail belongs to the page, not to the chrome.** It sits above the lens
-  in the work area, never in the top bar, because the top bar is workspace
-  chrome and a session trail is page context.
+- **The trail belongs to the page, not to the chrome.** It sits above the
+  session pane, never in the top bar, because the top bar is workspace chrome
+  and a session trail is page context.
 - **The trail starts at `Overview`, and the session name is not a crumb.** The
   sidebar already carries the session identity, so repeating it in the trail
   spends a crumb on something the user is already looking at.
@@ -133,7 +134,7 @@ parked beside it.
   other lens: a studio belongs under its tool, never under another tool's lens.
 - **Opening a child extends the trail and preserves every ancestor**:
   `Overview > {HomeLens} > {Agent}`. Selecting a sibling changes only the last
-  crumb and the child region. The lens shell remains mounted beneath it.
+  crumb and the child region.
 - **The trail describes the structure of the app, not the history of the
   session.** A parent is derived from the object that is open, never from the
   surface the jump came from: selecting an agent leaves the active lens where it
@@ -141,9 +142,9 @@ parked beside it.
   the palette, a notification, a linked-work chip and a restored session are
   shortcuts into a place that already has a parent, and none of them may rewrite
   it. History is what Back is for.
-- **A child hangs off its own home lens**: a step under its run under
-  Workflows, an ad-hoc agent under Agents, a resolver under Resolve. The
-  overlay's back target still prefers the agent-list lens the user was standing
+- **A child hangs off the overview section that owns it**: a step under its
+  run under Workflows, an ad-hoc agent under Agents, a resolver under Resolve.
+  The overlay's back target still prefers the surface the user was standing
   in, so Back returns where you were while the trail states where you are.
 - **A crumb with siblings is a switcher**: plain text when the agent is alone
   in its home lens, otherwise a popover that switches the open agent in place.
@@ -181,8 +182,9 @@ state, so connected and disconnected tools stay reachable through one flow.
 - With nothing connected, the action explicitly invites the first connection.
 - The glyph strip scrolls horizontally inside its region. The link action stays
   fixed, so many connections never displace the rest of the footer.
-- A workspace with no repository keeps `Add a repo` before the integration
-  strip and drops the integrations that need a repository to read.
+- The footer does not gate on repository presence. Turning a folder-only
+  workspace into one backed by a git repository is offered from the workspace
+  link and convert flow, not from the footer.
 
 Right: the launchers reached by name, the update control while an update is
 pending, and a `More` popover for the rest.
@@ -198,7 +200,7 @@ pending, and a `More` popover for the rest.
 ## Shortcuts
 
 One registry, three modifier planes: bare ⌘ for the app, ⌘⇧ for the session,
-⌘⌥ for the lens rail. A combo string is never written by hand outside the
+⌘⌥ for the lens surfaces. A combo string is never written by hand outside the
 registry, so no two surfaces can claim the same chord and no shortcut can exist
 undocumented. **A shortcut is taught where it is used**: a
 control that has one shows it, as a pill on hover in dense rows and a
@@ -230,7 +232,7 @@ breadcrumb IA, exit on close or Esc, and only one is open at a time.
   to a session and stay disabled; the mount reads through the workspace's first
   repo project, so a workspace with no repo project stops at an empty state.
 
-## Lenses
+## Lens surfaces
 
 - **One level at a time, never a rail plus a detail at once.** Selecting a card
   swaps the list for the detail, and the list is the only way back. Completed
@@ -243,13 +245,14 @@ breadcrumb IA, exit on close or Esc, and only one is open at a time.
 - **A sibling detail is a split, not a rail**: a resizable column owned by the
   pane it opens in, so it dies with that pane. There is one implementation of
   that split; reuse it rather than growing a rail.
-- **The lens rail is navigation.** Rows only select a destination; counts and
-  dots are read-only signals attached to one. Session lifecycle actions are not
-  navigation and do not belong in the rail. A count on a row is a promise
-  about that destination: it counts the items the destination lists, and
-  every surface that routes to the same destination shows the same number
-  from the same selector. A population with no home at the destination gets
-  no badge pointing there.
+- **A lens surface is reached from the overview, never from a rail.** Rows and
+  chips inside the overview route to it, expanding in place or opening a side
+  panel; counts and dots are read-only signals on the row that routes there.
+  Session lifecycle actions are not navigation and do not belong on those
+  rows. A count on a row is a promise about that destination: it counts the
+  items the destination lists, and every surface that routes to the same
+  destination shows the same number from the same selector. A population with
+  no home at the destination gets no badge pointing there.
 - **The activity bar shows ALL sessions grouped by stage**, never filtered to
   running only.
 - **A blocked action is re-routed, never hidden.** A blocked workflow advance
