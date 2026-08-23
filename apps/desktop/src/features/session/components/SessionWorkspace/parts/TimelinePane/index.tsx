@@ -7,7 +7,9 @@ import {
   EMPTY_ARRAY,
   agentHasUnread,
   useAppStore,
+  useMountDiffStats,
   useSessionOpenQuestions,
+  type MountDiffStat,
 } from '../../../../../../store';
 import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
 import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
@@ -52,6 +54,7 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
   const openTargetFor = useTimelineOpen({ sessionId });
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const activity = useActivityFilter();
+  const diffStats = useMountDiffStats(sessionId);
   const { showToast } = useToast();
   const { copied, failed, copy } = useCopyLink();
 
@@ -142,6 +145,35 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
     () => layoutTimelineRail({ rows: stream.items, groups: stream.groups }),
     [stream.groups, stream.items],
   );
+
+  const mountPathByProjectId = useMemo(() => {
+    const paths = new Map<string, string>();
+    for (const worktree of worktrees) {
+      if (worktree.projectId != null) {
+        paths.set(worktree.projectId, worktree.worktreePath);
+      }
+    }
+    return paths;
+  }, [worktrees]);
+
+  const diffStatFor = ({ item }: { readonly item: TimelineRowItem }): MountDiffStat | null => {
+    const { entry } = item;
+    if (entry.kind === 'branch') {
+      return diffStats.get(entry.worktree.worktreePath) ?? null;
+    }
+    if (entry.kind !== 'event' || entry.event.kind !== 'project_materialized') {
+      return null;
+    }
+    const projectId = entry.event.payload?.projectId ?? null;
+    if (projectId == null) {
+      return null;
+    }
+    const worktreePath = mountPathByProjectId.get(projectId) ?? null;
+    if (worktreePath == null) {
+      return null;
+    }
+    return diffStats.get(worktreePath) ?? null;
+  };
 
   const actionFor = ({ item }: { readonly item: TimelineRowItem }): TimelineRowAction | null => {
     const { entry } = item;
@@ -255,6 +287,7 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
                 sessionId={sessionId}
                 openLabel={target.label}
                 action={actionFor({ item })}
+                diffStat={diffStatFor({ item })}
                 onOpen={target.open}
               />
             );

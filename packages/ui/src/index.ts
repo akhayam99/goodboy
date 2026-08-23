@@ -46,6 +46,8 @@ export { RefreshIconButton } from './components/RefreshIconButton';
 export { Sparkline } from './components/Sparkline';
 export { StateBadge } from './components/StateBadge';
 export type { StateTone } from './components/StateBadge';
+export { ValueToken } from './components/ValueToken';
+export type { ValueTokenProps } from './components/ValueToken';
 export { StudioDetailTabs } from './components/StudioDetailTabs';
 export { StudioRailLayout } from './components/StudioRailLayout';
 export { StudioWidget } from './components/StudioWidget';

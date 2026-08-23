@@ -7,6 +7,7 @@ export {
   useCurrentWorkspace,
   useDiffComments,
   useFilesTouched,
+  useMountDiffStats,
   useSessionAnsweredQuestions,
   useSessionById,
   useSessionCost,
@@ -33,6 +34,7 @@ export {
   useHasUnreadElsewhere,
   useWorkspaces,
   type FilesTouched,
+  type MountDiffStat,
 } from './selectors';
 export { useTranscript } from './transcript';
 export { readPersistedLens } from './slices/session-view';

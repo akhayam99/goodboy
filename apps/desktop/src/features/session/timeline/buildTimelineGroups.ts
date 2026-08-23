@@ -304,20 +304,41 @@ export const buildTimelineGroups = ({
   );
   const visibleIssues = issues.filter((entry) => !linkedIssueUrls.has(entry.task.url));
   const hasBranchEvent = events.some((event) => event.kind === 'branch_created');
+  const materializedProjectIds = new Set(
+    events.flatMap((event) =>
+      event.kind === 'project_materialized' && event.payload?.projectId != null
+        ? [event.payload.projectId]
+        : [],
+    ),
+  );
   const branches: ReadonlyArray<TimelineBranchEntry> = hasBranchEvent
     ? []
-    : worktrees.map((worktree) => ({
-        kind: 'branch',
-        id: `branch:${worktree.id}`,
-        at: timestampForWorktree({ worktree }),
-        worktree,
-      }));
-  const eventEntries: ReadonlyArray<TimelineEventEntry> = events.map((event) => ({
-    kind: 'event',
-    id: `event:${event.id}`,
-    at: event.createdAt,
-    event,
-  }));
+    : worktrees
+        .filter(
+          (worktree) =>
+            worktree.branch !== '' &&
+            (worktree.projectId == null || !materializedProjectIds.has(worktree.projectId)),
+        )
+        .map((worktree) => ({
+          kind: 'branch',
+          id: `branch:${worktree.id}`,
+          at: timestampForWorktree({ worktree }),
+          worktree,
+        }));
+  const hasProjectMount = worktrees.some((worktree) => worktree.projectId != null);
+  const eventEntries: ReadonlyArray<TimelineEventEntry> = events.flatMap((event) => {
+    if (event.kind === 'worktree_created' && hasProjectMount) {
+      return [];
+    }
+    return [
+      {
+        kind: 'event',
+        id: `event:${event.id}`,
+        at: event.createdAt,
+        event,
+      },
+    ];
+  });
 
   const entries = [
     ...runEntries,

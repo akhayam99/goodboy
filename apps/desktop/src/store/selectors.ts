@@ -563,15 +563,9 @@ export type FilesTouched = {
 
 const EMPTY_FILES_TOUCHED: FilesTouched = { paths: [], count: 0, additions: 0, deletions: 0 };
 
-export const useFilesTouched = (
-  sessionId: SessionId | null,
-  isActive: boolean = true,
-): FilesTouched => {
-  const workingDir = useAppStore((s) =>
-    sessionId == null ? null : (resolveSessionRepo({ state: s, sessionId })?.worktreePath ?? null),
-  );
-  const lastTurnFinishedAt = useAppStore((s) => {
-    if (!sessionId) {
+const useSessionLastTurnFinishedAt = (sessionId: SessionId | null): string | null =>
+  useAppStore((s) => {
+    if (sessionId == null) {
       return null;
     }
     const runs = s.sessionPhaseRuns[sessionId];
@@ -587,6 +581,15 @@ export const useFilesTouched = (
     }
     return max;
   });
+
+export const useFilesTouched = (
+  sessionId: SessionId | null,
+  isActive: boolean = true,
+): FilesTouched => {
+  const workingDir = useAppStore((s) =>
+    sessionId == null ? null : (resolveSessionRepo({ state: s, sessionId })?.worktreePath ?? null),
+  );
+  const lastTurnFinishedAt = useSessionLastTurnFinishedAt(sessionId);
   const summarizerLastUpdate = useAppStore((s) =>
     sessionId ? (s.summarizerStatus[sessionId]?.lastUpdate ?? null) : null,
   );
@@ -628,6 +631,65 @@ export const useFilesTouched = (
   }, [isActive, workingDir, lastTurnFinishedAt, summarizerLastUpdate]);
 
   return state;
+};
+
+export type MountDiffStat = {
+  readonly additions: number;
+  readonly deletions: number;
+};
+
+const EMPTY_MOUNT_PATHS: ReadonlyArray<string> = [];
+const EMPTY_MOUNT_DIFF_STATS: ReadonlyMap<string, MountDiffStat> = new Map();
+
+export const useMountDiffStats = (
+  sessionId: SessionId | null,
+): ReadonlyMap<string, MountDiffStat> => {
+  const worktreePaths = useAppStore(
+    useShallow((s) => {
+      if (sessionId == null) {
+        return EMPTY_MOUNT_PATHS;
+      }
+      const rows = s.sessionWorktreeRecords?.[sessionId];
+      if (rows == null || rows.length === 0) {
+        return EMPTY_MOUNT_PATHS;
+      }
+      return rows.flatMap((row) => (row.worktreePath === '' ? [] : [row.worktreePath]));
+    }),
+  );
+  const lastTurnFinishedAt = useSessionLastTurnFinishedAt(sessionId);
+  const summarizerLastUpdate = useAppStore((s) =>
+    sessionId == null ? null : (s.summarizerStatus[sessionId]?.lastUpdate ?? null),
+  );
+
+  const [stats, setStats] = useState<ReadonlyMap<string, MountDiffStat>>(EMPTY_MOUNT_DIFF_STATS);
+
+  useEffect(() => {
+    if (worktreePaths.length === 0) {
+      setStats(EMPTY_MOUNT_DIFF_STATS);
+      return;
+    }
+    let cancelled = false;
+    void Promise.all(
+      worktreePaths.map(async (worktreePath) => {
+        const summary = await worktreeChangedFiles(worktreePath).catch(() => null);
+        const stat: MountDiffStat =
+          summary == null
+            ? { additions: 0, deletions: 0 }
+            : { additions: summary.additions, deletions: summary.deletions };
+        return [worktreePath, stat] satisfies readonly [string, MountDiffStat];
+      }),
+    ).then((entries) => {
+      if (cancelled) {
+        return;
+      }
+      setStats(new Map(entries));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [worktreePaths, lastTurnFinishedAt, summarizerLastUpdate]);
+
+  return stats;
 };
 
 const useSessionAgentKindOverrides = (sessionId: SessionId): Readonly<Record<string, AgentKind>> =>

@@ -22,6 +22,7 @@ vi.mock('../../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   agentHasUnread: () => false,
   useAppStore: <T,>(selector: (state: typeof storeState) => T) => selector(storeState),
+  useMountDiffStats: () => new Map(),
   useSessionOpenQuestions: () => [],
 }));
 vi.mock('../../../../../workflows/useAttachedWorkflowRuns', () => ({

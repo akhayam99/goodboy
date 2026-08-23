@@ -63,6 +63,41 @@ const itemOf = ({ entry, grade = 'entry' }: ItemParams): TimelineRowItem => ({
 const renderKind = ({ agentKind, name, isChained }: AgentParams) =>
   render(<TimelineRowLabel item={itemOf({ entry: agentEntry({ agentKind, name, isChained }) })} />);
 
+const mountEntry = (): TimelineStreamEntry =>
+  ({
+    kind: 'event',
+    id: 'event:ev-1',
+    at: '2026-08-17T09:04:00Z',
+    event: {
+      id: 'ev-1',
+      sessionId: 'session-1',
+      kind: 'project_materialized',
+      payload: {
+        projectId: 'project-1',
+        projectName: 'app-web',
+        branch: 'goodboy/untitled',
+        reason: 'step "migrazione cluster 1 modali legacy": 7. Apertura imperativa da file .ts',
+      },
+      createdAt: '2026-08-17T09:04:00Z',
+    },
+  }) as unknown as TimelineStreamEntry;
+
+const branchEntry = (): TimelineStreamEntry =>
+  ({
+    kind: 'branch',
+    id: 'branch:wt-1',
+    at: '2026-08-17T09:04:00Z',
+    worktree: {
+      id: 'wt-1',
+      sessionId: 'session-1',
+      worktreePath: '/tmp/wt',
+      branch: 'ak/feat-tokens',
+      parallelIndex: 1,
+      mountName: 'app-web',
+      createdAt: 0,
+    },
+  }) as unknown as TimelineStreamEntry;
+
 describe('TimelineRowLabel', () => {
   it('leads a resolver row with its role chip, like every other kind of agent', () => {
     renderKind({ agentKind: 'resolver', name: 'resolve: 2 review threads' });
@@ -141,6 +176,58 @@ describe('TimelineRowLabel', () => {
 
     expect(screen.getByText(AGENT_KIND_META.planner.label)).toBeDefined();
     expect(container.querySelector('svg')).toBeNull();
+  });
+
+  it('renders the mounted project and its branch as value tokens, not as prose', () => {
+    render(<TimelineRowLabel item={itemOf({ entry: mountEntry() })} />);
+
+    for (const value of ['app-web', 'goodboy/untitled']) {
+      expect(screen.getByText(value).className).toContain('font-mono');
+    }
+    expect(screen.getByText('Mounted').className).not.toContain('font-mono');
+  });
+
+  it('leaves the mount rationale off the row entirely', () => {
+    render(<TimelineRowLabel item={itemOf({ entry: mountEntry() })} />);
+
+    expect(screen.queryByText(/Apertura imperativa/)).toBeNull();
+  });
+
+  it('tokenizes the branch and the mount name on a synthesized branch row', () => {
+    render(<TimelineRowLabel item={itemOf({ entry: branchEntry() })} />);
+
+    expect(screen.getByText('ak/feat-tokens').className).toContain('font-mono');
+    expect(screen.getByText('app-web').className).toContain('font-mono');
+    expect(screen.getByText('created')).toBeDefined();
+  });
+
+  it('appends the mount diff stat, additions and deletions apart', () => {
+    render(
+      <TimelineRowLabel
+        item={itemOf({ entry: mountEntry() })}
+        diffStat={{ additions: 2000, deletions: 200 }}
+      />,
+    );
+
+    expect(screen.getByText('+2000').className).toContain('text-success');
+    expect(screen.getByText('-200').className).toContain('text-danger');
+  });
+
+  it('shows no stat at all for a mount with nothing changed', () => {
+    const { container } = render(
+      <TimelineRowLabel
+        item={itemOf({ entry: mountEntry() })}
+        diffStat={{ additions: 0, deletions: 0 }}
+      />,
+    );
+
+    expect(container.querySelector('[data-testid="timeline-diff-stat"]')).toBeNull();
+  });
+
+  it('shows no stat while the mount has not been measured yet', () => {
+    const { container } = render(<TimelineRowLabel item={itemOf({ entry: mountEntry() })} />);
+
+    expect(container.querySelector('[data-testid="timeline-diff-stat"]')).toBeNull();
   });
 
   it('keeps the chip off a step row, where the run already names the role', () => {
