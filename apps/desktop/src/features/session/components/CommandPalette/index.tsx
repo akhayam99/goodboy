@@ -20,7 +20,7 @@ import { REPORT_ISSUE_STUDIO_EVENT } from '../../../settings/reportIssueStudioEv
 import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useThemeStore } from '../../../../shared/lib/theme';
-import { primaryProjectRoot } from '../../../workspace/primaryProjectRoot';
+import { linkedProjectsLabel } from '../../../workspace/linkedProjectsLabel';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 type PaletteGroup = Exclude<QuickActionGroup, 'skill' | 'workflow'> | 'recents';
@@ -130,7 +130,7 @@ export const CommandPalette = ({
       out.push({
         id: `workspace:${w.id}`,
         label: w.name,
-        sublabel: primaryProjectRoot({ projects, workspaceId: w.id }) ?? '',
+        sublabel: linkedProjectsLabel({ projects, workspaceId: w.id }),
         group: 'workspace',
         onSelect: () => void openWorkspace(w.id, w.name),
       });

@@ -1,9 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, PullRequestState, SessionExternalTask, SessionId } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  Project,
+  ProjectId,
+  PullRequestState,
+  Session,
+  SessionExternalTask,
+  SessionId,
+  SessionProjectMount,
+} from '@goodboy/types';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
 import { reviewPrKey, resolveReviewTarget, type ReviewTargetState } from './resolveReviewTarget';
 
 const SESSION_ID = 'session-1' as SessionId;
+const PROJECT_ID = 'project-1' as ProjectId;
 const NOW = '2026-08-01T00:00:00.000Z' as IsoDateTime;
 
 const githubTask: SessionExternalTask = {
@@ -75,7 +85,21 @@ type StateParams = {
 
 const buildState = ({ tasks, prs = [], mr = null }: StateParams): ReviewTargetState => ({
   sessionExternalTasks: { [SESSION_ID]: tasks },
-  sessionGithubPrs: { [SESSION_ID]: prs },
+  sessions: [{ id: SESSION_ID, activeProjectId: PROJECT_ID } as Session],
+  projects: [{ id: PROJECT_ID, kind: 'repo' } as Project],
+  sessionProjectMounts: {
+    [SESSION_ID]: [
+      {
+        projectId: PROJECT_ID,
+        repoRoot: '/repo',
+        worktreePath: '/wt',
+        branch: 'ak/feature',
+        mountName: 'repo',
+      } as SessionProjectMount,
+    ],
+  },
+  sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
+  sessionProjectPrs: { [SESSION_ID]: { [PROJECT_ID]: prs } },
   sessionGitlabMr: {
     [SESSION_ID]: { mr, fetchedAt: NOW, loading: false, error: null },
   },

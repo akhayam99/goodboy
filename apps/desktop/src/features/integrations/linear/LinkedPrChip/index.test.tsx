@@ -6,7 +6,20 @@ import type { PullRequestState } from '@goodboy/types';
 
 type Store = {
   currentSessionId: string | null;
-  sessionGithubPrs: Record<string, ReadonlyArray<PullRequestState>>;
+  sessions: ReadonlyArray<{ id: string; activeProjectId?: string }>;
+  projects: ReadonlyArray<{ id: string; kind: string }>;
+  sessionProjectMounts: Record<
+    string,
+    ReadonlyArray<{
+      projectId: string;
+      mountName: string | null;
+      worktreePath: string;
+      repoRoot: string;
+      branch: string;
+    }>
+  >;
+  sessionActiveProject: Record<string, string>;
+  sessionProjectPrs: Record<string, Readonly<Record<string, ReadonlyArray<PullRequestState>>>>;
   sessionGithub: Record<string, { pr: PullRequestState | null }>;
   readonly selectSessionPr: ReturnType<typeof vi.fn>;
   readonly setActiveLens: ReturnType<typeof vi.fn>;
@@ -15,7 +28,21 @@ type Store = {
 const h = vi.hoisted(() => ({
   store: {
     currentSessionId: 'session-1',
-    sessionGithubPrs: {},
+    sessions: [{ id: 'session-1', activeProjectId: 'project-1' }],
+    projects: [{ id: 'project-1', kind: 'repo' }],
+    sessionProjectMounts: {
+      'session-1': [
+        {
+          projectId: 'project-1',
+          mountName: null,
+          worktreePath: '/wt',
+          repoRoot: '/repo',
+          branch: 'ak/current',
+        },
+      ],
+    },
+    sessionActiveProject: { 'session-1': 'project-1' },
+    sessionProjectPrs: {},
     sessionGithub: {},
     selectSessionPr: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
@@ -51,7 +78,7 @@ const SESSION_PR: PullRequestState = {
 
 beforeEach(() => {
   h.store.currentSessionId = 'session-1';
-  h.store.sessionGithubPrs = {};
+  h.store.sessionProjectPrs = {};
   h.store.sessionGithub = {};
   h.store.selectSessionPr.mockClear();
   h.store.setActiveLens.mockClear();
@@ -62,7 +89,7 @@ afterEach(cleanup);
 
 describe('LinkedPrChip', () => {
   it('opens the pull request the session already holds in the pull request lens', () => {
-    h.store.sessionGithubPrs = { 'session-1': [SESSION_PR] };
+    h.store.sessionProjectPrs = { 'session-1': { 'project-1': [SESSION_PR] } };
 
     render(
       <LinkedPrChip
@@ -77,7 +104,7 @@ describe('LinkedPrChip', () => {
   });
 
   it('falls back to the browser for a pull request this session does not track', () => {
-    h.store.sessionGithubPrs = { 'session-1': [SESSION_PR] };
+    h.store.sessionProjectPrs = { 'session-1': { 'project-1': [SESSION_PR] } };
 
     render(
       <LinkedPrChip
@@ -96,7 +123,7 @@ describe('LinkedPrChip', () => {
   });
 
   it('falls back to the browser while a studio overlay covers the session', () => {
-    h.store.sessionGithubPrs = { 'session-1': [SESSION_PR] };
+    h.store.sessionProjectPrs = { 'session-1': { 'project-1': [SESSION_PR] } };
     const overlay = document.createElement('div');
     overlay.setAttribute('data-studio-overlay', '');
     document.body.appendChild(overlay);

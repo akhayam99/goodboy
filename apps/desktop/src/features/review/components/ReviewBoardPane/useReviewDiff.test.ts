@@ -99,7 +99,11 @@ const mergeRequest: GitlabMergeRequest = {
 
 const state: MockStore = {
   sessionExternalTasks: { [SESSION_ID]: [githubTask, gitlabTask] },
-  sessionGithubPrs: { [SESSION_ID]: [] },
+  sessions: [],
+  projects: [],
+  sessionProjectMounts: {},
+  sessionActiveProject: {},
+  sessionProjectPrs: { [SESSION_ID]: {} },
   sessionGitlabMr: {
     [SESSION_ID]: { mr: mergeRequest, fetchedAt: NOW, loading: false, error: null },
   },

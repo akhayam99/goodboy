@@ -29,6 +29,7 @@ import { ExternalRefActions } from '../../../../../shared/components/ExternalRef
 import { GhostActionButton } from '@goodboy/ui';
 import { workspaceMountName } from '../../../../../shared/utils/workspaceMountName';
 import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../../store';
+import { selectActiveProjectPrs } from '../../../../../store/slices/github/activeProjectPrs';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { StateBadge } from '@goodboy/ui';
@@ -134,7 +135,7 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
   const remoteKind = useRemoteHostKind({ sessionId });
   const sessionBranch = useSessionRepo({ sessionId })?.branch ?? null;
   const canonicalPullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
-  const branchPrs = useAppStore((state) => state.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY);
+  const branchPrs = useAppStore((state) => selectActiveProjectPrs({ state, sessionId }));
   const selectedPrNumber = useAppStore((state) => state.sessionSelectedPrNumber[sessionId] ?? null);
   const selectedPullRequest =
     selectedPrNumber != null
@@ -296,7 +297,7 @@ const GithubPrCard = ({
   const sessionId = session.id as SessionId;
   const [unlinkingIssueNumber, setUnlinkingIssueNumber] = useState<number | null>(null);
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
-  const branchPrs = useAppStore((s) => s.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY);
+  const branchPrs = useAppStore((s) => selectActiveProjectPrs({ state: s, sessionId }));
   const mergeRequest = useAppStore((s) => s.sessionGitlabMr[sessionId]?.mr ?? null);
   const selectedPrNumber = useAppStore((s) => s.sessionSelectedPrNumber[sessionId] ?? null);
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);

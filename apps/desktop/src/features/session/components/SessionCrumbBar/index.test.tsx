@@ -92,6 +92,24 @@ const STEP_CRUMBS = [
   { id: 'selected-child', label: 'workflow step' },
 ];
 
+const clusterAlpha = buildAgent({
+  id: 'agent-cluster-alpha' as AgentId,
+  name: 'area alpha',
+  kind: 'implementer',
+  ordinal: 4,
+  status: 'running',
+  parentAgentId: workflowStep.id,
+  workflowRunId: 'run-1' as never,
+});
+const clusterBeta = buildAgent({
+  id: 'agent-cluster-beta' as AgentId,
+  name: 'area beta',
+  kind: 'implementer',
+  ordinal: 5,
+  parentAgentId: workflowStep.id,
+  workflowRunId: 'run-1' as never,
+});
+
 const resetState = () => {
   Object.keys(h.state).forEach((key) => delete h.state[key]);
   Object.assign(h.state, {
@@ -106,6 +124,21 @@ const resetState = () => {
     sessionWorkflows: { [SESSION_ID]: [] },
     selectAgent: h.selectAgent,
   });
+};
+
+const openClusterSurface = () => {
+  h.currentSession = workflowSession;
+  h.crumbs = [
+    { id: 'overview', label: 'Overview', onClick: vi.fn() },
+    { id: 'workflows', label: 'Workflows', onClick: vi.fn() },
+    { id: 'workflow-run', label: 'refactor', onClick: vi.fn() },
+    { id: 'selected-parent', label: 'workflow step', onClick: vi.fn() },
+    { id: 'selected-child', label: 'area alpha' },
+  ];
+  h.state.selectedAgentId = { [SESSION_ID]: clusterAlpha.id };
+  h.state.sessionPhaseRuns = {
+    [SESSION_ID]: [scout, implementer, workflowStep, laterWorkflowStep, clusterAlpha, clusterBeta],
+  };
 };
 
 const openStepSurface = () => {
@@ -236,6 +269,94 @@ describe('SessionCrumbBar on a workflow step', () => {
     render(<SessionCrumbBar />);
 
     expect(screen.queryByTestId('workflow-advance')).toBeNull();
+  });
+});
+
+describe('SessionCrumbBar on a cluster child', () => {
+  it('names the father level between the run and the child', () => {
+    openClusterSurface();
+    render(<SessionCrumbBar />);
+
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(nav.textContent).toContain('Overview');
+    expect(nav.textContent).toContain('Workflows');
+    expect(nav.textContent).toContain('refactor');
+    expect(nav.textContent).toContain('workflow step');
+    expect(nav.textContent).toContain('area alpha');
+  });
+
+  it('navigates to the father when its label is clicked', () => {
+    openClusterSurface();
+    render(<SessionCrumbBar />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'workflow step' }));
+    const parentCrumb = h.crumbs.find((crumb) => crumb.id === 'selected-parent');
+    expect(parentCrumb?.onClick).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('keeps the step switcher on the father crumb, scoped to the run steps', () => {
+    openClusterSurface();
+    render(<SessionCrumbBar />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'workflow step. Switch agent.' }));
+    const menu = screen.getByRole('menu', { name: 'Switch agent' });
+    expect(menu.textContent).toContain('workflow review');
+    expect(menu.textContent).not.toContain('area beta');
+    expect(menu.textContent).not.toContain('implement two');
+
+    fireEvent.click(screen.getByRole('menuitem', { name: /workflow review/ }));
+    expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, laterWorkflowStep.id);
+  });
+
+  it('scopes the child dropdown to the cluster siblings only', () => {
+    openClusterSurface();
+    render(<SessionCrumbBar />);
+
+    fireEvent.click(screen.getByRole('button', { name: /area alpha/ }));
+    const menu = screen.getByRole('menu', { name: 'Switch agent' });
+    expect(menu.textContent).toContain('area beta');
+    expect(menu.textContent).not.toContain('workflow step');
+    expect(menu.textContent).not.toContain('workflow review');
+    expect(menu.textContent).not.toContain('implement two');
+
+    fireEvent.click(screen.getByRole('menuitem', { name: /area beta/ }));
+    expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, clusterBeta.id);
+  });
+
+  it('truncates every agent crumb so long names never wrap the bar', () => {
+    openClusterSurface();
+    h.crumbs = [
+      { id: 'overview', label: 'Overview', onClick: vi.fn() },
+      { id: 'workflows', label: 'Workflows', onClick: vi.fn() },
+      { id: 'workflow-run', label: 'a very long workflow kind name', onClick: vi.fn() },
+      {
+        id: 'selected-parent',
+        label: 'an extremely long father agent display name',
+        onClick: vi.fn(),
+      },
+      { id: 'selected-child', label: 'an even longer cluster child area description name' },
+    ];
+    render(<SessionCrumbBar />);
+
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(nav.className).not.toContain('flex-wrap');
+    const father = screen.getByRole('button', {
+      name: 'an extremely long father agent display name',
+    });
+    expect(father.className).toContain('truncate');
+    expect(father.className).toContain('max-w-48');
+    const child = screen.getByRole('button', {
+      name: /an even longer cluster child area description name/,
+    });
+    expect(child.className).toContain('truncate');
+  });
+
+  it('keeps the advance action on a cluster child trail', () => {
+    openClusterSurface();
+    render(<SessionCrumbBar />);
+
+    expect(screen.getByTestId('workflow-advance').textContent).toBe('run-1');
   });
 });
 

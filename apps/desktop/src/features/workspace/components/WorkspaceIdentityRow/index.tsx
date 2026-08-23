@@ -2,24 +2,16 @@ import { ChevronsUpDown, SlidersHorizontal } from 'lucide-react';
 import { AnchoredPopover, StatusDot, Tooltip, useDropdown } from '@goodboy/ui';
 import { useAppStore, useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
 import { workspaceAccent } from '../../color';
-import { primaryProjectRoot } from '../../primaryProjectRoot';
+import { linkedProjectsLabel } from '../../linkedProjectsLabel';
 import { WorkspaceSwitcher } from '../WorkspaceSwitcher';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 const initialOf = (name: string): string => name.trim().charAt(0).toUpperCase() || '?';
 
-const basenameOf = (path: string): string => path.replace(/\/+$/, '').split('/').pop() || path;
-
 export const WorkspaceIdentityRow = () => {
   const currentWorkspace = useCurrentWorkspace();
-  const projectCount = useAppStore(
-    (state) =>
-      state.projects.filter((project) => project.workspaceId === currentWorkspace?.id).length,
-  );
-  const projectRoot = useAppStore((state) =>
-    currentWorkspace == null
-      ? null
-      : primaryProjectRoot({ projects: state.projects, workspaceId: currentWorkspace.id }),
+  const subtitle = useAppStore((state) =>
+    linkedProjectsLabel({ projects: state.projects, workspaceId: currentWorkspace?.id ?? null }),
   );
   const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null);
   const dropdown = useDropdown({
@@ -33,7 +25,6 @@ export const WorkspaceIdentityRow = () => {
     return null;
   }
   const accent = workspaceAccent(currentWorkspace.id);
-  const subtitle = projectCount > 1 ? `${projectCount} projects` : basenameOf(projectRoot ?? '');
 
   return (
     <div className="flex w-full min-w-0 items-center gap-0.5">

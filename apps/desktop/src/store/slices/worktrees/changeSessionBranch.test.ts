@@ -52,7 +52,7 @@ const makeState = (): State => ({
   },
   sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
   sessionGithub: { [SESSION_ID]: { pr: { number: 42 } } },
-  sessionGithubPrs: { [SESSION_ID]: [{ number: 42 }] },
+  sessionProjectPrs: { [SESSION_ID]: { [PROJECT_ID]: [{ number: 42 }] } },
   sessionSelectedPrNumber: { [SESSION_ID]: 40 },
   sessionExternalTasks: {
     [SESSION_ID]: [{ provider: 'linear', externalId: 'GB-1', branch: 'ak/outgoing' }],
@@ -117,7 +117,7 @@ describe('changeSessionBranch', () => {
 
     expect(state.sessionBranches).toEqual({ [SESSION_ID]: 'ak/incoming' });
     expect(state.sessionGithub).toEqual({});
-    expect(state.sessionGithubPrs).toEqual({});
+    expect(state.sessionProjectPrs).toEqual({ [SESSION_ID]: {} });
     expect(state.sessionSelectedPrNumber).toEqual({});
   });
 });

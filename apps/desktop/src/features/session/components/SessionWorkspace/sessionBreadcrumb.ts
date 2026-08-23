@@ -8,6 +8,8 @@ export type SessionBreadcrumbHandlers = {
   toWorkflowsList: () => void;
   toWorkflowRun: () => void;
   toPlansList: () => void;
+  toParentAgent: () => void;
+  toRootAgent: () => void;
 };
 
 export type SessionBreadcrumbInput = {
@@ -18,6 +20,8 @@ export type SessionBreadcrumbInput = {
   focusedPlanTitle: string | null;
   selectedChildLabel: string | null;
   selectedChildHome: AgentHomeLens | null;
+  selectedParentLabel: string | null;
+  selectedRootLabel: string | null;
   lensLabel: (lens: LensKind) => string;
   handlers: SessionBreadcrumbHandlers;
 };
@@ -38,6 +42,8 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     focusedPlanTitle,
     selectedChildLabel,
     selectedChildHome,
+    selectedParentLabel,
+    selectedRootLabel,
     lensLabel,
     handlers,
   } = input;
@@ -92,6 +98,21 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
 
   if (selectedChildLabel != null && selectedChildHome != null) {
     const selectedChild: BreadcrumbCrumb = { id: 'selected-child', label: selectedChildLabel };
+    const ancestors: BreadcrumbCrumb[] = [];
+    if (selectedRootLabel != null) {
+      ancestors.push({
+        id: 'selected-root',
+        label: selectedRootLabel,
+        onClick: handlers.toRootAgent,
+      });
+    }
+    if (selectedParentLabel != null) {
+      ancestors.push({
+        id: 'selected-parent',
+        label: selectedParentLabel,
+        onClick: handlers.toParentAgent,
+      });
+    }
 
     if (selectedChildHome !== 'workflows') {
       return sealLast([
@@ -101,12 +122,13 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
           label: lensLabel(selectedChildHome),
           onClick: () => handlers.toLens(selectedChildHome),
         },
+        ...ancestors,
         selectedChild,
       ]);
     }
 
     if (selectedChildWorkflowName == null) {
-      return sealLast([overview, workflowsList, selectedChild]);
+      return sealLast([overview, workflowsList, ...ancestors, selectedChild]);
     }
 
     return sealLast([
@@ -117,6 +139,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
         label: selectedChildWorkflowName,
         onClick: handlers.toWorkflowRun,
       },
+      ...ancestors,
       selectedChild,
     ]);
   }

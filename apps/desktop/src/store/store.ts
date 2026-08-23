@@ -943,7 +943,6 @@ export const initialState: AppState = {
   sessionPanelExpanded: {},
   githubStatus: null,
   sessionGithub: {},
-  sessionGithubPrs: {},
   sessionProjectPrs: {},
   sessionSelectedPrNumber: {},
   sessionGitlabMr: {},

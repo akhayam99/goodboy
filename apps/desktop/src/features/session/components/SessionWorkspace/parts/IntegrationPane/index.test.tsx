@@ -20,7 +20,23 @@ type FocusedExternalTask = {
 type Store = {
   readonly sessionExternalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>;
   readonly focusedExternalTask: Readonly<Record<string, FocusedExternalTask | null>>;
-  readonly sessionGithubPrs: Readonly<Record<string, ReadonlyArray<PullRequestState>>>;
+  readonly sessionProjectPrs: Readonly<
+    Record<string, Readonly<Record<string, ReadonlyArray<PullRequestState>>>>
+  >;
+  readonly projects: ReadonlyArray<{ id: string; kind: string }>;
+  readonly sessionProjectMounts: Readonly<
+    Record<
+      string,
+      ReadonlyArray<{
+        projectId: string;
+        mountName: string | null;
+        worktreePath: string;
+        repoRoot: string;
+        branch: string;
+      }>
+    >
+  >;
+  readonly sessionActiveProject: Readonly<Record<string, string>>;
   readonly sessionGitlabMr: Readonly<Record<string, unknown>>;
   readonly workspaceIntegrations: Readonly<Record<string, ReadonlyArray<{ provider: string }>>>;
   readonly sessions: ReadonlyArray<{ id: string; workspaceId: string }>;
@@ -47,10 +63,13 @@ const h = vi.hoisted(() => ({
   store: {
     sessionExternalTasks: {},
     focusedExternalTask: {},
-    sessionGithubPrs: {},
+    sessionProjectPrs: {},
+    projects: [] as ReadonlyArray<{ id: string; kind: string }>,
+    sessionProjectMounts: {},
+    sessionActiveProject: {},
     sessionGitlabMr: {},
     workspaceIntegrations: {},
-    sessions: [],
+    sessions: [] as ReadonlyArray<{ id: string; workspaceId: string }>,
     linkSessionExternalTask: vi.fn(async () => undefined),
     unlinkSessionExternalTask: vi.fn(async () => undefined),
     integrationCredentials: [],
@@ -208,7 +227,21 @@ const SENTRY_TASK: SessionExternalTask = {
 beforeEach(() => {
   h.store.sessionExternalTasks = { [SESSION_ID]: [TASK] };
   h.store.focusedExternalTask = {};
-  h.store.sessionGithubPrs = {};
+  h.store.sessionProjectPrs = {};
+  h.store.sessions = [{ id: SESSION_ID, workspaceId: WORKSPACE_ID }];
+  h.store.projects = [{ id: 'project-1', kind: 'repo' }];
+  h.store.sessionProjectMounts = {
+    [SESSION_ID]: [
+      {
+        projectId: 'project-1',
+        mountName: null,
+        worktreePath: '/wt',
+        repoRoot: '/repo',
+        branch: 'ak/current',
+      },
+    ],
+  };
+  h.store.sessionActiveProject = { [SESSION_ID]: 'project-1' };
   h.store.workspaceIntegrations = {
     [WORKSPACE_ID]: [{ provider: 'linear' }, { provider: 'sentry' }, { provider: 'gitlab' }],
   };
@@ -363,7 +396,7 @@ describe('IntegrationPane', () => {
         { ...SECOND_TASK, branch: 'ak/shipped' },
       ],
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [MERGED_PR] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { 'project-1': [MERGED_PR] } };
 
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 

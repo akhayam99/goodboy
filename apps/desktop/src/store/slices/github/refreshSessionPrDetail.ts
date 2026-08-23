@@ -3,6 +3,8 @@ import { formatError } from '@goodboy/ui';
 import type { IsoDateTime, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
+import { isActiveSessionProject } from '../worktrees/isActiveSessionProject';
+import { selectActiveProjectPrs } from './activeProjectPrs';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -16,7 +18,7 @@ const DETAIL_TTL_MS = 30_000;
 export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, opts?: Params) => {
     const existing = get().sessionGithub[sessionId];
-    const prs = get().sessionGithubPrs[sessionId] ?? [];
+    const prs = selectActiveProjectPrs({ state: get(), sessionId });
     const selectedNumber = get().sessionSelectedPrNumber[sessionId] ?? null;
     const selectedPr =
       selectedNumber != null
@@ -47,6 +49,7 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
     if (!opts?.force && existing?.detail && fresh < DETAIL_TTL_MS) {
       return;
     }
+    const projectId = repo.projectId;
     set((state) => ({
       sessionGithub: {
         ...state.sessionGithub,
@@ -54,6 +57,7 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
           pr: state.sessionGithub[sessionId]?.pr ?? null,
           linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
           fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
+          failedAt: state.sessionGithub[sessionId]?.failedAt ?? null,
           loading: state.sessionGithub[sessionId]?.loading ?? false,
           error: state.sessionGithub[sessionId]?.error ?? null,
           detail: state.sessionGithub[sessionId]?.detail ?? null,
@@ -74,22 +78,28 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
           repo.projectId,
         );
         if (!slug) {
-          set((state) => ({
-            sessionGithub: {
-              ...state.sessionGithub,
-              [sessionId]: {
-                pr: state.sessionGithub[sessionId]?.pr ?? null,
-                linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
-                fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
-                loading: state.sessionGithub[sessionId]?.loading ?? false,
-                error: state.sessionGithub[sessionId]?.error ?? null,
-                detail: null,
-                detailFetchedAt: new Date().toISOString() as IsoDateTime,
-                detailLoading: false,
-                detailError: null,
+          set((state) => {
+            if (!isActiveSessionProject({ state, sessionId, projectId })) {
+              return state;
+            }
+            return {
+              sessionGithub: {
+                ...state.sessionGithub,
+                [sessionId]: {
+                  pr: state.sessionGithub[sessionId]?.pr ?? null,
+                  linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
+                  fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
+                  failedAt: state.sessionGithub[sessionId]?.failedAt ?? null,
+                  loading: state.sessionGithub[sessionId]?.loading ?? false,
+                  error: state.sessionGithub[sessionId]?.error ?? null,
+                  detail: null,
+                  detailFetchedAt: new Date().toISOString() as IsoDateTime,
+                  detailLoading: false,
+                  detailError: null,
+                },
               },
-            },
-          }));
+            };
+          });
           return;
         }
         const detail = await fetchPrDetail(tauriGhRunner, slug, pr.number, {
@@ -97,42 +107,54 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
           workspaceId: session.workspaceId,
           projectId: repo.projectId,
         });
-        set((state) => ({
-          sessionGithub: {
-            ...state.sessionGithub,
-            [sessionId]: {
-              pr: state.sessionGithub[sessionId]?.pr ?? null,
-              linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
-              fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
-              loading: state.sessionGithub[sessionId]?.loading ?? false,
-              error: state.sessionGithub[sessionId]?.error ?? null,
-              detail,
-              detailFetchedAt: new Date().toISOString() as IsoDateTime,
-              detailLoading: false,
-              detailError: null,
+        set((state) => {
+          if (!isActiveSessionProject({ state, sessionId, projectId })) {
+            return state;
+          }
+          return {
+            sessionGithub: {
+              ...state.sessionGithub,
+              [sessionId]: {
+                pr: state.sessionGithub[sessionId]?.pr ?? null,
+                linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
+                fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
+                failedAt: state.sessionGithub[sessionId]?.failedAt ?? null,
+                loading: state.sessionGithub[sessionId]?.loading ?? false,
+                error: state.sessionGithub[sessionId]?.error ?? null,
+                detail,
+                detailFetchedAt: new Date().toISOString() as IsoDateTime,
+                detailLoading: false,
+                detailError: null,
+              },
             },
-          },
-        }));
+          };
+        });
         return;
       } catch (err) {
         lastErr = err;
       }
     }
-    set((state) => ({
-      sessionGithub: {
-        ...state.sessionGithub,
-        [sessionId]: {
-          pr: state.sessionGithub[sessionId]?.pr ?? null,
-          linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
-          fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
-          loading: state.sessionGithub[sessionId]?.loading ?? false,
-          error: state.sessionGithub[sessionId]?.error ?? null,
-          detail: state.sessionGithub[sessionId]?.detail ?? null,
-          detailFetchedAt: state.sessionGithub[sessionId]?.detailFetchedAt ?? null,
-          detailLoading: false,
-          detailError: opts?.silent ? null : formatError(lastErr),
+    set((state) => {
+      if (!isActiveSessionProject({ state, sessionId, projectId })) {
+        return state;
+      }
+      return {
+        sessionGithub: {
+          ...state.sessionGithub,
+          [sessionId]: {
+            pr: state.sessionGithub[sessionId]?.pr ?? null,
+            linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
+            fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
+            failedAt: state.sessionGithub[sessionId]?.failedAt ?? null,
+            loading: state.sessionGithub[sessionId]?.loading ?? false,
+            error: state.sessionGithub[sessionId]?.error ?? null,
+            detail: state.sessionGithub[sessionId]?.detail ?? null,
+            detailFetchedAt: state.sessionGithub[sessionId]?.detailFetchedAt ?? null,
+            detailLoading: false,
+            detailError: opts?.silent ? null : formatError(lastErr),
+          },
         },
-      },
-    }));
+      };
+    });
   };
 };

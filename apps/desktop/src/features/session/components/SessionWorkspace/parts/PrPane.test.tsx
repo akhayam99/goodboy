@@ -10,13 +10,14 @@ import type {
   Session,
   SessionExternalTask,
   SessionId,
+  SessionProjectMount,
   WorkspaceId,
   Workspace,
 } from '@goodboy/types';
 
 type Store = {
   sessionGithub: Record<string, unknown>;
-  sessionGithubPrs: Record<string, ReadonlyArray<PullRequestState>>;
+  sessionProjectPrs: Record<string, Readonly<Record<string, ReadonlyArray<PullRequestState>>>>;
   sessionSelectedPrNumber: Record<string, number | null>;
   sessionGitlabMr: Record<string, unknown>;
   sessionBitbucketPr: Record<string, unknown>;
@@ -30,7 +31,7 @@ type Store = {
   readonly setFocusedGithubIssueNumber: ReturnType<typeof vi.fn>;
   readonly openExternalTaskLens: ReturnType<typeof vi.fn>;
   readonly sessionBranches: Record<string, string>;
-  sessionProjectMounts: Record<string, ReadonlyArray<never>>;
+  sessionProjectMounts: Record<string, ReadonlyArray<SessionProjectMount>>;
   sessionActiveProject: Record<string, ProjectId>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   sessions: ReadonlyArray<Session>;
@@ -41,7 +42,7 @@ type Store = {
 const h = vi.hoisted(() => ({
   store: {
     sessionGithub: {},
-    sessionGithubPrs: {},
+    sessionProjectPrs: {},
     sessionSelectedPrNumber: {},
     sessionGitlabMr: {},
     sessionBitbucketPr: {},
@@ -143,6 +144,7 @@ import { PrPane } from './PrPane';
 
 const DATE = '2026-07-22T10:00:00.000Z' as IsoDateTime;
 const SESSION_ID = 'session-1' as SessionId;
+const PROJECT_ID = 'project-goodboy' as ProjectId;
 const PULL_REQUEST = {
   number: 42,
   title: 'Refactor authentication',
@@ -193,7 +195,7 @@ const githubPrState = ({ body, linkedIssues = [] }: GithubPrStateParams) => {
       error: null,
     },
   };
-  h.store.sessionGithubPrs = { [SESSION_ID]: [pr] };
+  h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [pr] } };
 };
 
 const issueTask = (overrides: Partial<SessionExternalTask>): SessionExternalTask => ({
@@ -209,7 +211,7 @@ const issueTask = (overrides: Partial<SessionExternalTask>): SessionExternalTask
 
 beforeEach(() => {
   h.store.sessionGithub = {};
-  h.store.sessionGithubPrs = {};
+  h.store.sessionProjectPrs = {};
   h.store.sessionSelectedPrNumber = {};
   h.store.sessionGitlabMr = {};
   h.store.sessionBitbucketPr = {};
@@ -230,7 +232,7 @@ beforeEach(() => {
   ];
   h.store.projects = [
     {
-      id: 'project-goodboy' as ProjectId,
+      id: PROJECT_ID,
       workspaceId: session.workspaceId,
       name: 'goodboy',
       rootPath: '/tmp/goodboy',
@@ -240,6 +242,18 @@ beforeEach(() => {
       updatedAt: DATE,
     },
   ];
+  h.store.sessionProjectMounts = {
+    [SESSION_ID]: [
+      {
+        projectId: PROJECT_ID,
+        mountName: 'goodboy',
+        worktreePath: '/tmp/goodboy/.goodboy/worktrees/refactor-auth',
+        repoRoot: '/tmp/goodboy',
+        branch: 'ak/refactor-auth',
+      } as SessionProjectMount,
+    ],
+  };
+  h.store.sessionActiveProject = { [SESSION_ID]: PROJECT_ID };
   h.remoteKind = 'github';
   h.onSelectLens.mockReset();
   h.openUrl.mockClear();
@@ -327,7 +341,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST] } };
     h.store.sessionGitlabMr = {
       [SESSION_ID]: { mr: { iid: 7, title: 'MR', state: 'open', draft: false } },
     };
@@ -389,7 +403,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST] } };
     h.store.sessionBitbucketPr = {
       [SESSION_ID]: { pr: { id: 42, title: 'Raise the fuel constant', state: 'OPEN' } },
     };
@@ -411,7 +425,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST] } };
     h.store.sessionGitlabMr = {
       [SESSION_ID]: { mr: { iid: 7, title: 'MR', state: 'open', draft: false } },
     };
@@ -460,7 +474,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: prs };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: prs } };
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
@@ -477,7 +491,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST] } };
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
@@ -493,7 +507,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST] } };
     h.store.sessionExternalTasks = {
       [SESSION_ID]: [
         {
@@ -526,7 +540,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [mergedPr] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [mergedPr] } };
     h.store.sessionExternalTasks = {
       [SESSION_ID]: [
         {
@@ -569,7 +583,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST] } };
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
@@ -589,7 +603,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST] } };
     const githubEvents: Array<CustomEvent> = [];
     const listener = (event: Event) => githubEvents.push(event as CustomEvent);
     window.addEventListener('goodboy:open-github-session', listener);
@@ -618,7 +632,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST, closedPr] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST, closedPr] } };
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
@@ -643,7 +657,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST, closedPr] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST, closedPr] } };
     h.store.sessionSelectedPrNumber = { [SESSION_ID]: closedPr.number };
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);

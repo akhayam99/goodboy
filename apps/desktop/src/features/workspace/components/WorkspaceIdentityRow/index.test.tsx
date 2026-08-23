@@ -46,11 +46,11 @@ describe('WorkspaceIdentityRow', () => {
     expect(screen.queryByText('monorepo')).toBeNull();
   });
 
-  it('carries the repo and the switcher shortcut in the title', () => {
+  it('carries the linked project count and the switcher shortcut in the title', () => {
     render(<WorkspaceIdentityRow />);
 
     expect(screen.getByLabelText('Switch or open a workspace').getAttribute('title')).toBe(
-      `Acme, monorepo (${shortcutGlyphs('workspace.switcher')})`,
+      `Acme, 1 linked project (${shortcutGlyphs('workspace.switcher')})`,
     );
   });
 

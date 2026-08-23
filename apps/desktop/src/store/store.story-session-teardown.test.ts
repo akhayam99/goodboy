@@ -120,7 +120,7 @@ type Store = {
   sessionProjectMounts: Record<string, ReadonlyArray<Mount>>;
   sessionActiveProject: Record<string, string>;
   sessionGithub: Record<string, unknown>;
-  sessionGithubPrs: Record<string, ReadonlyArray<unknown>>;
+  sessionProjectPrs: Record<string, Readonly<Record<string, ReadonlyArray<unknown>>>>;
   sessionSelectedPrNumber: Record<string, number | null>;
   sessionExternalTasks: Record<string, ReadonlyArray<{ readonly branch?: string }>>;
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
@@ -156,7 +156,7 @@ const makeStore = ({ projects, mounts, branch, activeProjectId }: MakeStoreParam
   sessionProjectMounts: { [SESSION_ID]: mounts },
   sessionActiveProject: activeProjectId === undefined ? {} : { [SESSION_ID]: activeProjectId },
   sessionGithub: {},
-  sessionGithubPrs: {},
+  sessionProjectPrs: {},
   sessionSelectedPrNumber: {},
   sessionExternalTasks: {},
   sessionPhaseRuns: {},

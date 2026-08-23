@@ -49,7 +49,7 @@ const makeState = (): State => ({
   sessionWorktrees: { [SESSION_ID]: [WORKTREE_PATH] },
   sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
   sessionGithub: { [SESSION_ID]: { pr: { number: 42 } } },
-  sessionGithubPrs: { [SESSION_ID]: [{ number: 42 }] },
+  sessionProjectPrs: { [SESSION_ID]: { [PROJECT_ID]: [{ number: 42 }] } },
   sessionSelectedPrNumber: { [SESSION_ID]: 40 },
   sessionExternalTasks: { [SESSION_ID]: [] },
   emitNotification: h.emitNotification,
@@ -76,7 +76,7 @@ describe('reconcileSessionBranch', () => {
       { sessionId: SESSION_ID, workspaceId: 'workspace-1' },
     );
     expect(state.sessionBranches).toEqual({ [SESSION_ID]: 'ak/incoming' });
-    expect(state.sessionGithubPrs).toEqual({});
+    expect(state.sessionProjectPrs).toEqual({ [SESSION_ID]: {} });
     expect(state.sessionSelectedPrNumber).toEqual({});
   });
 

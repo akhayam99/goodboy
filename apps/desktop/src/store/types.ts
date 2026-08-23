@@ -260,7 +260,6 @@ export type AppState = AppSliceState & {
   >;
   readonly githubStatus: GhTokenStatus | null;
   readonly sessionGithub: Readonly<Record<SessionId, SessionGithubState>>;
-  readonly sessionGithubPrs: Readonly<Record<SessionId, ReadonlyArray<PullRequestState>>>;
   readonly sessionProjectPrs: Readonly<
     Record<SessionId, Readonly<Record<ProjectId, ReadonlyArray<PullRequestState>>>>
   >;

@@ -19,6 +19,7 @@ const { store, actions } = vi.hoisted(() => {
     setActiveLens: vi.fn(),
     setFocusedWorkflowRun: vi.fn(),
     setFocusedPlanId: vi.fn(),
+    selectAgent: vi.fn(),
   };
   return { store, actions };
 });
@@ -63,6 +64,15 @@ const stepAgent = agentOf({
 
 const adHocAgent = agentOf({ id: ADHOC_AGENT_ID, name: 'scout one', kind: 'scout' });
 
+const CLUSTER_CHILD_ID = 'agent-cluster-child' as AgentId;
+const clusterChild = agentOf({
+  id: CLUSTER_CHILD_ID,
+  name: 'area alpha',
+  kind: 'implementer',
+  parentAgentId: STEP_AGENT_ID,
+  workflowRunId: RUN_ID,
+});
+
 const resolverAgent = agentOf({
   id: RESOLVER_AGENT_ID,
   name: 'resolve one',
@@ -96,7 +106,7 @@ beforeEach(() => {
     focusedWorkflowRunId: {},
     focusedPlanId: {},
     selectedAgentId: {},
-    sessionPhaseRuns: { [SESSION_ID]: [stepAgent, adHocAgent, resolverAgent] },
+    sessionPhaseRuns: { [SESSION_ID]: [stepAgent, adHocAgent, resolverAgent, clusterChild] },
     agentKindOverride: {},
     phaseTemplates: { 'workspace-1': [workflow] },
     sessionWorkflows: {},
@@ -140,6 +150,33 @@ describe('useSessionCrumbs', () => {
 
   it('gives a resolver opened from the feed the resolve home as parent', () => {
     expect(labelsOf(null, RESOLVER_AGENT_ID)).toEqual(['Overview', 'Resolve', 'resolve one']);
+  });
+
+  it('parents a cluster child on its father, under the run', () => {
+    expect(labelsOf(null, CLUSTER_CHILD_ID)).toEqual([
+      'Overview',
+      'Workflows',
+      'refactor',
+      'Implement',
+      'area alpha',
+    ]);
+  });
+
+  it('navigates to the father from the father crumb of a cluster child', () => {
+    openOn({ lens: null, selectedAgentId: CLUSTER_CHILD_ID });
+    const { result } = renderHook(() => useSessionCrumbs({ session }));
+
+    expect(result.current[3]?.id).toBe('selected-parent');
+    result.current[3]?.onClick?.();
+    expect(actions.selectAgent).toHaveBeenCalledWith(SESSION_ID, STEP_AGENT_ID);
+  });
+
+  it('keeps a top-level step free of any father crumb', () => {
+    openOn({ lens: null, selectedAgentId: STEP_AGENT_ID });
+    const { result } = renderHook(() => useSessionCrumbs({ session }));
+
+    expect(result.current.map((crumb) => crumb.id)).not.toContain('selected-parent');
+    expect(result.current.map((crumb) => crumb.id)).not.toContain('selected-root');
   });
 
   it('navigates from the run crumb to that run, and from Workflows to the list', () => {

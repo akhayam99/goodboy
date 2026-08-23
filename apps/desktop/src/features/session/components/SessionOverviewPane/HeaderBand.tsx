@@ -127,7 +127,7 @@ export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
           />
           <Tooltip content="Decisions and session summary">
             <button type="button" onClick={() => onSelectLens('context')} className={VITAL_CHIP}>
-              <CONCEPT_ICONS.decisions size={11} aria-hidden />
+              <CONCEPT_ICONS.context size={11} aria-hidden />
               <span>Context</span>
             </button>
           </Tooltip>

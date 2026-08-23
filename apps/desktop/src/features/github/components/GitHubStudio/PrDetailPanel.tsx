@@ -20,6 +20,7 @@ import { OpenSessionButton } from '../../../../shared/components/OpenSessionButt
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { RefreshIconButton } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
+import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
 import { groupThreads, type CommentThread } from '../../comment-threads';
 import { PullRequestChip } from '../PullRequestChip';
 import { CreatePrPanel } from './CreatePrPanel';
@@ -66,7 +67,7 @@ export const PrDetailPanel = ({
     sessionId != null ? state.sessionGithub[sessionId] : null,
   );
   const prs = useAppStore((state) =>
-    sessionId != null ? (state.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
+    sessionId != null ? selectActiveProjectPrs({ state, sessionId }) : EMPTY_ARRAY,
   );
   const selectedNumber = useAppStore((state) =>
     sessionId != null ? (state.sessionSelectedPrNumber[sessionId] ?? null) : null,

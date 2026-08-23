@@ -55,11 +55,12 @@ export const changeSessionBranch = (set: SetFn, get: GetFn) => {
     const previousBranch = changedWorktree.branch;
     set((state) => {
       const nextGithub = { ...state.sessionGithub };
-      const nextGithubPrs = { ...state.sessionGithubPrs };
       const nextSelectedPrNumber = { ...state.sessionSelectedPrNumber };
       delete nextGithub[sessionId];
-      delete nextGithubPrs[sessionId];
       delete nextSelectedPrNumber[sessionId];
+      const sessionPrMap = { ...state.sessionProjectPrs[sessionId] };
+      delete sessionPrMap[repo.projectId];
+      const nextProjectPrs = { ...state.sessionProjectPrs, [sessionId]: sessionPrMap };
       const mounts = state.sessionProjectMounts[sessionId] ?? [];
       const shouldUpdateSessionBranch = mounts[0]?.worktreePath === worktreePath;
       const sessionProjectMounts = {
@@ -74,7 +75,7 @@ export const changeSessionBranch = (set: SetFn, get: GetFn) => {
           : state.sessionBranches,
         sessionProjectMounts,
         sessionGithub: nextGithub,
-        sessionGithubPrs: nextGithubPrs,
+        sessionProjectPrs: nextProjectPrs,
         sessionSelectedPrNumber: nextSelectedPrNumber,
       };
     });

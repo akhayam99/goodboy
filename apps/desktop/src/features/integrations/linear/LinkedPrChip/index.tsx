@@ -4,6 +4,7 @@ import type { LinearLinkedPr } from '../client';
 import { prStatusTone } from '../prStatusTone';
 import { openUrl } from '../../../../shared/lib/editor';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
 
 type Props = {
   readonly pr: LinearLinkedPr;
@@ -14,7 +15,7 @@ export const LinkedPrChip = ({ pr }: Props) => {
   const branchPrs = useAppStore((s) =>
     s.currentSessionId == null
       ? EMPTY_ARRAY
-      : (s.sessionGithubPrs[s.currentSessionId] ?? EMPTY_ARRAY),
+      : selectActiveProjectPrs({ state: s, sessionId: s.currentSessionId }),
   );
   const canonicalPr = useAppStore((s) =>
     s.currentSessionId == null ? null : (s.sessionGithub[s.currentSessionId]?.pr ?? null),

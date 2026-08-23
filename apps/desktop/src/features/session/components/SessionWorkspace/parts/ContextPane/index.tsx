@@ -13,6 +13,7 @@ import {
   useSummarizerStatus,
 } from '../../../../../../store';
 import { PaneShell } from '../../../../../../shared/components/PaneShell';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import type { ContextLens } from '../../../../lens-surface';
 import { InspectorSplit } from '../InspectorSplit';
 import { SlotHistoryPanel } from '../SlotHistoryPanel';
@@ -133,7 +134,7 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
         )
       }
     >
-      <PaneShell title="Context">
+      <PaneShell title="Context" icon={CONCEPT_ICONS.context} tone={CONCEPT_TONE.context}>
         <WorkingSetSection session={session} />
         <Divider />
         {REGION_ORDER.map((slotKey, index) => {

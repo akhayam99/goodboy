@@ -1,5 +1,6 @@
 import type { ReviewablePrProvider, SessionExternalTask, SessionId } from '@goodboy/types';
 import { PROVIDER_PRIORITY } from '../../../features/session/components/SessionWorkspace/parts/resolvePullRequestProvider';
+import { selectActiveProjectPrs } from '../github/activeProjectPrs';
 import type { AppState } from '../../types';
 
 export type ReviewTarget = {
@@ -89,7 +90,13 @@ const reviewTargetFromTasks = ({
 
 export type ReviewTargetState = Pick<
   AppState,
-  'sessionExternalTasks' | 'sessionGithubPrs' | 'sessionGitlabMr'
+  | 'sessionExternalTasks'
+  | 'sessionGitlabMr'
+  | 'sessions'
+  | 'projects'
+  | 'sessionProjectMounts'
+  | 'sessionActiveProject'
+  | 'sessionProjectPrs'
 >;
 
 type Params = {
@@ -99,7 +106,7 @@ type Params = {
 
 const discoveredPrKeysForSession = ({ state, sessionId }: Params): ReadonlySet<string> => {
   const keys = new Set<string>();
-  for (const pr of state.sessionGithubPrs[sessionId] ?? []) {
+  for (const pr of selectActiveProjectPrs({ state, sessionId })) {
     keys.add(reviewPrKey({ provider: 'github', prNumber: pr.number }));
   }
   const mergeRequest = state.sessionGitlabMr[sessionId]?.mr ?? null;

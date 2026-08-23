@@ -13,7 +13,7 @@ export const createWorktreesSlice = (set: SetFn, get: GetFn) => {
     reconcileSessionBranch: reconcileSessionBranch(set, get),
     reconcileOrphanWorktrees: reconcileOrphanWorktrees(set, get),
     removeOrphanWorktrees: removeOrphanWorktrees(set, get),
-    setSessionActiveProject: setSessionActiveProject({ set }),
+    setSessionActiveProject: setSessionActiveProject({ set, get }),
     amendSessionCommit: amendSessionCommit(set, get),
     squashSessionCommits: squashSessionCommits(set, get),
   };

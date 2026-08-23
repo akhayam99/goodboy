@@ -59,26 +59,58 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
     return resolveRootAgent({ agents: phaseRuns, agentId: selectedAgentId });
   }, [phaseRuns, selectedAgentId]);
 
+  const parentAgent = useMemo(() => {
+    const parentId = selectedAgent?.parentAgentId ?? null;
+    if (parentId == null) {
+      return null;
+    }
+    return phaseRuns.find((agent) => agent.id === parentId) ?? null;
+  }, [phaseRuns, selectedAgent]);
+
+  const toEntries = useMemo(() => {
+    const kindOf = (agent: Agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null);
+    return (peers: ReadonlyArray<Agent>): ReadonlyArray<SwitcherEntry> =>
+      peers.map((agent) => ({
+        agent,
+        kind: kindOf(agent),
+        isFinished: isAgentFinished({
+          agent,
+          resolverStatus: resolverStatusByAgentId.get(agent.id) ?? null,
+        }),
+      }));
+  }, [agentKindOverride, resolverStatusByAgentId]);
+
   const siblings: ReadonlyArray<SwitcherEntry> = useMemo(() => {
     if (selectedAgent == null || rootAgent == null) {
       return EMPTY_ARRAY as ReadonlyArray<SwitcherEntry>;
     }
     const kindOf = (agent: Agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null);
-    return switcherPeers({
-      agents: phaseRuns,
-      selectedAgent,
-      rootAgent,
-      home: agentHomeLens(rootAgent, kindOf(rootAgent)),
-      kindOf,
-    }).map((agent) => ({
-      agent,
-      kind: kindOf(agent),
-      isFinished: isAgentFinished({
-        agent,
-        resolverStatus: resolverStatusByAgentId.get(agent.id) ?? null,
+    return toEntries(
+      switcherPeers({
+        agents: phaseRuns,
+        selectedAgent,
+        rootAgent,
+        home: agentHomeLens(rootAgent, kindOf(rootAgent)),
+        kindOf,
       }),
-    }));
-  }, [phaseRuns, agentKindOverride, resolverStatusByAgentId, selectedAgent, rootAgent]);
+    );
+  }, [phaseRuns, agentKindOverride, toEntries, selectedAgent, rootAgent]);
+
+  const parentSiblings: ReadonlyArray<SwitcherEntry> = useMemo(() => {
+    if (parentAgent == null || rootAgent == null) {
+      return EMPTY_ARRAY as ReadonlyArray<SwitcherEntry>;
+    }
+    const kindOf = (agent: Agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null);
+    return toEntries(
+      switcherPeers({
+        agents: phaseRuns,
+        selectedAgent: parentAgent,
+        rootAgent,
+        home: agentHomeLens(rootAgent, kindOf(rootAgent)),
+        kindOf,
+      }),
+    );
+  }, [phaseRuns, agentKindOverride, toEntries, parentAgent, rootAgent]);
 
   const lastCrumb = crumbs[crumbs.length - 1];
   const isSelectedCrumbAnAgent = selectedAgent != null && lastCrumb?.id === 'selected-child';
@@ -107,6 +139,18 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
                 label={crumb.label}
                 siblings={siblings}
                 selectedAgentId={selectedAgent.id}
+                onSelect={(id) => {
+                  void selectAgent(sessionId, id);
+                }}
+              />
+            ) : crumb.id === 'selected-parent' &&
+              parentAgent != null &&
+              parentSiblings.length > 1 ? (
+              <AgentSwitcherCrumb
+                label={crumb.label}
+                siblings={parentSiblings}
+                selectedAgentId={parentAgent.id}
+                onNavigate={crumb.onClick}
                 onSelect={(id) => {
                   void selectAgent(sessionId, id);
                 }}

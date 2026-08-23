@@ -574,7 +574,7 @@ describe('store contract', () => {
         githubStatus: null,
         sessionGithub: {},
         sessionResolvedThreads: {},
-        sessionGithubPrs: {},
+        sessionProjectPrs: {},
         sessionSelectedPrNumber: {},
         volatilePermissionAllows: new Set<string>(),
         agentModelOverride: {},
@@ -706,7 +706,7 @@ describe('store contract', () => {
             detailError: null,
           },
         },
-        sessionGithubPrs: { [SESSION_ID]: [selectedPr] },
+        sessionProjectPrs: { [SESSION_ID]: { [PROJECT_ID]: [selectedPr] } },
         sessionSelectedPrNumber: { [SESSION_ID]: selectedPr.number },
       });
 
@@ -715,6 +715,62 @@ describe('store contract', () => {
       expect(store.getState().sessionGithub[SESSION_ID]?.pr?.number).toBe(canonicalPr.number);
       expect(store.getState().sessionSelectedPrNumber[SESSION_ID]).toBe(selectedPr.number);
       expect(listPrsForBranchSpy).toHaveBeenCalledOnce();
+    });
+
+    it('keeps a fetch that lands after an active-project switch out of the session surface', async () => {
+      const store = await getStore();
+      const otherProjectId = 'project-2' as ProjectId;
+      const fetchedPr = {
+        number: 42,
+        title: 'From the previous mount',
+        state: 'open',
+        updatedAt: '2026-07-30T10:00:00Z',
+      } as PullRequestState;
+      detectRepoSlugSpy.mockResolvedValueOnce('acme/goodboy');
+      listPrsForBranchSpy.mockImplementationOnce(async () => {
+        store.setState((state) => {
+          const nextGithub = { ...state.sessionGithub };
+          delete nextGithub[SESSION_ID];
+          return {
+            sessionActiveProject: { [SESSION_ID]: otherProjectId },
+            sessionGithub: nextGithub,
+          };
+        });
+        return [fetchedPr];
+      });
+      store.setState({
+        workspaces: [buildWorkspace()],
+        projects: [
+          buildProject(),
+          buildProject({ id: otherProjectId, name: 'api', rootPath: '/tmp/api' }),
+        ],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
+        sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            {
+              projectId: PROJECT_ID,
+              mountName: 'repo',
+              worktreePath: '/tmp/repo/.wt/topic',
+              repoRoot: '/tmp/repo',
+              branch: 'goodboy/topic',
+            },
+            {
+              projectId: otherProjectId,
+              mountName: 'api',
+              worktreePath: '/tmp/api/.wt/topic',
+              repoRoot: '/tmp/api',
+              branch: 'goodboy/topic',
+            },
+          ],
+        },
+      });
+
+      await store.getState().refreshSessionPr(SESSION_ID, { force: true });
+
+      expect(store.getState().sessionGithub[SESSION_ID]).toBeUndefined();
+      expect(store.getState().sessionProjectPrs[SESSION_ID]?.[PROJECT_ID]).toEqual([fetchedPr]);
     });
 
     it('caches the canonical pull request under its repository slug', async () => {
@@ -789,13 +845,13 @@ describe('store contract', () => {
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
         sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/topic'] },
-        sessionGithubPrs: { [SESSION_ID]: [previousPr] },
+        sessionProjectPrs: { [SESSION_ID]: { [PROJECT_ID]: [previousPr] } },
         sessionSelectedPrNumber: { [SESSION_ID]: previousPr.number },
       });
 
       await store.getState().refreshSessionPr(SESSION_ID, { force: true });
 
-      expect(store.getState().sessionGithubPrs[SESSION_ID]).toEqual([previousPr]);
+      expect(store.getState().sessionProjectPrs[SESSION_ID]?.[PROJECT_ID]).toEqual([previousPr]);
       expect(store.getState().sessionSelectedPrNumber[SESSION_ID]).toBe(previousPr.number);
     });
 

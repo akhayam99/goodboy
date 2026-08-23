@@ -1,10 +1,11 @@
 import type { ProjectId, SessionId } from '@goodboy/types';
 import { updateSessionActiveProject } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import type { SetFn } from './types';
+import type { GetFn, SetFn } from './types';
 
 type Params = {
   readonly set: SetFn;
+  readonly get: GetFn;
 };
 
 type Input = {
@@ -12,28 +13,49 @@ type Input = {
   readonly projectId: ProjectId;
 };
 
-export const setSessionActiveProject = ({ set }: Params) => {
+export const setSessionActiveProject = ({ set, get }: Params) => {
   return async ({ sessionId, projectId }: Input): Promise<void> => {
     set((state) => {
       const nextGithub = { ...state.sessionGithub };
-      const nextGithubPrs = { ...state.sessionGithubPrs };
       const nextGitlab = { ...state.sessionGitlabMr };
       const nextSelectedPrNumber = { ...state.sessionSelectedPrNumber };
       delete nextGithub[sessionId];
-      delete nextGithubPrs[sessionId];
       delete nextGitlab[sessionId];
       delete nextSelectedPrNumber[sessionId];
+      const cachedPr = state.sessionProjectPrs[sessionId]?.[projectId]?.[0] ?? null;
+      const seededGithub =
+        cachedPr === null
+          ? nextGithub
+          : {
+              ...nextGithub,
+              [sessionId]: {
+                pr: cachedPr,
+                linkedIssues: [],
+                fetchedAt: null,
+                failedAt: null,
+                loading: false,
+                error: null,
+                detail: null,
+                detailFetchedAt: null,
+                detailLoading: false,
+                detailError: null,
+              },
+            };
       return {
         sessions: state.sessions.map((session) =>
           session.id === sessionId ? { ...session, activeProjectId: projectId } : session,
         ),
         sessionActiveProject: { ...state.sessionActiveProject, [sessionId]: projectId },
-        sessionGithub: nextGithub,
-        sessionGithubPrs: nextGithubPrs,
+        sessionGithub: seededGithub,
         sessionGitlabMr: nextGitlab,
         sessionSelectedPrNumber: nextSelectedPrNumber,
       };
     });
+    if (get().githubStatus?.available === true) {
+      void get()
+        .refreshSessionPr(sessionId, { force: true, silent: true, retries: 1 })
+        .then(() => get().refreshSessionPrDetail(sessionId, { silent: true }));
+    }
     await updateSessionActiveProject({ db: tauriDatabase, id: sessionId, projectId });
   };
 };

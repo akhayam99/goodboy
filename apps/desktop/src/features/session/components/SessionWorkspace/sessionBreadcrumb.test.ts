@@ -9,6 +9,8 @@ const makeHandlers = (): SessionBreadcrumbHandlers => ({
   toWorkflowsList: vi.fn(),
   toWorkflowRun: vi.fn(),
   toPlansList: vi.fn(),
+  toParentAgent: vi.fn(),
+  toRootAgent: vi.fn(),
 });
 
 const lensLabel = (lens: LensKind) => lens;
@@ -24,6 +26,8 @@ const base = (
   focusedPlanTitle: null,
   selectedChildLabel: null,
   selectedChildHome: null,
+  selectedParentLabel: null,
+  selectedRootLabel: null,
   lensLabel,
   handlers,
   ...overrides,
@@ -135,6 +139,83 @@ describe('buildSessionBreadcrumb', () => {
     expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'refactor', 'Implement']);
     expect(last(crumbs)?.id).toBe('selected-child');
     expect(last(crumbs)?.onClick).toBeUndefined();
+  });
+
+  it('slots the father between the run and the cluster child', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          lens: 'workflows',
+          selectedChildHome: 'workflows',
+          selectedChildWorkflowName: 'refactor',
+          selectedChildLabel: 'area alpha',
+          selectedParentLabel: 'Implement',
+        },
+        h,
+      ),
+    );
+
+    expect(labels(crumbs)).toEqual([
+      'Overview',
+      'Workflows',
+      'refactor',
+      'Implement',
+      'area alpha',
+    ]);
+    expect(crumbs[3]?.id).toBe('selected-parent');
+    crumbs[3]!.onClick!();
+    expect(h.toParentAgent).toHaveBeenCalledOnce();
+    expect(last(crumbs)?.id).toBe('selected-child');
+    expect(last(crumbs)?.onClick).toBeUndefined();
+  });
+
+  it('keeps the father crumb on a non-workflow home too', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          lens: null,
+          selectedChildHome: 'agents',
+          selectedChildLabel: 'scout area',
+          selectedParentLabel: 'scout one',
+        },
+        h,
+      ),
+    );
+
+    expect(labels(crumbs)).toEqual(['Overview', 'agents', 'scout one', 'scout area']);
+    crumbs[2]!.onClick!();
+    expect(h.toParentAgent).toHaveBeenCalledOnce();
+  });
+
+  it('collapses a deeper chain to root, father, and child without crashing', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          lens: 'workflows',
+          selectedChildHome: 'workflows',
+          selectedChildWorkflowName: 'refactor',
+          selectedChildLabel: 'leaf',
+          selectedParentLabel: 'mid',
+          selectedRootLabel: 'Implement',
+        },
+        h,
+      ),
+    );
+
+    expect(labels(crumbs)).toEqual([
+      'Overview',
+      'Workflows',
+      'refactor',
+      'Implement',
+      'mid',
+      'leaf',
+    ]);
+    expect(crumbs[3]?.id).toBe('selected-root');
+    crumbs[3]!.onClick!();
+    expect(h.toRootAgent).toHaveBeenCalledOnce();
   });
 
   it('navigates to the run from the third crumb of a step trail', () => {
