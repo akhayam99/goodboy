@@ -19,6 +19,7 @@ const ACTIVITY_CATEGORY_CONCEPT = {
   workflows: 'workflows',
   plans: 'plans',
   agents: 'agents',
+  questions: 'questions',
   resolver: 'resolve',
   decisions: 'decisions',
 } satisfies Record<ActivityCategory, keyof typeof CONCEPT_ICONS>;

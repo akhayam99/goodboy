@@ -143,10 +143,12 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
         showWorkflowSubagents: activity.filter.workflowSubagents,
         showAgentSubagents: activity.filter.agentSubagents,
         showPlans: activity.filter.plans,
+        showQuestions: activity.filter.questions,
       }),
     [
       activity.filter.agentSubagents,
       activity.filter.plans,
+      activity.filter.questions,
       activity.filter.workflowSubagents,
       blockedRunIds,
       unreadAgentIds,

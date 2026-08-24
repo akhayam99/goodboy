@@ -8,6 +8,7 @@ export const ACTIVITY_CATEGORIES = [
   'workflows',
   'plans',
   'agents',
+  'questions',
   'resolver',
   'decisions',
 ] as const;
@@ -36,6 +37,7 @@ export const ACTIVITY_CATEGORY_LABEL: Record<ActivityCategory, string> = {
   workflows: 'Workflows',
   plans: 'Plans',
   agents: 'Agents',
+  questions: 'Questions',
   resolver: 'Resolver',
   decisions: 'Decisions',
 };
@@ -47,6 +49,7 @@ export const DEFAULT_ACTIVITY_FILTER: ActivityFilter = {
   workflows: true,
   plans: true,
   agents: true,
+  questions: true,
   resolver: true,
   decisions: true,
   workflowSubagents: true,

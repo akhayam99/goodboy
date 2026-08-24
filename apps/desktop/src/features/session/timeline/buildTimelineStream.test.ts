@@ -3,6 +3,8 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  OpenQuestion,
+  OpenQuestionId,
   PlanId,
   PlanWithCount,
   SessionEvent,
@@ -166,9 +168,11 @@ type StreamParams = {
   readonly unreadAgentIds?: ReadonlySet<string>;
   readonly events?: ReadonlyArray<SessionEvent>;
   readonly plans?: ReadonlyArray<PlanWithCount>;
+  readonly questions?: ReadonlyArray<OpenQuestion>;
   readonly showWorkflowSubagents?: boolean;
   readonly showAgentSubagents?: boolean;
   readonly showPlans?: boolean;
+  readonly showQuestions?: boolean;
 };
 
 const stream = ({
@@ -177,9 +181,11 @@ const stream = ({
   unreadAgentIds = new Set(),
   events = [],
   plans = [],
+  questions = [],
   showWorkflowSubagents,
   showAgentSubagents,
   showPlans,
+  showQuestions,
 }: StreamParams) =>
   buildTimelineStream({
     entries: buildTimelineGroups({
@@ -187,7 +193,7 @@ const stream = ({
       workflows,
       plans,
       externalTasks: [],
-      questions: [],
+      questions,
       worktrees: [],
       events,
       agentKindOverride: {},
@@ -198,6 +204,7 @@ const stream = ({
     ...(showWorkflowSubagents != null ? { showWorkflowSubagents } : {}),
     ...(showAgentSubagents != null ? { showAgentSubagents } : {}),
     ...(showPlans != null ? { showPlans } : {}),
+    ...(showQuestions != null ? { showQuestions } : {}),
   });
 
 type LaneSpan = {
@@ -1295,6 +1302,44 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
 
     expect(items.map(labelOf)).not.toContain('step:plan:plan-1');
     expect(items.map(labelOf)).toContain('step:agent:plan');
+  });
+
+  const answeredQuestion: OpenQuestion = {
+    id: typedString<OpenQuestionId>({ value: 'question-1' }),
+    sessionId: SESSION_ID,
+    createdByAgentId: typedString<AgentId>({ value: 'asker' }),
+    text: 'Which auth flow should the migration keep?',
+    suggestedAnswers: [],
+    userAnswer: 'the oauth one',
+    status: 'answered',
+    createdAt: localIso({ day: 18, hour: 9 }) as IsoDateTime,
+    answeredAt: localIso({ day: 18, hour: 10 }) as IsoDateTime,
+  };
+
+  const ASKER_AGENTS: ReadonlyArray<Agent> = [
+    agent({
+      id: 'asker',
+      ordinal: 1,
+      startedAt: localIso({ day: 18, hour: 8 }),
+      completedAt: localIso({ day: 18, hour: 11 }),
+    }),
+  ];
+
+  it('keeps an answered question in the stream by default', () => {
+    const { items } = stream({ agents: ASKER_AGENTS, questions: [answeredQuestion] });
+
+    expect(items.map(labelOf)).toContain('step:answer:agent:asker:question-1');
+  });
+
+  it('drops answered questions from the stream when questions are hidden', () => {
+    const { items } = stream({
+      agents: ASKER_AGENTS,
+      questions: [answeredQuestion],
+      showQuestions: false,
+    });
+
+    expect(items.map(labelOf)).not.toContain('step:answer:agent:asker:question-1');
+    expect(items.map(labelOf)).toContain('entry:agent:asker');
   });
 
   const CLUSTER_RUN_AGENTS: ReadonlyArray<Agent> = [

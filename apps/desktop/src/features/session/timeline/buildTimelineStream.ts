@@ -87,6 +87,7 @@ type Params = {
   readonly showWorkflowSubagents?: boolean;
   readonly showAgentSubagents?: boolean;
   readonly showPlans?: boolean;
+  readonly showQuestions?: boolean;
 };
 
 type DraftRow = {
@@ -191,6 +192,7 @@ type EmitContext = {
   readonly showWorkflowSubagents: boolean;
   readonly showAgentSubagents: boolean;
   readonly showPlans: boolean;
+  readonly showQuestions: boolean;
 };
 
 const hasUnreadDescendant = ({
@@ -283,24 +285,26 @@ const agentBlock = ({
       );
     }
   }
-  for (const answer of entry.answers) {
-    const row: DraftRow = {
-      kind: 'row',
-      id: answer.id,
-      at: answer.at,
-      grade: 'step',
-      entry: answer,
-      identity,
-      familyId,
-      groupId,
-      ordinal: null,
-      sortOrdinal: 0,
-      markerState: 'done',
-      hasUnread: false,
-      isPending: false,
-      isSubagent,
-    };
-    nested.push({ key: sortableOf({ row }), rows: [row] });
+  if (context.showQuestions) {
+    for (const answer of entry.answers) {
+      const row: DraftRow = {
+        kind: 'row',
+        id: answer.id,
+        at: answer.at,
+        grade: 'step',
+        entry: answer,
+        identity,
+        familyId,
+        groupId,
+        ordinal: null,
+        sortOrdinal: 0,
+        markerState: 'done',
+        hasUnread: false,
+        isPending: false,
+        isSubagent,
+      };
+      nested.push({ key: sortableOf({ row }), rows: [row] });
+    }
   }
   const origin: DraftRow = {
     kind: 'row',
@@ -536,6 +540,7 @@ export const buildTimelineStream = ({
   showWorkflowSubagents = true,
   showAgentSubagents = true,
   showPlans = true,
+  showQuestions = true,
 }: Params): TimelineStream => {
   const context: EmitContext = {
     unreadAgentIds,
@@ -544,6 +549,7 @@ export const buildTimelineStream = ({
     showWorkflowSubagents,
     showAgentSubagents,
     showPlans,
+    showQuestions,
   };
   const blocks: DraftBlock[] = [];
 
