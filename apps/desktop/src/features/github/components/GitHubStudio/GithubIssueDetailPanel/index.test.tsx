@@ -10,6 +10,15 @@ const h = vi.hoisted(() => ({
   showToast: vi.fn(),
   store: {
     workspaces: [{ id: 'workspace-1', rootPath: '/repo' }],
+    projects: [
+      {
+        id: 'project-1',
+        workspaceId: 'workspace-1',
+        name: 'repo',
+        rootPath: '/repo',
+        kind: 'repo',
+      },
+    ],
   },
 }));
 
@@ -76,6 +85,7 @@ describe('GithubIssueDetailPanel', () => {
     expect(h.createSession).toHaveBeenCalledWith(
       expect.objectContaining({
         workspaceId: 'workspace-1',
+        projectId: 'project-1',
         branchSlug: '42-add-issue-dashboard',
         externalTasks: [
           {

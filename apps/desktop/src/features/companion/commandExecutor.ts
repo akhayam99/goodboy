@@ -543,7 +543,11 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       const gate = evaluateMobileCreateSession({
         workspaceId,
         provider,
+        projectId: data.projectId,
         workspaces: store.workspaces,
+        projects: workspaceId
+          ? store.projects.filter((project) => project.workspaceId === workspaceId)
+          : [],
         integrations: workspaceId
           ? (store.workspaceIntegrations[workspaceId as WorkspaceId] ?? [])
           : [],
@@ -560,6 +564,7 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
         );
         ({ session } = await store.createSession({
           workspaceId: gate.workspaceId,
+          projectId: gate.projectId,
           goal: resolved.goal,
           externalTasks: [resolved.externalTask],
           mobileShared: true,
