@@ -104,7 +104,6 @@ describe('SessionKickoff', () => {
     render(<SessionKickoff session={session} onOpenWorkflowBuilder={onOpenWorkflowBuilder} />);
 
     expect(screen.getByText('How do you want to start?')).toBeDefined();
-    expect(screen.getByRole('button', { name: /Start in chat/ })).toBeDefined();
     expect(screen.getByTestId('create-agent-tile')).toBeDefined();
     expect(screen.getByRole('button', { name: /Add a workflow/ })).toBeDefined();
     expect(screen.getByText('Or pick up an issue')).toBeDefined();
@@ -142,18 +141,12 @@ describe('SessionKickoff', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('reveals the chat and opens the workflow builder from the tiles', () => {
+  it('opens the workflow builder from the tile', () => {
     const onOpenWorkflowBuilder = vi.fn();
-    const onReveal = vi.fn();
-    window.addEventListener('goodboy:reveal-chat', onReveal);
     render(<SessionKickoff session={session} onOpenWorkflowBuilder={onOpenWorkflowBuilder} />);
-
-    fireEvent.click(screen.getByRole('button', { name: /Start in chat/ }));
-    expect(onReveal).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: /Add a workflow/ }));
     expect(onOpenWorkflowBuilder).toHaveBeenCalledTimes(1);
-    window.removeEventListener('goodboy:reveal-chat', onReveal);
   });
 
   it('lists recent tracker issues, hiding ones a session already picked up', async () => {

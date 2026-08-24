@@ -96,10 +96,6 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder }: Props) => {
     }
   };
 
-  const revealChat = () => {
-    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-  };
-
   const emptyStateSources = issues.hasSources
     ? issues.sources.filter(
         (source): source is IssueSource & { readonly provider: ConnectableProvider } =>
@@ -115,14 +111,7 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder }: Props) => {
           Pick a starting point. These suggestions step aside once the first activity lands.
         </p>
       </header>
-      <div className="grid gap-2 lg:grid-cols-3">
-        <KickoffTile
-          icon={CONCEPT_ICONS.comments}
-          iconClassName="text-primary"
-          title="Start in chat"
-          description="Describe what you need and go from there."
-          onClick={revealChat}
-        />
+      <div className="grid gap-2 lg:grid-cols-2">
         <CreateAgentPopover
           sessionId={session.id}
           variant="tile"
