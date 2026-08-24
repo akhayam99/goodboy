@@ -3,7 +3,6 @@ import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
-  useSessionStageInfo,
   useSessionLoading,
   useSessionSlots,
   useSlotHistory,
@@ -39,7 +38,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
   const [isGoalHistoryOpen, setIsGoalHistoryOpen] = useState(false);
   const goalSlot = slots.find((slot) => slot.key === 'goal');
-  const stage = useSessionStageInfo(session);
   const sessionList = useMemo(() => [session], [session]);
   const runs = useWorkspaceRuns(session.workspaceId, sessionList);
   const sessionAgents = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
@@ -69,7 +67,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       }
     >
       <PaneShell
-        header={<HeaderBand session={session} stage={stage} onSelectLens={onSelectLens} />}
+        header={<HeaderBand session={session} onSelectLens={onSelectLens} />}
         animationClassName="animate-fade-in"
       >
         <GoalOverviewRegion

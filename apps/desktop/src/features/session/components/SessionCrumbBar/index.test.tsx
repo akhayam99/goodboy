@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
@@ -36,6 +37,20 @@ vi.mock('./WorkflowAdvance', () => ({
     <div data-testid="workflow-advance">{run.id}</div>
   ),
 }));
+
+vi.mock('../SessionOverviewPane/SessionCostChip', () => ({
+  SessionCostChip: () => <span data-testid="session-cost-chip" />,
+}));
+
+vi.mock('@goodboy/ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/ui')>();
+  return {
+    ...actual,
+    Tooltip: ({ content, children }: { content: string; children: ReactElement }) => (
+      <span data-tooltip={content}>{children as ReactNode}</span>
+    ),
+  };
+});
 
 import { SessionCrumbBar } from './index';
 
@@ -152,6 +167,7 @@ const openStepSurface = () => {
 
 beforeEach(() => {
   h.currentSession = session;
+  h.stage.reason = 'running';
   h.crumbs = [
     { id: 'overview', label: 'Overview', onClick: vi.fn() },
     { id: 'lens-agents', label: 'Agents', onClick: vi.fn() },
@@ -172,6 +188,34 @@ describe('SessionCrumbBar', () => {
     expect(nav.className).not.toContain('border-b');
     expect(nav.className).not.toContain('border-border-soft');
     expect(screen.getByRole('separator', { hidden: true })).toBeDefined();
+  });
+
+  it('carries the stage label and reason as a tooltip on the crumb dot', () => {
+    h.stage.reason = 'PR needs review';
+    render(<SessionCrumbBar />);
+
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    const anchor = nav.querySelector('[data-tooltip="running · PR needs review"]');
+    expect(anchor).not.toBeNull();
+    expect(anchor?.querySelector('.rounded-full')).not.toBeNull();
+  });
+
+  it('falls back to the stage label alone when the reason is empty', () => {
+    h.stage.reason = '';
+    render(<SessionCrumbBar />);
+
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(nav.querySelector('[data-tooltip="running"]')).not.toBeNull();
+  });
+
+  it('renders the session cost right-aligned at the end of the strip', () => {
+    render(<SessionCrumbBar />);
+
+    const chip = screen.getByTestId('session-cost-chip');
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(nav.contains(chip)).toBe(true);
+    expect(chip.parentElement?.className).toContain('ml-auto');
+    expect(nav.lastElementChild).toBe(chip.parentElement);
   });
 
   it('lists the crumbs from useSessionCrumbs in order', () => {

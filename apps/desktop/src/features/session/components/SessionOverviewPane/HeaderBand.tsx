@@ -1,36 +1,25 @@
 import { useEffect, useRef } from 'react';
-import { Input, StatusDot, Tooltip } from '@goodboy/ui';
-import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
+import { Input, Tooltip } from '@goodboy/ui';
+import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
-import { SESSION_STAGE_META, STAGE_TONE } from '../../session-stage';
-import { SummarizerBadge } from '../SummarizerBadge';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { EditorMenu } from './EditorMenu';
 import { SessionGitActions } from '../SessionWorkspace/parts/SessionGitActions';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { VITAL_CHIP } from './vitalChip';
 import { SessionDestructiveActions } from './SessionDestructiveActions';
 import { LinkIssueAction } from './LinkIssueAction';
 import { MountChangesChip } from './MountChangesChip';
 import { ProjectScopeChip } from './ProjectScopeChip';
-import { SessionCostChip } from './SessionCostChip';
+import { ContextChip } from './ContextChip';
 import { StatusRowRequest } from './StatusRowRequest';
 import { LinkedWorkChips } from './LinkedWorkChips';
 
 type Props = {
   readonly session: Session;
-  readonly stage: SessionStageInfo;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
-const REASON_HIDDEN: ReadonlySet<string> = new Set([
-  'no PR yet',
-  'checking GitHub',
-  'GitHub unreachable',
-]);
-
-export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
+export const HeaderBand = ({ session, onSelectLens }: Props) => {
   const sessionId = session.id as SessionId;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
   const pendingTitleFocus = useAppStore((s) => s.pendingTitleFocusSessionId);
@@ -58,7 +47,6 @@ export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
   }, [rename.editing]);
 
   const goalText = session.goal === '' ? 'Untitled session' : session.goal;
-  const reasonVisible = stage.reason !== '' && !REASON_HIDDEN.has(stage.reason);
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -105,36 +93,15 @@ export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
           <SessionDestructiveActions session={session} />
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <StatusDot tone={STAGE_TONE[stage.stage]} pulsing={stage.stage === 'running'} />
-          <span className="shrink-0 text-xs font-medium text-foreground">
-            {SESSION_STAGE_META[stage.stage].label}
-          </span>
-          {reasonVisible ? (
-            <Tooltip
-              content={`${SESSION_STAGE_META[stage.stage].label} · ${stage.reason}`}
-              side="top"
-            >
-              <span className="min-w-0 truncate text-xs text-muted-foreground">{stage.reason}</span>
-            </Tooltip>
-          ) : null}
-          <SummarizerBadge sessionId={sessionId} />
-          <SessionCostChip sessionId={sessionId} />
-          <ProjectScopeChip
-            sessionId={sessionId}
-            workspaceId={session.workspaceId}
-            onSelectLens={onSelectLens}
-          />
-          <MountChangesChip sessionId={sessionId} />
-          <Tooltip content="Decisions and session summary">
-            <button type="button" onClick={() => onSelectLens('context')} className={VITAL_CHIP}>
-              <CONCEPT_ICONS.context size={11} aria-hidden />
-              <span>Context</span>
-            </button>
-          </Tooltip>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <ProjectScopeChip
+          sessionId={sessionId}
+          workspaceId={session.workspaceId}
+          onSelectLens={onSelectLens}
+        />
+        <MountChangesChip sessionId={sessionId} />
+        <ContextChip sessionId={sessionId} onSelectLens={onSelectLens} />
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />
           <StatusRowRequest sessionId={sessionId} />
         </div>

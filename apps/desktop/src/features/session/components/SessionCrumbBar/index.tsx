@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Divider, StatusDot } from '@goodboy/ui';
+import { Divider, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -8,7 +8,8 @@ import {
   useCurrentSession,
   useSessionStageInfo,
 } from '../../../../store';
-import { STAGE_TONE } from '../../session-stage';
+import { SESSION_STAGE_META, STAGE_TONE } from '../../session-stage';
+import { SessionCostChip } from '../SessionOverviewPane/SessionCostChip';
 import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
 import { useSelectedWorkflowRun } from '../../hooks/useSelectedWorkflowRun';
 import { agentHomeLens, classifyAgent, resolveRootAgent } from '../../agent-kind';
@@ -128,7 +129,17 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
         aria-label="Breadcrumb"
         className="flex h-8 min-w-0 shrink-0 items-center gap-1.5 bg-background px-4"
       >
-        <StatusDot tone={STAGE_TONE[stage.stage]} size="sm" title={stage.reason} />
+        <Tooltip
+          content={
+            stage.reason === ''
+              ? SESSION_STAGE_META[stage.stage].label
+              : `${SESSION_STAGE_META[stage.stage].label} · ${stage.reason}`
+          }
+        >
+          <span className="inline-flex shrink-0 items-center">
+            <StatusDot tone={STAGE_TONE[stage.stage]} size="sm" />
+          </span>
+        </Tooltip>
         {crumbs.map((crumb, index) => (
           <span key={crumb.id} className="flex min-w-0 items-center gap-1.5">
             {index > 0 ? (
@@ -167,6 +178,9 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
             workflow={selectedWorkflowRun.workflow}
           />
         ) : null}
+        <div className="ml-auto flex shrink-0 items-center">
+          <SessionCostChip sessionId={sessionId} />
+        </div>
       </nav>
       <Divider className="shrink-0" />
     </>
