@@ -116,14 +116,15 @@ describe('ProjectsPane', () => {
     expect(screen.queryByRole('button', { name: 'Mount' })).toBeNull();
   });
 
-  it('shows branch, mount path and the active marker on mounted rows', () => {
+  it('shows branch, mount path and the primary marker on mounted rows', () => {
     render(<ProjectsPane session={session} />);
 
     expect(screen.getAllByText('ak/project-scope')).toHaveLength(2);
     expect(screen.getByText('/worktrees/api')).toBeDefined();
     expect(screen.getByText('/worktrees/web')).toBeDefined();
-    const active = screen.getByText('Active');
-    expect(active.closest('[class*="rounded-lg"]')?.textContent).toContain('web');
+    const primary = screen.getByText('Primary');
+    expect(primary.closest('[class*="rounded-lg"]')?.textContent).toContain('web');
+    expect(screen.queryByText('Active')).toBeNull();
   });
 
   it('counts the changes of each mount, and says so when a mount is clean', () => {
@@ -246,10 +247,10 @@ describe('ProjectsPane', () => {
     expect(screen.queryByText('Detach api?')).toBeNull();
   });
 
-  it('switches the active project from a mounted row', () => {
+  it('switches the primary project from a mounted row', () => {
     render(<ProjectsPane session={session} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Make active' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Make primary' }));
 
     expect(store.setSessionActiveProject).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
@@ -257,12 +258,13 @@ describe('ProjectsPane', () => {
     });
   });
 
-  it('explains what the active project drives on hover of the pill and the switch', async () => {
+  it('explains what the primary project drives on hover of the pill and the switch', async () => {
     vi.useFakeTimers();
     try {
       render(<ProjectsPane session={session} />);
-      const hint = 'The header, PR surface and default branch follow this project';
-      const pillAnchor = screen.getByText('Active').parentElement!;
+      const hint =
+        'New agents and turns work in this project by default; other mounts stay writable';
+      const pillAnchor = screen.getByText('Primary').parentElement!;
 
       fireEvent.mouseEnter(pillAnchor);
       await act(async () => {
@@ -271,7 +273,7 @@ describe('ProjectsPane', () => {
       expect(screen.getByRole('tooltip').textContent).toBe(hint);
       fireEvent.mouseLeave(pillAnchor);
 
-      fireEvent.mouseEnter(screen.getByRole('button', { name: 'Make active' }));
+      fireEvent.mouseEnter(screen.getByRole('button', { name: 'Make primary' }));
       await act(async () => {
         vi.advanceTimersByTime(400);
       });
@@ -287,7 +289,7 @@ describe('ProjectsPane', () => {
 
     render(<ProjectsPane session={session} />);
 
-    expect(screen.queryByRole('button', { name: 'Make active' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Make primary' })).toBeNull();
   });
 
   it('notifies when a detach fails', async () => {

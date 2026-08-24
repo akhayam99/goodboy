@@ -6,7 +6,8 @@ import { useAppStore, type MountDiffStat } from '../../../../../../store';
 import { BranchSwitchPanel } from '../../../../../worktree/BranchSwitchPanel';
 import { DiffStat } from '../../../DiffStat';
 
-const ACTIVE_HINT = 'The header, PR surface and default branch follow this project';
+const PRIMARY_HINT =
+  'New agents and turns work in this project by default; other mounts stay writable';
 const DETACH_HINT = 'Removes the clean checkout; uncommitted work stays on disk.';
 
 type Props = {
@@ -62,9 +63,9 @@ export const ProjectRow = ({ sessionId, project, mount, isActive, canSwitch, dif
             </span>
           ) : null}
           {isActive ? (
-            <Tooltip content={ACTIVE_HINT}>
+            <Tooltip content={PRIMARY_HINT}>
               <span className="shrink-0">
-                <Chip tone="primary" size="xs" label="Active" />
+                <Chip tone="primary" size="xs" label="Primary" />
               </span>
             </Tooltip>
           ) : null}
@@ -134,13 +135,13 @@ export const ProjectRow = ({ sessionId, project, mount, isActive, canSwitch, dif
             </AnchoredPopover>
           ) : null}
           {canSwitch && !isActive ? (
-            <Tooltip content={ACTIVE_HINT}>
+            <Tooltip content={PRIMARY_HINT}>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => void setSessionActiveProject({ sessionId, projectId: project.id })}
               >
-                Make active
+                Make primary
               </Button>
             </Tooltip>
           ) : null}

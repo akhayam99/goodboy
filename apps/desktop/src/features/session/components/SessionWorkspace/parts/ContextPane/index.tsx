@@ -21,7 +21,6 @@ import { ContextLoadFailure } from './ContextLoadFailure';
 import { ContextSection } from './ContextSection';
 import { DecisionsSection } from './DecisionsSection';
 import { SummarySection } from './SummarySection';
-import { WorkingSetSection } from './WorkingSetSection';
 
 const REGION_ORDER = ['last_output_summary', 'decisions'] satisfies ReadonlyArray<ContextLens>;
 
@@ -135,8 +134,6 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
       }
     >
       <PaneShell title="Context" icon={CONCEPT_ICONS.context} tone={CONCEPT_TONE.context}>
-        <WorkingSetSection session={session} />
-        <Divider />
         {REGION_ORDER.map((slotKey, index) => {
           const value = valueFor({ slots, slotKey });
           const title = REGION_TITLE[slotKey];
