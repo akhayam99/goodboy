@@ -1748,7 +1748,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     expect(userEvent?.model).toBe('claude-4.6-sonnet-medium');
   });
 
-  it('remaps a composer selection to the fallback provider default', async () => {
+  it('remaps a composer selection to the role-aware model on the fallback provider', async () => {
     const useAppStore = await importStore();
     setup(useAppStore);
     useAppStore.setState({
@@ -1783,11 +1783,11 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     });
 
     expect(runTurnSpy.mock.calls[0]?.[0]).toEqual(
-      expect.objectContaining({ provider: 'cursor', model: 'composer-2.5' }),
+      expect.objectContaining({ provider: 'cursor', model: 'claude-4.6-sonnet-medium' }),
     );
     expect(resolveModelArgsSpy).toHaveBeenLastCalledWith({
       provider: 'cursor',
-      selection: expect.objectContaining({ key: 'composer-2.5' }),
+      selection: expect.objectContaining({ key: 'sonnet-4.6' }),
     });
     expect(resolveModelArgsSpy).not.toHaveBeenCalledWith({
       provider: 'cursor',
@@ -1796,7 +1796,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     const userEvent = (useAppStore.getState().transcripts[AGENT_A] ?? []).find(
       (event) => event.kind === 'user_text',
     );
-    expect(userEvent?.model).toBe('composer-2.5');
+    expect(userEvent?.model).toBe('claude-4.6-sonnet-medium');
   });
 
   it('uses a composer override for both the transcript and spawn args', async () => {
@@ -2062,7 +2062,7 @@ describe('sendTurn, budget routing notice', () => {
     expect(messages.join(' ')).not.toContain('threshold');
   });
 
-  it('stays quiet when the move was not about budget', async () => {
+  it('tells the transcript when the preferred provider was unreachable', async () => {
     const useAppStore = await importStore();
     setupNoticeAgent(useAppStore);
 
@@ -2072,6 +2072,21 @@ describe('sendTurn, budget routing notice', () => {
       reason: 'fallback-disconnected',
       fallbackUsed: true,
       fallbackFrom: 'anthropic',
+    });
+
+    expect(messages.join(' ')).toContain('anthropic is not reachable right now');
+    expect(messages.join(' ')).toContain('running this turn on cursor');
+  });
+
+  it('stays quiet when routing kept the preferred provider', async () => {
+    const useAppStore = await importStore();
+    setupNoticeAgent(useAppStore);
+
+    const messages = await sendWithDecision(useAppStore, {
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-sonnet-4-5',
+      reason: 'preferred',
+      fallbackUsed: false,
     });
 
     expect(messages.join(' ')).not.toContain('running this turn on');

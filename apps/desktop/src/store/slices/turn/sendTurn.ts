@@ -392,6 +392,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     }
 
     const provider: ProviderId = routingDecision.selectedProvider;
+    const turnAgentKind =
+      get().agentKindOverride[activeAgentId] ?? inferAgentKindFromName(activeAgent?.name ?? '');
     const autoStepModel =
       phaseDefinition != null && phaseDefinition.modelOverride == null
         ? autoModelForRole({
@@ -399,7 +401,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             providers: [provider],
             prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
           })
-        : null;
+        : phaseDefinition == null && routingDecision.fallbackUsed
+          ? autoModelForRole({
+              role: KIND_TO_ROLE[turnAgentKind],
+              providers: [provider],
+              prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
+            })
+          : null;
     const rawEffort = phaseDefinition?.effort ?? get().agentEffortOverride[activeAgentId] ?? null;
     const requestedEffort = EFFORT_LEVELS.find((level) => level === rawEffort);
     const modelSelection = resolveTurnModelSelection({
@@ -609,8 +617,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
 
     const agentRowEarly =
       (get().sessionPhaseRuns[sessionId] ?? []).find((s) => s.id === activeAgentId) ?? null;
-    const earlyAgentKind =
-      get().agentKindOverride[activeAgentId] ?? inferAgentKindFromName(agentRowEarly?.name ?? '');
+    const earlyAgentKind = turnAgentKind;
     const slotFilter = slotsForKind(earlyAgentKind);
     const contextPreamble = buildContextPreamble(sharedSlots, slotFilter);
     if (contextPreamble.length > 0) {

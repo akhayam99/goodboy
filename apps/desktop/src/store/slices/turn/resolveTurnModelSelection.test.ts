@@ -332,4 +332,18 @@ describe('resolveTurnModelSelection', () => {
 
     expect(selection.key).toBe('opus-5');
   });
+
+  it('keeps the role-aware model computed for the provider routing fell back to', () => {
+    const selection = resolveTurnModelSelection({
+      ...BASE_PARAMS,
+      routingDecision: {
+        ...ROUTING_DECISION,
+        fallbackUsed: true,
+        fallbackFrom: 'cursor',
+      },
+      autoStepModel: { provider: 'anthropic', model: 'haiku-4.5' },
+    });
+
+    expect(selection.key).toBe('haiku-4.5');
+  });
 });

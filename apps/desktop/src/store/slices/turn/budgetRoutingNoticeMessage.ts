@@ -1,6 +1,9 @@
 import type { ProviderId, RoutingReason } from '@goodboy/types';
 
-export type BudgetRoutingReason = Extract<RoutingReason, 'fallback-budget' | 'fallback-threshold'>;
+export type BudgetRoutingReason = Extract<
+  RoutingReason,
+  'fallback-budget' | 'fallback-threshold' | 'fallback-disconnected'
+>;
 
 type Params = {
   readonly from: ProviderId;
@@ -14,6 +17,8 @@ const causeFor = ({ reason }: { readonly reason: BudgetRoutingReason }): string 
       return 'is past its budget threshold';
     case 'fallback-budget':
       return 'is over its monthly cap';
+    case 'fallback-disconnected':
+      return 'is not reachable right now';
     default: {
       const exhaustive: never = reason;
       throw new Error(`unknown budget routing reason: ${String(exhaustive)}`);
@@ -26,7 +31,11 @@ export const budgetRoutingReason = ({
 }: {
   readonly reason: RoutingReason;
 }): BudgetRoutingReason | null => {
-  if (reason === 'fallback-budget' || reason === 'fallback-threshold') {
+  if (
+    reason === 'fallback-budget' ||
+    reason === 'fallback-threshold' ||
+    reason === 'fallback-disconnected'
+  ) {
     return reason;
   }
   return null;
