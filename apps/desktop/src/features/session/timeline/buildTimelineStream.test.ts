@@ -163,6 +163,8 @@ type StreamParams = {
   readonly workflows?: ReadonlyArray<ReturnType<typeof attachedWorkflow>>;
   readonly unreadAgentIds?: ReadonlySet<string>;
   readonly events?: ReadonlyArray<SessionEvent>;
+  readonly showWorkflowSubagents?: boolean;
+  readonly showAgentSubagents?: boolean;
 };
 
 const stream = ({
@@ -170,6 +172,8 @@ const stream = ({
   workflows = [],
   unreadAgentIds = new Set(),
   events = [],
+  showWorkflowSubagents,
+  showAgentSubagents,
 }: StreamParams) =>
   buildTimelineStream({
     entries: buildTimelineGroups({
@@ -185,6 +189,8 @@ const stream = ({
     unreadAgentIds,
     blockedRunIds: new Set(),
     dayLabelFor: ({ at }) => dayLabel({ at, now: NOW }),
+    ...(showWorkflowSubagents != null ? { showWorkflowSubagents } : {}),
+    ...(showAgentSubagents != null ? { showAgentSubagents } : {}),
   });
 
 type LaneSpan = {
@@ -1106,5 +1112,132 @@ describe('buildTimelineStream, session events', () => {
     });
 
     expect(result.groups.map((group) => group.identityIndex)).toEqual([expect.any(Number)]);
+  });
+});
+
+describe('buildTimelineStream, subagent collapse', () => {
+  const FAN_OUT: ReadonlyArray<Agent> = [
+    agent({
+      id: 'implement',
+      ordinal: 1,
+      startedAt: localIso({ day: 18, hour: 9 }),
+      workflowRunId: RUN_ID,
+    }),
+    agent({
+      id: 'sub-a',
+      ordinal: 2,
+      parentAgentId: 'implement',
+      startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+    }),
+    agent({
+      id: 'sub-a-a',
+      ordinal: 3,
+      parentAgentId: 'sub-a',
+      startedAt: localIso({ day: 18, hour: 9, minute: 20 }),
+    }),
+    agent({ id: 'cluster-parent', ordinal: 4, startedAt: localIso({ day: 18, hour: 10 }) }),
+    agent({
+      id: 'cluster-child',
+      ordinal: 5,
+      parentAgentId: 'cluster-parent',
+      startedAt: localIso({ day: 18, hour: 10, minute: 10 }),
+    }),
+  ];
+
+  const FAN_OUT_WORKFLOWS = [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })];
+
+  it('drops workflow descendants but keeps steps when workflow subagents are off', () => {
+    const { items } = stream({
+      workflows: FAN_OUT_WORKFLOWS,
+      agents: FAN_OUT,
+      showWorkflowSubagents: false,
+    });
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'step:agent:cluster-child',
+      'entry:agent:cluster-parent',
+      'step:agent:implement',
+      'entry:run:run-1',
+    ]);
+  });
+
+  it('drops standalone descendants but keeps the parent when agent subagents are off', () => {
+    const { items } = stream({
+      workflows: FAN_OUT_WORKFLOWS,
+      agents: FAN_OUT,
+      showAgentSubagents: false,
+    });
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'entry:agent:cluster-parent',
+      'step:agent:sub-a-a',
+      'step:agent:sub-a',
+      'step:agent:implement',
+      'entry:run:run-1',
+    ]);
+  });
+
+  it('emits no lane for a collapsed brood, so the rail carries no empty group', () => {
+    const { items, groups } = stream({
+      workflows: FAN_OUT_WORKFLOWS,
+      agents: FAN_OUT,
+      showWorkflowSubagents: false,
+      showAgentSubagents: false,
+    });
+    const layout = layoutTimelineRail({ rows: items, groups });
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'entry:agent:cluster-parent',
+      'step:agent:implement',
+      'entry:run:run-1',
+    ]);
+    expect(groups.map((group) => group.id)).toEqual(['lane:run:run-1']);
+    for (const group of groups) {
+      expect(items.some((item) => item.groupId === group.id)).toBe(true);
+    }
+    expect(layout.columnByGroupId.get('lane:agent:implement')).toBeUndefined();
+    expect(layout.columnByGroupId.get('lane:agent:cluster-parent')).toBeUndefined();
+  });
+
+  it('moves a hidden child unread onto the parent row', () => {
+    const collapsed = stream({
+      workflows: FAN_OUT_WORKFLOWS,
+      agents: FAN_OUT,
+      unreadAgentIds: new Set(['sub-a-a', 'cluster-child']),
+      showWorkflowSubagents: false,
+      showAgentSubagents: false,
+    });
+    const unreadIds = collapsed.items.flatMap((item) =>
+      item.kind === 'row' && item.hasUnread ? [item.id] : [],
+    );
+
+    expect(unreadIds).toEqual(expect.arrayContaining(['agent:implement', 'agent:cluster-parent']));
+  });
+
+  it('leaves the unread on the child row itself while subagents are shown', () => {
+    const expanded = stream({
+      workflows: FAN_OUT_WORKFLOWS,
+      agents: FAN_OUT,
+      unreadAgentIds: new Set(['sub-a-a']),
+    });
+    const unreadIds = expanded.items.flatMap((item) =>
+      item.kind === 'row' && item.hasUnread ? [item.id] : [],
+    );
+
+    expect(unreadIds).toEqual(['agent:sub-a-a']);
+  });
+
+  it('matches the default stream exactly when both flags are on', () => {
+    const params = {
+      workflows: FAN_OUT_WORKFLOWS,
+      agents: FAN_OUT,
+    };
+
+    expect(stream({ ...params, showWorkflowSubagents: true, showAgentSubagents: true })).toEqual(
+      stream(params),
+    );
   });
 });

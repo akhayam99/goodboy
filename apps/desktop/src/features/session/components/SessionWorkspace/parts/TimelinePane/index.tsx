@@ -138,8 +138,16 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
         unreadAgentIds,
         blockedRunIds,
         dayLabelFor: dayLabel,
+        showWorkflowSubagents: activity.filter.workflowSubagents,
+        showAgentSubagents: activity.filter.agentSubagents,
       }),
-    [blockedRunIds, unreadAgentIds, visibleEntries],
+    [
+      activity.filter.agentSubagents,
+      activity.filter.workflowSubagents,
+      blockedRunIds,
+      unreadAgentIds,
+      visibleEntries,
+    ],
   );
 
   const rail = useMemo(
@@ -249,7 +257,8 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
             <ActivityFilterButton
               filter={activity.filter}
               hiddenCount={activity.hiddenCount}
-              onCategory={activity.setCategory}
+              onToggle={activity.setToggle}
+              onAll={activity.setAll}
             />
             {actions}
           </div>
@@ -258,6 +267,10 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
       {model.entries.length === 0 ? (
         <p className="px-0.5 py-2 text-xs text-muted-foreground">
           Nothing yet. Agents, workflows, and session facts land here as they happen.
+        </p>
+      ) : visibleEntries.length === 0 ? (
+        <p className="px-0.5 py-2 text-xs text-muted-foreground">
+          Everything is hidden by the activity filter. Show a category to bring it back.
         </p>
       ) : (
         <div className="flex flex-col">

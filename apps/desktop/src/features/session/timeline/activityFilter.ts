@@ -6,6 +6,7 @@ export const ACTIVITY_CATEGORIES = [
   'issues',
   'pullRequests',
   'workflows',
+  'plans',
   'agents',
   'resolver',
   'decisions',
@@ -13,13 +14,27 @@ export const ACTIVITY_CATEGORIES = [
 
 export type ActivityCategory = (typeof ACTIVITY_CATEGORIES)[number];
 
-export type ActivityFilter = Readonly<Record<ActivityCategory, boolean>>;
+export const ACTIVITY_SUBAGENT_TOGGLES = ['workflowSubagents', 'agentSubagents'] as const;
+
+export type ActivitySubagentToggle = (typeof ACTIVITY_SUBAGENT_TOGGLES)[number];
+
+export const ACTIVITY_TOGGLES = [...ACTIVITY_CATEGORIES, ...ACTIVITY_SUBAGENT_TOGGLES] as const;
+
+export type ActivityToggle = (typeof ACTIVITY_TOGGLES)[number];
+
+export const ACTIVITY_SUBAGENT_PARENT: Record<ActivitySubagentToggle, ActivityCategory> = {
+  workflowSubagents: 'workflows',
+  agentSubagents: 'agents',
+};
+
+export type ActivityFilter = Readonly<Record<ActivityToggle, boolean>>;
 
 export const ACTIVITY_CATEGORY_LABEL: Record<ActivityCategory, string> = {
   worktree: 'Worktree and branch',
   issues: 'Issues',
   pullRequests: 'Pull requests',
   workflows: 'Workflows',
+  plans: 'Plans',
   agents: 'Agents',
   resolver: 'Resolver',
   decisions: 'Decisions',
@@ -30,9 +45,12 @@ export const DEFAULT_ACTIVITY_FILTER: ActivityFilter = {
   issues: true,
   pullRequests: true,
   workflows: true,
+  plans: true,
   agents: true,
   resolver: true,
-  decisions: false,
+  decisions: true,
+  workflowSubagents: true,
+  agentSubagents: true,
 };
 
 export const ACTIVITY_FILTER_STORAGE_KEY = 'goodboy:activity-filter';
@@ -73,6 +91,9 @@ export const activityCategoryOf = ({ entry }: EntryParams): ActivityCategory | n
   if (entry.kind === 'agent') {
     return entry.agentKind === 'resolver' ? 'resolver' : 'agents';
   }
+  if (entry.kind === 'plan') {
+    return 'plans';
+  }
   if (entry.kind === 'issue') {
     return 'issues';
   }
@@ -110,9 +131,9 @@ export const parseActivityFilter = ({ raw }: ParseParams): ActivityFilter => {
       return DEFAULT_ACTIVITY_FILTER;
     }
     const source = parsed as Readonly<Record<string, unknown>>;
-    const entries = ACTIVITY_CATEGORIES.map((category) => {
-      const value = source[category];
-      return [category, typeof value === 'boolean' ? value : DEFAULT_ACTIVITY_FILTER[category]];
+    const entries = ACTIVITY_TOGGLES.map((toggle) => {
+      const value = source[toggle];
+      return [toggle, typeof value === 'boolean' ? value : DEFAULT_ACTIVITY_FILTER[toggle]];
     });
     return Object.fromEntries(entries) as ActivityFilter;
   } catch {

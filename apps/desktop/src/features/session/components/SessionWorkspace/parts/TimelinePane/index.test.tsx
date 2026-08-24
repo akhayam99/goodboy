@@ -82,6 +82,7 @@ beforeEach(() => {
   storeState.sessionWorktreeRecords = {};
   storeState.openMountDiff.mockReset();
   diffStats.current = new Map();
+  localStorage.clear();
 });
 
 afterEach(cleanup);
@@ -108,6 +109,31 @@ describe('TimelinePane mount rows', () => {
 
     expect(screen.getByRole('button', { name: 'Copy path' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'View diff' })).toBeNull();
+  });
+});
+
+describe('TimelinePane under a full filter', () => {
+  it('reads an all-hidden timeline as filtered, not empty', () => {
+    storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
+    localStorage.setItem(
+      'goodboy:activity-filter',
+      JSON.stringify({
+        worktree: false,
+        issues: false,
+        pullRequests: false,
+        workflows: false,
+        plans: false,
+        agents: false,
+        resolver: false,
+        decisions: false,
+      }),
+    );
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    expect(screen.getByText(/hidden by the activity filter/)).toBeDefined();
+    expect(screen.queryByText(/Nothing yet/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copy path' })).toBeNull();
   });
 });
 

@@ -84,6 +84,8 @@ type Params = {
   readonly unreadAgentIds: ReadonlySet<string>;
   readonly blockedRunIds: ReadonlySet<string>;
   readonly dayLabelFor: (params: { readonly at: string }) => string | null;
+  readonly showWorkflowSubagents?: boolean;
+  readonly showAgentSubagents?: boolean;
 };
 
 type DraftRow = {
@@ -184,7 +186,21 @@ type EmitContext = {
   readonly unreadAgentIds: ReadonlySet<string>;
   readonly blockedRunIds: ReadonlySet<string>;
   readonly groups: RailGroupInput[];
+  readonly showWorkflowSubagents: boolean;
+  readonly showAgentSubagents: boolean;
 };
+
+const hasUnreadDescendant = ({
+  entry,
+  unreadAgentIds,
+}: {
+  readonly entry: TimelineAgentEntry;
+  readonly unreadAgentIds: ReadonlySet<string>;
+}): boolean =>
+  entry.children.some(
+    (child) =>
+      unreadAgentIds.has(child.agent.id) || hasUnreadDescendant({ entry: child, unreadAgentIds }),
+  );
 
 const sortableOf = ({ row }: { readonly row: DraftRow }): Sortable => ({
   at: row.at,
@@ -216,6 +232,7 @@ type EmitAgentParams = {
   readonly isMuted: boolean;
   readonly familyId: string | null;
   readonly groupId: string | null;
+  readonly showSubagents: boolean;
   readonly context: EmitContext;
 };
 
@@ -226,11 +243,12 @@ const agentBlock = ({
   isMuted,
   familyId,
   groupId,
+  showSubagents,
   context,
 }: EmitAgentParams): DraftBlock => {
   const childLaneId = laneIdOf({ entryId: entry.id });
   const nested: DraftBlock[] = [];
-  if (entry.children.length > 0) {
+  if (showSubagents && entry.children.length > 0) {
     context.groups.push({
       id: childLaneId,
       parentGroupId: groupId,
@@ -252,6 +270,7 @@ const agentBlock = ({
           isMuted,
           familyId,
           groupId: childLaneId,
+          showSubagents,
           context,
         }),
       );
@@ -291,7 +310,9 @@ const agentBlock = ({
       hasOpenQuestion: entry.openQuestions.length > 0,
       needsUser: false,
     }),
-    hasUnread: context.unreadAgentIds.has(entry.agent.id),
+    hasUnread:
+      context.unreadAgentIds.has(entry.agent.id) ||
+      (!showSubagents && hasUnreadDescendant({ entry, unreadAgentIds: context.unreadAgentIds })),
     isPending: entry.agent.status === 'pending',
   };
   return blockOf({ rows: [...nestedFirst({ blocks: nested }), origin], origin });
@@ -327,6 +348,7 @@ const runBlock = ({ entry, context }: EmitRunParams): DraftBlock => {
           isMuted,
           familyId: entry.id,
           groupId: laneId,
+          showSubagents: context.showWorkflowSubagents,
           context,
         }),
       );
@@ -488,11 +510,15 @@ export const buildTimelineStream = ({
   unreadAgentIds,
   blockedRunIds,
   dayLabelFor,
+  showWorkflowSubagents = true,
+  showAgentSubagents = true,
 }: Params): TimelineStream => {
   const context: EmitContext = {
     unreadAgentIds,
     blockedRunIds,
     groups: [],
+    showWorkflowSubagents,
+    showAgentSubagents,
   };
   const blocks: DraftBlock[] = [];
 
@@ -510,6 +536,7 @@ export const buildTimelineStream = ({
           isMuted: false,
           familyId: entry.id,
           groupId: null,
+          showSubagents: context.showAgentSubagents,
           context,
         }),
       );
