@@ -45,7 +45,7 @@ describe('workflow queries', () => {
     await migrate(db);
     await db.execute(
       'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-      [workspaceId, 'ws', '/tmp/ws', Date.now(), Date.now()],
+      [workspaceId, 'ws', 'ws', Date.now(), Date.now()],
     );
   });
 

@@ -27,7 +27,7 @@ export const isApplicable = (
     return rule.workspaceId === context.workspaceId;
   }
   if (rule.scope === 'project') {
-    return rule.projectId === context.projectId;
+    return rule.projectId != null && rule.projectId === context.projectId;
   }
   return false;
 };

@@ -24,7 +24,7 @@ const databaseWithRun = async ({}: Params) => {
   const now = Date.parse(recordedAt);
   await database.execute(
     'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-    [workspaceId, 'Workspace', '/tmp/workspace', now, now],
+    [workspaceId, 'Workspace', 'workspace', now, now],
   );
   await database.execute(
     'INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
