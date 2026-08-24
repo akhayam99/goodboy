@@ -76,8 +76,8 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onCategory }: Props)
             aria-checked={isActive}
             onClick={() => onCategory({ category, enabled: !isActive })}
             className={cn(
-              'flex w-full items-center gap-2 px-3 py-1.5 text-left motion-safe:transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-focus-ring)]',
-              isActive && 'bg-muted/60',
+              'group flex w-full items-center gap-2 px-3 py-1.5 text-left motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-focus-ring)]',
+              isActive ? 'bg-muted/60 hover:bg-muted' : 'hover:bg-muted/40',
             )}
           >
             <Icon
@@ -90,16 +90,24 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onCategory }: Props)
             />
             <span
               className={cn(
-                'flex-1 whitespace-nowrap text-xs',
-                isActive ? 'text-foreground' : 'text-muted-foreground',
+                'flex-1 whitespace-nowrap text-xs motion-safe:transition-colors',
+                isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground',
               )}
             >
               {ACTIVITY_CATEGORY_LABEL[category]}
             </span>
             {isActive ? (
-              <Eye size={12} aria-hidden className="shrink-0 text-muted-foreground" />
+              <Eye
+                size={12}
+                aria-hidden
+                className="shrink-0 text-muted-foreground motion-safe:transition-colors group-hover:text-foreground"
+              />
             ) : (
-              <EyeOff size={12} aria-hidden className="shrink-0 text-muted-foreground/40" />
+              <EyeOff
+                size={12}
+                aria-hidden
+                className="shrink-0 text-muted-foreground/40 motion-safe:transition-colors group-hover:text-muted-foreground"
+              />
             )}
           </button>
         );
