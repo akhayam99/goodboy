@@ -96,6 +96,17 @@ describe('LinkIssueAction', () => {
     expect(screen.getByRole('button', { name: 'Linear' })).toBeDefined();
   });
 
+  it('opens the same flow from the quiet chip presentation', () => {
+    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }] };
+
+    render(<LinkIssueAction session={session} presentation="chip" />);
+    const trigger = screen.getByRole('button', { name: 'Link an issue' });
+
+    expect(trigger.textContent).toContain('Link');
+    fireEvent.click(trigger);
+    expect(screen.getByTestId('link-issue-form').textContent).toBe('linear');
+  });
+
   it('reopens on the provider list after a tracker was picked', () => {
     store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }, { provider: 'jira' }] };
 

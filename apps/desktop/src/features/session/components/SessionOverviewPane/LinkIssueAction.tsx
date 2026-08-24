@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { ChevronLeft, Link2 } from 'lucide-react';
-import { AnchoredPopover, Tooltip, useDropdown } from '@goodboy/ui';
+import { ChevronLeft, Link2, Plus } from 'lucide-react';
+import { AnchoredPopover, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import type { Session, SessionExternalTaskProvider } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import { LinkIssueForm } from '../SessionWorkspace/parts/IntegrationPane/LinkIssueForm';
+import { VITAL_CHIP } from './vitalChip';
 
 type Tracker = {
   readonly provider: Exclude<SessionExternalTaskProvider, 'sentry' | 'bitbucket' | 'slack'>;
@@ -21,11 +22,14 @@ const INTEGRATION_TRACKERS: ReadonlyArray<Tracker> = [
 const TRIGGER_BUTTON =
   'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
 
+const CHIP_TRIGGER = cn(VITAL_CHIP, 'border-dashed border-border bg-transparent');
+
 type Props = {
   readonly session: Session;
+  readonly presentation?: 'icon' | 'chip';
 };
 
-export const LinkIssueAction = ({ session }: Props) => {
+export const LinkIssueAction = ({ session, presentation = 'icon' }: Props) => {
   const integrations = useAppStore(
     (s) => s.workspaceIntegrations[session.workspaceId] ?? EMPTY_ARRAY,
   );
@@ -63,14 +67,26 @@ export const LinkIssueAction = ({ session }: Props) => {
       className="p-3"
       trigger={
         <Tooltip content="Link an issue">
-          <button
-            type="button"
-            aria-label="Link an issue"
-            onClick={onToggle}
-            className={TRIGGER_BUTTON}
-          >
-            <Link2 size={13} aria-hidden />
-          </button>
+          {presentation === 'chip' ? (
+            <button
+              type="button"
+              aria-label="Link an issue"
+              onClick={onToggle}
+              className={CHIP_TRIGGER}
+            >
+              <Plus size={11} aria-hidden />
+              Link
+            </button>
+          ) : (
+            <button
+              type="button"
+              aria-label="Link an issue"
+              onClick={onToggle}
+              className={TRIGGER_BUTTON}
+            >
+              <Link2 size={13} aria-hidden />
+            </button>
+          )}
         </Tooltip>
       }
     >

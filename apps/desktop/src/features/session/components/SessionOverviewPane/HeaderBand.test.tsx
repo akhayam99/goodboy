@@ -134,7 +134,9 @@ vi.mock('../SessionWorkspace/parts/SessionGitActions', () => ({
 }));
 
 vi.mock('./LinkIssueAction', () => ({
-  LinkIssueAction: () => <button type="button" aria-label="Link an issue" />,
+  LinkIssueAction: ({ presentation }: { presentation?: 'icon' | 'chip' }) => (
+    <button type="button" aria-label="Link an issue" data-presentation={presentation ?? 'icon'} />
+  ),
 }));
 
 vi.mock('./SessionDestructiveActions', () => ({
@@ -157,6 +159,22 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
 import { HeaderBand } from './HeaderBand';
 
 const SESSION_ID = 'sess-1' as SessionId;
+
+const GOAL_STUB = <section aria-label="Goal" data-testid="goal-region" />;
+
+const mountApiProject = () => {
+  store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo', name: 'api' }];
+  store.sessionProjectMounts = {
+    [SESSION_ID]: [
+      {
+        projectId: 'project-1',
+        mountName: 'api',
+        branch: 'goodboy/x',
+        worktreePath: '/worktrees/api',
+      },
+    ],
+  };
+};
 
 const baseSession = (): Session =>
   ({
@@ -203,34 +221,38 @@ afterEach(cleanup);
 
 describe('HeaderBand', () => {
   it('shows the stage nowhere in the header', () => {
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
     for (const label of ['needs you', 'running', 'in review', 'building', 'done']) {
       expect(screen.queryByText(label)).toBeNull();
     }
   });
 
-  it('keeps the PR create action in the vitals row when no PR exists', () => {
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+  it('keeps the PR create action in the project row when no PR exists', () => {
+    mountApiProject();
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
     expect(screen.getByRole('button', { name: /open pull request/i })).toBeDefined();
   });
 
   it('offers a merge-request creation action when the remote is GitLab', () => {
+    mountApiProject();
     hooks.remoteKind.current = 'gitlab';
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
     expect(screen.getByRole('button', { name: /open merge request/i })).toBeDefined();
   });
 
   it('dispatches the GitHub studio event when the create action fires', () => {
+    mountApiProject();
     const events: Array<CustomEvent> = [];
     const listener = (event: Event) => events.push(event as CustomEvent);
     window.addEventListener('goodboy:open-github-session', listener);
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
     fireEvent.click(screen.getByRole('button', { name: /open pull request/i }));
     window.removeEventListener('goodboy:open-github-session', listener);
     expect(events[0]?.detail).toEqual({ sessionId: SESSION_ID });
   });
 
-  it('inlines the pull request chip in the status row when a PR exists', () => {
+  it('inlines the pull request chip in the project row when a PR exists', () => {
+    mountApiProject();
     store.sessionGithub = {
       [SESSION_ID]: {
         pr: {
@@ -242,7 +264,7 @@ describe('HeaderBand', () => {
         },
       },
     };
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
     expect(screen.getByRole('button', { name: 'Open PR #42' })).toBeDefined();
   });
 
@@ -255,21 +277,83 @@ describe('HeaderBand', () => {
       },
     };
     const onSelectLens = vi.fn();
-    render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} goal={GOAL_STUB} />);
     fireEvent.click(screen.getByRole('button', { name: 'Open issue #7' }));
     expect(store.setFocusedGithubIssueNumber).toHaveBeenCalledWith(SESSION_ID, 7);
     expect(onSelectLens).toHaveBeenCalledWith('github_issue');
   });
 
-  it('fits the header into exactly two rows', () => {
-    const { container } = render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+  it('stacks title, goal and context rows and skips the project row without projects', () => {
+    const { container } = render(
+      <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
+    );
     const band = container.firstElementChild;
 
-    expect(band?.children).toHaveLength(2);
+    expect(band?.children).toHaveLength(3);
+    expect(band?.children[1]?.getAttribute('data-testid')).toBe('goal-region');
+  });
+
+  it('pins the row order to title, goal, context, project', () => {
+    mountApiProject();
+    const { container } = render(
+      <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
+    );
+    const band = container.firstElementChild;
+
+    expect(band?.children).toHaveLength(4);
+    expect(band?.children[0]?.querySelector('h1')?.textContent).toBe('refactor auth');
+    expect(band?.children[1]?.getAttribute('data-testid')).toBe('goal-region');
+    expect(band?.children[2]?.contains(screen.getByRole('button', { name: 'Context' }))).toBe(true);
+    expect(band?.children[3]?.contains(screen.getByRole('button', { name: 'api' }))).toBe(true);
+  });
+
+  it('seats the linked work and the link affordance on the context row', () => {
+    store.sessionGithub = {
+      [SESSION_ID]: {
+        linkedIssues: [
+          { number: 7, title: 'Broken auth', url: 'https://github.com/acme/repo/issues/7' },
+        ],
+      },
+    };
+    const { container } = render(
+      <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
+    );
+    const contextRow = container.firstElementChild?.children[2];
+
+    expect(contextRow?.contains(screen.getByRole('button', { name: 'Context' }))).toBe(true);
+    expect(contextRow?.contains(screen.getByRole('button', { name: 'Open issue #7' }))).toBe(true);
+    expect(
+      contextRow?.querySelector('[data-presentation="chip"]')?.getAttribute('aria-label'),
+    ).toBe('Link an issue');
+  });
+
+  it('seats branch, diff and the PR surface on the project row', () => {
+    mountApiProject();
+    stats.current = new Map([['/worktrees/api', { additions: 2, deletions: 1 }]]);
+    store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: { number: 42, state: 'open', isDraft: false, checks: 'success', reviewDecision: null },
+      },
+    };
+    const { container } = render(
+      <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
+    );
+    const projectRow = container.firstElementChild?.children[3];
+
+    expect(projectRow?.contains(screen.getByRole('button', { name: 'api' }))).toBe(true);
+    expect(
+      projectRow?.contains(screen.getByRole('button', { name: 'Copy branch goodboy/x' })),
+    ).toBe(true);
+    expect(
+      projectRow?.contains(screen.getByRole('button', { name: 'View the changes of api' })),
+    ).toBe(true);
+    expect(projectRow?.contains(screen.getByRole('button', { name: 'Open PR #42' }))).toBe(true);
   });
 
   it('puts the title first and the folder, branch and destructive controls at the far end of that row', () => {
-    const { container } = render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    const { container } = render(
+      <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
+    );
     const titleRow = container.firstElementChild?.firstElementChild;
 
     expect(titleRow?.textContent).toContain('refactor auth');
@@ -279,7 +363,7 @@ describe('HeaderBand', () => {
   });
 
   it('renames from a click on the title, with no separate edit button', () => {
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
 
     expect(screen.queryByRole('button', { name: /edit goal/i })).toBeNull();
     fireEvent.click(screen.getByText('refactor auth'));
@@ -288,7 +372,7 @@ describe('HeaderBand', () => {
 
   it('opens rename with the whole title selected when creation flags this session', () => {
     store.pendingTitleFocusSessionId = SESSION_ID;
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
 
     const input = screen.getByRole('textbox', { name: 'Session title' }) as HTMLInputElement;
     expect(store.clearPendingTitleFocus).toHaveBeenCalledOnce();
@@ -299,14 +383,14 @@ describe('HeaderBand', () => {
 
   it('leaves the title alone when the pending focus names another session', () => {
     store.pendingTitleFocusSessionId = 'sess-other';
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
 
     expect(screen.queryByRole('textbox', { name: 'Session title' })).toBeNull();
     expect(store.clearPendingTitleFocus).not.toHaveBeenCalled();
   });
 
   it('reaches rename from the keyboard as well as the mouse', () => {
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
     const title = screen.getByText('refactor auth');
 
     expect(title.getAttribute('tabindex')).toBe('0');
@@ -316,41 +400,31 @@ describe('HeaderBand', () => {
 
   it('leaves "Mark all seen" to the activity heading', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [{ id: 'agent-1' }] };
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
 
     expect(screen.queryByRole('button', { name: /mark all seen/i })).toBeNull();
   });
 
   it('keeps the scope entry out of a workspace with no projects', () => {
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
 
     expect(screen.queryByText('No project mounted')).toBeNull();
   });
 
-  it('orders the vitals row as project, branch, diff, context', () => {
-    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo', name: 'api' }];
-    store.sessionProjectMounts = {
-      [SESSION_ID]: [
-        {
-          projectId: 'project-1',
-          mountName: 'api',
-          branch: 'goodboy/x',
-          worktreePath: '/worktrees/api',
-        },
-      ],
-    };
+  it('orders the chips as context, then project, branch, diff', () => {
+    mountApiProject();
     stats.current = new Map([['/worktrees/api', { additions: 2, deletions: 1 }]]);
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
 
     const follows = (first: Element, second: Element) =>
       (first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    const context = screen.getByRole('button', { name: 'Context' });
     const project = screen.getByRole('button', { name: 'api' });
     const branch = screen.getByRole('button', { name: 'Copy branch goodboy/x' });
     const diff = screen.getByRole('button', { name: 'View the changes of api' });
-    const context = screen.getByRole('button', { name: 'Context' });
+    expect(follows(context, project)).toBe(true);
     expect(follows(project, branch)).toBe(true);
     expect(follows(branch, diff)).toBe(true);
-    expect(follows(diff, context)).toBe(true);
   });
 
   it('shows the plain project name when only one project is mounted', () => {
@@ -365,7 +439,7 @@ describe('HeaderBand', () => {
         },
       ],
     };
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
 
     expect(screen.getByRole('button', { name: 'api' })).toBeDefined();
     expect(screen.queryByText('+1')).toBeNull();
@@ -393,7 +467,7 @@ describe('HeaderBand', () => {
       ],
     };
     store.sessionActiveProject = { [SESSION_ID]: 'project-1' };
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
 
     expect(screen.getByRole('button', { name: 'api +1' })).toBeDefined();
   });
@@ -405,7 +479,7 @@ describe('HeaderBand', () => {
         { projectId: 'project-1', mountName: 'api', branch: '', worktreePath: '/worktrees/api' },
       ],
     };
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
 
     expect(screen.getByRole('button', { name: 'api' })).toBeDefined();
     expect(screen.queryByRole('button', { name: /Copy branch/ })).toBeNull();
@@ -438,7 +512,7 @@ describe('HeaderBand', () => {
       ['/worktrees/web', { additions: 4, deletions: 1 }],
     ]);
     const onSelectLens = vi.fn();
-    render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} goal={GOAL_STUB} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'View the changes of web' }));
     expect(store.openMountDiff).toHaveBeenCalledWith(SESSION_ID, '/worktrees/web');
@@ -449,7 +523,7 @@ describe('HeaderBand', () => {
     store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo', name: 'api' }];
     store.sessionProjectMounts = { [SESSION_ID]: [] };
     const onSelectLens = vi.fn();
-    render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} goal={GOAL_STUB} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'No project mounted' }));
     fireEvent.click(screen.getByRole('button', { name: 'Open projects page' }));
@@ -472,7 +546,7 @@ describe('HeaderBand', () => {
       ],
     };
     const onSelectLens = vi.fn();
-    render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} goal={GOAL_STUB} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Copy branch goodboy/x' }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('goodboy/x'));
@@ -491,7 +565,7 @@ describe('HeaderBand', () => {
         },
       ],
     };
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Switch branch' }));
     expect(screen.getByTestId('branch-switch-panel')).toBeDefined();
@@ -499,7 +573,7 @@ describe('HeaderBand', () => {
 
   it('offers a context shortcut in the vitals row that opens the context lens', () => {
     const onSelectLens = vi.fn();
-    render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} goal={GOAL_STUB} />);
 
     const chip = screen.getByRole('button', { name: 'Context' });
     expect(chip.closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe(
@@ -517,7 +591,7 @@ describe('HeaderBand', () => {
         { kind: 'agent', estimatedCostUsd: 5 },
       ],
     };
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
 
     const chip = screen.getByRole('button', { name: /Context/ });
     expect(chip.textContent).toContain('Σ $0.042');
@@ -527,7 +601,7 @@ describe('HeaderBand', () => {
   });
 
   it('seats the summarizer working-state inside the context chip cluster', () => {
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
 
     const badge = screen.getByTestId('summarizer-badge');
     const cluster = badge.parentElement;
@@ -536,7 +610,7 @@ describe('HeaderBand', () => {
 
   it('traces a spinning border around the context chip while the summarizer works', () => {
     summarizer.current = { status: 'running', error: null, lastAttempt: null };
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
 
     const chip = screen.getByRole('button', { name: 'Context' });
     expect(chip.className).toContain('spin-border');
@@ -545,12 +619,13 @@ describe('HeaderBand', () => {
   });
 
   it('keeps the context chip border still while the summarizer is idle', () => {
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
 
     expect(screen.getByRole('button', { name: 'Context' }).className).not.toContain('spin-border');
   });
 
-  it('wraps the vitals row instead of dropping chips when a PR and linked tasks pile up', () => {
+  it('wraps both chip rows instead of dropping chips when a PR and linked tasks pile up', () => {
+    mountApiProject();
     store.sessionGithub = {
       [SESSION_ID]: {
         pr: { number: 42, state: 'open', isDraft: false, checks: 'success', reviewDecision: null },
@@ -565,28 +640,47 @@ describe('HeaderBand', () => {
         { provider: 'jira', identifier: 'JIRA-9', title: 'Audit tokens', externalId: 'jira-9' },
       ],
     };
-    const { container } = render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    const { container } = render(
+      <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
+    );
 
     expect(screen.getByRole('button', { name: 'Open PR #42' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Open issue #7' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Open LIN-42' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Open JIRA-9' })).toBeDefined();
 
-    const vitalsRow = container.firstElementChild?.children[1];
-    expect(vitalsRow?.className).toContain('flex-wrap');
+    const contextRow = container.firstElementChild?.children[2];
+    const projectRow = container.firstElementChild?.children[3];
+    expect(contextRow?.className).toContain('flex-wrap');
+    expect(projectRow?.className).toContain('flex-wrap');
   });
 
-  it('seats the link-issue action in the icon cluster of the title row', () => {
-    const { container } = render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+  it('keeps the link-issue action out of the title cluster, living only on the context row', () => {
+    const { container } = render(
+      <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
+    );
     const titleRow = container.firstElementChild?.firstElementChild;
     const cluster = titleRow?.lastElementChild;
 
-    expect(cluster?.querySelector('[aria-label="Link an issue"]')).not.toBeNull();
-    expect(cluster?.firstElementChild?.getAttribute('aria-label')).toBe('Link an issue');
+    expect(cluster?.querySelector('[aria-label="Link an issue"]')).toBeNull();
+    expect(container.querySelectorAll('[aria-label="Link an issue"]')).toHaveLength(1);
+    expect(
+      container.querySelector('[aria-label="Link an issue"]')?.getAttribute('data-presentation'),
+    ).toBe('chip');
+  });
+
+  it('renders no PR surface when the mount has no reachable remote', () => {
+    mountApiProject();
+    hooks.remoteKind.current = 'none';
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
+
+    expect(screen.queryByRole('button', { name: /open pull request/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /open merge request/i })).toBeNull();
+    expect(screen.getByRole('button', { name: 'api' })).toBeDefined();
   });
 
   it('mounts the editor menu, git actions and destructive actions at compact density for this session', () => {
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
     expect(editorMenuCalls).toEqual([{ sessionId: SESSION_ID, density: 'compact' }]);
     expect(sessionGitActionsCalls).toEqual([{ sessionId: SESSION_ID, density: 'compact' }]);
     expect(sessionDestructiveActionsCalls).toEqual([{ sessionId: SESSION_ID }]);

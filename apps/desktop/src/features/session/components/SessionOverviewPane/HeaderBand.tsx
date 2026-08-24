@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import type { ReactNode } from 'react';
 import { Input, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -18,13 +19,17 @@ import { LinkedWorkChips } from './LinkedWorkChips';
 type Props = {
   readonly session: Session;
   readonly onSelectLens: (lens: LensKind) => void;
+  readonly goal: ReactNode;
 };
 
-export const HeaderBand = ({ session, onSelectLens }: Props) => {
+export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
   const sessionId = session.id as SessionId;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
   const pendingTitleFocus = useAppStore((s) => s.pendingTitleFocusSessionId);
   const clearPendingTitleFocus = useAppStore((s) => s.clearPendingTitleFocus);
+  const hasProjects = useAppStore((s) =>
+    s.projects.some((project) => project.workspaceId === session.workspaceId),
+  );
   const titleFieldRef = useRef<HTMLDivElement | null>(null);
   const selectOnEditRef = useRef(false);
   const startRenameRef = useRef(rename.start);
@@ -50,7 +55,7 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
   const goalText = session.goal === '' ? 'Untitled session' : session.goal;
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2.5">
       <div className="flex items-center gap-2">
         {rename.editing ? (
           <div ref={titleFieldRef} className="flex min-w-0 flex-1 flex-col gap-1">
@@ -88,26 +93,33 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
           </Tooltip>
         )}
         <div className="flex shrink-0 items-center gap-1">
-          <LinkIssueAction session={session} />
           <EditorMenu sessionId={sessionId} density="compact" />
           <SessionGitActions session={session} density="compact" />
           <SessionDestructiveActions session={session} />
         </div>
       </div>
+      {goal}
       <div className="flex flex-wrap items-center gap-2">
-        <ProjectChip
-          sessionId={sessionId}
-          workspaceId={session.workspaceId}
-          onSelectLens={onSelectLens}
-        />
-        <BranchChip sessionId={sessionId} />
-        <MountChangesChip sessionId={sessionId} />
         <ContextChip sessionId={sessionId} onSelectLens={onSelectLens} />
         <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />
-          <StatusRowRequest sessionId={sessionId} />
+          <LinkIssueAction session={session} presentation="chip" />
         </div>
       </div>
+      {hasProjects ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <ProjectChip
+            sessionId={sessionId}
+            workspaceId={session.workspaceId}
+            onSelectLens={onSelectLens}
+          />
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+            <BranchChip sessionId={sessionId} />
+            <MountChangesChip sessionId={sessionId} />
+            <StatusRowRequest sessionId={sessionId} />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

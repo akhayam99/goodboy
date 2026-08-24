@@ -67,20 +67,27 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       }
     >
       <PaneShell
-        header={<HeaderBand session={session} onSelectLens={onSelectLens} />}
+        header={
+          <HeaderBand
+            session={session}
+            onSelectLens={onSelectLens}
+            goal={
+              <GoalOverviewRegion
+                sessionId={sessionId}
+                value={goalSlot?.value ?? ''}
+                historyCount={goalHistoryCount}
+                isLoading={goalSlot == null && slotLoading.slots}
+                isSummarizing={summarizer.status === 'running'}
+                onOpenHistory={() => {
+                  void loadSlotHistory(sessionId, 'goal');
+                  setIsGoalHistoryOpen(true);
+                }}
+              />
+            }
+          />
+        }
         animationClassName="animate-fade-in"
       >
-        <GoalOverviewRegion
-          sessionId={sessionId}
-          value={goalSlot?.value ?? ''}
-          historyCount={goalHistoryCount}
-          isLoading={goalSlot == null && slotLoading.slots}
-          isSummarizing={summarizer.status === 'running'}
-          onOpenHistory={() => {
-            void loadSlotHistory(sessionId, 'goal');
-            setIsGoalHistoryOpen(true);
-          }}
-        />
         <OverviewNextSteps session={session} agents={sessionAgents} />
         <OverviewPlans session={session} onSelectLens={onSelectLens} />
         <OverviewPrs session={session} onSelectLens={onSelectLens} />
