@@ -27,9 +27,10 @@ const CHIP_TRIGGER = cn(VITAL_CHIP, 'border-dashed border-border bg-transparent'
 type Props = {
   readonly session: Session;
   readonly presentation?: 'icon' | 'chip';
+  readonly isCollapsed?: boolean;
 };
 
-export const LinkIssueAction = ({ session, presentation = 'icon' }: Props) => {
+export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = false }: Props) => {
   const integrations = useAppStore(
     (s) => s.workspaceIntegrations[session.workspaceId] ?? EMPTY_ARRAY,
   );
@@ -72,10 +73,10 @@ export const LinkIssueAction = ({ session, presentation = 'icon' }: Props) => {
               type="button"
               aria-label="Link an issue"
               onClick={onToggle}
-              className={CHIP_TRIGGER}
+              className={cn(CHIP_TRIGGER, isCollapsed && 'w-6 justify-center px-0')}
             >
               <Plus size={11} aria-hidden />
-              Link
+              {isCollapsed ? null : 'Link an issue'}
             </button>
           ) : (
             <button

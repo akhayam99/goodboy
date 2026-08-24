@@ -96,13 +96,24 @@ describe('LinkIssueAction', () => {
     expect(screen.getByRole('button', { name: 'Linear' })).toBeDefined();
   });
 
-  it('opens the same flow from the quiet chip presentation', () => {
+  it('opens the same flow from the quiet chip presentation, spelling out the invite', () => {
     store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }] };
 
     render(<LinkIssueAction session={session} presentation="chip" />);
     const trigger = screen.getByRole('button', { name: 'Link an issue' });
 
-    expect(trigger.textContent).toContain('Link');
+    expect(trigger.textContent).toContain('Link an issue');
+    fireEvent.click(trigger);
+    expect(screen.getByTestId('link-issue-form').textContent).toBe('linear');
+  });
+
+  it('collapses the chip to the bare plus and still opens the same flow', () => {
+    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }] };
+
+    render(<LinkIssueAction session={session} presentation="chip" isCollapsed />);
+    const trigger = screen.getByRole('button', { name: 'Link an issue' });
+
+    expect(trigger.textContent).not.toContain('Link an issue');
     fireEvent.click(trigger);
     expect(screen.getByTestId('link-issue-form').textContent).toBe('linear');
   });

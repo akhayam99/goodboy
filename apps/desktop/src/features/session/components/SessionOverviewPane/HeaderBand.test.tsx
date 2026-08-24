@@ -43,7 +43,10 @@ type Store = {
   emitNotification: ReturnType<typeof vi.fn>;
 };
 
-const { store, hooks, stats, summarizer } = vi.hoisted(() => ({
+const { store, hooks, stats, summarizer, worktreeMocks } = vi.hoisted(() => ({
+  worktreeMocks: {
+    worktreeStatus: vi.fn(async () => ({}) as unknown),
+  },
   store: {
     sessions: [] as ReadonlyArray<Session>,
     workspaces: [] as ReadonlyArray<unknown>,
@@ -115,6 +118,11 @@ vi.mock('../../../worktree/useRemoteHostKind', () => ({
   useRemoteHostKind: () => hooks.remoteKind.current,
 }));
 
+vi.mock('../../../worktree/worktree', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../worktree/worktree')>();
+  return { ...actual, worktreeStatus: worktreeMocks.worktreeStatus };
+});
+
 const editorMenuCalls: Array<{ sessionId: string; density?: string }> = [];
 const sessionGitActionsCalls: Array<{ sessionId: string; density?: string }> = [];
 const sessionDestructiveActionsCalls: Array<{ sessionId: string }> = [];
@@ -134,8 +142,19 @@ vi.mock('../SessionWorkspace/parts/SessionGitActions', () => ({
 }));
 
 vi.mock('./LinkIssueAction', () => ({
-  LinkIssueAction: ({ presentation }: { presentation?: 'icon' | 'chip' }) => (
-    <button type="button" aria-label="Link an issue" data-presentation={presentation ?? 'icon'} />
+  LinkIssueAction: ({
+    presentation,
+    isCollapsed,
+  }: {
+    presentation?: 'icon' | 'chip';
+    isCollapsed?: boolean;
+  }) => (
+    <button
+      type="button"
+      aria-label="Link an issue"
+      data-presentation={presentation ?? 'icon'}
+      data-collapsed={isCollapsed === true ? 'true' : 'false'}
+    />
   ),
 }));
 
@@ -212,6 +231,7 @@ beforeEach(() => {
   store.materializeProject.mockReset();
   store.emitNotification.mockReset();
   stats.current = new Map();
+  worktreeMocks.worktreeStatus.mockReset();
   hooks.remoteKind.current = 'github';
   editorMenuCalls.length = 0;
   sessionGitActionsCalls.length = 0;
@@ -283,17 +303,18 @@ describe('HeaderBand', () => {
     expect(onSelectLens).toHaveBeenCalledWith('github_issue');
   });
 
-  it('stacks title, goal and context rows and skips the project row without projects', () => {
+  it('stacks title, context and goal rows and skips the project row without projects', () => {
     const { container } = render(
       <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
     );
     const band = container.firstElementChild;
 
     expect(band?.children).toHaveLength(3);
-    expect(band?.children[1]?.getAttribute('data-testid')).toBe('goal-region');
+    expect(band?.children[1]?.contains(screen.getByRole('button', { name: 'Context' }))).toBe(true);
+    expect(band?.children[2]?.getAttribute('data-testid')).toBe('goal-region');
   });
 
-  it('pins the row order to title, goal, context, project', () => {
+  it('pins the row order to title, context, project, goal', () => {
     mountApiProject();
     const { container } = render(
       <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
@@ -302,9 +323,9 @@ describe('HeaderBand', () => {
 
     expect(band?.children).toHaveLength(4);
     expect(band?.children[0]?.querySelector('h1')?.textContent).toBe('refactor auth');
-    expect(band?.children[1]?.getAttribute('data-testid')).toBe('goal-region');
-    expect(band?.children[2]?.contains(screen.getByRole('button', { name: 'Context' }))).toBe(true);
-    expect(band?.children[3]?.contains(screen.getByRole('button', { name: 'api' }))).toBe(true);
+    expect(band?.children[1]?.contains(screen.getByRole('button', { name: 'Context' }))).toBe(true);
+    expect(band?.children[2]?.contains(screen.getByRole('button', { name: 'api' }))).toBe(true);
+    expect(band?.children[3]?.getAttribute('data-testid')).toBe('goal-region');
   });
 
   it('seats the linked work and the link affordance on the context row', () => {
@@ -318,7 +339,7 @@ describe('HeaderBand', () => {
     const { container } = render(
       <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
     );
-    const contextRow = container.firstElementChild?.children[2];
+    const contextRow = container.firstElementChild?.children[1];
 
     expect(contextRow?.contains(screen.getByRole('button', { name: 'Context' }))).toBe(true);
     expect(contextRow?.contains(screen.getByRole('button', { name: 'Open issue #7' }))).toBe(true);
@@ -338,7 +359,7 @@ describe('HeaderBand', () => {
     const { container } = render(
       <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
     );
-    const projectRow = container.firstElementChild?.children[3];
+    const projectRow = container.firstElementChild?.children[2];
 
     expect(projectRow?.contains(screen.getByRole('button', { name: 'api' }))).toBe(true);
     expect(
@@ -350,7 +371,7 @@ describe('HeaderBand', () => {
     expect(projectRow?.contains(screen.getByRole('button', { name: 'Open PR #42' }))).toBe(true);
   });
 
-  it('puts the title first and the folder, branch and destructive controls at the far end of that row', () => {
+  it('puts the title first and only the folder and destructive controls at the far end of that row', () => {
     const { container } = render(
       <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
     );
@@ -358,8 +379,65 @@ describe('HeaderBand', () => {
 
     expect(titleRow?.textContent).toContain('refactor auth');
     expect(titleRow?.querySelector('[aria-label="open worktree"]')).not.toBeNull();
-    expect(titleRow?.querySelector('[aria-label="branch actions"]')).not.toBeNull();
+    expect(titleRow?.querySelector('[aria-label="branch actions"]')).toBeNull();
     expect(titleRow?.querySelector('[aria-label="session actions"]')).not.toBeNull();
+  });
+
+  it('moves the git actions off the title cluster onto the project row', () => {
+    mountApiProject();
+    const { container } = render(
+      <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
+    );
+    const titleRow = container.firstElementChild?.firstElementChild;
+    const projectRow = container.firstElementChild?.children[2];
+
+    expect(titleRow?.querySelector('[aria-label="branch actions"]')).toBeNull();
+    expect(projectRow?.querySelector('[aria-label="branch actions"]')).not.toBeNull();
+    expect(projectRow?.querySelector('[aria-label="Sync with main"]')).not.toBeNull();
+    expect(sessionGitActionsCalls).toEqual([{ sessionId: SESSION_ID, density: 'compact' }]);
+  });
+
+  it('opens the sync popover on the project row and reports the distance from main', async () => {
+    mountApiProject();
+    worktreeMocks.worktreeStatus.mockResolvedValue({
+      branch: 'goodboy/x',
+      head: 'abc123',
+      headSubject: null,
+      upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+      mainDistance: { kind: 'known', ahead: 3, behind: 2 },
+      workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+      upstream: null,
+      inProgress: null,
+    });
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync with main' }));
+    expect(worktreeMocks.worktreeStatus).toHaveBeenCalledWith('/worktrees/api');
+    expect(await screen.findByText('3 commits ahead of main, 2 behind')).toBeDefined();
+  });
+
+  it('keeps the link affordance expanded with zero linked work and collapses it beside linked chips', () => {
+    const zero = render(
+      <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
+    );
+    expect(
+      zero.container.querySelector('[aria-label="Link an issue"]')?.getAttribute('data-collapsed'),
+    ).toBe('false');
+    cleanup();
+
+    store.sessionExternalTasks = {
+      [SESSION_ID]: [
+        { provider: 'linear', identifier: 'GRW-111', title: 'Grow', externalId: 'grw-111' },
+      ],
+    };
+    const linked = render(
+      <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
+    );
+    expect(
+      linked.container
+        .querySelector('[aria-label="Link an issue"]')
+        ?.getAttribute('data-collapsed'),
+    ).toBe('true');
   });
 
   it('renames from a click on the title, with no separate edit button', () => {
@@ -649,8 +727,8 @@ describe('HeaderBand', () => {
     expect(screen.getByRole('button', { name: 'Open LIN-42' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Open JIRA-9' })).toBeDefined();
 
-    const contextRow = container.firstElementChild?.children[2];
-    const projectRow = container.firstElementChild?.children[3];
+    const contextRow = container.firstElementChild?.children[1];
+    const projectRow = container.firstElementChild?.children[2];
     expect(contextRow?.className).toContain('flex-wrap');
     expect(projectRow?.className).toContain('flex-wrap');
   });
@@ -679,10 +757,10 @@ describe('HeaderBand', () => {
     expect(screen.getByRole('button', { name: 'api' })).toBeDefined();
   });
 
-  it('mounts the editor menu, git actions and destructive actions at compact density for this session', () => {
+  it('mounts the editor menu and destructive actions on the title row, leaving git actions to the project row', () => {
     render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
     expect(editorMenuCalls).toEqual([{ sessionId: SESSION_ID, density: 'compact' }]);
-    expect(sessionGitActionsCalls).toEqual([{ sessionId: SESSION_ID, density: 'compact' }]);
+    expect(sessionGitActionsCalls).toEqual([]);
     expect(sessionDestructiveActionsCalls).toEqual([{ sessionId: SESSION_ID }]);
   });
 });

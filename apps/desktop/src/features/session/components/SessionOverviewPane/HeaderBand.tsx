@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Input, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { EditorMenu } from './EditorMenu';
@@ -12,6 +12,7 @@ import { LinkIssueAction } from './LinkIssueAction';
 import { MountChangesChip } from './MountChangesChip';
 import { ProjectChip } from './ProjectChip';
 import { BranchChip } from './BranchChip';
+import { BranchSyncStatus } from './BranchSyncStatus';
 import { ContextChip } from './ContextChip';
 import { StatusRowRequest } from './StatusRowRequest';
 import { LinkedWorkChips } from './LinkedWorkChips';
@@ -30,6 +31,11 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
   const hasProjects = useAppStore((s) =>
     s.projects.some((project) => project.workspaceId === session.workspaceId),
   );
+  const hasLinkedWork = useAppStore((s) => {
+    const linkedIssues = s.sessionGithub[sessionId]?.linkedIssues ?? EMPTY_ARRAY;
+    const externalTasks = s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY;
+    return linkedIssues.length > 0 || externalTasks.length > 0;
+  });
   const titleFieldRef = useRef<HTMLDivElement | null>(null);
   const selectOnEditRef = useRef(false);
   const startRenameRef = useRef(rename.start);
@@ -94,16 +100,14 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
         )}
         <div className="flex shrink-0 items-center gap-1">
           <EditorMenu sessionId={sessionId} density="compact" />
-          <SessionGitActions session={session} density="compact" />
           <SessionDestructiveActions session={session} />
         </div>
       </div>
-      {goal}
       <div className="flex flex-wrap items-center gap-2">
         <ContextChip sessionId={sessionId} onSelectLens={onSelectLens} />
         <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />
-          <LinkIssueAction session={session} presentation="chip" />
+          <LinkIssueAction session={session} presentation="chip" isCollapsed={hasLinkedWork} />
         </div>
       </div>
       {hasProjects ? (
@@ -115,11 +119,14 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
           />
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
             <BranchChip sessionId={sessionId} />
+            <SessionGitActions session={session} density="compact" />
+            <BranchSyncStatus sessionId={sessionId} />
             <MountChangesChip sessionId={sessionId} />
             <StatusRowRequest sessionId={sessionId} />
           </div>
         </div>
       ) : null}
+      {goal}
     </div>
   );
 };
