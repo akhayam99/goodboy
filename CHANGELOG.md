@@ -37,6 +37,21 @@ project, and the session page shows the whole story in one document: goal,
 linked work, plan, workflows, PRs, activity. The lens sidebar is gone; the
 left panel is your sessions, the rest happens on the page.
 
+### An empty session says where to start
+
+A session with nothing in it used to open on an empty Activity section. In its
+place there are now two ways in, create an agent or add a workflow, and under
+them the open issues from the trackers this workspace has connected: five per
+tracker, without the ones another session already picked up. Choosing one links
+it, writes the goal if the session has none, and titles the session after it.
+With no tracker connected, or none with anything open, the line says so and
+carries the glyphs that open each studio. All of it steps aside for good the
+moment the session's first activity lands.
+
+Answered questions read in the activity feed as their own category, so they can
+be filtered like everything else, and the terminal and the scripts are one click
+away from the session header, next to the folder and the archive.
+
 ### Integrations connect once per workspace
 
 Linear, Sentry, Slack, Jira, Bitbucket, GitLab and GitHub now bind at the
@@ -58,7 +73,8 @@ under ~/.goodboy for your own reference, never with secrets in it.
 First boot on 0.2.0 migrates the database to the new shape, and 0.1.x cannot
 read it afterwards. Before migrating, Goodboy saves a snapshot of the database
 next to the original; restoring that file is the way back if anything goes
-wrong. The migration also clears years of accumulated dead weight: unused
+wrong. The sessions you already had come across with their history, each one
+attached to the project it worked in. The migration also clears years of accumulated dead weight: unused
 columns, an unreachable parallel-groups feature, mixed timestamp formats, and
 missing foreign keys.
 
