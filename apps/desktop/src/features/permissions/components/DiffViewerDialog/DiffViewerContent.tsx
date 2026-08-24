@@ -53,7 +53,7 @@ import {
   worktreeStatus,
 } from '../../../../features/worktree/worktree';
 import { DiffViewSelector } from '../DiffViewSelector';
-import { TOOLBAR_ICON_BTN, type ReviewState } from './lib';
+import { DIFF_CAPPED_COLUMN_CLASS, TOOLBAR_ICON_BTN, type ReviewState } from './lib';
 import { FileRail } from './FileTree/FileRail';
 import { FileDiffCard } from './FileDiffCard';
 import { DiffToolbar } from './DiffToolbar';
@@ -75,6 +75,7 @@ type Props = {
   diffFocus?: DiffFocus | null;
   showToolbarClose?: boolean;
   presentation?: 'dialog' | 'pane';
+  onContentEmptyChange?: (isEmpty: boolean) => void;
 };
 
 const DEFAULT_VIEW: DiffView = { kind: 'branch' };
@@ -250,6 +251,7 @@ export const DiffViewerContent = ({
   diffFocus = null,
   showToolbarClose = true,
   presentation = 'dialog',
+  onContentEmptyChange,
 }: Props) => {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
   const [focusPath, setFocusPath] = useState<string | null>(null);
@@ -720,7 +722,12 @@ export const DiffViewerContent = ({
   }, []);
 
   const isEmpty = !loading && !error && files.length === 0;
+  const isContentEmpty = error === null && files.length === 0;
   const verifiedFilesCount = !loading && error === null ? files.length : null;
+
+  useEffect(() => {
+    onContentEmptyChange?.(isContentEmpty);
+  }, [isContentEmpty, onContentEmptyChange]);
   const isPane = presentation === 'pane';
   const isDefaultView = view.kind === 'branch';
   const mainDistance = status?.mainDistance ?? null;
@@ -743,9 +750,10 @@ export const DiffViewerContent = ({
     >
       {isPane ? (
         <div
+          data-testid="diff-pane-header"
           className={cn(
             'flex shrink-0 flex-wrap items-start justify-between gap-3',
-            isEmpty && 'mx-auto w-full max-w-5xl',
+            isContentEmpty && DIFF_CAPPED_COLUMN_CLASS,
           )}
         >
           <div className="flex min-w-0 flex-col gap-1">
@@ -962,7 +970,7 @@ export const DiffViewerContent = ({
           </div>
         ) : files.length === 0 ? (
           <ScrollFade className="min-h-0 min-w-0 flex-1">
-            <div className={cn('mx-auto w-full max-w-5xl', !isPane && 'px-6 py-5')}>
+            <div className={cn(DIFF_CAPPED_COLUMN_CLASS, !isPane && 'px-6 py-5')}>
               <LensEmptyState
                 tone={CONCEPT_TONE.diff}
                 icon={CONCEPT_ICONS.diff}

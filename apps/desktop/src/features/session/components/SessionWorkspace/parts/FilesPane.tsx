@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { SessionId, SessionProjectMount } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
@@ -27,6 +28,7 @@ export const FilesPane = ({
 }: Props) => {
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
   const mounts = useAppStore((s) => s.sessionProjectMounts?.[sessionId] ?? EMPTY_MOUNTS);
+  const [isDiffEmpty, setIsDiffEmpty] = useState(true);
 
   if (isBranchless) {
     if (sessionDir == null) {
@@ -69,6 +71,7 @@ export const FilesPane = ({
           sessionId={sessionId}
           mounts={mounts}
           selectedWorktreePath={worktreePath}
+          isDiffEmpty={isDiffEmpty}
         />
       ) : null}
       <div className="min-h-0 flex-1">
@@ -78,6 +81,7 @@ export const FilesPane = ({
           worktreePath={worktreePath}
           diffFocus={diffFocus}
           onClose={onClose}
+          onContentEmptyChange={setIsDiffEmpty}
         />
       </div>
     </div>

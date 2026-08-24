@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { DIFF_CAPPED_COLUMN_CLASS } from '../../../../permissions/components/DiffViewerDialog/lib';
 import type { ProjectId, SessionId, SessionProjectMount } from '@goodboy/types';
 import {
   openDiffLens,
@@ -18,6 +19,8 @@ type State = Record<string, unknown>;
 const state: State = {};
 
 let diffStats: ReadonlyMap<string, MountDiffStat> = new Map();
+
+let reportDiffEmpty: ((isEmpty: boolean) => void) | undefined;
 
 const mountOf = ({
   name,
@@ -52,16 +55,21 @@ vi.mock('../../../../permissions/components/DiffViewerDialog', () => ({
   DiffViewerPane: ({
     diffFocus,
     worktreePath,
+    onContentEmptyChange,
   }: {
     diffFocus: { readonly kind: string } | null;
     worktreePath?: string;
-  }) => (
-    <div
-      data-testid="diff-viewer"
-      data-focus-kind={diffFocus?.kind ?? 'none'}
-      data-worktree={worktreePath ?? 'none'}
-    />
-  ),
+    onContentEmptyChange?: (isEmpty: boolean) => void;
+  }) => {
+    reportDiffEmpty = onContentEmptyChange;
+    return (
+      <div
+        data-testid="diff-viewer"
+        data-focus-kind={diffFocus?.kind ?? 'none'}
+        data-worktree={worktreePath ?? 'none'}
+      />
+    );
+  },
 }));
 
 vi.mock('./FileVersionsPane', () => ({
@@ -84,6 +92,7 @@ const reset = ({ mounts = [] }: { readonly mounts?: ReadonlyArray<SessionProject
   }
   openMountDiff.mockClear();
   diffStats = new Map();
+  reportDiffEmpty = undefined;
   Object.assign(state, {
     activeLens: {},
     selectedAgentId: {},
@@ -179,9 +188,43 @@ describe('FilesPane', () => {
     expect(switcher.className).toContain('border-border-soft');
     expect(switcher.className).toContain('bg-subtle');
     expect(screen.getAllByTestId('diff-mount-option')).toHaveLength(2);
-    expect(switcher.parentElement?.className).toContain('max-w-5xl');
-    expect(switcher.parentElement?.className).toContain('mx-auto');
+    for (const cls of DIFF_CAPPED_COLUMN_CLASS.split(' ')) {
+      expect(switcher.parentElement?.className).toContain(cls);
+    }
     expect(switcher.parentElement?.parentElement?.className).toContain('px-6');
+  });
+
+  it('frees the switcher to the full pane width once the diff has files', () => {
+    reset({ mounts: [API_MOUNT, WEB_MOUNT] });
+    setActiveLens(set)(SESSION_ID, 'files');
+
+    renderPane({ worktreePath: API_MOUNT.worktreePath });
+    act(() => {
+      reportDiffEmpty?.(false);
+    });
+
+    const wrapper = screen.getByTestId('diff-mount-switcher').parentElement;
+    expect(wrapper?.className).not.toContain('max-w-5xl');
+    expect(wrapper?.className).not.toContain('mx-auto');
+    expect(wrapper?.parentElement?.className).toContain('px-6');
+  });
+
+  it('returns the switcher to the capped column when the diff empties again', () => {
+    reset({ mounts: [API_MOUNT, WEB_MOUNT] });
+    setActiveLens(set)(SESSION_ID, 'files');
+
+    renderPane({ worktreePath: API_MOUNT.worktreePath });
+    act(() => {
+      reportDiffEmpty?.(false);
+    });
+    act(() => {
+      reportDiffEmpty?.(true);
+    });
+
+    const wrapper = screen.getByTestId('diff-mount-switcher').parentElement;
+    for (const cls of DIFF_CAPPED_COLUMN_CLASS.split(' ')) {
+      expect(wrapper?.className).toContain(cls);
+    }
   });
 
   it('keeps an untouched mount visible and marks it quiet', () => {

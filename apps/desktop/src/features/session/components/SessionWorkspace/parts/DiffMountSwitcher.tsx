@@ -1,21 +1,28 @@
 import type { SessionId, SessionProjectMount } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
 import { useAppStore, useMountDiffStats } from '../../../../../store';
+import { DIFF_CAPPED_COLUMN_CLASS } from '../../../../permissions/components/DiffViewerDialog/lib';
 import { DiffStat } from '../../DiffStat';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly mounts: ReadonlyArray<SessionProjectMount>;
   readonly selectedWorktreePath: string | null;
+  readonly isDiffEmpty: boolean;
 };
 
-export const DiffMountSwitcher = ({ sessionId, mounts, selectedWorktreePath }: Props) => {
+export const DiffMountSwitcher = ({
+  sessionId,
+  mounts,
+  selectedWorktreePath,
+  isDiffEmpty,
+}: Props) => {
   const openMountDiff = useAppStore((s) => s.openMountDiff);
   const diffStats = useMountDiffStats(sessionId);
 
   return (
     <div className="shrink-0 px-6 pt-5">
-      <div className="mx-auto w-full max-w-5xl">
+      <div className={cn(isDiffEmpty && DIFF_CAPPED_COLUMN_CLASS)}>
         <div
           role="group"
           aria-label="Project mounts"
