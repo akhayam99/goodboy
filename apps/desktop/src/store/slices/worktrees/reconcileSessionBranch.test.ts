@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SessionId } from '@goodboy/types';
+import type { ProjectId, SessionId } from '@goodboy/types';
 
 const WORKTREE_PATH = '/repos/goodboy/.goodboy/worktrees/task';
 
@@ -25,18 +25,31 @@ vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 import { reconcileSessionBranch } from './reconcileSessionBranch';
 
 const SESSION_ID = 'session-1' as SessionId;
+const PROJECT_ID = 'project-1' as ProjectId;
 
 type State = Record<string, unknown>;
 
 const makeState = (): State => ({
   sessions: [{ id: SESSION_ID, workspaceId: 'workspace-1' }],
-  workspaces: [{ id: 'workspace-1', kind: 'repo', rootPath: '/repos/goodboy' }],
+  projects: [
+    { id: PROJECT_ID, workspaceId: 'workspace-1', kind: 'repo', rootPath: '/repos/goodboy' },
+  ],
   sessionBranches: { [SESSION_ID]: 'ak/outgoing' },
-  sessionMounts: {},
+  sessionProjectMounts: {
+    [SESSION_ID]: [
+      {
+        projectId: PROJECT_ID,
+        mountName: 'goodboy',
+        worktreePath: WORKTREE_PATH,
+        repoRoot: '/repos/goodboy',
+        branch: 'ak/outgoing',
+      },
+    ],
+  },
   sessionWorktrees: { [SESSION_ID]: [WORKTREE_PATH] },
-  sessionActiveMount: {},
+  sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
   sessionGithub: { [SESSION_ID]: { pr: { number: 42 } } },
-  sessionGithubPrs: { [SESSION_ID]: [{ number: 42 }] },
+  sessionProjectPrs: { [SESSION_ID]: { [PROJECT_ID]: [{ number: 42 }] } },
   sessionSelectedPrNumber: { [SESSION_ID]: 40 },
   sessionExternalTasks: { [SESSION_ID]: [] },
   emitNotification: h.emitNotification,
@@ -63,7 +76,7 @@ describe('reconcileSessionBranch', () => {
       { sessionId: SESSION_ID, workspaceId: 'workspace-1' },
     );
     expect(state.sessionBranches).toEqual({ [SESSION_ID]: 'ak/incoming' });
-    expect(state.sessionGithubPrs).toEqual({});
+    expect(state.sessionProjectPrs).toEqual({ [SESSION_ID]: {} });
     expect(state.sessionSelectedPrNumber).toEqual({});
   });
 

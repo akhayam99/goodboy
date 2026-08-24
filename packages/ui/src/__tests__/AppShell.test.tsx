@@ -48,6 +48,13 @@ describe('AppShell', () => {
     expect(slot?.className).toContain('pointer-events-none');
   });
 
+  it('lets the footer size its own track, so a divider never pushes it past the row', () => {
+    render(<AppShell footer={<div>status</div>} main={<div>main</div>} rightSidebar={null} />);
+    const grid = screen.getByText('status').closest('[style*="grid-template-rows"]');
+
+    expect(grid?.getAttribute('style')).toContain('grid-template-rows: minmax(0,1fr) auto');
+  });
+
   it('omits the overlay slot when nothing is peeking', () => {
     render(
       <AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} rightSidebar={null} />,

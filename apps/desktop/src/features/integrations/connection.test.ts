@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type {
   SessionExternalTask,
-  WorkspaceIntegration,
+  IntegrationBinding,
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 import { resolveIntegrationConnection } from './connection';
@@ -14,8 +14,8 @@ type TaskParams = {
   readonly provider: SessionExternalTask['provider'];
 };
 
-const integration = ({ provider }: IntegrationParams): WorkspaceIntegration =>
-  ({ provider }) as WorkspaceIntegration;
+const integration = ({ provider }: IntegrationParams): IntegrationBinding =>
+  ({ provider }) as IntegrationBinding;
 
 const task = ({ provider }: TaskParams): SessionExternalTask =>
   ({ provider }) as SessionExternalTask;

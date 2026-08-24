@@ -1,13 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Check, UserRound } from 'lucide-react';
 import {
+  AnchoredPopover,
   Button,
-  cn,
   Divider,
-  DropdownBackdrop,
   formatError,
   Input,
-  Popover,
   ScrollFade,
   StatusDot,
   useDropdown,
@@ -45,14 +43,8 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
   const [query, setQuery] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
-  const {
-    open: isOpen,
-    close,
-    toggle,
-    containerRef,
-    popupRef,
-    popupClassName,
-  } = useDropdown({ align: 'end', width: 'w-64', expectedHeight: 300, hasBackdrop: true });
+  const dropdown = useDropdown({ align: 'end', width: 'w-64', expectedHeight: 300 });
+  const { open: isOpen, close, toggle } = dropdown;
   const { users, isLoading, error, reload } = useJiraAssignableUsers({
     issueKey,
     workspaceId,
@@ -75,104 +67,98 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
   };
 
   return (
-    <div ref={containerRef} className="relative">
-      <Button
-        size="sm"
-        variant="secondary"
-        aria-haspopup="menu"
-        aria-expanded={isOpen}
-        title="Change who owns this issue in Jira"
-        isBusy={busyId != null}
-        busyLabel="Assigning"
-        onClick={toggle}
-      >
-        <UserRound size={12} aria-hidden />
-        {assignee?.displayName ?? 'Unassigned'}
-      </Button>
-      {isOpen && (
-        <>
-          <DropdownBackdrop onClose={close} />
-          <Popover
-            innerRef={popupRef}
-            role="menu"
-            ariaLabel="Assign this issue"
-            className={cn(popupClassName, 'flex flex-col')}
+    <AnchoredPopover
+      dropdown={dropdown}
+      role="menu"
+      ariaLabel="Assign this issue"
+      className="flex flex-col"
+      hasBackdrop
+      trigger={
+        <Button
+          size="sm"
+          variant="secondary"
+          aria-haspopup="menu"
+          aria-expanded={isOpen}
+          title="Change who owns this issue in Jira"
+          isBusy={busyId != null}
+          busyLabel="Assigning"
+          onClick={toggle}
+        >
+          <UserRound size={12} aria-hidden />
+          {assignee?.displayName ?? 'Unassigned'}
+        </Button>
+      }
+    >
+      <div className="p-1">
+        <Input
+          autoFocus
+          value={query}
+          aria-label="Filter assignable people"
+          placeholder="Filter by name"
+          onChange={(event) => setQuery(event.target.value)}
+          className="h-7 text-xs"
+        />
+      </div>
+      <Divider />
+      <ScrollFade className="max-h-64" viewportClassName="flex flex-col gap-0.5 p-1">
+        {assignee != null && (
+          <button
+            type="button"
+            role="menuitem"
+            disabled={busyId != null}
+            onClick={() => void assign(null)}
+            className={MENU_ROW}
           >
-            <div className="p-1">
-              <Input
-                autoFocus
-                value={query}
-                aria-label="Filter assignable people"
-                placeholder="Filter by name"
-                onChange={(event) => setQuery(event.target.value)}
-                className="h-7 text-xs"
-              />
-            </div>
-            <Divider />
-            <ScrollFade className="max-h-64" viewportClassName="flex flex-col gap-0.5 p-1">
-              {assignee != null && (
-                <button
-                  type="button"
-                  role="menuitem"
-                  disabled={busyId != null}
-                  onClick={() => void assign(null)}
-                  className={MENU_ROW}
-                >
-                  <span className="min-w-0 truncate text-muted-foreground">Unassign</span>
-                  {busyId === UNASSIGN_ROW_ID && <StatusDot tone="neutral" pulsing />}
-                </button>
-              )}
-              {filtered.map((user) => (
-                <button
-                  key={user.accountId}
-                  type="button"
-                  role="menuitem"
-                  disabled={busyId != null}
-                  onClick={() => void assign(user.accountId)}
-                  className={MENU_ROW}
-                >
-                  <span className="min-w-0 truncate">{user.displayName}</span>
-                  {busyId === user.accountId && <StatusDot tone="neutral" pulsing />}
-                  {busyId !== user.accountId && user.accountId === assignee?.accountId && (
-                    <Check size={12} aria-hidden />
-                  )}
-                </button>
-              ))}
-              {isLoading && (
-                <p role="status" className="px-2 py-1.5 text-2xs text-muted-foreground">
-                  Reading who can take this issue
-                </p>
-              )}
-              {!isLoading && error == null && filtered.length === 0 && (
-                <p className="px-2 py-1.5 text-2xs text-muted-foreground">
-                  No one matches that name
-                </p>
-              )}
-            </ScrollFade>
-            {error != null && (
-              <>
-                <Divider />
-                <div className="flex items-center justify-between gap-2 p-1">
-                  <p role="alert" className="min-w-0 text-2xs text-danger">
-                    {error}
-                  </p>
-                  <Button size="sm" variant="ghost" onClick={reload}>
-                    Retry
-                  </Button>
-                </div>
-              </>
+            <span className="min-w-0 truncate text-muted-foreground">Unassign</span>
+            {busyId === UNASSIGN_ROW_ID && <StatusDot tone="neutral" pulsing />}
+          </button>
+        )}
+        {filtered.map((user) => (
+          <button
+            key={user.accountId}
+            type="button"
+            role="menuitem"
+            disabled={busyId != null}
+            onClick={() => void assign(user.accountId)}
+            className={MENU_ROW}
+          >
+            <span className="min-w-0 truncate">{user.displayName}</span>
+            {busyId === user.accountId && <StatusDot tone="neutral" pulsing />}
+            {busyId !== user.accountId && user.accountId === assignee?.accountId && (
+              <Check size={12} aria-hidden />
             )}
-            {assignError != null && (
-              <>
-                <Divider />
-                <p role="alert" className="px-2 py-1.5 text-2xs text-danger">
-                  {assignError}
-                </p>
-              </>
-            )}
-          </Popover>
+          </button>
+        ))}
+        {isLoading && (
+          <p role="status" className="px-2 py-1.5 text-2xs text-muted-foreground">
+            Reading who can take this issue
+          </p>
+        )}
+        {!isLoading && error == null && filtered.length === 0 && (
+          <p className="px-2 py-1.5 text-2xs text-muted-foreground">No one matches that name</p>
+        )}
+      </ScrollFade>
+      {error != null && (
+        <>
+          <Divider />
+          <div className="flex items-center justify-between gap-2 p-1">
+            <p role="alert" className="min-w-0 text-2xs text-danger">
+              {error}
+            </p>
+            <Button size="sm" variant="ghost" onClick={reload}>
+              Retry
+            </Button>
+          </div>
         </>
       )}
-    </div>
+      {assignError != null && (
+        <>
+          <Divider />
+          <p role="alert" className="px-2 py-1.5 text-2xs text-danger">
+            {assignError}
+          </p>
+        </>
+      )}
+    </AnchoredPopover>
   );
 };

@@ -14,13 +14,10 @@ type Props = {
 export const DeleteSessionConfirm = ({ session, onClose, className }: Props) => {
   const deleteTask = useAppStore((s) => s.deleteTask);
   const archiveTask = useAppStore((s) => s.archiveTask);
-  const workspaceKind = useAppStore(
-    (s) => s.workspaces.find((workspace) => workspace.id === session.workspaceId)?.kind,
-  );
   const sessionBranch = useAppStore((s) => s.sessionBranches[session.id as SessionId]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isBranchless = isBranchlessSession({ workspaceKind, branch: sessionBranch });
+  const isBranchless = isBranchlessSession({ branch: sessionBranch });
   const description = isBranchless
     ? 'Permanently removes this session, its transcripts, and every saved file version from this device.'
     : 'Permanently removes the worktree and transcripts for this session from this device. The branch is preserved for manual merge.';

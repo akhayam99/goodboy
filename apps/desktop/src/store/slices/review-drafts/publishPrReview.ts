@@ -6,12 +6,7 @@ import {
 } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import { markPrReviewDraftsPublished } from '@goodboy/db';
-import type {
-  GitlabWorkspaceIntegration,
-  PrReviewDraft,
-  SessionId,
-  Workspace,
-} from '@goodboy/types';
+import type { GitlabIntegrationBinding, PrReviewDraft, SessionId, Workspace } from '@goodboy/types';
 import { ghPrDiff, tauriGhRunner } from '../../../features/github/github';
 import {
   gitlabCreateMrDiscussion,
@@ -51,7 +46,7 @@ type GitlabHostParams = {
 
 const gitlabHost = ({ get, workspace }: GitlabHostParams): string => {
   const integration = (get().workspaceIntegrations[workspace.id] ?? []).find(
-    (candidate): candidate is GitlabWorkspaceIntegration => candidate.provider === 'gitlab',
+    (candidate): candidate is GitlabIntegrationBinding => candidate.provider === 'gitlab',
   );
   if (integration == null) {
     throw new Error(`gitlab integration not connected for workspace ${workspace.id}`);
@@ -73,7 +68,7 @@ const fetchCurrentDiff = async ({
   target,
 }: FetchDiffParams): Promise<string> => {
   if (target.provider === 'github') {
-    return ghPrDiff(target.repo, target.prNumber, repo.repoRoot, workspace.id, repo.workspaceId);
+    return ghPrDiff(target.repo, target.prNumber, repo.repoRoot, workspace.id, repo.projectId);
   }
   return gitlabMrDiff(workspace.id, gitlabHost({ get, workspace }), target.repo, target.prNumber);
 };
@@ -106,7 +101,7 @@ const publishGithub = async ({
   const ghOpts = {
     cwd: repo.repoRoot,
     workspaceId: workspace.id,
-    memberWorkspaceId: repo.workspaceId,
+    projectId: repo.projectId,
   };
   try {
     const pullRequestId = await fetchPrNodeId(tauriGhRunner, target.repo, target.prNumber, ghOpts);

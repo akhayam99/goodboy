@@ -10,8 +10,8 @@ import type { Database } from '../client';
 
 type GoalAttachmentRow = {
   id: string;
-  owner_type: string;
-  owner_id: string;
+  session_id: string | null;
+  workflow_run_id: string | null;
   rel_path: string;
   kind: string;
   file_name: string;
@@ -20,10 +20,18 @@ type GoalAttachmentRow = {
 };
 
 function toDomain(row: GoalAttachmentRow): GoalAttachment {
+  const ownerId = row.session_id ?? row.workflow_run_id;
+  if (ownerId == null) {
+    throw new Error(`goal attachment ${row.id} has no owner`);
+  }
+  const owner = {
+    type: row.session_id != null ? 'session' : 'workflow_run',
+    id: ownerId,
+  } satisfies GoalAttachmentOwner;
   return {
     id: row.id,
-    ownerType: row.owner_type as GoalAttachmentOwnerType,
-    ownerId: row.owner_id,
+    ownerType: owner.type,
+    ownerId: owner.id,
     relPath: row.rel_path,
     kind: row.kind as 'image' | 'file',
     fileName: row.file_name,
@@ -32,7 +40,7 @@ function toDomain(row: GoalAttachmentRow): GoalAttachment {
   };
 }
 
-const SELECT_COLUMNS = `id, owner_type, owner_id, rel_path, kind, file_name, mime_type, created_at`;
+const SELECT_COLUMNS = `id, session_id, workflow_run_id, rel_path, kind, file_name, mime_type, created_at`;
 
 export const insertGoalAttachment = async (
   db: Database,
@@ -47,12 +55,12 @@ export const insertGoalAttachment = async (
 ): Promise<void> => {
   await db.execute(
     `INSERT INTO goal_attachments
-       (id, owner_type, owner_id, rel_path, kind, file_name, mime_type, created_at)
+       (id, session_id, workflow_run_id, rel_path, kind, file_name, mime_type, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       attachment.id,
-      attachment.owner.type,
-      attachment.owner.id,
+      attachment.owner.type === 'session' ? attachment.owner.id : null,
+      attachment.owner.type === 'workflow_run' ? attachment.owner.id : null,
       attachment.relPath,
       attachment.kind,
       attachment.fileName,
@@ -70,9 +78,9 @@ const listForOwner = async (
   const rows = await db.select<GoalAttachmentRow>(
     `SELECT ${SELECT_COLUMNS}
      FROM goal_attachments
-     WHERE owner_type = ? AND owner_id = ?
+     WHERE ${ownerType === 'session' ? 'session_id' : 'workflow_run_id'} = ?
      ORDER BY created_at ASC`,
-    [ownerType, ownerId],
+    [ownerId],
   );
   return rows.map(toDomain);
 };

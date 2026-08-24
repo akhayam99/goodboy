@@ -78,6 +78,16 @@ describe('activityCategoryOf', () => {
     );
   });
 
+  it('files a plan under its own category', () => {
+    const plan = {
+      kind: 'plan',
+      id: 'plan:1',
+      at: '2026-08-21T10:00:00.000Z',
+    } as unknown as TimelineTopLevelEntry;
+
+    expect(activityCategoryOf({ entry: plan })).toBe('plans');
+  });
+
   it('separates a resolver agent from an ordinary one', () => {
     expect(activityCategoryOf({ entry: agentEntry({ id: 'a', agentKind: 'resolver' }) })).toBe(
       'resolver',
@@ -89,7 +99,7 @@ describe('activityCategoryOf', () => {
 });
 
 describe('filterTimelineEntries', () => {
-  it('hides decisions by default and keeps everything else', () => {
+  it('shows decisions by default alongside everything else', () => {
     const entries = [
       eventEntry({ id: 'a', kind: 'decisions_changed' }),
       eventEntry({ id: 'b', kind: 'pr_merged' }),
@@ -97,7 +107,7 @@ describe('filterTimelineEntries', () => {
 
     expect(
       filterTimelineEntries({ entries, filter: DEFAULT_ACTIVITY_FILTER }).map((entry) => entry.id),
-    ).toEqual(['event:b']);
+    ).toEqual(['event:a', 'event:b']);
   });
 
   it('hides a discard and its restore together', () => {
@@ -125,7 +135,7 @@ describe('filterTimelineEntries', () => {
     ]);
   });
 
-  it('keeps an entry that belongs to no category', () => {
+  it('shows a plan by default and hides it when plans are off', () => {
     const plan = {
       kind: 'plan',
       id: 'plan:1',
@@ -135,6 +145,26 @@ describe('filterTimelineEntries', () => {
     expect(
       filterTimelineEntries({ entries: [plan], filter: DEFAULT_ACTIVITY_FILTER }),
     ).toHaveLength(1);
+    expect(
+      filterTimelineEntries({
+        entries: [plan],
+        filter: { ...DEFAULT_ACTIVITY_FILTER, plans: false },
+      }),
+    ).toHaveLength(0);
+  });
+
+  it('leaves entries alone when only subagents are collapsed', () => {
+    const entries = [
+      eventEntry({ id: 'a', kind: 'pr_merged' }),
+      agentEntry({ id: 'b', agentKind: 'implementer' }),
+    ];
+
+    expect(
+      filterTimelineEntries({
+        entries,
+        filter: { ...DEFAULT_ACTIVITY_FILTER, workflowSubagents: false, agentSubagents: false },
+      }),
+    ).toHaveLength(2);
   });
 });
 
@@ -153,5 +183,23 @@ describe('parseActivityFilter', () => {
 
     expect(parsed.decisions).toBe(true);
     expect(parsed.agents).toBe(DEFAULT_ACTIVITY_FILTER.agents);
+  });
+
+  it('gives an old payload the defaults for plans and both subagent flags', () => {
+    const parsed = parseActivityFilter({
+      raw: '{"worktree":false,"issues":true,"pullRequests":true,"workflows":true,"agents":true,"resolver":true,"decisions":true}',
+    });
+
+    expect(parsed.worktree).toBe(false);
+    expect(parsed.plans).toBe(true);
+    expect(parsed.workflowSubagents).toBe(true);
+    expect(parsed.agentSubagents).toBe(true);
+  });
+
+  it('honors a stored subagent choice on either flag', () => {
+    expect(parseActivityFilter({ raw: '{"workflowSubagents":false}' }).workflowSubagents).toBe(
+      false,
+    );
+    expect(parseActivityFilter({ raw: '{"agentSubagents":false}' }).agentSubagents).toBe(false);
   });
 });

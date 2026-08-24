@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
@@ -6,6 +6,8 @@ import type {
   Session,
   SessionId,
   StepId,
+  Project,
+  ProjectId,
   TelemetryKind,
   TelemetryRecord,
   WorkflowRunId,
@@ -15,22 +17,26 @@ import type {
 
 type StoreState = Record<string, unknown>;
 
-const { store } = vi.hoisted(() => {
+const { store, changedFiles } = vi.hoisted(() => {
   const store: { state: StoreState } = { state: {} };
-  return { store };
+  return { store, changedFiles: vi.fn() };
 });
 
 vi.mock('./store', () => ({
   useAppStore: (selector: (state: StoreState) => unknown) => selector(store.state),
 }));
 
+vi.mock('../features/worktree/worktree', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../features/worktree/worktree')>()),
+  worktreeChangedFiles: changedFiles,
+}));
+
 import {
   sumSessionCost,
   useIsSessionCollectionLoaded,
-  useLiveTerminalCount,
+  useMountDiffStats,
   useSessionPrFetchState,
   useSessionStageInfo,
-  useSessionUnreadLens,
   useSortedGroupedSessions,
   useStageGroupedSessions,
 } from './selectors';
@@ -77,11 +83,13 @@ const createAgent = ({
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 
 const createSession = (id: SessionId): Session =>
   ({
     id,
     workspaceId: WORKSPACE_ID,
+    activeProjectId: PROJECT_ID,
     goal: 'ship the fix',
     state: { kind: 'idle', lastActivityAt: '2026-07-27T10:00:00.000Z' },
     createdAt: '2026-07-27T10:00:00.000Z',
@@ -89,8 +97,33 @@ const createSession = (id: SessionId): Session =>
     workflowRuns: [],
   }) as unknown as Session;
 
-const createWorkspace = (kind: string): Workspace =>
-  ({ id: WORKSPACE_ID, kind, rootPath: '/tmp/ws' }) as unknown as Workspace;
+const createWorkspace = (): Workspace => ({ id: WORKSPACE_ID }) as unknown as Workspace;
+
+const createProject = (kind: Project['kind'] = 'repo'): Project =>
+  ({
+    id: PROJECT_ID,
+    workspaceId: WORKSPACE_ID,
+    rootPath: '/tmp/ws',
+    name: 'project',
+    kind,
+  }) as unknown as Project;
+
+const setProjectScope = ({ kind = 'repo' }: { readonly kind?: Project['kind'] } = {}): void => {
+  store.state.workspaces = [createWorkspace()];
+  store.state.projects = [createProject(kind)];
+  store.state.sessionProjectMounts = {
+    [SESSION_ID]: [
+      {
+        projectId: PROJECT_ID,
+        mountName: 'project',
+        repoRoot: '/tmp/ws',
+        worktreePath: '/tmp/ws-worktree',
+        branch: kind === 'repo' ? 'ak/feat-thing' : '',
+      },
+    ],
+  };
+  store.state.sessionActiveProject = { [SESSION_ID]: PROJECT_ID };
+};
 
 beforeEach(() => {
   store.state = {
@@ -107,12 +140,16 @@ beforeEach(() => {
     getSessionViewPrefs: vi.fn(),
     sessions: [],
     workspaces: [],
+    projects: [],
     sessionBranches: {},
     sessionWorktrees: {},
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionWorktreeRecords: {},
+    summarizerStatus: {},
+    sessionProjectMounts: {},
+    sessionActiveProject: {},
     githubStatus: null,
   };
+  changedFiles.mockReset();
 });
 
 describe('useIsSessionCollectionLoaded', () => {
@@ -164,7 +201,7 @@ describe('useSessionStageInfo pull request freshness', () => {
   const repoSession = () => {
     const session = createSession(SESSION_ID);
     store.state.sessions = [session];
-    store.state.workspaces = [createWorkspace('repo')];
+    setProjectScope();
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/ws-worktree'] };
     return session;
@@ -226,6 +263,7 @@ describe('useSessionStageInfo pull request freshness', () => {
   it('claims no PR for a session whose worktree never landed', () => {
     const session = repoSession();
     store.state.sessionWorktrees = {};
+    store.state.sessionProjectMounts = {};
     store.state.githubStatus = { available: true };
 
     const { result } = renderHook(() => useSessionStageInfo(session));
@@ -238,7 +276,7 @@ describe('useSessionPrFetchState', () => {
   const fetchableSession = () => {
     const session = createSession(SESSION_ID);
     store.state.sessions = [session];
-    store.state.workspaces = [createWorkspace('repo')];
+    setProjectScope();
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/ws-worktree'] };
     store.state.githubStatus = { available: true };
@@ -275,10 +313,10 @@ describe('useSessionPrFetchState', () => {
     expect(result.current).toBe('unreachable');
   });
 
-  it('reports known for a simple workspace, which never gets a pull request fetched', () => {
+  it('reports known for a folder project, which never gets a pull request fetched', () => {
     const session = createSession(SESSION_ID);
     store.state.sessions = [session];
-    store.state.workspaces = [createWorkspace('simple')];
+    setProjectScope({ kind: 'folder' });
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/ws-worktree'] };
     store.state.githubStatus = { available: true };
@@ -298,35 +336,6 @@ describe('useSessionPrFetchState', () => {
   });
 });
 
-describe('useLiveTerminalCount', () => {
-  it('counts dock tabs that have not exited', () => {
-    store.state.terminalTabs = {
-      [SESSION_ID]: [{ status: 'running' }, { status: 'attention' }, { status: 'exited' }],
-    };
-
-    const { result } = renderHook(() => useLiveTerminalCount(SESSION_ID));
-
-    expect(result.current).toBe(2);
-  });
-
-  it('counts the scripts-panel terminal as a live terminal too', () => {
-    store.state.terminalSessions = { [SESSION_ID]: 'open' };
-
-    const { result } = renderHook(() => useLiveTerminalCount(SESSION_ID));
-
-    expect(result.current).toBe(1);
-  });
-
-  it('returns zero once every terminal is gone', () => {
-    store.state.terminalTabs = { [SESSION_ID]: [{ status: 'exited' }] };
-    store.state.terminalSessions = { [SESSION_ID]: 'closed' };
-
-    const { result } = renderHook(() => useLiveTerminalCount(SESSION_ID));
-
-    expect(result.current).toBe(0);
-  });
-});
-
 describe('sumSessionCost', () => {
   it('sums turn costs and skips summarizer costs', () => {
     const records = [
@@ -339,108 +348,9 @@ describe('sumSessionCost', () => {
   });
 });
 
-describe('useSessionUnreadLens', () => {
-  it('routes a workflow-step agent reply to workflows', () => {
-    store.state.sessionPhaseRuns = {
-      [SESSION_ID]: [
-        createAgent({
-          id: AGENT_ID,
-          kind: 'resolver',
-          workflowRunId: 'workflow-1' as WorkflowRunId,
-          stepId: 'step-1' as StepId,
-        }),
-      ],
-    };
-
-    const { result } = renderHook(() => useSessionUnreadLens(SESSION_ID));
-
-    expect(result.current).toBe('workflows');
-  });
-
-  it('routes a cluster child reply through its workflow-step parent', () => {
-    const parentId = 'parent' as AgentId;
-    store.state.sessionPhaseRuns = {
-      [SESSION_ID]: [
-        createAgent({
-          id: parentId,
-          kind: 'implementer',
-          workflowRunId: 'workflow-1' as WorkflowRunId,
-          stepId: 'step-1' as StepId,
-          lastFinishedAt: '2026-07-21T09:00:00.000Z',
-        }),
-        createAgent({
-          id: AGENT_ID,
-          kind: 'scout',
-          parentAgentId: parentId,
-          workflowRunId: 'workflow-1' as WorkflowRunId,
-        }),
-      ],
-    };
-
-    const { result } = renderHook(() => useSessionUnreadLens(SESSION_ID));
-
-    expect(result.current).toBe('workflows');
-  });
-
-  it('routes a resolver reply to resolve', () => {
-    store.state.sessionPhaseRuns = {
-      [SESSION_ID]: [createAgent({ id: AGENT_ID, kind: 'resolver' })],
-    };
-
-    const { result } = renderHook(() => useSessionUnreadLens(SESSION_ID));
-
-    expect(result.current).toBe('resolve');
-  });
-
-  it('routes a standalone agent reply to agents', () => {
-    store.state.sessionPhaseRuns = {
-      [SESSION_ID]: [createAgent({ id: AGENT_ID, kind: 'implementer' })],
-    };
-
-    const { result } = renderHook(() => useSessionUnreadLens(SESSION_ID));
-
-    expect(result.current).toBe('agents');
-  });
-
-  it('returns null when the unread agent is selected in the current session', () => {
-    store.state.sessionPhaseRuns = {
-      [SESSION_ID]: [createAgent({ id: AGENT_ID, kind: 'implementer' })],
-    };
-    store.state.selectedAgentId = { [SESSION_ID]: AGENT_ID };
-    store.state.currentSessionId = SESSION_ID;
-
-    const { result } = renderHook(() => useSessionUnreadLens(SESSION_ID));
-
-    expect(result.current).toBeNull();
-  });
-
-  it('routes to the most recently finished unread agent lens', () => {
-    store.state.sessionPhaseRuns = {
-      [SESSION_ID]: [
-        createAgent({
-          id: 'older-resolver' as AgentId,
-          kind: 'resolver',
-          lastFinishedAt: '2026-07-21T10:00:00.000Z',
-        }),
-        createAgent({
-          id: 'newer-workflow' as AgentId,
-          kind: 'implementer',
-          workflowRunId: 'workflow-1' as WorkflowRunId,
-          stepId: 'step-1' as StepId,
-          lastFinishedAt: '2026-07-21T11:00:00.000Z',
-        }),
-      ],
-    };
-
-    const { result } = renderHook(() => useSessionUnreadLens(SESSION_ID));
-
-    expect(result.current).toBe('workflows');
-  });
-});
-
 describe('useSortedGroupedSessions', () => {
   it('derives stages with the default stage grouping', () => {
-    store.state.workspaces = [createWorkspace('repo')];
+    store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     const sessions = [createSession(SESSION_ID)];
 
@@ -452,7 +362,7 @@ describe('useSortedGroupedSessions', () => {
 
 describe('useStageGroupedSessions', () => {
   it('groups a repo session by its pull request stage', () => {
-    store.state.workspaces = [createWorkspace('repo')];
+    store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     store.state.sessionGithub = {
       [SESSION_ID]: { pr: { number: 12, state: 'merged', isDraft: false } },
@@ -465,7 +375,7 @@ describe('useStageGroupedSessions', () => {
   });
 
   it('groups a GitLab-only session by its merge request stage', () => {
-    store.state.workspaces = [createWorkspace('repo')];
+    store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     store.state.sessionGitlabMr = {
       [SESSION_ID]: {
@@ -480,7 +390,7 @@ describe('useStageGroupedSessions', () => {
   });
 
   it('keeps a branchless simple-workspace session out of the pull request stages', () => {
-    store.state.workspaces = [createWorkspace('simple')];
+    store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: '' };
     store.state.sessionGithub = {
       [SESSION_ID]: { pr: { number: 12, state: 'merged', isDraft: false } },
@@ -493,7 +403,7 @@ describe('useStageGroupedSessions', () => {
   });
 
   it('keeps the same array reference when an unrelated store field changes', () => {
-    store.state.workspaces = [createWorkspace('repo')];
+    store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     const sessions = [createSession(SESSION_ID)];
 
@@ -507,7 +417,7 @@ describe('useStageGroupedSessions', () => {
   });
 
   it('returns a new reference when a session object is replaced under the same id', () => {
-    store.state.workspaces = [createWorkspace('repo')];
+    store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     let sessions = [createSession(SESSION_ID)];
 
@@ -523,7 +433,7 @@ describe('useStageGroupedSessions', () => {
 
   it('returns a new reference when a session is added', () => {
     const otherId = 'session-2' as SessionId;
-    store.state.workspaces = [createWorkspace('repo')];
+    store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing', [otherId]: 'ak/feat-two' };
     let sessions = [createSession(SESSION_ID)];
 
@@ -534,5 +444,137 @@ describe('useStageGroupedSessions', () => {
     rerender();
 
     expect(result.current).not.toBe(first);
+  });
+});
+
+describe('useMountDiffStats', () => {
+  const worktreeRow = ({
+    id,
+    worktreePath,
+  }: {
+    readonly id: string;
+    readonly worktreePath: string;
+  }) => ({ id, sessionId: SESSION_ID, worktreePath, branch: 'ak/feat', parallelIndex: 0 });
+
+  it('fetches nothing for a session with no worktrees', () => {
+    const { result } = renderHook(() => useMountDiffStats(SESSION_ID));
+
+    expect(result.current.size).toBe(0);
+    expect(changedFiles).not.toHaveBeenCalled();
+  });
+
+  it('keys one stat per worktree path', async () => {
+    store.state.sessionWorktreeRecords = {
+      [SESSION_ID]: [
+        worktreeRow({ id: 'wt-1', worktreePath: '/tmp/a' }),
+        worktreeRow({ id: 'wt-2', worktreePath: '/tmp/b' }),
+      ],
+    };
+    changedFiles.mockImplementation((path: string) =>
+      Promise.resolve(
+        path === '/tmp/a'
+          ? { paths: ['x.ts'], additions: 2000, deletions: 200, numstat: '' }
+          : { paths: [], additions: 0, deletions: 0, numstat: '' },
+      ),
+    );
+
+    const { result } = renderHook(() => useMountDiffStats(SESSION_ID));
+
+    await waitFor(() => expect(result.current.size).toBe(2));
+    expect(result.current.get('/tmp/a')).toEqual({ additions: 2000, deletions: 200 });
+    expect(result.current.get('/tmp/b')).toEqual({ additions: 0, deletions: 0 });
+  });
+
+  it('swallows one failing path to zero instead of losing the whole map', async () => {
+    store.state.sessionWorktreeRecords = {
+      [SESSION_ID]: [
+        worktreeRow({ id: 'wt-1', worktreePath: '/tmp/a' }),
+        worktreeRow({ id: 'wt-2', worktreePath: '/tmp/gone' }),
+      ],
+    };
+    changedFiles.mockImplementation((path: string) =>
+      path === '/tmp/gone'
+        ? Promise.reject(new Error('not a worktree'))
+        : Promise.resolve({ paths: ['x.ts'], additions: 3, deletions: 1, numstat: '' }),
+    );
+
+    const { result } = renderHook(() => useMountDiffStats(SESSION_ID));
+
+    await waitFor(() => expect(result.current.size).toBe(2));
+    expect(result.current.get('/tmp/a')).toEqual({ additions: 3, deletions: 1 });
+    expect(result.current.get('/tmp/gone')).toEqual({ additions: 0, deletions: 0 });
+  });
+
+  it('skips a worktree row that carries no path', async () => {
+    store.state.sessionWorktreeRecords = {
+      [SESSION_ID]: [
+        worktreeRow({ id: 'wt-1', worktreePath: '' }),
+        worktreeRow({ id: 'wt-2', worktreePath: '/tmp/b' }),
+      ],
+    };
+    changedFiles.mockResolvedValue({ paths: [], additions: 0, deletions: 0, numstat: '' });
+
+    const { result } = renderHook(() => useMountDiffStats(SESSION_ID));
+
+    await waitFor(() => expect(result.current.size).toBe(1));
+    expect(changedFiles).toHaveBeenCalledTimes(1);
+    expect(changedFiles).toHaveBeenCalledWith('/tmp/b');
+  });
+
+  it('refetches when the last turn finishes', async () => {
+    store.state.sessionWorktreeRecords = {
+      [SESSION_ID]: [worktreeRow({ id: 'wt-1', worktreePath: '/tmp/a' })],
+    };
+    changedFiles.mockResolvedValue({ paths: [], additions: 1, deletions: 0, numstat: '' });
+
+    const { rerender } = renderHook(() => useMountDiffStats(SESSION_ID));
+    await waitFor(() => expect(changedFiles).toHaveBeenCalledTimes(1));
+
+    store.state.sessionPhaseRuns = {
+      [SESSION_ID]: [createAgent({ id: AGENT_ID, lastFinishedAt: '2026-08-22T10:00:00.000Z' })],
+    };
+    rerender();
+
+    await waitFor(() => expect(changedFiles).toHaveBeenCalledTimes(2));
+  });
+
+  it('asks git once when several surfaces read the same mount at the same time', async () => {
+    store.state.sessionWorktreeRecords = {
+      [SESSION_ID]: [worktreeRow({ id: 'wt-1', worktreePath: '/tmp/a' })],
+    };
+    changedFiles.mockResolvedValue({ paths: [], additions: 4, deletions: 0, numstat: '' });
+
+    const { result } = renderHook(() => [
+      useMountDiffStats(SESSION_ID),
+      useMountDiffStats(SESSION_ID),
+      useMountDiffStats(SESSION_ID),
+    ]);
+
+    await waitFor(() => expect(result.current[0]?.get('/tmp/a')).toBeDefined());
+    expect(result.current[2]?.get('/tmp/a')).toEqual({ additions: 4, deletions: 0 });
+    expect(changedFiles).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes when the window comes back into view', async () => {
+    store.state.sessionWorktreeRecords = {
+      [SESSION_ID]: [worktreeRow({ id: 'wt-1', worktreePath: '/tmp/a' })],
+    };
+    changedFiles.mockResolvedValue({ paths: [], additions: 1, deletions: 0, numstat: '' });
+
+    renderHook(() => useMountDiffStats(SESSION_ID));
+    await waitFor(() => expect(changedFiles).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => expect(changedFiles).toHaveBeenCalledTimes(2));
+  });
+
+  it('returns an empty map without a session', () => {
+    const { result } = renderHook(() => useMountDiffStats(null));
+
+    expect(result.current.size).toBe(0);
+    expect(changedFiles).not.toHaveBeenCalled();
   });
 });

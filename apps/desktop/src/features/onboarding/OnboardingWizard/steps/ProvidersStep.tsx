@@ -37,8 +37,7 @@ export const ProvidersStep = () => {
           Connect a provider
         </h2>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          Goodboy runs every agent through a provider CLI, so you need at least one to continue. You
-          can add more, or connect API-key providers, later in settings.
+          Every agent runs through a provider CLI, so connect at least one.
         </p>
       </div>
 

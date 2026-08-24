@@ -1,11 +1,12 @@
 import { useCallback, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type {
-  GitlabWorkspaceIntegration,
+  GitlabIntegrationBinding,
   SessionExternalTaskProvider,
   WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { primaryProjectRoot } from '../../../workspace/primaryProjectRoot';
 import { fetchIssueCandidates, type IssueCandidate } from '../../fetchIssueCandidates';
 import { useJiraConfig } from '../../jira/useJiraConfig';
 
@@ -25,12 +26,12 @@ type Result = {
 const EMPTY_ROWS: ReadonlyArray<IssueCandidate> = [];
 
 export const useIssueCandidates = ({ workspaceId, provider }: Params): Result => {
-  const rootPath = useAppStore(
-    (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.rootPath ?? null,
+  const rootPath = useAppStore((state) =>
+    primaryProjectRoot({ projects: state.projects, workspaceId }),
   );
   const gitlabHost = useAppStore((state) => {
     const integration = (state.workspaceIntegrations[workspaceId] ?? []).find(
-      (entry): entry is GitlabWorkspaceIntegration => entry.provider === 'gitlab',
+      (entry): entry is GitlabIntegrationBinding => entry.provider === 'gitlab',
     );
     return integration?.config.host ?? null;
   });

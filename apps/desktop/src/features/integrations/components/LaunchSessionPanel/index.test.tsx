@@ -11,12 +11,15 @@ const h = vi.hoisted(() => ({
     session: { id: 'session-9', goal: 'Fix the flake' },
   })),
   loadSetting: vi.fn(async () => null),
-  simpleSessionDirExists: vi.fn(async () => false),
+  sessionDirExists: vi.fn(async () => false),
   showToast: vi.fn(),
   store: {
     workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'dev' }] as ReadonlyArray<
       Record<string, unknown>
     >,
+    projects: [
+      { id: 'project-1', workspaceId: 'workspace-1', name: 'web', rootPath: '/repo', kind: 'repo' },
+    ] as ReadonlyArray<Record<string, unknown>>,
   },
 }));
 
@@ -38,7 +41,7 @@ vi.mock('../../../../app/components/Toast', () => ({
 vi.mock('../../../worktree/useBranchConflict', () => ({ useBranchConflict: () => null }));
 vi.mock('../../../worktree/worktree', () => ({
   removeWorktree: vi.fn(),
-  simpleSessionDirExists: h.simpleSessionDirExists,
+  sessionDirExists: h.sessionDirExists,
 }));
 
 import { LaunchSessionPanel } from './index';
@@ -53,7 +56,7 @@ const EXTERNAL_TASK = {
   title: 'Fix the flake',
 };
 
-const renderPanel = () =>
+const renderPanel = (onSelectedProjectChange?: (project: unknown) => void) =>
   render(
     <LaunchSessionPanel
       workspaceId={WORKSPACE_ID}
@@ -61,6 +64,7 @@ const renderPanel = () =>
       goalSeed="Fix the flake"
       branchSlugSeed="7-fix-the-flake"
       externalTask={EXTERNAL_TASK}
+      onSelectedProjectChange={onSelectedProjectChange}
       onClose={vi.fn()}
     />,
   );
@@ -68,9 +72,12 @@ const renderPanel = () =>
 beforeEach(() => {
   localStorage.clear();
   h.createSession.mockClear();
-  h.simpleSessionDirExists.mockClear();
+  h.sessionDirExists.mockClear();
   h.showToast.mockClear();
   h.store.workspaces = [{ id: 'workspace-1', rootPath: '/repo', kind: 'dev' }];
+  h.store.projects = [
+    { id: 'project-1', workspaceId: 'workspace-1', name: 'web', rootPath: '/repo', kind: 'repo' },
+  ];
 });
 
 afterEach(cleanup);
@@ -87,6 +94,139 @@ describe('LaunchSessionPanel', () => {
     const payload = h.createSession.mock.calls[0]?.[0] ?? {};
     expect(payload['openWorkflowBuilder']).toBeUndefined();
     expect(payload).toMatchObject({ externalTasks: [EXTERNAL_TASK] });
+  });
+
+  it('selects the only project of the workspace without showing a chooser', async () => {
+    renderPanel();
+
+    expect(screen.queryByRole('group', { name: 'Project for this session' })).toBeNull();
+    expect(screen.queryByText('Which project?')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /Launch session/i }));
+
+    await waitFor(() => expect(h.createSession).toHaveBeenCalledOnce());
+    expect(h.createSession.mock.calls[0]?.[0]?.['projectId']).toBe('project-1');
+  });
+
+  it('blocks the launch until one of several projects is picked, and launches into it', async () => {
+    h.store.projects = [
+      { id: 'project-1', workspaceId: 'workspace-1', name: 'web', rootPath: '/repo', kind: 'repo' },
+      { id: 'project-2', workspaceId: 'workspace-1', name: 'api', rootPath: '/api', kind: 'repo' },
+    ];
+
+    renderPanel();
+
+    expect(screen.getByText('Which project?')).toBeDefined();
+    expect(screen.queryByRole('button', { name: /Session setup/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /Launch session/i }).getAttribute('disabled')).toBe(
+      '',
+    );
+
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Session goal' }), {
+      key: 'Enter',
+      metaKey: true,
+    });
+    expect(h.createSession).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: /api/ }));
+
+    expect(screen.getByRole('button', { name: /api/ }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: /Launch session/i }).getAttribute('disabled')).toBe(
+      null,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Launch session/i }));
+
+    await waitFor(() => expect(h.createSession).toHaveBeenCalledOnce());
+    expect(h.createSession.mock.calls[0]?.[0]?.['projectId']).toBe('project-2');
+  });
+
+  it('reports the only project of the workspace to its host', async () => {
+    const onSelectedProjectChange = vi.fn();
+
+    renderPanel(onSelectedProjectChange);
+
+    await waitFor(() => expect(onSelectedProjectChange).toHaveBeenCalled());
+    expect(onSelectedProjectChange.mock.calls.at(-1)?.[0]).toMatchObject({
+      id: 'project-1',
+      rootPath: '/repo',
+    });
+  });
+
+  it('reports no project until one of several is picked, then reports the pick', async () => {
+    h.store.projects = [
+      { id: 'project-1', workspaceId: 'workspace-1', name: 'web', rootPath: '/repo', kind: 'repo' },
+      { id: 'project-2', workspaceId: 'workspace-1', name: 'api', rootPath: '/api', kind: 'repo' },
+    ];
+    const onSelectedProjectChange = vi.fn();
+
+    renderPanel(onSelectedProjectChange);
+
+    await waitFor(() => expect(onSelectedProjectChange).toHaveBeenCalledWith(null));
+
+    fireEvent.click(screen.getByRole('button', { name: /api/ }));
+
+    await waitFor(() =>
+      expect(onSelectedProjectChange.mock.calls.at(-1)?.[0]).toMatchObject({
+        id: 'project-2',
+        rootPath: '/api',
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /web/ }));
+
+    await waitFor(() =>
+      expect(onSelectedProjectChange.mock.calls.at(-1)?.[0]).toMatchObject({
+        id: 'project-1',
+        rootPath: '/repo',
+      }),
+    );
+  });
+
+  it('re-derives the session setup from the project that is picked', async () => {
+    h.store.projects = [
+      { id: 'project-1', workspaceId: 'workspace-1', name: 'web', rootPath: '/repo', kind: 'repo' },
+      {
+        id: 'project-2',
+        workspaceId: 'workspace-1',
+        name: 'notes',
+        rootPath: '/notes',
+        kind: 'folder',
+      },
+    ];
+
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: /web/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Session setup/ }));
+
+    expect(screen.getByLabelText('Branch slug').getAttribute('value')).toBe('7-fix-the-flake');
+    expect(screen.queryByLabelText('Folder name')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /notes/ }));
+
+    expect(screen.queryByLabelText('Branch slug')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Folder name'), { target: { value: 'issue-7' } });
+
+    await waitFor(() =>
+      expect(h.sessionDirExists).toHaveBeenCalledWith({ path: '/notes/sessions/issue-7' }),
+    );
+  });
+
+  it('says the workspace has no project and keeps the launch disabled', () => {
+    h.store.projects = [];
+
+    renderPanel();
+
+    expect(
+      screen.getByText(
+        'This workspace has no project yet. Add one in workspace settings, then launch from here.',
+      ),
+    ).toBeDefined();
+    expect(screen.queryByRole('button', { name: /Session setup/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /Launch session/i }).getAttribute('disabled')).toBe(
+      '',
+    );
   });
 
   it('launches on the keyboard submit shortcut', async () => {
@@ -169,7 +309,15 @@ describe('LaunchSessionPanel', () => {
   });
 
   it('blocks launch for invalid folder names in a repo-less workspace', () => {
-    h.store.workspaces = [{ id: 'workspace-1', rootPath: '/notes', kind: 'simple' }];
+    h.store.projects = [
+      {
+        id: 'project-1',
+        workspaceId: 'workspace-1',
+        name: 'notes',
+        rootPath: '/notes',
+        kind: 'folder',
+      },
+    ];
 
     renderPanel();
     fireEvent.click(screen.getByRole('button', { name: /Session setup/ }));
@@ -183,8 +331,16 @@ describe('LaunchSessionPanel', () => {
   });
 
   it('blocks launch when the folder already exists in a repo-less workspace', async () => {
-    h.store.workspaces = [{ id: 'workspace-1', rootPath: '/notes', kind: 'simple' }];
-    h.simpleSessionDirExists.mockResolvedValueOnce(true);
+    h.store.projects = [
+      {
+        id: 'project-1',
+        workspaceId: 'workspace-1',
+        name: 'notes',
+        rootPath: '/notes',
+        kind: 'folder',
+      },
+    ];
+    h.sessionDirExists.mockResolvedValueOnce(true);
 
     renderPanel();
     fireEvent.click(screen.getByRole('button', { name: /Session setup/ }));
@@ -193,7 +349,7 @@ describe('LaunchSessionPanel', () => {
     });
 
     await waitFor(() =>
-      expect(h.simpleSessionDirExists).toHaveBeenCalledWith({
+      expect(h.sessionDirExists).toHaveBeenCalledWith({
         path: '/notes/sessions/Existing folder',
       }),
     );
@@ -208,7 +364,15 @@ describe('LaunchSessionPanel', () => {
   });
 
   it('drops the branch field and passes the typed folder name in a repo-less workspace', async () => {
-    h.store.workspaces = [{ id: 'workspace-1', rootPath: '/notes', kind: 'simple' }];
+    h.store.projects = [
+      {
+        id: 'project-1',
+        workspaceId: 'workspace-1',
+        name: 'notes',
+        rootPath: '/notes',
+        kind: 'folder',
+      },
+    ];
 
     render(
       <LaunchSessionPanel
@@ -237,7 +401,7 @@ describe('LaunchSessionPanel', () => {
       target: { value: 'Issue 7 follow-up' },
     });
     await waitFor(() =>
-      expect(h.simpleSessionDirExists).toHaveBeenCalledWith({
+      expect(h.sessionDirExists).toHaveBeenCalledWith({
         path: '/notes/sessions/Issue 7 follow-up',
       }),
     );

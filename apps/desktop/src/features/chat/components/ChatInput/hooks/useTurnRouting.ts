@@ -9,6 +9,8 @@ import {
 } from '@goodboy/core';
 import { useAppStore } from '../../../../../store';
 import { agentPinApplies } from '../../../../../store/slices/turn/agentPinApplies';
+import { agentReferenceRouting } from '../../../../../store/slices/turn/agentReferenceRouting';
+import { stepConfigForAgent } from '../../../../../store/slices/turn/stepConfigForAgent';
 import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
 import { type EffortLevel, clampEffort } from '../../../utils/chat-constants';
 import { asEffortLevel, asProvider } from '../lib';
@@ -32,6 +34,18 @@ export const useTurnRouting = ({ session }: Params) => {
   const agentProviderOverride = useAppStore((s) =>
     selectedAgentId ? (s.agentProviderOverride[selectedAgentId] ?? null) : null,
   );
+  const selectedAgent = useAppStore((s) =>
+    selectedAgentId
+      ? ((s.sessionPhaseRuns[session.id] ?? []).find((r) => r.id === selectedAgentId) ?? null)
+      : null,
+  );
+  const selectedAgentKindOverride = useAppStore((s) =>
+    selectedAgentId ? (s.agentKindOverride[selectedAgentId] ?? null) : null,
+  );
+  const roleModels = useAppStore(
+    (s) => s.workspaceOverrides[session.workspaceId]?.roleModels ?? null,
+  );
+  const workspaceWorkflows = useAppStore((s) => s.phaseTemplates[session.workspaceId] ?? null);
   const connectedProviders = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected')),
   );
@@ -57,9 +71,18 @@ export const useTurnRouting = ({ session }: Params) => {
     return persistedModel;
   });
   const [isPicked, setIsPicked] = useState(false);
-  const [effort, setEffortState] = useState<EffortLevel>(
-    () => asEffortLevel(session.effort) ?? 'medium',
-  );
+  const [effort, setEffortState] = useState<EffortLevel>(() => {
+    const state = useAppStore.getState();
+    const initialAgentId = state.selectedAgentId[session.id] ?? null;
+    const initialRuns = state.sessionPhaseRuns[session.id] ?? [];
+    const initialAgent = initialAgentId
+      ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)
+      : null;
+    const agentEffort = asEffortLevel(
+      initialAgentId ? (state.agentEffortOverride[initialAgentId] ?? initialAgent?.effort) : null,
+    );
+    return agentEffort ?? asEffortLevel(session.effort) ?? 'medium';
+  });
   const [verbosity, setVerbosityState] = useState<VerbosityLevel>(() => {
     const initialAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null;
     const initialRuns = useAppStore.getState().sessionPhaseRuns[session.id] ?? [];
@@ -86,6 +109,24 @@ export const useTurnRouting = ({ session }: Params) => {
     provider: defaultProvider,
     modelId: defaultModelId,
   });
+  const stepConfig = useMemo(
+    () => stepConfigForAgent({ agent: selectedAgent, session, workflows: workspaceWorkflows }),
+    [selectedAgent, session, workspaceWorkflows],
+  );
+  const reference = useMemo(
+    () =>
+      agentReferenceRouting({
+        agent: selectedAgent,
+        stepConfig,
+        roleModels,
+        session,
+        kindOverride: selectedAgentKindOverride,
+      }),
+    [selectedAgent, stepConfig, roleModels, session, selectedAgentKindOverride],
+  );
+  const referenceProvider = reference.provider;
+  const referenceModel = reference.model;
+  const referenceEffort: EffortLevel = reference.effort;
   const effectiveProvider: ProviderId =
     selectedProvider ?? agentProviderOverride ?? defaultProvider;
   const effectiveModelId =
@@ -147,11 +188,12 @@ export const useTurnRouting = ({ session }: Params) => {
   const setEffort = useCallback(
     (level: EffortLevel) => {
       setEffortState(level);
-      void storeSetSessionConfig(session.id, { effort: level });
       if (selectedAgentId) {
         void storeSetAgentConfig(session.id, selectedAgentId, { effort: level });
         storeSetAgentEffortOverride(selectedAgentId, level);
+        return;
       }
+      void storeSetSessionConfig(session.id, { effort: level });
     },
     [
       storeSetSessionConfig,
@@ -176,10 +218,11 @@ export const useTurnRouting = ({ session }: Params) => {
     (id: ProviderId | null) => {
       setIsPicked(true);
       setSelectedProviderState(id);
-      void storeSetSessionConfig(session.id, { providerOverride: id });
       if (selectedAgentId) {
         void storeSetAgentConfig(session.id, selectedAgentId, { providerOverride: id });
+        return;
       }
+      void storeSetSessionConfig(session.id, { providerOverride: id });
     },
     [storeSetSessionConfig, storeSetAgentConfig, session.id, selectedAgentId],
   );
@@ -188,10 +231,11 @@ export const useTurnRouting = ({ session }: Params) => {
     (id: string | null) => {
       setIsPicked(true);
       setSelectedModelState(id);
-      void storeSetSessionConfig(session.id, { modelOverride: id });
       if (selectedAgentId) {
         void storeSetAgentConfig(session.id, selectedAgentId, { modelOverride: id });
+        return;
       }
+      void storeSetSessionConfig(session.id, { modelOverride: id });
     },
     [storeSetSessionConfig, storeSetAgentConfig, session.id, selectedAgentId],
   );
@@ -215,14 +259,15 @@ export const useTurnRouting = ({ session }: Params) => {
       setIsPicked(true);
       setSelectedProviderState(id);
       setSelectedModelState(null);
-      void storeSetSessionConfig(session.id, { providerOverride: id, modelOverride: null });
+      realignEffort(id === defaultProvider ? defaultModel : getDefaultTurnModel({ id }));
       if (selectedAgentId) {
         void storeSetAgentConfig(session.id, selectedAgentId, {
           providerOverride: id,
           modelOverride: null,
         });
+        return;
       }
-      realignEffort(id === defaultProvider ? defaultModel : getDefaultTurnModel({ id }));
+      void storeSetSessionConfig(session.id, { providerOverride: id, modelOverride: null });
     },
     [
       allowOverride,
@@ -251,9 +296,32 @@ export const useTurnRouting = ({ session }: Params) => {
     if (!allowOverride) {
       return;
     }
-    setSelectedProvider(null);
-    setSelectedModel(null);
-  }, [allowOverride, setSelectedProvider, setSelectedModel]);
+    if (selectedAgentId === null) {
+      setSelectedProvider(null);
+      setSelectedModel(null);
+      return;
+    }
+    setIsPicked(false);
+    setSelectedProviderState(referenceProvider);
+    setSelectedModelState(referenceModel);
+    const alignedEffort = clampEffort(referenceModel, referenceEffort);
+    setEffortState(alignedEffort);
+    void storeSetAgentConfig(session.id, selectedAgentId, {
+      providerOverride: referenceProvider,
+      modelOverride: referenceModel,
+      effort: alignedEffort,
+    });
+  }, [
+    allowOverride,
+    selectedAgentId,
+    setSelectedProvider,
+    setSelectedModel,
+    referenceProvider,
+    referenceModel,
+    referenceEffort,
+    storeSetAgentConfig,
+    session.id,
+  ]);
 
   return {
     selectedProvider,
@@ -268,8 +336,9 @@ export const useTurnRouting = ({ session }: Params) => {
     effectiveProvider,
     effectiveModel,
     effectiveEffort,
-    defaultProvider,
-    defaultModel,
+    referenceProvider,
+    referenceModel,
+    referenceEffort,
     routingOverride,
     allowOverride,
     currentProviderRef,

@@ -163,6 +163,47 @@ describe('AgentMetrics', () => {
     expect(screen.getByTestId('agent-metrics-inline').className).toContain('opacity-60');
   });
 
+  it('shows what actually ran and names the plan it replaced', () => {
+    render(
+      <AgentMetrics
+        telemetry={telemetry({ provider: 'codex', model: 'gpt-5.1-codex' })}
+        aggregate={null}
+        contextUsage={[]}
+        turns={1}
+        turnsLoading={false}
+        run={run}
+        density="compact"
+        plannedModel="claude-haiku-4-5"
+        plannedProvider="anthropic"
+      />,
+    );
+
+    expect(screen.getByTitle('Model: gpt-5.1-codex')).toBeDefined();
+    expect(screen.queryByTitle('Model: claude-haiku-4-5')).toBeNull();
+    const note = screen.getByTestId('routing-divergence');
+    expect(note.textContent).toBe('was Haiku 4.5');
+    expect(note.getAttribute('title')).toContain('Planned Claude Haiku 4.5');
+  });
+
+  it('keeps the planned routing silent while the plan is what would run', () => {
+    render(
+      <AgentMetrics
+        telemetry={null}
+        aggregate={null}
+        contextUsage={[]}
+        turns={0}
+        turnsLoading={false}
+        run={run}
+        density="compact"
+        plannedModel="claude-haiku-4-5"
+        plannedProvider="anthropic"
+      />,
+    );
+
+    expect(screen.getByText('Haiku 4.5')).toBeDefined();
+    expect(screen.queryByTestId('routing-divergence')).toBeNull();
+  });
+
   it('falls back to the dominant context provider model when telemetry is missing', () => {
     render(
       <AgentMetrics

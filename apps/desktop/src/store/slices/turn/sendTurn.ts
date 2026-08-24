@@ -20,7 +20,6 @@ import {
   insertMessage,
   insertProviderRun,
   listContextSlotsForSession,
-  listWorktreesForSession,
   updateProviderRunStatus,
   updateSessionState,
   upsertContextSlot,
@@ -50,7 +49,11 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { invokePermissionRuleList } from '../../../features/permissions/permissions';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { resolveProviderForTurn } from '../../../features/providers/routing';
-import { simpleSessionDirExists, worktreeChangedFiles } from '../../../features/worktree/worktree';
+import {
+  scratchDirPrepare,
+  sessionDirExists,
+  worktreeChangedFiles,
+} from '../../../features/worktree/worktree';
 import { encodeAuthRequiredMessage, runTurn } from '../../../features/chat/turn';
 import { classifyProviderError } from '../../../features/chat/classifyProviderError';
 import { createTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
@@ -61,22 +64,22 @@ import {
   AGENT_KIND_DEFAULTS,
   KIND_TO_ROLE,
   inferAgentKindFromName,
+  kindWritesFiles,
 } from '../../../features/session/agent-kind';
 import { slotsForKind } from '../../../features/providers/slot-routing';
-import { AGENT_FEATURES } from '../../../shared/lib/features';
 import { formatInteger } from '../../../shared/utils/formatInteger';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { detectParallelGroup } from '../../parallel-turn';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from '../../integrationsGuard';
+import { buildProfileGuard } from '../../profileGuard';
+import { buildScopeGuard } from '../../scopeGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
 import { stepSummaryDegraded } from '../../summarizeAgentOutput';
 import { decisionsDelta } from '../session-events';
-import { relinkSimpleSessionDirectories } from '../workspaces/relinkSimpleSessionDirectories';
 import { flushTurnEvents } from '../transcripts/buffer';
 import {
   beginTurnFileVersionCapture,
@@ -85,6 +88,7 @@ import {
 import {
   buildAttachmentPromptBlock,
   buildGoalAttachmentsBlock,
+  captureMaterializeRequestsFromTurn,
   capturePlanFromTurn,
   captureScoutDomainsFromTurn,
   emitTurnNudges,
@@ -97,7 +101,6 @@ import { completeResolvedAgent } from './completeResolvedAgent';
 import { resolvePhaseAgent } from './resolvePhaseAgent';
 import { resolveSkillPrompt } from './resolveSkillPrompt';
 import { persistAttachments } from './persistAttachments';
-import { dispatchParallelTurn } from './dispatchParallelTurn';
 import { auditToolCall } from './auditToolCall';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { fallbackNoticeMessage } from './fallbackNoticeMessage';
@@ -156,44 +159,23 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (!session) {
       throw new Error(`session not found: ${sessionId}`);
     }
-    let workingDir = (before.sessionWorktrees[sessionId] ?? [])[0] ?? null;
-    if (!workingDir) {
-      throw new Error(
-        'session worktree not initialized. restart the app to reload persisted worktree paths',
-      );
-    }
-    const workspace =
-      before.workspaces.find((candidate) => candidate.id === session.workspaceId) ?? null;
-    const isPlainSessionDir = isBranchlessSession({
-      workspaceKind: workspace?.kind,
-      branch: before.sessionBranches[sessionId],
-    });
-    if (workspace != null && isPlainSessionDir) {
-      const exists = await simpleSessionDirExists({ path: workingDir });
-      if (!exists) {
-        const worktrees = await listWorktreesForSession(tauriDatabase, sessionId);
-        const resolved = await relinkSimpleSessionDirectories({
-          rootPath: workspace.rootPath,
-          workspaceId: workspace.id,
-          workspaceKind: workspace.kind,
-          worktreesBySession: new Map([[sessionId, worktrees]]),
-        });
-        const relinkedPath = resolved.get(sessionId)?.[0]?.worktreePath ?? workingDir;
-        const relinkedExists = await simpleSessionDirExists({ path: relinkedPath });
-        if (!relinkedExists) {
-          throw new Error(
-            'Session directory not found. It may have been moved outside the workspace folder.',
-          );
-        }
-        workingDir = relinkedPath;
-        set((state) => ({
-          sessionWorktrees: {
-            ...state.sessionWorktrees,
-            [sessionId]: resolved.get(sessionId)?.map((worktree) => worktree.worktreePath) ?? [
-              relinkedPath,
-            ],
-          },
-        }));
+    const workspaceProjects = before.projects.filter(
+      (project) => project.workspaceId === session.workspaceId,
+    );
+    const turnMounts = before.sessionProjectMounts[sessionId] ?? [];
+    const turnActiveProjectId = before.sessionActiveProject[sessionId] ?? session.activeProjectId;
+    const activeMount =
+      turnMounts.find((mount) => mount.projectId === turnActiveProjectId) ?? turnMounts[0];
+    const workingDir =
+      activeMount !== undefined ? activeMount.worktreePath : await scratchDirPrepare({ sessionId });
+    const isPlainSessionDir =
+      activeMount !== undefined && isBranchlessSession({ branch: activeMount.branch });
+    if (isPlainSessionDir) {
+      const exists = await sessionDirExists({ path: workingDir });
+      if (exists === false) {
+        throw new Error(
+          'Session directory not found. It may have been moved outside the workspace folder.',
+        );
       }
     }
 
@@ -256,13 +238,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     let phaseWorkflowRunId: WorkflowRunId | null = null;
     let phasePromptCarryForward = '';
     let phaseTransitionEvent: Extract<TurnEvent, { kind: 'step_transition' }> | null = null;
-    let parallelDispatch: {
-      template: Workflow;
-      currentDef: Step;
-      groupDefs: ReadonlyArray<Step>;
-    } | null = null;
-    const userPromptForPhase = resolvedPrompt;
-
     if (session.workflowRuns.length > 0) {
       const freshRuns = await invokeAgentList(sessionId);
       set((state) => ({
@@ -288,44 +263,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           const predecessorDefinitions = sortedDefs.filter(
             (definition) => definition.ordinal < nextDef.ordinal,
           );
-          const completedPredecessors = predecessorDefinitions.flatMap(
-            (definition, _index, definitions) => {
-              if (definition.parallelGroup !== undefined) {
-                const groupDefinitions = definitions.filter(
-                  (candidate) => candidate.parallelGroup === definition.parallelGroup,
-                );
-                if (groupDefinitions.at(-1)?.id !== definition.id) {
-                  return [];
-                }
-                const representative = groupDefinitions
-                  .map((groupDefinition) =>
-                    runAgents.find(
-                      (agent) =>
-                        agent.stepId === groupDefinition.id && agent.status === 'completed',
-                    ),
-                  )
-                  .find((agent) => agent != null);
-                if (representative == null) {
-                  return [];
-                }
-                const groupSummary = representative.outputSummary ?? '';
-                return [
-                  {
-                    ...representative,
-                    ordinal: groupDefinitions.at(-1)?.ordinal ?? definition.ordinal,
-                    name: groupDefinitions[0]?.name ?? definition.name,
-                    outputSummary: groupSummary.startsWith('## workflow handoff\n')
-                      ? groupSummary.slice('## workflow handoff\n'.length)
-                      : groupSummary,
-                  },
-                ];
-              }
-              const completedAgent = runAgents.find(
-                (agent) => agent.stepId === definition.id && agent.status === 'completed',
-              );
-              return completedAgent == null ? [] : [completedAgent];
-            },
-          );
+          const completedPredecessors = predecessorDefinitions.flatMap((definition) => {
+            const completedAgent = runAgents.find(
+              (agent) => agent.stepId === definition.id && agent.status === 'completed',
+            );
+            return completedAgent == null ? [] : [completedAgent];
+          });
           const immediatePredecessor = completedPredecessors.at(-1) ?? null;
           const hasAssistantTurn = (before.transcripts[activeAgentId] ?? []).some(
             (event) => event.kind === 'assistant_text',
@@ -369,26 +312,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           phaseDefinition = nextDef;
           phaseWorkflowRunId = activeRun?.id ?? null;
 
-          if (AGENT_FEATURES.parallelAgents) {
-            const detection = detectParallelGroup(template, nextDef);
-            if (detection !== null) {
-              parallelDispatch = {
-                template,
-                currentDef: detection.currentDef,
-                groupDefs: detection.groupDefs,
-              };
-            }
-          }
-
-          if (parallelDispatch === null) {
-            const prefix = nextDef.promptPrefix.trim();
-            const hasPrefixAlready = prefix.length > 0 && resolvedPrompt.includes(prefix);
-            resolvedPrompt = buildStepPrompt({
-              definition: hasPrefixAlready ? { ...nextDef, promptPrefix: '' } : nextDef,
-              carryForwardContext: phasePromptCarryForward,
-              userMessage: resolvedPrompt,
-            });
-          }
+          const prefix = nextDef.promptPrefix.trim();
+          const hasPrefixAlready = prefix.length > 0 && resolvedPrompt.includes(prefix);
+          resolvedPrompt = buildStepPrompt({
+            definition: hasPrefixAlready ? { ...nextDef, promptPrefix: '' } : nextDef,
+            carryForwardContext: phasePromptCarryForward,
+            userMessage: resolvedPrompt,
+          });
         }
       }
     }
@@ -462,6 +392,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     }
 
     const provider: ProviderId = routingDecision.selectedProvider;
+    const turnAgentKind =
+      get().agentKindOverride[activeAgentId] ?? inferAgentKindFromName(activeAgent?.name ?? '');
     const autoStepModel =
       phaseDefinition != null && phaseDefinition.modelOverride == null
         ? autoModelForRole({
@@ -469,7 +401,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             providers: [provider],
             prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
           })
-        : null;
+        : phaseDefinition == null && routingDecision.fallbackUsed
+          ? autoModelForRole({
+              role: KIND_TO_ROLE[turnAgentKind],
+              providers: [provider],
+              prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
+            })
+          : null;
     const rawEffort = phaseDefinition?.effort ?? get().agentEffortOverride[activeAgentId] ?? null;
     const requestedEffort = EFFORT_LEVELS.find((level) => level === rawEffort);
     const modelSelection = resolveTurnModelSelection({
@@ -547,52 +485,50 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const runId = crypto.randomUUID() as ProviderRunId;
     const isFirstTurn = (get().agentRunHistory[activeAgentId] ?? []).length === 0;
 
-    if (parallelDispatch === null) {
-      set((state) => {
-        const prev = state.agentRunHistory[activeAgentId] ?? [];
-        if (prev.includes(runId)) {
-          return state;
-        }
-        return {
-          agentRunHistory: { ...state.agentRunHistory, [activeAgentId]: [...prev, runId] },
-        };
-      });
-      if (retry == null) {
-        const userMessage: Message = {
-          id: crypto.randomUUID() as MessageId,
-          sessionId,
-          agentId: activeAgentId,
-          role: 'user',
-          content: userTurnText,
-          createdAt: now(),
-          ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
-        };
-        await insertMessage(tauriDatabase, userMessage);
-        get().appendTurnEvent(activeAgentId, sessionId, {
-          kind: 'user_text',
-          runId,
-          text: userTurnText,
-          ...(attachmentRefs.length > 0 ? { attachments: attachmentRefs } : {}),
-          provider,
-          model,
-          at: userMessage.createdAt,
-        });
+    set((state) => {
+      const prev = state.agentRunHistory[activeAgentId] ?? [];
+      if (prev.includes(runId)) {
+        return state;
       }
-
-      const run: ProviderRun = {
-        id: runId,
-        sessionId,
-        provider,
-        model: spawnModel,
-        status: { kind: 'streaming', startedAt: now() },
-        routingDecision,
-        createdAt: now(),
+      return {
+        agentRunHistory: { ...state.agentRunHistory, [activeAgentId]: [...prev, runId] },
       };
-      await insertProviderRun(tauriDatabase, run);
+    });
+    if (retry == null) {
+      const userMessage: Message = {
+        id: crypto.randomUUID() as MessageId,
+        sessionId,
+        agentId: activeAgentId,
+        role: 'user',
+        content: userTurnText,
+        createdAt: now(),
+        ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
+      };
+      await insertMessage(tauriDatabase, userMessage);
+      get().appendTurnEvent(activeAgentId, sessionId, {
+        kind: 'user_text',
+        runId,
+        text: userTurnText,
+        ...(attachmentRefs.length > 0 ? { attachments: attachmentRefs } : {}),
+        provider,
+        model,
+        at: userMessage.createdAt,
+      });
     }
 
+    const providerRun: ProviderRun = {
+      id: runId,
+      sessionId,
+      provider,
+      model: spawnModel,
+      status: { kind: 'streaming', startedAt: now() },
+      routingDecision,
+      createdAt: now(),
+    };
+    await insertProviderRun(tauriDatabase, providerRun);
+
     let resolvedAgentId: AgentId | null = null;
-    if (phaseDefinition && parallelDispatch === null) {
+    if (phaseDefinition) {
       const runsForSession = get().sessionPhaseRuns[sessionId] ?? [];
       const scopedRuns = phaseWorkflowRunId
         ? runsForWorkflowRun(runsForSession, phaseWorkflowRunId)
@@ -615,7 +551,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         get().appendTurnEvent(activeAgentId, sessionId, { ...phaseTransitionEvent, runId });
       }
     }
-    if (!phaseDefinition && parallelDispatch === null) {
+    if (!phaseDefinition) {
       await invokeAgentUpdateStatus(activeAgentId, {
         status: 'running',
         providerRunId: runId,
@@ -628,21 +564,19 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }));
     }
 
-    if (parallelDispatch === null) {
-      let nextAgentState: TurnState = get().agentTurnState[activeAgentId] ?? {
-        kind: 'idle',
-        lastActivityAt: now(),
-      };
-      if (nextAgentState.kind === 'draft') {
-        nextAgentState = turnReducer(nextAgentState, { kind: 'start', at: now() });
-      }
-      if (nextAgentState.kind === 'error' || nextAgentState.kind === 'blocked') {
-        nextAgentState = turnReducer(nextAgentState, { kind: 'retry', at: now() });
-      }
-      nextAgentState = turnReducer(nextAgentState, { kind: 'send', runId, at: now() });
-      const derived = applyAgentTurnState(set, sessionId, activeAgentId, nextAgentState, now());
-      await updateSessionState(tauriDatabase, sessionId, derived, now());
+    let nextAgentState: TurnState = get().agentTurnState[activeAgentId] ?? {
+      kind: 'idle',
+      lastActivityAt: now(),
+    };
+    if (nextAgentState.kind === 'draft') {
+      nextAgentState = turnReducer(nextAgentState, { kind: 'start', at: now() });
     }
+    if (nextAgentState.kind === 'error' || nextAgentState.kind === 'blocked') {
+      nextAgentState = turnReducer(nextAgentState, { kind: 'retry', at: now() });
+    }
+    nextAgentState = turnReducer(nextAgentState, { kind: 'send', runId, at: now() });
+    const derived = applyAgentTurnState(set, sessionId, activeAgentId, nextAgentState, now());
+    await updateSessionState(tauriDatabase, sessionId, derived, now());
 
     const providerInfo = get().providers.find((p) => p.id === provider);
 
@@ -679,35 +613,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
     }
 
-    if (parallelDispatch !== null) {
-      await dispatchParallelTurn(set, get, {
-        session,
-        sessionId,
-        activeAgentId,
-        provider,
-        model: spawnModel,
-        effort: effortFlag,
-        cursorMaxMode: resolvedModel.maxMode,
-        parallelDispatch,
-        claudeFlags,
-        apiKeyBinding,
-        providerBinary: providerInfo?.binary,
-        workingDir,
-        userTurnText,
-        userPromptForPhase,
-        phasePromptCarryForward,
-        phaseWorkflowRunId,
-        now,
-      });
-      return NOT_BLOCKED;
-    }
-
     const sharedSlots = get().sessionSlots[sessionId] ?? [];
 
     const agentRowEarly =
       (get().sessionPhaseRuns[sessionId] ?? []).find((s) => s.id === activeAgentId) ?? null;
-    const earlyAgentKind =
-      get().agentKindOverride[activeAgentId] ?? inferAgentKindFromName(agentRowEarly?.name ?? '');
+    const earlyAgentKind = turnAgentKind;
     const slotFilter = slotsForKind(earlyAgentKind);
     const contextPreamble = buildContextPreamble(sharedSlots, slotFilter);
     if (contextPreamble.length > 0) {
@@ -792,12 +702,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
 
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
-    const scopeWorkspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    const isSessionDirScope = isBranchlessSession({
-      workspaceKind: scopeWorkspace?.kind,
-      branch: get().sessionBranches[sessionId],
-    });
-    const scopeMembers = scopeWorkspace?.kind === 'composite' ? (scopeWorkspace.members ?? []) : [];
+    const scopeMounts = get().sessionProjectMounts[sessionId] ?? [];
+    const activeProject =
+      activeMount !== undefined
+        ? get().projects.find((project) => project.id === activeMount.projectId)
+        : undefined;
+    const isSessionDirScope = activeProject?.kind === 'folder';
     const notifySnapshotFailure = async ({
       stage,
       message,
@@ -821,34 +731,15 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           onFailure: notifySnapshotFailure,
         })
       : null;
-    const scopeGuard = (
-      isSessionDirScope
-        ? [
-            '[session-directory-scope]',
-            `You are operating inside this session directory: ${workingDir}`,
-            'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this directory.',
-            'NEVER write to absolute paths that exit this directory.',
-            'Prefer paths relative to your current working directory. If a request implies editing files outside this directory, stop and ask for explicit confirmation before touching them.',
-            '[/session-directory-scope]',
-          ]
-        : scopeMembers.length > 0
-          ? [
-              '[multi-repo-scope]',
-              `You are operating across ${scopeMembers.length} linked git repositories mounted under: ${workingDir}`,
-              `Each repo lives in its own subfolder: ${scopeMembers.map((m) => m.mountName).join(', ')}.`,
-              'Each subfolder is a separate git repository with its own branch. Run git commands inside the relevant subfolder, never at the container root.',
-              'ALL file operations MUST resolve inside one of these subfolders. Do NOT create files at the container root or outside it.',
-              '[/multi-repo-scope]',
-            ]
-          : [
-              '[worktree-scope]',
-              `You are operating inside an isolated git worktree at: ${workingDir}`,
-              'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this worktree.',
-              'NEVER write to absolute paths that exit this directory, especially not to the parent project checkout.',
-              'Prefer paths relative to your current working directory. If a user request implies editing files outside the worktree, stop and ask for explicit confirmation before touching them.',
-              '[/worktree-scope]',
-            ]
-    ).join('\n');
+    const isBridgeServing = await isQueryBridgeServing();
+    const scopeGuard = buildScopeGuard({
+      workingDir,
+      projects: workspaceProjects,
+      mounts: scopeMounts,
+      isBridgeServing,
+      isSessionDirScope,
+      canWrite: kindWritesFiles(earlyAgentKind),
+    });
     const languageGuard = buildSessionLanguageGuard({
       goal: resolveSessionLanguageGoal({
         session,
@@ -858,13 +749,21 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }),
       }),
     });
+    const githubMode = get().githubStatus?.mode;
+    const isGithubConnected = githubMode === 'pat' || githubMode === 'gh-cli';
     const integrationsGuard = buildIntegrationsGuard({
-      providers: (get().workspaceIntegrations[session.workspaceId] ?? []).map(
-        (integration) => integration.provider,
-      ),
-      isBridgeServing: await isQueryBridgeServing(),
+      providers: [
+        ...(get().workspaceIntegrations[session.workspaceId] ?? []).map(
+          (integration) => integration.provider,
+        ),
+        ...(isGithubConnected ? (['github'] as const) : []),
+      ],
+      isBridgeServing,
     });
-    const guards = [scopeGuard, languageGuard, integrationsGuard]
+    const profileGuard = buildProfileGuard({
+      profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)?.profile,
+    });
+    const guards = [scopeGuard, languageGuard, integrationsGuard, profileGuard]
       .filter((block) => block.length > 0)
       .join('\n\n');
     const fullSystemPrompt = kindSystemPrompt ? `${guards}\n\n${kindSystemPrompt}` : guards;
@@ -888,6 +787,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         prompt: resolvedPrompt,
         binary: providerInfo?.binary,
         workspaceId: session.workspaceId,
+        sessionId,
         ...(resumeSessionId !== undefined && { resumeSessionId }),
         systemPrompt: fullSystemPrompt,
         ...(effortFlag !== undefined && { effort: effortFlag }),
@@ -1122,7 +1022,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         // The existing `files_touched` slot is left untouched (mobile falls back
         // to it, paths-only, when this slot is absent). Best-effort: a git failure
         // must not fail the turn.
-        if (!isSessionDirScope) {
+        if (activeMount !== undefined && !isSessionDirScope) {
           try {
             const changed = await worktreeChangedFiles(workingDir);
             await upsertContextSlot(
@@ -1303,6 +1203,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         sessionId,
         agentId: activeAgentId,
         agentKind: earlyAgentKind,
+        assistantText,
+      });
+      await captureMaterializeRequestsFromTurn({
+        get,
+        sessionId,
+        agentId: activeAgentId,
+        runId,
         assistantText,
       });
       void emitTurnNudges(set, get, sessionId, activeAgentId, assistantText, capturedPlan);

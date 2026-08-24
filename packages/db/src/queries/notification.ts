@@ -10,6 +10,8 @@ export type NotificationKind =
   | 'agent-auto-spawn'
   | 'pr-created'
   | 'workspace-deleted'
+  | 'workspace-merged'
+  | 'project-adopted'
   | 'boundary-drift'
   | 'branch-changed'
   | 'budget-cap'
@@ -44,7 +46,7 @@ export type Notification = {
 
 type NotificationRow = {
   id: string;
-  ts: string;
+  ts: number;
   kind: string;
   title: string;
   body: string | null;
@@ -73,7 +75,7 @@ function serializeAction(action: NotificationAction | null): string | null {
 function toNotification(row: NotificationRow): Notification {
   return {
     id: row.id,
-    ts: row.ts as IsoDateTime,
+    ts: new Date(row.ts).toISOString() as IsoDateTime,
     kind: row.kind as NotificationKind,
     title: row.title,
     body: row.body,
@@ -91,7 +93,7 @@ export const insertNotification = async (db: Database, n: Notification): Promise
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       n.id,
-      n.ts,
+      Date.parse(n.ts),
       n.kind,
       n.title,
       n.body ?? null,

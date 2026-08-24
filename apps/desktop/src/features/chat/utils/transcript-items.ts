@@ -110,25 +110,6 @@ export type TranscriptItem =
       at: IsoDateTime;
     };
 
-export const detectParallelRunIds = (
-  events: ReadonlyArray<TurnEvent>,
-): ReadonlyArray<ProviderRunId> => {
-  const seen = new Set<ProviderRunId>();
-  for (const event of events) {
-    if (event.runId !== ('history' as ProviderRunId)) {
-      seen.add(event.runId);
-    }
-  }
-  return seen.size > 1 ? [...seen] : [];
-};
-
-export const filterEventsByRunId = (
-  events: ReadonlyArray<TurnEvent>,
-  runId: ProviderRunId,
-): ReadonlyArray<TurnEvent> => {
-  return events.filter((e) => e.runId === runId);
-};
-
 export const reduceTranscript = (
   events: ReadonlyArray<TurnEvent>,
 ): ReadonlyArray<TranscriptItem> => {

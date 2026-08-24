@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { WorkspaceIntegration, WorkspaceIntegrationProvider } from '@goodboy/types';
+import type { IntegrationBinding, WorkspaceIntegrationProvider } from '@goodboy/types';
 import { resolveIssueSources } from './issueSources';
 
-const integration = (provider: WorkspaceIntegrationProvider): WorkspaceIntegration =>
-  ({ provider }) as WorkspaceIntegration;
+const integration = (provider: WorkspaceIntegrationProvider): IntegrationBinding =>
+  ({ provider }) as IntegrationBinding;
 
 describe('resolveIssueSources', () => {
   it('offers every connected source, slack included', () => {

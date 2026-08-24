@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FolderX, Trash2 } from 'lucide-react';
-import { Button, formatError, InlineConfirm, SectionHeader } from '@goodboy/ui';
+import { Button, Divider, formatError, InlineConfirm, SectionHeader } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -37,45 +37,48 @@ export const OrphanWorktreesSection = ({ workspaceId }: Props) => {
   };
 
   return (
-    <section className="flex flex-col gap-4">
-      <SectionHeader
-        label="Session folders left on disk"
-        hint="Git no longer tracks these and no session claims them. Deleting them frees the space."
-      />
-      <div className="flex flex-col gap-1.5">
-        {orphans.map((orphan) => (
-          <div
-            key={orphan.path}
-            className="flex items-center justify-between gap-3 rounded-md border border-border px-2.5 py-1.5"
-          >
-            <div className="flex min-w-0 flex-col">
-              <span className="truncate font-mono text-xs text-foreground">{orphan.name}</span>
-              <span className="truncate text-2xs text-muted-foreground">{orphan.path}</span>
-            </div>
-            <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
-              {formatDiskSize({ bytes: orphan.sizeBytes })}
-            </span>
-          </div>
-        ))}
-      </div>
-      {isArmed ? (
-        <InlineConfirm
-          role="danger"
-          icon={<FolderX size={13} aria-hidden />}
-          title={`Delete ${folderLabel}`}
-          description={`${formatDiskSize({ bytes: totalBytes })} will be removed from disk. This cannot be undone.`}
-          confirmLabel="Delete"
-          onConfirm={onConfirm}
-          onCancel={() => setIsArmed(false)}
+    <div className="flex flex-col gap-6">
+      <Divider />
+      <section className="flex flex-col gap-4">
+        <SectionHeader
+          label="Session folders left on disk"
+          hint="Git no longer tracks these and no session claims them. Deleting them frees the space."
         />
-      ) : (
-        <div className="flex justify-start">
-          <Button variant="danger" size="sm" onClick={() => setIsArmed(true)}>
-            <Trash2 size={13} aria-hidden />
-            Delete {folderLabel} ({formatDiskSize({ bytes: totalBytes })})
-          </Button>
+        <div className="flex flex-col gap-1.5">
+          {orphans.map((orphan) => (
+            <div
+              key={orphan.path}
+              className="flex items-center justify-between gap-3 rounded-md border border-border px-2.5 py-1.5"
+            >
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate font-mono text-xs text-foreground">{orphan.name}</span>
+                <span className="truncate text-2xs text-muted-foreground">{orphan.path}</span>
+              </div>
+              <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
+                {formatDiskSize({ bytes: orphan.sizeBytes })}
+              </span>
+            </div>
+          ))}
         </div>
-      )}
-    </section>
+        {isArmed ? (
+          <InlineConfirm
+            role="danger"
+            icon={<FolderX size={13} aria-hidden />}
+            title={`Delete ${folderLabel}`}
+            description={`${formatDiskSize({ bytes: totalBytes })} will be removed from disk. This cannot be undone.`}
+            confirmLabel="Delete"
+            onConfirm={onConfirm}
+            onCancel={() => setIsArmed(false)}
+          />
+        ) : (
+          <div className="flex justify-start">
+            <Button variant="danger" size="sm" onClick={() => setIsArmed(true)}>
+              <Trash2 size={13} aria-hidden />
+              Delete {folderLabel} ({formatDiskSize({ bytes: totalBytes })})
+            </Button>
+          </div>
+        )}
+      </section>
+    </div>
   );
 };

@@ -44,13 +44,14 @@ afterEach(cleanup);
 import { LinearFormBody } from './LinearFormBody';
 
 describe('LinearFormBody', () => {
-  it('offers the token link before the token field', () => {
+  it('shows the token field first and the get-a-token link right under it', () => {
     render(<LinearFormBody workspaceId={WS_ID} />);
 
-    const link = screen.getByRole('link', { name: /create a personal API key/i });
     const field = screen.getByLabelText(/personal API key/i);
+    const link = screen.getByRole('link', { name: /get an API key from Linear/i });
 
-    expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(field.compareDocumentPosition(link)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(link.getAttribute('href')).toBe('https://linear.app/settings/account/security');
   });
 
   describe('connect form (happy path)', () => {
@@ -101,7 +102,7 @@ describe('LinearFormBody', () => {
       state.workspaceIntegrations = { [WS_ID]: [linearIntegration] };
     });
 
-    it('renders the connected state with viewer and workspace', () => {
+    it('renders one connected row with viewer and workspace', () => {
       render(<LinearFormBody workspaceId={WS_ID} />);
       expect(screen.getByText(/Connected as Ada Lovelace/i)).toBeDefined();
       expect(screen.getByText('linear.app/acme')).toBeDefined();
@@ -110,24 +111,28 @@ describe('LinearFormBody', () => {
 
     it('arms the disconnect confirm instead of disconnecting immediately', () => {
       render(<LinearFormBody workspaceId={WS_ID} />);
-      fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /disconnect linear/i }));
       expect(screen.getByText(/Disconnect Linear\?/i)).toBeDefined();
       expect(state.disconnectIntegration).not.toHaveBeenCalled();
     });
 
-    it('disconnects Linear for the workspace once the confirm is confirmed', () => {
+    it('disconnects Linear for the workspace once the confirm is confirmed', async () => {
       render(<LinearFormBody workspaceId={WS_ID} />);
-      fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /disconnect linear/i }));
       fireEvent.click(screen.getByRole('button', { name: /^disconnect linear$/i }));
-      expect(state.disconnectIntegration).toHaveBeenCalledWith({
-        workspaceId: WS_ID,
-        provider: 'linear',
-      });
+      await waitFor(() =>
+        expect(state.disconnectIntegration).toHaveBeenCalledWith({
+          workspaceId: WS_ID,
+          provider: 'linear',
+        }),
+      );
     });
   });
 
-  it('says where the token travels instead of claiming it never leaves', () => {
+  it('keeps the keychain note behind a quiet disclosure and says where the token travels', () => {
     render(<LinearFormBody workspaceId={WS_ID} />);
+    expect(screen.queryByText(/never touches Goodboy's own servers/i)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /where your key goes/i }));
     expect(screen.getByText(/never touches Goodboy's own servers/i)).toBeDefined();
     expect(screen.queryByText(/never leaves this machine/i)).toBeNull();
     expect(screen.queryByText(/never leaving this machine/i)).toBeNull();

@@ -54,6 +54,7 @@ export const useScopeNudge = ({ session, activeAgentKind, isRunning }: UseScopeN
     try {
       await insertNudgeEvent(tauriDatabase, {
         id,
+        sessionId: session.id,
         ts: new Date().toISOString() as IsoDateTime,
         kind: 'scope-mismatch',
         contextJson: JSON.stringify({

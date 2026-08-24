@@ -1,5 +1,6 @@
 import { Button, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
+import type { MountDiffStat } from '../../../../../../store';
 import { formatCardTime } from '../../../../../chat/utils/format-card-time';
 import { useHoverMarkViewed } from '../../../../hooks/useHoverMarkViewed';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
@@ -22,6 +23,7 @@ type Props = {
   readonly sessionId: SessionId;
   readonly openLabel: string;
   readonly action: TimelineRowAction | null;
+  readonly diffStat?: MountDiffStat | null;
   readonly onOpen: () => void;
 };
 
@@ -35,6 +37,7 @@ export const TimelineStreamRow = ({
   sessionId,
   openLabel,
   action,
+  diffStat = null,
   onOpen,
 }: Props) => {
   const hover = useHoverMarkViewed({
@@ -85,15 +88,21 @@ export const TimelineStreamRow = ({
           )}
           style={{ height: boxHeight }}
         >
-          <TimelineRowLabel item={item} />
+          <TimelineRowLabel item={item} diffStat={diffStat} />
           <span className="shrink-0 text-3xs text-muted-foreground opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
             {`${openLabel} ↵`}
           </span>
         </button>
         {action == null ? null : (
-          <Button variant="ghost" size="sm" className="h-6 shrink-0" onClick={action.onAct}>
-            {action.label}
-          </Button>
+          <span
+            data-testid="timeline-row-action"
+            className="flex shrink-0 items-center"
+            style={{ height: boxHeight }}
+          >
+            <Button variant="ghost" size="sm" className="h-6" onClick={action.onAct}>
+              {action.label}
+            </Button>
+          </span>
         )}
       </div>
     </div>

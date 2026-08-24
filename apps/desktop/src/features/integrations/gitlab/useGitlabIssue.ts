@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
-import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import type { GitlabIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { gitlabFetchIssue, type GitlabIssue } from './client';
 
@@ -39,7 +39,7 @@ export const useGitlabIssue = ({ workspaceId, identifier }: Params): Result => {
   const host = useAppStore(
     useShallow((state) => {
       const integration = (state.workspaceIntegrations[workspaceId] ?? []).find(
-        (candidate): candidate is GitlabWorkspaceIntegration => candidate.provider === 'gitlab',
+        (candidate): candidate is GitlabIntegrationBinding => candidate.provider === 'gitlab',
       );
       return integration ? integration.config.host : null;
     }),

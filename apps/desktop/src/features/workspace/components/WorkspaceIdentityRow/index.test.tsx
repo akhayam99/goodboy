@@ -10,7 +10,8 @@ const { workspaceRef } = vi.hoisted(() => ({
     value: {
       id: 'ws-1' as WorkspaceId,
       name: 'Acme',
-      rootPath: '/code/monorepo',
+      slug: 'acme',
+      sessionsRoot: '/code/monorepo',
     } as Workspace | null,
   },
 }));
@@ -20,8 +21,16 @@ vi.mock('../../../../store', () => ({
   useHasUnreadElsewhere: () => false,
   useWorkspaces: () => (workspaceRef.value ? [workspaceRef.value] : []),
   useWorkspaceHasUnread: () => false,
-  useAppStore: (selector: (s: { openWorkspace: () => Promise<void> }) => unknown) =>
-    selector({ openWorkspace: async () => undefined }),
+  useAppStore: (
+    selector: (s: {
+      projects: ReadonlyArray<{ id: string; workspaceId: string; kind: string; rootPath: string }>;
+      openWorkspace: () => Promise<void>;
+    }) => unknown,
+  ) =>
+    selector({
+      projects: [{ id: 'proj-1', workspaceId: 'ws-1', kind: 'repo', rootPath: '/code/monorepo' }],
+      openWorkspace: async () => undefined,
+    }),
 }));
 
 import { WorkspaceIdentityRow } from './index';
@@ -37,11 +46,11 @@ describe('WorkspaceIdentityRow', () => {
     expect(screen.queryByText('monorepo')).toBeNull();
   });
 
-  it('carries the repo and the switcher shortcut in the title', () => {
+  it('carries the linked project count and the switcher shortcut in the title', () => {
     render(<WorkspaceIdentityRow />);
 
     expect(screen.getByLabelText('Switch or open a workspace').getAttribute('title')).toBe(
-      `Acme, monorepo (${shortcutGlyphs('workspace.switcher')})`,
+      `Acme, 1 linked project (${shortcutGlyphs('workspace.switcher')})`,
     );
   });
 
@@ -85,7 +94,8 @@ describe('WorkspaceIdentityRow', () => {
     workspaceRef.value = {
       id: 'ws-1' as WorkspaceId,
       name: 'Acme',
-      rootPath: '/code/monorepo',
+      slug: 'acme',
+      sessionsRoot: '/code/monorepo',
     } as Workspace;
   });
 });

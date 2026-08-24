@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { collapse, visibleOnboardingSteps, type OnboardingGroup } from '../onboarding-store';
+import { collapse, ONBOARDING_STEPS, type OnboardingGroup } from '../onboarding-store';
 import type { OnboardingProgress } from '../hooks/useOnboardingProgress';
 import { StepRow } from './StepRow';
 import { Tooltip } from '@goodboy/ui';
@@ -16,7 +16,6 @@ type Props = {
 };
 
 export const ChecklistBody = ({ progress }: Props) => {
-  const visibleSteps = visibleOnboardingSteps({ isSimple: progress.isSimple });
   return (
     <>
       <div className="flex items-center justify-between">
@@ -34,7 +33,7 @@ export const ChecklistBody = ({ progress }: Props) => {
       </div>
       <div className="flex flex-col gap-2.5">
         {GROUP_ORDER.map((group) => {
-          const steps = visibleSteps.filter((step) => step.group === group);
+          const steps = ONBOARDING_STEPS.filter((step) => step.group === group);
           if (steps.length === 0) {
             return null;
           }

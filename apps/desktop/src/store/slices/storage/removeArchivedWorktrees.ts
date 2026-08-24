@@ -6,7 +6,7 @@ import type { GetFn, SetFn, WorktreeRemovalResult } from './types';
 
 export const removeArchivedWorktrees = (_set: SetFn, get: GetFn) => {
   return async (): Promise<WorktreeRemovalResult> => {
-    const targets = await collectArchivedWorktrees({ workspaces: get().workspaces });
+    const targets = await collectArchivedWorktrees({ projects: get().projects });
     let removed = 0;
     let failed = 0;
     for (const target of targets) {

@@ -1,4 +1,4 @@
-import type { Agent, AgentId, Skill, Workflow, WorkspaceScript } from '@goodboy/types';
+import type { Agent, AgentId, Skill, Workflow, ProjectScript } from '@goodboy/types';
 import { AGENT_KIND_META, inferAgentKindFromName, type AgentKind } from '../session/agent-kind';
 import type { QuickActionItem } from './types';
 
@@ -8,8 +8,8 @@ function firstLine(body: string): string | undefined {
 }
 
 export const buildScriptActions = (
-  scripts: ReadonlyArray<WorkspaceScript>,
-  onPick: (script: WorkspaceScript) => void,
+  scripts: ReadonlyArray<ProjectScript>,
+  onPick: (script: ProjectScript) => void,
 ): ReadonlyArray<QuickActionItem> => {
   return scripts.map((script) => ({
     id: `script:${script.id}`,

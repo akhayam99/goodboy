@@ -8,10 +8,6 @@ describe('storage keys', () => {
     expect(STORAGE_KEYS.rightSidebarWidth).toBe(RIGHT_SIDEBAR_STORAGE_KEY);
   });
 
-  it('registers the onboarding workspace draft key', () => {
-    expect(STORAGE_KEYS.onboardingWorkspaceDraft).toBe('goodboy:onboarding-workspace-draft:v1');
-  });
-
   it('keeps every registered key under the goodboy namespace', () => {
     for (const key of Object.values(STORAGE_KEYS)) {
       expect(key.startsWith('goodboy:')).toBe(true);

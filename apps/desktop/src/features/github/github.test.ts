@@ -119,7 +119,7 @@ describe('ghIssueByNumber', () => {
     h.detectRepoSlug.mockResolvedValueOnce(null);
 
     await expect(ghIssueByNumber('/repo', 42)).rejects.toThrow(
-      'could not detect a GitHub repository for this workspace',
+      'could not detect a GitHub repository for this project',
     );
     expect(h.ghRunJson).not.toHaveBeenCalled();
   });
@@ -144,7 +144,7 @@ describe('ghIssueComments', () => {
     h.detectRepoSlug.mockResolvedValueOnce(null);
 
     await expect(ghIssueComments({ cwd: '/repo', issueNumber: 42 })).rejects.toThrow(
-      'could not detect a GitHub repository for this workspace',
+      'could not detect a GitHub repository for this project',
     );
     expect(h.listIssueComments).not.toHaveBeenCalled();
   });
@@ -177,7 +177,7 @@ describe('ghCreateIssueComment', () => {
 
     await expect(
       ghCreateIssueComment({ cwd: '/repo', issueNumber: 42, body: 'On it.' }),
-    ).rejects.toThrow('could not detect a GitHub repository for this workspace');
+    ).rejects.toThrow('could not detect a GitHub repository for this project');
     expect(h.createIssueComment).not.toHaveBeenCalled();
   });
 });
@@ -208,7 +208,7 @@ describe('ghUpdateIssueBody', () => {
     h.detectRepoSlug.mockResolvedValueOnce(null);
 
     await expect(ghUpdateIssueBody({ cwd: '/repo', issueNumber: 42, body: 'x' })).rejects.toThrow(
-      'could not detect a GitHub repository for this workspace',
+      'could not detect a GitHub repository for this project',
     );
     expect(h.updateIssueBody).not.toHaveBeenCalled();
   });

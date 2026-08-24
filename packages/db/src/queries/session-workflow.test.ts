@@ -36,7 +36,7 @@ async function seed(): Promise<Database> {
   await migrate(db);
   const now = Date.now();
   await db.execute(
-    'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
     [workspaceId, 'ws', '/tmp/ws', now, now],
   );
   await db.execute(
@@ -44,12 +44,12 @@ async function seed(): Promise<Database> {
     [sessionId, workspaceId, 'goal', 'idle', now, now],
   );
   await db.execute(
-    'INSERT INTO workflows (id, workspace_id, name, description) VALUES (?, ?, ?, ?)',
-    [workflowId, workspaceId, 'Workflow 1', ''],
+    'INSERT INTO workflows (id, workspace_id, name, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+    [workflowId, workspaceId, 'Workflow 1', '', now, now],
   );
   await db.execute(
-    'INSERT INTO workflows (id, workspace_id, name, description) VALUES (?, ?, ?, ?)',
-    [workflowId2, workspaceId, 'Workflow 2', ''],
+    'INSERT INTO workflows (id, workspace_id, name, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+    [workflowId2, workspaceId, 'Workflow 2', '', now, now],
   );
   return db;
 }
@@ -426,6 +426,14 @@ describe('session_workflows trigger-mode queries', () => {
       await attachWorkflowToSession({
         db,
         sessionId,
+        workflowRunId: 'pred' as WorkflowRunId,
+        workflowId: workflowId2,
+        autoRun: true,
+        updatedAt: NOW,
+      });
+      await attachWorkflowToSession({
+        db,
+        sessionId,
         workflowRunId: 'run-1' as WorkflowRunId,
         workflowId,
         autoRun: true,
@@ -445,6 +453,14 @@ describe('session_workflows trigger-mode queries', () => {
     });
 
     it('flips a chained run to manual without clearing chain_after_run_id', async () => {
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'pred' as WorkflowRunId,
+        workflowId: workflowId2,
+        autoRun: true,
+        updatedAt: NOW,
+      });
       await attachWorkflowToSession({
         db,
         sessionId,
@@ -820,20 +836,6 @@ describe('session_workflows trigger-mode queries', () => {
       ).toBeUndefined();
     });
 
-    it('reads a run that still carries the retired step routing columns', async () => {
-      await attachDynamic();
-      await db.execute(
-        'UPDATE session_workflows SET step_provider = ?, step_model = ?, step_effort = ? WHERE workflow_run_id = ?',
-        ['codex', 'gpt-5.6-terra', 'high', 'run-1' as WorkflowRunId],
-      );
-
-      const run = (await listWorkflowsForSession(db, sessionId))[0]!;
-
-      expect(run.id).toBe('run-1');
-      expect(run.executionMode).toBe('dynamic');
-      expect(Object.keys(run)).not.toContain('stepRouting');
-    });
-
     it('carries the reason and the routing through a reorder', async () => {
       await attachDynamic();
       await attachWorkflowToSession({
@@ -899,8 +901,8 @@ describe('session_workflows trigger-mode queries', () => {
   describe('migration m060 backfill', () => {
     it('existing rows without explicit trigger_mode default to immediate, null chain', async () => {
       await db.execute(
-        'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run) VALUES (?, ?, ?, ?, ?, ?)',
-        ['legacy', sessionId, workflowId, 0, 0, 1],
+        'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        ['legacy', sessionId, workflowId, 0, 0, 1, Date.parse(NOW)],
       );
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs[0]!.triggerMode).toBe('immediate');

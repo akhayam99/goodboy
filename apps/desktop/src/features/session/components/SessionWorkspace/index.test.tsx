@@ -7,12 +7,13 @@ import type { LensKind } from '../../../../store';
 type Store = {
   sessions: ReadonlyArray<Session>;
   workspaces: ReadonlyArray<{ id: string; rootPath: string; kind: string }>;
+  projects: ReadonlyArray<{ id: string; workspaceId: string; name: string; kind: string }>;
   activeLens: Record<string, LensKind | null>;
   selectedAgentId: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   sessionBranches: Record<string, string>;
-  sessionMounts: Record<string, ReadonlyArray<never>>;
-  sessionActiveMount: Record<string, string>;
+  sessionProjectMounts: Record<string, ReadonlyArray<never>>;
+  sessionActiveProject: Record<string, string>;
   sessionStudio: Record<string, null>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   sessionPlans: Record<string, ReadonlyArray<unknown>>;
@@ -52,12 +53,13 @@ const { store, hooks } = vi.hoisted(() => ({
   store: {
     sessions: [] as ReadonlyArray<Session>,
     workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'repo' }],
+    projects: [],
     activeLens: {},
     selectedAgentId: {},
     sessionWorktrees: {},
     sessionBranches: {},
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: {},
+    sessionActiveProject: {},
     sessionStudio: {},
     sessionPhaseRuns: {},
     sessionPlans: {},
@@ -213,6 +215,9 @@ vi.mock('./parts/ContextPane', () => ({
   ),
 }));
 vi.mock('./parts/PrPane', () => ({ PrPane: () => null }));
+vi.mock('./parts/ProjectsPane', () => ({
+  ProjectsPane: () => <div data-testid="projects-pane" />,
+}));
 vi.mock('./parts/FilesPane', () => ({ FilesPane: () => null }));
 vi.mock('./parts/IntegrationPane', () => ({
   IntegrationPane: ({ provider }: { provider: string }) => (
@@ -268,8 +273,8 @@ beforeEach(() => {
   store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
   store.sessionWorktrees = {};
   store.sessionBranches = {};
-  store.sessionMounts = {};
-  store.sessionActiveMount = {};
+  store.sessionProjectMounts = {};
+  store.sessionActiveProject = {};
   store.sessionStudio = { [SESSION_ID]: null };
   store.sessionPhaseRuns = { [SESSION_ID]: [selectedAgent] };
   store.sessionPlans = { [SESSION_ID]: [] };
@@ -611,6 +616,26 @@ describe('SessionWorkspace pane metadata', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.queryByTestId('pane-meta-agents')).toBeNull();
+  });
+});
+
+describe('SessionWorkspace projects lens', () => {
+  it('mounts the projects pane for the projects lens', () => {
+    store.activeLens = { [SESSION_ID]: 'projects' };
+    store.selectedAgentId = {};
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('projects-pane')).toBeDefined();
+  });
+
+  it('leaves no scope strip between the crumb bar and the lens', () => {
+    store.activeLens = { [SESSION_ID]: null };
+    store.selectedAgentId = {};
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.queryByTestId('repo-scope-bar')).toBeNull();
   });
 });
 

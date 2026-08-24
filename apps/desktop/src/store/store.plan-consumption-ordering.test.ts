@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
+  ProjectId,
   Agent,
   AgentId,
   ImplementationCluster,
@@ -351,6 +352,17 @@ function seedStore(useAppStore: { setState: (s: Record<string, unknown>) => void
     currentWorkspaceId: WS_ID,
     sessions: [makeSession()],
     sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+    sessionProjectMounts: {
+      [SESSION_ID]: [
+        {
+          projectId: 'project-turn' as ProjectId,
+          mountName: 'repo',
+          worktreePath: '/tmp/wt',
+          repoRoot: '/tmp/repo',
+          branch: 'goodboy/turn',
+        },
+      ],
+    },
     sessionPhaseRuns: { [SESSION_ID]: phaseRuns },
     selectedAgentId: { [SESSION_ID]: PLANNER_ID },
     transcripts: { [PLANNER_ID]: [], [IMPL_ID]: [] },

@@ -15,6 +15,7 @@ import {
   extractFilesTouched,
   extractHandoff,
   extractMarkers,
+  extractMaterializeRequests,
   extractPlanFromMarker,
   extractReviewComments,
   extractScoutDomains,
@@ -837,6 +838,42 @@ describe('extractScoutDomains', () => {
   });
 });
 
+describe('extractMaterializeRequests', () => {
+  it('parses the project name and reason', () => {
+    const requests = extractMaterializeRequests(
+      'done scanning\n<<materialize: web | need to patch the router>>\nmoving on',
+    );
+    expect(requests).toEqual([{ projectName: 'web', reason: 'need to patch the router' }]);
+  });
+
+  it('defaults the reason when the marker omits it', () => {
+    expect(extractMaterializeRequests('<<materialize: app>>')).toEqual([
+      { projectName: 'app', reason: 'requested by the agent' },
+    ]);
+    expect(extractMaterializeRequests('<<materialize: app | >>')).toEqual([
+      { projectName: 'app', reason: 'requested by the agent' },
+    ]);
+  });
+
+  it('dedupes case-insensitive repeats keeping the last reason', () => {
+    const requests = extractMaterializeRequests(
+      '<<materialize: App | first>> and <<materialize: app | second>>',
+    );
+    expect(requests).toEqual([{ projectName: 'app', reason: 'second' }]);
+  });
+
+  it('ignores empty names and unterminated markers', () => {
+    expect(extractMaterializeRequests('<<materialize: | why>>')).toEqual([]);
+    expect(extractMaterializeRequests('<<materialize: app | trailing')).toEqual([]);
+  });
+
+  it('ignores the placeholder instruction shape', () => {
+    expect(
+      extractMaterializeRequests('emit <<materialize: <project name> | <why you need it>>>'),
+    ).toEqual([]);
+  });
+});
+
 describe('stripControlMarkers', () => {
   it('strips block markers (plan, clusters, fan-out, scout-split, ctx-*)', () => {
     const text = 'before <<plan>>some plan<</plan>> middle <<clusters>>json<</clusters>> after';
@@ -847,6 +884,12 @@ describe('stripControlMarkers', () => {
     const text =
       'hello <<handoff kind=scout reason="r">> world <<comment-resolved threadid=T1 commit=abc>> end <<comment-wontfix threadid=T2 reason="x">> <<cluster-done id=c1>>';
     expect(stripControlMarkers(text)).toBe('hello  world  end');
+  });
+
+  it('strips the materialize marker and its streaming partial tail', () => {
+    const text = 'found it <<materialize: web | need to patch the router>> continuing';
+    expect(stripControlMarkers(text)).toBe('found it  continuing');
+    expect(stripControlMarkers('found it <<materialize: we')).toBe('found it');
   });
 
   it('strips ctx-question with attributes', () => {

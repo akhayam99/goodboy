@@ -66,7 +66,7 @@ export const BitbucketWorkspaceStudio = ({ workspaceId, workspaceName, onClose }
     >
       {(requestClose) =>
         !isConnected ? (
-          <div className="flex min-h-0 flex-1 items-center justify-center p-5">
+          <div className="flex min-h-0 flex-1 overflow-y-auto p-5">
             <ConnectIntegrationEmptyState
               provider="bitbucket"
               workspaceId={workspaceId}
@@ -75,13 +75,14 @@ export const BitbucketWorkspaceStudio = ({ workspaceId, workspaceName, onClose }
             />
           </div>
         ) : repo == null ? (
-          <div className="flex min-h-0 flex-1 items-center justify-center p-5">
+          <div className="flex min-h-0 flex-1 overflow-y-auto p-5">
             <EmptyState
               bordered
+              className="m-auto max-w-md"
               icon={CONCEPT_ICONS.bitbucket}
               tone={CONCEPT_TONE.bitbucket}
               title="No Bitbucket repository here"
-              description="Goodboy reads pull requests from the workspace git remote, and this workspace has no single Bitbucket remote. Open a session on the repository you want to review."
+              description="Goodboy reads pull requests from each project's git remote, and no project here resolves to a single Bitbucket remote. Open a session on the repository you want to review."
               size="lg"
               headingLevel={2}
             />

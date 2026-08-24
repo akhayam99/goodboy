@@ -9,6 +9,7 @@ import { disconnectIntegration } from './disconnectIntegration';
 import { forgetIntegrationCredential } from './forgetIntegrationCredential';
 import { loadIntegrationCredentials } from './loadIntegrationCredentials';
 import { loadIntegrations } from './loadIntegrations';
+import { resolveBinding } from './resolveBinding';
 import type { GetFn, SetFn } from './types';
 
 export const createIntegrationsSlice = (set: SetFn, get: GetFn) => {
@@ -17,6 +18,7 @@ export const createIntegrationsSlice = (set: SetFn, get: GetFn) => {
     loadIntegrationCredentials: loadIntegrationCredentials(set),
     forgetIntegrationCredential: forgetIntegrationCredential(set, get),
     disconnectIntegration: disconnectIntegration(set),
+    resolveBinding: resolveBinding(get),
     connectLinear: connectLinear(set),
     connectSentry: connectSentry(set),
     connectGitlab: connectGitlab(set, get),

@@ -1,4 +1,4 @@
-import type { AgentId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { AgentId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GetFn, SetFn } from './types';
 
@@ -28,16 +28,27 @@ import { squashSessionCommits } from './squashSessionCommits';
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 
 const setFn = () => (() => undefined) as unknown as SetFn;
 
 const getFn = (worktrees: Record<string, ReadonlyArray<string>>): GetFn =>
   (() => ({
     sessions: [{ id: SESSION_ID, workspaceId: WORKSPACE_ID }],
-    workspaces: [{ id: WORKSPACE_ID, kind: 'repo', rootPath: '/tmp/repo' }],
+    projects: [{ id: PROJECT_ID, workspaceId: WORKSPACE_ID, kind: 'repo', rootPath: '/tmp/repo' }],
     sessionWorktrees: worktrees,
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: {
+      [SESSION_ID]: [
+        {
+          projectId: PROJECT_ID,
+          mountName: 'repo',
+          worktreePath: worktrees[SESSION_ID]?.[0] ?? '',
+          repoRoot: '/tmp/repo',
+          branch: 'ak/task',
+        },
+      ],
+    },
+    sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
     sessionBranches: {},
     sessionPendingResolutions: {},
   })) as unknown as GetFn;
@@ -94,10 +105,22 @@ describe('local history rewrites', () => {
   it('repoints outcomes and queued resolutions onto the rewritten head', async () => {
     const state = {
       sessions: [{ id: SESSION_ID, workspaceId: WORKSPACE_ID }],
-      workspaces: [{ id: WORKSPACE_ID, kind: 'repo', rootPath: '/tmp/repo' }],
+      projects: [
+        { id: PROJECT_ID, workspaceId: WORKSPACE_ID, kind: 'repo', rootPath: '/tmp/repo' },
+      ],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
-      sessionMounts: {},
-      sessionActiveMount: {},
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            projectId: PROJECT_ID,
+            mountName: 'repo',
+            worktreePath: '/tmp/wt',
+            repoRoot: '/tmp/repo',
+            branch: 'ak/task',
+          },
+        ],
+      },
+      sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
       sessionBranches: {},
       resolverThreadOutcomes: {
         [AGENT_ID]: {

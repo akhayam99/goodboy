@@ -9,6 +9,7 @@ import type {
 import { cn, CountToggle, formatError, InlineConfirm } from '@goodboy/ui';
 import { LensEmptyState } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
+import { selectActiveProjectPrs } from '../../../../../../store/slices/github/activeProjectPrs';
 import { ConnectIntegrationEmptyState } from '../../../../../integrations/ConnectIntegrationEmptyState';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
@@ -119,7 +120,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   );
   const githubConnection = useGithubConnection({ workspaceId });
   const sessionBranch = useSessionRepo({ sessionId })?.branch ?? null;
-  const branchPrs = useAppStore((state) => state.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY);
+  const branchPrs = useAppStore((state) => selectActiveProjectPrs({ state, sessionId }));
   const mergeRequest = useAppStore((state) => state.sessionGitlabMr[sessionId]?.mr ?? null);
   const tasks = useMemo(
     () => externalTasks.filter((task) => task.provider === provider),
@@ -153,14 +154,14 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   });
 
   const handleUnlink = async ({ task }: UnlinkParams) => {
-    const mountWorkspaceId = task.mountWorkspaceId;
+    const projectId = task.projectId;
     setUnlinkError(null);
     setIsUnlinking(true);
     try {
       const unlink =
-        mountWorkspaceId == null
+        projectId == null
           ? () => unlinkSessionExternalTask(sessionId, provider, task.externalId)
-          : () => unlinkSessionExternalTask(sessionId, provider, task.externalId, mountWorkspaceId);
+          : () => unlinkSessionExternalTask(sessionId, provider, task.externalId, projectId);
       await unlink();
       setIsUnlinkArmed(false);
       setFocusedTaskKey(null);

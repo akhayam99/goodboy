@@ -48,7 +48,7 @@ import { GithubFormBody } from './GithubFormBody';
 
 const connectWith = async (token: string): Promise<void> => {
   render(<GithubFormBody workspaceId={WS_ID} />);
-  fireEvent.change(await screen.findByLabelText(/GitHub personal API key/i), {
+  fireEvent.change(await screen.findByLabelText(/personal API key/i), {
     target: { value: token },
   });
   fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));

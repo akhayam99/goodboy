@@ -1,65 +1,72 @@
-import { useEffect, useRef, useState } from 'react';
 import { ChevronsUpDown, SlidersHorizontal } from 'lucide-react';
-import { StatusDot, Tooltip } from '@goodboy/ui';
-import { useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
+import { AnchoredPopover, StatusDot, Tooltip, useDropdown } from '@goodboy/ui';
+import { useAppStore, useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
 import { workspaceAccent } from '../../color';
+import { linkedProjectsLabel } from '../../linkedProjectsLabel';
 import { WorkspaceSwitcher } from '../WorkspaceSwitcher';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 const initialOf = (name: string): string => name.trim().charAt(0).toUpperCase() || '?';
 
-const basenameOf = (path: string): string => path.replace(/\/+$/, '').split('/').pop() || path;
-
 export const WorkspaceIdentityRow = () => {
   const currentWorkspace = useCurrentWorkspace();
+  const subtitle = useAppStore((state) =>
+    linkedProjectsLabel({ projects: state.projects, workspaceId: currentWorkspace?.id ?? null }),
+  );
   const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    const open = () => setIsOpen(true);
-    window.addEventListener('goodboy:open-workspace-switcher', open);
-    return () => window.removeEventListener('goodboy:open-workspace-switcher', open);
-  }, []);
+  const dropdown = useDropdown({
+    width: 'w-[340px]',
+    expectedWidth: 340,
+    expectedHeight: 480,
+    openEvent: 'goodboy:open-workspace-switcher',
+  });
 
   if (!currentWorkspace) {
     return null;
   }
   const accent = workspaceAccent(currentWorkspace.id);
-  const memberCount = currentWorkspace.members?.length ?? 0;
-  const subtitle = memberCount > 1 ? `${memberCount} repos` : basenameOf(currentWorkspace.rootPath);
 
   return (
     <div className="flex w-full min-w-0 items-center gap-0.5">
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => setIsOpen((current) => !current)}
-        data-tauri-drag-region="false"
-        aria-label="Switch or open a workspace"
-        aria-expanded={isOpen}
-        className="group flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-muted/50"
-        title={`${currentWorkspace.name}, ${subtitle} (${shortcutGlyphs('workspace.switcher')})`}
+      <AnchoredPopover
+        dropdown={dropdown}
+        role="dialog"
+        ariaLabel="Switch or open a workspace"
+        anchorClassName="min-w-0 flex-1"
+        hasBackdrop
+        trigger={
+          <button
+            type="button"
+            onClick={dropdown.toggle}
+            data-tauri-drag-region="false"
+            aria-label="Switch or open a workspace"
+            aria-expanded={dropdown.open}
+            className="group flex w-full min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-muted/50"
+            title={`${currentWorkspace.name}, ${subtitle} (${shortcutGlyphs('workspace.switcher')})`}
+          >
+            <span
+              aria-hidden
+              className="flex size-5 shrink-0 items-center justify-center rounded-md text-3xs font-bold text-primary-foreground ring-1 ring-inset ring-border-soft"
+              style={{ backgroundColor: accent }}
+            >
+              {initialOf(currentWorkspace.name)}
+            </span>
+            <span className="truncate text-xs font-semibold leading-tight text-foreground">
+              {currentWorkspace.name}
+            </span>
+            {hasUnreadElsewhere ? (
+              <StatusDot tone="warning" size="sm" title="Activity in another workspace" />
+            ) : null}
+            <ChevronsUpDown
+              size={12}
+              aria-hidden
+              className="shrink-0 text-muted-foreground/40 transition-colors group-hover:text-muted-foreground"
+            />
+          </button>
+        }
       >
-        <span
-          aria-hidden
-          className="flex size-5 shrink-0 items-center justify-center rounded-md text-3xs font-bold text-primary-foreground ring-1 ring-inset ring-border-soft"
-          style={{ backgroundColor: accent }}
-        >
-          {initialOf(currentWorkspace.name)}
-        </span>
-        <span className="truncate text-xs font-semibold leading-tight text-foreground">
-          {currentWorkspace.name}
-        </span>
-        {hasUnreadElsewhere ? (
-          <StatusDot tone="warning" size="sm" title="Activity in another workspace" />
-        ) : null}
-        <ChevronsUpDown
-          size={12}
-          aria-hidden
-          className="shrink-0 text-muted-foreground/40 transition-colors group-hover:text-muted-foreground"
-        />
-      </button>
+        <WorkspaceSwitcher onClose={dropdown.close} />
+      </AnchoredPopover>
       <Tooltip content="Preferences" side="bottom">
         <button
           type="button"
@@ -70,9 +77,6 @@ export const WorkspaceIdentityRow = () => {
           <SlidersHorizontal size={12} aria-hidden />
         </button>
       </Tooltip>
-      {isOpen ? (
-        <WorkspaceSwitcher anchorRef={triggerRef} onClose={() => setIsOpen(false)} />
-      ) : null}
     </div>
   );
 };

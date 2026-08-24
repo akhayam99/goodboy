@@ -24,16 +24,16 @@ import { ToastProvider } from './app/components/Toast';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
 import { WorkflowFollowToastBridge } from './features/workflows/components/WorkflowFollowToastBridge';
 import { SessionNavSidebar } from './features/session/components/SessionNavSidebar';
+import { NewSessionBridge } from './features/session/components/NewSessionBridge';
 import { CollapsedRail } from './features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
-import { useSessionNavMode } from './features/workspace/hooks/useSessionNavMode';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
-import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
+import { WorkspaceLinkStudio } from './features/workspace/components/WorkspaceLinkStudio';
 import { ConvertWorkspaceDialog } from './features/workspace/components/ConvertWorkspaceDialog';
 import { WorkspaceLauncher } from './features/workspace/components/WorkspaceLauncher';
 import { isMainWindow } from './features/workspace/window';
+import { primaryProjectRoot } from './features/workspace/primaryProjectRoot';
 import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
-import { NewSessionView } from './features/session/components/NewSessionView';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
 import { SentryStudio } from './features/integrations/sentry/SentryStudio';
@@ -57,6 +57,7 @@ import { OnboardingCard } from './features/onboarding/OnboardingCard';
 import { OnboardingWizard } from './features/onboarding/OnboardingWizard';
 import { CompanionStudio } from './features/companion/CompanionStudio';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
+import { listenProjectMaterializeRequests } from './features/session/projectMaterializeBridge';
 import { markStepComplete } from './features/onboarding/onboarding-store';
 import { OPEN_COMMAND_PALETTE_EVENT } from './features/onboarding/openCommandPaletteEvent';
 import { useShortcut } from './shared/keyboard/useShortcut';
@@ -94,10 +95,15 @@ export const App = () => {
   const workspaces = useWorkspaces();
   const hasWorkspaces = workspaces.length > 0;
   const currentWorkspace = useCurrentWorkspace();
+  const currentWorkspaceId = currentWorkspace?.id ?? null;
+  const workspaceProjectRoot = useAppStore((s) =>
+    currentWorkspaceId == null
+      ? null
+      : primaryProjectRoot({ projects: s.projects, workspaceId: currentWorkspaceId }),
+  );
   const currentSession = useCurrentSession();
   const hasActiveSession = currentSession != null;
   const sessionSidebar = useSessionSidebarVisibility({ hasActiveSession });
-  const sessionNav = useSessionNavMode();
   const githubConnection = useGithubConnection({ workspaceId: currentWorkspace?.id ?? null });
   const hasLinear = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
@@ -170,6 +176,7 @@ export const App = () => {
   const [githubStudioPrNumber, setGithubStudioPrNumber] = useState<number | null>(null);
   const [githubStudioThreadId, setGithubStudioThreadId] = useState<string | null>(null);
   const [githubStudioIssueId, setGithubStudioIssueId] = useState<string | null>(null);
+  const [githubStudioTab, setGithubStudioTab] = useState<'pull-requests' | 'issues' | null>(null);
   const [budgetStudioOpen, setBudgetStudioOpen] = useState(false);
   const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
   const [impactStudioOpen, setImpactStudioOpen] = useState(false);
@@ -182,7 +189,6 @@ export const App = () => {
       useAppStore.getState().setSessionStudio(id, null);
     }
   }, []);
-  const [newSessionOpen, setNewSessionOpen] = useState(false);
   const { commitDiff, setCommitDiff } = useCommitLinkInterceptor();
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
 
@@ -205,6 +211,11 @@ export const App = () => {
     setReportIssueStudioOpen(false);
     setAddWorkspaceOpen(false);
   }, []);
+
+  const openAddWorkspace = useCallback(() => {
+    closeAllStudios();
+    setAddWorkspaceOpen(true);
+  }, [closeAllStudios]);
 
   useEffect(() => {
     void hydrate();
@@ -242,6 +253,7 @@ export const App = () => {
           prNumber?: number;
           threadId?: string;
           issueExternalId?: string;
+          tab?: 'pull-requests' | 'issues';
         }>
       ).detail;
       closeAllStudios();
@@ -249,6 +261,7 @@ export const App = () => {
       setGithubStudioPrNumber(detail?.prNumber ?? null);
       setGithubStudioThreadId(detail?.threadId ?? null);
       setGithubStudioIssueId(detail?.issueExternalId ?? null);
+      setGithubStudioTab(detail?.tab ?? null);
       setGithubStudioOpen(true);
     };
     const onOpenPlanStudio = (event: Event) => {
@@ -256,7 +269,6 @@ export const App = () => {
       if (!detail?.sessionId) {
         return;
       }
-      setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
       const state = useAppStore.getState();
@@ -269,7 +281,6 @@ export const App = () => {
       if (resolved === null) {
         return;
       }
-      setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
       useAppStore.getState().openDiffLens(resolved.sessionId, resolved.focus);
@@ -314,7 +325,6 @@ export const App = () => {
       setJiraStudioOpen(true);
     };
     const onRevealChat = () => {
-      setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
       const state = useAppStore.getState();
@@ -323,7 +333,7 @@ export const App = () => {
         state.setSessionStudio(sid, null);
       }
     };
-    const onAddWorkspace = () => setAddWorkspaceOpen(true);
+    const onAddWorkspace = () => openAddWorkspace();
     const onPairDevice = () => setCompanionOpen(true);
     const onOpenNotificationsStudio = () => {
       closeAllStudios();
@@ -363,7 +373,7 @@ export const App = () => {
       window.removeEventListener('goodboy:add-workspace', onAddWorkspace);
       window.removeEventListener('goodboy:open-pair-device', onPairDevice);
     };
-  }, [closeAllStudios]);
+  }, [closeAllStudios, openAddWorkspace]);
 
   useEffect(() => {
     if (!archiveOpen && !deleteOpen) {
@@ -398,7 +408,6 @@ export const App = () => {
         return;
       }
       setWorkspaceSettingsFocus(detail?.section);
-      setNewSessionOpen(false);
       clearSessionStudio();
       setWorkspaceSettingsOpen(true);
     };
@@ -414,7 +423,6 @@ export const App = () => {
       if (!detail?.sessionId) {
         return;
       }
-      setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
       setSessionStudio(detail.sessionId, {
@@ -433,7 +441,6 @@ export const App = () => {
       if (!detail?.sessionId) {
         return;
       }
-      setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
       setSessionStudio(detail.sessionId, { kind: 'mr' });
@@ -448,7 +455,6 @@ export const App = () => {
       if (!detail?.sessionId) {
         return;
       }
-      setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
       setSessionStudio(detail.sessionId, { kind: 'bitbucket' });
@@ -463,7 +469,6 @@ export const App = () => {
       if (detail?.sessionId) {
         setWorkspaceSettingsOpen(false);
         setWorkspaceSettingsFocus(undefined);
-        setNewSessionOpen(false);
         setSessionStudio(detail.sessionId, { kind: 'workflow' });
       }
     };
@@ -480,11 +485,13 @@ export const App = () => {
       setWorkspaceSettingsFocus(undefined);
       clearSessionStudio();
       setGithubStudioOpen(false);
-      setNewSessionOpen(true);
+      if (hasActiveSession && sessionSidebar.isCollapsed) {
+        sessionSidebar.pin();
+      }
     };
     window.addEventListener('goodboy:new-session', handler);
     return () => window.removeEventListener('goodboy:new-session', handler);
-  }, [currentWorkspace, clearSessionStudio]);
+  }, [currentWorkspace, clearSessionStudio, hasActiveSession, sessionSidebar]);
 
   useEffect(() => {
     let off: (() => void) | undefined;
@@ -503,12 +510,27 @@ export const App = () => {
   }, []);
 
   useEffect(() => {
+    let off: (() => void) | undefined;
+    let cancelled = false;
+    void listenProjectMaterializeRequests().then((fn) => {
+      if (cancelled) {
+        fn();
+        return;
+      }
+      off = fn;
+    });
+    return () => {
+      cancelled = true;
+      off?.();
+    };
+  }, []);
+
+  useEffect(() => {
     setKeepAliveIds([]);
   }, [currentWorkspace?.id]);
 
   useEffect(() => {
     setWorkspaceSettingsOpen(false);
-    setNewSessionOpen(false);
   }, [currentWorkspace?.id]);
 
   useEffect(() => {
@@ -672,9 +694,7 @@ export const App = () => {
     if (session == null) {
       return false;
     }
-    const workspace = s.workspaces.find((candidate) => candidate.id === session.workspaceId);
     return isBranchlessSession({
-      workspaceKind: workspace?.kind,
       branch: s.sessionBranches[sessionId],
     });
   });
@@ -793,11 +813,18 @@ export const App = () => {
     );
   }
 
-  if (hasWorkspaces && !currentWorkspace && isMainWindow() && !addWorkspaceOpen) {
+  const addWorkspaceSurface = addWorkspaceOpen ? (
+    <WorkspaceLinkStudio
+      onClose={() => setAddWorkspaceOpen(false)}
+      onOfferRepo={() => setConvertWorkspaceOpen(true)}
+    />
+  ) : null;
+
+  if (hasWorkspaces && !currentWorkspace && isMainWindow()) {
     return (
       <ToastProvider>
         <NotificationToastBridge />
-        <WorkspaceLauncher />
+        {addWorkspaceSurface ?? <WorkspaceLauncher />}
       </ToastProvider>
     );
   }
@@ -806,6 +833,7 @@ export const App = () => {
     <ToastProvider>
       <NotificationToastBridge />
       <WorkflowFollowToastBridge />
+      <NewSessionBridge />
       <ReleaseToast onOpenChangelog={openChangelog} />
       <AppShell
         topBar={<AppTopBar onOpenBudget={openBudget} showWorkspaceIdentity={!hasActiveSession} />}
@@ -813,8 +841,6 @@ export const App = () => {
           currentWorkspace ? (
             <AppFooter
               activeStudio={activeStudio}
-              isSimpleWorkspace={currentWorkspace.kind === 'simple'}
-              onConvertToDevProject={() => setConvertWorkspaceOpen(true)}
               githubEnabled={githubConnection.isAuthenticated}
               linearEnabled={hasLinear}
               jiraEnabled={hasJira}
@@ -879,14 +905,9 @@ export const App = () => {
         leftSidebar={
           currentSession ? (
             sessionSidebar.isCollapsed ? (
-              <CollapsedRail session={currentSession} onExpand={sessionSidebar.pin} />
+              <CollapsedRail onExpand={sessionSidebar.pin} />
             ) : (
-              <SessionNavSidebar
-                session={currentSession}
-                mode={sessionNav.mode}
-                onModeChange={sessionNav.setMode}
-                onCollapse={sessionSidebar.toggle}
-              />
+              <SessionNavSidebar session={currentSession} onCollapse={sessionSidebar.toggle} />
             )
           ) : undefined
         }
@@ -906,8 +927,6 @@ export const App = () => {
             >
               <SessionNavSidebar
                 session={currentSession}
-                mode={sessionNav.mode}
-                onModeChange={sessionNav.setMode}
                 onCollapse={sessionSidebar.pin}
                 collapseAction="pin"
                 onNavigate={sessionSidebar.closePeek}
@@ -930,13 +949,9 @@ export const App = () => {
                 ))}
               </div>
             ) : currentWorkspace ? (
-              <StageBoard
-                workspaceId={currentWorkspace.id}
-                sessions={currentWorkspaceSessions}
-                onCreateSession={openNewSession}
-              />
+              <StageBoard workspaceId={currentWorkspace.id} sessions={currentWorkspaceSessions} />
             ) : (
-              <NoWorkspaceScreen onAddWorkspace={() => setAddWorkspaceOpen(true)} />
+              <NoWorkspaceScreen onAddWorkspace={openAddWorkspace} />
             )}
 
             <OnboardingCard />
@@ -944,16 +959,7 @@ export const App = () => {
         }
         rightSidebar={null}
         overlay={
-          newSessionOpen && currentWorkspace ? (
-            <NewSessionView
-              workspaceId={currentWorkspace.id}
-              onClose={() => setNewSessionOpen(false)}
-              onOpenSettings={() => {
-                setNewSessionOpen(false);
-                openSettings();
-              }}
-            />
-          ) : workspaceSettingsOpen && currentWorkspace ? (
+          workspaceSettingsOpen && currentWorkspace ? (
             <WorkspaceSettingsPane
               workspaceId={currentWorkspace.id}
               workspaceName={currentWorkspace.name}
@@ -1002,13 +1008,7 @@ export const App = () => {
           }}
         />
       ) : null}
-      {addWorkspaceOpen ? (
-        <WorkspaceLinkDialog
-          open
-          onClose={() => setAddWorkspaceOpen(false)}
-          onOfferRepo={() => setConvertWorkspaceOpen(true)}
-        />
-      ) : null}
+      {addWorkspaceSurface}
       {currentWorkspace ? (
         <ConvertWorkspaceDialog
           open={convertWorkspaceOpen}
@@ -1026,12 +1026,13 @@ export const App = () => {
       {githubStudioOpen && currentWorkspace ? (
         <GitHubStudio
           workspaceId={currentWorkspace.id}
-          rootPath={currentWorkspace.rootPath}
+          rootPath={workspaceProjectRoot ?? ''}
           workspaceName={currentWorkspace.name}
           initialSessionId={githubStudioSession}
           initialPrNumber={githubStudioPrNumber}
           initialThreadId={githubStudioThreadId}
           initialIssueExternalId={githubStudioIssueId}
+          initialTab={githubStudioTab}
           onClose={() => setGithubStudioOpen(false)}
         />
       ) : null}

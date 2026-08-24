@@ -63,13 +63,88 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+const originalDescriptors = {
+  scrollHeight: Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight'),
+  clientHeight: Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight'),
+};
+
+const mockTextMeasurement = ({
+  scrollHeight,
+  clientHeight,
+}: {
+  readonly scrollHeight: number;
+  readonly clientHeight: number;
+}) => {
+  Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+    configurable: true,
+    get: () => scrollHeight,
+  });
+  Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+    configurable: true,
+    get: () => clientHeight,
+  });
+};
+
+const restoreTextMeasurement = () => {
+  if (originalDescriptors.scrollHeight == null) {
+    Reflect.deleteProperty(HTMLElement.prototype, 'scrollHeight');
+  }
+  if (originalDescriptors.scrollHeight != null) {
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', originalDescriptors.scrollHeight);
+  }
+  if (originalDescriptors.clientHeight == null) {
+    Reflect.deleteProperty(HTMLElement.prototype, 'clientHeight');
+  }
+  if (originalDescriptors.clientHeight != null) {
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', originalDescriptors.clientHeight);
+  }
+};
+
 describe('GoalOverviewRegion', () => {
-  it('keeps the text and its controls on one row that truncates instead of wrapping', () => {
+  it('clamps the goal text to four lines below the label row', () => {
     renderRegion();
     const text = screen.getByRole('button', { name: 'Edit goal' });
 
-    expect(text.className).toContain('truncate');
-    expect(text.parentElement?.parentElement?.className).toContain('items-center');
+    expect(text.className).toContain('line-clamp-4');
+    expect(text.className).not.toContain('truncate');
+  });
+
+  it('spreads the label and the labeled actions across the Goal line', () => {
+    renderRegion();
+    const copy = screen.getByRole('button', { name: /copy goal/i });
+    const history = screen.getByRole('button', { name: /2 previous versions of Goal/i });
+    const cluster = copy.closest('div');
+    const labelRow = cluster?.parentElement;
+
+    expect(labelRow?.className).toContain('justify-between');
+    expect(labelRow?.textContent).toContain('Goal');
+    expect(cluster?.contains(history)).toBe(true);
+    expect(copy.textContent).toContain('Copy the goal');
+    expect(history.textContent).toContain('History');
+    expect(labelRow?.contains(screen.getByRole('button', { name: 'Edit goal' }))).toBe(false);
+  });
+
+  it('offers Show more only when the goal overflows the clamp, and Show less collapses it back', () => {
+    mockTextMeasurement({ scrollHeight: 160, clientHeight: 80 });
+    renderRegion();
+
+    const toggle = screen.getByRole('button', { name: 'Show more' });
+    fireEvent.click(toggle);
+    expect(screen.getByRole('button', { name: 'Edit goal' }).className).not.toContain(
+      'line-clamp-4',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show less' }));
+    expect(screen.getByRole('button', { name: 'Edit goal' }).className).toContain('line-clamp-4');
+    restoreTextMeasurement();
+  });
+
+  it('hides the Show more toggle when the goal fits inside the clamp', () => {
+    mockTextMeasurement({ scrollHeight: 80, clientHeight: 80 });
+    renderRegion();
+
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+    restoreTextMeasurement();
   });
 
   it('enters edit from a click on the text, with no edit button', () => {

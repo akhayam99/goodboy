@@ -13,16 +13,13 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
     const nowIso = new Date().toISOString() as IsoDateTime;
     const archived: Session = { ...prev, archivedAt: nowIso };
     const workspaceId = prev.workspaceId;
+    const isCurrent = get().currentSessionId === sessionId;
 
     set((state) => {
-      const cached = state.archivedSessions[workspaceId];
-      const nextArchived = cached
-        ? { ...state.archivedSessions, [workspaceId]: [archived, ...cached] }
-        : state.archivedSessions;
+      const cached = state.archivedSessions[workspaceId] ?? [];
       return {
         sessions: state.sessions.filter((s) => s.id !== sessionId),
-        archivedSessions: nextArchived,
-        currentSessionId: state.currentSessionId === sessionId ? null : state.currentSessionId,
+        archivedSessions: { ...state.archivedSessions, [workspaceId]: [archived, ...cached] },
       };
     });
 
@@ -30,16 +27,20 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
       await archiveSessionInDb(tauriDatabase, sessionId);
     } catch (err) {
       set((state) => {
-        const cached = state.archivedSessions[workspaceId];
-        const nextArchived = cached
-          ? { ...state.archivedSessions, [workspaceId]: cached.filter((s) => s.id !== sessionId) }
-          : state.archivedSessions;
+        const cached = state.archivedSessions[workspaceId] ?? [];
         return {
           sessions: [...state.sessions, prev],
-          archivedSessions: nextArchived,
+          archivedSessions: {
+            ...state.archivedSessions,
+            [workspaceId]: cached.filter((s) => s.id !== sessionId),
+          },
         };
       });
       throw err;
+    }
+
+    if (isCurrent) {
+      return;
     }
 
     dropPendingTurnEvents({
@@ -55,9 +56,11 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
       }
       const nextWorktrees = { ...state.sessionWorktrees };
       delete nextWorktrees[sessionId];
-      const nextMounts = { ...state.sessionMounts };
+      const nextWorktreeRecords = { ...state.sessionWorktreeRecords };
+      delete nextWorktreeRecords[sessionId];
+      const nextMounts = { ...state.sessionProjectMounts };
       delete nextMounts[sessionId];
-      const nextActiveMount = { ...state.sessionActiveMount };
+      const nextActiveMount = { ...state.sessionActiveProject };
       delete nextActiveMount[sessionId];
       const nextBranches = { ...state.sessionBranches };
       delete nextBranches[sessionId];
@@ -65,16 +68,14 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
       delete nextPhaseRuns[sessionId];
       const nextGithub = { ...state.sessionGithub };
       delete nextGithub[sessionId];
-      const nextGithubPrs = { ...state.sessionGithubPrs };
-      delete nextGithubPrs[sessionId];
+      const nextProjectPrs = { ...state.sessionProjectPrs };
+      delete nextProjectPrs[sessionId];
       const nextSelectedPrNumber = { ...state.sessionSelectedPrNumber };
       delete nextSelectedPrNumber[sessionId];
       const nextLoading = { ...state.sessionLoading };
       delete nextLoading[sessionId];
       const nextSelected = { ...state.selectedAgentId };
       delete nextSelected[sessionId];
-      const nextConflicts = { ...state.sessionMergeConflicts };
-      delete nextConflicts[sessionId];
       const nextOpenQs = { ...state.sessionOpenQuestions };
       delete nextOpenQs[sessionId];
       const nextWorkflows = { ...state.sessionWorkflows };
@@ -83,16 +84,16 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
         transcripts: nextTranscripts,
         messages: nextMessages,
         sessionWorktrees: nextWorktrees,
-        sessionMounts: nextMounts,
-        sessionActiveMount: nextActiveMount,
+        sessionWorktreeRecords: nextWorktreeRecords,
+        sessionProjectMounts: nextMounts,
+        sessionActiveProject: nextActiveMount,
         sessionBranches: nextBranches,
         sessionPhaseRuns: nextPhaseRuns,
         sessionGithub: nextGithub,
-        sessionGithubPrs: nextGithubPrs,
+        sessionProjectPrs: nextProjectPrs,
         sessionSelectedPrNumber: nextSelectedPrNumber,
         sessionLoading: nextLoading,
         selectedAgentId: nextSelected,
-        sessionMergeConflicts: nextConflicts,
         sessionOpenQuestions: nextOpenQs,
         sessionWorkflows: nextWorkflows,
       };

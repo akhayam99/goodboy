@@ -27,8 +27,8 @@ const { state, workspace } = vi.hoisted(() => {
       workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
       workspaces: [currentWorkspace],
       sessions: [] as ReadonlyArray<{ id: string; workspaceId: string }>,
-      sessionMounts: {},
-      sessionActiveMount: {},
+      sessionProjectMounts: {},
+      sessionActiveProject: {},
       sessionBranches: {} as Record<string, string>,
       setSessionStudio: vi.fn(),
       openWorkspace: vi.fn(),
@@ -172,6 +172,9 @@ vi.mock('../app/components/Toast', () => ({
 vi.mock('../features/notifications/components/NotificationToastBridge', () => ({
   NotificationToastBridge: () => null,
 }));
+vi.mock('../features/session/components/NewSessionBridge', () => ({
+  NewSessionBridge: () => null,
+}));
 vi.mock('../features/workflows/components/WorkflowFollowToastBridge', () => ({
   WorkflowFollowToastBridge: () => null,
 }));
@@ -179,8 +182,8 @@ vi.mock('../features/session/components/SessionNavSidebar', () => ({
   SessionNavSidebar: () => null,
 }));
 vi.mock('../features/workspace/hooks/useWindowPresence', () => ({ useWindowPresence: vi.fn() }));
-vi.mock('../features/workspace/components/WorkspaceLinkDialog', () => ({
-  WorkspaceLinkDialog: () => null,
+vi.mock('../features/workspace/components/WorkspaceLinkStudio', () => ({
+  WorkspaceLinkStudio: () => null,
 }));
 vi.mock('../features/workspace/components/WorkspaceLauncher', () => ({
   WorkspaceLauncher: () => null,
@@ -190,7 +193,6 @@ vi.mock('../features/workspace/components/WorkspaceSwitcher', () => ({
 }));
 vi.mock('../features/workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('../features/workflows/components/WorkflowStudio', () => ({ WorkflowStudio: () => null }));
-vi.mock('../features/session/components/NewSessionView', () => ({ NewSessionView: () => null }));
 vi.mock('../features/github/components/GitHubStudio', () => ({
   GitHubStudio: ({ workspaceName }: { workspaceName: string }) => (
     <div data-testid="github-studio">{workspaceName}</div>

@@ -18,7 +18,7 @@ import { reconcileOrphanWorktrees } from './reconcileOrphanWorktrees';
 const emitNotification = vi.fn(async () => undefined);
 
 const makeStore = (kind: string) => ({
-  workspaces: [{ id: 'ws-1', name: 'demo', rootPath: '/repo', kind }],
+  projects: [{ id: 'project-1', workspaceId: 'ws-1', name: 'demo', rootPath: '/repo', kind }],
   orphanWorktrees: {},
   emitNotification,
 });
@@ -63,7 +63,7 @@ describe('reconciling the worktrees folder at startup', () => {
   });
 
   it('leaves a folder-backed workspace alone', async () => {
-    const store = makeStore('simple');
+    const store = makeStore('folder');
     const set = vi.fn();
 
     await reconcileOrphanWorktrees(set as never, (() => store) as never)();

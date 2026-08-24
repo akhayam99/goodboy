@@ -112,7 +112,7 @@ describe('switcherPeers', () => {
     expect(ids(peers)).not.toContain(otherRunStep.id);
   });
 
-  it('offers the step and its cluster peers when a cluster child is open', () => {
+  it('offers only the cluster siblings, father excluded, when a cluster child is open', () => {
     const peers = switcherPeers({
       agents: [stepOne, stepTwo, clusterTwo, clusterOne],
       selectedAgent: clusterOne,
@@ -121,7 +121,36 @@ describe('switcherPeers', () => {
       kindOf,
     });
 
-    expect(ids(peers)).toEqual([stepTwo.id, clusterOne.id, clusterTwo.id]);
+    expect(ids(peers)).toEqual([clusterOne.id, clusterTwo.id]);
+  });
+
+  it('scopes a scout fan-out child to its scout siblings, not implementers', () => {
+    const scoutChildOne = buildAgent({
+      id: 'scout-child-one' as AgentId,
+      name: 'scout area one',
+      kind: 'scout',
+      ordinal: 6,
+      parentAgentId: stepTwo.id,
+      workflowRunId: 'run-1' as never,
+    });
+    const scoutChildTwo = buildAgent({
+      id: 'scout-child-two' as AgentId,
+      name: 'scout area two',
+      kind: 'scout',
+      ordinal: 7,
+      parentAgentId: stepTwo.id,
+      workflowRunId: 'run-1' as never,
+    });
+
+    const peers = switcherPeers({
+      agents: [stepTwo, clusterOne, scoutChildOne, scoutChildTwo],
+      selectedAgent: scoutChildOne,
+      rootAgent: stepTwo,
+      home: 'workflows',
+      kindOf,
+    });
+
+    expect(ids(peers)).toEqual([scoutChildOne.id, scoutChildTwo.id]);
   });
 
   it('keeps a non-implementer branch out of the cluster peers', () => {
@@ -145,6 +174,7 @@ describe('switcherPeers', () => {
       kindOf,
     });
 
-    expect(ids(peers)).toEqual([stepTwo.id, clusterOne.id, parallelBranch.id]);
+    expect(ids(peers)).toContain(parallelBranch.id);
+    expect(ids(peers)).not.toContain(stepTwo.id);
   });
 });

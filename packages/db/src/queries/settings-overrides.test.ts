@@ -17,18 +17,24 @@ const EMPTY: OverrideSettings = {
   taskModels: null,
   roleModels: null,
   parallelAgents: null,
+  providerPool: null,
 };
 
 async function makeDb() {
   const db = makeTestDatabase();
   await migrate(db);
   const now = new Date().toISOString() as IsoDateTime;
-  await insertWorkspace(db, {
-    id: WS_ID,
-    name: 'my-repo',
-    rootPath: '/tmp/my-repo',
-    createdAt: now,
-    updatedAt: now,
+  await insertWorkspace({
+    db,
+    workspace: {
+      id: WS_ID,
+      name: 'my-repo',
+      slug: 'my-repo',
+      sessionsRoot: '/tmp/my-repo',
+      overrides: EMPTY,
+      createdAt: now,
+      updatedAt: now,
+    },
   });
   return db;
 }
@@ -41,7 +47,7 @@ describe('workspace overrides', () => {
       roleModels: {
         reviewer: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'max' },
       },
-      enabledProviders: ['anthropic', 'codex'],
+      providerPool: ['anthropic', 'codex'],
     });
 
     const stored = await getWorkspaceOverrides(db, WS_ID);
@@ -49,7 +55,7 @@ describe('workspace overrides', () => {
     expect(stored?.roleModels).toEqual({
       reviewer: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'max' },
     });
-    expect(stored?.enabledProviders).toEqual(['anthropic', 'codex']);
+    expect(stored?.providerPool).toEqual(['anthropic', 'codex']);
   });
 
   it('stores no row value for an empty preference map', async () => {

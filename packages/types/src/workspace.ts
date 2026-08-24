@@ -1,21 +1,20 @@
 import type {
   IntegrationCredentialId,
   IsoDateTime,
+  ProjectId,
+  ProjectScriptId,
   ProviderRunId,
   SessionId,
   WorkflowId,
   WorkflowRunId,
   WorkspaceId,
-  WorkspaceIntegrationId,
-  WorkspaceScriptId,
+  IntegrationBindingId,
 } from './ids';
 import type { SessionProviderPreference } from './provider-preference';
 import type { ModelEffort, ProviderId } from './provider-registry';
 import type { ClaudePermissionMode } from './permission';
-import type { RoleModelPreferences } from './settings';
+import type { OverrideSettings, RoleModelPreferences } from './settings';
 import type { GitDistance, GitOperation, GitWorkingTree } from './worktree';
-
-export type WorkspaceKind = 'repo' | 'composite' | 'simple';
 
 export type WorkspaceGitState = 'missing' | 'absent' | 'unborn' | 'ready';
 
@@ -29,14 +28,25 @@ export type WorkspaceGitStatus = Readonly<{
   inProgress: GitOperation | null;
 }>;
 
-export type WorkspaceMember = Readonly<{
-  workspaceId: WorkspaceId;
-  rootPath: string;
-  mountName: string;
+export type WorkspaceProfile = Readonly<{
+  bio: string | null;
 }>;
 
-export type SessionMount = Readonly<{
+export type Project = Readonly<{
+  id: ProjectId;
   workspaceId: WorkspaceId;
+  name: string;
+  rootPath: string;
+  kind: 'repo' | 'folder';
+  overrides: OverrideSettings;
+  createdAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+  disconnectedAt?: IsoDateTime;
+  lastAccessedAt?: IsoDateTime;
+}>;
+
+export type SessionProjectMount = Readonly<{
+  projectId: ProjectId;
   mountName: string;
   worktreePath: string;
   repoRoot: string;
@@ -46,11 +56,13 @@ export type SessionMount = Readonly<{
 export type Workspace = Readonly<{
   id: WorkspaceId;
   name: string;
-  rootPath: string;
-  kind?: WorkspaceKind;
-  members?: ReadonlyArray<WorkspaceMember>;
+  slug: string;
+  sessionsRoot: string | null;
+  profile?: WorkspaceProfile;
+  overrides: OverrideSettings;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
+  deletedAt?: IsoDateTime;
   disconnectedAt?: IsoDateTime;
   lastAccessedAt?: IsoDateTime;
 }>;
@@ -135,7 +147,7 @@ export type Session = Readonly<{
   workflowRuns: ReadonlyArray<WorkflowRun>;
   autoRun: boolean;
   titleUserEdited: boolean;
-  activeMountWorkspaceId?: WorkspaceId;
+  activeProjectId?: ProjectId;
   archivedAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
   verbosity?: 'brief' | 'normal' | 'verbose';
@@ -146,9 +158,9 @@ export type Session = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
-export type WorkspaceScript = Readonly<{
-  id: WorkspaceScriptId;
-  workspaceId: WorkspaceId;
+export type ProjectScript = Readonly<{
+  id: ProjectScriptId;
+  projectId: ProjectId;
   name: string;
   body: string;
   sortOrder: number;
@@ -158,6 +170,21 @@ export type WorkspaceScript = Readonly<{
 
 export type WorkspaceIntegrationProvider =
   'linear' | 'sentry' | 'gitlab' | 'jira' | 'bitbucket' | 'slack';
+
+export type IntegrationBindingProvider = WorkspaceIntegrationProvider | 'github';
+
+export const INTEGRATION_BINDING_PROVIDERS = [
+  'linear',
+  'sentry',
+  'gitlab',
+  'jira',
+  'bitbucket',
+  'slack',
+  'github',
+] satisfies ReadonlyArray<IntegrationBindingProvider>;
+
+export const isIntegrationBindingProvider = (value: unknown): value is IntegrationBindingProvider =>
+  typeof value === 'string' && INTEGRATION_BINDING_PROVIDERS.some((provider) => provider === value);
 
 export type LinearIntegrationConfig = Readonly<{
   workspaceUrlKey: string;
@@ -201,72 +228,99 @@ export type SlackIntegrationConfig = Readonly<{
   botUserName?: string;
 }>;
 
-export type WorkspaceIntegrationConfig =
+export type GithubIntegrationConfig = Readonly<Record<string, never>>;
+
+export type IntegrationBindingConfig =
   | LinearIntegrationConfig
   | SentryIntegrationConfig
   | GitlabIntegrationConfig
   | JiraIntegrationConfig
   | BitbucketIntegrationConfig
-  | SlackIntegrationConfig;
+  | SlackIntegrationConfig
+  | GithubIntegrationConfig;
 
-type WorkspaceIntegrationBase = Readonly<{
-  id: WorkspaceIntegrationId;
+type IntegrationBindingBase = Readonly<{
+  id: IntegrationBindingId;
   workspaceId: WorkspaceId;
+  projectId: ProjectId | null;
   credentialId: IntegrationCredentialId;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;
 
-export type LinearWorkspaceIntegration = WorkspaceIntegrationBase &
+export type LinearIntegrationBinding = IntegrationBindingBase &
   Readonly<{
     provider: 'linear';
     config: LinearIntegrationConfig;
   }>;
 
-export type SentryWorkspaceIntegration = WorkspaceIntegrationBase &
+export type SentryIntegrationBinding = IntegrationBindingBase &
   Readonly<{
     provider: 'sentry';
     config: SentryIntegrationConfig;
   }>;
 
-export type GitlabWorkspaceIntegration = WorkspaceIntegrationBase &
+export type GitlabIntegrationBinding = IntegrationBindingBase &
   Readonly<{
     provider: 'gitlab';
     config: GitlabIntegrationConfig;
   }>;
 
-export type JiraWorkspaceIntegration = WorkspaceIntegrationBase &
+export type JiraIntegrationBinding = IntegrationBindingBase &
   Readonly<{
     provider: 'jira';
     config: JiraIntegrationConfig;
   }>;
 
-export type BitbucketWorkspaceIntegration = WorkspaceIntegrationBase &
+export type BitbucketIntegrationBinding = IntegrationBindingBase &
   Readonly<{
     provider: 'bitbucket';
     config: BitbucketIntegrationConfig;
   }>;
 
-export type SlackWorkspaceIntegration = WorkspaceIntegrationBase &
+export type SlackIntegrationBinding = IntegrationBindingBase &
   Readonly<{
     provider: 'slack';
     config: SlackIntegrationConfig;
   }>;
 
-export type WorkspaceIntegration =
-  | LinearWorkspaceIntegration
-  | SentryWorkspaceIntegration
-  | GitlabWorkspaceIntegration
-  | JiraWorkspaceIntegration
-  | BitbucketWorkspaceIntegration
-  | SlackWorkspaceIntegration;
+export type GithubIntegrationBinding = IntegrationBindingBase &
+  Readonly<{
+    provider: 'github';
+    config: GithubIntegrationConfig;
+  }>;
+
+export type IntegrationBinding =
+  | LinearIntegrationBinding
+  | SentryIntegrationBinding
+  | GitlabIntegrationBinding
+  | JiraIntegrationBinding
+  | BitbucketIntegrationBinding
+  | SlackIntegrationBinding
+  | GithubIntegrationBinding;
 
 export type SessionExternalTaskProvider =
   'linear' | 'sentry' | 'gitlab' | 'github' | 'jira' | 'bitbucket' | 'slack';
 
+export const SESSION_EXTERNAL_TASK_PROVIDERS = [
+  'linear',
+  'sentry',
+  'gitlab',
+  'github',
+  'jira',
+  'bitbucket',
+  'slack',
+] satisfies ReadonlyArray<SessionExternalTaskProvider>;
+
+export const isSessionExternalTaskProvider = (
+  value: unknown,
+): value is SessionExternalTaskProvider =>
+  typeof value === 'string' &&
+  SESSION_EXTERNAL_TASK_PROVIDERS.some((provider) => provider === value);
+
 export type SessionExternalTask = Readonly<{
   sessionId: SessionId;
-  mountWorkspaceId?: WorkspaceId;
+  projectId?: ProjectId;
   branch?: string;
   provider: SessionExternalTaskProvider;
   externalId: string;

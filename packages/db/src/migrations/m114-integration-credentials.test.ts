@@ -6,6 +6,8 @@ import { migrations } from './index';
 
 const THROUGH = 113;
 
+const throughM130 = migrations.filter((migration) => migration.version <= 130);
+
 const seedThrough113 = async (): Promise<Database> => {
   const db = makeTestDatabase();
   await migrate(
@@ -59,7 +61,7 @@ describe('m114 integration credentials', () => {
       config: '{"workspaceUrlKey":"acme","viewerUserId":"u-1","viewerName":"Grace Hopper"}',
     });
 
-    await migrate(db, migrations);
+    await migrate(db, throughM130);
 
     const rows = await db.select<{ id: string; credential_id: string; config: string }>(
       'SELECT id, credential_id, config FROM workspace_integrations',
@@ -120,7 +122,7 @@ describe('m114 integration credentials', () => {
       config: '{"teamId":"T1","teamName":"Acme","botUserId":"U1","botUserName":"goodboy"}',
     });
 
-    await migrate(db, migrations);
+    await migrate(db, throughM130);
 
     const credentials = await db.select<{ id: string; label: string; account: string }>(
       'SELECT id, label, account FROM integration_credentials ORDER BY id',
@@ -144,7 +146,7 @@ describe('m114 integration credentials', () => {
       config: '{}',
     });
 
-    await migrate(db, migrations);
+    await migrate(db, throughM130);
 
     const credentials = await db.select<{ label: string; account: string }>(
       'SELECT label, account FROM integration_credentials',
@@ -162,12 +164,12 @@ describe('m114 integration credentials', () => {
       config: '{"workspaceUrlKey":"acme","viewerUserId":"u-1","viewerName":"Grace Hopper"}',
     });
 
-    await migrate(db, migrations);
+    await migrate(db, throughM130);
     const afterFirst = await db.select<{ id: string }>(
       'SELECT id FROM integration_credentials ORDER BY id',
     );
 
-    const replay = await migrate(db, migrations);
+    const replay = await migrate(db, throughM130);
 
     expect(replay.applied).toEqual([]);
     expect(
@@ -185,7 +187,7 @@ describe('m114 integration credentials', () => {
       config: '{"workspaceUrlKey":"acme","viewerUserId":"u-1","viewerName":"Grace Hopper"}',
     });
 
-    await migrate(db, migrations);
+    await migrate(db, throughM130);
     const now = Date.now();
     await db.execute(
       `INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_id, created_at, updated_at)
@@ -209,7 +211,7 @@ describe('m114 integration credentials', () => {
       config: '{"viewerName":"Grace Hopper"}',
     });
 
-    await migrate(db, migrations);
+    await migrate(db, throughM130);
 
     await expect(
       db.execute("DELETE FROM integration_credentials WHERE id = 'wi-linear'"),
@@ -226,7 +228,7 @@ describe('m114 integration credentials', () => {
       config: '{"viewerName":"Grace Hopper"}',
     });
 
-    await migrate(db, migrations);
+    await migrate(db, throughM130);
     await db.execute("DELETE FROM workspace_integrations WHERE credential_id = 'wi-linear'");
     await db.execute("DELETE FROM integration_credentials WHERE id = 'wi-linear'");
 
@@ -236,7 +238,7 @@ describe('m114 integration credentials', () => {
   it('drops the workspace-scoped keychain key from the row shape', async () => {
     const db = makeTestDatabase();
 
-    await migrate(db, migrations);
+    await migrate(db, throughM130);
 
     const columns = await db.select<{ name: string }>(
       "SELECT name FROM pragma_table_info('workspace_integrations')",

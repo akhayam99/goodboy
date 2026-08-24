@@ -10,7 +10,12 @@ const {
 } = vi.hoisted(() => ({
   removeWorktree: vi.fn(async () => undefined),
   listWorktreesForSession: vi.fn(async () => [
-    { worktreePath: '/repo/.goodboy/worktrees/gb-ghost', branch: 'gb/ghost', parallelIndex: 0 },
+    {
+      projectId: 'project-1',
+      worktreePath: '/repo/.goodboy/worktrees/gb-ghost',
+      branch: 'gb/ghost',
+      parallelIndex: 0,
+    },
   ]),
   deleteSession: vi.fn(async () => undefined),
   deleteGithubPrCacheForWorktreePath: vi.fn(async () => 1),
@@ -25,6 +30,7 @@ vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/worktree/worktree', () => ({
   removeWorktree,
   removeSessionDirectory: vi.fn(async () => undefined),
+  tidyRepoGoodboyDir: vi.fn(async () => undefined),
 }));
 vi.mock('../../../features/chat/turn', () => ({ cancelTurn: vi.fn(async () => undefined) }));
 
@@ -35,7 +41,10 @@ const SESSION_ID = 'sess-1' as never;
 const makeStore = () => ({
   sessions: [{ id: 'sess-1', workspaceId: 'ws-1', goal: 'ship it', state: { kind: 'idle' } }],
   archivedSessions: {},
-  workspaces: [{ id: 'ws-1', rootPath: '/repo', kind: 'repo' }],
+  workspaces: [{ id: 'ws-1', sessionsRoot: '/repo' }],
+  projects: [
+    { id: 'project-1', workspaceId: 'ws-1', rootPath: '/repo', kind: 'repo', name: 'repo' },
+  ],
   sessionBranches: { 'sess-1': 'gb/ghost' },
   sessionPhaseRuns: {},
   closeSessionTerminals: vi.fn(async () => {

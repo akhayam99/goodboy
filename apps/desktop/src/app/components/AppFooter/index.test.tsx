@@ -70,7 +70,6 @@ const footerProps = ({ overrides = {} }: Params = {}): FooterProps => ({
   onOpenGitlab: vi.fn(),
   onOpenBitbucket: vi.fn(),
   onOpenSlack: vi.fn(),
-  onConvertToDevProject: vi.fn(),
   githubEnabled: false,
   linearEnabled: false,
   jiraEnabled: false,
@@ -78,7 +77,6 @@ const footerProps = ({ overrides = {} }: Params = {}): FooterProps => ({
   gitlabEnabled: false,
   bitbucketEnabled: false,
   slackEnabled: false,
-  isSimpleWorkspace: false,
   ...overrides,
 });
 
@@ -434,30 +432,6 @@ describe('AppFooter', () => {
     ).toBe(7);
     fireEvent.click(screen.getByRole('button', { name: 'Link integration' }));
     expect(screen.getByRole('dialog', { name: 'Integrations' })).toBeDefined();
-  });
-
-  it('swaps the code hosts for the conversion CTA and drops Sentry in a simple workspace', () => {
-    const onConvertToDevProject = vi.fn();
-    render(
-      <AppFooter
-        {...footerProps({ overrides: { isSimpleWorkspace: true, onConvertToDevProject } })}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Link your first integration' }));
-    const panel = screen.getByRole('dialog', { name: 'Integrations' });
-    expect(within(panel).getByRole('button', { name: 'Connect Linear' })).toBeDefined();
-    expect(within(panel).getByRole('button', { name: 'Connect Jira' })).toBeDefined();
-    expect(within(panel).queryByRole('button', { name: 'Connect Sentry' })).toBeNull();
-    expect(within(panel).queryByRole('button', { name: 'Connect GitHub' })).toBeNull();
-
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Turn this workspace into a dev project backed by a git repository',
-      }),
-    );
-
-    expect(onConvertToDevProject).toHaveBeenCalledOnce();
   });
 
   it('keeps Slack reachable whether or not it is connected', () => {

@@ -34,7 +34,7 @@ is here, and an autonomous release cycle is its one reader.
 - [file-system.md](file-system.md): when deciding where a new file or folder
   goes inside `apps/desktop/src/`.
 - [navigation.md](navigation.md): when deciding what surface exists and where
-  it lives: lens, pane, strip, footer, or breadcrumb.
+  it lives: pane, sidebar, strip, footer, or breadcrumb.
 - [tone-of-voice.md](tone-of-voice.md): when writing any user-facing string:
   README, website, release notes, in-app copy, or error messages.
 - [brand.md](brand.md): when drawing the mascot, the lockup, an app icon or a
@@ -82,12 +82,17 @@ one only when the current task reaches its trigger.
   ask a connected integration, or how it asks.
 - [workflows.md](workflows.md): when touching workflow tables, run advance
   logic, or the post-step summarizer.
+- [adr/001-workspace-project-rename.md](adr/001-workspace-project-rename.md):
+  when you need why the schema calls the old workspaces table `projects`, or
+  what the 0.2.0 migrations did to existing data.
 - [release.md](release.md): when you need the technical detail of a release:
   signing, notarization, updater, or Homebrew.
 - [release-command.md](release-command.md): when an agent is executing a
   release and needs the step order plus the gotchas that bit previous runs.
 - [styling.md](styling.md): when implementing spacing, radius, scroll, overlay,
   or z-index in code.
+- [mock-screenshots.md](mock-screenshots.md): when you need a real-app
+  screenshot with fake, advanced, non-empty state.
 
 ## Routing an ad-hoc agent
 

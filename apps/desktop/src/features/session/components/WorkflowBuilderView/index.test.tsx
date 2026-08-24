@@ -49,8 +49,8 @@ vi.mock('../../../../store', () => {
   const getState = () => ({
     sessions: [session],
     workspaces: [{ id: session.workspaceId, rootPath: '/tmp/repo', kind: 'repo' }],
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: {},
+    sessionActiveProject: {},
     sessionWorktrees: { [session.id]: ['/tmp/worktree'] },
     sessionBranches: { [session.id]: 'ak/workflow' },
     savePhaseTemplate: mockSavePhaseTemplate,

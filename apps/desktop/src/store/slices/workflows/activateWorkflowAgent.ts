@@ -7,6 +7,7 @@ import {
 import {
   inferAgentKindFromName,
   kindConsumesPlan,
+  kindWritesFiles,
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import {
@@ -17,7 +18,13 @@ import {
   composeStepBoundary,
 } from '../../kickoff';
 import type { SpawnFocus } from '../session-view/spawnFocus';
-import { fanOutClusters, selectFanOutPlan } from './clusterImplementation';
+import {
+  fanOutClusters,
+  resumeClusterChildren,
+  selectFanOutPlan,
+  unsettledClusterChildren,
+} from './clusterImplementation';
+import { materializeDeclaredProjects } from './materializeDeclaredProjects';
 import { isWatchingWorkflowLens } from './isWatchingWorkflowLens';
 import { WorkflowGateError, findWorkflowActivationBlock } from './workflowActivationGate';
 import type { GetFn, SetFn } from './types';
@@ -57,6 +64,11 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       if (blocked !== null) {
         throw new WorkflowGateError({ reason: blocked });
       }
+    }
+
+    if (unsettledClusterChildren(runs, agentId).length > 0) {
+      await resumeClusterChildren({ set, get, sessionId, container: agent });
+      return;
     }
 
     const run = session.workflowRuns.find((r) => r.id === agent.workflowRunId);
@@ -122,6 +134,19 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
         sessionPlans: { ...state.sessionPlans, [sessionId]: refreshedPlans },
         planConsumptions: { ...state.planConsumptions, [planToConsume.id]: consumptions },
       }));
+    }
+
+    if (kindWritesFiles(effectiveKind)) {
+      await materializeDeclaredProjects({
+        get,
+        sessionId,
+        stepName: step?.name ?? agent.name,
+        declarationText: [
+          run?.goal ?? '',
+          promptPrefix,
+          explicitPlan?.bodyMd ?? latestPlan?.bodyMd ?? '',
+        ].join('\n'),
+      });
     }
 
     const clusters =

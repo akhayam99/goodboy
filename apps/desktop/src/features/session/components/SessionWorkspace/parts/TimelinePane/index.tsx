@@ -1,13 +1,15 @@
 import { useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
-import { Button, Eyebrow, useCopyLink } from '@goodboy/ui';
+import { SectionHeader, useCopyLink } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   agentHasUnread,
   useAppStore,
+  useMountDiffStats,
   useSessionOpenQuestions,
+  type MountDiffStat,
 } from '../../../../../../store';
 import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
 import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
@@ -34,24 +36,28 @@ type Props = {
   readonly session: Session;
   readonly runs: WorkspaceRuns;
   readonly actions: ReactNode;
+  readonly kickoff?: ReactNode;
 };
 
-export const TimelinePane = ({ session, runs, actions }: Props) => {
+export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
   const sessionId: SessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const plans = useAppStore((s) => s.sessionPlans?.[sessionId] ?? EMPTY_ARRAY);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks?.[sessionId] ?? EMPTY_ARRAY);
   const worktrees = useAppStore((s) => s.sessionWorktreeRecords?.[sessionId] ?? EMPTY_ARRAY);
   const events = useAppStore((s) => s.sessionEvents?.[sessionId] ?? EMPTY_ARRAY);
+  const areEventsLoaded = useAppStore((s) => s.sessionEvents?.[sessionId] !== undefined);
   const loadSessionEvents = useAppStore((s) => s.loadSessionEvents);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const openMountDiff = useAppStore((s) => s.openMountDiff);
   const questions = useSessionOpenQuestions(sessionId);
   const workflows = useAttachedWorkflowRuns({ session });
   const openTargetFor = useTimelineOpen({ sessionId });
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const activity = useActivityFilter();
+  const diffStats = useMountDiffStats(sessionId);
   const { showToast } = useToast();
   const { copied, failed, copy } = useCopyLink();
 
@@ -134,8 +140,20 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
         unreadAgentIds,
         blockedRunIds,
         dayLabelFor: dayLabel,
+        showWorkflowSubagents: activity.filter.workflowSubagents,
+        showAgentSubagents: activity.filter.agentSubagents,
+        showPlans: activity.filter.plans,
+        showQuestions: activity.filter.questions,
       }),
-    [blockedRunIds, unreadAgentIds, visibleEntries],
+    [
+      activity.filter.agentSubagents,
+      activity.filter.plans,
+      activity.filter.questions,
+      activity.filter.workflowSubagents,
+      blockedRunIds,
+      unreadAgentIds,
+      visibleEntries,
+    ],
   );
 
   const rail = useMemo(
@@ -143,16 +161,53 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
     [stream.groups, stream.items],
   );
 
+  const mountPathByProjectId = useMemo(() => {
+    const paths = new Map<string, string>();
+    for (const worktree of worktrees) {
+      if (worktree.projectId != null) {
+        paths.set(worktree.projectId, worktree.worktreePath);
+      }
+    }
+    return paths;
+  }, [worktrees]);
+
+  const mountPathFor = ({ item }: { readonly item: TimelineRowItem }): string | null => {
+    const { entry } = item;
+    if (entry.kind === 'branch') {
+      return entry.worktree.worktreePath;
+    }
+    if (entry.kind !== 'event' || entry.event.kind !== 'project_materialized') {
+      return null;
+    }
+    const projectId = entry.event.payload?.projectId ?? null;
+    if (projectId == null) {
+      return null;
+    }
+    return mountPathByProjectId.get(projectId) ?? null;
+  };
+
+  const diffStatFor = ({ item }: { readonly item: TimelineRowItem }): MountDiffStat | null => {
+    const worktreePath = mountPathFor({ item });
+    if (worktreePath == null) {
+      return null;
+    }
+    return diffStats.get(worktreePath) ?? null;
+  };
+
   const actionFor = ({ item }: { readonly item: TimelineRowItem }): TimelineRowAction | null => {
     const { entry } = item;
-    if (entry.kind === 'event' && entry.event.kind === 'worktree_created') {
-      const worktreePath = entry.event.payload?.worktreePath ?? null;
-      if (worktreePath == null) {
-        return null;
+    const mountPath = mountPathFor({ item });
+    if (mountPath != null) {
+      const stat = diffStatFor({ item });
+      if (stat != null && (stat.additions > 0 || stat.deletions > 0)) {
+        return {
+          label: 'View diff',
+          onAct: () => openMountDiff(sessionId, mountPath),
+        };
       }
       return {
         label: copied ? 'Copied' : 'Copy path',
-        onAct: () => void copy(worktreePath),
+        onAct: () => void copy(mountPath),
       };
     }
     if (entry.kind === 'agent' && entry.openQuestions.length > 0) {
@@ -192,71 +247,96 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
 
   const hasUnreadAgents = unreadAgentIds.size > 0;
 
+  if (model.entries.length === 0 && kickoff != null && areEventsLoaded) {
+    return <>{kickoff}</>;
+  }
+
   return (
     <section aria-label="Activity" className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-4 px-0.5">
-        <Eyebrow label="Activity" muted className="font-medium" />
-        <div className="flex items-center gap-1">
-          {hasUnreadAgents ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7"
-              onClick={() => void markAllAgentsSeen(sessionId)}
-            >
-              <CheckCheck size={13} aria-hidden />
-              Mark all seen
-            </Button>
-          ) : null}
-          <ActivityFilterButton
-            filter={activity.filter}
-            hiddenCount={activity.hiddenCount}
-            onCategory={activity.setCategory}
-          />
-          {actions}
-        </div>
-      </div>
-      <div className="flex flex-col">
-        {stream.items.map((item, index) => {
-          const railRow = rail.rows[index];
-          if (railRow === undefined) {
-            return null;
-          }
-          if (item.kind === 'now') {
+      <SectionHeader
+        label="Activity"
+        className="px-0.5"
+        action={
+          <div className="flex items-center gap-1">
+            <ActivityFilterButton
+              filter={activity.filter}
+              hiddenCount={activity.hiddenCount}
+              onToggle={activity.setToggle}
+              onAll={activity.setAll}
+            />
+            {actions}
+          </div>
+        }
+      />
+      {model.entries.length === 0 ? (
+        <p className="px-0.5 py-2 text-xs text-muted-foreground">
+          Nothing yet. Agents, workflows, and session facts land here as they happen.
+        </p>
+      ) : visibleEntries.length === 0 ? (
+        <p className="px-0.5 py-2 text-xs text-muted-foreground">
+          Everything is hidden by the activity filter. Show a category to bring it back.
+        </p>
+      ) : (
+        <div className="flex flex-col">
+          {stream.items.map((item, index) => {
+            const railRow = rail.rows[index];
+            if (railRow === undefined) {
+              return null;
+            }
+            if (item.kind === 'now') {
+              return (
+                <TimelineNowRule
+                  key={item.id}
+                  item={item}
+                  rail={railRow}
+                  railWidth={rail.width}
+                  action={
+                    hasUnreadAgents ? (
+                      <button
+                        type="button"
+                        onClick={() => void markAllAgentsSeen(sessionId)}
+                        className="inline-flex h-6 items-center gap-1 rounded-full bg-primary/10 px-2.5 text-2xs font-medium text-primary motion-safe:transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
+                      >
+                        <CheckCheck size={12} aria-hidden />
+                        Mark all seen
+                      </button>
+                    ) : undefined
+                  }
+                />
+              );
+            }
+            if (item.kind === 'day') {
+              return (
+                <TimelineDayRule key={item.id} item={item} rail={railRow} railWidth={rail.width} />
+              );
+            }
+            if (item.kind === 'cluster') {
+              return (
+                <TimelinePendingCluster
+                  key={item.id}
+                  item={item}
+                  rail={railRow}
+                  railWidth={rail.width}
+                />
+              );
+            }
+            const target = openTargetFor({ entry: item.entry });
             return (
-              <TimelineNowRule key={item.id} item={item} rail={railRow} railWidth={rail.width} />
-            );
-          }
-          if (item.kind === 'day') {
-            return (
-              <TimelineDayRule key={item.id} item={item} rail={railRow} railWidth={rail.width} />
-            );
-          }
-          if (item.kind === 'cluster') {
-            return (
-              <TimelinePendingCluster
+              <TimelineStreamRow
                 key={item.id}
                 item={item}
                 rail={railRow}
                 railWidth={rail.width}
+                sessionId={sessionId}
+                openLabel={target.label}
+                action={actionFor({ item })}
+                diffStat={diffStatFor({ item })}
+                onOpen={target.open}
               />
             );
-          }
-          const target = openTargetFor({ entry: item.entry });
-          return (
-            <TimelineStreamRow
-              key={item.id}
-              item={item}
-              rail={railRow}
-              railWidth={rail.width}
-              sessionId={sessionId}
-              openLabel={target.label}
-              action={actionFor({ item })}
-              onOpen={target.open}
-            />
-          );
-        })}
-      </div>
+          })}
+        </div>
+      )}
     </section>
   );
 };

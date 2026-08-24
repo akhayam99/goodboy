@@ -1,5 +1,6 @@
 import type {
-  GitlabWorkspaceIntegration,
+  GitlabIntegrationBinding,
+  ProjectId,
   ReviewablePr,
   SessionId,
   WorkspaceId,
@@ -14,7 +15,7 @@ type FetchDiffParams = {
   workspaceId: WorkspaceId;
   pr: ReviewablePr;
   rootPath: string;
-  memberWorkspaceId?: WorkspaceId;
+  projectId: ProjectId;
 };
 
 const fetchDiff = async ({
@@ -22,16 +23,13 @@ const fetchDiff = async ({
   workspaceId,
   pr,
   rootPath,
-  memberWorkspaceId,
+  projectId,
 }: FetchDiffParams): Promise<string> => {
   if (pr.provider === 'github') {
-    if (memberWorkspaceId != null) {
-      return ghPrDiff(pr.repo, pr.number, rootPath, workspaceId, memberWorkspaceId);
-    }
-    return ghPrDiff(pr.repo, pr.number, rootPath, workspaceId);
+    return ghPrDiff(pr.repo, pr.number, rootPath, workspaceId, projectId);
   }
   const integration = (get().workspaceIntegrations[workspaceId] ?? []).find(
-    (i): i is GitlabWorkspaceIntegration => i.provider === 'gitlab',
+    (i): i is GitlabIntegrationBinding => i.provider === 'gitlab',
   );
   if (integration == null) {
     throw new Error(`gitlab integration not connected for workspace ${workspaceId}`);
@@ -48,20 +46,17 @@ export const startPrReviewSession = (get: GetFn) => {
     if (workspace == null) {
       throw new Error(`workspace not found: ${workspaceId}`);
     }
-    const member =
-      workspace.kind === 'composite'
-        ? ((workspace.members ?? []).find(
-            (candidate) => candidate.workspaceId === pr.mountWorkspaceId,
-          ) ?? null)
-        : null;
-    if (workspace.kind === 'composite' && member == null) {
+    const projects = get().projects.filter((project) => project.workspaceId === workspaceId);
+    const project =
+      projects.find((candidate) => candidate.id === pr.projectId) ??
+      projects.find((candidate) => candidate.kind === 'repo');
+    if (project === undefined) {
       throw new Error(`review repository not found for pull request: ${pr.id}`);
     }
-    const rootPath = member?.rootPath ?? workspace.rootPath;
-    const memberWorkspaceId = member?.workspaceId;
+    const rootPath = project.rootPath;
     let diff: string | null = null;
     try {
-      diff = await fetchDiff({ get, workspaceId, pr, rootPath, memberWorkspaceId });
+      diff = await fetchDiff({ get, workspaceId, pr, rootPath, projectId: project.id });
     } catch {
       diff = null;
     }
@@ -72,6 +67,7 @@ export const startPrReviewSession = (get: GetFn) => {
       : `Review PR #${pr.number}: ${pr.title}`;
     const { session } = await get().createSession({
       workspaceId,
+      projectId: project.id,
       goal,
       existingBranch: pr.headBranch,
       fallbackRef: isGitlab ? `merge-requests/${pr.number}/head` : `pull/${pr.number}/head`,
@@ -81,7 +77,7 @@ export const startPrReviewSession = (get: GetFn) => {
       externalTasks: [
         {
           provider: pr.provider,
-          ...(pr.mountWorkspaceId != null ? { mountWorkspaceId: pr.mountWorkspaceId } : {}),
+          projectId: project.id,
           externalId: String(pr.number),
           identifier: isGitlab ? `!${pr.number}` : `#${pr.number}`,
           url: pr.url,
@@ -89,12 +85,7 @@ export const startPrReviewSession = (get: GetFn) => {
         },
       ],
     });
-    if (pr.mountWorkspaceId != null) {
-      await get().setSessionActiveMount({
-        sessionId: session.id,
-        workspaceId: pr.mountWorkspaceId,
-      });
-    }
+    await get().setSessionActiveProject({ sessionId: session.id, projectId: project.id });
     return session.id;
   };
 };

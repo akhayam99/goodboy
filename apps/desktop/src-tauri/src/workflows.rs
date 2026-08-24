@@ -27,8 +27,6 @@ pub struct StepRow {
     pub model_override: Option<String>,
     pub effort: Option<String>,
     pub verbosity: Option<String>,
-    #[serde(rename = "parallelGroup")]
-    pub parallel_group: Option<i64>,
     #[serde(rename = "orchestratorReason")]
     pub orchestrator_reason: Option<String>,
 }
@@ -38,8 +36,6 @@ pub struct StepDefRow {
     pub id: String,
     #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
-    #[serde(rename = "baseStepId")]
-    pub base_step_id: Option<String>,
     pub role: String,
     pub name: String,
     #[serde(rename = "promptPrefix")]
@@ -63,8 +59,6 @@ pub struct StepDefUpsertInput {
     pub id: Option<String>,
     #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
-    #[serde(rename = "baseStepId")]
-    pub base_step_id: Option<String>,
     pub role: String,
     pub name: String,
     #[serde(rename = "promptPrefix")]
@@ -127,8 +121,6 @@ pub struct StepInput {
     pub model_override: Option<String>,
     pub effort: Option<String>,
     pub verbosity: Option<String>,
-    #[serde(rename = "parallelGroup")]
-    pub parallel_group: Option<i64>,
     #[serde(rename = "orchestratorReason")]
     pub orchestrator_reason: Option<String>,
 }
@@ -310,7 +302,7 @@ fn load_steps(
     let mut stmt = conn.prepare(
         "SELECT id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
                 expected_output, provider_override, model_override, effort, verbosity,
-                parallel_group, orchestrator_reason
+                orchestrator_reason
          FROM steps
          WHERE workflow_id = ?1 AND deleted_at IS NULL
          ORDER BY ordinal ASC",
@@ -329,8 +321,7 @@ fn load_steps(
             model_override: row.get(9)?,
             effort: row.get(10)?,
             verbosity: row.get(11)?,
-            parallel_group: row.get(12)?,
-            orchestrator_reason: row.get(13)?,
+            orchestrator_reason: row.get(12)?,
         })
     })?;
     rows.collect()
@@ -345,8 +336,8 @@ fn row_to_template(
     description: String,
     goal: Option<String>,
     process_text: Option<String>,
-    created_at: String,
-    updated_at: String,
+    created_at: i64,
+    updated_at: i64,
     deleted_at: Option<i64>,
     is_preset: bool,
     origin: Option<String>,
@@ -360,8 +351,8 @@ fn row_to_template(
         goal,
         process_text,
         steps,
-        created_at,
-        updated_at,
+        created_at: crate::util::ms_to_iso(created_at),
+        updated_at: crate::util::ms_to_iso(updated_at),
         deleted_at,
         is_preset,
         origin,
@@ -392,8 +383,8 @@ pub fn workflow_list(
         String,
         Option<String>,
         Option<String>,
-        String,
-        String,
+        i64,
+        i64,
         Option<i64>,
         i64,
         Option<String>,
@@ -458,8 +449,8 @@ pub fn workflow_get(state: State<'_, Db>, id: String) -> Result<Option<WorkflowR
             row.get::<_, String>(3)?,
             row.get::<_, Option<String>>(4)?,
             row.get::<_, Option<String>>(5)?,
-            row.get::<_, String>(6)?,
-            row.get::<_, String>(7)?,
+            row.get::<_, i64>(6)?,
+            row.get::<_, i64>(7)?,
             row.get::<_, Option<i64>>(8)?,
             row.get::<_, i64>(9)?,
             row.get::<_, Option<String>>(10)?,
@@ -529,7 +520,8 @@ pub fn workflow_upsert(
     input: PhaseTemplateUpsertInput,
 ) -> Result<WorkflowRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
-    let now = crate::util::iso_now();
+    let now_ms = crate::util::now_ms();
+    let now = crate::util::ms_to_iso(now_ms);
 
     // Resolve id: use provided or look up by (workspace_id, name) or generate new.
     let id = if let Some(ref given_id) = input.id {
@@ -555,12 +547,12 @@ pub fn workflow_upsert(
 
     let name = resolve_live_name(&conn, &input.workspace_id, &input.name, &id)?;
 
-    let created_at: String = {
+    let created_at_ms: i64 = {
         let mut stmt = conn.prepare("SELECT created_at FROM workflows WHERE id = ?1 LIMIT 1")?;
         let mut rows = stmt.query_map(rusqlite::params![id], |row| row.get(0))?;
         match rows.next() {
             Some(r) => r.map_err(PhaseError::Db)?,
-            None => now.clone(),
+            None => now_ms,
         }
     };
 
@@ -583,8 +575,8 @@ pub fn workflow_upsert(
             input.description,
             input.goal,
             input.process_text,
-            created_at,
-            now,
+            created_at_ms,
+            now_ms,
             input.is_preset as i32,
             input.origin.clone(),
         ],
@@ -603,8 +595,8 @@ pub fn workflow_upsert(
             "INSERT INTO steps
                (id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
                 expected_output, provider_override, model_override, effort, verbosity,
-                parallel_group, orchestrator_reason, deleted_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, NULL)
+                orchestrator_reason, deleted_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, NULL)
              ON CONFLICT(id) DO UPDATE SET
                workflow_id      = excluded.workflow_id,
                library_step_id  = excluded.library_step_id,
@@ -617,7 +609,6 @@ pub fn workflow_upsert(
                model_override   = excluded.model_override,
                effort           = excluded.effort,
                verbosity        = excluded.verbosity,
-               parallel_group   = excluded.parallel_group,
                orchestrator_reason = excluded.orchestrator_reason,
                deleted_at       = NULL",
             rusqlite::params![
@@ -633,7 +624,6 @@ pub fn workflow_upsert(
                 def.model_override,
                 def.effort,
                 def.verbosity,
-                def.parallel_group,
                 def.orchestrator_reason,
             ],
         )?;
@@ -651,7 +641,6 @@ pub fn workflow_upsert(
             model_override: def.model_override.clone(),
             effort: def.effort.clone(),
             verbosity: def.verbosity.clone(),
-            parallel_group: def.parallel_group,
             orchestrator_reason: def.orchestrator_reason.clone(),
         });
     }
@@ -668,12 +657,13 @@ pub fn workflow_upsert(
             .join(",")
     };
     let sql = format!(
-        "UPDATE steps SET deleted_at = strftime('%s','now')
+        "UPDATE steps SET deleted_at = ?2
          WHERE workflow_id = ?1 AND deleted_at IS NULL AND id NOT IN ({})",
         placeholders
     );
     let mut params: Vec<&dyn rusqlite::ToSql> = Vec::with_capacity(kept_ids.len() + 1);
     params.push(&id);
+    params.push(&now_ms);
     for k in &kept_ids {
         params.push(k);
     }
@@ -687,7 +677,7 @@ pub fn workflow_upsert(
         goal: input.goal,
         process_text: input.process_text,
         steps,
-        created_at,
+        created_at: crate::util::ms_to_iso(created_at_ms),
         updated_at: now,
         deleted_at: None,
         is_preset: input.is_preset,
@@ -727,8 +717,8 @@ pub fn workflow_delete(state: State<'_, Db>, id: String) -> Result<(), PhaseErro
         // Soft-delete: hide it from the preset picker while keeping seeded rows
         // restorable and attached sessions fully intact.
         conn.execute(
-            "UPDATE workflows SET deleted_at = strftime('%s','now') WHERE id = ?1",
-            rusqlite::params![id],
+            "UPDATE workflows SET deleted_at = ?2 WHERE id = ?1",
+            rusqlite::params![id, crate::util::now_ms()],
         )?;
     } else {
         // User-created and unreferenced: hard-delete so deleted drafts/presets do
@@ -767,8 +757,8 @@ pub fn workflows_for_session(
         String,
         Option<String>,
         Option<String>,
-        String,
-        String,
+        i64,
+        i64,
         Option<i64>,
         i64,
         Option<String>,
@@ -821,27 +811,21 @@ fn map_step_def_row(row: &rusqlite::Row<'_>) -> Result<StepDefRow, rusqlite::Err
     Ok(StepDefRow {
         id: row.get(0)?,
         workspace_id: row.get(1)?,
-        base_step_id: row.get(2)?,
-        role: row.get(3)?,
-        name: row.get(4)?,
-        prompt_prefix: row.get(5)?,
-        provider_default: row.get(6)?,
-        model_default: row.get(7)?,
-        effort_default: row.get(8)?,
-        verbosity_default: row.get(9)?,
-        created_at: row.get(10)?,
-        updated_at: row.get(11)?,
+        role: row.get(2)?,
+        name: row.get(3)?,
+        prompt_prefix: row.get(4)?,
+        provider_default: row.get(5)?,
+        model_default: row.get(6)?,
+        effort_default: row.get(7)?,
+        verbosity_default: row.get(8)?,
+        created_at: crate::util::ms_to_iso(row.get(9)?),
+        updated_at: crate::util::ms_to_iso(row.get(10)?),
     })
 }
 
-const STEP_DEF_COLS: &str =
-    "id, workspace_id, base_step_id, role, name, prompt_prefix, provider_default, \
+const STEP_DEF_COLS: &str = "id, workspace_id, role, name, prompt_prefix, provider_default, \
      model_default, effort_default, verbosity_default, created_at, updated_at";
 
-/// The effective library for a workspace: every non-deleted global seed plus the
-/// workspace's own non-deleted steps. A workspace override (a local row with
-/// `base_step_id` pointing at a global) shadows that global, so the global is
-/// filtered out when an override exists.
 #[tauri::command]
 pub fn step_def_list(
     state: State<'_, Db>,
@@ -851,16 +835,7 @@ pub fn step_def_list(
     let sql = format!(
         "SELECT {cols} FROM step_library
          WHERE deleted_at IS NULL
-           AND (
-             workspace_id = ?1
-             OR (
-               workspace_id IS NULL
-               AND id NOT IN (
-                 SELECT base_step_id FROM step_library
-                 WHERE workspace_id = ?1 AND base_step_id IS NOT NULL AND deleted_at IS NULL
-               )
-             )
-           )
+           AND (workspace_id = ?1 OR workspace_id IS NULL)
          ORDER BY (workspace_id IS NULL) DESC, name ASC",
         cols = STEP_DEF_COLS
     );
@@ -875,26 +850,26 @@ pub fn step_def_upsert(
     input: StepDefUpsertInput,
 ) -> Result<StepDefRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
-    let now = crate::util::iso_now();
+    let now_ms = crate::util::now_ms();
+    let now = crate::util::ms_to_iso(now_ms);
     let id = input.id.clone().unwrap_or_else(crate::util::uuid_v4);
-    let created_at: String = {
+    let created_at_ms: i64 = {
         let mut stmt = conn.prepare("SELECT created_at FROM step_library WHERE id = ?1 LIMIT 1")?;
         let mut rows = stmt.query_map(rusqlite::params![id], |row| row.get(0))?;
         match rows.next() {
             Some(r) => r.map_err(PhaseError::Db)?,
-            None => now.clone(),
+            None => now_ms,
         }
     };
 
     conn.execute(
         "INSERT INTO step_library
-           (id, workspace_id, base_step_id, role, name, prompt_prefix,
+           (id, workspace_id, role, name, prompt_prefix,
             provider_default, model_default, effort_default, verbosity_default,
             created_at, updated_at, deleted_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, NULL)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, NULL)
          ON CONFLICT(id) DO UPDATE SET
            workspace_id      = excluded.workspace_id,
-           base_step_id      = excluded.base_step_id,
            role              = excluded.role,
            name              = excluded.name,
            prompt_prefix     = excluded.prompt_prefix,
@@ -907,7 +882,6 @@ pub fn step_def_upsert(
         rusqlite::params![
             id,
             input.workspace_id,
-            input.base_step_id,
             input.role,
             input.name,
             input.prompt_prefix,
@@ -915,15 +889,14 @@ pub fn step_def_upsert(
             input.model_default,
             input.effort_default,
             input.verbosity_default,
-            created_at,
-            now,
+            created_at_ms,
+            now_ms,
         ],
     )?;
 
     Ok(StepDefRow {
         id,
         workspace_id: input.workspace_id,
-        base_step_id: input.base_step_id,
         role: input.role,
         name: input.name,
         prompt_prefix: input.prompt_prefix,
@@ -931,7 +904,7 @@ pub fn step_def_upsert(
         model_default: input.model_default,
         effort_default: input.effort_default,
         verbosity_default: input.verbosity_default,
-        created_at,
+        created_at: crate::util::ms_to_iso(created_at_ms),
         updated_at: now,
     })
 }
@@ -943,8 +916,8 @@ pub fn step_def_upsert(
 pub fn step_def_delete(state: State<'_, Db>, id: String) -> Result<(), PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let affected = conn.execute(
-        "UPDATE step_library SET deleted_at = strftime('%s','now') WHERE id = ?1",
-        rusqlite::params![id],
+        "UPDATE step_library SET deleted_at = ?2 WHERE id = ?1",
+        rusqlite::params![id, crate::util::now_ms()],
     )?;
     if affected == 0 {
         return Err(PhaseError::TemplateNotFound(id));
@@ -958,7 +931,7 @@ pub fn step_def_delete(state: State<'_, Db>, id: String) -> Result<(), PhaseErro
 
 const AGENT_SESSION_COLS: &str =
     "id, session_id, step_id, ordinal, name, status, \
-     provider_run_id, output_summary, started_at, completed_at, \
+     provider_run_id, output_summary, started_at, last_finished_at, \
      provider_session_id, provider_session_provider_id, last_finished_at, last_viewed_at, done_at, kind, verbosity, \
      effort, model_override, provider_override, \
      parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url, \
@@ -974,13 +947,13 @@ fn session_row_from_row(row: &rusqlite::Row<'_>) -> Result<SessionRow, rusqlite:
         status: row.get(5)?,
         provider_run_id: row.get(6)?,
         output_summary: row.get(7)?,
-        started_at: row.get(8)?,
-        completed_at: row.get(9)?,
+        started_at: crate::util::optional_ms_to_iso(row.get(8)?),
+        completed_at: crate::util::optional_ms_to_iso(row.get(9)?),
         provider_session_id: row.get(10)?,
         provider_session_provider_id: row.get(11)?,
-        last_finished_at: row.get(12)?,
-        last_viewed_at: row.get(13)?,
-        done_at: row.get(14)?,
+        last_finished_at: crate::util::optional_ms_to_iso(row.get(12)?),
+        last_viewed_at: crate::util::optional_ms_to_iso(row.get(13)?),
+        done_at: crate::util::optional_ms_to_iso(row.get(14)?),
         kind: row.get(15)?,
         verbosity: row.get(16)?,
         effort: row.get(17)?,
@@ -1013,7 +986,7 @@ pub fn agent_list_for_session(
 
 const AGENT_INSERT_SQL: &str = "INSERT INTO agents
    (id, session_id, step_id, ordinal, name, status,
-    provider_run_id, output_summary, started_at, completed_at, kind, verbosity,
+    provider_run_id, output_summary, started_at, last_finished_at, kind, verbosity,
     effort, model_override, provider_override,
     parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url, source_kind,
     domains_json)
@@ -1026,6 +999,11 @@ pub fn agent_insert(
 ) -> Result<SessionRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let id = input.id.clone().unwrap_or_else(crate::util::uuid_v4);
+    let started_at_ms = input.started_at.as_deref().and_then(crate::util::iso_to_ms);
+    let completed_at_ms = input
+        .completed_at
+        .as_deref()
+        .and_then(crate::util::iso_to_ms);
 
     conn.execute(
         AGENT_INSERT_SQL,
@@ -1038,8 +1016,8 @@ pub fn agent_insert(
             input.status,
             input.provider_run_id,
             input.output_summary,
-            input.started_at,
-            input.completed_at,
+            started_at_ms,
+            completed_at_ms,
             input.kind,
             input.verbosity,
             input.effort,
@@ -1065,10 +1043,10 @@ pub fn agent_insert(
         provider_run_id: input.provider_run_id,
         output_summary: input.output_summary,
         started_at: input.started_at,
-        completed_at: input.completed_at,
+        completed_at: input.completed_at.clone(),
         provider_session_id: None,
         provider_session_provider_id: None,
-        last_finished_at: None,
+        last_finished_at: input.completed_at,
         last_viewed_at: None,
         done_at: None,
         kind: input.kind,
@@ -1092,6 +1070,11 @@ pub fn agent_update_status(
     input: PhaseRunUpdateInput,
 ) -> Result<SessionRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    let started_at_ms = input.started_at.as_deref().and_then(crate::util::iso_to_ms);
+    let completed_at_ms = input
+        .completed_at
+        .as_deref()
+        .and_then(crate::util::iso_to_ms);
 
     // When status transitions to a terminal state, also stamp `last_finished_at`
     // so the sidebar can show an unread indicator until the user views the
@@ -1103,9 +1086,8 @@ pub fn agent_update_status(
            provider_run_id = COALESCE(?3, provider_run_id),
            output_summary  = COALESCE(?4, output_summary),
            started_at      = COALESCE(?5, started_at),
-           completed_at    = COALESCE(?6, completed_at),
            last_finished_at = CASE WHEN ?7 = 1
-             THEN COALESCE(?6, last_finished_at, CURRENT_TIMESTAMP)
+             THEN COALESCE(?6, last_finished_at, ?8)
              ELSE last_finished_at END
          WHERE id = ?1",
         rusqlite::params![
@@ -1113,13 +1095,13 @@ pub fn agent_update_status(
             input.status,
             input.provider_run_id,
             input.output_summary,
-            input.started_at,
-            input.completed_at,
+            started_at_ms,
+            completed_at_ms,
             is_terminal as i32,
+            crate::util::now_ms(),
         ],
     )?;
 
-    // Fetch updated row.
     let sql = format!(
         "SELECT {cols} FROM agents WHERE id = ?1 LIMIT 1",
         cols = AGENT_SESSION_COLS
@@ -1195,7 +1177,10 @@ pub fn agent_mark_viewed(state: State<'_, Db>, id: String, at: String) -> Result
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let affected = conn.execute(
         "UPDATE agents SET last_viewed_at = ?2 WHERE id = ?1",
-        rusqlite::params![id, at],
+        rusqlite::params![
+            id,
+            crate::util::iso_to_ms(&at).unwrap_or_else(crate::util::now_ms)
+        ],
     )?;
     if affected == 0 {
         return Err(PhaseError::RunNotFound(id));
@@ -1213,7 +1198,11 @@ pub fn agent_set_done(
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let affected = conn.execute(
         "UPDATE agents SET done_at = CASE WHEN ?2 = 1 THEN ?3 ELSE NULL END WHERE id = ?1",
-        rusqlite::params![id, done as i32, at],
+        rusqlite::params![
+            id,
+            done as i32,
+            at.as_deref().and_then(crate::util::iso_to_ms)
+        ],
     )?;
     if affected == 0 {
         return Err(PhaseError::RunNotFound(id));
@@ -1252,7 +1241,7 @@ mod tests {
         conn.execute_batch(
             "CREATE TABLE agents (
                 id TEXT, session_id TEXT, step_id TEXT, ordinal INTEGER, name TEXT, status TEXT,
-                provider_run_id TEXT, output_summary TEXT, started_at TEXT, completed_at TEXT,
+                provider_run_id TEXT, output_summary TEXT, started_at TEXT,
                 provider_session_id TEXT, provider_session_provider_id TEXT, last_finished_at TEXT, last_viewed_at TEXT, done_at TEXT,
                 kind TEXT, verbosity TEXT, effort TEXT, model_override TEXT, provider_override TEXT,
                 parent_agent_id TEXT, workflow_run_id TEXT, source_thread_id TEXT,

@@ -1,0 +1,90 @@
+// @vitest-environment happy-dom
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { Workspace, WorkspaceId } from '@goodboy/types';
+
+const { state, repoMocks } = vi.hoisted(() => ({
+  state: {
+    projects: [] as ReadonlyArray<Record<string, unknown>>,
+    addProject: vi.fn(async (): Promise<Record<string, unknown>> => ({
+      kind: 'linked',
+      project: { id: 'proj-1', name: 'api', rootPath: '/repos/api' },
+    })),
+    addProjects: vi.fn(async () => ({ linked: [], conflicts: [] })),
+    adoptProject: vi.fn(async () => ({
+      movedSessionCount: 4,
+      ambiguousSessionCount: 0,
+      mergedWorkspace: true,
+    })),
+    previewProjectAdoption: vi.fn(async (): Promise<Record<string, unknown> | null> => null),
+    removeProject: vi.fn(async () => undefined),
+  },
+  repoMocks: {
+    validateGitRepo: vi.fn(async () => ({
+      isRepo: true,
+      rootPath: '/repos/app-web',
+      resolvedPath: '/repos/app-web',
+      error: null,
+    })),
+    scanChildRepos: vi.fn(async (): Promise<ReadonlyArray<never>> => []),
+    initRepo: vi.fn(async () => ({ rootPath: '/repos/api' })),
+  },
+}));
+
+vi.mock('../../../../store', () => ({
+  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
+}));
+vi.mock('../../../../shared/lib/repo', () => repoMocks);
+vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn(async () => null) }));
+
+import { ProjectsStep } from './ProjectsStep';
+
+const workspace = {
+  id: 'ws-target' as WorkspaceId,
+  name: 'Acme',
+} as unknown as Workspace;
+
+const conflict = {
+  project: { id: 'proj-known', name: 'app-web', rootPath: '/repos/app-web', kind: 'repo' },
+  sourceWorkspace: { id: 'ws-legacy', name: 'app-web' },
+  sessionCount: 4,
+  isShell: true,
+};
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+afterEach(cleanup);
+
+describe('ProjectsStep', () => {
+  it('renders an inline conflict row and adopts through Move it here', async () => {
+    state.addProject.mockResolvedValueOnce({ kind: 'conflict', conflict });
+    render(<ProjectsStep workspace={workspace} />);
+
+    fireEvent.change(screen.getByLabelText('Project path'), {
+      target: { value: '/repos/app-web' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /add/i }));
+
+    await waitFor(() => screen.getByText('already in app-web with 4 sessions'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move it here' }));
+
+    await waitFor(() =>
+      expect(state.adoptProject).toHaveBeenCalledWith({
+        projectId: 'proj-known',
+        targetWorkspaceId: workspace.id,
+      }),
+    );
+    await waitFor(() =>
+      expect(screen.queryByText('already in app-web with 4 sessions')).toBeNull(),
+    );
+  });
+
+  it('seeds the notices handed over by the wizard', () => {
+    render(<ProjectsStep workspace={workspace} initialConflicts={[conflict] as never} />);
+
+    expect(screen.getByText('already in app-web with 4 sessions')).toBeDefined();
+  });
+});

@@ -36,6 +36,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   taskModels: null,
   roleModels: null,
   parallelAgents: null,
+  providerPool: null,
 };
 
 export const DefaultsPanel = ({ workspaceId }: Props) => {
@@ -52,8 +53,8 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
   const overrides = workspaceOverrides ?? EMPTY_OVERRIDES;
   const defaultProviderId =
     overrides.defaultProviderId ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
-  const enabledProviderIds = new Set(overrides.enabledProviders ?? connectedProviderIds);
-  enabledProviderIds.add(defaultProviderId);
+  const providerPoolIds = new Set(overrides.providerPool ?? connectedProviderIds);
+  providerPoolIds.add(defaultProviderId);
 
   const { busy, error, persistOverrides, persistTaskModel, persistRoleModel } =
     useDefaultsPersistence({
@@ -70,18 +71,18 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
   ];
 
   const onDefaultProvider = ({ providerId }: ProviderParams) => {
-    const enabledProviders =
-      overrides.enabledProviders == null
+    const providerPool =
+      overrides.providerPool == null
         ? undefined
-        : Array.from(new Set([...overrides.enabledProviders, providerId]));
-    void persistOverrides({ partial: { defaultProviderId: providerId, enabledProviders } });
+        : Array.from(new Set([...overrides.providerPool, providerId]));
+    void persistOverrides({ partial: { defaultProviderId: providerId, providerPool } });
   };
 
   const onToggleRoutingProvider = ({ providerId }: ProviderParams) => {
     if (providerId === defaultProviderId) {
       return;
     }
-    const nextProviderIds = new Set(enabledProviderIds);
+    const nextProviderIds = new Set(providerPoolIds);
     if (nextProviderIds.has(providerId)) {
       nextProviderIds.delete(providerId);
     } else {
@@ -92,7 +93,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
     const isEveryProviderEnabled = selectedProviderIds.length === connectedProviderIds.length;
     void persistOverrides({
       partial: {
-        enabledProviders: isEveryProviderEnabled ? undefined : selectedProviderIds,
+        providerPool: isEveryProviderEnabled ? undefined : selectedProviderIds,
       },
     });
   };
@@ -119,9 +120,6 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
             />
           </div>
         </FieldRow>
-        <p className="text-2xs text-muted-foreground">
-          Default rows follow the provider you set above.
-        </p>
         <Divider />
         <FieldRow
           label="Routing pool"
@@ -142,7 +140,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
                   <ProviderChip
                     key={providerId}
                     id={providerId}
-                    selected={enabledProviderIds.has(providerId)}
+                    selected={providerPoolIds.has(providerId)}
                     disabled={busy || isDefaultProvider}
                     onClick={() => onToggleRoutingProvider({ providerId })}
                     title={isDefaultProvider ? 'Default provider is always enabled' : undefined}

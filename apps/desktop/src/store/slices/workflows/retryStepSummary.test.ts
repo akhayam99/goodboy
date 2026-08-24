@@ -59,8 +59,8 @@ type State = {
     rootPath: string;
     kind: 'repo';
   }>;
-  sessionMounts: Record<string, ReadonlyArray<never>>;
-  sessionActiveMount: Record<string, WorkspaceId>;
+  sessionProjectMounts: Record<string, ReadonlyArray<never>>;
+  sessionActiveProject: Record<string, WorkspaceId>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   sessionBranches: Record<string, string>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
@@ -73,8 +73,8 @@ const buildHarness = (stateOverrides: Partial<State> = {}) => {
   const state: State = {
     sessions: [session],
     workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: {},
+    sessionActiveProject: {},
     sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
     sessionBranches: { [SESSION_ID]: 'ak/workflow' },
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
@@ -128,8 +128,8 @@ describe('retryStepSummary', () => {
     const state: State = {
       sessions: [session],
       workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
-      sessionMounts: {},
-      sessionActiveMount: {},
+      sessionProjectMounts: {},
+      sessionActiveProject: {},
       sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
       sessionBranches: { [SESSION_ID]: 'ak/workflow' },
       sessionPhaseRuns: { [SESSION_ID]: [agent] },

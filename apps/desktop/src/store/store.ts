@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { type FileConflict, type SlotKey } from '@goodboy/core';
+import { type SlotKey } from '@goodboy/core';
 import {
   type SessionConfigUpdate,
   type AgentConfigUpdate,
@@ -36,6 +36,8 @@ import type {
   WorkflowExecutionMode,
   WorkflowSpendLimitMode,
   ProviderId,
+  Project,
+  ProjectId,
   ProviderCredential,
   CredentialId,
   FileVersionId,
@@ -48,13 +50,17 @@ import type {
   TurnProviderOverride,
   SessionExternalTaskProvider,
   SessionExternalTask,
+  SessionProjectMount,
   SessionEventKind,
   SessionEventPayload,
+  IntegrationBindingProvider,
   IntegrationCredentialId,
   Workspace,
   WorkspaceId,
+  WorkspaceProfile,
+  IntegrationBinding,
   WorkspaceIntegrationProvider,
-  WorkspaceScriptId,
+  ProjectScriptId,
   GhTokenStatus,
   PrMergeMethod,
   SessionViewPrefs,
@@ -71,7 +77,7 @@ import type { ExtractedReviewComment } from '@goodboy/core';
 import { buildProviderList, type ProviderStatus } from '../features/providers/providers';
 import { DEFAULT_BRANCH_PREFIX } from '../features/settings/settings';
 import { AGENT_FEATURES } from '../shared/lib/features';
-import { type CreatedWorktree, type RewrittenHead } from '../features/worktree/worktree';
+import { type RewrittenHead } from '../features/worktree/worktree';
 import { type SkillUpsertArgs } from '../features/skills/skills';
 import type { ScriptRunResult } from '../features/scripts/scripts';
 import { type WorkflowUpsertArgs, type StepDefUpsertArgs } from '../features/workflows/workflows';
@@ -147,11 +153,6 @@ import type {
   StartWorkflowGenerationParams,
   WorkflowStudioDraft,
 } from './slices/workflowStudio/types';
-import { createNewSessionDraftsSlice } from './slices/newSessionDrafts';
-import type {
-  ClearNewSessionDraftParams,
-  SetNewSessionDraftParams,
-} from './slices/newSessionDrafts/types';
 import { createSlotsSlice } from './slices/slots';
 import { createOverridesSlice } from './slices/overrides';
 import { createCredentialsSlice } from './slices/credentials';
@@ -159,11 +160,15 @@ import { createWorkflowsSlice } from './slices/workflows';
 import type { OrchestrateOptions } from './slices/workflows/orchestrateNextStep';
 import type { ActivateWorkflowAgentParams } from './slices/workflows/activateWorkflowAgent';
 import { createSettingsSlice } from './slices/settings';
-import { createConflictsSlice } from './slices/conflicts';
 import { createTranscriptsSlice } from './slices/transcripts';
 import { createSummariesSlice } from './slices/summaries';
 import { createSessionsSlice } from './slices/sessions';
 import { createWorkspacesSlice } from './slices/workspaces';
+import { createProjectsSlice } from './slices/projects';
+import type { AddProjectResult, ProjectAttachConflict } from './slices/projects/addProject';
+import type { AddProjectsResult } from './slices/projects/addProjects';
+import type { AdoptProjectResult } from './slices/projects/adoptProject';
+import { createProjectMountsSlice } from './slices/project-mounts';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
@@ -232,20 +237,39 @@ export type AppActions = {
   cancelProviderConnect(providerId: ProviderId): Promise<void>;
   dismissProviderConnect(providerId: ProviderId): void;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
-  addCompositeWorkspace(input: {
-    name?: string;
-    containerPath: string;
-    members: ReadonlyArray<{ workspaceId: WorkspaceId; mountName: string }>;
-  }): Promise<Workspace>;
-  addSimpleWorkspace(input: { name: string; path: string }): Promise<Workspace>;
-  convertWorkspaceToRepo(input: {
+  createWorkspace(input: { name: string }): Promise<Workspace>;
+  addProject(input: {
     workspaceId: WorkspaceId;
-    remoteUrl: string;
-  }): Promise<Workspace>;
+    rootPath: string;
+    name?: string;
+    requireRepo?: boolean;
+  }): Promise<AddProjectResult>;
+  addProjects(input: {
+    workspaceId: WorkspaceId;
+    rootPaths: ReadonlyArray<string>;
+  }): Promise<AddProjectsResult>;
+  adoptProject(input: {
+    projectId: ProjectId;
+    targetWorkspaceId: WorkspaceId;
+  }): Promise<AdoptProjectResult>;
+  previewProjectAdoption(input: {
+    workspaceId: WorkspaceId | null;
+    rootPath: string;
+  }): Promise<ProjectAttachConflict | null>;
+  removeProject(input: { projectId: ProjectId }): Promise<void>;
+  convertProjectToRepo(input: { projectId: ProjectId; remoteUrl: string }): Promise<Project>;
   renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;
+  updateWorkspaceProfile(input: {
+    workspaceId: WorkspaceId;
+    profile: WorkspaceProfile;
+  }): Promise<Workspace>;
   deleteWorkspace(id: WorkspaceId): Promise<void>;
-  loadWorkspaceGitStatus(input: { workspaceId: WorkspaceId }): Promise<void>;
-  fastForwardWorkspaceCheckout(input: { workspaceId: WorkspaceId }): Promise<void>;
+  mergeWorkspaces(input: {
+    sourceWorkspaceIds: ReadonlyArray<WorkspaceId>;
+    targetWorkspaceId: WorkspaceId;
+  }): Promise<void>;
+  loadProjectGitStatus(input: { projectId: ProjectId }): Promise<void>;
+  fastForwardProjectCheckout(input: { projectId: ProjectId }): Promise<void>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
   loadIntegrationCredentials(): Promise<void>;
   forgetIntegrationCredential(params: { credentialId: IntegrationCredentialId }): Promise<void>;
@@ -253,6 +277,11 @@ export type AppActions = {
     workspaceId: WorkspaceId;
     provider: WorkspaceIntegrationProvider;
   }): Promise<void>;
+  resolveBinding(params: {
+    workspaceId: WorkspaceId;
+    provider: IntegrationBindingProvider;
+    projectId?: ProjectId;
+  }): IntegrationBinding | null;
   connectLinear(params: {
     workspaceId: WorkspaceId;
     token: string | null;
@@ -294,6 +323,7 @@ export type AppActions = {
   disconnectGithub(params: { workspaceId: WorkspaceId }): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
+    projectId?: ProjectId;
     goal: string;
     branchPrefix?: string;
     branchSlug?: string;
@@ -308,14 +338,23 @@ export type AppActions = {
     kickoffPrompt?: string;
     externalTasks?: ReadonlyArray<{
       provider: SessionExternalTaskProvider;
-      mountWorkspaceId?: WorkspaceId;
+      projectId?: ProjectId;
       externalId: string;
       identifier: string;
       url: string;
       title: string;
     }>;
     mobileShared?: boolean;
-  }): Promise<{ session: Session; worktree: CreatedWorktree }>;
+    omitGoalSlot?: boolean;
+  }): Promise<{ session: Session }>;
+  createUntitledSession(input: { workspaceId: WorkspaceId }): Promise<{ session: Session }>;
+  clearPendingTitleFocus(): void;
+  materializeProject(input: {
+    sessionId: SessionId;
+    projectId: ProjectId;
+    reason: string;
+  }): Promise<SessionProjectMount>;
+  detachProject(input: { sessionId: SessionId; projectId: ProjectId }): Promise<void>;
   linkSessionExternalTask(
     sessionId: SessionId,
     task: Omit<SessionExternalTask, 'sessionId'>,
@@ -324,13 +363,13 @@ export type AppActions = {
     sessionId: SessionId,
     provider: SessionExternalTaskProvider,
     externalId: string,
-    mountWorkspaceId?: WorkspaceId,
+    projectId?: ProjectId,
   ): Promise<void>;
   changeSessionBranch(
     sessionId: SessionId,
     args: { branch: string; createNew: boolean },
   ): Promise<void>;
-  setSessionActiveMount(input: { sessionId: SessionId; workspaceId: WorkspaceId }): Promise<void>;
+  setSessionActiveProject(input: { sessionId: SessionId; projectId: ProjectId }): Promise<void>;
   reconcileSessionBranch(sessionId: SessionId, observedBranch: string): Promise<void>;
   amendSessionCommit(
     sessionId: SessionId,
@@ -466,19 +505,19 @@ export type AppActions = {
   loadScripts(workspaceId: WorkspaceId): Promise<void>;
   saveScript(input: {
     workspaceId: WorkspaceId;
-    id?: WorkspaceScriptId;
+    id?: ProjectScriptId;
     name: string;
     body: string;
   }): Promise<void>;
-  deleteScript(scriptId: WorkspaceScriptId, workspaceId: WorkspaceId): Promise<void>;
+  deleteScript(scriptId: ProjectScriptId, workspaceId: WorkspaceId): Promise<void>;
   runScript(
     sessionId: SessionId,
-    scriptId: WorkspaceScriptId,
+    scriptId: ProjectScriptId,
     cwd: string,
     cols?: number,
     rows?: number,
   ): Promise<ScriptRunResult>;
-  cancelScript(sessionId: SessionId, scriptId: WorkspaceScriptId): Promise<void>;
+  cancelScript(sessionId: SessionId, scriptId: ProjectScriptId): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
   savePhaseTemplate(template: WorkflowUpsertArgs): Promise<Workflow>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
@@ -534,8 +573,6 @@ export type AppActions = {
   setAgentEffortOverride(agentId: AgentId, effort: string): void;
   setAgentDraft(agentId: AgentId, value: string): void;
   clearAgentDraft(agentId: AgentId): void;
-  setNewSessionDraft(params: SetNewSessionDraftParams): void;
-  clearNewSessionDraft(params: ClearNewSessionDraftParams): void;
   setWorkflowDraft(sessionId: SessionId, draft: WorkflowBuilderDraft): void;
   clearWorkflowDraft(sessionId: SessionId): void;
   setWorkflowStudioDraft(params: { workspaceId: WorkspaceId; draft: WorkflowStudioDraft }): void;
@@ -551,12 +588,6 @@ export type AppActions = {
   deleteAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
   wipeLocalDatabase(): Promise<void>;
   dismissSystemAlert(id: string): void;
-  setSessionMergeConflicts(sessionId: SessionId, conflicts: ReadonlyArray<FileConflict>): void;
-  resolveMergeConflicts(
-    sessionId: SessionId,
-    picks: Record<string, string>,
-    runStatuses: ReadonlyArray<{ runId: string; completedAt: string; status: string }>,
-  ): Promise<void>;
   loadWorkspaceOverrides(workspaceId: WorkspaceId): Promise<void>;
   setWorkspaceOverrides(workspaceId: WorkspaceId, overrides: OverrideSettings): Promise<void>;
   setWorkspaceProviderBinding(
@@ -800,7 +831,8 @@ export type AppActions = {
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
   setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
-  openDiffLens(sessionId: SessionId, focus: DiffFocus): void;
+  openDiffLens(sessionId: SessionId, focus: DiffFocus | null): void;
+  openMountDiff(sessionId: SessionId, worktreePath: string): void;
   openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
   beginSessionCreation(
     sessionId: SessionId,
@@ -829,11 +861,12 @@ export const initialState: AppState = {
   ...initialBugReportDraftState,
   ...createInitialSessionViewState({}),
   workspaces: [],
+  projects: [],
   workspaceIntegrations: {},
   integrationCredentials: [],
   integrationCredentialUsage: {},
-  workspaceGitStatus: {},
-  workspaceCheckoutPulling: {},
+  projectGitStatus: {},
+  projectCheckoutPulling: {},
   sessionExternalTasks: {},
   sessionEvents: {},
   currentWorkspaceId: null,
@@ -841,6 +874,7 @@ export const initialState: AppState = {
   sessions: [],
   archivedSessions: {},
   currentSessionId: null,
+  pendingTitleFocusSessionId: null,
   settings: {},
   sessionSummary: null,
   providerStatus: null,
@@ -868,8 +902,8 @@ export const initialState: AppState = {
   sessionWorktrees: {},
   sessionWorktreeRecords: {},
   orphanWorktrees: {},
-  sessionMounts: {},
-  sessionActiveMount: {},
+  sessionProjectMounts: {},
+  sessionActiveProject: {},
   sessionBranches: {},
   sessionTelemetry: {},
   workspaceSummary: null,
@@ -885,7 +919,7 @@ export const initialState: AppState = {
   providerSpendBreakdown: [],
   budgetAlerts: [],
   skills: {},
-  workspaceScripts: {},
+  projectScripts: {},
   scriptRuns: {},
   phaseTemplates: {},
   stepLibrary: {},
@@ -897,7 +931,7 @@ export const initialState: AppState = {
   selectedAgentId: {},
   agentRunHistory: {},
   agentTurnState: {},
-  sessionMergeConflicts: {},
+  clusterStartAttempts: {},
   unknownPayloadCounts: {},
   detectedEditors: [],
   systemAlerts: [],
@@ -911,7 +945,7 @@ export const initialState: AppState = {
   sessionPanelExpanded: {},
   githubStatus: null,
   sessionGithub: {},
-  sessionGithubPrs: {},
+  sessionProjectPrs: {},
   sessionSelectedPrNumber: {},
   sessionGitlabMr: {},
   ...initialBitbucketPrState,
@@ -929,7 +963,6 @@ export const initialState: AppState = {
   resolverState: {},
   resolverThreadOutcomes: {},
   agentDraft: {},
-  newSessionDrafts: {},
   workflowDrafts: {},
   ...initialWorkflowStudioState,
   agentAttachments: {},
@@ -985,7 +1018,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createPermissionsSlice(set, get),
   ...createProvidersSlice(set, get),
   ...createAgentsSlice(set, get),
-  ...createNewSessionDraftsSlice({ set }),
   ...createWorkflowDraftsSlice(set, get),
   ...createWorkflowStudioSlice(set, get),
   ...createSlotsSlice(set, get),
@@ -993,11 +1025,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createCredentialsSlice(set, get),
   ...createWorkflowsSlice(set, get),
   ...createSettingsSlice(set, get),
-  ...createConflictsSlice(set, get),
   ...createTranscriptsSlice(set, get),
   ...createSummariesSlice(set, get),
   ...createSessionsSlice(set, get),
   ...createWorkspacesSlice(set, get),
+  ...createProjectsSlice(set, get),
+  ...createProjectMountsSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),

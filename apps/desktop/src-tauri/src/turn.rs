@@ -70,6 +70,8 @@ pub struct SpawnArgs {
     #[serde(default)]
     pub workspace_id: Option<String>,
     #[serde(default)]
+    pub session_id: Option<String>,
+    #[serde(default)]
     pub api_key_env: Option<String>,
     #[serde(default)]
     pub credential_id: Option<String>,
@@ -256,8 +258,7 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
     }
 }
 
-/// Per-run spawn parameters used by both `turn_spawn` and `parallel_agent_spawn`.
-pub struct SpawnOneArgs<'a> {
+struct SpawnOneArgs<'a> {
     pub run_id: &'a str,
     pub binary: &'a str,
     pub model: &'a str,
@@ -272,6 +273,7 @@ pub struct SpawnOneArgs<'a> {
     pub api_key_env: Option<&'a str>,
     pub credential_id: Option<&'a str>,
     pub workspace_id: Option<&'a str>,
+    pub session_id: Option<&'a str>,
     pub cursor_max_mode: bool,
 }
 
@@ -285,12 +287,7 @@ fn max_mode_config_dir_for(binary: &str, cursor_max_mode: bool) -> Option<std::p
     crate::cursor_config::max_mode_config_dir()
 }
 
-/// Spawns one child process, registers it in the registry, and starts the
-/// forwarding thread. Returns `run_id` on success.
-///
-/// Extracted so that `turn_spawn` (single run) and `parallel_agent_spawn`
-/// (N runs) share the same logic without copy-paste.
-pub(crate) fn spawn_one(
+fn spawn_one(
     app: &AppHandle,
     registry: &ChildRegistry,
     args: SpawnOneArgs<'_>,
@@ -314,7 +311,7 @@ pub(crate) fn spawn_one(
         command.env("GITHUB_TOKEN", &token);
     }
 
-    crate::query_bridge::apply_env(&mut command, args.workspace_id);
+    crate::query_bridge::apply_env(&mut command, args.workspace_id, args.session_id);
 
     let cli_args = build_provider_cli_args(args.binary, &args);
     for a in &cli_args {
@@ -401,6 +398,7 @@ pub fn turn_spawn(
             api_key_env: args.api_key_env.as_deref(),
             credential_id: args.credential_id.as_deref(),
             workspace_id: args.workspace_id.as_deref(),
+            session_id: args.session_id.as_deref(),
             cursor_max_mode: args.cursor_max_mode,
         },
     )
@@ -427,25 +425,6 @@ pub fn turn_cancel(state: State<'_, TurnRegistry>, run_id: String) -> Result<(),
         }
     }
     Ok(())
-}
-
-/// Kill the child registered under `run_id`, if present. No-op when the run is
-/// unknown or already reaped. Used by `parallel_agent_spawn` to roll back a
-/// partially-spawned batch so a mid-batch failure can't orphan live children.
-pub(crate) fn kill_run(registry: &ChildRegistry, run_id: &str) {
-    let slot = {
-        let Ok(map) = registry.lock() else {
-            return;
-        };
-        map.get(run_id).cloned()
-    };
-    if let Some(slot) = slot {
-        if let Ok(mut guard) = slot.lock() {
-            if let Some(child) = guard.as_mut() {
-                let _ = child.kill();
-            }
-        }
-    }
 }
 
 fn forward_lines(app: &AppHandle, run_id: &str, stdout: ChildStdout) {
@@ -540,6 +519,7 @@ mod tests {
             api_key_env: None,
             credential_id: None,
             workspace_id: None,
+            session_id: None,
             cursor_max_mode: false,
         };
         assert_eq!(args.run_id, "run-1");
@@ -567,6 +547,7 @@ mod tests {
             api_key_env: None,
             credential_id: None,
             workspace_id: None,
+            session_id: None,
             cursor_max_mode: false,
         }
     }
@@ -811,6 +792,7 @@ mod tests {
             api_key_env: None,
             credential_id: None,
             workspace_id: None,
+            session_id: None,
             cursor_max_mode: false,
         };
         let cli = build_provider_cli_args("codex", &args);

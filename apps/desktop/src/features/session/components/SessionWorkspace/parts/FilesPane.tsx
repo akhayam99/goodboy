@@ -1,11 +1,15 @@
-import type { SessionId } from '@goodboy/types';
+import { useState } from 'react';
+import type { SessionId, SessionProjectMount } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { DiffViewerPane } from '../../../../permissions/components/DiffViewerDialog';
 import { DIFF_VIEWER_PANE_COPY } from '../../../../permissions/components/DiffViewerDialog/diffViewerPaneCopy';
+import { DiffMountSwitcher } from './DiffMountSwitcher';
 import { FileVersionsPane } from './FileVersionsPane';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
+
+const EMPTY_MOUNTS: ReadonlyArray<SessionProjectMount> = [];
 
 type Props = {
   readonly sessionId: SessionId;
@@ -23,6 +27,8 @@ export const FilesPane = ({
   onClose,
 }: Props) => {
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
+  const mounts = useAppStore((s) => s.sessionProjectMounts?.[sessionId] ?? EMPTY_MOUNTS);
+  const [isDiffEmpty, setIsDiffEmpty] = useState(true);
 
   if (isBranchless) {
     if (sessionDir == null) {
@@ -59,12 +65,25 @@ export const FilesPane = ({
   }
 
   return (
-    <DiffViewerPane
-      sessionId={sessionId}
-      workingDir={sessionDir ?? undefined}
-      worktreePath={worktreePath}
-      diffFocus={diffFocus}
-      onClose={onClose}
-    />
+    <div className="flex h-full min-h-0 w-full flex-col">
+      {mounts.length > 1 ? (
+        <DiffMountSwitcher
+          sessionId={sessionId}
+          mounts={mounts}
+          selectedWorktreePath={worktreePath}
+          isDiffEmpty={isDiffEmpty}
+        />
+      ) : null}
+      <div className="min-h-0 flex-1">
+        <DiffViewerPane
+          sessionId={sessionId}
+          workingDir={sessionDir ?? undefined}
+          worktreePath={worktreePath}
+          diffFocus={diffFocus}
+          onClose={onClose}
+          onContentEmptyChange={setIsDiffEmpty}
+        />
+      </div>
+    </div>
   );
 };

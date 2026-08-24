@@ -66,11 +66,19 @@ describe('TimelineRowMarker', () => {
     expect(plan.getAttribute('fill')).toBe(question.getAttribute('fill'));
   });
 
-  it('outgrows the circle markers so a plan reads as a distinct artifact', () => {
+  it('sizes the plan glyph like every other marker of its grade', () => {
     render(<TimelineRowMarker item={itemOf({ entry: planEntry() })} />);
-    const plan = Number(glyphOf({ label: 'Plan' }).getAttribute('width'));
+    const plan = glyphOf({ label: 'Plan' });
 
-    expect(plan).toBeGreaterThan(TIMELINE_RHYTHM.grade.entry.markerSize);
+    expect(plan.getAttribute('width')).toBe(String(TIMELINE_RHYTHM.grade.entry.glyphSize));
+  });
+
+  it('sizes the plan disc like every other marker of its grade', () => {
+    const { container } = render(<TimelineRowMarker item={itemOf({ entry: planEntry() })} />);
+
+    expect(container.firstElementChild?.getAttribute('style')).toContain(
+      `${TIMELINE_RHYTHM.grade.entry.markerSize}px`,
+    );
   });
 
   it('takes the plan hue from the concept map, so it never reads as a question', () => {
@@ -86,7 +94,7 @@ describe('TimelineRowMarker', () => {
     const { container } = render(<TimelineRowMarker item={itemOf({ entry: planEntry() })} />);
     const root = container.firstElementChild;
 
-    expect(root?.querySelector('span')?.className).toContain(TIMELINE_SURFACE_FILL);
+    expect(root?.className).toContain(TIMELINE_SURFACE_FILL);
   });
 
   it('leaves the other artifact markers on their own container', () => {

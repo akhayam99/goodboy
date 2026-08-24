@@ -29,8 +29,8 @@ type Store = {
   readonly selectAgent: ReturnType<typeof vi.fn>;
   readonly setCurrentSession: ReturnType<typeof vi.fn>;
   readonly sessionBranches: Record<string, string>;
-  readonly sessionMounts: Record<string, ReadonlyArray<never>>;
-  readonly sessionActiveMount: Record<string, string>;
+  readonly sessionProjectMounts: Record<string, ReadonlyArray<never>>;
+  readonly sessionActiveProject: Record<string, string>;
   readonly sessionWorktrees: Record<string, ReadonlyArray<string>>;
   readonly sessions: ReadonlyArray<{ id: SessionId; workspaceId: string }>;
   sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
@@ -70,8 +70,8 @@ const h = vi.hoisted(() => ({
     selectAgent: vi.fn(async () => undefined),
     setCurrentSession: vi.fn(async () => undefined),
     sessionBranches: { 'session-2': 'ak/card-config' },
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: {},
+    sessionActiveProject: {},
     sessionWorktrees: { 'session-2': ['/repo/.goodboy/worktrees/card-config'] },
     sessions: [{ id: 'session-2' as SessionId, workspaceId: 'workspace-1' }],
     sessionExternalTasks: {} as Record<string, ReadonlyArray<SessionExternalTask>>,

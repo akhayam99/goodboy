@@ -8,7 +8,7 @@ export type GhRunOptions = {
   cwd?: string;
   token?: string;
   workspaceId?: string;
-  memberWorkspaceId?: string;
+  projectId?: string;
   timeoutMs?: number;
 };
 

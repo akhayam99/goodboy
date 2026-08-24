@@ -69,6 +69,7 @@ vi.mock('../../store', () => ({
       sessionPhaseRuns: {},
       sessionPlans: {},
       workspaces: [],
+      projects: [],
       workspaceIntegrations: {},
       newSessionDrafts: {},
       loadBudgetAlerts: vi.fn(),
@@ -163,6 +164,7 @@ function mockStore(partial: Partial<AppStore>): void {
       providerLifecycle: DEFAULT_LIFECYCLE_MAP,
       newSessionDrafts: {},
       workspaces: [],
+      projects: [],
       sessionBranches: {},
       setNewSessionDraft: vi.fn(),
       clearNewSessionDraft: vi.fn(),
@@ -174,7 +176,6 @@ import { NoWorkspaceScreen } from '../../app/components/AppEmptyState';
 import { ChatEmptyState } from '../../features/chat/components/ChatView/ChatEmptyState';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';
-import { NewSessionView } from '../../features/session/components/NewSessionView';
 import { DeleteSessionConfirm } from '../../features/session/components/DeleteSessionConfirm';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';
@@ -221,15 +222,6 @@ describe('snapshot, empty states', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('NewSessionView: no workflows', () => {
-    const { container } = render(
-      <ToastProvider>
-        <NewSessionView onClose={vi.fn()} workspaceId={WS_ID} onOpenSettings={vi.fn()} />
-      </ToastProvider>,
-    );
-    expect(container.firstChild).toMatchSnapshot();
-  });
-
   it('NotificationCenter: no notifications', () => {
     const { container } = render(<NotificationCenter />);
     expect(container.firstChild).toMatchSnapshot();
@@ -259,27 +251,6 @@ describe('snapshot, empty states', () => {
 describe('snapshot, error states', () => {
   it('App init error, BootSplash with error message', () => {
     const { container } = render(<BootSplash phase="error" error="database migration failed" />);
-    expect(container.firstChild).toMatchSnapshot();
-  });
-
-  it('NewSessionView: form error', () => {
-    mockStore({
-      providers: [],
-      skills: {},
-      settings: {},
-      phaseTemplates: {},
-      sessionBudgets: {},
-      workspaces: [],
-      workspaceIntegrations: {},
-      loadSetting: vi.fn().mockResolvedValue(null),
-      createSession: vi.fn().mockRejectedValue(new Error('workspace git repo not found')),
-      setSessionBudget: vi.fn(),
-    });
-    const { container } = render(
-      <ToastProvider>
-        <NewSessionView onClose={vi.fn()} workspaceId={WS_ID} onOpenSettings={vi.fn()} />
-      </ToastProvider>,
-    );
     expect(container.firstChild).toMatchSnapshot();
   });
 

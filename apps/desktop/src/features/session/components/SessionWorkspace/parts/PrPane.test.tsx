@@ -3,17 +3,21 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type {
   GhTokenStatus,
   IsoDateTime,
+  OverrideSettings,
+  Project,
+  ProjectId,
   PullRequestState,
   Session,
   SessionExternalTask,
   SessionId,
+  SessionProjectMount,
   WorkspaceId,
   Workspace,
 } from '@goodboy/types';
 
 type Store = {
   sessionGithub: Record<string, unknown>;
-  sessionGithubPrs: Record<string, ReadonlyArray<PullRequestState>>;
+  sessionProjectPrs: Record<string, Readonly<Record<string, ReadonlyArray<PullRequestState>>>>;
   sessionSelectedPrNumber: Record<string, number | null>;
   sessionGitlabMr: Record<string, unknown>;
   sessionBitbucketPr: Record<string, unknown>;
@@ -27,17 +31,18 @@ type Store = {
   readonly setFocusedGithubIssueNumber: ReturnType<typeof vi.fn>;
   readonly openExternalTaskLens: ReturnType<typeof vi.fn>;
   readonly sessionBranches: Record<string, string>;
-  sessionMounts: Record<string, ReadonlyArray<never>>;
-  sessionActiveMount: Record<string, WorkspaceId>;
+  sessionProjectMounts: Record<string, ReadonlyArray<SessionProjectMount>>;
+  sessionActiveProject: Record<string, ProjectId>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   sessions: ReadonlyArray<Session>;
   workspaces: ReadonlyArray<Workspace>;
+  projects: ReadonlyArray<Project>;
 };
 
 const h = vi.hoisted(() => ({
   store: {
     sessionGithub: {},
-    sessionGithubPrs: {},
+    sessionProjectPrs: {},
     sessionSelectedPrNumber: {},
     sessionGitlabMr: {},
     sessionBitbucketPr: {},
@@ -51,11 +56,12 @@ const h = vi.hoisted(() => ({
     setFocusedGithubIssueNumber: vi.fn(),
     openExternalTaskLens: vi.fn(),
     sessionBranches: { 'session-1': 'ak/refactor-auth' },
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: {},
+    sessionActiveProject: {},
     sessionWorktrees: { 'session-1': ['/tmp/goodboy/.goodboy/worktrees/refactor-auth'] },
     sessions: [] as ReadonlyArray<Session>,
     workspaces: [] as ReadonlyArray<Workspace>,
+    projects: [] as ReadonlyArray<Project>,
   } satisfies Store,
   remoteKind: 'github' as 'github' | 'gitlab' | 'other' | null,
   onSelectLens: vi.fn(),
@@ -69,6 +75,19 @@ const h = vi.hoisted(() => ({
   ghSetToken: vi.fn(),
   openUrl: vi.fn(async () => undefined),
 }));
+
+const EMPTY_OVERRIDES: OverrideSettings = {
+  defaultProviderId: null,
+  defaultWorkflowId: null,
+  defaultBranchPrefix: null,
+  parallelEnabled: null,
+  defaultVerbosity: null,
+  providerBindings: null,
+  taskModels: null,
+  roleModels: null,
+  parallelAgents: null,
+  providerPool: null,
+};
 
 vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: [],
@@ -125,6 +144,7 @@ import { PrPane } from './PrPane';
 
 const DATE = '2026-07-22T10:00:00.000Z' as IsoDateTime;
 const SESSION_ID = 'session-1' as SessionId;
+const PROJECT_ID = 'project-goodboy' as ProjectId;
 const PULL_REQUEST = {
   number: 42,
   title: 'Refactor authentication',
@@ -175,7 +195,7 @@ const githubPrState = ({ body, linkedIssues = [] }: GithubPrStateParams) => {
       error: null,
     },
   };
-  h.store.sessionGithubPrs = { [SESSION_ID]: [pr] };
+  h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [pr] } };
 };
 
 const issueTask = (overrides: Partial<SessionExternalTask>): SessionExternalTask => ({
@@ -191,7 +211,7 @@ const issueTask = (overrides: Partial<SessionExternalTask>): SessionExternalTask
 
 beforeEach(() => {
   h.store.sessionGithub = {};
-  h.store.sessionGithubPrs = {};
+  h.store.sessionProjectPrs = {};
   h.store.sessionSelectedPrNumber = {};
   h.store.sessionGitlabMr = {};
   h.store.sessionBitbucketPr = {};
@@ -203,12 +223,37 @@ beforeEach(() => {
     {
       id: session.workspaceId,
       name: 'Goodboy',
-      rootPath: '/tmp/goodboy',
-      kind: 'repo',
+      slug: 'goodboy',
+      sessionsRoot: '/tmp/goodboy',
+      overrides: EMPTY_OVERRIDES,
       createdAt: DATE,
       updatedAt: DATE,
     },
   ];
+  h.store.projects = [
+    {
+      id: PROJECT_ID,
+      workspaceId: session.workspaceId,
+      name: 'goodboy',
+      rootPath: '/tmp/goodboy',
+      kind: 'repo',
+      overrides: EMPTY_OVERRIDES,
+      createdAt: DATE,
+      updatedAt: DATE,
+    },
+  ];
+  h.store.sessionProjectMounts = {
+    [SESSION_ID]: [
+      {
+        projectId: PROJECT_ID,
+        mountName: 'goodboy',
+        worktreePath: '/tmp/goodboy/.goodboy/worktrees/refactor-auth',
+        repoRoot: '/tmp/goodboy',
+        branch: 'ak/refactor-auth',
+      } as SessionProjectMount,
+    ],
+  };
+  h.store.sessionActiveProject = { [SESSION_ID]: PROJECT_ID };
   h.remoteKind = 'github';
   h.onSelectLens.mockReset();
   h.openUrl.mockClear();
@@ -296,7 +341,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST] } };
     h.store.sessionGitlabMr = {
       [SESSION_ID]: { mr: { iid: 7, title: 'MR', state: 'open', draft: false } },
     };
@@ -358,7 +403,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST] } };
     h.store.sessionBitbucketPr = {
       [SESSION_ID]: { pr: { id: 42, title: 'Raise the fuel constant', state: 'OPEN' } },
     };
@@ -380,7 +425,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST] } };
     h.store.sessionGitlabMr = {
       [SESSION_ID]: { mr: { iid: 7, title: 'MR', state: 'open', draft: false } },
     };
@@ -429,7 +474,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: prs };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: prs } };
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
@@ -446,7 +491,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST] } };
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
@@ -462,7 +507,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST] } };
     h.store.sessionExternalTasks = {
       [SESSION_ID]: [
         {
@@ -495,7 +540,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [mergedPr] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [mergedPr] } };
     h.store.sessionExternalTasks = {
       [SESSION_ID]: [
         {
@@ -538,7 +583,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST] } };
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
@@ -558,7 +603,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST] } };
     const githubEvents: Array<CustomEvent> = [];
     const listener = (event: Event) => githubEvents.push(event as CustomEvent);
     window.addEventListener('goodboy:open-github-session', listener);
@@ -587,7 +632,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST, closedPr] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST, closedPr] } };
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
@@ -612,7 +657,7 @@ describe('PrPane', () => {
         error: null,
       },
     };
-    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST, closedPr] };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [PULL_REQUEST, closedPr] } };
     h.store.sessionSelectedPrNumber = { [SESSION_ID]: closedPr.number };
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
@@ -723,17 +768,31 @@ describe('PrPane', () => {
     expect(screen.getAllByRole('link', { name: 'Open in GitHub' })).toHaveLength(3);
   });
 
-  it('shows repository attribution on composite linked rows', () => {
-    const memberId = 'workspace-web' as WorkspaceId;
+  it('shows repository attribution on multi-project linked rows', () => {
+    const memberId = 'project-web' as ProjectId;
     h.store.workspaces = [
       {
         id: session.workspaceId,
         name: 'Product',
-        rootPath: '/tmp/product',
-        kind: 'composite',
-        members: [{ workspaceId: memberId, rootPath: '/tmp/web', mountName: 'web' }],
+        slug: 'product',
+        sessionsRoot: '/tmp/product',
+        overrides: EMPTY_OVERRIDES,
         createdAt: DATE,
         updatedAt: DATE,
+      },
+    ];
+    h.store.projects = [
+      {
+        ...h.store.projects[0]!,
+        id: memberId,
+        name: 'web',
+        rootPath: '/tmp/web',
+      },
+      {
+        ...h.store.projects[0]!,
+        id: 'project-api' as ProjectId,
+        name: 'api',
+        rootPath: '/tmp/api',
       },
     ];
     h.store.sessionGithub = {
@@ -748,7 +807,7 @@ describe('PrPane', () => {
       [SESSION_ID]: [
         {
           sessionId: SESSION_ID,
-          mountWorkspaceId: memberId,
+          projectId: memberId,
           provider: 'github',
           externalId: '42',
           identifier: '#42',
@@ -932,9 +991,9 @@ describe('PrPane', () => {
     h.remoteKind = null;
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
-    expect(screen.getByRole('heading', { name: 'GitHub', level: 2 })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Connect GitHub', level: 2 })).toBeDefined();
     expect(screen.getByText(/does not have a GitHub remote/i)).toBeDefined();
-    expect(screen.queryByLabelText('GitHub personal API key')).toBeNull();
+    expect(screen.queryByLabelText('Personal API key')).toBeNull();
     expect(screen.queryByRole('button', { name: /Draft a pull request/i })).toBeNull();
   });
 
@@ -946,12 +1005,12 @@ describe('PrPane', () => {
     };
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
-    const tokenInput = await screen.findByLabelText('GitHub personal API key');
+    const tokenInput = await screen.findByLabelText('Personal API key');
     fireEvent.change(tokenInput, { target: { value: 'ghp_valid' } });
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
 
     await waitFor(() => {
-      expect(screen.queryByLabelText('GitHub personal API key')).toBeNull();
+      expect(screen.queryByLabelText('Personal API key')).toBeNull();
     });
     expect(screen.getByRole('button', { name: /Draft a pull request/i })).toBeDefined();
   });

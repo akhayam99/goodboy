@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, cn, Divider, DropdownPortal, Popover, Textarea, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, Divider, Textarea, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -27,23 +27,13 @@ const toErrorMessage = ({ error }: { readonly error: unknown }): string => {
 };
 
 export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
-  const {
-    open,
-    close,
-    toggle,
-    containerRef,
-    popupRef,
-    popupClassName,
-    popupStyle,
-    portal,
-    portalTarget,
-  } = useDropdown({
+  const dropdown = useDropdown({
     align: 'end',
     expectedHeight: 420,
     expectedWidth: 420,
     width: 'w-[26rem] max-w-[calc(100vw-2rem)]',
-    strategy: 'fixed',
   });
+  const { open, close, toggle } = dropdown;
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const selectAgent = useAppStore((state) => state.selectAgent);
   const { showToast } = useToast();
@@ -111,57 +101,52 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
   };
 
   return (
-    <div ref={containerRef} className="relative">
-      <button
-        type="button"
-        onClick={toggle}
-        aria-label={`Ask an agent to work on ${entry.name}`}
-        className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
-      >
-        <CONCEPT_ICONS.agents size={14} aria-hidden />
-      </button>
-      <DropdownPortal portal={portal} portalTarget={portalTarget}>
-        {open ? (
-          <Popover
-            innerRef={popupRef}
-            role="dialog"
-            ariaLabel={`Ask an agent about ${entry.name}`}
-            className={cn(popupClassName, 'flex flex-col gap-3 p-3')}
-            style={popupStyle}
-          >
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium text-foreground">Ask an agent about this file</p>
-              <p className="truncate font-mono text-2xs text-muted-foreground">{entry.relPath}</p>
-            </div>
-            <Divider />
-            <div className="flex flex-col gap-2">
-              <Textarea
-                aria-label="What should the agent do with this file?"
-                value={ask}
-                onChange={(event) => setAsk(event.target.value)}
-                minRows={3}
-                maxRows={10}
-                autoGrow
-                placeholder="Describe what you want from this file."
-                disabled={isSpawning}
-              />
-              <AgentSpawnConfig
-                value={config}
-                onChange={setConfig}
-                disabled={isSpawning}
-                className="gap-1.5"
-              />
-              {spawnError != null ? <p className="text-xs text-danger">{spawnError}</p> : null}
-            </div>
-            <Divider />
-            <div className="flex items-center justify-end">
-              <Button size="sm" onClick={() => void spawnFromFile()} disabled={!canSpawn}>
-                {isSpawning ? 'Spawning…' : 'Spawn agent'}
-              </Button>
-            </div>
-          </Popover>
-        ) : null}
-      </DropdownPortal>
-    </div>
+    <AnchoredPopover
+      dropdown={dropdown}
+      role="dialog"
+      ariaLabel={`Ask an agent about ${entry.name}`}
+      className="flex flex-col gap-3 p-3"
+      trigger={
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={`Ask an agent to work on ${entry.name}`}
+          className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+        >
+          <CONCEPT_ICONS.agents size={14} aria-hidden />
+        </button>
+      }
+    >
+      <div className="flex flex-col gap-1">
+        <p className="text-sm font-medium text-foreground">Ask an agent about this file</p>
+        <p className="truncate font-mono text-2xs text-muted-foreground">{entry.relPath}</p>
+      </div>
+      <Divider />
+      <div className="flex flex-col gap-2">
+        <Textarea
+          aria-label="What should the agent do with this file?"
+          value={ask}
+          onChange={(event) => setAsk(event.target.value)}
+          minRows={3}
+          maxRows={10}
+          autoGrow
+          placeholder="Describe what you want from this file."
+          disabled={isSpawning}
+        />
+        <AgentSpawnConfig
+          value={config}
+          onChange={setConfig}
+          disabled={isSpawning}
+          className="gap-1.5"
+        />
+        {spawnError != null ? <p className="text-xs text-danger">{spawnError}</p> : null}
+      </div>
+      <Divider />
+      <div className="flex items-center justify-end">
+        <Button size="sm" onClick={() => void spawnFromFile()} disabled={!canSpawn}>
+          {isSpawning ? 'Spawning…' : 'Spawn agent'}
+        </Button>
+      </div>
+    </AnchoredPopover>
   );
 };

@@ -1,9 +1,9 @@
 type Params = {
-  readonly workspaceRoot: string;
+  readonly projectRoot: string;
   readonly folderName: string;
 };
 
-export const buildSimpleSessionDirectoryPath = ({ workspaceRoot, folderName }: Params): string => {
-  const normalizedRoot = workspaceRoot === '/' ? workspaceRoot : workspaceRoot.replace(/\/+$/, '');
+export const buildSimpleSessionDirectoryPath = ({ projectRoot, folderName }: Params): string => {
+  const normalizedRoot = projectRoot === '/' ? projectRoot : projectRoot.replace(/\/+$/, '');
   return `${normalizedRoot}/sessions/${folderName}`;
 };

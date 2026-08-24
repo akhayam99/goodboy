@@ -1,10 +1,14 @@
-import { Chip, cn } from '@goodboy/ui';
+import { Chip, ValueToken, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
+import type { MountDiffStat } from '../../../../../../store';
 import { agentKindPalette } from '../../../../agent-kind';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import {
+  segmentsToText,
   sessionEventEmphasis,
-  sessionEventTitle,
+  sessionEventLabel,
+  sessionEventSecondary,
+  type TimelineLabelSegment,
 } from '../../../../timeline/sessionEventPresentation';
 import type {
   TimelineRowItem,
@@ -12,9 +16,11 @@ import type {
 } from '../../../../timeline/buildTimelineStream';
 import type { TimelineRowGrade } from '../../../../timeline/timelineRhythm';
 import { TimelineRunLabel } from './TimelineRunLabel';
+import { DiffStat } from '../../../DiffStat';
 
 type Props = {
   readonly item: TimelineRowItem;
+  readonly diffStat?: MountDiffStat | null;
 };
 
 type LabelEntry = Exclude<TimelineStreamEntry, TimelineRunEntry>;
@@ -23,23 +29,39 @@ type EntryParams = {
   readonly entry: LabelEntry;
 };
 
-const titleOf = ({ entry }: EntryParams): string => {
+const segmentsOf = ({ entry }: EntryParams): ReadonlyArray<TimelineLabelSegment> => {
   if (entry.kind === 'agent') {
-    return entry.agent.name;
+    return [{ kind: 'text', text: entry.agent.name }];
   }
   if (entry.kind === 'plan') {
-    return entry.plan.title;
+    return [{ kind: 'text', text: entry.plan.title }];
   }
   if (entry.kind === 'issue') {
-    return `${entry.task.identifier}: ${entry.task.title}`;
+    return [
+      { kind: 'value', text: entry.task.identifier, variant: 'issue' },
+      { kind: 'text', text: `: ${entry.task.title}` },
+    ];
   }
   if (entry.kind === 'branch') {
-    return 'Branch created';
+    const { mountName, branch } = entry.worktree;
+    const created: ReadonlyArray<TimelineLabelSegment> = [
+      { kind: 'text', text: 'Branch ' },
+      { kind: 'value', text: branch, variant: 'branch' },
+      { kind: 'text', text: ' created' },
+    ];
+    if (mountName == null) {
+      return created;
+    }
+    return [
+      ...created,
+      { kind: 'text', text: ' for ' },
+      { kind: 'value', text: mountName, variant: 'project' },
+    ];
   }
   if (entry.kind === 'event') {
-    return sessionEventTitle({ event: entry.event });
+    return sessionEventLabel({ event: entry.event });
   }
-  return entry.question.text;
+  return [{ kind: 'text', text: entry.question.text }];
 };
 
 type ChipParams = EntryParams & {
@@ -69,7 +91,7 @@ const chipOf = ({ entry, grade }: ChipParams) => {
   );
 };
 
-export const TimelineRowLabel = ({ item }: Props) => {
+export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
     return <TimelineRunLabel entry={entry} />;
@@ -77,7 +99,8 @@ export const TimelineRowLabel = ({ item }: Props) => {
   const isStep = grade === 'step';
   const emphasis =
     entry.kind === 'event' ? sessionEventEmphasis({ kind: entry.event.kind }) : 'plain';
-  const isPath = entry.kind === 'event' && entry.event.kind === 'worktree_created';
+  const secondary = entry.kind === 'event' ? sessionEventSecondary({ event: entry.event }) : null;
+  const segments = segmentsOf({ entry });
   return (
     <>
       {chipOf({ entry, grade })}
@@ -90,10 +113,10 @@ export const TimelineRowLabel = ({ item }: Props) => {
         <span className="shrink-0 text-2xs text-muted-foreground">You answered</span>
       ) : null}
       <span
+        title={segmentsToText({ segments })}
         className={cn(
-          'min-w-0 truncate',
+          'flex min-w-0 items-center overflow-hidden',
           isStep ? 'text-xs leading-4' : 'text-sm leading-5',
-          isPath && 'font-mono text-xs',
           emphasis === 'success'
             ? 'text-success'
             : emphasis === 'muted'
@@ -105,8 +128,25 @@ export const TimelineRowLabel = ({ item }: Props) => {
                   : 'text-foreground',
         )}
       >
-        {titleOf({ entry })}
+        {segments.map((segment, index) =>
+          segment.kind === 'value' ? (
+            <ValueToken key={`${segment.variant}:${index}`} value={segment.text} />
+          ) : (
+            <span
+              key={`text:${index}`}
+              className="min-w-0 overflow-hidden text-ellipsis whitespace-pre"
+            >
+              {segment.text}
+            </span>
+          ),
+        )}
       </span>
+      {diffStat == null ? null : (
+        <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />
+      )}
+      {secondary != null ? (
+        <span className="min-w-0 truncate text-2xs text-muted-foreground">{secondary}</span>
+      ) : null}
     </>
   );
 };

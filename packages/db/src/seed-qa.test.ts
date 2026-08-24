@@ -1,9 +1,18 @@
 import { describe, it } from 'vitest';
-import type { ProviderRunId, Session, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
+import type {
+  Project,
+  ProjectId,
+  ProviderRunId,
+  Session,
+  SessionId,
+  Workspace,
+  WorkspaceId,
+} from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { migrate } from './migrations/runner';
 import { migrations } from './migrations';
 import { insertWorkspace } from './queries/workspace';
+import { insertProject } from './queries/project';
 import { archiveSession, insertSession } from './queries/session';
 import { makeTestDatabase } from './test-helpers/test-db';
 
@@ -25,12 +34,35 @@ describe.skipIf(!shouldSeed)('qa seed', () => {
     const workspace: Workspace = {
       id: workspaceId,
       name: 'QA Sandbox',
-      rootPath: '/tmp/goodboy-qa-sandbox',
-      kind: 'simple',
+      slug: 'qa-sandbox',
+      sessionsRoot: '/tmp/goodboy-qa-sandbox',
+      overrides: {
+        defaultProviderId: null,
+        defaultWorkflowId: null,
+        defaultBranchPrefix: null,
+        parallelEnabled: null,
+        defaultVerbosity: null,
+        providerBindings: null,
+        taskModels: null,
+        roleModels: null,
+        parallelAgents: null,
+        providerPool: null,
+      },
       createdAt: now,
       updatedAt: now,
     };
-    await insertWorkspace(db, workspace);
+    const project: Project = {
+      id: 'project-qa-1' as ProjectId,
+      workspaceId,
+      name: 'QA Sandbox',
+      rootPath: '/tmp/goodboy-qa-sandbox',
+      kind: 'folder',
+      overrides: workspace.overrides,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await insertWorkspace({ db, workspace });
+    await insertProject({ db, project });
 
     const baseSession = {
       workspaceId,

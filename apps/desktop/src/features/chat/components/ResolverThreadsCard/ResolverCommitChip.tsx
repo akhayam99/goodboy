@@ -30,7 +30,7 @@ export const ResolverCommitChip = ({ sha, onOpen }: Props) => {
       aria-label={`Open commit ${shortSha}`}
       className={cn(
         CHIP_CLASS,
-        'motion-safe:transition-colors hover:border-border hover:text-primary',
+        'cursor-pointer underline-offset-2 motion-safe:transition-colors hover:border-border hover:text-foreground hover:underline',
       )}
     >
       {content}

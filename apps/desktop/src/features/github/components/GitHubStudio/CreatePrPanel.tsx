@@ -55,8 +55,8 @@ export const CreatePrPanel = ({
   const { showToast } = useToast();
   const repo = useSessionRepo({ sessionId });
   const branch = repo?.branch ?? null;
-  const workspaceRoot = repo?.repoRoot ?? null;
-  const memberWorkspaceId = repo?.workspaceId;
+  const projectRoot = repo?.repoRoot ?? null;
+  const projectId = repo?.projectId;
   const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
   const workspaceId = session?.workspaceId;
   const workspaceOverrides = useAppStore((s) =>
@@ -110,13 +110,13 @@ export const CreatePrPanel = ({
   }, [agentConfigUserTouched, resolvedAgentConfig]);
 
   useEffect(() => {
-    if (workspaceRoot == null) {
+    if (projectRoot == null) {
       setBranchesLoading(false);
       return;
     }
     let cancelled = false;
     setBranchesLoading(true);
-    void ghBaseBranches(workspaceRoot, workspaceId, memberWorkspaceId).then(
+    void ghBaseBranches(projectRoot, workspaceId, projectId).then(
       ({ defaultBranch, branches: list }) => {
         if (cancelled) {
           return;
@@ -131,7 +131,7 @@ export const CreatePrPanel = ({
     return () => {
       cancelled = true;
     };
-  }, [memberWorkspaceId, workspaceRoot, workspaceId]);
+  }, [projectId, projectRoot, workspaceId]);
 
   const onCreate = async () => {
     if (busy || title.trim().length === 0) {

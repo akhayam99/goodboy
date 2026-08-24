@@ -24,13 +24,12 @@ type AgentRow = {
   status: string;
   provider_run_id: string | null;
   output_summary: string | null;
-  started_at: string | null;
-  completed_at: string | null;
+  started_at: number | null;
   provider_session_id: string | null;
   provider_session_provider_id: string | null;
-  last_finished_at: string | null;
-  last_viewed_at: string | null;
-  done_at: string | null;
+  last_finished_at: number | null;
+  last_viewed_at: number | null;
+  done_at: number | null;
   deleted_at: number | null;
   verbosity: string | null;
   effort: string | null;
@@ -82,15 +81,23 @@ const toAgent = ({ row }: ToAgentParams): Agent => {
     status: row.status as AgentStatus,
     ...(row.provider_run_id && { runId: row.provider_run_id as ProviderRunId }),
     ...(row.output_summary && { outputSummary: row.output_summary }),
-    ...(row.started_at && { startedAt: row.started_at as IsoDateTime }),
-    ...(row.completed_at && { completedAt: row.completed_at as IsoDateTime }),
+    ...(row.started_at != null && {
+      startedAt: new Date(row.started_at).toISOString() as IsoDateTime,
+    }),
     ...(row.provider_session_id && { providerSessionId: row.provider_session_id }),
     ...(row.provider_session_provider_id != null && {
       providerSessionProviderId: row.provider_session_provider_id as ProviderId,
     }),
-    ...(row.last_finished_at && { lastFinishedAt: row.last_finished_at as IsoDateTime }),
-    ...(row.last_viewed_at && { lastViewedAt: row.last_viewed_at as IsoDateTime }),
-    ...(row.done_at && { doneAt: row.done_at as IsoDateTime }),
+    ...(row.last_finished_at != null && {
+      completedAt: new Date(row.last_finished_at).toISOString() as IsoDateTime,
+      lastFinishedAt: new Date(row.last_finished_at).toISOString() as IsoDateTime,
+    }),
+    ...(row.last_viewed_at != null && {
+      lastViewedAt: new Date(row.last_viewed_at).toISOString() as IsoDateTime,
+    }),
+    ...(row.done_at != null && {
+      doneAt: new Date(row.done_at).toISOString() as IsoDateTime,
+    }),
     ...(row.deleted_at != null && {
       deletedAt: new Date(row.deleted_at).toISOString() as IsoDateTime,
     }),
@@ -144,31 +151,6 @@ export const getAgentById = async (db: Database, id: AgentId): Promise<Agent | n
   return row ? toAgent({ row }) : null;
 };
 
-export const insertAgent = async (db: Database, agent: Agent): Promise<void> => {
-  await db.execute(
-    `INSERT INTO agents
-      (id, session_id, step_id, workflow_run_id, parent_agent_id, ordinal, name, status, provider_run_id, output_summary, started_at, completed_at, provider_session_id, provider_session_provider_id, domains_json)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      agent.id,
-      agent.sessionId,
-      agent.stepId ?? null,
-      agent.workflowRunId ?? null,
-      agent.parentAgentId ?? null,
-      agent.ordinal,
-      agent.name,
-      agent.status,
-      agent.runId ?? null,
-      agent.outputSummary ?? null,
-      agent.startedAt ?? null,
-      agent.completedAt ?? null,
-      agent.providerSessionId ?? null,
-      agent.providerSessionProviderId ?? null,
-      agent.domains !== undefined ? JSON.stringify(agent.domains) : null,
-    ],
-  );
-};
-
 export const updateAgentDomains = async ({
   db,
   id,
@@ -208,11 +190,11 @@ export const updateAgentStatus = async (
   }
   if (fields.startedAt !== undefined) {
     updates.push('started_at = ?');
-    values.push(fields.startedAt);
+    values.push(Date.parse(fields.startedAt));
   }
   if (fields.completedAt !== undefined) {
-    updates.push('completed_at = ?');
-    values.push(fields.completedAt);
+    updates.push('last_finished_at = ?');
+    values.push(Date.parse(fields.completedAt));
   }
 
   if (updates.length === 0) {

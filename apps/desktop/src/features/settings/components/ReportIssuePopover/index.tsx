@@ -1,9 +1,8 @@
 import {
+  AnchoredPopover,
   Button,
   cn,
   Divider,
-  DropdownPortal,
-  Popover,
   SegmentedTabs,
   Textarea,
   Tooltip,
@@ -21,23 +20,13 @@ const TRIGGER_LABEL = 'Report an issue';
 const DRAFT_TRIGGER_LABEL = 'Report an issue, draft saved';
 
 export const ReportIssuePopover = () => {
-  const {
-    open,
-    close,
-    toggle,
-    containerRef,
-    popupRef,
-    popupClassName,
-    popupStyle,
-    portal,
-    portalTarget,
-  } = useDropdown({
+  const dropdown = useDropdown({
     align: 'end',
     expectedHeight: 340,
     expectedWidth: 384,
     width: 'w-96 max-w-[calc(100vw-2rem)]',
-    strategy: 'fixed',
   });
+  const { open, close, toggle } = dropdown;
   const draft = useAppStore((s) => s.bugReportDraft);
   const setBugReportDraft = useAppStore((s) => s.setBugReportDraft);
   const clearBugReportDraft = useAppStore((s) => s.clearBugReportDraft);
@@ -57,79 +46,73 @@ export const ReportIssuePopover = () => {
   };
 
   return (
-    <div ref={containerRef} className="relative">
-      <Tooltip content={TRIGGER_LABEL} side="top">
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={triggerLabel}
-          className={cn(
-            'relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors',
-            open
-              ? 'bg-muted text-foreground'
-              : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-          )}
-        >
-          <ReportIssueIcon size={14} aria-hidden />
-          {hasDraft && (
-            <span
-              data-testid="report-issue-draft-dot"
-              aria-hidden
-              className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-info"
-            />
-          )}
-        </button>
-      </Tooltip>
-
-      <DropdownPortal portal={portal} portalTarget={portalTarget}>
-        {open && (
-          <Popover
-            innerRef={popupRef}
-            role="dialog"
-            ariaLabel={TRIGGER_LABEL}
-            className={cn(popupClassName, 'flex flex-col bg-subtle')}
-            style={popupStyle}
+    <AnchoredPopover
+      dropdown={dropdown}
+      role="dialog"
+      ariaLabel={TRIGGER_LABEL}
+      className="flex flex-col bg-subtle"
+      trigger={
+        <Tooltip content={TRIGGER_LABEL} side="top">
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={triggerLabel}
+            className={cn(
+              'relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors',
+              open
+                ? 'bg-muted text-foreground'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+            )}
           >
-            <header className="flex items-center gap-2 px-3 py-2">
-              <span className="text-xs font-semibold text-foreground">{TRIGGER_LABEL}</span>
-            </header>
-            <Divider />
-            <div className="flex flex-col gap-3 px-3 py-3">
-              <SegmentedTabs
-                fill
-                size="sm"
-                ariaLabel="Issue type"
-                options={ISSUE_TYPE_OPTIONS}
-                value={draft.issueType}
-                onChange={(issueType: IssueTypeValue) => setBugReportDraft({ issueType })}
+            <ReportIssueIcon size={14} aria-hidden />
+            {hasDraft && (
+              <span
+                data-testid="report-issue-draft-dot"
+                aria-hidden
+                className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-info"
               />
-              <Textarea
-                autoGrow
-                minRows={4}
-                maxRows={10}
-                aria-label="Description"
-                value={draft.description}
-                onChange={(e) => setBugReportDraft({ description: e.target.value })}
-                onPaste={imageControl.onPaste}
-                placeholder="What happened, and what you expected instead"
-              />
-              <BugReportImages control={imageControl} />
-              <p className="text-2xs leading-relaxed text-muted-foreground">
-                Kept as a draft until you send it.
-              </p>
-            </div>
-            <Divider />
-            <footer className="flex items-center justify-end gap-2 px-3 py-2">
-              <Button variant="ghost" size="sm" onClick={clearBugReportDraft} disabled={!hasDraft}>
-                Reset
-              </Button>
-              <Button size="sm" onClick={openFullForm}>
-                Add details and send
-              </Button>
-            </footer>
-          </Popover>
-        )}
-      </DropdownPortal>
-    </div>
+            )}
+          </button>
+        </Tooltip>
+      }
+    >
+      <header className="flex items-center gap-2 px-3 py-2">
+        <span className="text-xs font-semibold text-foreground">{TRIGGER_LABEL}</span>
+      </header>
+      <Divider />
+      <div className="flex flex-col gap-3 px-3 py-3">
+        <SegmentedTabs
+          fill
+          size="sm"
+          ariaLabel="Issue type"
+          options={ISSUE_TYPE_OPTIONS}
+          value={draft.issueType}
+          onChange={(issueType: IssueTypeValue) => setBugReportDraft({ issueType })}
+        />
+        <Textarea
+          autoGrow
+          minRows={4}
+          maxRows={10}
+          aria-label="Description"
+          value={draft.description}
+          onChange={(e) => setBugReportDraft({ description: e.target.value })}
+          onPaste={imageControl.onPaste}
+          placeholder="What happened, and what you expected instead"
+        />
+        <BugReportImages control={imageControl} />
+        <p className="text-2xs leading-relaxed text-muted-foreground">
+          Kept as a draft until you send it.
+        </p>
+      </div>
+      <Divider />
+      <footer className="flex items-center justify-end gap-2 px-3 py-2">
+        <Button variant="ghost" size="sm" onClick={clearBugReportDraft} disabled={!hasDraft}>
+          Reset
+        </Button>
+        <Button size="sm" onClick={openFullForm}>
+          Add details and send
+        </Button>
+      </footer>
+    </AnchoredPopover>
   );
 };

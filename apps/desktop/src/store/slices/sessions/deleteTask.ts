@@ -7,12 +7,25 @@ import {
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
-import { removeSessionDirectory, removeWorktree } from '../../../features/worktree/worktree';
+import {
+  removeSessionDirectory,
+  removeWorktree,
+  scratchDirRemove,
+  tidyRepoGoodboyDir,
+} from '../../../features/worktree/worktree';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { buildSessionMounts } from '../worktrees/buildSessionMounts';
 import { purgeSessionFileVersions } from '../file-versions/persistFinalizedFileVersions';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
+import { forgetMaterializationSeed } from './materializationSeeds';
 import type { GetFn, SetFn } from './types';
+
+const removePersistedDirectory = async (path: string): Promise<void> => {
+  const parent = path.slice(0, path.lastIndexOf('/'));
+  if (parent === '') {
+    throw new Error(`session path has no parent: ${path}`);
+  }
+  await removeSessionDirectory({ basePath: parent, path });
+};
 
 export const deleteTask = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
@@ -33,61 +46,49 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       );
     }
     const rows = await listWorktreesForSession(tauriDatabase, sessionId);
-    const paths = rows.map((row) => row.worktreePath);
-    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
     const isBranchless = isBranchlessSession({
-      workspaceKind: workspace?.kind,
       branch: get().sessionBranches[sessionId],
     });
     const cleanupFailures: unknown[] = [];
-    if (workspace?.kind === 'composite' && !isBranchless) {
-      const mounts = buildSessionMounts({ workspace, rows });
-      const memberCleanupFailures: unknown[] = [];
-      for (const mount of mounts) {
+    const projects = get().projects.filter(
+      (project) => project.workspaceId === session.workspaceId,
+    );
+    for (const row of rows) {
+      const project =
+        projects.find((candidate) => candidate.id === row.projectId) ??
+        (row.projectId === undefined
+          ? projects.find((candidate) => candidate.name === row.mountName)
+          : undefined);
+      if (project?.kind === 'repo') {
         try {
-          await removeWorktree(mount.repoRoot, mount.worktreePath);
+          await removeWorktree(project.rootPath, row.worktreePath);
+          await tidyRepoGoodboyDir({ repoPath: project.rootPath }).catch(() => undefined);
         } catch (error) {
-          memberCleanupFailures.push(error);
           cleanupFailures.push(error);
           continue;
         }
         try {
           await deleteGithubPrCacheForWorktreePath({
             db: tauriDatabase,
-            worktreePath: mount.worktreePath,
+            worktreePath: row.worktreePath,
           });
         } catch (error) {
           cleanupFailures.push(error);
         }
+        continue;
       }
-      const containerPath = rows.find((row) => row.mountWorkspaceId == null)?.worktreePath;
-      if (containerPath != null && memberCleanupFailures.length === 0) {
-        try {
-          await removeSessionDirectory({ basePath: workspace.rootPath, path: containerPath });
-        } catch (error) {
-          cleanupFailures.push(error);
-        }
+      try {
+        await removePersistedDirectory(row.worktreePath);
+      } catch (error) {
+        cleanupFailures.push(error);
       }
     }
-    if (workspace?.kind !== 'composite' && workspace != null && !isBranchless) {
-      const worktreePath = paths[0];
-      if (worktreePath != null) {
-        let isWorktreeRemoved = false;
-        try {
-          await removeWorktree(workspace.rootPath, worktreePath);
-          isWorktreeRemoved = true;
-        } catch (error) {
-          cleanupFailures.push(error);
-        }
-        if (isWorktreeRemoved) {
-          try {
-            await deleteGithubPrCacheForWorktreePath({ db: tauriDatabase, worktreePath });
-          } catch (error) {
-            cleanupFailures.push(error);
-          }
-        }
-      }
+    try {
+      await scratchDirRemove({ sessionId });
+    } catch {
+      console.error(`scratch directory not removed: ${sessionId}`);
     }
+    forgetMaterializationSeed({ sessionId });
     if (cleanupFailures.length > 0) {
       void get().emitNotification(
         'error',
@@ -116,9 +117,11 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       }
       const nextWorktrees = { ...state.sessionWorktrees };
       delete nextWorktrees[sessionId];
-      const nextMounts = { ...state.sessionMounts };
+      const nextWorktreeRecords = { ...state.sessionWorktreeRecords };
+      delete nextWorktreeRecords[sessionId];
+      const nextMounts = { ...state.sessionProjectMounts };
       delete nextMounts[sessionId];
-      const nextActiveMount = { ...state.sessionActiveMount };
+      const nextActiveMount = { ...state.sessionActiveProject };
       delete nextActiveMount[sessionId];
       const nextBranches = { ...state.sessionBranches };
       delete nextBranches[sessionId];
@@ -126,16 +129,14 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       delete nextPhaseRuns[sessionId];
       const nextGithub = { ...state.sessionGithub };
       delete nextGithub[sessionId];
-      const nextGithubPrs = { ...state.sessionGithubPrs };
-      delete nextGithubPrs[sessionId];
+      const nextProjectPrs = { ...state.sessionProjectPrs };
+      delete nextProjectPrs[sessionId];
       const nextSelectedPrNumber = { ...state.sessionSelectedPrNumber };
       delete nextSelectedPrNumber[sessionId];
       const nextLoading = { ...state.sessionLoading };
       delete nextLoading[sessionId];
       const nextSelected = { ...state.selectedAgentId };
       delete nextSelected[sessionId];
-      const nextConflicts = { ...state.sessionMergeConflicts };
-      delete nextConflicts[sessionId];
       const nextOpenQs = { ...state.sessionOpenQuestions };
       delete nextOpenQs[sessionId];
       const nextWorkflows = { ...state.sessionWorkflows };
@@ -164,16 +165,16 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         transcripts: nextTranscripts,
         messages: nextMessages,
         sessionWorktrees: nextWorktrees,
-        sessionMounts: nextMounts,
-        sessionActiveMount: nextActiveMount,
+        sessionWorktreeRecords: nextWorktreeRecords,
+        sessionProjectMounts: nextMounts,
+        sessionActiveProject: nextActiveMount,
         sessionBranches: nextBranches,
         sessionPhaseRuns: nextPhaseRuns,
         sessionGithub: nextGithub,
-        sessionGithubPrs: nextGithubPrs,
+        sessionProjectPrs: nextProjectPrs,
         sessionSelectedPrNumber: nextSelectedPrNumber,
         sessionLoading: nextLoading,
         selectedAgentId: nextSelected,
-        sessionMergeConflicts: nextConflicts,
         sessionOpenQuestions: nextOpenQs,
         sessionWorkflows: nextWorkflows,
         workflowDrafts: nextWorkflowDrafts,

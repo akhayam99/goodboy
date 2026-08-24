@@ -7,6 +7,7 @@ import { useToast } from '../../../../app/components/Toast';
 const SCOPE_LABELS: Record<PermissionScope, string> = {
   global: 'approve global',
   workspace: 'approve workspace',
+  project: 'approve project',
   session: 'approve session',
   once: 'approve once',
   deny: 'deny',
@@ -15,6 +16,7 @@ const SCOPE_LABELS: Record<PermissionScope, string> = {
 const SCOPE_TOAST: Record<PermissionScope, string> = {
   global: 'rule added: allow globally',
   workspace: 'rule added: allow for this workspace',
+  project: 'rule added: allow for this project',
   session: 'rule added: allow for this session',
   once: 'allowed once, not saved',
   deny: 'rule added: deny for this session',
@@ -57,11 +59,12 @@ export const PermissionScopePicker = ({
     }
   };
 
-  const scopes: PermissionScope[] = ['global', 'workspace', 'session', 'once', 'deny'];
+  const scopes: PermissionScope[] = ['global', 'workspace', 'project', 'session', 'once', 'deny'];
 
   const SCOPE_TITLES: Record<PermissionScope, string> = {
     global: 'allow for all sessions',
     workspace: 'allow for this workspace',
+    project: 'allow for this project',
     session: 'allow for this task (recommended)',
     once: 'allow this time only (not saved)',
     deny: 'deny this request',

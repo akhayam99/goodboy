@@ -10,13 +10,11 @@ export const STORAGE_KEYS = {
   reviewBoardListWidth: `${PREFIX}review-board-list-width`,
   leftSidebarWidth: `${PREFIX}left-sidebar-width:v2`,
   rightSidebarWidth: `${PREFIX}right-sidebar-width`,
-  onboardingWorkspaceDraft: `${PREFIX}onboarding-workspace-draft:v1`,
   changelogCache: `${PREFIX}changelog-cache:v1`,
 } as const;
 
 export const STORAGE_PREFIXES = {
   workSurfaceView: `${PREFIX}work-surface-view:`,
-  diffView: `${PREFIX}diff-view:`,
   diffReviewed: `${PREFIX}diff-reviewed:`,
   sessionView: `${PREFIX}session-view:`,
   cursorMaxMode: `${PREFIX}cursor-max-mode:`,

@@ -1,9 +1,10 @@
 import type { SessionId } from '@goodboy/types';
+import { selectActiveProjectPrs } from './activeProjectPrs';
 import type { GetFn, SetFn } from './types';
 
 export const selectSessionPr = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber: number): Promise<void> => {
-    const prs = get().sessionGithubPrs[sessionId] ?? [];
+    const prs = selectActiveProjectPrs({ state: get(), sessionId });
     const pr = prs.find((candidate) => candidate.number === prNumber);
     if (pr == null) {
       return;

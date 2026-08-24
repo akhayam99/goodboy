@@ -1,10 +1,28 @@
-import type { WorkspaceIntegrationProvider } from '@goodboy/types';
+import type { IntegrationBindingProvider } from '@goodboy/types';
 
 export const QUERY_BRIDGE_VERBS: Readonly<
-  Record<WorkspaceIntegrationProvider, ReadonlyArray<string>>
+  Record<IntegrationBindingProvider, ReadonlyArray<string>>
 > = {
   linear: ['issue', 'issues-assigned', 'comments', 'comment-create', 'issue-update'],
   sentry: ['issues', 'issue', 'issue-detail'],
+  github: [
+    'prs',
+    'pr',
+    'pr-for-branch',
+    'pr-diff',
+    'pr-checks',
+    'pr-comments',
+    'issues-assigned',
+    'issue',
+    'issue-comments',
+    'pr-comment-create',
+    'pr-thread-reply',
+    'pr-thread-resolve',
+    'pr-ready',
+    'pr-merge',
+    'issue-comment-create',
+    'push',
+  ],
   gitlab: [
     'issues-assigned',
     'issue',
@@ -53,7 +71,7 @@ export const QUERY_BRIDGE_VERBS: Readonly<
 };
 
 type GuardParams = {
-  readonly providers: ReadonlyArray<WorkspaceIntegrationProvider>;
+  readonly providers: ReadonlyArray<IntegrationBindingProvider>;
   readonly isBridgeServing: boolean;
 };
 
@@ -62,13 +80,13 @@ export const buildIntegrationsGuard = ({ providers, isBridgeServing }: GuardPara
     return '';
   }
   const known = Array.from(new Set(providers)).filter(
-    (provider): provider is WorkspaceIntegrationProvider =>
+    (provider): provider is IntegrationBindingProvider =>
       Object.prototype.hasOwnProperty.call(QUERY_BRIDGE_VERBS, provider),
   );
   if (known.length === 0) {
     return '';
   }
-  const order = Object.keys(QUERY_BRIDGE_VERBS) as ReadonlyArray<WorkspaceIntegrationProvider>;
+  const order = Object.keys(QUERY_BRIDGE_VERBS) as ReadonlyArray<IntegrationBindingProvider>;
   const listed = order.filter((provider) => known.includes(provider));
   return [
     '[integrations]',

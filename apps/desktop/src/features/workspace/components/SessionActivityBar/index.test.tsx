@@ -66,7 +66,6 @@ function renderBar(
       archivedSessions={archived}
       currentSessionId={null}
       onSelectSession={onSelectSession}
-      onNewSession={vi.fn()}
     />,
   );
 }
@@ -116,6 +115,24 @@ describe('SessionActivityBar, baseline', () => {
   it('offers no collapse control in the header', () => {
     renderBar([]);
     expect(screen.queryByRole('button', { name: 'hide sessions' })).toBeNull();
+  });
+
+  it('dispatches the new-session event when the New button is clicked', () => {
+    const listener = vi.fn();
+    window.addEventListener('goodboy:new-session', listener);
+    renderBar([]);
+    fireEvent.click(screen.getByRole('button', { name: /create new session/i }));
+    expect(listener).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('textbox')).toBeNull();
+    window.removeEventListener('goodboy:new-session', listener);
+  });
+
+  it('switches back from the archived tab when a new session is requested', () => {
+    renderBar([makeSession('s-1', 'archived one')]);
+    toggleArchivedTab();
+    expect(screen.queryByRole('button', { name: /create new session/i })).toBeNull();
+    fireEvent(window, new CustomEvent('goodboy:new-session'));
+    expect(screen.getByRole('button', { name: /create new session/i })).toBeDefined();
   });
 });
 

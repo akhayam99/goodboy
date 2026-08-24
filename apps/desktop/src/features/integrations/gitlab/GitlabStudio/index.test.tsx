@@ -156,7 +156,7 @@ describe('GitlabStudio', () => {
     renderStudio();
 
     expect(
-      screen.getByText('Connect GitLab to review merge requests from this workspace'),
+      screen.getByText('Connect GitLab to review merge requests from this project'),
     ).toBeDefined();
     expect(screen.getByLabelText('Host')).toBeDefined();
     expect(screen.getByLabelText('Personal access token')).toBeDefined();

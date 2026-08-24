@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
-  GitlabWorkspaceIntegration,
+  GitlabIntegrationBinding,
   Session,
   SessionExternalTask,
   SessionId,
@@ -127,7 +127,7 @@ export const useGitlabIssues = ({ workspaceId, isEnabled = true }: HookParams): 
   const sessionBranches = useAppStore((s) => s.sessionBranches);
   const host = useAppStore((s) => {
     const integration = s.workspaceIntegrations[workspaceId]?.find(
-      (i): i is GitlabWorkspaceIntegration => i.provider === 'gitlab',
+      (i): i is GitlabIntegrationBinding => i.provider === 'gitlab',
     );
     return integration ? integration.config.host : null;
   });

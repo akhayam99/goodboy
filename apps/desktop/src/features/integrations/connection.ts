@@ -1,14 +1,14 @@
 import type {
   SessionExternalTask,
   SessionExternalTaskProvider,
-  WorkspaceIntegration,
+  IntegrationBinding,
 } from '@goodboy/types';
 
 type Provider = SessionExternalTaskProvider | 'pr';
 
 type Params = {
   readonly provider: Provider;
-  readonly integrations: ReadonlyArray<WorkspaceIntegration>;
+  readonly integrations: ReadonlyArray<IntegrationBinding>;
   readonly externalTasks: ReadonlyArray<SessionExternalTask>;
   readonly isGithubAuthenticated: boolean;
 };

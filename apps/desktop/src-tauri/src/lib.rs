@@ -16,10 +16,10 @@ mod gitlab;
 mod integration_credentials;
 mod jira;
 mod linear;
-mod parallel_groups;
 mod path_env;
 mod permissions;
 mod planner;
+mod profile_file;
 mod provider_credentials;
 mod provider_lifecycle;
 mod providers;
@@ -28,6 +28,7 @@ mod query_bridge;
 mod releases;
 mod remote_image;
 mod repo;
+mod scratch_dir;
 mod scripts;
 mod secrets;
 mod sentry;
@@ -197,6 +198,9 @@ pub fn run() {
             boot_breadcrumb::boot_breadcrumb,
             db::db_exec,
             db::db_execute,
+            db::db_list_migration_snapshots,
+            db::db_path,
+            db::db_remove_migration_snapshot,
             db::db_select,
             db::db_wipe,
             bridge::bridge_start,
@@ -204,20 +208,19 @@ pub fn run() {
             bridge::bridge_status,
             bridge::bridge_command_result,
             bridge::bridge_revoke,
-            session_dir::simple_workspace_default_path,
-            session_dir::simple_workspace_prepare,
+            profile_file::workspace_profile_project,
             session_dir::session_dir_create,
             session_dir::session_dir_remove,
-            session_dir::simple_sessions_scan,
-            session_dir::simple_session_marker_write,
-            session_dir::simple_session_dir_exists,
+            session_dir::session_dir_exists,
+            scratch_dir::scratch_dir_prepare,
+            scratch_dir::scratch_dir_remove,
             worktree::worktree_create,
             worktree::worktree_remove,
+            worktree::worktree_tidy_goodboy,
             worktree::worktree_orphans,
             worktree::worktree_orphan_remove,
             worktree::worktree_list,
             worktree::worktree_remote_url,
-            worktree::worktree_exists,
             worktree::worktree_diff,
             worktree::worktree_diff_file,
             worktree::worktree_changed_files,
@@ -255,10 +258,12 @@ pub fn run() {
             turn::turn_cancel,
             turn::turn_list_live,
             query_bridge::query_bridge_serving,
+            query_bridge::project::project_materialize_result,
             attachment::attachment_write,
             attachment::attachment_read,
             attachment::attachment_delete,
             attachment::attachment_read_dropped,
+            attachment::attachment_cleanup_orphans,
             attachment::bug_report_stage_images,
             attachment::bug_report_discard_images,
             attachment::bug_report_reveal_images,
@@ -272,8 +277,10 @@ pub fn run() {
             summarize::summarize_cancel,
             planner::planner_run,
             repo::validate_git_repo,
-            repo::workspace_git_status,
+            repo::project_git_status,
             repo::repo_init_with_remote,
+            repo::repo_init,
+            repo::scan_child_repos,
             budget::budget_rule_upsert,
             budget::budget_rule_list,
             budget::budget_rule_delete,
@@ -315,12 +322,6 @@ pub fn run() {
             workflows::agent_mark_viewed,
             workflows::agent_set_done,
             workflows::workspaces_with_unread,
-            parallel_groups::parallel_group_create,
-            parallel_groups::parallel_group_list,
-            parallel_groups::parallel_group_get,
-            parallel_groups::parallel_group_delete,
-            parallel_groups::parallel_group_update_completed_at,
-            parallel_groups::parallel_agent_spawn,
             permissions::permission_rule_list,
             permissions::permission_rule_get,
             permissions::permission_rule_upsert,

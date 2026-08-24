@@ -60,6 +60,17 @@ The same text reaches every provider through the guard-block channel, so the
 bridge is advertised identically whether the agent is Claude, Codex, Cursor,
 Gemini or opencode. Nothing about it is provider-specific.
 
+## The workspace is the container
+
+`--workspace` (or `GOODBOY_WORKSPACE_ID`) names the workspace container, and a
+connection is a binding on that container: one credential and one shared
+configuration, with an optional per-project override row. A verb that reads
+per-repository configuration accepts `--project <name>` to resolve against that
+project's override first, falling back to the workspace-level binding when the
+project carries none. On a verb that already owns a `project` argument, such as
+a GitLab project path or a Jira project key, the flag keeps its verb-specific
+meaning and sets no scope.
+
 ## Where it is reachable
 
 The socket is created when the app starts and removed when it stops, so an

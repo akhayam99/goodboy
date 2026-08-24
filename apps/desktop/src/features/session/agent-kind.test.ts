@@ -626,15 +626,10 @@ describe('boundary systemPrompts', () => {
   });
 });
 
-describe('visibility by workspace kind', () => {
-  it('reduces roles and kinds while the workspace has no repository', () => {
-    expect(visibleAgentRoles({ workspaceKind: 'simple' })).toEqual(['scout', 'planner', 'custom']);
-    expect(visibleAgentKinds({ workspaceKind: 'simple' })).toEqual(['generic']);
-  });
-
-  it('restores every role and kind once the workspace is a dev project', () => {
-    expect(visibleAgentRoles({ workspaceKind: 'repo' }).length).toBeGreaterThan(3);
-    expect(visibleAgentKinds({ workspaceKind: 'repo' })).toEqual([
+describe('agent visibility', () => {
+  it('exposes every role and visible kind for every workspace', () => {
+    expect(visibleAgentRoles().length).toBeGreaterThan(3);
+    expect(visibleAgentKinds()).toEqual([
       'debugger',
       'docs',
       'generic',

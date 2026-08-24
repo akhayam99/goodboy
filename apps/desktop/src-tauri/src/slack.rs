@@ -442,7 +442,7 @@ async fn fetch_paged<T: serde::de::DeserializeOwned>(
 }
 
 fn read_token(workspace_id: &str, cache: &SlackTokenCache) -> Result<String, SlackError> {
-    integration_credentials::read_for_workspace(PROVIDER, workspace_id, &cache.0)?
+    integration_credentials::read_for_binding(PROVIDER, workspace_id, None, &cache.0)?
         .ok_or_else(|| SlackError::NoToken(workspace_id.to_string()))
 }
 

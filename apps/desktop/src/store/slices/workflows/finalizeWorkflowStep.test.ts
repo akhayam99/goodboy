@@ -94,8 +94,26 @@ const buildHarness = ({ sessions = [session], agents = [agent] }: Params = {}) =
     sessionPhaseRuns: { [SESSION_ID]: agents },
     sessions,
     workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
-    sessionMounts: {},
-    sessionActiveMount: {},
+    projects: [
+      {
+        id: 'project-1',
+        workspaceId: WORKSPACE_ID,
+        rootPath: '/tmp/repo',
+        kind: 'repo',
+      },
+    ],
+    sessionProjectMounts: {
+      [SESSION_ID]: [
+        {
+          projectId: 'project-1',
+          mountName: 'repo',
+          repoRoot: '/tmp/repo',
+          worktreePath: '/tmp/worktree',
+          branch: 'ak/workflow',
+        },
+      ],
+    },
+    sessionActiveProject: { [SESSION_ID]: 'project-1' },
     sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
     sessionBranches: { [SESSION_ID]: 'ak/workflow' },
     refreshUnreadWorkspaces: vi.fn(),
@@ -158,8 +176,8 @@ describe('finalizeWorkflowStep output summary', () => {
       sessionPhaseRuns: { [SESSION_ID]: [agent] },
       sessions: [session],
       workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
-      sessionMounts: {},
-      sessionActiveMount: {},
+      sessionProjectMounts: {},
+      sessionActiveProject: {},
       sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
       sessionBranches: { [SESSION_ID]: 'ak/workflow' },
       refreshUnreadWorkspaces: vi.fn(),
@@ -199,8 +217,8 @@ describe('finalizeWorkflowStep output summary', () => {
       sessionPhaseRuns: { [SESSION_ID]: [agent] },
       sessions: [session],
       workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
-      sessionMounts: {},
-      sessionActiveMount: {},
+      sessionProjectMounts: {},
+      sessionActiveProject: {},
       sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
       sessionBranches: { [SESSION_ID]: 'ak/workflow' },
       refreshUnreadWorkspaces: vi.fn(),
@@ -320,13 +338,125 @@ describe('finalizeWorkflowStep output summary', () => {
     expect(result).toEqual({ shouldAutoAdvance: true });
   });
 
+  it('leaves the step open and resumes the cluster when a child never ran', async () => {
+    const child: Agent = {
+      id: 'child-1' as AgentId,
+      sessionId: SESSION_ID,
+      workflowRunId: WORKFLOW_RUN_ID,
+      parentAgentId: AGENT_ID,
+      ordinal: 1,
+      name: 'cluster 1',
+      status: 'pending',
+    };
+    const plan = {
+      id: 'plan-1',
+      sessionId: SESSION_ID,
+      workflowRunId: WORKFLOW_RUN_ID,
+      title: 'Migrate modals',
+      bodyMd: '',
+      status: 'consumed',
+      clusters: [
+        { title: 'c0', instructions: 'do 0' },
+        { title: 'c1', instructions: 'do 1' },
+      ],
+    };
+    const state = {
+      sessionPhaseRuns: { [SESSION_ID]: [agent, child] },
+      sessions: [session],
+      sessionPlans: { [SESSION_ID]: [plan] },
+      planConsumptions: { 'plan-1': [{ agentId: AGENT_ID }] },
+      workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
+      sessionProjectMounts: {},
+      sessionActiveProject: {},
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
+      sessionBranches: { [SESSION_ID]: 'ak/workflow' },
+      refreshUnreadWorkspaces: vi.fn(),
+      emitNotification: vi.fn(),
+      sendTurn: vi.fn(async () => undefined),
+      loadSessionPlans: vi.fn(async () => undefined),
+    };
+    const set = vi.fn();
+    const get = (() => state) as unknown as Parameters<typeof finalizeWorkflowStep>[1];
+    const finalize = finalizeWorkflowStep(
+      set as unknown as Parameters<typeof finalizeWorkflowStep>[0],
+      get,
+    );
+
+    const result = await finalize(
+      SESSION_ID,
+      AGENT_ID,
+      `done <<step-done id="${AGENT_ID}">>`,
+      false,
+    );
+
+    expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalledWith(
+      AGENT_ID,
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(state.sendTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: 'child-1' as AgentId }),
+    );
+    expect(result).toEqual({ shouldAutoAdvance: false });
+  });
+
+  it('leaves the step open and warns when an unsettled child cannot be resumed', async () => {
+    const child: Agent = {
+      id: 'child-1' as AgentId,
+      sessionId: SESSION_ID,
+      workflowRunId: WORKFLOW_RUN_ID,
+      parentAgentId: AGENT_ID,
+      ordinal: 1,
+      name: 'cluster 1',
+      status: 'failed',
+    };
+    const state = {
+      sessionPhaseRuns: { [SESSION_ID]: [agent, child] },
+      sessions: [session],
+      sessionPlans: {},
+      planConsumptions: {},
+      workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
+      sessionProjectMounts: {},
+      sessionActiveProject: {},
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
+      sessionBranches: { [SESSION_ID]: 'ak/workflow' },
+      refreshUnreadWorkspaces: vi.fn(),
+      emitNotification: vi.fn(),
+      sendTurn: vi.fn(async () => undefined),
+      loadSessionPlans: vi.fn(async () => undefined),
+    };
+    const set = vi.fn();
+    const get = (() => state) as unknown as Parameters<typeof finalizeWorkflowStep>[1];
+    const finalize = finalizeWorkflowStep(
+      set as unknown as Parameters<typeof finalizeWorkflowStep>[0],
+      get,
+    );
+
+    const result = await finalize(
+      SESSION_ID,
+      AGENT_ID,
+      `done <<step-done id="${AGENT_ID}">>`,
+      false,
+    );
+
+    expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
+    expect(state.sendTurn).not.toHaveBeenCalled();
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      `step waiting on clusters: ${agent.name}`,
+      expect.stringContaining('1 cluster agent has not finished'),
+      { sessionId: SESSION_ID },
+    );
+    expect(result).toEqual({ shouldAutoAdvance: false });
+  });
+
   it('does not notify the inbox for the session-missing guard fallback (excluded from I6)', async () => {
     const state = {
       sessionPhaseRuns: { [SESSION_ID]: [agent] },
       sessions: [],
       workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
-      sessionMounts: {},
-      sessionActiveMount: {},
+      sessionProjectMounts: {},
+      sessionActiveProject: {},
       sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
       sessionBranches: { [SESSION_ID]: 'ak/workflow' },
       refreshUnreadWorkspaces: vi.fn(),

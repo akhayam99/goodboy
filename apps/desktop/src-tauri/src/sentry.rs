@@ -174,9 +174,9 @@ fn token_from_secret(raw: &str) -> String {
 }
 
 fn read_config(workspace_id: &str, cache: &SentryTokenCache) -> Result<SentryConfig, SentryError> {
-    let raw = integration_credentials::read_for_workspace(PROVIDER, workspace_id, &cache.0)?
+    let raw = integration_credentials::read_for_binding(PROVIDER, workspace_id, None, &cache.0)?
         .ok_or_else(|| SentryError::NoToken(workspace_id.to_string()))?;
-    let scope = integration_credentials::config_for_workspace(PROVIDER, workspace_id)?
+    let scope = integration_credentials::config_for_binding(PROVIDER, workspace_id, None)?
         .ok_or_else(|| SentryError::NoToken(workspace_id.to_string()))?;
     let scope: SentryScope = serde_json::from_str(&scope)?;
     Ok(SentryConfig {

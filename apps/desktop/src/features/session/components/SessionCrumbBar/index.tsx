@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Divider, StatusDot } from '@goodboy/ui';
+import { Divider, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -8,7 +8,8 @@ import {
   useCurrentSession,
   useSessionStageInfo,
 } from '../../../../store';
-import { STAGE_TONE } from '../../session-stage';
+import { SESSION_STAGE_META, STAGE_TONE } from '../../session-stage';
+import { SessionCostChip } from '../SessionOverviewPane/SessionCostChip';
 import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
 import { useSelectedWorkflowRun } from '../../hooks/useSelectedWorkflowRun';
 import { agentHomeLens, classifyAgent, resolveRootAgent } from '../../agent-kind';
@@ -59,26 +60,58 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
     return resolveRootAgent({ agents: phaseRuns, agentId: selectedAgentId });
   }, [phaseRuns, selectedAgentId]);
 
+  const parentAgent = useMemo(() => {
+    const parentId = selectedAgent?.parentAgentId ?? null;
+    if (parentId == null) {
+      return null;
+    }
+    return phaseRuns.find((agent) => agent.id === parentId) ?? null;
+  }, [phaseRuns, selectedAgent]);
+
+  const toEntries = useMemo(() => {
+    const kindOf = (agent: Agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null);
+    return (peers: ReadonlyArray<Agent>): ReadonlyArray<SwitcherEntry> =>
+      peers.map((agent) => ({
+        agent,
+        kind: kindOf(agent),
+        isFinished: isAgentFinished({
+          agent,
+          resolverStatus: resolverStatusByAgentId.get(agent.id) ?? null,
+        }),
+      }));
+  }, [agentKindOverride, resolverStatusByAgentId]);
+
   const siblings: ReadonlyArray<SwitcherEntry> = useMemo(() => {
     if (selectedAgent == null || rootAgent == null) {
       return EMPTY_ARRAY as ReadonlyArray<SwitcherEntry>;
     }
     const kindOf = (agent: Agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null);
-    return switcherPeers({
-      agents: phaseRuns,
-      selectedAgent,
-      rootAgent,
-      home: agentHomeLens(rootAgent, kindOf(rootAgent)),
-      kindOf,
-    }).map((agent) => ({
-      agent,
-      kind: kindOf(agent),
-      isFinished: isAgentFinished({
-        agent,
-        resolverStatus: resolverStatusByAgentId.get(agent.id) ?? null,
+    return toEntries(
+      switcherPeers({
+        agents: phaseRuns,
+        selectedAgent,
+        rootAgent,
+        home: agentHomeLens(rootAgent, kindOf(rootAgent)),
+        kindOf,
       }),
-    }));
-  }, [phaseRuns, agentKindOverride, resolverStatusByAgentId, selectedAgent, rootAgent]);
+    );
+  }, [phaseRuns, agentKindOverride, toEntries, selectedAgent, rootAgent]);
+
+  const parentSiblings: ReadonlyArray<SwitcherEntry> = useMemo(() => {
+    if (parentAgent == null || rootAgent == null) {
+      return EMPTY_ARRAY as ReadonlyArray<SwitcherEntry>;
+    }
+    const kindOf = (agent: Agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null);
+    return toEntries(
+      switcherPeers({
+        agents: phaseRuns,
+        selectedAgent: parentAgent,
+        rootAgent,
+        home: agentHomeLens(rootAgent, kindOf(rootAgent)),
+        kindOf,
+      }),
+    );
+  }, [phaseRuns, agentKindOverride, toEntries, parentAgent, rootAgent]);
 
   const lastCrumb = crumbs[crumbs.length - 1];
   const isSelectedCrumbAnAgent = selectedAgent != null && lastCrumb?.id === 'selected-child';
@@ -96,7 +129,17 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
         aria-label="Breadcrumb"
         className="flex h-8 min-w-0 shrink-0 items-center gap-1.5 bg-background px-4"
       >
-        <StatusDot tone={STAGE_TONE[stage.stage]} size="sm" title={stage.reason} />
+        <Tooltip
+          content={
+            stage.reason === ''
+              ? SESSION_STAGE_META[stage.stage].label
+              : `${SESSION_STAGE_META[stage.stage].label} · ${stage.reason}`
+          }
+        >
+          <span className="inline-flex shrink-0 items-center">
+            <StatusDot tone={STAGE_TONE[stage.stage]} size="sm" />
+          </span>
+        </Tooltip>
         {crumbs.map((crumb, index) => (
           <span key={crumb.id} className="flex min-w-0 items-center gap-1.5">
             {index > 0 ? (
@@ -107,6 +150,18 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
                 label={crumb.label}
                 siblings={siblings}
                 selectedAgentId={selectedAgent.id}
+                onSelect={(id) => {
+                  void selectAgent(sessionId, id);
+                }}
+              />
+            ) : crumb.id === 'selected-parent' &&
+              parentAgent != null &&
+              parentSiblings.length > 1 ? (
+              <AgentSwitcherCrumb
+                label={crumb.label}
+                siblings={parentSiblings}
+                selectedAgentId={parentAgent.id}
+                onNavigate={crumb.onClick}
                 onSelect={(id) => {
                   void selectAgent(sessionId, id);
                 }}
@@ -123,6 +178,9 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
             workflow={selectedWorkflowRun.workflow}
           />
         ) : null}
+        <div className="ml-auto flex shrink-0 items-center">
+          <SessionCostChip sessionId={sessionId} />
+        </div>
       </nav>
       <Divider className="shrink-0" />
     </>

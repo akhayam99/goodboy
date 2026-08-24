@@ -130,19 +130,19 @@ const blockedReasonOf = ({ status }: { readonly status: WorkspaceGitStatus }): s
 export const MainStatus = ({ rootPath, status }: Props) => {
   const [openError, setOpenError] = useState<string | null>(null);
   const [pullError, setPullError] = useState<string | null>(null);
-  const workspaceId = useAppStore(
-    (s) => s.workspaces.find((candidate) => candidate.rootPath === rootPath)?.id ?? null,
+  const projectId = useAppStore(
+    (state) => state.projects.find((project) => project.rootPath === rootPath)?.id ?? null,
   );
   const pulling = useAppStore(
-    (s) => workspaceId != null && s.workspaceCheckoutPulling[workspaceId] === true,
+    (state) => projectId != null && state.projectCheckoutPulling[projectId] === true,
   );
-  const fastForwardWorkspaceCheckout = useAppStore((s) => s.fastForwardWorkspaceCheckout);
+  const fastForwardProjectCheckout = useAppStore((state) => state.fastForwardProjectCheckout);
   const signals = signalsOf({ status });
   const notes = unknownNotesOf({ status });
   const readFailure = hasReadFailure({ status });
   const branch = status.branch ?? 'detached HEAD';
   const blockedReason = blockedReasonOf({ status });
-  const canPull = blockedReason == null && workspaceId != null && !pulling;
+  const canPull = blockedReason == null && projectId != null && !pulling;
   const pullLabel =
     status.upstream != null
       ? `Fast-forward ${branch} to ${status.upstream}`
@@ -158,12 +158,12 @@ export const MainStatus = ({ rootPath, status }: Props) => {
   };
 
   const onPull = async () => {
-    if (workspaceId == null) {
+    if (projectId == null) {
       return;
     }
     setPullError(null);
     try {
-      await fastForwardWorkspaceCheckout({ workspaceId });
+      await fastForwardProjectCheckout({ projectId });
     } catch (error) {
       setPullError(formatError(error));
     }

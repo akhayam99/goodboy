@@ -119,6 +119,7 @@ describe('m101 telemetry orchestrator kind', () => {
     await migrate(db, migrations);
 
     expect(await indexNames({ db })).toEqual([
+      'idx_telemetry_provider',
       'idx_telemetry_recorded_at',
       'idx_telemetry_run_id',
       'idx_telemetry_session_kind',

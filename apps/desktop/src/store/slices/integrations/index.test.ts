@@ -16,6 +16,8 @@ import type {
   PlanConsumptionId,
   PlanId,
   PlanWithCount,
+  Project,
+  ProjectId,
   ProviderRunId,
   Session,
   SessionId,
@@ -28,10 +30,10 @@ import type {
   WorkflowId,
   Workspace,
   WorkspaceId,
-  WorkspaceIntegration,
-  WorkspaceIntegrationId,
-  WorkspaceScript,
-  WorkspaceScriptId,
+  IntegrationBinding,
+  IntegrationBindingId,
+  ProjectScript,
+  ProjectScriptId,
 } from '@goodboy/types';
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -55,21 +57,22 @@ const resolveDiffCommentDbSpy = vi.fn(async () => undefined);
 const reopenDiffCommentDbSpy = vi.fn(async () => undefined);
 const consumeDiffCommentsDbSpy = vi.fn(async () => undefined);
 const deleteDiffCommentDbSpy = vi.fn(async () => undefined);
-const upsertWorkspaceIntegrationSpy = vi.fn(async () => undefined);
-const getWorkspaceIntegrationSpy = vi.fn(async () => null as WorkspaceIntegration | null);
-const listIntegrationsForWorkspaceSpy = vi.fn(
-  async () => [] as ReadonlyArray<WorkspaceIntegration>,
+const upsertIntegrationBindingSpy = vi.fn(async () => undefined);
+const getIntegrationBindingSpy = vi.fn(async () => null as IntegrationBinding | null);
+const listIntegrationBindingsForWorkspaceSpy = vi.fn(
+  async () => [] as ReadonlyArray<IntegrationBinding>,
 );
-const deleteWorkspaceIntegrationSpy = vi.fn(async () => undefined);
+const deleteIntegrationBindingSpy = vi.fn(async () => undefined);
+const deleteIntegrationBindingsForProviderSpy = vi.fn(async () => undefined);
 const upsertIntegrationCredentialSpy = vi.fn(async () => undefined);
 const deleteIntegrationCredentialSpy = vi.fn(async () => undefined);
 const listIntegrationCredentialsSpy = vi.fn(async () => [] as ReadonlyArray<IntegrationCredential>);
 const countWorkspacesPerIntegrationCredentialSpy = vi.fn(
   async () => ({}) as Record<string, number>,
 );
-const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>);
-const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
-const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
+const listProjectScriptsSpy = vi.fn(async () => [] as ReadonlyArray<ProjectScript>);
+const upsertProjectScriptSpy = vi.fn(async () => undefined);
+const deleteProjectScriptSpy = vi.fn(async () => undefined);
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
@@ -125,9 +128,9 @@ vi.mock('@goodboy/db', () => ({
   detachWorkflowFromSession: vi.fn(async () => undefined),
   updateWorkflowOrder: vi.fn(async () => undefined),
   updateSessionWorkflowStep: vi.fn(async () => undefined),
-  listWorkspaceScripts: listWorkspaceScriptsSpy,
-  upsertWorkspaceScript: upsertWorkspaceScriptSpy,
-  deleteWorkspaceScript: deleteWorkspaceScriptSpy,
+  listProjectScripts: listProjectScriptsSpy,
+  upsertProjectScript: upsertProjectScriptSpy,
+  deleteProjectScript: deleteProjectScriptSpy,
   upsertContextSlot: vi.fn(async () => undefined),
   listOpenQuestionsForSession: vi.fn(async () => []),
   insertNudgeEvent: insertNudgeEventSpy,
@@ -144,10 +147,11 @@ vi.mock('@goodboy/db', () => ({
   reopenDiffComment: reopenDiffCommentDbSpy,
   consumeDiffComments: consumeDiffCommentsDbSpy,
   deleteDiffComment: deleteDiffCommentDbSpy,
-  listIntegrationsForWorkspace: listIntegrationsForWorkspaceSpy,
-  getWorkspaceIntegration: getWorkspaceIntegrationSpy,
-  upsertWorkspaceIntegration: upsertWorkspaceIntegrationSpy,
-  deleteWorkspaceIntegration: deleteWorkspaceIntegrationSpy,
+  listIntegrationBindingsForWorkspace: listIntegrationBindingsForWorkspaceSpy,
+  getIntegrationBinding: getIntegrationBindingSpy,
+  upsertIntegrationBinding: upsertIntegrationBindingSpy,
+  deleteIntegrationBinding: deleteIntegrationBindingSpy,
+  deleteIntegrationBindingsForProvider: deleteIntegrationBindingsForProviderSpy,
   upsertIntegrationCredential: upsertIntegrationCredentialSpy,
   deleteIntegrationCredential: deleteIntegrationCredentialSpy,
   listIntegrationCredentials: listIntegrationCredentialsSpy,
@@ -400,6 +404,7 @@ vi.mock('../../../features/settings/config-export', () => ({
 
 const WS_ID = 'workspace-1' as WorkspaceId;
 const WS_ID_2 = 'workspace-2' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 const SESSION_ID = 'session-1' as SessionId;
 const SESSION_ID_2 = 'session-2' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -412,13 +417,37 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {
     id: WS_ID,
     name: 'ws',
-    rootPath: '/tmp/repo',
+    slug: 'ws',
+    sessionsRoot: '/tmp/repo',
+    overrides: {
+      defaultProviderId: null,
+      defaultWorkflowId: null,
+      defaultBranchPrefix: null,
+      parallelEnabled: null,
+      defaultVerbosity: null,
+      providerBindings: null,
+      taskModels: null,
+      roleModels: null,
+      parallelAgents: null,
+      providerPool: null,
+    },
     createdAt: NOW,
     updatedAt: NOW,
     lastAccessedAt: NOW,
     ...overrides,
   };
 }
+
+const buildProject = (): Project => ({
+  id: PROJECT_ID,
+  workspaceId: WS_ID,
+  name: 'repo',
+  rootPath: '/tmp/repo',
+  kind: 'repo',
+  overrides: buildWorkspace().overrides,
+  createdAt: NOW,
+  updatedAt: NOW,
+});
 
 function buildSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -483,9 +512,9 @@ describe('store contract', () => {
     invokePlanListSpy.mockResolvedValue([]);
     invokeListConsumptionsForPlanSpy.mockResolvedValue([]);
     invokeWorkspacesWithUnreadSpy.mockResolvedValue([]);
-    listWorkspaceScriptsSpy.mockResolvedValue([]);
-    listIntegrationsForWorkspaceSpy.mockResolvedValue([]);
-    getWorkspaceIntegrationSpy.mockResolvedValue(null);
+    listProjectScriptsSpy.mockResolvedValue([]);
+    listIntegrationBindingsForWorkspaceSpy.mockResolvedValue([]);
+    getIntegrationBindingSpy.mockResolvedValue(null);
     listDiffCommentsSpy.mockResolvedValue([]);
     dbGetSettingSpy.mockResolvedValue(null);
     ghStatusSpy.mockResolvedValue({ available: true, mode: 'gh-cli', scopes: [] });
@@ -495,6 +524,7 @@ describe('store contract', () => {
       const snap = store.getState();
       resetState = {
         workspaces: [],
+        projects: [buildProject()],
         workspaceIntegrations: {},
         integrationCredentials: [],
         integrationCredentialUsage: {},
@@ -528,7 +558,7 @@ describe('store contract', () => {
         budgetAlerts: [],
         systemAlerts: [],
         skills: {},
-        workspaceScripts: {},
+        projectScripts: {},
         scriptRuns: {},
         phaseTemplates: {},
         sessionWorkflows: {},
@@ -536,7 +566,6 @@ describe('store contract', () => {
         selectedAgentId: {},
         agentRunHistory: {},
         agentTurnState: {},
-        sessionMergeConflicts: {},
         unknownPayloadCounts: {},
         detectedEditors: [],
         workspaceOverrides: {},
@@ -575,9 +604,10 @@ describe('store contract', () => {
   describe('integrations', () => {
     const CRED_ID = 'cred-1' as IntegrationCredentialId;
 
-    const linearRow = (): WorkspaceIntegration => ({
-      id: 'i-1' as WorkspaceIntegrationId,
+    const linearRow = (): IntegrationBinding => ({
+      id: 'i-1' as IntegrationBindingId,
       workspaceId: WS_ID,
+      projectId: null,
       provider: 'linear',
       config: { workspaceUrlKey: 'k', viewerUserId: 'u', viewerName: 'n' },
       credentialId: CRED_ID,
@@ -588,7 +618,7 @@ describe('store contract', () => {
     it('loadIntegrations caches rows keyed by workspaceId', async () => {
       const store = await getStore();
       const integ = linearRow();
-      listIntegrationsForWorkspaceSpy.mockResolvedValueOnce([integ]);
+      listIntegrationBindingsForWorkspaceSpy.mockResolvedValueOnce([integ]);
       await store.getState().loadIntegrations(WS_ID);
       expect(store.getState().workspaceIntegrations[WS_ID]).toEqual([integ]);
     });
@@ -624,7 +654,7 @@ describe('store contract', () => {
         .connectLinear({ workspaceId: WS_ID, token: 'tok', credentialId: null });
       expect(out.id).toBe('viewer-1');
       expect(upsertIntegrationCredentialSpy).toHaveBeenCalledTimes(1);
-      expect(upsertWorkspaceIntegrationSpy).toHaveBeenCalledTimes(1);
+      expect(upsertIntegrationBindingSpy).toHaveBeenCalledTimes(1);
       const cached = store.getState().workspaceIntegrations[WS_ID];
       const linear = cached?.find((i) => i.provider === 'linear');
       expect(linear?.credentialId).toBeDefined();
@@ -661,10 +691,8 @@ describe('store contract', () => {
 
       await store.getState().disconnectIntegration({ workspaceId: WS_ID, provider: 'linear' });
 
-      expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(
-        expect.anything(),
-        WS_ID,
-        'linear',
+      expect(deleteIntegrationBindingsForProviderSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ workspaceId: WS_ID, provider: 'linear' }),
       );
       expect(deleteIntegrationCredentialSpy).not.toHaveBeenCalled();
       expect(store.getState().workspaceIntegrations[WS_ID]).toEqual([]);
@@ -672,9 +700,10 @@ describe('store contract', () => {
 
     it('disconnectIntegration leaves the other providers of the workspace alone', async () => {
       const store = await getStore();
-      const sentry: WorkspaceIntegration = {
-        id: 'sentry-1' as WorkspaceIntegrationId,
+      const sentry: IntegrationBinding = {
+        id: 'sentry-1' as IntegrationBindingId,
         workspaceId: WS_ID,
+        projectId: null,
         provider: 'sentry',
         config: { org: 'goodboy', project: 'desktop' },
         credentialId: 'cred-sentry' as IntegrationCredentialId,
@@ -753,16 +782,17 @@ describe('store contract', () => {
 
     it('connectSentry reuses an existing row id and createdAt on reconnect', async () => {
       const store = await getStore();
-      const existing: WorkspaceIntegration = {
-        id: 'sentry-old' as WorkspaceIntegrationId,
+      const existing: IntegrationBinding = {
+        id: 'sentry-old' as IntegrationBindingId,
         workspaceId: WS_ID,
+        projectId: null,
         provider: 'sentry',
         config: { org: 'goodboy', project: 'old', projectName: 'Old' },
         credentialId: CRED_ID,
         createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
         updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
       };
-      getWorkspaceIntegrationSpy.mockResolvedValueOnce(existing);
+      getIntegrationBindingSpy.mockResolvedValueOnce(existing);
       store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
       sentryValidateConnectionSpy.mockResolvedValueOnce({
         slug: 'new',
@@ -818,7 +848,7 @@ describe('store contract', () => {
           credentialId: null,
         }),
       ).rejects.toThrow('invalid token');
-      expect(upsertWorkspaceIntegrationSpy).not.toHaveBeenCalled();
+      expect(upsertIntegrationBindingSpy).not.toHaveBeenCalled();
       expect(upsertIntegrationCredentialSpy).not.toHaveBeenCalled();
       expect(store.getState().workspaceIntegrations[WS_ID]).toBeUndefined();
     });
@@ -857,16 +887,17 @@ describe('store contract', () => {
 
     it('connectGitlab preserves id + createdAt and refreshes host on reconnect', async () => {
       const store = await getStore();
-      const existing: WorkspaceIntegration = {
-        id: 'gl-keep' as WorkspaceIntegrationId,
+      const existing: IntegrationBinding = {
+        id: 'gl-keep' as IntegrationBindingId,
         workspaceId: WS_ID,
+        projectId: null,
         provider: 'gitlab',
         config: { userName: 'old', userId: '1', host: 'https://gitlab.com' },
         credentialId: CRED_ID,
         createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
         updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
       };
-      getWorkspaceIntegrationSpy.mockResolvedValueOnce(existing);
+      getIntegrationBindingSpy.mockResolvedValueOnce(existing);
       store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
       gitlabValidateConnectionSpy.mockResolvedValueOnce({
         id: 2,
@@ -919,9 +950,10 @@ describe('store contract', () => {
 
     it('connectJira keeps the row identity and refreshes the project on reconnect', async () => {
       const store = await getStore();
-      const existing: WorkspaceIntegration = {
-        id: 'ji-keep' as WorkspaceIntegrationId,
+      const existing: IntegrationBinding = {
+        id: 'ji-keep' as IntegrationBindingId,
         workspaceId: WS_ID,
+        projectId: null,
         provider: 'jira',
         config: {
           siteUrl: 'https://acme.atlassian.net',
@@ -932,7 +964,7 @@ describe('store contract', () => {
         createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
         updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
       };
-      getWorkspaceIntegrationSpy.mockResolvedValueOnce(existing);
+      getIntegrationBindingSpy.mockResolvedValueOnce(existing);
       store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
       jiraValidateConnectionSpy.mockResolvedValueOnce({
         accountId: 'acc-7',
@@ -998,7 +1030,7 @@ describe('store contract', () => {
         .getState()
         .connectSlack({ workspaceId: WS_ID, botToken: 'xoxp-secret', credentialId: null });
 
-      const dbCallOrder = upsertWorkspaceIntegrationSpy.mock.invocationCallOrder[0];
+      const dbCallOrder = upsertIntegrationBindingSpy.mock.invocationCallOrder[0];
       const keychainCallOrder = slackConnectSpy.mock.invocationCallOrder[0];
       expect(dbCallOrder).toBeDefined();
       expect(keychainCallOrder).toBeDefined();
@@ -1021,24 +1053,27 @@ describe('store contract', () => {
           .connectSlack({ workspaceId: WS_ID, botToken: 'xoxp-secret', credentialId: null }),
       ).rejects.toThrow(/keychain unavailable/);
 
-      expect(upsertWorkspaceIntegrationSpy).toHaveBeenCalledTimes(1);
-      expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(expect.anything(), WS_ID, 'slack');
+      expect(upsertIntegrationBindingSpy).toHaveBeenCalledTimes(1);
+      expect(deleteIntegrationBindingSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ workspaceId: WS_ID, provider: 'slack', projectId: null }),
+      );
       expect(deleteIntegrationCredentialSpy).toHaveBeenCalledTimes(1);
       expect(store.getState().workspaceIntegrations[WS_ID] ?? []).toEqual([]);
     });
 
     it('connectSlack restores the database row when the in-memory store is stale', async () => {
       const store = await getStore();
-      const existing: WorkspaceIntegration = {
-        id: 'sl-db-existing' as WorkspaceIntegrationId,
+      const existing: IntegrationBinding = {
+        id: 'sl-db-existing' as IntegrationBindingId,
         workspaceId: WS_ID,
+        projectId: null,
         provider: 'slack',
         config: { teamId: 'T00', teamName: 'Old', botUserId: 'U00' },
         credentialId: CRED_ID,
         createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
         updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
       };
-      getWorkspaceIntegrationSpy.mockResolvedValueOnce(existing);
+      getIntegrationBindingSpy.mockResolvedValueOnce(existing);
       slackValidateConnectionSpy.mockResolvedValueOnce({
         teamId: 'T01',
         teamName: 'NewTeam',
@@ -1053,9 +1088,11 @@ describe('store contract', () => {
           .connectSlack({ workspaceId: WS_ID, botToken: 'xoxp-new', credentialId: CRED_ID }),
       ).rejects.toThrow(/keychain unavailable/);
 
-      expect(deleteWorkspaceIntegrationSpy).not.toHaveBeenCalled();
+      expect(deleteIntegrationBindingSpy).not.toHaveBeenCalled();
       expect(deleteIntegrationCredentialSpy).not.toHaveBeenCalled();
-      expect(upsertWorkspaceIntegrationSpy).toHaveBeenLastCalledWith(expect.anything(), existing);
+      expect(upsertIntegrationBindingSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({ binding: existing }),
+      );
     });
 
     it('connectSlack preserves the keychain error when database rollback fails', async () => {
@@ -1067,7 +1104,7 @@ describe('store contract', () => {
         botUserName: 'goodboy',
       });
       slackConnectSpy.mockRejectedValueOnce(new Error('keychain unavailable'));
-      deleteWorkspaceIntegrationSpy.mockRejectedValueOnce(new Error('rollback failed'));
+      deleteIntegrationBindingSpy.mockRejectedValueOnce(new Error('rollback failed'));
 
       await expect(
         store
@@ -1087,22 +1124,23 @@ describe('store contract', () => {
       ).rejects.toThrow(/invalid_auth/);
 
       expect(slackConnectSpy).not.toHaveBeenCalled();
-      expect(upsertWorkspaceIntegrationSpy).not.toHaveBeenCalled();
+      expect(upsertIntegrationBindingSpy).not.toHaveBeenCalled();
       expect(store.getState().workspaceIntegrations[WS_ID] ?? []).toEqual([]);
     });
 
     it('connectSlack keeps the row identity when the same workspace reconnects', async () => {
       const store = await getStore();
-      const existing: WorkspaceIntegration = {
-        id: 'sl-keep' as WorkspaceIntegrationId,
+      const existing: IntegrationBinding = {
+        id: 'sl-keep' as IntegrationBindingId,
         workspaceId: WS_ID,
+        projectId: null,
         provider: 'slack',
         config: { teamId: 'T00', teamName: 'Old', botUserId: 'U00' },
         credentialId: CRED_ID,
         createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
         updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
       };
-      getWorkspaceIntegrationSpy.mockResolvedValueOnce(existing);
+      getIntegrationBindingSpy.mockResolvedValueOnce(existing);
       store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
       slackValidateConnectionSpy.mockResolvedValueOnce({
         teamId: 'T01',
@@ -1124,13 +1162,49 @@ describe('store contract', () => {
       expect((rows[0]?.config as { teamName: string }).teamName).toBe('Acme');
     });
 
+    it('resolveBinding prefers the project override over the workspace binding', async () => {
+      const store = await getStore();
+      const workspaceLevel = linearRow();
+      const override: IntegrationBinding = {
+        ...linearRow(),
+        id: 'i-override' as IntegrationBindingId,
+        projectId: PROJECT_ID,
+        credentialId: 'cred-override' as IntegrationCredentialId,
+      };
+      store.setState({ workspaceIntegrations: { [WS_ID]: [workspaceLevel, override] } });
+
+      const resolved = store
+        .getState()
+        .resolveBinding({ workspaceId: WS_ID, provider: 'linear', projectId: PROJECT_ID });
+      expect(resolved?.id).toBe('i-override');
+
+      const fallback = store.getState().resolveBinding({ workspaceId: WS_ID, provider: 'linear' });
+      expect(fallback?.id).toBe('i-1');
+    });
+
+    it('resolveBinding falls back to the workspace binding for a project with no override', async () => {
+      const store = await getStore();
+      store.setState({ workspaceIntegrations: { [WS_ID]: [linearRow()] } });
+
+      const resolved = store.getState().resolveBinding({
+        workspaceId: WS_ID,
+        provider: 'linear',
+        projectId: 'project-elsewhere' as ProjectId,
+      });
+      expect(resolved?.id).toBe('i-1');
+
+      const missing = store.getState().resolveBinding({ workspaceId: WS_ID, provider: 'slack' });
+      expect(missing).toBeNull();
+    });
+
     it('disconnectGithub clears the workspace-scoped keychain token only', async () => {
       const store = await getStore();
 
       await store.getState().disconnectGithub({ workspaceId: WS_ID });
 
       expect(ghClearTokenSpy).toHaveBeenCalledWith(WS_ID);
-      expect(deleteWorkspaceIntegrationSpy).not.toHaveBeenCalled();
+      expect(deleteIntegrationBindingSpy).not.toHaveBeenCalled();
+      expect(deleteIntegrationBindingsForProviderSpy).not.toHaveBeenCalled();
     });
   });
 });

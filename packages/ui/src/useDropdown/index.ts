@@ -1,14 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { CSSProperties, RefObject } from 'react';
 import { cn } from '../cn';
 import { useDropdownDirection } from '../useDropdownDirection';
 
 type Align = 'start' | 'end' | 'center';
-
-const ALIGN_CLASS = {
-  start: 'left-0',
-  end: 'right-0',
-  center: 'left-1/2 -translate-x-1/2',
-} satisfies Record<Align, string>;
 
 type Params = {
   readonly disabled?: boolean;
@@ -17,34 +12,41 @@ type Params = {
   readonly expectedHeight?: number;
   readonly expectedWidth?: number;
   readonly openEvent?: string;
-  readonly strategy?: 'absolute' | 'fixed';
   readonly isEscapeEnabled?: boolean;
-  readonly hasBackdrop?: boolean;
+};
+
+export type DropdownController = {
+  readonly open: boolean;
+  readonly close: () => void;
+  readonly toggle: () => void;
+  readonly containerRef: RefObject<HTMLDivElement | null>;
+  readonly popupRef: RefObject<HTMLDivElement | null>;
+  readonly popupStyle: CSSProperties | undefined;
+  readonly popupClassName: string;
+  readonly portalTarget: Element;
 };
 
 export const useDropdown = ({
   disabled = false,
   align = 'start',
-  width = 'w-full min-w-[10rem]',
+  width,
   expectedHeight = 200,
   expectedWidth = 160,
   openEvent,
-  strategy = 'absolute',
   isEscapeEnabled = true,
-  hasBackdrop = false,
-}: Params) => {
+}: Params): DropdownController => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
-  const position = useDropdownDirection({
+  const popupStyle = useDropdownDirection({
     triggerRef: containerRef,
     popupRef,
     open,
     expectedHeight,
     expectedWidth,
     align,
-    strategy,
+    shouldMatchTriggerWidth: width == null,
   });
 
   useEffect(() => {
@@ -105,16 +107,8 @@ export const useDropdown = ({
     toggle,
     containerRef,
     popupRef,
-    popupStyle: position.style,
-    portal: strategy === 'fixed',
+    popupStyle,
+    popupClassName: cn('fixed z-popover', width),
     portalTarget,
-    popupClassName: cn(
-      strategy === 'fixed' ? 'fixed' : 'absolute',
-      strategy === 'fixed' || hasBackdrop ? 'z-popover' : 'z-50',
-      width,
-      strategy === 'absolute' && ALIGN_CLASS[align],
-      strategy === 'absolute' &&
-        (position.direction === 'up' ? 'bottom-[calc(100%+0.25rem)]' : 'top-[calc(100%+0.25rem)]'),
-    ),
   };
 };

@@ -4,6 +4,7 @@ import type {
   PullRequestState,
   SessionExternalTask,
   SessionId,
+  ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
 
@@ -25,6 +26,7 @@ import type { GetFn, SetFn } from './types';
 
 const SESSION_ID = 'sess-1' as SessionId;
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 const BRANCH = 'ak/cards';
 const NOW = '2026-08-04T00:00:00.000Z' as IsoDateTime;
 
@@ -43,10 +45,11 @@ const githubIssue = (overrides: Partial<SessionExternalTask> = {}): SessionExter
 type FakeState = {
   sessions: ReadonlyArray<unknown>;
   workspaces: ReadonlyArray<unknown>;
+  projects: ReadonlyArray<unknown>;
   sessionBranches: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
-  sessionMounts: Record<string, ReadonlyArray<unknown>>;
-  sessionActiveMount: Record<string, string>;
+  sessionProjectMounts: Record<string, ReadonlyArray<unknown>>;
+  sessionActiveProject: Record<string, string>;
   sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
   sessionGithub: Record<string, { pr: PullRequestState | null }>;
   refreshSessionPr: ReturnType<typeof vi.fn>;
@@ -56,12 +59,37 @@ type FakeState = {
 };
 
 const buildState = (overrides: Partial<FakeState> = {}): FakeState => ({
-  sessions: [{ id: SESSION_ID, workspaceId: WORKSPACE_ID, goal: 'Fix the cards' }],
-  workspaces: [{ id: WORKSPACE_ID, rootPath: '/repo', kind: 'repo' }],
+  sessions: [
+    {
+      id: SESSION_ID,
+      workspaceId: WORKSPACE_ID,
+      activeProjectId: PROJECT_ID,
+      goal: 'Fix the cards',
+    },
+  ],
+  workspaces: [{ id: WORKSPACE_ID }],
+  projects: [
+    {
+      id: PROJECT_ID,
+      workspaceId: WORKSPACE_ID,
+      rootPath: '/repo',
+      kind: 'repo',
+    },
+  ],
   sessionBranches: { [SESSION_ID]: BRANCH },
   sessionWorktrees: { [SESSION_ID]: ['/repo/.goodboy/worktrees/cards'] },
-  sessionMounts: {},
-  sessionActiveMount: {},
+  sessionProjectMounts: {
+    [SESSION_ID]: [
+      {
+        projectId: PROJECT_ID,
+        mountName: 'repo',
+        repoRoot: '/repo',
+        worktreePath: '/repo/.goodboy/worktrees/cards',
+        branch: BRANCH,
+      },
+    ],
+  },
+  sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
   sessionExternalTasks: {},
   sessionGithub: {},
   refreshSessionPr: vi.fn(async () => undefined),

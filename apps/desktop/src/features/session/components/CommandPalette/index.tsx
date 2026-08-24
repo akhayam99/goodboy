@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
-import type { Agent, AgentId, SessionId, WorkspaceScript } from '@goodboy/types';
+import type { Agent, AgentId, SessionId, ProjectScript } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -20,6 +20,7 @@ import { REPORT_ISSUE_STUDIO_EVENT } from '../../../settings/reportIssueStudioEv
 import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useThemeStore } from '../../../../shared/lib/theme';
+import { linkedProjectsLabel } from '../../../workspace/linkedProjectsLabel';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 type PaletteGroup = Exclude<QuickActionGroup, 'skill' | 'workflow'> | 'recents';
@@ -97,6 +98,7 @@ export const CommandPalette = ({
   const listRef = useRef<HTMLUListElement>(null);
 
   const workspaces = useWorkspaces();
+  const projects = useAppStore((s) => s.projects);
   const sessions = useSessions();
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
@@ -105,8 +107,8 @@ export const CommandPalette = ({
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const scripts = useAppStore((s) =>
-    currentWorkspace ? (s.workspaceScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
-  ) as ReadonlyArray<WorkspaceScript>;
+    currentWorkspace ? (s.projectScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
+  ) as ReadonlyArray<ProjectScript>;
   const agents = useAppStore((s) =>
     currentSession ? (s.sessionPhaseRuns[currentSession.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<Agent>;
@@ -128,7 +130,7 @@ export const CommandPalette = ({
       out.push({
         id: `workspace:${w.id}`,
         label: w.name,
-        sublabel: w.rootPath,
+        sublabel: linkedProjectsLabel({ projects, workspaceId: w.id }),
         group: 'workspace',
         onSelect: () => void openWorkspace(w.id, w.name),
       });
@@ -278,6 +280,7 @@ export const CommandPalette = ({
     return out;
   }, [
     workspaces,
+    projects,
     sessions,
     agents,
     scripts,

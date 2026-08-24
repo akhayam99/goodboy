@@ -22,6 +22,10 @@ pub enum DbError {
     AppDir(#[from] std::io::Error),
     #[error("connection mutex poisoned")]
     Poisoned,
+    #[error("invalid migration snapshot path")]
+    InvalidSnapshotPath,
+    #[error("migration snapshot filesystem error: {0}")]
+    MigrationSnapshotFilesystem(String),
 }
 
 crate::util::impl_error_serialize!(DbError);
@@ -33,11 +37,13 @@ impl DbError {
             DbError::NoHomeDir => "no_home_dir",
             DbError::AppDir(_) => "app_dir",
             DbError::Poisoned => "poisoned",
+            DbError::InvalidSnapshotPath => "invalid_snapshot_path",
+            DbError::MigrationSnapshotFilesystem(_) => "migration_snapshot_filesystem",
         }
     }
 }
 
-pub struct Db(pub Mutex<Connection>);
+pub struct Db(pub Mutex<Connection>, pub PathBuf);
 
 pub fn open() -> Result<Db, DbError> {
     let path = resolve_db_path()?;
@@ -46,7 +52,58 @@ pub fn open() -> Result<Db, DbError> {
     }
     let conn = Connection::open(&path)?;
     conn.execute_batch("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;")?;
-    Ok(Db(Mutex::new(conn)))
+    Ok(Db(Mutex::new(conn), path))
+}
+
+#[tauri::command]
+pub fn db_path(state: State<'_, Db>) -> String {
+    state.1.to_string_lossy().into_owned()
+}
+
+fn migration_snapshot_prefix(path: &std::path::Path) -> String {
+    format!(
+        "{}.pre-m",
+        path.file_name().unwrap_or_default().to_string_lossy()
+    )
+}
+
+#[tauri::command]
+pub fn db_list_migration_snapshots(state: State<'_, Db>) -> Result<Vec<String>, DbError> {
+    let Some(parent) = state.1.parent() else {
+        return Ok(Vec::new());
+    };
+    let prefix = migration_snapshot_prefix(&state.1);
+    let mut snapshots = Vec::new();
+    let entries = std::fs::read_dir(parent)
+        .map_err(|error| DbError::MigrationSnapshotFilesystem(error.to_string()))?;
+    for entry in entries {
+        let path = entry
+            .map_err(|error| DbError::MigrationSnapshotFilesystem(error.to_string()))?
+            .path();
+        let name = path.file_name().unwrap_or_default().to_string_lossy();
+        if name.starts_with(&prefix) && name.ends_with(".bak") {
+            snapshots.push(path.to_string_lossy().into_owned());
+        }
+    }
+    Ok(snapshots)
+}
+
+#[tauri::command]
+pub fn db_remove_migration_snapshot(state: State<'_, Db>, path: String) -> Result<(), DbError> {
+    let snapshot_path = PathBuf::from(path);
+    let name = snapshot_path
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy();
+    let is_same_parent = snapshot_path.parent() == state.1.parent();
+    let is_snapshot =
+        name.starts_with(&migration_snapshot_prefix(&state.1)) && name.ends_with(".bak");
+    if !is_same_parent || !is_snapshot {
+        return Err(DbError::InvalidSnapshotPath);
+    }
+    std::fs::remove_file(snapshot_path)
+        .map_err(|error| DbError::MigrationSnapshotFilesystem(error.to_string()))?;
+    Ok(())
 }
 
 /// Resolves the SQLite file. Precedence:

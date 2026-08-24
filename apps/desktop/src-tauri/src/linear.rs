@@ -103,7 +103,7 @@ async fn graphql<T: serde::de::DeserializeOwned>(
 }
 
 fn read_token(workspace_id: &str, cache: &LinearTokenCache) -> Result<String, LinearError> {
-    integration_credentials::read_for_workspace(PROVIDER, workspace_id, &cache.0)?
+    integration_credentials::read_for_binding(PROVIDER, workspace_id, None, &cache.0)?
         .ok_or_else(|| LinearError::NoToken(workspace_id.to_string()))
 }
 

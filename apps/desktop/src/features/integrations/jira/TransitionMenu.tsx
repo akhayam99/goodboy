@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { ArrowRightLeft } from 'lucide-react';
 import {
+  AnchoredPopover,
   Button,
   cn,
   Divider,
-  DropdownBackdrop,
   formatError,
-  Popover,
   ScrollFade,
   useDropdown,
 } from '@goodboy/ui';
@@ -49,20 +48,13 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition }: Props) =
   const [moveError, setMoveError] = useState<string | null>(null);
   const reason = blockReason({ isLoading, error, count: transitions.length });
   const isBlocked = reason != null;
-  const {
-    open: isOpen,
-    close,
-    toggle,
-    containerRef,
-    popupRef,
-    popupClassName,
-  } = useDropdown({
+  const dropdown = useDropdown({
     disabled: isBlocked,
     align: 'end',
     width: 'w-60',
     expectedHeight: 280,
-    hasBackdrop: true,
   });
+  const { open: isOpen, close, toggle } = dropdown;
 
   const move = async (transitionId: string) => {
     setBusyId(transitionId);
@@ -79,62 +71,56 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition }: Props) =
   };
 
   return (
-    <div ref={containerRef} className="relative">
-      <Button
-        size="sm"
-        variant="secondary"
-        aria-haspopup="menu"
-        aria-expanded={isOpen}
-        aria-disabled={isBlocked}
-        title={reason ?? 'Move this issue through its Jira workflow'}
-        isBusy={busyId != null}
-        busyLabel="Moving"
-        className={cn(isBlocked && 'opacity-50')}
-        onClick={toggle}
-      >
-        <ArrowRightLeft size={12} aria-hidden />
-        Move
-      </Button>
-      {isOpen && (
-        <>
-          <DropdownBackdrop onClose={close} />
-          <Popover
-            innerRef={popupRef}
-            role="menu"
-            ariaLabel="Move this issue"
-            className={cn(popupClassName, 'flex flex-col')}
+    <AnchoredPopover
+      dropdown={dropdown}
+      role="menu"
+      ariaLabel="Move this issue"
+      className="flex flex-col"
+      hasBackdrop
+      trigger={
+        <Button
+          size="sm"
+          variant="secondary"
+          aria-haspopup="menu"
+          aria-expanded={isOpen}
+          aria-disabled={isBlocked}
+          title={reason ?? 'Move this issue through its Jira workflow'}
+          isBusy={busyId != null}
+          busyLabel="Moving"
+          className={cn(isBlocked && 'opacity-50')}
+          onClick={toggle}
+        >
+          <ArrowRightLeft size={12} aria-hidden />
+          Move
+        </Button>
+      }
+    >
+      <ScrollFade className="max-h-64" viewportClassName="flex flex-col gap-0.5 p-1">
+        {transitions.map((transition) => (
+          <button
+            key={transition.id}
+            type="button"
+            role="menuitem"
+            disabled={busyId != null}
+            title={transition.hasScreen ? SCREEN_HINT : undefined}
+            onClick={() => void move(transition.id)}
+            className={MENU_ROW}
           >
-            <ScrollFade className="max-h-64" viewportClassName="flex flex-col gap-0.5 p-1">
-              {transitions.map((transition) => (
-                <button
-                  key={transition.id}
-                  type="button"
-                  role="menuitem"
-                  disabled={busyId != null}
-                  title={transition.hasScreen ? SCREEN_HINT : undefined}
-                  onClick={() => void move(transition.id)}
-                  className={MENU_ROW}
-                >
-                  <span className="min-w-0 truncate">{transition.name}</span>
-                  {transition.to != null && (
-                    <span className="shrink-0 text-2xs text-muted-foreground">
-                      {transition.to.name}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </ScrollFade>
-            {moveError != null && (
-              <>
-                <Divider />
-                <p role="alert" className="px-2 py-1.5 text-2xs text-danger">
-                  {moveError}
-                </p>
-              </>
+            <span className="min-w-0 truncate">{transition.name}</span>
+            {transition.to != null && (
+              <span className="shrink-0 text-2xs text-muted-foreground">{transition.to.name}</span>
             )}
-          </Popover>
+          </button>
+        ))}
+      </ScrollFade>
+      {moveError != null && (
+        <>
+          <Divider />
+          <p role="alert" className="px-2 py-1.5 text-2xs text-danger">
+            {moveError}
+          </p>
         </>
       )}
-    </div>
+    </AnchoredPopover>
   );
 };

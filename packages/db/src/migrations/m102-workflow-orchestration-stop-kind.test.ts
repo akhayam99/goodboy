@@ -43,9 +43,9 @@ const insertRun = async ({ db, runId, ordinal, error }: RunParams): Promise<void
   await db.execute(
     `INSERT INTO session_workflows
        (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run,
-        trigger_mode, execution_mode, orchestration_error, orchestrator_hints)
-     VALUES (?, ?, ?, ?, 0, 1, 'immediate', 'dynamic', ?, 'ignore the website')`,
-    [runId, sessionId, workflowId, ordinal, error],
+        trigger_mode, execution_mode, orchestration_error, orchestrator_hints, created_at)
+     VALUES (?, ?, ?, ?, 0, 1, 'immediate', 'dynamic', ?, 'ignore the website', ?)`,
+    [runId, sessionId, workflowId, ordinal, error, Date.now()],
   );
 };
 
@@ -130,6 +130,7 @@ describe('m102 workflow orchestration stop kind', () => {
     await migrate(db, migrations);
 
     expect(await indexNames({ db })).toEqual([
+      'idx_session_workflows_chain_after_run_id',
       'idx_session_workflows_session_id',
       'idx_session_workflows_workflow_id',
     ]);
@@ -141,6 +142,7 @@ describe('m102 workflow orchestration stop kind', () => {
     expect(
       [...keys].map((key) => [key.table, key.on_delete]).sort((a, b) => a[0]!.localeCompare(b[0]!)),
     ).toEqual([
+      ['session_workflows', 'SET NULL'],
       ['sessions', 'CASCADE'],
       ['workflows', 'CASCADE'],
     ]);

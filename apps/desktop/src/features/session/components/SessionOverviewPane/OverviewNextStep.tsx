@@ -23,6 +23,14 @@ const pendingForStep = ({
 
 export const OverviewNextStep = ({ sessionId, workflow, runAgents, stepId }: Props) => {
   const roleModels = useSessionRoleModels({ sessionId });
+  const sessionProvider = useAppStore(
+    (state) =>
+      state.sessions?.find((candidate) => candidate.id === sessionId)?.providerPreference
+        .defaultProvider ?? null,
+  );
+  const sessionEffort = useAppStore(
+    (state) => state.sessions?.find((candidate) => candidate.id === sessionId)?.effort ?? null,
+  );
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const nextAgent = pendingForStep({ runAgents, stepId });
   const modelOverride = useAppStore((state) =>
@@ -49,6 +57,8 @@ export const OverviewNextStep = ({ sessionId, workflow, runAgents, stepId }: Pro
       agentModel={routing.agentModel}
       agentProvider={routing.agentProvider}
       agentEffort={routing.agentEffort}
+      sessionProvider={sessionProvider}
+      sessionEffort={sessionEffort}
       onAdvance={({ step, isConfirmed }) => {
         void advanceAgent({ agent: pendingForStep({ runAgents, stepId: step.id }), isConfirmed });
       }}

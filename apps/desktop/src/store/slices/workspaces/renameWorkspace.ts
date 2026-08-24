@@ -22,7 +22,7 @@ export const renameWorkspace = (set: SetFn, get: GetFn) => {
       return workspace;
     }
 
-    await renameWorkspaceRow(tauriDatabase, workspaceId, trimmed);
+    await renameWorkspaceRow({ db: tauriDatabase, id: workspaceId, name: trimmed });
 
     const renamed: Workspace = {
       ...workspace,

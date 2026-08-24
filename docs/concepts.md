@@ -1,9 +1,10 @@
 # Concepts
 
-> **Read this when** you need what a Goodboy object actually is: an agent
-> kind, a workflow run, a lens, a plan, a resolver, a permission rule, or how
-> far an integration goes. **Not for** the code that implements them
-> (`docs/architecture.md`) or how a surface should look (`DESIGN.md`).
+> **Read this when** you need what a Goodboy object actually is: a workspace,
+> a project, a session, an agent kind, a workflow run, a lens, a plan, a
+> resolver, a permission rule, or how far an integration goes. **Not for** the
+> code that implements them (`docs/architecture.md`) or how a surface should
+> look (`DESIGN.md`).
 
 What the app does today, defined once. Every other document links here rather
 than restating a definition.
@@ -12,52 +13,135 @@ than restating a definition.
 
 Four nested things, and everything else hangs off them.
 
-- A **workspace** is the detail view of a project plus the integrations
-  specific to it. It aggregates every piece of work on that project, not just
-  the sessions you opened today. A repo owns one project directory and gives
-  each session a git worktree, a composite links repo workspaces so one
-  session can span them, and a simple workspace is a standalone folder whose
-  sessions use plain directories without git. Those are the three
-  `WorkspaceKind` values (`'repo'`, `'composite'`, `'simple'`), and five
-  different wordings name them, none shared with another: the type union
-  itself; the workspace form (`WorkspaceLinkForm`), which presents them as
-  **Single project**, **Multi project**, and **Standalone**; the onboarding
-  wizard's connected-workspace chip, which labels them **Repository**,
-  **Composite**, and **Standalone**; the same wizard's earlier audience step,
-  which asks the question a different way, as **I write code** versus **I do
-  not write code** (the second answer only ever offers Standalone); and
-  `WorkspaceRow`, live in the workspace launcher and switcher, which renders
-  a simple workspace's chip as the raw kind value, lowercase: **simple**,
-  with no equivalent chip for the other two kinds.
-- A **session** is a container for a goal: its own git worktree, branch,
-  budget and shared context. Its stage (attention / running / review /
-  building / done) is derived from what the session actually holds, never set
-  by hand. "Refactor authentication domain" is a session.
+- A **workspace** is the container you work in, named after the thing you
+  work on, not after a directory on disk. It owns a user profile, the
+  integration bindings, one or more projects, and every session. A single
+  repository is a workspace with one project; there is no separate
+  single-repo mode, and no composite kind linking workspaces to each other.
+  The old composite workspace is absorbed, not removed: every workspace is
+  the container a composite used to be
+  ([ADR 001](adr/001-workspace-project-rename.md)).
+- A **project** is one place code or files live: a git repository (kind
+  `repo`) or a plain folder (kind `folder`), with a root path on disk. A
+  project belongs to exactly one workspace. It carries only what is truly
+  per-place: its scripts, its settings override row, and an optional
+  integration binding override.
+- A **session** is a container for a goal: its own directory, budget and
+  shared context. Sessions belong to the workspace, never to a project. A
+  session starts with no worktree and no branch; per-project worktrees and
+  branches appear on demand (see Lazy sessions below). Its stage (attention /
+  running / review / building / done) is derived from what the session
+  actually holds, never set by hand. "Refactor authentication domain" is a
+  session.
 - An **agent** is an independent chat thread inside a session. You spawn as
   many as you want, switch between them by clicking, and rename them inline.
   Each agent has its own provider, model, effort level, verbosity and kind.
-- A **task** is the thing you are actually doing, and it is what the product
-  is organized around. It has an origin (an issue, an alert, a review comment,
-  an idea), a goal, a budget, a state and a definition of done. A task is not
-  finished when the code compiles, it is finished when the issue closes, the
-  PR merges, the alert resolves.
+
+These four words are the entire vocabulary, and each has exactly one meaning:
+**workspace** is always the container, **project** is always the repo-or-folder
+leaf, **session** is always the goal, **agent** is always the thread. Before
+0.2.0 the leaf was called a workspace and five surfaces each worded its kinds
+differently; that naming debt is paid, and no surface may reintroduce a synonym.
+The new-workspace form still offers **Single project**, **Multi project** and
+**Standalone**, but all three answers configure the projects of one container,
+not different container kinds.
 
 A session always has at least one agent, auto-spawned at creation. Spawning
 more needs no workflow. Attaching a workflow preset pre-spawns one agent per
 step, and those agents then live alongside any free agents you add.
 
-A repo workspace must already have usable git state before a session can
-create its worktree. **Goodboy never runs git init, never commits, never adds
-a remote on your behalf.**
+A repo project must already have usable git state before a session can
+materialize a worktree in it. **Goodboy never runs git init, never commits,
+never adds a remote on your behalf.**
 
 The order matters, and it is why the app looks the way it does: task first,
 then the integrations a task comes from and returns to, then the code as the
 artifact it produces, then chat as the last mile. Every surface follows that
 order. One that shows chat before it shows the task is built upside down.
 
+### The scoping ladder
+
+Configuration lives at four scopes, and a value set closer to the work wins:
+**global → workspace → project → session**.
+
+- **Permission rules** exist at all four scopes; when several rules match a
+  tool call, the most specific applicable scope decides.
+- **Settings overrides** (default provider, branch prefix, verbosity, model
+  pins, provider pool) are stored as an override row at workspace, project
+  and session scope on top of the global defaults; an unset value inherits
+  from an outer scope. The reading side still resolves session over workspace
+  over global; the project row is stored but not yet consulted.
+- **Workflows, the step library, and skills** are owned by the workspace. A
+  step library row with no workspace is a global seed. Skills are discovered
+  from the project roots but registered per workspace.
+- **Project scripts** are owned by the project, the only object that knows
+  its root path.
+- **Integration bindings** resolve project override first, then the workspace
+  binding (see Integration bindings below).
+
+### Lazy sessions
+
+A session is born on the workspace with only a **container directory**:
+`~/.goodboy/sessions/<workspace-slug>/<session-slug>-<id>` by default, or under
+the sessions root the workspace configured. No project worktree, no branch.
+
+A project enters the session by being **materialized**, which mounts it into
+the session: a repo project gets a git worktree inside the container, named
+after the project; a folder project gets a plain directory under its own
+`<project-root>/sessions/`. Materialization happens on demand, four ways:
+
+- A workflow step that writes files reads the run goal, the step prompt and
+  the consumed plan; a project named there is materialized before the step
+  starts. This is how a planner declares which projects the work will touch.
+- The **+ project** chip in the session's scope bar materializes one by hand.
+- An agent asks through the query bridge:
+  `"$GOODBOY_BIN" query project materialize <name> --reason "<why>"`.
+- The first turn in a workspace with exactly one project materializes that
+  project automatically.
+
+Every materialization carries a mandatory rationale and is recorded as a
+session event; a blank reason is refused before anything runs. The branch is
+`<prefix>/<session-slug>`, and it is the same name in every project the
+session materializes; the repository slug stamped on each mount is what tells
+them apart. Until a project is materialized, agents may read its root but
+every write must land inside the container or a mounted project.
+
+### Activity as story
+
+A session records what happened to it as an ordered stream of events: the
+container and branches created, issues linked and unlinked, one pull request
+per project through its lifecycle, workflow runs started and discarded,
+decision changes, projects materialized with their rationale, materializations
+refused with the failure, and external tasks created from Goodboy. The
+timeline renders that stream grouped by day, so a session can be read back as
+the story of the work rather than reconstructed from chat transcripts. An
+action that cannot say why it happened, like a materialization without a
+reason, is refused rather than recorded blank.
+
+### The workspace profile
+
+Each workspace carries at most one profile: a single free-form bio the person
+writes in their own words, prompted as "Tell agents who you are and what you
+do here". The bio is injected verbatim into every agent prompt as a guard
+block, framed as what the person says about themselves; an empty bio injects
+nothing. Saving the profile also projects it one way to
+`~/.goodboy/workspaces/<slug>/PROFILE.md` as plain text; the database row is
+the source of truth and the file is never read back.
+
+### Integration bindings
+
+A connection is a **binding on the workspace container**: one credential and
+one configuration shared by every project, stored as a workspace-level row.
+A project that needs a different account or configuration gets its own
+override row, and resolution is project override first, workspace binding
+second. GitHub is a binding provider like the rest, with one extra layer: a
+workspace without a scoped credential falls back to the system `gh` CLI
+login. Secrets stay inside the Goodboy process; a spawned agent reaches the
+connections only through the [query bridge](query-bridge.md).
+
 ## Integration surface
 
-The workspace is the aggregator of the project, so every integration surface
+The workspace is the aggregator of the work, so every integration surface
 has to be readable inside Goodboy, not linked out to a browser tab.
 "Integrated" has a fixed meaning here, and a mirror does not qualify:
 
@@ -65,8 +149,8 @@ has to be readable inside Goodboy, not linked out to a browser tab.
   shared page anatomy.
 - **Act on it**: comment, reply, assign, transition, approve, merge, resolve,
   from the same screen.
-- **Route it**: turn it into a session with the goal written and the branch
-  named, and follow it back out when the work ships.
+- **Route it**: turn it into a session with the goal written, and follow it
+  back out when the work ships.
 
 Where each connected source stands, honestly:
 
@@ -80,7 +164,7 @@ Where each connected source stands, honestly:
   request changes, withdraw, comment, reply, merge, decline). No issue
   tracking by design: Atlassian points issues at Jira and Goodboy follows.
 - **Jira.** Issues read in full and acted on: comment, assign, transition,
-  edit description. Cloud only, one project key per workspace, no sprints or
+  edit description. Cloud only, one project key per binding, no sprints or
   boards yet.
 - **Linear.** Issues read and routed, with two writes: the description and a
   comment. Assign and transition are still the open gap, because the state
@@ -109,10 +193,8 @@ Ten agent kinds shape how an agent works. Every kind has a display label:
 separate, for example `generic` uses `gen`. Each kind carries default model,
 effort, and optional system prompt settings.
 Kind is inferred automatically from the agent's name or first user message, or
-chosen explicitly when the agent is spawned. In a repo or composite
-workspace, nine are pickable in the spawn menu; **resolver** is spawned only
-by the resolve UI. A simple (standalone) workspace's spawn menu offers only
-**generic**.
+chosen explicitly when the agent is spawned. Nine are pickable in the spawn
+menu; **resolver** is spawned only by the resolve UI.
 
 ### Workflows
 
@@ -134,18 +216,19 @@ goal, overridable per run.
 ### Shared context
 
 Agents inside the same session do **not** share their conversation history.
-What they share is the **lens column**, a left rail that lists every view onto
-the session, grouped Context / Work / Infra / Integrations above a session
-Overview. Context opens one surface with three ordered regions: goal, decisions,
-and session summary. The LLM auto-populates them after every turn; you can also
-edit them by hand. Work holds what the session produces (workflows, agents,
-resolve, questions, diff, plans).
+What they share is the **session record**, surfaced on the session overview:
+goal, decisions and session summary as ordered regions, with what the session
+produces (workflows, agents, resolve, questions, diff, plans) as sections of
+the same page. The LLM auto-populates goal, decisions and summary after every
+turn; you can also edit them by hand.
 
-Each lens opens as the main view, rendered as markdown where it is prose, and
-slots maintain history. Chat is one destination among the lenses, not the
-frame around them: switching agents swaps the transcript, the lens column does
-not move, because it belongs to the session and not to the agent. This is the
-layer that lets independent agents collaborate on the same goal without
+Each of those surfaces is a **lens**: a view onto the session, reached from
+rows and chips on the overview, expanding in place or opening a side panel,
+and rendered as markdown where it is prose.
+Chat is one destination among them, not the frame around them: switching
+agents swaps the transcript, the overview stays where it is, because the
+record belongs to the session and not to the agent. This is the layer that
+lets independent agents collaborate on the same goal without
 cross-contaminating their threads.
 
 Context is a resource, not a dump.
@@ -159,7 +242,9 @@ Planner agents emit structured plans wrapped in `<<plan>>...<</plan>>`
 markers. These become first-class session artifacts, not buried in chat
 transcripts. Plans have lifecycle status (active / consumed / superseded) and
 are consumed by other agents who act on them. Consumption is tracked, and
-plans are viewable in a dedicated studio that renders them as a tree.
+plans are viewable in a dedicated studio that renders them as a tree. A plan
+is also where a planner declares the projects the work will touch, which is
+what materializes them when an implementing step starts.
 
 ### Review resolution
 
@@ -171,8 +256,9 @@ cannot race over the same branch.
 ### Permission rules
 
 A permission rule matches a tool and chooses allow, deny, or ask at global,
-workspace, or session scope. Provider capability determines enforcement. A
-denied headless call blocks the turn; approval is explicit and retryable.
+workspace, project, or session scope; the most specific applicable rule wins.
+Provider capability determines enforcement. A denied headless call blocks the
+turn; approval is explicit and retryable.
 
 ### Provider routing & balance
 
@@ -190,20 +276,9 @@ the right provider automatically.
   explicit pin overrides the auto choice.
 - You see the spend in real time. No surprises at end of month.
 
-Routing is a fact about the work, so it reads like one, except in the agent
-spawn menu itself. `AgentSpawnConfig` renders `RoutingPicker` directly.
-`CreateAgentPopover` does not: it renders `AgentRoutingSections`, which
-imports `RoutingPicker`'s `CatalogGrid` on its own instead of mounting
-`RoutingPicker`. Either way, `CatalogGrid` groups each model's catalog entry
-by `presentation.group` (**Haiku**, **Sonnet**, **Opus**, **Fable**, and the
-equivalent per-provider groups) as a row label, except for ten models, across
-Cursor, OpenCode, Moonshot and OpenRouter, whose `presentation.group` is
-`null`; those render in one ungrouped row per family with no row label at
-all. Each model then renders as a `VersionChip` showing its
-`presentation.version` (**4.5**, **4.6**, **4.7**, **4.8**, **5**) as its
-visible text, not bare. Neither the row label nor the chip carries a provider
-mark or an effort value; effort is a separate control elsewhere in the
-picker.
+Choosing a model is one control, mounted in many places: an axes-based picker
+(provider, model, version, variant, effort) rendered from the compiled
+catalog. How it works is owned by [model-picker.md](model-picker.md).
 
 ### Cost awareness
 
@@ -225,11 +300,12 @@ All metrics are computed and stored locally. Nothing transmitted.
 
 ### Skills & automation
 
-Local skills live with the workspace: markdown files with frontmatter
-discovered from `<workspace>/.kay/skills/*.md` or
-`<workspace>/.claude/skills/<name>/SKILL.md`. Invoke from chat via
-`/skill-name`. Parsed by the skill registry, executable across any connected
-provider. Per-workspace, not global. Not locked into any single AI provider's
+Local skills live with the code: markdown files with frontmatter discovered
+from `<project-root>/.kay/skills/*.md` or
+`<project-root>/.claude/skills/<name>/SKILL.md` across every project of the
+workspace, registered per workspace. Invoke from chat via `/skill-name`.
+Parsed by the skill registry, executable across any connected provider.
+Per-workspace, not global. Not locked into any single AI provider's
 ecosystem.
 
 ### Editor integration

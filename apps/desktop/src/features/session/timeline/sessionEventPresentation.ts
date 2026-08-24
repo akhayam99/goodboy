@@ -1,4 +1,6 @@
 import {
+  FolderGit2,
+  FolderMinus,
   FolderPlus,
   GitBranch,
   GitMerge,
@@ -11,7 +13,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import type { SessionEvent, SessionEventKind, SessionEventPayload } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 
 export type SessionEventEmphasis = 'plain' | 'muted' | 'success';
 
@@ -31,6 +33,10 @@ const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
   workflow_restored: 'plain',
   workflow_deleted: 'muted',
   decisions_changed: 'muted',
+  project_materialized: 'plain',
+  project_materialization_refused: 'muted',
+  project_detached: 'muted',
+  external_task_created: 'plain',
 };
 
 export type SessionEventGlyph = {
@@ -40,7 +46,7 @@ export type SessionEventGlyph = {
 };
 
 const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
-  worktree_created: { icon: FolderPlus, tone: 'neutral', label: 'Worktree' },
+  worktree_created: { icon: FolderPlus, tone: 'neutral', label: 'Session folder' },
   branch_created: { icon: GitBranch, tone: 'info', label: 'Branch' },
   branch_switched: { icon: GitBranch, tone: 'info', label: 'Branch' },
   issue_linked: { icon: Link2, tone: 'neutral', label: 'Issue' },
@@ -54,26 +60,47 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   workflow_discarded: { icon: CONCEPT_ICONS.workflows, tone: 'neutral', label: 'Workflow' },
   workflow_restored: { icon: CONCEPT_ICONS.workflows, tone: 'accent', label: 'Workflow' },
   workflow_deleted: { icon: Trash2, tone: 'neutral', label: 'Workflow' },
-  decisions_changed: { icon: CONCEPT_ICONS.decisions, tone: 'neutral', label: 'Decisions' },
+  decisions_changed: { icon: CONCEPT_ICONS.context, tone: CONCEPT_TONE.context, label: 'Context' },
+  project_materialized: { icon: FolderGit2, tone: 'info', label: 'Project' },
+  project_materialization_refused: { icon: FolderGit2, tone: 'warning', label: 'Project' },
+  project_detached: { icon: FolderMinus, tone: 'neutral', label: 'Project' },
+  external_task_created: { icon: Link2, tone: 'neutral', label: 'Issue' },
 };
+
+type TimelineValueVariant = 'project' | 'branch' | 'path' | 'pull-request' | 'issue' | 'workflow';
+
+export type TimelineLabelSegment =
+  | { readonly kind: 'text'; readonly text: string }
+  | { readonly kind: 'value'; readonly text: string; readonly variant: TimelineValueVariant };
 
 type PayloadParams = {
   readonly payload: SessionEventPayload | null;
 };
 
-const issueLabel = ({ payload }: PayloadParams): string => {
+const issueSegments = ({ payload }: PayloadParams): ReadonlyArray<TimelineLabelSegment> => {
   const identifier = payload?.identifier ?? null;
   const title = payload?.title ?? null;
   if (identifier != null && title != null) {
-    return `${identifier}: ${title}`;
+    return [
+      { kind: 'value', text: identifier, variant: 'issue' },
+      { kind: 'text', text: `: ${title}` },
+    ];
   }
-  return identifier ?? title ?? 'an issue';
+  if (identifier != null) {
+    return [{ kind: 'value', text: identifier, variant: 'issue' }];
+  }
+  return [{ kind: 'text', text: title ?? 'an issue' }];
 };
 
-const prLabel = ({ payload }: PayloadParams): string =>
-  payload?.number == null ? 'Pull request' : `#${payload.number}`;
+const prSegment = ({ payload }: PayloadParams): TimelineLabelSegment =>
+  payload?.number == null
+    ? { kind: 'text', text: 'Pull request' }
+    : { kind: 'value', text: `#${payload.number}`, variant: 'pull-request' };
 
-const workflowLabel = ({ payload }: PayloadParams): string => payload?.workflowName ?? 'Workflow';
+const workflowSegment = ({ payload }: PayloadParams): TimelineLabelSegment =>
+  payload?.workflowName == null
+    ? { kind: 'text', text: 'Workflow' }
+    : { kind: 'value', text: payload.workflowName, variant: 'workflow' };
 
 const decisionCount = ({ count }: { readonly count: number }): string =>
   count === 1 ? '1 decision' : `${count} decisions`;
@@ -82,48 +109,131 @@ type TitleParams = {
   readonly event: SessionEvent;
 };
 
-export const sessionEventTitle = ({ event }: TitleParams): string => {
+export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<TimelineLabelSegment> => {
   const { payload } = event;
   switch (event.kind) {
     case 'worktree_created':
-      return payload?.worktreePath ?? 'Worktree created';
+      return payload?.worktreePath == null
+        ? [{ kind: 'text', text: 'Session folder created' }]
+        : [
+            { kind: 'text', text: 'Session folder created at ' },
+            { kind: 'value', text: payload.worktreePath, variant: 'path' },
+          ];
     case 'branch_created':
-      return payload?.branch == null ? 'Branch created' : `Branch created: ${payload.branch}`;
+      return payload?.branch == null
+        ? [{ kind: 'text', text: 'Branch created' }]
+        : [
+            { kind: 'text', text: 'Branch ' },
+            { kind: 'value', text: payload.branch, variant: 'branch' },
+            { kind: 'text', text: ' created' },
+          ];
     case 'branch_switched':
       return payload?.from == null || payload.to == null
-        ? 'Branch switched'
-        : `Branch switched: ${payload.from} → ${payload.to}`;
+        ? [{ kind: 'text', text: 'Branch switched' }]
+        : [
+            { kind: 'text', text: 'Branch ' },
+            { kind: 'value', text: payload.from, variant: 'branch' },
+            { kind: 'text', text: ' → ' },
+            { kind: 'value', text: payload.to, variant: 'branch' },
+          ];
     case 'issue_linked':
-      return `Linked ${issueLabel({ payload })}`;
+      return [{ kind: 'text', text: 'Linked ' }, ...issueSegments({ payload })];
     case 'issue_unlinked':
-      return `Unlinked ${issueLabel({ payload })}`;
+      return [{ kind: 'text', text: 'Unlinked ' }, ...issueSegments({ payload })];
     case 'pr_created':
       return payload?.title == null
-        ? `Opened ${prLabel({ payload })}`
-        : `Opened ${prLabel({ payload })}: ${payload.title}`;
+        ? [{ kind: 'text', text: 'Opened ' }, prSegment({ payload })]
+        : [
+            { kind: 'text', text: 'Opened ' },
+            prSegment({ payload }),
+            { kind: 'text', text: `: ${payload.title}` },
+          ];
     case 'pr_ready':
-      return `${prLabel({ payload })} ready for review`;
+      return [prSegment({ payload }), { kind: 'text', text: ' ready for review' }];
     case 'pr_approved':
-      return `${prLabel({ payload })} approved`;
+      return [prSegment({ payload }), { kind: 'text', text: ' approved' }];
     case 'pr_merged':
-      return `${prLabel({ payload })} merged`;
+      return [prSegment({ payload }), { kind: 'text', text: ' merged' }];
     case 'pr_closed':
-      return `${prLabel({ payload })} closed`;
+      return [prSegment({ payload }), { kind: 'text', text: ' closed' }];
     case 'workflow_started':
-      return `${workflowLabel({ payload })} started`;
+      return [workflowSegment({ payload }), { kind: 'text', text: ' started' }];
     case 'workflow_discarded':
-      return `${workflowLabel({ payload })} discarded`;
+      return [workflowSegment({ payload }), { kind: 'text', text: ' discarded' }];
     case 'workflow_restored':
-      return `${workflowLabel({ payload })} restored`;
+      return [workflowSegment({ payload }), { kind: 'text', text: ' restored' }];
     case 'workflow_deleted':
-      return `${workflowLabel({ payload })} deleted`;
+      return [workflowSegment({ payload }), { kind: 'text', text: ' deleted' }];
     case 'decisions_changed':
-      return `${decisionCount({ count: payload?.added ?? 0 })} added, ${payload?.removed ?? 0} removed`;
+      return [
+        {
+          kind: 'text',
+          text: `${decisionCount({ count: payload?.added ?? 0 })} added, ${payload?.removed ?? 0} removed`,
+        },
+      ];
+    case 'project_materialized': {
+      const branch = payload?.branch ?? '';
+      const onBranch: ReadonlyArray<TimelineLabelSegment> =
+        branch === ''
+          ? []
+          : [
+              { kind: 'text', text: ' on ' },
+              { kind: 'value', text: branch, variant: 'branch' },
+            ];
+      if (payload?.projectName == null) {
+        return [{ kind: 'text', text: 'Project mounted' }, ...onBranch];
+      }
+      return [
+        { kind: 'text', text: 'Mounted ' },
+        { kind: 'value', text: payload.projectName, variant: 'project' },
+        ...onBranch,
+      ];
+    }
+    case 'project_materialization_refused': {
+      const reason = payload?.reason ?? 'unknown failure';
+      if (payload?.projectName == null) {
+        return [{ kind: 'text', text: `Project mount refused: ${reason}` }];
+      }
+      return [
+        { kind: 'text', text: 'Mount refused for ' },
+        { kind: 'value', text: payload.projectName, variant: 'project' },
+        { kind: 'text', text: `: ${reason}` },
+      ];
+    }
+    case 'project_detached':
+      return payload?.projectName == null
+        ? [{ kind: 'text', text: 'Detached a project' }]
+        : [
+            { kind: 'text', text: 'Detached ' },
+            { kind: 'value', text: payload.projectName, variant: 'project' },
+          ];
+    case 'external_task_created':
+      return [{ kind: 'text', text: 'Created ' }, ...issueSegments({ payload })];
     default: {
       const exhaustive: never = event.kind;
       return exhaustive;
     }
   }
+};
+
+export const segmentsToText = ({
+  segments,
+}: {
+  readonly segments: ReadonlyArray<TimelineLabelSegment>;
+}): string => segments.map((segment) => segment.text).join('');
+
+export const sessionEventTitle = ({ event }: TitleParams): string =>
+  segmentsToText({ segments: sessionEventLabel({ event }) });
+
+export const sessionEventSecondary = ({ event }: TitleParams): string | null => {
+  const { payload } = event;
+  if (event.kind === 'project_detached') {
+    if (payload?.kept !== true) {
+      return null;
+    }
+    return payload.reason ?? 'worktree kept on disk';
+  }
+  return null;
 };
 
 type KindParams = {

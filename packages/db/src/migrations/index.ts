@@ -114,6 +114,24 @@ import { m113WorkflowRunRoleModels } from './m113-workflow-run-role-models';
 import { m114IntegrationCredentials } from './m114-integration-credentials';
 import { m115SessionEvents } from './m115-session-events';
 import { m116SessionEventWorkflowRestored } from './m116-session-event-workflow-restored';
+import { m117RenameProjects } from './m117-rename-projects';
+import { m118WorkspaceContainers } from './m118-workspace-containers';
+import { m119ProjectSessionRelations } from './m119-project-session-relations';
+import { m120WorkspaceProfiles } from './m120-workspace-profiles';
+import { m121ProjectSessionMounts } from './m121-project-session-mounts';
+import { m122RuntimeDeadWeight } from './m122-runtime-dead-weight';
+import { m123StorageCleanup } from './m123-storage-cleanup';
+import { m124TombstoneGc } from './m124-tombstone-gc';
+import { m125NormalizeTimestamps } from './m125-normalize-timestamps';
+import { m126UnconstrainProviderColumns } from './m126-unconstrain-provider-columns';
+import { m127AddWorkflowReferenceForeignKeys } from './m127-add-workflow-reference-foreign-keys';
+import { m128NormalizeGoalAttachmentOwners } from './m128-normalize-goal-attachment-owners';
+import { m129ImpactQueryIndexes } from './m129-impact-query-indexes';
+import { m130SessionEventLazyProjects } from './m130-session-event-lazy-projects';
+import { m131IntegrationBindings } from './m131-integration-bindings';
+import { m132WorkspaceProfileBio } from './m132-workspace-profile-bio';
+import { m133SessionEventProjectDetached } from './m133-session-event-project-detached';
+import { m134SessionActiveProjects } from './m134-session-active-projects';
 
 export type Migration = {
   readonly version: number;
@@ -237,4 +255,22 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 114, sql: m114IntegrationCredentials },
   { version: 115, sql: m115SessionEvents },
   { version: 116, sql: m116SessionEventWorkflowRestored },
+  { version: 117, sql: m117RenameProjects },
+  { version: 118, sql: m118WorkspaceContainers },
+  { version: 119, sql: m119ProjectSessionRelations },
+  { version: 120, sql: m120WorkspaceProfiles },
+  { version: 121, sql: m121ProjectSessionMounts },
+  { version: 122, sql: m122RuntimeDeadWeight },
+  { version: 123, sql: m123StorageCleanup },
+  { version: 124, sql: m124TombstoneGc },
+  { version: 125, sql: m125NormalizeTimestamps },
+  { version: 126, sql: m126UnconstrainProviderColumns },
+  { version: 127, sql: m127AddWorkflowReferenceForeignKeys },
+  { version: 128, sql: m128NormalizeGoalAttachmentOwners },
+  { version: 129, sql: m129ImpactQueryIndexes },
+  { version: 130, sql: m130SessionEventLazyProjects },
+  { version: 131, sql: m131IntegrationBindings },
+  { version: 132, sql: m132WorkspaceProfileBio },
+  { version: 133, sql: m133SessionEventProjectDetached },
+  { version: 134, sql: m134SessionActiveProjects },
 ];

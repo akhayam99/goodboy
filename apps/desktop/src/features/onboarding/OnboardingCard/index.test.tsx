@@ -11,13 +11,13 @@ const { finishMock, progress } = vi.hoisted(() => ({
     collapsed: true,
     finished: false,
     isDone: false,
-    isSimple: false,
+    hasProjects: true,
   },
 }));
 
 vi.mock('../onboarding-store', () => ({
   OPEN_WIZARD_EVENT: 'goodboy:open-onboarding-wizard',
-  visibleOnboardingSteps: () => [
+  ONBOARDING_STEPS: [
     { id: 'workspace', title: 'Workspace', why: 'Workspace', group: 'setup' },
     { id: 'session', title: 'Session', why: 'Session', group: 'build' },
   ],

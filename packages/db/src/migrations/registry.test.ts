@@ -39,7 +39,12 @@ const sampleIntermediateCounts = ({
   for (let count = offset; count <= highest; count += step) {
     sampled.add(count);
   }
-  return [...sampled].sort((a, b) => a - b);
+  const ordered = [...sampled].sort((a, b) => a - b);
+  if (ordered.length <= sampleSize + 1) {
+    return ordered;
+  }
+  const withoutHighest = ordered.filter((count) => count !== highest);
+  return [...withoutHighest.slice(0, sampleSize), highest];
 };
 
 const schemaOf = async (db: Database): Promise<ReadonlyArray<string>> => {
@@ -168,6 +173,24 @@ const SHIPPED_MIGRATION_SQL_SHA256: Readonly<Record<number, string>> = {
   114: '86327dd8477a5794fb649f7d1f8942968d3b79bc460b18a06488f2d1cbd8338f',
   115: '90bfd30d51404a38c56b621fc469b391b8681cee11af5e0d1d215da9fcc1e953',
   116: '6a646ecfa328bd0da37ad9efe6f7b89c8cd948dd408c745e87437ebf1f864da5',
+  117: 'f0e73d09d334350250486de1af1f3a3dc4881db65c89228e275997a1c7c12d3a',
+  118: 'c5c3eb1e5c946cf72d1f8b50074ba7e6922bce1ed515f0b01d43e5a2fc313a71',
+  119: '7b83931a874181712d6b1df29ce0f39b6655f4e859a0473c42666debf593dce5',
+  120: '2d6b79811adaf0e97c6d3797aa430f49031d3b0679e1fdc6a44d3f645a3a0c19',
+  121: 'd96321d54ed0fa1e644f35a97381268785b85618c9a357c164dfac8429bb2c09',
+  122: '69fca7d61d59f9842c23978761adc923b907fd48fa5fa5b3d9a37537cc742871',
+  123: '9d11f84c0d1dcc352c226997006c3ac69b27cdf2cb08ef8ef5dd0a7f98140c7b',
+  124: 'c78a36f3d919f9ca472e1a9f93288cb669d742943fb1ba687d4d3ccb51b87627',
+  125: '9e08a8666c20e7b41cb7a44b407e1de13946fa06b3bae70711a6a7806379f727',
+  126: 'a2f12b88bbf1dcebf1cf0a57a02dbe26b0f09e940399e605514042231498c366',
+  127: 'f0e8f2634dccf8cbb135c1c28821e9b8a0a11007d6208dc6f5c59e48f8bc37eb',
+  128: 'fd398e0897445a5cb070d8ad6c089b9c32e9fa82bb856df6d9bf620512b1d2da',
+  129: '3a9e93fedf88f8b40f2ee1513a401a1c2b718ca1b55d1107003b3c709ae3ef05',
+  130: '66629d1980fc6805a7eff27156135d9152727379ccd47ba03c432ea69aa55291',
+  131: '392e9d2788178db4807b5a99d10e692ade6db4fda231ab7f77daf3a94028332f',
+  132: 'af62afc7388a7d776371404c5048601e1da3f8008d222e2847ebe78499705cbe',
+  133: '0d86d7a5ff20749453c04fc330de5f30014f382feaa9df5e2c436e12c2dd1975',
+  134: '7f9c9b1aa884f3e0abfd22f3a75e06bb37349c98c39fb2f0d30be78fe88f98f0',
 };
 
 const MIN_CONVERGENCE_SAMPLE_POINTS = 10;

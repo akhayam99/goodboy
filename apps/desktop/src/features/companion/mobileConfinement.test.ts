@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import type { PullRequestState, SessionId, WorkflowId, WorkspaceId } from '@goodboy/types';
+import type {
+  ProjectId,
+  PullRequestState,
+  SessionId,
+  WorkflowId,
+  WorkspaceId,
+} from '@goodboy/types';
 import {
   clearMobileCreateRateState,
   clearMobileSharedSessions,
@@ -133,6 +139,11 @@ describe('evaluateMobileCreateSession', () => {
   // (workspaceId/provider) are tested against THESE, never trusted directly.
   const workspaces = [{ id: 'w1' as WorkspaceId }, { id: 'w2' as WorkspaceId }];
   const linearOnW1 = [{ provider: 'linear' as const }];
+  const oneProject = [{ id: 'p-api' as ProjectId, name: 'api' }];
+  const twoProjects = [
+    { id: 'p-api' as ProjectId, name: 'api' },
+    { id: 'p-web' as ProjectId, name: 'web' },
+  ];
 
   afterEach(() => clearMobileCreateRateState());
 
@@ -141,12 +152,105 @@ describe('evaluateMobileCreateSession', () => {
       workspaceId: 'w1',
       provider: 'linear',
       workspaces,
+      projects: oneProject,
       integrations: linearOnW1,
     });
     expect(gate.ok).toBe(true);
     if (gate.ok) {
       expect(gate.workspaceId).toBe('w1');
       expect(gate.provider).toBe('linear');
+      expect(gate.projectId).toBe('p-api');
+    }
+  });
+
+  it('returns the requested project when it belongs to the workspace', () => {
+    const gate = evaluateMobileCreateSession({
+      workspaceId: 'w1',
+      provider: 'linear',
+      projectId: 'p-web',
+      workspaces,
+      projects: twoProjects,
+      integrations: linearOnW1,
+    });
+    expect(gate.ok).toBe(true);
+    if (gate.ok) expect(gate.projectId).toBe('p-web');
+  });
+
+  it('refuses a project id the workspace does not hold', () => {
+    const gate = evaluateMobileCreateSession({
+      workspaceId: 'w1',
+      provider: 'linear',
+      projectId: 'p-evil',
+      workspaces,
+      projects: twoProjects,
+      integrations: linearOnW1,
+    });
+    expect(gate.ok).toBe(false);
+    if (!gate.ok) expect(gate.reason).toMatch(/unknown project for this workspace: p-evil/i);
+  });
+
+  it('refuses several projects with no pick, naming the choice and listing the options', () => {
+    const gate = evaluateMobileCreateSession({
+      workspaceId: 'w1',
+      provider: 'linear',
+      workspaces,
+      projects: twoProjects,
+      integrations: linearOnW1,
+    });
+    expect(gate.ok).toBe(false);
+    if (!gate.ok) {
+      expect(gate.reason).toMatch(/several projects/i);
+      expect(gate.reason).toMatch(/projectId/);
+      expect(gate.reason).toContain('api (p-api)');
+      expect(gate.reason).toContain('web (p-web)');
+    }
+  });
+
+  it('refuses a workspace with no project at all', () => {
+    const gate = evaluateMobileCreateSession({
+      workspaceId: 'w1',
+      provider: 'linear',
+      workspaces,
+      projects: [],
+      integrations: linearOnW1,
+    });
+    expect(gate.ok).toBe(false);
+    if (!gate.ok) expect(gate.reason).toMatch(/no project/i);
+  });
+
+  it('never burns a rate slot on a project refusal', () => {
+    for (let i = 0; i < 5; i += 1) {
+      const refused = evaluateMobileCreateSession({
+        workspaceId: 'w1',
+        provider: 'linear',
+        workspaces,
+        projects: twoProjects,
+        integrations: linearOnW1,
+        now: 5_000,
+      });
+      expect(refused.ok).toBe(false);
+    }
+    const unknown = evaluateMobileCreateSession({
+      workspaceId: 'w1',
+      provider: 'linear',
+      projectId: 'p-evil',
+      workspaces,
+      projects: twoProjects,
+      integrations: linearOnW1,
+      now: 5_000,
+    });
+    expect(unknown.ok).toBe(false);
+    for (let i = 0; i < 5; i += 1) {
+      const next = evaluateMobileCreateSession({
+        workspaceId: 'w1',
+        provider: 'linear',
+        workspaces,
+        projects: oneProject,
+        integrations: linearOnW1,
+        now: 5_000,
+      });
+      expect(next.ok).toBe(true);
+      if (next.ok) next.reservation.commit(5_000);
     }
   });
 
@@ -155,6 +259,7 @@ describe('evaluateMobileCreateSession', () => {
       workspaceId: undefined,
       provider: 'linear',
       workspaces,
+      projects: oneProject,
       integrations: linearOnW1,
     });
     expect(gate.ok).toBe(false);
@@ -166,6 +271,7 @@ describe('evaluateMobileCreateSession', () => {
       workspaceId: 'w1',
       provider: 'github',
       workspaces,
+      projects: oneProject,
       integrations: linearOnW1,
     });
     expect(gate.ok).toBe(false);
@@ -177,7 +283,8 @@ describe('evaluateMobileCreateSession', () => {
     const gate = evaluateMobileCreateSession({
       workspaceId: 'w-evil',
       provider: 'linear',
-      workspaces, // only w1, w2 are real
+      workspaces,
+      projects: oneProject,
       integrations: linearOnW1,
     });
     expect(gate.ok).toBe(false);
@@ -191,6 +298,7 @@ describe('evaluateMobileCreateSession', () => {
       workspaceId: 'w1',
       provider: 'sentry', // only linear is connected on w1
       workspaces,
+      projects: oneProject,
       integrations: linearOnW1,
     });
     expect(gate.ok).toBe(false);
@@ -205,6 +313,7 @@ describe('evaluateMobileCreateSession', () => {
       workspaceId: 'w1',
       provider: 'jira',
       workspaces,
+      projects: oneProject,
       integrations: [{ provider: 'jira' as const }],
     });
     expect(gate.ok).toBe(true);
@@ -221,6 +330,7 @@ describe('evaluateMobileCreateSession', () => {
       workspaceId: 'w1',
       provider: 'jira',
       workspaces,
+      projects: oneProject,
       integrations: linearOnW1, // only linear connected on w1
     });
     expect(gate.ok).toBe(false);
@@ -235,6 +345,7 @@ describe('evaluateMobileCreateSession', () => {
         workspaceId: 'w1',
         provider,
         workspaces,
+        projects: oneProject,
         integrations: [{ provider: provider as never }],
       });
       expect(gate.ok).toBe(false);
@@ -248,6 +359,7 @@ describe('evaluateMobileCreateSession', () => {
       workspaceId: 'w2',
       provider: 'linear',
       workspaces,
+      projects: oneProject,
       integrations: [], // w2 has nothing wired up
     });
     expect(gate.ok).toBe(false);
@@ -260,6 +372,7 @@ describe('evaluateMobileCreateSession', () => {
         workspaceId: 'w1',
         provider: 'linear',
         workspaces,
+        projects: oneProject,
         integrations: linearOnW1,
         now: 1_000,
       });
@@ -276,6 +389,7 @@ describe('evaluateMobileCreateSession', () => {
       workspaceId: 'w1',
       provider: 'linear',
       workspaces,
+      projects: oneProject,
       integrations: linearOnW1,
       now: 1_000,
     });
@@ -287,6 +401,7 @@ describe('evaluateMobileCreateSession', () => {
       workspaceId: 'w1',
       provider: 'linear',
       workspaces,
+      projects: oneProject,
       integrations: linearOnW1,
       now: 1_000 + 61_000,
     });
@@ -302,6 +417,7 @@ describe('evaluateMobileCreateSession', () => {
         workspaceId: 'w1',
         provider: 'linear',
         workspaces,
+        projects: oneProject,
         integrations: linearOnW1,
         now: 2_000,
       });
@@ -331,6 +447,7 @@ describe('evaluateMobileCreateSession', () => {
       workspaceId: 'w1',
       provider: 'linear',
       workspaces,
+      projects: oneProject,
       integrations: linearOnW1,
       now: 3_000,
     });
@@ -345,6 +462,7 @@ describe('evaluateMobileCreateSession', () => {
         workspaceId: 'w1',
         provider: 'linear',
         workspaces,
+        projects: oneProject,
         integrations: linearOnW1,
         now: 3_000,
       });

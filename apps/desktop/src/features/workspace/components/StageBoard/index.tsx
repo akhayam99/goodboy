@@ -11,7 +11,9 @@ import { DeleteSessionConfirm } from '../../../session/components/DeleteSessionC
 import { WorkspaceGitPanel } from '../WorkspaceGitPanel';
 import { BulkActionBar } from '../BulkActionBar';
 import { useWorkspaceGitStatus } from '../../hooks/useWorkspaceGitStatus';
+import { primaryProjectRoot } from '../../primaryProjectRoot';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
+import { ProjectsStep } from '../../../onboarding/OnboardingWizard/steps/ProjectsStep';
 import { StageColumn } from './StageColumn';
 import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
@@ -58,17 +60,21 @@ const BoardSkeleton = () => (
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly sessions: ReadonlyArray<Session>;
-  readonly onCreateSession: () => void;
 };
 
-export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) => {
+export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const groups = useStageGroupedSessions(workspaceId, sessions);
   const nav = useBoardNavigation();
-  const archived = useAppStore((s) => s.archivedSessions[workspaceId] ?? EMPTY_ARRAY);
+  const archivedList = useAppStore((s) => s.archivedSessions[workspaceId]);
+  const archived = archivedList ?? EMPTY_ARRAY;
   const boardReady = useAppStore((s) => s.boardReady);
   const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
-  const rootPath = useAppStore(
-    (s) => s.workspaces.find((candidate) => candidate.id === workspaceId)?.rootPath ?? null,
+  const rootPath = useAppStore((s) => primaryProjectRoot({ projects: s.projects, workspaceId }));
+  const workspace = useAppStore(
+    (s) => s.workspaces.find((candidate) => candidate.id === workspaceId) ?? null,
+  );
+  const hasProjects = useAppStore((s) =>
+    s.projects.some((project) => project.workspaceId === workspaceId),
   );
   const gitStatus = useWorkspaceGitStatus({ workspaceId });
   const [confirm, setConfirm] = useState<Confirm | null>(null);
@@ -109,16 +115,19 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
   );
   const lasso = useDragLasso<SessionId>({ containerRef: columnsRef, onSelect: onLassoSelect });
 
-  const empty = sessions.length === 0;
+  const empty = sessions.length === 0 && archived.length === 0;
+  const pending = !boardReady || (sessions.length === 0 && archivedList === undefined);
   const gitReady = gitStatus === null || gitStatus.state === 'ready';
-  const blockedReason =
-    gitStatus?.state === 'missing'
+  const showGitPanel = rootPath != null && gitStatus !== null && (!gitReady || !empty);
+  const blockedReason = !hasProjects
+    ? 'Link a project first'
+    : gitStatus?.state === 'missing'
       ? 'The project folder is unreachable'
       : 'This project needs a git repository with one commit first';
 
   return (
     <div className={cn('flex h-full w-full flex-col gap-4', PANE_RHYTHM.board.pad)}>
-      {rootPath != null && gitStatus !== null && (
+      {showGitPanel && rootPath != null && gitStatus !== null && (
         <>
           <div className="shrink-0">
             <WorkspaceGitPanel rootPath={rootPath} status={gitStatus} />
@@ -127,7 +136,7 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
         </>
       )}
 
-      {!boardReady || !empty ? (
+      {pending || !empty ? (
         <>
           <div className="flex shrink-0 items-center justify-between gap-4">
             <span className="flex items-baseline gap-2">
@@ -141,30 +150,59 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
                 </span>
               )}
             </span>
-            <Button
-              size="sm"
-              onClick={onCreateSession}
-              disabled={!gitReady}
-              title={gitReady ? undefined : blockedReason}
-            >
-              <Plus size={14} aria-hidden />
-              New session
-            </Button>
+            <span className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent('goodboy:open-workspace-settings', {
+                      detail: { section: 'projects' },
+                    }),
+                  )
+                }
+                title="Manage the projects linked to this workspace"
+                className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+              >
+                + Add project
+              </button>
+              <Button
+                size="sm"
+                onClick={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}
+                disabled={!gitReady || !hasProjects}
+                title={gitReady && hasProjects ? undefined : blockedReason}
+              >
+                <Plus size={14} aria-hidden />
+                New session
+              </Button>
+            </span>
           </div>
           <Divider />
         </>
       ) : null}
 
-      {!boardReady && <BoardSkeleton />}
+      <div className="mx-auto w-full max-w-md shrink-0 empty:hidden"></div>
 
-      {boardReady && empty && gitReady && (
+      {pending && <BoardSkeleton />}
+
+      {!pending && empty && !hasProjects && workspace !== null && (
+        <div className="flex flex-1 items-center justify-center overflow-y-auto">
+          <div className="w-full max-w-xl py-6">
+            <ProjectsStep workspace={workspace} />
+          </div>
+        </div>
+      )}
+
+      {!pending && hasProjects && empty && gitReady && (
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
             illustration={<DogMascot size={72} className="text-primary" />}
             title="Start your first session"
-            description="Describe an outcome. An agent picks it up in its own worktree and branch; your main checkout stays untouched."
+            description="Describe an outcome; an agent picks it up in its own worktree and branch."
             action={
-              <Button size="md" onClick={onCreateSession}>
+              <Button
+                size="md"
+                onClick={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}
+              >
                 <Plus size={16} aria-hidden />
                 New session
               </Button>
@@ -176,7 +214,7 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
         </div>
       )}
 
-      {boardReady && !empty && (
+      {!pending && !empty && (
         <div className="flex min-h-0 flex-1 overflow-x-auto">
           <div
             ref={columnsRef}

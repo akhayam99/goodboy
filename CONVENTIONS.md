@@ -2,7 +2,7 @@
 
 > **Read this when** you need monorepo-wide process rules: pnpm, git workflow, commits, CI. **Not for** package-specific rules (that workspace's own `CONVENTIONS.md`) or the code working-memory floor (`AGENTS.md`).
 
-Foundational rules for the Goodboy monorepo. Each workspace has its own `CONVENTIONS.md` for stack-specific rules.
+Foundational rules for the Goodboy monorepo. Each workspace has its own `CONVENTIONS.md` for stack-specific rules. In this file, "workspace" means a pnpm workspace, never the Goodboy container.
 
 ## Monorepo structure
 
@@ -30,7 +30,7 @@ documentation. Product copy follows the separate rule in
 ### Branches
 
 - `main` is protected. No direct push. PR required.
-- Branch naming: `<user>/<type>-<kebab-description>`, e.g. `ak/feat-integrations-lens`, `ak/chore-release-v0.1.31`. Never the worktree codename.
+- Branch naming: `<user>/<type>-<kebab-description>`, e.g. `ak/feat-integration-bindings`, `ak/chore-release-v0.1.31`. Never the worktree codename.
 - One concern per branch. Split if mixed.
 
 ### Conventional commits

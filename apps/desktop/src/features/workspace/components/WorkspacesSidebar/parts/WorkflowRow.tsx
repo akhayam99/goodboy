@@ -144,6 +144,8 @@ export const WorkflowRow = ({
   recoverStuckStep,
 }: Props) => {
   const roleModels = useSessionRoleModels({ sessionId: task.id });
+  const sessionProvider = task.providerPreference?.defaultProvider ?? null;
+  const sessionEffort = task.effort ?? null;
   const isOrchestrating = useAppStore((s) => s.orchestratingWorkflowRuns?.[run.id] ?? false);
   const restoreWorkflow = useAppStore((s) => s.restoreWorkflow);
   const stopWorkflowRunNow = useAppStore((s) => s.stopWorkflowRunNow);
@@ -428,6 +430,8 @@ export const WorkflowRow = ({
                 agentModel={ctaRouting.agentModel}
                 agentProvider={ctaRouting.agentProvider}
                 agentEffort={ctaRouting.agentEffort}
+                sessionProvider={sessionProvider}
+                sessionEffort={sessionEffort}
                 blockReason={wfBlockReason}
                 onAdvance={({ step, isConfirmed }) => {
                   const pending = wfAgents.find(
@@ -475,6 +479,8 @@ export const WorkflowRow = ({
                   agentModelOverride={agentModelOverride}
                   agentProviderOverride={agentProviderOverride}
                   roleModels={roleModels}
+                  sessionProvider={sessionProvider}
+                  sessionEffort={sessionEffort}
                   selectedAgentId={selectedAgentId}
                   onSelect={onPickAgent}
                 />
@@ -491,6 +497,8 @@ export const WorkflowRow = ({
                       roleModels,
                       agentModel: agentModelOverride[run.id] ?? run.modelOverride,
                       agentProvider: agentProviderOverride[run.id] ?? run.providerOverride,
+                      sessionProvider,
+                      sessionEffort,
                     });
                     const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
                     const clustersExpanded = clusterExpand.get(run.id) ?? false;

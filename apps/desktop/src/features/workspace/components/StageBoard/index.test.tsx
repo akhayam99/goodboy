@@ -10,6 +10,12 @@ const { state, gitStatus, groups } = vi.hoisted(() => ({
     archivedSessions: {} as Record<string, ReadonlyArray<Session>>,
     loadArchivedSessions: vi.fn(),
     workspaces: [] as ReadonlyArray<Workspace>,
+    projects: [] as ReadonlyArray<{
+      id: string;
+      workspaceId: string;
+      kind: string;
+      rootPath: string;
+    }>,
     bulkUnarchiveTask: vi.fn(async () => undefined),
   },
   gitStatus: { current: null as WorkspaceGitStatus | null },
@@ -24,6 +30,12 @@ vi.mock('../../../../store', () => ({
 
 vi.mock('../../hooks/useWorkspaceGitStatus', () => ({
   useWorkspaceGitStatus: () => gitStatus.current,
+}));
+
+vi.mock('../../../onboarding/OnboardingWizard/steps/ProjectsStep', () => ({
+  ProjectsStep: ({ workspace }: { workspace: Workspace }) => (
+    <div data-testid="projects-step">{workspace.name}</div>
+  ),
 }));
 
 vi.mock('../WorkspaceGitPanel', () => ({
@@ -75,9 +87,13 @@ import { StageBoard } from './index';
 
 const session = { id: 's-1' } as Session;
 const wsId = 'ws-a' as WorkspaceId;
-const onCreate = vi.fn();
 
-const workspace = { id: wsId, kind: 'repo', rootPath: '/tmp/fresh-idea' } as Workspace;
+const workspace = {
+  id: wsId,
+  name: 'fresh-idea',
+  slug: 'fresh-idea',
+  sessionsRoot: '/tmp/fresh-idea',
+} as Workspace;
 
 const boxOf = (left: number, top: number, width: number, height: number) =>
   ({
@@ -103,9 +119,10 @@ const statusOf = (state: WorkspaceGitStatus['state']): WorkspaceGitStatus => ({
 
 beforeEach(() => {
   state.boardReady = true;
-  state.archivedSessions = {};
+  state.archivedSessions = { [wsId]: [] };
   state.loadArchivedSessions = vi.fn();
   state.workspaces = [workspace];
+  state.projects = [{ id: 'proj-1', workspaceId: wsId, kind: 'repo', rootPath: '/tmp/fresh-idea' }];
   gitStatus.current = null;
   groups.current = [];
 });
@@ -114,14 +131,14 @@ afterEach(cleanup);
 describe('StageBoard loading gate', () => {
   it('shows the skeleton board while boardReady is false, hiding columns and empty state', () => {
     state.boardReady = false;
-    render(<StageBoard workspaceId={wsId} sessions={[session]} onCreateSession={onCreate} />);
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
     expect(screen.getByLabelText('Loading board')).toBeDefined();
     expect(screen.queryByTestId('stage-column')).toBeNull();
     expect(screen.queryByText('Start your first session')).toBeNull();
   });
 
   it('renders the empty state once ready with no sessions', () => {
-    render(<StageBoard workspaceId={wsId} sessions={[]} onCreateSession={onCreate} />);
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.queryByLabelText('Loading board')).toBeNull();
     expect(screen.getByText('Start your first session')).toBeDefined();
     expect(screen.queryByText('Stage board')).toBeNull();
@@ -129,18 +146,69 @@ describe('StageBoard loading gate', () => {
   });
 
   it('renders stage columns once ready with sessions', () => {
-    render(<StageBoard workspaceId={wsId} sessions={[session]} onCreateSession={onCreate} />);
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
     expect(screen.queryByLabelText('Loading board')).toBeNull();
     expect(screen.getAllByTestId('stage-column').length).toBeGreaterThan(0);
     expect(screen.getByText('Stage board')).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
+  });
+
+  it('renders the board with the archived column instead of the hero when only archived sessions exist', () => {
+    const shelved = { id: 's-9' } as Session;
+    state.archivedSessions = { [wsId]: [shelved] };
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.queryByText('Start your first session')).toBeNull();
+    expect(screen.getByText('Stage board')).toBeDefined();
+    const columns = screen.getAllByTestId('stage-column');
+    expect(columns.some((column) => column.textContent?.includes('archived'))).toBe(true);
+    expect(screen.getByRole('button', { name: 'card s-9' })).toBeDefined();
+  });
+
+  it('holds the skeleton instead of the hero while the archived list is still unknown', () => {
+    state.archivedSessions = {};
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.getByLabelText('Loading board')).toBeDefined();
+    expect(screen.queryByText('Start your first session')).toBeNull();
+  });
+});
+
+describe('StageBoard empty-projects gate', () => {
+  it('leads with the add-projects surface instead of session creation when no project exists', () => {
+    state.projects = [];
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.getByTestId('projects-step').textContent).toBe('fresh-idea');
+    expect(screen.queryByText('Start your first session')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'New session' })).toBeNull();
+  });
+
+  it('disables New session with the reason while sessions exist but no project does', () => {
+    state.projects = [];
+    groups.current = [{ key: 'building', sessions: [session] }];
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
+    const button = screen.getByRole('button', { name: 'New session' });
+    expect(button.hasAttribute('disabled')).toBe(true);
+    expect(button.getAttribute('title')).toBe('Link a project first');
+    expect(screen.queryByTestId('projects-step')).toBeNull();
+  });
+
+  it('flips back to the session-first empty state once a project lands', () => {
+    state.projects = [];
+    const { rerender } = render(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.getByTestId('projects-step')).toBeDefined();
+
+    state.projects = [
+      { id: 'proj-1', workspaceId: wsId, kind: 'repo', rootPath: '/tmp/fresh-idea' },
+    ];
+    rerender(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.queryByTestId('projects-step')).toBeNull();
+    expect(screen.getByText('Start your first session')).toBeDefined();
   });
 });
 
 describe('StageBoard git gate', () => {
   it('replaces the start-a-session invitation with the git panel when there is no repository', () => {
     gitStatus.current = statusOf('absent');
-    render(<StageBoard workspaceId={wsId} sessions={[]} onCreateSession={onCreate} />);
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.getByTestId('git-panel').textContent).toBe('absent');
     expect(screen.queryByText('Start your first session')).toBeNull();
     expect(screen.queryByRole('button', { name: 'New session' })).toBeNull();
@@ -148,7 +216,7 @@ describe('StageBoard git gate', () => {
 
   it('offers New session as unavailable rather than failing when a repository is missing', () => {
     gitStatus.current = statusOf('unborn');
-    render(<StageBoard workspaceId={wsId} sessions={[session]} onCreateSession={onCreate} />);
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
     const button = screen.getByRole('button', { name: 'New session' });
     expect(button.hasAttribute('disabled')).toBe(true);
     expect(button.getAttribute('title')).toBe(
@@ -158,7 +226,7 @@ describe('StageBoard git gate', () => {
 
   it('leaves the board alone once the repository is ready', () => {
     gitStatus.current = statusOf('ready');
-    render(<StageBoard workspaceId={wsId} sessions={[session]} onCreateSession={onCreate} />);
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
     expect(screen.getByTestId('git-panel').textContent).toBe('ready');
     expect(screen.getByRole('button', { name: 'New session' }).hasAttribute('disabled')).toBe(
       false,
@@ -167,7 +235,7 @@ describe('StageBoard git gate', () => {
 
   it('shows no git surface and no gate when the workspace reports no git state', () => {
     gitStatus.current = null;
-    render(<StageBoard workspaceId={wsId} sessions={[]} onCreateSession={onCreate} />);
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.queryByTestId('git-panel')).toBeNull();
     expect(screen.getByText('Start your first session')).toBeDefined();
     expect(screen.getByRole('button', { name: 'New session' }).hasAttribute('disabled')).toBe(
@@ -176,26 +244,48 @@ describe('StageBoard git gate', () => {
   });
 });
 
+describe('StageBoard instant create', () => {
+  it('dispatches the new-session event from the board header button', () => {
+    const listener = vi.fn();
+    window.addEventListener('goodboy:new-session', listener);
+    groups.current = [{ key: 'building', sessions: [session] }];
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'New session' }));
+
+    expect(listener).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('textbox')).toBeNull();
+    window.removeEventListener('goodboy:new-session', listener);
+  });
+
+  it('dispatches the new-session event from the empty-board button', () => {
+    const listener = vi.fn();
+    window.addEventListener('goodboy:new-session', listener);
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'New session' }));
+
+    expect(listener).toHaveBeenCalledOnce();
+    window.removeEventListener('goodboy:new-session', listener);
+  });
+});
+
 describe('StageBoard selection', () => {
   const other = { id: 's-2' } as Session;
   const shelved = { id: 's-9' } as Session;
 
   it('offers the alt-click hint only once the board holds more than one session', () => {
-    render(<StageBoard workspaceId={wsId} sessions={[session]} onCreateSession={onCreate} />);
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
     expect(screen.queryByText(/lasso/)).toBeNull();
 
     cleanup();
-    render(
-      <StageBoard workspaceId={wsId} sessions={[session, other]} onCreateSession={onCreate} />,
-    );
+    render(<StageBoard workspaceId={wsId} sessions={[session, other]} />);
     expect(screen.getByText('⌥click to select · drag to lasso')).toBeDefined();
   });
 
   it('raises a single bulk bar for the whole board, not one per column', () => {
     groups.current = [{ key: 'building', sessions: [session, other] }];
-    render(
-      <StageBoard workspaceId={wsId} sessions={[session, other]} onCreateSession={onCreate} />,
-    );
+    render(<StageBoard workspaceId={wsId} sessions={[session, other]} />);
     expect(screen.queryByText(/selected/)).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'card s-1' }), { altKey: true });
@@ -215,9 +305,7 @@ describe('StageBoard selection', () => {
       { key: 'building', sessions: [session] },
       { key: 'review', sessions: [other] },
     ];
-    render(
-      <StageBoard workspaceId={wsId} sessions={[session, other]} onCreateSession={onCreate} />,
-    );
+    render(<StageBoard workspaceId={wsId} sessions={[session, other]} />);
 
     const cardA = screen.getByRole('button', { name: 'card s-1' });
     const cardB = screen.getByRole('button', { name: 'card s-2' });
@@ -250,9 +338,7 @@ describe('StageBoard selection', () => {
     });
     vi.stubGlobal('cancelAnimationFrame', () => undefined);
     groups.current = [{ key: 'building', sessions: [session, other] }];
-    render(
-      <StageBoard workspaceId={wsId} sessions={[session, other]} onCreateSession={onCreate} />,
-    );
+    render(<StageBoard workspaceId={wsId} sessions={[session, other]} />);
 
     const cardA = screen.getByRole('button', { name: 'card s-1' });
     const columns = cardA.closest('[data-testid="stage-column"]')?.parentElement as HTMLElement;
@@ -273,7 +359,7 @@ describe('StageBoard selection', () => {
   it('never mixes the archived scope with the active one', () => {
     groups.current = [{ key: 'building', sessions: [session] }];
     state.archivedSessions = { [wsId]: [shelved] };
-    render(<StageBoard workspaceId={wsId} sessions={[session]} onCreateSession={onCreate} />);
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'card s-1' }), { altKey: true });
     fireEvent.click(screen.getByRole('button', { name: 'card s-9' }), { altKey: true });
@@ -294,9 +380,7 @@ describe('StageBoard selection', () => {
       { key: 'review', sessions: [other] },
     ];
     state.archivedSessions = { [wsId]: [shelved] };
-    render(
-      <StageBoard workspaceId={wsId} sessions={[session, other]} onCreateSession={onCreate} />,
-    );
+    render(<StageBoard workspaceId={wsId} sessions={[session, other]} />);
 
     const cardA = screen.getByRole('button', { name: 'card s-1' });
     const cardB = screen.getByRole('button', { name: 'card s-2' });

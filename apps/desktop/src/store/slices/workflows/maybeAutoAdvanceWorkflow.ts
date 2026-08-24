@@ -1,4 +1,4 @@
-import type { SessionId, WorkflowRunId } from '@goodboy/types';
+import type { Agent, SessionId, WorkflowRunId } from '@goodboy/types';
 import { listOpenQuestionsForSession } from '@goodboy/db';
 import {
   classifyWorkflowChain,
@@ -16,9 +16,13 @@ import {
 } from './budgetBlock';
 import { persistOrchestrationStop } from './orchestrateNextStep';
 import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
+import { resumeClusterChildren, unsettledClusterChildren } from './clusterImplementation';
 import type { GetFn, SetFn } from './types';
 
 const advanceInFlight = new Set<SessionId>();
+
+const isSettled = (agent: Agent): boolean =>
+  agent.status === 'completed' || agent.status === 'skipped';
 
 type Params = {
   readonly set: SetFn;
@@ -109,6 +113,28 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   const templates = state.phaseTemplates[session.workspaceId] ?? [];
   const runs = state.sessionPhaseRuns[sessionId] ?? [];
   const openQuestions = await listOpenQuestionsForSession(tauriDatabase, sessionId, 'open');
+
+  const strandedContainer = (() => {
+    for (const run of runnableRuns) {
+      const runAgents = [...runsForWorkflowRun(runs, run.id)].sort((a, b) => a.ordinal - b.ordinal);
+      for (const agent of runAgents) {
+        if (agent.stepId == null || agent.parentAgentId != null || !isSettled(agent)) {
+          continue;
+        }
+        if (unsettledClusterChildren(runAgents, agent.id).length > 0) {
+          return agent;
+        }
+      }
+    }
+    return null;
+  })();
+  if (
+    strandedContainer != null &&
+    (await resumeClusterChildren({ set, get, sessionId, container: strandedContainer }))
+  ) {
+    return;
+  }
+
   let dynamicRunId = null as (typeof activeRuns)[number]['id'] | null;
   const nextPendingAgent = (() => {
     for (const run of runnableRuns) {

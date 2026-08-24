@@ -5,6 +5,7 @@ import type {
   IsoDateTime,
   OpenQuestion,
   OpenQuestionId,
+  ProjectId,
   SessionEvent,
   SessionEventId,
   SessionEventKind,
@@ -408,12 +409,19 @@ const sessionEvent = ({ id, kind, at, payload }: EventParams): SessionEvent => (
   createdAt: typedString<IsoDateTime>({ value: at }),
 });
 
-const worktree = ({ branch }: { readonly branch: string }): SessionWorktree => ({
+const worktree = ({
+  branch,
+  projectId,
+}: {
+  readonly branch: string;
+  readonly projectId?: string;
+}): SessionWorktree => ({
   id: 'wt-1',
   sessionId: SESSION_ID,
   worktreePath: '/repo/.goodboy/worktrees/gb-trace',
   branch,
   parallelIndex: 0,
+  ...(projectId != null ? { projectId: typedString<ProjectId>({ value: projectId }) } : {}),
   createdAt: Date.parse('2026-08-17T07:00:00Z'),
 });
 
@@ -465,6 +473,55 @@ describe('buildTimelineGroups, session events', () => {
     });
 
     expect(model.entries.some((entry) => entry.kind === 'branch')).toBe(true);
+  });
+
+  it('drops the session folder row once the work lives in a mounted repo', () => {
+    const model = build({
+      agents: [],
+      worktrees: [worktree({ branch: 'ak/feat', projectId: 'project-1' })],
+      events: [
+        sessionEvent({
+          id: 'ev-1',
+          kind: 'worktree_created',
+          at: '2026-08-17T07:00:00Z',
+          payload: { worktreePath: '/home/dev/.goodboy/sessions/ws/gb-trace' },
+        }),
+      ],
+    });
+
+    expect(model.entries.some((entry) => entry.kind === 'event')).toBe(false);
+  });
+
+  it('keeps the session folder row when the container is where the work happens', () => {
+    const model = build({
+      agents: [],
+      worktrees: [worktree({ branch: '' })],
+      events: [
+        sessionEvent({
+          id: 'ev-1',
+          kind: 'worktree_created',
+          at: '2026-08-17T07:00:00Z',
+          payload: { worktreePath: '/home/dev/.goodboy/sessions/ws/gb-trace' },
+        }),
+      ],
+    });
+
+    expect(model.entries.map((entry) => entry.id)).toEqual(['event:ev-1']);
+  });
+
+  it('leaves every other event alone on a session with a mounted repo', () => {
+    const model = build({
+      agents: [],
+      worktrees: [worktree({ branch: 'ak/feat', projectId: 'project-1' })],
+      events: [
+        sessionEvent({ id: 'ev-1', kind: 'pr_merged', at: '2026-08-17T12:00:00Z' }),
+        sessionEvent({ id: 'ev-2', kind: 'worktree_created', at: '2026-08-17T07:00:00Z' }),
+      ],
+    });
+
+    expect(model.entries.flatMap((entry) => (entry.kind === 'event' ? [entry.id] : []))).toEqual([
+      'event:ev-1',
+    ]);
   });
 
   it('drops the derived issue row once the link event carries the same url', () => {

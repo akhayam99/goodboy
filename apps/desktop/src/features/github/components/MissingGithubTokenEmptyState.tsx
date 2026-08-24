@@ -21,7 +21,6 @@ export const MissingGithubTokenEmptyState = ({
     <IntegrationConnectPanel
       provider="github"
       description="Connect a GitHub token to review pull requests and issues from this repository."
-      size={compact ? 'sm' : 'lg'}
       headingLevel={compact ? undefined : 2}
     >
       <GithubFormBody

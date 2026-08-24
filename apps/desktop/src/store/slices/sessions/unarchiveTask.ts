@@ -2,11 +2,11 @@ import type { Session, SessionId } from '@goodboy/types';
 import {
   listWorktreesForSession,
   unarchiveSession as unarchiveSessionInDb,
-  updateSessionActiveMount,
+  updateSessionActiveProject,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { invokeAgentList } from '../../../features/workflows/workflows';
-import { buildSessionMounts } from '../worktrees/buildSessionMounts';
+import { invokeAgentList, invokeWorkflowsForSession } from '../../../features/workflows/workflows';
+import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMounts';
 import type { GetFn, SetFn } from './types';
 
 export const unarchiveTask = (set: SetFn, get: GetFn) => {
@@ -52,30 +52,31 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
       return;
     }
     try {
-      const [worktreeRows, runs] = await Promise.all([
+      const [worktreeRows, runs, attachedWorkflows] = await Promise.all([
         listWorktreesForSession(tauriDatabase, sessionId),
         invokeAgentList(sessionId),
+        invokeWorkflowsForSession(sessionId).catch(() => []),
       ]);
-      const workspace = get().workspaces.find((candidate) => candidate.id === workspaceId) ?? null;
-      const mounts = buildSessionMounts({ workspace, rows: worktreeRows });
-      const storedActiveMount = restoredSession.activeMountWorkspaceId;
-      const hasStoredActiveMount =
-        storedActiveMount != null &&
-        mounts.some((mount) => mount.workspaceId === storedActiveMount);
-      if (storedActiveMount != null && !hasStoredActiveMount) {
-        await updateSessionActiveMount({ db: tauriDatabase, id: sessionId, workspaceId: null });
+      const projects = get().projects.filter((project) => project.workspaceId === workspaceId);
+      const mounts = buildSessionProjectMounts({ projects, rows: worktreeRows });
+      const storedActiveProjectId = restoredSession.activeProjectId;
+      const hasStoredActiveProjectId =
+        storedActiveProjectId != null &&
+        mounts.some((mount) => mount.projectId === storedActiveProjectId);
+      if (storedActiveProjectId != null && !hasStoredActiveProjectId) {
+        await updateSessionActiveProject({ db: tauriDatabase, id: sessionId, projectId: null });
       }
       let restoredWithValidActiveMount = restoredSession;
-      if (storedActiveMount != null && !hasStoredActiveMount) {
-        const { activeMountWorkspaceId: _drop, ...validSession } = restoredSession;
+      if (storedActiveProjectId != null && !hasStoredActiveProjectId) {
+        const { activeProjectId: _drop, ...validSession } = restoredSession;
         restoredWithValidActiveMount = validSession;
       }
       set((state) => {
         const nextWorktrees = { ...state.sessionWorktrees };
         const nextBranches = { ...state.sessionBranches };
-        const nextActiveMount = { ...state.sessionActiveMount };
-        if (hasStoredActiveMount) {
-          nextActiveMount[sessionId] = storedActiveMount;
+        const nextActiveMount = { ...state.sessionActiveProject };
+        if (hasStoredActiveProjectId) {
+          nextActiveMount[sessionId] = storedActiveProjectId;
         } else {
           delete nextActiveMount[sessionId];
         }
@@ -91,10 +92,12 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
             candidate.id === sessionId ? restoredWithValidActiveMount : candidate,
           ),
           sessionWorktrees: nextWorktrees,
-          sessionMounts: { ...state.sessionMounts, [sessionId]: mounts },
-          sessionActiveMount: nextActiveMount,
+          sessionWorktreeRecords: { ...state.sessionWorktreeRecords, [sessionId]: worktreeRows },
+          sessionProjectMounts: { ...state.sessionProjectMounts, [sessionId]: mounts },
+          sessionActiveProject: nextActiveMount,
           sessionBranches: nextBranches,
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: runs },
+          sessionWorkflows: { ...state.sessionWorkflows, [sessionId]: attachedWorkflows },
         };
       });
     } catch {}

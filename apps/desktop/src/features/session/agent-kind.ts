@@ -12,7 +12,6 @@ import type {
   AgentRole,
   ProviderId,
   RoleModelPreferences,
-  WorkspaceKind,
 } from '@goodboy/types';
 
 export type AgentKind = AgentKindLabel;
@@ -75,6 +74,19 @@ export const PLAN_CONSUMING_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>([
 
 export const kindConsumesPlan = (kind: AgentKind): boolean => {
   return PLAN_CONSUMING_KINDS.has(kind);
+};
+
+const WRITE_CAPABLE_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>([
+  'implementer',
+  'debugger',
+  'tester',
+  'docs',
+  'resolver',
+  'generic',
+]);
+
+export const kindWritesFiles = (kind: AgentKind): boolean => {
+  return WRITE_CAPABLE_KINDS.has(kind);
 };
 
 export const AGENT_KIND_META: Record<
@@ -253,18 +265,7 @@ export const AGENT_ROLES: ReadonlyArray<AgentRole> = [
   'custom',
 ];
 
-type VisibilityParams = {
-  readonly workspaceKind?: WorkspaceKind;
-};
-
-export const visibleAgentRoles = ({
-  workspaceKind,
-}: VisibilityParams): ReadonlyArray<AgentRole> => {
-  if (workspaceKind === 'simple') {
-    return ['scout', 'planner', 'custom'];
-  }
-  return AGENT_ROLES;
-};
+export const visibleAgentRoles = (): ReadonlyArray<AgentRole> => AGENT_ROLES;
 
 export const ROLE_TO_KIND: Record<AgentRole, AgentKind> = {
   scout: 'scout',
@@ -378,16 +379,10 @@ export const AGENT_KIND_DEFAULTS: Record<
   },
 };
 
-export const visibleAgentKinds = ({
-  workspaceKind,
-}: VisibilityParams): ReadonlyArray<AgentKind> => {
-  if (workspaceKind === 'simple') {
-    return ['generic'];
-  }
-  return AGENT_KIND_ORDER.filter((kind) => AGENT_KIND_DEFAULTS[kind].visible !== false).sort(
+export const visibleAgentKinds = (): ReadonlyArray<AgentKind> =>
+  AGENT_KIND_ORDER.filter((kind) => AGENT_KIND_DEFAULTS[kind].visible !== false).sort(
     (left, right) => AGENT_KIND_META[left].label.localeCompare(AGENT_KIND_META[right].label),
   );
-};
 
 const STEP_ROLE_KIND_LOOKUP: Record<string, AgentKind> = {
   scout: 'scout',

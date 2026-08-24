@@ -82,7 +82,7 @@ describe('LinearStudio', () => {
   it('shows the connection state when Linear is disconnected', () => {
     renderStudio();
 
-    expect(screen.getByText('Connect Linear to review issues from this workspace')).toBeDefined();
+    expect(screen.getByText('Connect Linear to review issues from this project')).toBeDefined();
     expect(screen.getByLabelText('Personal access token')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Disconnect Linear' })).toBeNull();
   });

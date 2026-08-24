@@ -1,11 +1,14 @@
+import type { WorkspaceId } from '@goodboy/types';
 import { archiveTask } from './archiveTask';
 import { autoTitleSession } from './autoTitleSession';
 import { bulkArchiveTask } from './bulkArchiveTask';
 import { bulkDeleteTask } from './bulkDeleteTask';
 import { bulkUnarchiveTask } from './bulkUnarchiveTask';
 import { createSession } from './createSession';
+import { createUntitledSession } from './createUntitledSession';
 import { deleteTask } from './deleteTask';
 import { linkSessionExternalTask } from './linkSessionExternalTask';
+import { materializeProject } from './materializeProject';
 import { renameTask } from './renameTask';
 import { setAgentConfig } from './setAgentConfig';
 import { setAgentVerbosity } from './setAgentVerbosity';
@@ -31,6 +34,9 @@ export const createSessionsSlice = (set: SetFn, get: GetFn) => {
     unarchiveTask: unarchiveTask(set, get),
     bulkUnarchiveTask: bulkUnarchiveTask(set, get),
     createSession: createSession(set, get),
+    createUntitledSession: createUntitledSession(set, get),
+    clearPendingTitleFocus: () => set({ pendingTitleFocusSessionId: null }),
+    materializeProject: materializeProject(set, get),
     linkSessionExternalTask: linkSessionExternalTask({ set, get }),
     unlinkSessionExternalTask: unlinkSessionExternalTask({ set, get }),
     setCurrentSession: setCurrentSession(set, get),

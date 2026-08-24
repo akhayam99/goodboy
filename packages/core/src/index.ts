@@ -33,6 +33,7 @@ export {
   extractFilesTouched,
   extractHandoff,
   extractMarkers,
+  extractMaterializeRequests,
   extractPlanFromMarker,
   extractReviewComments,
   extractScoutDomains,
@@ -72,6 +73,7 @@ export {
   type ExtractedCommentResolution,
   type ExtractedCommentWontfix,
   type ExtractedHandoff,
+  type ExtractedMaterializeRequest,
   type ExtractedPlan,
   type ExtractedReviewComment,
   type PlanReadinessInput,
@@ -290,32 +292,6 @@ export {
   type AuditRecorderDeps,
   type AuditQuery,
 } from './permissions';
-
-export {
-  fanOut,
-  awaitMerge,
-  onProgress,
-  cancelGroup,
-  detectConflicts,
-  resolveConflicts,
-  ManualResolutionRequiredError,
-  type SchedulerDeps,
-  type SchedulerHandle,
-  type SchedulerProgress,
-  type MergeResult,
-  type UnsubscribeFn,
-  type RunFileTouches,
-  type FileConflict,
-  type ResolvedConflict,
-  type ConflictResolutionInput,
-} from './scheduler';
-
-export {
-  createParallelWorktrees,
-  removeParallelWorktrees,
-  type ParallelWorktreeDeps,
-  type ParallelWorktreeResult,
-} from './worktree/parallel';
 
 export { resolveSettings, type ResolveSettingsInput } from './settings/resolver';
 

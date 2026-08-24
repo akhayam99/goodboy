@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RepoPullRequest } from '@goodboy/core';
 import type {
-  GitlabWorkspaceIntegration,
+  GitlabIntegrationBinding,
   IntegrationCredentialId,
   IsoDateTime,
+  Project,
+  ProjectId,
   Workspace,
   WorkspaceId,
-  WorkspaceIntegrationId,
+  IntegrationBindingId,
 } from '@goodboy/types';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
 import type { AppStore } from '../../store';
@@ -39,23 +41,50 @@ vi.mock('../../../features/worktree/worktree', () => ({
 }));
 
 const WS_ID = 'workspace-1' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 const NOW = '2026-07-23T00:00:00.000Z' as IsoDateTime;
 
 const buildWorkspace = (): Workspace => {
   return {
     id: WS_ID,
     name: 'ws',
-    rootPath: '/tmp/repo',
+    slug: 'ws',
+    sessionsRoot: '/tmp/repo',
+    overrides: {
+      defaultProviderId: null,
+      defaultWorkflowId: null,
+      defaultBranchPrefix: null,
+      parallelEnabled: null,
+      defaultVerbosity: null,
+      providerBindings: null,
+      taskModels: null,
+      roleModels: null,
+      parallelAgents: null,
+      providerPool: null,
+    },
     createdAt: NOW,
     updatedAt: NOW,
     lastAccessedAt: NOW,
   };
 };
 
-const buildGitlabIntegration = (): GitlabWorkspaceIntegration => {
+const buildProject = (overrides: Partial<Project> = {}): Project => ({
+  id: PROJECT_ID,
+  workspaceId: WS_ID,
+  name: 'repo',
+  rootPath: '/tmp/repo',
+  kind: 'repo',
+  overrides: buildWorkspace().overrides,
+  createdAt: NOW,
+  updatedAt: NOW,
+  ...overrides,
+});
+
+const buildGitlabIntegration = (): GitlabIntegrationBinding => {
   return {
-    id: 'wi-1' as WorkspaceIntegrationId,
+    id: 'wi-1' as IntegrationBindingId,
     workspaceId: WS_ID,
+    projectId: null,
     provider: 'gitlab',
     credentialId: 'k' as IntegrationCredentialId,
     config: { userName: 'nbro', userId: '1', host: 'https://gitlab.com' },
@@ -115,6 +144,7 @@ const buildHarness = (initial: Record<string, unknown>): Harness => {
   let state = {
     reviewPrs: {},
     workspaces: [buildWorkspace()],
+    projects: [buildProject()],
     workspaceIntegrations: {},
     githubStatus: null,
     ...initial,
@@ -199,7 +229,7 @@ describe('review-prs slice', () => {
     await slice.refreshReviewPrs(WS_ID);
     const result = selectReviewPrs(WS_ID)(getState());
     expect(gitlabFetchProjectMrsSpy).not.toHaveBeenCalled();
-    expect(result.items.map((p) => p.id)).toEqual(['github:7']);
+    expect(result.items.map((p) => p.id)).toEqual(['github:7:project-1']);
     expect(result.error).toBeNull();
   });
 
@@ -222,7 +252,9 @@ describe('review-prs slice', () => {
       'https://code.acme.dev',
       'acme/web',
     );
-    expect(selectReviewPrs(WS_ID)(getState()).items.map((p) => p.id)).toEqual(['gitlab:11']);
+    expect(selectReviewPrs(WS_ID)(getState()).items.map((p) => p.id)).toEqual([
+      'gitlab:11:project-1',
+    ]);
   });
 
   it('keeps github results when the gitlab provider fails', async () => {
@@ -235,15 +267,15 @@ describe('review-prs slice', () => {
     });
     await slice.refreshReviewPrs(WS_ID);
     const result = selectReviewPrs(WS_ID)(getState());
-    expect(result.items.map((p) => p.id)).toEqual(['github:7']);
+    expect(result.items.map((p) => p.id)).toEqual(['github:7:project-1']);
     expect(result.error).toContain('gitlab down');
     expect(result.loading).toBe(false);
   });
 
-  it('collects attributed PRs from every resolvable composite member', async () => {
-    const webId = 'workspace-web' as WorkspaceId;
-    const apiId = 'workspace-api' as WorkspaceId;
-    const brokenId = 'workspace-broken' as WorkspaceId;
+  it('collects attributed PRs from every resolvable member project', async () => {
+    const webId = 'project-web' as ProjectId;
+    const apiId = 'project-api' as ProjectId;
+    const brokenId = 'project-broken' as ProjectId;
     detectRepoSlugSpy.mockImplementation(async (_runner, rootPath: string) => {
       if (rootPath === '/tmp/broken') {
         throw new Error('not a repository');
@@ -254,16 +286,10 @@ describe('review-prs slice', () => {
       buildRepoPr({ number: slug === 'acme/web' ? 7 : 8, title: slug }),
     ]);
     const { slice, getState } = buildHarness({
-      workspaces: [
-        {
-          ...buildWorkspace(),
-          kind: 'composite',
-          members: [
-            { workspaceId: webId, rootPath: '/tmp/web', mountName: 'web' },
-            { workspaceId: brokenId, rootPath: '/tmp/broken', mountName: 'broken' },
-            { workspaceId: apiId, rootPath: '/tmp/api', mountName: 'api' },
-          ],
-        },
+      projects: [
+        buildProject({ id: webId, name: 'web', rootPath: '/tmp/web' }),
+        buildProject({ id: brokenId, name: 'broken', rootPath: '/tmp/broken' }),
+        buildProject({ id: apiId, name: 'api', rootPath: '/tmp/api' }),
       ],
     });
 
@@ -275,8 +301,8 @@ describe('review-prs slice', () => {
       ['/tmp/api', WS_ID, apiId],
     ]);
     expect(selectReviewPrs(WS_ID)(getState()).items).toEqual([
-      expect.objectContaining({ repo: 'acme/web', mountWorkspaceId: webId }),
-      expect.objectContaining({ repo: 'acme/api', mountWorkspaceId: apiId }),
+      expect.objectContaining({ repo: 'acme/web', projectId: webId }),
+      expect.objectContaining({ repo: 'acme/api', projectId: apiId }),
     ]);
   });
 
@@ -293,14 +319,14 @@ describe('review-prs slice', () => {
     });
     await slice.refreshReviewPrs(WS_ID);
     const result = selectReviewPrs(WS_ID)(getState());
-    expect(result.items.map((p) => p.id)).toEqual(['gitlab:2', 'github:1']);
+    expect(result.items.map((p) => p.id)).toEqual(['gitlab:2:project-1', 'github:1:project-1']);
     expect(result.fetchedAt).not.toBeNull();
   });
 
   it('skips fetching entirely for a simple workspace', async () => {
     detectRepoSlugSpy.mockResolvedValue('org/repo');
     const { slice, getState } = buildHarness({
-      workspaces: [{ ...buildWorkspace(), kind: 'simple' }],
+      projects: [buildProject({ kind: 'folder' })],
       workspaceIntegrations: { [WS_ID]: [buildGitlabIntegration()] },
     });
     await slice.refreshReviewPrs(WS_ID);
@@ -310,7 +336,7 @@ describe('review-prs slice', () => {
       items: [],
       loading: false,
       error: null,
-      fetchedAt: null,
+      fetchedAt: expect.any(String),
     });
   });
 

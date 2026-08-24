@@ -13,6 +13,6 @@ export const sessionThreadGhOptions = ({ get, sessionId }: Params) => {
   return {
     cwd: repo?.repoRoot,
     workspaceId: session?.workspaceId,
-    memberWorkspaceId: repo?.workspaceId,
+    projectId: repo?.projectId,
   };
 };

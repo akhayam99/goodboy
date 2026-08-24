@@ -59,8 +59,8 @@ type State = {
   sessionResolvedThreads: Record<string, ReadonlyArray<string>>;
   resolverThreadOutcomes: Record<string, Record<string, unknown>>;
   sessionPendingResolutions: Record<string, ReadonlyArray<PendingResolution>>;
-  sessionMounts: Record<string, ReadonlyArray<unknown>>;
-  sessionActiveMount: Record<string, string>;
+  sessionProjectMounts: Record<string, ReadonlyArray<unknown>>;
+  sessionActiveProject: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   sessionBranches: Record<string, string>;
   emitNotification: ReturnType<typeof vi.fn>;
@@ -75,8 +75,8 @@ const makeStore = () => {
     sessionResolvedThreads: {},
     resolverThreadOutcomes: {},
     sessionPendingResolutions: {},
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: {},
+    sessionActiveProject: {},
     sessionWorktrees: {},
     sessionBranches: {},
     emitNotification: vi.fn(async () => undefined),

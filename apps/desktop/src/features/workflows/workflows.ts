@@ -4,9 +4,6 @@ import type {
   AgentRole,
   AgentSourceKind,
   IsoDateTime,
-  ParallelMergeStrategy,
-  ParallelGroup,
-  ParallelGroupId,
   Step,
   StepDef,
   StepDefId,
@@ -39,14 +36,12 @@ type RawWorkflowStepRow = {
   readonly modelOverride: string | null;
   readonly effort: string | null;
   readonly verbosity: string | null;
-  readonly parallelGroup: number | null;
   readonly orchestratorReason: string | null;
 };
 
 type RawStepDefRow = {
   readonly id: string;
   readonly workspaceId: string | null;
-  readonly baseStepId: string | null;
   readonly role: string;
   readonly name: string;
   readonly promptPrefix: string;
@@ -122,7 +117,6 @@ function rowToStep(row: RawWorkflowStepRow): Step {
     ...(row.modelOverride != null && { modelOverride: row.modelOverride }),
     ...(row.effort != null && { effort: row.effort as AgentEffort }),
     ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
-    ...(row.parallelGroup != null && { parallelGroup: row.parallelGroup }),
     ...(row.orchestratorReason != null &&
       row.orchestratorReason !== '' && { orchestratorReason: row.orchestratorReason }),
   };
@@ -137,7 +131,6 @@ function rowToStepDef(row: RawStepDefRow): StepDef {
     promptPrefix: row.promptPrefix,
     createdAt: row.createdAt as IsoDateTime,
     updatedAt: row.updatedAt as IsoDateTime,
-    ...(row.baseStepId != null && { baseStepId: row.baseStepId as StepDefId }),
     ...(row.providerDefault != null && { providerDefault: row.providerDefault as ProviderId }),
     ...(row.modelDefault != null && { modelDefault: row.modelDefault }),
     ...(row.effortDefault != null && { effortDefault: row.effortDefault as AgentEffort }),
@@ -164,7 +157,7 @@ function rowToWorkflow(row: RawWorkflowRow): Workflow {
     createdAt: row.createdAt as IsoDateTime,
     updatedAt: row.updatedAt as IsoDateTime,
     ...(row.deletedAt != null && {
-      deletedAt: new Date(row.deletedAt * 1000).toISOString() as IsoDateTime,
+      deletedAt: new Date(row.deletedAt).toISOString() as IsoDateTime,
     }),
   };
 }
@@ -242,7 +235,6 @@ export type WorkflowStepUpsertArgs = {
   readonly modelOverride?: string;
   readonly effort?: AgentEffort;
   readonly verbosity?: VerbosityLevel;
-  readonly parallelGroup?: number;
   readonly orchestratorReason?: string;
 };
 
@@ -281,7 +273,6 @@ export const invokeWorkflowUpsert = async (args: WorkflowUpsertArgs): Promise<Wo
         modelOverride: d.modelOverride ?? null,
         effort: d.effort ?? null,
         verbosity: d.verbosity ?? null,
-        parallelGroup: d.parallelGroup ?? null,
         orchestratorReason: d.orchestratorReason ?? null,
       })),
     },
@@ -301,7 +292,6 @@ export const invokeStepDefList = async (workspaceId: WorkspaceId): Promise<StepD
 export type StepDefUpsertArgs = {
   readonly id?: StepDefId;
   readonly workspaceId: WorkspaceId | null;
-  readonly baseStepId?: StepDefId;
   readonly role: AgentRole;
   readonly name: string;
   readonly promptPrefix: string;
@@ -316,7 +306,6 @@ export const invokeStepDefUpsert = async (args: StepDefUpsertArgs): Promise<Step
     input: {
       id: args.id ?? null,
       workspaceId: args.workspaceId,
-      baseStepId: args.baseStepId ?? null,
       role: args.role,
       name: args.name,
       promptPrefix: args.promptPrefix,
@@ -480,58 +469,4 @@ export const invokeAgentSetDone = async (
 export const invokeWorkspacesWithUnread = async (): Promise<ReadonlyArray<WorkspaceId>> => {
   const ids = await invoke<string[]>('workspaces_with_unread');
   return ids as ReadonlyArray<string> as ReadonlyArray<WorkspaceId>;
-};
-
-type RawParallelGroupRow = {
-  readonly id: string;
-  readonly sessionId: string;
-  readonly ordinal: number;
-  readonly mergeStrategy: string;
-  readonly createdAt: string;
-  readonly completedAt: string | null;
-};
-
-function rowToParallelGroup(row: RawParallelGroupRow): ParallelGroup {
-  return {
-    id: row.id as ParallelGroupId,
-    sessionId: row.sessionId as SessionId,
-    ordinal: row.ordinal,
-    mergeStrategy: row.mergeStrategy as ParallelMergeStrategy,
-    createdAt: row.createdAt as IsoDateTime,
-    completedAt: row.completedAt != null ? (row.completedAt as IsoDateTime) : null,
-  };
-}
-
-export type ParallelGroupCreateArgs = {
-  readonly id?: ParallelGroupId;
-  readonly sessionId: SessionId;
-  readonly ordinal: number;
-  readonly mergeStrategy: ParallelMergeStrategy;
-  readonly createdAt?: IsoDateTime;
-};
-
-export const invokeParallelGroupCreate = async (
-  args: ParallelGroupCreateArgs,
-): Promise<ParallelGroup> => {
-  const row = await invoke<RawParallelGroupRow>('parallel_group_create', {
-    input: {
-      id: args.id ?? null,
-      sessionId: args.sessionId,
-      ordinal: args.ordinal,
-      mergeStrategy: args.mergeStrategy,
-      createdAt: args.createdAt ?? null,
-    },
-  });
-  return rowToParallelGroup(row);
-};
-
-export const invokeParallelGroupUpdateCompletedAt = async (
-  id: ParallelGroupId,
-  completedAt: IsoDateTime,
-): Promise<ParallelGroup> => {
-  const row = await invoke<RawParallelGroupRow>('parallel_group_update_completed_at', {
-    id,
-    completedAt,
-  });
-  return rowToParallelGroup(row);
 };

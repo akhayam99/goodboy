@@ -1,4 +1,7 @@
-import { countWorkspacesPerIntegrationCredential, deleteWorkspaceIntegration } from '@goodboy/db';
+import {
+  countWorkspacesPerIntegrationCredential,
+  deleteIntegrationBindingsForProvider,
+} from '@goodboy/db';
 import type { WorkspaceId, WorkspaceIntegrationProvider } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SetFn } from './types';
@@ -10,7 +13,7 @@ type Params = {
 
 export const disconnectIntegration = (set: SetFn) => {
   return async ({ workspaceId, provider }: Params): Promise<void> => {
-    await deleteWorkspaceIntegration(tauriDatabase, workspaceId, provider);
+    await deleteIntegrationBindingsForProvider({ db: tauriDatabase, workspaceId, provider });
     const integrationCredentialUsage = await countWorkspacesPerIntegrationCredential(tauriDatabase);
     set((state) => ({
       workspaceIntegrations: {

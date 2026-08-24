@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { EmptyState, formatError } from '@goodboy/ui';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import type { Project, SessionId, WorkspaceId } from '@goodboy/types';
 import { sanitizeBranchSlug } from '../../../../shared/utils/sanitizeBranchSlug';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { ghPrHeadBranch } from '../../../github/github';
@@ -38,15 +37,12 @@ const branchSlugFor = ({ issue }: Params): string => {
 };
 
 export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Props) => {
-  const rootPath = useAppStore(
-    (s) => s.workspaces.find((w) => w.id === workspaceId)?.rootPath ?? null,
-  );
-  const isBranchless = useAppStore(
-    (s) => s.workspaces.find((w) => w.id === workspaceId)?.kind === 'simple',
-  );
+  const [launchProject, setLaunchProject] = useState<Project | null>(null);
+  const rootPath = launchProject?.rootPath ?? null;
+  const isFolderProject = launchProject?.kind === 'folder';
 
   const adoptablePr =
-    issue != null && !isBranchless
+    issue != null && !isFolderProject
       ? (issuePullRequests(issue).find((pr) => pr.repo != null && pr.repo !== '') ?? null)
       : null;
 
@@ -55,16 +51,15 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
   const [prError, setPrError] = useState<string | null>(null);
 
   useEffect(() => {
-    setPrBranch(null);
-    setPrError(null);
-  }, [issue]);
-
-  useEffect(() => {
     if (adoptablePr?.repo == null || rootPath == null) {
+      setPrBranch(null);
+      setPrError(null);
+      setPrResolving(false);
       return;
     }
     const prNumber = adoptablePr.number;
     let cancelled = false;
+    setPrBranch(null);
     setPrResolving(true);
     setPrError(null);
     ghPrHeadBranch(rootPath, prNumber, workspaceId)
@@ -118,8 +113,9 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         url: issue.url,
         title: issue.title,
       }}
+      onSelectedProjectChange={setLaunchProject}
       adoptable={
-        adoptablePr != null
+        launchProject != null && adoptablePr != null
           ? {
               label: `Continue on PR #${adoptablePr.number}`,
               branch: prBranch,

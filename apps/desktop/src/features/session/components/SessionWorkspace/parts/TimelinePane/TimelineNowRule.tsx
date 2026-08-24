@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { cn } from '@goodboy/ui';
 import type { TimelineNowItem } from '../../../../timeline/buildTimelineStream';
 import { RAIL_SPINE_X, type RailRow } from '../../../../timeline/railGeometry';
@@ -8,9 +9,10 @@ type Props = {
   readonly item: TimelineNowItem;
   readonly rail: RailRow;
   readonly railWidth: number;
+  readonly action?: ReactNode;
 };
 
-export const TimelineNowRule = ({ item, rail, railWidth }: Props) => (
+export const TimelineNowRule = ({ item, rail, railWidth, action }: Props) => (
   <div className="flex min-w-0" style={{ height: item.height }}>
     <span className={cn('relative shrink-0', TIMELINE_GUTTER)}>
       <span
@@ -29,6 +31,15 @@ export const TimelineNowRule = ({ item, rail, railWidth }: Props) => (
         style={{ left: RAIL_SPINE_X, top: item.ruleY }}
       />
     </span>
-    <span className="relative min-w-0 flex-1" />
+    <span className="relative min-w-0 flex-1">
+      {action != null ? (
+        <span
+          className="absolute right-0 flex -translate-y-1/2 items-center"
+          style={{ top: item.ruleY }}
+        >
+          {action}
+        </span>
+      ) : null}
+    </span>
   </div>
 );

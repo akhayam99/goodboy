@@ -72,7 +72,6 @@ type Props = {
   archivedSessions: ReadonlyArray<Session>;
   currentSessionId: SessionId | null;
   onSelectSession: (id: SessionId) => void;
-  onNewSession: () => void;
   onArchivedTabOpen?: () => void;
 };
 
@@ -82,10 +81,17 @@ export const SessionActivityBar = ({
   archivedSessions,
   currentSessionId,
   onSelectSession,
-  onNewSession,
   onArchivedTabOpen,
 }: Props) => {
   const [tab, setTab] = useState<ActivityTab>('active');
+
+  useEffect(() => {
+    const onNewSessionRequest = () => {
+      setTab('active');
+    };
+    window.addEventListener('goodboy:new-session', onNewSessionRequest);
+    return () => window.removeEventListener('goodboy:new-session', onNewSessionRequest);
+  }, []);
   const [expandedOverrides, setExpandedOverrides] = useState<ReadonlyMap<string, boolean>>(
     new Map(),
   );
@@ -194,7 +200,7 @@ export const SessionActivityBar = ({
             <Button
               variant="secondary"
               size="sm"
-              onClick={onNewSession}
+              onClick={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}
               aria-label="Create new session"
               title={`Create new session (${shortcutGlyphs('session.new')})`}
               className="group relative mb-1 w-full justify-center gap-1.5 px-2 text-xs"

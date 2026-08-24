@@ -150,6 +150,15 @@ describe('TimelineStreamRow', () => {
     expect(screen.getByText('Open chat ↵').className).toContain('group-hover:opacity-100');
   });
 
+  it('boxes the trailing action to the same height as the row content line', () => {
+    renderRow({ action: { label: 'Answer', onAct: vi.fn() } });
+    const wrapper = screen.getByTestId('timeline-row-action');
+    const content = screen.getByRole('button', { name: /Implement the parser/ });
+
+    expect(wrapper.getAttribute('style')).toBe(content.getAttribute('style'));
+    expect(wrapper.className).toContain('items-center');
+  });
+
   it('reserves the same box for a step whatever trailing metadata it carries', () => {
     renderRow();
     const button = screen.getByRole('button', { name: /Implement the parser/ });

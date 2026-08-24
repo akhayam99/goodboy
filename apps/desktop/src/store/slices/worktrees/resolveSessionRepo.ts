@@ -1,5 +1,4 @@
-import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
+import type { ProjectId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 
 export type SessionRepo = Readonly<{
@@ -7,17 +6,12 @@ export type SessionRepo = Readonly<{
   worktreePath: string;
   branch: string;
   mountName: string | null;
-  workspaceId: WorkspaceId;
+  projectId: ProjectId;
 }>;
 
 type State = Pick<
   AppState,
-  | 'sessions'
-  | 'workspaces'
-  | 'sessionMounts'
-  | 'sessionActiveMount'
-  | 'sessionWorktrees'
-  | 'sessionBranches'
+  'sessions' | 'projects' | 'sessionProjectMounts' | 'sessionActiveProject'
 >;
 
 type ResolveParams = {
@@ -27,48 +21,24 @@ type ResolveParams = {
 
 export const resolveSessionRepo = ({ state, sessionId }: ResolveParams): SessionRepo | null => {
   const session = state.sessions.find((candidate) => candidate.id === sessionId);
-  if (session == null) {
+  if (session === undefined) {
     return null;
   }
-  const workspace = state.workspaces.find((candidate) => candidate.id === session.workspaceId);
-  if (workspace == null) {
+  const mounts = state.sessionProjectMounts[sessionId] ?? [];
+  const activeProjectId = state.sessionActiveProject[sessionId] ?? session.activeProjectId;
+  const activeMount = mounts.find((mount) => mount.projectId === activeProjectId) ?? mounts[0];
+  if (activeMount === undefined) {
     return null;
   }
-  if (workspace.kind === 'simple') {
-    return null;
-  }
-  if (workspace.kind === 'composite') {
-    const mounts = state.sessionMounts[sessionId] ?? [];
-    if (mounts.length === 0) {
-      return null;
-    }
-    const activeWorkspaceId = state.sessionActiveMount[sessionId];
-    const active =
-      mounts.find((mount) => mount.workspaceId === activeWorkspaceId) ?? mounts[0] ?? null;
-    if (active == null) {
-      return null;
-    }
-    return {
-      repoRoot: active.repoRoot,
-      worktreePath: active.worktreePath,
-      branch: active.branch,
-      mountName: active.mountName,
-      workspaceId: active.workspaceId,
-    };
-  }
-  const worktreePath = state.sessionWorktrees[sessionId]?.[0];
-  if (worktreePath == null) {
-    return null;
-  }
-  const branch = state.sessionBranches[sessionId];
-  if (isBranchlessSession({ workspaceKind: workspace.kind, branch })) {
+  const project = state.projects.find((candidate) => candidate.id === activeMount.projectId);
+  if (project === undefined || project.kind !== 'repo') {
     return null;
   }
   return {
-    repoRoot: workspace.rootPath,
-    worktreePath,
-    branch: branch ?? '',
-    mountName: null,
-    workspaceId: workspace.id,
+    repoRoot: activeMount.repoRoot,
+    worktreePath: activeMount.worktreePath,
+    branch: activeMount.branch,
+    mountName: activeMount.mountName,
+    projectId: activeMount.projectId,
   };
 };

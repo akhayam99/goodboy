@@ -66,7 +66,7 @@ describe('refreshProviders', () => {
       providerCredentials: [],
       providerConnect: {
         ...INITIAL_CONNECT_MAP,
-        cursor: { ...IDLE_CONNECT, phase: 'success', identity: 'amin@serenis.it' },
+        cursor: { ...IDLE_CONNECT, phase: 'success', identity: 'dev@example.com' },
       },
     }));
     await refreshProviders(set as never, get as never)();
@@ -80,7 +80,7 @@ describe('refreshProviders', () => {
       identity: null,
     }));
     const set = vi.fn();
-    const connected = { ...IDLE_CONNECT, phase: 'success' as const, identity: 'amin@serenis.it' };
+    const connected = { ...IDLE_CONNECT, phase: 'success' as const, identity: 'dev@example.com' };
     const get = vi.fn(() => ({
       providerCredentials: [],
       providerConnect: { ...INITIAL_CONNECT_MAP, cursor: connected },

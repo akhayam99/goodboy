@@ -1,15 +1,15 @@
-import type { WorkspaceId, WorkspaceScriptId } from '@goodboy/types';
-import { deleteWorkspaceScript } from '@goodboy/db';
+import type { WorkspaceId, ProjectScriptId } from '@goodboy/types';
+import { deleteProjectScript } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SetFn } from './types';
 
 export const deleteScript = (set: SetFn) => {
-  return async (scriptId: WorkspaceScriptId, workspaceId: WorkspaceId) => {
-    await deleteWorkspaceScript(tauriDatabase, scriptId);
+  return async (scriptId: ProjectScriptId, workspaceId: WorkspaceId) => {
+    await deleteProjectScript({ db: tauriDatabase, scriptId });
     set((state) => ({
-      workspaceScripts: {
-        ...state.workspaceScripts,
-        [workspaceId]: (state.workspaceScripts[workspaceId] ?? []).filter((s) => s.id !== scriptId),
+      projectScripts: {
+        ...state.projectScripts,
+        [workspaceId]: (state.projectScripts[workspaceId] ?? []).filter((s) => s.id !== scriptId),
       },
     }));
   };

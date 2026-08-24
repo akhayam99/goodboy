@@ -7,7 +7,20 @@ type Store = {
     readonly id: SessionId;
     readonly workspaceId: WorkspaceId;
     readonly goal: string;
+    readonly activeProjectId?: string;
   }>;
+  readonly projects: ReadonlyArray<{ readonly id: string; readonly kind: string }>;
+  readonly sessionProjectMounts: Record<
+    string,
+    ReadonlyArray<{
+      readonly projectId: string;
+      readonly mountName: string | null;
+      readonly worktreePath: string;
+      readonly repoRoot: string;
+      readonly branch: string;
+    }>
+  >;
+  readonly sessionActiveProject: Record<string, string>;
   readonly workspaces: ReadonlyArray<{
     readonly id: WorkspaceId;
     readonly rootPath: string;
@@ -21,7 +34,10 @@ type Store = {
       readonly detailError: string | null;
     }
   >;
-  readonly sessionGithubPrs: Record<string, ReadonlyArray<PullRequestState>>;
+  readonly sessionProjectPrs: Record<
+    string,
+    Readonly<Record<string, ReadonlyArray<PullRequestState>>>
+  >;
   readonly sessionSelectedPrNumber: Record<string, number | null>;
   readonly sessionBranches: Record<string, string>;
   readonly refreshSessionPrDetail: ReturnType<typeof vi.fn>;
@@ -107,6 +123,19 @@ const h = vi.hoisted(() => {
         },
       ],
       workspaces: [{ id: workspaceId, rootPath: '/repo' }],
+      projects: [{ id: 'project-1', kind: 'repo' }],
+      sessionProjectMounts: {
+        [sessionId]: [
+          {
+            projectId: 'project-1',
+            mountName: null,
+            worktreePath: '/repo/.wt/shared-pr-chrome',
+            repoRoot: '/repo',
+            branch: 'ak/shared-pr-chrome',
+          },
+        ],
+      },
+      sessionActiveProject: { [sessionId]: 'project-1' },
       sessionGithub: {
         [sessionId]: {
           pr,
@@ -115,7 +144,7 @@ const h = vi.hoisted(() => {
           detailError: null,
         },
       },
-      sessionGithubPrs: { [sessionId]: [pr] },
+      sessionProjectPrs: { [sessionId]: { 'project-1': [pr] } },
       sessionSelectedPrNumber: {},
       sessionBranches: { [sessionId]: pr.headBranch },
       refreshSessionPrDetail: vi.fn(async () => undefined),
@@ -232,7 +261,7 @@ beforeEach(() => {
   h.store.setActiveLens.mockClear();
   h.store.setCurrentSession.mockClear();
   h.prs = [h.pr];
-  h.store.sessionGithubPrs = { [h.sessionId]: [h.pr] };
+  h.store.sessionProjectPrs = { [h.sessionId]: { 'project-1': [h.pr] } };
   h.store.sessionSelectedPrNumber = {};
   h.store.selectSessionPr.mockClear();
   h.store.publishPrReview.mockClear();
@@ -297,7 +326,7 @@ describe('PrDetailPanel', () => {
     expect(screen.queryByTitle('2 pull requests on this branch')).toBeNull();
 
     firstRender.unmount();
-    h.store.sessionGithubPrs = { [h.sessionId]: [h.pr, h.secondPr] };
+    h.store.sessionProjectPrs = { [h.sessionId]: { 'project-1': [h.pr, h.secondPr] } };
     renderPanel();
 
     await waitFor(() => {
@@ -306,7 +335,7 @@ describe('PrDetailPanel', () => {
   });
 
   it('selects the requested pull request even without a comment thread', () => {
-    h.store.sessionGithubPrs = { [h.sessionId]: [h.pr, h.secondPr] };
+    h.store.sessionProjectPrs = { [h.sessionId]: { 'project-1': [h.pr, h.secondPr] } };
 
     render(
       <PrDetailPanel
@@ -368,7 +397,7 @@ describe('PrDetailPanel', () => {
   });
 
   it('publishes the verdict against the pull request selected in the panel', async () => {
-    h.store.sessionGithubPrs = { [h.sessionId]: [h.pr, h.secondPr] };
+    h.store.sessionProjectPrs = { [h.sessionId]: { 'project-1': [h.pr, h.secondPr] } };
     h.store.sessionSelectedPrNumber = { [h.sessionId]: h.secondPr.number };
 
     renderPanel();
@@ -406,7 +435,7 @@ describe('PrDetailPanel', () => {
   });
 
   it('drives the active pr and switcher selection through store state', () => {
-    h.store.sessionGithubPrs = { [h.sessionId]: [h.pr, h.secondPr] };
+    h.store.sessionProjectPrs = { [h.sessionId]: { 'project-1': [h.pr, h.secondPr] } };
     h.store.sessionSelectedPrNumber = { [h.sessionId]: h.secondPr.number };
 
     renderPanel();

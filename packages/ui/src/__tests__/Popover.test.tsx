@@ -21,7 +21,7 @@ describe('Popover', () => {
 
     expect(screen.getByRole('button', { name: 'Start' })).toBeDefined();
   });
-  it('defers its own height bound to the dropdown variable', () => {
+  it('carries no height bound of its own', () => {
     render(
       <Popover role="menu" ariaLabel="Bounded">
         <PopoverBody>Row</PopoverBody>
@@ -29,11 +29,21 @@ describe('Popover', () => {
     );
 
     const popover = screen.getByRole('menu');
-    expect(popover.style.maxHeight).toBe('var(--dropdown-max-height, 100%)');
+    expect(popover.style.maxHeight).toBe('');
     expect(popover.className).not.toContain('max-h-full');
   });
 
-  it('lets a positioned caller override the bound', () => {
+  it('scrolls plain content instead of clipping it', () => {
+    render(
+      <Popover role="menu" ariaLabel="Plain">
+        Row
+      </Popover>,
+    );
+
+    expect(screen.getByRole('menu').className).toContain('overflow-y-auto');
+  });
+
+  it('takes the positioned bound from its caller', () => {
     render(
       <Popover role="menu" ariaLabel="Fixed" style={{ maxHeight: 320 }}>
         <PopoverBody>Row</PopoverBody>

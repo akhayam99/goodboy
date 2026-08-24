@@ -1,12 +1,14 @@
 import type {
   PrMergeMethod,
+  Project,
+  ProjectId,
   PullRequestState,
   SessionId,
   Workflow,
   WorkflowId,
   Workspace,
   WorkspaceId,
-  WorkspaceIntegration,
+  IntegrationBinding,
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 
@@ -78,10 +80,46 @@ export type CreateSessionGate =
   | {
       readonly ok: true;
       readonly workspaceId: WorkspaceId;
+      readonly projectId: ProjectId;
       readonly provider: WorkspaceIntegrationProvider;
       readonly reservation: MobileCreateReservation;
     }
   | { readonly ok: false; readonly reason: string };
+
+export type MobileCreateProject = Pick<Project, 'id' | 'name'>;
+
+type ProjectChoice =
+  | { readonly ok: true; readonly projectId: ProjectId }
+  | { readonly ok: false; readonly reason: string };
+
+const describeProjects = (projects: ReadonlyArray<MobileCreateProject>): string =>
+  projects.map((project) => `${project.name} (${project.id})`).join(', ');
+
+const chooseMobileProject = (args: {
+  readonly projects: ReadonlyArray<MobileCreateProject>;
+  readonly projectId: unknown;
+}): ProjectChoice => {
+  const { projects, projectId } = args;
+  if (projects.length === 0) {
+    return { ok: false, reason: 'this workspace has no project: add one on the desktop first' };
+  }
+  const requested = typeof projectId === 'string' && projectId.length > 0 ? projectId : undefined;
+  if (requested !== undefined) {
+    const picked = projects.find((project) => project.id === requested);
+    if (picked === undefined) {
+      return { ok: false, reason: `unknown project for this workspace: ${requested}` };
+    }
+    return { ok: true, projectId: picked.id };
+  }
+  const only = projects[0];
+  if (projects.length === 1 && only !== undefined) {
+    return { ok: true, projectId: only.id };
+  }
+  return {
+    ok: false,
+    reason: `this workspace has several projects: send projectId to pick the one this session works in (${describeProjects(projects)})`,
+  };
+};
 
 const MOBILE_CREATE_WINDOW_MS = 60_000;
 const MOBILE_CREATE_MAX_IN_WINDOW = 5;
@@ -141,11 +179,13 @@ const reserveSlot = (): MobileCreateReservation | null => {
 export const evaluateMobileCreateSession = (args: {
   readonly workspaceId: unknown;
   readonly provider: unknown;
+  readonly projectId?: unknown;
   readonly workspaces: ReadonlyArray<Pick<Workspace, 'id'>>;
-  readonly integrations: ReadonlyArray<Pick<WorkspaceIntegration, 'provider'>>;
+  readonly projects: ReadonlyArray<MobileCreateProject>;
+  readonly integrations: ReadonlyArray<Pick<IntegrationBinding, 'provider'>>;
   readonly now?: number;
 }): CreateSessionGate => {
-  const { workspaceId, provider, workspaces, integrations } = args;
+  const { workspaceId, provider, projectId, projects, workspaces, integrations } = args;
   const now = args.now ?? Date.now();
 
   if (typeof workspaceId !== 'string' || workspaceId.length === 0) {
@@ -162,6 +202,10 @@ export const evaluateMobileCreateSession = (args: {
   if (!connected) {
     return { ok: false, reason: `${provider} is not connected for this workspace` };
   }
+  const choice = chooseMobileProject({ projects, projectId });
+  if (!choice.ok) {
+    return { ok: false, reason: choice.reason };
+  }
   if (isRateLimited(now)) {
     return { ok: false, reason: 'too many session launches: slow down and retry shortly' };
   }
@@ -169,7 +213,13 @@ export const evaluateMobileCreateSession = (args: {
   if (!reservation) {
     return { ok: false, reason: 'too many session launches: slow down and retry shortly' };
   }
-  return { ok: true, workspaceId: workspaceId as WorkspaceId, provider, reservation };
+  return {
+    ok: true,
+    workspaceId: workspaceId as WorkspaceId,
+    projectId: choice.projectId,
+    provider,
+    reservation,
+  };
 };
 
 export type SpawnWorkflowGate =

@@ -23,8 +23,11 @@ export const addGoalAttachments = (set: SetFn, get: GetFn) => {
       return;
     }
     const sessionId = owner.type === 'session' ? (owner.id as SessionId) : get().currentSessionId;
-    const worktreeDir = sessionId ? (get().sessionWorktrees[sessionId] ?? [])[0] : undefined;
-    if (!worktreeDir) {
+    if (sessionId == null) {
+      throw new Error('cannot add goal attachments: session worktree not available');
+    }
+    const worktreeDir = (get().sessionWorktrees[sessionId] ?? [])[0];
+    if (worktreeDir === undefined) {
       throw new Error('cannot add goal attachments: session worktree not available');
     }
 

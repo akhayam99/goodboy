@@ -1,9 +1,9 @@
 import type {
+  IntegrationBindingProvider,
   IntegrationCredential,
   IntegrationCredentialId,
   IntegrationCredentialUsage,
   IsoDateTime,
-  WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 import type { Database } from '../client';
 
@@ -18,7 +18,7 @@ type IntegrationCredentialRow = {
 
 const toDomain = (row: IntegrationCredentialRow): IntegrationCredential => ({
   id: row.id as IntegrationCredentialId,
-  provider: row.provider as WorkspaceIntegrationProvider,
+  provider: row.provider as IntegrationBindingProvider,
   label: row.label,
   account: row.account,
   createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
@@ -67,7 +67,7 @@ export const countWorkspacesPerIntegrationCredential = async (
   db: Database,
 ): Promise<IntegrationCredentialUsage> => {
   const rows = await db.select<{ credential_id: string; used_by: number }>(
-    'SELECT credential_id, COUNT(*) AS used_by FROM workspace_integrations GROUP BY credential_id',
+    'SELECT credential_id, COUNT(*) AS used_by FROM integration_bindings GROUP BY credential_id',
   );
   return Object.fromEntries(
     rows.map((row) => [row.credential_id as IntegrationCredentialId, row.used_by]),

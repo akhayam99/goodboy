@@ -87,7 +87,7 @@ describe('SentryStudio', () => {
     const workspaceId = 'workspace-1' as WorkspaceId;
     renderStudio();
 
-    expect(screen.getByText('Connect Sentry to review errors from this workspace')).toBeDefined();
+    expect(screen.getByText('Connect Sentry to review errors from this project')).toBeDefined();
     expect(screen.getByLabelText('Auth token')).toBeDefined();
     expect(screen.getByLabelText('Project slug')).toBeDefined();
     expect(h.useSentryIssues).toHaveBeenCalledWith(workspaceId, false);

@@ -18,8 +18,8 @@ const seed = async (): Promise<Database> => {
   const db = makeTestDatabase();
   await migrate(db);
   await db.execute(
-    'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-    [workspaceId, 'workspace', '/tmp/workspace', NOW, NOW],
+    'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    [workspaceId, 'workspace', 'workspace', NOW, NOW],
   );
   await db.execute(
     'INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',

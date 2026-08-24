@@ -2,7 +2,14 @@
 
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, Session, SessionId, SessionMount, WorkspaceId } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  ProjectId,
+  Session,
+  SessionId,
+  SessionProjectMount,
+  WorkspaceId,
+} from '@goodboy/types';
 
 const { worktreeRemoteUrl } = vi.hoisted(() => ({
   worktreeRemoteUrl: vi.fn(),
@@ -10,7 +17,7 @@ const { worktreeRemoteUrl } = vi.hoisted(() => ({
 
 vi.mock('@goodboy/db', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/db')>();
-  return { ...actual, updateSessionActiveMount: vi.fn(async () => undefined) };
+  return { ...actual, updateSessionActiveProject: vi.fn(async () => undefined) };
 });
 
 vi.mock('./worktree', () => ({ worktreeRemoteUrl }));
@@ -19,14 +26,14 @@ import { useAppStore } from '../../store';
 import { useRemoteHostKind } from './useRemoteHostKind';
 
 const SESSION_ID = 'remote-host-session' as SessionId;
-const COMPOSITE_WORKSPACE_ID = 'remote-host-composite' as WorkspaceId;
-const API_WORKSPACE_ID = 'remote-host-api' as WorkspaceId;
-const WEB_WORKSPACE_ID = 'remote-host-web' as WorkspaceId;
+const MULTI_PROJECT_WORKSPACE_ID = 'remote-host-multi-project' as WorkspaceId;
+const API_PROJECT_ID = 'remote-host-api' as ProjectId;
+const WEB_PROJECT_ID = 'remote-host-web' as ProjectId;
 const NOW = '2026-08-01T00:00:00.000Z' as IsoDateTime;
 
 const SESSION = {
   id: SESSION_ID,
-  workspaceId: COMPOSITE_WORKSPACE_ID,
+  workspaceId: MULTI_PROJECT_WORKSPACE_ID,
   goal: 'Resolve the active remote',
   state: { kind: 'draft' },
   contextSlots: [],
@@ -40,20 +47,20 @@ const SESSION = {
 } satisfies Session;
 
 const API_MOUNT = {
-  workspaceId: API_WORKSPACE_ID,
+  projectId: API_PROJECT_ID,
   mountName: 'api',
   worktreePath: '/remote-host/worktrees/api',
   repoRoot: '/remote-host/repos/api',
   branch: 'ak/active-remote',
-} satisfies SessionMount;
+} satisfies SessionProjectMount;
 
 const WEB_MOUNT = {
-  workspaceId: WEB_WORKSPACE_ID,
+  projectId: WEB_PROJECT_ID,
   mountName: 'web',
   worktreePath: '/remote-host/worktrees/web',
   repoRoot: '/remote-host/repos/web',
   branch: 'ak/active-remote',
-} satisfies SessionMount;
+} satisfies SessionProjectMount;
 
 beforeEach(() => {
   worktreeRemoteUrl.mockReset();
@@ -66,16 +73,72 @@ beforeEach(() => {
     sessions: [SESSION],
     workspaces: [
       {
-        id: COMPOSITE_WORKSPACE_ID,
+        id: MULTI_PROJECT_WORKSPACE_ID,
         name: 'Composite',
-        rootPath: '/remote-host/composite',
-        kind: 'composite',
+        slug: 'multi-project',
+        sessionsRoot: '/remote-host/multi-project',
+        overrides: {
+          defaultProviderId: null,
+          defaultWorkflowId: null,
+          defaultBranchPrefix: null,
+          parallelEnabled: null,
+          defaultVerbosity: null,
+          providerBindings: null,
+          taskModels: null,
+          roleModels: null,
+          parallelAgents: null,
+          providerPool: null,
+        },
         createdAt: NOW,
         updatedAt: NOW,
       },
     ],
-    sessionMounts: { [SESSION_ID]: [API_MOUNT, WEB_MOUNT] },
-    sessionActiveMount: { [SESSION_ID]: API_WORKSPACE_ID },
+    projects: [
+      {
+        id: API_PROJECT_ID,
+        workspaceId: MULTI_PROJECT_WORKSPACE_ID,
+        name: 'api',
+        rootPath: API_MOUNT.repoRoot,
+        kind: 'repo',
+        overrides: {
+          defaultProviderId: null,
+          defaultWorkflowId: null,
+          defaultBranchPrefix: null,
+          parallelEnabled: null,
+          defaultVerbosity: null,
+          providerBindings: null,
+          taskModels: null,
+          roleModels: null,
+          parallelAgents: null,
+          providerPool: null,
+        },
+        createdAt: NOW,
+        updatedAt: NOW,
+      },
+      {
+        id: WEB_PROJECT_ID,
+        workspaceId: MULTI_PROJECT_WORKSPACE_ID,
+        name: 'web',
+        rootPath: WEB_MOUNT.repoRoot,
+        kind: 'repo',
+        overrides: {
+          defaultProviderId: null,
+          defaultWorkflowId: null,
+          defaultBranchPrefix: null,
+          parallelEnabled: null,
+          defaultVerbosity: null,
+          providerBindings: null,
+          taskModels: null,
+          roleModels: null,
+          parallelAgents: null,
+          providerPool: null,
+        },
+        createdAt: NOW,
+        updatedAt: NOW,
+      },
+    ],
+    sessionProjectMounts: { [SESSION_ID]: [API_MOUNT, WEB_MOUNT] },
+    sessionActiveProject: { [SESSION_ID]: API_PROJECT_ID },
     sessionWorktrees: { [SESSION_ID]: ['/remote-host/container'] },
     sessionBranches: {},
     workspaceIntegrations: {},
@@ -87,8 +150,9 @@ afterEach(() => {
   useAppStore.setState({
     sessions: [],
     workspaces: [],
-    sessionMounts: {},
-    sessionActiveMount: {},
+    projects: [],
+    sessionProjectMounts: {},
+    sessionActiveProject: {},
     sessionWorktrees: {},
     sessionBranches: {},
     workspaceIntegrations: {},
@@ -101,9 +165,9 @@ describe('useRemoteHostKind', () => {
 
     await waitFor(() => expect(result.current).toBe('github'));
     act(() => {
-      useAppStore.getState().setSessionActiveMount({
+      useAppStore.getState().setSessionActiveProject({
         sessionId: SESSION_ID,
-        workspaceId: WEB_WORKSPACE_ID,
+        projectId: WEB_PROJECT_ID,
       });
     });
     await waitFor(() => expect(result.current).toBe('gitlab'));

@@ -17,6 +17,7 @@ type DiffViewerContentProps = {
   jumpToFile?: string;
   diffFocus?: DiffFocus | null;
   showToolbarClose?: boolean;
+  onContentEmptyChange?: (isEmpty: boolean) => void;
 };
 
 type DiffViewerDialogProps = DiffViewerContentProps & {

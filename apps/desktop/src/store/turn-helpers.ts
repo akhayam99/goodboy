@@ -4,6 +4,7 @@ import {
   assessPlanReadiness,
   extractClustersFromMarker,
   extractHandoff,
+  extractMaterializeRequests,
   extractPlanFromMarker,
   extractScoutDomains,
   resolveTaskModel,
@@ -57,6 +58,7 @@ import {
 import { buildProviderSpendBreakdown } from './slices/budget';
 import type { SessionNudge } from './types';
 import type { SetFn, GetFn } from './slice-types';
+import { decisionsDelta } from './slices/session-events';
 
 type AttachmentsBlockParams = {
   readonly scope: string;
@@ -296,6 +298,22 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
           upsert.previousValue !== null,
       )
       .map((upsert) => upsert.key);
+    const decisionsUpsert = upsertResults.find(
+      (upsert) => upsert.key === 'decisions' && upsert.didChange && !upsert.hasConflict,
+    );
+    if (decisionsUpsert != null) {
+      const delta = decisionsDelta({
+        previous: decisionsUpsert.previousValue ?? '',
+        next: decisionsUpsert.value,
+      });
+      if (delta.added > 0 || delta.removed > 0) {
+        await get().recordSessionEvent({
+          sessionId,
+          kind: 'decisions_changed',
+          payload: { added: delta.added, removed: delta.removed },
+        });
+      }
+    }
     const hasConflict = upsertResults.some((upsert) => upsert.hasConflict);
     const hasChangedOversizeSlot = upsertResults.some(
       (upsert) =>
@@ -548,19 +566,90 @@ export const captureScoutDomainsFromTurn = async ({
   }
 };
 
-async function recordNudgeShown(
-  kind: NudgeKind,
-  context: Record<string, unknown>,
-): Promise<string> {
+type CaptureMaterializeParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly runId: ProviderRunId;
+  readonly assistantText: string;
+};
+
+export const captureMaterializeRequestsFromTurn = async ({
+  get,
+  sessionId,
+  agentId,
+  runId,
+  assistantText,
+}: CaptureMaterializeParams): Promise<void> => {
+  const requests = extractMaterializeRequests(assistantText);
+  if (requests.length === 0) {
+    return;
+  }
+  const session = get().sessions.find((candidate) => candidate.id === sessionId);
+  if (session === undefined) {
+    return;
+  }
+  const projects = get().projects.filter((project) => project.workspaceId === session.workspaceId);
+  const note = (message: string) => {
+    get().appendTurnEvent(agentId, sessionId, {
+      kind: 'error',
+      runId,
+      message,
+      at: new Date().toISOString() as IsoDateTime,
+    });
+  };
+  for (const request of requests) {
+    const project = projects.find(
+      (candidate) => candidate.name.toLowerCase() === request.projectName.toLowerCase(),
+    );
+    if (project === undefined) {
+      await get().recordSessionEvent({
+        sessionId,
+        kind: 'project_materialization_refused',
+        payload: {
+          projectName: request.projectName,
+          reason: `no project named "${request.projectName}" in this workspace`,
+        },
+      });
+      const known = projects.map((candidate) => candidate.name).join(', ');
+      note(
+        `materialize refused: no project named "${request.projectName}" in this workspace.${known.length > 0 ? ` Known projects: ${known}.` : ''}`,
+      );
+      continue;
+    }
+    try {
+      await get().materializeProject({
+        sessionId,
+        projectId: project.id,
+        reason: request.reason,
+      });
+    } catch (error) {
+      note(`materialize failed for ${project.name}: ${formatError(error)}`);
+    }
+  }
+};
+
+type RecordNudgeShownParams = {
+  readonly kind: NudgeKind;
+  readonly sessionId: SessionId;
+  readonly context: Record<string, unknown>;
+};
+
+const recordNudgeShown = async ({
+  kind,
+  sessionId,
+  context,
+}: RecordNudgeShownParams): Promise<string> => {
   const id = crypto.randomUUID();
-  const event: NudgeEvent = {
+  const event = {
     id,
+    sessionId,
     ts: new Date().toISOString() as IsoDateTime,
     kind,
     contextJson: JSON.stringify(context),
     outcome: null,
     outcomeTs: null,
-  };
+  } satisfies NudgeEvent;
   try {
     await insertNudgeEvent(tauriDatabase, event);
   } catch (err) {
@@ -569,7 +658,7 @@ async function recordNudgeShown(
     }
   }
   return id;
-}
+};
 
 export const emitTurnNudges = async (
   set: SetFn,
@@ -589,12 +678,16 @@ export const emitTurnNudges = async (
 
   const handoff: ExtractedHandoff | null = extractHandoff(assistantText);
   if (handoff && !inWorkflow) {
-    const id = await recordNudgeShown('handoff-suggested', {
+    const id = await recordNudgeShown({
+      kind: 'handoff-suggested',
       sessionId,
-      agentId,
-      targetKind: handoff.kind,
-      reason: handoff.reason,
-      planId: handoff.planId,
+      context: {
+        sessionId,
+        agentId,
+        targetKind: handoff.kind,
+        reason: handoff.reason,
+        planId: handoff.planId,
+      },
     });
     nextNudge = {
       kind: 'handoff-suggested',
@@ -610,10 +703,14 @@ export const emitTurnNudges = async (
       assistantText,
     });
     if (readiness.ready) {
-      const id = await recordNudgeShown('plan-ready', {
+      const id = await recordNudgeShown({
+        kind: 'plan-ready',
         sessionId,
-        agentId,
-        planId: capturedPlan.id,
+        context: {
+          sessionId,
+          agentId,
+          planId: capturedPlan.id,
+        },
       });
       nextNudge = {
         kind: 'plan-ready',

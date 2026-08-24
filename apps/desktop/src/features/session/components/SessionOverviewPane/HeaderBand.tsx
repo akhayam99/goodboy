@@ -1,48 +1,71 @@
-import { useShallow } from 'zustand/react/shallow';
-import { Input, StatusDot, Tooltip } from '@goodboy/ui';
-import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
-import { useAppStore, useCurrentWorkspace } from '../../../../store';
+import { useEffect, useRef } from 'react';
+import type { ReactNode } from 'react';
+import { Input, Tooltip } from '@goodboy/ui';
+import type { Session, SessionId } from '@goodboy/types';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
-import { SESSION_STAGE_META, STAGE_TONE } from '../../session-stage';
-import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
-import { SummarizerBadge } from '../SummarizerBadge';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { EditorMenu } from './EditorMenu';
+import { LensShortcutActions } from './LensShortcutActions';
 import { SessionGitActions } from '../SessionWorkspace/parts/SessionGitActions';
 import { SessionDestructiveActions } from './SessionDestructiveActions';
+import { LinkIssueAction } from './LinkIssueAction';
+import { MountChangesChip } from './MountChangesChip';
+import { ProjectChip } from './ProjectChip';
 import { BranchChip } from './BranchChip';
-import { SessionCostChip } from './SessionCostChip';
+import { BranchSyncStatus } from './BranchSyncStatus';
+import { ContextChip } from './ContextChip';
 import { StatusRowRequest } from './StatusRowRequest';
 import { LinkedWorkChips } from './LinkedWorkChips';
-import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 
 type Props = {
   readonly session: Session;
-  readonly stage: SessionStageInfo;
   readonly onSelectLens: (lens: LensKind) => void;
+  readonly goal: ReactNode;
 };
 
-const REASON_HIDDEN: ReadonlySet<string> = new Set([
-  'no PR yet',
-  'checking GitHub',
-  'GitHub unreachable',
-]);
-
-export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
+export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
   const sessionId = session.id as SessionId;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
-  const workspace = useCurrentWorkspace();
-  const repo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
-  const storedBranch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
-  const branch = repo != null && repo.mountName != null ? repo.branch : storedBranch;
+  const pendingTitleFocus = useAppStore((s) => s.pendingTitleFocusSessionId);
+  const clearPendingTitleFocus = useAppStore((s) => s.clearPendingTitleFocus);
+  const hasProjects = useAppStore((s) =>
+    s.projects.some((project) => project.workspaceId === session.workspaceId),
+  );
+  const hasLinkedWork = useAppStore((s) => {
+    const linkedIssues = s.sessionGithub[sessionId]?.linkedIssues ?? EMPTY_ARRAY;
+    const externalTasks = s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY;
+    return linkedIssues.length > 0 || externalTasks.length > 0;
+  });
+  const titleFieldRef = useRef<HTMLDivElement | null>(null);
+  const selectOnEditRef = useRef(false);
+  const startRenameRef = useRef(rename.start);
+  startRenameRef.current = rename.start;
+
+  useEffect(() => {
+    if (pendingTitleFocus !== sessionId) {
+      return;
+    }
+    clearPendingTitleFocus();
+    selectOnEditRef.current = true;
+    startRenameRef.current();
+  }, [pendingTitleFocus, sessionId, clearPendingTitleFocus]);
+
+  useEffect(() => {
+    if (!rename.editing || !selectOnEditRef.current) {
+      return;
+    }
+    selectOnEditRef.current = false;
+    titleFieldRef.current?.querySelector('input')?.select();
+  }, [rename.editing]);
+
   const goalText = session.goal === '' ? 'Untitled session' : session.goal;
-  const reasonVisible = stage.reason !== '' && !REASON_HIDDEN.has(stage.reason);
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2.5">
       <div className="flex items-center gap-2">
         {rename.editing ? (
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div ref={titleFieldRef} className="flex min-w-0 flex-1 flex-col gap-1">
             <Input
               autoFocus
               value={rename.draft}
@@ -78,44 +101,34 @@ export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
         )}
         <div className="flex shrink-0 items-center gap-1">
           <EditorMenu sessionId={sessionId} density="compact" />
-          <SessionGitActions session={session} density="compact" />
+          <LensShortcutActions onSelectLens={onSelectLens} />
           <SessionDestructiveActions session={session} />
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <StatusDot tone={STAGE_TONE[stage.stage]} pulsing={stage.stage === 'running'} />
-          <span className="shrink-0 text-xs font-medium text-foreground">
-            {SESSION_STAGE_META[stage.stage].label}
-          </span>
-          {reasonVisible ? (
-            <Tooltip
-              content={`${SESSION_STAGE_META[stage.stage].label} · ${stage.reason}`}
-              side="top"
-            >
-              <span className="min-w-0 truncate text-xs text-muted-foreground/70">
-                {stage.reason}
-              </span>
-            </Tooltip>
-          ) : null}
-          <SummarizerBadge sessionId={sessionId} />
-          <SessionCostChip sessionId={sessionId} />
-          {branch != null ? (
-            <BranchChip
-              branch={branch}
-              mountName={repo?.mountName ?? null}
-              sessionId={sessionId}
-              canEdit={
-                workspace != null && !isBranchlessSession({ workspaceKind: workspace.kind, branch })
-              }
-            />
-          ) : null}
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <ContextChip sessionId={sessionId} onSelectLens={onSelectLens} />
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />
-          <StatusRowRequest sessionId={sessionId} />
+          <LinkIssueAction session={session} presentation="chip" isCollapsed={hasLinkedWork} />
         </div>
       </div>
+      {hasProjects ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <ProjectChip
+            sessionId={sessionId}
+            workspaceId={session.workspaceId}
+            onSelectLens={onSelectLens}
+          />
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+            <BranchSyncStatus sessionId={sessionId} />
+            <BranchChip sessionId={sessionId} />
+            <SessionGitActions session={session} density="compact" />
+            <MountChangesChip sessionId={sessionId} />
+            <StatusRowRequest sessionId={sessionId} />
+          </div>
+        </div>
+      ) : null}
+      {goal}
     </div>
   );
 };

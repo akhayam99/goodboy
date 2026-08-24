@@ -32,8 +32,8 @@ const { setActiveLens, sessionList, state } = vi.hoisted(() => {
         },
       ],
       sessions,
-      sessionMounts: {},
-      sessionActiveMount: {},
+      sessionProjectMounts: {},
+      sessionActiveProject: {},
       sessionBranches: { 'session-1': 'feature/branch' } as Record<string, string>,
       setSessionStudio: vi.fn(),
       openWorkspace: vi.fn(),
@@ -81,8 +81,8 @@ vi.mock('../../features/session/components/SessionNavSidebar', () => ({
   SessionNavSidebar: () => null,
 }));
 vi.mock('../../features/workspace/hooks/useWindowPresence', () => ({ useWindowPresence: vi.fn() }));
-vi.mock('../../features/workspace/components/WorkspaceLinkDialog', () => ({
-  WorkspaceLinkDialog: () => null,
+vi.mock('../../features/workspace/components/WorkspaceLinkStudio', () => ({
+  WorkspaceLinkStudio: () => null,
 }));
 vi.mock('../../features/workspace/components/WorkspaceLauncher', () => ({
   WorkspaceLauncher: () => null,
@@ -94,7 +94,6 @@ vi.mock('../../features/workspace/window', () => ({ isMainWindow: () => true }))
 vi.mock('../../features/workflows/components/WorkflowStudio', () => ({
   WorkflowStudio: () => null,
 }));
-vi.mock('../../features/session/components/NewSessionView', () => ({ NewSessionView: () => null }));
 vi.mock('../../features/github/components/GitHubStudio', () => ({ GitHubStudio: () => null }));
 vi.mock('../../features/integrations/linear/LinearStudio', () => ({ LinearStudio: () => null }));
 vi.mock('../../features/integrations/sentry/SentryStudio', () => ({ SentryStudio: () => null }));

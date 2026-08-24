@@ -7,7 +7,7 @@ const { state, hooks, toastMock } = vi.hoisted(() => ({
   state: {
     skills: {} as Record<string, ReadonlyArray<unknown>>,
     phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
-    workspaceScripts: {} as Record<string, ReadonlyArray<unknown>>,
+    projectScripts: {} as Record<string, ReadonlyArray<unknown>>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     agentKindOverride: {} as Record<string, string>,
@@ -40,7 +40,7 @@ import { REPORT_ISSUE_STUDIO_EVENT } from '../../../settings/reportIssueStudioEv
 beforeEach(() => {
   state.skills = {};
   state.phaseTemplates = {};
-  state.workspaceScripts = {};
+  state.projectScripts = {};
   state.sessionPhaseRuns = {};
   state.sessionWorktrees = {};
   state.agentKindOverride = {};

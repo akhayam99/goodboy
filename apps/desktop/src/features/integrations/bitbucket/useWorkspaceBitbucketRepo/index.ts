@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { BitbucketWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import type { BitbucketIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { worktreeRemoteUrl } from '../../../worktree/worktree';
 import { projectPathFromRemoteUrl } from '../../../../shared/lib/remoteHost';
@@ -18,15 +18,15 @@ export const useWorkspaceBitbucketRepo = ({
   isEnabled,
 }: Params): BitbucketRepo | null => {
   const rootPath = useAppStore((state) => {
-    const workspace = state.workspaces.find((candidate) => candidate.id === workspaceId) ?? null;
-    if (workspace == null || (workspace.kind ?? 'repo') !== 'repo') {
-      return null;
-    }
-    return workspace.rootPath;
+    return (
+      state.projects?.find(
+        (project) => project.workspaceId === workspaceId && project.kind === 'repo',
+      )?.rootPath ?? null
+    );
   });
   const config = useAppStore((state) => {
     const integration = (state.workspaceIntegrations[workspaceId] ?? EMPTY_ARRAY).find(
-      (candidate): candidate is BitbucketWorkspaceIntegration => candidate.provider === 'bitbucket',
+      (candidate): candidate is BitbucketIntegrationBinding => candidate.provider === 'bitbucket',
     );
     return integration?.config ?? null;
   });

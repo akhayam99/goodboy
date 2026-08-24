@@ -98,8 +98,6 @@ export const LibraryStepForm = ({
     };
     if (def && !isGlobal) {
       onCommit({ ...base, id: def.id });
-    } else if (def && isGlobal) {
-      onCommit({ ...base, baseStepId: def.id });
     } else {
       onCommit(base);
     }

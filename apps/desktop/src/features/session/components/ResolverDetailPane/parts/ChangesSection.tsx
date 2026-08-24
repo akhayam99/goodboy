@@ -65,7 +65,7 @@ export const ChangesSection = ({
                     title={`Open the diff of ${sha}`}
                     className={cn(
                       MISSING_SHA_CLASS,
-                      'rounded-md text-left motion-safe:transition-colors hover:text-primary',
+                      'cursor-pointer rounded-md text-left underline-offset-2 motion-safe:transition-colors hover:text-foreground hover:underline',
                     )}
                   >
                     {sha.slice(0, 7)}

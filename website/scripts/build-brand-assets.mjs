@@ -27,6 +27,10 @@ const ICNS_HEADER_BYTES = 8;
 const TILE_RADIUS_RATIO = 0.28;
 const MARK_SCALE = 0.76;
 const APP_ICON_MARK_SCALE_EXCEPTION = 0.66;
+const DEV_ICON_CONTENT_RATIO = 0.8125;
+const DEV_ICON_CORNER_RADIUS_RATIO = 0.2237;
+const DEV_ICON_FILES = ['icon.png', '32x32.png', '128x128.png', '128x128@2x.png'];
+const PNG_WIDTH_OFFSET_BYTES = 16;
 
 const readSource = (relativePath) =>
   readFileSync(resolve(REPOSITORY_DIRECTORY, relativePath), 'utf8');
@@ -347,6 +351,45 @@ const createAppIconHtml = ({ tileColor, mascotBase64 }) => `<!doctype html>
 </style>
 <body><i class="mascot"></i></body>`;
 
+const createDevIconHtml = ({ tileColor, mascotBase64, canvasPx }) => {
+  const contentPx = canvasPx * DEV_ICON_CONTENT_RATIO;
+  const markPx = contentPx * APP_ICON_MARK_SCALE_EXCEPTION;
+  return `<!doctype html>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box }
+  html, body { width: ${canvasPx}px; height: ${canvasPx}px; background: transparent; overflow: hidden }
+  body { display: grid; place-items: center }
+  .tile { width: ${contentPx}px; height: ${contentPx}px; border-radius: ${contentPx * DEV_ICON_CORNER_RADIUS_RATIO}px; background: ${tileColor}; display: grid; place-items: center }
+  .mascot { display: block; width: ${markPx}px; height: ${markPx}px; background: #fff; -webkit-mask: url(data:image/png;base64,${mascotBase64}) no-repeat center / contain }
+</style>
+<body><div class="tile"><i class="mascot"></i></div></body>`;
+};
+
+const renderDevIcon = ({ name, tileColor, mascotBase64, temporaryIconsDirectory }) => {
+  const outputPath = resolve(temporaryIconsDirectory, name);
+  const canvasPx = readFileSync(outputPath).readUInt32BE(PNG_WIDTH_OFFSET_BYTES);
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const temporaryHtmlPath = resolve(tmpdir(), `goodboy-dev-icon-${slug}-${process.pid}.html`);
+  try {
+    writeFileSync(temporaryHtmlPath, createDevIconHtml({ tileColor, mascotBase64, canvasPx }));
+    execFileSync(CHROME, [
+      '--headless=new',
+      '--disable-gpu',
+      '--hide-scrollbars',
+      '--default-background-color=00000000',
+      '--force-device-scale-factor=1',
+      `--window-size=${canvasPx},${canvasPx}`,
+      `--screenshot=${outputPath}`,
+      pathToFileURL(temporaryHtmlPath).href,
+    ]);
+  } finally {
+    if (existsSync(temporaryHtmlPath)) {
+      unlinkSync(temporaryHtmlPath);
+    }
+  }
+};
+
 const icnsChunkDigests = (buffer) => {
   const digests = [];
   let cursor = ICNS_HEADER_BYTES;
@@ -464,6 +507,9 @@ const renderAppIcons = ({ tileColor, mascotBase64 }) => {
     execFileSync(TAURI_CLI, ['icon', temporaryPngPath, '-o', temporaryIconsDirectory], {
       stdio: 'ignore',
     });
+    DEV_ICON_FILES.forEach((name) =>
+      renderDevIcon({ name, tileColor, mascotBase64, temporaryIconsDirectory }),
+    );
     const stale = readdirSync(DESKTOP_ICONS_DIRECTORY)
       .filter((name) => existsSync(resolve(temporaryIconsDirectory, name)))
       .filter(

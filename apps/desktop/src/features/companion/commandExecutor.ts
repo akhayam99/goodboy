@@ -33,6 +33,7 @@ import type {
   JiraIntegrationConfig,
   SessionExternalTaskProvider,
   WorkspaceId,
+  IntegrationBindingProvider,
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 import { linearFetchAssignedIssues, type LinearIssue } from '../integrations/linear/client';
@@ -256,7 +257,7 @@ function jiraConfigFor(workspaceId: WorkspaceId): JiraIntegrationConfig | undefi
   return row && row.provider === 'jira' ? row.config : undefined;
 }
 
-function connectedProviders(workspaceId: WorkspaceId): ReadonlySet<WorkspaceIntegrationProvider> {
+function connectedProviders(workspaceId: WorkspaceId): ReadonlySet<IntegrationBindingProvider> {
   const rows = useAppStore.getState().workspaceIntegrations[workspaceId] ?? [];
   return new Set(rows.map((r) => r.provider));
 }
@@ -542,7 +543,11 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       const gate = evaluateMobileCreateSession({
         workspaceId,
         provider,
+        projectId: data.projectId,
         workspaces: store.workspaces,
+        projects: workspaceId
+          ? store.projects.filter((project) => project.workspaceId === workspaceId)
+          : [],
         integrations: workspaceId
           ? (store.workspaceIntegrations[workspaceId as WorkspaceId] ?? [])
           : [],
@@ -559,6 +564,7 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
         );
         ({ session } = await store.createSession({
           workspaceId: gate.workspaceId,
+          projectId: gate.projectId,
           goal: resolved.goal,
           externalTasks: [resolved.externalTask],
           mobileShared: true,

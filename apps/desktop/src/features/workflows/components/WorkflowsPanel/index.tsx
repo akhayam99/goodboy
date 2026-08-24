@@ -9,6 +9,7 @@ import type {
 } from '@goodboy/types';
 import { formatError, StudioRailLayout } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { primaryProjectRoot } from '../../../workspace/primaryProjectRoot';
 import type { WorkflowStepUpsertArgs, WorkflowUpsertArgs } from '../../workflows';
 import type { DefinitionForm, TemplateForm } from '../../form';
 import { defFromLibraryStep, emptyDefinition, emptyForm, templateToForm } from '../../form';
@@ -52,9 +53,8 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     (state) => state.stepLibrary[workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<StepDef>),
   );
   const providers = useAppStore((state) => state.providers);
-  const workspaceRoot = useAppStore(
-    (state) =>
-      state.workspaces?.find((workspace) => workspace.id === workspaceId)?.rootPath ?? null,
+  const workspaceRoot = useAppStore((state) =>
+    primaryProjectRoot({ projects: state.projects, workspaceId }),
   );
   const storedDraft = useAppStore((state) => state.workflowStudioDrafts[workspaceId]);
   const generation = useAppStore((state) => state.workflowGenerations[workspaceId]);

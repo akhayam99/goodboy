@@ -39,9 +39,9 @@ const insertRun = async ({ db }: InsertRunParams): Promise<void> => {
   await db.execute(
     `INSERT INTO session_workflows
        (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run,
-        trigger_mode, execution_mode)
-     VALUES ('run-1', ?, ?, 0, 0, 0, 'immediate', 'dynamic')`,
-    [sessionId, workflowId],
+        trigger_mode, execution_mode, created_at)
+     VALUES ('run-1', ?, ?, 0, 0, 0, 'immediate', 'dynamic', ?)`,
+    [sessionId, workflowId, Date.now()],
   );
 };
 

@@ -2,75 +2,83 @@ import { describe, expect, it } from 'vitest';
 import type {
   IntegrationCredentialId,
   IsoDateTime,
+  ProjectId,
   WorkspaceId,
-  WorkspaceIntegration,
-  WorkspaceIntegrationConfig,
-  WorkspaceIntegrationId,
+  IntegrationBinding,
+  IntegrationBindingConfig,
+  IntegrationBindingId,
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 import { describeIntegrationConfig } from './describeIntegrationConfig';
 
 const WS = 'workspace-app-web' as WorkspaceId;
+const PROJECT_ID = 'project-app-web' as ProjectId;
 
 type Params = {
   readonly provider: WorkspaceIntegrationProvider;
-  readonly config: WorkspaceIntegrationConfig;
+  readonly config: IntegrationBindingConfig;
 };
 
-const integration = ({ provider, config }: Params): WorkspaceIntegration =>
+const integration = ({ provider, config }: Params): IntegrationBinding =>
   ({
-    id: 'integration-1' as WorkspaceIntegrationId,
+    id: 'integration-1' as IntegrationBindingId,
     workspaceId: WS,
+    projectId: null,
     provider,
     config,
     credentialId: `goodboy.workspace.${WS}.${provider}` as IntegrationCredentialId,
     createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
     updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
-  }) as WorkspaceIntegration;
+  }) as IntegrationBinding;
 
 describe('describeIntegrationConfig', () => {
   it('names the Linear account and workspace', () => {
     const description = describeIntegrationConfig({
       integration: integration({
         provider: 'linear',
-        config: { workspaceUrlKey: 'serenis', viewerUserId: 'user-1', viewerName: 'Amin Khayam' },
+        config: { workspaceUrlKey: 'demo-team', viewerUserId: 'user-1', viewerName: 'Amin Khayam' },
       }),
     });
 
-    expect(description).toBe('Amin Khayam on linear.app/serenis');
+    expect(description).toBe('Amin Khayam on linear.app/demo-team');
   });
 
   it('names the Sentry organization and project the reuse would bring along', () => {
     const description = describeIntegrationConfig({
       integration: integration({
         provider: 'sentry',
-        config: { org: 'serenis', project: 'app-web', orgName: 'Serenis', projectName: 'App Web' },
+        config: {
+          org: 'demo-team',
+          project: 'app-web',
+          orgName: 'Demo Team',
+          projectName: 'App Web',
+        },
       }),
     });
 
-    expect(description).toBe('Serenis / App Web');
+    expect(description).toBe('Demo Team / App Web');
   });
 
   it('falls back to Sentry slugs when the human names were never fetched', () => {
     const description = describeIntegrationConfig({
       integration: integration({
         provider: 'sentry',
-        config: { org: 'serenis', project: 'app-web' },
+        config: { org: 'demo-team', project: 'app-web' },
       }),
     });
 
-    expect(description).toBe('serenis / app-web');
+    expect(description).toBe('demo-team / app-web');
   });
 
   it('names the GitLab user and host, so a self-hosted instance is visible', () => {
     const description = describeIntegrationConfig({
       integration: integration({
         provider: 'gitlab',
-        config: { userName: 'octo', userId: '42', host: 'https://gitlab.serenis.it' },
+        config: { userName: 'octo', userId: '42', host: 'https://gitlab.example.com' },
       }),
     });
 
-    expect(description).toBe('octo on https://gitlab.serenis.it');
+    expect(description).toBe('octo on https://gitlab.example.com');
   });
 
   it('names the Jira project, because the reuse carries that project with it', () => {
@@ -109,24 +117,24 @@ describe('describeIntegrationConfig', () => {
       integration: integration({
         provider: 'bitbucket',
         config: {
-          workspaceSlug: 'serenis',
+          workspaceSlug: 'demo-team',
           email: 'grace@acme.com',
           displayName: 'Grace Hopper',
         },
       }),
     });
 
-    expect(description).toBe('bitbucket.org/serenis as Grace Hopper');
+    expect(description).toBe('bitbucket.org/demo-team as Grace Hopper');
   });
 
   it('names the Slack team and the person the token belongs to', () => {
     const description = describeIntegrationConfig({
       integration: integration({
         provider: 'slack',
-        config: { teamId: 'T1', teamName: 'Serenis', botUserId: 'U1', botUserName: 'goodboy' },
+        config: { teamId: 'T1', teamName: 'Demo Team', botUserId: 'U1', botUserName: 'goodboy' },
       }),
     });
 
-    expect(description).toBe('Serenis as goodboy');
+    expect(description).toBe('Demo Team as goodboy');
   });
 });

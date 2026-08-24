@@ -1,6 +1,6 @@
 use super::protocol::{
-    self, help_text, parse_argv, ArgvOutcome, QueryRequest, QueryResponse, SOCKET_ENV, SUBCOMMAND,
-    WORKSPACE_ENV,
+    self, help_text, parse_argv, ArgvOutcome, QueryRequest, QueryResponse, SESSION_ENV, SOCKET_ENV,
+    SUBCOMMAND, WORKSPACE_ENV,
 };
 
 pub(crate) fn dispatch() -> Option<i32> {
@@ -39,6 +39,11 @@ fn run(argv: &[String]) -> Result<String, String> {
     }
     let request = QueryRequest {
         workspace_id: workspace_id.trim().to_string(),
+        session_id: std::env::var(SESSION_ENV)
+            .unwrap_or_default()
+            .trim()
+            .to_string(),
+        project: project_scope(&parsed.args, argv),
         provider: parsed.provider,
         verb: parsed.verb,
         args: parsed.args,
@@ -61,6 +66,22 @@ fn help_provider(argv: &[String]) -> Option<&str> {
         .map(String::as_str)
         .find(|token| !token.starts_with('-'))
         .filter(|token| protocol::providers().contains(token))
+}
+
+/// A `--project` value scopes the request to one project of the workspace,
+/// except on a verb that owns a `project` argument of its own, where the
+/// flag keeps its verb-specific meaning and no scope is set.
+fn project_scope(
+    args: &std::collections::BTreeMap<String, serde_json::Value>,
+    argv: &[String],
+) -> String {
+    match args.contains_key("project") {
+        true => String::new(),
+        false => named_value(argv, "project")
+            .unwrap_or_default()
+            .trim()
+            .to_string(),
+    }
 }
 
 fn named_value(argv: &[String], name: &str) -> Option<String> {
@@ -196,6 +217,24 @@ mod tests {
         assert_eq!(named_value(&spaced, "workspace").as_deref(), Some("ws-1"));
         assert_eq!(named_value(&inline, "workspace").as_deref(), Some("ws-2"));
         assert_eq!(named_value(&[], "workspace"), None);
+    }
+
+    #[test]
+    fn the_project_scope_is_read_from_argv_on_a_verb_without_a_project_argument() {
+        let args = std::collections::BTreeMap::new();
+        let argv = owned(&["linear", "issue", "ENG-1", "--project", "app"]);
+
+        assert_eq!(project_scope(&args, &argv), "app");
+        assert_eq!(project_scope(&args, &owned(&["linear", "issue", "ENG-1"])), "");
+    }
+
+    #[test]
+    fn a_verb_that_owns_a_project_argument_keeps_it_and_sets_no_scope() {
+        let mut args = std::collections::BTreeMap::new();
+        args.insert("project".to_string(), serde_json::json!("group/app"));
+        let argv = owned(&["gitlab", "issue", "--project", "group/app", "--iid", "42"]);
+
+        assert_eq!(project_scope(&args, &argv), "");
     }
 
     #[test]

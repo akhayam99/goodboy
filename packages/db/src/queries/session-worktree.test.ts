@@ -19,7 +19,7 @@ const seed = async (): Promise<Database> => {
   await migrate(db, migrations);
   const now = Date.now();
   await db.execute(
-    'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
     [workspaceId, 'ws', '/tmp/ws', now, now],
   );
   for (const id of [sessionId, otherSessionId]) {
@@ -32,7 +32,7 @@ const seed = async (): Promise<Database> => {
 };
 
 describe('updateSessionWorktreeRepoSlug', () => {
-  it('stamps only the addressed mount of a composite session', async () => {
+  it('stamps only the addressed mount of a multi-project session', async () => {
     const db = await seed();
     await insertSessionWorktree(db, {
       id: 'wt-api',

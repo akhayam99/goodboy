@@ -29,6 +29,7 @@ type Candidate = {
   readonly provider: ProviderId;
   readonly id: string;
   readonly selection?: ModelSelection;
+  readonly roleAware?: boolean;
 };
 
 export const resolveTurnModelSelection = ({
@@ -72,6 +73,7 @@ export const resolveTurnModelSelection = ({
             ? {
                 provider: autoStepModel.provider,
                 id: autoStepModel.model,
+                roleAware: true,
               }
             : turnCandidate != null
               ? turnCandidate
@@ -86,7 +88,8 @@ export const resolveTurnModelSelection = ({
                   };
   const shouldUseRoutingDefault =
     retryModel == null &&
-    (routingDecision.fallbackUsed || candidate.provider !== routingDecision.selectedProvider);
+    (candidate.provider !== routingDecision.selectedProvider ||
+      (routingDecision.fallbackUsed && candidate.roleAware !== true));
   const selectedCandidate: Candidate = shouldUseRoutingDefault
     ? {
         provider,

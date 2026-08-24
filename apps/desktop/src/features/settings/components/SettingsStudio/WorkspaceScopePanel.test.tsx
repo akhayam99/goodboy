@@ -35,6 +35,10 @@ vi.mock('../../../../features/skills/components/SkillsPanel', () => ({
   SkillsPanel: () => null,
 }));
 
+vi.mock('./WorkspaceMergeSection', () => ({
+  WorkspaceMergeSection: () => null,
+}));
+
 vi.mock('../../../../features/session/components/VerbositySelect', () => ({
   VerbositySelect: () => null,
 }));
@@ -82,12 +86,30 @@ describe('WorkspaceScopePanel', () => {
     expect(screen.queryByRole('button', { name: /^general$/i })).toBeNull();
   });
 
+  it('orders the sections projects, profile, session defaults, danger zone', () => {
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
+    const order = ['Projects', 'Profile', 'Session defaults', 'Danger zone'].map((label) =>
+      screen.getByText(label),
+    );
+    for (let i = 0; i < order.length - 1; i += 1) {
+      expect(
+        order[i]!.compareDocumentPosition(order[i + 1]!) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    }
+  });
+
+  it('folds parallel agents into the session defaults section', () => {
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
+    const section = screen.getByText('Session defaults').closest('section');
+    expect(section?.textContent).toContain('Parallel agents');
+  });
+
   it('renames the workspace on blur while keeping the folder name as the hint', () => {
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
 
     const input = screen.getByLabelText(/display name/i);
     expect((input as HTMLInputElement).value).toBe('billing');
-    expect(screen.getByText(/the folder on disk stays billing-api/i)).toBeDefined();
+    expect(screen.getByText(/the folder on disk stays the workspace folder/i)).toBeDefined();
 
     fireEvent.change(input, { target: { value: 'Billing platform' } });
     fireEvent.blur(input);

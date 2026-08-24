@@ -1,11 +1,11 @@
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId } from '@goodboy/types';
 
 type Params = {
   readonly task: {
     readonly externalId: string;
-    readonly mountWorkspaceId?: WorkspaceId | null;
+    readonly projectId?: ProjectId | null;
   };
 };
 
 export const integrationTaskKey = ({ task }: Params): string =>
-  `${task.externalId}:${task.mountWorkspaceId ?? ''}`;
+  `${task.externalId}:${task.projectId ?? ''}`;

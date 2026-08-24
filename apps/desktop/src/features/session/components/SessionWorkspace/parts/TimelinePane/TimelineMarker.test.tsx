@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { tintClasses } from '@goodboy/ui';
 import type { TimelineMarkerState } from '../../../../timeline/markerState';
 import { TIMELINE_RHYTHM, type TimelineRowGrade } from '../../../../timeline/timelineRhythm';
 import { TimelineMarker } from './TimelineMarker';
@@ -17,14 +18,6 @@ const STATES = [
   'skipped',
   'needsUser',
   'question',
-] satisfies ReadonlyArray<TimelineMarkerState>;
-
-const CIRCLE_STATES = [
-  'done',
-  'failed',
-  'running',
-  'pending',
-  'skipped',
 ] satisfies ReadonlyArray<TimelineMarkerState>;
 
 const ELEVATION_RAMP = ['bg-background', 'bg-subtle', 'bg-muted', 'bg-elevated'];
@@ -88,13 +81,15 @@ describe('TimelineMarker', () => {
     }
   });
 
-  it('gives the two blocking states a shape that is not the circle', () => {
-    for (const state of CIRCLE_STATES) {
+  it('keeps every state on the same disc and marks the blocking ones by tone', () => {
+    for (const state of STATES) {
       expect(rootOf({ state }).className).toContain('rounded-full');
       cleanup();
     }
     for (const state of ['needsUser', 'question'] satisfies ReadonlyArray<TimelineMarkerState>) {
-      expect(rootOf({ state }).className).not.toContain('rounded-full');
+      const root = rootOf({ state });
+      expect(root.className).toContain(tintClasses('warning').ring);
+      expect(root.querySelector('svg')?.getAttribute('fill-opacity')).not.toBeNull();
       cleanup();
     }
   });

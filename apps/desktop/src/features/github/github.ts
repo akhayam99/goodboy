@@ -83,7 +83,7 @@ export const ghPrDiff = async (
   pr: number,
   cwd?: string,
   workspaceId?: string,
-  memberWorkspaceId?: string,
+  projectId?: string,
 ): Promise<string> => {
   try {
     return await invoke<string>('gh_pr_diff', {
@@ -91,7 +91,7 @@ export const ghPrDiff = async (
       pr,
       cwd,
       workspaceId,
-      ...(memberWorkspaceId != null ? { memberWorkspaceId } : {}),
+      ...(projectId != null ? { projectId } : {}),
     });
   } catch (err) {
     const msg = formatError(err);
@@ -103,14 +103,14 @@ export const gitPush = async (
   cwd: string,
   branch: string | null,
   workspaceId?: string,
-  memberWorkspaceId?: string,
+  projectId?: string,
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
   try {
     const raw = await invoke<RawGhRunResult>('git_push', {
       cwd,
       branch: branch ?? undefined,
       workspaceId,
-      ...(memberWorkspaceId != null ? { memberWorkspaceId } : {}),
+      ...(projectId != null ? { projectId } : {}),
     });
     return { stdout: raw.stdout, stderr: raw.stderr, exitCode: raw.exitCode };
   } catch (err) {
@@ -155,7 +155,7 @@ export const ghIssueByNumber = async (
 ): Promise<GithubIssue> => {
   const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
   if (slug == null) {
-    throw new Error('could not detect a GitHub repository for this workspace');
+    throw new Error('could not detect a GitHub repository for this project');
   }
   const raw = await ghRunJson<RawGithubIssueView>(
     tauriGhRunner,
@@ -188,7 +188,7 @@ export const ghUpdateIssueBody = async ({
 }: UpdateIssueBodyParams): Promise<string> => {
   const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
   if (slug == null) {
-    throw new Error('could not detect a GitHub repository for this workspace');
+    throw new Error('could not detect a GitHub repository for this project');
   }
   return updateIssueBody({
     runner: tauriGhRunner,
@@ -212,7 +212,7 @@ export const ghIssueComments = async ({
 }: IssueCommentsParams): Promise<ReadonlyArray<GithubIssueComment>> => {
   const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
   if (slug == null) {
-    throw new Error('could not detect a GitHub repository for this workspace');
+    throw new Error('could not detect a GitHub repository for this project');
   }
   return listIssueComments({
     runner: tauriGhRunner,
@@ -237,7 +237,7 @@ export const ghCreateIssueComment = async ({
 }: CreateIssueCommentParams): Promise<GithubIssueComment> => {
   const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
   if (slug == null) {
-    throw new Error('could not detect a GitHub repository for this workspace');
+    throw new Error('could not detect a GitHub repository for this project');
   }
   return createIssueComment({
     runner: tauriGhRunner,
@@ -267,7 +267,7 @@ export const ghPrHeadBranch = async (
 ): Promise<string> => {
   const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
   if (!slug) {
-    throw new Error('could not detect a GitHub repository for this workspace');
+    throw new Error('could not detect a GitHub repository for this project');
   }
   const res = await tauriGhRunner.run(
     [
@@ -296,7 +296,7 @@ export const ghPrHeadBranch = async (
 export const ghBaseBranches = async (
   cwd: string,
   workspaceId?: string,
-  memberWorkspaceId?: string,
+  projectId?: string,
 ): Promise<{ defaultBranch: string | null; branches: ReadonlyArray<string> }> => {
   const [def, list] = await Promise.all([
     tauriGhRunner.run(
@@ -304,13 +304,13 @@ export const ghBaseBranches = async (
       {
         cwd,
         workspaceId,
-        memberWorkspaceId,
+        projectId,
       },
     ),
     tauriGhRunner.run(['api', 'repos/{owner}/{repo}/branches?per_page=100', '--jq', '.[].name'], {
       cwd,
       workspaceId,
-      memberWorkspaceId,
+      projectId,
     }),
   ]);
   const defaultBranch = def.exitCode === 0 ? def.stdout.trim() || null : null;
@@ -327,11 +327,11 @@ export const ghBaseBranches = async (
 export const ghRepoCollaborators = async (
   cwd: string,
   workspaceId?: string,
-  memberWorkspaceId?: string,
+  projectId?: string,
 ): Promise<ReadonlyArray<string>> => {
   const res = await tauriGhRunner.run(
     ['api', 'repos/{owner}/{repo}/collaborators?per_page=100', '--jq', '.[].login'],
-    { cwd, workspaceId, memberWorkspaceId },
+    { cwd, workspaceId, projectId },
   );
   if (res.exitCode !== 0) {
     return [];
@@ -362,7 +362,7 @@ export const tauriGhRunner: GhRunner = {
         args: [...args],
         cwd: opts.cwd,
         workspaceId: opts.workspaceId,
-        ...(opts.memberWorkspaceId != null ? { memberWorkspaceId: opts.memberWorkspaceId } : {}),
+        ...(opts.projectId != null ? { projectId: opts.projectId } : {}),
       });
       return {
         stdout: raw.stdout,

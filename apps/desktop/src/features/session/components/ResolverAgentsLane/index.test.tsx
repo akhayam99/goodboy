@@ -164,8 +164,8 @@ beforeEach(() => {
   Object.assign(h.state, {
     sessions: [session],
     workspaces: [{ id: WS_ID, rootPath: '/tmp/repo', kind: 'repo' }],
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: {},
+    sessionActiveProject: {},
     sessionBranches: { [SESSION_ID]: 'ak/resolver' },
     currentSessionId: SESSION_ID,
     sessionPhaseRuns: {},

@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
-  BitbucketWorkspaceIntegration,
+  BitbucketIntegrationBinding,
   IntegrationCredentialId,
   WorkspaceId,
 } from '@goodboy/types';
@@ -25,9 +25,10 @@ vi.mock('../../../store', () => ({
 
 const WS_ID = 'ws-1' as WorkspaceId;
 
-const bitbucketIntegration: BitbucketWorkspaceIntegration = {
+const bitbucketIntegration: BitbucketIntegrationBinding = {
   id: 'wi-1' as never,
   workspaceId: WS_ID,
+  projectId: null,
   provider: 'bitbucket',
   credentialId: 'cred-1' as IntegrationCredentialId,
   config: {
@@ -40,13 +41,13 @@ const bitbucketIntegration: BitbucketWorkspaceIntegration = {
 };
 
 const fillConnectForm = () => {
+  fireEvent.change(screen.getByLabelText(/personal API key/i), { target: { value: ' ATATT-x ' } });
   fireEvent.change(screen.getByLabelText(/workspace slug/i), {
     target: { value: 'https://bitbucket.org/GoodBoy/desktop' },
   });
   fireEvent.change(screen.getByLabelText(/account email/i), {
     target: { value: ' grace@acme.com ' },
   });
-  fireEvent.change(screen.getByLabelText(/personal API key/i), { target: { value: ' ATATT-x ' } });
 };
 
 beforeEach(() => {
@@ -62,13 +63,24 @@ afterEach(cleanup);
 import { BitbucketFormBody } from './BitbucketFormBody';
 
 describe('BitbucketFormBody', () => {
-  it('offers the token link before the token field', () => {
+  it('shows the token field first and the get-a-token link right under it', () => {
     render(<BitbucketFormBody workspaceId={WS_ID} />);
 
-    const link = screen.getByRole('link', { name: /create an API token/i });
     const field = screen.getByLabelText(/personal API key/i);
+    const link = screen.getByRole('link', { name: /get an API token from Atlassian/i });
 
-    expect(link.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(field.compareDocumentPosition(link)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('keeps slug and email out of sight until the token is pasted', () => {
+    render(<BitbucketFormBody workspaceId={WS_ID} />);
+    expect(screen.queryByLabelText(/workspace slug/i)).toBeNull();
+    expect(screen.queryByLabelText(/account email/i)).toBeNull();
+    fireEvent.change(screen.getByLabelText(/personal API key/i), {
+      target: { value: 'ATATT-x' },
+    });
+    expect(screen.getByLabelText(/workspace slug/i)).toBeDefined();
+    expect(screen.getByLabelText(/account email/i)).toBeDefined();
   });
 
   it('keeps Connect disabled until every field is filled', () => {
@@ -113,36 +125,39 @@ describe('BitbucketFormBody', () => {
       state.workspaceIntegrations = { [WS_ID]: [bitbucketIntegration] };
     });
 
-    it('shows the workspace and account instead of the form', () => {
+    it('renders one connected row with the workspace instead of the form', () => {
       render(<BitbucketFormBody workspaceId={WS_ID} />);
       expect(screen.getByText(/Connected as Grace Hopper/i)).toBeDefined();
-      expect(screen.getByText('goodboy')).toBeDefined();
-      expect(screen.getByText('grace@acme.com')).toBeDefined();
+      expect(screen.getByText('bitbucket.org/goodboy')).toBeDefined();
       expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
     });
 
     it('arms the disconnect confirm instead of disconnecting immediately', () => {
       render(<BitbucketFormBody workspaceId={WS_ID} />);
-      fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /disconnect bitbucket/i }));
       expect(screen.getByText(/Disconnect Bitbucket\?/i)).toBeDefined();
       expect(state.disconnectIntegration).not.toHaveBeenCalled();
     });
 
-    it('disconnects Bitbucket for the workspace once the confirm is confirmed', () => {
+    it('disconnects Bitbucket for the workspace once the confirm is confirmed', async () => {
       render(<BitbucketFormBody workspaceId={WS_ID} />);
-      fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /disconnect bitbucket/i }));
       fireEvent.click(screen.getByRole('button', { name: /^disconnect bitbucket$/i }));
-      expect(state.disconnectIntegration).toHaveBeenCalledWith({
-        workspaceId: WS_ID,
-        provider: 'bitbucket',
-      });
+      await waitFor(() =>
+        expect(state.disconnectIntegration).toHaveBeenCalledWith({
+          workspaceId: WS_ID,
+          provider: 'bitbucket',
+        }),
+      );
     });
   });
 
-  it('says where the token travels instead of claiming it never leaves', () => {
+  it('keeps the cloud-only note behind a quiet disclosure and says where the token travels', () => {
     render(<BitbucketFormBody workspaceId={WS_ID} />);
+    expect(screen.queryByText(/never touches Goodboy's own servers/i)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /bitbucket cloud only/i }));
     expect(screen.getByText(/never touches Goodboy's own servers/i)).toBeDefined();
+    expect(screen.getByText(/app password works in the same field/i)).toBeDefined();
     expect(screen.queryByText(/never leaves this machine/i)).toBeNull();
-    expect(screen.queryByText(/never leaving this machine/i)).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import { cn } from '@goodboy/ui';
-import type { Agent, ProviderId } from '@goodboy/types';
+import type { Agent, ProviderId, ProviderName } from '@goodboy/types';
 import type { AgentKind } from '../../../session/agent-kind';
 import { AgentKindChip } from '../../../session/components/AgentKindChip';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
@@ -8,8 +8,10 @@ import { WorkflowStepStatus } from '../WorkflowStepStatus';
 type Props = {
   readonly run: Agent;
   readonly kind: AgentKind;
-  readonly provider: ProviderId;
+  readonly provider: ProviderName;
   readonly model: string;
+  readonly plannedProvider: ProviderId;
+  readonly plannedModel: string;
   readonly marker: string;
   readonly childCount: number;
   readonly doneChildCount: number;
@@ -22,6 +24,8 @@ export const WorkflowStepGraphNode = ({
   kind,
   provider,
   model,
+  plannedProvider,
+  plannedModel,
   marker,
   childCount,
   doneChildCount,
@@ -48,8 +52,9 @@ export const WorkflowStepGraphNode = ({
       <RoutingBadge
         provider={provider}
         model={model}
+        planned={{ provider: plannedProvider, model: plannedModel }}
         glyphPlacement="trailing"
-        className="max-w-28 shrink-0"
+        className="max-w-40 shrink-0"
       />
       <WorkflowStepStatus status={run.status} label={run.name} />
     </button>

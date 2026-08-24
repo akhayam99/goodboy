@@ -1,4 +1,4 @@
-import type { SessionId, WorkspaceScriptId } from '@goodboy/types';
+import type { SessionId, ProjectScriptId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import {
   invokeScriptRun,
@@ -12,7 +12,7 @@ import type { GetFn, SetFn } from './types';
 export const runScript = (set: SetFn, get: GetFn) => {
   return async (
     sessionId: SessionId,
-    scriptId: WorkspaceScriptId,
+    scriptId: ProjectScriptId,
     cwd: string,
     cols: number = 220,
     rows: number = 50,

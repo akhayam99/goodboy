@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { PullRequestState, SessionId } from '@goodboy/types';
+import type { ProjectId, PullRequestState, SessionId } from '@goodboy/types';
 import { selectSessionPr } from './selectSessionPr';
 import type { GetFn, SetFn } from './types';
 
 const SESSION_ID = 'session-1' as SessionId;
+const PROJECT_ID = 'project-web' as ProjectId;
 
 const pr = (number: number): PullRequestState =>
   ({ number, title: `pr ${number}`, state: 'open' }) as PullRequestState;
@@ -11,7 +12,21 @@ const pr = (number: number): PullRequestState =>
 const harness = (selected: number) => {
   const refreshSessionPrDetail = vi.fn(async () => undefined);
   const state = {
-    sessionGithubPrs: { [SESSION_ID]: [pr(42), pr(40)] },
+    sessions: [{ id: SESSION_ID, activeProjectId: PROJECT_ID }],
+    projects: [{ id: PROJECT_ID, kind: 'repo' }],
+    sessionProjectMounts: {
+      [SESSION_ID]: [
+        {
+          projectId: PROJECT_ID,
+          repoRoot: '/repo',
+          worktreePath: '/wt',
+          branch: 'feature',
+          mountName: null,
+        },
+      ],
+    },
+    sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
+    sessionProjectPrs: { [SESSION_ID]: { [PROJECT_ID]: [pr(42), pr(40)] } },
     sessionSelectedPrNumber: { [SESSION_ID]: null as number | null },
     sessionGithub: {
       [SESSION_ID]: {

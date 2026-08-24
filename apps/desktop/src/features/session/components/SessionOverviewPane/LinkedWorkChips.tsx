@@ -1,4 +1,3 @@
-import { GitBranch } from 'lucide-react';
 import type {
   LinkedIssue,
   SessionExternalTask,
@@ -8,6 +7,7 @@ import type {
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
+import { VITAL_CHIP } from './vitalChip';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -35,9 +35,9 @@ const IssueChip = ({ issue, onOpen }: IssueChipProps) => (
     onClick={onOpen}
     title={issue.title ?? `Open issue #${issue.number}`}
     aria-label={`Open issue #${issue.number}`}
-    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft bg-elevated px-1.5 py-0.5 text-2xs font-medium text-foreground motion-safe:transition-colors hover:border-border hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
+    className={VITAL_CHIP}
   >
-    <GitBranch size={11} aria-hidden className="text-provider-github" />
+    <IntegrationGlyph provider="github" size="xs" />
     <span className="font-mono">#{issue.number}</span>
   </button>
 );
@@ -53,7 +53,7 @@ const TaskChip = ({ task, onOpen }: TaskChipProps) => (
     onClick={onOpen}
     title={`${task.identifier}: ${task.title}`}
     aria-label={`Open ${task.identifier}`}
-    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft bg-elevated px-1.5 py-0.5 text-2xs font-medium text-foreground motion-safe:transition-colors hover:border-border hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
+    className={VITAL_CHIP}
   >
     <IntegrationGlyph provider={task.provider} size="xs" />
     <span className="font-mono">{task.identifier}</span>
@@ -86,7 +86,7 @@ export const LinkedWorkChips = ({ sessionId, onSelectLens }: Props) => {
       ))}
       {orderedTasks.map((task) => (
         <TaskChip
-          key={`${task.provider}:${task.externalId}:${task.mountWorkspaceId ?? ''}`}
+          key={`${task.provider}:${task.externalId}:${task.projectId ?? ''}`}
           task={task}
           onOpen={() => openExternalTaskLens(sessionId, task)}
         />

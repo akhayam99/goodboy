@@ -41,6 +41,8 @@ export const setActiveLens = (set: SetFn) => {
             ? s.focusedWorkflowRunId
             : { ...s.focusedWorkflowRunId, [sessionId]: null },
         diffFocus: lens === 'files' ? s.diffFocus : { ...s.diffFocus, [sessionId]: null },
+        diffMountPath:
+          lens === 'files' ? s.diffMountPath : { ...s.diffMountPath, [sessionId]: null },
         focusedPlanId:
           lens === 'plans' ? s.focusedPlanId : { ...s.focusedPlanId, [sessionId]: null },
         focusedGithubIssueNumber:
@@ -125,8 +127,16 @@ export const setDiffFocus = (set: SetFn) => {
 };
 
 export const openDiffLens = (get: GetFn) => {
-  return (sessionId: SessionId, focus: DiffFocus): void => {
+  return (sessionId: SessionId, focus: DiffFocus | null): void => {
     get().setDiffFocus(sessionId, focus);
+    get().setActiveLens(sessionId, 'files');
+  };
+};
+
+export const openMountDiff = (set: SetFn, get: GetFn) => {
+  return (sessionId: SessionId, worktreePath: string): void => {
+    set((s) => ({ diffMountPath: { ...s.diffMountPath, [sessionId]: worktreePath } }));
+    get().setDiffFocus(sessionId, null);
     get().setActiveLens(sessionId, 'files');
   };
 };
@@ -158,7 +168,7 @@ export const openExternalTaskLens = (set: SetFn, get: GetFn) => {
         [sessionId]: {
           provider: task.provider,
           externalId: task.externalId,
-          mountWorkspaceId: task.mountWorkspaceId ?? null,
+          projectId: task.projectId ?? null,
         },
       },
     }));

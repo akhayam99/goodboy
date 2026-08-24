@@ -1,5 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
-import { ScrollFade, cn } from '@goodboy/ui';
+import type { LucideIcon } from 'lucide-react';
+import { ScrollFade, cn, tintClasses } from '@goodboy/ui';
+import type { Tone } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 
 type BaseProps = {
@@ -10,6 +12,8 @@ type BaseProps = {
 
 type TitleHeaderProps = {
   readonly title: string;
+  readonly icon?: LucideIcon;
+  readonly tone?: Tone;
   readonly description?: string;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
@@ -19,6 +23,8 @@ type TitleHeaderProps = {
 type CustomHeaderProps = {
   readonly header: ReactElement;
   readonly title?: undefined;
+  readonly icon?: undefined;
+  readonly tone?: undefined;
   readonly description?: undefined;
   readonly meta?: undefined;
   readonly actions?: undefined;
@@ -49,6 +55,16 @@ export const PaneShell = (props: Props) => {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex min-w-0 flex-col gap-1">
               <div className="flex items-baseline gap-2">
+                {props.icon != null ? (
+                  <props.icon
+                    size={16}
+                    aria-hidden
+                    className={cn(
+                      'shrink-0 translate-y-0.5',
+                      tintClasses(props.tone ?? 'neutral').icon,
+                    )}
+                  />
+                ) : null}
                 <h1 className="text-xl font-semibold leading-snug text-foreground">
                   {props.title}
                 </h1>

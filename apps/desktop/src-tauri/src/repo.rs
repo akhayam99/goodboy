@@ -159,9 +159,45 @@ pub(crate) fn is_inside_repo(path: &Path) -> bool {
         .is_some_and(|found| !found.is_empty())
 }
 
+#[derive(Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ChildRepo {
+    pub name: String,
+    pub path: String,
+}
+
 #[tauri::command]
-pub fn workspace_git_status(workspace_path: String) -> WorkspaceGitStatus {
-    let root = Path::new(workspace_path.trim());
+pub fn scan_child_repos(path: String) -> Vec<ChildRepo> {
+    let parent = Path::new(path.trim());
+    let Ok(entries) = std::fs::read_dir(parent) else {
+        return Vec::new();
+    };
+    let mut repos: Vec<ChildRepo> = Vec::new();
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if name.starts_with('.') {
+            continue;
+        }
+        let Ok(resolved) = std::fs::canonicalize(entry.path()) else {
+            continue;
+        };
+        if !resolved.is_dir() || !resolved.join(".git").exists() {
+            continue;
+        }
+        if !is_repo_root(&resolved) {
+            continue;
+        }
+        repos.push(ChildRepo {
+            name,
+            path: resolved.to_string_lossy().into_owned(),
+        });
+    }
+    repos.sort();
+    repos
+}
+
+#[tauri::command]
+pub fn project_git_status(project_path: String) -> WorkspaceGitStatus {
+    let root = Path::new(project_path.trim());
     if !root.is_dir() {
         return blank_status("missing");
     }
@@ -265,20 +301,29 @@ fn is_supported_authority(authority: &str) -> bool {
 
 #[tauri::command]
 pub fn repo_init_with_remote(args: RepoInitArgs) -> Result<InitializedRepo, RepoInitError> {
-    let root = PathBuf::from(args.path.trim());
-    if !root.is_dir() {
-        return Err(RepoInitError::DirNotFound(args.path.clone()));
-    }
     let remote_url = args.remote_url.trim().to_string();
     if !is_supported_remote_url(&remote_url) {
         return Err(RepoInitError::InvalidRemote(args.remote_url.clone()));
+    }
+    init_repo_at(&args.path, Some(&remote_url))
+}
+
+#[tauri::command]
+pub fn repo_init(path: String) -> Result<InitializedRepo, RepoInitError> {
+    init_repo_at(&path, None)
+}
+
+fn init_repo_at(path: &str, remote_url: Option<&str>) -> Result<InitializedRepo, RepoInitError> {
+    let root = PathBuf::from(path.trim());
+    if !root.is_dir() {
+        return Err(RepoInitError::DirNotFound(path.to_string()));
     }
     let root = std::fs::canonicalize(&root)?;
 
     match repo_state(&root)? {
         RepoState::Nested(toplevel) => Err(RepoInitError::NestedRepo(toplevel)),
-        RepoState::AtRoot => adopt_repo(&root, &remote_url),
-        RepoState::Absent => create_repo(&root, &remote_url),
+        RepoState::AtRoot => adopt_repo(&root, remote_url),
+        RepoState::Absent => create_repo(&root, remote_url),
     }
 }
 
@@ -299,28 +344,30 @@ fn repo_state(root: &Path) -> Result<RepoState, RepoInitError> {
     Ok(RepoState::Nested(toplevel))
 }
 
-fn create_repo(root: &Path, remote_url: &str) -> Result<InitializedRepo, RepoInitError> {
+fn create_repo(root: &Path, remote_url: Option<&str>) -> Result<InitializedRepo, RepoInitError> {
     let snapshot = GitignoreSnapshot::capture(root);
     run_git(root, &["init"])?;
     match scaffold_repo(root, remote_url) {
         Ok(()) => Ok(InitializedRepo {
             root_path: root.to_string_lossy().into_owned(),
-            remote_url: remote_url.to_string(),
+            remote_url: remote_url.unwrap_or_default().to_string(),
             branch: DEFAULT_BRANCH.to_string(),
         }),
         Err(err) => Err(undo_creation(root, &snapshot, err)),
     }
 }
 
-fn scaffold_repo(root: &Path, remote_url: &str) -> Result<(), RepoInitError> {
+fn scaffold_repo(root: &Path, remote_url: Option<&str>) -> Result<(), RepoInitError> {
     run_git(root, &["symbolic-ref", "HEAD", "refs/heads/main"])?;
     apply_ignore_entries(root)?;
     commit_ignore_file(root)?;
-    run_git(root, &["remote", "add", "origin", remote_url])?;
+    if let Some(url) = remote_url {
+        run_git(root, &["remote", "add", "origin", url])?;
+    }
     Ok(())
 }
 
-fn adopt_repo(root: &Path, remote_url: &str) -> Result<InitializedRepo, RepoInitError> {
+fn adopt_repo(root: &Path, remote_url: Option<&str>) -> Result<InitializedRepo, RepoInitError> {
     let snapshot = GitignoreSnapshot::capture(root);
     if let Err(err) = apply_ignore_entries(root) {
         return Err(undo_ignore(root, &snapshot, err));
@@ -330,15 +377,18 @@ fn adopt_repo(root: &Path, remote_url: &str) -> Result<InitializedRepo, RepoInit
         commit_ignore_file(root)?;
     }
     let origin = match current_origin(root) {
-        Some(existing) => existing,
-        None => {
-            run_git(root, &["remote", "add", "origin", remote_url])?;
-            remote_url.to_string()
-        }
+        Some(existing) => Some(existing),
+        None => match remote_url {
+            Some(url) => {
+                run_git(root, &["remote", "add", "origin", url])?;
+                Some(url.to_string())
+            }
+            None => None,
+        },
     };
     Ok(InitializedRepo {
         root_path: root.to_string_lossy().into_owned(),
-        remote_url: origin,
+        remote_url: origin.unwrap_or_default(),
         branch: current_branch(root),
     })
 }
@@ -517,7 +567,7 @@ fn run_git(cwd: &Path, args: &[&str]) -> Result<String, RepoInitError> {
 #[cfg(test)]
 mod tests {
     use super::{
-        is_supported_remote_url, repo_init_with_remote, workspace_git_status, RepoInitArgs,
+        is_supported_remote_url, project_git_status, repo_init_with_remote, RepoInitArgs,
         RepoInitError,
     };
     use crate::worktree::{GitDistance, GitWorkingTree};
@@ -597,6 +647,52 @@ mod tests {
         assert!(git_ignores(&root, "sessions/plan-1/.goodboy"));
         assert!(git_ignores(&root, ".goodboy"));
         assert!(!git_ignores(&root, "src/app/sessions/page.ts"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn initializes_a_repository_without_a_remote() {
+        let root = test_root("repo-init-plain");
+        std::fs::write(root.join("notes.md"), "hello").unwrap();
+
+        let created = super::repo_init(root.to_string_lossy().into_owned()).unwrap();
+
+        assert_eq!(created.branch, "main");
+        assert_eq!(created.remote_url, "");
+        assert_eq!(git_output(&root, &["ls-files"]), ".gitignore");
+        assert_eq!(git_output(&root, &["rev-list", "--count", "HEAD"]), "1");
+        assert!(git_output(&root, &["remote"]).is_empty());
+        assert!(git_ignores(&root, ".goodboy"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn plain_init_adopts_an_existing_repository_and_keeps_its_remote() {
+        let root = test_root("repo-init-plain-adopt");
+        convert(&root, "https://github.com/acme/widgets.git").unwrap();
+
+        let adopted = super::repo_init(root.to_string_lossy().into_owned()).unwrap();
+
+        assert_eq!(adopted.remote_url, "https://github.com/acme/widgets.git");
+        assert_eq!(git_output(&root, &["rev-list", "--count", "HEAD"]), "1");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn plain_init_refuses_a_folder_nested_inside_another_repository() {
+        let root = test_root("repo-init-plain-nested");
+        crate::path_env::command("git")
+            .args(["init"])
+            .current_dir(&root)
+            .output()
+            .unwrap();
+        let nested = root.join("notes");
+        std::fs::create_dir_all(&nested).unwrap();
+
+        let err = super::repo_init(nested.to_string_lossy().into_owned()).unwrap_err();
+
+        assert!(matches!(err, RepoInitError::NestedRepo(_)));
+        assert!(!nested.join(".git").exists());
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -720,7 +816,7 @@ mod tests {
     }
 
     fn status_of(root: &std::path::Path) -> super::WorkspaceGitStatus {
-        workspace_git_status(root.to_string_lossy().into_owned())
+        project_git_status(root.to_string_lossy().into_owned())
     }
 
     #[test]
@@ -729,7 +825,7 @@ mod tests {
         std::fs::write(root.join("notes.md"), "hello").unwrap();
 
         let absent = status_of(&root);
-        let missing = workspace_git_status(root.join("gone").to_string_lossy().into_owned());
+        let missing = project_git_status(root.join("gone").to_string_lossy().into_owned());
 
         assert_eq!(absent.state, "absent");
         assert_eq!(absent.branch, None);
@@ -833,5 +929,64 @@ mod tests {
             "git@-oProxyCommand=x:acme/widgets.git"
         ));
         assert!(!is_supported_remote_url("https:///acme/widgets.git"));
+    }
+
+    #[test]
+    fn scans_only_direct_visible_children_for_repositories() {
+        let root = test_root("scan-children");
+        for name in ["beta", "alpha"] {
+            let child = root.join(name);
+            std::fs::create_dir_all(&child).unwrap();
+            git_run(&child, &["init"]);
+        }
+        let plain = root.join("plain");
+        std::fs::create_dir_all(&plain).unwrap();
+        let deep = plain.join("deep");
+        std::fs::create_dir_all(&deep).unwrap();
+        git_run(&deep, &["init"]);
+        let hidden = root.join(".hidden");
+        std::fs::create_dir_all(&hidden).unwrap();
+        git_run(&hidden, &["init"]);
+        std::fs::write(root.join("notes.md"), "hello").unwrap();
+
+        let found = super::scan_child_repos(root.to_string_lossy().into_owned());
+
+        let names: Vec<&str> = found.iter().map(|repo| repo.name.as_str()).collect();
+        assert_eq!(names, vec!["alpha", "beta"]);
+        let canonical_alpha = std::fs::canonicalize(root.join("alpha")).unwrap();
+        assert_eq!(found[0].path, canonical_alpha.to_string_lossy());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn scan_returns_nothing_for_a_missing_or_repo_free_folder() {
+        let root = test_root("scan-empty");
+        std::fs::create_dir_all(root.join("plain")).unwrap();
+
+        let empty = super::scan_child_repos(root.to_string_lossy().into_owned());
+        let missing = super::scan_child_repos(root.join("gone").to_string_lossy().into_owned());
+
+        assert!(empty.is_empty());
+        assert!(missing.is_empty());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn scan_resolves_a_symlinked_repository_and_skips_a_broken_link() {
+        let root = test_root("scan-symlink");
+        let target = test_root("scan-symlink-target");
+        git_run(&target, &["init"]);
+        std::os::unix::fs::symlink(&target, root.join("linked")).unwrap();
+        std::os::unix::fs::symlink(root.join("gone"), root.join("broken")).unwrap();
+
+        let found = super::scan_child_repos(root.to_string_lossy().into_owned());
+
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].name, "linked");
+        let canonical_target = std::fs::canonicalize(&target).unwrap();
+        assert_eq!(found[0].path, canonical_target.to_string_lossy());
+        std::fs::remove_dir_all(root).unwrap();
+        std::fs::remove_dir_all(target).unwrap();
     }
 }

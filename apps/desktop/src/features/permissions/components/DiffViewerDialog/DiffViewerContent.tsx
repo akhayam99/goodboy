@@ -53,7 +53,7 @@ import {
   worktreeStatus,
 } from '../../../../features/worktree/worktree';
 import { DiffViewSelector } from '../DiffViewSelector';
-import { TOOLBAR_ICON_BTN, type ReviewState } from './lib';
+import { DIFF_CAPPED_COLUMN_CLASS, TOOLBAR_ICON_BTN, type ReviewState } from './lib';
 import { FileRail } from './FileTree/FileRail';
 import { FileDiffCard } from './FileDiffCard';
 import { DiffToolbar } from './DiffToolbar';
@@ -75,6 +75,7 @@ type Props = {
   diffFocus?: DiffFocus | null;
   showToolbarClose?: boolean;
   presentation?: 'dialog' | 'pane';
+  onContentEmptyChange?: (isEmpty: boolean) => void;
 };
 
 const DEFAULT_VIEW: DiffView = { kind: 'branch' };
@@ -85,37 +86,6 @@ const DIFF_SKELETON_CARDS: ReadonlyArray<ReadonlyArray<string>> = [
   ['72%', '54%', '88%', '40%', '66%', '30%'],
   ['60%', '82%', '46%', '70%'],
 ];
-
-const viewStorageKey = (sessionId: SessionId | undefined): string | null =>
-  sessionId ? `${STORAGE_PREFIXES.diffView}${sessionId}` : null;
-
-const readPersistedView = (sessionId: SessionId | undefined): DiffView | null => {
-  const key = viewStorageKey(sessionId);
-  if (!key || typeof window === 'undefined') {
-    return null;
-  }
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) {
-      return null;
-    }
-    const parsed = JSON.parse(raw) as DiffView;
-    if (parsed && typeof parsed === 'object' && 'kind' in parsed) {
-      return parsed;
-    }
-  } catch {}
-  return null;
-};
-
-const writePersistedView = (sessionId: SessionId | undefined, view: DiffView): void => {
-  const key = viewStorageKey(sessionId);
-  if (!key || typeof window === 'undefined') {
-    return;
-  }
-  try {
-    window.localStorage.setItem(key, JSON.stringify(view));
-  } catch {}
-};
 
 const loadDiffForView = (worktreePath: string, view: DiffView): Promise<string> => {
   if (view.kind === 'working') {
@@ -281,6 +251,7 @@ export const DiffViewerContent = ({
   diffFocus = null,
   showToolbarClose = true,
   presentation = 'dialog',
+  onContentEmptyChange,
 }: Props) => {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
   const [focusPath, setFocusPath] = useState<string | null>(null);
@@ -297,22 +268,12 @@ export const DiffViewerContent = ({
   const didInitialScroll = useRef(false);
   const pendingScrollPath = useRef<string | null>(null);
 
-  const [view, setViewState] = useState<DiffView>(
-    () => readPersistedView(sessionId) ?? DEFAULT_VIEW,
-  );
+  const [view, setView] = useState<DiffView>(DEFAULT_VIEW);
   const [commits, setCommits] = useState<ReadonlyArray<BranchCommit>>([]);
   const [status, setStatus] = useState<WorktreeStatus | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
   const isGitAware = Boolean(worktreePath);
-
-  const setView = useCallback(
-    (next: DiffView) => {
-      setViewState(next);
-      writePersistedView(sessionId, next);
-    },
-    [sessionId],
-  );
 
   const comments = useDiffComments(sessionId ?? null);
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
@@ -431,10 +392,6 @@ export const DiffViewerContent = ({
     },
     [sessionId, view],
   );
-
-  useEffect(() => {
-    setViewState(DEFAULT_VIEW);
-  }, []);
 
   useEffect(() => {
     if (diffFocus == null) {
@@ -765,7 +722,12 @@ export const DiffViewerContent = ({
   }, []);
 
   const isEmpty = !loading && !error && files.length === 0;
+  const isContentEmpty = error === null && files.length === 0;
   const verifiedFilesCount = !loading && error === null ? files.length : null;
+
+  useEffect(() => {
+    onContentEmptyChange?.(isContentEmpty);
+  }, [isContentEmpty, onContentEmptyChange]);
   const isPane = presentation === 'pane';
   const isDefaultView = view.kind === 'branch';
   const mainDistance = status?.mainDistance ?? null;
@@ -788,9 +750,10 @@ export const DiffViewerContent = ({
     >
       {isPane ? (
         <div
+          data-testid="diff-pane-header"
           className={cn(
             'flex shrink-0 flex-wrap items-start justify-between gap-3',
-            isEmpty && 'mx-auto w-full max-w-5xl',
+            isContentEmpty && DIFF_CAPPED_COLUMN_CLASS,
           )}
         >
           <div className="flex min-w-0 flex-col gap-1">
@@ -1007,7 +970,7 @@ export const DiffViewerContent = ({
           </div>
         ) : files.length === 0 ? (
           <ScrollFade className="min-h-0 min-w-0 flex-1">
-            <div className={cn('mx-auto w-full max-w-5xl', !isPane && 'px-6 py-5')}>
+            <div className={cn(DIFF_CAPPED_COLUMN_CLASS, !isPane && 'px-6 py-5')}>
               <LensEmptyState
                 tone={CONCEPT_TONE.diff}
                 icon={CONCEPT_ICONS.diff}

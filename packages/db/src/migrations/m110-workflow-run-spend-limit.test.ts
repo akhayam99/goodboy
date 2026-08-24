@@ -41,9 +41,9 @@ const insertRun = async ({ db, runId, ordinal }: RunParams): Promise<void> => {
   await db.execute(
     `INSERT INTO session_workflows
        (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run,
-        trigger_mode, execution_mode)
-     VALUES (?, ?, ?, ?, 0, 1, 'immediate', 'dynamic')`,
-    [runId, sessionId, workflowId, ordinal],
+        trigger_mode, execution_mode, created_at)
+     VALUES (?, ?, ?, ?, 0, 1, 'immediate', 'dynamic', ?)`,
+    [runId, sessionId, workflowId, ordinal, Date.now()],
   );
 };
 
@@ -99,6 +99,7 @@ describe('m110 workflow run spend limit', () => {
       "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'session_workflows' AND sql IS NOT NULL ORDER BY name",
     );
     expect(indexes.map((index) => index.name)).toEqual([
+      'idx_session_workflows_chain_after_run_id',
       'idx_session_workflows_session_id',
       'idx_session_workflows_workflow_id',
     ]);

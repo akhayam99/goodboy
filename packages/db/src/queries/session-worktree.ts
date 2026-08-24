@@ -1,4 +1,4 @@
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { ProjectId, SessionId } from '@goodboy/types';
 import type { Database } from '../client';
 
 type SessionWorktreeRow = {
@@ -7,7 +7,7 @@ type SessionWorktreeRow = {
   worktree_path: string;
   branch: string;
   parallel_index: number;
-  mount_workspace_id: string | null;
+  project_id: string | null;
   mount_name: string | null;
   repo_slug: string | null;
   created_at: number;
@@ -19,7 +19,7 @@ export type SessionWorktree = {
   readonly worktreePath: string;
   readonly branch: string;
   readonly parallelIndex: number;
-  readonly mountWorkspaceId?: WorkspaceId;
+  readonly projectId?: ProjectId;
   readonly mountName?: string;
   readonly repoSlug?: string;
   readonly createdAt: number;
@@ -32,9 +32,7 @@ function toDomain(row: SessionWorktreeRow): SessionWorktree {
     worktreePath: row.worktree_path,
     branch: row.branch,
     parallelIndex: row.parallel_index,
-    ...(row.mount_workspace_id != null
-      ? { mountWorkspaceId: row.mount_workspace_id as WorkspaceId }
-      : {}),
+    ...(row.project_id != null ? { projectId: row.project_id as ProjectId } : {}),
     ...(row.mount_name != null ? { mountName: row.mount_name } : {}),
     ...(row.repo_slug != null ? { repoSlug: row.repo_slug } : {}),
     createdAt: row.created_at,
@@ -47,7 +45,7 @@ export const insertSessionWorktree = async (
 ): Promise<void> => {
   await db.execute(
     `INSERT INTO session_worktrees
-      (id, session_id, worktree_path, branch, parallel_index, mount_workspace_id, mount_name, repo_slug, created_at)
+      (id, session_id, worktree_path, branch, parallel_index, project_id, mount_name, repo_slug, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       worktree.id,
@@ -55,7 +53,7 @@ export const insertSessionWorktree = async (
       worktree.worktreePath,
       worktree.branch,
       worktree.parallelIndex,
-      worktree.mountWorkspaceId ?? null,
+      worktree.projectId ?? null,
       worktree.mountName ?? null,
       worktree.repoSlug ?? null,
       worktree.createdAt,
@@ -101,6 +99,23 @@ export const deleteWorktreesForSession = async (
   sessionId: SessionId,
 ): Promise<void> => {
   await db.execute('DELETE FROM session_worktrees WHERE session_id = ?', [sessionId]);
+};
+
+type DeleteSessionWorktreeForProjectParams = {
+  readonly db: Database;
+  readonly sessionId: SessionId;
+  readonly projectId: ProjectId;
+};
+
+export const deleteSessionWorktreeForProject = async ({
+  db,
+  sessionId,
+  projectId,
+}: DeleteSessionWorktreeForProjectParams): Promise<void> => {
+  await db.execute('DELETE FROM session_worktrees WHERE session_id = ? AND project_id = ?', [
+    sessionId,
+    projectId,
+  ]);
 };
 
 export const updateSessionWorktreeBranch = async (

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { SectionHeader, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 
-type Concept = 'decisions' | 'sessionSummary';
+type Concept = 'decisions' | 'sessionSummary' | 'explore';
 
 type Props = {
   readonly concept: Concept;

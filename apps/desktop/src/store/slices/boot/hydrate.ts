@@ -1,6 +1,6 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { getSetting, listWorkspaces } from '@goodboy/db';
+import { getSetting, listProjectsForWorkspace, listWorkspaces } from '@goodboy/db';
 import { invoke } from '@tauri-apps/api/core';
 import { runDbMigrations, tauriDatabase } from '../../../shared/lib/db';
 import { migrateLsToDb } from '../../../shared/lib/ls-to-db-migration';
@@ -99,19 +99,19 @@ export const hydrate = (set: SetFn, get: GetFn) => {
 
         const loadingWorkspacesAt = Date.now();
         set({ bootPhase: 'loading-workspaces' });
-        const workspaces = await listWorkspaces(tauriDatabase);
-        set({ workspaces });
+        const workspaces = await listWorkspaces({ db: tauriDatabase });
+        const projects = (
+          await Promise.all(
+            workspaces.map((workspace) =>
+              listProjectsForWorkspace({ db: tauriDatabase, workspaceId: workspace.id }),
+            ),
+          )
+        ).flat();
+        set({ workspaces, projects });
         await adoptLegacyIntegrationSecrets();
-        await Promise.all([
-          get()
-            .loadIntegrationCredentials()
-            .catch(() => {}),
-          ...workspaces.map((w) =>
-            get()
-              .loadIntegrations(w.id)
-              .catch(() => {}),
-          ),
-        ]);
+        await get()
+          .loadIntegrationCredentials()
+          .catch(() => {});
         try {
           await recoverStagedFileVersions({
             onFailure: async ({ sessionId, runId, message }) => {

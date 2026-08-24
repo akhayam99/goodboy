@@ -16,6 +16,8 @@ import type {
   PlanConsumptionId,
   PlanId,
   PlanWithCount,
+  Project,
+  ProjectId,
   ProviderRunId,
   Session,
   SessionId,
@@ -28,10 +30,10 @@ import type {
   WorkflowId,
   Workspace,
   WorkspaceId,
-  WorkspaceIntegration,
-  WorkspaceIntegrationId,
-  WorkspaceScript,
-  WorkspaceScriptId,
+  IntegrationBinding,
+  IntegrationBindingId,
+  ProjectScript,
+  ProjectScriptId,
 } from '@goodboy/types';
 
 const { invokeSpy } = vi.hoisted(() => ({
@@ -47,6 +49,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 
 const listWorkspacesSpy = vi.fn(async () => [] as ReadonlyArray<Workspace>);
+const listProjectsForWorkspaceSpy = vi.fn(async () => [] as ReadonlyArray<Project>);
 const listProviderCredentialsSpy = vi.fn(async () => []);
 const runDbMigrationsSpy = vi.fn(async () => undefined);
 const dbSetSettingSpy = vi.fn(async () => undefined);
@@ -63,14 +66,14 @@ const resolveDiffCommentDbSpy = vi.fn(async () => undefined);
 const reopenDiffCommentDbSpy = vi.fn(async () => undefined);
 const consumeDiffCommentsDbSpy = vi.fn(async () => undefined);
 const deleteDiffCommentDbSpy = vi.fn(async () => undefined);
-const upsertWorkspaceIntegrationSpy = vi.fn(async () => undefined);
-const listIntegrationsForWorkspaceSpy = vi.fn(
-  async () => [] as ReadonlyArray<WorkspaceIntegration>,
+const upsertIntegrationBindingSpy = vi.fn(async () => undefined);
+const listIntegrationBindingsForWorkspaceSpy = vi.fn(
+  async () => [] as ReadonlyArray<IntegrationBinding>,
 );
-const deleteWorkspaceIntegrationSpy = vi.fn(async () => undefined);
-const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>);
-const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
-const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
+const deleteIntegrationBindingSpy = vi.fn(async () => undefined);
+const listProjectScriptsSpy = vi.fn(async () => [] as ReadonlyArray<ProjectScript>);
+const upsertProjectScriptSpy = vi.fn(async () => undefined);
+const deleteProjectScriptSpy = vi.fn(async () => undefined);
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
@@ -102,6 +105,7 @@ vi.mock('@goodboy/db', () => ({
   listArchivedSessionsForWorkspace: vi.fn(async () => []),
   listTelemetryForSession: vi.fn(async () => []),
   listWorkspaces: listWorkspacesSpy,
+  listProjectsForWorkspace: listProjectsForWorkspaceSpy,
   listWorktreesForSession: vi.fn(async () => []),
   listWorktreesForSessions: vi.fn(async () => new Map()),
   listAgentsForSessions: vi.fn(async () => new Map()),
@@ -126,9 +130,9 @@ vi.mock('@goodboy/db', () => ({
   detachWorkflowFromSession: vi.fn(async () => undefined),
   updateWorkflowOrder: vi.fn(async () => undefined),
   updateSessionWorkflowStep: vi.fn(async () => undefined),
-  listWorkspaceScripts: listWorkspaceScriptsSpy,
-  upsertWorkspaceScript: upsertWorkspaceScriptSpy,
-  deleteWorkspaceScript: deleteWorkspaceScriptSpy,
+  listProjectScripts: listProjectScriptsSpy,
+  upsertProjectScript: upsertProjectScriptSpy,
+  deleteProjectScript: deleteProjectScriptSpy,
   upsertContextSlot: vi.fn(async () => undefined),
   listOpenQuestionsForSession: vi.fn(async () => []),
   insertNudgeEvent: insertNudgeEventSpy,
@@ -147,9 +151,11 @@ vi.mock('@goodboy/db', () => ({
   reopenDiffComment: reopenDiffCommentDbSpy,
   consumeDiffComments: consumeDiffCommentsDbSpy,
   deleteDiffComment: deleteDiffCommentDbSpy,
-  listIntegrationsForWorkspace: listIntegrationsForWorkspaceSpy,
-  upsertWorkspaceIntegration: upsertWorkspaceIntegrationSpy,
-  deleteWorkspaceIntegration: deleteWorkspaceIntegrationSpy,
+  listIntegrationBindingsForWorkspace: listIntegrationBindingsForWorkspaceSpy,
+  getIntegrationBinding: vi.fn(async () => null),
+  upsertIntegrationBinding: upsertIntegrationBindingSpy,
+  deleteIntegrationBinding: deleteIntegrationBindingSpy,
+  deleteIntegrationBindingsForProvider: vi.fn(async () => undefined),
   insertOpenQuestion: vi.fn(async () => undefined),
   markOpenQuestionsResolvedByText: vi.fn(async () => 0),
   listResolvedQuestionTextsForSession: vi.fn(async () => []),
@@ -386,7 +392,20 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {
     id: WS_ID,
     name: 'ws',
-    rootPath: '/tmp/repo',
+    slug: 'ws',
+    sessionsRoot: '/tmp/repo',
+    overrides: {
+      defaultProviderId: null,
+      defaultWorkflowId: null,
+      defaultBranchPrefix: null,
+      parallelEnabled: null,
+      defaultVerbosity: null,
+      providerBindings: null,
+      taskModels: null,
+      roleModels: null,
+      parallelAgents: null,
+      providerPool: null,
+    },
     createdAt: NOW,
     updatedAt: NOW,
     lastAccessedAt: NOW,
@@ -458,8 +477,8 @@ describe('store contract', () => {
     invokePlanListSpy.mockResolvedValue([]);
     invokeListConsumptionsForPlanSpy.mockResolvedValue([]);
     invokeWorkspacesWithUnreadSpy.mockResolvedValue([]);
-    listWorkspaceScriptsSpy.mockResolvedValue([]);
-    listIntegrationsForWorkspaceSpy.mockResolvedValue([]);
+    listProjectScriptsSpy.mockResolvedValue([]);
+    listIntegrationBindingsForWorkspaceSpy.mockResolvedValue([]);
     listDiffCommentsSpy.mockResolvedValue([]);
     dbGetSettingSpy.mockResolvedValue(null);
     ghStatusSpy.mockResolvedValue({ available: true, mode: 'gh-cli', scopes: [] });
@@ -500,7 +519,7 @@ describe('store contract', () => {
         budgetAlerts: [],
         systemAlerts: [],
         skills: {},
-        workspaceScripts: {},
+        projectScripts: {},
         scriptRuns: {},
         phaseTemplates: {},
         sessionWorkflows: {},
@@ -508,7 +527,6 @@ describe('store contract', () => {
         selectedAgentId: {},
         agentRunHistory: {},
         agentTurnState: {},
-        sessionMergeConflicts: {},
         unknownPayloadCounts: {},
         detectedEditors: [],
         workspaceOverrides: {},
@@ -748,8 +766,43 @@ describe('store contract', () => {
         {
           id: 'ws-1' as WorkspaceId,
           name: 'demo',
+          slug: 'demo',
+          sessionsRoot: '/repo',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+          updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        },
+      ]);
+      listProjectsForWorkspaceSpy.mockResolvedValueOnce([
+        {
+          id: 'project-1' as ProjectId,
+          workspaceId: 'ws-1' as WorkspaceId,
+          name: 'demo',
           rootPath: '/repo',
           kind: 'repo',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
           createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
           updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
         },

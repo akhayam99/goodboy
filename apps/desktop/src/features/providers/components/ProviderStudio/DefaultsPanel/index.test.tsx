@@ -123,7 +123,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   taskModels: null,
   roleModels: null,
   parallelAgents: null,
-  enabledProviders: undefined,
+  providerPool: null,
 };
 
 beforeEach(() => {
@@ -171,13 +171,13 @@ describe('DefaultsPanel', () => {
 
     expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
       'ws-1',
-      expect.objectContaining({ enabledProviders: ['anthropic'] }),
+      expect.objectContaining({ providerPool: ['anthropic'] }),
     );
   });
 
   it('adds a new default provider to a restricted routing pool', () => {
     state.workspaceOverrides = {
-      'ws-1': { ...EMPTY_OVERRIDES, enabledProviders: ['anthropic'] },
+      'ws-1': { ...EMPTY_OVERRIDES, providerPool: ['anthropic'] },
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
@@ -187,7 +187,7 @@ describe('DefaultsPanel', () => {
       'ws-1',
       expect.objectContaining({
         defaultProviderId: 'cursor',
-        enabledProviders: ['anthropic', 'cursor'],
+        providerPool: ['anthropic', 'cursor'],
       }),
     );
   });

@@ -1,25 +1,26 @@
 import { useEffect } from 'react';
 import { Check, GitBranch, Pencil } from 'lucide-react';
-import { cn, Popover, Tooltip, useCopyLink, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Tooltip, cn, useCopyLink, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
+import { useActiveMount } from '../../hooks/useActiveMount';
 import { BranchSwitchPanel } from '../../../worktree/BranchSwitchPanel';
+import { VITAL_CHIP_FOCUS, VITAL_CHIP_FRAME, VITAL_CHIP_HOVER } from './vitalChip';
 
 type Props = {
-  readonly branch: string;
-  readonly mountName?: string | null;
   readonly sessionId: SessionId;
-  readonly canEdit: boolean;
 };
 
-export const BranchChip = ({ branch, mountName = null, sessionId, canEdit }: Props) => {
+export const BranchChip = ({ sessionId }: Props) => {
   const { showToast } = useToast();
   const { copied, failed, copy } = useCopyLink();
-  const { open, close, toggle, containerRef, popupClassName } = useDropdown({
-    disabled: !canEdit,
-    width: 'w-96',
-    expectedHeight: 360,
-  });
+  const activeMount = useActiveMount({ sessionId });
+  const activeKind = useAppStore(
+    (state) =>
+      state.projects.find((project) => project.id === activeMount?.projectId)?.kind ?? null,
+  );
+  const branchDropdown = useDropdown({ width: 'w-96', expectedHeight: 360 });
 
   useEffect(() => {
     if (copied) {
@@ -33,66 +34,66 @@ export const BranchChip = ({ branch, mountName = null, sessionId, canEdit }: Pro
     }
   }, [failed, showToast]);
 
+  if (activeMount == null || activeMount.branch === '') {
+    return null;
+  }
+
+  const branch = activeMount.branch;
+  const canSwitch = activeKind === 'repo';
+
   return (
-    <div
-      ref={containerRef}
+    <span
       className={cn(
-        'group/branch relative inline-flex min-w-0 max-w-full shrink items-center rounded-md border font-mono text-2xs transition-colors',
-        copied
-          ? 'border-success/30 bg-success/10 text-success'
-          : 'border-border-soft bg-muted/30 text-foreground/80 hover:border-border hover:bg-muted/50 hover:text-foreground',
+        VITAL_CHIP_FRAME,
+        'min-w-0 max-w-full shrink',
+        copied ? 'border-success/30 bg-success/10 text-success' : VITAL_CHIP_HOVER,
       )}
     >
-      <Tooltip content={copied ? 'Copied' : 'Click to copy the branch name'}>
+      <Tooltip content={copied ? 'Copied' : 'Copy the branch name'} side="top">
         <button
           type="button"
           onClick={() => void copy(branch)}
           aria-label={`Copy branch ${branch}`}
-          className="inline-flex min-w-0 items-center gap-1.5 px-2 py-1"
+          className={cn(
+            'inline-flex h-full min-w-0 items-center gap-1.5 rounded-md px-2',
+            VITAL_CHIP_FOCUS,
+          )}
         >
           {copied ? (
-            <Check size={10} aria-hidden className="shrink-0" />
+            <Check size={11} aria-hidden className="shrink-0" />
           ) : (
-            <GitBranch
-              size={10}
-              aria-hidden
-              className="shrink-0 text-muted-foreground group-hover/branch:text-foreground"
-            />
+            <GitBranch size={11} aria-hidden className="shrink-0" />
           )}
-          {mountName != null ? <span className="text-muted-foreground">{mountName}:</span> : null}
-          <span className="truncate">{branch}</span>
+          <span className="min-w-0 truncate font-mono">{branch}</span>
         </button>
       </Tooltip>
-
-      {canEdit ? (
-        <Tooltip content="Edit branch" side="top">
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label="Edit branch"
-            aria-haspopup="dialog"
-            aria-expanded={open}
-            className={cn(
-              'inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50',
-              'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
-              'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-              'group-hover/branch:opacity-100 motion-reduce:opacity-60',
-            )}
-          >
-            <Pencil size={10} aria-hidden />
-          </button>
-        </Tooltip>
-      ) : null}
-
-      {open ? (
-        <Popover
+      {canSwitch ? (
+        <AnchoredPopover
+          dropdown={branchDropdown}
           role="dialog"
           ariaLabel="Switch branch"
-          className={cn(popupClassName, 'overflow-visible bg-elevated')}
+          anchorClassName="flex h-full shrink-0"
+          trigger={
+            <Tooltip content="Switch branch" side="top">
+              <button
+                type="button"
+                aria-haspopup="dialog"
+                aria-expanded={branchDropdown.open}
+                aria-label="Switch branch"
+                onClick={branchDropdown.toggle}
+                className={cn(
+                  'inline-flex shrink-0 items-center rounded-md px-1.5 text-muted-foreground hover:text-foreground',
+                  VITAL_CHIP_FOCUS,
+                )}
+              >
+                <Pencil size={10} aria-hidden />
+              </button>
+            </Tooltip>
+          }
         >
-          <BranchSwitchPanel sessionId={sessionId} onDone={close} />
-        </Popover>
+          <BranchSwitchPanel sessionId={sessionId} onDone={branchDropdown.close} />
+        </AnchoredPopover>
       ) : null}
-    </div>
+    </span>
   );
 };

@@ -1,6 +1,6 @@
 import { Plus } from 'lucide-react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
-import { Button, cn, DropdownPortal, Popover, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, useDropdown } from '@goodboy/ui';
 import { LinkIssueForm } from './LinkIssueForm';
 
 type Props = {
@@ -22,51 +22,37 @@ export const LinkTicketPopover = ({
   nounPhrase,
   nounPlural,
 }: Props) => {
-  const {
-    open,
-    close,
-    toggle,
-    containerRef,
-    popupRef,
-    popupClassName,
-    popupStyle,
-    portal,
-    portalTarget,
-  } = useDropdown({
+  const dropdown = useDropdown({
     align: 'end',
     expectedHeight: 280,
     expectedWidth: 384,
     width: 'w-96 max-w-[calc(100vw-2rem)]',
-    strategy: 'fixed',
   });
+  const { close, toggle } = dropdown;
 
   return (
-    <div ref={containerRef} className="relative min-w-0">
-      <Button variant="secondary" size="sm" onClick={toggle}>
-        <Plus size={13} aria-hidden />
-        {`Link ${noun}`}
-      </Button>
-      <DropdownPortal portal={portal} portalTarget={portalTarget}>
-        {open && (
-          <Popover
-            innerRef={popupRef}
-            role="dialog"
-            ariaLabel={`Link ${providerLabel} ${noun}`}
-            className={cn(popupClassName, 'p-3')}
-            style={popupStyle}
-          >
-            <LinkIssueForm
-              sessionId={sessionId}
-              workspaceId={workspaceId}
-              provider={provider}
-              providerLabel={providerLabel}
-              nounPhrase={nounPhrase}
-              nounPlural={nounPlural}
-              onLinked={close}
-            />
-          </Popover>
-        )}
-      </DropdownPortal>
-    </div>
+    <AnchoredPopover
+      dropdown={dropdown}
+      role="dialog"
+      ariaLabel={`Link ${providerLabel} ${noun}`}
+      className="p-3"
+      anchorClassName="min-w-0"
+      trigger={
+        <Button variant="secondary" size="sm" onClick={toggle}>
+          <Plus size={13} aria-hidden />
+          {`Link ${noun}`}
+        </Button>
+      }
+    >
+      <LinkIssueForm
+        sessionId={sessionId}
+        workspaceId={workspaceId}
+        provider={provider}
+        providerLabel={providerLabel}
+        nounPhrase={nounPhrase}
+        nounPlural={nounPlural}
+        onLinked={close}
+      />
+    </AnchoredPopover>
   );
 };

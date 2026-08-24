@@ -1,17 +1,11 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { Kanban, PanelLeft, Plus } from 'lucide-react';
-import { Divider, ScrollFade, Tooltip, cn, tintClasses } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import { isPrReviewSession } from '../../../../../store/slices/session-view';
-import { useIsBranchlessSession } from '../../../hooks/useIsBranchlessSession';
+import { Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { useAppStore } from '../../../../../store';
 import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
-import { LENS_SHORTCUTS, buildLensNavigation } from './LensNav/groups';
-import { resolveLensSurface } from '../../../lens-surface';
 import { WorkspaceRailBadge } from './WorkspaceRailBadge';
 
 type Props = {
-  readonly session: Session;
   readonly onExpand: () => void;
 };
 
@@ -24,46 +18,8 @@ const railButton = (isActive: boolean): string =>
       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
   );
 
-export const CollapsedRail = ({ session, onExpand }: Props) => {
-  const sessionId = session.id as SessionId;
+export const CollapsedRail = ({ onExpand }: Props) => {
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
-  const activeLens = useAppStore((s) => s.activeLens[sessionId] ?? null);
-  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-  const isBranchless = useIsBranchlessSession({ session });
-  const isPrReview = useMemo(() => isPrReviewSession({ agents: phaseRuns }), [phaseRuns]);
-
-  const rows = useMemo(() => {
-    const navigation = buildLensNavigation({
-      isBranchless,
-      isPrReview,
-      reviewDraftCount: 0,
-      activeWorkflows: 0,
-      attentionLens: null,
-      unreadLens: null,
-      agentCount: 0,
-      areAgentsLoading: false,
-      hasRunningAgent: false,
-      openResolvers: 0,
-      hasPendingBatch: false,
-      openCount: 0,
-      areQuestionsLoading: false,
-      filesCount: 0,
-      activePlans: 0,
-      arePlansLoading: false,
-      areWorkflowsLoading: false,
-      areReviewDraftsLoading: false,
-      areFilesLoading: false,
-      runningScripts: 0,
-      liveTerminals: 0,
-      integrationRows: EMPTY_ARRAY,
-    });
-    return [...navigation.primaryRows, ...navigation.groups.flatMap((group) => group.rows)].filter(
-      (row) => row.icon != null,
-    );
-  }, [isBranchless, isPrReview]);
-
-  const activeSurface = resolveLensSurface({ lens: activeLens });
 
   const onBoard = useCallback(() => {
     void setCurrentSession(null);
@@ -102,28 +58,6 @@ export const CollapsedRail = ({ session, onExpand }: Props) => {
           <Plus size={15} aria-hidden />
         </button>
       </Tooltip>
-      <Divider className="my-1 w-5" />
-      <ScrollFade className="min-h-0 flex-1">
-        <nav aria-label="Session lenses" className="flex flex-col items-center gap-1">
-          {rows.map((row) => {
-            const isActive = activeSurface === row.kind;
-            const label = `${row.label} (${shortcutGlyphs(LENS_SHORTCUTS[row.kind])})`;
-            return (
-              <Tooltip key={row.kind} content={label} side="right">
-                <button
-                  type="button"
-                  onClick={() => setActiveLens(sessionId, row.kind)}
-                  aria-label={label}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={railButton(isActive)}
-                >
-                  {row.icon != null ? <row.icon size={15} aria-hidden /> : null}
-                </button>
-              </Tooltip>
-            );
-          })}
-        </nav>
-      </ScrollFade>
     </div>
   );
 };

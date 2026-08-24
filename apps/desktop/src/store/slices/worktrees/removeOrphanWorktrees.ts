@@ -10,15 +10,17 @@ type Params = {
 
 export const removeOrphanWorktrees = (set: SetFn, get: GetFn) => {
   return async ({ workspaceId, paths }: Params): Promise<void> => {
-    const workspace = get().workspaces.find((w) => w.id === workspaceId);
-    if (workspace == null) {
-      throw new Error(`workspace not found: ${workspaceId}`);
+    const project = get().projects.find(
+      (candidate) => candidate.workspaceId === workspaceId && candidate.kind === 'repo',
+    );
+    if (project === undefined) {
+      throw new Error(`workspace has no repository project: ${workspaceId}`);
     }
     const failures: Array<string> = [];
     const removed = new Set<string>();
     for (const path of paths) {
       try {
-        await removeOrphanWorktree({ repoPath: workspace.rootPath, path });
+        await removeOrphanWorktree({ repoPath: project.rootPath, path });
         removed.add(path);
       } catch (error) {
         failures.push(formatError(error));

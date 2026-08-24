@@ -91,9 +91,10 @@ import { GitHubStudio } from './index';
 
 type RenderParams = {
   readonly initialIssueExternalId?: string | null;
+  readonly initialTab?: 'pull-requests' | 'issues' | null;
 };
 
-const renderStudio = ({ initialIssueExternalId = null }: RenderParams = {}) =>
+const renderStudio = ({ initialIssueExternalId = null, initialTab = null }: RenderParams = {}) =>
   render(
     <ToastProvider>
       <GitHubStudio
@@ -102,6 +103,7 @@ const renderStudio = ({ initialIssueExternalId = null }: RenderParams = {}) =>
         workspaceName="Goodboy"
         initialSessionId={'session-1' as SessionId}
         initialIssueExternalId={initialIssueExternalId}
+        initialTab={initialTab}
         onClose={vi.fn()}
       />
     </ToastProvider>,
@@ -186,9 +188,18 @@ describe('GitHubStudio', () => {
     expect(screen.getByText(/issue detail: Add issue dashboard/)).toBeDefined();
   });
 
-  it('renders an issues refresh button in the header', () => {
+  it('lands on the issues tab when asked to open there', () => {
+    renderStudio({ initialTab: 'issues' });
+
+    expect(screen.getByRole('tab', { name: 'Issues', selected: true })).toBeDefined();
+    expect(screen.getByRole('complementary', { name: 'GitHub issues' })).toBeDefined();
+  });
+
+  it('renders an issues refresh button in the header on the issues tab', () => {
     renderStudio();
 
+    expect(screen.queryByRole('button', { name: 'Refresh issues' })).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: 'Issues' }));
     fireEvent.click(screen.getByRole('button', { name: 'Refresh issues' }));
 
     expect(h.refetch).toHaveBeenCalledOnce();

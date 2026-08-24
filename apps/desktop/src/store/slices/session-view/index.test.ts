@@ -27,10 +27,10 @@ import type {
   WorkflowId,
   Workspace,
   WorkspaceId,
-  WorkspaceIntegration,
-  WorkspaceIntegrationId,
-  WorkspaceScript,
-  WorkspaceScriptId,
+  IntegrationBinding,
+  IntegrationBindingId,
+  ProjectScript,
+  ProjectScriptId,
 } from '@goodboy/types';
 import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
 import { readPersistedLens } from './workSurfaceStorage';
@@ -59,14 +59,14 @@ const resolveDiffCommentDbSpy = vi.fn(async () => undefined);
 const reopenDiffCommentDbSpy = vi.fn(async () => undefined);
 const consumeDiffCommentsDbSpy = vi.fn(async () => undefined);
 const deleteDiffCommentDbSpy = vi.fn(async () => undefined);
-const upsertWorkspaceIntegrationSpy = vi.fn(async () => undefined);
-const listIntegrationsForWorkspaceSpy = vi.fn(
-  async () => [] as ReadonlyArray<WorkspaceIntegration>,
+const upsertIntegrationBindingSpy = vi.fn(async () => undefined);
+const listIntegrationBindingsForWorkspaceSpy = vi.fn(
+  async () => [] as ReadonlyArray<IntegrationBinding>,
 );
-const deleteWorkspaceIntegrationSpy = vi.fn(async () => undefined);
-const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>);
-const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
-const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
+const deleteIntegrationBindingSpy = vi.fn(async () => undefined);
+const listProjectScriptsSpy = vi.fn(async () => [] as ReadonlyArray<ProjectScript>);
+const upsertProjectScriptSpy = vi.fn(async () => undefined);
+const deleteProjectScriptSpy = vi.fn(async () => undefined);
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
@@ -122,9 +122,9 @@ vi.mock('@goodboy/db', () => ({
   detachWorkflowFromSession: vi.fn(async () => undefined),
   updateWorkflowOrder: vi.fn(async () => undefined),
   updateSessionWorkflowStep: vi.fn(async () => undefined),
-  listWorkspaceScripts: listWorkspaceScriptsSpy,
-  upsertWorkspaceScript: upsertWorkspaceScriptSpy,
-  deleteWorkspaceScript: deleteWorkspaceScriptSpy,
+  listProjectScripts: listProjectScriptsSpy,
+  upsertProjectScript: upsertProjectScriptSpy,
+  deleteProjectScript: deleteProjectScriptSpy,
   upsertContextSlot: vi.fn(async () => undefined),
   listOpenQuestionsForSession: vi.fn(async () => []),
   insertNudgeEvent: insertNudgeEventSpy,
@@ -141,9 +141,11 @@ vi.mock('@goodboy/db', () => ({
   reopenDiffComment: reopenDiffCommentDbSpy,
   consumeDiffComments: consumeDiffCommentsDbSpy,
   deleteDiffComment: deleteDiffCommentDbSpy,
-  listIntegrationsForWorkspace: listIntegrationsForWorkspaceSpy,
-  upsertWorkspaceIntegration: upsertWorkspaceIntegrationSpy,
-  deleteWorkspaceIntegration: deleteWorkspaceIntegrationSpy,
+  listIntegrationBindingsForWorkspace: listIntegrationBindingsForWorkspaceSpy,
+  getIntegrationBinding: vi.fn(async () => null),
+  upsertIntegrationBinding: upsertIntegrationBindingSpy,
+  deleteIntegrationBinding: deleteIntegrationBindingSpy,
+  deleteIntegrationBindingsForProvider: vi.fn(async () => undefined),
   insertOpenQuestion: vi.fn(async () => undefined),
   markOpenQuestionsResolvedByText: vi.fn(async () => 0),
   listResolvedQuestionTextsForSession: vi.fn(async () => []),
@@ -369,7 +371,20 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {
     id: WS_ID,
     name: 'ws',
-    rootPath: '/tmp/repo',
+    slug: 'ws',
+    sessionsRoot: '/tmp/repo',
+    overrides: {
+      defaultProviderId: null,
+      defaultWorkflowId: null,
+      defaultBranchPrefix: null,
+      parallelEnabled: null,
+      defaultVerbosity: null,
+      providerBindings: null,
+      taskModels: null,
+      roleModels: null,
+      parallelAgents: null,
+      providerPool: null,
+    },
     createdAt: NOW,
     updatedAt: NOW,
     lastAccessedAt: NOW,
@@ -453,8 +468,8 @@ describe('store contract', () => {
     invokePlanListSpy.mockResolvedValue([]);
     invokeListConsumptionsForPlanSpy.mockResolvedValue([]);
     invokeWorkspacesWithUnreadSpy.mockResolvedValue([]);
-    listWorkspaceScriptsSpy.mockResolvedValue([]);
-    listIntegrationsForWorkspaceSpy.mockResolvedValue([]);
+    listProjectScriptsSpy.mockResolvedValue([]);
+    listIntegrationBindingsForWorkspaceSpy.mockResolvedValue([]);
     listDiffCommentsSpy.mockResolvedValue([]);
     dbGetSettingSpy.mockResolvedValue(null);
     ghStatusSpy.mockResolvedValue({ available: true, mode: 'gh-cli', scopes: [] });
@@ -495,7 +510,7 @@ describe('store contract', () => {
         budgetAlerts: [],
         systemAlerts: [],
         skills: {},
-        workspaceScripts: {},
+        projectScripts: {},
         scriptRuns: {},
         phaseTemplates: {},
         sessionWorkflows: {},
@@ -503,7 +518,6 @@ describe('store contract', () => {
         selectedAgentId: {},
         agentRunHistory: {},
         agentTurnState: {},
-        sessionMergeConflicts: {},
         unknownPayloadCounts: {},
         detectedEditors: [],
         workspaceOverrides: {},
@@ -801,7 +815,7 @@ describe('store contract', () => {
         expect(store.getState().focusedExternalTask[SESSION_ID]).toEqual({
           provider,
           externalId: `${provider}-7`,
-          mountWorkspaceId: null,
+          projectId: null,
         });
       },
     );
@@ -863,7 +877,7 @@ describe('store contract', () => {
       store.getState().openDiffLens(resolved.sessionId, resolved.focus);
 
       expect(store.getState().activeLens[SESSION_ID]).toBe('files');
-      expect(store.getState().diffFocus[SESSION_ID]).toEqual({ kind: 'working', path: null });
+      expect(store.getState().diffFocus[SESSION_ID]).toBeNull();
     });
 
     it('the event path and a direct openDiffLens call land in identical state', async () => {
@@ -880,13 +894,33 @@ describe('store contract', () => {
       };
 
       store.getState().openDiffLens(SESSION_ID_2, { kind: 'commit', sha: 'abc1234', path: null });
-      store.getState().openDiffLens(SESSION_ID_2, { kind: 'working', path: null });
+      store.getState().openDiffLens(SESSION_ID_2, null);
       const directCallState = {
         activeLens: store.getState().activeLens[SESSION_ID_2],
         diffFocus: store.getState().diffFocus[SESSION_ID_2],
       };
 
       expect(eventPathState).toEqual(directCallState);
+    });
+
+    it('openMountDiff selects the mount and leaves the focus null so the lens lands on the branch default', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setDiffFocus(SESSION_ID, { kind: 'working', path: null });
+      store.getState().openMountDiff(SESSION_ID, '/wt/api');
+
+      expect(store.getState().activeLens[SESSION_ID]).toBe('files');
+      expect(store.getState().diffMountPath[SESSION_ID]).toBe('/wt/api');
+      expect(store.getState().diffFocus[SESSION_ID]).toBeNull();
+    });
+
+    it('openMountDiff clears a commit focus a resolver link left behind', async () => {
+      const store = await getStore();
+      store.getState().openDiffLens(SESSION_ID, { kind: 'commit', sha: 'abc1234', path: null });
+      store.getState().openMountDiff(SESSION_ID, '/wt/web');
+
+      expect(store.getState().diffFocus[SESSION_ID]).toBeNull();
+      expect(store.getState().diffMountPath[SESSION_ID]).toBe('/wt/web');
     });
 
     it('setSessionStudio(non-null) clears the selected agent', async () => {

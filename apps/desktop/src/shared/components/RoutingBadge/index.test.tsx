@@ -84,6 +84,74 @@ describe('RoutingBadge', () => {
     expect(modelIndex).toBeLessThan(effortIndex);
   });
 
+  it('stays silent when the executed routing matches the plan', () => {
+    render(
+      <RoutingBadge
+        provider="anthropic"
+        model="claude-sonnet-4-5"
+        planned={{ provider: 'anthropic', model: 'claude-sonnet-4-5' }}
+      />,
+    );
+
+    expect(screen.queryByTestId('routing-divergence')).toBeNull();
+  });
+
+  it('names the plan the executed routing replaced', () => {
+    render(
+      <RoutingBadge
+        provider="codex"
+        model="gpt-5.1-codex"
+        planned={{ provider: 'anthropic', model: 'claude-haiku-4-5' }}
+      />,
+    );
+
+    const note = screen.getByTestId('routing-divergence');
+    expect(note.textContent).toBe('was Haiku 4.5');
+    expect(note.getAttribute('title')).toContain('Planned Claude Haiku 4.5');
+    expect(note.getAttribute('title')).toContain('ran Codex');
+  });
+
+  it('flags a provider move even when only the provider diverged', () => {
+    render(
+      <RoutingBadge
+        provider="cursor"
+        model="claude-sonnet-4-5"
+        planned={{ provider: 'anthropic', model: 'claude-sonnet-4-5' }}
+      />,
+    );
+
+    const note = screen.getByTestId('routing-divergence');
+    expect(note.textContent).toBe('was Claude');
+    expect(note.getAttribute('title')).toContain('Planned Claude');
+    expect(note.getAttribute('title')).toContain('ran Cursor');
+  });
+
+  it('keeps the plan out of the badge while the step has not run', () => {
+    render(
+      <RoutingBadge
+        provider="anthropic"
+        model="claude-haiku-4-5"
+        planned={{ provider: 'anthropic', model: 'claude-haiku-4-5' }}
+      />,
+    );
+
+    expect(screen.getByText('Haiku 4.5')).toBeDefined();
+    expect(screen.queryByText(/was /)).toBeNull();
+  });
+
+  it('renders the divergence as its own chip in the full variant', () => {
+    render(
+      <RoutingBadge
+        variant="full"
+        provider="codex"
+        model="gpt-5.1-codex"
+        planned={{ provider: 'anthropic', model: 'claude-haiku-4-5' }}
+      />,
+    );
+
+    expect(screen.getByTestId('routing-divergence').textContent).toBe('was Haiku 4.5');
+  });
+
   it('leads the compact variant with the provider mark, like the routing trigger does', () => {
     const { container } = render(
       <RoutingBadge provider="anthropic" model="claude-opus-4-5" effort="high" />,

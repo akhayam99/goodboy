@@ -15,7 +15,7 @@ const { state } = vi.hoisted(() => ({
       readonly workspaceId: string;
       readonly goal: string;
     }>,
-    workspaceScripts: {
+    projectScripts: {
       'ws-1': [{ id: 'script-1', name: 'lint' }],
     } as Record<string, ReadonlyArray<{ id: string; name: string }>>,
     setCurrentSession: vi.fn(async () => undefined),

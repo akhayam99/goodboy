@@ -78,11 +78,9 @@ One radius family, one step off square, picked from the scale and never
 inlined. The mapping and values are in
 [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md)'s radius table.
 
-Any `text-[Npx]` is rejected, with two standing exceptions: relative `em` sizing
+Any `text-[Npx]` is rejected, with one standing exception: relative `em` sizing
 inside prose and markdown rendering, where the size is intentionally
-proportional to a parent that varies by call site; and the lens rail, which runs
-`text-[13px]` rows (half a step above body, so the rail reads as navigation)
-under `text-[10px]` uppercase group headings.
+proportional to a parent that varies by call site.
 
 ## The window grid
 

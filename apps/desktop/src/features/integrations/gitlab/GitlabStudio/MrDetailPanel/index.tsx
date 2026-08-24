@@ -2,7 +2,7 @@ import { StudioDetailLayout } from '../../../../../shared/components/StudioDetai
 import { useEffect, useState } from 'react';
 import { Button, EmptyState, formatError, Markdown } from '@goodboy/ui';
 import { AlertTriangle, FileText, GitBranch, GitMerge, MessageSquare } from 'lucide-react';
-import type { GitlabWorkspaceIntegration, SessionId, WorkspaceId } from '@goodboy/types';
+import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { StudioWidget, HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { gitlabMergeRequestFields, resolveDetailFields } from '../../../../../shared/detail-fields';
 import { StateBadge } from '@goodboy/ui';
@@ -78,7 +78,7 @@ export const MrDetailPanel = ({
       return null;
     }
     const integration = s.workspaceIntegrations?.[activeWorkspaceId]?.find(
-      (candidate): candidate is GitlabWorkspaceIntegration => candidate.provider === 'gitlab',
+      (candidate): candidate is GitlabIntegrationBinding => candidate.provider === 'gitlab',
     );
     return integration?.config.host ?? null;
   });

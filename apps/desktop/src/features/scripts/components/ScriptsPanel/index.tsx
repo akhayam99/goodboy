@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, formatError, SectionHeader } from '@goodboy/ui';
-import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
+import type { SessionId, WorkspaceId, ProjectScript, ProjectScriptId } from '@goodboy/types';
 import { Plus } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
@@ -25,38 +25,38 @@ type NewDraft = {
 };
 
 type PendingNewAction = {
-  readonly expandedId: WorkspaceScriptId | null;
+  readonly expandedId: ProjectScriptId | null;
 };
 
 type SaveNewResult =
   | { readonly kind: 'failed' }
-  | { readonly kind: 'saved'; readonly scriptId: WorkspaceScriptId | null };
+  | { readonly kind: 'saved'; readonly scriptId: ProjectScriptId | null };
 
 type SaveNewParams = Record<never, never>;
 
 type ToggleParams = {
-  readonly id: WorkspaceScriptId;
+  readonly id: ProjectScriptId;
 };
 
 type CopyParams = {
-  readonly id: WorkspaceScriptId;
+  readonly id: ProjectScriptId;
   readonly body: string;
 };
 
 type DeleteParams = {
-  readonly id: WorkspaceScriptId;
+  readonly id: ProjectScriptId;
 };
 
 type RunParams = {
-  readonly script: WorkspaceScript;
+  readonly script: ProjectScript;
 };
 
 type CancelParams = {
-  readonly id: WorkspaceScriptId;
+  readonly id: ProjectScriptId;
 };
 
 type SaveExistingParams = {
-  readonly script: WorkspaceScript;
+  readonly script: ProjectScript;
   readonly name: string;
   readonly body: string;
 };
@@ -67,7 +67,7 @@ export const ScriptsPanel = ({
   worktreePath,
   hasHostHeading = false,
 }: Props) => {
-  const scripts = useAppStore((state) => state.workspaceScripts[workspaceId]);
+  const scripts = useAppStore((state) => state.projectScripts[workspaceId]);
   const loadScripts = useAppStore((state) => state.loadScripts);
   const saveScript = useAppStore((state) => state.saveScript);
   const deleteScript = useAppStore((state) => state.deleteScript);
@@ -77,11 +77,11 @@ export const ScriptsPanel = ({
     sessionId != null ? state.scriptRuns[sessionId] : undefined,
   );
 
-  const [expandedId, setExpandedId] = useState<WorkspaceScriptId | null>(null);
+  const [expandedId, setExpandedId] = useState<ProjectScriptId | null>(null);
   const [newDraft, setNewDraft] = useState<NewDraft | null>(null);
   const [pendingNewAction, setPendingNewAction] = useState<PendingNewAction | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<WorkspaceScriptId | null>(null);
+  const [copiedId, setCopiedId] = useState<ProjectScriptId | null>(null);
   const [completedAt, setCompletedAt] = useState<Record<string, number>>({});
 
   const runnable = sessionId != null;
@@ -128,7 +128,7 @@ export const ScriptsPanel = ({
         const savedScript =
           useAppStore
             .getState()
-            .workspaceScripts[workspaceId]?.find((script) => !previousIds.has(script.id)) ?? null;
+            .projectScripts[workspaceId]?.find((script) => !previousIds.has(script.id)) ?? null;
         return { kind: 'saved', scriptId: savedScript?.id ?? null };
       } catch (caughtError) {
         setError(formatError(caughtError));

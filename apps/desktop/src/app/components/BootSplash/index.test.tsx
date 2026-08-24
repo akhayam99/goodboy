@@ -84,6 +84,15 @@ describe('BootSplash boot handoff', () => {
     expect(document.getElementById('boot-shell')).toBeNull();
   });
 
+  it('renders the bare mascot mark without a circle tile', () => {
+    const { container } = render(<BootSplash phase="restoring-session" error={null} />);
+
+    const mark = container.querySelector('span[aria-hidden]');
+    expect(mark).not.toBeNull();
+    expect(container.querySelector('.rounded-full')).toBeNull();
+    expect(container.querySelector('.bg-subtle')).toBeNull();
+  });
+
   it('offers retry on the error screen', () => {
     const onRetry = vi.fn();
     render(<BootSplash phase="migrating" error="boom" onRetry={onRetry} />);

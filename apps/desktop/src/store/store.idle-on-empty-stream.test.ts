@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
+  ProjectId,
   Agent,
   AgentId,
   IsoDateTime,
@@ -269,6 +270,17 @@ describe('sendTurn, terminal state guarantees', () => {
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            projectId: 'project-turn' as ProjectId,
+            mountName: 'repo',
+            worktreePath: '/tmp/wt',
+            repoRoot: '/tmp/repo',
+            branch: 'goodboy/turn',
+          },
+        ],
+      },
       sessionPhaseRuns: { [SESSION_ID]: [defaultAgent] },
       selectedAgentId: { [SESSION_ID]: defaultAgent.id },
       transcripts: {},
@@ -290,7 +302,20 @@ describe('sendTurn, terminal state guarantees', () => {
         {
           id: WORKSPACE_ID,
           name: 'ws',
-          rootPath: '/tmp',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
           createdAt: '2026-05-08T00:00:00.000Z' as IsoDateTime,
           updatedAt: '2026-05-08T00:00:00.000Z' as IsoDateTime,
         },

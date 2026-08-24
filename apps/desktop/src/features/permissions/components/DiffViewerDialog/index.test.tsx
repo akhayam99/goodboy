@@ -144,6 +144,7 @@ afterEach(() => {
 });
 
 import { DiffViewerDialog, DiffViewerPane } from './index';
+import { DIFF_CAPPED_COLUMN_CLASS } from './lib';
 
 const SID = 's1' as SessionId;
 
@@ -252,6 +253,39 @@ describe('DiffViewerPane', () => {
     expect(refresh.parentElement?.className).toContain('pt-0.5');
     expect(container.querySelector('[class*="max-w-2xl"]')).toBeNull();
     expect(container.querySelector('[class*="max-w-5xl"]')).not.toBeNull();
+  });
+
+  it('caps the pane header to the empty-state column when there is nothing to diff', async () => {
+    render(<DiffViewerPane worktreePath="/tmp/worktree" onClose={vi.fn()} />);
+    await screen.findByText('Branch matches main');
+    const header = screen.getByTestId('diff-pane-header');
+    for (const cls of DIFF_CAPPED_COLUMN_CLASS.split(' ')) {
+      expect(header.className).toContain(cls);
+    }
+  });
+
+  it('lets the pane header span the full width once files load', async () => {
+    fixtures.files = fileFixture();
+    render(<DiffViewerPane worktreePath="/tmp/worktree" onClose={vi.fn()} />);
+    await screen.findByText(/alpha/);
+    const header = screen.getByTestId('diff-pane-header');
+    expect(header.className).not.toContain('max-w-5xl');
+    expect(header.className).not.toContain('mx-auto');
+  });
+
+  it('reports content emptiness to the pane host as the diff loads', async () => {
+    const onContentEmptyChange = vi.fn();
+    fixtures.files = fileFixture();
+    render(
+      <DiffViewerPane
+        worktreePath="/tmp/worktree"
+        onContentEmptyChange={onContentEmptyChange}
+        onClose={vi.fn()}
+      />,
+    );
+    await screen.findByText(/alpha/);
+    expect(onContentEmptyChange).toHaveBeenCalledWith(true);
+    expect(onContentEmptyChange).toHaveBeenLastCalledWith(false);
   });
 
   it('keeps the selector available when a non-default pane view becomes empty', async () => {
@@ -400,6 +434,25 @@ describe('DiffViewerPane', () => {
     );
 
     await waitFor(() => expect(worktreeDiffWorking).toHaveBeenCalledWith('/tmp/worktree', 'all'));
+  });
+
+  it('lands on the branch vs main view when no diff focus is set', async () => {
+    fixtures.files = fileFixture();
+    const { worktreeDiff, worktreeDiffWorking } =
+      await import('../../../../features/worktree/worktree');
+    vi.mocked(worktreeDiff).mockClear();
+    vi.mocked(worktreeDiffWorking).mockClear();
+    render(
+      <DiffViewerPane
+        sessionId={SID}
+        worktreePath="/tmp/worktree"
+        diffFocus={null}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(worktreeDiff).toHaveBeenCalledWith('/tmp/worktree'));
+    expect(worktreeDiffWorking).not.toHaveBeenCalled();
   });
 });
 

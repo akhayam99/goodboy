@@ -218,34 +218,33 @@ const marginsOf = ({
 const inkMargins = ({ source }: { source: Buffer }): Bounds =>
   marginsOf({ source, isInk: ({ alpha }) => alpha > 0 });
 
-const tileChannelsOf = ({ source }: { source: Buffer }): Channels => {
-  const { pixels } = readPixelData({ source });
+const channelsAt = ({ source, x, y }: { source: Buffer; x: number; y: number }): Channels => {
+  const { width, pixels } = readPixelData({ source });
+  const start = (y * width + x) * RGBA_BYTES_PER_PIXEL;
   return {
-    red: pixels[0] ?? 0,
-    green: pixels[1] ?? 0,
-    blue: pixels[2] ?? 0,
-    alpha: pixels[3] ?? 0,
+    red: pixels[start] ?? 0,
+    green: pixels[start + 1] ?? 0,
+    blue: pixels[start + 2] ?? 0,
+    alpha: pixels[start + 3] ?? 0,
   };
 };
 
-const tileColorOf = ({ source }: { source: Buffer }): string => {
-  const { red, green, blue } = tileChannelsOf({ source });
+const tileColorOf = ({ source, x, y }: { source: Buffer; x: number; y: number }): string => {
+  const { red, green, blue } = channelsAt({ source, x, y });
   return [red, green, blue].reduce(
     (hex, channel) => `${hex}${channel.toString(16).padStart(2, '0')}`,
     '#',
   );
 };
 
-const markMarginsOf = ({ source }: { source: Buffer }): Bounds => {
-  const tile = tileChannelsOf({ source });
-  return marginsOf({
+const markMarginsOf = ({ source, tile }: { source: Buffer; tile: Channels }): Bounds =>
+  marginsOf({
     source,
     isInk: ({ red, green, blue, alpha }) =>
       alpha > OPAQUE_FLOOR &&
       Math.max(Math.abs(red - tile.red), Math.abs(green - tile.green), Math.abs(blue - tile.blue)) >
         HALF_COVERAGE,
   });
-};
 
 const centerOffsetOf = ({ margins }: { margins: Bounds }): { x: number; y: number } => ({
   x: (margins.left - margins.right) / 2,
@@ -254,9 +253,9 @@ const centerOffsetOf = ({ margins }: { margins: Bounds }): { x: number; y: numbe
 
 const canvasWidthOf = ({ source }: { source: Buffer }): number => readPixelData({ source }).width;
 
-const inkWidthRatioOf = ({ source }: { source: Buffer }): number => {
+const inkWidthRatioOf = ({ source, tile }: { source: Buffer; tile: Channels }): number => {
   const width = canvasWidthOf({ source });
-  const margins = markMarginsOf({ source });
+  const margins = markMarginsOf({ source, tile });
   return (width - margins.left - margins.right) / width;
 };
 
@@ -294,6 +293,14 @@ const ratioOf = ({ source, name }: { source: string; name: string }): number => 
     throw new Error(`The source must declare ${name}`);
   }
   return Number(match[1]);
+};
+
+const namesOf = ({ source, name }: { source: string; name: string }): readonly string[] => {
+  const match = new RegExp(`const ${name} = \\[([^\\]]+)\\];`).exec(source);
+  if (match === null) {
+    throw new Error(`The source must declare ${name}`);
+  }
+  return [...(match[1] ?? '').matchAll(/'([^']+)'/g)].map((entry) => entry[1] ?? '');
 };
 
 const chunk = ({ type, payload }: { type: string; payload: Buffer }): Buffer => {
@@ -349,6 +356,41 @@ const APP_ICON_SCALE = ratioOf({
   source: GENERATOR_SOURCE,
   name: 'APP_ICON_MARK_SCALE_EXCEPTION',
 });
+const DEV_ICON_CONTENT_RATIO = ratioOf({
+  source: GENERATOR_SOURCE,
+  name: 'DEV_ICON_CONTENT_RATIO',
+});
+const DEV_ICON_CORNER_RADIUS_RATIO = ratioOf({
+  source: GENERATOR_SOURCE,
+  name: 'DEV_ICON_CORNER_RADIUS_RATIO',
+});
+const MASKED_ICON_FILES = namesOf({ source: GENERATOR_SOURCE, name: 'DEV_ICON_FILES' });
+const SQUARE_ICON_FILES = ICON_FILES.filter((name) => !MASKED_ICON_FILES.includes(name));
+
+const tilePointOf = ({
+  name,
+  source,
+}: {
+  name: string;
+  source: Buffer;
+}): { x: number; y: number } => {
+  if (!MASKED_ICON_FILES.includes(name)) {
+    return { x: 0, y: 0 };
+  }
+  const { width, height } = readPixelData({ source });
+  const contentTop = (1 - DEV_ICON_CONTENT_RATIO) / 2;
+  const markTop = contentTop + (DEV_ICON_CONTENT_RATIO * (1 - APP_ICON_SCALE)) / 2;
+  return {
+    x: Math.round(width / 2),
+    y: Math.round((height * (contentTop + markTop)) / 2),
+  };
+};
+
+const tileChannelsFor = ({ name, source }: { name: string; source: Buffer }): Channels => {
+  const point = tilePointOf({ name, source });
+  return channelsAt({ source, x: point.x, y: point.y });
+};
+
 const MASCOT_MARGINS = inkMargins({ source: readFileSync(MASCOT_PNG) });
 const MASCOT_CANVAS_PX = canvasWidthOf({ source: readFileSync(MASCOT_PNG) });
 const MASCOT_INK_RATIO =
@@ -495,22 +537,54 @@ describe('brand mark is centered in its tile', () => {
   it('centers the mark on every desktop icon and keeps them on the brand tile', () => {
     expect(ICON_FILES.length).toBeGreaterThan(0);
     const offCenter = ICON_FILES.filter((name) => {
-      const margins = markMarginsOf({ source: readFileSync(join(DESKTOP_ICONS, name)) });
+      const source = readFileSync(join(DESKTOP_ICONS, name));
+      const margins = markMarginsOf({ source, tile: tileChannelsFor({ name, source }) });
       const offset = centerOffsetOf({ margins });
       return Math.abs(offset.x) > CENTER_TOLERANCE_PX || Math.abs(offset.y) > CENTER_TOLERANCE_PX;
     });
     expect(offCenter).toEqual([]);
-    const offBrand = ICON_FILES.filter(
-      (name) => tileColorOf({ source: readFileSync(join(DESKTOP_ICONS, name)) }) !== DESKTOP_TILE,
-    );
+    const offBrand = ICON_FILES.filter((name) => {
+      const source = readFileSync(join(DESKTOP_ICONS, name));
+      const point = tilePointOf({ name, source });
+      return tileColorOf({ source, x: point.x, y: point.y }) !== DESKTOP_TILE;
+    });
     expect(offBrand).toEqual([]);
+  });
+
+  it('rounds the dev icon corners off and keeps the windows tiles full bleed', () => {
+    expect(MASKED_ICON_FILES.length).toBeGreaterThan(0);
+    expect(SQUARE_ICON_FILES.length).toBeGreaterThan(0);
+    MASKED_ICON_FILES.forEach((name) => {
+      expect(ICON_FILES).toContain(name);
+      const source = readFileSync(join(DESKTOP_ICONS, name));
+      const { width, height } = readPixelData({ source });
+      const margin = Math.round(((1 - DEV_ICON_CONTENT_RATIO) / 2) * width);
+      const radius = Math.ceil(width * DEV_ICON_CONTENT_RATIO * DEV_ICON_CORNER_RADIUS_RATIO);
+      expect(channelsAt({ source, x: 0, y: 0 }).alpha).toBe(0);
+      expect(channelsAt({ source, x: margin, y: margin }).alpha).toBeLessThan(OPAQUE_FLOOR);
+      expect(channelsAt({ source, x: margin + radius, y: margin }).alpha).toBeGreaterThan(
+        OPAQUE_FLOOR,
+      );
+      expect(
+        channelsAt({ source, x: margin + radius, y: height - 1 - margin }).alpha,
+      ).toBeGreaterThan(OPAQUE_FLOOR);
+    });
+    SQUARE_ICON_FILES.forEach((name) => {
+      const source = readFileSync(join(DESKTOP_ICONS, name));
+      expect(channelsAt({ source, x: 0, y: 0 }).alpha).toBeGreaterThan(OPAQUE_FLOOR);
+    });
   });
 
   it('gives the app icon its own scale and leaves the shared ratio to the rest', () => {
     expect(APP_ICON_SCALE).toBeLessThan(MARK_SCALE);
     expect(GENERATOR_SOURCE).toContain(`APP_ICON_PX * APP_ICON_MARK_SCALE_EXCEPTION`);
-    const measured = inkWidthRatioOf({ source: readFileSync(join(DESKTOP_ICONS, APP_ICON)) });
-    expect(measured).toBeCloseTo(APP_ICON_SCALE * MASCOT_INK_RATIO, 1);
-    expect(measured).not.toBeCloseTo(MARK_SCALE * MASCOT_INK_RATIO, 1);
+    expect(MASKED_ICON_FILES).toContain(APP_ICON);
+    const source = readFileSync(join(DESKTOP_ICONS, APP_ICON));
+    const measured = inkWidthRatioOf({
+      source,
+      tile: tileChannelsFor({ name: APP_ICON, source }),
+    });
+    expect(measured).toBeCloseTo(APP_ICON_SCALE * MASCOT_INK_RATIO * DEV_ICON_CONTENT_RATIO, 1);
+    expect(measured).not.toBeCloseTo(MARK_SCALE * MASCOT_INK_RATIO * DEV_ICON_CONTENT_RATIO, 1);
   });
 });

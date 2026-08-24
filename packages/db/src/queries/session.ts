@@ -3,6 +3,7 @@ import type {
   ClaudePermissionMode,
   IsoDateTime,
   ModelEffort,
+  ProjectId,
   ProviderId,
   Session,
   SessionId,
@@ -25,14 +26,14 @@ type SessionRow = {
   workspace_id: string;
   goal: string;
   state_kind: TurnState['kind'];
-  state_payload: string;
+  last_activity_at: number | null;
   provider_default: string;
   provider_allow_override: number;
   provider_enabled: string | null;
   permission_mode: string | null;
   auto_run: number;
   title_user_edited: number;
-  active_mount_workspace_id: string | null;
+  active_project_id: string | null;
   archived_at: number | null;
   deleted_at: number | null;
   verbosity: string | null;
@@ -43,9 +44,13 @@ type SessionRow = {
   updated_at: number;
 };
 
-const toState = (kind: TurnState['kind'], payload: string): TurnState => {
-  const data = JSON.parse(payload) as Record<string, unknown>;
-  return { kind, ...data } as TurnState;
+const toState = (
+  kind: TurnState['kind'],
+  lastActivityAt: number | null,
+  updatedAt: number,
+): TurnState => {
+  const activityAt = new Date(lastActivityAt ?? updatedAt).toISOString() as IsoDateTime;
+  return { kind, lastActivityAt: activityAt } as TurnState;
 };
 
 const VALID_PROVIDER_IDS: ReadonlySet<string> = new Set(PROVIDER_IDS);
@@ -56,18 +61,25 @@ function serializeEnabledProviders(
   if (!providers || providers.length === 0) {
     return null;
   }
-  return providers.join(',');
+  return JSON.stringify(providers);
 }
 
 function parseEnabledProviders(raw: string | null): ReadonlyArray<ProviderId> | undefined {
   if (raw === null) {
     return undefined;
   }
-  const parsed = raw
-    .split(',')
-    .map((id) => id.trim())
-    .filter((id) => VALID_PROVIDER_IDS.has(id)) as ProviderId[];
-  return parsed.length > 0 ? parsed : undefined;
+  try {
+    const values: unknown = JSON.parse(raw);
+    if (!Array.isArray(values)) {
+      return undefined;
+    }
+    const providers = values.filter(
+      (value): value is ProviderId => typeof value === 'string' && VALID_PROVIDER_IDS.has(value),
+    );
+    return providers.length > 0 ? providers : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 const VALID_PERMISSION_MODES: ReadonlySet<string> = new Set(CLAUDE_PERMISSION_MODES);
@@ -100,15 +112,15 @@ const toDomain = (
     id: row.id as SessionId,
     workspaceId: row.workspace_id as WorkspaceId,
     goal: row.goal,
-    state: toState(row.state_kind, row.state_payload),
+    state: toState(row.state_kind, row.last_activity_at, row.updated_at),
     contextSlots,
     providerPreference: toProviderPreference(row),
     permissionMode: toPermissionMode(row.permission_mode),
     workflowRuns,
     autoRun: row.auto_run !== 0,
     titleUserEdited: row.title_user_edited !== 0,
-    ...(row.active_mount_workspace_id != null && {
-      activeMountWorkspaceId: row.active_mount_workspace_id as WorkspaceId,
+    ...(row.active_project_id != null && {
+      activeProjectId: row.active_project_id as ProjectId,
     }),
     ...(row.archived_at != null && {
       archivedAt: new Date(row.archived_at).toISOString() as IsoDateTime,
@@ -187,36 +199,34 @@ export const updateSessionConfig = async (
   await db.execute(`UPDATE sessions SET ${updates.join(', ')} WHERE id = ?`, values);
 };
 
-const splitState = (state: TurnState): { kind: TurnState['kind']; payload: string } => {
-  const { kind, ...rest } = state;
-  return { kind, payload: JSON.stringify(rest) };
-};
+const lastActivityAtFor = (state: TurnState, updatedAt: IsoDateTime): number =>
+  Date.parse(state.kind === 'idle' ? state.lastActivityAt : updatedAt);
 
 export const insertSession = async (db: Database, session: Session): Promise<void> => {
-  const { kind, payload } = splitState(session.state);
   await db.execute(
     `INSERT INTO sessions
-      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, provider_enabled, permission_mode, auto_run, title_user_edited, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, workspace_id, goal, state_kind, last_activity_at, provider_default, provider_allow_override, provider_enabled, permission_mode, auto_run, title_user_edited, active_project_id, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       session.id,
       session.workspaceId,
       session.goal,
-      kind,
-      payload,
+      session.state.kind,
+      lastActivityAtFor(session.state, session.updatedAt),
       session.providerPreference.defaultProvider,
       session.providerPreference.allowTurnOverride ? 1 : 0,
       serializeEnabledProviders(session.providerPreference.enabledProviders),
       session.permissionMode,
       session.autoRun ? 1 : 0,
       session.titleUserEdited ? 1 : 0,
+      session.activeProjectId ?? null,
       Date.parse(session.createdAt),
       Date.parse(session.updatedAt),
     ],
   );
   for (const run of session.workflowRuns) {
     await db.execute(
-      'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, execution_mode, orchestration_outcome, role_model_overrides) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, execution_mode, orchestration_outcome, role_model_overrides, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         run.id,
         session.id,
@@ -225,12 +235,13 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
         run.currentStep,
         run.autoRun ? 1 : 0,
         run.goal ?? null,
-        run.discardedAt ?? null,
+        run.discardedAt != null ? Date.parse(run.discardedAt) : null,
         run.executionMode,
         run.orchestrationOutcome ?? null,
         run.roleModelOverrides != null && Object.keys(run.roleModelOverrides).length > 0
           ? JSON.stringify(run.roleModelOverrides)
           : null,
+        run.createdAt != null ? Date.parse(run.createdAt) : Date.parse(session.createdAt),
       ],
     );
   }
@@ -262,21 +273,18 @@ export const updateSessionTitleUserEdited = async (
   ]);
 };
 
-type UpdateSessionActiveMountParams = {
+type UpdateSessionActiveProjectParams = {
   readonly db: Database;
   readonly id: SessionId;
-  readonly workspaceId: WorkspaceId | null;
+  readonly projectId: ProjectId | null;
 };
 
-export const updateSessionActiveMount = async ({
+export const updateSessionActiveProject = async ({
   db,
   id,
-  workspaceId,
-}: UpdateSessionActiveMountParams): Promise<void> => {
-  await db.execute('UPDATE sessions SET active_mount_workspace_id = ? WHERE id = ?', [
-    workspaceId,
-    id,
-  ]);
+  projectId,
+}: UpdateSessionActiveProjectParams): Promise<void> => {
+  await db.execute('UPDATE sessions SET active_project_id = ? WHERE id = ?', [projectId, id]);
 };
 
 export const updateSessionState = async (
@@ -285,10 +293,9 @@ export const updateSessionState = async (
   state: TurnState,
   updatedAt: IsoDateTime,
 ): Promise<void> => {
-  const { kind, payload } = splitState(state);
   await db.execute(
-    'UPDATE sessions SET state_kind = ?, state_payload = ?, updated_at = ? WHERE id = ?',
-    [kind, payload, Date.parse(updatedAt), id],
+    'UPDATE sessions SET state_kind = ?, last_activity_at = ?, updated_at = ? WHERE id = ?',
+    [state.kind, lastActivityAtFor(state, updatedAt), Date.parse(updatedAt), id],
   );
 };
 

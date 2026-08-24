@@ -18,6 +18,19 @@ export const switcherPeers = ({
   home,
   kindOf,
 }: Params): ReadonlyArray<Agent> => {
+  const parentAgentId = selectedAgent.parentAgentId ?? null;
+
+  if (parentAgentId != null) {
+    const selectedKind = kindOf(selectedAgent);
+    return agents
+      .filter(
+        (agent) =>
+          agent.parentAgentId === parentAgentId &&
+          (kindOf(agent) === selectedKind || agent.id === selectedAgent.id),
+      )
+      .sort(byOrdinal);
+  }
+
   const workflowRunId = rootAgent.workflowRunId ?? null;
 
   if (workflowRunId == null) {
@@ -27,28 +40,13 @@ export const switcherPeers = ({
       .sort((first, second) => byOrdinal(second, first));
   }
 
-  const parentAgentId = selectedAgent.parentAgentId ?? null;
-
-  if (parentAgentId == null) {
-    return agents
-      .filter(
-        (agent) =>
-          agent.workflowRunId === workflowRunId &&
-          agent.parentAgentId == null &&
-          agent.stepId != null &&
-          agent.status !== 'pending',
-      )
-      .sort(byOrdinal);
-  }
-
-  const clusterPeers = agents
+  return agents
     .filter(
       (agent) =>
-        agent.parentAgentId === parentAgentId &&
-        (kindOf(agent) === 'implementer' || agent.id === selectedAgent.id),
+        agent.workflowRunId === workflowRunId &&
+        agent.parentAgentId == null &&
+        agent.stepId != null &&
+        agent.status !== 'pending',
     )
     .sort(byOrdinal);
-  const parent = agents.find((agent) => agent.id === parentAgentId) ?? null;
-
-  return parent == null ? clusterPeers : [parent, ...clusterPeers];
 };

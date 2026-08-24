@@ -1,4 +1,4 @@
-import type { Workspace } from '@goodboy/types';
+import type { Project, Workspace } from '@goodboy/types';
 
 export const sortWorkspacesByRecent = (
   list: ReadonlyArray<Workspace>,
@@ -13,15 +13,27 @@ export const sortWorkspacesByRecent = (
   });
 };
 
-export const filterWorkspaces = (
-  list: ReadonlyArray<Workspace>,
-  query: string,
-): ReadonlyArray<Workspace> => {
+type FilterParams = {
+  readonly workspaces: ReadonlyArray<Workspace>;
+  readonly projects: ReadonlyArray<Project>;
+  readonly query: string;
+};
+
+export const filterWorkspaces = ({
+  workspaces,
+  projects,
+  query,
+}: FilterParams): ReadonlyArray<Workspace> => {
   const q = query.trim().toLowerCase();
   if (!q) {
-    return list;
+    return workspaces;
   }
-  return list.filter(
-    (w) => w.name.toLowerCase().includes(q) || w.rootPath.toLowerCase().includes(q),
+  return workspaces.filter(
+    (workspace) =>
+      workspace.name.toLowerCase().includes(q) ||
+      projects.some(
+        (project) =>
+          project.workspaceId === workspace.id && project.rootPath.toLowerCase().includes(q),
+      ),
   );
 };

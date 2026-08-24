@@ -9,8 +9,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 const seedSession = async ({ db }: { readonly db: Database }): Promise<void> => {
   await db.execute(
-    `INSERT INTO workspaces (id, name, root_path, created_at, updated_at)
-     VALUES ('workspace-1', 'workspace', '/tmp/workspace', ?, ?)`,
+    `INSERT INTO workspaces (id, name, slug, created_at, updated_at)
+     VALUES ('workspace-1', 'workspace', 'workspace', ?, ?)`,
     [NOW, NOW],
   );
   await db.execute(
@@ -53,7 +53,7 @@ describe('runDatabaseHygiene', () => {
       ['recent-pending', 'pending'],
     ]);
     expect(JSON.parse(rows[0]?.status_payload ?? '{}')).toMatchObject({
-      finishedAt: new Date(NOW).toISOString(),
+      finishedAt: NOW,
       routingDecision: { provider: 'anthropic' },
     });
   });
@@ -122,12 +122,7 @@ describe('runDatabaseHygiene', () => {
        VALUES
          ('old-audit', 'run', 'session-1', 'tool-old', 'Read', '{}', 'allow', 'user', ?, ?),
          ('new-audit', 'run', 'session-1', 'tool-new', 'Read', '{}', 'allow', 'user', ?, ?)`,
-      [
-        new Date(NOW - 31 * DAY_MS).toISOString(),
-        new Date(NOW - 31 * DAY_MS).toISOString(),
-        new Date(NOW).toISOString(),
-        new Date(NOW).toISOString(),
-      ],
+      [NOW - 31 * DAY_MS, NOW - 31 * DAY_MS, NOW, NOW],
     );
     await db.execute(
       `INSERT INTO turn_events (id, session_id, agent_id, payload, created_at)
@@ -144,13 +139,7 @@ describe('runDatabaseHygiene', () => {
          ('ak/unknown-repo', 'acme/repo', NULL, ?),
          ('ak/other-live', 'acme/repo', NULL, ?),
          ('ak/orphan', 'acme/repo', NULL, ?)`,
-      [
-        new Date(NOW).toISOString(),
-        new Date(NOW).toISOString(),
-        new Date(NOW).toISOString(),
-        new Date(NOW).toISOString(),
-        new Date(NOW).toISOString(),
-      ],
+      [NOW, NOW, NOW, NOW, NOW],
     );
 
     const result = await runDatabaseHygiene({ db, now: NOW });
@@ -194,7 +183,7 @@ describe('runDatabaseHygiene', () => {
          ?,
          ?
        FROM sequence`,
-      [new Date(NOW).toISOString(), new Date(NOW).toISOString()],
+      [NOW, NOW],
     );
     await db.execute(
       `WITH RECURSIVE sequence(value) AS (

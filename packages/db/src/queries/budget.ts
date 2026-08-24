@@ -10,7 +10,7 @@ type BudgetRuleRow = {
   cap_usd: number;
   alert_threshold_pct: number;
   extra_tokens_budget: number | null;
-  created_at: string;
+  created_at: number;
 };
 
 function toBudgetRule(row: BudgetRuleRow): BudgetRule {
@@ -21,34 +21,13 @@ function toBudgetRule(row: BudgetRuleRow): BudgetRule {
     capUsd: row.cap_usd,
     alertThresholdPct: row.alert_threshold_pct,
     extraTokensBudget: row.extra_tokens_budget ?? null,
-    createdAt: row.created_at as IsoDateTime,
+    createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
   };
 }
-
-export const insertBudgetRule = async (db: Database, rule: BudgetRule): Promise<void> => {
-  await db.execute(
-    `INSERT INTO budget_rules
-      (id, provider, period, cap_usd, alert_threshold_pct, extra_tokens_budget, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [
-      rule.id,
-      rule.provider,
-      rule.period,
-      rule.capUsd,
-      rule.alertThresholdPct,
-      rule.extraTokensBudget ?? null,
-      rule.createdAt,
-    ],
-  );
-};
 
 export const listBudgetRules = async (db: Database): Promise<ReadonlyArray<BudgetRule>> => {
   const rows = await db.select<BudgetRuleRow>('SELECT * FROM budget_rules ORDER BY created_at ASC');
   return rows.map(toBudgetRule);
-};
-
-export const deleteBudgetRule = async (db: Database, id: string): Promise<void> => {
-  await db.execute('DELETE FROM budget_rules WHERE id = ?', [id]);
 };
 
 type SessionBudgetRow = {
@@ -94,8 +73,8 @@ type BudgetAlertRow = {
   session_id: string | null;
   current_usd: number;
   cap_usd: number;
-  created_at: string;
-  dismissed_at: string | null;
+  created_at: number;
+  dismissed_at: number | null;
 };
 
 function toBudgetAlert(row: BudgetAlertRow): BudgetAlert {
@@ -106,8 +85,11 @@ function toBudgetAlert(row: BudgetAlertRow): BudgetAlert {
     sessionId: row.session_id ? (row.session_id as SessionId) : undefined,
     currentUsd: row.current_usd,
     capUsd: row.cap_usd,
-    createdAt: row.created_at as IsoDateTime,
-    dismissedAt: row.dismissed_at ? (row.dismissed_at as IsoDateTime) : undefined,
+    createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
+    dismissedAt:
+      row.dismissed_at != null
+        ? (new Date(row.dismissed_at).toISOString() as IsoDateTime)
+        : undefined,
   };
 }
 
@@ -123,8 +105,8 @@ export const insertBudgetAlert = async (db: Database, alert: BudgetAlert): Promi
       alert.sessionId ?? null,
       alert.currentUsd,
       alert.capUsd,
-      alert.createdAt,
-      alert.dismissedAt ?? null,
+      Date.parse(alert.createdAt),
+      alert.dismissedAt != null ? Date.parse(alert.dismissedAt) : null,
     ],
   );
 };
@@ -167,5 +149,8 @@ export const dismissBudgetAlert = async (
   id: string,
   dismissedAt: IsoDateTime,
 ): Promise<void> => {
-  await db.execute('UPDATE budget_alerts SET dismissed_at = ? WHERE id = ?', [dismissedAt, id]);
+  await db.execute('UPDATE budget_alerts SET dismissed_at = ? WHERE id = ?', [
+    Date.parse(dismissedAt),
+    id,
+  ]);
 };

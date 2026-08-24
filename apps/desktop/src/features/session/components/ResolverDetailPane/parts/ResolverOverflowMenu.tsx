@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MoreHorizontal } from 'lucide-react';
-import { cn, Divider, Popover, Tooltip, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, cn, Divider, Tooltip, useDropdown } from '@goodboy/ui';
 import type { Agent, BranchCommit } from '@goodboy/types';
 import { RESOLVER_ACTION_ICON } from '../../../resolverActionIcon';
 import type { ResolverAction, ResolverActionKind } from '../../../resolverActions';
@@ -31,13 +31,8 @@ export const ResolverOverflowMenu = ({
   onSquash,
 }: Props) => {
   const [armed, setArmed] = useState<Armed | null>(null);
-  const {
-    open: isOpen,
-    close,
-    toggle,
-    containerRef,
-    popupClassName,
-  } = useDropdown({ align: 'end', width: 'w-72', expectedHeight: 320 });
+  const dropdown = useDropdown({ align: 'end', width: 'w-72', expectedHeight: 320 });
+  const { open: isOpen, close, toggle } = dropdown;
 
   useEffect(() => {
     if (isOpen) {
@@ -58,77 +53,76 @@ export const ResolverOverflowMenu = ({
   }
 
   return (
-    <div className="relative" ref={containerRef}>
-      <Tooltip content="More resolver actions">
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label="More resolver actions"
-          aria-haspopup="menu"
-          aria-expanded={isOpen}
-          className={cn(
-            'rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground',
-            isOpen && 'bg-foreground/10 text-foreground',
-          )}
-        >
-          <MoreHorizontal size={14} aria-hidden />
-        </button>
-      </Tooltip>
-      {isOpen && (
-        <Popover
-          role="menu"
-          ariaLabel="More resolver actions"
-          className={cn(popupClassName, 'py-1')}
-        >
-          {armedAction !== null && (
-            <div className="p-2">
-              <ResolverConfirm
-                action={armedAction}
-                onConfirm={async () => {
-                  await actions.run(armedAction.kind);
-                  close();
-                }}
-                onCancel={() => setArmed(null)}
-              />
-            </div>
-          )}
-          {armed === null && (
+    <AnchoredPopover
+      dropdown={dropdown}
+      role="menu"
+      ariaLabel="More resolver actions"
+      className="py-1"
+      trigger={
+        <Tooltip content="More resolver actions">
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label="More resolver actions"
+            aria-haspopup="menu"
+            aria-expanded={isOpen}
+            className={cn(
+              'rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground',
+              isOpen && 'bg-foreground/10 text-foreground',
+            )}
+          >
+            <MoreHorizontal size={14} aria-hidden />
+          </button>
+        </Tooltip>
+      }
+    >
+      {armedAction !== null && (
+        <div className="p-2">
+          <ResolverConfirm
+            action={armedAction}
+            onConfirm={async () => {
+              await actions.run(armedAction.kind);
+              close();
+            }}
+            onCancel={() => setArmed(null)}
+          />
+        </div>
+      )}
+      {armed === null && (
+        <>
+          {actions.plan.overflow.map((action) => {
+            const Icon = RESOLVER_ACTION_ICON[action.kind];
+            return (
+              <button
+                key={action.kind}
+                type="button"
+                role="menuitem"
+                onClick={() => setArmed(action.kind)}
+                className={cn(
+                  ITEM_CLASS,
+                  action.role === 'danger'
+                    ? 'text-danger/90 hover:bg-danger/10 hover:text-danger'
+                    : 'text-foreground/80 hover:bg-muted hover:text-foreground',
+                )}
+              >
+                <Icon size={11} aria-hidden className="shrink-0 text-muted-foreground/70" />
+                {action.label}
+              </button>
+            );
+          })}
+          {commits.length > 0 && (
             <>
-              {actions.plan.overflow.map((action) => {
-                const Icon = RESOLVER_ACTION_ICON[action.kind];
-                return (
-                  <button
-                    key={action.kind}
-                    type="button"
-                    role="menuitem"
-                    onClick={() => setArmed(action.kind)}
-                    className={cn(
-                      ITEM_CLASS,
-                      action.role === 'danger'
-                        ? 'text-danger/90 hover:bg-danger/10 hover:text-danger'
-                        : 'text-foreground/80 hover:bg-muted hover:text-foreground',
-                    )}
-                  >
-                    <Icon size={11} aria-hidden className="shrink-0 text-muted-foreground/70" />
-                    {action.label}
-                  </button>
-                );
-              })}
-              {commits.length > 0 && (
-                <>
-                  <Divider />
-                  <BranchSurgery
-                    commits={commits}
-                    headSha={headSha}
-                    onAmend={onAmend}
-                    onSquash={onSquash}
-                  />
-                </>
-              )}
+              <Divider />
+              <BranchSurgery
+                commits={commits}
+                headSha={headSha}
+                onAmend={onAmend}
+                onSquash={onSquash}
+              />
             </>
           )}
-        </Popover>
+        </>
       )}
-    </div>
+    </AnchoredPopover>
   );
 };

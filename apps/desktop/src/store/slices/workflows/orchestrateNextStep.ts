@@ -48,6 +48,7 @@ import {
   type SpendLimitStop,
 } from './budgetBlock';
 import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import { buildProfileGuard } from '../../profileGuard';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
@@ -404,6 +405,7 @@ const appendStep = async ({
     defaultProvider: (session.providerOverride ??
       session.providerPreference.defaultProvider) as ProviderId,
     roleModels,
+    sessionEffort: session.effort ?? null,
   });
   const agent = spawned.agents[0];
   if (agent == null) {
@@ -540,7 +542,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         defaultProvider,
       );
       const routing = options?.routing ?? run.orchestratorRouting ?? taskModel;
-      const hints = [run.orchestratorHints, operatorNote]
+      const profileBlock = buildProfileGuard({
+        profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)
+          ?.profile,
+      });
+      const hints = [profileBlock, run.orchestratorHints, operatorNote]
         .map((entry) => entry?.trim() ?? '')
         .filter((entry) => entry !== '')
         .join('\n');

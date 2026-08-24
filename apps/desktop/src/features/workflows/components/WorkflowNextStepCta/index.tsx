@@ -41,6 +41,8 @@ export type Props = {
   readonly agentModel?: string | null;
   readonly agentProvider?: ProviderId | null;
   readonly agentEffort?: ModelEffort | null;
+  readonly sessionProvider?: ProviderId | null;
+  readonly sessionEffort?: ModelEffort | null;
 };
 
 export const WorkflowNextStepCta = ({
@@ -56,6 +58,8 @@ export const WorkflowNextStepCta = ({
   agentModel = null,
   agentProvider = null,
   agentEffort = null,
+  sessionProvider = null,
+  sessionEffort = null,
 }: Props) => {
   const [busy, setBusy] = useState(false);
   const [pendingForce, setPendingForce] = useState(false);
@@ -70,6 +74,8 @@ export const WorkflowNextStepCta = ({
     agentModel,
     agentProvider,
     agentEffort,
+    sessionProvider,
+    sessionEffort,
   });
   const advance = useStartAnywayConfirm({
     blockReason,

@@ -39,8 +39,10 @@ import {
   advanceClusterImplementation,
   composeClusterBoundary,
   fanOutClusters,
+  resumeClusterChildren,
   selectClustersPlan,
   selectFanOutPlan,
+  unsettledClusterChildren,
 } from './clusterImplementation';
 
 const plan = (over: Partial<Omit<PlanWithCount, 'id'>> & { id?: string }): PlanWithCount =>
@@ -895,5 +897,224 @@ describe('advanceClusterImplementation', () => {
     expect(sendTurn).not.toHaveBeenCalled();
     expect(refreshUnreadWorkspaces).toHaveBeenCalledTimes(1);
     expect(maybeAutoAdvanceWorkflow).toHaveBeenCalledWith(SID);
+  });
+});
+
+describe('unsettledClusterChildren', () => {
+  it('counts every child that has not reached a settled status', () => {
+    const runs = [
+      container(),
+      childAgent({ id: 'c0', ordinal: 1, status: 'completed' }),
+      childAgent({ id: 'c1', ordinal: 2, status: 'skipped' }),
+      childAgent({ id: 'c2', ordinal: 3, status: 'pending' }),
+      childAgent({ id: 'c3', ordinal: 4, status: 'running' }),
+      childAgent({ id: 'c4', ordinal: 5, status: 'failed' }),
+    ];
+
+    expect(unsettledClusterChildren(runs, PARENT).map((child) => child.id)).toEqual([
+      'c2',
+      'c3',
+      'c4',
+    ]);
+  });
+
+  it('is empty for a container whose children all settled', () => {
+    const runs = [container(), childAgent({ id: 'c0', ordinal: 1, status: 'completed' })];
+
+    expect(unsettledClusterChildren(runs, PARENT)).toHaveLength(0);
+  });
+});
+
+describe('resumeClusterChildren', () => {
+  const consumedPlan = plan({ status: 'consumed', workflowRunId: 'wf-1' as WorkflowRunId });
+
+  it('starts the first pending child from the plan the container already consumed', async () => {
+    const c = container({ status: 'pending', workflowRunId: 'wf-1' as WorkflowRunId });
+    const children = [
+      childAgent({ id: 'c0', ordinal: 1, status: 'completed' }),
+      childAgent({ id: 'c1', ordinal: 2, status: 'pending' }),
+    ];
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [c, ...children] },
+      sessionPlans: { [SID]: [consumedPlan] },
+      planConsumptions: { p1: [{ agentId: PARENT }] },
+    });
+
+    const resumed = await resumeClusterChildren({ set, get, sessionId: SID, container: c });
+
+    expect(resumed).toBe(true);
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(PARENT, { status: 'running' });
+    const call = (sendTurn.mock.calls[0]! as unknown[])[0] as {
+      sessionId: SessionId;
+      agentId: AgentId;
+      content: string;
+    };
+    expect(call.sessionId).toBe(SID);
+    expect(call.agentId).toBe('c1');
+    expect(call.content).toContain('do 1');
+    expect(call.content).toContain('<<cluster-done id="c1">>');
+  });
+
+  it('does nothing when the next unsettled child is already in flight', async () => {
+    const c = container({ status: 'running', workflowRunId: 'wf-1' as WorkflowRunId });
+    const children = [childAgent({ id: 'c0', ordinal: 1, status: 'running' })];
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [c, ...children] },
+      sessionPlans: { [SID]: [consumedPlan] },
+      planConsumptions: { p1: [{ agentId: PARENT }] },
+    });
+
+    const resumed = await resumeClusterChildren({ set, get, sessionId: SID, container: c });
+
+    expect(resumed).toBe(false);
+    expect(sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('returns false when every child already settled', async () => {
+    const c = container({ status: 'running', workflowRunId: 'wf-1' as WorkflowRunId });
+    const children = [childAgent({ id: 'c0', ordinal: 1, status: 'completed' })];
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [c, ...children] },
+      sessionPlans: { [SID]: [consumedPlan] },
+      planConsumptions: { p1: [{ agentId: PARENT }] },
+    });
+
+    expect(await resumeClusterChildren({ set, get, sessionId: SID, container: c })).toBe(false);
+    expect(sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('fails the child and warns when the plan no longer carries its instructions', async () => {
+    const c = container({ status: 'pending', workflowRunId: 'wf-1' as WorkflowRunId });
+    const children = [childAgent({ id: 'c0', ordinal: 1, status: 'pending' })];
+    const { get, set, sendTurn, emitNotification } = makeStore({
+      sessionPhaseRuns: { [SID]: [c, ...children] },
+      sessionPlans: { [SID]: [] },
+      planConsumptions: {},
+    });
+
+    const resumed = await resumeClusterChildren({ set, get, sessionId: SID, container: c });
+
+    expect(resumed).toBe(false);
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      'c0',
+      expect.objectContaining({ status: 'failed' }),
+    );
+    expect(emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'cluster blocked: child-1',
+      expect.any(String),
+      { sessionId: SID },
+    );
+  });
+});
+
+describe('cluster child start retry', () => {
+  const withUniqueChildIds = (prefix: string) => {
+    hoisted.invokeAgentInsert.mockImplementation(async (args: Record<string, unknown>) => {
+      hoisted.insertArgs.push(args);
+      return {
+        id: `${prefix}-${hoisted.insertArgs.length}` as AgentId,
+        ...args,
+      } as unknown as Agent;
+    });
+  };
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('retries a transient start failure with backoff, then fails the child after the cap', async () => {
+    vi.useFakeTimers();
+    withUniqueChildIds('retry-a');
+    const c = container({ id: 'container-a' as AgentId });
+    const { get, set, sendTurn, emitNotification } = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+      clusterStartAttempts: {},
+    });
+    sendTurn.mockRejectedValue(new Error('spawn ETIMEDOUT'));
+
+    await fanOutClusters(set, get, SID, c, clusters, 'goal');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(sendTurn).toHaveBeenCalledTimes(2);
+
+    await vi.advanceTimersByTimeAsync(8_000);
+    expect(sendTurn).toHaveBeenCalledTimes(3);
+
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(sendTurn).toHaveBeenCalledTimes(3);
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      'retry-a-1',
+      expect.objectContaining({ status: 'failed' }),
+    );
+    expect(emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      expect.stringContaining('cluster could not start'),
+      expect.any(String),
+      { sessionId: SID },
+    );
+  });
+
+  it('does not retry a deterministic start failure', async () => {
+    vi.useFakeTimers();
+    withUniqueChildIds('retry-b');
+    const c = container({ id: 'container-b' as AgentId });
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+      clusterStartAttempts: {},
+    });
+    sendTurn.mockRejectedValue(new Error('no agent selected. spawn one before sending a turn'));
+
+    await fanOutClusters(set, get, SID, c, clusters, 'goal');
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      'retry-b-1',
+      expect.objectContaining({ status: 'failed' }),
+    );
+  });
+
+  it('never retries a turn that already produced work, so a long run is not replayed', async () => {
+    vi.useFakeTimers();
+    withUniqueChildIds('retry-c');
+    const c = container({ id: 'container-c' as AgentId });
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+      clusterStartAttempts: {},
+      transcripts: { 'retry-c-1': [{ kind: 'assistant_text', delta: 'work' }] },
+    });
+    sendTurn.mockRejectedValue(new Error('stream closed'));
+
+    await fanOutClusters(set, get, SID, c, clusters, 'goal');
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      'retry-c-1',
+      expect.objectContaining({ status: 'failed' }),
+    );
+  });
+
+  it('records the attempt number in the store so the stepper can show it', async () => {
+    vi.useFakeTimers();
+    withUniqueChildIds('retry-d');
+    const c = container({ id: 'container-d' as AgentId });
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+      clusterStartAttempts: {},
+    });
+    sendTurn.mockRejectedValue(new Error('spawn ETIMEDOUT'));
+
+    await fanOutClusters(set, get, SID, c, clusters, 'goal');
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    expect((get().clusterStartAttempts as unknown as Record<string, number>)['retry-d-1']).toBe(2);
   });
 });

@@ -3,6 +3,7 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  ProjectId,
   ProviderId,
   ProviderRunId,
   Session,
@@ -223,7 +224,7 @@ vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
   worktreeChangedFiles: vi.fn(async () => ({ files: [], numstat: '' })),
-  simpleSessionDirExists: vi.fn(async () => true),
+  sessionDirExists: vi.fn(async () => true),
 }));
 
 vi.mock('../shared/lib/repo', () => ({
@@ -332,6 +333,17 @@ describe('sendTurn, agent routing', () => {
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            projectId: 'project-rt' as ProjectId,
+            mountName: 'repo',
+            worktreePath: '/tmp/wt',
+            repoRoot: '/tmp/repo',
+            branch: 'goodboy/rt',
+          },
+        ],
+      },
       sessionPhaseRuns: { [SESSION_ID]: [buildAgent(AGENT_A, 0), buildAgent(AGENT_B, 1)] },
       selectedAgentId: { [SESSION_ID]: selectedAgent },
       transcripts: { [AGENT_A]: [], [AGENT_B]: [] },
@@ -350,7 +362,26 @@ describe('sendTurn, agent routing', () => {
         codex: { state: 'connected', identity: 'test' },
       } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
   }
@@ -419,18 +450,44 @@ describe('sendTurn, agent routing', () => {
   it('captures file versions for changed files in a simple session turn', async () => {
     const useAppStore = await importStore();
     setupTwoAgents(useAppStore, AGENT_A);
+    const projectId = 'project-folder' as ProjectId;
     useAppStore.setState({
       sessionWorktrees: { [SESSION_ID]: ['/tmp/simple-session'] },
-      workspaces: [
+      projects: [
         {
-          id: WORKSPACE_ID,
-          name: 'ws',
-          rootPath: '/tmp',
-          kind: 'simple',
+          id: projectId,
+          workspaceId: WORKSPACE_ID,
+          name: 'folder',
+          rootPath: '/tmp/simple-session',
+          kind: 'folder',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
           createdAt: NOW,
           updatedAt: NOW,
         },
-      ] as never,
+      ],
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            projectId,
+            mountName: 'folder',
+            worktreePath: '/tmp/simple-session',
+            repoRoot: '/tmp/simple-session',
+            branch: '',
+          },
+        ],
+      },
+      sessionActiveProject: { [SESSION_ID]: projectId },
     });
     fileVersionsBeginSnapshotSpy.mockResolvedValue({
       manifest: [
@@ -604,147 +661,6 @@ describe('sendTurn, workflow carry-forward', () => {
     vi.clearAllMocks();
   });
 
-  it('collapses a completed parallel group into one predecessor entry', async () => {
-    const useAppStore = await importStore();
-    const workflowId = 'workflow-parallel-carry' as WorkflowId;
-    const workflowRunId = 'workflow-run-parallel-carry' as WorkflowRunId;
-    const apiStepId = 'step-api' as StepId;
-    const uiStepId = 'step-ui' as StepId;
-    const reviewStepId = 'step-review-parallel' as StepId;
-    const apiAgentId = 'agent-api' as AgentId;
-    const uiAgentId = 'agent-ui' as AgentId;
-    const reviewAgentId = 'agent-review-parallel' as AgentId;
-    const mergedSummary = [
-      '## workflow handoff',
-      '### parallel group output: API',
-      '#### branch 1: API',
-      'Added endpoint.',
-      '#### branch 2: UI',
-      'Built form.',
-    ].join('\n');
-    const workflow: Workflow = {
-      id: workflowId,
-      workspaceId: WORKSPACE_ID,
-      name: 'parallel carry-forward workflow',
-      description: '',
-      steps: [
-        {
-          id: apiStepId,
-          workflowId,
-          ordinal: 0,
-          name: 'API',
-          promptPrefix: '',
-          parallelGroup: 9,
-        },
-        {
-          id: uiStepId,
-          workflowId,
-          ordinal: 1,
-          name: 'UI',
-          promptPrefix: '',
-          parallelGroup: 9,
-        },
-        { id: reviewStepId, workflowId, ordinal: 2, name: 'Review', promptPrefix: 'review' },
-      ],
-      createdAt: NOW,
-      updatedAt: NOW,
-    };
-    const agents: Agent[] = [
-      {
-        ...buildAgent(apiAgentId, 0),
-        stepId: apiStepId,
-        workflowRunId,
-        name: 'API',
-        status: 'completed',
-        outputSummary: mergedSummary,
-      },
-      {
-        ...buildAgent(uiAgentId, 1),
-        stepId: uiStepId,
-        workflowRunId,
-        name: 'UI',
-        status: 'completed',
-        outputSummary: 'Built form.',
-      },
-      {
-        ...buildAgent(reviewAgentId, 2),
-        stepId: reviewStepId,
-        workflowRunId,
-        name: 'Review',
-      },
-    ];
-    const workflowsMod = await import('../features/workflows/workflows');
-    (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue(agents);
-    invokeAgentUpdateStatusSpy.mockImplementation(async (id: AgentId, fields: object) => ({
-      ...agents.find((agent) => agent.id === id)!,
-      ...fields,
-    }));
-    useAppStore.setState({
-      sessions: [
-        {
-          ...buildSession(),
-          workflowRuns: [
-            {
-              id: workflowRunId,
-              workflowId,
-              ordinal: 0,
-              currentStep: 2,
-              autoRun: false,
-              triggerMode: 'immediate',
-              executionMode: 'static',
-            },
-          ],
-        },
-      ],
-      sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
-      sessionPhaseRuns: { [SESSION_ID]: agents },
-      selectedAgentId: { [SESSION_ID]: reviewAgentId },
-      transcripts: { [reviewAgentId]: [] },
-      phaseTemplates: { [WORKSPACE_ID]: [workflow] },
-      providers: [
-        {
-          id: 'anthropic',
-          binary: 'claude',
-          connection: 'connected',
-          name: 'Claude',
-          installation: 'installed',
-        } as never,
-      ],
-      authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
-      workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
-      ],
-    });
-
-    await useAppStore
-      .getState()
-      .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'review group' });
-
-    const expectedCarryForward = [
-      '## workflow handoff',
-      '### step 1 output: API',
-      '### parallel group output: API',
-      '#### branch 1: API',
-      'Added endpoint.',
-      '#### branch 2: UI',
-      'Built form.',
-    ].join('\n');
-    expect(runTurnSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ prompt: expect.stringContaining(expectedCarryForward) }),
-    );
-    expect(runTurnSpy.mock.calls[0]?.[0]?.prompt).not.toContain('### earlier steps');
-    expect(
-      (useAppStore.getState().transcripts[reviewAgentId] ?? []).filter(
-        (event) => event.kind === 'step_transition',
-      ),
-    ).toEqual([
-      expect.objectContaining({
-        fromStep: { ordinal: 1, name: 'API' },
-        carryForwardContext: expectedCarryForward,
-      }),
-    ]);
-  });
-
   it('injects the same full chain on retry without duplicating slots', async () => {
     const useAppStore = await importStore();
     const workflowId = 'workflow-carry' as WorkflowId;
@@ -877,7 +793,26 @@ describe('sendTurn, workflow carry-forward', () => {
       ],
       authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
 
@@ -1030,7 +965,26 @@ describe('sendTurn, workflow carry-forward', () => {
       ],
       authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
     stepSummaryDegraded.clear();
@@ -1104,7 +1058,26 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
         codex: { state: 'connected', identity: 'test' },
       } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
   }
@@ -1262,6 +1235,17 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            projectId: 'project-rt' as ProjectId,
+            mountName: 'repo',
+            worktreePath: '/tmp/wt',
+            repoRoot: '/tmp/repo',
+            branch: 'goodboy/rt',
+          },
+        ],
+      },
       sessionPhaseRuns: { [SESSION_ID]: [buildAgent(AGENT_A, 0), buildAgent(AGENT_B, 1)] },
       selectedAgentId: { [SESSION_ID]: AGENT_A },
       transcripts: { [AGENT_A]: [], [AGENT_B]: [] },
@@ -1283,7 +1267,26 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       ],
       authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
     runTurnSpy.mockReset();
@@ -1337,7 +1340,26 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       ],
       authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
     runTurnSpy.mockReset();
@@ -1377,6 +1399,17 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            projectId: 'project-rt' as ProjectId,
+            mountName: 'repo',
+            worktreePath: '/tmp/wt',
+            repoRoot: '/tmp/repo',
+            branch: 'goodboy/rt',
+          },
+        ],
+      },
       sessionPhaseRuns: { [SESSION_ID]: [buildAgent(AGENT_A, 0), buildAgent(AGENT_B, 1)] },
       selectedAgentId: { [SESSION_ID]: AGENT_A },
       transcripts: { [AGENT_A]: [], [AGENT_B]: [] },
@@ -1398,7 +1431,26 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       ],
       authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
     runTurnSpy.mockReset();
@@ -1431,6 +1483,17 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            projectId: 'project-rt' as ProjectId,
+            mountName: 'repo',
+            worktreePath: '/tmp/wt',
+            repoRoot: '/tmp/repo',
+            branch: 'goodboy/rt',
+          },
+        ],
+      },
       sessionPhaseRuns: { [SESSION_ID]: [buildAgent(AGENT_A, 0), buildAgent(AGENT_B, 1)] },
       selectedAgentId: { [SESSION_ID]: AGENT_A },
       transcripts: { [AGENT_A]: [], [AGENT_B]: [] },
@@ -1452,7 +1515,26 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       ],
       authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
     runTurnSpy.mockReset();
@@ -1666,7 +1748,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     expect(userEvent?.model).toBe('claude-4.6-sonnet-medium');
   });
 
-  it('remaps a composer selection to the fallback provider default', async () => {
+  it('remaps a composer selection to the role-aware model on the fallback provider', async () => {
     const useAppStore = await importStore();
     setup(useAppStore);
     useAppStore.setState({
@@ -1701,11 +1783,11 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     });
 
     expect(runTurnSpy.mock.calls[0]?.[0]).toEqual(
-      expect.objectContaining({ provider: 'cursor', model: 'composer-2.5' }),
+      expect.objectContaining({ provider: 'cursor', model: 'claude-4.6-sonnet-medium' }),
     );
     expect(resolveModelArgsSpy).toHaveBeenLastCalledWith({
       provider: 'cursor',
-      selection: expect.objectContaining({ key: 'composer-2.5' }),
+      selection: expect.objectContaining({ key: 'sonnet-4.6' }),
     });
     expect(resolveModelArgsSpy).not.toHaveBeenCalledWith({
       provider: 'cursor',
@@ -1714,7 +1796,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     const userEvent = (useAppStore.getState().transcripts[AGENT_A] ?? []).find(
       (event) => event.kind === 'user_text',
     );
-    expect(userEvent?.model).toBe('composer-2.5');
+    expect(userEvent?.model).toBe('claude-4.6-sonnet-medium');
   });
 
   it('uses a composer override for both the transcript and spawn args', async () => {
@@ -1829,7 +1911,26 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       ],
       authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
 
@@ -1888,7 +1989,26 @@ describe('sendTurn, budget routing notice', () => {
         cursor: { state: 'connected', identity: 'test' },
       } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
     });
   }
@@ -1942,7 +2062,7 @@ describe('sendTurn, budget routing notice', () => {
     expect(messages.join(' ')).not.toContain('threshold');
   });
 
-  it('stays quiet when the move was not about budget', async () => {
+  it('tells the transcript when the preferred provider was unreachable', async () => {
     const useAppStore = await importStore();
     setupNoticeAgent(useAppStore);
 
@@ -1952,6 +2072,21 @@ describe('sendTurn, budget routing notice', () => {
       reason: 'fallback-disconnected',
       fallbackUsed: true,
       fallbackFrom: 'anthropic',
+    });
+
+    expect(messages.join(' ')).toContain('anthropic is not reachable right now');
+    expect(messages.join(' ')).toContain('running this turn on cursor');
+  });
+
+  it('stays quiet when routing kept the preferred provider', async () => {
+    const useAppStore = await importStore();
+    setupNoticeAgent(useAppStore);
+
+    const messages = await sendWithDecision(useAppStore, {
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-sonnet-4-5',
+      reason: 'preferred',
+      fallbackUsed: false,
     });
 
     expect(messages.join(' ')).not.toContain('running this turn on');
@@ -2080,7 +2215,26 @@ describe('sendTurn, role fallback model', () => {
         anthropic: { state: 'connected', identity: 'test' },
       } as never,
       workspaces: [
-        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
       ],
       workspaceOverrides: {
         [WORKSPACE_ID]: {

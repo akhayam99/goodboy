@@ -157,8 +157,8 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
 
     // Default location: <repo>/.goodboy/worktrees/<prefix>-<slug>. Keeps every
     // session-scoped checkout inside the workspace folder so the user only has
-    // one project root to track. The .goodboy dir should be in the repo's
-    // .gitignore (we add it on first creation, see ensure_gitignore_entry).
+    // one project root to track. The .goodboy dir is excluded from the parent
+    // repo's status via .git/info/exclude (see ensure_goodboy_excluded).
     let parent = args
         .parent_dir
         .map(PathBuf::from)
@@ -179,7 +179,9 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
         None => parent.join(format!("{}-{dir_slug}", args.branch_prefix)),
     };
 
-    ensure_gitignore_entry(&repo_path, ".goodboy/")?;
+    if worktree_path.starts_with(&repo_path) {
+        ensure_goodboy_excluded(&repo_path);
+    }
 
     if let Some(existing) = find_existing(&repo_path, &worktree_path)? {
         return Ok(CreatedWorktree {
@@ -440,6 +442,80 @@ pub fn worktree_remove(repo_path: String, worktree_path: String) -> Result<(), W
     remove_worktree_with(Path::new(&repo_path), &worktree_path, &mut |cwd, args| {
         git(cwd, args)
     })
+}
+
+fn exclude_file_path(repo_path: &Path) -> Option<PathBuf> {
+    let raw = git(repo_path, &["rev-parse", "--git-common-dir"]).ok()?;
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let dir = PathBuf::from(trimmed);
+    let resolved = if dir.is_absolute() {
+        dir
+    } else {
+        repo_path.join(dir)
+    };
+    Some(resolved.join("info").join("exclude"))
+}
+
+pub(crate) fn remove_goodboy_exclude_entry(repo_path: &Path) {
+    let Some(file) = exclude_file_path(repo_path) else {
+        return;
+    };
+    let Ok(existing) = std::fs::read_to_string(&file) else {
+        return;
+    };
+    let next: String = existing
+        .lines()
+        .filter(|line| {
+            let trimmed = line.trim();
+            trimmed != ".goodboy/" && trimmed != "/.goodboy/" && trimmed != ".goodboy"
+        })
+        .map(|line| format!("{line}\n"))
+        .collect();
+    if next != existing {
+        let _ = std::fs::write(&file, next);
+    }
+}
+
+pub(crate) fn tidy_goodboy_dir(repo_path: &Path) {
+    let _ = std::fs::remove_dir(worktrees_parent(repo_path));
+    let goodboy_dir = repo_path.join(WORKTREE_PARENT[0]);
+    let _ = std::fs::remove_dir(&goodboy_dir);
+    if goodboy_dir.exists() {
+        return;
+    }
+    remove_goodboy_exclude_entry(repo_path);
+}
+
+#[tauri::command]
+pub fn worktree_tidy_goodboy(repo_path: String) -> Result<(), WorktreeError> {
+    tidy_goodboy_dir(Path::new(&repo_path));
+    Ok(())
+}
+
+pub(crate) fn ensure_goodboy_excluded(repo_path: &Path) {
+    let Some(file) = exclude_file_path(repo_path) else {
+        return;
+    };
+    let existing = std::fs::read_to_string(&file).unwrap_or_default();
+    let has_entry = existing.lines().any(|line| {
+        let trimmed = line.trim();
+        trimmed == ".goodboy/" || trimmed == "/.goodboy/" || trimmed == ".goodboy"
+    });
+    if has_entry {
+        return;
+    }
+    let mut next = existing;
+    if !next.is_empty() && !next.ends_with('\n') {
+        next.push('\n');
+    }
+    next.push_str(".goodboy/\n");
+    if let Some(parent) = file.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    let _ = std::fs::write(&file, next);
 }
 
 const WORKTREE_PARENT: [&str; 2] = [".goodboy", "worktrees"];
@@ -1443,19 +1519,6 @@ fn git_strs(cwd: &Path, args: &[String]) -> Result<String, WorktreeError> {
     git(cwd, &refs)
 }
 
-#[tauri::command]
-pub fn worktree_exists(
-    repo_path: String,
-    branch_prefix: String,
-    slug: String,
-) -> Result<bool, WorktreeError> {
-    let entries = worktree_list(repo_path)?;
-    let target_branch = format!("{branch_prefix}/{}", sanitize_slug(&slug));
-    Ok(entries
-        .iter()
-        .any(|w| w.branch.as_deref() == Some(target_branch.as_str())))
-}
-
 fn find_existing(
     repo_path: &Path,
     worktree_path: &Path,
@@ -1465,32 +1528,6 @@ fn find_existing(
     Ok(entries
         .into_iter()
         .find(|w| Path::new(&w.path) == worktree_path))
-}
-
-/// Append a line to the repo's .gitignore if it isn't already present, so the
-/// worktree directory created by Goodboy doesn't leak into git status. No-ops
-/// when the file is already gitignoring the entry, when no .gitignore exists
-/// and writing fails, or when the entry is already there.
-pub(crate) fn ensure_gitignore_entry(repo_path: &Path, entry: &str) -> Result<(), WorktreeError> {
-    let gitignore = repo_path.join(".gitignore");
-    let existing = std::fs::read_to_string(&gitignore).unwrap_or_default();
-    let has_entry = existing
-        .lines()
-        .any(|line| line.trim() == entry || line.trim() == entry.trim_end_matches('/'));
-    if has_entry {
-        return Ok(());
-    }
-    let needs_newline = !existing.is_empty() && !existing.ends_with('\n');
-    let mut next = existing;
-    if needs_newline {
-        next.push('\n');
-    }
-    next.push_str(entry);
-    next.push('\n');
-    // Best-effort: silently swallow write errors so a read-only repo doesn't
-    // block worktree creation.
-    let _ = std::fs::write(&gitignore, next);
-    Ok(())
 }
 
 /// Best-effort fetch of `origin/<base>`. Silently swallows errors so that
@@ -1700,8 +1737,8 @@ fn parse_porcelain(stdout: &str) -> Vec<WorktreeInfo> {
 #[cfg(test)]
 mod rewrite_tests {
     use super::{
-        worktree_amend_commit, worktree_create, worktree_squash_commits, worktree_status,
-        CreateArgs, GitDistance, GitUnknownReason, GitWorkingTree, RewriteArgs,
+        worktree_amend_commit, worktree_create, worktree_remove, worktree_squash_commits,
+        worktree_status, CreateArgs, GitDistance, GitUnknownReason, GitWorkingTree, RewriteArgs,
     };
     use std::path::{Path, PathBuf};
 
@@ -2208,6 +2245,113 @@ mod rewrite_tests {
         assert_eq!(log_subjects(&root), vec!["third", "second", "first"]);
         assert!(!root.join(".git").join("rebase-merge").exists());
         assert!(!root.join(".git").join("rebase-apply").exists());
+    }
+
+    fn create_session_mount(root: &Path, slug: &str) -> super::CreatedWorktree {
+        let parent = root.join(".goodboy").join("worktrees");
+        worktree_create(CreateArgs {
+            repo_path: root.to_string_lossy().into_owned(),
+            branch_prefix: "goodboy".to_string(),
+            slug: slug.to_string(),
+            parent_dir: Some(parent.to_string_lossy().into_owned()),
+            existing_branch: None,
+            fallback_ref: None,
+            base_branch: None,
+            dir_name: Some(slug.to_string()),
+        })
+        .unwrap()
+    }
+
+    #[test]
+    fn a_session_mount_lands_under_goodboy_worktrees_and_stays_out_of_status() {
+        let root = std::fs::canonicalize(init_repo("exclude-on-create")).unwrap();
+        commit(&root, "base.txt", "base", "base");
+        push_to_new_remote(&root);
+
+        let created = create_session_mount(&root, "goal-abc12345");
+
+        assert_eq!(
+            created.worktree_path,
+            root.join(".goodboy")
+                .join("worktrees")
+                .join("goal-abc12345")
+                .to_string_lossy()
+        );
+        let exclude =
+            std::fs::read_to_string(root.join(".git").join("info").join("exclude")).unwrap();
+        assert_eq!(exclude.lines().filter(|line| *line == ".goodboy/").count(), 1);
+        let status = git_ok(&root, &["status", "--porcelain"]);
+        assert!(!status.contains(".goodboy"), "{status}");
+        assert!(!root.join(".gitignore").exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn the_exclude_entry_is_written_once_and_survives_a_detach() {
+        let root = std::fs::canonicalize(init_repo("exclude-lifecycle")).unwrap();
+        commit(&root, "base.txt", "base", "base");
+        push_to_new_remote(&root);
+        let created = create_session_mount(&root, "goal-def67890");
+
+        let reused = create_session_mount(&root, "goal-def67890");
+        assert!(reused.reused);
+        let exclude_path = root.join(".git").join("info").join("exclude");
+        let exclude = std::fs::read_to_string(&exclude_path).unwrap();
+        assert_eq!(exclude.lines().filter(|line| *line == ".goodboy/").count(), 1);
+
+        worktree_remove(
+            root.to_string_lossy().into_owned(),
+            created.worktree_path.clone(),
+        )
+        .unwrap();
+
+        assert!(!Path::new(&created.worktree_path).exists());
+        let after = std::fs::read_to_string(&exclude_path).unwrap();
+        assert_eq!(after.lines().filter(|line| *line == ".goodboy/").count(), 1);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn deleting_the_last_mount_tidies_the_goodboy_dir_and_the_exclude_entry() {
+        let root = std::fs::canonicalize(init_repo("tidy-last-mount")).unwrap();
+        commit(&root, "base.txt", "base", "base");
+        push_to_new_remote(&root);
+        let created = create_session_mount(&root, "goal-tidy0001");
+
+        worktree_remove(
+            root.to_string_lossy().into_owned(),
+            created.worktree_path.clone(),
+        )
+        .unwrap();
+        super::tidy_goodboy_dir(&root);
+
+        assert!(!root.join(".goodboy").exists());
+        let exclude_path = root.join(".git").join("info").join("exclude");
+        let exclude = std::fs::read_to_string(&exclude_path).unwrap();
+        assert_eq!(exclude.lines().filter(|line| *line == ".goodboy/").count(), 0);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn tidy_keeps_the_goodboy_dir_and_the_exclude_entry_while_another_mount_remains() {
+        let root = std::fs::canonicalize(init_repo("tidy-shared-repo")).unwrap();
+        commit(&root, "base.txt", "base", "base");
+        push_to_new_remote(&root);
+        let removed = create_session_mount(&root, "goal-tidy0002");
+        let survivor = create_session_mount(&root, "goal-tidy0003");
+
+        worktree_remove(
+            root.to_string_lossy().into_owned(),
+            removed.worktree_path.clone(),
+        )
+        .unwrap();
+        super::tidy_goodboy_dir(&root);
+
+        assert!(Path::new(&survivor.worktree_path).is_dir());
+        let exclude_path = root.join(".git").join("info").join("exclude");
+        let exclude = std::fs::read_to_string(&exclude_path).unwrap();
+        assert_eq!(exclude.lines().filter(|line| *line == ".goodboy/").count(), 1);
+        std::fs::remove_dir_all(root).unwrap();
     }
 }
 

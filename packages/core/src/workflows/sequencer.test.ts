@@ -175,7 +175,7 @@ describe('isWorkflowComplete', () => {
     const workflowRunId = 'workflow-run-parallel' as WorkflowRunId;
     const parallelTemplate: Workflow = {
       ...TEMPLATE,
-      steps: [{ ...D1, parallelGroup: 7 }, { ...D2, parallelGroup: 7 }, D3],
+      steps: [D1, D2, D3],
     };
     const rows = [
       { ...makeRun('d1', 'pending', 1), workflowRunId },

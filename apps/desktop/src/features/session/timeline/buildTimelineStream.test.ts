@@ -3,13 +3,20 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  OpenQuestion,
+  OpenQuestionId,
+  PlanId,
+  PlanWithCount,
   SessionEvent,
   SessionEventId,
   SessionEventKind,
   SessionId,
+  Step,
   StepId,
   Workflow,
+  WorkflowExecutionMode,
   WorkflowId,
+  WorkflowOrchestrationOutcome,
   WorkflowRun,
   WorkflowRunId,
   WorkspaceId,
@@ -89,14 +96,27 @@ type WorkflowParams = {
   readonly runId?: WorkflowRunId;
   readonly name?: string;
   readonly createdAt: string;
+  readonly stepIds?: ReadonlyArray<string>;
+  readonly executionMode?: WorkflowExecutionMode;
+  readonly orchestrationOutcome?: WorkflowOrchestrationOutcome;
 };
 
 const attachedWorkflow = ({
   runId = RUN_ID,
   name = 'Release workflow',
   createdAt,
+  stepIds = [],
+  executionMode = 'static',
+  orchestrationOutcome,
 }: WorkflowParams): { readonly run: WorkflowRun; readonly workflow: Workflow } => {
   const workflowId = typedString<WorkflowId>({ value: `workflow-${runId}` });
+  const steps: ReadonlyArray<Step> = stepIds.map((stepId, index) => ({
+    id: typedString<StepId>({ value: `step-${stepId}` }),
+    workflowId,
+    ordinal: index,
+    name: stepId,
+    promptPrefix: '',
+  }));
   return {
     run: {
       id: runId,
@@ -105,7 +125,8 @@ const attachedWorkflow = ({
       currentStep: 0,
       autoRun: false,
       triggerMode: 'manual',
-      executionMode: 'static',
+      executionMode,
+      ...(orchestrationOutcome != null ? { orchestrationOutcome } : {}),
       createdAt: typedString<IsoDateTime>({ value: createdAt }),
     },
     workflow: {
@@ -113,7 +134,7 @@ const attachedWorkflow = ({
       workspaceId: typedString<WorkspaceId>({ value: 'workspace-1' }),
       name,
       description: '',
-      steps: [],
+      steps,
       createdAt: typedString<IsoDateTime>({ value: createdAt }),
       updatedAt: typedString<IsoDateTime>({ value: createdAt }),
     },
@@ -146,6 +167,12 @@ type StreamParams = {
   readonly workflows?: ReadonlyArray<ReturnType<typeof attachedWorkflow>>;
   readonly unreadAgentIds?: ReadonlySet<string>;
   readonly events?: ReadonlyArray<SessionEvent>;
+  readonly plans?: ReadonlyArray<PlanWithCount>;
+  readonly questions?: ReadonlyArray<OpenQuestion>;
+  readonly showWorkflowSubagents?: boolean;
+  readonly showAgentSubagents?: boolean;
+  readonly showPlans?: boolean;
+  readonly showQuestions?: boolean;
 };
 
 const stream = ({
@@ -153,14 +180,20 @@ const stream = ({
   workflows = [],
   unreadAgentIds = new Set(),
   events = [],
+  plans = [],
+  questions = [],
+  showWorkflowSubagents,
+  showAgentSubagents,
+  showPlans,
+  showQuestions,
 }: StreamParams) =>
   buildTimelineStream({
     entries: buildTimelineGroups({
       agents,
       workflows,
-      plans: [],
+      plans,
       externalTasks: [],
-      questions: [],
+      questions,
       worktrees: [],
       events,
       agentKindOverride: {},
@@ -168,6 +201,10 @@ const stream = ({
     unreadAgentIds,
     blockedRunIds: new Set(),
     dayLabelFor: ({ at }) => dayLabel({ at, now: NOW }),
+    ...(showWorkflowSubagents != null ? { showWorkflowSubagents } : {}),
+    ...(showAgentSubagents != null ? { showAgentSubagents } : {}),
+    ...(showPlans != null ? { showPlans } : {}),
+    ...(showQuestions != null ? { showQuestions } : {}),
   });
 
 type LaneSpan = {
@@ -690,7 +727,7 @@ describe('buildTimelineStream', () => {
     expect(layout.columnByGroupId.get('lane:agent:implement')).toBe(2);
   });
 
-  it('interleaves a standalone agent between two steps without breaking the run', () => {
+  it('keeps a run whole when a standalone agent ran between two of its steps', () => {
     const { items, groups } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
       agents: [
@@ -715,14 +752,59 @@ describe('buildTimelineStream', () => {
     expect(items.map(labelOf)).toEqual([
       'now',
       'step:agent:step-two',
-      'entry:agent:loose',
       'step:agent:step-one',
       'entry:run:run-1',
+      'entry:agent:loose',
     ]);
     expect(layout.rows[looseIndex]?.markerColumn).toBe(0);
-    expect(
-      layout.rows[looseIndex]?.segments.filter((segment) => segment.column === 1),
-    ).toHaveLength(1);
+    expect(layout.rows[looseIndex]?.segments.filter((segment) => segment.column > 0)).toEqual([]);
+  });
+
+  it('keeps a chain with its parent when the children landed a day later', () => {
+    const { items, groups } = stream({
+      agents: [
+        agent({
+          id: 'cluster-parent',
+          ordinal: 1,
+          startedAt: localIso({ day: 17, hour: 21, minute: 35 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 40 }),
+        }),
+        agent({ id: 'elenca', ordinal: 2, startedAt: localIso({ day: 17, hour: 21, minute: 37 }) }),
+        agent({
+          id: 'cluster-child',
+          ordinal: 3,
+          parentAgentId: 'cluster-parent',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+        }),
+      ],
+      events: [
+        sessionEvent({
+          id: 'ev-decision',
+          kind: 'decisions_changed',
+          at: localIso({ day: 17, hour: 23, minute: 27 }),
+        }),
+      ],
+    });
+    const layout = layoutTimelineRail({ rows: items, groups });
+    const laneSegmentsOf = ({ id }: { readonly id: string }) =>
+      layout.rows[items.findIndex((item) => item.id === id)]?.segments.filter(
+        (segment) => segment.column > 0,
+      ) ?? [];
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'step:agent:cluster-child',
+      'day:Yesterday',
+      'entry:agent:cluster-parent',
+      'entry:event:ev-decision',
+      'entry:agent:elenca',
+    ]);
+    expect(laneSegmentsOf({ id: 'event:ev-decision' })).toEqual([]);
+    expect(laneSegmentsOf({ id: 'agent:elenca' })).toEqual([]);
+    const dayIndex = items.findIndex((item) => item.kind === 'day');
+
+    expect(layout.rows[dayIndex]?.segments.filter((segment) => segment.column > 0)).toHaveLength(1);
   });
 
   it('centres a marker on its label line, not on a row box carrying leading air', () => {
@@ -864,6 +946,172 @@ describe('buildTimelineStream, session events', () => {
     expect(groups.some((group) => group.isMuted)).toBe(false);
   });
 
+  it('keeps the lane of a live dynamic run open when its spawned steps have settled', () => {
+    const { items, groups } = stream({
+      workflows: [
+        attachedWorkflow({
+          createdAt: localIso({ day: 18, hour: 8 }),
+          stepIds: ['one', 'two'],
+          executionMode: 'dynamic',
+        }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({
+          id: 'two',
+          ordinal: 2,
+          startedAt: localIso({ day: 18, hour: 10 }),
+          completedAt: localIso({ day: 18, hour: 10, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:run:run-1');
+    const runRow = items.find((item) => item.id === 'run:run-1');
+
+    expect(lane?.shape).toBe('open');
+    expect(runRow?.kind === 'row' ? runRow.markerState : null).toBe('pending');
+  });
+
+  it('closes the lane of a dynamic run once the orchestrator declares it done', () => {
+    const { items, groups } = stream({
+      workflows: [
+        attachedWorkflow({
+          createdAt: localIso({ day: 18, hour: 8 }),
+          stepIds: ['one', 'two'],
+          executionMode: 'dynamic',
+          orchestrationOutcome: 'done',
+        }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({
+          id: 'two',
+          ordinal: 2,
+          startedAt: localIso({ day: 18, hour: 10 }),
+          completedAt: localIso({ day: 18, hour: 10, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:run:run-1');
+    const runRow = items.find((item) => item.id === 'run:run-1');
+
+    expect(lane?.shape).toBe('merged');
+    expect(runRow?.kind === 'row' ? runRow.markerState : null).toBe('done');
+  });
+
+  it('keeps the lane of a static run open while planned steps are still unspawned', () => {
+    const { groups } = stream({
+      workflows: [
+        attachedWorkflow({
+          createdAt: localIso({ day: 18, hour: 8 }),
+          stepIds: ['one', 'two', 'three'],
+        }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:run:run-1');
+
+    expect(lane?.shape).toBe('open');
+  });
+
+  it('closes the lane of a static run when every planned step has settled', () => {
+    const { groups } = stream({
+      workflows: [
+        attachedWorkflow({
+          createdAt: localIso({ day: 18, hour: 8 }),
+          stepIds: ['one', 'two'],
+        }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({
+          id: 'two',
+          ordinal: 2,
+          startedAt: localIso({ day: 18, hour: 10 }),
+          completedAt: localIso({ day: 18, hour: 10, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:run:run-1');
+
+    expect(lane?.shape).toBe('merged');
+  });
+
+  it('keeps a parent agent group open while the parent still runs over settled children', () => {
+    const { groups } = stream({
+      agents: [
+        agent({
+          id: 'parent',
+          ordinal: 1,
+          status: 'running',
+          startedAt: localIso({ day: 18, hour: 9 }),
+        }),
+        agent({
+          id: 'child',
+          ordinal: 2,
+          parentAgentId: 'parent',
+          startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 40 }),
+        }),
+      ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:agent:parent');
+
+    expect(lane?.shape).toBe('open');
+  });
+
+  it('closes a parent agent group only when parent and children have all settled', () => {
+    const { groups } = stream({
+      agents: [
+        agent({
+          id: 'parent',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 10 }),
+        }),
+        agent({
+          id: 'child',
+          ordinal: 2,
+          parentAgentId: 'parent',
+          startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 40 }),
+        }),
+      ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:agent:parent');
+
+    expect(lane?.shape).toBe('merged');
+  });
+
   it('gives a chained agent group a colored lane', () => {
     const result = stream({
       agents: [
@@ -878,5 +1126,270 @@ describe('buildTimelineStream, session events', () => {
     });
 
     expect(result.groups.map((group) => group.identityIndex)).toEqual([expect.any(Number)]);
+  });
+});
+
+describe('buildTimelineStream, subagent collapse', () => {
+  const FAN_OUT: ReadonlyArray<Agent> = [
+    agent({
+      id: 'implement',
+      ordinal: 1,
+      startedAt: localIso({ day: 18, hour: 9 }),
+      workflowRunId: RUN_ID,
+    }),
+    agent({
+      id: 'sub-a',
+      ordinal: 2,
+      parentAgentId: 'implement',
+      startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+    }),
+    agent({
+      id: 'sub-a-a',
+      ordinal: 3,
+      parentAgentId: 'sub-a',
+      startedAt: localIso({ day: 18, hour: 9, minute: 20 }),
+    }),
+    agent({ id: 'cluster-parent', ordinal: 4, startedAt: localIso({ day: 18, hour: 10 }) }),
+    agent({
+      id: 'cluster-child',
+      ordinal: 5,
+      parentAgentId: 'cluster-parent',
+      startedAt: localIso({ day: 18, hour: 10, minute: 10 }),
+    }),
+  ];
+
+  const FAN_OUT_WORKFLOWS = [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })];
+
+  it('drops workflow descendants but keeps steps when workflow subagents are off', () => {
+    const { items } = stream({
+      workflows: FAN_OUT_WORKFLOWS,
+      agents: FAN_OUT,
+      showWorkflowSubagents: false,
+    });
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'step:agent:cluster-child',
+      'entry:agent:cluster-parent',
+      'step:agent:implement',
+      'entry:run:run-1',
+    ]);
+  });
+
+  it('drops standalone descendants but keeps the parent when agent subagents are off', () => {
+    const { items } = stream({
+      workflows: FAN_OUT_WORKFLOWS,
+      agents: FAN_OUT,
+      showAgentSubagents: false,
+    });
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'entry:agent:cluster-parent',
+      'step:agent:sub-a-a',
+      'step:agent:sub-a',
+      'step:agent:implement',
+      'entry:run:run-1',
+    ]);
+  });
+
+  it('emits no lane for a collapsed brood, so the rail carries no empty group', () => {
+    const { items, groups } = stream({
+      workflows: FAN_OUT_WORKFLOWS,
+      agents: FAN_OUT,
+      showWorkflowSubagents: false,
+      showAgentSubagents: false,
+    });
+    const layout = layoutTimelineRail({ rows: items, groups });
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'entry:agent:cluster-parent',
+      'step:agent:implement',
+      'entry:run:run-1',
+    ]);
+    expect(groups.map((group) => group.id)).toEqual(['lane:run:run-1']);
+    for (const group of groups) {
+      expect(items.some((item) => item.groupId === group.id)).toBe(true);
+    }
+    expect(layout.columnByGroupId.get('lane:agent:implement')).toBeUndefined();
+    expect(layout.columnByGroupId.get('lane:agent:cluster-parent')).toBeUndefined();
+  });
+
+  it('moves a hidden child unread onto the parent row', () => {
+    const collapsed = stream({
+      workflows: FAN_OUT_WORKFLOWS,
+      agents: FAN_OUT,
+      unreadAgentIds: new Set(['sub-a-a', 'cluster-child']),
+      showWorkflowSubagents: false,
+      showAgentSubagents: false,
+    });
+    const unreadIds = collapsed.items.flatMap((item) =>
+      item.kind === 'row' && item.hasUnread ? [item.id] : [],
+    );
+
+    expect(unreadIds).toEqual(expect.arrayContaining(['agent:implement', 'agent:cluster-parent']));
+  });
+
+  it('leaves the unread on the child row itself while subagents are shown', () => {
+    const expanded = stream({
+      workflows: FAN_OUT_WORKFLOWS,
+      agents: FAN_OUT,
+      unreadAgentIds: new Set(['sub-a-a']),
+    });
+    const unreadIds = expanded.items.flatMap((item) =>
+      item.kind === 'row' && item.hasUnread ? [item.id] : [],
+    );
+
+    expect(unreadIds).toEqual(['agent:sub-a-a']);
+  });
+
+  it('matches the default stream exactly when both flags are on', () => {
+    const params = {
+      workflows: FAN_OUT_WORKFLOWS,
+      agents: FAN_OUT,
+    };
+
+    expect(stream({ ...params, showWorkflowSubagents: true, showAgentSubagents: true })).toEqual(
+      stream(params),
+    );
+  });
+});
+
+describe('buildTimelineStream, plan visibility and family anchoring', () => {
+  const runPlan: PlanWithCount = {
+    id: typedString<PlanId>({ value: 'plan-1' }),
+    sessionId: SESSION_ID,
+    agentId: typedString<AgentId>({ value: 'plan' }),
+    workflowRunId: RUN_ID,
+    title: 'migration plan',
+    bodyMd: '',
+    status: 'active',
+    createdAt: typedString<IsoDateTime>({ value: localIso({ day: 18, hour: 9, minute: 15 }) }),
+    updatedAt: typedString<IsoDateTime>({ value: localIso({ day: 18, hour: 9, minute: 15 }) }),
+    consumptionCount: 0,
+  };
+
+  const PLAN_RUN_AGENTS: ReadonlyArray<Agent> = [
+    agent({
+      id: 'plan',
+      ordinal: 1,
+      startedAt: localIso({ day: 18, hour: 9 }),
+      completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+      workflowRunId: RUN_ID,
+    }),
+  ];
+
+  const PLAN_RUN_WORKFLOWS = [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })];
+
+  it('keeps a run plan in the stream by default', () => {
+    const { items } = stream({
+      workflows: PLAN_RUN_WORKFLOWS,
+      agents: PLAN_RUN_AGENTS,
+      plans: [runPlan],
+    });
+
+    expect(items.map(labelOf)).toContain('step:plan:plan-1');
+  });
+
+  it('drops a run plan from the stream when plans are hidden', () => {
+    const { items } = stream({
+      workflows: PLAN_RUN_WORKFLOWS,
+      agents: PLAN_RUN_AGENTS,
+      plans: [runPlan],
+      showPlans: false,
+    });
+
+    expect(items.map(labelOf)).not.toContain('step:plan:plan-1');
+    expect(items.map(labelOf)).toContain('step:agent:plan');
+  });
+
+  const answeredQuestion: OpenQuestion = {
+    id: typedString<OpenQuestionId>({ value: 'question-1' }),
+    sessionId: SESSION_ID,
+    createdByAgentId: typedString<AgentId>({ value: 'asker' }),
+    text: 'Which auth flow should the migration keep?',
+    suggestedAnswers: [],
+    userAnswer: 'the oauth one',
+    status: 'answered',
+    createdAt: localIso({ day: 18, hour: 9 }) as IsoDateTime,
+    answeredAt: localIso({ day: 18, hour: 10 }) as IsoDateTime,
+  };
+
+  const ASKER_AGENTS: ReadonlyArray<Agent> = [
+    agent({
+      id: 'asker',
+      ordinal: 1,
+      startedAt: localIso({ day: 18, hour: 8 }),
+      completedAt: localIso({ day: 18, hour: 11 }),
+    }),
+  ];
+
+  it('keeps an answered question in the stream by default', () => {
+    const { items } = stream({ agents: ASKER_AGENTS, questions: [answeredQuestion] });
+
+    expect(items.map(labelOf)).toContain('step:answer:agent:asker:question-1');
+  });
+
+  it('drops answered questions from the stream when questions are hidden', () => {
+    const { items } = stream({
+      agents: ASKER_AGENTS,
+      questions: [answeredQuestion],
+      showQuestions: false,
+    });
+
+    expect(items.map(labelOf)).not.toContain('step:answer:agent:asker:question-1');
+    expect(items.map(labelOf)).toContain('entry:agent:asker');
+  });
+
+  const CLUSTER_RUN_AGENTS: ReadonlyArray<Agent> = [
+    agent({
+      id: 'implement',
+      ordinal: 1,
+      status: 'pending',
+      startedAt: localIso({ day: 18, hour: 9 }),
+      workflowRunId: RUN_ID,
+    }),
+    agent({
+      id: 'sub-1',
+      ordinal: 2,
+      parentAgentId: 'implement',
+      startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+    }),
+    agent({
+      id: 'sub-2',
+      ordinal: 3,
+      parentAgentId: 'implement',
+      startedAt: localIso({ day: 18, hour: 9, minute: 20 }),
+    }),
+    agent({ id: 'sub-3', ordinal: 4, status: 'pending', parentAgentId: 'implement' }),
+    agent({ id: 'review', ordinal: 5, status: 'pending', workflowRunId: RUN_ID }),
+  ];
+
+  it('anchors a waiting parent under its children instead of lifting it to the head', () => {
+    const { items } = stream({
+      workflows: PLAN_RUN_WORKFLOWS,
+      agents: CLUSTER_RUN_AGENTS,
+    });
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'step:agent:review',
+      'step:agent:sub-3',
+      'step:agent:sub-2',
+      'step:agent:sub-1',
+      'step:agent:implement',
+      'entry:run:run-1',
+    ]);
+  });
+
+  it('gives an anchored pending subagent no clock of its own', () => {
+    const { items } = stream({
+      workflows: PLAN_RUN_WORKFLOWS,
+      agents: CLUSTER_RUN_AGENTS,
+    });
+    const pendingChild = items.find((item) => item.id === 'agent:sub-3');
+
+    expect(pendingChild?.kind === 'row' ? pendingChild.at : 'missing').toBeNull();
   });
 });

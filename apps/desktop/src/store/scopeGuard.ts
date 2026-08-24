@@ -1,0 +1,149 @@
+import type { Project, SessionProjectMount } from '@goodboy/types';
+
+type ScopeGuardParams = {
+  readonly workingDir: string;
+  readonly projects: ReadonlyArray<Project>;
+  readonly mounts: ReadonlyArray<SessionProjectMount>;
+  readonly isBridgeServing: boolean;
+  readonly isSessionDirScope: boolean;
+  readonly canWrite: boolean;
+};
+
+type ProjectLineParams = {
+  readonly project: Project;
+  readonly mounts: ReadonlyArray<SessionProjectMount>;
+};
+
+const projectLine = ({ project, mounts }: ProjectLineParams): string => {
+  const mount = mounts.find((candidate) => candidate.projectId === project.id);
+  const identity = `- ${project.name} (${project.kind}) root: ${project.rootPath}`;
+  if (mount === undefined) {
+    return `${identity} | NOT materialized: read-only until you materialize it`;
+  }
+  const branch = mount.branch === '' ? 'no branch' : `branch ${mount.branch}`;
+  return `${identity} | materialized at ${mount.worktreePath} (${branch})`;
+};
+
+type MaterializeLineParams = {
+  readonly isBridgeServing: boolean;
+};
+
+const materializeLine = ({ isBridgeServing }: MaterializeLineParams): string => {
+  const marker =
+    'To write into a project marked NOT materialized, emit on its own line: <<materialize: <project name> | <why you need it>>> and the mount is ready from your next turn.';
+  if (!isBridgeServing) {
+    return marker;
+  }
+  return `${marker} For an immediate mount, run \`"$GOODBOY_BIN" query project materialize <name> --reason "<why you need it>"\`; it prints the mount path and branch.`;
+};
+
+const WRITE_BOUNDARY_LINE =
+  'ALL writes (Write/Edit/Bash file mutations) MUST resolve inside the session directory or a materialized project mount. NEVER write to a project root or any path outside them.';
+
+const STRICT_DIR_LINES: ReadonlyArray<string> = [
+  'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this directory.',
+  'NEVER write to absolute paths that exit this directory.',
+  'Prefer paths relative to your current working directory. If a request implies editing files outside this directory, stop and ask for explicit confirmation before touching them.',
+];
+
+const STRICT_WORKTREE_LINES: ReadonlyArray<string> = [
+  'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this worktree.',
+  'NEVER write to absolute paths that exit this directory, especially not to the parent project checkout.',
+  'Prefer paths relative to your current working directory. If a user request implies editing files outside the worktree, stop and ask for explicit confirmation before touching them.',
+];
+
+type GuardTag = 'worktree-scope' | 'session-directory-scope' | 'projects-scope';
+
+type TagParams = {
+  readonly mounts: ReadonlyArray<SessionProjectMount>;
+  readonly isSessionDirScope: boolean;
+};
+
+const guardTag = ({ mounts, isSessionDirScope }: TagParams): GuardTag => {
+  if (mounts.length !== 1) {
+    return 'projects-scope';
+  }
+  return isSessionDirScope ? 'session-directory-scope' : 'worktree-scope';
+};
+
+type HeadParams = {
+  readonly tag: GuardTag;
+  readonly workingDir: string;
+  readonly mounts: ReadonlyArray<SessionProjectMount>;
+};
+
+const headLines = ({ tag, workingDir, mounts }: HeadParams): ReadonlyArray<string> => {
+  if (tag === 'worktree-scope') {
+    return [`You are operating inside an isolated git worktree at: ${workingDir}`];
+  }
+  if (tag === 'session-directory-scope') {
+    return [`You are operating inside this session directory: ${workingDir}`];
+  }
+  if (mounts.length === 0) {
+    return [
+      `You are operating from an ephemeral scratch directory at: ${workingDir}`,
+      'This session has no materialized project mounts yet. Nothing you put in the scratch directory is kept.',
+    ];
+  }
+  return [
+    `You are operating inside the active project mount at: ${workingDir}`,
+    `This session has ${mounts.length} materialized project mounts:`,
+    ...mounts.map(
+      (mount) =>
+        `- ${mount.mountName} at ${mount.worktreePath}${mount.branch === '' ? '' : ` (branch ${mount.branch})`}`,
+    ),
+    'Each mount is a separate git repository on its own branch. Run git commands inside the relevant mount.',
+  ];
+};
+
+type StrictParams = {
+  readonly tag: GuardTag;
+};
+
+const strictBoundaryLines = ({ tag }: StrictParams): ReadonlyArray<string> => {
+  if (tag === 'worktree-scope') {
+    return STRICT_WORKTREE_LINES;
+  }
+  if (tag === 'projects-scope') {
+    return [
+      'ALL file operations MUST resolve inside one of these mounts. Do NOT create files outside them.',
+    ];
+  }
+  return STRICT_DIR_LINES;
+};
+
+export const buildScopeGuard = ({
+  workingDir,
+  projects,
+  mounts,
+  isBridgeServing,
+  isSessionDirScope,
+  canWrite,
+}: ScopeGuardParams): string => {
+  const unmounted = projects.filter(
+    (project) => !mounts.some((mount) => mount.projectId === project.id),
+  );
+  const tag = guardTag({ mounts, isSessionDirScope });
+  const mountedLines =
+    tag === 'projects-scope'
+      ? []
+      : projects
+          .filter((project) => mounts.some((mount) => mount.projectId === project.id))
+          .map((project) => projectLine({ project, mounts }));
+  const teachingLines =
+    unmounted.length > 0
+      ? [
+          'This session belongs to a workspace with these projects:',
+          ...projects.map((project) => projectLine({ project, mounts })),
+          'You may READ the project root paths listed above.',
+          WRITE_BOUNDARY_LINE,
+          ...(canWrite ? [materializeLine({ isBridgeServing })] : []),
+        ]
+      : [...mountedLines, ...strictBoundaryLines({ tag })];
+  return [
+    `[${tag}]`,
+    ...headLines({ tag, workingDir, mounts }),
+    ...teachingLines,
+    `[/${tag}]`,
+  ].join('\n');
+};

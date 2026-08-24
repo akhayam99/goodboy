@@ -20,6 +20,7 @@ type Params = {
   readonly baseOrdinal: number;
   readonly defaultProvider: ProviderId;
   readonly roleModels: RoleModelPreferences | null;
+  readonly sessionEffort?: ModelEffort | null;
   readonly defaultVerbosity?: VerbosityLevel;
 };
 
@@ -38,6 +39,7 @@ export const preSpawnWorkflowAgents = async ({
   baseOrdinal,
   defaultProvider,
   roleModels,
+  sessionEffort,
   defaultVerbosity,
 }: Params): Promise<PreSpawnWorkflowAgentsResult> => {
   const agents: Agent[] = [];
@@ -53,7 +55,8 @@ export const preSpawnWorkflowAgents = async ({
       step,
       kind,
       roleModels,
-      agentProvider: defaultProvider,
+      sessionProvider: defaultProvider,
+      sessionEffort: sessionEffort ?? null,
     });
     const provider = routing.provider;
     const model = resolveModelForProvider({ provider, modelId: routing.model });

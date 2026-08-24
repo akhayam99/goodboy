@@ -23,16 +23,16 @@ type ProviderRunRow = {
 };
 
 export const runDatabaseHygiene = async ({ db, now }: Params): Promise<DatabaseHygieneResult> => {
-  const permissionCutoff = new Date(now - 30 * DAY_MS).toISOString();
+  const permissionCutoff = now - 30 * DAY_MS;
   const oldPermissionRows = await db.execute(
-    'DELETE FROM permission_audit_log WHERE julianday(requested_at) < julianday(?)',
+    'DELETE FROM permission_audit_log WHERE requested_at < ?',
     [permissionCutoff],
   );
   const excessPermissionRows = await db.execute(
     `DELETE FROM permission_audit_log
      WHERE rowid IN (
        SELECT rowid FROM permission_audit_log
-       ORDER BY julianday(requested_at) DESC, rowid DESC
+       ORDER BY requested_at DESC, rowid DESC
        LIMIT -1 OFFSET ${PERMISSION_AUDIT_MAX_ROWS}
      )`,
   );

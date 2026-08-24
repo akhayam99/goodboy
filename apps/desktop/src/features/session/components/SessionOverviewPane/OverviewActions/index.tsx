@@ -8,12 +8,14 @@ type Props = {
   readonly onOpenWorkflowBuilder: () => void;
 };
 
-export const OverviewActions = ({ sessionId, onOpenWorkflowBuilder }: Props) => (
-  <div className="flex shrink-0 flex-wrap items-center gap-2">
-    <Button variant="ghost" size="sm" onClick={onOpenWorkflowBuilder}>
-      <CONCEPT_ICONS.workflows size={13} aria-hidden />
-      New workflow
-    </Button>
-    <CreateAgentPopover sessionId={sessionId} variant="compact" />
-  </div>
-);
+export const OverviewActions = ({ sessionId, onOpenWorkflowBuilder }: Props) => {
+  return (
+    <div className="flex shrink-0 flex-wrap items-center gap-1">
+      <Button variant="ghost" size="sm" onClick={onOpenWorkflowBuilder}>
+        <CONCEPT_ICONS.workflows size={13} aria-hidden />
+        Add workflow
+      </Button>
+      <CreateAgentPopover sessionId={sessionId} variant="compact" />
+    </div>
+  );
+};

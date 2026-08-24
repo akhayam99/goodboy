@@ -20,6 +20,7 @@ import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 
 export const WorkspaceLauncher = () => {
   const workspaces = useWorkspaces();
+  const projects = useAppStore((s) => s.projects);
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const deleteWorkspace = useAppStore((s) => s.deleteWorkspace);
@@ -34,8 +35,8 @@ export const WorkspaceLauncher = () => {
   }, []);
 
   const filtered = useMemo(
-    () => filterWorkspaces(sortWorkspacesByRecent(workspaces), query),
-    [workspaces, query],
+    () => filterWorkspaces({ workspaces: sortWorkspacesByRecent(workspaces), projects, query }),
+    [workspaces, projects, query],
   );
 
   useEffect(() => {

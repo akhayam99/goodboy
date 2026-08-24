@@ -27,7 +27,7 @@ const { state, toastMock } = vi.hoisted(() => ({
     selectAgent: vi.fn(async () => undefined),
     skills: {} as Record<string, ReadonlyArray<unknown>>,
     phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
-    workspaceScripts: {} as Record<string, ReadonlyArray<unknown>>,
+    projectScripts: {} as Record<string, ReadonlyArray<unknown>>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     agentKindOverride: {} as Record<string, string>,

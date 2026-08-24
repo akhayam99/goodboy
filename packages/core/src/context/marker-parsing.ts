@@ -41,6 +41,7 @@ const COMMENT_REPLY_CLOSE = '<</comment-reply>>';
 const CLUSTER_DONE_OPEN = '<<cluster-done';
 const SCOUT_DOMAINS_OPEN = '<<scout-domains';
 const REVIEW_COMMENT_OPEN = '<<review-comment';
+const MATERIALIZE_OPEN = '<<materialize:';
 const SCOUT_DOMAIN_RE = /^[a-z0-9][a-z0-9_-]*$/;
 
 const extractSelfClosingInner = (text: string, open: string): ReadonlyArray<string> => {
@@ -608,6 +609,30 @@ export const extractClusterDone = (assistantText: string): { readonly id: string
   return last;
 };
 
+export type ExtractedMaterializeRequest = {
+  readonly projectName: string;
+  readonly reason: string;
+};
+
+export const extractMaterializeRequests = (
+  assistantText: string,
+): ReadonlyArray<ExtractedMaterializeRequest> => {
+  const byName = new Map<string, ExtractedMaterializeRequest>();
+  for (const inner of extractSelfClosingInner(assistantText, MATERIALIZE_OPEN)) {
+    const separatorIndex = inner.indexOf('|');
+    const projectName = (separatorIndex === -1 ? inner : inner.slice(0, separatorIndex)).trim();
+    const reason = separatorIndex === -1 ? '' : inner.slice(separatorIndex + 1).trim();
+    if (projectName.length === 0) {
+      continue;
+    }
+    byName.set(projectName.toLowerCase(), {
+      projectName,
+      reason: reason.length > 0 ? reason : 'requested by the agent',
+    });
+  }
+  return [...byName.values()];
+};
+
 export const extractScoutDomains = (text: string): ReadonlyArray<string> | null => {
   let last: ReadonlyArray<string> | null = null;
   for (const inner of extractSelfClosingInner(text, SCOUT_DOMAINS_OPEN)) {
@@ -794,7 +819,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 const BLOCK_MARKER_ALT =
   'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply';
 const SELF_MARKER_ALT =
-  'handoff|comment-analysis|comment-resolved|comment-wontfix|review-comment|cluster-done|step-done|scout-domains';
+  'handoff|comment-analysis|comment-resolved|comment-wontfix|review-comment|cluster-done|step-done|scout-domains|materialize:';
 
 const CONTROL_BLOCK_STRIP_RE = new RegExp(
   `<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*?<<\\/(?:${BLOCK_MARKER_ALT})>>`,
@@ -802,7 +827,7 @@ const CONTROL_BLOCK_STRIP_RE = new RegExp(
 );
 const CONTROL_SELF_STRIP_RE = new RegExp(`<<(?:${SELF_MARKER_ALT})\\s[^>]*?>>`, 'g');
 const CONTROL_OPEN_TAIL_RE = new RegExp(`<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*$`);
-const CONTROL_PARTIAL_TAIL_RE = /<<?\/?[a-z-]*(?:\s[^>]*)?$/;
+const CONTROL_PARTIAL_TAIL_RE = /<<?\/?[a-z-]*:?(?:\s[^>]*)?$/;
 
 export const stripControlMarkers = (text: string): string => {
   CONTROL_BLOCK_STRIP_RE.lastIndex = 0;

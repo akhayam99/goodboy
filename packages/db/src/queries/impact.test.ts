@@ -31,7 +31,7 @@ const seedDb = async (): Promise<Database> => {
   await migrate(db);
   for (const id of [workspaceId, otherWorkspaceId]) {
     await db.execute(
-      `INSERT INTO workspaces (id, name, root_path, created_at, updated_at)
+      `INSERT INTO workspaces (id, name, slug, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?)`,
       [id, id, `/tmp/${id}`, OLD, NOW],
     );
@@ -86,7 +86,7 @@ const addAgent = async ({
 }): Promise<void> => {
   await db.execute(
     `INSERT INTO agents
-       (id, session_id, ordinal, name, status, provider_run_id, started_at, completed_at, kind, parent_agent_id)
+       (id, session_id, ordinal, name, status, provider_run_id, started_at, last_finished_at, kind, parent_agent_id)
      VALUES (?, ?, 0, ?, ?, ?, ?, ?, ?, ?)`,
     [
       seed.id,
@@ -94,8 +94,8 @@ const addAgent = async ({
       seed.id,
       seed.status ?? 'completed',
       seed.runId ?? null,
-      iso(seed.startedAt),
-      seed.completedAt === undefined ? null : iso(seed.completedAt),
+      seed.startedAt,
+      seed.completedAt === undefined ? null : seed.completedAt,
       seed.kind ?? 'implementer',
       seed.parentId ?? null,
     ],
@@ -264,7 +264,7 @@ describe('pull request outcomes', () => {
           state: 'merged',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
         'feature/b',
         JSON.stringify({
           number: 9,
@@ -272,7 +272,7 @@ describe('pull request outcomes', () => {
           state: 'open',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
       ],
     );
 
@@ -282,14 +282,14 @@ describe('pull request outcomes', () => {
     expect(result.entries[0]).toMatchObject({ number: 8, sessionId: 's1' });
   });
 
-  it('does not double-count spend when a composite session has two worktree rows on one branch', async () => {
+  it('does not double-count spend when a multi-project session has two worktree rows on one branch', async () => {
     const db = await seedDb();
-    await addSession({ db, seed: { id: 'composite', createdAt: RECENT } });
+    await addSession({ db, seed: { id: 'multi-project', createdAt: RECENT } });
     await db.execute(
       `INSERT INTO session_worktrees
          (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
-       VALUES ('wt-a', 'composite', '/tmp/repo-a', 'shared/branch', 0, 'repo', ?),
-              ('wt-b', 'composite', '/tmp/repo-b', 'shared/branch', 1, 'repo', ?)`,
+       VALUES ('wt-a', 'multi-project', '/tmp/repo-a', 'shared/branch', 0, 'repo', ?),
+              ('wt-b', 'multi-project', '/tmp/repo-b', 'shared/branch', 1, 'repo', ?)`,
       [RECENT, RECENT],
     );
     await db.execute(
@@ -299,19 +299,19 @@ describe('pull request outcomes', () => {
         'shared/branch',
         JSON.stringify({
           number: 21,
-          title: 'composite ship',
+          title: 'multi-project ship',
           state: 'merged',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
       ],
     );
     await addTelemetry({
       db,
       seed: {
-        id: 't-composite',
-        runId: 'r-composite',
-        sessionId: 'composite',
+        id: 't-multi-project',
+        runId: 'r-multi-project',
+        sessionId: 'multi-project',
         at: RECENT,
         cost: 5,
       },
@@ -342,7 +342,7 @@ describe('pull request outcomes', () => {
           state: 'open',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
       ],
     );
 
@@ -376,7 +376,7 @@ describe('pull request outcomes', () => {
           state: 'open',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
       ],
     );
     await addTelemetry({
@@ -413,7 +413,7 @@ describe('pull request outcomes', () => {
           state: 'open',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
       ],
     );
     await addTelemetry({
@@ -453,7 +453,7 @@ describe('pull request outcomes', () => {
           state: 'open',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
       ],
     );
 
@@ -485,7 +485,7 @@ describe('pull request outcomes', () => {
           state: 'open',
           updatedAt: iso(RECENT),
         }),
-        iso(RECENT),
+        RECENT,
       ],
     );
     await addTelemetry({
@@ -524,7 +524,7 @@ describe('pull request outcomes', () => {
           state: 'open',
           updatedAt: iso(RECENT),
         }),
-        iso(staleFetch),
+        staleFetch,
       ],
     );
 
@@ -553,7 +553,7 @@ describe('pull request outcomes', () => {
           state: 'merged',
           updatedAt: iso(RECENT),
         }),
-        iso(Date.now() - DAY_MS),
+        Date.now() - DAY_MS,
       ],
     );
 
@@ -578,7 +578,7 @@ describe('review outcomes', () => {
       `INSERT INTO pr_review_drafts
          (id, session_id, provider, repo, pr_number, path, line, body, status, created_at)
        VALUES ('draft', 's1', 'github', 'repo', 1, 'a.ts', 1, 'body', 'published', ?)`,
-      [iso(RECENT)],
+      [RECENT],
     );
     await db.execute(
       `INSERT INTO pending_resolutions
@@ -678,7 +678,7 @@ describe('flow health', () => {
       `INSERT INTO budget_alerts
          (id, kind, session_id, current_usd, cap_usd, created_at)
        VALUES ('b1', 'session-threshold', 's1', 8, 10, ?)`,
-      [iso(RECENT)],
+      [RECENT],
     );
 
     const result = await getFlowHealth(params({ db, sinceMs: SINCE }));
@@ -766,9 +766,9 @@ describe('right-size nudges', () => {
     const db = await seedDb();
     await addSession({ db, seed: { id: 's1', createdAt: RECENT } });
     await db.execute(
-      `INSERT INTO nudge_events (id, ts, kind, context_json, outcome, outcome_ts)
-       VALUES ('n1', ?, 'model-rightsize', ?, 'accepted', ?)`,
-      [iso(RECENT), JSON.stringify({ sessionId: 's1' }), iso(RECENT)],
+      `INSERT INTO nudge_events (id, session_id, created_at, kind, context_json, outcome, outcome_ts)
+       VALUES ('n1', 's1', ?, 'model-rightsize', ?, 'accepted', ?)`,
+      [RECENT, JSON.stringify({ sessionId: 's1' }), RECENT],
     );
 
     const result = await getRightSizeNudgeOutcomes(params({ db, sinceMs: SINCE }));

@@ -13,7 +13,7 @@ type Props = {
   readonly closeLabel: string;
   readonly headerAccessory?: ReactNode;
   readonly onClose: () => void;
-  readonly variant?: 'fullscreen' | 'slot';
+  readonly variant?: 'fullscreen' | 'slot' | 'viewport';
   readonly children: (requestClose: () => void) => ReactNode;
 };
 
@@ -37,7 +37,9 @@ export const StudioShell = ({
       className={cn(
         variant === 'slot'
           ? 'relative h-full w-full flex flex-col bg-background'
-          : 'fixed inset-x-0 bottom-9 top-9 z-50 flex flex-col bg-background',
+          : variant === 'viewport'
+            ? 'fixed inset-0 z-50 flex flex-col bg-background'
+            : 'fixed inset-x-0 bottom-9 top-9 z-50 flex flex-col bg-background',
         closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
       )}
     >

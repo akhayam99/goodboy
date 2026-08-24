@@ -2,7 +2,14 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { IsoDateTime, ReviewablePr, Workspace, WorkspaceId } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  Project,
+  ProjectId,
+  ReviewablePr,
+  Workspace,
+  WorkspaceId,
+} from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   refreshReviewPrs: vi.fn(async () => undefined),
@@ -17,6 +24,7 @@ const h = vi.hoisted(() => ({
       }
     >,
     workspaces: [] as ReadonlyArray<Workspace>,
+    projects: [] as ReadonlyArray<Project>,
   },
 }));
 
@@ -88,8 +96,32 @@ beforeEach(() => {
     {
       id: WORKSPACE_ID,
       name: 'Web',
+      slug: 'web',
+      sessionsRoot: '/tmp/web',
+      overrides: {
+        defaultProviderId: null,
+        defaultWorkflowId: null,
+        defaultBranchPrefix: null,
+        parallelEnabled: null,
+        defaultVerbosity: null,
+        providerBindings: null,
+        taskModels: null,
+        roleModels: null,
+        parallelAgents: null,
+        providerPool: null,
+      },
+      createdAt: DATE,
+      updatedAt: DATE,
+    },
+  ];
+  h.state.projects = [
+    {
+      id: 'project-web' as ProjectId,
+      workspaceId: WORKSPACE_ID,
+      name: 'web',
       rootPath: '/tmp/web',
       kind: 'repo',
+      overrides: h.state.workspaces[0]!.overrides,
       createdAt: DATE,
       updatedAt: DATE,
     },
@@ -144,25 +176,45 @@ describe('ReviewInboxList', () => {
     expect(rows[1]).toContain('Newer plain');
   });
 
-  it('shows repository attribution only for a composite workspace', () => {
-    const memberWorkspaceId = 'workspace-web' as WorkspaceId;
+  it('shows repository attribution only for a multi-project workspace', () => {
+    const projectId = 'project-web' as ProjectId;
     h.state.workspaces = [
       {
         id: WORKSPACE_ID,
         name: 'Product',
-        rootPath: '/tmp/product',
-        kind: 'composite',
-        members: [{ workspaceId: memberWorkspaceId, rootPath: '/tmp/web', mountName: 'web' }],
+        slug: 'product',
+        sessionsRoot: '/tmp/product',
+        overrides: {
+          defaultProviderId: null,
+          defaultWorkflowId: null,
+          defaultBranchPrefix: null,
+          parallelEnabled: null,
+          defaultVerbosity: null,
+          providerBindings: null,
+          taskModels: null,
+          roleModels: null,
+          parallelAgents: null,
+          providerPool: null,
+        },
         createdAt: DATE,
         updatedAt: DATE,
       },
     ];
-    setItems([pr({ mountWorkspaceId: memberWorkspaceId })]);
+    setItems([pr({ projectId })]);
+    h.state.projects = [
+      h.state.projects[0]!,
+      {
+        ...h.state.projects[0]!,
+        id: 'project-api' as ProjectId,
+        name: 'api',
+        rootPath: '/tmp/api',
+      },
+    ];
 
     const view = renderList('others');
     expect(screen.getByText('web')).toBeDefined();
 
-    h.state.workspaces = [{ ...h.state.workspaces[0]!, kind: 'repo' }];
+    h.state.projects = [h.state.projects[0]!];
     cleanup();
     renderList('others', view);
     expect(screen.queryByText('web')).toBeNull();

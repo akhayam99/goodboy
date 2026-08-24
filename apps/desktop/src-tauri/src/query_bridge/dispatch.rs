@@ -1,10 +1,12 @@
 use std::collections::BTreeMap;
 
+use rusqlite::OptionalExtension;
 use serde::Serialize;
 use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
 use super::protocol::{spec_for, Access, QueryRequest};
+use crate::db::Db;
 
 type Args = BTreeMap<String, Value>;
 
@@ -29,6 +31,10 @@ fn number(args: &Args, key: &str) -> Result<i64, String> {
         .ok_or_else(|| format!("missing numeric argument: {}", key))
 }
 
+fn optional_number(args: &Args, key: &str) -> Option<i64> {
+    args.get(key).and_then(Value::as_i64)
+}
+
 fn unsigned(args: &Args, key: &str) -> Result<u64, String> {
     let value = number(args, key)?;
     u64::try_from(value).map_err(|_| format!("{} must not be negative", key))
@@ -38,10 +44,26 @@ fn flag(args: &Args, key: &str) -> bool {
     args.get(key).and_then(Value::as_bool).unwrap_or(false)
 }
 
-fn config_field(provider: &str, workspace_id: &str, key: &str) -> Result<String, String> {
-    let raw = crate::integration_credentials::config_for_workspace(provider, workspace_id)
-        .map_err(|error| error.to_string())?
-        .ok_or_else(|| format!("{} is not connected in this workspace", provider))?;
+pub(super) struct Scope<'a> {
+    pub(super) workspace: &'a str,
+    pub(super) session: &'a str,
+    pub(super) project: Option<String>,
+}
+
+impl Scope<'_> {
+    pub(super) fn project_id(&self) -> Option<&str> {
+        self.project.as_deref()
+    }
+}
+
+fn config_field(provider: &str, scope: &Scope<'_>, key: &str) -> Result<String, String> {
+    let raw = crate::integration_credentials::config_for_binding(
+        provider,
+        scope.workspace,
+        scope.project_id(),
+    )
+    .map_err(|error| error.to_string())?
+    .ok_or_else(|| format!("{} is not connected in this workspace", provider))?;
     let parsed: Value = serde_json::from_str(&raw).map_err(|error| error.to_string())?;
     parsed
         .get(key)
@@ -51,17 +73,68 @@ fn config_field(provider: &str, workspace_id: &str, key: &str) -> Result<String,
         .ok_or_else(|| format!("the {} connection stores no {}", provider, key))
 }
 
+fn ensure_connected(app: &AppHandle, workspace_id: &str, provider: &str) -> Result<(), String> {
+    let state = app.state::<Db>();
+    let conn = state
+        .0
+        .lock()
+        .map_err(|_| "db mutex poisoned".to_string())?;
+    conn.query_row(
+        "SELECT 1 FROM integration_bindings
+         WHERE workspace_id = ?1 AND provider = ?2
+         LIMIT 1",
+        rusqlite::params![workspace_id, provider],
+        |_| Ok(()),
+    )
+    .optional()
+    .map_err(|error| error.to_string())?
+    .ok_or_else(|| format!("{} is not connected in this workspace", provider))
+}
+
+fn named_project_id(app: &AppHandle, workspace_id: &str, name: &str) -> Result<String, String> {
+    let state = app.state::<Db>();
+    let conn = state
+        .0
+        .lock()
+        .map_err(|_| "db mutex poisoned".to_string())?;
+    conn.query_row(
+        "SELECT id FROM projects
+         WHERE workspace_id = ?1 AND disconnected_at IS NULL AND lower(name) = lower(?2)
+         ORDER BY created_at ASC, id ASC
+         LIMIT 1",
+        rusqlite::params![workspace_id, name],
+        |row| row.get(0),
+    )
+    .optional()
+    .map_err(|error| error.to_string())?
+    .ok_or_else(|| format!("unknown project: {}", name))
+}
+
 pub async fn dispatch(app: &AppHandle, request: &QueryRequest) -> Result<Value, String> {
     if request.workspace_id.is_empty() {
         return Err("no workspace: pass --workspace <id>".to_string());
     }
     let spec = spec_for(&request.provider, &request.verb)
         .ok_or_else(|| format!("unknown command: {} {}", request.provider, request.verb))?;
-    let workspace = request.workspace_id.as_str();
+    if request.provider == "project" {
+        return super::project::materialize(app, request).await;
+    }
+    if request.provider != "github" {
+        ensure_connected(app, &request.workspace_id, &request.provider)?;
+    }
+    let project = match request.project.trim() {
+        "" => None,
+        name => Some(named_project_id(app, &request.workspace_id, name)?),
+    };
+    let scope = Scope {
+        workspace: &request.workspace_id,
+        session: &request.session_id,
+        project,
+    };
     let args = &request.args;
     match spec.access {
-        Access::Read => run_read(app, &request.provider, &request.verb, workspace, args).await,
-        Access::Write => run_write(app, &request.provider, &request.verb, workspace, args).await,
+        Access::Read => run_read(app, &request.provider, &request.verb, &scope, args).await,
+        Access::Write => run_write(app, &request.provider, &request.verb, &scope, args).await,
     }
 }
 
@@ -69,13 +142,13 @@ async fn run_read(
     app: &AppHandle,
     provider: &str,
     verb: &str,
-    workspace: &str,
+    scope: &Scope<'_>,
     args: &Args,
 ) -> Result<Value, String> {
     match (provider, verb) {
         ("linear", "issue") => encode(
             crate::linear::linear_fetch_issue(
-                workspace.to_string(),
+                scope.workspace.to_string(),
                 text(args, "id")?,
                 app.state(),
             )
@@ -84,7 +157,7 @@ async fn run_read(
         ),
         ("linear", "issues-assigned") => encode(
             crate::linear::linear_fetch_assigned_issues(
-                workspace.to_string(),
+                scope.workspace.to_string(),
                 optional_text(args, "team"),
                 app.state(),
             )
@@ -93,7 +166,7 @@ async fn run_read(
         ),
         ("linear", "comments") => encode(
             crate::linear::linear_fetch_issue_comments(
-                workspace.to_string(),
+                scope.workspace.to_string(),
                 text(args, "id")?,
                 app.state(),
             )
@@ -102,7 +175,7 @@ async fn run_read(
         ),
         ("sentry", "issues") => encode(
             crate::sentry::sentry_fetch_issues(
-                workspace.to_string(),
+                scope.workspace.to_string(),
                 optional_text(args, "query"),
                 optional_text(args, "cursor"),
                 app.state(),
@@ -112,7 +185,7 @@ async fn run_read(
         ),
         ("sentry", "issue") => encode(
             crate::sentry::sentry_fetch_issue(
-                workspace.to_string(),
+                scope.workspace.to_string(),
                 text(args, "id")?,
                 app.state(),
             )
@@ -121,17 +194,36 @@ async fn run_read(
         ),
         ("sentry", "issue-detail") => encode(
             crate::sentry::sentry_fetch_issue_detail(
-                workspace.to_string(),
+                scope.workspace.to_string(),
                 text(args, "id")?,
                 app.state(),
             )
             .await
             .map_err(|error| error.to_string())?,
         ),
+        ("github", "prs") => super::github::prs(app, scope, optional_text(args, "state")).await,
+        ("github", "pr") => super::github::pr(app, scope, optional_number(args, "number")).await,
+        ("github", "pr-for-branch") => {
+            super::github::pr_for_branch(app, scope, text(args, "branch")?).await
+        }
+        ("github", "pr-diff") => {
+            super::github::pr_diff(app, scope, optional_number(args, "number")).await
+        }
+        ("github", "pr-checks") => {
+            super::github::pr_checks(app, scope, optional_number(args, "number")).await
+        }
+        ("github", "pr-comments") => {
+            super::github::pr_comments(app, scope, optional_number(args, "number")).await
+        }
+        ("github", "issues-assigned") => super::github::issues_assigned(app, scope).await,
+        ("github", "issue") => super::github::issue(app, scope, number(args, "number")?).await,
+        ("github", "issue-comments") => {
+            super::github::issue_comments(app, scope, number(args, "number")?).await
+        }
         ("gitlab", "issues-assigned") => encode(
             crate::gitlab::gitlab_fetch_assigned_issues(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 app.state(),
             )
             .await
@@ -139,8 +231,8 @@ async fn run_read(
         ),
         ("gitlab", "issue") => encode(
             crate::gitlab::gitlab_fetch_issue(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 number(args, "iid")?,
                 app.state(),
@@ -150,8 +242,8 @@ async fn run_read(
         ),
         ("gitlab", "issue-notes") => encode(
             crate::gitlab::gitlab_list_issue_notes(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 number(args, "iid")?,
                 app.state(),
@@ -161,8 +253,8 @@ async fn run_read(
         ),
         ("gitlab", "mrs-assigned") => encode(
             crate::gitlab::gitlab_fetch_assigned_mrs(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 app.state(),
             )
             .await
@@ -170,8 +262,8 @@ async fn run_read(
         ),
         ("gitlab", "mrs") => encode(
             crate::gitlab::gitlab_fetch_project_mrs(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 app.state(),
             )
@@ -180,8 +272,8 @@ async fn run_read(
         ),
         ("gitlab", "mr-for-branch") => encode(
             crate::gitlab::gitlab_mr_for_branch(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 text(args, "branch")?,
                 app.state(),
@@ -191,8 +283,8 @@ async fn run_read(
         ),
         ("gitlab", "mr-diff") => encode(
             crate::gitlab::gitlab_mr_diff(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 number(args, "iid")?,
                 app.state(),
@@ -202,8 +294,8 @@ async fn run_read(
         ),
         ("gitlab", "mr-discussions") => encode(
             crate::gitlab::gitlab_list_mr_discussions(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 number(args, "iid")?,
                 app.state(),
@@ -213,8 +305,8 @@ async fn run_read(
         ),
         ("gitlab", "mr-approval-state") => encode(
             crate::gitlab::gitlab_mr_approval_state(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 number(args, "iid")?,
                 app.state(),
@@ -224,12 +316,12 @@ async fn run_read(
         ),
         ("jira", "issues") => encode(
             crate::jira::jira_list_issues(
-                workspace.to_string(),
-                config_field("jira", workspace, "siteUrl")?,
-                config_field("jira", workspace, "email")?,
+                scope.workspace.to_string(),
+                config_field("jira", scope, "siteUrl")?,
+                config_field("jira", scope, "email")?,
                 match optional_text(args, "project") {
                     Some(project) => project,
-                    None => config_field("jira", workspace, "projectKey")?,
+                    None => config_field("jira", scope, "projectKey")?,
                 },
                 !flag(args, "all"),
                 app.state(),
@@ -239,9 +331,9 @@ async fn run_read(
         ),
         ("jira", "issue") => encode(
             crate::jira::jira_get_issue(
-                workspace.to_string(),
-                config_field("jira", workspace, "siteUrl")?,
-                config_field("jira", workspace, "email")?,
+                scope.workspace.to_string(),
+                config_field("jira", scope, "siteUrl")?,
+                config_field("jira", scope, "email")?,
                 text(args, "key")?,
                 app.state(),
             )
@@ -250,9 +342,9 @@ async fn run_read(
         ),
         ("jira", "comments") => encode(
             crate::jira::jira_list_comments(
-                workspace.to_string(),
-                config_field("jira", workspace, "siteUrl")?,
-                config_field("jira", workspace, "email")?,
+                scope.workspace.to_string(),
+                config_field("jira", scope, "siteUrl")?,
+                config_field("jira", scope, "email")?,
                 text(args, "key")?,
                 app.state(),
             )
@@ -261,9 +353,9 @@ async fn run_read(
         ),
         ("jira", "transitions") => encode(
             crate::jira::jira_list_transitions(
-                workspace.to_string(),
-                config_field("jira", workspace, "siteUrl")?,
-                config_field("jira", workspace, "email")?,
+                scope.workspace.to_string(),
+                config_field("jira", scope, "siteUrl")?,
+                config_field("jira", scope, "email")?,
                 text(args, "key")?,
                 app.state(),
             )
@@ -272,10 +364,10 @@ async fn run_read(
         ),
         ("bitbucket", "prs") => encode(
             crate::bitbucket::bitbucket_list_pull_requests(
-                workspace.to_string(),
-                config_field("bitbucket", workspace, "workspaceSlug")?,
+                scope.workspace.to_string(),
+                config_field("bitbucket", scope, "workspaceSlug")?,
                 text(args, "repo")?,
-                config_field("bitbucket", workspace, "email")?,
+                config_field("bitbucket", scope, "email")?,
                 optional_text(args, "state"),
                 app.state(),
             )
@@ -284,10 +376,10 @@ async fn run_read(
         ),
         ("bitbucket", "pr") => encode(
             crate::bitbucket::bitbucket_get_pull_request(
-                workspace.to_string(),
-                config_field("bitbucket", workspace, "workspaceSlug")?,
+                scope.workspace.to_string(),
+                config_field("bitbucket", scope, "workspaceSlug")?,
                 text(args, "repo")?,
-                config_field("bitbucket", workspace, "email")?,
+                config_field("bitbucket", scope, "email")?,
                 unsigned(args, "id")?,
                 app.state(),
             )
@@ -296,10 +388,10 @@ async fn run_read(
         ),
         ("bitbucket", "pr-diff") => encode(
             crate::bitbucket::bitbucket_pull_request_diff(
-                workspace.to_string(),
-                config_field("bitbucket", workspace, "workspaceSlug")?,
+                scope.workspace.to_string(),
+                config_field("bitbucket", scope, "workspaceSlug")?,
                 text(args, "repo")?,
-                config_field("bitbucket", workspace, "email")?,
+                config_field("bitbucket", scope, "email")?,
                 unsigned(args, "id")?,
                 app.state(),
             )
@@ -308,10 +400,10 @@ async fn run_read(
         ),
         ("bitbucket", "pr-comments") => encode(
             crate::bitbucket::bitbucket_list_pull_request_comments(
-                workspace.to_string(),
-                config_field("bitbucket", workspace, "workspaceSlug")?,
+                scope.workspace.to_string(),
+                config_field("bitbucket", scope, "workspaceSlug")?,
                 text(args, "repo")?,
-                config_field("bitbucket", workspace, "email")?,
+                config_field("bitbucket", scope, "email")?,
                 unsigned(args, "id")?,
                 app.state(),
             )
@@ -320,10 +412,10 @@ async fn run_read(
         ),
         ("bitbucket", "pr-statuses") => encode(
             crate::bitbucket::bitbucket_list_pull_request_statuses(
-                workspace.to_string(),
-                config_field("bitbucket", workspace, "workspaceSlug")?,
+                scope.workspace.to_string(),
+                config_field("bitbucket", scope, "workspaceSlug")?,
                 text(args, "repo")?,
-                config_field("bitbucket", workspace, "email")?,
+                config_field("bitbucket", scope, "email")?,
                 unsigned(args, "id")?,
                 app.state(),
             )
@@ -332,10 +424,10 @@ async fn run_read(
         ),
         ("bitbucket", "pr-for-branch") => encode(
             crate::bitbucket::bitbucket_pull_request_for_branch(
-                workspace.to_string(),
-                config_field("bitbucket", workspace, "workspaceSlug")?,
+                scope.workspace.to_string(),
+                config_field("bitbucket", scope, "workspaceSlug")?,
                 text(args, "repo")?,
-                config_field("bitbucket", workspace, "email")?,
+                config_field("bitbucket", scope, "email")?,
                 text(args, "branch")?,
                 app.state(),
             )
@@ -343,13 +435,13 @@ async fn run_read(
             .map_err(|error| error.to_string())?,
         ),
         ("slack", "channels") => encode(
-            crate::slack::slack_list_channels(workspace.to_string(), app.state())
+            crate::slack::slack_list_channels(scope.workspace.to_string(), app.state())
                 .await
                 .map_err(|error| error.to_string())?,
         ),
         ("slack", "thread-heads") => encode(
             crate::slack::slack_list_thread_heads(
-                workspace.to_string(),
+                scope.workspace.to_string(),
                 text(args, "channel")?,
                 app.state(),
             )
@@ -358,7 +450,7 @@ async fn run_read(
         ),
         ("slack", "thread") => encode(
             crate::slack::slack_get_thread(
-                workspace.to_string(),
+                scope.workspace.to_string(),
                 text(args, "channel")?,
                 text(args, "ts")?,
                 app.state(),
@@ -368,7 +460,7 @@ async fn run_read(
         ),
         ("slack", "permalink") => encode(
             crate::slack::slack_get_permalink(
-                workspace.to_string(),
+                scope.workspace.to_string(),
                 text(args, "channel")?,
                 text(args, "ts")?,
                 app.state(),
@@ -377,7 +469,7 @@ async fn run_read(
             .map_err(|error| error.to_string())?,
         ),
         ("slack", "users") => encode(
-            crate::slack::slack_list_users(workspace.to_string(), app.state())
+            crate::slack::slack_list_users(scope.workspace.to_string(), app.state())
                 .await
                 .map_err(|error| error.to_string())?,
         ),
@@ -389,13 +481,13 @@ async fn run_write(
     app: &AppHandle,
     provider: &str,
     verb: &str,
-    workspace: &str,
+    scope: &Scope<'_>,
     args: &Args,
 ) -> Result<Value, String> {
     match (provider, verb) {
         ("linear", "comment-create") => encode(
             crate::linear::linear_create_comment(
-                workspace.to_string(),
+                scope.workspace.to_string(),
                 text(args, "id")?,
                 text(args, "body")?,
                 app.state(),
@@ -405,7 +497,7 @@ async fn run_write(
         ),
         ("linear", "issue-update") => encode(
             crate::linear::linear_update_issue(
-                workspace.to_string(),
+                scope.workspace.to_string(),
                 text(args, "id")?,
                 text(args, "description")?,
                 app.state(),
@@ -413,10 +505,56 @@ async fn run_write(
             .await
             .map_err(|error| error.to_string())?,
         ),
+        ("github", "pr-comment-create") => {
+            super::github::pr_comment_create(
+                app,
+                scope,
+                text(args, "body")?,
+                optional_number(args, "number"),
+            )
+            .await
+        }
+        ("github", "pr-thread-reply") => {
+            super::github::pr_thread_reply(app, scope, text(args, "thread")?, text(args, "body")?)
+                .await
+        }
+        ("github", "pr-thread-resolve") => {
+            super::github::pr_thread_resolve(app, scope, text(args, "thread")?).await
+        }
+        ("github", "pr-ready") => {
+            super::github::pr_ready(app, scope, optional_number(args, "number")).await
+        }
+        ("github", "pr-merge") => {
+            super::github::pr_merge(
+                app,
+                scope,
+                optional_number(args, "number"),
+                optional_text(args, "method"),
+            )
+            .await
+        }
+        ("github", "issue-comment-create") => {
+            super::github::issue_comment_create(
+                app,
+                scope,
+                number(args, "number")?,
+                text(args, "body")?,
+            )
+            .await
+        }
+        ("github", "push") => {
+            super::github::push(
+                app,
+                scope,
+                optional_text(args, "branch"),
+                flag(args, "force-with-lease"),
+            )
+            .await
+        }
         ("gitlab", "issue-update") => encode(
             crate::gitlab::gitlab_update_issue(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 number(args, "iid")?,
                 text(args, "description")?,
@@ -427,8 +565,8 @@ async fn run_write(
         ),
         ("gitlab", "issue-note-create") => encode(
             crate::gitlab::gitlab_create_issue_note(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 number(args, "iid")?,
                 text(args, "body")?,
@@ -439,8 +577,8 @@ async fn run_write(
         ),
         ("gitlab", "mr-note-create") => encode(
             crate::gitlab::gitlab_create_mr_note(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 number(args, "iid")?,
                 text(args, "body")?,
@@ -451,8 +589,8 @@ async fn run_write(
         ),
         ("gitlab", "mr-discussion-reply") => encode(
             crate::gitlab::gitlab_reply_to_mr_discussion(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 number(args, "iid")?,
                 text(args, "discussion")?,
@@ -464,8 +602,8 @@ async fn run_write(
         ),
         ("gitlab", "mr-discussion-resolve") => encode(
             crate::gitlab::gitlab_resolve_mr_discussion(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 number(args, "iid")?,
                 text(args, "discussion")?,
@@ -477,8 +615,8 @@ async fn run_write(
         ),
         ("gitlab", "mr-approve") => encode(
             crate::gitlab::gitlab_approve_mr(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 number(args, "iid")?,
                 app.state(),
@@ -488,8 +626,8 @@ async fn run_write(
         ),
         ("gitlab", "mr-unapprove") => encode(
             crate::gitlab::gitlab_unapprove_mr(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 number(args, "iid")?,
                 app.state(),
@@ -499,8 +637,8 @@ async fn run_write(
         ),
         ("gitlab", "mr-merge") => encode(
             crate::gitlab::gitlab_merge_mr(
-                workspace.to_string(),
-                config_field("gitlab", workspace, "host")?,
+                scope.workspace.to_string(),
+                config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 number(args, "iid")?,
                 app.state(),
@@ -510,9 +648,9 @@ async fn run_write(
         ),
         ("jira", "comment-create") => encode(
             crate::jira::jira_create_comment(
-                workspace.to_string(),
-                config_field("jira", workspace, "siteUrl")?,
-                config_field("jira", workspace, "email")?,
+                scope.workspace.to_string(),
+                config_field("jira", scope, "siteUrl")?,
+                config_field("jira", scope, "email")?,
                 text(args, "key")?,
                 text(args, "body")?,
                 app.state(),
@@ -522,9 +660,9 @@ async fn run_write(
         ),
         ("jira", "issue-update") => encode(
             crate::jira::jira_update_issue(
-                workspace.to_string(),
-                config_field("jira", workspace, "siteUrl")?,
-                config_field("jira", workspace, "email")?,
+                scope.workspace.to_string(),
+                config_field("jira", scope, "siteUrl")?,
+                config_field("jira", scope, "email")?,
                 text(args, "key")?,
                 text(args, "description")?,
                 app.state(),
@@ -534,9 +672,9 @@ async fn run_write(
         ),
         ("jira", "transition") => encode(
             crate::jira::jira_transition_issue(
-                workspace.to_string(),
-                config_field("jira", workspace, "siteUrl")?,
-                config_field("jira", workspace, "email")?,
+                scope.workspace.to_string(),
+                config_field("jira", scope, "siteUrl")?,
+                config_field("jira", scope, "email")?,
                 text(args, "key")?,
                 text(args, "transition")?,
                 app.state(),
@@ -546,10 +684,10 @@ async fn run_write(
         ),
         ("bitbucket", "pr-comment-create") => encode(
             crate::bitbucket::bitbucket_create_pull_request_comment(
-                workspace.to_string(),
-                config_field("bitbucket", workspace, "workspaceSlug")?,
+                scope.workspace.to_string(),
+                config_field("bitbucket", scope, "workspaceSlug")?,
                 text(args, "repo")?,
-                config_field("bitbucket", workspace, "email")?,
+                config_field("bitbucket", scope, "email")?,
                 unsigned(args, "id")?,
                 text(args, "body")?,
                 app.state(),
@@ -559,10 +697,10 @@ async fn run_write(
         ),
         ("bitbucket", "pr-comment-reply") => encode(
             crate::bitbucket::bitbucket_reply_to_pull_request_comment(
-                workspace.to_string(),
-                config_field("bitbucket", workspace, "workspaceSlug")?,
+                scope.workspace.to_string(),
+                config_field("bitbucket", scope, "workspaceSlug")?,
                 text(args, "repo")?,
-                config_field("bitbucket", workspace, "email")?,
+                config_field("bitbucket", scope, "email")?,
                 unsigned(args, "id")?,
                 unsigned(args, "parent")?,
                 text(args, "body")?,
@@ -573,10 +711,10 @@ async fn run_write(
         ),
         ("bitbucket", "pr-approve") => encode(
             crate::bitbucket::bitbucket_approve_pull_request(
-                workspace.to_string(),
-                config_field("bitbucket", workspace, "workspaceSlug")?,
+                scope.workspace.to_string(),
+                config_field("bitbucket", scope, "workspaceSlug")?,
                 text(args, "repo")?,
-                config_field("bitbucket", workspace, "email")?,
+                config_field("bitbucket", scope, "email")?,
                 unsigned(args, "id")?,
                 app.state(),
             )
@@ -585,10 +723,10 @@ async fn run_write(
         ),
         ("bitbucket", "pr-unapprove") => encode(
             crate::bitbucket::bitbucket_unapprove_pull_request(
-                workspace.to_string(),
-                config_field("bitbucket", workspace, "workspaceSlug")?,
+                scope.workspace.to_string(),
+                config_field("bitbucket", scope, "workspaceSlug")?,
                 text(args, "repo")?,
-                config_field("bitbucket", workspace, "email")?,
+                config_field("bitbucket", scope, "email")?,
                 unsigned(args, "id")?,
                 app.state(),
             )
@@ -597,10 +735,10 @@ async fn run_write(
         ),
         ("bitbucket", "pr-request-changes") => encode(
             crate::bitbucket::bitbucket_request_changes(
-                workspace.to_string(),
-                config_field("bitbucket", workspace, "workspaceSlug")?,
+                scope.workspace.to_string(),
+                config_field("bitbucket", scope, "workspaceSlug")?,
                 text(args, "repo")?,
-                config_field("bitbucket", workspace, "email")?,
+                config_field("bitbucket", scope, "email")?,
                 unsigned(args, "id")?,
                 app.state(),
             )
@@ -609,10 +747,10 @@ async fn run_write(
         ),
         ("bitbucket", "pr-unrequest-changes") => encode(
             crate::bitbucket::bitbucket_unrequest_changes(
-                workspace.to_string(),
-                config_field("bitbucket", workspace, "workspaceSlug")?,
+                scope.workspace.to_string(),
+                config_field("bitbucket", scope, "workspaceSlug")?,
                 text(args, "repo")?,
-                config_field("bitbucket", workspace, "email")?,
+                config_field("bitbucket", scope, "email")?,
                 unsigned(args, "id")?,
                 app.state(),
             )
@@ -621,10 +759,10 @@ async fn run_write(
         ),
         ("bitbucket", "pr-merge") => encode(
             crate::bitbucket::bitbucket_merge_pull_request(
-                workspace.to_string(),
-                config_field("bitbucket", workspace, "workspaceSlug")?,
+                scope.workspace.to_string(),
+                config_field("bitbucket", scope, "workspaceSlug")?,
                 text(args, "repo")?,
-                config_field("bitbucket", workspace, "email")?,
+                config_field("bitbucket", scope, "email")?,
                 unsigned(args, "id")?,
                 None,
                 optional_text(args, "message"),
@@ -635,10 +773,10 @@ async fn run_write(
         ),
         ("bitbucket", "pr-decline") => encode(
             crate::bitbucket::bitbucket_decline_pull_request(
-                workspace.to_string(),
-                config_field("bitbucket", workspace, "workspaceSlug")?,
+                scope.workspace.to_string(),
+                config_field("bitbucket", scope, "workspaceSlug")?,
                 text(args, "repo")?,
-                config_field("bitbucket", workspace, "email")?,
+                config_field("bitbucket", scope, "email")?,
                 unsigned(args, "id")?,
                 app.state(),
             )
@@ -647,7 +785,7 @@ async fn run_write(
         ),
         ("slack", "reply") => encode(
             crate::slack::slack_post_reply(
-                workspace.to_string(),
+                scope.workspace.to_string(),
                 text(args, "channel")?,
                 text(args, "ts")?,
                 text(args, "text")?,
@@ -658,7 +796,7 @@ async fn run_write(
         ),
         ("slack", "reaction-add") => encode(
             crate::slack::slack_add_reaction(
-                workspace.to_string(),
+                scope.workspace.to_string(),
                 text(args, "channel")?,
                 text(args, "ts")?,
                 text(args, "name")?,
@@ -754,6 +892,15 @@ mod tests {
         ("sentry", "issues"),
         ("sentry", "issue"),
         ("sentry", "issue-detail"),
+        ("github", "prs"),
+        ("github", "pr"),
+        ("github", "pr-for-branch"),
+        ("github", "pr-diff"),
+        ("github", "pr-checks"),
+        ("github", "pr-comments"),
+        ("github", "issues-assigned"),
+        ("github", "issue"),
+        ("github", "issue-comments"),
         ("gitlab", "issues-assigned"),
         ("gitlab", "issue"),
         ("gitlab", "issue-notes"),
@@ -781,8 +928,16 @@ mod tests {
     ];
 
     const WRITE_VERBS: &[(&str, &str)] = &[
+        ("project", "materialize"),
         ("linear", "comment-create"),
         ("linear", "issue-update"),
+        ("github", "pr-comment-create"),
+        ("github", "pr-thread-reply"),
+        ("github", "pr-thread-resolve"),
+        ("github", "pr-ready"),
+        ("github", "pr-merge"),
+        ("github", "issue-comment-create"),
+        ("github", "push"),
         ("gitlab", "issue-update"),
         ("gitlab", "issue-note-create"),
         ("gitlab", "mr-note-create"),

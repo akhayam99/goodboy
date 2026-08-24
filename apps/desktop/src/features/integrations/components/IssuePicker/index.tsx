@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cn, EmptyState, ScrollFade, Skeleton, Tooltip, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  cn,
+  EmptyState,
+  ScrollFade,
+  Skeleton,
+  Tooltip,
+  useDropdown,
+} from '@goodboy/ui';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 import type { IssueCandidate } from '../../fetchIssueCandidates';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -38,13 +46,8 @@ export const IssuePicker = ({
   const [highlightIdx, setHighlightIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
-  const {
-    open: isOpen,
-    close,
-    toggle,
-    containerRef,
-    popupClassName,
-  } = useDropdown({ disabled, width: 'w-full', expectedHeight: 288 });
+  const dropdown = useDropdown({ disabled, expectedHeight: 288 });
+  const { open: isOpen, close, toggle } = dropdown;
 
   useEffect(() => {
     setQuery(value == null ? '' : `${value.identifier} ${value.title}`);
@@ -144,162 +147,155 @@ export const IssuePicker = ({
     }
   };
 
+  const isLoadingState = pasted == null && isLoading && rows.length === 0;
+  const isErrorState = pasted == null && error != null;
+  const hasOptions = (pasted != null || error == null) && options.length > 0;
+  const isEmptyState = error == null && !isLoading && isLoaded && options.length === 0;
+  const hasPopupContent = isLoadingState || isErrorState || hasOptions || isEmptyState;
+
   return (
-    <div ref={containerRef} className="relative w-full">
-      <div
-        className={cn(
-          'flex h-9 w-full items-center gap-1 rounded-md border border-border bg-background px-1 motion-safe:transition-colors focus-within:border-primary hover:border-border-strong',
-          disabled && 'cursor-not-allowed opacity-50',
-        )}
-      >
-        <input
-          id={inputId}
-          ref={inputRef}
-          type="text"
-          value={query}
-          placeholder={isLoading ? 'Loading issues…' : placeholder}
-          disabled={disabled}
-          aria-label={inputId === undefined ? 'Issue' : undefined}
-          role="combobox"
-          aria-expanded={isOpen}
-          aria-autocomplete="list"
-          autoComplete="off"
-          className="flex-1 truncate bg-transparent px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 disabled:cursor-not-allowed"
-          onChange={(event) => {
-            setQuery(event.target.value);
-            if (!isOpen) {
-              toggle();
-            }
-            if (event.target.value === '') {
-              onClear();
-            }
-          }}
-          onFocus={openPanel}
-          onKeyDown={onKeyDown}
-        />
-        {value != null && value.url !== '' && (
-          <Tooltip content="Open issue in browser">
+    <AnchoredPopover
+      dropdown={dropdown}
+      className={cn('bg-subtle', isErrorState && !hasOptions && 'border-danger/40 bg-danger/5')}
+      anchorClassName="w-full"
+      trigger={
+        <div
+          className={cn(
+            'flex h-9 w-full items-center gap-1 rounded-md border border-border bg-background px-1 motion-safe:transition-colors focus-within:border-primary hover:border-border-strong',
+            disabled && 'cursor-not-allowed opacity-50',
+          )}
+        >
+          <input
+            id={inputId}
+            ref={inputRef}
+            type="text"
+            value={query}
+            placeholder={isLoading ? 'Loading issues…' : placeholder}
+            disabled={disabled}
+            aria-label={inputId === undefined ? 'Issue' : undefined}
+            role="combobox"
+            aria-expanded={isOpen}
+            aria-autocomplete="list"
+            autoComplete="off"
+            className="flex-1 truncate bg-transparent px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 disabled:cursor-not-allowed"
+            onChange={(event) => {
+              setQuery(event.target.value);
+              if (!isOpen) {
+                toggle();
+              }
+              if (event.target.value === '') {
+                onClear();
+              }
+            }}
+            onFocus={openPanel}
+            onKeyDown={onKeyDown}
+          />
+          {value != null && value.url !== '' && (
+            <Tooltip content="Open issue in browser">
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void openUrl(value.url);
+                }}
+                aria-label="Open issue in browser"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <ExternalLink size={12} aria-hidden />
+              </button>
+            </Tooltip>
+          )}
+          <Tooltip content={isOpen ? 'Close issue list' : 'Open issue list'}>
             <button
               type="button"
               tabIndex={-1}
-              onClick={(event) => {
-                event.stopPropagation();
-                void openUrl(value.url);
-              }}
-              aria-label="Open issue in browser"
+              onClick={togglePanel}
+              aria-label={isOpen ? 'Close issue list' : 'Open issue list'}
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
-              <ExternalLink size={12} aria-hidden />
+              <ChevronDown
+                size={13}
+                aria-hidden
+                className={cn('motion-safe:transition-transform', isOpen && 'rotate-180')}
+              />
             </button>
           </Tooltip>
-        )}
-        <Tooltip content={isOpen ? 'Close issue list' : 'Open issue list'}>
-          <button
-            type="button"
-            tabIndex={-1}
-            onClick={togglePanel}
-            aria-label={isOpen ? 'Close issue list' : 'Open issue list'}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <ChevronDown
-              size={13}
-              aria-hidden
-              className={cn('motion-safe:transition-transform', isOpen && 'rotate-180')}
-            />
-          </button>
-        </Tooltip>
-      </div>
-
-      {isOpen && pasted == null && isLoading && rows.length === 0 && (
-        <div
-          role="status"
-          aria-label="Loading issues"
-          className={cn(
-            popupClassName,
-            'rounded-md border border-border bg-subtle py-0.5 shadow-lg',
-          )}
-        >
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="flex items-center gap-2 px-2.5 py-1.5">
-              <Skeleton className="h-3 w-12 shrink-0 rounded" />
-              <Skeleton className="h-3 min-w-0 flex-1 rounded" />
-            </div>
-          ))}
         </div>
-      )}
-
-      {isOpen && pasted == null && error != null && (
-        <div
-          className={cn(
-            popupClassName,
-            'rounded-md border border-danger/40 bg-danger/5 px-3 py-2 text-xs text-danger shadow-lg',
-          )}
-        >
-          {error}
-        </div>
-      )}
-
-      {isOpen && (pasted != null || error == null) && options.length > 0 && (
-        <ScrollFade
-          className={cn(
-            popupClassName,
-            'max-h-72 rounded-md border border-border bg-subtle shadow-lg',
-          )}
-          viewportClassName="py-0.5"
-          fadeFrom="subtle"
-        >
-          <ul ref={listRef} role="listbox">
-            {options.map((row, index) => (
-              <li
-                key={`${row.provider}:${row.externalId}`}
-                role="option"
-                aria-selected={highlightIdx === index}
-                onMouseEnter={() => setHighlightIdx(index)}
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  select(row);
-                }}
-                className={cn(
-                  'flex cursor-pointer flex-col gap-0.5 px-2.5 py-1.5',
-                  highlightIdx === index && 'bg-primary/10',
-                )}
-              >
-                <div className="flex items-center gap-2 text-sm">
-                  {pasted == null ? (
-                    <>
-                      <span className="shrink-0 font-mono text-2xs text-muted-foreground">
-                        {row.identifier}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-foreground">{row.title}</span>
-                    </>
-                  ) : (
-                    <span className="min-w-0 flex-1 truncate text-foreground">
-                      Link {row.identifier}
-                    </span>
-                  )}
+      }
+    >
+      {hasPopupContent ? (
+        <>
+          {isLoadingState && (
+            <div role="status" aria-label="Loading issues" className="py-0.5">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="flex items-center gap-2 px-2.5 py-1.5">
+                  <Skeleton className="h-3 w-12 shrink-0 rounded" />
+                  <Skeleton className="h-3 min-w-0 flex-1 rounded" />
                 </div>
-              </li>
-            ))}
-          </ul>
-        </ScrollFade>
-      )}
-
-      {isOpen && error == null && !isLoading && isLoaded && options.length === 0 && (
-        <div
-          className={cn(
-            popupClassName,
-            'rounded-md border border-border bg-subtle px-3 py-2 text-xs text-muted-foreground shadow-lg',
+              ))}
+            </div>
           )}
-        >
-          <EmptyState
-            icon={CONCEPT_ICONS.search}
-            tone={CONCEPT_TONE.search}
-            title={query.trim() !== '' ? 'No matching issues' : 'No open issues assigned to you'}
-            size="inline"
-            className="p-0"
-          />
-        </div>
-      )}
-    </div>
+
+          {isErrorState && !hasOptions && (
+            <div className="px-3 py-2 text-xs text-danger">{error}</div>
+          )}
+
+          {hasOptions && (
+            <ScrollFade className="max-h-72" viewportClassName="py-0.5" fadeFrom="subtle">
+              <ul ref={listRef} role="listbox">
+                {options.map((row, index) => (
+                  <li
+                    key={`${row.provider}:${row.externalId}`}
+                    role="option"
+                    aria-selected={highlightIdx === index}
+                    onMouseEnter={() => setHighlightIdx(index)}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      select(row);
+                    }}
+                    className={cn(
+                      'flex cursor-pointer flex-col gap-0.5 px-2.5 py-1.5',
+                      highlightIdx === index && 'bg-primary/10',
+                    )}
+                  >
+                    <div className="flex items-center gap-2 text-sm">
+                      {pasted == null ? (
+                        <>
+                          <span className="shrink-0 font-mono text-2xs text-muted-foreground">
+                            {row.identifier}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-foreground">
+                            {row.title}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="min-w-0 flex-1 truncate text-foreground">
+                          Link {row.identifier}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </ScrollFade>
+          )}
+
+          {isEmptyState && (
+            <div className="px-3 py-2 text-xs text-muted-foreground">
+              <EmptyState
+                icon={CONCEPT_ICONS.search}
+                tone={CONCEPT_TONE.search}
+                title={
+                  query.trim() !== '' ? 'No matching issues' : 'No open issues assigned to you'
+                }
+                size="inline"
+                className="p-0"
+              />
+            </div>
+          )}
+        </>
+      ) : null}
+    </AnchoredPopover>
   );
 };

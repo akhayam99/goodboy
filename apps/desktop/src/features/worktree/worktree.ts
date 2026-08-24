@@ -67,48 +67,36 @@ export const removeSessionDirectory = async ({
   await invoke('session_dir_remove', { args: { basePath, path } });
 };
 
-export type SimpleSessionScanEntry = {
+type SessionDirExistsParams = {
+  readonly path: string;
+};
+
+export const sessionDirExists = async ({ path }: SessionDirExistsParams): Promise<boolean> => {
+  return invoke<boolean>('session_dir_exists', { path });
+};
+
+type ScratchDirParams = {
   readonly sessionId: SessionId;
-  readonly workspaceId: WorkspaceId;
-  readonly path: string;
 };
 
-type ScanSimpleSessionsParams = {
-  readonly rootPath: string;
+export const scratchDirPrepare = async ({ sessionId }: ScratchDirParams): Promise<string> => {
+  return invoke<string>('scratch_dir_prepare', { sessionId });
 };
 
-export const scanSimpleSessions = async ({
-  rootPath,
-}: ScanSimpleSessionsParams): Promise<ReadonlyArray<SimpleSessionScanEntry>> => {
-  return invoke<ReadonlyArray<SimpleSessionScanEntry>>('simple_sessions_scan', { rootPath });
-};
-
-type WriteSimpleSessionMarkerParams = {
-  readonly path: string;
-  readonly sessionId: SessionId;
-  readonly workspaceId: WorkspaceId;
-};
-
-export const writeSimpleSessionMarker = async ({
-  path,
-  sessionId,
-  workspaceId,
-}: WriteSimpleSessionMarkerParams): Promise<void> => {
-  await invoke('simple_session_marker_write', { path, sessionId, workspaceId });
-};
-
-type SimpleSessionDirExistsParams = {
-  readonly path: string;
-};
-
-export const simpleSessionDirExists = async ({
-  path,
-}: SimpleSessionDirExistsParams): Promise<boolean> => {
-  return invoke<boolean>('simple_session_dir_exists', { path });
+export const scratchDirRemove = async ({ sessionId }: ScratchDirParams): Promise<void> => {
+  await invoke('scratch_dir_remove', { sessionId });
 };
 
 export const removeWorktree = async (repoPath: string, worktreePath: string): Promise<void> => {
   await invoke('worktree_remove', { repoPath, worktreePath });
+};
+
+type TidyRepoGoodboyDirParams = {
+  readonly repoPath: string;
+};
+
+export const tidyRepoGoodboyDir = async ({ repoPath }: TidyRepoGoodboyDirParams): Promise<void> => {
+  await invoke('worktree_tidy_goodboy', { repoPath });
 };
 
 export type OrphanWorktree = {

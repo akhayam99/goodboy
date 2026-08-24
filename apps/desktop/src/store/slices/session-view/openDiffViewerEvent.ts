@@ -7,7 +7,7 @@ export type OpenDiffViewerEventDetail = {
 
 export type OpenDiffViewerEventResolution = {
   readonly sessionId: SessionId;
-  readonly focus: DiffFocus;
+  readonly focus: DiffFocus | null;
 };
 
 export const resolveOpenDiffViewerEvent = ({
@@ -18,5 +18,5 @@ export const resolveOpenDiffViewerEvent = ({
   if (detail?.sessionId == null) {
     return null;
   }
-  return { sessionId: detail.sessionId, focus: { kind: 'working', path: null } };
+  return { sessionId: detail.sessionId, focus: null };
 };

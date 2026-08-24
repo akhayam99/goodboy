@@ -52,7 +52,10 @@ export const resolveSkillPrompt = async (
         skill,
         args: slashCmd.args,
         workingDir,
-        workspaceRoot: repo?.repoRoot ?? workspace.rootPath,
+        projectRoot:
+          repo?.repoRoot ??
+          before.projects.find((project) => project.workspaceId === workspace.id)?.rootPath ??
+          workingDir,
       });
       resolvedPrompt = result.resolvedPrompt;
       const skillRunId = crypto.randomUUID() as ProviderRunId;

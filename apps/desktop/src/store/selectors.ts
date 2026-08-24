@@ -1,13 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { worktreeChangedFiles } from '../features/worktree/worktree';
-import {
-  agentHomeLens,
-  classifyAgent,
-  resolveRootAgent,
-  selectNonResolverStandaloneAgents,
-  type AgentKind,
-} from '../features/session/agent-kind';
+import { selectNonResolverStandaloneAgents, type AgentKind } from '../features/session/agent-kind';
 import type {
   Agent,
   ContextSlot,
@@ -15,6 +9,7 @@ import type {
   DiffComment,
   OpenQuestion,
   PlanWithCount,
+  ProviderRunId,
   Session,
   SessionId,
   SessionPrFetchState,
@@ -26,7 +21,6 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { Workspace } from '@goodboy/types';
-import type { TerminalTab } from '../shared/types/terminal';
 import { isBranchlessSession } from '../shared/utils/isBranchlessSession';
 import { useAppStore } from './store';
 import type {
@@ -47,12 +41,15 @@ import { sessionPrFetchState } from './slices/github/sessionPrFetchState';
 import { isSessionPrFetchable } from './slices/github/resolveSessionPrFetch';
 import { resolveSessionRepo } from './slices/worktrees/resolveSessionRepo';
 import { runSpendUsd } from './slices/workflows/runSpendUsd';
+import {
+  executedAgentRouting,
+  type ExecutedAgentRouting,
+} from './slices/turn/executedAgentRouting';
 export { agentHasUnread } from './slices/agents/agentHasUnread';
 
 const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
 const EMPTY_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
-const EMPTY_TERMINAL_TABS: ReadonlyArray<TerminalTab> = [];
 
 export const sumSessionCost = (records: readonly TelemetryRecord[]): number => {
   let sum = 0;
@@ -80,6 +77,26 @@ export const useRunSpendUsd = (sessionId: SessionId, workflowRunId: WorkflowRunI
     }),
   );
 
+const EMPTY_RUN_IDS: ReadonlyArray<ProviderRunId> = [];
+
+type ExecutedRoutingParams = {
+  readonly agent: Pick<Agent, 'id' | 'sessionId' | 'runId'>;
+};
+
+export const useExecutedAgentRouting = ({
+  agent,
+}: ExecutedRoutingParams): ExecutedAgentRouting | null => {
+  const records = useAppStore(
+    (state) => state.sessionTelemetry[agent.sessionId] ?? EMPTY_TELEMETRY,
+  );
+  const runHistory = useAppStore((state) => state.agentRunHistory[agent.id] ?? EMPTY_RUN_IDS);
+  const agentRunId = agent.runId ?? null;
+  return useMemo(
+    () => executedAgentRouting({ agentRunId, runHistory, records }),
+    [agentRunId, runHistory, records],
+  );
+};
+
 export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionViewPrefs => {
   const prefs = useAppStore((s) =>
     workspaceId ? (s.sessionViewPrefs[workspaceId] ?? null) : null,
@@ -102,10 +119,11 @@ type StageInfoState = Pick<
   AppState,
   | 'sessions'
   | 'workspaces'
+  | 'projects'
   | 'sessionBranches'
   | 'sessionWorktrees'
-  | 'sessionMounts'
-  | 'sessionActiveMount'
+  | 'sessionProjectMounts'
+  | 'sessionActiveProject'
   | 'sessionGithub'
   | 'sessionGitlabMr'
   | 'sessionOpenQuestions'
@@ -141,7 +159,6 @@ function sessionHasRunningAgentIn(state: StageInfoState, sessionId: SessionId): 
 function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo {
   const sessionId = session.id as SessionId;
   const isBranchless = isBranchlessSession({
-    workspaceKind: state.workspaces.find((workspace) => workspace.id === session.workspaceId)?.kind,
     branch: state.sessionBranches[sessionId],
   });
   const request = resolveSessionRequest({
@@ -207,26 +224,28 @@ export const useSortedGroupedSessions = (
   const currentSessionId = useAppStore((s) => (needsStage ? s.currentSessionId : null));
   const githubStatus = useAppStore((s) => (needsStage ? s.githubStatus : null));
   const workspaces = useAppStore((s) => (needsStage ? s.workspaces : EMPTY_WORKSPACES));
+  const projects = useAppStore((s) => (needsStage ? s.projects : []));
   const sessionBranches = useAppStore((s) =>
     needsStage ? s.sessionBranches : (EMPTY_GITHUB_STATE as typeof s.sessionBranches),
   );
   const sessionWorktrees = useAppStore((s) =>
     needsStage ? s.sessionWorktrees : (EMPTY_GITHUB_STATE as typeof s.sessionWorktrees),
   );
-  const sessionMounts = useAppStore((s) =>
-    needsStage ? s.sessionMounts : (EMPTY_GITHUB_STATE as typeof s.sessionMounts),
+  const sessionProjectMounts = useAppStore((s) =>
+    needsStage ? s.sessionProjectMounts : (EMPTY_GITHUB_STATE as typeof s.sessionProjectMounts),
   );
-  const sessionActiveMount = useAppStore((s) =>
-    needsStage ? s.sessionActiveMount : (EMPTY_GITHUB_STATE as typeof s.sessionActiveMount),
+  const sessionActiveProject = useAppStore((s) =>
+    needsStage ? s.sessionActiveProject : (EMPTY_GITHUB_STATE as typeof s.sessionActiveProject),
   );
   return useMemo(() => {
     const partial: StageInfoState = {
       sessions,
       workspaces,
+      projects,
       sessionBranches,
       sessionWorktrees,
-      sessionMounts,
-      sessionActiveMount,
+      sessionProjectMounts,
+      sessionActiveProject,
       sessionGithub,
       sessionGitlabMr,
       sessionOpenQuestions,
@@ -247,10 +266,11 @@ export const useSortedGroupedSessions = (
     prefs,
     needsStage,
     workspaces,
+    projects,
     sessionBranches,
     sessionWorktrees,
-    sessionMounts,
-    sessionActiveMount,
+    sessionProjectMounts,
+    sessionActiveProject,
     sessionGithub,
     sessionGitlabMr,
     sessionOpenQuestions,
@@ -302,19 +322,21 @@ export const useStageGroupedSessions = (
   const currentSessionId = useAppStore((s) => s.currentSessionId);
   const githubStatus = useAppStore((s) => s.githubStatus);
   const workspaces = useAppStore((s) => s.workspaces);
+  const projects = useAppStore((s) => s.projects);
   const sessionBranches = useAppStore((s) => s.sessionBranches);
   const sessionWorktrees = useAppStore((s) => s.sessionWorktrees);
-  const sessionMounts = useAppStore((s) => s.sessionMounts);
-  const sessionActiveMount = useAppStore((s) => s.sessionActiveMount);
+  const sessionProjectMounts = useAppStore((s) => s.sessionProjectMounts);
+  const sessionActiveProject = useAppStore((s) => s.sessionActiveProject);
   const previousRef = useRef<ReadonlyArray<GroupedSessions> | null>(null);
   const grouped = useMemo(() => {
     const partial: StageInfoState = {
       sessions,
       workspaces,
+      projects,
       sessionBranches,
       sessionWorktrees,
-      sessionMounts,
-      sessionActiveMount,
+      sessionProjectMounts,
+      sessionActiveProject,
       sessionGithub,
       sessionGitlabMr,
       sessionOpenQuestions,
@@ -337,10 +359,11 @@ export const useStageGroupedSessions = (
     sessions,
     prefs.sort,
     workspaces,
+    projects,
     sessionBranches,
     sessionWorktrees,
-    sessionMounts,
-    sessionActiveMount,
+    sessionProjectMounts,
+    sessionActiveProject,
     sessionGithub,
     sessionGitlabMr,
     sessionOpenQuestions,
@@ -522,16 +545,6 @@ export const useSessionAnsweredQuestions = (
       : EMPTY_OPEN_QUESTIONS,
   );
 
-export const useLiveTerminalCount = (sessionId: SessionId | null): number =>
-  useAppStore((s) => {
-    if (sessionId == null) {
-      return 0;
-    }
-    const tabs = s.terminalTabs[sessionId] ?? EMPTY_TERMINAL_TABS;
-    const liveTabs = tabs.filter((tab) => tab.status !== 'exited').length;
-    return liveTabs + (s.terminalSessions[sessionId] === 'open' ? 1 : 0);
-  });
-
 const IDLE_STATUS: SummarizerSessionStatus = {
   status: 'idle',
   lastUpdate: null,
@@ -575,15 +588,9 @@ export type FilesTouched = {
 
 const EMPTY_FILES_TOUCHED: FilesTouched = { paths: [], count: 0, additions: 0, deletions: 0 };
 
-export const useFilesTouched = (
-  sessionId: SessionId | null,
-  isActive: boolean = true,
-): FilesTouched => {
-  const workingDir = useAppStore((s) =>
-    sessionId == null ? null : (resolveSessionRepo({ state: s, sessionId })?.worktreePath ?? null),
-  );
-  const lastTurnFinishedAt = useAppStore((s) => {
-    if (!sessionId) {
+const useSessionLastTurnFinishedAt = (sessionId: SessionId | null): string | null =>
+  useAppStore((s) => {
+    if (sessionId == null) {
       return null;
     }
     const runs = s.sessionPhaseRuns[sessionId];
@@ -599,6 +606,15 @@ export const useFilesTouched = (
     }
     return max;
   });
+
+export const useFilesTouched = (
+  sessionId: SessionId | null,
+  isActive: boolean = true,
+): FilesTouched => {
+  const workingDir = useAppStore((s) =>
+    sessionId == null ? null : (resolveSessionRepo({ state: s, sessionId })?.worktreePath ?? null),
+  );
+  const lastTurnFinishedAt = useSessionLastTurnFinishedAt(sessionId);
   const summarizerLastUpdate = useAppStore((s) =>
     sessionId ? (s.summarizerStatus[sessionId]?.lastUpdate ?? null) : null,
   );
@@ -642,6 +658,124 @@ export const useFilesTouched = (
   return state;
 };
 
+export type MountDiffStat = {
+  readonly additions: number;
+  readonly deletions: number;
+};
+
+const EMPTY_MOUNT_PATHS: ReadonlyArray<string> = [];
+const EMPTY_MOUNT_DIFF_STATS: ReadonlyMap<string, MountDiffStat> = new Map();
+const MOUNT_DIFF_POLL_MS = 30_000;
+
+let mountDiffTick = 0;
+let mountDiffTimer: number | null = null;
+const mountDiffTickListeners = new Set<() => void>();
+
+const bumpMountDiffTick = (): void => {
+  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+    return;
+  }
+  mountDiffTick += 1;
+  for (const listener of mountDiffTickListeners) {
+    listener();
+  }
+};
+
+const readMountDiffTick = (): number => mountDiffTick;
+
+const subscribeMountDiffTick = (listener: () => void): (() => void) => {
+  mountDiffTickListeners.add(listener);
+  if (mountDiffTimer === null && typeof window !== 'undefined') {
+    mountDiffTimer = window.setInterval(bumpMountDiffTick, MOUNT_DIFF_POLL_MS);
+    document.addEventListener('visibilitychange', bumpMountDiffTick);
+  }
+  return () => {
+    mountDiffTickListeners.delete(listener);
+    if (mountDiffTickListeners.size > 0 || mountDiffTimer === null) {
+      return;
+    }
+    window.clearInterval(mountDiffTimer);
+    mountDiffTimer = null;
+    document.removeEventListener('visibilitychange', bumpMountDiffTick);
+  };
+};
+
+const inFlightMountDiffStats = new Map<string, Promise<MountDiffStat>>();
+
+type LoadMountDiffStatParams = {
+  readonly worktreePath: string;
+  readonly revision: string;
+};
+
+const loadMountDiffStat = ({
+  worktreePath,
+  revision,
+}: LoadMountDiffStatParams): Promise<MountDiffStat> => {
+  const key = `${revision}@${worktreePath}`;
+  const pending = inFlightMountDiffStats.get(key);
+  if (pending !== undefined) {
+    return pending;
+  }
+  const request = worktreeChangedFiles(worktreePath)
+    .then((summary) => ({ additions: summary.additions, deletions: summary.deletions }))
+    .catch(() => ({ additions: 0, deletions: 0 }));
+  inFlightMountDiffStats.set(key, request);
+  void request.finally(() => {
+    inFlightMountDiffStats.delete(key);
+  });
+  return request;
+};
+
+export const useMountDiffStats = (
+  sessionId: SessionId | null,
+): ReadonlyMap<string, MountDiffStat> => {
+  const worktreePaths = useAppStore(
+    useShallow((s) => {
+      if (sessionId == null) {
+        return EMPTY_MOUNT_PATHS;
+      }
+      const rows = s.sessionWorktreeRecords?.[sessionId];
+      if (rows == null || rows.length === 0) {
+        return EMPTY_MOUNT_PATHS;
+      }
+      return rows.flatMap((row) => (row.worktreePath === '' ? [] : [row.worktreePath]));
+    }),
+  );
+  const lastTurnFinishedAt = useSessionLastTurnFinishedAt(sessionId);
+  const summarizerLastUpdate = useAppStore((s) =>
+    sessionId == null ? null : (s.summarizerStatus[sessionId]?.lastUpdate ?? null),
+  );
+
+  const tick = useSyncExternalStore(subscribeMountDiffTick, readMountDiffTick, readMountDiffTick);
+
+  const [stats, setStats] = useState<ReadonlyMap<string, MountDiffStat>>(EMPTY_MOUNT_DIFF_STATS);
+
+  useEffect(() => {
+    if (worktreePaths.length === 0) {
+      setStats(EMPTY_MOUNT_DIFF_STATS);
+      return;
+    }
+    const revision = `${String(lastTurnFinishedAt)}|${String(summarizerLastUpdate)}|${tick}`;
+    let cancelled = false;
+    void Promise.all(
+      worktreePaths.map(async (worktreePath) => {
+        const stat = await loadMountDiffStat({ worktreePath, revision });
+        return [worktreePath, stat] satisfies readonly [string, MountDiffStat];
+      }),
+    ).then((entries) => {
+      if (cancelled) {
+        return;
+      }
+      setStats(new Map(entries));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [worktreePaths, lastTurnFinishedAt, summarizerLastUpdate, tick]);
+
+  return stats;
+};
+
 const useSessionAgentKindOverrides = (sessionId: SessionId): Readonly<Record<string, AgentKind>> =>
   useAppStore(
     useShallow((state) => {
@@ -663,39 +797,6 @@ export const useNonResolverStandaloneAgents = (sessionId: SessionId): ReadonlyAr
     () => selectNonResolverStandaloneAgents(phaseRuns, agentKindOverride),
     [phaseRuns, agentKindOverride],
   );
-};
-
-export type SessionUnreadLens = 'agents' | 'resolve' | 'workflows' | null;
-
-export const useSessionUnreadLens = (sessionId: SessionId): SessionUnreadLens => {
-  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS);
-  const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
-  const isCurrentSession = useAppStore((s) => s.currentSessionId === sessionId);
-  const agentKindOverride = useSessionAgentKindOverrides(sessionId);
-  return useMemo(() => {
-    let unreadAgent: Agent | null = null;
-    for (const agent of phaseRuns) {
-      if (!agentHasUnread(agent, isCurrentSession && agent.id === selectedAgentId)) {
-        continue;
-      }
-      if (
-        unreadAgent != null &&
-        (agent.lastFinishedAt ?? '') <= (unreadAgent.lastFinishedAt ?? '')
-      ) {
-        continue;
-      }
-      unreadAgent = agent;
-    }
-    if (unreadAgent == null) {
-      return null;
-    }
-    const rootAgent = resolveRootAgent({ agents: phaseRuns, agentId: unreadAgent.id });
-    if (rootAgent == null) {
-      return null;
-    }
-    const kind = classifyAgent(rootAgent, agentKindOverride[rootAgent.id] ?? null);
-    return agentHomeLens(rootAgent, kind);
-  }, [phaseRuns, selectedAgentId, isCurrentSession, agentKindOverride]);
 };
 
 export const useSessionHasUnread = (sessionId: SessionId | null): boolean => {

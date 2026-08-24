@@ -1,8 +1,9 @@
 import { Chip, cn } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
-import { useWorkspaceHasUnread } from '../../../../store';
+import { useAppStore, useWorkspaceHasUnread } from '../../../../store';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { workspaceAccent } from '../../color';
+import { linkedProjectsLabel } from '../../linkedProjectsLabel';
 
 type Props = {
   workspace: Workspace;
@@ -13,6 +14,9 @@ type Props = {
 
 export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props) => {
   const hasUnread = useWorkspaceHasUnread(workspace.id);
+  const projectsLabel = useAppStore((state) =>
+    linkedProjectsLabel({ projects: state.projects, workspaceId: workspace.id }),
+  );
   const accent = workspaceAccent(workspace.id);
   const lastSeen = workspace.lastAccessedAt ? formatRelativeDuration(workspace.lastAccessedAt) : '';
 
@@ -37,16 +41,11 @@ export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props)
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
           <span className="truncate text-sm font-medium text-foreground">{workspace.name}</span>
-          {workspace.kind === 'simple' ? (
-            <Chip tone="neutral" size="3xs" bordered={false} label="simple" className="shrink-0" />
-          ) : null}
           {hasUnread ? (
             <Chip tone="warning" size="3xs" bordered={false} label="unread" className="shrink-0" />
           ) : null}
         </span>
-        <span className="block truncate font-mono text-xs text-muted-foreground/80">
-          {workspace.rootPath}
-        </span>
+        <span className="block truncate text-xs text-muted-foreground/80">{projectsLabel}</span>
       </span>
       {lastSeen ? (
         <span className="shrink-0 text-xs text-muted-foreground/60">{lastSeen}</span>

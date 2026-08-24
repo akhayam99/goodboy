@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, ChevronDown, ChevronRight, Copy, Pencil, Play, Square, Trash2 } from 'lucide-react';
 import { InlineConfirm, Textarea, cn } from '@goodboy/ui';
-import type { WorkspaceScript } from '@goodboy/types';
+import type { ProjectScript } from '@goodboy/types';
 import { CardAction } from '@goodboy/ui';
 import { CardActionSlot } from '@goodboy/ui';
 import type { ScriptRunRecord } from '../../scripts';
@@ -9,7 +9,7 @@ import { ScriptRunOutput } from './ScriptRunOutput';
 import { SCRIPT_RUN_PRESENTATION } from './scriptRunPresentation';
 
 type Props = {
-  readonly script: WorkspaceScript;
+  readonly script: ProjectScript;
   readonly run: ScriptRunRecord | null;
   readonly completedAt: number | undefined;
   readonly expanded: boolean;

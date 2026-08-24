@@ -1,14 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
-  GitlabWorkspaceIntegration,
+  GitlabIntegrationBinding,
   IntegrationCredentialId,
   IsoDateTime,
+  Project,
+  ProjectId,
   ReviewablePr,
   Session,
   SessionId,
   Workspace,
   WorkspaceId,
-  WorkspaceIntegrationId,
+  IntegrationBindingId,
 } from '@goodboy/types';
 import type { CreatedWorktree } from '../../../features/worktree/worktree';
 import type { AppStore } from '../../store';
@@ -26,6 +28,7 @@ vi.mock('../../../features/integrations/gitlab/client', () => ({
 }));
 
 const WS_ID = 'workspace-1' as WorkspaceId;
+const PROJECT_ID = 'project-1' as ProjectId;
 const NOW = '2026-07-23T00:00:00.000Z' as IsoDateTime;
 
 type CreateSessionInput = {
@@ -38,7 +41,7 @@ type CreateSessionInput = {
   kickoffPrompt?: string;
   externalTasks?: ReadonlyArray<{
     provider: string;
-    mountWorkspaceId?: WorkspaceId;
+    projectId?: ProjectId;
     externalId: string;
     identifier: string;
     url: string;
@@ -50,17 +53,43 @@ const buildWorkspace = (): Workspace => {
   return {
     id: WS_ID,
     name: 'ws',
-    rootPath: '/tmp/repo',
+    slug: 'ws',
+    sessionsRoot: '/tmp/repo',
+    overrides: {
+      defaultProviderId: null,
+      defaultWorkflowId: null,
+      defaultBranchPrefix: null,
+      parallelEnabled: null,
+      defaultVerbosity: null,
+      providerBindings: null,
+      taskModels: null,
+      roleModels: null,
+      parallelAgents: null,
+      providerPool: null,
+    },
     createdAt: NOW,
     updatedAt: NOW,
     lastAccessedAt: NOW,
   };
 };
 
-const buildGitlabIntegration = (): GitlabWorkspaceIntegration => {
+const buildProject = (overrides: Partial<Project> = {}): Project => ({
+  id: PROJECT_ID,
+  workspaceId: WS_ID,
+  name: 'repo',
+  rootPath: '/tmp/repo',
+  kind: 'repo',
+  overrides: buildWorkspace().overrides,
+  createdAt: NOW,
+  updatedAt: NOW,
+  ...overrides,
+});
+
+const buildGitlabIntegration = (): GitlabIntegrationBinding => {
   return {
-    id: 'wi-1' as WorkspaceIntegrationId,
+    id: 'wi-1' as IntegrationBindingId,
     workspaceId: WS_ID,
+    projectId: null,
     provider: 'gitlab',
     credentialId: 'k' as IntegrationCredentialId,
     config: { userName: 'nbro', userId: '1', host: 'https://gitlab.com' },
@@ -102,9 +131,10 @@ const buildHarness = (initial: Record<string, unknown> = {}) => {
   }));
   const state = {
     workspaces: [buildWorkspace()],
+    projects: [buildProject()],
     workspaceIntegrations: {},
     createSession: createSessionSpy,
-    setSessionActiveMount: vi.fn(),
+    setSessionActiveProject: vi.fn(),
     ...initial,
   } as unknown as AppStore;
   return { action: startPrReviewSession(() => state), createSessionSpy };
@@ -121,7 +151,7 @@ describe('startPrReviewSession', () => {
     const { action, createSessionSpy } = buildHarness();
     const sessionId = await action(WS_ID, buildPr());
     expect(sessionId).toBe('sess-1');
-    expect(ghPrDiffSpy).toHaveBeenCalledWith('org/repo', 7, '/tmp/repo', WS_ID);
+    expect(ghPrDiffSpy).toHaveBeenCalledWith('org/repo', 7, '/tmp/repo', WS_ID, PROJECT_ID);
     const input = createSessionSpy.mock.calls[0]![0];
     expect(input).toMatchObject({
       workspaceId: WS_ID,
@@ -133,6 +163,7 @@ describe('startPrReviewSession', () => {
       externalTasks: [
         {
           provider: 'github',
+          projectId: PROJECT_ID,
           externalId: '7',
           identifier: '#7',
           url: 'https://github.com/org/repo/pull/7',
@@ -174,33 +205,26 @@ describe('startPrReviewSession', () => {
     expect(input.kickoffPrompt).not.toContain('```diff');
   });
 
-  it('uses and activates the attributed member for a composite review', async () => {
-    const memberWorkspaceId = 'workspace-api' as WorkspaceId;
-    const setSessionActiveMountSpy = vi.fn();
+  it('uses and activates the attributed member for a multi-project review', async () => {
+    const projectId = 'workspace-api' as ProjectId;
+    const setSessionActiveProjectSpy = vi.fn();
     const { action, createSessionSpy } = buildHarness({
-      workspaces: [
-        {
-          ...buildWorkspace(),
-          kind: 'composite',
-          rootPath: '/tmp/product',
-          members: [
-            { workspaceId: 'workspace-web', rootPath: '/tmp/web', mountName: 'web' },
-            { workspaceId: memberWorkspaceId, rootPath: '/tmp/api', mountName: 'api' },
-          ],
-        },
+      projects: [
+        buildProject({ id: 'project-web' as ProjectId, name: 'web', rootPath: '/tmp/web' }),
+        buildProject({ id: projectId, name: 'api', rootPath: '/tmp/api' }),
       ],
-      setSessionActiveMount: setSessionActiveMountSpy,
+      setSessionActiveProject: setSessionActiveProjectSpy,
     });
 
-    await action(WS_ID, buildPr({ mountWorkspaceId: memberWorkspaceId }));
+    await action(WS_ID, buildPr({ projectId: projectId }));
 
-    expect(ghPrDiffSpy).toHaveBeenCalledWith('org/repo', 7, '/tmp/api', WS_ID, memberWorkspaceId);
+    expect(ghPrDiffSpy).toHaveBeenCalledWith('org/repo', 7, '/tmp/api', WS_ID, projectId);
     expect(createSessionSpy.mock.calls[0]![0].externalTasks?.[0]).toMatchObject({
-      mountWorkspaceId: memberWorkspaceId,
+      projectId: projectId,
     });
-    expect(setSessionActiveMountSpy).toHaveBeenCalledWith({
+    expect(setSessionActiveProjectSpy).toHaveBeenCalledWith({
       sessionId: 'sess-1',
-      workspaceId: memberWorkspaceId,
+      projectId: projectId,
     });
   });
 

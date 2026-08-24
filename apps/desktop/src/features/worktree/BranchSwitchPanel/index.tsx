@@ -68,11 +68,7 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
     };
   }, [repoRoot]);
 
-  if (
-    session == null ||
-    workspace == null ||
-    isBranchlessSession({ workspaceKind: workspace.kind, branch })
-  ) {
+  if (session == null || workspace == null || isBranchlessSession({ branch })) {
     return null;
   }
 

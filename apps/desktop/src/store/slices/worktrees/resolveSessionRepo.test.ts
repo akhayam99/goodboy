@@ -1,29 +1,51 @@
 import { describe, expect, it } from 'vitest';
 import type {
   IsoDateTime,
+  OverrideSettings,
+  Project,
+  ProjectId,
   Session,
   SessionId,
-  SessionMount,
-  Workspace,
   WorkspaceId,
 } from '@goodboy/types';
 import { resolveSessionRepo } from './resolveSessionRepo';
 
-const SESSION_ID = 'session-1' as SessionId;
+const NOW = '2026-01-01T00:00:00.000Z' as IsoDateTime;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
-const API_WORKSPACE_ID = 'workspace-api' as WorkspaceId;
-const WEB_WORKSPACE_ID = 'workspace-web' as WorkspaceId;
-const STALE_WORKSPACE_ID = 'workspace-stale' as WorkspaceId;
-const NOW = '2026-08-01T00:00:00.000Z' as IsoDateTime;
-
-const SESSION = {
+const PROJECT_ID = 'project-1' as ProjectId;
+const SESSION_ID = 'session-1' as SessionId;
+const OVERRIDES: OverrideSettings = {
+  defaultProviderId: null,
+  defaultWorkflowId: null,
+  defaultBranchPrefix: null,
+  parallelEnabled: null,
+  defaultVerbosity: null,
+  providerBindings: null,
+  taskModels: null,
+  roleModels: null,
+  parallelAgents: null,
+  providerPool: null,
+};
+const PROJECT: Project = {
+  id: PROJECT_ID,
+  workspaceId: WORKSPACE_ID,
+  name: 'api',
+  rootPath: '/repo/api',
+  kind: 'repo',
+  overrides: OVERRIDES,
+  createdAt: NOW,
+  updatedAt: NOW,
+};
+const SESSION: Session = {
   id: SESSION_ID,
   workspaceId: WORKSPACE_ID,
-  goal: 'Ship project scope',
+  activeProjectId: PROJECT_ID,
+  goal: 'test',
   state: { kind: 'draft' },
   contextSlots: [],
   providerPreference: {
     defaultProvider: 'anthropic',
+    enabledProviders: ['anthropic'],
     allowTurnOverride: true,
   },
   permissionMode: 'bypassPermissions',
@@ -32,170 +54,58 @@ const SESSION = {
   titleUserEdited: false,
   createdAt: NOW,
   updatedAt: NOW,
-} satisfies Session;
-
-const API_MOUNT = {
-  workspaceId: API_WORKSPACE_ID,
-  mountName: 'api',
-  worktreePath: '/worktrees/session-1/api',
-  repoRoot: '/repos/api',
-  branch: 'ak/project-scope',
-} satisfies SessionMount;
-
-const WEB_MOUNT = {
-  workspaceId: WEB_WORKSPACE_ID,
-  mountName: 'web',
-  worktreePath: '/worktrees/session-1/web',
-  repoRoot: '/repos/web',
-  branch: 'ak/project-scope',
-} satisfies SessionMount;
-
-type State = Parameters<typeof resolveSessionRepo>[0]['state'];
-
-type StateParams = {
-  readonly workspace: Workspace;
-  readonly sessions?: ReadonlyArray<Session>;
-  readonly mounts?: ReadonlyArray<SessionMount>;
-  readonly activeMount?: WorkspaceId;
-  readonly worktrees?: ReadonlyArray<string>;
-  readonly branch?: string;
 };
-
-const buildState = ({
-  workspace,
-  sessions = [SESSION],
-  mounts = [],
-  activeMount,
-  worktrees = [],
-  branch,
-}: StateParams): State => ({
-  sessions,
-  workspaces: [workspace],
-  sessionMounts: { [SESSION_ID]: mounts },
-  sessionActiveMount: activeMount == null ? {} : { [SESSION_ID]: activeMount },
-  sessionWorktrees: { [SESSION_ID]: worktrees },
-  sessionBranches: branch == null ? {} : { [SESSION_ID]: branch },
-});
-
-type WorkspaceParams = {
-  readonly kind?: Workspace['kind'];
-};
-
-const buildWorkspace = ({ kind }: WorkspaceParams): Workspace => ({
-  id: WORKSPACE_ID,
-  name: 'Project',
-  rootPath: '/repos/project',
-  ...(kind == null ? {} : { kind }),
-  createdAt: NOW,
-  updatedAt: NOW,
-});
 
 describe('resolveSessionRepo', () => {
-  it('resolves repo workspaces from the primary session worktree', () => {
-    const expected = {
-      repoRoot: '/repos/project',
-      worktreePath: '/worktrees/session-1',
-      branch: 'ak/project-scope',
-      mountName: null,
-      workspaceId: WORKSPACE_ID,
-    };
-    const repoResult = resolveSessionRepo({
-      state: buildState({
-        workspace: buildWorkspace({ kind: 'repo' }),
-        worktrees: ['/worktrees/session-1', '/worktrees/session-1-secondary'],
-        branch: 'ak/project-scope',
-      }),
-      sessionId: SESSION_ID,
-    });
-    const legacyResult = resolveSessionRepo({
-      state: buildState({
-        workspace: buildWorkspace({}),
-        worktrees: ['/worktrees/session-1'],
-        branch: 'ak/project-scope',
-      }),
-      sessionId: SESSION_ID,
-    });
-
-    expect(repoResult).toEqual(expected);
-    expect(legacyResult).toEqual(expected);
-  });
-
-  it('returns null for a simple workspace', () => {
+  it('resolves the active project mount', () => {
     const result = resolveSessionRepo({
-      state: buildState({
-        workspace: buildWorkspace({ kind: 'simple' }),
-        worktrees: ['/sessions/session-1'],
-        branch: '',
-      }),
+      state: {
+        sessions: [SESSION],
+        projects: [PROJECT],
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            {
+              projectId: PROJECT_ID,
+              mountName: 'api',
+              worktreePath: '/sessions/one/api',
+              repoRoot: '/repo/api',
+              branch: 'ak/one',
+            },
+          ],
+        },
+        sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
+      },
       sessionId: SESSION_ID,
     });
-
-    expect(result).toBeNull();
-  });
-
-  it('keeps a converted workspace from resolving the sessions it created while standalone', () => {
-    const standalone = buildState({
-      workspace: buildWorkspace({ kind: 'simple' }),
-      worktrees: ['/sessions/session-1'],
-      branch: '',
+    expect(result).toEqual({
+      projectId: PROJECT_ID,
+      mountName: 'api',
+      worktreePath: '/sessions/one/api',
+      repoRoot: '/repo/api',
+      branch: 'ak/one',
     });
-    const converted = { ...standalone, workspaces: [buildWorkspace({ kind: 'repo' })] };
-
-    expect(resolveSessionRepo({ state: standalone, sessionId: SESSION_ID })).toBeNull();
-    expect(resolveSessionRepo({ state: converted, sessionId: SESSION_ID })).toBeNull();
   });
 
-  it('uses the first composite mount when no active mount is explicit', () => {
+  it('does not expose folder projects as repositories', () => {
     const result = resolveSessionRepo({
-      state: buildState({
-        workspace: buildWorkspace({ kind: 'composite' }),
-        mounts: [API_MOUNT, WEB_MOUNT],
-        worktrees: ['/worktrees/session-1', API_MOUNT.worktreePath, WEB_MOUNT.worktreePath],
-        branch: API_MOUNT.branch,
-      }),
+      state: {
+        sessions: [SESSION],
+        projects: [{ ...PROJECT, kind: 'folder' }],
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            {
+              projectId: PROJECT_ID,
+              mountName: 'api',
+              worktreePath: '/sessions/one/api',
+              repoRoot: '/repo/api',
+              branch: '',
+            },
+          ],
+        },
+        sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
+      },
       sessionId: SESSION_ID,
     });
-
-    expect(result).toEqual({ ...API_MOUNT });
-  });
-
-  it('uses the explicit active composite mount', () => {
-    const result = resolveSessionRepo({
-      state: buildState({
-        workspace: buildWorkspace({ kind: 'composite' }),
-        mounts: [API_MOUNT, WEB_MOUNT],
-        activeMount: WEB_WORKSPACE_ID,
-      }),
-      sessionId: SESSION_ID,
-    });
-
-    expect(result).toEqual({ ...WEB_MOUNT });
-  });
-
-  it('falls back to the first composite mount when the active mount id is stale', () => {
-    const result = resolveSessionRepo({
-      state: buildState({
-        workspace: buildWorkspace({ kind: 'composite' }),
-        mounts: [API_MOUNT, WEB_MOUNT],
-        activeMount: STALE_WORKSPACE_ID,
-      }),
-      sessionId: SESSION_ID,
-    });
-
-    expect(result).toEqual({ ...API_MOUNT });
-  });
-
-  it('returns null when the session is missing', () => {
-    const result = resolveSessionRepo({
-      state: buildState({
-        workspace: buildWorkspace({ kind: 'repo' }),
-        sessions: [],
-        worktrees: ['/worktrees/session-1'],
-        branch: 'ak/project-scope',
-      }),
-      sessionId: SESSION_ID,
-    });
-
     expect(result).toBeNull();
   });
 });

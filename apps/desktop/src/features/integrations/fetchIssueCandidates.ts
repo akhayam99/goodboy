@@ -67,7 +67,7 @@ export const fetchIssueCandidates = async ({
       const slug = await detectRepoSlug(tauriGhRunner, rootPath, workspaceId);
       if (slug == null) {
         throw new Error(
-          'No GitHub repository resolved for this workspace, so there are no issues to list here.',
+          'No GitHub repository resolved for this project, so there are no issues to list here.',
         );
       }
       const issues = await ghAssignedIssues(slug, { cwd: rootPath, workspaceId });

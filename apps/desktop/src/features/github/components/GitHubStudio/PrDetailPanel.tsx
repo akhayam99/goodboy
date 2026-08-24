@@ -20,6 +20,7 @@ import { OpenSessionButton } from '../../../../shared/components/OpenSessionButt
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { RefreshIconButton } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
+import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
 import { groupThreads, type CommentThread } from '../../comment-threads';
 import { PullRequestChip } from '../PullRequestChip';
 import { CreatePrPanel } from './CreatePrPanel';
@@ -66,13 +67,13 @@ export const PrDetailPanel = ({
     sessionId != null ? state.sessionGithub[sessionId] : null,
   );
   const prs = useAppStore((state) =>
-    sessionId != null ? (state.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
+    sessionId != null ? selectActiveProjectPrs({ state, sessionId }) : EMPTY_ARRAY,
   );
   const selectedNumber = useAppStore((state) =>
     sessionId != null ? (state.sessionSelectedPrNumber[sessionId] ?? null) : null,
   );
   const repo = useSessionRepo({ sessionId: (sessionId ?? '') as SessionId });
-  const workspaceRoot = repo?.repoRoot ?? null;
+  const projectRoot = repo?.repoRoot ?? null;
   const roleModels = useSessionRoleModels({ sessionId });
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);
@@ -481,8 +482,8 @@ export const PrDetailPanel = ({
       rail={
         <PrReviewers
           detail={detail}
-          workspaceRoot={workspaceRoot}
-          memberWorkspaceId={repo?.workspaceId}
+          projectRoot={projectRoot}
+          projectId={repo?.projectId}
           onAddReviewers={onAddReviewers}
         />
       }

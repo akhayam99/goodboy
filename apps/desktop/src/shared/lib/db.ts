@@ -2,7 +2,9 @@ import { invoke } from '@tauri-apps/api/core';
 import {
   migrate as runMigrations,
   runDatabaseHygiene,
+  runRuntimeMigrations,
   type Database,
+  type MigrationSnapshotStorage,
   type MigrateResult,
 } from '@goodboy/db';
 
@@ -60,9 +62,20 @@ export const tauriDatabase: Database = {
   },
 };
 
+const migrationSnapshotStorage: MigrationSnapshotStorage = {
+  list: async () => invokeDb<ReadonlyArray<string>>('db_list_migration_snapshots', {}),
+  remove: async ({ path }) => invokeDb('db_remove_migration_snapshot', { path }),
+};
+
 export const runDbMigrations = async (): Promise<MigrateResult> => {
-  const result = await runMigrations(tauriDatabase);
+  const databasePath = await invokeDb<string>('db_path', {});
+  const result = await runRuntimeMigrations({
+    databasePath,
+    db: tauriDatabase,
+    storage: migrationSnapshotStorage,
+  });
   await runDatabaseHygiene({ db: tauriDatabase, now: Date.now() });
+  await invokeDb('attachment_cleanup_orphans', {});
   return result;
 };
 

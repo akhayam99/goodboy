@@ -31,7 +31,10 @@ export const CommitRow = ({ commit, onOpen }: Props) => {
           type="button"
           onClick={onOpen}
           title={`Open the diff of ${commit.shortSha}`}
-          className={cn(ROW_CLASS, 'rounded-md motion-safe:transition-colors hover:text-primary')}
+          className={cn(
+            ROW_CLASS,
+            'cursor-pointer rounded-md underline-offset-2 motion-safe:transition-colors hover:text-foreground hover:underline',
+          )}
         >
           {content}
         </button>

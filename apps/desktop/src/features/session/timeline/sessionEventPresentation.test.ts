@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionEvent, SessionEventKind, SessionEventPayload } from '@goodboy/types';
 import { SESSION_EVENT_KINDS } from '@goodboy/types';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import {
   sessionEventEmphasis,
   sessionEventGlyph,
+  sessionEventLabel,
+  sessionEventSecondary,
   sessionEventTitle,
 } from './sessionEventPresentation';
 
@@ -22,12 +25,12 @@ const event = ({ kind, payload }: MakeParams): SessionEvent =>
   }) as unknown as SessionEvent;
 
 describe('sessionEventTitle', () => {
-  it('shows the worktree path so it can be copied', () => {
+  it('reads the container event as the session folder, path included', () => {
     expect(
       sessionEventTitle({
         event: event({ kind: 'worktree_created', payload: { worktreePath: '/repo/wt/gb-trace' } }),
       }),
-    ).toBe('/repo/wt/gb-trace');
+    ).toBe('Session folder created at /repo/wt/gb-trace');
   });
 
   it('names both branches of a switch', () => {
@@ -35,7 +38,15 @@ describe('sessionEventTitle', () => {
       sessionEventTitle({
         event: event({ kind: 'branch_switched', payload: { from: 'main', to: 'ak/feat' } }),
       }),
-    ).toBe('Branch switched: main → ak/feat');
+    ).toBe('Branch main → ak/feat');
+  });
+
+  it('reads a created branch with the name inside the sentence', () => {
+    expect(
+      sessionEventTitle({
+        event: event({ kind: 'branch_created', payload: { branch: 'ak/feat' } }),
+      }),
+    ).toBe('Branch ak/feat created');
   });
 
   it('reads an issue by identifier and title', () => {
@@ -81,9 +92,146 @@ describe('sessionEventTitle', () => {
     ).toBe('1 decision added, 0 removed');
   });
 
+  it('names the mounted project first when the payload carries it', () => {
+    expect(
+      sessionEventTitle({
+        event: event({
+          kind: 'project_materialized',
+          payload: { projectName: 'api', branch: 'goodboy/untitled', reason: 'added manually' },
+        }),
+      }),
+    ).toBe('Mounted api on goodboy/untitled');
+  });
+
+  it('falls back to the old mount copy without a project name, rationale left out', () => {
+    expect(
+      sessionEventTitle({
+        event: event({
+          kind: 'project_materialized',
+          payload: { branch: 'goodboy/untitled', reason: 'added manually by the user' },
+        }),
+      }),
+    ).toBe('Project mounted on goodboy/untitled');
+  });
+
+  it('names the detached project and whether the worktree survived', () => {
+    expect(
+      sessionEventTitle({
+        event: event({ kind: 'project_detached', payload: { projectName: 'api', kept: true } }),
+      }),
+    ).toBe('Detached api');
+    expect(
+      sessionEventSecondary({
+        event: event({ kind: 'project_detached', payload: { projectName: 'api', kept: true } }),
+      }),
+    ).toBe('worktree kept on disk');
+    expect(
+      sessionEventSecondary({
+        event: event({ kind: 'project_detached', payload: { projectName: 'api', kept: false } }),
+      }),
+    ).toBeNull();
+  });
+
+  it('drops the mount rationale entirely, on the row and beside it', () => {
+    const mounted = event({
+      kind: 'project_materialized',
+      payload: {
+        projectName: 'api',
+        branch: 'goodboy/untitled',
+        reason: 'step "migrazione cluster 1": 7. Apertura imperativa da file .ts',
+      },
+    });
+
+    expect(sessionEventSecondary({ event: mounted })).toBeNull();
+    expect(sessionEventTitle({ event: mounted })).toBe('Mounted api on goodboy/untitled');
+  });
+
+  it('keeps the refusal reason, which is the whole point of that payload', () => {
+    expect(
+      sessionEventTitle({
+        event: event({
+          kind: 'project_materialization_refused',
+          payload: { projectName: 'api', reason: 'branch already checked out' },
+        }),
+      }),
+    ).toBe('Mount refused for api: branch already checked out');
+  });
+
   it('stays readable when the payload is missing', () => {
     for (const kind of SESSION_EVENT_KINDS) {
       expect(sessionEventTitle({ event: event({ kind }) }).length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('sessionEventLabel', () => {
+  it('splits a mount into prose and the two values it names', () => {
+    expect(
+      sessionEventLabel({
+        event: event({
+          kind: 'project_materialized',
+          payload: { projectName: 'api', branch: 'goodboy/untitled' },
+        }),
+      }),
+    ).toEqual([
+      { kind: 'text', text: 'Mounted ' },
+      { kind: 'value', text: 'api', variant: 'project' },
+      { kind: 'text', text: ' on ' },
+      { kind: 'value', text: 'goodboy/untitled', variant: 'branch' },
+    ]);
+  });
+
+  it('carries the worktree path as a value, not as prose', () => {
+    expect(
+      sessionEventLabel({
+        event: event({ kind: 'worktree_created', payload: { worktreePath: '/repo/wt/gb-trace' } }),
+      }),
+    ).toEqual([
+      { kind: 'text', text: 'Session folder created at ' },
+      { kind: 'value', text: '/repo/wt/gb-trace', variant: 'path' },
+    ]);
+  });
+
+  it('tokenizes the pull request number and leaves its title as prose', () => {
+    expect(
+      sessionEventLabel({
+        event: event({ kind: 'pr_created', payload: { number: 42, title: 'Segment the labels' } }),
+      }),
+    ).toEqual([
+      { kind: 'text', text: 'Opened ' },
+      { kind: 'value', text: '#42', variant: 'pull-request' },
+      { kind: 'text', text: ': Segment the labels' },
+    ]);
+  });
+
+  it('tokenizes the issue identifier and leaves its title as prose', () => {
+    expect(
+      sessionEventLabel({
+        event: event({
+          kind: 'issue_linked',
+          payload: { identifier: 'GB-1', title: 'Persist the trace' },
+        }),
+      }),
+    ).toEqual([
+      { kind: 'text', text: 'Linked ' },
+      { kind: 'value', text: 'GB-1', variant: 'issue' },
+      { kind: 'text', text: ': Persist the trace' },
+    ]);
+  });
+
+  it('leaves a count-only event as one plain run of text', () => {
+    expect(
+      sessionEventLabel({
+        event: event({ kind: 'decisions_changed', payload: { added: 3, removed: 1 } }),
+      }).every((segment) => segment.kind === 'text'),
+    ).toBe(true);
+  });
+
+  it('falls back to prose when the payload names no value', () => {
+    for (const kind of SESSION_EVENT_KINDS) {
+      const segments = sessionEventLabel({ event: event({ kind }) });
+      expect(segments.length).toBeGreaterThan(0);
+      expect(segments.every((segment) => segment.kind === 'text')).toBe(true);
     }
   });
 });
@@ -114,5 +262,12 @@ describe('sessionEventGlyph', () => {
     for (const kind of SESSION_EVENT_KINDS) {
       expect(sessionEventGlyph({ kind }).label.length).toBeGreaterThan(0);
     }
+  });
+
+  it('marks a context change with the context concept, tinted', () => {
+    const glyph = sessionEventGlyph({ kind: 'decisions_changed' });
+    expect(glyph.icon).toBe(CONCEPT_ICONS.context);
+    expect(glyph.tone).toBe(CONCEPT_TONE.context);
+    expect(glyph.label).toBe('Context');
   });
 });

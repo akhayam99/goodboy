@@ -85,7 +85,7 @@ export const BitbucketStudio = ({ sessionId, workspaceName, onClose }: Props) =>
     >
       {(requestClose) =>
         workspaceId == null ? null : !isConnected || repo == null ? (
-          <div className="flex min-h-0 flex-1 items-center justify-center p-5">
+          <div className="flex min-h-0 flex-1 overflow-y-auto p-5">
             <ConnectIntegrationEmptyState
               provider="bitbucket"
               workspaceId={workspaceId}

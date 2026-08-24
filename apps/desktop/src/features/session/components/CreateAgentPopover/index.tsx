@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { getDefaultTurnModel } from '@goodboy/core';
 import {
+  AnchoredPopover,
   Button,
   cn,
   Divider,
-  DropdownPortal,
-  Popover,
   PopoverBody,
   PopoverFooter,
   useDropdown,
@@ -42,28 +41,17 @@ export const CreateAgentPopover = ({
   description,
   onSpawned,
 }: Props) => {
-  const {
-    open,
-    close,
-    toggle,
-    containerRef,
-    popupRef,
-    popupClassName,
-    popupStyle,
-    portal,
-    portalTarget,
-  } = useDropdown({
+  const dropdown = useDropdown({
     align: 'center',
     expectedHeight: 460,
     expectedWidth: 384,
     width: 'w-96 max-w-[calc(100vw-2rem)]',
-    strategy: 'fixed',
   });
+  const { open, close, toggle } = dropdown;
   const [kind, setKind] = useState<AgentKind>('generic');
   const [routing, setRouting] = useState<AgentKindRouting | null>(null);
   const spawnAgent = useAppStore((state) => state.spawnAgent);
-  const workspaceKind = useCurrentWorkspace()?.kind;
-  const agentKinds = visibleAgentKinds({ workspaceKind });
+  const agentKinds = visibleAgentKinds();
   const selectedKind = agentKinds.includes(kind) ? kind : (agentKinds[0] ?? 'generic');
   const connectedProviders = useAppStore(
     useShallow((state) =>
@@ -101,64 +89,60 @@ export const CreateAgentPopover = ({
   };
 
   return (
-    <div ref={containerRef} className={cn('relative min-w-0', variant === 'tile' && 'w-full')}>
-      <CreateAgentTrigger
-        variant={variant}
-        isOpen={open}
-        description={description}
-        className={cn(variant === 'tile' && 'w-full', className)}
-        onClick={toggle}
-      />
-      <DropdownPortal portal={portal} portalTarget={portalTarget}>
-        {open && (
-          <Popover
-            innerRef={popupRef}
-            role="dialog"
-            ariaLabel="Create agent"
-            className={cn(popupClassName, 'flex max-h-[calc(100vh-1rem)] flex-col bg-subtle')}
-            style={popupStyle}
-          >
-            <PopoverBody>
-              {agentKinds.length > 1 && (
-                <>
-                  <PickerSection label="Agent type">
-                    <AgentKindGrid kinds={agentKinds} value={selectedKind} onChange={setKind} />
-                  </PickerSection>
-                  <Divider />
-                </>
-              )}
-              <AgentRoutingSections
-                connectedProviders={connectedProviders}
-                effective={effective}
-                viewProvider={viewProvider}
-                onViewProvider={setViewProvider}
-                onNavigateProviders={close}
-                onPickProvider={(provider) => {
-                  const model = getDefaultTurnModel({ id: provider });
-                  setRouting({
-                    provider,
-                    model,
-                    effort: clampEffort(model, effective.effort),
-                  });
-                }}
-                onPickModel={(model, effort) => {
-                  setRouting({
-                    provider: viewProvider,
-                    model,
-                    effort,
-                  });
-                }}
-              />
-            </PopoverBody>
+    <AnchoredPopover
+      dropdown={dropdown}
+      role="dialog"
+      ariaLabel="Create agent"
+      className="flex max-h-[calc(100vh-1rem)] flex-col bg-subtle"
+      anchorClassName={cn('min-w-0', variant === 'tile' && 'w-full')}
+      trigger={
+        <CreateAgentTrigger
+          variant={variant}
+          isOpen={open}
+          description={description}
+          className={cn(variant === 'tile' && 'w-full', className)}
+          onClick={toggle}
+        />
+      }
+    >
+      <PopoverBody>
+        {agentKinds.length > 1 && (
+          <>
+            <PickerSection label="Agent type">
+              <AgentKindGrid kinds={agentKinds} value={selectedKind} onChange={setKind} />
+            </PickerSection>
             <Divider />
-            <PopoverFooter className="flex items-center justify-end px-2.5 py-2">
-              <Button size="sm" onClick={() => void onCreate()}>
-                Spawn {AGENT_KIND_META[selectedKind].label}
-              </Button>
-            </PopoverFooter>
-          </Popover>
+          </>
         )}
-      </DropdownPortal>
-    </div>
+        <AgentRoutingSections
+          connectedProviders={connectedProviders}
+          effective={effective}
+          viewProvider={viewProvider}
+          onViewProvider={setViewProvider}
+          onNavigateProviders={close}
+          onPickProvider={(provider) => {
+            const model = getDefaultTurnModel({ id: provider });
+            setRouting({
+              provider,
+              model,
+              effort: clampEffort(model, effective.effort),
+            });
+          }}
+          onPickModel={(model, effort) => {
+            setRouting({
+              provider: viewProvider,
+              model,
+              effort,
+            });
+          }}
+        />
+      </PopoverBody>
+      <Divider />
+      <PopoverFooter className="flex items-center justify-end px-2.5 py-2">
+        <Button size="sm" onClick={() => void onCreate()}>
+          Spawn {AGENT_KIND_META[selectedKind].label}
+        </Button>
+      </PopoverFooter>
+    </AnchoredPopover>
   );
 };

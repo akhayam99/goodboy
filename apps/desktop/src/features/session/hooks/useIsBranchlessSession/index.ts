@@ -8,9 +8,6 @@ type Params = {
 
 export const useIsBranchlessSession = ({ session }: Params): boolean => {
   const sessionId = session.id as SessionId;
-  const workspaceKind = useAppStore(
-    (s) => s.workspaces?.find((workspace) => workspace.id === session.workspaceId)?.kind ?? 'repo',
-  );
   const branch = useAppStore((s) => s.sessionBranches[sessionId]);
-  return isBranchlessSession({ workspaceKind, branch });
+  return isBranchlessSession({ branch });
 };

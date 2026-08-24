@@ -57,7 +57,17 @@ describe('budgetRoutingReason', () => {
   it('drops the reasons that are not about budget', () => {
     expect(budgetRoutingReason({ reason: 'preferred' })).toBeNull();
     expect(budgetRoutingReason({ reason: 'override' })).toBeNull();
-    expect(budgetRoutingReason({ reason: 'fallback-disconnected' })).toBeNull();
+    expect(budgetRoutingReason({ reason: 'fallback-disconnected' })).toBe('fallback-disconnected');
     expect(budgetRoutingReason({ reason: 'all-exceeded' })).toBeNull();
+  });
+
+  it('tells the transcript when the preferred provider was unreachable', () => {
+    expect(
+      budgetRoutingNoticeMessage({
+        from: 'anthropic',
+        to: 'codex',
+        reason: 'fallback-disconnected',
+      }),
+    ).toBe('anthropic is not reachable right now. running this turn on codex.');
   });
 });

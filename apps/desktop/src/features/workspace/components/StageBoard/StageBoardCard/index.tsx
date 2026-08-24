@@ -72,6 +72,13 @@ export const StageBoardCard = memo(function StageBoardCard({
   const agentCount = useNonResolverStandaloneAgents(id).length;
   const agentCountLabel = `${agentCount} ${agentCount === 1 ? 'agent' : 'agents'}`;
   const worktreePath = useAppStore((s) => s.sessionWorktrees[id]?.[0] ?? null);
+  const mounts = useAppStore((s) => s.sessionProjectMounts?.[id] ?? EMPTY_ARRAY);
+  const workspaceProjectCount = useAppStore(
+    (s) =>
+      (s.projects ?? EMPTY_ARRAY).filter((project) => project.workspaceId === session.workspaceId)
+        .length,
+  );
+  const showProjectChips = workspaceProjectCount > 1 && mounts.length > 0;
   const dynamicActions = useDynamicActions(session, nav, stage);
   const sessionCost = useSessionCost(id);
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[id] ?? EMPTY_ARRAY);
@@ -186,6 +193,18 @@ export const StageBoardCard = memo(function StageBoardCard({
               variant="icon"
             />
           ))}
+          {showProjectChips
+            ? mounts.map((mount) => (
+                <Chip
+                  key={mount.projectId}
+                  tone="neutral"
+                  size="3xs"
+                  bordered={false}
+                  label={mount.mountName}
+                  className="shrink-0"
+                />
+              ))
+            : null}
           {sessionCost > 0 && (
             <CostBadge
               value={sessionCost}

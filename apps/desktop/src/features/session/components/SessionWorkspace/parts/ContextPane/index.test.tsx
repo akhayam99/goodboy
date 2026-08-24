@@ -282,6 +282,28 @@ describe('Session summary blocks', () => {
     expect(summary.textContent).not.toContain('####');
   });
 
+  it('leads each canonical block header with a small icon on the eyebrow tone', () => {
+    render(<ContextPane session={SESSION} />);
+    const summary = sectionFor('Session summary');
+
+    for (const title of ['Problem', 'Learned', 'State', 'Next']) {
+      const region = within(summary).getByRole('region', { name: title });
+      const icon = region.querySelector('h3 svg');
+      expect(icon).not.toBeNull();
+      expect(icon?.getAttribute('width')).toBe('12');
+    }
+  });
+
+  it('keeps the icon off a non-canonical block header', () => {
+    store.sessionSlots['session-1'] = slots({
+      last_output_summary: `${SUMMARY}\n\n#### Risks\n- a heading we do not know.`,
+    });
+    render(<ContextPane session={SESSION} />);
+    const risks = within(sectionFor('Session summary')).getByRole('region', { name: 'Risks' });
+
+    expect(risks.querySelector('h3 svg')).toBeNull();
+  });
+
   it('labels each block without drawing a box around it', () => {
     render(<ContextPane session={SESSION} />);
     const problem = within(sectionFor('Session summary')).getByRole('region', { name: 'Problem' });
@@ -528,5 +550,14 @@ describe('Decisions rows', () => {
       (within(decisions).getByRole('button', { name: 'Edit decision 1' }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
+  });
+});
+
+describe('Working set removal', () => {
+  it('keeps the working set off the context page', () => {
+    render(<ContextPane session={SESSION} />);
+
+    expect(screen.queryByRole('region', { name: 'Working set' })).toBeNull();
+    expect(screen.queryByText('Working set')).toBeNull();
   });
 });

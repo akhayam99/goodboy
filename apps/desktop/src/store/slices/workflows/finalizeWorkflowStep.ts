@@ -14,6 +14,7 @@ import { composeStepBoundary } from '../../kickoff';
 import { summarizeAgentOutput } from '../../summarizeAgentOutput';
 import { degradedNotifiedAgents } from '../../../shared/utils/degradedNotifiedAgents';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
+import { resumeClusterChildren, unsettledClusterChildren } from './clusterImplementation';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
 
@@ -57,6 +58,21 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
     if (!agent || !agent.stepId || !agent.workflowRunId) {
+      return { shouldAutoAdvance: false };
+    }
+
+    const unsettledChildren = unsettledClusterChildren(runs, agentId);
+    if (unsettledChildren.length > 0) {
+      const resumed = await resumeClusterChildren({ set, get, sessionId, container: agent });
+      if (!resumed) {
+        void get().emitNotification(
+          'error',
+          'warning',
+          `step waiting on clusters: ${agent.name}`,
+          `${unsettledChildren.length} cluster ${unsettledChildren.length === 1 ? 'agent has' : 'agents have'} not finished, so this step stays open. open the cluster agents and continue them.`,
+          { sessionId },
+        );
+      }
       return { shouldAutoAdvance: false };
     }
 

@@ -23,8 +23,8 @@ const databaseWithRun = async ({}: Params) => {
   await migrate(database);
   const now = Date.parse(recordedAt);
   await database.execute(
-    'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-    [workspaceId, 'Workspace', '/tmp/workspace', now, now],
+    'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    [workspaceId, 'Workspace', 'workspace', now, now],
   );
   await database.execute(
     'INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',

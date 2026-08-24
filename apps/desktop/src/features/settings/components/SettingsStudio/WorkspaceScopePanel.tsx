@@ -12,11 +12,15 @@ import {
 } from '@goodboy/ui';
 import { Check, GitBranch, Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
+import { WorkspaceProfileSection } from './WorkspaceProfileSection';
+import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
+import { WorkspaceMergeSection } from './WorkspaceMergeSection';
 import { OrphanWorktreesSection } from '../../../../features/worktree/components/OrphanWorktreesSection';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
-import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
+import { DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore } from '../../../../store';
+import { primaryProjectRoot } from '../../../../features/workspace/primaryProjectRoot';
 import { useToast } from '../../../../app/components/Toast';
 
 type Props = {
@@ -26,10 +30,9 @@ type Props = {
 };
 
 export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose }: Props) => {
-  const loadSetting = useAppStore((s) => s.loadSetting);
-  const saveSetting = useAppStore((s) => s.saveSetting);
   const disconnect = useAppStore((s) => s.deleteWorkspace);
   const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId) ?? null);
+  const projectRoot = useAppStore((s) => primaryProjectRoot({ projects: s.projects, workspaceId }));
   const renameWorkspace = useAppStore((s) => s.renameWorkspace);
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
   const storeSetWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
@@ -49,12 +52,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
   const parallelAgents = wsOverrides?.parallelAgents ?? false;
 
   useEffect(() => {
-    void loadSetting(settingBranchPrefix(workspaceId)).then((v) => {
-      const value = v ?? DEFAULT_BRANCH_PREFIX;
-      setBranchPrefix(value);
-      setSavedBranchPrefix(value);
-    });
-  }, [workspaceId, loadSetting]);
+    const value = wsOverrides?.defaultBranchPrefix ?? DEFAULT_BRANCH_PREFIX;
+    setBranchPrefix(value);
+    setSavedBranchPrefix(value);
+  }, [workspaceId, wsOverrides?.defaultBranchPrefix]);
 
   useEffect(() => {
     setDisplayName(workspace?.name ?? '');
@@ -71,6 +72,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
     partial: Partial<{
       defaultVerbosity: VerbosityLevel;
       parallelAgents: boolean;
+      defaultBranchPrefix: string;
     }>,
     successMessage: string,
   ) => {
@@ -86,7 +88,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
         taskModels: wsOverrides?.taskModels ?? null,
         roleModels: wsOverrides?.roleModels ?? null,
         parallelAgents,
-        enabledProviders: wsOverrides?.enabledProviders,
+        providerPool: wsOverrides?.providerPool ?? null,
         ...partial,
       });
       showToast('success', successMessage);
@@ -123,7 +125,18 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
     }
     setBusy(true);
     try {
-      await saveSetting(settingBranchPrefix(workspaceId), next);
+      await storeSetWorkspaceOverrides(workspaceId, {
+        defaultProviderId: wsOverrides?.defaultProviderId ?? null,
+        defaultWorkflowId: wsOverrides?.defaultWorkflowId ?? null,
+        defaultBranchPrefix: next,
+        parallelEnabled: wsOverrides?.parallelEnabled ?? null,
+        defaultVerbosity: verbosity,
+        providerBindings: wsOverrides?.providerBindings ?? null,
+        taskModels: wsOverrides?.taskModels ?? null,
+        roleModels: wsOverrides?.roleModels ?? null,
+        parallelAgents,
+        providerPool: wsOverrides?.providerPool ?? null,
+      });
       setBranchPrefix(next);
       setSavedBranchPrefix(next);
       showToast('success', 'branch prefix saved');
@@ -152,8 +165,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       .replace(/^-+/, '')
       .slice(0, 16);
 
-  const folderName =
-    workspace?.rootPath.split('/').filter(Boolean).at(-1) ?? 'the workspace folder';
+  const folderName = projectRoot?.split('/').filter(Boolean).at(-1) ?? 'the workspace folder';
 
   const anchor = (id: string) => (el: HTMLElement | null) => {
     anchorsRef.current[id] = el;
@@ -170,10 +182,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   label="Workspace"
                   hint="How this workspace is labelled across the app."
                 />
-                <FieldRow
-                  label="Display name"
-                  help={`Presentation only. The folder on disk stays ${folderName}.`}
-                >
+                <FieldRow label="Display name" help={`The folder on disk stays ${folderName}.`}>
                   <input
                     type="text"
                     value={displayName}
@@ -200,6 +209,18 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   />
                 </FieldRow>
               </section>
+
+              <Divider />
+
+              <div ref={anchor('projects')}>
+                <WorkspaceProjectsSection workspaceId={workspaceId} />
+              </div>
+
+              <Divider />
+
+              <div ref={anchor('profile')}>
+                <WorkspaceProfileSection workspaceId={workspaceId} />
+              </div>
 
               <Divider />
             </>
@@ -251,28 +272,24 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   />
                 </div>
               </FieldRow>
+
+              <FieldRow
+                label="Parallel agents"
+                help="Lets eligible agents split independent work and reconcile it in one output."
+              >
+                <Switch
+                  label={parallelAgents ? 'On' : 'Off'}
+                  checked={parallelAgents}
+                  disabled={busy}
+                  onChange={(next) =>
+                    void persistOverrides(
+                      { parallelAgents: next },
+                      next ? 'parallel agents on' : 'parallel agents off',
+                    )
+                  }
+                />
+              </FieldRow>
             </div>
-          </section>
-
-          <Divider />
-
-          <section id="agents" ref={anchor('agents')} className="flex flex-col">
-            <FieldRow
-              label="Parallel agents"
-              help="Allow role-eligible agents to split independent work and reconcile it in one output."
-            >
-              <Switch
-                label={parallelAgents ? 'On' : 'Off'}
-                checked={parallelAgents}
-                disabled={busy}
-                onChange={(next) =>
-                  void persistOverrides(
-                    { parallelAgents: next },
-                    next ? 'parallel agents on' : 'parallel agents off',
-                  )
-                }
-              />
-            </FieldRow>
           </section>
 
           {WORKSPACE_FEATURES.skills ? (
@@ -284,11 +301,17 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
             </>
           ) : null}
 
-          <Divider />
-
           <div ref={anchor('orphans')}>
             <OrphanWorktreesSection workspaceId={workspaceId} />
           </div>
+
+          {workspace == null ? null : (
+            <div ref={anchor('merge')}>
+              <WorkspaceMergeSection workspaceId={workspaceId} />
+            </div>
+          )}
+
+          <Divider />
 
           <section id="danger" ref={anchor('danger')} className="flex flex-col gap-4">
             <SectionHeader label="Danger zone" hint="Destructive workspace controls." />
@@ -298,10 +321,11 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
             >
               {!confirmDisconnect ? (
                 <Button
-                  variant="danger"
+                  variant="ghost"
                   size="sm"
                   onClick={() => setConfirmDisconnect(true)}
                   disabled={disconnecting}
+                  className="text-danger hover:bg-danger/10 hover:text-danger"
                 >
                   <Unplug size={13} aria-hidden />
                   Disconnect

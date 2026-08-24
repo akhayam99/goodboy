@@ -7,11 +7,13 @@ const { state, currentWorkspace, activityBar } = vi.hoisted(() => ({
     archivedSessions: {} as Record<string, ReadonlyArray<unknown>>,
     setCurrentSession: vi.fn(),
     loadArchivedSessions: vi.fn(),
+    projects: [] as ReadonlyArray<never>,
   },
   currentWorkspace: {
     id: 'ws-1' as WorkspaceId,
     name: 'Test WS',
-    rootPath: '/code/test-ws',
+    slug: 'test-ws',
+    sessionsRoot: '/code/test-ws',
   } as Workspace,
   activityBar: { onSelectSession: vi.fn() as (id: SessionId) => void },
 }));
@@ -31,80 +33,33 @@ vi.mock('../../../workspace/components/SessionActivityBar', () => ({
   },
 }));
 
-vi.mock('../../hooks/useLensNavModel', () => ({
-  useLensNavModel: () => ({
-    isBranchless: false,
-    filesCount: 0,
-    diffstat: { additions: 0, deletions: 0 },
-  }),
-}));
-
-vi.mock('./parts/LensNav', () => ({ LensNav: () => <div data-testid="lens-nav" /> }));
-
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  state.setCurrentSession.mockClear();
+});
 
 import { SessionNavSidebar } from './index';
 
 const session = { id: 'session-1' as SessionId, goal: 'ship the nav' } as Session;
 
 describe('SessionNavSidebar', () => {
-  it('uses the session title as the back affordance in lens mode', () => {
-    const onModeChange = vi.fn();
-    render(<SessionNavSidebar session={session} mode="lenses" onModeChange={onModeChange} />);
-
-    expect(screen.getByTestId('lens-nav')).toBeTruthy();
-    expect(screen.queryByTestId('activity-bar')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Back to sessions' })).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'ship the nav' }));
-    expect(onModeChange).toHaveBeenCalledWith('sessions');
-  });
-
-  it('keeps the board CTA reachable from both modes', () => {
-    render(<SessionNavSidebar session={session} mode="lenses" onModeChange={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /back to board/i }));
-    expect(state.setCurrentSession).toHaveBeenCalledWith(null);
-
-    cleanup();
-    state.setCurrentSession.mockClear();
-
-    render(<SessionNavSidebar session={session} mode="sessions" onModeChange={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /back to board/i }));
-    expect(state.setCurrentSession).toHaveBeenCalledWith(null);
-  });
-
-  it('drops the workspace name row in sessions mode', () => {
-    render(<SessionNavSidebar session={session} mode="sessions" onModeChange={vi.fn()} />);
+  it('always renders the session list, with no lens navigation', () => {
+    render(<SessionNavSidebar session={session} />);
 
     expect(screen.getByTestId('activity-bar')).toBeTruthy();
-    expect(screen.queryByTestId('lens-nav')).toBeNull();
-    expect(screen.queryByText('Test WS')).toBeNull();
-    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.queryByRole('navigation', { name: /lenses/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'ship the nav' })).toBeNull();
   });
 
-  it('steps the pane forward into detail and back out to the list', () => {
-    const { container, rerender } = render(
-      <SessionNavSidebar session={session} mode="sessions" onModeChange={vi.fn()} />,
-    );
-    const listPane = container.querySelector('.motion-safe\\:animate-nav-step-out');
-    expect(listPane?.contains(screen.getByTestId('activity-bar'))).toBe(true);
-
-    rerender(<SessionNavSidebar session={session} mode="lenses" onModeChange={vi.fn()} />);
-    const detailPane = container.querySelector('.motion-safe\\:animate-nav-step-in');
-    expect(detailPane?.contains(screen.getByTestId('lens-nav'))).toBe(true);
-    expect(container.querySelector('.motion-safe\\:animate-nav-step-out')).toBeNull();
+  it('keeps the board CTA reachable', () => {
+    render(<SessionNavSidebar session={session} />);
+    fireEvent.click(screen.getByRole('button', { name: /back to board/i }));
+    expect(state.setCurrentSession).toHaveBeenCalledWith(null);
   });
 
   it('carries workspace identity and the collapse control in the pinned header', () => {
     const onCollapse = vi.fn();
-    render(
-      <SessionNavSidebar
-        session={session}
-        mode="lenses"
-        onModeChange={vi.fn()}
-        onCollapse={onCollapse}
-      />,
-    );
+    render(<SessionNavSidebar session={session} onCollapse={onCollapse} />);
 
     expect(screen.getByLabelText('Switch or open a workspace')).toBeTruthy();
     expect(screen.getByLabelText('Preferences')).toBeTruthy();
@@ -114,27 +69,18 @@ describe('SessionNavSidebar', () => {
   });
 
   it('drops the header in the peek panel, where collapsing makes no sense', () => {
-    render(<SessionNavSidebar session={session} mode="lenses" onModeChange={vi.fn()} />);
+    render(<SessionNavSidebar session={session} />);
 
     expect(screen.queryByLabelText('Switch or open a workspace')).toBeNull();
     expect(screen.queryByRole('button', { name: /hide session sidebar/i })).toBeNull();
   });
 
-  it('returns to lens mode and closes the peek once a session is picked', () => {
-    const onModeChange = vi.fn();
+  it('closes the peek once a session is picked', () => {
     const onNavigate = vi.fn();
-    render(
-      <SessionNavSidebar
-        session={session}
-        mode="sessions"
-        onModeChange={onModeChange}
-        onNavigate={onNavigate}
-      />,
-    );
+    render(<SessionNavSidebar session={session} onNavigate={onNavigate} />);
 
     activityBar.onSelectSession('session-2' as SessionId);
     expect(state.setCurrentSession).toHaveBeenCalledWith('session-2');
-    expect(onModeChange).toHaveBeenCalledWith('lenses');
     expect(onNavigate).toHaveBeenCalledOnce();
   });
 });

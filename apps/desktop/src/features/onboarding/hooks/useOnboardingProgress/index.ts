@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useAppStore, useCurrentSession, useWorkspaces } from '../../../../store';
 import { ghStatus } from '../../../github/github';
 import {
-  visibleOnboardingSteps,
+  ONBOARDING_STEPS,
   getCompleted,
   isCollapsed,
   isFinished,
@@ -17,7 +17,7 @@ export type OnboardingProgress = {
   readonly collapsed: boolean;
   readonly finished: boolean;
   readonly isDone: boolean;
-  readonly isSimple: boolean;
+  readonly hasProjects: boolean;
 };
 
 export const useOnboardingProgress = (): OnboardingProgress => {
@@ -36,7 +36,6 @@ export const useOnboardingProgress = (): OnboardingProgress => {
   const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
   const workspace =
     workspaces.find((candidate) => candidate.id === currentWorkspaceId) ?? workspaces[0] ?? null;
-  const isSimple = workspace?.kind === 'simple';
   const sessionCount = useAppStore((s) => s.sessions.length);
   const needsAgentDetect = !persistedCompleted.has('agent');
   const needsPlanDetect = !persistedCompleted.has('plan');
@@ -65,7 +64,10 @@ export const useOnboardingProgress = (): OnboardingProgress => {
   const currentSession = useCurrentSession();
 
   const workspaceId = workspace?.id ?? null;
-  const needsCodeHostDetect = !isSimple && !persistedCompleted.has('codeHost');
+  const hasProjects = useAppStore((s) =>
+    workspaceId ? s.projects.some((project) => project.workspaceId === workspaceId) : false,
+  );
+  const needsCodeHostDetect = !persistedCompleted.has('codeHost');
   const gitlabConnected = useAppStore((s) =>
     workspaceId
       ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'gitlab')
@@ -106,7 +108,6 @@ export const useOnboardingProgress = (): OnboardingProgress => {
       markStepComplete('workspace');
     }
     if (
-      !isSimple &&
       (gitlabConnected || bitbucketConnected || githubScoped) &&
       !persistedCompleted.has('codeHost')
     ) {
@@ -133,7 +134,6 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     bitbucketConnected,
     githubScoped,
     hasTools,
-    isSimple,
     persistedCompleted,
     currentSession,
   ]);
@@ -143,7 +143,7 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     if (workspaces.length > 0) {
       liveCompleted.add('workspace');
     }
-    if (!isSimple && (gitlabConnected || bitbucketConnected || githubScoped)) {
+    if (gitlabConnected || bitbucketConnected || githubScoped) {
       liveCompleted.add('codeHost');
     }
     if (hasTools) {
@@ -162,7 +162,6 @@ export const useOnboardingProgress = (): OnboardingProgress => {
   }, [
     persistedCompleted,
     workspaces.length,
-    isSimple,
     gitlabConnected,
     bitbucketConnected,
     githubScoped,
@@ -171,9 +170,8 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     anyAgent,
     anyPlan,
   ]);
-  const visibleSteps = visibleOnboardingSteps({ isSimple });
-  const totalCount = visibleSteps.length;
-  const completedCount = visibleSteps.filter((step) => completed.has(step.id)).length;
+  const totalCount = ONBOARDING_STEPS.length;
+  const completedCount = ONBOARDING_STEPS.filter((step) => completed.has(step.id)).length;
 
   return {
     completedCount,
@@ -182,6 +180,6 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     collapsed,
     finished,
     isDone: completedCount >= totalCount,
-    isSimple,
+    hasProjects,
   };
 };

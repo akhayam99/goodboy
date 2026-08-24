@@ -94,7 +94,7 @@ describe('JiraStudio', () => {
   it('asks for the connection before showing an inbox', () => {
     renderStudio();
 
-    expect(screen.getByText('Connect Jira to review issues from this workspace')).toBeDefined();
+    expect(screen.getByText('Connect Jira to review issues from this project')).toBeDefined();
     expect(screen.getByLabelText('API token')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Disconnect Jira' })).toBeNull();
   });

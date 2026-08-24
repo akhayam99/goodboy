@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import type { GitlabIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { gitlabUpdateIssueDescription, type GitlabIssue } from './client';
 import { projectPathFromIssue } from './issueProjectPath';
@@ -17,7 +17,7 @@ type Result = {
 export const useGitlabIssueDescription = ({ issue, workspaceId }: Params): Result => {
   const host = useAppStore((state) => {
     const integration = (state.workspaceIntegrations[workspaceId] ?? []).find(
-      (candidate): candidate is GitlabWorkspaceIntegration => candidate.provider === 'gitlab',
+      (candidate): candidate is GitlabIntegrationBinding => candidate.provider === 'gitlab',
     );
     return integration != null ? integration.config.host : null;
   });

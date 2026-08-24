@@ -1,18 +1,21 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
   IsoDateTime,
+  ProviderRunId,
   SessionId,
   StepId,
+  TelemetryRecord,
   Workflow,
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
 import { brandColor } from '../../../providers/components/provider-brand';
+import { useAppStore } from '../../../../store';
 import { WorkflowStepGraph } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -90,6 +93,8 @@ const renderGraph = (
       agentModelOverride={{}}
       agentProviderOverride={agentProviderOverride}
       roleModels={null}
+      sessionProvider={null}
+      sessionEffort={null}
       selectedAgentId={null}
       onSelect={onSelect}
     />,
@@ -98,6 +103,10 @@ const renderGraph = (
 };
 
 afterEach(cleanup);
+
+beforeEach(() => {
+  useAppStore.setState({ sessionTelemetry: {}, agentRunHistory: {} });
+});
 
 describe('WorkflowStepGraph', () => {
   it('numbers the steps down the spine and shows a fan-out without asking', () => {
@@ -130,6 +139,44 @@ describe('WorkflowStepGraph', () => {
     fireEvent.click(screen.getByRole('button', { name: /Implement/ }));
 
     expect(onSelect).toHaveBeenCalledWith(implement.id);
+  });
+
+  it('keeps the planned routing for a step that has not run yet', () => {
+    renderGraph(new Map());
+
+    expect(screen.getByTitle('Model: claude-sonnet-4-5')).toBeDefined();
+    expect(screen.queryByTestId('routing-divergence')).toBeNull();
+  });
+
+  it('shows the model that actually ran and names the plan it replaced', () => {
+    useAppStore.setState({
+      agentRunHistory: { [scout.id]: ['run-1' as ProviderRunId] },
+      sessionTelemetry: {
+        [SESSION_ID]: [
+          {
+            id: 'rec-1',
+            runId: 'run-1' as ProviderRunId,
+            sessionId: SESSION_ID,
+            kind: 'turn',
+            provider: 'gemini',
+            model: 'gemini-3-pro',
+            inputTokens: 10,
+            outputTokens: 2,
+            estimatedCostUsd: 0.1,
+            recordedAt: NOW,
+          } as TelemetryRecord,
+        ],
+      },
+    });
+
+    renderGraph(new Map());
+
+    expect(screen.getByTitle('Model: gemini-3-pro')).toBeDefined();
+    expect(screen.queryByTitle('Model: claude-sonnet-4-5')).toBeNull();
+    const note = screen.getByTestId('routing-divergence');
+    expect(note.textContent).toBe('was Sonnet 4.5');
+    expect(note.getAttribute('title')).toContain('Planned Claude Sonnet 4.5');
+    expect(note.getAttribute('title')).toContain('ran Gemini');
   });
 
   it('shows the provider the agent runs on instead of guessing it from the model id', () => {

@@ -1,6 +1,10 @@
 export type { Database } from './client';
 
 export { migrate, type MigrateResult } from './migrations/runner';
+export {
+  runRuntimeMigrations,
+  type MigrationSnapshotStorage,
+} from './migrations/runRuntimeMigrations';
 export { migrations, type Migration } from './migrations';
 export { runDatabaseHygiene, type DatabaseHygieneResult } from './maintenance/runDatabaseHygiene';
 
@@ -11,21 +15,44 @@ export {
   getWorkspaceById,
   listWorkspaces,
   listDisconnectedWorkspaces,
-  findWorkspaceByRootPath,
   disconnectWorkspace,
   reconnectWorkspace,
   renameWorkspace,
   touchWorkspaceLastAccessed,
-  updateWorkspaceKind,
   deleteWorkspace,
+  upsertWorkspaceProfile,
 } from './queries/workspace';
-export { insertWorkspaceMembers } from './queries/workspace-member';
 export {
-  upsertWorkspaceIntegration,
-  listIntegrationsForWorkspace,
-  getWorkspaceIntegration,
-  deleteWorkspaceIntegration,
-} from './queries/workspace-integration';
+  mergeWorkspaces,
+  listWorkspaceMergeCandidates,
+  type WorkspaceMergeCandidate,
+} from './queries/workspace-merge';
+export {
+  insertProject,
+  getProjectById,
+  listProjectsForWorkspace,
+  listDisconnectedProjects,
+  findProjectByRootPath,
+  disconnectProject,
+  reconnectProject,
+  renameProject,
+  touchProjectLastAccessed,
+  updateProjectKind,
+  deleteProject,
+} from './queries/project';
+export {
+  describeProjectAdoption,
+  moveProjectToWorkspace,
+  type ProjectAdoptionInfo,
+  type ProjectMoveResult,
+} from './queries/project-adoption';
+export {
+  upsertIntegrationBinding,
+  listIntegrationBindingsForWorkspace,
+  getIntegrationBinding,
+  deleteIntegrationBinding,
+  deleteIntegrationBindingsForProvider,
+} from './queries/integration-binding';
 export {
   listIntegrationCredentials,
   upsertIntegrationCredential,
@@ -44,7 +71,7 @@ export {
   updateSessionPermissionMode,
   updateSessionAutoRun,
   updateSessionTitleUserEdited,
-  updateSessionActiveMount,
+  updateSessionActiveProject,
   getSessionById,
   listSessionsForWorkspace,
   listArchivedSessionsForWorkspace,
@@ -129,9 +156,7 @@ export {
 } from './queries/telemetry';
 export { getSetting, setSetting } from './queries/settings';
 export {
-  insertBudgetRule,
   listBudgetRules,
-  deleteBudgetRule,
   upsertSessionBudget,
   getSessionBudget,
   insertBudgetAlert,
@@ -150,7 +175,6 @@ export { listWorkflows, getWorkflow, upsertWorkflow, deleteWorkflow } from './qu
 export {
   listAgentsForSession,
   listAgentsForSessions,
-  insertAgent,
   updateAgentStatus,
   softDeleteAgent,
   restoreAgent,
@@ -164,6 +188,7 @@ export {
   listWorktreesForSession,
   listWorktreesForSessions,
   deleteWorktreesForSession,
+  deleteSessionWorktreeForProject,
   updateSessionWorktreeBranch,
   updateSessionWorktreePath,
   updateSessionWorktreeRepoSlug,
@@ -176,24 +201,10 @@ export {
   deleteSessionEvents,
 } from './queries/session-event';
 export {
-  enqueueAuditRetry,
-  drainOldest,
-  updateAuditRetryAttempts,
-  deleteAuditRetry,
-  type AuditRetryRow,
-} from './queries/permission-audit-retry';
-export {
-  insertGroup,
-  listGroupsForSession,
-  getGroupById,
-  deleteGroup,
-  updateGroupCompletedAt,
-} from './queries/parallel-group';
-export {
   getWorkspaceOverrides,
   setWorkspaceOverrides,
-  getSessionOverrides,
-  setSessionOverrides,
+  getProjectOverrides,
+  setProjectOverrides,
 } from './queries/settings-overrides';
 export {
   listProviderCredentials,
@@ -291,10 +302,10 @@ export {
   type AddPlanConsumptionInput,
 } from './queries/plan';
 export {
-  listWorkspaceScripts,
-  upsertWorkspaceScript,
-  deleteWorkspaceScript,
-} from './queries/workspace-script';
+  listProjectScripts,
+  upsertProjectScript,
+  deleteProjectScript,
+} from './queries/project-script';
 export {
   insertOpenQuestion,
   listOpenQuestionsForSession,

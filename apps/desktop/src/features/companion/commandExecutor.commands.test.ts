@@ -179,10 +179,14 @@ const invokeMock = vi.mocked(invoke);
 
 function makeStore(over: Record<string, unknown> = {}) {
   return {
-    sessions: [{ id: 's1', workspaceId: 'w1', workflowRuns: [] }],
+    sessions: [{ id: 's1', workspaceId: 'w1', activeProjectId: 'project-1', workflowRuns: [] }],
     workspaces: [
       { id: 'w1', rootPath: '/repo/w1', kind: 'repo' },
       { id: 'w2', rootPath: '/repo/w2', kind: 'repo' },
+    ],
+    projects: [
+      { id: 'project-1', workspaceId: 'w1', rootPath: '/repo/w1', kind: 'repo' },
+      { id: 'project-2', workspaceId: 'w2', rootPath: '/repo/w2', kind: 'repo' },
     ],
     workspaceIntegrations: {
       w1: [{ provider: 'linear', config: { host: 'gitlab.com' } }],
@@ -191,8 +195,18 @@ function makeStore(over: Record<string, unknown> = {}) {
     phaseTemplates: {},
     sessionPhaseRuns: {},
     sessionGithub: {},
-    sessionMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: {
+      s1: [
+        {
+          projectId: 'project-1',
+          mountName: 'repo',
+          repoRoot: '/repo/w1',
+          worktreePath: '/wt/s1',
+          branch: 'feature/test',
+        },
+      ],
+    },
+    sessionActiveProject: { s1: 'project-1' },
     sessionWorktrees: {},
     sessionBranches: {},
     sendTurn: h.sendTurn,
@@ -916,6 +930,7 @@ describe('createSessionFromIssue (security-gated write)', () => {
     // Goal + externalTasks are derived from the resolved issue, not the phone.
     expect(h.createSession).toHaveBeenCalledWith({
       workspaceId: 'w1',
+      projectId: 'project-1',
       goal: '[ENG-1] Fix the thing',
       externalTasks: [
         {
@@ -960,6 +975,7 @@ describe('createSessionFromIssue (security-gated write)', () => {
     expect(res.data).toEqual({ sessionId: 'new-session-1' });
     expect(h.createSession).toHaveBeenCalledWith({
       workspaceId: 'w1',
+      projectId: 'project-1',
       goal: '[PROJ-1] Fix the thing',
       externalTasks: [
         {
@@ -1086,6 +1102,108 @@ describe('createSessionFromIssue (security-gated write)', () => {
     expect(res.ok).toBe(false);
     expect(res.error).toMatch(/issueIdentifier/i);
     expect(h.createSession).not.toHaveBeenCalled();
+  });
+
+  it('passes the picked project through to createSession', async () => {
+    h.state.value = makeStore({
+      projects: [
+        { id: 'project-1', workspaceId: 'w1', name: 'api', rootPath: '/repo/w1', kind: 'repo' },
+        { id: 'project-9', workspaceId: 'w1', name: 'web', rootPath: '/repo/w1-web', kind: 'repo' },
+      ],
+    });
+    const res = await executeBridgeCommand(
+      cmd('createSessionFromIssue', {
+        workspaceId: 'w1',
+        provider: 'linear',
+        projectId: 'project-9',
+        issueIdentifier: 'ENG-1',
+      }),
+    );
+    expect(res.ok).toBe(true);
+    expect(h.createSession).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId: 'w1', projectId: 'project-9' }),
+    );
+  });
+
+  it('refuses a multi-project workspace with no projectId and lists the options', async () => {
+    h.state.value = makeStore({
+      projects: [
+        { id: 'project-1', workspaceId: 'w1', name: 'api', rootPath: '/repo/w1', kind: 'repo' },
+        { id: 'project-9', workspaceId: 'w1', name: 'web', rootPath: '/repo/w1-web', kind: 'repo' },
+      ],
+    });
+    const res = await executeBridgeCommand(
+      cmd('createSessionFromIssue', {
+        workspaceId: 'w1',
+        provider: 'linear',
+        issueIdentifier: 'ENG-1',
+      }),
+    );
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/several projects/i);
+    expect(res.error).toContain('api (project-1)');
+    expect(res.error).toContain('web (project-9)');
+    expect(integ.linearFetch).not.toHaveBeenCalled();
+    expect(h.createSession).not.toHaveBeenCalled();
+  });
+
+  it('refuses a projectId that belongs to another workspace', async () => {
+    const res = await executeBridgeCommand(
+      cmd('createSessionFromIssue', {
+        workspaceId: 'w1',
+        provider: 'linear',
+        projectId: 'project-2',
+        issueIdentifier: 'ENG-1',
+      }),
+    );
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/unknown project for this workspace: project-2/i);
+    expect(h.createSession).not.toHaveBeenCalled();
+  });
+
+  it('refuses a workspace with no project', async () => {
+    h.state.value = makeStore({ projects: [] });
+    const res = await executeBridgeCommand(
+      cmd('createSessionFromIssue', {
+        workspaceId: 'w1',
+        provider: 'linear',
+        issueIdentifier: 'ENG-1',
+      }),
+    );
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/no project/i);
+    expect(h.createSession).not.toHaveBeenCalled();
+  });
+
+  it('does not consume a rate slot when the project choice is missing', async () => {
+    h.state.value = makeStore({
+      projects: [
+        { id: 'project-1', workspaceId: 'w1', name: 'api', rootPath: '/repo/w1', kind: 'repo' },
+        { id: 'project-9', workspaceId: 'w1', name: 'web', rootPath: '/repo/w1-web', kind: 'repo' },
+      ],
+    });
+    for (let i = 0; i < 5; i += 1) {
+      const refused = await executeBridgeCommand(
+        cmd('createSessionFromIssue', {
+          workspaceId: 'w1',
+          provider: 'linear',
+          issueIdentifier: 'ENG-1',
+        }),
+      );
+      expect(refused.ok).toBe(false);
+      expect(refused.error).toMatch(/several projects/i);
+    }
+    for (let i = 0; i < 5; i += 1) {
+      const res = await executeBridgeCommand(
+        cmd('createSessionFromIssue', {
+          workspaceId: 'w1',
+          provider: 'linear',
+          projectId: 'project-9',
+          issueIdentifier: 'ENG-1',
+        }),
+      );
+      expect(res.ok).toBe(true);
+    }
   });
 
   // ADVERSARIAL: forge a workspaceId the desktop doesn't have. Must be refused

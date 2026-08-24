@@ -178,7 +178,7 @@ describe('runLifecycle', () => {
       providerCredentials: [],
       providerConnect: {
         ...INITIAL_CONNECT_MAP,
-        cursor: { ...IDLE_CONNECT, phase: 'success', identity: 'amin@serenis.it' },
+        cursor: { ...IDLE_CONNECT, phase: 'success', identity: 'dev@example.com' },
       },
       refreshProviders,
     };

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pencil, Plus } from 'lucide-react';
+import { Pencil, Plus, type LucideIcon } from 'lucide-react';
 import { CardAction, CardActionSlot, Eyebrow, Markdown } from '@goodboy/ui';
 import { BlockEditor } from './BlockEditor';
 
@@ -9,11 +9,12 @@ const REVEAL_GROUP =
 type Props = {
   readonly title: string;
   readonly body: string;
+  readonly icon?: LucideIcon;
   readonly isLocked: boolean;
   readonly onCommit: (body: string) => void;
 };
 
-export const SummaryBlock = ({ title, body, isLocked, onCommit }: Props) => {
+export const SummaryBlock = ({ title, body, icon: Icon, isLocked, onCommit }: Props) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(body);
   const hasBody = body.trim() !== '';
@@ -35,7 +36,7 @@ export const SummaryBlock = ({ title, body, isLocked, onCommit }: Props) => {
     <section aria-label={title} className="group/summary-block flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
         <h3>
-          <Eyebrow label={title} />
+          <Eyebrow label={title} icon={Icon != null ? <Icon size={12} aria-hidden /> : undefined} />
         </h3>
         {isEditing ? null : (
           <CardActionSlot label={`${title} actions`}>

@@ -62,7 +62,7 @@ pub fn budget_rule_upsert(state: State<'_, Db>, rule: BudgetRule) -> Result<(), 
             rule.cap_usd,
             rule.alert_threshold_pct,
             rule.extra_tokens_budget,
-            rule.created_at,
+            crate::util::iso_to_ms(&rule.created_at).unwrap_or_else(crate::util::now_ms),
         ],
     )?;
     Ok(())
@@ -82,7 +82,7 @@ pub fn budget_rule_list(state: State<'_, Db>) -> Result<Vec<BudgetRule>, DbError
             cap_usd: row.get(3)?,
             alert_threshold_pct: row.get(4)?,
             extra_tokens_budget: row.get(5)?,
-            created_at: row.get(6)?,
+            created_at: crate::util::ms_to_iso(row.get(6)?),
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(DbError::Sqlite)
@@ -150,8 +150,8 @@ pub fn budget_alerts_list(state: State<'_, Db>) -> Result<Vec<BudgetAlert>, DbEr
             session_id: row.get(3)?,
             current_usd: row.get(4)?,
             cap_usd: row.get(5)?,
-            created_at: row.get(6)?,
-            dismissed_at: row.get(7)?,
+            created_at: crate::util::ms_to_iso(row.get(6)?),
+            dismissed_at: crate::util::optional_ms_to_iso(row.get(7)?),
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(DbError::Sqlite)
@@ -161,8 +161,8 @@ pub fn budget_alerts_list(state: State<'_, Db>) -> Result<Vec<BudgetAlert>, DbEr
 pub fn budget_alert_dismiss(state: State<'_, Db>, id: String) -> Result<(), DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     conn.execute(
-        "UPDATE budget_alerts SET dismissed_at = datetime('now') WHERE id = ?1",
-        rusqlite::params![id],
+        "UPDATE budget_alerts SET dismissed_at = ?2 WHERE id = ?1",
+        rusqlite::params![id, crate::util::now_ms()],
     )?;
     Ok(())
 }
@@ -215,7 +215,8 @@ pub fn budget_emit_alerts(
     input: EmitAlertsInput,
 ) -> Result<Vec<BudgetAlert>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
-    let now = crate::util::iso_now();
+    let now_ms = crate::util::now_ms();
+    let now = crate::util::ms_to_iso(now_ms);
     let period = "monthly";
     let provider = &input.provider;
     let session_id = &input.session_id;
@@ -275,7 +276,7 @@ pub fn budget_emit_alerts(
                 conn.execute(
                     "INSERT INTO budget_alerts (id, kind, provider, session_id, current_usd, cap_usd, created_at, dismissed_at)
                      VALUES (?1, ?2, ?3, NULL, ?4, ?5, ?6, NULL)",
-                    rusqlite::params![id, kind, provider, spent, cap_usd, now],
+                    rusqlite::params![id, kind, provider, spent, cap_usd, now_ms],
                 )?;
                 created.push(BudgetAlert {
                     id,
@@ -334,7 +335,7 @@ pub fn budget_emit_alerts(
                 conn.execute(
                     "INSERT INTO budget_alerts (id, kind, provider, session_id, current_usd, cap_usd, created_at, dismissed_at)
                      VALUES (?1, ?2, NULL, ?3, ?4, ?5, ?6, NULL)",
-                    rusqlite::params![id, kind, session_id, spent, cap_usd, now],
+                    rusqlite::params![id, kind, session_id, spent, cap_usd, now_ms],
                 )?;
                 created.push(BudgetAlert {
                     id,

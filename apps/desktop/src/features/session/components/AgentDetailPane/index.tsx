@@ -4,7 +4,7 @@ import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
 import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
-import { useAppStore } from '../../../../store';
+import { useAppStore, useExecutedAgentRouting } from '../../../../store';
 import { classifyAgent } from '../../agent-kind';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import { AgentKindChip } from '../AgentKindChip';
@@ -42,6 +42,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack }: Props)
   );
   const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
   const metrics = useAgentMetrics({ sessionId: session.id });
+  const executed = useExecutedAgentRouting({ agent });
   const kind = classifyAgent(agent, kindOverride);
 
   useEffect(() => {
@@ -69,8 +70,11 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack }: Props)
     );
   }
 
-  const telemetry = metrics.latestTelemetryByAgentId.get(agent.id) ?? null;
   const status = turnState?.kind === 'running' ? 'running' : agent.status;
+  const planned =
+    modelOverride != null || providerOverride != null
+      ? { provider: providerOverride, model: modelOverride }
+      : null;
 
   return (
     <StudioDetailLayout
@@ -83,9 +87,10 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack }: Props)
               <AgentStatusBadge status={status} />
               <AgentKindChip kind={kind} />
               <RoutingBadge
-                provider={telemetry?.provider ?? providerOverride}
-                model={telemetry?.model ?? modelOverride}
+                provider={executed?.provider ?? providerOverride}
+                model={executed?.model ?? modelOverride}
                 effort={effortOverride}
+                planned={planned}
               />
               <span className="text-2xs tabular-nums text-muted-foreground">
                 {metrics.turnsByAgentId.get(agent.id) ?? 0} turns

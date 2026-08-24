@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { parseUnifiedDiff } from '@goodboy/core';
-import type { FileDiff, GitlabWorkspaceIntegration, Session, SessionId } from '@goodboy/types';
+import type { FileDiff, GitlabIntegrationBinding, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import {
   resolveReviewTarget,
@@ -34,8 +34,7 @@ export const useReviewDiff = ({ session }: Params): Result => {
   const gitlabHost = useAppStore(
     (s) =>
       (s.workspaceIntegrations[session.workspaceId] ?? []).find(
-        (integration): integration is GitlabWorkspaceIntegration =>
-          integration.provider === 'gitlab',
+        (integration): integration is GitlabIntegrationBinding => integration.provider === 'gitlab',
       )?.config.host ?? null,
   );
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
@@ -52,8 +51,7 @@ export const useReviewDiff = ({ session }: Params): Result => {
     }
     const fetchDiff =
       target.provider === 'github'
-        ? () =>
-            ghPrDiff(target.repo, target.prNumber, repo.repoRoot, workspace.id, repo.workspaceId)
+        ? () => ghPrDiff(target.repo, target.prNumber, repo.repoRoot, workspace.id, repo.projectId)
         : gitlabHost == null
           ? null
           : () => gitlabMrDiff(workspace.id, gitlabHost, target.repo, target.prNumber);

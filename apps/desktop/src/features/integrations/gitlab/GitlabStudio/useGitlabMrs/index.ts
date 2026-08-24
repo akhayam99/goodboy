@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import type { GitlabIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { gitlabFetchAssignedMrs, type GitlabMergeRequest } from '../../client';
 
@@ -61,7 +61,7 @@ export const buildGitlabMrGroups = ({ mrs }: GroupsParams): ReadonlyArray<Gitlab
 export const useGitlabMrs = ({ workspaceId, isEnabled = true }: HookParams): Result => {
   const host = useAppStore((state) => {
     const integration = state.workspaceIntegrations[workspaceId]?.find(
-      (candidate): candidate is GitlabWorkspaceIntegration => candidate.provider === 'gitlab',
+      (candidate): candidate is GitlabIntegrationBinding => candidate.provider === 'gitlab',
     );
     return integration?.config.host ?? null;
   });

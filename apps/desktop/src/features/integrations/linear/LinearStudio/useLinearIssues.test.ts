@@ -9,7 +9,7 @@ function makeIssue(overrides: Partial<LinearIssue> = {}): LinearIssue {
     identifier: 'SER-1',
     title: 'Issue one',
     description: null,
-    url: 'https://linear.app/serenis/issue/SER-1',
+    url: 'https://linear.app/demo-team/issue/SER-1',
     state: { name: 'In Progress', type: 'started' },
     team: { key: 'SER' },
     updatedAt: '2026-05-21T10:00:00Z',

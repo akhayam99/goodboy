@@ -14,6 +14,8 @@ import type {
   PlanConsumptionId,
   PlanId,
   PlanWithCount,
+  Project,
+  ProjectId,
   PendingResolution,
   PullRequestState,
   ProviderRunId,
@@ -28,10 +30,10 @@ import type {
   WorkflowId,
   Workspace,
   WorkspaceId,
-  WorkspaceIntegration,
-  WorkspaceIntegrationId,
-  WorkspaceScript,
-  WorkspaceScriptId,
+  IntegrationBinding,
+  IntegrationBindingId,
+  ProjectScript,
+  ProjectScriptId,
 } from '@goodboy/types';
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -55,14 +57,14 @@ const resolveDiffCommentDbSpy = vi.fn(async () => undefined);
 const reopenDiffCommentDbSpy = vi.fn(async () => undefined);
 const consumeDiffCommentsDbSpy = vi.fn(async () => undefined);
 const deleteDiffCommentDbSpy = vi.fn(async () => undefined);
-const upsertWorkspaceIntegrationSpy = vi.fn(async () => undefined);
-const listIntegrationsForWorkspaceSpy = vi.fn(
-  async () => [] as ReadonlyArray<WorkspaceIntegration>,
+const upsertIntegrationBindingSpy = vi.fn(async () => undefined);
+const listIntegrationBindingsForWorkspaceSpy = vi.fn(
+  async () => [] as ReadonlyArray<IntegrationBinding>,
 );
-const deleteWorkspaceIntegrationSpy = vi.fn(async () => undefined);
-const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>);
-const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
-const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
+const deleteIntegrationBindingSpy = vi.fn(async () => undefined);
+const listProjectScriptsSpy = vi.fn(async () => [] as ReadonlyArray<ProjectScript>);
+const upsertProjectScriptSpy = vi.fn(async () => undefined);
+const deleteProjectScriptSpy = vi.fn(async () => undefined);
 const deletePendingResolutionSpy = vi.fn(async () => undefined);
 const listPendingResolutionsForSessionSpy = vi.fn<
   (db: unknown, sessionId: SessionId) => Promise<ReadonlyArray<PendingResolution>>
@@ -125,9 +127,9 @@ vi.mock('@goodboy/db', () => ({
   detachWorkflowFromSession: vi.fn(async () => undefined),
   updateWorkflowOrder: vi.fn(async () => undefined),
   updateSessionWorkflowStep: vi.fn(async () => undefined),
-  listWorkspaceScripts: listWorkspaceScriptsSpy,
-  upsertWorkspaceScript: upsertWorkspaceScriptSpy,
-  deleteWorkspaceScript: deleteWorkspaceScriptSpy,
+  listProjectScripts: listProjectScriptsSpy,
+  upsertProjectScript: upsertProjectScriptSpy,
+  deleteProjectScript: deleteProjectScriptSpy,
   deletePendingResolution: deletePendingResolutionSpy,
   listPendingResolutionsForSession: listPendingResolutionsForSessionSpy,
   queuePendingResolution: queuePendingResolutionSpy,
@@ -148,9 +150,11 @@ vi.mock('@goodboy/db', () => ({
   reopenDiffComment: reopenDiffCommentDbSpy,
   consumeDiffComments: consumeDiffCommentsDbSpy,
   deleteDiffComment: deleteDiffCommentDbSpy,
-  listIntegrationsForWorkspace: listIntegrationsForWorkspaceSpy,
-  upsertWorkspaceIntegration: upsertWorkspaceIntegrationSpy,
-  deleteWorkspaceIntegration: deleteWorkspaceIntegrationSpy,
+  listIntegrationBindingsForWorkspace: listIntegrationBindingsForWorkspaceSpy,
+  getIntegrationBinding: vi.fn(async () => null),
+  upsertIntegrationBinding: upsertIntegrationBindingSpy,
+  deleteIntegrationBinding: deleteIntegrationBindingSpy,
+  deleteIntegrationBindingsForProvider: vi.fn(async () => undefined),
   insertOpenQuestion: vi.fn(async () => undefined),
   markOpenQuestionsResolvedByText: vi.fn(async () => 0),
   listResolvedQuestionTextsForSession: vi.fn(async () => []),
@@ -378,16 +382,55 @@ const AGENT_ID = 'agent-1' as AgentId;
 const AGENT_ID_2 = 'agent-2' as AgentId;
 const RUN_ID = 'run-1' as ProviderRunId;
 const PLAN_ID = 'plan-1' as PlanId;
+const PROJECT_ID = 'project-1' as ProjectId;
 const NOW = '2026-05-28T00:00:00.000Z' as IsoDateTime;
 
 function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {
     id: WS_ID,
     name: 'ws',
-    rootPath: '/tmp/repo',
+    slug: 'ws',
+    sessionsRoot: '/tmp/repo',
+    overrides: {
+      defaultProviderId: null,
+      defaultWorkflowId: null,
+      defaultBranchPrefix: null,
+      parallelEnabled: null,
+      defaultVerbosity: null,
+      providerBindings: null,
+      taskModels: null,
+      roleModels: null,
+      parallelAgents: null,
+      providerPool: null,
+    },
     createdAt: NOW,
     updatedAt: NOW,
     lastAccessedAt: NOW,
+    ...overrides,
+  };
+}
+
+function buildProject(overrides: Partial<Project> = {}): Project {
+  return {
+    id: PROJECT_ID,
+    workspaceId: WS_ID,
+    name: 'repo',
+    rootPath: '/tmp/repo',
+    kind: 'repo',
+    overrides: {
+      defaultProviderId: null,
+      defaultWorkflowId: null,
+      defaultBranchPrefix: null,
+      parallelEnabled: null,
+      defaultVerbosity: null,
+      providerBindings: null,
+      taskModels: null,
+      roleModels: null,
+      parallelAgents: null,
+      providerPool: null,
+    },
+    createdAt: NOW,
+    updatedAt: NOW,
     ...overrides,
   };
 }
@@ -396,6 +439,7 @@ function buildSession(overrides: Partial<Session> = {}): Session {
   return {
     id: SESSION_ID,
     workspaceId: WS_ID,
+    activeProjectId: PROJECT_ID,
     goal: 'do a thing',
     state: { kind: 'idle', lastActivityAt: NOW },
     contextSlots: [],
@@ -455,8 +499,8 @@ describe('store contract', () => {
     invokePlanListSpy.mockResolvedValue([]);
     invokeListConsumptionsForPlanSpy.mockResolvedValue([]);
     invokeWorkspacesWithUnreadSpy.mockResolvedValue([]);
-    listWorkspaceScriptsSpy.mockResolvedValue([]);
-    listIntegrationsForWorkspaceSpy.mockResolvedValue([]);
+    listProjectScriptsSpy.mockResolvedValue([]);
+    listIntegrationBindingsForWorkspaceSpy.mockResolvedValue([]);
     listDiffCommentsSpy.mockResolvedValue([]);
     dbGetSettingSpy.mockResolvedValue(null);
     ghStatusSpy.mockResolvedValue({ available: true, mode: 'gh-cli', scopes: [] });
@@ -466,6 +510,7 @@ describe('store contract', () => {
       const snap = store.getState();
       resetState = {
         workspaces: [],
+        projects: [buildProject()],
         workspaceIntegrations: {},
         sessionExternalTasks: {},
         currentWorkspaceId: null,
@@ -485,6 +530,18 @@ describe('store contract', () => {
         transcripts: {},
         messages: {},
         sessionWorktrees: {},
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            {
+              projectId: PROJECT_ID,
+              mountName: 'repo',
+              worktreePath: '/tmp/repo',
+              repoRoot: '/tmp/repo',
+              branch: 'goodboy/topic',
+            },
+          ],
+        },
+        sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
         sessionBranches: {},
         sessionTelemetry: {},
         workspaceSummary: null,
@@ -497,7 +554,7 @@ describe('store contract', () => {
         budgetAlerts: [],
         systemAlerts: [],
         skills: {},
-        workspaceScripts: {},
+        projectScripts: {},
         scriptRuns: {},
         phaseTemplates: {},
         sessionWorkflows: {},
@@ -505,7 +562,6 @@ describe('store contract', () => {
         selectedAgentId: {},
         agentRunHistory: {},
         agentTurnState: {},
-        sessionMergeConflicts: {},
         unknownPayloadCounts: {},
         detectedEditors: [],
         workspaceOverrides: {},
@@ -518,7 +574,7 @@ describe('store contract', () => {
         githubStatus: null,
         sessionGithub: {},
         sessionResolvedThreads: {},
-        sessionGithubPrs: {},
+        sessionProjectPrs: {},
         sessionSelectedPrNumber: {},
         volatilePermissionAllows: new Set<string>(),
         agentModelOverride: {},
@@ -591,10 +647,11 @@ describe('store contract', () => {
       expect(store.getState().sessionGithub[SESSION_ID]).toBeUndefined();
     });
 
-    it('refreshSessionPr noops for a simple workspace even with a branch', async () => {
+    it('refreshSessionPr noops for a folder project even with a branch', async () => {
       const store = await getStore();
       store.setState({
-        workspaces: [{ ...buildWorkspace(), kind: 'simple' } as never],
+        workspaces: [buildWorkspace()],
+        projects: [buildProject({ kind: 'folder' })],
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
       });
@@ -624,6 +681,17 @@ describe('store contract', () => {
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
         sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/topic'] },
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            {
+              projectId: PROJECT_ID,
+              mountName: 'repo',
+              worktreePath: '/tmp/repo/.wt/topic',
+              repoRoot: '/tmp/repo',
+              branch: 'goodboy/topic',
+            },
+          ],
+        },
         sessionGithub: {
           [SESSION_ID]: {
             pr: selectedPr,
@@ -638,7 +706,7 @@ describe('store contract', () => {
             detailError: null,
           },
         },
-        sessionGithubPrs: { [SESSION_ID]: [selectedPr] },
+        sessionProjectPrs: { [SESSION_ID]: { [PROJECT_ID]: [selectedPr] } },
         sessionSelectedPrNumber: { [SESSION_ID]: selectedPr.number },
       });
 
@@ -647,6 +715,62 @@ describe('store contract', () => {
       expect(store.getState().sessionGithub[SESSION_ID]?.pr?.number).toBe(canonicalPr.number);
       expect(store.getState().sessionSelectedPrNumber[SESSION_ID]).toBe(selectedPr.number);
       expect(listPrsForBranchSpy).toHaveBeenCalledOnce();
+    });
+
+    it('keeps a fetch that lands after an active-project switch out of the session surface', async () => {
+      const store = await getStore();
+      const otherProjectId = 'project-2' as ProjectId;
+      const fetchedPr = {
+        number: 42,
+        title: 'From the previous mount',
+        state: 'open',
+        updatedAt: '2026-07-30T10:00:00Z',
+      } as PullRequestState;
+      detectRepoSlugSpy.mockResolvedValueOnce('acme/goodboy');
+      listPrsForBranchSpy.mockImplementationOnce(async () => {
+        store.setState((state) => {
+          const nextGithub = { ...state.sessionGithub };
+          delete nextGithub[SESSION_ID];
+          return {
+            sessionActiveProject: { [SESSION_ID]: otherProjectId },
+            sessionGithub: nextGithub,
+          };
+        });
+        return [fetchedPr];
+      });
+      store.setState({
+        workspaces: [buildWorkspace()],
+        projects: [
+          buildProject(),
+          buildProject({ id: otherProjectId, name: 'api', rootPath: '/tmp/api' }),
+        ],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
+        sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            {
+              projectId: PROJECT_ID,
+              mountName: 'repo',
+              worktreePath: '/tmp/repo/.wt/topic',
+              repoRoot: '/tmp/repo',
+              branch: 'goodboy/topic',
+            },
+            {
+              projectId: otherProjectId,
+              mountName: 'api',
+              worktreePath: '/tmp/api/.wt/topic',
+              repoRoot: '/tmp/api',
+              branch: 'goodboy/topic',
+            },
+          ],
+        },
+      });
+
+      await store.getState().refreshSessionPr(SESSION_ID, { force: true });
+
+      expect(store.getState().sessionGithub[SESSION_ID]).toBeUndefined();
+      expect(store.getState().sessionProjectPrs[SESSION_ID]?.[PROJECT_ID]).toEqual([fetchedPr]);
     });
 
     it('caches the canonical pull request under its repository slug', async () => {
@@ -673,6 +797,17 @@ describe('store contract', () => {
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
         sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/topic'] },
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            {
+              projectId: PROJECT_ID,
+              mountName: 'repo',
+              worktreePath: '/tmp/repo/.wt/topic',
+              repoRoot: '/tmp/repo',
+              branch: 'goodboy/topic',
+            },
+          ],
+        },
       });
 
       await store.getState().refreshSessionPr(SESSION_ID, { force: true });
@@ -710,13 +845,13 @@ describe('store contract', () => {
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
         sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/topic'] },
-        sessionGithubPrs: { [SESSION_ID]: [previousPr] },
+        sessionProjectPrs: { [SESSION_ID]: { [PROJECT_ID]: [previousPr] } },
         sessionSelectedPrNumber: { [SESSION_ID]: previousPr.number },
       });
 
       await store.getState().refreshSessionPr(SESSION_ID, { force: true });
 
-      expect(store.getState().sessionGithubPrs[SESSION_ID]).toEqual([previousPr]);
+      expect(store.getState().sessionProjectPrs[SESSION_ID]?.[PROJECT_ID]).toEqual([previousPr]);
       expect(store.getState().sessionSelectedPrNumber[SESSION_ID]).toBe(previousPr.number);
     });
 
@@ -776,12 +911,23 @@ describe('store contract', () => {
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
         sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            {
+              projectId: PROJECT_ID,
+              mountName: 'repo',
+              worktreePath: '/tmp/repo/.wt/x',
+              repoRoot: '/tmp/repo',
+              branch: 'ak/feat-x',
+            },
+          ],
+        },
       });
       const ok = await store
         .getState()
         .resolveGithubThread(SESSION_ID, 'PRT_1', { commitSha: 'abcdef1234567890' });
       expect(ok).toBe(true);
-      expect(gitPushSpy).toHaveBeenCalledWith('/tmp/repo/.wt/x', 'ak/feat-x', WS_ID, WS_ID);
+      expect(gitPushSpy).toHaveBeenCalledWith('/tmp/repo/.wt/x', 'ak/feat-x', WS_ID, PROJECT_ID);
       const pushOrder = gitPushSpy.mock.invocationCallOrder[0] ?? 0;
       const replyOrder = addReplySpy.mock.invocationCallOrder[0] ?? 0;
       expect(pushOrder).toBeGreaterThan(0);
