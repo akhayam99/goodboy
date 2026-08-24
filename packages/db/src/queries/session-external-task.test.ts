@@ -23,7 +23,9 @@ type SeedParams = {
   readonly throughVersion?: number;
 };
 
-const seed = async ({ throughVersion = 129 }: SeedParams) => {
+const LATEST_VERSION = migrations[migrations.length - 1]?.version ?? 0;
+
+const seed = async ({ throughVersion = LATEST_VERSION }: SeedParams) => {
   const db = makeTestDatabase();
   await migrate(
     db,

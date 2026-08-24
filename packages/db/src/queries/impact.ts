@@ -276,6 +276,7 @@ const selectOverview = async ({
      FROM sessions s
     WHERE s.workspace_id = ?
       AND s.deleted_at IS NULL
+      AND s.legacy_at IS NULL
       AND (? IS NULL OR s.updated_at >= ?)
       AND (? IS NULL OR s.updated_at < ?)`,
     [workspaceId, startMs, startMs, endMs, endMs],
@@ -304,6 +305,7 @@ const selectSessionDurations = async ({
      FROM sessions s
     WHERE s.workspace_id = ?
       AND s.deleted_at IS NULL
+      AND s.legacy_at IS NULL
       AND (? IS NULL OR s.updated_at >= ?)
       AND (? IS NULL OR s.updated_at < ?)
     ORDER BY duration_hours DESC, s.updated_at DESC
@@ -332,6 +334,7 @@ const selectSessionSpend = async ({
      JOIN telemetry_records tr ON tr.session_id = s.id
     WHERE s.workspace_id = ?
       AND s.deleted_at IS NULL
+      AND s.legacy_at IS NULL
       AND (? IS NULL OR s.updated_at >= ?)
       AND (? IS NULL OR s.updated_at < ?)
       AND (? IS NULL OR tr.recorded_at >= ?)
@@ -450,6 +453,7 @@ const selectPullRequests = async ({
                 AND sw2.repo_slug = g.repo_slug
                 AND s2.workspace_id = s.workspace_id
                 AND s2.deleted_at IS NULL
+                AND s2.legacy_at IS NULL
            )),
          0
        ) AS spend_usd
@@ -458,6 +462,7 @@ const selectPullRequests = async ({
      JOIN sessions s ON s.id = sw.session_id
     WHERE s.workspace_id = ?
       AND s.deleted_at IS NULL
+      AND s.legacy_at IS NULL
       AND g.pr_json IS NOT NULL
       AND g.fetched_at >= ?
       AND (? IS NULL OR julianday(json_extract(g.pr_json, '$.updatedAt')) >= julianday(?))
@@ -535,6 +540,7 @@ const selectReviewDurations = async ({
      JOIN sessions s ON s.id = d.session_id
     WHERE s.workspace_id = ?
       AND s.deleted_at IS NULL
+      AND s.legacy_at IS NULL
       AND d.status IN ('resolved', 'consumed')
       AND COALESCE(d.resolved_at, d.consumed_at) IS NOT NULL
       AND (? IS NULL OR COALESCE(d.resolved_at, d.consumed_at) >= ?)
@@ -574,6 +580,7 @@ export const getReviewOutcomes = async ({
         WHERE d.status = 'published'
           AND s.workspace_id = ?
           AND s.deleted_at IS NULL
+          AND s.legacy_at IS NULL
           AND (? IS NULL OR d.created_at >= ?)`,
       [workspaceId, sinceMs, sinceMs],
     ),
@@ -584,6 +591,7 @@ export const getReviewOutcomes = async ({
         WHERE r.outcome IS NOT NULL
           AND s.workspace_id = ?
           AND s.deleted_at IS NULL
+          AND s.legacy_at IS NULL
           AND (? IS NULL OR r.created_at >= ?)`,
       [workspaceId, sinceMs, sinceMs],
     ),
@@ -594,6 +602,7 @@ export const getReviewOutcomes = async ({
         WHERE r.outcome IS NOT NULL
           AND s.workspace_id = ?
           AND s.deleted_at IS NULL
+          AND s.legacy_at IS NULL
           AND (? IS NULL OR r.created_at >= ?)
         GROUP BY r.outcome
         ORDER BY outcome_count DESC, r.outcome ASC`,
@@ -647,6 +656,7 @@ export const getExternalTaskOutcomes = async ({
      JOIN sessions s ON s.id = t.session_id
     WHERE s.workspace_id = ?
       AND s.deleted_at IS NULL
+      AND s.legacy_at IS NULL
       AND (? IS NULL OR t.created_at >= ?)
     GROUP BY s.id
     ORDER BY MAX(t.created_at) DESC`,
@@ -679,6 +689,7 @@ export const getAgentDurations = async ({
      JOIN sessions s ON s.id = a.session_id
     WHERE s.workspace_id = ?
       AND s.deleted_at IS NULL
+      AND s.legacy_at IS NULL
       AND a.deleted_at IS NULL
       AND a.started_at IS NOT NULL
       AND COALESCE(a.done_at, a.last_finished_at) IS NOT NULL
@@ -725,6 +736,7 @@ export const getFlowHealth = async ({
        JOIN sessions s ON s.id = q.session_id
       WHERE s.workspace_id = ?
         AND s.deleted_at IS NULL
+        AND s.legacy_at IS NULL
         AND q.answered_at IS NOT NULL
         AND (? IS NULL OR q.created_at >= ?)`,
       [workspaceId, sinceMs, sinceMs],
@@ -736,6 +748,7 @@ export const getFlowHealth = async ({
         WHERE q.status = 'open'
           AND s.workspace_id = ?
           AND s.deleted_at IS NULL
+          AND s.legacy_at IS NULL
           AND (? IS NULL OR q.created_at >= ?)`,
       [workspaceId, sinceMs, sinceMs],
     ),
@@ -746,6 +759,7 @@ export const getFlowHealth = async ({
         WHERE q.status = 'open'
           AND s.workspace_id = ?
           AND s.deleted_at IS NULL
+          AND s.legacy_at IS NULL
           AND q.created_at <= (CAST(strftime('%s', 'now') AS INTEGER) * 1000 - 86400000)
           AND (? IS NULL OR q.created_at >= ?)`,
       [workspaceId, sinceMs, sinceMs],
@@ -758,6 +772,7 @@ export const getFlowHealth = async ({
           AND a.deleted_at IS NULL
           AND s.workspace_id = ?
           AND s.deleted_at IS NULL
+          AND s.legacy_at IS NULL
           AND (? IS NULL OR a.started_at >= ?)`,
       [workspaceId, sinceMs, sinceMs],
     ),
@@ -768,6 +783,7 @@ export const getFlowHealth = async ({
         WHERE b.dismissed_at IS NULL
           AND s.workspace_id = ?
           AND s.deleted_at IS NULL
+          AND s.legacy_at IS NULL
           AND (? IS NULL OR b.created_at >= ?)`,
       [workspaceId, sinceMs, sinceMs],
     ),
@@ -806,6 +822,7 @@ export const getCacheEfficiency = async ({
      JOIN sessions s ON s.id = tr.session_id
     WHERE s.workspace_id = ?
       AND s.deleted_at IS NULL
+      AND s.legacy_at IS NULL
       AND tr.kind = 'turn'
       AND (? IS NULL OR tr.recorded_at >= ?)
     GROUP BY tr.provider
@@ -835,6 +852,7 @@ export const getContextGrowth = async ({
        JOIN sessions s ON s.id = tr.session_id
       WHERE s.workspace_id = ?
         AND s.deleted_at IS NULL
+        AND s.legacy_at IS NULL
         AND tr.kind = 'turn'
         AND tr.context_tokens IS NOT NULL
         AND (? IS NULL OR tr.recorded_at >= ?)
@@ -865,6 +883,7 @@ export const getTurnDistribution = async ({
             AND (? IS NULL OR tr.recorded_at >= ?)
           WHERE s.workspace_id = ?
             AND s.deleted_at IS NULL
+            AND s.legacy_at IS NULL
             AND a.deleted_at IS NULL
           GROUP BY a.id
        )
@@ -890,6 +909,7 @@ export const getRightSizeNudgeOutcomes = async ({
       WHERE n.kind = 'model-rightsize'
         AND s.workspace_id = ?
         AND s.deleted_at IS NULL
+        AND s.legacy_at IS NULL
         AND (? IS NULL OR n.created_at >= ?)
       GROUP BY n.outcome`,
     [workspaceId, sinceMs, sinceMs],

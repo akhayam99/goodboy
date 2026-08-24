@@ -40,7 +40,7 @@ export const listWorkspaceMergeCandidates = async ({
        (SELECT COUNT(*) FROM projects p
          WHERE p.workspace_id = w.id AND p.disconnected_at IS NULL) AS project_count,
        (SELECT COUNT(*) FROM sessions s
-         WHERE s.workspace_id = w.id AND s.deleted_at IS NULL) AS session_count
+         WHERE s.workspace_id = w.id AND s.deleted_at IS NULL AND s.legacy_at IS NULL) AS session_count
      FROM workspaces w
      WHERE w.deleted_at IS NULL AND w.disconnected_at IS NULL AND w.id != ?
      ORDER BY w.created_at DESC`,

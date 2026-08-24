@@ -107,6 +107,7 @@ export const listExternalTasksForWorkspace = async ({
        FROM session_external_tasks t
        INNER JOIN sessions s ON s.id = t.session_id
       WHERE s.workspace_id = ?
+        AND s.legacy_at IS NULL
       ORDER BY t.created_at ASC, t.provider ASC, t.external_id ASC, t.project_id ASC`,
     [workspaceId],
   );

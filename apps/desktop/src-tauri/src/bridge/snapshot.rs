@@ -171,7 +171,7 @@ pub fn build() -> Result<Snapshot, BridgeError> {
         "SELECT id, workspace_id, goal, state_kind, last_activity_at, \
          provider_allow_override, permission_mode, \
          archived_at, deleted_at, created_at, updated_at \
-         FROM sessions WHERE deleted_at IS NULL AND archived_at IS NULL",
+         FROM sessions WHERE deleted_at IS NULL AND archived_at IS NULL AND legacy_at IS NULL",
     )?;
     let agents = rows(
         &conn,
@@ -253,7 +253,7 @@ pub fn build() -> Result<Snapshot, BridgeError> {
          LEFT JOIN (SELECT session_id, SUM(estimated_cost_usd) AS spent_usd \
                     FROM telemetry_records GROUP BY session_id) c ON c.session_id = s.id \
          LEFT JOIN session_budgets b ON b.session_id = s.id \
-         WHERE s.deleted_at IS NULL AND s.archived_at IS NULL",
+         WHERE s.deleted_at IS NULL AND s.archived_at IS NULL AND s.legacy_at IS NULL",
     )?;
 
     let snapshot_id = format!("snap_{}", random_id());
