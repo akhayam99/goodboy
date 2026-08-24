@@ -7,6 +7,7 @@ import type {
   Step,
 } from '@goodboy/types';
 import { inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
+import { useExecutedAgentRouting } from '../../../../store';
 import { resolveStepRouting } from '../../resolveStepRouting';
 import { WorkflowStepGraphNode } from './WorkflowStepGraphNode';
 
@@ -54,6 +55,7 @@ export const WorkflowStepGraphBranch = ({
     sessionProvider,
     sessionEffort,
   });
+  const executed = useExecutedAgentRouting({ agent: run });
   const doneChildCount = children.filter(
     (child) => child.status === 'completed' || child.status === 'skipped',
   ).length;
@@ -64,8 +66,10 @@ export const WorkflowStepGraphBranch = ({
       <WorkflowStepGraphNode
         run={run}
         kind={kind}
-        provider={routing.provider}
-        model={routing.model}
+        provider={executed?.provider ?? routing.provider}
+        model={executed?.model ?? routing.model}
+        plannedProvider={routing.provider}
+        plannedModel={routing.model}
         marker={marker}
         childCount={showBranch ? children.length : 0}
         doneChildCount={doneChildCount}

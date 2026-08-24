@@ -16,6 +16,7 @@ export {
   useNonResolverStandaloneAgents,
   useSessionOpenQuestions,
   useSessionPlans,
+  useExecutedAgentRouting,
   useRunSpendUsd,
   useSessionPrFetchState,
   useSessionSlots,

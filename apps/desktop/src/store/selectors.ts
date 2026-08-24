@@ -9,6 +9,7 @@ import type {
   DiffComment,
   OpenQuestion,
   PlanWithCount,
+  ProviderRunId,
   Session,
   SessionId,
   SessionPrFetchState,
@@ -40,6 +41,10 @@ import { sessionPrFetchState } from './slices/github/sessionPrFetchState';
 import { isSessionPrFetchable } from './slices/github/resolveSessionPrFetch';
 import { resolveSessionRepo } from './slices/worktrees/resolveSessionRepo';
 import { runSpendUsd } from './slices/workflows/runSpendUsd';
+import {
+  executedAgentRouting,
+  type ExecutedAgentRouting,
+} from './slices/turn/executedAgentRouting';
 export { agentHasUnread } from './slices/agents/agentHasUnread';
 
 const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
@@ -71,6 +76,26 @@ export const useRunSpendUsd = (sessionId: SessionId, workflowRunId: WorkflowRunI
       workflowRunId,
     }),
   );
+
+const EMPTY_RUN_IDS: ReadonlyArray<ProviderRunId> = [];
+
+type ExecutedRoutingParams = {
+  readonly agent: Pick<Agent, 'id' | 'sessionId' | 'runId'>;
+};
+
+export const useExecutedAgentRouting = ({
+  agent,
+}: ExecutedRoutingParams): ExecutedAgentRouting | null => {
+  const records = useAppStore(
+    (state) => state.sessionTelemetry[agent.sessionId] ?? EMPTY_TELEMETRY,
+  );
+  const runHistory = useAppStore((state) => state.agentRunHistory[agent.id] ?? EMPTY_RUN_IDS);
+  const agentRunId = agent.runId ?? null;
+  return useMemo(
+    () => executedAgentRouting({ agentRunId, runHistory, records }),
+    [agentRunId, runHistory, records],
+  );
+};
 
 export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionViewPrefs => {
   const prefs = useAppStore((s) =>

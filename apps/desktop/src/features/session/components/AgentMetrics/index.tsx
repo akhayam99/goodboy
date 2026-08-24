@@ -50,6 +50,10 @@ export const AgentMetrics = ({
     dominant?.provider ??
     plannedProvider ??
     (plannedModel != null ? getModelProvider(plannedModel) : undefined);
+  const planned =
+    plannedModel != null || plannedProvider != null
+      ? { provider: plannedProvider, model: plannedModel }
+      : null;
   const summary = contextUsageSummary({ usage: contextUsage });
   const pct = summary == null ? null : Math.round(summary.pct * 100);
   const inputTokens = aggregate?.inputTokens ?? 0;
@@ -71,6 +75,7 @@ export const AgentMetrics = ({
               key="model"
               provider={provider ?? null}
               model={model ?? null}
+              planned={planned}
               muted={muted}
               missingLabel="no model yet"
             />,

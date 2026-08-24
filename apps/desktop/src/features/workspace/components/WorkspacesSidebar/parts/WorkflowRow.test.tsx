@@ -28,6 +28,7 @@ const storeMocks = vi.hoisted(() => ({
 vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useRunSpendUsd: () => storeMocks.runSpendUsd,
+  useExecutedAgentRouting: () => null,
   useAppStore: <T,>(selector: (state: unknown) => T) =>
     selector({
       renameWorkflow: storeMocks.renameWorkflow,

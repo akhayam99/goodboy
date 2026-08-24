@@ -12,8 +12,13 @@ const state = vi.hoisted(() => ({
   agentTurnState: {},
 }));
 
+const executedRouting = vi.hoisted(() => ({
+  value: null as { provider: string; model: string } | null,
+}));
+
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
+  useExecutedAgentRouting: () => executedRouting.value,
 }));
 
 vi.mock('../../hooks/useAgentMetrics', () => ({
@@ -56,6 +61,7 @@ beforeEach(() => {
     agentEffortOverride: {},
     agentTurnState: {},
   });
+  executedRouting.value = null;
 });
 
 describe('AgentDetailPane', () => {
@@ -94,6 +100,30 @@ describe('AgentDetailPane', () => {
 
     expect(screen.getByText('Brief body')).toBeDefined();
     expect(screen.getByRole('tab', { name: 'Brief' })).toBeDefined();
+  });
+
+  it('shows the planned model in the header while the agent has not run', () => {
+    Object.assign(state, { agentModelOverride: { [agentId]: 'claude-haiku-4-5' } });
+
+    render(
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
+    );
+
+    expect(screen.getByTitle('Model: claude-haiku-4-5')).toBeDefined();
+    expect(screen.queryByTestId('routing-divergence')).toBeNull();
+  });
+
+  it('shows the model that actually ran and names the plan it replaced', () => {
+    Object.assign(state, { agentModelOverride: { [agentId]: 'claude-haiku-4-5' } });
+    executedRouting.value = { provider: 'codex', model: 'gpt-5.1-codex' };
+
+    render(
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
+    );
+
+    expect(screen.getByTitle('Model: gpt-5.1-codex')).toBeDefined();
+    expect(screen.queryByTitle('Model: claude-haiku-4-5')).toBeNull();
+    expect(screen.getByTestId('routing-divergence').textContent).toBe('was Haiku 4.5');
   });
 
   it('reveals the transcript without changing the selected agent', () => {
