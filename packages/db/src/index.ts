@@ -22,11 +22,7 @@ export {
   deleteWorkspace,
   upsertWorkspaceProfile,
 } from './queries/workspace';
-export {
-  mergeWorkspaces,
-  listWorkspaceMergeCandidates,
-  type WorkspaceMergeCandidate,
-} from './queries/workspace-merge';
+export { mergeWorkspaces } from './queries/workspace-merge';
 export {
   insertProject,
   getProjectById,
