@@ -349,19 +349,11 @@ exports[`snapshot, error states > App init error, BootSplash with error message 
   <div
     class="flex flex-col items-center gap-5"
   >
-    <div
-      class="relative flex h-24 w-24 items-center justify-center text-primary"
-    >
-      <div
-        class="shadow-glow-primary relative flex h-full w-full items-center justify-center rounded-full bg-subtle ring-1 ring-border-soft"
-      >
-        <span
-          aria-hidden="true"
-          class="inline-block shrink-0 text-primary"
-          style="width: 52px; height: 52px; background-color: currentcolor;"
-        />
-      </div>
-    </div>
+    <span
+      aria-hidden="true"
+      class="inline-block shrink-0 text-primary"
+      style="width: 64px; height: 64px; background-color: currentcolor;"
+    />
     <div
       class="flex flex-col items-center gap-0.5"
     >
@@ -418,19 +410,11 @@ exports[`snapshot, error states > BootSplash: boot-error phase 1`] = `
   <div
     class="flex flex-col items-center gap-5"
   >
-    <div
-      class="relative flex h-24 w-24 items-center justify-center text-primary"
-    >
-      <div
-        class="shadow-glow-primary relative flex h-full w-full items-center justify-center rounded-full bg-subtle ring-1 ring-border-soft"
-      >
-        <span
-          aria-hidden="true"
-          class="inline-block shrink-0 text-primary"
-          style="width: 52px; height: 52px; background-color: currentcolor;"
-        />
-      </div>
-    </div>
+    <span
+      aria-hidden="true"
+      class="inline-block shrink-0 text-primary"
+      style="width: 64px; height: 64px; background-color: currentcolor;"
+    />
     <div
       class="flex flex-col items-center gap-0.5"
     >
