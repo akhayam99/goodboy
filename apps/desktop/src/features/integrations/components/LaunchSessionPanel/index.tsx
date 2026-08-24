@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { Button, cn, Divider, formatError, Textarea } from '@goodboy/ui';
 import { AlertTriangle, ArrowRight, Folder, GitBranch } from 'lucide-react';
 import type {
+  Project,
   ProjectId,
   SessionExternalTaskProvider,
   SessionId,
@@ -44,6 +45,7 @@ type Props = {
   readonly branchSlugSeed: string;
   readonly externalTask: ExternalTask;
   readonly adoptable?: AdoptableBranch | null;
+  readonly onSelectedProjectChange?: (project: Project | null) => void;
   readonly onClose: () => void;
 };
 
@@ -56,6 +58,7 @@ export const LaunchSessionPanel = ({
   branchSlugSeed,
   externalTask,
   adoptable: adoptableInput = null,
+  onSelectedProjectChange,
   onClose,
 }: Props) => {
   const createSession = useAppStore((state) => state.createSession);
@@ -90,6 +93,10 @@ export const LaunchSessionPanel = ({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const goalSeedRef = useRef(goalSeed);
+
+  useEffect(() => {
+    onSelectedProjectChange?.(selectedProject);
+  }, [onSelectedProjectChange, selectedProject]);
 
   useEffect(() => {
     const previousSeed = goalSeedRef.current;

@@ -56,7 +56,7 @@ const EXTERNAL_TASK = {
   title: 'Fix the flake',
 };
 
-const renderPanel = () =>
+const renderPanel = (onSelectedProjectChange?: (project: unknown) => void) =>
   render(
     <LaunchSessionPanel
       workspaceId={WORKSPACE_ID}
@@ -64,6 +64,7 @@ const renderPanel = () =>
       goalSeed="Fix the flake"
       branchSlugSeed="7-fix-the-flake"
       externalTask={EXTERNAL_TASK}
+      onSelectedProjectChange={onSelectedProjectChange}
       onClose={vi.fn()}
     />,
   );
@@ -138,6 +139,48 @@ describe('LaunchSessionPanel', () => {
 
     await waitFor(() => expect(h.createSession).toHaveBeenCalledOnce());
     expect(h.createSession.mock.calls[0]?.[0]?.['projectId']).toBe('project-2');
+  });
+
+  it('reports the only project of the workspace to its host', async () => {
+    const onSelectedProjectChange = vi.fn();
+
+    renderPanel(onSelectedProjectChange);
+
+    await waitFor(() => expect(onSelectedProjectChange).toHaveBeenCalled());
+    expect(onSelectedProjectChange.mock.calls.at(-1)?.[0]).toMatchObject({
+      id: 'project-1',
+      rootPath: '/repo',
+    });
+  });
+
+  it('reports no project until one of several is picked, then reports the pick', async () => {
+    h.store.projects = [
+      { id: 'project-1', workspaceId: 'workspace-1', name: 'web', rootPath: '/repo', kind: 'repo' },
+      { id: 'project-2', workspaceId: 'workspace-1', name: 'api', rootPath: '/api', kind: 'repo' },
+    ];
+    const onSelectedProjectChange = vi.fn();
+
+    renderPanel(onSelectedProjectChange);
+
+    await waitFor(() => expect(onSelectedProjectChange).toHaveBeenCalledWith(null));
+
+    fireEvent.click(screen.getByRole('button', { name: /api/ }));
+
+    await waitFor(() =>
+      expect(onSelectedProjectChange.mock.calls.at(-1)?.[0]).toMatchObject({
+        id: 'project-2',
+        rootPath: '/api',
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /web/ }));
+
+    await waitFor(() =>
+      expect(onSelectedProjectChange.mock.calls.at(-1)?.[0]).toMatchObject({
+        id: 'project-1',
+        rootPath: '/repo',
+      }),
+    );
   });
 
   it('re-derives the session setup from the project that is picked', async () => {
