@@ -58,6 +58,7 @@ import {
 import { buildProviderSpendBreakdown } from './slices/budget';
 import type { SessionNudge } from './types';
 import type { SetFn, GetFn } from './slice-types';
+import { decisionsDelta } from './slices/session-events';
 
 type AttachmentsBlockParams = {
   readonly scope: string;
@@ -297,6 +298,22 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
           upsert.previousValue !== null,
       )
       .map((upsert) => upsert.key);
+    const decisionsUpsert = upsertResults.find(
+      (upsert) => upsert.key === 'decisions' && upsert.didChange && !upsert.hasConflict,
+    );
+    if (decisionsUpsert != null) {
+      const delta = decisionsDelta({
+        previous: decisionsUpsert.previousValue ?? '',
+        next: decisionsUpsert.value,
+      });
+      if (delta.added > 0 || delta.removed > 0) {
+        await get().recordSessionEvent({
+          sessionId,
+          kind: 'decisions_changed',
+          payload: { added: delta.added, removed: delta.removed },
+        });
+      }
+    }
     const hasConflict = upsertResults.some((upsert) => upsert.hasConflict);
     const hasChangedOversizeSlot = upsertResults.some(
       (upsert) =>

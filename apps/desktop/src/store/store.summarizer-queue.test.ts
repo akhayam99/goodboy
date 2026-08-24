@@ -136,9 +136,12 @@ const upsertContextSlotSpy = vi.fn(
   },
 );
 
+const insertSessionEventSpy = vi.fn(async () => undefined);
+
 vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
+  insertSessionEvent: insertSessionEventSpy,
   insertProviderRun: vi.fn(async () => undefined),
   insertSession: vi.fn(),
   insertSessionWorktree: vi.fn(),
@@ -222,6 +225,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     summarizeSpy.mockReset();
     resolveSummarize = null;
     summarizerUpserts = [];
+    insertSessionEventSpy.mockClear();
     summarizerUpsertSequence = [];
     summarizerConstructorCalls = [];
     dbSlots = [];
@@ -622,6 +626,64 @@ describe('summarizer queue, coalescing and no-stack', () => {
       value: '- summarized decision',
     });
     expect(useAppStore.getState().sessionSlots[SESSION_ID]).toContainEqual(concurrentGoal);
+  });
+
+  it('logs a decisions_changed event when the summarizer rewrites decisions', async () => {
+    summarizeSpy.mockResolvedValue(undefined);
+    summarizerUpserts = [
+      { key: 'goal', value: 'same goal' },
+      { key: 'decisions', value: '- kept decision\n- new decision' },
+    ];
+    dbSlots = [
+      { key: 'goal', value: 'same goal', enabled: true },
+      { key: 'decisions', value: '- kept decision', enabled: true },
+    ];
+
+    const { useAppStore } = await import('./store');
+    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    queues.clear();
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionSlots: { [SESSION_ID]: dbSlots },
+      summarizerStatus: {},
+      workspaces: [
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          slug: 'ws',
+          sessionsRoot: '/tmp',
+          overrides: {
+            defaultProviderId: null,
+            defaultWorkflowId: null,
+            defaultBranchPrefix: null,
+            parallelEnabled: null,
+            defaultVerbosity: null,
+            providerBindings: null,
+            taskModels: null,
+            roleModels: null,
+            parallelAgents: null,
+            providerPool: null,
+          },
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
+      ],
+    });
+
+    enqueueSummarizer(
+      useAppStore.setState,
+      useAppStore.getState,
+      SESSION_ID,
+      'turn input',
+      'turn output',
+    );
+    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+
+    const decisionEvents = insertSessionEventSpy.mock.calls
+      .map(([params]: [{ event: { kind: string; payload: unknown } }]) => params.event)
+      .filter((event) => event.kind === 'decisions_changed');
+    expect(decisionEvents).toHaveLength(1);
+    expect(decisionEvents[0]?.payload).toEqual({ added: 1, removed: 0 });
   });
 
   it('coalesces multiple conflicts into one follow-up pass', async () => {
