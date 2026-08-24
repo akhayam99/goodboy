@@ -3,7 +3,6 @@ import {
   insertSessionWorktree,
   listWorktreesForSession,
   updateSessionActiveProject,
-  updateSessionWorktreeBranch,
   updateSessionWorktreeRepoSlug,
 } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
@@ -13,6 +12,7 @@ import { tauriGhRunner } from '../../../features/github/github';
 import { createSessionDir, createWorktree } from '../../../features/worktree/worktree';
 import { DEFAULT_BRANCH_PREFIX } from '../../../features/settings/settings';
 import { consumeAdoptionSeed, materializationSeedFor } from './materializationSeeds';
+import { slugifyDir } from './slugifyDir';
 import type { GetFn, SetFn } from './types';
 
 export type MaterializeProjectInput = {
@@ -82,7 +82,6 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
     if (project === undefined || project.workspaceId !== session.workspaceId) {
       throw new Error(`project not found in this workspace: ${projectId}`);
     }
-    const containerDir = await get().ensureSessionContainer({ sessionId });
     const rows = await listWorktreesForSession(tauriDatabase, sessionId);
     const persistedRow = rows.find(
       (row) =>
@@ -106,7 +105,7 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
       return persistedMount;
     }
     const seed = materializationSeedFor({ sessionId });
-    const sessionSlug = seed?.sessionSlug ?? containerDir.split('/').pop() ?? sessionId.slice(0, 8);
+    const sessionSlug = seed?.sessionSlug ?? `${slugifyDir(session.goal)}-${sessionId.slice(0, 8)}`;
     const prefix = seed?.branchPrefix ?? DEFAULT_BRANCH_PREFIX;
     const hasRepoMount = rows.some((row) => row.projectId !== undefined && row.branch !== '');
     const adoptedBranch = hasRepoMount ? undefined : seed?.existingBranch;
@@ -153,11 +152,7 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
       mountName: project.name,
       createdAt: Date.now(),
     });
-    const seedsContainerBranch =
-      created.branchName !== '' && rows.every((row) => row.branch === '');
-    if (seedsContainerBranch) {
-      await updateSessionWorktreeBranch(tauriDatabase, sessionId, 0, created.branchName);
-    }
+    const isFirstMount = (get().sessionProjectMounts[sessionId] ?? []).length === 0;
     const isFirstActiveProject =
       session.activeProjectId === undefined && get().sessionActiveProject[sessionId] === undefined;
     if (isFirstActiveProject) {
@@ -191,7 +186,7 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
         ...state.sessionWorktrees,
         [sessionId]: [...(state.sessionWorktrees[sessionId] ?? []), created.worktreePath],
       },
-      ...(seedsContainerBranch
+      ...(isFirstMount
         ? { sessionBranches: { ...state.sessionBranches, [sessionId]: created.branchName } }
         : {}),
       ...(isFirstActiveProject

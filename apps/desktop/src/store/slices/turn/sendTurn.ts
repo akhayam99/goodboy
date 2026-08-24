@@ -158,13 +158,15 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const workspaceProjects = before.projects.filter(
       (project) => project.workspaceId === session.workspaceId,
     );
-    const containerDir = await get().ensureSessionContainer({ sessionId });
-    const mountedState = get();
-    const turnMounts = mountedState.sessionProjectMounts[sessionId] ?? [];
-    const workingDir = turnMounts.length === 1 ? turnMounts[0]!.worktreePath : containerDir;
-    const isPlainSessionDir = isBranchlessSession({
-      branch: mountedState.sessionBranches[sessionId],
-    });
+    const turnMounts = before.sessionProjectMounts[sessionId] ?? [];
+    const turnActiveProjectId = before.sessionActiveProject[sessionId] ?? session.activeProjectId;
+    const activeMount =
+      turnMounts.find((mount) => mount.projectId === turnActiveProjectId) ?? turnMounts[0];
+    if (activeMount === undefined) {
+      throw new Error(`session has no project mounted: ${sessionId}`);
+    }
+    const workingDir = activeMount.worktreePath;
+    const isPlainSessionDir = isBranchlessSession({ branch: activeMount.branch });
     if (isPlainSessionDir) {
       const exists = await sessionDirExists({ path: workingDir });
       if (exists === false) {
@@ -691,8 +693,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
     const scopeMounts = get().sessionProjectMounts[sessionId] ?? [];
-    const activeProjectId = get().sessionActiveProject[sessionId] ?? session.activeProjectId;
-    const activeProject = get().projects.find((project) => project.id === activeProjectId);
+    const activeProject = get().projects.find((project) => project.id === activeMount.projectId);
     const isSessionDirScope = activeProject?.kind === 'folder';
     const notifySnapshotFailure = async ({
       stage,
@@ -719,7 +720,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       : null;
     const isBridgeServing = await isQueryBridgeServing();
     const scopeGuard = buildScopeGuard({
-      containerDir,
       workingDir,
       projects: workspaceProjects,
       mounts: scopeMounts,

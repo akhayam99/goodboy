@@ -37,6 +37,7 @@ import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { sessionCardShell } from '../../../session/components/sessionCardShell';
+import { NewSessionProjectPicker } from '../../../session/components/NewSessionProjectPicker';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { BulkActionBar } from '../BulkActionBar';
 import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
@@ -195,6 +196,8 @@ export const SessionActivityBar = ({
               <SessionViewMenu workspaceId={workspaceId} />
             </div>
           </div>
+
+          {!isArchivedView && <NewSessionProjectPicker workspaceId={workspaceId} />}
 
           {!isArchivedView && (
             <Button

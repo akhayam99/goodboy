@@ -67,6 +67,7 @@ export const startPrReviewSession = (get: GetFn) => {
       : `Review PR #${pr.number}: ${pr.title}`;
     const { session } = await get().createSession({
       workspaceId,
+      projectId: project.id,
       goal,
       existingBranch: pr.headBranch,
       fallbackRef: isGitlab ? `merge-requests/${pr.number}/head` : `pull/${pr.number}/head`,

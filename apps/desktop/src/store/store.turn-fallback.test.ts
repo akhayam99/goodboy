@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentId, IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
+import type { AgentId, ProjectId, IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
 import {
   buildStoryAgent,
   buildStorySession,
@@ -87,6 +87,17 @@ describe('sendTurn, provider failure fallback', () => {
       ],
       projects: [],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            projectId: 'project-turn' as ProjectId,
+            mountName: 'repo',
+            worktreePath: '/tmp/wt',
+            repoRoot: '/tmp/repo',
+            branch: 'goodboy/turn',
+          },
+        ],
+      },
       sessionPhaseRuns: {
         [SESSION_ID]: [buildStoryAgent({ id: AGENT_A, sessionId: SESSION_ID, name: 'agent 0' })],
       },

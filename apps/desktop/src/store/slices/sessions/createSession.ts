@@ -187,6 +187,9 @@ export const createSession = (set: SetFn, get: GetFn) => {
     set((state) => ({
       sessions:
         state.currentWorkspaceId === workspaceId ? [session, ...state.sessions] : state.sessions,
+      projects: state.projects.some((candidate) => candidate.id === project.id)
+        ? state.projects
+        : [...state.projects, project],
       sessionWorktrees: { ...state.sessionWorktrees, [session.id]: [] },
       sessionProjectMounts: { ...state.sessionProjectMounts, [session.id]: [] },
       sessionBranches: { ...state.sessionBranches, [session.id]: '' },

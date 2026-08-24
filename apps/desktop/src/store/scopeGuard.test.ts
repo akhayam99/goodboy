@@ -54,24 +54,25 @@ const webMount: SessionProjectMount = {
 };
 
 const base = {
-  containerDir: '/tmp/sessions/goal',
-  workingDir: '/tmp/sessions/goal',
+  workingDir: appMount.worktreePath,
   isBridgeServing: false,
   isSessionDirScope: false,
   canWrite: true,
 };
 
 describe('buildScopeGuard', () => {
-  it('teaches inventory, scouting, and the marker on a fresh session with zero mounts', () => {
-    const guard = buildScopeGuard({ ...base, projects: [app, web], mounts: [] });
+  it('teaches the inventory and the marker while another project stays unmounted', () => {
+    const guard = buildScopeGuard({ ...base, projects: [app, web], mounts: [appMount] });
 
-    expect(guard).toContain('[workspace-scope]');
-    expect(guard).toContain('You are operating inside this session directory: /tmp/sessions/goal');
-    expect(guard).toContain('- app (repo) root: /tmp/app | NOT materialized');
+    expect(guard).toContain('[worktree-scope]');
+    expect(guard).toContain(
+      'You are operating inside an isolated git worktree at: /tmp/app/.goodboy/worktrees/goal',
+    );
+    expect(guard).toContain(
+      '- app (repo) root: /tmp/app | materialized at /tmp/app/.goodboy/worktrees/goal',
+    );
     expect(guard).toContain('- web (repo) root: /tmp/web | NOT materialized');
     expect(guard).toContain('You may READ the project root paths listed above.');
-    expect(guard).toContain('No project is materialized yet');
-    expect(guard).toContain('Do not create branches, worktrees, or clones for read-only work.');
     expect(guard).toContain('<<materialize: <project name> | <why you need it>>>');
     expect(guard).not.toContain('GOODBOY_BIN');
   });
@@ -80,7 +81,7 @@ describe('buildScopeGuard', () => {
     const guard = buildScopeGuard({
       ...base,
       projects: [app, web],
-      mounts: [],
+      mounts: [appMount],
       isBridgeServing: true,
     });
 
@@ -92,40 +93,20 @@ describe('buildScopeGuard', () => {
   });
 
   it('suppresses the materialize instruction for kinds that cannot write', () => {
-    const guard = buildScopeGuard({ ...base, projects: [app, web], mounts: [], canWrite: false });
+    const guard = buildScopeGuard({
+      ...base,
+      projects: [app, web],
+      mounts: [appMount],
+      canWrite: false,
+    });
 
     expect(guard).toContain('NOT materialized');
     expect(guard).not.toContain('<<materialize:');
     expect(guard).not.toContain('GOODBOY_BIN');
   });
 
-  it('keeps the inventory and marker after a mount while other projects stay unmounted', () => {
-    const guard = buildScopeGuard({
-      ...base,
-      workingDir: appMount.worktreePath,
-      projects: [app, web],
-      mounts: [appMount],
-    });
-
-    expect(guard).toContain('[worktree-scope]');
-    expect(guard).toContain(
-      'You are operating inside an isolated git worktree at: /tmp/app/.goodboy/worktrees/goal',
-    );
-    expect(guard).toContain(
-      '- app (repo) root: /tmp/app | materialized at /tmp/app/.goodboy/worktrees/goal',
-    );
-    expect(guard).toContain('- web (repo) root: /tmp/web | NOT materialized');
-    expect(guard).toContain('<<materialize: <project name> | <why you need it>>>');
-    expect(guard).not.toContain('No project is materialized yet');
-  });
-
   it('keeps the mount inventory but drops the teaching once every project is mounted', () => {
-    const guard = buildScopeGuard({
-      ...base,
-      workingDir: appMount.worktreePath,
-      projects: [app],
-      mounts: [appMount],
-    });
+    const guard = buildScopeGuard({ ...base, projects: [app], mounts: [appMount] });
 
     expect(guard).toContain('[worktree-scope]');
     expect(guard).toContain(
@@ -137,23 +118,23 @@ describe('buildScopeGuard', () => {
     expect(guard.split('\n')).toHaveLength(7);
   });
 
-  it('lists every mount with its path and branch when every mount exists', () => {
+  it('names the active mount as the working directory and lists the others', () => {
     const guard = buildScopeGuard({
       ...base,
+      workingDir: webMount.worktreePath,
       projects: [app, web],
       mounts: [appMount, webMount],
     });
 
     expect(guard).toContain('[projects-scope]');
     expect(guard).toContain(
-      'You are operating across 2 materialized project mounts from this session folder: /tmp/sessions/goal',
+      'You are operating inside the active project mount at: /tmp/web/.goodboy/worktrees/goal',
     );
+    expect(guard).toContain('This session has 2 materialized project mounts:');
     expect(guard).toContain('- app at /tmp/app/.goodboy/worktrees/goal (branch goodboy/goal)');
     expect(guard).toContain('- web at /tmp/web/.goodboy/worktrees/goal (branch goodboy/goal-web)');
-    expect(guard).not.toContain('subfolder');
     expect(guard).toContain('ALL file operations MUST resolve inside one of these mounts.');
     expect(guard).not.toContain('NOT materialized');
-    expect(guard.split('\n')).toHaveLength(7);
   });
 
   it('keeps the session-directory grammar for a mounted folder project', () => {
@@ -166,7 +147,7 @@ describe('buildScopeGuard', () => {
     const folderMount: SessionProjectMount = {
       projectId: folder.id,
       mountName: 'notes',
-      worktreePath: '/tmp/notes/goal',
+      worktreePath: '/tmp/notes/sessions/goal',
       repoRoot: '/tmp/notes',
       branch: '',
     };
@@ -179,18 +160,12 @@ describe('buildScopeGuard', () => {
     });
 
     expect(guard).toContain('[session-directory-scope]');
-    expect(guard).toContain('You are operating inside this session directory: /tmp/notes/goal');
     expect(guard).toContain(
-      '- notes (folder) root: /tmp/notes | materialized at /tmp/notes/goal (no branch)',
+      'You are operating inside this session directory: /tmp/notes/sessions/goal',
+    );
+    expect(guard).toContain(
+      '- notes (folder) root: /tmp/notes | materialized at /tmp/notes/sessions/goal (no branch)',
     );
     expect(guard).not.toContain('<<materialize:');
-  });
-
-  it('falls back to the strict worktree grammar for a session without projects', () => {
-    const guard = buildScopeGuard({ ...base, workingDir: '/tmp/wt', projects: [], mounts: [] });
-
-    expect(guard).toContain('[worktree-scope]');
-    expect(guard).toContain('You are operating inside an isolated git worktree at: /tmp/wt');
-    expect(guard).not.toContain('materialize');
   });
 });

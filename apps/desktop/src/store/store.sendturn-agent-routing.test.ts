@@ -333,6 +333,17 @@ describe('sendTurn, agent routing', () => {
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            projectId: 'project-rt' as ProjectId,
+            mountName: 'repo',
+            worktreePath: '/tmp/wt',
+            repoRoot: '/tmp/repo',
+            branch: 'goodboy/rt',
+          },
+        ],
+      },
       sessionPhaseRuns: { [SESSION_ID]: [buildAgent(AGENT_A, 0), buildAgent(AGENT_B, 1)] },
       selectedAgentId: { [SESSION_ID]: selectedAgent },
       transcripts: { [AGENT_A]: [], [AGENT_B]: [] },
@@ -1224,6 +1235,17 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            projectId: 'project-rt' as ProjectId,
+            mountName: 'repo',
+            worktreePath: '/tmp/wt',
+            repoRoot: '/tmp/repo',
+            branch: 'goodboy/rt',
+          },
+        ],
+      },
       sessionPhaseRuns: { [SESSION_ID]: [buildAgent(AGENT_A, 0), buildAgent(AGENT_B, 1)] },
       selectedAgentId: { [SESSION_ID]: AGENT_A },
       transcripts: { [AGENT_A]: [], [AGENT_B]: [] },
@@ -1377,6 +1399,17 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            projectId: 'project-rt' as ProjectId,
+            mountName: 'repo',
+            worktreePath: '/tmp/wt',
+            repoRoot: '/tmp/repo',
+            branch: 'goodboy/rt',
+          },
+        ],
+      },
       sessionPhaseRuns: { [SESSION_ID]: [buildAgent(AGENT_A, 0), buildAgent(AGENT_B, 1)] },
       selectedAgentId: { [SESSION_ID]: AGENT_A },
       transcripts: { [AGENT_A]: [], [AGENT_B]: [] },
@@ -1450,6 +1483,17 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            projectId: 'project-rt' as ProjectId,
+            mountName: 'repo',
+            worktreePath: '/tmp/wt',
+            repoRoot: '/tmp/repo',
+            branch: 'goodboy/rt',
+          },
+        ],
+      },
       sessionPhaseRuns: { [SESSION_ID]: [buildAgent(AGENT_A, 0), buildAgent(AGENT_B, 1)] },
       selectedAgentId: { [SESSION_ID]: AGENT_A },
       transcripts: { [AGENT_A]: [], [AGENT_B]: [] },

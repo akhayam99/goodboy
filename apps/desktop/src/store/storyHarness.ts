@@ -26,10 +26,18 @@ export const storySpies = {
   tauriInvoke: vi.fn(async (_cmd: unknown, _args?: unknown) => undefined),
   invokeAgentList: vi.fn(async (_sessionId: unknown) => [] as ReadonlyArray<never>),
   invokeBudgetAlertsList: vi.fn(async () => [] as ReadonlyArray<never>),
-  createWorktree: vi.fn(),
-  createSessionDir: vi.fn(),
-  prepareSessionContainer: vi.fn(async ({ path }: { readonly path: string }) => path),
-  writeSessionMarker: vi.fn(async (_args: unknown) => undefined),
+  createWorktree: vi.fn(async (_args: unknown) => ({
+    worktreePath: '/tmp/app/.goodboy/worktrees/goal-12345678',
+    branchName: 'goodboy/goal-12345678',
+    slug: 'goal-12345678',
+    reused: false,
+  })),
+  createSessionDir: vi.fn(async (_args: unknown) => ({
+    worktreePath: '/tmp/app/sessions/goal-12345678',
+    branchName: '',
+    slug: 'goal-12345678',
+    reused: false,
+  })),
   sessionDirExists: vi.fn(async (_args: unknown) => true),
   removeWorktree: vi.fn(async (_repoPath: string, _worktreePath: string) => undefined),
   removeSessionDirectory: vi.fn(async (_args: unknown) => undefined),
@@ -227,17 +235,11 @@ export const worktreeModuleMock = () => ({
   removeWorktree: (repoPath: string, worktreePath: string) =>
     storySpies.removeWorktree(repoPath, worktreePath),
   removeSessionDirectory: (args: unknown) => storySpies.removeSessionDirectory(args),
-  writeSessionMarker: (args: unknown) => storySpies.writeSessionMarker(args),
   sessionDirExists: (args: unknown) => storySpies.sessionDirExists(args),
   worktreeChangedFiles: (path: string) => storySpies.worktreeChangedFiles(path),
   worktreeStatus: (path: string) => storySpies.worktreeStatus(path),
   changeWorktreeBranch: vi.fn(async () => undefined),
   invalidateLocalBranchesCache: vi.fn(),
-});
-
-export const prepareSessionContainerModuleMock = () => ({
-  prepareSessionContainer: (args: { readonly path: string }) =>
-    storySpies.prepareSessionContainer(args),
 });
 
 export const repoModuleMock = () => ({ validateGitRepo: vi.fn() });

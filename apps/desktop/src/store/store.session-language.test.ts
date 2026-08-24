@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
+  ProjectId,
   Agent,
   AgentId,
   IsoDateTime,
@@ -127,6 +128,17 @@ describe('sendTurn session language guard', () => {
       sessions: [buildSession(runGoal)],
       projects: [],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            projectId: 'project-turn' as ProjectId,
+            mountName: 'repo',
+            worktreePath: '/tmp/wt',
+            repoRoot: '/tmp/repo',
+            branch: 'goodboy/turn',
+          },
+        ],
+      },
       sessionPhaseRuns: { [SESSION_ID]: [stepAgent, clusterAgent] },
       selectedAgentId: { [SESSION_ID]: STEP_AGENT_ID },
       phaseTemplates: { [WORKSPACE_ID]: [buildWorkflow()] },

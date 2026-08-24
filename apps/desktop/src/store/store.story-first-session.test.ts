@@ -41,9 +41,6 @@ vi.mock('../features/workflows/workflows', async () =>
 vi.mock('../features/worktree/worktree', async () =>
   (await import('./storyHarness')).worktreeModuleMock(),
 );
-vi.mock('../features/workspace/prepareSessionContainer', async () =>
-  (await import('./storyHarness')).prepareSessionContainerModuleMock(),
-);
 vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
 
 const WORKSPACE_ID = 'workspace-first' as WorkspaceId;
@@ -79,8 +76,22 @@ beforeEach(() => {
   useAppStore.setState(freshWorkspaceState() as never);
 });
 
+const MOUNT_PATH = '/tmp/app/.goodboy/worktrees/untitled-session';
+const MOUNT_BRANCH = 'goodboy/untitled-session';
+
+const primeMount = () => {
+  storySpies.createWorktree.mockResolvedValueOnce({
+    worktreePath: MOUNT_PATH,
+    branchName: MOUNT_BRANCH,
+    slug: 'untitled-session',
+    reused: false,
+  } as never);
+};
+
 describe('story: a first-run user opens their workspace and starts a session', () => {
-  it('New session lands on the board instantly, before any file or event exists', async () => {
+  it('New session lands on the board already mounted in the only project', async () => {
+    primeMount();
+
     const { session } = await useAppStore
       .getState()
       .createUntitledSession({ workspaceId: WORKSPACE_ID });
@@ -91,19 +102,20 @@ describe('story: a first-run user opens their workspace and starts a session', (
     expect(state.currentSessionId).toBe(session.id);
     expect(state.pendingTitleFocusSessionId).toBe(session.id);
 
-    expect(storySpies.prepareSessionContainer).not.toHaveBeenCalled();
-    expect(storySpies.createWorktree).not.toHaveBeenCalled();
+    expect(storySpies.createWorktree).toHaveBeenCalledWith(
+      expect.objectContaining({ repoPath: '/tmp/app', parentDir: '/tmp/app/.goodboy/worktrees' }),
+    );
     expect(storySpies.createSessionDir).not.toHaveBeenCalled();
-    expect(storySpies.writeSessionMarker).not.toHaveBeenCalled();
-    expect(storySpies.insertSessionWorktree).not.toHaveBeenCalled();
-    expect(storySpies.insertSessionEvent).not.toHaveBeenCalled();
-
-    expect(state.sessionWorktrees[session.id]).toEqual([]);
-    expect(state.sessionProjectMounts[session.id]).toEqual([]);
-    expect(state.sessionBranches[session.id]).toBe('');
+    expect(state.sessionWorktrees[session.id]).toEqual([MOUNT_PATH]);
+    expect(state.sessionProjectMounts[session.id]?.map((mount) => mount.projectId)).toEqual([
+      PROJECT_ID,
+    ]);
+    expect(state.sessionBranches[session.id]).toBe(MOUNT_BRANCH);
+    expect(recordedEventKinds()).toEqual(['project_materialized']);
   });
 
-  it('the first agent turn materializes the container once, and nothing else', async () => {
+  it('the first agent turn runs inside the project worktree, with no session container', async () => {
+    primeMount();
     const { session } = await useAppStore
       .getState()
       .createUntitledSession({ workspaceId: WORKSPACE_ID });
@@ -115,31 +127,23 @@ describe('story: a first-run user opens their workspace and starts a session', (
 
     await useAppStore.getState().sendTurn({ sessionId: session.id, content: 'scan the codebase' });
 
-    expect(storySpies.prepareSessionContainer).toHaveBeenCalledTimes(1);
-    const containerDir = useAppStore.getState().sessionWorktrees[session.id]?.[0] ?? '';
-    expect(containerDir).toContain('/.goodboy/sessions/acme/untitled-session-');
-    expect(storySpies.writeSessionMarker).toHaveBeenCalledWith(
-      expect.objectContaining({ path: containerDir, sessionId: session.id }),
-    );
+    expect(storySpies.insertSessionWorktree).toHaveBeenCalledTimes(1);
     expect(storySpies.insertSessionWorktree).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ worktreePath: containerDir, branch: '', parallelIndex: 0 }),
+      expect.objectContaining({ worktreePath: MOUNT_PATH, projectId: PROJECT_ID }),
     );
-    expect(recordedEventKinds()).toEqual(['worktree_created']);
+    expect(recordedEventKinds()).toEqual(['project_materialized']);
 
-    expect(storySpies.createWorktree).not.toHaveBeenCalled();
-    expect(useAppStore.getState().sessionProjectMounts[session.id]).toEqual([]);
-    expect(useAppStore.getState().sessionBranches[session.id]).toBe('');
-
-    expect(spawnedArgs()['workingDir']).toBe(containerDir);
+    expect(spawnedArgs()['workingDir']).toBe(MOUNT_PATH);
     const systemPrompt = String(spawnedArgs()['systemPrompt']);
-    expect(systemPrompt).toContain('[workspace-scope]');
+    expect(systemPrompt).toContain('[worktree-scope]');
     expect(systemPrompt).toContain('app (repo) root: /tmp/app');
-    expect(systemPrompt).toContain('NOT materialized');
-    expect(systemPrompt).toContain('No project is materialized yet');
+    expect(systemPrompt).toContain('materialized at /tmp/app/.goodboy/worktrees/untitled-session');
+    expect(systemPrompt).not.toContain('NOT materialized');
   });
 
-  it('a second turn reuses the container instead of preparing it again', async () => {
+  it('a second turn reuses the same worktree instead of creating another', async () => {
+    primeMount();
     const { session } = await useAppStore
       .getState()
       .createUntitledSession({ workspaceId: WORKSPACE_ID });
@@ -153,13 +157,15 @@ describe('story: a first-run user opens their workspace and starts a session', (
     await useAppStore.getState().sendTurn({ sessionId: session.id, content: 'first look' });
     await useAppStore.getState().sendTurn({ sessionId: session.id, content: 'keep going' });
 
-    expect(storySpies.prepareSessionContainer).toHaveBeenCalledTimes(1);
-    expect(recordedEventKinds()).toEqual(['worktree_created']);
+    expect(storySpies.createWorktree).toHaveBeenCalledTimes(1);
+    expect(recordedEventKinds()).toEqual(['project_materialized']);
   });
 });
 
 describe('story: a session seeded from a GitHub issue', () => {
-  it('records the external task as its only event and still owns no files', async () => {
+  it('records the mount and the external task, and owns exactly one worktree', async () => {
+    primeMount();
+
     const { session } = await useAppStore.getState().createSession({
       workspaceId: WORKSPACE_ID,
       goal: 'Fix the login redirect',
@@ -175,7 +181,7 @@ describe('story: a session seeded from a GitHub issue', () => {
     });
 
     expect(session.goal).toBe('Fix the login redirect');
-    expect(recordedEventKinds()).toEqual(['external_task_created']);
+    expect(recordedEventKinds()).toEqual(['project_materialized', 'external_task_created']);
     expect(recordedEvent('external_task_created')?.payload).toMatchObject({
       provider: 'github',
       identifier: '#123',
@@ -185,9 +191,7 @@ describe('story: a session seeded from a GitHub issue', () => {
       useAppStore.getState().sessionExternalTasks[session.id]?.map((task) => task.identifier),
     ).toEqual(['#123']);
 
-    expect(storySpies.prepareSessionContainer).not.toHaveBeenCalled();
-    expect(storySpies.createWorktree).not.toHaveBeenCalled();
-    expect(storySpies.insertSessionWorktree).not.toHaveBeenCalled();
-    expect(useAppStore.getState().sessionWorktrees[session.id]).toEqual([]);
+    expect(storySpies.insertSessionWorktree).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().sessionWorktrees[session.id]).toEqual([MOUNT_PATH]);
   });
 });

@@ -36,9 +36,6 @@ vi.mock('../features/workflows/workflows', async () =>
 vi.mock('../features/worktree/worktree', async () =>
   (await import('./storyHarness')).worktreeModuleMock(),
 );
-vi.mock('../features/workspace/prepareSessionContainer', async () =>
-  (await import('./storyHarness')).prepareSessionContainerModuleMock(),
-);
 vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
 
 const APP_WEB_WS = 'ws-app-web' as WorkspaceId;

@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
-import { Check, Copy, Folder, FolderGit2, FolderTree, GitBranch } from 'lucide-react';
+import { Check, Copy, Folder, FolderGit2, GitBranch } from 'lucide-react';
 import { cn, Tooltip, useCopyLink } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { VITAL_CHIP, VITAL_CHIP_FOCUS, VITAL_CHIP_FRAME, VITAL_CHIP_HOVER } from './vitalChip';
+import { VITAL_CHIP_FOCUS, VITAL_CHIP_FRAME, VITAL_CHIP_HOVER } from './vitalChip';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -45,17 +45,8 @@ export const ProjectScopeChip = ({ sessionId, workspaceId, onSelectLens }: Props
     }
   }, [failed, showToast]);
 
-  if (projectCount === 0) {
+  if (projectCount === 0 || activeMount == null) {
     return null;
-  }
-
-  if (activeMount == null) {
-    return (
-      <button type="button" onClick={() => onSelectLens('projects')} className={VITAL_CHIP}>
-        <FolderTree size={11} aria-hidden />
-        <span>No projects mounted</span>
-      </button>
-    );
   }
 
   const branch = activeMount.branch;

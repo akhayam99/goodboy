@@ -43,9 +43,6 @@ vi.mock('../features/workflows/workflows', async () =>
 vi.mock('../features/worktree/worktree', async () =>
   (await import('./storyHarness')).worktreeModuleMock(),
 );
-vi.mock('../features/workspace/prepareSessionContainer', async () =>
-  (await import('./storyHarness')).prepareSessionContainerModuleMock(),
-);
 vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
 
 const SESSION_ID = 'session-story' as SessionId;
@@ -53,9 +50,10 @@ const WORKSPACE_ID = 'workspace-story' as WorkspaceId;
 const AGENT_ID = 'agent-story' as AgentId;
 const APP_PROJECT_ID = 'project-app' as ProjectId;
 const WEB_PROJECT_ID = 'project-web' as ProjectId;
-const CONTAINER = '/tmp/sessions/goal-12345678';
+const APP_MOUNT_PATH = '/tmp/app/.goodboy/worktrees/goal-12345678';
+const APP_BRANCH = 'goodboy/goal-12345678';
 const WEB_MOUNT_PATH = '/tmp/web/.goodboy/worktrees/goal-12345678';
-const WEB_BRANCH = 'goodboy/goal-12345678';
+const WEB_BRANCH = 'goodboy/goal-12345678-web';
 
 const workspace = buildStoryWorkspace({ id: WORKSPACE_ID });
 const appProject = buildStoryProject({ id: APP_PROJECT_ID, workspaceId: WORKSPACE_ID });
@@ -71,6 +69,22 @@ const agent = buildStoryAgent({ id: AGENT_ID, sessionId: SESSION_ID });
 type StoreModule = typeof import('./store');
 let useAppStore: StoreModule['useAppStore'];
 
+const appMount = {
+  projectId: APP_PROJECT_ID,
+  mountName: 'app',
+  repoRoot: '/tmp/app',
+  worktreePath: APP_MOUNT_PATH,
+  branch: APP_BRANCH,
+};
+
+const webMount = {
+  projectId: WEB_PROJECT_ID,
+  mountName: 'web',
+  repoRoot: '/tmp/web',
+  worktreePath: WEB_MOUNT_PATH,
+  branch: WEB_BRANCH,
+};
+
 const seedSession = (projects: ReadonlyArray<typeof appProject>) => {
   useAppStore.setState({
     workspaces: [workspace],
@@ -78,10 +92,10 @@ const seedSession = (projects: ReadonlyArray<typeof appProject>) => {
     sessions: [session],
     archivedSessions: {},
     projects,
-    sessionWorktrees: { [SESSION_ID]: [CONTAINER] },
-    sessionProjectMounts: { [SESSION_ID]: [] },
-    sessionBranches: { [SESSION_ID]: '' },
-    sessionActiveProject: {},
+    sessionWorktrees: { [SESSION_ID]: [APP_MOUNT_PATH] },
+    sessionProjectMounts: { [SESSION_ID]: [appMount] },
+    sessionBranches: { [SESSION_ID]: APP_BRANCH },
+    sessionActiveProject: { [SESSION_ID]: APP_PROJECT_ID },
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
     selectedAgentId: { [SESSION_ID]: AGENT_ID },
     ...connectedAnthropicState(),
@@ -91,20 +105,8 @@ const seedSession = (projects: ReadonlyArray<typeof appProject>) => {
 const seedMountedWeb = () => {
   seedSession([appProject, webProject]);
   useAppStore.setState({
-    sessionProjectMounts: {
-      [SESSION_ID]: [
-        {
-          projectId: WEB_PROJECT_ID,
-          mountName: 'web',
-          repoRoot: '/tmp/web',
-          worktreePath: WEB_MOUNT_PATH,
-          branch: WEB_BRANCH,
-        },
-      ],
-    },
-    sessionWorktrees: { [SESSION_ID]: [CONTAINER, WEB_MOUNT_PATH] },
-    sessionActiveProject: { [SESSION_ID]: WEB_PROJECT_ID },
-    sessionBranches: { [SESSION_ID]: WEB_BRANCH },
+    sessionProjectMounts: { [SESSION_ID]: [appMount, webMount] },
+    sessionWorktrees: { [SESSION_ID]: [APP_MOUNT_PATH, WEB_MOUNT_PATH] },
   } as never);
 };
 
@@ -120,31 +122,31 @@ beforeEach(() => {
   storySpies.runTurn.mockImplementation(() => emptyTurnStream());
 });
 
-describe('story: an agent scouts a workspace without touching any repo', () => {
-  it('keeps a single-project first turn in the container, with no branch or worktree', async () => {
+describe('story: an agent works from its own project and reads the others', () => {
+  it('keeps a single-project turn inside the mounted worktree, creating nothing else', async () => {
     seedSession([appProject]);
 
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
 
     expect(storySpies.createWorktree).not.toHaveBeenCalled();
-    expect(spawnedArgs()['workingDir']).toBe(CONTAINER);
+    expect(spawnedArgs()['workingDir']).toBe(APP_MOUNT_PATH);
     const systemPrompt = String(spawnedArgs()['systemPrompt']);
-    expect(systemPrompt).toContain('[workspace-scope]');
+    expect(systemPrompt).toContain('[worktree-scope]');
     expect(systemPrompt).toContain('app (repo) root: /tmp/app');
-    expect(systemPrompt).toContain('NOT materialized');
-    expect(useAppStore.getState().sessionBranches[SESSION_ID]).toBe('');
+    expect(systemPrompt).not.toContain('NOT materialized');
+    expect(useAppStore.getState().sessionBranches[SESSION_ID]).toBe(APP_BRANCH);
     expect(recordedEventKinds()).not.toContain('project_materialized');
   });
 
-  it('keeps a multi-project session lazy and teaches the materialize marker instead', async () => {
+  it('teaches the materialize marker for the projects that are not mounted yet', async () => {
     seedSession([appProject, webProject]);
 
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
 
     expect(storySpies.createWorktree).not.toHaveBeenCalled();
-    expect(spawnedArgs()['workingDir']).toBe(CONTAINER);
+    expect(spawnedArgs()['workingDir']).toBe(APP_MOUNT_PATH);
     const systemPrompt = String(spawnedArgs()['systemPrompt']);
-    expect(systemPrompt).toContain('[workspace-scope]');
+    expect(systemPrompt).toContain('[worktree-scope]');
     expect(systemPrompt).toContain('web (repo) root: /tmp/web');
     expect(systemPrompt).toContain('NOT materialized');
     expect(systemPrompt).toContain('<<materialize: <project name> | <why you need it>>>');
@@ -152,7 +154,7 @@ describe('story: an agent scouts a workspace without touching any repo', () => {
 });
 
 describe('story: an agent asks for write access with the materialize marker', () => {
-  it('mounts exactly the requested project, records why, and keeps the turn in the container', async () => {
+  it('mounts exactly the requested project, records why, and keeps the turn in its own worktree', async () => {
     seedSession([appProject, webProject]);
     storySpies.createWorktree.mockResolvedValueOnce({
       worktreePath: WEB_MOUNT_PATH,
@@ -165,21 +167,21 @@ describe('story: an agent asks for write access with the materialize marker', ()
 
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
 
-    expect(spawnedArgs()['workingDir']).toBe(CONTAINER);
+    expect(spawnedArgs()['workingDir']).toBe(APP_MOUNT_PATH);
     expect(storySpies.createWorktree).toHaveBeenCalledWith(
       expect.objectContaining({
         repoPath: '/tmp/web',
         parentDir: '/tmp/web/.goodboy/worktrees',
-        dirName: 'goal-12345678',
+        dirName: expect.stringContaining('ship-the-thing'),
       }),
     );
     const mounts = useAppStore.getState().sessionProjectMounts[SESSION_ID] ?? [];
-    expect(mounts.map((mount) => mount.projectId)).toEqual([WEB_PROJECT_ID]);
+    expect(mounts.map((mount) => mount.projectId)).toEqual([APP_PROJECT_ID, WEB_PROJECT_ID]);
     expect(recordedEvent('project_materialized')?.payload).toMatchObject({
       projectName: 'web',
       reason: 'need to patch the router',
     });
-    expect(useAppStore.getState().sessionBranches[SESSION_ID]).toBe(WEB_BRANCH);
+    expect(useAppStore.getState().sessionBranches[SESSION_ID]).toBe(APP_BRANCH);
     expect(stripControlMarkers(assistantText)).not.toContain('<<materialize');
   });
 
@@ -215,8 +217,8 @@ describe('story: the user detaches a project from the mounted strip', () => {
     expect(storySpies.deleteSessionWorktreeForProject).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: SESSION_ID, projectId: WEB_PROJECT_ID }),
     );
-    expect(useAppStore.getState().sessionProjectMounts[SESSION_ID]).toEqual([]);
-    expect(useAppStore.getState().sessionWorktrees[SESSION_ID]).toEqual([CONTAINER]);
+    expect(useAppStore.getState().sessionProjectMounts[SESSION_ID]).toEqual([appMount]);
+    expect(useAppStore.getState().sessionWorktrees[SESSION_ID]).toEqual([APP_MOUNT_PATH]);
     expect(recordedEvent('project_detached')?.payload).toMatchObject({
       projectName: 'web',
       kept: false,
@@ -234,7 +236,7 @@ describe('story: the user detaches a project from the mounted strip', () => {
       .detachProject({ sessionId: SESSION_ID, projectId: WEB_PROJECT_ID });
 
     expect(storySpies.removeWorktree).not.toHaveBeenCalled();
-    expect(useAppStore.getState().sessionProjectMounts[SESSION_ID]).toEqual([]);
+    expect(useAppStore.getState().sessionProjectMounts[SESSION_ID]).toEqual([appMount]);
     expect(recordedEvent('project_detached')?.payload).toMatchObject({
       kept: true,
       reason: 'uncommitted changes in the worktree',

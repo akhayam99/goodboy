@@ -48,9 +48,7 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
     const projects = get().projects.filter(
       (project) => project.workspaceId === session.workspaceId,
     );
-    const containerRow = rows.find((row) => row.projectId === undefined && row.parallelIndex === 0);
-    const mountRows = rows.filter((row) => row !== containerRow);
-    for (const row of mountRows) {
+    for (const row of rows) {
       const project =
         projects.find((candidate) => candidate.id === row.projectId) ??
         (row.projectId === undefined
@@ -67,13 +65,6 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       }
       try {
         await removePersistedDirectory(row.worktreePath);
-      } catch (error) {
-        cleanupFailures.push(error);
-      }
-    }
-    if (containerRow !== undefined) {
-      try {
-        await removePersistedDirectory(containerRow.worktreePath);
       } catch (error) {
         cleanupFailures.push(error);
       }

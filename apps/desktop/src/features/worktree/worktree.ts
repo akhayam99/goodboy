@@ -67,20 +67,6 @@ export const removeSessionDirectory = async ({
   await invoke('session_dir_remove', { args: { basePath, path } });
 };
 
-type WriteSessionMarkerParams = {
-  readonly path: string;
-  readonly sessionId: SessionId;
-  readonly workspaceId: WorkspaceId;
-};
-
-export const writeSessionMarker = async ({
-  path,
-  sessionId,
-  workspaceId,
-}: WriteSessionMarkerParams): Promise<void> => {
-  await invoke('session_marker_write', { path, sessionId, workspaceId });
-};
-
 type SessionDirExistsParams = {
   readonly path: string;
 };

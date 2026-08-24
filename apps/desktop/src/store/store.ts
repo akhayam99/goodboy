@@ -323,6 +323,7 @@ export type AppActions = {
   disconnectGithub(params: { workspaceId: WorkspaceId }): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
+    projectId?: ProjectId;
     goal: string;
     branchPrefix?: string;
     branchSlug?: string;
@@ -346,9 +347,13 @@ export type AppActions = {
     mobileShared?: boolean;
     omitGoalSlot?: boolean;
   }): Promise<{ session: Session }>;
-  createUntitledSession(input: { workspaceId: WorkspaceId }): Promise<{ session: Session }>;
+  createUntitledSession(input: {
+    workspaceId: WorkspaceId;
+    projectId?: ProjectId;
+  }): Promise<{ session: Session }>;
   clearPendingTitleFocus(): void;
-  ensureSessionContainer(input: { sessionId: SessionId }): Promise<string>;
+  requestSessionProjectPick(input: { workspaceId: WorkspaceId }): void;
+  clearSessionProjectPick(): void;
   materializeProject(input: {
     sessionId: SessionId;
     projectId: ProjectId;
@@ -874,6 +879,7 @@ export const initialState: AppState = {
   archivedSessions: {},
   currentSessionId: null,
   pendingTitleFocusSessionId: null,
+  pendingProjectPickWorkspaceId: null,
   settings: {},
   sessionSummary: null,
   providerStatus: null,

@@ -14,6 +14,7 @@ import { useWorkspaceGitStatus } from '../../hooks/useWorkspaceGitStatus';
 import { primaryProjectRoot } from '../../primaryProjectRoot';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { ProjectsStep } from '../../../onboarding/OnboardingWizard/steps/ProjectsStep';
+import { NewSessionProjectPicker } from '../../../session/components/NewSessionProjectPicker';
 import { StageColumn } from './StageColumn';
 import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
@@ -177,6 +178,10 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           <Divider />
         </>
       ) : null}
+
+      <div className="mx-auto w-full max-w-md shrink-0 empty:hidden">
+        <NewSessionProjectPicker workspaceId={workspaceId} />
+      </div>
 
       {!boardReady && <BoardSkeleton />}
 

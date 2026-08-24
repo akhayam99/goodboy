@@ -191,12 +191,6 @@ fn resolve_directory_name(args: &CreateArgs) -> Result<String, SessionDirError> 
 }
 
 #[tauri::command]
-pub fn session_container_prepare(path: String) -> Result<String, SessionDirError> {
-    let resolved = create_absolute_dir(expand_home(&path)?)?;
-    Ok(resolved.to_string_lossy().into_owned())
-}
-
-#[tauri::command]
 pub fn session_dir_create(args: CreateArgs) -> Result<CreatedSessionDir, SessionDirError> {
     let base = expand_home(&args.base_path)?;
     let slug = resolve_directory_name(&args)?;
@@ -253,19 +247,6 @@ pub fn session_dir_remove(args: RemoveArgs) -> Result<(), SessionDirError> {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
         Err(error) => Err(error.into()),
     }
-}
-
-#[tauri::command]
-pub fn session_marker_write(
-    path: String,
-    session_id: String,
-    workspace_id: String,
-) -> Result<(), SessionDirError> {
-    marker_write(
-        &absolute_path(expand_home(&path)?)?,
-        session_id,
-        workspace_id,
-    )
 }
 
 #[tauri::command]

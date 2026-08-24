@@ -327,13 +327,11 @@ describe('HeaderBand', () => {
     expect(screen.queryByRole('button', { name: /No projects mounted/ })).toBeNull();
   });
 
-  it('says no projects are mounted yet still opens the projects lens', () => {
+  it('shows no scope entry until the session mount is known', () => {
     store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo' }];
-    const onSelectLens = vi.fn();
-    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={onSelectLens} />);
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'No projects mounted' }));
-    expect(onSelectLens).toHaveBeenCalledWith('projects');
+    expect(screen.queryByRole('button', { name: /No projects mounted/ })).toBeNull();
   });
 
   it('shows the active mount with its branch and opens the projects lens', () => {

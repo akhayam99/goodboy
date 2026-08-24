@@ -87,7 +87,12 @@ vi.mock('@goodboy/db', () => ({
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),
   insertSession: vi.fn(),
+  deleteSession: vi.fn(async () => undefined),
   insertSessionWorktree: vi.fn(),
+  insertSessionEvent: vi.fn(async () => undefined),
+  listSessionEvents: vi.fn(async () => []),
+  updateSessionActiveProject: vi.fn(async () => undefined),
+  updateSessionWorktreeRepoSlug: vi.fn(async () => undefined),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
   listContextSlotsForSession: vi.fn(async () => []),
@@ -182,13 +187,14 @@ vi.mock('../features/worktree/worktree', () => ({
     branchName: 'kay/test',
     slug: 'test',
   })),
+  createSessionDir: vi.fn(async () => ({
+    worktreePath: '/tmp/sessions/test',
+    branchName: '',
+    slug: 'test',
+  })),
   removeWorktree: vi.fn(),
-  writeSessionMarker: vi.fn(async () => undefined),
   sessionDirExists: vi.fn(async () => true),
-}));
-
-vi.mock('../features/workspace/prepareSessionContainer', () => ({
-  prepareSessionContainer: vi.fn(async ({ path }: { path: string }) => path),
+  worktreeChangedFiles: vi.fn(async () => ({ files: [], numstat: '' })),
 }));
 
 vi.mock('../shared/lib/repo', () => ({ validateGitRepo: vi.fn() }));

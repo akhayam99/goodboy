@@ -55,6 +55,9 @@ export const LaunchSessionPanel = ({
   const workspaceOverrides = useAppStore(
     (state) => state.workspaceOverrides?.[workspaceId] ?? null,
   );
+  const projectId = useAppStore(
+    (state) => state.projects?.find((project) => project.workspaceId === workspaceId)?.id ?? null,
+  );
   const rootPath = useAppStore(
     (state) =>
       state.projects?.find((project) => project.workspaceId === workspaceId)?.rootPath ?? null,
@@ -170,6 +173,7 @@ export const LaunchSessionPanel = ({
       }
       const { session } = await createSession({
         workspaceId,
+        ...(projectId != null ? { projectId } : {}),
         goal,
         ...(isFolderProject
           ? { folderName }
