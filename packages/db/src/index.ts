@@ -216,6 +216,7 @@ export {
   getGithubPrCache,
   upsertGithubPrCache,
   deleteGithubPrCache,
+  deleteGithubPrCacheForWorktreePath,
 } from './queries/github-pr-cache';
 export {
   insertDiffComment,

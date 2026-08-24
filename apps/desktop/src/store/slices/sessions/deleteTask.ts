@@ -1,6 +1,10 @@
 import type { ProviderRunId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { deleteSession as deleteSessionFromDb, listWorktreesForSession } from '@goodboy/db';
+import {
+  deleteGithubPrCacheForWorktreePath,
+  deleteSession as deleteSessionFromDb,
+  listWorktreesForSession,
+} from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import {
@@ -59,6 +63,15 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         try {
           await removeWorktree(project.rootPath, row.worktreePath);
           await tidyRepoGoodboyDir({ repoPath: project.rootPath }).catch(() => undefined);
+        } catch (error) {
+          cleanupFailures.push(error);
+          continue;
+        }
+        try {
+          await deleteGithubPrCacheForWorktreePath({
+            db: tauriDatabase,
+            worktreePath: row.worktreePath,
+          });
         } catch (error) {
           cleanupFailures.push(error);
         }

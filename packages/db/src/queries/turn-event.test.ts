@@ -99,4 +99,46 @@ describe('turn event queries', () => {
     }
     expect(decision.operatorNote).toBe('the gate is in place but its tests are missing');
   });
+
+  it('does not persist unknown provider payloads', async () => {
+    await insertTurnEvent(db, {
+      id: 'event-unknown',
+      sessionId,
+      agentId,
+      event: {
+        kind: 'unknown_payload',
+        runId,
+        adapter: 'provider',
+        payloadType: 'rate_limit',
+        raw: { message: 'noise' },
+        at,
+      },
+    });
+
+    await expect(listTurnEventsForAgent(db, agentId)).resolves.toEqual([]);
+  });
+
+  it('stores oversized payloads as valid bounded events with a marker', async () => {
+    await insertTurnEvent(db, {
+      id: 'event-large',
+      sessionId,
+      agentId,
+      event: {
+        kind: 'tool_call_end',
+        runId,
+        toolUseId: 'tool-large',
+        output: { body: 'x'.repeat(100_000) },
+        isError: false,
+        at,
+      },
+    });
+
+    const rows = await db.select<{ payload: string }>(
+      'SELECT payload FROM turn_events WHERE id = ?',
+      ['event-large'],
+    );
+    const events = await listTurnEventsForAgent(db, agentId);
+    expect(new TextEncoder().encode(rows[0]?.payload).byteLength).toBeLessThanOrEqual(64 * 1024);
+    expect(events[0]).toMatchObject({ kind: 'tool_call_end', output: '…[truncated]' });
+  });
 });

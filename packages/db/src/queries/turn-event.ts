@@ -18,6 +18,129 @@ type CountRow = {
   count: number;
 };
 
+const MAX_PAYLOAD_BYTES = 64 * 1024;
+const MAX_TRUNCATED_STRING_LENGTH = 4096;
+const TRUNCATION_MARKER = '…[truncated]';
+
+type SerializeTurnEventParams = {
+  readonly event: TurnEvent;
+};
+
+const payloadBytes = (payload: string): number => new TextEncoder().encode(payload).byteLength;
+
+const markTruncated = (value: string): string =>
+  `${value.slice(0, MAX_TRUNCATED_STRING_LENGTH)}${TRUNCATION_MARKER}`;
+
+const toTruncatedEvent = ({ event }: SerializeTurnEventParams): TurnEvent => {
+  switch (event.kind) {
+    case 'user_text':
+      return {
+        kind: event.kind,
+        runId: event.runId,
+        text: markTruncated(event.text),
+        ...(event.attachments !== undefined ? { attachments: [] } : {}),
+        ...(event.provider !== undefined ? { provider: event.provider } : {}),
+        ...(event.model !== undefined ? { model: markTruncated(event.model) } : {}),
+        at: event.at,
+      };
+    case 'assistant_text':
+      return { ...event, delta: markTruncated(event.delta) };
+    case 'tool_call_start':
+      return {
+        kind: event.kind,
+        runId: event.runId,
+        toolUseId: markTruncated(event.toolUseId),
+        toolName: markTruncated(event.toolName),
+        input: TRUNCATION_MARKER,
+        at: event.at,
+      };
+    case 'tool_call_end':
+      return {
+        kind: event.kind,
+        runId: event.runId,
+        toolUseId: markTruncated(event.toolUseId),
+        output: TRUNCATION_MARKER,
+        isError: event.isError,
+        at: event.at,
+      };
+    case 'file_edit':
+      return { ...event, path: markTruncated(event.path) };
+    case 'usage':
+      return {
+        kind: event.kind,
+        runId: event.runId,
+        usage: event.usage,
+        at: event.at,
+      };
+    case 'error':
+      return { ...event, message: markTruncated(event.message) };
+    case 'done':
+      return event;
+    case 'provider_session_init':
+      return { ...event, providerSessionId: markTruncated(event.providerSessionId) };
+    case 'skill_invocation':
+      return {
+        ...event,
+        skillName: markTruncated(event.skillName),
+        args: event.args.slice(0, 8).map(markTruncated),
+      };
+    case 'step_transition':
+      return {
+        ...event,
+        fromStep: { ...event.fromStep, name: markTruncated(event.fromStep.name) },
+        toStep: { ...event.toStep, name: markTruncated(event.toStep.name) },
+        carryForwardContext: markTruncated(event.carryForwardContext),
+      };
+    case 'orchestrator_decision':
+      return {
+        ...event,
+        reason: markTruncated(event.reason),
+        ...(event.stepName !== undefined ? { stepName: markTruncated(event.stepName) } : {}),
+        ...(event.operatorNote !== undefined
+          ? { operatorNote: markTruncated(event.operatorNote) }
+          : {}),
+      };
+    case 'permission_request':
+      return {
+        kind: event.kind,
+        runId: event.runId,
+        toolUseId: markTruncated(event.toolUseId),
+        toolName: markTruncated(event.toolName),
+        input: TRUNCATION_MARKER,
+        at: event.at,
+      };
+    case 'permission_decision':
+      return event;
+    case 'unknown_payload':
+      return { ...event, raw: TRUNCATION_MARKER };
+    default: {
+      const exhaustive: never = event;
+      return exhaustive;
+    }
+  }
+};
+
+const serializeTurnEvent = ({ event }: SerializeTurnEventParams): string | null => {
+  if (event.kind === 'unknown_payload') {
+    return null;
+  }
+  const payload = JSON.stringify(event);
+  if (payloadBytes(payload) <= MAX_PAYLOAD_BYTES) {
+    return payload;
+  }
+  const truncatedPayload = JSON.stringify(toTruncatedEvent({ event }));
+  if (payloadBytes(truncatedPayload) <= MAX_PAYLOAD_BYTES) {
+    return truncatedPayload;
+  }
+  return JSON.stringify({
+    kind: 'error',
+    runId: event.runId,
+    message: `${event.kind}${TRUNCATION_MARKER}`,
+    retryable: false,
+    at: event.at,
+  } satisfies TurnEvent);
+};
+
 function rowToEvent(row: TurnEventRow): TurnEvent | null {
   try {
     return JSON.parse(row.payload) as TurnEvent;
@@ -45,10 +168,14 @@ export const insertTurnEvent = async (
     readonly event: TurnEvent;
   },
 ): Promise<void> => {
+  const payload = serializeTurnEvent({ event: args.event });
+  if (payload === null) {
+    return;
+  }
   await db.execute(
     `INSERT INTO turn_events (id, session_id, agent_id, payload, created_at)
      VALUES (?, ?, ?, ?, ?)`,
-    [args.id, args.sessionId, args.agentId, JSON.stringify(args.event), eventTimestamp(args.event)],
+    [args.id, args.sessionId, args.agentId, payload, eventTimestamp(args.event)],
   );
 };
 
@@ -71,16 +198,17 @@ export const insertTurnEventsBatch = async (
     await insertTurnEvent(db, ins);
     return;
   }
-  const placeholders = inserts.map(() => '(?, ?, ?, ?, ?)').join(', ');
+  const persisted = inserts.flatMap((insert) => {
+    const payload = serializeTurnEvent({ event: insert.event });
+    return payload === null ? [] : [{ insert, payload }];
+  });
+  if (persisted.length === 0) {
+    return;
+  }
+  const placeholders = persisted.map(() => '(?, ?, ?, ?, ?)').join(', ');
   const values: unknown[] = [];
-  for (const ins of inserts) {
-    values.push(
-      ins.id,
-      ins.sessionId,
-      ins.agentId,
-      JSON.stringify(ins.event),
-      eventTimestamp(ins.event),
-    );
+  for (const { insert, payload } of persisted) {
+    values.push(insert.id, insert.sessionId, insert.agentId, payload, eventTimestamp(insert.event));
   }
   await db.execute(
     `INSERT INTO turn_events (id, session_id, agent_id, payload, created_at) VALUES ${placeholders}`,

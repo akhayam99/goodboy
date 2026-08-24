@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const order: Array<string> = [];
 
-const { removeWorktree, listWorktreesForSession, deleteSession } = vi.hoisted(() => ({
+const {
+  removeWorktree,
+  listWorktreesForSession,
+  deleteSession,
+  deleteGithubPrCacheForWorktreePath,
+} = vi.hoisted(() => ({
   removeWorktree: vi.fn(async () => undefined),
   listWorktreesForSession: vi.fn(async () => [
     {
@@ -13,9 +18,14 @@ const { removeWorktree, listWorktreesForSession, deleteSession } = vi.hoisted(()
     },
   ]),
   deleteSession: vi.fn(async () => undefined),
+  deleteGithubPrCacheForWorktreePath: vi.fn(async () => 1),
 }));
 
-vi.mock('@goodboy/db', () => ({ listWorktreesForSession, deleteSession }));
+vi.mock('@goodboy/db', () => ({
+  listWorktreesForSession,
+  deleteSession,
+  deleteGithubPrCacheForWorktreePath,
+}));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/worktree/worktree', () => ({
   removeWorktree,
@@ -59,6 +69,10 @@ describe('deleting a session', () => {
     await deleteTask(vi.fn(), (() => store) as never)(SESSION_ID);
 
     expect(order).toEqual(['terminals closed', 'worktree removed']);
+    expect(deleteGithubPrCacheForWorktreePath).toHaveBeenCalledWith({
+      db: {},
+      worktreePath: '/repo/.goodboy/worktrees/gb-ghost',
+    });
   });
 
   it('reports the paths it could not remove', async () => {
