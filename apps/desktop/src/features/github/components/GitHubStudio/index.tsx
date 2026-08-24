@@ -43,6 +43,7 @@ type Props = {
   readonly initialPrNumber?: number | null;
   readonly initialThreadId?: string | null;
   readonly initialIssueExternalId?: string | null;
+  readonly initialTab?: Tab | null;
   readonly onClose: () => void;
 };
 
@@ -54,6 +55,7 @@ export const GitHubStudio = ({
   initialPrNumber = null,
   initialThreadId = null,
   initialIssueExternalId = null,
+  initialTab = null,
   onClose,
 }: Props) => {
   const groups = useGithubInbox();
@@ -73,7 +75,9 @@ export const GitHubStudio = ({
   const issues = useGithubIssues({ workspaceId, rootPath, isEnabled: canBrowseRepo });
   const [focused, setFocused] = useState<SessionId | null>(initialSessionId);
   const [focusedIssue, setFocusedIssue] = useState<GithubIssue | null>(null);
-  const [tab, setTab] = useState<Tab>(initialIssueExternalId == null ? 'pull-requests' : 'issues');
+  const [tab, setTab] = useState<Tab>(
+    initialTab ?? (initialIssueExternalId == null ? 'pull-requests' : 'issues'),
+  );
   const [reviewScope, setReviewScope] = useState<ReviewScope>('mine');
   const [focusedReviewPr, setFocusedReviewPr] = useState<ReviewablePr | null>(null);
 
@@ -84,6 +88,12 @@ export const GitHubStudio = ({
     setTab('issues');
     setFocusedIssue(null);
   }, [initialIssueExternalId]);
+
+  useEffect(() => {
+    if (initialTab != null) {
+      setTab(initialTab);
+    }
+  }, [initialTab]);
 
   useEffect(() => {
     if (focused !== null) {
@@ -140,28 +150,19 @@ export const GitHubStudio = ({
       headerAccessory={
         canBrowseRepo || canDisconnect ? (
           <div className="flex items-center gap-2">
-            {canBrowseRepo ? (
-              <>
-                <SegmentedTabs
-                  ariaLabel="GitHub work"
-                  options={TABS}
-                  value={tab}
-                  onChange={setTab}
-                  size="sm"
-                />
-                {issues.groups.length > 0 ? (
-                  <IconButton
-                    icon={RefreshCw}
-                    label="Refresh issues"
-                    onClick={issues.refetch}
-                    disabled={issues.loading}
-                  />
-                ) : null}
-              </>
+            {canBrowseRepo && tab === 'issues' && issues.groups.length > 0 ? (
+              <IconButton
+                icon={RefreshCw}
+                label="Refresh issues"
+                onClick={issues.refetch}
+                disabled={issues.loading}
+              />
             ) : null}
             {canDisconnect ? (
               <>
-                {canBrowseRepo ? <Divider orientation="vertical" className="mx-0.5 h-5" /> : null}
+                {canBrowseRepo && tab === 'issues' && issues.groups.length > 0 ? (
+                  <Divider orientation="vertical" className="mx-0.5 h-5" />
+                ) : null}
                 <IntegrationDisconnect
                   label="GitHub"
                   description="Deletes this workspace's GitHub token from your keychain. This does not sign you out of the system gh CLI."
@@ -194,7 +195,15 @@ export const GitHubStudio = ({
             railWidth="standard"
             rail={
               <>
-                <div className="shrink-0 px-3 pt-3">
+                <div className="flex shrink-0 flex-col gap-2 px-3 pt-3">
+                  <SegmentedTabs
+                    ariaLabel="GitHub work"
+                    options={TABS}
+                    value={tab}
+                    onChange={setTab}
+                    size="sm"
+                    fill
+                  />
                   <SegmentedTabs
                     ariaLabel="Review inbox filter"
                     options={REVIEW_SCOPES}
@@ -239,14 +248,26 @@ export const GitHubStudio = ({
             railLabel="GitHub issues"
             railWidth="standard"
             rail={
-              <IssueInbox
-                groups={issues.groups}
-                focusedIssueNumber={focusedIssue?.number ?? null}
-                onSelect={setFocusedIssue}
-                loading={issues.loading}
-                error={issues.error}
-                onRefresh={issues.refetch}
-              />
+              <>
+                <div className="shrink-0 px-3 pt-3">
+                  <SegmentedTabs
+                    ariaLabel="GitHub work"
+                    options={TABS}
+                    value={tab}
+                    onChange={setTab}
+                    size="sm"
+                    fill
+                  />
+                </div>
+                <IssueInbox
+                  groups={issues.groups}
+                  focusedIssueNumber={focusedIssue?.number ?? null}
+                  onSelect={setFocusedIssue}
+                  loading={issues.loading}
+                  error={issues.error}
+                  onRefresh={issues.refetch}
+                />
+              </>
             }
             detail={
               <GithubIssueDetailPanel

@@ -195,7 +195,12 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder }: Props) => {
                     aria-label={`Open the ${source.label} studio`}
                     className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60"
                     onClick={() =>
-                      window.dispatchEvent(new CustomEvent(STUDIO_OPEN_EVENT[source.provider]))
+                      window.dispatchEvent(
+                        new CustomEvent(
+                          STUDIO_OPEN_EVENT[source.provider],
+                          source.provider === 'github' ? { detail: { tab: 'issues' } } : undefined,
+                        ),
+                      )
                     }
                   >
                     <IntegrationGlyph provider={source.provider} size="xs" />

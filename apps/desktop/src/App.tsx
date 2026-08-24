@@ -176,6 +176,7 @@ export const App = () => {
   const [githubStudioPrNumber, setGithubStudioPrNumber] = useState<number | null>(null);
   const [githubStudioThreadId, setGithubStudioThreadId] = useState<string | null>(null);
   const [githubStudioIssueId, setGithubStudioIssueId] = useState<string | null>(null);
+  const [githubStudioTab, setGithubStudioTab] = useState<'pull-requests' | 'issues' | null>(null);
   const [budgetStudioOpen, setBudgetStudioOpen] = useState(false);
   const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
   const [impactStudioOpen, setImpactStudioOpen] = useState(false);
@@ -252,6 +253,7 @@ export const App = () => {
           prNumber?: number;
           threadId?: string;
           issueExternalId?: string;
+          tab?: 'pull-requests' | 'issues';
         }>
       ).detail;
       closeAllStudios();
@@ -259,6 +261,7 @@ export const App = () => {
       setGithubStudioPrNumber(detail?.prNumber ?? null);
       setGithubStudioThreadId(detail?.threadId ?? null);
       setGithubStudioIssueId(detail?.issueExternalId ?? null);
+      setGithubStudioTab(detail?.tab ?? null);
       setGithubStudioOpen(true);
     };
     const onOpenPlanStudio = (event: Event) => {
@@ -1029,6 +1032,7 @@ export const App = () => {
           initialPrNumber={githubStudioPrNumber}
           initialThreadId={githubStudioThreadId}
           initialIssueExternalId={githubStudioIssueId}
+          initialTab={githubStudioTab}
           onClose={() => setGithubStudioOpen(false)}
         />
       ) : null}
