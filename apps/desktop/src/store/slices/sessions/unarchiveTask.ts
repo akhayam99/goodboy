@@ -5,7 +5,7 @@ import {
   updateSessionActiveProject,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { invokeAgentList } from '../../../features/workflows/workflows';
+import { invokeAgentList, invokeWorkflowsForSession } from '../../../features/workflows/workflows';
 import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMounts';
 import type { GetFn, SetFn } from './types';
 
@@ -52,9 +52,10 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
       return;
     }
     try {
-      const [worktreeRows, runs] = await Promise.all([
+      const [worktreeRows, runs, attachedWorkflows] = await Promise.all([
         listWorktreesForSession(tauriDatabase, sessionId),
         invokeAgentList(sessionId),
+        invokeWorkflowsForSession(sessionId).catch(() => []),
       ]);
       const projects = get().projects.filter((project) => project.workspaceId === workspaceId);
       const mounts = buildSessionProjectMounts({ projects, rows: worktreeRows });
@@ -91,10 +92,12 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
             candidate.id === sessionId ? restoredWithValidActiveMount : candidate,
           ),
           sessionWorktrees: nextWorktrees,
+          sessionWorktreeRecords: { ...state.sessionWorktreeRecords, [sessionId]: worktreeRows },
           sessionProjectMounts: { ...state.sessionProjectMounts, [sessionId]: mounts },
           sessionActiveProject: nextActiveMount,
           sessionBranches: nextBranches,
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: runs },
+          sessionWorkflows: { ...state.sessionWorkflows, [sessionId]: attachedWorkflows },
         };
       });
     } catch {}

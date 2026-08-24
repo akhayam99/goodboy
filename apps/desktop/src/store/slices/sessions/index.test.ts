@@ -264,6 +264,7 @@ const invokeAgentSetVerbositySpy = vi.fn(async () => undefined);
 const invokeAgentMarkViewedSpy = vi.fn(async () => undefined);
 const invokeAgentSetProviderSessionIdSpy = vi.fn(async () => undefined);
 const invokeWorkspacesWithUnreadSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceId>);
+const invokeWorkflowsForSessionSpy = vi.fn(async () => [] as ReadonlyArray<unknown>);
 
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeWorkflowList: invokeWorkflowListSpy,
@@ -277,6 +278,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentMarkViewed: invokeAgentMarkViewedSpy,
   invokeAgentSetProviderSessionId: invokeAgentSetProviderSessionIdSpy,
   invokeWorkspacesWithUnread: invokeWorkspacesWithUnreadSpy,
+  invokeWorkflowsForSession: invokeWorkflowsForSessionSpy,
 }));
 
 const createWorktreeSpy = vi.fn();
@@ -815,6 +817,25 @@ describe('store contract', () => {
       const s = store.getState();
       expect(s.sessions.find((x) => x.id === SESSION_ID)).toBeDefined();
       expect(s.archivedSessions[WS_ID]).toEqual([]);
+    });
+
+    it('unarchiveTask reloads the workflows attached to the session', async () => {
+      const store = await getStore();
+      const archived: Session = {
+        ...buildSession(),
+        archivedAt: NOW,
+      } as Session;
+      const workflow = { id: 'wf-1', name: 'release' };
+      invokeWorkflowsForSessionSpy.mockResolvedValueOnce([workflow]);
+      store.setState({
+        workspaces: [buildWorkspace()],
+        currentWorkspaceId: WS_ID,
+        archivedSessions: { [WS_ID]: [archived] },
+      });
+      await store.getState().unarchiveTask(SESSION_ID);
+      const s = store.getState();
+      expect(invokeWorkflowsForSessionSpy).toHaveBeenCalledWith(SESSION_ID);
+      expect(s.sessionWorkflows[SESSION_ID]).toEqual([workflow]);
     });
 
     it('deleteTask removes an archived session from the archived cache', async () => {
