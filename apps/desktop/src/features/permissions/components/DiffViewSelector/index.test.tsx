@@ -91,11 +91,11 @@ describe('DiffViewSelector', () => {
     expect(screen.getByText('pushed')).toBeDefined();
   });
 
-  it('preserves arrow and enter keyboard selection from the filter', () => {
+  it('preserves arrow and enter keyboard selection from the filter, branch preset first', () => {
     const onChange = vi.fn();
     render(
       <DiffViewSelector
-        view={{ kind: 'branch' }}
+        view={{ kind: 'working', scope: 'all' }}
         onChange={onChange}
         commits={[]}
         status={null}
@@ -107,6 +107,72 @@ describe('DiffViewSelector', () => {
     fireEvent.keyDown(filter, { key: 'ArrowDown' });
     fireEvent.keyDown(filter, { key: 'Enter' });
 
-    expect(onChange).toHaveBeenCalledWith({ kind: 'working', scope: 'all' });
+    expect(onChange).toHaveBeenCalledWith({ kind: 'branch' });
+  });
+
+  it('reads top-down as branch, currently editing, ready to push, on origin', () => {
+    render(
+      <DiffViewSelector
+        view={workingView}
+        onChange={vi.fn()}
+        commits={commits}
+        status={null}
+        filesCount={null}
+      />,
+    );
+    fireEvent.click(screen.getByTitle(/change diff view/i));
+
+    const labels = ['branch', 'currently editing', 'ready to push', 'on origin'].map(
+      (label) => screen.getByText(label) as HTMLElement,
+    );
+    for (let index = 1; index < labels.length; index += 1) {
+      const position = labels[index - 1]!.compareDocumentPosition(labels[index]!);
+      expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+    const firstOption = screen
+      .getAllByRole('button')
+      .find((button) => button.getAttribute('aria-pressed') != null);
+    expect(firstOption?.textContent).toContain('branch vs main');
+  });
+
+  it('shows one quiet empty line when the filter matches no commits', () => {
+    render(
+      <DiffViewSelector
+        view={workingView}
+        onChange={vi.fn()}
+        commits={commits}
+        status={null}
+        filesCount={null}
+      />,
+    );
+    fireEvent.click(screen.getByTitle(/change diff view/i));
+    const filter = screen.getByRole('textbox', { name: 'Filter commits' });
+    fireEvent.change(filter, { target: { value: 'zzz-no-such-commit' } });
+
+    expect(screen.getByText('no commits match')).toBeDefined();
+    expect(screen.queryByText('ready to push')).toBeNull();
+    expect(screen.queryByText('on origin')).toBeNull();
+    expect(screen.getByText('branch vs main')).toBeDefined();
+    expect(screen.getByText('staged only')).toBeDefined();
+  });
+
+  it('keeps the filter scoped to commits and drops only the unmatched commit section', () => {
+    render(
+      <DiffViewSelector
+        view={workingView}
+        onChange={vi.fn()}
+        commits={commits}
+        status={null}
+        filesCount={null}
+      />,
+    );
+    fireEvent.click(screen.getByTitle(/change diff view/i));
+    const filter = screen.getByRole('textbox', { name: 'Filter commits' });
+    fireEvent.change(filter, { target: { value: 'origin change' } });
+
+    expect(screen.getByText('on origin')).toBeDefined();
+    expect(screen.getByText('origin change')).toBeDefined();
+    expect(screen.queryByText('ready to push')).toBeNull();
+    expect(screen.queryByText('no commits match')).toBeNull();
   });
 });

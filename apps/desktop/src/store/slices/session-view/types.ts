@@ -155,7 +155,7 @@ type SessionViewSliceActions = {
   openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
-  openDiffLens(sessionId: SessionId, focus: DiffFocus): void;
+  openDiffLens(sessionId: SessionId, focus: DiffFocus | null): void;
   openMountDiff(sessionId: SessionId, worktreePath: string): void;
   beginSessionCreation(
     sessionId: SessionId,

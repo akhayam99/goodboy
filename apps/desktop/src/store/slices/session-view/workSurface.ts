@@ -127,7 +127,7 @@ export const setDiffFocus = (set: SetFn) => {
 };
 
 export const openDiffLens = (get: GetFn) => {
-  return (sessionId: SessionId, focus: DiffFocus): void => {
+  return (sessionId: SessionId, focus: DiffFocus | null): void => {
     get().setDiffFocus(sessionId, focus);
     get().setActiveLens(sessionId, 'files');
   };
@@ -136,7 +136,7 @@ export const openDiffLens = (get: GetFn) => {
 export const openMountDiff = (set: SetFn, get: GetFn) => {
   return (sessionId: SessionId, worktreePath: string): void => {
     set((s) => ({ diffMountPath: { ...s.diffMountPath, [sessionId]: worktreePath } }));
-    get().setDiffFocus(sessionId, { kind: 'working', path: null });
+    get().setDiffFocus(sessionId, null);
     get().setActiveLens(sessionId, 'files');
   };
 };

@@ -5,9 +5,9 @@ import { resolveOpenDiffViewerEvent } from './openDiffViewerEvent';
 const SESSION_ID = 'session-1' as SessionId;
 
 describe('resolveOpenDiffViewerEvent', () => {
-  it('resolves a working-tree focus for a sessionId, never a stale commit', () => {
+  it('resolves a cleared focus for a sessionId so the lens lands on the branch default', () => {
     const resolved = resolveOpenDiffViewerEvent({ detail: { sessionId: SESSION_ID } });
-    expect(resolved).toEqual({ sessionId: SESSION_ID, focus: { kind: 'working', path: null } });
+    expect(resolved).toEqual({ sessionId: SESSION_ID, focus: null });
   });
 
   it('returns null when the event carries no sessionId', () => {

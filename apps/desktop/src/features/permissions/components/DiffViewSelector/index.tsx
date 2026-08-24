@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, GitCommit } from 'lucide-react';
+import { ChevronDown, GitCommit, Search } from 'lucide-react';
 import { AnchoredPopover, Chip, cn, Divider, ScrollFade, useDropdown } from '@goodboy/ui';
 import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
@@ -30,6 +30,7 @@ type SectionRow = OptionRow | PlaceholderRow;
 
 type Section = {
   readonly label: string;
+  readonly hint?: string;
   readonly rows: ReadonlyArray<SectionRow>;
 };
 
@@ -145,41 +146,68 @@ export const DiffViewSelector = ({
     [query],
   );
 
+  const hasQuery = query.trim().length > 0;
+
   const sections = useMemo<ReadonlyArray<Section>>(() => {
     const filteredLocalCommits = localCommits.filter(filterMatch);
-    const readyRows: ReadonlyArray<SectionRow> =
-      localCommits.length === 0
-        ? [{ kind: 'placeholder', label: 'nothing to push' }]
-        : filteredLocalCommits.length === 0
-          ? [{ kind: 'placeholder', label: 'no match' }]
-          : filteredLocalCommits.map((commit) => ({
-              kind: 'option',
-              view: { kind: 'commit', sha: commit.sha },
-              label: commit.subject,
-              commit,
-            }));
     const filteredPushedCommits = pushedCommits.filter(filterMatch);
-    const originRows: ReadonlyArray<SectionRow> =
-      pushedCommits.length === 0
-        ? [
-            {
-              kind: 'placeholder',
-              label:
-                status != null && status.upstream == null
-                  ? 'branch not pushed yet'
-                  : 'no commits pushed yet',
-            },
-          ]
-        : filteredPushedCommits.length === 0
-          ? [{ kind: 'placeholder', label: 'no match' }]
-          : filteredPushedCommits.map((commit) => ({
-              kind: 'option',
-              view: { kind: 'commit', sha: commit.sha },
-              label: commit.subject,
-              commit,
-            }));
+    const commitRows = ({
+      matches,
+    }: {
+      readonly matches: ReadonlyArray<BranchCommit>;
+    }): ReadonlyArray<SectionRow> =>
+      matches.map((commit) => ({
+        kind: 'option',
+        view: { kind: 'commit', sha: commit.sha },
+        label: commit.subject,
+        commit,
+      }));
+
+    const commitSections: Section[] = [];
+    if (hasQuery) {
+      if (filteredLocalCommits.length > 0) {
+        commitSections.push({
+          label: 'ready to push',
+          rows: commitRows({ matches: filteredLocalCommits }),
+        });
+      }
+      if (filteredPushedCommits.length > 0) {
+        commitSections.push({
+          label: 'on origin',
+          rows: commitRows({ matches: filteredPushedCommits }),
+        });
+      }
+    } else {
+      commitSections.push({
+        label: 'ready to push',
+        rows:
+          localCommits.length === 0
+            ? [{ kind: 'placeholder', label: 'nothing to push' }]
+            : commitRows({ matches: localCommits }),
+      });
+      commitSections.push({
+        label: 'on origin',
+        rows:
+          pushedCommits.length === 0
+            ? [
+                {
+                  kind: 'placeholder',
+                  label:
+                    status != null && status.upstream == null
+                      ? 'branch not pushed yet'
+                      : 'no commits pushed yet',
+                },
+              ]
+            : commitRows({ matches: pushedCommits }),
+      });
+    }
 
     return [
+      {
+        label: 'branch',
+        hint: 'everything this branch changes vs main, uncommitted edits included',
+        rows: [{ kind: 'option', view: { kind: 'branch' }, label: 'branch vs main' }],
+      },
       {
         label: 'currently editing',
         rows: [
@@ -200,14 +228,17 @@ export const DiffViewSelector = ({
           },
         ],
       },
-      { label: 'ready to push', rows: readyRows },
-      { label: 'on origin', rows: originRows },
-      {
-        label: 'presets',
-        rows: [{ kind: 'option', view: { kind: 'branch' }, label: 'branch vs main' }],
-      },
+      ...commitSections,
     ];
-  }, [filterMatch, localCommits, pushedCommits, status?.upstream]);
+  }, [filterMatch, hasQuery, localCommits, pushedCommits, status?.upstream]);
+
+  const hasCommitMatch = useMemo(
+    () =>
+      sections.some((section) =>
+        section.rows.some((row) => row.kind === 'option' && row.commit != null),
+      ),
+    [sections],
+  );
 
   const options = useMemo(
     () =>
@@ -298,7 +329,8 @@ export const DiffViewSelector = ({
         </button>
       }
     >
-      <div className="px-2.5 py-2">
+      <div className="flex items-center gap-1.5 px-2.5 py-2">
+        <Search size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
         <input
           ref={searchRef}
           value={query}
@@ -316,7 +348,7 @@ export const DiffViewSelector = ({
       <ScrollFade fadeFrom="subtle" className="max-h-[400px]">
         <div className="flex flex-col gap-0.5 py-1" onKeyDown={handleKeyDown}>
           {sections.map((section) => (
-            <PickerSection key={section.label} label={section.label}>
+            <PickerSection key={section.label} label={section.label} hint={section.hint}>
               <div className="flex flex-col gap-0.5 px-1">
                 {section.rows.map((row) => {
                   if (row.kind === 'placeholder') {
@@ -388,6 +420,11 @@ export const DiffViewSelector = ({
               </div>
             </PickerSection>
           ))}
+          {hasQuery && !hasCommitMatch ? (
+            <span className="px-3.5 py-1.5 text-2xs italic text-muted-foreground/50">
+              no commits match
+            </span>
+          ) : null}
         </div>
       </ScrollFade>
     </AnchoredPopover>

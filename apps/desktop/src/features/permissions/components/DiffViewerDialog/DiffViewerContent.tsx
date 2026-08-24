@@ -86,37 +86,6 @@ const DIFF_SKELETON_CARDS: ReadonlyArray<ReadonlyArray<string>> = [
   ['60%', '82%', '46%', '70%'],
 ];
 
-const viewStorageKey = (sessionId: SessionId | undefined): string | null =>
-  sessionId ? `${STORAGE_PREFIXES.diffView}${sessionId}` : null;
-
-const readPersistedView = (sessionId: SessionId | undefined): DiffView | null => {
-  const key = viewStorageKey(sessionId);
-  if (!key || typeof window === 'undefined') {
-    return null;
-  }
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) {
-      return null;
-    }
-    const parsed = JSON.parse(raw) as DiffView;
-    if (parsed && typeof parsed === 'object' && 'kind' in parsed) {
-      return parsed;
-    }
-  } catch {}
-  return null;
-};
-
-const writePersistedView = (sessionId: SessionId | undefined, view: DiffView): void => {
-  const key = viewStorageKey(sessionId);
-  if (!key || typeof window === 'undefined') {
-    return;
-  }
-  try {
-    window.localStorage.setItem(key, JSON.stringify(view));
-  } catch {}
-};
-
 const loadDiffForView = (worktreePath: string, view: DiffView): Promise<string> => {
   if (view.kind === 'working') {
     return worktreeDiffWorking(worktreePath, view.scope);
@@ -297,22 +266,12 @@ export const DiffViewerContent = ({
   const didInitialScroll = useRef(false);
   const pendingScrollPath = useRef<string | null>(null);
 
-  const [view, setViewState] = useState<DiffView>(
-    () => readPersistedView(sessionId) ?? DEFAULT_VIEW,
-  );
+  const [view, setView] = useState<DiffView>(DEFAULT_VIEW);
   const [commits, setCommits] = useState<ReadonlyArray<BranchCommit>>([]);
   const [status, setStatus] = useState<WorktreeStatus | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
   const isGitAware = Boolean(worktreePath);
-
-  const setView = useCallback(
-    (next: DiffView) => {
-      setViewState(next);
-      writePersistedView(sessionId, next);
-    },
-    [sessionId],
-  );
 
   const comments = useDiffComments(sessionId ?? null);
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
@@ -431,10 +390,6 @@ export const DiffViewerContent = ({
     },
     [sessionId, view],
   );
-
-  useEffect(() => {
-    setViewState(DEFAULT_VIEW);
-  }, []);
 
   useEffect(() => {
     if (diffFocus == null) {

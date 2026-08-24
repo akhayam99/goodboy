@@ -877,7 +877,7 @@ describe('store contract', () => {
       store.getState().openDiffLens(resolved.sessionId, resolved.focus);
 
       expect(store.getState().activeLens[SESSION_ID]).toBe('files');
-      expect(store.getState().diffFocus[SESSION_ID]).toEqual({ kind: 'working', path: null });
+      expect(store.getState().diffFocus[SESSION_ID]).toBeNull();
     });
 
     it('the event path and a direct openDiffLens call land in identical state', async () => {
@@ -894,13 +894,33 @@ describe('store contract', () => {
       };
 
       store.getState().openDiffLens(SESSION_ID_2, { kind: 'commit', sha: 'abc1234', path: null });
-      store.getState().openDiffLens(SESSION_ID_2, { kind: 'working', path: null });
+      store.getState().openDiffLens(SESSION_ID_2, null);
       const directCallState = {
         activeLens: store.getState().activeLens[SESSION_ID_2],
         diffFocus: store.getState().diffFocus[SESSION_ID_2],
       };
 
       expect(eventPathState).toEqual(directCallState);
+    });
+
+    it('openMountDiff selects the mount and leaves the focus null so the lens lands on the branch default', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setDiffFocus(SESSION_ID, { kind: 'working', path: null });
+      store.getState().openMountDiff(SESSION_ID, '/wt/api');
+
+      expect(store.getState().activeLens[SESSION_ID]).toBe('files');
+      expect(store.getState().diffMountPath[SESSION_ID]).toBe('/wt/api');
+      expect(store.getState().diffFocus[SESSION_ID]).toBeNull();
+    });
+
+    it('openMountDiff clears a commit focus a resolver link left behind', async () => {
+      const store = await getStore();
+      store.getState().openDiffLens(SESSION_ID, { kind: 'commit', sha: 'abc1234', path: null });
+      store.getState().openMountDiff(SESSION_ID, '/wt/web');
+
+      expect(store.getState().diffFocus[SESSION_ID]).toBeNull();
+      expect(store.getState().diffMountPath[SESSION_ID]).toBe('/wt/web');
     });
 
     it('setSessionStudio(non-null) clears the selected agent', async () => {

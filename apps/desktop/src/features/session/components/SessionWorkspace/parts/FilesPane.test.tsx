@@ -168,6 +168,22 @@ describe('FilesPane', () => {
     expect(web.getAttribute('data-stat')).toBe('changed');
   });
 
+  it('renders the mounts as one segmented control aligned with the pane column', () => {
+    reset({ mounts: [API_MOUNT, WEB_MOUNT] });
+    setActiveLens(set)(SESSION_ID, 'files');
+
+    renderPane({ worktreePath: API_MOUNT.worktreePath });
+
+    const switcher = screen.getByTestId('diff-mount-switcher');
+    expect(switcher.className).toContain('rounded-lg');
+    expect(switcher.className).toContain('border-border-soft');
+    expect(switcher.className).toContain('bg-subtle');
+    expect(screen.getAllByTestId('diff-mount-option')).toHaveLength(2);
+    expect(switcher.parentElement?.className).toContain('max-w-5xl');
+    expect(switcher.parentElement?.className).toContain('mx-auto');
+    expect(switcher.parentElement?.parentElement?.className).toContain('px-6');
+  });
+
   it('keeps an untouched mount visible and marks it quiet', () => {
     reset({ mounts: [API_MOUNT, WEB_MOUNT] });
     diffStats = new Map([

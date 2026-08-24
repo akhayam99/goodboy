@@ -401,6 +401,25 @@ describe('DiffViewerPane', () => {
 
     await waitFor(() => expect(worktreeDiffWorking).toHaveBeenCalledWith('/tmp/worktree', 'all'));
   });
+
+  it('lands on the branch vs main view when no diff focus is set', async () => {
+    fixtures.files = fileFixture();
+    const { worktreeDiff, worktreeDiffWorking } =
+      await import('../../../../features/worktree/worktree');
+    vi.mocked(worktreeDiff).mockClear();
+    vi.mocked(worktreeDiffWorking).mockClear();
+    render(
+      <DiffViewerPane
+        sessionId={SID}
+        worktreePath="/tmp/worktree"
+        diffFocus={null}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(worktreeDiff).toHaveBeenCalledWith('/tmp/worktree'));
+    expect(worktreeDiffWorking).not.toHaveBeenCalled();
+  });
 });
 
 describe('line comment add (single + multi-line drag)', () => {
