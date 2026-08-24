@@ -28,7 +28,7 @@ import { NewSessionBridge } from './features/session/components/NewSessionBridge
 import { CollapsedRail } from './features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
-import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
+import { WorkspaceLinkStudio } from './features/workspace/components/WorkspaceLinkStudio';
 import { ConvertWorkspaceDialog } from './features/workspace/components/ConvertWorkspaceDialog';
 import { WorkspaceLauncher } from './features/workspace/components/WorkspaceLauncher';
 import { isMainWindow } from './features/workspace/window';
@@ -211,6 +211,11 @@ export const App = () => {
     setAddWorkspaceOpen(false);
   }, []);
 
+  const openAddWorkspace = useCallback(() => {
+    closeAllStudios();
+    setAddWorkspaceOpen(true);
+  }, [closeAllStudios]);
+
   useEffect(() => {
     void hydrate();
     if (import.meta.env.PROD) {
@@ -325,7 +330,7 @@ export const App = () => {
         state.setSessionStudio(sid, null);
       }
     };
-    const onAddWorkspace = () => setAddWorkspaceOpen(true);
+    const onAddWorkspace = () => openAddWorkspace();
     const onPairDevice = () => setCompanionOpen(true);
     const onOpenNotificationsStudio = () => {
       closeAllStudios();
@@ -365,7 +370,7 @@ export const App = () => {
       window.removeEventListener('goodboy:add-workspace', onAddWorkspace);
       window.removeEventListener('goodboy:open-pair-device', onPairDevice);
     };
-  }, [closeAllStudios]);
+  }, [closeAllStudios, openAddWorkspace]);
 
   useEffect(() => {
     if (!archiveOpen && !deleteOpen) {
@@ -805,11 +810,18 @@ export const App = () => {
     );
   }
 
-  if (hasWorkspaces && !currentWorkspace && isMainWindow() && !addWorkspaceOpen) {
+  const addWorkspaceSurface = addWorkspaceOpen ? (
+    <WorkspaceLinkStudio
+      onClose={() => setAddWorkspaceOpen(false)}
+      onOfferRepo={() => setConvertWorkspaceOpen(true)}
+    />
+  ) : null;
+
+  if (hasWorkspaces && !currentWorkspace && isMainWindow()) {
     return (
       <ToastProvider>
         <NotificationToastBridge />
-        <WorkspaceLauncher />
+        {addWorkspaceSurface ?? <WorkspaceLauncher />}
       </ToastProvider>
     );
   }
@@ -936,7 +948,7 @@ export const App = () => {
             ) : currentWorkspace ? (
               <StageBoard workspaceId={currentWorkspace.id} sessions={currentWorkspaceSessions} />
             ) : (
-              <NoWorkspaceScreen onAddWorkspace={() => setAddWorkspaceOpen(true)} />
+              <NoWorkspaceScreen onAddWorkspace={openAddWorkspace} />
             )}
 
             <OnboardingCard />
@@ -993,13 +1005,7 @@ export const App = () => {
           }}
         />
       ) : null}
-      {addWorkspaceOpen ? (
-        <WorkspaceLinkDialog
-          open
-          onClose={() => setAddWorkspaceOpen(false)}
-          onOfferRepo={() => setConvertWorkspaceOpen(true)}
-        />
-      ) : null}
+      {addWorkspaceSurface}
       {currentWorkspace ? (
         <ConvertWorkspaceDialog
           open={convertWorkspaceOpen}

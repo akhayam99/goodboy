@@ -17,6 +17,7 @@ import type {
 } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import {
+  deleteSession,
   insertSession,
   getWorkspaceById,
   listProjectsForWorkspace,
@@ -35,7 +36,9 @@ import { markSessionMobileShared } from '../../../features/companion/mobileConfi
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import { clampTitle } from './titleLimit';
 import { preSpawnWorkflowAgents } from '../workflows/preSpawnWorkflowAgents';
+import { discardUncreatedSession } from './discardUncreatedSession';
 import { rememberMaterializationSeed } from './materializationSeeds';
+import { resolveSessionProject } from './resolveSessionProject';
 import { slugifyDir } from './slugifyDir';
 import type { GetFn, SetFn } from './types';
 
@@ -50,6 +53,7 @@ type ExternalTaskInput = {
 
 type Input = {
   workspaceId: WorkspaceId;
+  projectId?: ProjectId;
   goal: string;
   branchPrefix?: string;
   branchSlug?: string;
@@ -71,6 +75,7 @@ type Input = {
 export const createSession = (set: SetFn, get: GetFn) => {
   return async ({
     workspaceId,
+    projectId,
     goal,
     branchPrefix,
     branchSlug,
@@ -93,9 +98,10 @@ export const createSession = (set: SetFn, get: GetFn) => {
       throw new Error(`workspace not found: ${workspaceId}`);
     }
     const projects = await listProjectsForWorkspace({ db: tauriDatabase, workspaceId });
-    if (projects.length === 0) {
-      throw new Error(`workspace has no projects: ${workspaceId}`);
-    }
+    const project = resolveSessionProject({
+      projects,
+      ...(projectId !== undefined ? { projectId } : {}),
+    });
 
     const prefix = branchPrefix?.trim() || DEFAULT_BRANCH_PREFIX;
     const slugSeed =
@@ -178,6 +184,27 @@ export const createSession = (set: SetFn, get: GetFn) => {
       updatedAt: now,
     };
     await insertSession(tauriDatabase, session);
+    set((state) => ({
+      sessions:
+        state.currentWorkspaceId === workspaceId ? [session, ...state.sessions] : state.sessions,
+      sessionWorktrees: { ...state.sessionWorktrees, [session.id]: [] },
+      sessionProjectMounts: { ...state.sessionProjectMounts, [session.id]: [] },
+      sessionBranches: { ...state.sessionBranches, [session.id]: '' },
+    }));
+    try {
+      await get().materializeProject({
+        sessionId: session.id,
+        projectId: project.id,
+        reason:
+          trimmedExisting !== undefined && trimmedExisting !== ''
+            ? `adopted existing branch ${trimmedExisting}`
+            : 'the session works in this project',
+      });
+    } catch (error) {
+      await discardUncreatedSession({ set, sessionId: session.id });
+      throw error;
+    }
+
     const externalTaskRows: Array<SessionExternalTask> = [];
     for (const externalTask of externalTasks ?? []) {
       const row: SessionExternalTask = {
@@ -293,25 +320,11 @@ export const createSession = (set: SetFn, get: GetFn) => {
     }
 
     set((state) => ({
-      sessions:
-        state.currentWorkspaceId === workspaceId ? [session, ...state.sessions] : state.sessions,
       currentSessionId: session.id,
       sessionSummary: null,
       sessionExternalTasks: {
         ...state.sessionExternalTasks,
         [session.id]: externalTaskRows,
-      },
-      sessionWorktrees: {
-        ...state.sessionWorktrees,
-        [session.id]: [],
-      },
-      sessionProjectMounts: {
-        ...state.sessionProjectMounts,
-        [session.id]: [],
-      },
-      sessionBranches: {
-        ...state.sessionBranches,
-        [session.id]: '',
       },
       sessionSlots: {
         ...state.sessionSlots,
@@ -351,21 +364,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
       agentEffortOverride: { ...get().agentEffortOverride, ...agentEffortOverrides },
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
-
-    if (trimmedExisting !== undefined && trimmedExisting !== '') {
-      const adoptionProjectId =
-        externalTasks?.find((task) => task.projectId != null)?.projectId ??
-        projects.find((project) => project.kind === 'repo')?.id;
-      if (adoptionProjectId !== undefined) {
-        await get()
-          .materializeProject({
-            sessionId: session.id,
-            projectId: adoptionProjectId,
-            reason: `adopted existing branch ${trimmedExisting}`,
-          })
-          .catch(() => undefined);
-      }
-    }
 
     if (attachmentInputs && attachmentInputs.length > 0) {
       await get().addGoalAttachments({ type: 'session', id: session.id }, attachmentInputs);

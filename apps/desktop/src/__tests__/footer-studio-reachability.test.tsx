@@ -182,8 +182,8 @@ vi.mock('../features/session/components/SessionNavSidebar', () => ({
   SessionNavSidebar: () => null,
 }));
 vi.mock('../features/workspace/hooks/useWindowPresence', () => ({ useWindowPresence: vi.fn() }));
-vi.mock('../features/workspace/components/WorkspaceLinkDialog', () => ({
-  WorkspaceLinkDialog: () => null,
+vi.mock('../features/workspace/components/WorkspaceLinkStudio', () => ({
+  WorkspaceLinkStudio: () => null,
 }));
 vi.mock('../features/workspace/components/WorkspaceLauncher', () => ({
   WorkspaceLauncher: () => null,
