@@ -347,13 +347,8 @@ export type AppActions = {
     mobileShared?: boolean;
     omitGoalSlot?: boolean;
   }): Promise<{ session: Session }>;
-  createUntitledSession(input: {
-    workspaceId: WorkspaceId;
-    projectId?: ProjectId;
-  }): Promise<{ session: Session }>;
+  createUntitledSession(input: { workspaceId: WorkspaceId }): Promise<{ session: Session }>;
   clearPendingTitleFocus(): void;
-  requestSessionProjectPick(input: { workspaceId: WorkspaceId }): void;
-  clearSessionProjectPick(): void;
   materializeProject(input: {
     sessionId: SessionId;
     projectId: ProjectId;
@@ -880,7 +875,6 @@ export const initialState: AppState = {
   archivedSessions: {},
   currentSessionId: null,
   pendingTitleFocusSessionId: null,
-  pendingProjectPickWorkspaceId: null,
   settings: {},
   sessionSummary: null,
   providerStatus: null,

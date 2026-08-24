@@ -36,9 +36,6 @@ export const createSessionsSlice = (set: SetFn, get: GetFn) => {
     createSession: createSession(set, get),
     createUntitledSession: createUntitledSession(set, get),
     clearPendingTitleFocus: () => set({ pendingTitleFocusSessionId: null }),
-    requestSessionProjectPick: ({ workspaceId }: { readonly workspaceId: WorkspaceId }) =>
-      set({ pendingProjectPickWorkspaceId: workspaceId }),
-    clearSessionProjectPick: () => set({ pendingProjectPickWorkspaceId: null }),
     materializeProject: materializeProject(set, get),
     linkSessionExternalTask: linkSessionExternalTask({ set, get }),
     unlinkSessionExternalTask: unlinkSessionExternalTask({ set, get }),
