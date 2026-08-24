@@ -61,21 +61,26 @@ export const ProjectScopeChip = ({ sessionId, workspaceId, onSelectLens }: Props
         copied ? 'border-success/30 bg-success/10 text-success' : VITAL_CHIP_HOVER,
       )}
     >
-      <button
-        type="button"
-        onClick={() => onSelectLens('projects')}
-        className={cn('inline-flex min-w-0 items-center gap-1.5 rounded-md px-2', VITAL_CHIP_FOCUS)}
-      >
-        <GlyphIcon size={11} aria-hidden className="shrink-0" />
-        <span className="min-w-0 truncate">{activeMount.mountName}</span>
-        {branch !== '' ? (
-          <>
-            <GitBranch size={11} aria-hidden className="shrink-0" />
-            <span className="min-w-0 truncate font-mono">{branch}</span>
-          </>
-        ) : null}
-        {extraCount > 0 ? <span className="shrink-0">+{extraCount}</span> : null}
-      </button>
+      <Tooltip content={activeMount.worktreePath} side="top">
+        <button
+          type="button"
+          onClick={() => onSelectLens('projects')}
+          className={cn(
+            'inline-flex min-w-0 items-center gap-1.5 rounded-md px-2',
+            VITAL_CHIP_FOCUS,
+          )}
+        >
+          <GlyphIcon size={11} aria-hidden className="shrink-0" />
+          <span className="min-w-0 truncate">{activeMount.mountName}</span>
+          {branch !== '' ? (
+            <>
+              <GitBranch size={11} aria-hidden className="shrink-0" />
+              <span className="min-w-0 truncate font-mono">{branch}</span>
+            </>
+          ) : null}
+          {extraCount > 0 ? <span className="shrink-0">+{extraCount}</span> : null}
+        </button>
+      </Tooltip>
       {branch !== '' ? (
         <Tooltip content={copied ? 'Copied' : 'Copy the branch name'} side="top">
           <button

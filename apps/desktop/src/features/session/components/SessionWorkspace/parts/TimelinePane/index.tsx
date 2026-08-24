@@ -156,10 +156,10 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
     return paths;
   }, [worktrees]);
 
-  const diffStatFor = ({ item }: { readonly item: TimelineRowItem }): MountDiffStat | null => {
+  const mountPathFor = ({ item }: { readonly item: TimelineRowItem }): string | null => {
     const { entry } = item;
     if (entry.kind === 'branch') {
-      return diffStats.get(entry.worktree.worktreePath) ?? null;
+      return entry.worktree.worktreePath;
     }
     if (entry.kind !== 'event' || entry.event.kind !== 'project_materialized') {
       return null;
@@ -168,7 +168,11 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
     if (projectId == null) {
       return null;
     }
-    const worktreePath = mountPathByProjectId.get(projectId) ?? null;
+    return mountPathByProjectId.get(projectId) ?? null;
+  };
+
+  const diffStatFor = ({ item }: { readonly item: TimelineRowItem }): MountDiffStat | null => {
+    const worktreePath = mountPathFor({ item });
     if (worktreePath == null) {
       return null;
     }
@@ -177,14 +181,11 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
 
   const actionFor = ({ item }: { readonly item: TimelineRowItem }): TimelineRowAction | null => {
     const { entry } = item;
-    if (entry.kind === 'event' && entry.event.kind === 'worktree_created') {
-      const worktreePath = entry.event.payload?.worktreePath ?? null;
-      if (worktreePath == null) {
-        return null;
-      }
+    const mountPath = mountPathFor({ item });
+    if (mountPath != null) {
       return {
         label: copied ? 'Copied' : 'Copy path',
-        onAct: () => void copy(worktreePath),
+        onAct: () => void copy(mountPath),
       };
     }
     if (entry.kind === 'agent' && entry.openQuestions.length > 0) {
