@@ -90,6 +90,8 @@ const renderGraph = (
       agentModelOverride={{}}
       agentProviderOverride={agentProviderOverride}
       roleModels={null}
+      sessionProvider={null}
+      sessionEffort={null}
       selectedAgentId={null}
       onSelect={onSelect}
     />,

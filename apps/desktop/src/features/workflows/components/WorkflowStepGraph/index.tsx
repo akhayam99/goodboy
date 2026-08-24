@@ -1,6 +1,7 @@
 import type {
   Agent,
   AgentId,
+  ModelEffort,
   ProviderId,
   RoleModelPreferences,
   Step,
@@ -17,6 +18,8 @@ type Props = {
   readonly agentModelOverride: Readonly<Record<string, string>>;
   readonly agentProviderOverride: Readonly<Record<string, ProviderId>>;
   readonly roleModels: RoleModelPreferences | null;
+  readonly sessionProvider: ProviderId | null;
+  readonly sessionEffort: ModelEffort | null;
   readonly selectedAgentId: AgentId | null;
   readonly onSelect: (id: AgentId) => void;
 };
@@ -29,6 +32,8 @@ export const WorkflowStepGraph = ({
   agentModelOverride,
   agentProviderOverride,
   roleModels,
+  sessionProvider,
+  sessionEffort,
   selectedAgentId,
   onSelect,
 }: Props) => {
@@ -53,6 +58,8 @@ export const WorkflowStepGraph = ({
           agentModelOverride={agentModelOverride}
           agentProviderOverride={agentProviderOverride}
           roleModels={roleModels}
+          sessionProvider={sessionProvider}
+          sessionEffort={sessionEffort}
           selectedAgentId={selectedAgentId}
           onSelect={onSelect}
         />

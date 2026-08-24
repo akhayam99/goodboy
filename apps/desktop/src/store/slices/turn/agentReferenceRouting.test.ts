@@ -10,6 +10,7 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
+import { getCheapModel, resolveModelForProvider } from '@goodboy/core';
 import { agentReferenceRouting } from './agentReferenceRouting';
 
 const NOW = '2026-08-01T00:00:00.000Z' as IsoDateTime;
@@ -153,6 +154,36 @@ describe('agentReferenceRouting', () => {
     });
 
     expect(result.model).toBe('haiku-4.5');
+  });
+
+  it('follows the session default provider when the role has no preference', () => {
+    const result = agentReferenceRouting({
+      agent: makeAgent(),
+      stepConfig: null,
+      roleModels: null,
+      session: makeSession({
+        providerPreference: { defaultProvider: 'codex', allowTurnOverride: true },
+      }),
+    });
+
+    expect(result.provider).toBe('codex');
+    expect(result.model).toBe(
+      resolveModelForProvider({ provider: 'codex', modelId: getCheapModel('codex') }),
+    );
+    expect(result.effort).toBe('low');
+  });
+
+  it('keeps the role preference above the session default', () => {
+    const result = agentReferenceRouting({
+      agent: makeAgent(),
+      stepConfig: null,
+      roleModels: { scout: { providerId: 'anthropic', model: 'sonnet-5', effort: 'high' } },
+      session: makeSession({
+        providerPreference: { defaultProvider: 'codex', allowTurnOverride: true },
+      }),
+    });
+
+    expect(result).toEqual({ provider: 'anthropic', model: 'sonnet-5', effort: 'high' });
   });
 
   it('recomputes the same reference regardless of persisted agent overrides', () => {

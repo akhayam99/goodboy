@@ -1,4 +1,11 @@
-import type { Agent, AgentId, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  ModelEffort,
+  ProviderId,
+  RoleModelPreferences,
+  Step,
+} from '@goodboy/types';
 import { inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
 import { resolveStepRouting } from '../../resolveStepRouting';
 import { WorkflowStepGraphNode } from './WorkflowStepGraphNode';
@@ -15,6 +22,8 @@ type Props = {
   readonly agentModelOverride: Readonly<Record<string, string>>;
   readonly agentProviderOverride: Readonly<Record<string, ProviderId>>;
   readonly roleModels: RoleModelPreferences | null;
+  readonly sessionProvider: ProviderId | null;
+  readonly sessionEffort: ModelEffort | null;
   readonly selectedAgentId: AgentId | null;
   readonly onSelect: (id: AgentId) => void;
 };
@@ -29,6 +38,8 @@ export const WorkflowStepGraphBranch = ({
   agentModelOverride,
   agentProviderOverride,
   roleModels,
+  sessionProvider,
+  sessionEffort,
   selectedAgentId,
   onSelect,
 }: Props) => {
@@ -40,6 +51,8 @@ export const WorkflowStepGraphBranch = ({
     roleModels,
     agentModel: agentModelOverride[run.id] ?? run.modelOverride,
     agentProvider: agentProviderOverride[run.id] ?? run.providerOverride,
+    sessionProvider,
+    sessionEffort,
   });
   const doneChildCount = children.filter(
     (child) => child.status === 'completed' || child.status === 'skipped',
@@ -76,6 +89,8 @@ export const WorkflowStepGraphBranch = ({
                   agentModelOverride={agentModelOverride}
                   agentProviderOverride={agentProviderOverride}
                   roleModels={roleModels}
+                  sessionProvider={sessionProvider}
+                  sessionEffort={sessionEffort}
                   selectedAgentId={selectedAgentId}
                   onSelect={onSelect}
                 />

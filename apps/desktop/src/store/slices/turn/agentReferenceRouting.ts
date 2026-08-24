@@ -42,7 +42,13 @@ export const agentReferenceRouting = ({
     };
   }
   const kind = classifyAgent(agent, kindOverride);
-  const routing = resolveStepRouting({ step: stepConfig, kind, roleModels });
+  const routing = resolveStepRouting({
+    step: stepConfig,
+    kind,
+    roleModels,
+    sessionProvider: session.providerPreference.defaultProvider,
+    sessionEffort: session.effort ?? null,
+  });
   return {
     provider: routing.provider,
     model: resolveModelForProvider({ provider: routing.provider, modelId: routing.model }),

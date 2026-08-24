@@ -405,6 +405,7 @@ const appendStep = async ({
     defaultProvider: (session.providerOverride ??
       session.providerPreference.defaultProvider) as ProviderId,
     roleModels,
+    sessionEffort: session.effort ?? null,
   });
   const agent = spawned.agents[0];
   if (agent == null) {

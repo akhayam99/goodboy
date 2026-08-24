@@ -1,6 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ROLE_DEFAULTS } from '@goodboy/core';
-import type { AgentId, SessionId, Step, StepId, WorkflowId, WorkflowRunId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  IsoDateTime,
+  ProviderId,
+  RoleModelPreferences,
+  Session,
+  SessionId,
+  Step,
+  StepId,
+  WorkflowId,
+  WorkflowRunId,
+  WorkspaceId,
+} from '@goodboy/types';
 
 const { invokeAgentInsertSpy } = vi.hoisted(() => ({
   invokeAgentInsertSpy: vi.fn(),
@@ -10,6 +23,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: invokeAgentInsertSpy,
 }));
 
+import { agentReferenceRouting } from '../turn/agentReferenceRouting';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -122,5 +136,107 @@ describe('preSpawnWorkflowAgents', () => {
     const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
     expect(insert['modelOverride']).toBe('opus-5');
     expect(insert['effort']).toBe('high');
+  });
+});
+
+const NOW = '2026-08-01T00:00:00.000Z' as IsoDateTime;
+
+const makeSession = (defaultProvider: ProviderId): Session => ({
+  id: SESSION_ID,
+  workspaceId: 'ws-1' as WorkspaceId,
+  goal: 'g',
+  state: { kind: 'idle', lastActivityAt: NOW },
+  contextSlots: [],
+  providerPreference: { defaultProvider, allowTurnOverride: true },
+  permissionMode: 'default',
+  workflowRuns: [],
+  autoRun: false,
+  titleUserEdited: false,
+  createdAt: NOW,
+  updatedAt: NOW,
+});
+
+const makeAgent = (spawnStep: Step): Agent => ({
+  id: 'agent-1' as AgentId,
+  sessionId: SESSION_ID,
+  ordinal: 0,
+  name: spawnStep.name,
+  status: 'pending',
+  kind: 'scout',
+  stepId: spawnStep.id,
+});
+
+type InvariantParams = {
+  readonly spawnStep: Step;
+  readonly defaultProvider: ProviderId;
+  readonly roleModels: RoleModelPreferences | null;
+};
+
+const spawnAndReference = async ({ spawnStep, defaultProvider, roleModels }: InvariantParams) => {
+  const spawned = await preSpawnWorkflowAgents({
+    sessionId: SESSION_ID,
+    workflowRunId: RUN_ID,
+    steps: [spawnStep],
+    baseOrdinal: 0,
+    defaultProvider,
+    roleModels,
+  });
+  const persisted = {
+    provider: spawned.providerOverrides['agent-1'],
+    model: spawned.modelOverrides['agent-1'],
+    effort: spawned.effortOverrides['agent-1'],
+  };
+  const reference = agentReferenceRouting({
+    agent: makeAgent(spawnStep),
+    stepConfig: spawnStep,
+    roleModels,
+    session: makeSession(defaultProvider),
+  });
+  return { persisted, reference };
+};
+
+describe('preSpawnWorkflowAgents and agentReferenceRouting agree', () => {
+  it('lets the role preference win over a non-default session provider on both sides', async () => {
+    const roleModels: RoleModelPreferences = {
+      scout: { providerId: 'anthropic', model: 'sonnet-5', effort: 'high' },
+    };
+    const { persisted, reference } = await spawnAndReference({
+      spawnStep: step({ role: 'scout', name: 'Survey' }),
+      defaultProvider: 'codex',
+      roleModels,
+    });
+
+    expect(persisted.provider).toBe('anthropic');
+    expect(reference).toEqual(persisted);
+  });
+
+  it('lets the session default win over the hardcoded fallback on both sides', async () => {
+    const { persisted, reference } = await spawnAndReference({
+      spawnStep: step({ role: 'scout', name: 'Survey' }),
+      defaultProvider: 'codex',
+      roleModels: null,
+    });
+
+    expect(persisted.provider).toBe('codex');
+    expect(reference).toEqual(persisted);
+  });
+
+  it('lets the step pin win over everything on both sides', async () => {
+    const { persisted, reference } = await spawnAndReference({
+      spawnStep: step({
+        role: 'scout',
+        name: 'Survey',
+        providerOverride: 'anthropic',
+        modelOverride: 'opus-5',
+        effort: 'high',
+      }),
+      defaultProvider: 'codex',
+      roleModels: {
+        scout: { providerId: 'cursor', model: 'gpt-5.6', effort: 'medium' },
+      },
+    });
+
+    expect(persisted).toEqual({ provider: 'anthropic', model: 'opus-5', effort: 'high' });
+    expect(reference).toEqual(persisted);
   });
 });

@@ -275,6 +275,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
           baseOrdinal: 0,
           defaultProvider: session.providerPreference.defaultProvider,
           roleModels,
+          sessionEffort: session.effort ?? null,
           ...(workspaceVerbositySeed != null && { defaultVerbosity: workspaceVerbositySeed }),
         });
         Object.assign(agentModelOverrides, spawned.modelOverrides);

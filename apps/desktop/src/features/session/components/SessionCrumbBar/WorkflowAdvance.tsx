@@ -32,6 +32,14 @@ export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
   const hasOpenQuestions = workflowRunHasOpenQuestions(openQuestions, workflowRunId);
   const isAutoRun = run.autoRun === true;
   const roleModels = useSessionRoleModels({ sessionId });
+  const sessionProvider = useAppStore(
+    (state) =>
+      state.sessions?.find((candidate) => candidate.id === sessionId)?.providerPreference
+        .defaultProvider ?? null,
+  );
+  const sessionEffort = useAppStore(
+    (state) => state.sessions?.find((candidate) => candidate.id === sessionId)?.effort ?? null,
+  );
   const activateWorkflowAgent = useAppStore((state) => state.activateWorkflowAgent);
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
   const recoverStuckStep = useAppStore((state) => state.recoverStuckStep);
@@ -110,6 +118,8 @@ export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
       agentModel={routing.agentModel}
       agentProvider={routing.agentProvider}
       agentEffort={routing.agentEffort}
+      sessionProvider={sessionProvider}
+      sessionEffort={sessionEffort}
       blockReason={state.kind === 'blocked' ? state.reason : null}
       onAdvance={({ step, isConfirmed }) => void onAdvance({ step, isConfirmed })}
       onForceAdvance={() =>
