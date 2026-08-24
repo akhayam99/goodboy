@@ -28,6 +28,7 @@ import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useSelectedAgentHome } from '../../hooks/useSelectedAgentHome';
 import { useSessionBranchSync } from '../../hooks/useSessionBranchSync';
 import { resolveOverlayHome } from './resolveOverlayHome';
+import { resolveDiffMount } from './parts/resolveDiffMount';
 import { WorkflowsPane } from './parts/WorkflowsPane';
 import { IntegrationPane } from './parts/IntegrationPane';
 import { GithubTaskDetail } from './parts/IntegrationPane/GithubTaskDetail';
@@ -72,6 +73,13 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const workingDir = useAppStore((s) => (s.sessionWorktrees[sessionId] ?? [])[0] ?? null);
   const sessionRepo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const projectWorktreePath = sessionRepo?.worktreePath ?? null;
+  const sessionMounts = useAppStore((s) => s.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
+  const requestedDiffMountPath = useAppStore((s) => s.diffMountPath?.[sessionId] ?? null);
+  const diffWorktreePath = resolveDiffMount({
+    mounts: sessionMounts,
+    requestedPath: requestedDiffMountPath,
+    fallbackPath: projectWorktreePath,
+  });
   const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
   const setSessionStudio = useAppStore((s) => s.setSessionStudio);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
@@ -331,7 +339,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             <FilesPane
               sessionId={sessionId}
               sessionDir={workingDir}
-              worktreePath={projectWorktreePath}
+              worktreePath={diffWorktreePath}
               isBranchless={isBranchless}
               onClose={onSelectOverview}
             />

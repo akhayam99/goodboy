@@ -4,7 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ProjectId, Session, SessionId, SessionProjectMount } from '@goodboy/types';
 
-const { store } = vi.hoisted(() => ({
+const { store, diffStats } = vi.hoisted(() => ({
+  diffStats: {
+    current: new Map<string, { additions: number; deletions: number }>(),
+  },
   store: {
     sessionProjectMounts: {} as Record<string, ReadonlyArray<SessionProjectMount>>,
     sessionActiveProject: {} as Record<string, string>,
@@ -16,6 +19,7 @@ const { store } = vi.hoisted(() => ({
       rootPath: string;
     }>,
     setSessionActiveProject: vi.fn(),
+    openMountDiff: vi.fn(),
     materializeProject: vi.fn(async () => undefined),
     detachProject: vi.fn(async () => undefined),
     emitNotification: vi.fn(),
@@ -24,6 +28,7 @@ const { store } = vi.hoisted(() => ({
 
 vi.mock('../../../../../../store', () => ({
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
+  useMountDiffStats: () => diffStats.current,
 }));
 
 vi.mock('../../../../../../shared/components/PaneShell', () => ({
@@ -96,6 +101,7 @@ beforeEach(() => {
     [SESSION_ID]: [mount(API_PROJECT_ID, 'api'), mount(WEB_PROJECT_ID, 'web')],
   };
   store.sessionActiveProject = { [SESSION_ID]: WEB_PROJECT_ID };
+  diffStats.current = new Map([['/worktrees/api', { additions: 9, deletions: 2 }]]);
 });
 
 afterEach(cleanup);
@@ -118,6 +124,27 @@ describe('ProjectsPane', () => {
     expect(screen.getByText('/worktrees/web')).toBeDefined();
     const active = screen.getByText('Active');
     expect(active.closest('[class*="rounded-lg"]')?.textContent).toContain('web');
+  });
+
+  it('counts the changes of each mount, and says so when a mount is clean', () => {
+    render(<ProjectsPane session={session} />);
+
+    const apiRow = screen.getByText('/worktrees/api').closest('[class*="rounded-lg"]');
+    const webRow = screen.getByText('/worktrees/web').closest('[class*="rounded-lg"]');
+
+    expect(apiRow?.textContent).toContain('+9');
+    expect(apiRow?.textContent).toContain('-2');
+    expect(apiRow?.textContent).not.toContain('No changes');
+    expect(webRow?.textContent).toContain('No changes');
+  });
+
+  it('opens the diff of a mount that is not the active project, and leaves the active one alone', () => {
+    render(<ProjectsPane session={session} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'View the diff of api' }));
+
+    expect(store.openMountDiff).toHaveBeenCalledWith(SESSION_ID, '/worktrees/api');
+    expect(store.setSessionActiveProject).not.toHaveBeenCalled();
   });
 
   it('mounts an unmounted project from the CTA popover with the manual reason', async () => {

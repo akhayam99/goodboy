@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Folder, FolderGit2, GitBranch } from 'lucide-react';
 import { AnchoredPopover, Button, Chip, cn, formatError, Tooltip, useDropdown } from '@goodboy/ui';
 import type { Project, SessionId, SessionProjectMount } from '@goodboy/types';
-import { useAppStore } from '../../../../../../store';
+import { useAppStore, type MountDiffStat } from '../../../../../../store';
 import { BranchSwitchPanel } from '../../../../../worktree/BranchSwitchPanel';
+import { DiffStat } from '../../../DiffStat';
 
 const ACTIVE_HINT = 'The header, PR surface and default branch follow this project';
 const DETACH_HINT = 'Removes the clean checkout; uncommitted work stays on disk.';
@@ -14,17 +15,21 @@ type Props = {
   readonly mount: SessionProjectMount;
   readonly isActive: boolean;
   readonly canSwitch: boolean;
+  readonly diffStat: MountDiffStat | null;
 };
 
-export const ProjectRow = ({ sessionId, project, mount, isActive, canSwitch }: Props) => {
+export const ProjectRow = ({ sessionId, project, mount, isActive, canSwitch, diffStat }: Props) => {
   const detachProject = useAppStore((state) => state.detachProject);
   const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
+  const openMountDiff = useAppStore((state) => state.openMountDiff);
   const emitNotification = useAppStore((state) => state.emitNotification);
   const [isBusy, setIsBusy] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const branchDropdown = useDropdown({ width: 'w-96', expectedHeight: 360 });
   const GlyphIcon = project.kind === 'repo' ? FolderGit2 : Folder;
   const canSwitchBranch = isActive && project.kind === 'repo' && mount.branch !== '';
+  const changes =
+    diffStat != null && (diffStat.additions > 0 || diffStat.deletions > 0) ? diffStat : null;
 
   const detach = async () => {
     setIsBusy(true);
@@ -64,7 +69,14 @@ export const ProjectRow = ({ sessionId, project, mount, isActive, canSwitch }: P
             </Tooltip>
           ) : null}
         </div>
-        <span className="truncate text-xs text-muted-foreground/70">{mount.worktreePath}</span>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-xs text-muted-foreground/70">{mount.worktreePath}</span>
+          {changes != null ? (
+            <DiffStat additions={changes.additions} deletions={changes.deletions} size="md" />
+          ) : (
+            <span className="shrink-0 text-xs text-muted-foreground/50">No changes</span>
+          )}
+        </div>
       </div>
       {isConfirming ? (
         <div className="flex shrink-0 flex-col items-end gap-0.5 text-xs">
@@ -91,6 +103,16 @@ export const ProjectRow = ({ sessionId, project, mount, isActive, canSwitch }: P
         </div>
       ) : (
         <div className="flex shrink-0 items-center gap-1.5">
+          <Tooltip content={`See what changed in ${mount.mountName}`}>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label={`View the diff of ${mount.mountName}`}
+              onClick={() => openMountDiff(sessionId, mount.worktreePath)}
+            >
+              View diff
+            </Button>
+          </Tooltip>
           {canSwitchBranch ? (
             <AnchoredPopover
               dropdown={branchDropdown}

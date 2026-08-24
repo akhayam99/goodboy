@@ -837,6 +837,7 @@ export type AppActions = {
   setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
   openDiffLens(sessionId: SessionId, focus: DiffFocus): void;
+  openMountDiff(sessionId: SessionId, worktreePath: string): void;
   openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
   beginSessionCreation(
     sessionId: SessionId,

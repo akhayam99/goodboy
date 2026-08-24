@@ -12,6 +12,7 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { VITAL_CHIP } from './vitalChip';
 import { SessionDestructiveActions } from './SessionDestructiveActions';
 import { LinkIssueAction } from './LinkIssueAction';
+import { MountChangesChip } from './MountChangesChip';
 import { ProjectScopeChip } from './ProjectScopeChip';
 import { SessionCostChip } from './SessionCostChip';
 import { StatusRowRequest } from './StatusRowRequest';
@@ -125,6 +126,7 @@ export const HeaderBand = ({ session, stage, onSelectLens }: Props) => {
             workspaceId={session.workspaceId}
             onSelectLens={onSelectLens}
           />
+          <MountChangesChip sessionId={sessionId} />
           <Tooltip content="Decisions and session summary">
             <button type="button" onClick={() => onSelectLens('context')} className={VITAL_CHIP}>
               <CONCEPT_ICONS.context size={11} aria-hidden />

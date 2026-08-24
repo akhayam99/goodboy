@@ -138,6 +138,7 @@ type SessionViewSliceState = {
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
+  readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
 };
 
@@ -155,6 +156,7 @@ type SessionViewSliceActions = {
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
   openDiffLens(sessionId: SessionId, focus: DiffFocus): void;
+  openMountDiff(sessionId: SessionId, worktreePath: string): void;
   beginSessionCreation(
     sessionId: SessionId,
     creation: { readonly kind: SessionCreationKind; readonly label?: string | null },

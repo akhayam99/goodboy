@@ -20,6 +20,7 @@ export const ProjectScopeChip = ({ sessionId, workspaceId, onSelectLens }: Props
     (s) => s.projects.filter((project) => project.workspaceId === workspaceId).length,
   );
   const mountCount = useAppStore((s) => (s.sessionProjectMounts[sessionId] ?? EMPTY_ARRAY).length);
+  const openMountDiff = useAppStore((s) => s.openMountDiff);
   const activeMount = useAppStore((s) => {
     const mounts = s.sessionProjectMounts[sessionId];
     if (mounts == null || mounts.length === 0) {
@@ -64,7 +65,7 @@ export const ProjectScopeChip = ({ sessionId, workspaceId, onSelectLens }: Props
       <Tooltip content={activeMount.worktreePath} side="top">
         <button
           type="button"
-          onClick={() => onSelectLens('projects')}
+          onClick={() => openMountDiff(sessionId, activeMount.worktreePath)}
           className={cn(
             'inline-flex min-w-0 items-center gap-1.5 rounded-md px-2',
             VITAL_CHIP_FOCUS,
@@ -78,9 +79,23 @@ export const ProjectScopeChip = ({ sessionId, workspaceId, onSelectLens }: Props
               <span className="min-w-0 truncate font-mono">{branch}</span>
             </>
           ) : null}
-          {extraCount > 0 ? <span className="shrink-0">+{extraCount}</span> : null}
         </button>
       </Tooltip>
+      {extraCount > 0 ? (
+        <Tooltip content={`${extraCount} more mounted, open the projects lens`} side="top">
+          <button
+            type="button"
+            onClick={() => onSelectLens('projects')}
+            aria-label={`Open the projects lens, ${extraCount} more mounted`}
+            className={cn(
+              'inline-flex shrink-0 items-center rounded-md px-1.5 text-muted-foreground hover:text-foreground',
+              VITAL_CHIP_FOCUS,
+            )}
+          >
+            +{extraCount}
+          </button>
+        </Tooltip>
+      ) : null}
       {branch !== '' ? (
         <Tooltip content={copied ? 'Copied' : 'Copy the branch name'} side="top">
           <button

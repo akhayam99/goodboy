@@ -49,6 +49,7 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const openMountDiff = useAppStore((s) => s.openMountDiff);
   const questions = useSessionOpenQuestions(sessionId);
   const workflows = useAttachedWorkflowRuns({ session });
   const openTargetFor = useTimelineOpen({ sessionId });
@@ -183,6 +184,13 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
     const { entry } = item;
     const mountPath = mountPathFor({ item });
     if (mountPath != null) {
+      const stat = diffStatFor({ item });
+      if (stat != null && (stat.additions > 0 || stat.deletions > 0)) {
+        return {
+          label: 'View diff',
+          onAct: () => openMountDiff(sessionId, mountPath),
+        };
+      }
       return {
         label: copied ? 'Copied' : 'Copy path',
         onAct: () => void copy(mountPath),

@@ -5,6 +5,7 @@ import { setSessionSort } from './setSessionSort';
 import {
   lensGo,
   openDiffLens,
+  openMountDiff,
   openExternalTaskLens,
   setActiveLens,
   setDiffFocus,
@@ -49,6 +50,7 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     setSessionStudio: setSessionStudio(set),
     setDiffFocus: setDiffFocus(set),
     openDiffLens: openDiffLens(get),
+    openMountDiff: openMountDiff(set, get),
     openExternalTaskLens: openExternalTaskLens(set, get),
     beginSessionCreation: beginSessionCreation(set),
     endSessionCreation: endSessionCreation(set),

@@ -221,13 +221,13 @@ describe('TimelineRowLabel', () => {
       />,
     );
 
-    expect(container.querySelector('[data-testid="timeline-diff-stat"]')).toBeNull();
+    expect(container.querySelector('[data-testid="diff-stat"]')).toBeNull();
   });
 
   it('shows no stat while the mount has not been measured yet', () => {
     const { container } = render(<TimelineRowLabel item={itemOf({ entry: mountEntry() })} />);
 
-    expect(container.querySelector('[data-testid="timeline-diff-stat"]')).toBeNull();
+    expect(container.querySelector('[data-testid="diff-stat"]')).toBeNull();
   });
 
   it('keeps the chip off a step row, where the run already names the role', () => {

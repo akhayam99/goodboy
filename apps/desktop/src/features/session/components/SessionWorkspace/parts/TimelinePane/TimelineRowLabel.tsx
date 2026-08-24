@@ -15,8 +15,8 @@ import type {
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
 import type { TimelineRowGrade } from '../../../../timeline/timelineRhythm';
-import { TimelineDiffStat } from './TimelineDiffStat';
 import { TimelineRunLabel } from './TimelineRunLabel';
+import { DiffStat } from '../../../DiffStat';
 
 type Props = {
   readonly item: TimelineRowItem;
@@ -142,7 +142,7 @@ export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
         )}
       </span>
       {diffStat == null ? null : (
-        <TimelineDiffStat additions={diffStat.additions} deletions={diffStat.deletions} />
+        <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />
       )}
       {secondary != null ? (
         <span className="min-w-0 truncate text-2xs text-muted-foreground">{secondary}</span>

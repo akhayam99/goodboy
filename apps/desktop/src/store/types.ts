@@ -317,6 +317,7 @@ export type AppState = AppSliceState & {
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
+  readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;

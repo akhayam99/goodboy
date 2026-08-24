@@ -34,6 +34,7 @@ type Store = {
   renameTask: ReturnType<typeof vi.fn>;
   setFocusedGithubIssueNumber: ReturnType<typeof vi.fn>;
   openExternalTaskLens: ReturnType<typeof vi.fn>;
+  openMountDiff: ReturnType<typeof vi.fn>;
   clearPendingTitleFocus: ReturnType<typeof vi.fn>;
 };
 
@@ -55,6 +56,7 @@ const { store, hooks } = vi.hoisted(() => ({
     renameTask: vi.fn(async () => undefined),
     setFocusedGithubIssueNumber: vi.fn(),
     openExternalTaskLens: vi.fn(),
+    openMountDiff: vi.fn(),
     clearPendingTitleFocus: vi.fn(),
   } as Store,
   hooks: {
@@ -67,6 +69,7 @@ vi.mock('../../../../store', () => ({
   agentHasUnread: () => false,
   useAppStore: <T,>(selector: (s: Store) => T) => selector(store),
   useCurrentWorkspace: () => null,
+  useMountDiffStats: () => new Map(),
 }));
 
 vi.mock('../SummarizerBadge', () => ({
@@ -159,6 +162,7 @@ beforeEach(() => {
   store.renameTask.mockReset();
   store.setFocusedGithubIssueNumber.mockReset();
   store.openExternalTaskLens.mockReset();
+  store.openMountDiff.mockReset();
   store.clearPendingTitleFocus.mockReset();
   hooks.remoteKind.current = 'github';
   editorMenuCalls.length = 0;
@@ -334,16 +338,24 @@ describe('HeaderBand', () => {
     expect(screen.queryByRole('button', { name: /No projects mounted/ })).toBeNull();
   });
 
-  it('shows the active mount with its branch and opens the projects lens', () => {
+  it('shows the active mount with its branch and opens the diff of that mount', () => {
     store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo' }];
     store.sessionProjectMounts = {
-      [SESSION_ID]: [{ projectId: 'project-1', mountName: 'api', branch: 'goodboy/x' }],
+      [SESSION_ID]: [
+        {
+          projectId: 'project-1',
+          mountName: 'api',
+          branch: 'goodboy/x',
+          worktreePath: '/worktrees/api',
+        },
+      ],
     };
     const onSelectLens = vi.fn();
     render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={onSelectLens} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'api goodboy/x' }));
-    expect(onSelectLens).toHaveBeenCalledWith('projects');
+    expect(store.openMountDiff).toHaveBeenCalledWith(SESSION_ID, '/worktrees/api');
+    expect(onSelectLens).not.toHaveBeenCalled();
   });
 
   it('omits the branch part and the copy affordance on a branchless mount', () => {
@@ -357,7 +369,7 @@ describe('HeaderBand', () => {
     expect(screen.queryByRole('button', { name: /Copy branch/ })).toBeNull();
   });
 
-  it('suffixes the mounts beyond the active one with a count', () => {
+  it('keeps the project list one click away behind the overflow count', () => {
     store.projects = [
       { id: 'project-1', workspaceId: 'ws-1', kind: 'repo' },
       { id: 'project-2', workspaceId: 'ws-1', kind: 'repo' },
@@ -366,7 +378,12 @@ describe('HeaderBand', () => {
     store.sessionProjectMounts = {
       [SESSION_ID]: [
         { projectId: 'project-1', mountName: 'api', branch: 'goodboy/x' },
-        { projectId: 'project-2', mountName: 'web', branch: 'goodboy/y' },
+        {
+          projectId: 'project-2',
+          mountName: 'web',
+          branch: 'goodboy/y',
+          worktreePath: '/worktrees/web',
+        },
         { projectId: 'project-3', mountName: 'docs', branch: 'goodboy/z' },
       ],
     };
@@ -374,7 +391,11 @@ describe('HeaderBand', () => {
     const onSelectLens = vi.fn();
     render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={onSelectLens} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'web goodboy/y +2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'web goodboy/y' }));
+    expect(store.openMountDiff).toHaveBeenCalledWith(SESSION_ID, '/worktrees/web');
+    expect(onSelectLens).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open the projects lens, 2 more mounted' }));
     expect(onSelectLens).toHaveBeenCalledWith('projects');
     expect(screen.queryByText('goodboy/x')).toBeNull();
   });

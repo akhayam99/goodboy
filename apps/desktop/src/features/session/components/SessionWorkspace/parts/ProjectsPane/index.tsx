@@ -1,7 +1,7 @@
 import { useShallow } from 'zustand/react/shallow';
 import { LensEmptyState } from '@goodboy/ui';
 import type { Session, SessionId, SessionProjectMount } from '@goodboy/types';
-import { useAppStore } from '../../../../../../store';
+import { useAppStore, useMountDiffStats } from '../../../../../../store';
 import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { MountProjectPopover } from './MountProjectPopover';
@@ -22,6 +22,7 @@ export const ProjectsPane = ({ session }: Props) => {
       state.projects.filter((project) => project.workspaceId === session.workspaceId),
     ),
   );
+  const diffStats = useMountDiffStats(sessionId);
 
   const activeMountedId =
     mounts.find((mount) => mount.projectId === activeProjectId)?.projectId ??
@@ -60,6 +61,7 @@ export const ProjectsPane = ({ session }: Props) => {
                 mount={mount}
                 isActive={project.id === activeMountedId}
                 canSwitch={mounts.length > 1}
+                diffStat={diffStats.get(mount.worktreePath) ?? null}
               />
             ))
           )}
