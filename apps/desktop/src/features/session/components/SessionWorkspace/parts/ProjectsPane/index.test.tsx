@@ -116,14 +116,17 @@ describe('ProjectsPane', () => {
     expect(screen.queryByRole('button', { name: 'Mount' })).toBeNull();
   });
 
-  it('shows branch, mount path and the primary marker on mounted rows', () => {
+  it('shows branch, mount path and the primary highlight on mounted rows', () => {
     render(<ProjectsPane session={session} />);
 
     expect(screen.getAllByText('ak/project-scope')).toHaveLength(2);
     expect(screen.getByText('/worktrees/api')).toBeDefined();
     expect(screen.getByText('/worktrees/web')).toBeDefined();
-    const primary = screen.getByText('Primary');
-    expect(primary.closest('[class*="rounded-lg"]')?.textContent).toContain('web');
+    const webRow = screen.getByText('web').closest('[class*="rounded-lg"]');
+    expect(webRow?.className).toContain('border-primary/40');
+    const apiRow = screen.getByText('api').closest('[class*="rounded-lg"]');
+    expect(apiRow?.className).not.toContain('border-primary/40');
+    expect(screen.queryByText('Primary')).toBeNull();
     expect(screen.queryByText('Active')).toBeNull();
   });
 
@@ -258,20 +261,12 @@ describe('ProjectsPane', () => {
     });
   });
 
-  it('explains what the primary project drives on hover of the pill and the switch', async () => {
+  it('explains what the primary project drives on hover of the switch', async () => {
     vi.useFakeTimers();
     try {
       render(<ProjectsPane session={session} />);
       const hint =
         'New agents and turns work in this project by default; other mounts stay writable';
-      const pillAnchor = screen.getByText('Primary').parentElement!;
-
-      fireEvent.mouseEnter(pillAnchor);
-      await act(async () => {
-        vi.advanceTimersByTime(400);
-      });
-      expect(screen.getByRole('tooltip').textContent).toBe(hint);
-      fireEvent.mouseLeave(pillAnchor);
 
       fireEvent.mouseEnter(screen.getByRole('button', { name: 'Make primary' }));
       await act(async () => {

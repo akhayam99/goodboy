@@ -8,7 +8,7 @@ import type { Session, SessionId } from '@goodboy/types';
 type Store = {
   sessions: ReadonlyArray<Session>;
   workspaces: ReadonlyArray<unknown>;
-  projects: ReadonlyArray<{ id: string; workspaceId: string; kind?: string }>;
+  projects: ReadonlyArray<{ id: string; workspaceId: string; kind?: string; name?: string }>;
   sessionBranches: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   sessionProjectMounts: Record<string, ReadonlyArray<unknown>>;
@@ -37,13 +37,22 @@ type Store = {
   openExternalTaskLens: ReturnType<typeof vi.fn>;
   openMountDiff: ReturnType<typeof vi.fn>;
   clearPendingTitleFocus: ReturnType<typeof vi.fn>;
+  setSessionActiveProject: ReturnType<typeof vi.fn>;
+  detachProject: ReturnType<typeof vi.fn>;
+  materializeProject: ReturnType<typeof vi.fn>;
+  emitNotification: ReturnType<typeof vi.fn>;
 };
 
-const { store, hooks } = vi.hoisted(() => ({
+const { store, hooks, stats } = vi.hoisted(() => ({
   store: {
     sessions: [] as ReadonlyArray<Session>,
     workspaces: [] as ReadonlyArray<unknown>,
-    projects: [] as ReadonlyArray<{ id: string; workspaceId: string; kind?: string }>,
+    projects: [] as ReadonlyArray<{
+      id: string;
+      workspaceId: string;
+      kind?: string;
+      name?: string;
+    }>,
     sessionBranches: {} as Record<string, string>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
@@ -60,9 +69,16 @@ const { store, hooks } = vi.hoisted(() => ({
     openExternalTaskLens: vi.fn(),
     openMountDiff: vi.fn(),
     clearPendingTitleFocus: vi.fn(),
+    setSessionActiveProject: vi.fn(),
+    detachProject: vi.fn(async () => undefined),
+    materializeProject: vi.fn(async () => undefined),
+    emitNotification: vi.fn(),
   } as Store,
   hooks: {
     remoteKind: { current: 'github' as 'github' | 'gitlab' | 'other' | 'none' | null },
+  },
+  stats: {
+    current: new Map<string, { additions: number; deletions: number }>(),
   },
 }));
 
@@ -71,7 +87,11 @@ vi.mock('../../../../store', () => ({
   agentHasUnread: () => false,
   useAppStore: <T,>(selector: (s: Store) => T) => selector(store),
   useCurrentWorkspace: () => null,
-  useMountDiffStats: () => new Map(),
+  useMountDiffStats: () => stats.current,
+}));
+
+vi.mock('../../../worktree/BranchSwitchPanel', () => ({
+  BranchSwitchPanel: () => <div data-testid="branch-switch-panel" />,
 }));
 
 vi.mock('../SummarizerBadge', () => ({
@@ -160,6 +180,11 @@ beforeEach(() => {
   store.openExternalTaskLens.mockReset();
   store.openMountDiff.mockReset();
   store.clearPendingTitleFocus.mockReset();
+  store.setSessionActiveProject.mockReset();
+  store.detachProject.mockReset();
+  store.materializeProject.mockReset();
+  store.emitNotification.mockReset();
+  stats.current = new Map();
   hooks.remoteKind.current = 'github';
   editorMenuCalls.length = 0;
   sessionGitActionsCalls.length = 0;
@@ -290,18 +315,11 @@ describe('HeaderBand', () => {
   it('keeps the scope entry out of a workspace with no projects', () => {
     render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
 
-    expect(screen.queryByRole('button', { name: /No projects mounted/ })).toBeNull();
+    expect(screen.queryByText('No project mounted')).toBeNull();
   });
 
-  it('shows no scope entry until the session mount is known', () => {
-    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo' }];
-    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
-
-    expect(screen.queryByRole('button', { name: /No projects mounted/ })).toBeNull();
-  });
-
-  it('shows the active mount with its branch and opens the diff of that mount', () => {
-    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo' }];
+  it('orders the vitals row as project, branch, diff, context', () => {
+    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo', name: 'api' }];
     store.sessionProjectMounts = {
       [SESSION_ID]: [
         {
@@ -312,18 +330,71 @@ describe('HeaderBand', () => {
         },
       ],
     };
-    const onSelectLens = vi.fn();
-    render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} />);
+    stats.current = new Map([['/worktrees/api', { additions: 2, deletions: 1 }]]);
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'api goodboy/x' }));
-    expect(store.openMountDiff).toHaveBeenCalledWith(SESSION_ID, '/worktrees/api');
-    expect(onSelectLens).not.toHaveBeenCalled();
+    const follows = (first: Element, second: Element) =>
+      (first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    const project = screen.getByRole('button', { name: 'api' });
+    const branch = screen.getByRole('button', { name: 'Copy branch goodboy/x' });
+    const diff = screen.getByRole('button', { name: 'View the changes of api' });
+    const context = screen.getByRole('button', { name: 'Context' });
+    expect(follows(project, branch)).toBe(true);
+    expect(follows(branch, diff)).toBe(true);
+    expect(follows(diff, context)).toBe(true);
   });
 
-  it('omits the branch part and the copy affordance on a branchless mount', () => {
-    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo' }];
+  it('shows the plain project name when only one project is mounted', () => {
+    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo', name: 'api' }];
     store.sessionProjectMounts = {
-      [SESSION_ID]: [{ projectId: 'project-1', mountName: 'api', branch: '' }],
+      [SESSION_ID]: [
+        {
+          projectId: 'project-1',
+          mountName: 'api',
+          branch: 'goodboy/x',
+          worktreePath: '/worktrees/api',
+        },
+      ],
+    };
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'api' })).toBeDefined();
+    expect(screen.queryByText('+1')).toBeNull();
+  });
+
+  it('counts the extra mounts on the project chip label', () => {
+    store.projects = [
+      { id: 'project-1', workspaceId: 'ws-1', kind: 'repo', name: 'api' },
+      { id: 'project-2', workspaceId: 'ws-1', kind: 'repo', name: 'web' },
+    ];
+    store.sessionProjectMounts = {
+      [SESSION_ID]: [
+        {
+          projectId: 'project-1',
+          mountName: 'api',
+          branch: 'goodboy/x',
+          worktreePath: '/worktrees/api',
+        },
+        {
+          projectId: 'project-2',
+          mountName: 'web',
+          branch: 'goodboy/y',
+          worktreePath: '/worktrees/web',
+        },
+      ],
+    };
+    store.sessionActiveProject = { [SESSION_ID]: 'project-1' };
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'api +1' })).toBeDefined();
+  });
+
+  it('omits the branch chip on a branchless mount', () => {
+    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo', name: 'api' }];
+    store.sessionProjectMounts = {
+      [SESSION_ID]: [
+        { projectId: 'project-1', mountName: 'api', branch: '', worktreePath: '/worktrees/api' },
+      ],
     };
     render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
 
@@ -331,39 +402,56 @@ describe('HeaderBand', () => {
     expect(screen.queryByRole('button', { name: /Copy branch/ })).toBeNull();
   });
 
-  it('keeps the project list one click away behind the overflow count', () => {
+  it('opens the diff of the primary mount from the changes chip', () => {
     store.projects = [
-      { id: 'project-1', workspaceId: 'ws-1', kind: 'repo' },
-      { id: 'project-2', workspaceId: 'ws-1', kind: 'repo' },
-      { id: 'project-3', workspaceId: 'ws-1', kind: 'repo' },
+      { id: 'project-1', workspaceId: 'ws-1', kind: 'repo', name: 'api' },
+      { id: 'project-2', workspaceId: 'ws-1', kind: 'repo', name: 'web' },
     ];
     store.sessionProjectMounts = {
       [SESSION_ID]: [
-        { projectId: 'project-1', mountName: 'api', branch: 'goodboy/x' },
+        {
+          projectId: 'project-1',
+          mountName: 'api',
+          branch: 'goodboy/x',
+          worktreePath: '/worktrees/api',
+        },
         {
           projectId: 'project-2',
           mountName: 'web',
           branch: 'goodboy/y',
           worktreePath: '/worktrees/web',
         },
-        { projectId: 'project-3', mountName: 'docs', branch: 'goodboy/z' },
       ],
     };
     store.sessionActiveProject = { [SESSION_ID]: 'project-2' };
+    stats.current = new Map([
+      ['/worktrees/api', { additions: 12, deletions: 3 }],
+      ['/worktrees/web', { additions: 4, deletions: 1 }],
+    ]);
     const onSelectLens = vi.fn();
     render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'web goodboy/y' }));
+    fireEvent.click(screen.getByRole('button', { name: 'View the changes of web' }));
     expect(store.openMountDiff).toHaveBeenCalledWith(SESSION_ID, '/worktrees/web');
     expect(onSelectLens).not.toHaveBeenCalled();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open the projects page, 2 more mounted' }));
-    expect(onSelectLens).toHaveBeenCalledWith('projects');
-    expect(screen.queryByText('goodboy/x')).toBeNull();
   });
 
-  it('keeps the projects page reachable when only one project is mounted', () => {
-    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo' }];
+  it('reaches the projects page from the popover footer when nothing is mounted', () => {
+    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo', name: 'api' }];
+    store.sessionProjectMounts = { [SESSION_ID]: [] };
+    const onSelectLens = vi.fn();
+    render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'No project mounted' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open projects page' }));
+    expect(onSelectLens).toHaveBeenCalledWith('projects');
+    expect(store.openMountDiff).not.toHaveBeenCalled();
+  });
+
+  it('copies the active branch from the chip without leaving the overview', async () => {
+    const writeText = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo', name: 'api' }];
     store.sessionProjectMounts = {
       [SESSION_ID]: [
         {
@@ -377,34 +465,27 @@ describe('HeaderBand', () => {
     const onSelectLens = vi.fn();
     render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open the projects page' }));
-    expect(onSelectLens).toHaveBeenCalledWith('projects');
-  });
-
-  it('offers the projects page instead of vanishing when nothing is mounted', () => {
-    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo' }];
-    store.sessionProjectMounts = { [SESSION_ID]: [] };
-    const onSelectLens = vi.fn();
-    render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} />);
-
-    fireEvent.click(screen.getByRole('button', { name: /no project mounted/i }));
-    expect(onSelectLens).toHaveBeenCalledWith('projects');
-    expect(store.openMountDiff).not.toHaveBeenCalled();
-  });
-
-  it('copies the active branch from the chip without leaving the overview', async () => {
-    const writeText = vi.fn(async () => undefined);
-    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
-    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo' }];
-    store.sessionProjectMounts = {
-      [SESSION_ID]: [{ projectId: 'project-1', mountName: 'api', branch: 'goodboy/x' }],
-    };
-    const onSelectLens = vi.fn();
-    render(<HeaderBand session={baseSession()} onSelectLens={onSelectLens} />);
-
     fireEvent.click(screen.getByRole('button', { name: 'Copy branch goodboy/x' }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('goodboy/x'));
     expect(onSelectLens).not.toHaveBeenCalled();
+  });
+
+  it('opens the branch switch panel from the pencil beside the branch', () => {
+    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo', name: 'api' }];
+    store.sessionProjectMounts = {
+      [SESSION_ID]: [
+        {
+          projectId: 'project-1',
+          mountName: 'api',
+          branch: 'goodboy/x',
+          worktreePath: '/worktrees/api',
+        },
+      ],
+    };
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Switch branch' }));
+    expect(screen.getByTestId('branch-switch-panel')).toBeDefined();
   });
 
   it('offers a context shortcut in the vitals row that opens the context lens', () => {

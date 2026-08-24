@@ -9,7 +9,8 @@ import { SessionGitActions } from '../SessionWorkspace/parts/SessionGitActions';
 import { SessionDestructiveActions } from './SessionDestructiveActions';
 import { LinkIssueAction } from './LinkIssueAction';
 import { MountChangesChip } from './MountChangesChip';
-import { ProjectScopeChip } from './ProjectScopeChip';
+import { ProjectChip } from './ProjectChip';
+import { BranchChip } from './BranchChip';
 import { ContextChip } from './ContextChip';
 import { StatusRowRequest } from './StatusRowRequest';
 import { LinkedWorkChips } from './LinkedWorkChips';
@@ -94,11 +95,12 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <ProjectScopeChip
+        <ProjectChip
           sessionId={sessionId}
           workspaceId={session.workspaceId}
           onSelectLens={onSelectLens}
         />
+        <BranchChip sessionId={sessionId} />
         <MountChangesChip sessionId={sessionId} />
         <ContextChip sessionId={sessionId} onSelectLens={onSelectLens} />
         <div className="ml-auto flex flex-wrap items-center justify-end gap-2">

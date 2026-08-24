@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Folder, FolderGit2, GitBranch } from 'lucide-react';
-import { AnchoredPopover, Button, Chip, cn, formatError, Tooltip, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, cn, formatError, Tooltip, useDropdown } from '@goodboy/ui';
 import type { Project, SessionId, SessionProjectMount } from '@goodboy/types';
 import { useAppStore, type MountDiffStat } from '../../../../../../store';
 import { BranchSwitchPanel } from '../../../../../worktree/BranchSwitchPanel';
@@ -51,7 +51,12 @@ export const ProjectRow = ({ sessionId, project, mount, isActive, canSwitch, dif
   };
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-elevated/40 px-3 py-2">
+    <div
+      className={cn(
+        'flex items-center justify-between gap-3 rounded-lg border px-3 py-2',
+        isActive ? 'border-primary/40 bg-elevated/70' : 'border-border bg-elevated/40',
+      )}
+    >
       <div className="flex min-w-0 flex-col gap-0.5">
         <div className="flex min-w-0 items-center gap-2">
           <GlyphIcon size={14} aria-hidden className="shrink-0 text-muted-foreground" />
@@ -61,13 +66,6 @@ export const ProjectRow = ({ sessionId, project, mount, isActive, canSwitch, dif
               <GitBranch size={11} aria-hidden />
               <span className="font-mono">{mount.branch}</span>
             </span>
-          ) : null}
-          {isActive ? (
-            <Tooltip content={PRIMARY_HINT}>
-              <span className="shrink-0">
-                <Chip tone="primary" size="xs" label="Primary" />
-              </span>
-            </Tooltip>
           ) : null}
         </div>
         <div className="flex min-w-0 items-center gap-2">
