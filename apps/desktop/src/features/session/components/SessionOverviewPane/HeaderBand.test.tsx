@@ -393,11 +393,10 @@ describe('HeaderBand', () => {
 
     expect(titleRow?.querySelector('[aria-label="branch actions"]')).toBeNull();
     expect(projectRow?.querySelector('[aria-label="branch actions"]')).not.toBeNull();
-    expect(projectRow?.querySelector('[aria-label="Sync with main"]')).not.toBeNull();
     expect(sessionGitActionsCalls).toEqual([{ sessionId: SESSION_ID, density: 'compact' }]);
   });
 
-  it('opens the sync popover on the project row and reports the distance from main', async () => {
+  it('shows the distance from main inline on the project row', async () => {
     mountApiProject();
     worktreeMocks.worktreeStatus.mockResolvedValue({
       branch: 'goodboy/x',
@@ -409,11 +408,24 @@ describe('HeaderBand', () => {
       upstream: null,
       inProgress: null,
     });
+    const { container } = render(
+      <HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />,
+    );
+
+    const sync = await screen.findByTestId('branch-sync-status');
+    expect(worktreeMocks.worktreeStatus).toHaveBeenCalledWith('/worktrees/api');
+    expect(sync.getAttribute('aria-label')).toBe('3 commits ahead of main, 2 behind');
+    expect(sync.textContent).toBe('23');
+    const projectRow = container.firstElementChild?.children[2];
+    expect(projectRow?.contains(sync)).toBe(true);
+  });
+
+  it('renders no sync counts while the branch position is unknown', () => {
+    mountApiProject();
+    worktreeMocks.worktreeStatus.mockResolvedValue({});
     render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} goal={GOAL_STUB} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sync with main' }));
-    expect(worktreeMocks.worktreeStatus).toHaveBeenCalledWith('/worktrees/api');
-    expect(await screen.findByText('3 commits ahead of main, 2 behind')).toBeDefined();
+    expect(screen.queryByTestId('branch-sync-status')).toBeNull();
   });
 
   it('keeps the link affordance expanded with zero linked work and collapses it beside linked chips', () => {

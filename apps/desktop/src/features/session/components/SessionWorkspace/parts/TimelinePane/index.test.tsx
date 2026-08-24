@@ -14,7 +14,8 @@ type Worktree = {
   readonly createdAt: number;
 };
 
-const { storeState, diffStats } = vi.hoisted(() => ({
+const { storeState, diffStats, unread } = vi.hoisted(() => ({
+  unread: { current: false },
   diffStats: { current: new Map<string, { additions: number; deletions: number }>() },
   storeState: {
     sessionPhaseRuns: {},
@@ -35,7 +36,7 @@ vi.mock('../../../../../../store', () => {
   useAppStore.getState = () => storeState;
   return {
     EMPTY_ARRAY: Object.freeze([]),
-    agentHasUnread: () => false,
+    agentHasUnread: () => unread.current,
     useAppStore,
     useMountDiffStats: () => diffStats.current,
     useSessionOpenQuestions: () => [],
@@ -80,7 +81,10 @@ const WORKTREE: Worktree = {
 
 beforeEach(() => {
   storeState.sessionWorktreeRecords = {};
+  storeState.sessionPhaseRuns = {};
   storeState.openMountDiff.mockReset();
+  storeState.markAllAgentsSeen.mockReset();
+  unread.current = false;
   diffStats.current = new Map();
   localStorage.clear();
 });
@@ -150,6 +154,47 @@ describe('TimelinePane on an empty session', () => {
     expect(screen.getByRole('button', { name: 'Add workflow' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Filter' })).toBeDefined();
     expect(screen.getByText(/Nothing yet/)).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
+  });
+});
+
+describe('TimelinePane unread affordance', () => {
+  it('seats Mark all seen on the NOW rule and marks everything on click', () => {
+    storeState.sessionPhaseRuns = {
+      'session-1': [
+        {
+          id: 'agent-1',
+          sessionId: 'session-1',
+          ordinal: 1,
+          name: 'scout',
+          status: 'completed',
+          startedAt: '2026-08-20T10:00:00.000Z',
+        },
+      ],
+    };
+    unread.current = true;
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    const cta = screen.getByRole('button', { name: 'Mark all seen' });
+    fireEvent.click(cta);
+    expect(storeState.markAllAgentsSeen).toHaveBeenCalledWith('session-1');
+  });
+
+  it('hides the CTA once nothing is unread', () => {
+    storeState.sessionPhaseRuns = {
+      'session-1': [
+        {
+          id: 'agent-1',
+          sessionId: 'session-1',
+          ordinal: 1,
+          name: 'scout',
+          status: 'completed',
+          startedAt: '2026-08-20T10:00:00.000Z',
+        },
+      ],
+    };
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
     expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
   });
 });

@@ -109,14 +109,18 @@ describe('GoalOverviewRegion', () => {
     expect(text.className).not.toContain('truncate');
   });
 
-  it('keeps copy and history inline on the Goal label line', () => {
+  it('spreads the label and the labeled actions across the Goal line', () => {
     renderRegion();
     const copy = screen.getByRole('button', { name: /copy goal/i });
     const history = screen.getByRole('button', { name: /2 previous versions of Goal/i });
-    const labelRow = copy.closest('div');
+    const cluster = copy.closest('div');
+    const labelRow = cluster?.parentElement;
 
+    expect(labelRow?.className).toContain('justify-between');
     expect(labelRow?.textContent).toContain('Goal');
-    expect(labelRow?.contains(history)).toBe(true);
+    expect(cluster?.contains(history)).toBe(true);
+    expect(copy.textContent).toContain('Copy the goal');
+    expect(history.textContent).toContain('History');
     expect(labelRow?.contains(screen.getByRole('button', { name: 'Edit goal' }))).toBe(false);
   });
 

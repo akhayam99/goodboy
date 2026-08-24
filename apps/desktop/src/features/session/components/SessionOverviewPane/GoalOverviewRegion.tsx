@@ -88,31 +88,36 @@ export const GoalOverviewRegion = ({
 
   return (
     <section aria-label="Goal" className="flex min-w-0 flex-col gap-2">
-      <div className="flex min-w-0 items-center gap-2 px-0.5">
+      <div className="flex min-w-0 items-center justify-between gap-2 px-0.5">
         <Eyebrow label="Goal" className="shrink-0" />
-        {hasValue ? (
-          <CopyButton
-            presentation="icon"
-            value={value}
-            label="copy goal"
-            size={13}
-            className="rounded-md p-1 text-muted-foreground/60 motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground"
-          />
-        ) : null}
-        {historyCount > 0 ? (
-          <Tooltip
-            content={`${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'}`}
-          >
-            <button
-              type="button"
-              onClick={onOpenHistory}
-              aria-label={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of Goal`}
-              className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground/60 motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+        <div className="flex shrink-0 items-center gap-1">
+          {hasValue ? (
+            <CopyButton
+              presentation="icon"
+              value={value}
+              label="copy goal"
+              size={13}
+              className="gap-1 rounded-md px-1.5 py-1 text-2xs text-muted-foreground/60 motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground"
             >
-              <History size={13} aria-hidden />
-            </button>
-          </Tooltip>
-        ) : null}
+              Copy the goal
+            </CopyButton>
+          ) : null}
+          {historyCount > 0 ? (
+            <Tooltip
+              content={`${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'}`}
+            >
+              <button
+                type="button"
+                onClick={onOpenHistory}
+                aria-label={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of Goal`}
+                className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-2xs text-muted-foreground/60 motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+              >
+                <History size={13} aria-hidden />
+                History
+              </button>
+            </Tooltip>
+          ) : null}
+        </div>
       </div>
       {isLoading ? (
         <span className="h-4 w-2/3 rounded bg-muted/50" aria-label="Loading goal" />

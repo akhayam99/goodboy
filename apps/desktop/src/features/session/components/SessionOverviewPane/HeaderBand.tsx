@@ -118,9 +118,9 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
             onSelectLens={onSelectLens}
           />
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+            <BranchSyncStatus sessionId={sessionId} />
             <BranchChip sessionId={sessionId} />
             <SessionGitActions session={session} density="compact" />
-            <BranchSyncStatus sessionId={sessionId} />
             <MountChangesChip sessionId={sessionId} />
             <StatusRowRequest sessionId={sessionId} />
           </div>

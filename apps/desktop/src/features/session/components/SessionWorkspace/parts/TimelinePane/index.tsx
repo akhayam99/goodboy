@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
-import { Button, SectionHeader, useCopyLink } from '@goodboy/ui';
+import { SectionHeader, useCopyLink } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -250,12 +250,6 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
         className="px-0.5"
         action={
           <div className="flex items-center gap-1">
-            {hasUnreadAgents ? (
-              <Button variant="ghost" size="sm" onClick={() => void markAllAgentsSeen(sessionId)}>
-                <CheckCheck size={13} aria-hidden />
-                Mark all seen
-              </Button>
-            ) : null}
             <ActivityFilterButton
               filter={activity.filter}
               hiddenCount={activity.hiddenCount}
@@ -283,7 +277,24 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
             }
             if (item.kind === 'now') {
               return (
-                <TimelineNowRule key={item.id} item={item} rail={railRow} railWidth={rail.width} />
+                <TimelineNowRule
+                  key={item.id}
+                  item={item}
+                  rail={railRow}
+                  railWidth={rail.width}
+                  action={
+                    hasUnreadAgents ? (
+                      <button
+                        type="button"
+                        onClick={() => void markAllAgentsSeen(sessionId)}
+                        className="inline-flex h-6 items-center gap-1 rounded-full bg-primary/10 px-2.5 text-2xs font-medium text-primary motion-safe:transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
+                      >
+                        <CheckCheck size={12} aria-hidden />
+                        Mark all seen
+                      </button>
+                    ) : undefined
+                  }
+                />
               );
             }
             if (item.kind === 'day') {
