@@ -135,7 +135,7 @@ describe('SessionKickoff', () => {
     render(<SessionKickoff session={session} onOpenWorkflowBuilder={vi.fn()} />);
 
     await waitFor(() => {
-      expect(screen.getByText('No open issues waiting for a session')).toBeDefined();
+      expect(screen.getByText('No open issues detected')).toBeDefined();
     });
     expect(screen.getByTestId('glyph-linear')).toBeDefined();
     expect(screen.queryByTestId('glyph-github')).toBeNull();

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowRight, Link2 } from 'lucide-react';
-import { cn, formatError, Skeleton } from '@goodboy/ui';
+import { cn, formatError, Skeleton, Tooltip } from '@goodboy/ui';
 import type { IsoDateTime, Session } from '@goodboy/types';
 import type { LucideIcon } from 'lucide-react';
 import { useAppStore, useSessionSlots } from '../../../../store';
@@ -183,30 +183,24 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder }: Props) => {
           </div>
         ) : null}
         {!issues.hasSources || (issues.isLoaded && issues.rows.length === 0) ? (
-          <div className="flex flex-col gap-1.5 rounded-md border border-dashed border-border px-3 py-2.5">
-            <p className="text-sm text-foreground">
-              {issues.hasSources
-                ? 'No open issues waiting for a session'
-                : 'No tracker connected yet'}
-            </p>
+          <div className="flex items-center gap-2 px-2 py-1.5">
             <p className="text-xs text-muted-foreground">
-              {issues.hasSources
-                ? 'New issues land here as they arrive. Browse the studios for everything else.'
-                : 'Connect one to pick up issues right from here.'}
+              {issues.hasSources ? 'No open issues detected' : 'No tracker connected yet'}
             </p>
-            <div className="flex items-center gap-1.5">
+            <div className="ml-auto flex items-center gap-1">
               {emptyStateSources.map((source) => (
-                <button
-                  key={source.provider}
-                  type="button"
-                  aria-label={`Open the ${source.label} studio`}
-                  className="inline-flex size-7 items-center justify-center rounded-md border border-border-soft bg-elevated motion-safe:transition-colors hover:border-border"
-                  onClick={() =>
-                    window.dispatchEvent(new CustomEvent(STUDIO_OPEN_EVENT[source.provider]))
-                  }
-                >
-                  <IntegrationGlyph provider={source.provider} size="xs" />
-                </button>
+                <Tooltip key={source.provider} content={`Open the ${source.label} studio`}>
+                  <button
+                    type="button"
+                    aria-label={`Open the ${source.label} studio`}
+                    className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60"
+                    onClick={() =>
+                      window.dispatchEvent(new CustomEvent(STUDIO_OPEN_EVENT[source.provider]))
+                    }
+                  >
+                    <IntegrationGlyph provider={source.provider} size="xs" />
+                  </button>
+                </Tooltip>
               ))}
             </div>
           </div>
