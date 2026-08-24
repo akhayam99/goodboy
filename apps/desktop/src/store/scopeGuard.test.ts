@@ -137,6 +137,44 @@ describe('buildScopeGuard', () => {
     expect(guard).not.toContain('NOT materialized');
   });
 
+  it('frames a mountless turn as projects-scope with every project unmounted', () => {
+    const guard = buildScopeGuard({
+      ...base,
+      workingDir: '/tmp/goodboy-root/scratch/session-1',
+      projects: [app, web],
+      mounts: [],
+    });
+
+    expect(guard).toContain('[projects-scope]');
+    expect(guard).toContain(
+      'You are operating from an ephemeral scratch directory at: /tmp/goodboy-root/scratch/session-1',
+    );
+    expect(guard).toContain('This session has no materialized project mounts yet.');
+    expect(guard).toContain('- app (repo) root: /tmp/app | NOT materialized');
+    expect(guard).toContain('- web (repo) root: /tmp/web | NOT materialized');
+    expect(guard).toContain('You may READ the project root paths listed above.');
+    expect(guard).toContain(
+      'ALL writes (Write/Edit/Bash file mutations) MUST resolve inside the session directory or a materialized project mount.',
+    );
+    expect(guard).toContain('<<materialize: <project name> | <why you need it>>>');
+    expect(guard).not.toContain('materialized at');
+    expect(guard).not.toContain('isolated git worktree');
+  });
+
+  it('drops the materialize teaching from a mountless turn for kinds that cannot write', () => {
+    const guard = buildScopeGuard({
+      ...base,
+      workingDir: '/tmp/goodboy-root/scratch/session-1',
+      projects: [app, web],
+      mounts: [],
+      canWrite: false,
+    });
+
+    expect(guard).toContain('[projects-scope]');
+    expect(guard).toContain('NOT materialized');
+    expect(guard).not.toContain('<<materialize:');
+  });
+
   it('keeps the session-directory grammar for a mounted folder project', () => {
     const folder = buildProject({
       id: 'project-notes' as ProjectId,

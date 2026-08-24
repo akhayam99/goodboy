@@ -60,7 +60,7 @@ type TagParams = {
 };
 
 const guardTag = ({ mounts, isSessionDirScope }: TagParams): GuardTag => {
-  if (mounts.length > 1) {
+  if (mounts.length !== 1) {
     return 'projects-scope';
   }
   return isSessionDirScope ? 'session-directory-scope' : 'worktree-scope';
@@ -78,6 +78,12 @@ const headLines = ({ tag, workingDir, mounts }: HeadParams): ReadonlyArray<strin
   }
   if (tag === 'session-directory-scope') {
     return [`You are operating inside this session directory: ${workingDir}`];
+  }
+  if (mounts.length === 0) {
+    return [
+      `You are operating from an ephemeral scratch directory at: ${workingDir}`,
+      'This session has no materialized project mounts yet. Nothing you put in the scratch directory is kept.',
+    ];
   }
   return [
     `You are operating inside the active project mount at: ${workingDir}`,

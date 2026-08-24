@@ -129,9 +129,13 @@ describe('story: an agent works from its own project and reads the others', () =
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
 
     expect(storySpies.createWorktree).not.toHaveBeenCalled();
+    expect(storySpies.scratchDirPrepare).not.toHaveBeenCalled();
     expect(spawnedArgs()['workingDir']).toBe(APP_MOUNT_PATH);
     const systemPrompt = String(spawnedArgs()['systemPrompt']);
     expect(systemPrompt).toContain('[worktree-scope]');
+    expect(systemPrompt).toContain(
+      'You are operating inside an isolated git worktree at: /tmp/app/.goodboy/worktrees/goal-12345678',
+    );
     expect(systemPrompt).toContain('app (repo) root: /tmp/app');
     expect(systemPrompt).not.toContain('NOT materialized');
     expect(useAppStore.getState().sessionBranches[SESSION_ID]).toBe(APP_BRANCH);
@@ -150,6 +154,88 @@ describe('story: an agent works from its own project and reads the others', () =
     expect(systemPrompt).toContain('web (repo) root: /tmp/web');
     expect(systemPrompt).toContain('NOT materialized');
     expect(systemPrompt).toContain('<<materialize: <project name> | <why you need it>>>');
+  });
+});
+
+describe('story: a fresh session reads before any project is mounted', () => {
+  const SCRATCH_PATH = '/tmp/goodboy-root/scratch/session-story';
+
+  const seedUnmounted = () => {
+    useAppStore.setState({
+      workspaces: [workspace],
+      currentWorkspaceId: WORKSPACE_ID,
+      sessions: [session],
+      archivedSessions: {},
+      projects: [appProject, webProject],
+      sessionWorktrees: {},
+      sessionProjectMounts: {},
+      sessionBranches: {},
+      sessionActiveProject: {},
+      sessionPhaseRuns: { [SESSION_ID]: [agent] },
+      selectedAgentId: { [SESSION_ID]: AGENT_ID },
+      ...connectedAnthropicState(),
+    } as never);
+  };
+
+  it('runs the turn from the scratch standpoint instead of throwing', async () => {
+    seedUnmounted();
+
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'look around' });
+
+    expect(storySpies.scratchDirPrepare).toHaveBeenCalledWith({ sessionId: SESSION_ID });
+    expect(storySpies.createWorktree).not.toHaveBeenCalled();
+    expect(spawnedArgs()['workingDir']).toBe(SCRATCH_PATH);
+    const systemPrompt = String(spawnedArgs()['systemPrompt']);
+    expect(systemPrompt).toContain('[projects-scope]');
+    expect(systemPrompt).toContain(
+      `You are operating from an ephemeral scratch directory at: ${SCRATCH_PATH}`,
+    );
+    expect(systemPrompt).toContain('- app (repo) root: /tmp/app | NOT materialized');
+    expect(systemPrompt).toContain('- web (repo) root: /tmp/web | NOT materialized');
+    expect(systemPrompt).toContain('<<materialize: <project name> | <why you need it>>>');
+  });
+
+  it('keeps the scratch path out of the store and skips the numstat slot', async () => {
+    seedUnmounted();
+
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'look around' });
+
+    expect(storySpies.worktreeChangedFiles).not.toHaveBeenCalled();
+    const slotWrites = storySpies.upsertContextSlot.mock.calls as ReadonlyArray<
+      ReadonlyArray<unknown>
+    >;
+    const numstatWrites = slotWrites.filter(
+      (call) => (call[2] as { key?: string } | undefined)?.key === 'files_touched_numstat',
+    );
+    expect(numstatWrites).toHaveLength(0);
+    expect(storySpies.insertSessionWorktree).not.toHaveBeenCalled();
+    expect(useAppStore.getState().sessionProjectMounts[SESSION_ID] ?? []).toHaveLength(0);
+    expect(useAppStore.getState().sessionWorktrees[SESSION_ID] ?? []).toHaveLength(0);
+  });
+
+  it('mounts the requested project when the scouting turn emits the marker', async () => {
+    seedUnmounted();
+    storySpies.createWorktree.mockResolvedValueOnce({
+      worktreePath: WEB_MOUNT_PATH,
+      branchName: WEB_BRANCH,
+      slug: 'goal-12345678',
+      reused: false,
+    } as never);
+    storySpies.runTurn.mockImplementation(
+      assistantTurnStream('<<materialize: web | need to patch the router>>'),
+    );
+
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go write it' });
+
+    expect(spawnedArgs()['workingDir']).toBe(SCRATCH_PATH);
+    expect(storySpies.createWorktree).toHaveBeenCalledWith(
+      expect.objectContaining({ repoPath: '/tmp/web' }),
+    );
+    const mounts = useAppStore.getState().sessionProjectMounts[SESSION_ID] ?? [];
+    expect(mounts.map((mount) => mount.projectId)).toEqual([WEB_PROJECT_ID]);
+    expect(recordedEvent('project_materialized')?.payload).toMatchObject({
+      projectName: 'web',
+    });
   });
 });
 

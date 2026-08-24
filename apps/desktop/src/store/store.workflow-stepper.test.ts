@@ -194,6 +194,8 @@ vi.mock('../features/worktree/worktree', () => ({
   })),
   removeWorktree: vi.fn(),
   sessionDirExists: vi.fn(async () => true),
+  scratchDirPrepare: vi.fn(async () => '/tmp/goodboy-root/scratch/mountless'),
+  scratchDirRemove: vi.fn(async () => undefined),
   worktreeChangedFiles: vi.fn(async () => ({ files: [], numstat: '' })),
 }));
 
@@ -468,6 +470,36 @@ describe('createSession, AGENT_KIND_DEFAULTS applied to first workflow agent (#4
     expect(typeof callArgs['prompt']).toBe('string');
     expect(String(callArgs['prompt'])).toContain('Survey the area');
     expect(callArgs['model']).toBe('claude-haiku-4-5');
+  });
+
+  it('reaches the provider spawn from a scratch standpoint when no project is mounted', async () => {
+    const { useAppStore } = await import('./store');
+    useAppStore.setState({
+      currentWorkspaceId: WS_ID,
+      phaseTemplates: { [WS_ID]: [makeRefactorWorkflow()] },
+    });
+
+    const { session } = await useAppStore.getState().createSession({
+      workspaceId: WS_ID,
+      goal: 'extract helpers',
+      branchPrefix: 'kay',
+      workflowId: WORKFLOW_ID,
+    });
+
+    useAppStore.setState({
+      sessionProjectMounts: { [session.id]: [] },
+      sessionWorktrees: { [session.id]: [] },
+    } as never);
+
+    await useAppStore.getState().sendTurn({
+      sessionId: session.id,
+      content: 'Survey the codebase.',
+    });
+
+    expect(runTurnSpy).toHaveBeenCalledTimes(1);
+    const callArgs = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(callArgs['workingDir']).toBe('/tmp/goodboy-root/scratch/mountless');
+    expect(String(callArgs['systemPrompt'])).toContain('[projects-scope]');
   });
 
   it('does NOT auto-run when no workflow is attached', async () => {

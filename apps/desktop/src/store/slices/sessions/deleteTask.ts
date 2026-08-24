@@ -6,6 +6,7 @@ import { cancelTurn } from '../../../features/chat/turn';
 import {
   removeSessionDirectory,
   removeWorktree,
+  scratchDirRemove,
   tidyRepoGoodboyDir,
 } from '../../../features/worktree/worktree';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
@@ -68,6 +69,11 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       } catch (error) {
         cleanupFailures.push(error);
       }
+    }
+    try {
+      await scratchDirRemove({ sessionId });
+    } catch {
+      console.error(`scratch directory not removed: ${sessionId}`);
     }
     forgetMaterializationSeed({ sessionId });
     if (cleanupFailures.length > 0) {

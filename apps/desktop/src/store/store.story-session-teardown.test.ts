@@ -5,6 +5,7 @@ const {
   changeWorktreeBranch,
   removeSessionDirectory,
   removeWorktree,
+  scratchDirRemove,
   tidyRepoGoodboyDir,
   listWorktreesForSession,
   updateSessionWorktreeBranch,
@@ -19,6 +20,7 @@ const {
   changeWorktreeBranch: vi.fn(async () => undefined),
   removeSessionDirectory: vi.fn(async () => undefined),
   removeWorktree: vi.fn(async () => undefined),
+  scratchDirRemove: vi.fn(async () => undefined),
   tidyRepoGoodboyDir: vi.fn(async () => undefined),
   listWorktreesForSession: vi.fn(async () => [] as ReadonlyArray<unknown>),
   updateSessionWorktreeBranch: vi.fn(async () => undefined),
@@ -51,6 +53,7 @@ vi.mock('../features/worktree/worktree', () => ({
   changeWorktreeBranch,
   removeSessionDirectory,
   removeWorktree,
+  scratchDirRemove,
   tidyRepoGoodboyDir,
   invalidateLocalBranchesCache: vi.fn(),
 }));
@@ -288,6 +291,7 @@ describe('story: deleting a session that never did any work', () => {
 
     expect(removeWorktree).not.toHaveBeenCalled();
     expect(removeSessionDirectory).not.toHaveBeenCalled();
+    expect(scratchDirRemove).toHaveBeenCalledWith({ sessionId: SESSION_ID });
     const notificationKinds = (store.emitNotification as ReturnType<typeof vi.fn>).mock.calls.map(
       (call) => call[0],
     );

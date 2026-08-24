@@ -28,6 +28,7 @@ mod query_bridge;
 mod releases;
 mod remote_image;
 mod repo;
+mod scratch_dir;
 mod scripts;
 mod secrets;
 mod sentry;
@@ -211,6 +212,8 @@ pub fn run() {
             session_dir::session_dir_create,
             session_dir::session_dir_remove,
             session_dir::session_dir_exists,
+            scratch_dir::scratch_dir_prepare,
+            scratch_dir::scratch_dir_remove,
             worktree::worktree_create,
             worktree::worktree_remove,
             worktree::worktree_tidy_goodboy,

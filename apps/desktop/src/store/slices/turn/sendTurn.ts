@@ -49,7 +49,11 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { invokePermissionRuleList } from '../../../features/permissions/permissions';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { resolveProviderForTurn } from '../../../features/providers/routing';
-import { sessionDirExists, worktreeChangedFiles } from '../../../features/worktree/worktree';
+import {
+  scratchDirPrepare,
+  sessionDirExists,
+  worktreeChangedFiles,
+} from '../../../features/worktree/worktree';
 import { encodeAuthRequiredMessage, runTurn } from '../../../features/chat/turn';
 import { classifyProviderError } from '../../../features/chat/classifyProviderError';
 import { createTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
@@ -162,11 +166,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const turnActiveProjectId = before.sessionActiveProject[sessionId] ?? session.activeProjectId;
     const activeMount =
       turnMounts.find((mount) => mount.projectId === turnActiveProjectId) ?? turnMounts[0];
-    if (activeMount === undefined) {
-      throw new Error(`session has no project mounted: ${sessionId}`);
-    }
-    const workingDir = activeMount.worktreePath;
-    const isPlainSessionDir = isBranchlessSession({ branch: activeMount.branch });
+    const workingDir =
+      activeMount !== undefined ? activeMount.worktreePath : await scratchDirPrepare({ sessionId });
+    const isPlainSessionDir =
+      activeMount !== undefined && isBranchlessSession({ branch: activeMount.branch });
     if (isPlainSessionDir) {
       const exists = await sessionDirExists({ path: workingDir });
       if (exists === false) {
@@ -693,7 +696,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
     const scopeMounts = get().sessionProjectMounts[sessionId] ?? [];
-    const activeProject = get().projects.find((project) => project.id === activeMount.projectId);
+    const activeProject =
+      activeMount !== undefined
+        ? get().projects.find((project) => project.id === activeMount.projectId)
+        : undefined;
     const isSessionDirScope = activeProject?.kind === 'folder';
     const notifySnapshotFailure = async ({
       stage,
@@ -1004,7 +1010,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         // The existing `files_touched` slot is left untouched (mobile falls back
         // to it, paths-only, when this slot is absent). Best-effort: a git failure
         // must not fail the turn.
-        if (!isSessionDirScope) {
+        if (activeMount !== undefined && !isSessionDirScope) {
           try {
             const changed = await worktreeChangedFiles(workingDir);
             await upsertContextSlot(

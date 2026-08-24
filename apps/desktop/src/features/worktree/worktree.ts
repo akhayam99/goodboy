@@ -75,6 +75,18 @@ export const sessionDirExists = async ({ path }: SessionDirExistsParams): Promis
   return invoke<boolean>('session_dir_exists', { path });
 };
 
+type ScratchDirParams = {
+  readonly sessionId: SessionId;
+};
+
+export const scratchDirPrepare = async ({ sessionId }: ScratchDirParams): Promise<string> => {
+  return invoke<string>('scratch_dir_prepare', { sessionId });
+};
+
+export const scratchDirRemove = async ({ sessionId }: ScratchDirParams): Promise<void> => {
+  await invoke('scratch_dir_remove', { sessionId });
+};
+
 export const removeWorktree = async (repoPath: string, worktreePath: string): Promise<void> => {
   await invoke('worktree_remove', { repoPath, worktreePath });
 };
