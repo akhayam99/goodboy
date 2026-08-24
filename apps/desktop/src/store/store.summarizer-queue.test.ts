@@ -136,7 +136,10 @@ const upsertContextSlotSpy = vi.fn(
   },
 );
 
-const insertSessionEventSpy = vi.fn(async () => undefined);
+const insertSessionEventSpy = vi.fn(
+  async (_params: { readonly event: { readonly kind: string; readonly payload: unknown } }) =>
+    undefined,
+);
 
 vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
@@ -680,7 +683,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
 
     const decisionEvents = insertSessionEventSpy.mock.calls
-      .map(([params]: [{ event: { kind: string; payload: unknown } }]) => params.event)
+      .map(([params]) => params.event)
       .filter((event) => event.kind === 'decisions_changed');
     expect(decisionEvents).toHaveLength(1);
     expect(decisionEvents[0]?.payload).toEqual({ added: 1, removed: 0 });
