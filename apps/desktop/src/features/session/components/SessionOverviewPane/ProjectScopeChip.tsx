@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
-import { Check, Copy, Folder, FolderGit2, GitBranch } from 'lucide-react';
+import { Check, Copy, Folder, FolderGit2, GitBranch, FolderCog } from 'lucide-react';
 import { cn, Tooltip, useCopyLink } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { VITAL_CHIP_FOCUS, VITAL_CHIP_FRAME, VITAL_CHIP_HOVER } from './vitalChip';
+import { VITAL_CHIP, VITAL_CHIP_FOCUS, VITAL_CHIP_FRAME, VITAL_CHIP_HOVER } from './vitalChip';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -46,8 +46,23 @@ export const ProjectScopeChip = ({ sessionId, workspaceId, onSelectLens }: Props
     }
   }, [failed, showToast]);
 
-  if (projectCount === 0 || activeMount == null) {
+  if (projectCount === 0) {
     return null;
+  }
+
+  if (activeMount == null) {
+    return (
+      <Tooltip content="Nothing mounted yet, open the projects page" side="top">
+        <button
+          type="button"
+          onClick={() => onSelectLens('projects')}
+          className={cn(VITAL_CHIP, 'shrink')}
+        >
+          <Folder size={11} aria-hidden className="shrink-0" />
+          <span className="min-w-0 truncate">No project mounted</span>
+        </button>
+      </Tooltip>
+    );
   }
 
   const branch = activeMount.branch;
@@ -81,21 +96,30 @@ export const ProjectScopeChip = ({ sessionId, workspaceId, onSelectLens }: Props
           ) : null}
         </button>
       </Tooltip>
-      {extraCount > 0 ? (
-        <Tooltip content={`${extraCount} more mounted, open the projects lens`} side="top">
-          <button
-            type="button"
-            onClick={() => onSelectLens('projects')}
-            aria-label={`Open the projects lens, ${extraCount} more mounted`}
-            className={cn(
-              'inline-flex shrink-0 items-center rounded-md px-1.5 text-muted-foreground hover:text-foreground',
-              VITAL_CHIP_FOCUS,
-            )}
-          >
-            +{extraCount}
-          </button>
-        </Tooltip>
-      ) : null}
+      <Tooltip
+        content={
+          extraCount > 0
+            ? `${extraCount} more mounted, manage projects`
+            : 'Mount or detach projects'
+        }
+        side="top"
+      >
+        <button
+          type="button"
+          onClick={() => onSelectLens('projects')}
+          aria-label={
+            extraCount > 0
+              ? `Open the projects page, ${extraCount} more mounted`
+              : 'Open the projects page'
+          }
+          className={cn(
+            'inline-flex shrink-0 items-center gap-0.5 rounded-md px-1.5 text-muted-foreground hover:text-foreground',
+            VITAL_CHIP_FOCUS,
+          )}
+        >
+          {extraCount > 0 ? `+${extraCount}` : <FolderCog size={11} aria-hidden />}
+        </button>
+      </Tooltip>
       {branch !== '' ? (
         <Tooltip content={copied ? 'Copied' : 'Copy the branch name'} side="top">
           <button

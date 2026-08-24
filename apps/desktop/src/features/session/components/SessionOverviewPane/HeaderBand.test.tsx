@@ -395,9 +395,39 @@ describe('HeaderBand', () => {
     expect(store.openMountDiff).toHaveBeenCalledWith(SESSION_ID, '/worktrees/web');
     expect(onSelectLens).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open the projects lens, 2 more mounted' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open the projects page, 2 more mounted' }));
     expect(onSelectLens).toHaveBeenCalledWith('projects');
     expect(screen.queryByText('goodboy/x')).toBeNull();
+  });
+
+  it('keeps the projects page reachable when only one project is mounted', () => {
+    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo' }];
+    store.sessionProjectMounts = {
+      [SESSION_ID]: [
+        {
+          projectId: 'project-1',
+          mountName: 'api',
+          branch: 'goodboy/x',
+          worktreePath: '/worktrees/api',
+        },
+      ],
+    };
+    const onSelectLens = vi.fn();
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={onSelectLens} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open the projects page' }));
+    expect(onSelectLens).toHaveBeenCalledWith('projects');
+  });
+
+  it('offers the projects page instead of vanishing when nothing is mounted', () => {
+    store.projects = [{ id: 'project-1', workspaceId: 'ws-1', kind: 'repo' }];
+    store.sessionProjectMounts = { [SESSION_ID]: [] };
+    const onSelectLens = vi.fn();
+    render(<HeaderBand session={baseSession()} stage={stageWith()} onSelectLens={onSelectLens} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /no project mounted/i }));
+    expect(onSelectLens).toHaveBeenCalledWith('projects');
+    expect(store.openMountDiff).not.toHaveBeenCalled();
   });
 
   it('copies the active branch from the chip without leaving the overview', async () => {
