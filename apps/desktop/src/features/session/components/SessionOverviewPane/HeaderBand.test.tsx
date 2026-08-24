@@ -43,7 +43,7 @@ type Store = {
   emitNotification: ReturnType<typeof vi.fn>;
 };
 
-const { store, hooks, stats } = vi.hoisted(() => ({
+const { store, hooks, stats, summarizer } = vi.hoisted(() => ({
   store: {
     sessions: [] as ReadonlyArray<Session>,
     workspaces: [] as ReadonlyArray<unknown>,
@@ -80,6 +80,13 @@ const { store, hooks, stats } = vi.hoisted(() => ({
   stats: {
     current: new Map<string, { additions: number; deletions: number }>(),
   },
+  summarizer: {
+    current: { status: 'idle', error: null, lastAttempt: null } as {
+      status: string;
+      error: string | null;
+      lastAttempt: number | null;
+    },
+  },
 }));
 
 vi.mock('../../../../store', () => ({
@@ -88,6 +95,7 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: Store) => T) => selector(store),
   useCurrentWorkspace: () => null,
   useMountDiffStats: () => stats.current,
+  useSummarizerStatus: () => summarizer.current,
 }));
 
 vi.mock('../../../worktree/BranchSwitchPanel', () => ({
@@ -161,6 +169,7 @@ const baseSession = (): Session =>
   }) as unknown as Session;
 
 beforeEach(() => {
+  summarizer.current = { status: 'idle', error: null, lastAttempt: null };
   store.sessions = [];
   store.workspaces = [];
   store.projects = [];
@@ -523,6 +532,22 @@ describe('HeaderBand', () => {
     const badge = screen.getByTestId('summarizer-badge');
     const cluster = badge.parentElement;
     expect(cluster?.contains(screen.getByRole('button', { name: 'Context' }))).toBe(true);
+  });
+
+  it('traces a spinning border around the context chip while the summarizer works', () => {
+    summarizer.current = { status: 'running', error: null, lastAttempt: null };
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+
+    const chip = screen.getByRole('button', { name: 'Context' });
+    expect(chip.className).toContain('spin-border');
+    expect(chip.className).toContain('spin-border-primary');
+    expect(screen.queryByTestId('summarizer-badge')).toBeNull();
+  });
+
+  it('keeps the context chip border still while the summarizer is idle', () => {
+    render(<HeaderBand session={baseSession()} onSelectLens={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'Context' }).className).not.toContain('spin-border');
   });
 
   it('wraps the vitals row instead of dropping chips when a PR and linked tasks pile up', () => {

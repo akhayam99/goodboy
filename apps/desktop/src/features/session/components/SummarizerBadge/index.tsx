@@ -3,7 +3,6 @@ import { AlertTriangle, RotateCw } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore, useSummarizerStatus } from '../../../../store';
-import { SummarizerWorkingIndicator } from '../SummarizerWorkingIndicator';
 
 export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
   const { status, error, lastAttempt } = useSummarizerStatus(sessionId);
@@ -14,10 +13,6 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
   useEffect(() => {
     if (status !== 'error') setRetrying(false);
   }, [status]);
-
-  if (status === 'running') {
-    return <SummarizerWorkingIndicator />;
-  }
 
   if (status === 'error') {
     const errorTitle = error ? `Cannot summarize · ${error}` : 'Cannot summarize';
