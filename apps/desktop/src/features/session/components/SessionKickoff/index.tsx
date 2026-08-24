@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowRight, Link2 } from 'lucide-react';
-import { cn, formatError, Skeleton, Tooltip } from '@goodboy/ui';
+import { cn, formatError, Skeleton } from '@goodboy/ui';
 import type { IsoDateTime, Session } from '@goodboy/types';
 import type { LucideIcon } from 'lucide-react';
 import { useAppStore, useSessionSlots } from '../../../../store';
@@ -8,31 +8,15 @@ import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
-import type { IssueSource } from '../../../integrations/issueSources';
+import {
+  TRACKER_STUDIO_LINKS,
+  TrackerStudioLinks,
+} from '../../../integrations/components/TrackerStudioLinks';
 import { CreateAgentPopover } from '../CreateAgentPopover';
 import { useKickoffIssues } from './useKickoffIssues';
 
 const TILE_CLASS =
   'group flex w-full items-center gap-2.5 rounded-lg border border-border-soft bg-elevated px-3 py-2.5 text-left shadow-sm transition-colors hover:border-border';
-
-type ConnectableProvider = 'linear' | 'github' | 'gitlab' | 'jira' | 'sentry';
-
-const STUDIO_OPEN_EVENT: Record<ConnectableProvider, string> = {
-  linear: 'goodboy:open-linear-studio',
-  github: 'goodboy:open-github-studio',
-  gitlab: 'goodboy:open-gitlab-studio',
-  jira: 'goodboy:open-jira-studio',
-  sentry: 'goodboy:open-sentry-studio',
-};
-
-const CONNECTABLE_SOURCES: ReadonlyArray<IssueSource & { readonly provider: ConnectableProvider }> =
-  [
-    { provider: 'linear', label: 'Linear' },
-    { provider: 'github', label: 'GitHub' },
-    { provider: 'gitlab', label: 'GitLab' },
-    { provider: 'jira', label: 'Jira' },
-    { provider: 'sentry', label: 'Sentry' },
-  ];
 
 type TileProps = {
   readonly icon: LucideIcon;
@@ -96,12 +80,11 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder }: Props) => {
     }
   };
 
-  const emptyStateSources = issues.hasSources
-    ? issues.sources.filter(
-        (source): source is IssueSource & { readonly provider: ConnectableProvider } =>
-          source.provider !== 'slack',
+  const emptyStateLinks = issues.hasSources
+    ? TRACKER_STUDIO_LINKS.filter((link) =>
+        issues.sources.some((source) => source.provider === link.provider),
       )
-    : CONNECTABLE_SOURCES;
+    : TRACKER_STUDIO_LINKS;
 
   return (
     <section aria-label="Kickoff" className="flex flex-col gap-3">
@@ -176,26 +159,8 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder }: Props) => {
             <p className="text-xs text-muted-foreground">
               {issues.hasSources ? 'No open issues detected' : 'No tracker connected yet'}
             </p>
-            <div className="ml-auto flex items-center gap-1">
-              {emptyStateSources.map((source) => (
-                <Tooltip key={source.provider} content={`Open the ${source.label} studio`}>
-                  <button
-                    type="button"
-                    aria-label={`Open the ${source.label} studio`}
-                    className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60"
-                    onClick={() =>
-                      window.dispatchEvent(
-                        new CustomEvent(
-                          STUDIO_OPEN_EVENT[source.provider],
-                          source.provider === 'github' ? { detail: { tab: 'issues' } } : undefined,
-                        ),
-                      )
-                    }
-                  >
-                    <IntegrationGlyph provider={source.provider} size="xs" />
-                  </button>
-                </Tooltip>
-              ))}
+            <div className="ml-auto">
+              <TrackerStudioLinks links={emptyStateLinks} />
             </div>
           </div>
         ) : null}

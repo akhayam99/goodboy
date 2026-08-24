@@ -67,8 +67,8 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
       ariaLabel="Link an issue"
       className="p-3"
       trigger={
-        <Tooltip content="Link an issue">
-          {presentation === 'chip' ? (
+        presentation === 'chip' ? (
+          <Tooltip content="Link an issue">
             <button
               type="button"
               aria-label="Link an issue"
@@ -78,7 +78,9 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
               <Plus size={11} aria-hidden />
               {isCollapsed ? null : 'Link an issue'}
             </button>
-          ) : (
+          </Tooltip>
+        ) : (
+          <Tooltip content="Link an issue">
             <button
               type="button"
               aria-label="Link an issue"
@@ -87,8 +89,8 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
             >
               <Link2 size={13} aria-hidden />
             </button>
-          )}
-        </Tooltip>
+          </Tooltip>
+        )
       }
     >
       {connected.length === 0 ? (
