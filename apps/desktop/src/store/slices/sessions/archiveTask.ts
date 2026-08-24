@@ -13,16 +13,13 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
     const nowIso = new Date().toISOString() as IsoDateTime;
     const archived: Session = { ...prev, archivedAt: nowIso };
     const workspaceId = prev.workspaceId;
+    const isCurrent = get().currentSessionId === sessionId;
 
     set((state) => {
-      const cached = state.archivedSessions[workspaceId];
-      const nextArchived = cached
-        ? { ...state.archivedSessions, [workspaceId]: [archived, ...cached] }
-        : state.archivedSessions;
+      const cached = state.archivedSessions[workspaceId] ?? [];
       return {
         sessions: state.sessions.filter((s) => s.id !== sessionId),
-        archivedSessions: nextArchived,
-        currentSessionId: state.currentSessionId === sessionId ? null : state.currentSessionId,
+        archivedSessions: { ...state.archivedSessions, [workspaceId]: [archived, ...cached] },
       };
     });
 
@@ -30,16 +27,20 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
       await archiveSessionInDb(tauriDatabase, sessionId);
     } catch (err) {
       set((state) => {
-        const cached = state.archivedSessions[workspaceId];
-        const nextArchived = cached
-          ? { ...state.archivedSessions, [workspaceId]: cached.filter((s) => s.id !== sessionId) }
-          : state.archivedSessions;
+        const cached = state.archivedSessions[workspaceId] ?? [];
         return {
           sessions: [...state.sessions, prev],
-          archivedSessions: nextArchived,
+          archivedSessions: {
+            ...state.archivedSessions,
+            [workspaceId]: cached.filter((s) => s.id !== sessionId),
+          },
         };
       });
       throw err;
+    }
+
+    if (isCurrent) {
+      return;
     }
 
     dropPendingTurnEvents({

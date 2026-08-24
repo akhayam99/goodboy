@@ -765,7 +765,7 @@ describe('store contract', () => {
       expect(store.getState().sessions[0]?.permissionMode).toBe('default');
     });
 
-    it('archiveTask removes the session from active list and clears currentSessionId if it was current', async () => {
+    it('archiveTask keeps currentSessionId and session state when archiving the current session', async () => {
       const store = await getStore();
       store.setState({
         sessions: [buildSession()],
@@ -776,9 +776,28 @@ describe('store contract', () => {
       await store.getState().archiveTask(SESSION_ID);
       const s = store.getState();
       expect(s.sessions).toEqual([]);
-      expect(s.currentSessionId).toBeNull();
-      expect(s.sessionProjectPrs[SESSION_ID]).toBeUndefined();
-      expect(s.sessionSelectedPrNumber[SESSION_ID]).toBeUndefined();
+      expect(s.currentSessionId).toBe(SESSION_ID);
+      expect(s.archivedSessions[WS_ID]?.map((x) => x.id)).toEqual([SESSION_ID]);
+      expect(s.archivedSessions[WS_ID]?.[0]?.archivedAt).toBeDefined();
+      expect(s.sessionProjectPrs[SESSION_ID]).toBeDefined();
+      expect(s.sessionSelectedPrNumber[SESSION_ID]).toBe(40);
+    });
+
+    it('archiveTask removes a non-current session and wipes its state without touching currentSessionId', async () => {
+      const store = await getStore();
+      store.setState({
+        sessions: [buildSession(), buildSession({ id: SESSION_ID_2, goal: 'two' })],
+        currentSessionId: SESSION_ID,
+        sessionProjectPrs: { [SESSION_ID_2]: {} },
+        sessionSelectedPrNumber: { [SESSION_ID_2]: 40 },
+      });
+      await store.getState().archiveTask(SESSION_ID_2);
+      const s = store.getState();
+      expect(s.sessions.map((x) => x.id)).toEqual([SESSION_ID]);
+      expect(s.currentSessionId).toBe(SESSION_ID);
+      expect(s.archivedSessions[WS_ID]?.map((x) => x.id)).toEqual([SESSION_ID_2]);
+      expect(s.sessionProjectPrs[SESSION_ID_2]).toBeUndefined();
+      expect(s.sessionSelectedPrNumber[SESSION_ID_2]).toBeUndefined();
     });
 
     it('unarchiveTask restores a session from archived cache to active when in same workspace', async () => {

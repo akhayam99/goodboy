@@ -14,7 +14,6 @@ import { useWorkspaceGitStatus } from '../../hooks/useWorkspaceGitStatus';
 import { primaryProjectRoot } from '../../primaryProjectRoot';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { ProjectsStep } from '../../../onboarding/OnboardingWizard/steps/ProjectsStep';
-import { NewSessionProjectPicker } from '../../../session/components/NewSessionProjectPicker';
 import { StageColumn } from './StageColumn';
 import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
@@ -66,7 +65,8 @@ type Props = {
 export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const groups = useStageGroupedSessions(workspaceId, sessions);
   const nav = useBoardNavigation();
-  const archived = useAppStore((s) => s.archivedSessions[workspaceId] ?? EMPTY_ARRAY);
+  const archivedList = useAppStore((s) => s.archivedSessions[workspaceId]);
+  const archived = archivedList ?? EMPTY_ARRAY;
   const boardReady = useAppStore((s) => s.boardReady);
   const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
   const rootPath = useAppStore((s) => primaryProjectRoot({ projects: s.projects, workspaceId }));
@@ -115,7 +115,8 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   );
   const lasso = useDragLasso<SessionId>({ containerRef: columnsRef, onSelect: onLassoSelect });
 
-  const empty = sessions.length === 0;
+  const empty = sessions.length === 0 && archived.length === 0;
+  const pending = !boardReady || (sessions.length === 0 && archivedList === undefined);
   const gitReady = gitStatus === null || gitStatus.state === 'ready';
   const showGitPanel = rootPath != null && gitStatus !== null && (!gitReady || !empty);
   const blockedReason = !hasProjects
@@ -135,7 +136,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         </>
       )}
 
-      {!boardReady || !empty ? (
+      {pending || !empty ? (
         <>
           <div className="flex shrink-0 items-center justify-between gap-4">
             <span className="flex items-baseline gap-2">
@@ -179,13 +180,11 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         </>
       ) : null}
 
-      <div className="mx-auto w-full max-w-md shrink-0 empty:hidden">
-        <NewSessionProjectPicker workspaceId={workspaceId} />
-      </div>
+      <div className="mx-auto w-full max-w-md shrink-0 empty:hidden"></div>
 
-      {!boardReady && <BoardSkeleton />}
+      {pending && <BoardSkeleton />}
 
-      {boardReady && empty && !hasProjects && workspace !== null && (
+      {!pending && empty && !hasProjects && workspace !== null && (
         <div className="flex flex-1 items-center justify-center overflow-y-auto">
           <div className="w-full max-w-xl py-6">
             <ProjectsStep workspace={workspace} />
@@ -193,7 +192,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         </div>
       )}
 
-      {boardReady && hasProjects && empty && gitReady && (
+      {!pending && hasProjects && empty && gitReady && (
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
             illustration={<DogMascot size={72} className="text-primary" />}
@@ -215,7 +214,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         </div>
       )}
 
-      {boardReady && !empty && (
+      {!pending && !empty && (
         <div className="flex min-h-0 flex-1 overflow-x-auto">
           <div
             ref={columnsRef}

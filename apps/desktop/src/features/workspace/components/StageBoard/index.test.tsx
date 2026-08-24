@@ -119,7 +119,7 @@ const statusOf = (state: WorkspaceGitStatus['state']): WorkspaceGitStatus => ({
 
 beforeEach(() => {
   state.boardReady = true;
-  state.archivedSessions = {};
+  state.archivedSessions = { [wsId]: [] };
   state.loadArchivedSessions = vi.fn();
   state.workspaces = [workspace];
   state.projects = [{ id: 'proj-1', workspaceId: wsId, kind: 'repo', rootPath: '/tmp/fresh-idea' }];
@@ -151,6 +151,24 @@ describe('StageBoard loading gate', () => {
     expect(screen.getAllByTestId('stage-column').length).toBeGreaterThan(0);
     expect(screen.getByText('Stage board')).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
+  });
+
+  it('renders the board with the archived column instead of the hero when only archived sessions exist', () => {
+    const shelved = { id: 's-9' } as Session;
+    state.archivedSessions = { [wsId]: [shelved] };
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.queryByText('Start your first session')).toBeNull();
+    expect(screen.getByText('Stage board')).toBeDefined();
+    const columns = screen.getAllByTestId('stage-column');
+    expect(columns.some((column) => column.textContent?.includes('archived'))).toBe(true);
+    expect(screen.getByRole('button', { name: 'card s-9' })).toBeDefined();
+  });
+
+  it('holds the skeleton instead of the hero while the archived list is still unknown', () => {
+    state.archivedSessions = {};
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.getByLabelText('Loading board')).toBeDefined();
+    expect(screen.queryByText('Start your first session')).toBeNull();
   });
 });
 
