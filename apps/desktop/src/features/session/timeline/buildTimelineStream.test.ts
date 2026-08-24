@@ -3,6 +3,8 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  PlanId,
+  PlanWithCount,
   SessionEvent,
   SessionEventId,
   SessionEventKind,
@@ -163,8 +165,10 @@ type StreamParams = {
   readonly workflows?: ReadonlyArray<ReturnType<typeof attachedWorkflow>>;
   readonly unreadAgentIds?: ReadonlySet<string>;
   readonly events?: ReadonlyArray<SessionEvent>;
+  readonly plans?: ReadonlyArray<PlanWithCount>;
   readonly showWorkflowSubagents?: boolean;
   readonly showAgentSubagents?: boolean;
+  readonly showPlans?: boolean;
 };
 
 const stream = ({
@@ -172,14 +176,16 @@ const stream = ({
   workflows = [],
   unreadAgentIds = new Set(),
   events = [],
+  plans = [],
   showWorkflowSubagents,
   showAgentSubagents,
+  showPlans,
 }: StreamParams) =>
   buildTimelineStream({
     entries: buildTimelineGroups({
       agents,
       workflows,
-      plans: [],
+      plans,
       externalTasks: [],
       questions: [],
       worktrees: [],
@@ -191,6 +197,7 @@ const stream = ({
     dayLabelFor: ({ at }) => dayLabel({ at, now: NOW }),
     ...(showWorkflowSubagents != null ? { showWorkflowSubagents } : {}),
     ...(showAgentSubagents != null ? { showAgentSubagents } : {}),
+    ...(showPlans != null ? { showPlans } : {}),
   });
 
 type LaneSpan = {
@@ -1239,5 +1246,105 @@ describe('buildTimelineStream, subagent collapse', () => {
     expect(stream({ ...params, showWorkflowSubagents: true, showAgentSubagents: true })).toEqual(
       stream(params),
     );
+  });
+});
+
+describe('buildTimelineStream, plan visibility and family anchoring', () => {
+  const runPlan: PlanWithCount = {
+    id: typedString<PlanId>({ value: 'plan-1' }),
+    sessionId: SESSION_ID,
+    agentId: typedString<AgentId>({ value: 'plan' }),
+    workflowRunId: RUN_ID,
+    title: 'migration plan',
+    bodyMd: '',
+    status: 'active',
+    createdAt: typedString<IsoDateTime>({ value: localIso({ day: 18, hour: 9, minute: 15 }) }),
+    updatedAt: typedString<IsoDateTime>({ value: localIso({ day: 18, hour: 9, minute: 15 }) }),
+    consumptionCount: 0,
+  };
+
+  const PLAN_RUN_AGENTS: ReadonlyArray<Agent> = [
+    agent({
+      id: 'plan',
+      ordinal: 1,
+      startedAt: localIso({ day: 18, hour: 9 }),
+      completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+      workflowRunId: RUN_ID,
+    }),
+  ];
+
+  const PLAN_RUN_WORKFLOWS = [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })];
+
+  it('keeps a run plan in the stream by default', () => {
+    const { items } = stream({
+      workflows: PLAN_RUN_WORKFLOWS,
+      agents: PLAN_RUN_AGENTS,
+      plans: [runPlan],
+    });
+
+    expect(items.map(labelOf)).toContain('step:plan:plan-1');
+  });
+
+  it('drops a run plan from the stream when plans are hidden', () => {
+    const { items } = stream({
+      workflows: PLAN_RUN_WORKFLOWS,
+      agents: PLAN_RUN_AGENTS,
+      plans: [runPlan],
+      showPlans: false,
+    });
+
+    expect(items.map(labelOf)).not.toContain('step:plan:plan-1');
+    expect(items.map(labelOf)).toContain('step:agent:plan');
+  });
+
+  const CLUSTER_RUN_AGENTS: ReadonlyArray<Agent> = [
+    agent({
+      id: 'implement',
+      ordinal: 1,
+      status: 'pending',
+      startedAt: localIso({ day: 18, hour: 9 }),
+      workflowRunId: RUN_ID,
+    }),
+    agent({
+      id: 'sub-1',
+      ordinal: 2,
+      parentAgentId: 'implement',
+      startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+    }),
+    agent({
+      id: 'sub-2',
+      ordinal: 3,
+      parentAgentId: 'implement',
+      startedAt: localIso({ day: 18, hour: 9, minute: 20 }),
+    }),
+    agent({ id: 'sub-3', ordinal: 4, status: 'pending', parentAgentId: 'implement' }),
+    agent({ id: 'review', ordinal: 5, status: 'pending', workflowRunId: RUN_ID }),
+  ];
+
+  it('anchors a waiting parent under its children instead of lifting it to the head', () => {
+    const { items } = stream({
+      workflows: PLAN_RUN_WORKFLOWS,
+      agents: CLUSTER_RUN_AGENTS,
+    });
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'step:agent:review',
+      'step:agent:sub-3',
+      'step:agent:sub-2',
+      'step:agent:sub-1',
+      'step:agent:implement',
+      'entry:run:run-1',
+    ]);
+  });
+
+  it('gives an anchored pending subagent no clock of its own', () => {
+    const { items } = stream({
+      workflows: PLAN_RUN_WORKFLOWS,
+      agents: CLUSTER_RUN_AGENTS,
+    });
+    const pendingChild = items.find((item) => item.id === 'agent:sub-3');
+
+    expect(pendingChild?.kind === 'row' ? pendingChild.at : 'missing').toBeNull();
   });
 });

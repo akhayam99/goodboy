@@ -86,6 +86,7 @@ type Params = {
   readonly dayLabelFor: (params: { readonly at: string }) => string | null;
   readonly showWorkflowSubagents?: boolean;
   readonly showAgentSubagents?: boolean;
+  readonly showPlans?: boolean;
 };
 
 type DraftRow = {
@@ -102,6 +103,7 @@ type DraftRow = {
   readonly markerState: TimelineMarkerState;
   readonly hasUnread: boolean;
   readonly isPending: boolean;
+  readonly isSubagent: boolean;
 };
 
 type DraftCluster = {
@@ -188,6 +190,7 @@ type EmitContext = {
   readonly groups: RailGroupInput[];
   readonly showWorkflowSubagents: boolean;
   readonly showAgentSubagents: boolean;
+  readonly showPlans: boolean;
 };
 
 const hasUnreadDescendant = ({
@@ -233,6 +236,7 @@ type EmitAgentParams = {
   readonly familyId: string | null;
   readonly groupId: string | null;
   readonly showSubagents: boolean;
+  readonly isSubagent: boolean;
   readonly context: EmitContext;
 };
 
@@ -244,6 +248,7 @@ const agentBlock = ({
   familyId,
   groupId,
   showSubagents,
+  isSubagent,
   context,
 }: EmitAgentParams): DraftBlock => {
   const childLaneId = laneIdOf({ entryId: entry.id });
@@ -262,17 +267,19 @@ const agentBlock = ({
           : 'open',
     });
     for (const child of entry.children) {
+      const block = agentBlock({
+        entry: child,
+        grade: 'step',
+        identity,
+        isMuted,
+        familyId,
+        groupId: childLaneId,
+        showSubagents,
+        isSubagent: true,
+        context,
+      });
       nested.push(
-        agentBlock({
-          entry: child,
-          grade: 'step',
-          identity,
-          isMuted,
-          familyId,
-          groupId: childLaneId,
-          showSubagents,
-          context,
-        }),
+        child.agent.status === 'pending' ? { ...block, key: { ...block.key, at: null } } : block,
       );
     }
   }
@@ -291,6 +298,7 @@ const agentBlock = ({
       markerState: 'done',
       hasUnread: false,
       isPending: false,
+      isSubagent,
     };
     nested.push({ key: sortableOf({ row }), rows: [row] });
   }
@@ -314,6 +322,7 @@ const agentBlock = ({
       context.unreadAgentIds.has(entry.agent.id) ||
       (!showSubagents && hasUnreadDescendant({ entry, unreadAgentIds: context.unreadAgentIds })),
     isPending: entry.agent.status === 'pending',
+    isSubagent,
   };
   return blockOf({ rows: [...nestedFirst({ blocks: nested }), origin], origin });
 };
@@ -349,9 +358,13 @@ const runBlock = ({ entry, context }: EmitRunParams): DraftBlock => {
           familyId: entry.id,
           groupId: laneId,
           showSubagents: context.showWorkflowSubagents,
+          isSubagent: false,
           context,
         }),
       );
+      continue;
+    }
+    if (child.kind === 'plan' && !context.showPlans) {
       continue;
     }
     const row: DraftRow = {
@@ -368,6 +381,7 @@ const runBlock = ({ entry, context }: EmitRunParams): DraftBlock => {
       markerState: 'done',
       hasUnread: false,
       isPending: false,
+      isSubagent: false,
     };
     nested.push({ key: sortableOf({ row }), rows: [row] });
   }
@@ -396,12 +410,16 @@ const runBlock = ({ entry, context }: EmitRunParams): DraftBlock => {
     }),
     hasUnread: steps.some((agent) => context.unreadAgentIds.has(agent.id)),
     isPending: false,
+    isSubagent: false,
   };
   return blockOf({ rows: [...nestedFirst({ blocks: nested }), origin], origin });
 };
 
 const isPendingStep = ({ draft }: { readonly draft: DraftRow }): boolean =>
   draft.grade === 'step' && draft.markerState === 'pending';
+
+const isFamilyAnchored = ({ draft }: { readonly draft: DraftRow }): boolean =>
+  draft.isSubagent || (draft.entry.kind === 'agent' && draft.entry.children.length > 0);
 
 const blockKeyOf = ({ block }: { readonly block: DraftBlock }): Sortable => {
   const dated = block.rows.find((row) => !isPendingStep({ draft: row }));
@@ -422,7 +440,7 @@ const withPendingAtHead = ({ drafts }: HeadParams): ReadonlyArray<DraftRow> => {
   const laneRankOf = ({ draft }: { readonly draft: DraftRow }): number =>
     draft.familyId == null ? drafts.length : (laneRankById.get(draft.familyId) ?? drafts.length);
   const future = drafts
-    .filter((draft) => isPendingStep({ draft }))
+    .filter((draft) => isPendingStep({ draft }) && !isFamilyAnchored({ draft }))
     .map((draft) => ({ ...draft, at: null }))
     .sort(
       (first, second) =>
@@ -431,7 +449,12 @@ const withPendingAtHead = ({ drafts }: HeadParams): ReadonlyArray<DraftRow> => {
         second.sortOrdinal - first.sortOrdinal ||
         first.id.localeCompare(second.id),
     );
-  return [...future, ...drafts.filter((draft) => !isPendingStep({ draft }))];
+  return [
+    ...future,
+    ...drafts
+      .filter((draft) => !isPendingStep({ draft }) || isFamilyAnchored({ draft }))
+      .map((draft) => (isPendingStep({ draft }) ? { ...draft, at: null } : draft)),
+  ];
 };
 
 type ClusterParams = {
@@ -512,6 +535,7 @@ export const buildTimelineStream = ({
   dayLabelFor,
   showWorkflowSubagents = true,
   showAgentSubagents = true,
+  showPlans = true,
 }: Params): TimelineStream => {
   const context: EmitContext = {
     unreadAgentIds,
@@ -519,6 +543,7 @@ export const buildTimelineStream = ({
     groups: [],
     showWorkflowSubagents,
     showAgentSubagents,
+    showPlans,
   };
   const blocks: DraftBlock[] = [];
 
@@ -537,6 +562,7 @@ export const buildTimelineStream = ({
           familyId: entry.id,
           groupId: null,
           showSubagents: context.showAgentSubagents,
+          isSubagent: false,
           context,
         }),
       );
@@ -556,6 +582,7 @@ export const buildTimelineStream = ({
       markerState: 'done',
       hasUnread: false,
       isPending: false,
+      isSubagent: false,
     };
     blocks.push({ key: sortableOf({ row }), rows: [row] });
   }
