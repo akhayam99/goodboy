@@ -2,11 +2,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type {
+  IntegrationBindingProvider,
   IsoDateTime,
   Project,
   ProjectId,
   WorkspaceId,
-  WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 import { QUERY_BRIDGE_VERBS, buildIntegrationsGuard } from './integrationsGuard';
 import { buildScopeGuard } from './scopeGuard';
@@ -69,7 +69,7 @@ describe('buildIntegrationsGuard', () => {
 
   it('never leaks a credential, a token or an MCP endpoint into the prompt', () => {
     const guard = buildIntegrationsGuard({
-      providers: ['linear', 'sentry', 'gitlab', 'jira', 'bitbucket', 'slack'],
+      providers: ['linear', 'sentry', 'github', 'gitlab', 'jira', 'bitbucket', 'slack'],
       isBridgeServing: true,
     });
 
@@ -87,28 +87,48 @@ describe('buildIntegrationsGuard', () => {
 
   it('stays short enough to ride along on every prompt', () => {
     const guard = buildIntegrationsGuard({
-      providers: ['linear', 'sentry', 'gitlab', 'jira', 'bitbucket', 'slack'],
+      providers: ['linear', 'sentry', 'github', 'gitlab', 'jira', 'bitbucket', 'slack'],
       isBridgeServing: true,
     });
 
-    expect(guard.split('\n')).toHaveLength(12);
+    expect(guard.split('\n')).toHaveLength(13);
   });
 
   it('ignores a provider the bridge cannot serve', () => {
     const guard = buildIntegrationsGuard({
-      providers: ['github' as WorkspaceIntegrationProvider, 'linear'],
+      providers: ['sourcehut' as IntegrationBindingProvider, 'linear'],
+      isBridgeServing: true,
+    });
+
+    expect(guard).not.toContain('sourcehut');
+    expect(guard).toContain('linear:');
+  });
+
+  it('lists github with its verbs when the workspace has a working gh connection', () => {
+    const guard = buildIntegrationsGuard({ providers: ['github'], isBridgeServing: true });
+
+    expect(guard).toContain('[integrations]');
+    expect(guard).toContain(`github: ${QUERY_BRIDGE_VERBS.github.join(', ')}`);
+    expect(guard).toContain('pr-thread-resolve');
+    expect(guard).toContain('push');
+  });
+
+  it('leaves github out while the workspace has no gh connection', () => {
+    const guard = buildIntegrationsGuard({
+      providers: ['linear', 'slack'],
       isBridgeServing: true,
     });
 
     expect(guard).not.toContain('github');
     expect(guard).toContain('linear:');
+    expect(guard).toContain('slack:');
   });
 
   it('ignores a name that only exists on the object prototype', () => {
     const guard = buildIntegrationsGuard({
       providers: [
-        'toString' as WorkspaceIntegrationProvider,
-        'constructor' as WorkspaceIntegrationProvider,
+        'toString' as IntegrationBindingProvider,
+        'constructor' as IntegrationBindingProvider,
         'linear',
       ],
       isBridgeServing: true,

@@ -749,10 +749,15 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }),
       }),
     });
+    const githubMode = get().githubStatus?.mode;
+    const isGithubConnected = githubMode === 'pat' || githubMode === 'gh-cli';
     const integrationsGuard = buildIntegrationsGuard({
-      providers: (get().workspaceIntegrations[session.workspaceId] ?? []).map(
-        (integration) => integration.provider,
-      ),
+      providers: [
+        ...(get().workspaceIntegrations[session.workspaceId] ?? []).map(
+          (integration) => integration.provider,
+        ),
+        ...(isGithubConnected ? (['github'] as const) : []),
+      ],
       isBridgeServing,
     });
     const profileGuard = buildProfileGuard({

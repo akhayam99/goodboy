@@ -107,6 +107,14 @@ const fn num(name: &'static str) -> Param {
     }
 }
 
+const fn opt_num(name: &'static str) -> Param {
+    Param {
+        name,
+        required: false,
+        kind: ParamKind::Number,
+    }
+}
+
 const fn flag(name: &'static str) -> Param {
     Param {
         name,
@@ -178,6 +186,118 @@ pub const CATALOG: &[VerbSpec] = &[
         params: &[req("id")],
         access: Access::Read,
         summary: "one issue with stack frames, tags and breadcrumbs",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "prs",
+        params: &[opt("state")],
+        access: Access::Read,
+        summary: "pull requests of the repository this session mounts",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "pr",
+        params: &[opt_num("number")],
+        access: Access::Read,
+        summary: "one pull request, the current branch's when no number is given",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "pr-for-branch",
+        params: &[req("branch")],
+        access: Access::Read,
+        summary: "the pull request opened from a head branch",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "pr-diff",
+        params: &[opt_num("number")],
+        access: Access::Read,
+        summary: "unified diff of a pull request",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "pr-checks",
+        params: &[opt_num("number")],
+        access: Access::Read,
+        summary: "checks reported on a pull request",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "pr-comments",
+        params: &[opt_num("number")],
+        access: Access::Read,
+        summary: "review threads with their ids and resolved state",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "issues-assigned",
+        params: &[],
+        access: Access::Read,
+        summary: "open issues assigned to the connected user",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "issue",
+        params: &[num("number")],
+        access: Access::Read,
+        summary: "one issue by number",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "issue-comments",
+        params: &[num("number")],
+        access: Access::Read,
+        summary: "every comment on an issue",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "pr-comment-create",
+        params: &[req("body"), opt_num("number")],
+        access: Access::Write,
+        summary: "post a comment on a pull request",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "pr-thread-reply",
+        params: &[req("thread"), req("body")],
+        access: Access::Write,
+        summary: "reply inside an existing review thread",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "pr-thread-resolve",
+        params: &[req("thread")],
+        access: Access::Write,
+        summary: "resolve a review thread",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "pr-ready",
+        params: &[opt_num("number")],
+        access: Access::Write,
+        summary: "mark a draft pull request ready for review",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "pr-merge",
+        params: &[opt_num("number"), opt("method")],
+        access: Access::Write,
+        summary: "merge a pull request with squash, merge or rebase",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "issue-comment-create",
+        params: &[num("number"), req("body")],
+        access: Access::Write,
+        summary: "post a comment on an issue",
+    },
+    VerbSpec {
+        provider: "github",
+        verb: "push",
+        params: &[opt("branch"), flag("force-with-lease")],
+        access: Access::Write,
+        summary: "push this session's mount branch to origin",
     },
     VerbSpec {
         provider: "gitlab",
@@ -980,9 +1100,79 @@ mod tests {
         assert_eq!(
             providers(),
             vec![
-                "project", "linear", "sentry", "gitlab", "jira", "bitbucket", "slack"
+                "project",
+                "linear",
+                "sentry",
+                "github",
+                "gitlab",
+                "jira",
+                "bitbucket",
+                "slack"
             ]
         );
+    }
+
+    #[test]
+    fn every_github_verb_is_registered_under_the_access_its_effect_needs() {
+        let read = [
+            "prs",
+            "pr",
+            "pr-for-branch",
+            "pr-diff",
+            "pr-checks",
+            "pr-comments",
+            "issues-assigned",
+            "issue",
+            "issue-comments",
+        ];
+        let write = [
+            "pr-comment-create",
+            "pr-thread-reply",
+            "pr-thread-resolve",
+            "pr-ready",
+            "pr-merge",
+            "issue-comment-create",
+            "push",
+        ];
+
+        for verb in read {
+            let spec = spec_for("github", verb).unwrap_or_else(|| panic!("{} missing", verb));
+            assert_eq!(spec.access, Access::Read, "{} must be read access", verb);
+        }
+        for verb in write {
+            let spec = spec_for("github", verb).unwrap_or_else(|| panic!("{} missing", verb));
+            assert_eq!(spec.access, Access::Write, "{} must be write access", verb);
+        }
+        assert_eq!(specs_for_provider("github").len(), read.len() + write.len());
+    }
+
+    #[test]
+    fn the_github_push_verb_refuses_a_bare_force_flag() {
+        let argv = vec![
+            "github".to_string(),
+            "push".to_string(),
+            "--force".to_string(),
+        ];
+
+        assert!(parse_argv(&argv)
+            .expect_err("--force is not a push option")
+            .contains("--force"));
+    }
+
+    #[test]
+    fn the_github_push_verb_accepts_only_the_lease_protected_force() {
+        let argv = vec![
+            "github".to_string(),
+            "push".to_string(),
+            "--force-with-lease".to_string(),
+        ];
+
+        let ArgvOutcome::Parsed(parsed) = parse_argv(&argv).expect("parsed") else {
+            panic!("expected a parsed command");
+        };
+
+        assert_eq!(parsed.args["force-with-lease"], serde_json::json!(true));
+        assert!(parsed.args.get("branch").is_none());
     }
 
     #[test]

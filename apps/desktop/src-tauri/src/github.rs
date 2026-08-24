@@ -210,7 +210,7 @@ fn run_binary(
     }
 }
 
-fn run_gh(
+pub(crate) fn run_gh(
     args: &[&str],
     cwd: Option<&str>,
     token: Option<&str>,
@@ -254,7 +254,11 @@ fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<GhRunResult, 
     }
 }
 
-fn run_git_push(args: &[&str], cwd: &str, token: Option<&str>) -> Result<GhRunResult, GithubError> {
+pub(crate) fn run_git_push(
+    args: &[&str],
+    cwd: &str,
+    token: Option<&str>,
+) -> Result<GhRunResult, GithubError> {
     let mut cmd = crate::path_env::command_with_login_env("git");
     if gh_available() {
         cmd.args([
@@ -315,7 +319,7 @@ where
     resolve(None)
 }
 
-fn read_token(workspace_id: Option<&str>, project_id: Option<&str>) -> Option<String> {
+pub(crate) fn read_token(workspace_id: Option<&str>, project_id: Option<&str>) -> Option<String> {
     let cache = integration_credentials::SecretCache::default();
     read_token_from(workspace_id, project_id, |scope| match scope {
         Some(id) => integration_credentials::read_for_binding(GITHUB_PROVIDER, id, None, &cache)
@@ -380,10 +384,7 @@ fn status_blocking(workspace_id: Option<String>, project_id: Option<String>) -> 
 }
 
 #[tauri::command]
-pub async fn gh_status(
-    workspace_id: Option<String>,
-    project_id: Option<String>,
-) -> GhStatus {
+pub async fn gh_status(workspace_id: Option<String>, project_id: Option<String>) -> GhStatus {
     tauri::async_runtime::spawn_blocking(move || status_blocking(workspace_id, project_id))
         .await
         .unwrap_or_else(|_| absent_status())

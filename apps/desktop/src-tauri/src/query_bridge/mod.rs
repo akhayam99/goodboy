@@ -1,5 +1,6 @@
 mod cli;
 mod dispatch;
+mod github;
 pub mod project;
 pub mod protocol;
 
@@ -88,7 +89,11 @@ pub fn query_bridge_serving() -> bool {
     is_serving()
 }
 
-pub(crate) fn apply_env(command: &mut Command, workspace_id: Option<&str>, session_id: Option<&str>) {
+pub(crate) fn apply_env(
+    command: &mut Command,
+    workspace_id: Option<&str>,
+    session_id: Option<&str>,
+) {
     if !is_serving() {
         return;
     }

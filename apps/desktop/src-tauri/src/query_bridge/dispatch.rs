@@ -31,6 +31,10 @@ fn number(args: &Args, key: &str) -> Result<i64, String> {
         .ok_or_else(|| format!("missing numeric argument: {}", key))
 }
 
+fn optional_number(args: &Args, key: &str) -> Option<i64> {
+    args.get(key).and_then(Value::as_i64)
+}
+
 fn unsigned(args: &Args, key: &str) -> Result<u64, String> {
     let value = number(args, key)?;
     u64::try_from(value).map_err(|_| format!("{} must not be negative", key))
@@ -40,22 +44,26 @@ fn flag(args: &Args, key: &str) -> bool {
     args.get(key).and_then(Value::as_bool).unwrap_or(false)
 }
 
-struct Scope<'a> {
-    workspace: &'a str,
-    project: Option<String>,
+pub(super) struct Scope<'a> {
+    pub(super) workspace: &'a str,
+    pub(super) session: &'a str,
+    pub(super) project: Option<String>,
 }
 
 impl Scope<'_> {
-    fn project_id(&self) -> Option<&str> {
+    pub(super) fn project_id(&self) -> Option<&str> {
         self.project.as_deref()
     }
 }
 
 fn config_field(provider: &str, scope: &Scope<'_>, key: &str) -> Result<String, String> {
-    let raw =
-        crate::integration_credentials::config_for_binding(provider, scope.workspace, scope.project_id())
-            .map_err(|error| error.to_string())?
-            .ok_or_else(|| format!("{} is not connected in this workspace", provider))?;
+    let raw = crate::integration_credentials::config_for_binding(
+        provider,
+        scope.workspace,
+        scope.project_id(),
+    )
+    .map_err(|error| error.to_string())?
+    .ok_or_else(|| format!("{} is not connected in this workspace", provider))?;
     let parsed: Value = serde_json::from_str(&raw).map_err(|error| error.to_string())?;
     parsed
         .get(key)
@@ -111,13 +119,16 @@ pub async fn dispatch(app: &AppHandle, request: &QueryRequest) -> Result<Value, 
     if request.provider == "project" {
         return super::project::materialize(app, request).await;
     }
-    ensure_connected(app, &request.workspace_id, &request.provider)?;
+    if request.provider != "github" {
+        ensure_connected(app, &request.workspace_id, &request.provider)?;
+    }
     let project = match request.project.trim() {
         "" => None,
         name => Some(named_project_id(app, &request.workspace_id, name)?),
     };
     let scope = Scope {
         workspace: &request.workspace_id,
+        session: &request.session_id,
         project,
     };
     let args = &request.args;
@@ -190,6 +201,25 @@ async fn run_read(
             .await
             .map_err(|error| error.to_string())?,
         ),
+        ("github", "prs") => super::github::prs(app, scope, optional_text(args, "state")).await,
+        ("github", "pr") => super::github::pr(app, scope, optional_number(args, "number")).await,
+        ("github", "pr-for-branch") => {
+            super::github::pr_for_branch(app, scope, text(args, "branch")?).await
+        }
+        ("github", "pr-diff") => {
+            super::github::pr_diff(app, scope, optional_number(args, "number")).await
+        }
+        ("github", "pr-checks") => {
+            super::github::pr_checks(app, scope, optional_number(args, "number")).await
+        }
+        ("github", "pr-comments") => {
+            super::github::pr_comments(app, scope, optional_number(args, "number")).await
+        }
+        ("github", "issues-assigned") => super::github::issues_assigned(app, scope).await,
+        ("github", "issue") => super::github::issue(app, scope, number(args, "number")?).await,
+        ("github", "issue-comments") => {
+            super::github::issue_comments(app, scope, number(args, "number")?).await
+        }
         ("gitlab", "issues-assigned") => encode(
             crate::gitlab::gitlab_fetch_assigned_issues(
                 scope.workspace.to_string(),
@@ -475,6 +505,52 @@ async fn run_write(
             .await
             .map_err(|error| error.to_string())?,
         ),
+        ("github", "pr-comment-create") => {
+            super::github::pr_comment_create(
+                app,
+                scope,
+                text(args, "body")?,
+                optional_number(args, "number"),
+            )
+            .await
+        }
+        ("github", "pr-thread-reply") => {
+            super::github::pr_thread_reply(app, scope, text(args, "thread")?, text(args, "body")?)
+                .await
+        }
+        ("github", "pr-thread-resolve") => {
+            super::github::pr_thread_resolve(app, scope, text(args, "thread")?).await
+        }
+        ("github", "pr-ready") => {
+            super::github::pr_ready(app, scope, optional_number(args, "number")).await
+        }
+        ("github", "pr-merge") => {
+            super::github::pr_merge(
+                app,
+                scope,
+                optional_number(args, "number"),
+                optional_text(args, "method"),
+            )
+            .await
+        }
+        ("github", "issue-comment-create") => {
+            super::github::issue_comment_create(
+                app,
+                scope,
+                number(args, "number")?,
+                text(args, "body")?,
+            )
+            .await
+        }
+        ("github", "push") => {
+            super::github::push(
+                app,
+                scope,
+                optional_text(args, "branch"),
+                flag(args, "force-with-lease"),
+            )
+            .await
+        }
         ("gitlab", "issue-update") => encode(
             crate::gitlab::gitlab_update_issue(
                 scope.workspace.to_string(),
@@ -816,6 +892,15 @@ mod tests {
         ("sentry", "issues"),
         ("sentry", "issue"),
         ("sentry", "issue-detail"),
+        ("github", "prs"),
+        ("github", "pr"),
+        ("github", "pr-for-branch"),
+        ("github", "pr-diff"),
+        ("github", "pr-checks"),
+        ("github", "pr-comments"),
+        ("github", "issues-assigned"),
+        ("github", "issue"),
+        ("github", "issue-comments"),
         ("gitlab", "issues-assigned"),
         ("gitlab", "issue"),
         ("gitlab", "issue-notes"),
@@ -846,6 +931,13 @@ mod tests {
         ("project", "materialize"),
         ("linear", "comment-create"),
         ("linear", "issue-update"),
+        ("github", "pr-comment-create"),
+        ("github", "pr-thread-reply"),
+        ("github", "pr-thread-resolve"),
+        ("github", "pr-ready"),
+        ("github", "pr-merge"),
+        ("github", "issue-comment-create"),
+        ("github", "push"),
         ("gitlab", "issue-update"),
         ("gitlab", "issue-note-create"),
         ("gitlab", "mr-note-create"),
