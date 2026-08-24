@@ -99,7 +99,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SessionKickoff', () => {
-  it('offers the three starting points and skips the issue lane without trackers', () => {
+  it('offers the three starting points and tracker studios without trackers', () => {
     const onOpenWorkflowBuilder = vi.fn();
     render(<SessionKickoff session={session} onOpenWorkflowBuilder={onOpenWorkflowBuilder} />);
 
@@ -107,8 +107,39 @@ describe('SessionKickoff', () => {
     expect(screen.getByRole('button', { name: /Start in chat/ })).toBeDefined();
     expect(screen.getByTestId('create-agent-tile')).toBeDefined();
     expect(screen.getByRole('button', { name: /Add a workflow/ })).toBeDefined();
-    expect(screen.queryByText('Or pick up an issue')).toBeNull();
+    expect(screen.getByText('Or pick up an issue')).toBeDefined();
+    expect(screen.getByText('No tracker connected yet')).toBeDefined();
+    expect(screen.getByTestId('glyph-linear')).toBeDefined();
+    expect(screen.getByTestId('glyph-github')).toBeDefined();
+    expect(screen.getByTestId('glyph-gitlab')).toBeDefined();
+    expect(screen.getByTestId('glyph-jira')).toBeDefined();
+    expect(screen.getByTestId('glyph-sentry')).toBeDefined();
     expect(spies.fetchIssueCandidates).not.toHaveBeenCalled();
+  });
+
+  it('opens the Linear studio from the no-tracker state', () => {
+    const onOpenLinearStudio = vi.fn();
+    window.addEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
+    render(<SessionKickoff session={session} onOpenWorkflowBuilder={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open the Linear studio' }));
+
+    expect(onOpenLinearStudio).toHaveBeenCalledTimes(1);
+    window.removeEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
+  });
+
+  it('shows only connected tracker studios when no open issues remain', async () => {
+    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }] };
+    spies.fetchIssueCandidates.mockResolvedValue([]);
+
+    render(<SessionKickoff session={session} onOpenWorkflowBuilder={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('No open issues waiting for a session')).toBeDefined();
+    });
+    expect(screen.getByTestId('glyph-linear')).toBeDefined();
+    expect(screen.queryByTestId('glyph-github')).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
   });
 
   it('reveals the chat and opens the workflow builder from the tiles', () => {

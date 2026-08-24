@@ -6,7 +6,7 @@ import {
   fetchIssueCandidates,
   type IssueCandidate,
 } from '../../../integrations/fetchIssueCandidates';
-import { resolveIssueSources } from '../../../integrations/issueSources';
+import { resolveIssueSources, type IssueSource } from '../../../integrations/issueSources';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { useJiraConfig } from '../../../integrations/jira/useJiraConfig';
 
@@ -19,7 +19,8 @@ type Params = {
 type Result = {
   readonly hasSources: boolean;
   readonly rows: ReadonlyArray<IssueCandidate>;
-  readonly isLoading: boolean;
+  readonly isLoaded: boolean;
+  readonly sources: ReadonlyArray<IssueSource>;
 };
 
 export const useKickoffIssues = ({ workspaceId }: Params): Result => {
@@ -41,7 +42,7 @@ export const useKickoffIssues = ({ workspaceId }: Params): Result => {
   const [rowsByProvider, setRowsByProvider] = useState<
     Readonly<Record<string, ReadonlyArray<IssueCandidate>>>
   >({});
-  const [pendingCount, setPendingCount] = useState(0);
+  const [settled, setSettled] = useState<ReadonlySet<string>>(new Set());
   const fetchedRef = useRef(new Set<string>());
 
   const sources = useMemo(
@@ -59,7 +60,6 @@ export const useKickoffIssues = ({ workspaceId }: Params): Result => {
         continue;
       }
       fetchedRef.current.add(source.provider);
-      setPendingCount((count) => count + 1);
       void fetchIssueCandidates({
         provider: source.provider,
         workspaceId,
@@ -72,7 +72,7 @@ export const useKickoffIssues = ({ workspaceId }: Params): Result => {
         })
         .catch(() => undefined)
         .finally(() => {
-          setPendingCount((count) => count - 1);
+          setSettled((current) => new Set(current).add(source.provider));
         });
     }
   }, [gitlabHost, jiraConfig, rootPath, sources, workspaceId]);
@@ -100,6 +100,7 @@ export const useKickoffIssues = ({ workspaceId }: Params): Result => {
   return {
     hasSources: sources.length > 0,
     rows,
-    isLoading: pendingCount > 0,
+    isLoaded: sources.every((source) => settled.has(source.provider)),
+    sources,
   };
 };
