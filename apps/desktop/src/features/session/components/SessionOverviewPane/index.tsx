@@ -14,6 +14,7 @@ import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns'
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { HeaderBand } from './HeaderBand';
 import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';
+import { SessionKickoff } from '../SessionKickoff';
 import { OverviewActions } from './OverviewActions';
 import { InspectorSplit } from '../SessionWorkspace/parts/InspectorSplit';
 import { SlotHistoryPanel } from '../SessionWorkspace/parts/SlotHistoryPanel';
@@ -97,6 +98,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
           actions={
             <OverviewActions sessionId={sessionId} onOpenWorkflowBuilder={openWorkflowBuilder} />
           }
+          kickoff={<SessionKickoff session={session} onOpenWorkflowBuilder={openWorkflowBuilder} />}
         />
       </PaneShell>
     </InspectorSplit>

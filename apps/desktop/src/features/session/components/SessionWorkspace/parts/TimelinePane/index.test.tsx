@@ -82,6 +82,7 @@ const WORKTREE: Worktree = {
 beforeEach(() => {
   storeState.sessionWorktreeRecords = {};
   storeState.sessionPhaseRuns = {};
+  storeState.sessionEvents = {};
   storeState.openMountDiff.mockReset();
   storeState.markAllAgentsSeen.mockReset();
   unread.current = false;
@@ -155,6 +156,56 @@ describe('TimelinePane on an empty session', () => {
     expect(screen.getByRole('button', { name: 'Filter' })).toBeDefined();
     expect(screen.getByText(/Nothing yet/)).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
+  });
+});
+
+describe('TimelinePane kickoff', () => {
+  it('hands the empty session to the kickoff once events are known', () => {
+    storeState.sessionEvents = { 'session-1': [] };
+
+    render(
+      <TimelinePane
+        session={SESSION}
+        runs={RUNS}
+        actions={null}
+        kickoff={<div data-testid="kickoff" />}
+      />,
+    );
+
+    expect(screen.getByTestId('kickoff')).toBeDefined();
+    expect(screen.queryByText(/Nothing yet/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Filter' })).toBeNull();
+  });
+
+  it('holds the quiet line until the session events resolve', () => {
+    render(
+      <TimelinePane
+        session={SESSION}
+        runs={RUNS}
+        actions={null}
+        kickoff={<div data-testid="kickoff" />}
+      />,
+    );
+
+    expect(screen.queryByTestId('kickoff')).toBeNull();
+    expect(screen.getByText(/Nothing yet/)).toBeDefined();
+  });
+
+  it('steps aside as soon as the timeline holds any activity', () => {
+    storeState.sessionEvents = { 'session-1': [] };
+    storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
+
+    render(
+      <TimelinePane
+        session={SESSION}
+        runs={RUNS}
+        actions={null}
+        kickoff={<div data-testid="kickoff" />}
+      />,
+    );
+
+    expect(screen.queryByTestId('kickoff')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Filter' })).toBeDefined();
   });
 });
 

@@ -36,15 +36,17 @@ type Props = {
   readonly session: Session;
   readonly runs: WorkspaceRuns;
   readonly actions: ReactNode;
+  readonly kickoff?: ReactNode;
 };
 
-export const TimelinePane = ({ session, runs, actions }: Props) => {
+export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
   const sessionId: SessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const plans = useAppStore((s) => s.sessionPlans?.[sessionId] ?? EMPTY_ARRAY);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks?.[sessionId] ?? EMPTY_ARRAY);
   const worktrees = useAppStore((s) => s.sessionWorktreeRecords?.[sessionId] ?? EMPTY_ARRAY);
   const events = useAppStore((s) => s.sessionEvents?.[sessionId] ?? EMPTY_ARRAY);
+  const areEventsLoaded = useAppStore((s) => s.sessionEvents?.[sessionId] !== undefined);
   const loadSessionEvents = useAppStore((s) => s.loadSessionEvents);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
@@ -242,6 +244,10 @@ export const TimelinePane = ({ session, runs, actions }: Props) => {
   };
 
   const hasUnreadAgents = unreadAgentIds.size > 0;
+
+  if (model.entries.length === 0 && kickoff != null && areEventsLoaded) {
+    return <>{kickoff}</>;
+  }
 
   return (
     <section aria-label="Activity" className="flex flex-col gap-2">
