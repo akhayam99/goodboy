@@ -40,13 +40,19 @@ export const resolverTurnOutcomes = ({
     }
     turnOutcomes[marker.threadId] = { kind: 'analyzed', reply: marker.summary };
   }
+  let reworkedReplies = 0;
   for (const marker of extractAllCommentReplies(assistantText)) {
-    const outcome = turnOutcomes[marker.threadId];
-    if (outcome !== undefined) {
-      turnOutcomes[marker.threadId] = { ...outcome, reply: marker.body };
+    const outcome = turnOutcomes[marker.threadId] ?? previousOutcomes[marker.threadId];
+    if (outcome === undefined) {
+      continue;
     }
+    if (turnOutcomes[marker.threadId] === undefined) {
+      reworkedReplies += 1;
+    }
+    turnOutcomes[marker.threadId] = { ...outcome, reply: marker.body };
   }
-  const markerCount = resolvedMarkers.length + wontfixMarkers.length + analysisMarkers.length;
+  const markerCount =
+    resolvedMarkers.length + wontfixMarkers.length + analysisMarkers.length + reworkedReplies;
   return {
     outcomes: markerCount === 0 ? previousOutcomes : { ...previousOutcomes, ...turnOutcomes },
     turnOutcomes,
