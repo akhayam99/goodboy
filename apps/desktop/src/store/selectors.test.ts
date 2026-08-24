@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
@@ -534,6 +534,39 @@ describe('useMountDiffStats', () => {
       [SESSION_ID]: [createAgent({ id: AGENT_ID, lastFinishedAt: '2026-08-22T10:00:00.000Z' })],
     };
     rerender();
+
+    await waitFor(() => expect(changedFiles).toHaveBeenCalledTimes(2));
+  });
+
+  it('asks git once when several surfaces read the same mount at the same time', async () => {
+    store.state.sessionWorktreeRecords = {
+      [SESSION_ID]: [worktreeRow({ id: 'wt-1', worktreePath: '/tmp/a' })],
+    };
+    changedFiles.mockResolvedValue({ paths: [], additions: 4, deletions: 0, numstat: '' });
+
+    const { result } = renderHook(() => [
+      useMountDiffStats(SESSION_ID),
+      useMountDiffStats(SESSION_ID),
+      useMountDiffStats(SESSION_ID),
+    ]);
+
+    await waitFor(() => expect(result.current[0]?.get('/tmp/a')).toBeDefined());
+    expect(result.current[2]?.get('/tmp/a')).toEqual({ additions: 4, deletions: 0 });
+    expect(changedFiles).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes when the window comes back into view', async () => {
+    store.state.sessionWorktreeRecords = {
+      [SESSION_ID]: [worktreeRow({ id: 'wt-1', worktreePath: '/tmp/a' })],
+    };
+    changedFiles.mockResolvedValue({ paths: [], additions: 1, deletions: 0, numstat: '' });
+
+    renderHook(() => useMountDiffStats(SESSION_ID));
+    await waitFor(() => expect(changedFiles).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
 
     await waitFor(() => expect(changedFiles).toHaveBeenCalledTimes(2));
   });

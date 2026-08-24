@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { worktreeChangedFiles } from '../features/worktree/worktree';
 import { selectNonResolverStandaloneAgents, type AgentKind } from '../features/session/agent-kind';
@@ -640,6 +640,66 @@ export type MountDiffStat = {
 
 const EMPTY_MOUNT_PATHS: ReadonlyArray<string> = [];
 const EMPTY_MOUNT_DIFF_STATS: ReadonlyMap<string, MountDiffStat> = new Map();
+const MOUNT_DIFF_POLL_MS = 30_000;
+
+let mountDiffTick = 0;
+let mountDiffTimer: number | null = null;
+const mountDiffTickListeners = new Set<() => void>();
+
+const bumpMountDiffTick = (): void => {
+  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+    return;
+  }
+  mountDiffTick += 1;
+  for (const listener of mountDiffTickListeners) {
+    listener();
+  }
+};
+
+const readMountDiffTick = (): number => mountDiffTick;
+
+const subscribeMountDiffTick = (listener: () => void): (() => void) => {
+  mountDiffTickListeners.add(listener);
+  if (mountDiffTimer === null && typeof window !== 'undefined') {
+    mountDiffTimer = window.setInterval(bumpMountDiffTick, MOUNT_DIFF_POLL_MS);
+    document.addEventListener('visibilitychange', bumpMountDiffTick);
+  }
+  return () => {
+    mountDiffTickListeners.delete(listener);
+    if (mountDiffTickListeners.size > 0 || mountDiffTimer === null) {
+      return;
+    }
+    window.clearInterval(mountDiffTimer);
+    mountDiffTimer = null;
+    document.removeEventListener('visibilitychange', bumpMountDiffTick);
+  };
+};
+
+const inFlightMountDiffStats = new Map<string, Promise<MountDiffStat>>();
+
+type LoadMountDiffStatParams = {
+  readonly worktreePath: string;
+  readonly revision: string;
+};
+
+const loadMountDiffStat = ({
+  worktreePath,
+  revision,
+}: LoadMountDiffStatParams): Promise<MountDiffStat> => {
+  const key = `${revision}@${worktreePath}`;
+  const pending = inFlightMountDiffStats.get(key);
+  if (pending !== undefined) {
+    return pending;
+  }
+  const request = worktreeChangedFiles(worktreePath)
+    .then((summary) => ({ additions: summary.additions, deletions: summary.deletions }))
+    .catch(() => ({ additions: 0, deletions: 0 }));
+  inFlightMountDiffStats.set(key, request);
+  void request.finally(() => {
+    inFlightMountDiffStats.delete(key);
+  });
+  return request;
+};
 
 export const useMountDiffStats = (
   sessionId: SessionId | null,
@@ -661,6 +721,8 @@ export const useMountDiffStats = (
     sessionId == null ? null : (s.summarizerStatus[sessionId]?.lastUpdate ?? null),
   );
 
+  const tick = useSyncExternalStore(subscribeMountDiffTick, readMountDiffTick, readMountDiffTick);
+
   const [stats, setStats] = useState<ReadonlyMap<string, MountDiffStat>>(EMPTY_MOUNT_DIFF_STATS);
 
   useEffect(() => {
@@ -668,14 +730,11 @@ export const useMountDiffStats = (
       setStats(EMPTY_MOUNT_DIFF_STATS);
       return;
     }
+    const revision = `${String(lastTurnFinishedAt)}|${String(summarizerLastUpdate)}|${tick}`;
     let cancelled = false;
     void Promise.all(
       worktreePaths.map(async (worktreePath) => {
-        const summary = await worktreeChangedFiles(worktreePath).catch(() => null);
-        const stat: MountDiffStat =
-          summary == null
-            ? { additions: 0, deletions: 0 }
-            : { additions: summary.additions, deletions: summary.deletions };
+        const stat = await loadMountDiffStat({ worktreePath, revision });
         return [worktreePath, stat] satisfies readonly [string, MountDiffStat];
       }),
     ).then((entries) => {
@@ -687,7 +746,7 @@ export const useMountDiffStats = (
     return () => {
       cancelled = true;
     };
-  }, [worktreePaths, lastTurnFinishedAt, summarizerLastUpdate]);
+  }, [worktreePaths, lastTurnFinishedAt, summarizerLastUpdate, tick]);
 
   return stats;
 };
