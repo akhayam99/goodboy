@@ -91,6 +91,14 @@ describe('WorkspaceLinkStudio', () => {
     expect(container.querySelector('dialog')).toBeNull();
   });
 
+  it('takes the whole viewport instead of leaving the bars behind it', () => {
+    const { container } = render(<WorkspaceLinkStudio onClose={vi.fn()} onOfferRepo={vi.fn()} />);
+    const surface = container.firstElementChild;
+
+    expect(surface?.className).toContain('inset-0');
+    expect(surface?.className).not.toContain('top-9');
+  });
+
   it('renders with no workspace in the store at all', () => {
     render(<WorkspaceLinkStudio onClose={vi.fn()} onOfferRepo={vi.fn()} />);
 

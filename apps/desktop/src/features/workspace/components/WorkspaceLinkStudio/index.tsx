@@ -45,6 +45,7 @@ export const WorkspaceLinkStudio = ({ onClose, onOfferRepo }: Props) => {
       title="Add workspace"
       workspaceName="Create a workspace, then add the projects it works on."
       closeLabel="close add workspace"
+      variant="viewport"
       onClose={onClose}
     >
       {(requestClose) => (
