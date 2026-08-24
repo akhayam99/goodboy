@@ -6,6 +6,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { EditorMenu } from './EditorMenu';
+import { LensShortcutActions } from './LensShortcutActions';
 import { SessionGitActions } from '../SessionWorkspace/parts/SessionGitActions';
 import { SessionDestructiveActions } from './SessionDestructiveActions';
 import { LinkIssueAction } from './LinkIssueAction';
@@ -100,6 +101,7 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
         )}
         <div className="flex shrink-0 items-center gap-1">
           <EditorMenu sessionId={sessionId} density="compact" />
+          <LensShortcutActions onSelectLens={onSelectLens} />
           <SessionDestructiveActions session={session} />
         </div>
       </div>
