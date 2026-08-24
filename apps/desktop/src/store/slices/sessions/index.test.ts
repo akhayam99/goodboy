@@ -1066,7 +1066,7 @@ describe('store contract', () => {
       });
     };
 
-    it('mounts the only project of the workspace and works inside its worktree', async () => {
+    it('mounts the picked project and works inside its worktree', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');
       store.setState({ currentWorkspaceId: WS_ID });
@@ -1074,6 +1074,7 @@ describe('store contract', () => {
 
       const { session } = await store.getState().createSession({
         workspaceId: WS_ID,
+        projectId: PROJECT_ID,
         goal: 'Study plan',
       });
 
@@ -1139,7 +1140,7 @@ describe('store contract', () => {
       ).toEqual([webProject.id]);
     });
 
-    it('creates nothing when the workspace holds several projects and none was picked', async () => {
+    it('creates a bare session when the workspace holds several projects and none was picked', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');
       const apiProject = buildProject({
@@ -1155,27 +1156,29 @@ describe('store contract', () => {
       listProjectsForWorkspaceSpy.mockResolvedValueOnce([apiProject, webProject]);
       store.setState({ currentWorkspaceId: WS_ID, projects: [apiProject, webProject] });
 
-      await expect(
-        store.getState().createSession({ workspaceId: WS_ID, goal: 'Ship scope' }),
-      ).rejects.toThrow(/pick the one this session works in/);
+      const { session } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'Ship scope' });
 
-      expect(vi.mocked(db.insertSession)).not.toHaveBeenCalled();
+      expect(vi.mocked(db.insertSession)).toHaveBeenCalled();
       expect(createWorktreeSpy).not.toHaveBeenCalled();
-      expect(store.getState().sessions).toEqual([]);
+      expect(store.getState().sessions.map((s) => s.id)).toEqual([session.id]);
+      expect(store.getState().sessionProjectMounts[session.id]).toEqual([]);
     });
 
-    it('refuses to create a session in a workspace with no project', async () => {
+    it('creates a bare session in a workspace with no project', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');
       listProjectsForWorkspaceSpy.mockResolvedValueOnce([]);
       store.setState({ currentWorkspaceId: WS_ID, projects: [] });
 
-      await expect(
-        store.getState().createSession({ workspaceId: WS_ID, goal: 'Study plan' }),
-      ).rejects.toThrow(/add one before starting a session/);
+      const { session } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'Study plan' });
 
-      expect(vi.mocked(db.insertSession)).not.toHaveBeenCalled();
+      expect(vi.mocked(db.insertSession)).toHaveBeenCalled();
       expect(createWorktreeSpy).not.toHaveBeenCalled();
+      expect(store.getState().sessionProjectMounts[session.id]).toEqual([]);
     });
 
     it('leaves no session behind when the worktree cannot be created', async () => {
@@ -1185,7 +1188,9 @@ describe('store contract', () => {
       createWorktreeSpy.mockRejectedValueOnce(new Error('git worktree add failed'));
 
       await expect(
-        store.getState().createSession({ workspaceId: WS_ID, goal: 'Study plan' }),
+        store
+          .getState()
+          .createSession({ workspaceId: WS_ID, projectId: PROJECT_ID, goal: 'Study plan' }),
       ).rejects.toThrow('git worktree add failed');
 
       expect(store.getState().sessions).toEqual([]);
@@ -1210,6 +1215,7 @@ describe('store contract', () => {
 
       const { session } = await store.getState().createSession({
         workspaceId: WS_ID,
+        projectId: PROJECT_ID,
         goal: 'Take notes',
       });
 
@@ -1235,7 +1241,6 @@ describe('store contract', () => {
           },
         },
       });
-      primeMount();
 
       const { session } = await store
         .getState()
@@ -1256,6 +1261,7 @@ describe('store contract', () => {
 
       await store.getState().createSession({
         workspaceId: WS_ID,
+        projectId: PROJECT_ID,
         goal: 'do gitlab work',
         externalTasks: [
           {

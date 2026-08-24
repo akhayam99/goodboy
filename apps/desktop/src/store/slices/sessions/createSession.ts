@@ -98,10 +98,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       throw new Error(`workspace not found: ${workspaceId}`);
     }
     const projects = await listProjectsForWorkspace({ db: tauriDatabase, workspaceId });
-    const project = resolveSessionProject({
-      projects,
-      ...(projectId !== undefined ? { projectId } : {}),
-    });
+    const project = projectId !== undefined ? resolveSessionProject({ projects, projectId }) : null;
 
     const prefix = branchPrefix?.trim() || DEFAULT_BRANCH_PREFIX;
     const slugSeed =
@@ -187,25 +184,28 @@ export const createSession = (set: SetFn, get: GetFn) => {
     set((state) => ({
       sessions:
         state.currentWorkspaceId === workspaceId ? [session, ...state.sessions] : state.sessions,
-      projects: state.projects.some((candidate) => candidate.id === project.id)
-        ? state.projects
-        : [...state.projects, project],
+      projects:
+        project == null || state.projects.some((candidate) => candidate.id === project.id)
+          ? state.projects
+          : [...state.projects, project],
       sessionWorktrees: { ...state.sessionWorktrees, [session.id]: [] },
       sessionProjectMounts: { ...state.sessionProjectMounts, [session.id]: [] },
       sessionBranches: { ...state.sessionBranches, [session.id]: '' },
     }));
-    try {
-      await get().materializeProject({
-        sessionId: session.id,
-        projectId: project.id,
-        reason:
-          trimmedExisting !== undefined && trimmedExisting !== ''
-            ? `adopted existing branch ${trimmedExisting}`
-            : 'the session works in this project',
-      });
-    } catch (error) {
-      await discardUncreatedSession({ set, sessionId: session.id });
-      throw error;
+    if (project != null) {
+      try {
+        await get().materializeProject({
+          sessionId: session.id,
+          projectId: project.id,
+          reason:
+            trimmedExisting !== undefined && trimmedExisting !== ''
+              ? `adopted existing branch ${trimmedExisting}`
+              : 'the session works in this project',
+        });
+      } catch (error) {
+        await discardUncreatedSession({ set, sessionId: session.id });
+        throw error;
+      }
     }
 
     const externalTaskRows: Array<SessionExternalTask> = [];
