@@ -18,7 +18,12 @@ import {
   composeStepBoundary,
 } from '../../kickoff';
 import type { SpawnFocus } from '../session-view/spawnFocus';
-import { fanOutClusters, selectFanOutPlan } from './clusterImplementation';
+import {
+  fanOutClusters,
+  resumeClusterChildren,
+  selectFanOutPlan,
+  unsettledClusterChildren,
+} from './clusterImplementation';
 import { materializeDeclaredProjects } from './materializeDeclaredProjects';
 import { isWatchingWorkflowLens } from './isWatchingWorkflowLens';
 import { WorkflowGateError, findWorkflowActivationBlock } from './workflowActivationGate';
@@ -59,6 +64,11 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       if (blocked !== null) {
         throw new WorkflowGateError({ reason: blocked });
       }
+    }
+
+    if (unsettledClusterChildren(runs, agentId).length > 0) {
+      await resumeClusterChildren({ set, get, sessionId, container: agent });
+      return;
     }
 
     const run = session.workflowRuns.find((r) => r.id === agent.workflowRunId);

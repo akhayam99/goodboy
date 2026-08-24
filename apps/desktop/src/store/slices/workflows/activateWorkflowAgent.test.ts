@@ -25,12 +25,14 @@ const {
   listConsumptionsForPlanSpy,
   listPlansForSessionSpy,
   fanOutClustersSpy,
+  resumeClusterChildrenSpy,
   listOpenQuestionsSpy,
 } = vi.hoisted(() => ({
   addPlanConsumptionSpy: vi.fn(async () => undefined),
   listConsumptionsForPlanSpy: vi.fn(async () => []),
   listPlansForSessionSpy: vi.fn(async () => [] as ReadonlyArray<PlanWithCount>),
   fanOutClustersSpy: vi.fn(async () => undefined),
+  resumeClusterChildrenSpy: vi.fn(async () => true),
   listOpenQuestionsSpy: vi.fn(async () => [] as ReadonlyArray<OpenQuestion>),
 }));
 
@@ -45,7 +47,11 @@ vi.mock('../../../features/plans/plans', () => ({
 
 vi.mock('./clusterImplementation', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./clusterImplementation')>();
-  return { ...actual, fanOutClusters: fanOutClustersSpy };
+  return {
+    ...actual,
+    fanOutClusters: fanOutClustersSpy,
+    resumeClusterChildren: resumeClusterChildrenSpy,
+  };
 });
 
 import { activateWorkflowAgent } from './activateWorkflowAgent';
@@ -109,6 +115,7 @@ function buildHarness(opts: {
   workflow: Workflow;
   plans: ReadonlyArray<PlanWithCount>;
   autoRun?: boolean;
+  extraAgents?: ReadonlyArray<Agent>;
 }) {
   listPlansForSessionSpy.mockResolvedValue(opts.plans);
   const handsFree = opts.autoRun ?? false;
@@ -143,7 +150,7 @@ function buildHarness(opts: {
     async (_arg: { sessionId: SessionId; agentId: AgentId; content: string }) => undefined,
   );
   const state = {
-    sessionPhaseRuns: { [SESSION_ID]: [opts.agent] },
+    sessionPhaseRuns: { [SESSION_ID]: [opts.agent, ...(opts.extraAgents ?? [])] },
     sessions: [session],
     projects: [],
     sessionProjectMounts: {},
@@ -578,5 +585,54 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     ).rejects.toThrow('agent not found or not a workflow agent');
     expect(set).not.toHaveBeenCalled();
     expect(sendTurn).not.toHaveBeenCalled();
+  });
+});
+
+describe('activateWorkflowAgent, cluster container re-activation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    listConsumptionsForPlanSpy.mockResolvedValue([]);
+    listOpenQuestionsSpy.mockResolvedValue([]);
+    resumeClusterChildrenSpy.mockResolvedValue(true);
+  });
+
+  const clusterChild = (over: Partial<Agent>): Agent => ({
+    id: 'child-1' as AgentId,
+    sessionId: SESSION_ID,
+    workflowRunId: RUN_ID,
+    parentAgentId: AGENT_ID,
+    ordinal: 1,
+    name: 'cluster 1',
+    status: 'pending',
+    ...over,
+  });
+
+  it('resumes the cluster instead of running the container as a plain step', async () => {
+    const { sendTurn, activate } = buildHarness({
+      agent: makeAgent('implementer', 'Implement'),
+      workflow: makeWorkflow('Implement'),
+      plans: [makePlan({ status: 'consumed' })],
+      extraAgents: [clusterChild({})],
+    });
+
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+    expect(resumeClusterChildrenSpy).toHaveBeenCalledTimes(1);
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(fanOutClustersSpy).not.toHaveBeenCalled();
+  });
+
+  it('runs the step normally once every cluster child has settled', async () => {
+    const { sendTurn, activate } = buildHarness({
+      agent: makeAgent('implementer', 'Implement'),
+      workflow: makeWorkflow('Implement'),
+      plans: [makePlan({ status: 'consumed' })],
+      extraAgents: [clusterChild({ status: 'completed' })],
+    });
+
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+    expect(resumeClusterChildrenSpy).not.toHaveBeenCalled();
+    expect(sendTurn).toHaveBeenCalledTimes(1);
   });
 });

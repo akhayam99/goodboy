@@ -10,6 +10,8 @@ vi.mock('@goodboy/ui', () => ({
 }));
 
 vi.mock('../../../../../store', () => ({
+  useAppStore: (selector: (state: Record<string, unknown>) => unknown) =>
+    selector({ clusterStartAttempts: {} }),
   agentHasUnread: (agent: Agent, isCurrentlyViewed: boolean): boolean => {
     if (isCurrentlyViewed || agent.status === 'skipped' || !agent.lastFinishedAt) {
       return false;

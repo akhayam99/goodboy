@@ -930,6 +930,7 @@ export const initialState: AppState = {
   selectedAgentId: {},
   agentRunHistory: {},
   agentTurnState: {},
+  clusterStartAttempts: {},
   unknownPayloadCounts: {},
   detectedEditors: [],
   systemAlerts: [],

@@ -246,6 +246,7 @@ export type AppState = AppSliceState & {
   readonly selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly agentRunHistory: Readonly<Record<AgentId, ReadonlyArray<ProviderRunId>>>;
   readonly agentTurnState: Readonly<Record<AgentId, TurnState>>;
+  readonly clusterStartAttempts: Readonly<Record<AgentId, number>>;
   readonly unknownPayloadCounts: Readonly<Record<string, number>>;
   readonly detectedEditors: ReadonlyArray<DetectedEditor>;
   readonly workspaceOverrides: Readonly<Record<WorkspaceId, OverrideSettings>>;

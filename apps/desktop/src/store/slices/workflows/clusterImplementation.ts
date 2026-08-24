@@ -22,9 +22,37 @@ import type { GetFn, SetFn } from './types';
 
 const MAX_CONTINUE = 1;
 
+const MAX_START_ATTEMPTS = 3;
+
+const MAX_STEP_START_ATTEMPTS = 6;
+
+const START_BACKOFF_MS: ReadonlyArray<number> = [2_000, 8_000];
+
+const DETERMINISTIC_START_FAILURES: ReadonlyArray<RegExp> = [
+  /session not found/i,
+  /no agent selected/i,
+  /session directory not found/i,
+  /resolved model args omit/i,
+  /agent not found/i,
+];
+
 const continueAttempts = new Map<string, number>();
 
+const childStartAttempts = new Map<string, number>();
+
+const stepStartAttempts = new Map<string, number>();
+
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
+
+const isTransientStartFailure = (error: unknown): boolean => {
+  const message = error instanceof Error ? error.message : String(error);
+  return !DETERMINISTIC_START_FAILURES.some((pattern) => pattern.test(message));
+};
+
+const producedWork = (get: GetFn, childId: AgentId): boolean =>
+  (get().transcripts[childId] ?? []).some(
+    (event) => event.kind === 'assistant_text' || event.kind === 'tool_call_start',
+  );
 
 function childrenOf(runs: ReadonlyArray<Agent>, containerId: AgentId): ReadonlyArray<Agent> {
   return runs.filter((r) => r.parentAgentId === containerId).sort((a, b) => a.ordinal - b.ordinal);
@@ -70,20 +98,129 @@ function composeContinuePrompt(
   );
 }
 
-function startChild(
-  set: SetFn,
-  get: GetFn,
-  sessionId: SessionId,
-  childId: AgentId,
-  content: string,
-): void {
+type StartChildParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly containerId: AgentId;
+  readonly childId: AgentId;
+  readonly content: string;
+};
+
+const failChildStart = async ({
+  set,
+  get,
+  sessionId,
+  childId,
+  reason,
+}: {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly childId: AgentId;
+  readonly reason: string;
+}): Promise<void> => {
+  const name =
+    (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === childId)?.name ?? 'cluster';
+  await invokeAgentUpdateStatus(childId, { status: 'failed', completedAt: nowIso() }).catch(
+    () => undefined,
+  );
+  const refreshed = await invokeAgentList(sessionId).catch(() => null);
+  if (refreshed != null) {
+    set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
+  }
+  void get().refreshUnreadWorkspaces();
+  void get().emitNotification(
+    'error',
+    'warning',
+    `cluster could not start: ${name}`,
+    `${reason} open the agent and continue it manually. the step stays open until this cluster finishes.`,
+    { sessionId },
+  );
+};
+
+const handleChildStartFailure = async ({
+  set,
+  get,
+  sessionId,
+  containerId,
+  childId,
+  content,
+  error,
+}: StartChildParams & { readonly error: unknown }): Promise<void> => {
+  const message = error instanceof Error ? error.message : String(error);
+  const failures = (childStartAttempts.get(childId) ?? 0) + 1;
+  const stepFailures = (stepStartAttempts.get(containerId) ?? 0) + 1;
+  childStartAttempts.set(childId, failures);
+  stepStartAttempts.set(containerId, stepFailures);
+  const name =
+    (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === childId)?.name ?? 'cluster';
+
+  if (producedWork(get, childId) || !isTransientStartFailure(error)) {
+    await failChildStart({ set, get, sessionId, childId, reason: `${message}.` });
+    return;
+  }
+  if (failures >= MAX_START_ATTEMPTS || stepFailures >= MAX_STEP_START_ATTEMPTS) {
+    await failChildStart({
+      set,
+      get,
+      sessionId,
+      childId,
+      reason: `${message}. it failed to start ${failures} ${failures === 1 ? 'time' : 'times'}.`,
+    });
+    return;
+  }
+
+  const delayMs = START_BACKOFF_MS[failures - 1] ?? START_BACKOFF_MS[START_BACKOFF_MS.length - 1]!;
+  void get().emitNotification(
+    'error',
+    'warning',
+    `cluster retrying: ${name}`,
+    `it could not start (${message}). retrying in ${Math.round(delayMs / 1000)}s, attempt ${failures + 1} of ${MAX_START_ATTEMPTS}.`,
+    { sessionId },
+  );
+  setTimeout(() => {
+    const child = (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === childId);
+    if (child != null && (child.status === 'completed' || child.status === 'skipped')) {
+      return;
+    }
+    const turn = get().agentTurnState[childId];
+    if (turn?.kind === 'running' || turn?.kind === 'starting') {
+      return;
+    }
+    startChild({ set, get, sessionId, containerId, childId, content });
+  }, delayMs);
+};
+
+function startChild({
+  set,
+  get,
+  sessionId,
+  containerId,
+  childId,
+  content,
+}: StartChildParams): void {
+  const attempt = (childStartAttempts.get(childId) ?? 0) + 1;
   set((s) => ({
     agentTurnState: {
       ...s.agentTurnState,
       [childId]: { kind: 'idle' as const, lastActivityAt: nowIso() },
     },
+    clusterStartAttempts: { ...s.clusterStartAttempts, [childId]: attempt },
   }));
-  void get().sendTurn({ sessionId, agentId: childId, content });
+  void get()
+    .sendTurn({ sessionId, agentId: childId, content })
+    .catch((error: unknown) => {
+      void handleChildStartFailure({
+        set,
+        get,
+        sessionId,
+        containerId,
+        childId,
+        content,
+        error,
+      });
+    });
 }
 
 export const fanOutClusters = async (
@@ -145,7 +282,14 @@ export const fanOutClusters = async (
 
   const first = childIds[0];
   if (first) {
-    startChild(set, get, sessionId, first, composeClusterKickoff(first, goalTitle, clusters, 0));
+    startChild({
+      set,
+      get,
+      sessionId,
+      containerId: container.id,
+      childId: first,
+      content: composeClusterKickoff(first, goalTitle, clusters, 0),
+    });
   }
 };
 
@@ -280,6 +424,70 @@ const resolveClustersPlan = async ({
   return selectClustersPlan(plans, workflowRunId);
 };
 
+const isSettledChild = (agent: Agent): boolean =>
+  agent.status === 'completed' || agent.status === 'skipped';
+
+export const unsettledClusterChildren = (
+  runs: ReadonlyArray<Agent>,
+  containerId: AgentId,
+): ReadonlyArray<Agent> => childrenOf(runs, containerId).filter((child) => !isSettledChild(child));
+
+type ResumeClusterChildrenParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly container: Agent;
+};
+
+export const resumeClusterChildren = async ({
+  set,
+  get,
+  sessionId,
+  container,
+}: ResumeClusterChildrenParams): Promise<boolean> => {
+  const runs = get().sessionPhaseRuns[sessionId] ?? [];
+  const children = childrenOf(runs, container.id);
+  const next = children.find((child) => !isSettledChild(child));
+  if (next == null || next.status !== 'pending') {
+    return false;
+  }
+  const index = children.indexOf(next);
+  const plan = await resolveClustersPlan({
+    set,
+    get,
+    sessionId,
+    containerId: container.id,
+    workflowRunId: container.workflowRunId,
+  });
+  const clusters = plan?.clusters ?? [];
+  if (!hasInstructions(clusters[index])) {
+    await invokeAgentUpdateStatus(next.id, { status: 'failed', completedAt: nowIso() });
+    const blocked = await invokeAgentList(sessionId);
+    set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
+    void get().refreshUnreadWorkspaces();
+    void get().emitNotification(
+      'error',
+      'warning',
+      `cluster blocked: ${next.name}`,
+      'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
+      { sessionId },
+    );
+    return false;
+  }
+  await invokeAgentUpdateStatus(container.id, { status: 'running' });
+  const refreshed = await invokeAgentList(sessionId);
+  set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
+  startChild({
+    set,
+    get,
+    sessionId,
+    containerId: container.id,
+    childId: next.id,
+    content: composeClusterKickoff(next.id, plan?.title ?? 'the plan', clusters, index),
+  });
+  return true;
+};
+
 export const selectFanOutPlan = (
   get: GetFn,
   sessionId: SessionId,
@@ -326,13 +534,14 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       const attempts = continueAttempts.get(childAgentId) ?? 0;
       if (handsFree && attempts < MAX_CONTINUE) {
         continueAttempts.set(childAgentId, attempts + 1);
-        startChild(
+        startChild({
           set,
           get,
           sessionId,
-          childAgentId,
-          composeContinuePrompt(childAgentId, clusters[index]),
-        );
+          containerId,
+          childId: childAgentId,
+          content: composeContinuePrompt(childAgentId, clusters[index]),
+        });
       } else {
         continueAttempts.delete(childAgentId);
         await invokeAgentUpdateStatus(childAgentId, { status: 'failed', completedAt: nowIso() });
@@ -422,12 +631,13 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
     void get().refreshUnreadWorkspaces();
-    startChild(
+    startChild({
       set,
       get,
       sessionId,
-      next.id,
-      composeClusterKickoff(next.id, goalTitle, clusters, completedCount),
-    );
+      containerId,
+      childId: next.id,
+      content: composeClusterKickoff(next.id, goalTitle, clusters, completedCount),
+    });
   };
 };

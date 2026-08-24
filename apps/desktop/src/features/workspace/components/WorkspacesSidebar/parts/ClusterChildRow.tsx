@@ -1,7 +1,7 @@
 import { StatusDot, cn, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import { Check, Clock } from 'lucide-react';
 import type { Agent } from '@goodboy/types';
-import { agentHasUnread } from '../../../../../store';
+import { agentHasUnread, useAppStore } from '../../../../../store';
 import { useHoverMarkViewed } from '../../../../../features/session/hooks/useHoverMarkViewed';
 
 type Props = {
@@ -29,6 +29,7 @@ export const ClusterChildRow = ({
     agentId: child.id,
     hasUnread,
   });
+  const startAttempt = useAppStore((state) => state.clusterStartAttempts[child.id] ?? 1);
   const domains = child.domains ?? [];
   const visibleDomains = domains.slice(0, 3);
   const hiddenDomainCount = domains.length - visibleDomains.length;
@@ -63,6 +64,14 @@ export const ClusterChildRow = ({
       </span>
       {icon}
       <span className="min-w-0 flex-1 truncate text-left">{child.name}</span>
+      {startAttempt > 1 && child.status !== 'completed' && child.status !== 'skipped' ? (
+        <span
+          className="shrink-0 rounded bg-warning/15 px-1 py-0.5 text-2xs font-normal text-warning"
+          title={`this cluster agent failed to start and is on attempt ${startAttempt}`}
+        >
+          attempt {startAttempt}
+        </span>
+      ) : null}
       {visibleDomains.map((domain, domainIndex) => (
         <span
           key={`${domain}-${domainIndex}`}

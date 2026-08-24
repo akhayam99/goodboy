@@ -13,8 +13,15 @@ type Params = {
 
 export const splitWorkflowRuns = ({ attachedRuns, agents }: Params) => {
   const agentsByRunId = new Map<string, Agent[]>();
+  const everyAgentByRunId = new Map<string, Agent[]>();
   for (const agent of agents) {
-    if (agent.workflowRunId == null || agent.stepId == null || agent.parentAgentId != null) {
+    if (agent.workflowRunId == null) {
+      continue;
+    }
+    const everyForRun = everyAgentByRunId.get(agent.workflowRunId) ?? [];
+    everyForRun.push(agent);
+    everyAgentByRunId.set(agent.workflowRunId, everyForRun);
+    if (agent.stepId == null || agent.parentAgentId != null) {
       continue;
     }
     const forRun = agentsByRunId.get(agent.workflowRunId) ?? [];
@@ -25,7 +32,7 @@ export const splitWorkflowRuns = ({ attachedRuns, agents }: Params) => {
   const discarded = attachedRuns.filter(({ run }) => run.discardedAt != null);
   const live = attachedRuns.filter(({ run }) => run.discardedAt == null);
   const completed = live.filter(({ run, workflow }) =>
-    isWorkflowRunComplete({ run, workflow, agents: agentsByRunId.get(run.id) ?? [] }),
+    isWorkflowRunComplete({ run, workflow, agents: everyAgentByRunId.get(run.id) ?? [] }),
   );
   const active = live.filter((entry) => !completed.includes(entry));
 

@@ -19,10 +19,18 @@ import type {
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 
-const { listOpenQuestionsSpy, updateOrchestrationStopSpy } = vi.hoisted(() => ({
-  listOpenQuestionsSpy: vi.fn(async () => []),
-  updateOrchestrationStopSpy: vi.fn(async () => undefined),
-}));
+const { listOpenQuestionsSpy, updateOrchestrationStopSpy, resumeClusterChildrenSpy } = vi.hoisted(
+  () => ({
+    listOpenQuestionsSpy: vi.fn(async () => []),
+    updateOrchestrationStopSpy: vi.fn(async () => undefined),
+    resumeClusterChildrenSpy: vi.fn(async () => true),
+  }),
+);
+
+vi.mock('./clusterImplementation', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./clusterImplementation')>();
+  return { ...actual, resumeClusterChildren: resumeClusterChildrenSpy };
+});
 
 vi.mock('@goodboy/db', () => ({
   listOpenQuestionsForSession: listOpenQuestionsSpy,
@@ -126,6 +134,7 @@ const harness = (state: StoreState) => {
 beforeEach(() => {
   vi.clearAllMocks();
   listOpenQuestionsSpy.mockResolvedValue([]);
+  resumeClusterChildrenSpy.mockResolvedValue(true);
 });
 
 describe('maybeAutoAdvanceWorkflow', () => {
@@ -537,5 +546,65 @@ describe('maybeAutoAdvanceWorkflow', () => {
     await advance(SESSION_ID);
 
     expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
+  });
+});
+
+describe('maybeAutoAdvanceWorkflow, stranded cluster children', () => {
+  const strandedChild = (status: AgentStatus): Agent => ({
+    id: 'cluster-child-1' as AgentId,
+    sessionId: SESSION_ID,
+    workflowRunId: RUN_ID,
+    parentAgentId: `${RUN_ID}-s0` as AgentId,
+    ordinal: 9,
+    name: 'cluster 1',
+    status,
+  });
+
+  it('resumes a settled step whose cluster children never ran, instead of moving on', async () => {
+    const state = baseState(
+      ['s0', 's1'],
+      [makeAgent('s0', 'completed', 0), makeAgent('s1', 'pending', 1), strandedChild('pending')],
+    );
+    const { set, get } = harness(state);
+
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+
+    expect(resumeClusterChildrenSpy).toHaveBeenCalledTimes(1);
+    expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
+  });
+
+  it('moves on normally when the cluster children all settled', async () => {
+    const state = baseState(
+      ['s0', 's1'],
+      [makeAgent('s0', 'completed', 0), makeAgent('s1', 'pending', 1), strandedChild('completed')],
+    );
+    const { set, get } = harness(state);
+
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+
+    expect(resumeClusterChildrenSpy).not.toHaveBeenCalled();
+    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: `${RUN_ID}-s1`,
+      focus: 'announce',
+    });
+  });
+
+  it('does not block the workflow when the stranded cluster cannot be resumed', async () => {
+    resumeClusterChildrenSpy.mockResolvedValue(false);
+    const state = baseState(
+      ['s0', 's1'],
+      [makeAgent('s0', 'completed', 0), makeAgent('s1', 'pending', 1), strandedChild('failed')],
+    );
+    const { set, get } = harness(state);
+
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+
+    expect(resumeClusterChildrenSpy).toHaveBeenCalledTimes(1);
+    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: `${RUN_ID}-s1`,
+      focus: 'announce',
+    });
   });
 });
