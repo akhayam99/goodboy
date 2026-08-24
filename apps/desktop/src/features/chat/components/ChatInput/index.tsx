@@ -580,11 +580,11 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 disabled={!routing.allowOverride}
                 disabledTitle={overrideDisabledTitle}
                 overridden={
-                  routing.effectiveProvider !== routing.defaultProvider ||
-                  routing.effectiveModel !== routing.defaultModel
+                  routing.effectiveProvider !== routing.referenceProvider ||
+                  routing.effectiveModel !== routing.referenceModel
                 }
-                defaultSummary={`${PROVIDER_LABEL[routing.defaultProvider]} · ${modelLabel(
-                  routing.defaultModel,
+                defaultSummary={`${PROVIDER_LABEL[routing.referenceProvider]} · ${modelLabel(
+                  routing.referenceModel,
                 )}`}
                 onProvider={(next) => {
                   if (next === '') {

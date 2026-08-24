@@ -45,7 +45,8 @@ const {
     selectedAgentId: Record<string, string>;
     agentTurnState: Record<string, never>;
     agentModelOverride: Record<string, string>;
-    agentProviderOverride: Record<string, never>;
+    agentProviderOverride: Record<string, string>;
+    agentEffortOverride: Record<string, string>;
     agentKindOverride: Record<string, string>;
     agentRunHistory: Record<string, never>;
     agentDraft: Record<string, string>;
@@ -53,7 +54,7 @@ const {
     agentQueue: Record<string, ReadonlyArray<{ id: string }>>;
     sessionTelemetry: Record<string, ReadonlyArray<{ kind: string; estimatedCostUsd: number }>>;
     sessionNudges: Record<string, null>;
-    sessionPhaseRuns: Record<string, ReadonlyArray<never>>;
+    sessionPhaseRuns: Record<string, ReadonlyArray<Record<string, unknown>>>;
     phaseTemplates: Record<string, never>;
     setAgentDraft: (agentId: string, value: string) => void;
     clearAgentDraft: (agentId: string) => void;
@@ -91,6 +92,7 @@ const {
     agentTurnState: {},
     agentModelOverride: {},
     agentProviderOverride: {},
+    agentEffortOverride: {},
     agentKindOverride: {},
     agentRunHistory: {},
     agentDraft: {},
@@ -161,6 +163,10 @@ function resetMockStore() {
     agentAttachments: {},
     agentQueue: {},
     agentKindOverride: {},
+    agentModelOverride: {},
+    agentProviderOverride: {},
+    agentEffortOverride: {},
+    sessionPhaseRuns: {},
     sessionWorktrees: {},
     sessionTelemetry: {},
   });
@@ -416,7 +422,8 @@ describe('ChatInput, input wiring', () => {
 
   it('clears a codex model when switching the composer back to claude', async () => {
     const setSessionConfig = vi.fn(async () => undefined);
-    mockStore.setState({ setSessionConfig });
+    const setAgentConfig = vi.fn(async () => undefined);
+    mockStore.setState({ setSessionConfig, setAgentConfig });
 
     const user = userEvent.setup();
     render(
@@ -439,10 +446,11 @@ describe('ChatInput, input wiring', () => {
       }),
     );
 
-    expect(setSessionConfig).toHaveBeenCalledWith('session-1', {
+    expect(setAgentConfig).toHaveBeenCalledWith('session-1', 'agent-1', {
       providerOverride: 'anthropic',
       modelOverride: null,
     });
+    expect(setSessionConfig).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: /^Model routing:/ }));
     const textarea = screen.getByRole('textbox');
@@ -542,6 +550,112 @@ describe('ChatInput, input wiring', () => {
         }),
       }),
     );
+  });
+});
+
+describe('ChatInput, agent reference routing', () => {
+  const scoutRow = {
+    id: 'agent-1',
+    sessionId: 'session-1',
+    ordinal: 0,
+    name: 'Scout',
+    status: 'pending',
+    kind: 'scout',
+    providerOverride: 'anthropic',
+    modelOverride: 'claude-haiku-4-5',
+    effort: 'low',
+  };
+
+  function selectScout() {
+    mockStore.setState({
+      sessionPhaseRuns: { 'session-1': [scoutRow] },
+      agentModelOverride: { 'agent-1': 'claude-haiku-4-5' },
+      agentProviderOverride: { 'agent-1': 'anthropic' },
+      agentEffortOverride: { 'agent-1': 'low' },
+    });
+  }
+
+  function scoutSession(): Session {
+    return makeSession({
+      providerPreference: {
+        defaultProvider: 'anthropic' as Session['providerPreference']['defaultProvider'],
+        defaultModel: 'opus-5',
+        allowTurnOverride: true,
+      },
+    });
+  }
+
+  it('shows no reset affordance for a scout sitting on its reference model', async () => {
+    selectScout();
+    const user = userEvent.setup();
+    render(<ChatInput session={scoutSession()} />);
+
+    expect(screen.queryByLabelText('Reset routing override')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: /^Model routing:/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Model routing' });
+    expect(dialog.textContent).toContain('Using default · Claude · Haiku 4.5');
+  });
+
+  it('shows the affordance after a manual pick and reset returns to the reference', async () => {
+    selectScout();
+    const setAgentConfig = vi.fn(async () => undefined);
+    const setSessionConfig = vi.fn(async () => undefined);
+    mockStore.setState({ setAgentConfig, setSessionConfig });
+
+    const user = userEvent.setup();
+    render(<ChatInput session={scoutSession()} />);
+
+    await user.click(screen.getByRole('button', { name: /^Model routing:/ }));
+    await user.click(
+      within(screen.getByRole('dialog', { name: 'Model routing' })).getByRole('button', {
+        name: 'Cursor',
+      }),
+    );
+
+    expect(await screen.findByLabelText('Reset routing override')).toBeTruthy();
+
+    await user.click(screen.getByLabelText('Reset routing override'));
+
+    expect(setAgentConfig).toHaveBeenLastCalledWith('session-1', 'agent-1', {
+      providerOverride: 'anthropic',
+      modelOverride: 'haiku-4.5',
+      effort: 'low',
+    });
+    expect(setSessionConfig).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Reset routing override')).toBeNull();
+    });
+  });
+
+  it('sends the scout turn on the reference model after a reset', async () => {
+    selectScout();
+    const user = userEvent.setup();
+    render(<ChatInput session={scoutSession()} />);
+
+    await user.click(screen.getByRole('button', { name: /^Model routing:/ }));
+    await user.click(
+      within(screen.getByRole('dialog', { name: 'Model routing' })).getByRole('button', {
+        name: 'Cursor',
+      }),
+    );
+    await user.click(await screen.findByLabelText('Reset routing override'));
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, 'find the files');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(sendTurnMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          override: expect.objectContaining({
+            providerId: 'anthropic',
+            model: 'haiku-4.5',
+            explicit: false,
+          }),
+        }),
+      );
+    });
   });
 });
 
