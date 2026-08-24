@@ -1307,6 +1307,27 @@ describe('store contract', () => {
       });
     });
 
+    it('records every mount so the diff surfaces see it without a workspace reload', async () => {
+      const { store, session } = await seedMultiProjectSession();
+      const mountPath = '/tmp/api/.goodboy/worktrees/ship-scope';
+      createWorktreeSpy.mockResolvedValueOnce({
+        worktreePath: mountPath,
+        branchName: 'goodboy/ship-scope-api',
+        slug: 'ship-scope-api',
+        reused: false,
+      });
+
+      await store.getState().materializeProject({
+        sessionId: session.id,
+        projectId: API_PROJECT_ID,
+        reason: 'the plan implements the api first',
+      });
+
+      const records = store.getState().sessionWorktreeRecords?.[session.id] ?? [];
+      expect(records.map((row) => row.worktreePath)).toEqual([WEB_MOUNT_PATH, mountPath]);
+      expect(records.map((row) => row.projectId)).toEqual([WEB_PROJECT_ID, API_PROJECT_ID]);
+    });
+
     it('is idempotent per session and project', async () => {
       const { store, session } = await seedMultiProjectSession();
       createWorktreeSpy.mockResolvedValueOnce({

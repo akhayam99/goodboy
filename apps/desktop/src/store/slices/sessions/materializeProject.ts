@@ -4,6 +4,7 @@ import {
   listWorktreesForSession,
   updateSessionActiveProject,
   updateSessionWorktreeRepoSlug,
+  type SessionWorktree,
 } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { detectRepoSlug } from '@goodboy/core';
@@ -54,6 +55,24 @@ const stampRepoSlug = async ({
 
 const inFlight = new Map<string, Promise<SessionProjectMount>>();
 
+type AppendRecordParams = {
+  readonly current: Readonly<Record<string, ReadonlyArray<SessionWorktree>>> | undefined;
+  readonly sessionId: SessionId;
+  readonly record: SessionWorktree;
+};
+
+const withWorktreeRecord = ({
+  current,
+  sessionId,
+  record,
+}: AppendRecordParams): Readonly<Record<string, ReadonlyArray<SessionWorktree>>> => {
+  const rows = current?.[sessionId] ?? [];
+  if (rows.some((row) => row.id === record.id)) {
+    return current ?? {};
+  }
+  return { ...current, [sessionId]: [...rows, record] };
+};
+
 export const materializeProject = (set: SetFn, get: GetFn) => {
   const run = async ({
     sessionId,
@@ -101,6 +120,11 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
           ...state.sessionProjectMounts,
           [sessionId]: [...(state.sessionProjectMounts[sessionId] ?? []), persistedMount],
         },
+        sessionWorktreeRecords: withWorktreeRecord({
+          current: state.sessionWorktreeRecords,
+          sessionId,
+          record: persistedRow,
+        }),
       }));
       return persistedMount;
     }
@@ -142,7 +166,7 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
       consumeAdoptionSeed({ sessionId });
     }
     const nextParallelIndex = rows.reduce((max, row) => Math.max(max, row.parallelIndex), 0) + 1;
-    await insertSessionWorktree(tauriDatabase, {
+    const record: SessionWorktree = {
       id: crypto.randomUUID(),
       sessionId,
       worktreePath: created.worktreePath,
@@ -151,7 +175,8 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
       projectId,
       mountName: project.name,
       createdAt: Date.now(),
-    });
+    };
+    await insertSessionWorktree(tauriDatabase, record);
     const isFirstMount = (get().sessionProjectMounts[sessionId] ?? []).length === 0;
     const isFirstActiveProject =
       session.activeProjectId === undefined && get().sessionActiveProject[sessionId] === undefined;
@@ -186,6 +211,11 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
         ...state.sessionWorktrees,
         [sessionId]: [...(state.sessionWorktrees[sessionId] ?? []), created.worktreePath],
       },
+      sessionWorktreeRecords: withWorktreeRecord({
+        current: state.sessionWorktreeRecords,
+        sessionId,
+        record,
+      }),
       ...(isFirstMount
         ? { sessionBranches: { ...state.sessionBranches, [sessionId]: created.branchName } }
         : {}),
