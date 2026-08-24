@@ -313,10 +313,7 @@ export const updateSessionPermissionMode = async (
 };
 
 export const getSessionById = async (db: Database, id: SessionId): Promise<Session | null> => {
-  const rows = await db.select<SessionRow>(
-    'SELECT * FROM sessions WHERE id = ? AND legacy_at IS NULL',
-    [id],
-  );
+  const rows = await db.select<SessionRow>('SELECT * FROM sessions WHERE id = ?', [id]);
   const row = rows[0];
   if (!row) {
     return null;
@@ -354,7 +351,7 @@ export const listSessionsForWorkspace = async (
   workspaceId: WorkspaceId,
 ): Promise<ReadonlyArray<Session>> => {
   const rows = await db.select<SessionRow>(
-    'SELECT * FROM sessions WHERE workspace_id = ? AND archived_at IS NULL AND deleted_at IS NULL AND legacy_at IS NULL ORDER BY updated_at DESC',
+    'SELECT * FROM sessions WHERE workspace_id = ? AND archived_at IS NULL AND deleted_at IS NULL ORDER BY updated_at DESC',
     [workspaceId],
   );
   return hydrateSessions(db, rows);
@@ -365,7 +362,7 @@ export const listArchivedSessionsForWorkspace = async (
   workspaceId: WorkspaceId,
 ): Promise<ReadonlyArray<Session>> => {
   const rows = await db.select<SessionRow>(
-    'SELECT * FROM sessions WHERE workspace_id = ? AND archived_at IS NOT NULL AND deleted_at IS NULL AND legacy_at IS NULL ORDER BY archived_at DESC',
+    'SELECT * FROM sessions WHERE workspace_id = ? AND archived_at IS NOT NULL AND deleted_at IS NULL ORDER BY archived_at DESC',
     [workspaceId],
   );
   return hydrateSessions(db, rows);
@@ -387,7 +384,7 @@ export const listArchivedSessionRefs = async ({
   readonly db: Database;
 }): Promise<ReadonlyArray<ArchivedSessionRef>> => {
   const rows = await db.select<ArchivedSessionRefRow>(
-    'SELECT id, workspace_id FROM sessions WHERE archived_at IS NOT NULL AND deleted_at IS NULL AND legacy_at IS NULL ORDER BY archived_at DESC',
+    'SELECT id, workspace_id FROM sessions WHERE archived_at IS NOT NULL AND deleted_at IS NULL ORDER BY archived_at DESC',
   );
   return rows.map((row) => ({
     sessionId: row.id as SessionId,

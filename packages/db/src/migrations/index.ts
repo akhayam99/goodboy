@@ -131,7 +131,7 @@ import { m130SessionEventLazyProjects } from './m130-session-event-lazy-projects
 import { m131IntegrationBindings } from './m131-integration-bindings';
 import { m132WorkspaceProfileBio } from './m132-workspace-profile-bio';
 import { m133SessionEventProjectDetached } from './m133-session-event-project-detached';
-import { m134LegacySessions } from './m134-legacy-sessions';
+import { m134SessionActiveProjects } from './m134-session-active-projects';
 
 export type Migration = {
   readonly version: number;
@@ -272,5 +272,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 131, sql: m131IntegrationBindings },
   { version: 132, sql: m132WorkspaceProfileBio },
   { version: 133, sql: m133SessionEventProjectDetached },
-  { version: 134, sql: m134LegacySessions },
+  { version: 134, sql: m134SessionActiveProjects },
 ];

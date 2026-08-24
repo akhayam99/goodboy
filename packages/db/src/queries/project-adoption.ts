@@ -36,7 +36,6 @@ const splitSessions = async ({
   const candidates = await db.select<CandidateRow>(
     `SELECT DISTINCT s.id, s.deleted_at FROM sessions s
      WHERE s.workspace_id = ?
-       AND s.legacy_at IS NULL
        AND (s.active_project_id = ?
             OR s.id IN (SELECT session_id FROM session_worktrees WHERE project_id = ?))`,
     [sourceWorkspaceId, projectId, projectId],
@@ -90,7 +89,7 @@ export const describeProjectAdoption = async ({
   const isShell = (connectedRows[0]?.count ?? 0) <= 1;
   if (isShell) {
     const sessionRows = await db.select<{ readonly count: number }>(
-      'SELECT COUNT(*) AS count FROM sessions WHERE workspace_id = ? AND deleted_at IS NULL AND legacy_at IS NULL',
+      'SELECT COUNT(*) AS count FROM sessions WHERE workspace_id = ? AND deleted_at IS NULL',
       [sourceWorkspaceId],
     );
     return { sourceWorkspaceId, isShell, sessionCount: sessionRows[0]?.count ?? 0 };
