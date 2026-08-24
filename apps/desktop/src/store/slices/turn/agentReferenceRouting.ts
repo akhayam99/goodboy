@@ -6,7 +6,7 @@ import type {
   Session,
   Step,
 } from '@goodboy/types';
-import { getDefaultTurnModel, resolveModelForProvider } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, getDefaultTurnModel, resolveModelForProvider } from '@goodboy/core';
 import { classifyAgent, type AgentKind } from '../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../../features/workflows/resolveStepRouting';
 
@@ -22,6 +22,14 @@ type AgentReferenceRouting = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly effort: ModelEffort;
+};
+
+const sessionProviderOf = ({ session }: { readonly session: Session }): ProviderId => {
+  const override = session.providerOverride;
+  if (override != null && override in PROVIDER_CAPABILITIES) {
+    return override as ProviderId;
+  }
+  return session.providerPreference.defaultProvider;
 };
 
 export const agentReferenceRouting = ({
@@ -46,7 +54,7 @@ export const agentReferenceRouting = ({
     step: stepConfig,
     kind,
     roleModels,
-    sessionProvider: session.providerPreference.defaultProvider,
+    sessionProvider: sessionProviderOf({ session }),
     sessionEffort: session.effort ?? null,
   });
   return {

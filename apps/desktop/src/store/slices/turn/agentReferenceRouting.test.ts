@@ -202,4 +202,32 @@ describe('agentReferenceRouting', () => {
 
     expect(overwritten).toEqual(pristine);
   });
+
+  it('lets a valid session provider override stand in for the session default', () => {
+    const result = agentReferenceRouting({
+      agent: makeAgent(),
+      stepConfig: null,
+      roleModels: null,
+      session: makeSession({ providerOverride: 'codex' }),
+    });
+
+    expect(result.provider).toBe('codex');
+  });
+
+  it('ignores a session provider override that names no known provider', () => {
+    const withGarbage = agentReferenceRouting({
+      agent: makeAgent(),
+      stepConfig: null,
+      roleModels: null,
+      session: makeSession({ providerOverride: 'not-a-provider' }),
+    });
+    const pristine = agentReferenceRouting({
+      agent: makeAgent(),
+      stepConfig: null,
+      roleModels: null,
+      session: makeSession(),
+    });
+
+    expect(withGarbage).toEqual(pristine);
+  });
 });
