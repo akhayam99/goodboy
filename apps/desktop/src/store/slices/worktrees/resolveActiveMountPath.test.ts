@@ -92,6 +92,19 @@ describe('resolveActiveMountPath', () => {
     expect(path).toBe('/sessions/one/web');
   });
 
+  it('keeps the first mount when the active project is no longer mounted', () => {
+    const path = resolveActiveMountPath({
+      state: {
+        sessions: [SESSION],
+        sessionProjectMounts: { [SESSION_ID]: [MOUNTS[0] as SessionProjectMount] },
+        sessionActiveProject: { [SESSION_ID]: API_ID },
+      },
+      sessionId: SESSION_ID,
+    });
+
+    expect(path).toBe('/sessions/one/web');
+  });
+
   it('has no path for a session without mounts', () => {
     const path = resolveActiveMountPath({
       state: { sessions: [SESSION], sessionProjectMounts: {}, sessionActiveProject: {} },
