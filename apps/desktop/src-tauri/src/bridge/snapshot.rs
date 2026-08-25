@@ -163,8 +163,15 @@ pub fn build() -> Result<Snapshot, BridgeError> {
 
     let workspaces = rows(
         &conn,
-        "SELECT id, name, root_path, kind, disconnected_at, last_accessed_at, created_at, updated_at \
-         FROM workspaces WHERE deleted_at IS NULL",
+        "SELECT w.id AS id, w.name AS name, p.root_path AS root_path, p.kind AS kind, \
+                w.disconnected_at AS disconnected_at, w.last_accessed_at AS last_accessed_at, \
+                w.created_at AS created_at, w.updated_at AS updated_at \
+         FROM workspaces w \
+         LEFT JOIN projects p ON p.id = ( \
+           SELECT id FROM projects WHERE workspace_id = w.id \
+           ORDER BY created_at ASC, id ASC LIMIT 1 \
+         ) \
+         WHERE w.deleted_at IS NULL",
     )?;
     let sessions = rows(
         &conn,

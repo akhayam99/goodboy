@@ -1,11 +1,21 @@
 import type { WorkspaceId } from './ids';
 
-export const CONFIG_BUNDLE_SCHEMA_VERSION = 1 as const;
+export const CONFIG_BUNDLE_SCHEMA_VERSION = 2 as const;
+
+export type ConfigBundleProject = Readonly<{
+  id: string;
+  name: string;
+  rootPath: string;
+  kind: 'repo' | 'folder';
+  createdAt: string;
+  updatedAt: string;
+}>;
 
 export type ConfigBundleWorkspace = Readonly<{
   id: WorkspaceId;
   name: string;
-  rootPath: string;
+  rootPath?: string;
+  projects: ReadonlyArray<ConfigBundleProject>;
   createdAt: string;
   updatedAt: string;
   overrides: {

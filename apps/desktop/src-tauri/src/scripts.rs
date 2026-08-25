@@ -145,7 +145,7 @@ pub async fn workspace_script_run(
     let body = {
         let conn = state.0.lock().map_err(|_| ScriptError::Poisoned)?;
         conn.query_row(
-            "SELECT body FROM workspace_scripts WHERE id = ?1 LIMIT 1",
+            "SELECT body FROM project_scripts WHERE id = ?1 LIMIT 1",
             rusqlite::params![script_id],
             |row| row.get::<_, String>(0),
         )

@@ -7,7 +7,8 @@ use crate::db::{Db, DbError};
 // Schema version — bump on breaking change
 // ---------------------------------------------------------------------------
 
-const SCHEMA_VERSION: u32 = 1;
+const SCHEMA_VERSION: u32 = 2;
+const LEGACY_SCHEMA_VERSION: u32 = 1;
 
 // ---------------------------------------------------------------------------
 // Bundle types (mirrors packages/types/src/config-bundle.ts)
@@ -17,13 +18,28 @@ const SCHEMA_VERSION: u32 = 1;
 pub struct WorkspaceBundle {
     pub id: String,
     pub name: String,
-    #[serde(rename = "rootPath")]
-    pub root_path: String,
+    #[serde(rename = "rootPath", default, skip_serializing_if = "Option::is_none")]
+    pub root_path: Option<String>,
+    #[serde(default)]
+    pub projects: Vec<ProjectBundle>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
     #[serde(rename = "updatedAt")]
     pub updated_at: String,
     pub overrides: WorkspaceOverridesBundle,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProjectBundle {
+    pub id: String,
+    pub name: String,
+    #[serde(rename = "rootPath")]
+    pub root_path: String,
+    pub kind: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -197,31 +213,55 @@ impl From<DbError> for ConfigExportError {
 pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportError> {
     let conn = state.0.lock().map_err(|_| ConfigExportError::Poisoned)?;
 
-    // workspaces + overrides
+    // workspaces + overrides + projects
     let workspaces = {
         let mut stmt = conn.prepare(
-            "SELECT id, name, root_path, created_at, updated_at,
+            "SELECT id, name, created_at, updated_at,
                     default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled
              FROM workspaces
+             WHERE deleted_at IS NULL
              ORDER BY created_at ASC",
         )?;
         let rows = stmt.query_map([], |row| {
-            let parallel_raw: Option<i64> = row.get(8)?;
+            let parallel_raw: Option<i64> = row.get(7)?;
             Ok(WorkspaceBundle {
                 id: row.get(0)?,
                 name: row.get(1)?,
-                root_path: row.get(2)?,
-                created_at: ms_col_to_iso(row.get::<_, i64>(3).unwrap_or(0)),
-                updated_at: ms_col_to_iso(row.get::<_, i64>(4).unwrap_or(0)),
+                root_path: None,
+                projects: Vec::new(),
+                created_at: ms_col_to_iso(row.get::<_, i64>(2).unwrap_or(0)),
+                updated_at: ms_col_to_iso(row.get::<_, i64>(3).unwrap_or(0)),
                 overrides: WorkspaceOverridesBundle {
-                    default_provider_id: row.get(5)?,
-                    default_workflow_id: row.get(6)?,
-                    default_branch_prefix: row.get(7)?,
+                    default_provider_id: row.get(4)?,
+                    default_workflow_id: row.get(5)?,
+                    default_branch_prefix: row.get(6)?,
                     parallel_enabled: parallel_raw.map(|v| v != 0),
                 },
             })
         })?;
-        rows.collect::<Result<Vec<_>, _>>()?
+        let mut workspaces = rows.collect::<Result<Vec<_>, _>>()?;
+        let mut project_stmt = conn.prepare(
+            "SELECT id, name, root_path, kind, created_at, updated_at
+             FROM projects
+             WHERE workspace_id = ?1
+             ORDER BY created_at ASC, id ASC",
+        )?;
+        for workspace in &mut workspaces {
+            let project_rows = project_stmt.query_map(rusqlite::params![workspace.id], |row| {
+                Ok(ProjectBundle {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    root_path: row.get(2)?,
+                    kind: row
+                        .get::<_, Option<String>>(3)?
+                        .unwrap_or_else(|| "repo".to_string()),
+                    created_at: ms_col_to_iso(row.get::<_, i64>(4).unwrap_or(0)),
+                    updated_at: ms_col_to_iso(row.get::<_, i64>(5).unwrap_or(0)),
+                })
+            })?;
+            workspace.projects = project_rows.collect::<Result<Vec<_>, _>>()?;
+        }
+        workspaces
     };
 
     // skills
@@ -411,7 +451,7 @@ pub fn import_config(
     bundle: ConfigBundle,
 ) -> Result<ImportResult, ConfigExportError> {
     // Validate schema version.
-    if bundle.schema_version != SCHEMA_VERSION {
+    if bundle.schema_version != SCHEMA_VERSION && bundle.schema_version != LEGACY_SCHEMA_VERSION {
         return Err(ConfigExportError::SchemaMismatch {
             got: bundle.schema_version,
             expected: SCHEMA_VERSION,
@@ -494,7 +534,7 @@ pub fn import_config(
             let updated_ms = iso_to_ms(&w.updated_at).unwrap_or(now_ms);
             conn.execute(
                 "INSERT INTO workspaces
-                   (id, name, root_path, created_at, updated_at,
+                   (id, name, slug, created_at, updated_at,
                     default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
                  ON CONFLICT(id) DO UPDATE SET
@@ -505,7 +545,7 @@ pub fn import_config(
                    parallel_enabled          = excluded.parallel_enabled,
                    updated_at                = excluded.updated_at",
                 rusqlite::params![
-                    w.id, w.name, w.root_path,
+                    w.id, w.name, workspace_slug(&w.name, &w.id),
                     created_ms, updated_ms,
                     w.overrides.default_provider_id,
                     w.overrides.default_workflow_id,
@@ -513,6 +553,27 @@ pub fn import_config(
                     parallel_val,
                 ],
             )?;
+            for p in workspace_projects(w) {
+                conn.execute(
+                    "INSERT INTO projects
+                       (id, workspace_id, name, root_path, kind, created_at, updated_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+                     ON CONFLICT(id) DO UPDATE SET
+                       name       = excluded.name,
+                       root_path  = excluded.root_path,
+                       kind       = excluded.kind,
+                       updated_at = excluded.updated_at",
+                    rusqlite::params![
+                        p.id,
+                        w.id,
+                        p.name,
+                        p.root_path,
+                        p.kind,
+                        iso_to_ms(&p.created_at).unwrap_or(created_ms),
+                        iso_to_ms(&p.updated_at).unwrap_or(updated_ms),
+                    ],
+                )?;
+            }
         }
 
         // Skills — upsert.
@@ -686,6 +747,68 @@ fn iso_to_ms(s: &str) -> Option<i64> {
     crate::util::iso_to_ms(s)
 }
 
+fn workspace_slug(name: &str, id: &str) -> String {
+    let mut prefix = String::new();
+    let mut pending_dash = false;
+    for ch in name.to_lowercase().chars() {
+        if ch.is_ascii_alphanumeric() {
+            if pending_dash && !prefix.is_empty() {
+                prefix.push('-');
+            }
+            pending_dash = false;
+            prefix.push(ch);
+        } else {
+            pending_dash = true;
+        }
+        if prefix.len() >= 32 {
+            break;
+        }
+    }
+    let stem = if prefix.is_empty() {
+        "workspace"
+    } else {
+        prefix.as_str()
+    };
+    let suffix: String = id.chars().take(8).collect();
+    format!("{stem}-{suffix}")
+}
+
+fn workspace_projects(workspace: &WorkspaceBundle) -> Vec<ProjectBundle> {
+    if !workspace.projects.is_empty() {
+        return workspace
+            .projects
+            .iter()
+            .map(|project| ProjectBundle {
+                id: project.id.clone(),
+                name: project.name.clone(),
+                root_path: project.root_path.clone(),
+                kind: normalized_kind(&project.kind),
+                created_at: project.created_at.clone(),
+                updated_at: project.updated_at.clone(),
+            })
+            .collect();
+    }
+    match &workspace.root_path {
+        Some(root_path) if !root_path.trim().is_empty() => vec![ProjectBundle {
+            id: format!("{}-project", workspace.id),
+            name: workspace.name.clone(),
+            root_path: root_path.clone(),
+            kind: "repo".to_string(),
+            created_at: workspace.created_at.clone(),
+            updated_at: workspace.updated_at.clone(),
+        }],
+        _ => Vec::new(),
+    }
+}
+
+fn normalized_kind(kind: &str) -> String {
+    if kind == "folder" {
+        "folder".to_string()
+    } else {
+        "repo".to_string()
+    }
+}
+
 // ---------------------------------------------------------------------------
 // File-based commands (avoid requiring tauri-plugin-fs on the JS side)
 // ---------------------------------------------------------------------------
@@ -726,8 +849,70 @@ mod tests {
     }
 
     #[test]
-    fn schema_version_is_one() {
-        assert_eq!(SCHEMA_VERSION, 1);
+    fn schema_version_is_two() {
+        assert_eq!(SCHEMA_VERSION, 2);
+        assert_eq!(LEGACY_SCHEMA_VERSION, 1);
+    }
+
+    #[test]
+    fn workspace_slug_matches_the_desktop_shape() {
+        assert_eq!(
+            workspace_slug("Kay AM", "0efb8311-8d9c-4c85"),
+            "kay-am-0efb8311"
+        );
+        assert_eq!(workspace_slug("  ", "1234abcd-0000"), "workspace-1234abcd");
+    }
+
+    #[test]
+    fn legacy_root_path_becomes_the_single_project() {
+        let workspace = WorkspaceBundle {
+            id: "workspace-1".to_string(),
+            name: "Goodboy".to_string(),
+            root_path: Some("/Users/dev/goodboy".to_string()),
+            projects: vec![],
+            created_at: "2026-01-01T00:00:00Z".to_string(),
+            updated_at: "2026-01-02T00:00:00Z".to_string(),
+            overrides: WorkspaceOverridesBundle {
+                default_provider_id: None,
+                default_workflow_id: None,
+                default_branch_prefix: None,
+                parallel_enabled: None,
+            },
+        };
+        let projects = workspace_projects(&workspace);
+        assert_eq!(projects.len(), 1);
+        assert_eq!(projects[0].id, "workspace-1-project");
+        assert_eq!(projects[0].root_path, "/Users/dev/goodboy");
+        assert_eq!(projects[0].kind, "repo");
+    }
+
+    #[test]
+    fn bundled_projects_win_over_a_legacy_root_path() {
+        let workspace = WorkspaceBundle {
+            id: "workspace-1".to_string(),
+            name: "Goodboy".to_string(),
+            root_path: Some("/Users/dev/legacy".to_string()),
+            projects: vec![ProjectBundle {
+                id: "project-1".to_string(),
+                name: "desktop".to_string(),
+                root_path: "/Users/dev/goodboy".to_string(),
+                kind: "unknown".to_string(),
+                created_at: "2026-01-01T00:00:00Z".to_string(),
+                updated_at: "2026-01-02T00:00:00Z".to_string(),
+            }],
+            created_at: "2026-01-01T00:00:00Z".to_string(),
+            updated_at: "2026-01-02T00:00:00Z".to_string(),
+            overrides: WorkspaceOverridesBundle {
+                default_provider_id: None,
+                default_workflow_id: None,
+                default_branch_prefix: None,
+                parallel_enabled: None,
+            },
+        };
+        let projects = workspace_projects(&workspace);
+        assert_eq!(projects.len(), 1);
+        assert_eq!(projects[0].id, "project-1");
+        assert_eq!(projects[0].kind, "repo");
     }
 
     #[test]
@@ -757,7 +942,7 @@ mod tests {
         assert_eq!(
             serde_json::from_str::<serde_json::Value>(&json).expect("parse failed")
                 ["schemaVersion"],
-            serde_json::Value::Number(serde_json::Number::from(1u32))
+            serde_json::Value::Number(serde_json::Number::from(SCHEMA_VERSION))
         );
     }
 
