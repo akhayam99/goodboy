@@ -662,8 +662,8 @@ mod tests {
         let with_override =
             credential_id_for_binding(&conn, "linear", "container-1", Some("project-1"))
                 .expect("resolves");
-        let without = credential_id_for_binding(&conn, "linear", "container-1", None)
-            .expect("resolves");
+        let without =
+            credential_id_for_binding(&conn, "linear", "container-1", None).expect("resolves");
         let other_project =
             credential_id_for_binding(&conn, "linear", "container-1", Some("project-2"))
                 .expect("resolves");
@@ -681,8 +681,8 @@ mod tests {
         seed_binding(&conn, "b-1", "container-1", None, "github", "cred-bound");
 
         let global = global_credential_id(&conn, "github").expect("resolves");
-        let missing = credential_id_for_binding(&conn, "github", "container-2", None)
-            .expect("resolves");
+        let missing =
+            credential_id_for_binding(&conn, "github", "container-2", None).expect("resolves");
 
         assert_eq!(global.as_deref(), Some("cred-free"));
         assert_eq!(missing, None);
@@ -707,8 +707,7 @@ mod tests {
 
         let own = config_for_binding_in(&conn, "gitlab", "container-1", Some("project-1"))
             .expect("resolves");
-        let shared =
-            config_for_binding_in(&conn, "gitlab", "container-1", None).expect("resolves");
+        let shared = config_for_binding_in(&conn, "gitlab", "container-1", None).expect("resolves");
 
         assert_eq!(own.as_deref(), Some("{\"host\":\"own\"}"));
         assert_eq!(shared.as_deref(), Some("{\"host\":\"shared\"}"));
@@ -919,10 +918,7 @@ mod tests {
         assert_eq!(adopted, 0);
     }
 
-    fn run_github_adoption(
-        conn: &Connection,
-        store: &RefCell<HashMap<String, String>>,
-    ) -> usize {
+    fn run_github_adoption(conn: &Connection, store: &RefCell<HashMap<String, String>>) -> usize {
         adopt_github_with(
             conn,
             |key| Ok(store.borrow().get(key).cloned()),
@@ -980,7 +976,10 @@ mod tests {
             .expect("resolves")
             .expect("bound");
         assert_eq!(
-            store.borrow().get(&secret_key(&credential)).map(String::as_str),
+            store
+                .borrow()
+                .get(&secret_key(&credential))
+                .map(String::as_str),
             Some("ghp_scoped")
         );
         assert!(!store.borrow().contains_key("github.pat.ex-ws-1"));

@@ -211,6 +211,7 @@ export type {
   ConfigBundleBudgetRule,
   ConfigBundleImportResult,
   ConfigBundlePermissionRule,
+  ConfigBundleProject,
   ConfigBundleSettings,
   ConfigBundleSkill,
   ConfigBundleStep,
