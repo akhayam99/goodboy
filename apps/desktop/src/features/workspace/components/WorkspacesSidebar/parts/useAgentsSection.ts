@@ -27,6 +27,7 @@ import { workflowRunHasOpenQuestions } from '../../../../../features/context/ope
 import { classifyAgent, type AgentKind } from '../../../../../features/session/agent-kind';
 import { useAgentMetrics } from '../../../../../features/session/hooks/useAgentMetrics';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
+import { resolveActiveMountPath } from '../../../../../store/slices/worktrees/resolveActiveMountPath';
 import { useSessionAgentTree } from './useSessionAgentTree';
 import { workflowKindName } from '../lib';
 
@@ -95,7 +96,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     }),
   );
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[task.id] ?? null);
-  const worktreePath = useAppStore((s) => (s.sessionWorktrees[task.id] ?? [])[0] ?? null);
+  const worktreePath = useAppStore((s) => resolveActiveMountPath({ state: s, sessionId: task.id }));
   const selectAgent = useAppStore((s) => s.selectAgent);
   const requestOpenQuestionScroll = useAppStore((s) => s.requestOpenQuestionScroll);
   const spawnAgent = useAppStore((s) => s.spawnAgent);

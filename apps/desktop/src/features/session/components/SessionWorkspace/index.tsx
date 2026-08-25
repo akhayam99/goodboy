@@ -39,6 +39,7 @@ import { SessionOverviewLoading } from './parts/SessionOverviewLoading';
 import { ReviewBoardPane } from '../../../review/components/ReviewBoardPane';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
+import { resolveActiveMountPath } from '../../../../store/slices/worktrees/resolveActiveMountPath';
 import { ExplorePane } from '../../../explore/components/ExplorePane';
 import { SIMPLE_LENSES } from '../../lens-labels';
 import { contextRegionFor, resolveLensSurface } from '../../lens-surface';
@@ -70,7 +71,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     (s) => s.selectedAgentId[sessionId] ?? null,
   ) as AgentId | null;
   const agentHome = useSelectedAgentHome(sessionId);
-  const workingDir = useAppStore((s) => (s.sessionWorktrees[sessionId] ?? [])[0] ?? null);
+  const workingDir = useAppStore((s) => resolveActiveMountPath({ state: s, sessionId }));
   const sessionRepo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const projectWorktreePath = sessionRepo?.worktreePath ?? null;
   const sessionMounts = useAppStore((s) => s.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
