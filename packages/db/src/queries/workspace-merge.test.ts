@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from '../migrations/runner';
-import { listWorkspaceMergeCandidates, mergeWorkspaces } from './workspace-merge';
+import { mergeWorkspaces } from './workspace-merge';
 
 const target = 'ws-target' as WorkspaceId;
 const source = 'ws-source' as WorkspaceId;
@@ -341,21 +341,5 @@ describe('mergeWorkspaces', () => {
 
     const workspaces = await db.select<{ id: string }>('SELECT id FROM workspaces');
     expect(workspaces).toHaveLength(3);
-  });
-});
-
-describe('listWorkspaceMergeCandidates', () => {
-  it('lists the other workspaces with their project and session counts', async () => {
-    const db = await seed();
-    await addProject({ db, id: 'proj-s', workspaceId: source });
-    await addProject({ db, id: 'proj-s2', workspaceId: source });
-    await addSession({ db, id: 'sess-s', workspaceId: source });
-
-    const candidates = await listWorkspaceMergeCandidates({ db, targetWorkspaceId: target });
-
-    expect(candidates).toEqual([
-      { id: sourceB, name: 'ws-source-b', projectCount: 0, sessionCount: 0 },
-      { id: source, name: 'ws-source', projectCount: 2, sessionCount: 1 },
-    ]);
   });
 });

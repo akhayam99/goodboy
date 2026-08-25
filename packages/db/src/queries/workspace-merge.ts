@@ -10,50 +10,6 @@ type BindingRow = {
   readonly updated_at: number;
 };
 
-type MergeCandidateRow = {
-  readonly id: string;
-  readonly name: string;
-  readonly project_count: number;
-  readonly session_count: number;
-};
-
-export type WorkspaceMergeCandidate = {
-  readonly id: WorkspaceId;
-  readonly name: string;
-  readonly projectCount: number;
-  readonly sessionCount: number;
-};
-
-type ListCandidatesParams = {
-  readonly db: Database;
-  readonly targetWorkspaceId: WorkspaceId;
-};
-
-export const listWorkspaceMergeCandidates = async ({
-  db,
-  targetWorkspaceId,
-}: ListCandidatesParams): Promise<ReadonlyArray<WorkspaceMergeCandidate>> => {
-  const rows = await db.select<MergeCandidateRow>(
-    `SELECT
-       w.id,
-       w.name,
-       (SELECT COUNT(*) FROM projects p
-         WHERE p.workspace_id = w.id AND p.disconnected_at IS NULL) AS project_count,
-       (SELECT COUNT(*) FROM sessions s
-         WHERE s.workspace_id = w.id AND s.deleted_at IS NULL) AS session_count
-     FROM workspaces w
-     WHERE w.deleted_at IS NULL AND w.disconnected_at IS NULL AND w.id != ?
-     ORDER BY w.created_at DESC`,
-    [targetWorkspaceId],
-  );
-  return rows.map((row) => ({
-    id: row.id as WorkspaceId,
-    name: row.name,
-    projectCount: row.project_count,
-    sessionCount: row.session_count,
-  }));
-};
-
 type MergeParams = {
   readonly db: Database;
   readonly sourceWorkspaceIds: ReadonlyArray<WorkspaceId>;
