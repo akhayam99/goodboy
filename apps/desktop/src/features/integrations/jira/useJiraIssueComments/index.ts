@@ -82,7 +82,7 @@ export const useJiraIssueComments = ({ issue, workspaceId, projectId }: Params):
       });
       setComments((current) => [...current, created]);
     },
-    [workspaceId, siteUrl, email, issueKey],
+    [workspaceId, projectId, siteUrl, email, issueKey],
   );
 
   const isReady = siteUrl != null && email != null && issueKey != null;
