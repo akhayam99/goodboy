@@ -22,6 +22,7 @@ import { GoalOverviewRegion } from './GoalOverviewRegion';
 import { OverviewNextSteps } from './OverviewNextSteps';
 import { OverviewPlans } from './OverviewPlans';
 import { OverviewPrs } from './OverviewPrs';
+import { OverviewResolve } from './OverviewResolve';
 
 type Props = {
   readonly session: Session;
@@ -90,6 +91,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         animationClassName="animate-fade-in"
       >
         <OverviewNextSteps session={session} agents={sessionAgents} />
+        <OverviewResolve session={session} onSelectLens={onSelectLens} />
         <OverviewPlans session={session} onSelectLens={onSelectLens} />
         <OverviewPrs session={session} onSelectLens={onSelectLens} />
         <TimelinePane
