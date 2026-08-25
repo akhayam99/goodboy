@@ -1,7 +1,7 @@
 import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useState, type ReactNode } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import type { SegmentedTabOption } from '@goodboy/ui';
 import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
@@ -19,6 +19,7 @@ type IssueSection = 'overview' | 'conversation';
 type Props = {
   readonly issue: GitlabIssue;
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
   readonly headerActions?: ReactNode;
   readonly fit?: Fit;
 };
@@ -28,10 +29,16 @@ const SECTION_OPTIONS: ReadonlyArray<SegmentedTabOption<IssueSection>> = [
   { value: 'conversation', label: 'Conversation', icon: MessageSquare },
 ];
 
-export const GitlabIssueDetail = ({ issue, workspaceId, headerActions, fit = 'fill' }: Props) => {
+export const GitlabIssueDetail = ({
+  issue,
+  workspaceId,
+  projectId,
+  headerActions,
+  fit = 'fill',
+}: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
-  const { description, save } = useGitlabIssueDescription({ issue, workspaceId });
-  const notes = useGitlabIssueNotes({ issue, workspaceId });
+  const { description, save } = useGitlabIssueDescription({ issue, workspaceId, projectId });
+  const notes = useGitlabIssueNotes({ issue, workspaceId, projectId });
 
   return (
     <StudioDetailLayout

@@ -36,6 +36,7 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
     return (
       <IntegrationConnectedRow
         provider="bitbucket"
+        credentialId={bitbucket?.credentialId ?? null}
         primary={`Connected as ${bitbucket.config.displayName ?? bitbucket.config.email}`}
         secondary={`bitbucket.org/${bitbucket.config.workspaceSlug}`}
         disconnectDescription="Unlinks this project from the Bitbucket personal API key. The key stays saved for your other projects."

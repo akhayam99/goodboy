@@ -1,7 +1,7 @@
 import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useState, type ReactNode } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import type { SegmentedTabOption } from '@goodboy/ui';
 import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
@@ -22,6 +22,7 @@ type IssueSection = 'overview' | 'conversation';
 type Props = {
   readonly issue: JiraIssue;
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
   readonly headerActions?: ReactNode;
   readonly dock?: ReactNode;
   readonly fit?: Fit;
@@ -36,15 +37,16 @@ const SECTION_OPTIONS: ReadonlyArray<SegmentedTabOption<IssueSection>> = [
 export const JiraIssueDetail = ({
   issue,
   workspaceId,
+  projectId,
   headerActions,
   dock,
   fit = 'fill',
   onIssueWritten,
 }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
-  const actions = useJiraIssueActions({ issue, workspaceId, onWritten: onIssueWritten });
+  const actions = useJiraIssueActions({ issue, workspaceId, projectId, onWritten: onIssueWritten });
   const live = actions.issue;
-  const conversation = useJiraIssueComments({ issue: live, workspaceId });
+  const conversation = useJiraIssueComments({ issue: live, workspaceId, projectId });
 
   return (
     <StudioDetailLayout

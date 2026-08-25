@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import {
   issuePullRequests,
   linearCreateComment,
@@ -114,6 +114,25 @@ describe('Linear issue requests', () => {
     expect(mockInvoke.mock.calls).toEqual([
       ['linear_fetch_issue', { workspaceId: WORKSPACE_ID, issueId: 'issue-42' }],
       ['linear_fetch_issue_comments', { workspaceId: WORKSPACE_ID, issueId: 'issue-42' }],
+    ]);
+  });
+
+  it('carries the project scope only when the caller knows one', async () => {
+    mockInvoke.mockResolvedValueOnce(makeIssue([])).mockResolvedValueOnce(makeIssue([]));
+
+    await linearFetchIssue({
+      workspaceId: WORKSPACE_ID,
+      issueId: 'issue-42',
+      projectId: 'project-9' as ProjectId,
+    });
+    await linearFetchIssue({ workspaceId: WORKSPACE_ID, issueId: 'issue-42' });
+
+    expect(mockInvoke.mock.calls).toEqual([
+      [
+        'linear_fetch_issue',
+        { workspaceId: WORKSPACE_ID, issueId: 'issue-42', projectId: 'project-9' },
+      ],
+      ['linear_fetch_issue', { workspaceId: WORKSPACE_ID, issueId: 'issue-42' }],
     ]);
   });
 

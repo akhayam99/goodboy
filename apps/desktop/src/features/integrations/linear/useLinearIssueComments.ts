@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { linearCreateComment, linearFetchIssueComments, type LinearIssueComment } from './client';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
   readonly issueId: string | null;
+  readonly projectId?: ProjectId;
 };
 
 type Result = {
@@ -15,7 +16,7 @@ type Result = {
   readonly post: ((body: string) => Promise<void>) | null;
 };
 
-export const useLinearIssueComments = ({ workspaceId, issueId }: Params): Result => {
+export const useLinearIssueComments = ({ workspaceId, issueId, projectId }: Params): Result => {
   const [comments, setComments] = useState<ReadonlyArray<LinearIssueComment>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +31,7 @@ export const useLinearIssueComments = ({ workspaceId, issueId }: Params): Result
 
     let isCancelled = false;
     setIsLoading(true);
-    linearFetchIssueComments({ workspaceId, issueId })
+    linearFetchIssueComments({ workspaceId, issueId, projectId })
       .then((nextComments) => {
         if (isCancelled) {
           return;
@@ -53,17 +54,17 @@ export const useLinearIssueComments = ({ workspaceId, issueId }: Params): Result
     return () => {
       isCancelled = true;
     };
-  }, [issueId, workspaceId]);
+  }, [issueId, workspaceId, projectId]);
 
   const post = useCallback(
     async (body: string) => {
       if (issueId == null) {
         return;
       }
-      const created = await linearCreateComment({ workspaceId, issueId, body });
+      const created = await linearCreateComment({ workspaceId, issueId, body, projectId });
       setComments((current) => [...current, created]);
     },
-    [issueId, workspaceId],
+    [issueId, workspaceId, projectId],
   );
 
   return { comments, isLoading, error, post: issueId != null ? post : null };

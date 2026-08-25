@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { jiraCreateComment, jiraListComments, type JiraComment, type JiraIssue } from '../client';
 import { useJiraConfig } from '../useJiraConfig';
 
 type Params = {
   readonly issue: JiraIssue | null;
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
 };
 
 type Result = {
@@ -17,7 +18,7 @@ type Result = {
   readonly post: ((body: string) => Promise<void>) | null;
 };
 
-export const useJiraIssueComments = ({ issue, workspaceId }: Params): Result => {
+export const useJiraIssueComments = ({ issue, workspaceId, projectId }: Params): Result => {
   const config = useJiraConfig({ workspaceId });
   const siteUrl = config?.siteUrl ?? null;
   const email = config?.email ?? null;
@@ -37,7 +38,7 @@ export const useJiraIssueComments = ({ issue, workspaceId }: Params): Result => 
 
     let isCancelled = false;
     setIsLoading(true);
-    jiraListComments({ workspaceId, siteUrl, email, issueKey })
+    jiraListComments({ workspaceId, projectId, siteUrl, email, issueKey })
       .then((next) => {
         if (isCancelled) {
           return;
@@ -60,7 +61,7 @@ export const useJiraIssueComments = ({ issue, workspaceId }: Params): Result => 
     return () => {
       isCancelled = true;
     };
-  }, [workspaceId, siteUrl, email, issueKey, reloadToken]);
+  }, [workspaceId, projectId, siteUrl, email, issueKey, reloadToken]);
 
   const reload = useCallback(() => {
     setReloadToken((token) => token + 1);
@@ -71,7 +72,14 @@ export const useJiraIssueComments = ({ issue, workspaceId }: Params): Result => 
       if (siteUrl == null || email == null || issueKey == null) {
         return;
       }
-      const created = await jiraCreateComment({ workspaceId, siteUrl, email, issueKey, body });
+      const created = await jiraCreateComment({
+        workspaceId,
+        projectId,
+        siteUrl,
+        email,
+        issueKey,
+        body,
+      });
       setComments((current) => [...current, created]);
     },
     [workspaceId, siteUrl, email, issueKey],

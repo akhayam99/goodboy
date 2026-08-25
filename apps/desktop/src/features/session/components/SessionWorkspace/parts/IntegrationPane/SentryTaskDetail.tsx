@@ -1,14 +1,15 @@
-import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
+import type { ProjectId, SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { SentryIssueDetail } from '../../../../../integrations/sentry/SentryIssueDetail';
 import { useSentryIssue } from '../../../../../integrations/sentry/useSentryIssue';
 import { useSentryIssueDetail } from '../../../../../integrations/sentry/useSentryIssueDetail';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
   readonly task: SessionExternalTask;
 };
 
-export const SentryTaskDetail = ({ workspaceId, task }: Props) => {
+export const SentryTaskDetail = ({ workspaceId, projectId, task }: Props) => {
   const {
     issue,
     isLoading: isIssueLoading,
@@ -17,10 +18,12 @@ export const SentryTaskDetail = ({ workspaceId, task }: Props) => {
   } = useSentryIssue({
     workspaceId,
     issueId: task.externalId,
+    projectId,
   });
   const { detail, isLoading, error } = useSentryIssueDetail({
     workspaceId,
     issueId: task.externalId,
+    projectId,
   });
 
   return (

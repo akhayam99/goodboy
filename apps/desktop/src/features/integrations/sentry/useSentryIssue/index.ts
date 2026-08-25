@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { sentryFetchIssue, type SentryIssue } from '../client';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
   readonly issueId: string | null;
+  readonly projectId?: ProjectId;
 };
 
 type Result = {
@@ -15,7 +16,7 @@ type Result = {
   readonly refetch: () => void;
 };
 
-export const useSentryIssue = ({ workspaceId, issueId }: Params): Result => {
+export const useSentryIssue = ({ workspaceId, issueId, projectId }: Params): Result => {
   const [issue, setIssue] = useState<SentryIssue | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +32,7 @@ export const useSentryIssue = ({ workspaceId, issueId }: Params): Result => {
 
     let isCancelled = false;
     setIsLoading(true);
-    sentryFetchIssue({ workspaceId, issueId })
+    sentryFetchIssue({ workspaceId, issueId, projectId })
       .then((nextIssue) => {
         if (isCancelled) {
           return;
@@ -54,7 +55,7 @@ export const useSentryIssue = ({ workspaceId, issueId }: Params): Result => {
     return () => {
       isCancelled = true;
     };
-  }, [workspaceId, issueId, attempt]);
+  }, [workspaceId, issueId, projectId, attempt]);
 
   return { issue, isLoading, error, refetch: () => setAttempt((n) => n + 1) };
 };

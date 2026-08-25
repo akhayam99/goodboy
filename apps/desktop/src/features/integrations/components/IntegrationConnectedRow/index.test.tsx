@@ -2,16 +2,28 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { IntegrationCredentialId } from '@goodboy/types';
 import { IntegrationConnectedRow } from '.';
 
-afterEach(cleanup);
+const secret = vi.hoisted(() => ({ has: true }));
+
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn(async () => secret.has),
+}));
+
+afterEach(() => {
+  cleanup();
+  secret.has = true;
+});
 
 const renderRow = ({
   onDisconnect = vi.fn(async () => undefined),
   badge,
+  credentialId,
 }: {
   readonly onDisconnect?: () => Promise<void>;
   readonly badge?: string;
+  readonly credentialId?: IntegrationCredentialId;
 } = {}) =>
   render(
     <IntegrationConnectedRow
@@ -19,6 +31,7 @@ const renderRow = ({
       primary="Connected as Ada Lovelace"
       secondary="linear.app/acme"
       {...(badge != null ? { badge } : {})}
+      {...(credentialId != null ? { credentialId } : {})}
       disconnectDescription="Unlinks this project."
       onDisconnect={onDisconnect}
     />,
@@ -65,5 +78,22 @@ describe('IntegrationConnectedRow', () => {
     fireEvent.click(screen.getByRole('button', { name: /disconnect linear/i }));
     fireEvent.click(screen.getByRole('button', { name: /^disconnect linear$/i }));
     expect(await screen.findByText(/keychain said no/i)).toBeDefined();
+  });
+});
+
+describe('a connection whose key left the keychain', () => {
+  it('says the key is gone instead of claiming a healthy connection', async () => {
+    secret.has = false;
+    renderRow({ credentialId: 'cred-1' as IntegrationCredentialId });
+
+    await waitFor(() => expect(screen.getByText(/missing from this Mac/i)).toBeDefined());
+    expect(screen.getByText('Connected as Ada Lovelace')).toBeDefined();
+  });
+
+  it('stays quiet while the key is where it should be', async () => {
+    renderRow({ credentialId: 'cred-1' as IntegrationCredentialId });
+
+    await waitFor(() => expect(screen.getByText('Connected as Ada Lovelace')).toBeDefined());
+    expect(screen.queryByText(/missing from this Mac/i)).toBeNull();
   });
 });

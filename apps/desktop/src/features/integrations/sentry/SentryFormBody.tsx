@@ -25,6 +25,7 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
     return (
       <IntegrationConnectedRow
         provider="sentry"
+        credentialId={sentry?.credentialId ?? null}
         primary={`Connected to ${sentryConfig.projectName ?? sentryConfig.project}`}
         secondary={`${sentryConfig.org}/${sentryConfig.project}`}
         disconnectDescription="Unlinks this project from the Sentry personal API key. The key stays saved for your other projects."

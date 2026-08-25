@@ -1,7 +1,7 @@
 import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useState, type ReactNode } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { linearIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
@@ -18,6 +18,7 @@ type Fit = 'fill' | 'bleed' | 'flow';
 type Props = {
   readonly issue: LinearIssue;
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
   readonly dock?: ReactNode;
   readonly headerActions?: ReactNode;
   readonly fit?: Fit;
@@ -26,6 +27,7 @@ type Props = {
 export const LinearIssueDetail = ({
   issue,
   workspaceId,
+  projectId,
   dock,
   headerActions,
   fit = 'fill',
@@ -34,8 +36,9 @@ export const LinearIssueDetail = ({
   const { comments, isLoading, error, post } = useLinearIssueComments({
     workspaceId,
     issueId: issue.id,
+    projectId,
   });
-  const { description, save } = useLinearIssueDescription({ issue, workspaceId });
+  const { description, save } = useLinearIssueDescription({ issue, workspaceId, projectId });
 
   return (
     <StudioDetailLayout

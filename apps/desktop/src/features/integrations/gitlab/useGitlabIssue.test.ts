@@ -55,7 +55,13 @@ describe('useGitlabIssue', () => {
     );
 
     await waitFor(() => expect(result.current.issue).toEqual(ISSUE));
-    expect(fetchIssue).toHaveBeenCalledWith(WORKSPACE_ID, 'https://gitlab.com', 'acme/web', 7);
+    expect(fetchIssue).toHaveBeenCalledWith(
+      WORKSPACE_ID,
+      'https://gitlab.com',
+      'acme/web',
+      7,
+      undefined,
+    );
   });
 
   it('surfaces the fetch error and recovers on retry', async () => {

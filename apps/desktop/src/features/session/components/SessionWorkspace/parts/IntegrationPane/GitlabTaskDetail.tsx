@@ -1,6 +1,6 @@
 import { StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
 import { Skeleton } from '@goodboy/ui';
-import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
+import type { ProjectId, SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { ErrorStrip } from '@goodboy/ui';
 import { HeaderBand } from '@goodboy/ui';
 import { GitlabIssueDetail } from '../../../../../integrations/gitlab/GitlabIssueDetail';
@@ -8,17 +8,21 @@ import { useGitlabIssue } from '../../../../../integrations/gitlab/useGitlabIssu
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
   readonly task: SessionExternalTask;
 };
 
-export const GitlabTaskDetail = ({ workspaceId, task }: Props) => {
+export const GitlabTaskDetail = ({ workspaceId, projectId, task }: Props) => {
   const { issue, isLoading, error, refetch } = useGitlabIssue({
     workspaceId,
     identifier: task.identifier,
+    projectId,
   });
 
   if (issue != null) {
-    return <GitlabIssueDetail issue={issue} workspaceId={workspaceId} fit="fill" />;
+    return (
+      <GitlabIssueDetail issue={issue} workspaceId={workspaceId} projectId={projectId} fit="fill" />
+    );
   }
 
   return (

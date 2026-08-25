@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { linearUpdateIssueDescription, type LinearIssue } from './client';
 
 type Params = {
   readonly issue: LinearIssue;
   readonly workspaceId: WorkspaceId | null;
+  readonly projectId?: ProjectId;
 };
 
 type Result = {
@@ -12,7 +13,7 @@ type Result = {
   readonly save: ((next: string) => Promise<void>) | null;
 };
 
-export const useLinearIssueDescription = ({ issue, workspaceId }: Params): Result => {
+export const useLinearIssueDescription = ({ issue, workspaceId, projectId }: Params): Result => {
   const [saved, setSaved] = useState<string | null>(null);
   const issueId = issue.id;
 
@@ -29,10 +30,11 @@ export const useLinearIssueDescription = ({ issue, workspaceId }: Params): Resul
         workspaceId,
         issueId,
         description: next,
+        projectId,
       });
       setSaved(description);
     },
-    [workspaceId, issueId],
+    [workspaceId, issueId, projectId],
   );
 
   return {

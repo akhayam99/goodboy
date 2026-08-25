@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import {
   jiraGetIssue,
   jiraSetAssignee,
@@ -12,6 +12,7 @@ import { useJiraConfig } from '../useJiraConfig';
 type Params = {
   readonly issue: JiraIssue;
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
   readonly onWritten?: (() => void) | null;
 };
 
@@ -33,7 +34,12 @@ type SignatureParams = {
 
 const issueSignature = ({ issue }: SignatureParams): string => `${issue.id}:${issue.updated}`;
 
-export const useJiraIssueActions = ({ issue, workspaceId, onWritten }: Params): Result => {
+export const useJiraIssueActions = ({
+  issue,
+  workspaceId,
+  projectId,
+  onWritten,
+}: Params): Result => {
   const config = useJiraConfig({ workspaceId });
   const siteUrl = config?.siteUrl ?? null;
   const email = config?.email ?? null;
@@ -45,20 +51,20 @@ export const useJiraIssueActions = ({ issue, workspaceId, onWritten }: Params): 
     if (siteUrl == null || email == null) {
       return;
     }
-    const next = await jiraGetIssue({ workspaceId, siteUrl, email, issueKey });
+    const next = await jiraGetIssue({ workspaceId, projectId, siteUrl, email, issueKey });
     setHeld({ signature, issue: next });
     onWritten?.();
-  }, [workspaceId, siteUrl, email, issueKey, signature, onWritten]);
+  }, [workspaceId, projectId, siteUrl, email, issueKey, signature, onWritten]);
 
   const assign = useCallback(
     async (accountId: string | null) => {
       if (siteUrl == null || email == null) {
         return;
       }
-      await jiraSetAssignee({ workspaceId, siteUrl, email, issueKey, accountId });
+      await jiraSetAssignee({ workspaceId, projectId, siteUrl, email, issueKey, accountId });
       await refresh();
     },
-    [workspaceId, siteUrl, email, issueKey, refresh],
+    [workspaceId, projectId, siteUrl, email, issueKey, refresh],
   );
 
   const transition = useCallback(
@@ -66,10 +72,10 @@ export const useJiraIssueActions = ({ issue, workspaceId, onWritten }: Params): 
       if (siteUrl == null || email == null) {
         return;
       }
-      await jiraTransitionIssue({ workspaceId, siteUrl, email, issueKey, transitionId });
+      await jiraTransitionIssue({ workspaceId, projectId, siteUrl, email, issueKey, transitionId });
       await refresh();
     },
-    [workspaceId, siteUrl, email, issueKey, refresh],
+    [workspaceId, projectId, siteUrl, email, issueKey, refresh],
   );
 
   const saveDescription = useCallback(
@@ -79,6 +85,7 @@ export const useJiraIssueActions = ({ issue, workspaceId, onWritten }: Params): 
       }
       await jiraUpdateIssueDescription({
         workspaceId,
+        projectId,
         siteUrl,
         email,
         issueKey,
@@ -86,7 +93,7 @@ export const useJiraIssueActions = ({ issue, workspaceId, onWritten }: Params): 
       });
       await refresh();
     },
-    [workspaceId, siteUrl, email, issueKey, refresh],
+    [workspaceId, projectId, siteUrl, email, issueKey, refresh],
   );
 
   const isReady = siteUrl != null && email != null;

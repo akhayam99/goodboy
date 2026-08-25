@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { jiraGetIssue, type JiraIssue } from '../client';
 import { useJiraConfig } from '../useJiraConfig';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
   readonly issueKey: string;
 };
 
@@ -16,7 +17,7 @@ type Result = {
   readonly refetch: () => void;
 };
 
-export const useJiraIssue = ({ workspaceId, issueKey }: Params): Result => {
+export const useJiraIssue = ({ workspaceId, projectId, issueKey }: Params): Result => {
   const config = useJiraConfig({ workspaceId });
   const siteUrl = config?.siteUrl ?? null;
   const email = config?.email ?? null;
@@ -37,7 +38,7 @@ export const useJiraIssue = ({ workspaceId, issueKey }: Params): Result => {
     setIssue(null);
     setError(null);
     setIsLoading(true);
-    jiraGetIssue({ workspaceId, siteUrl, email, issueKey })
+    jiraGetIssue({ workspaceId, projectId, siteUrl, email, issueKey })
       .then((next) => {
         if (isCancelled) {
           return;
@@ -60,7 +61,7 @@ export const useJiraIssue = ({ workspaceId, issueKey }: Params): Result => {
     return () => {
       isCancelled = true;
     };
-  }, [workspaceId, siteUrl, email, issueKey, attempt]);
+  }, [workspaceId, projectId, siteUrl, email, issueKey, attempt]);
 
   return { issue, isLoading, error, refetch: () => setAttempt((count) => count + 1) };
 };

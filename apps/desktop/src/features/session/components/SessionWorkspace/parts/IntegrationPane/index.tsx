@@ -25,6 +25,7 @@ import { FocusedTaskBody } from './FocusedTaskBody';
 import { integrationTaskKey } from './integrationTaskKey';
 import { LinkTicketPopover } from './LinkTicketPopover';
 import { WorkItemList } from './WorkItemList';
+import { useSessionProjectScope } from '../../../../hooks/useSessionProjectScope';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -120,6 +121,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   );
   const githubConnection = useGithubConnection({ workspaceId });
   const sessionBranch = useSessionRepo({ sessionId })?.branch ?? null;
+  const projectScope = useSessionProjectScope({ sessionId });
   const branchPrs = useAppStore((state) => selectActiveProjectPrs({ state, sessionId }));
   const mergeRequest = useAppStore((state) => state.sessionGitlabMr[sessionId]?.mr ?? null);
   const tasks = useMemo(
@@ -222,6 +224,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
             sessionId={sessionId}
             workspaceId={workspaceId}
             task={focusedTask}
+            projectId={focusedTask.projectId ?? projectScope}
             isConnected={connection.isConnected}
           />
         </div>

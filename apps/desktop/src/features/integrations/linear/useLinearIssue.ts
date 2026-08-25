@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { linearFetchIssue, type LinearIssue } from './client';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
   readonly issueId: string;
+  readonly projectId?: ProjectId;
 };
 
 type Result = {
@@ -15,7 +16,7 @@ type Result = {
   readonly refetch: () => void;
 };
 
-export const useLinearIssue = ({ workspaceId, issueId }: Params): Result => {
+export const useLinearIssue = ({ workspaceId, issueId, projectId }: Params): Result => {
   const [issue, setIssue] = useState<LinearIssue | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +27,7 @@ export const useLinearIssue = ({ workspaceId, issueId }: Params): Result => {
     setIssue(null);
     setError(null);
     setIsLoading(true);
-    linearFetchIssue({ workspaceId, issueId })
+    linearFetchIssue({ workspaceId, issueId, projectId })
       .then((nextIssue) => {
         if (isCancelled) {
           return;
@@ -49,7 +50,7 @@ export const useLinearIssue = ({ workspaceId, issueId }: Params): Result => {
     return () => {
       isCancelled = true;
     };
-  }, [issueId, workspaceId, attempt]);
+  }, [issueId, workspaceId, projectId, attempt]);
 
   return { issue, isLoading, error, refetch: () => setAttempt((count) => count + 1) };
 };

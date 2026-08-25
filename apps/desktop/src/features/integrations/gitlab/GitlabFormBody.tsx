@@ -44,6 +44,7 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
     return (
       <IntegrationConnectedRow
         provider="gitlab"
+        credentialId={gitlab?.credentialId ?? null}
         primary={`Connected as ${config.userName}`}
         secondary={config.host}
         disconnectDescription="Unlinks this project from the GitLab personal API key. The key stays saved for your other projects."

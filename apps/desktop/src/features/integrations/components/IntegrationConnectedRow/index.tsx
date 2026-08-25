@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Chip, formatError, IconButton, InlineConfirm } from '@goodboy/ui';
-import { Unplug } from 'lucide-react';
+import { TriangleAlert, Unplug } from 'lucide-react';
+import type { IntegrationCredentialId } from '@goodboy/types';
+import { useCredentialSecret } from '../../useCredentialSecret';
 import {
   IntegrationGlyph,
   integrationLabel,
@@ -12,6 +14,7 @@ type Props = {
   readonly primary: string;
   readonly secondary?: string;
   readonly badge?: string;
+  readonly credentialId?: IntegrationCredentialId | null;
   readonly disconnectDescription: string;
   readonly onDisconnect: () => Promise<void>;
 };
@@ -21,10 +24,12 @@ export const IntegrationConnectedRow = ({
   primary,
   secondary,
   badge,
+  credentialId = null,
   disconnectDescription,
   onDisconnect,
 }: Props) => {
   const label = integrationLabel({ provider });
+  const secret = useCredentialSecret({ credentialId });
   const [isArmed, setIsArmed] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +79,15 @@ export const IntegrationConnectedRow = ({
           onConfirm={disconnect}
           onCancel={() => setIsArmed(false)}
         />
+      ) : null}
+      {secret === 'missing' ? (
+        <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-warning">
+          <TriangleAlert size={12} aria-hidden className="mt-0.5 shrink-0" />
+          <span>
+            The key is missing from this Mac's keychain, so every request with it fails. Disconnect
+            and connect again to paste a new one.
+          </span>
+        </p>
       ) : null}
       {error != null ? <p className="text-2xs leading-relaxed text-danger">{error}</p> : null}
     </div>
