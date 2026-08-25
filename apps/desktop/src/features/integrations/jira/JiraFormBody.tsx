@@ -37,6 +37,7 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
     return (
       <IntegrationConnectedRow
         provider="jira"
+        credentialId={jira?.credentialId ?? null}
         primary={`Connected as ${jira.config.displayName ?? jira.config.email}`}
         secondary={`${jira.config.siteUrl} (${jira.config.projectKey})`}
         disconnectDescription="Unlinks this project from the Jira personal API key. The key stays saved for your other projects."

@@ -261,8 +261,12 @@ async fn send_no_content(
     Ok(())
 }
 
-fn read_token(workspace_id: &str, cache: &JiraTokenCache) -> Result<String, JiraError> {
-    integration_credentials::read_for_binding(PROVIDER, workspace_id, None, &cache.0)?
+fn read_token(
+    workspace_id: &str,
+    project_id: Option<&str>,
+    cache: &JiraTokenCache,
+) -> Result<String, JiraError> {
+    integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, &cache.0)?
         .ok_or_else(|| JiraError::NoToken(workspace_id.to_string()))
 }
 
@@ -820,13 +824,14 @@ pub async fn jira_connect(
 #[tauri::command]
 pub async fn jira_list_issues(
     workspace_id: String,
+    project_id: Option<String>,
     site_url: String,
     email: String,
     project_key: String,
     assigned_only: bool,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<Vec<JiraIssue>, JiraError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -845,12 +850,13 @@ pub async fn jira_list_issues(
 #[tauri::command]
 pub async fn jira_get_issue(
     workspace_id: String,
+    project_id: Option<String>,
     site_url: String,
     email: String,
     issue_key: String,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<JiraIssue, JiraError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -870,12 +876,13 @@ pub async fn jira_get_issue(
 #[tauri::command]
 pub async fn jira_list_comments(
     workspace_id: String,
+    project_id: Option<String>,
     site_url: String,
     email: String,
     issue_key: String,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<Vec<JiraComment>, JiraError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -903,13 +910,14 @@ pub async fn jira_list_comments(
 #[tauri::command]
 pub async fn jira_create_comment(
     workspace_id: String,
+    project_id: Option<String>,
     site_url: String,
     email: String,
     issue_key: String,
     body: String,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<JiraComment, JiraError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -926,13 +934,14 @@ pub async fn jira_create_comment(
 #[tauri::command]
 pub async fn jira_update_issue(
     workspace_id: String,
+    project_id: Option<String>,
     site_url: String,
     email: String,
     issue_key: String,
     description: String,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<(), JiraError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -947,13 +956,14 @@ pub async fn jira_update_issue(
 #[tauri::command]
 pub async fn jira_set_assignee(
     workspace_id: String,
+    project_id: Option<String>,
     site_url: String,
     email: String,
     issue_key: String,
     account_id: Option<String>,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<(), JiraError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -968,13 +978,14 @@ pub async fn jira_set_assignee(
 #[tauri::command]
 pub async fn jira_list_assignable_users(
     workspace_id: String,
+    project_id: Option<String>,
     site_url: String,
     email: String,
     issue_key: String,
     query: Option<String>,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<Vec<JiraUser>, JiraError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -992,12 +1003,13 @@ pub async fn jira_list_assignable_users(
 #[tauri::command]
 pub async fn jira_list_transitions(
     workspace_id: String,
+    project_id: Option<String>,
     site_url: String,
     email: String,
     issue_key: String,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<Vec<JiraTransition>, JiraError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -1016,13 +1028,14 @@ pub async fn jira_list_transitions(
 #[tauri::command]
 pub async fn jira_transition_issue(
     workspace_id: String,
+    project_id: Option<String>,
     site_url: String,
     email: String,
     issue_key: String,
     transition_id: String,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<(), JiraError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {

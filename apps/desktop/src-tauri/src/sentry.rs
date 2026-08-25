@@ -173,10 +173,15 @@ fn token_from_secret(raw: &str) -> String {
         .unwrap_or_else(|_| raw.to_string())
 }
 
-fn read_config(workspace_id: &str, cache: &SentryTokenCache) -> Result<SentryConfig, SentryError> {
-    let raw = integration_credentials::read_for_binding(PROVIDER, workspace_id, None, &cache.0)?
-        .ok_or_else(|| SentryError::NoToken(workspace_id.to_string()))?;
-    let scope = integration_credentials::config_for_binding(PROVIDER, workspace_id, None)?
+fn read_config(
+    workspace_id: &str,
+    project_id: Option<&str>,
+    cache: &SentryTokenCache,
+) -> Result<SentryConfig, SentryError> {
+    let raw =
+        integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, &cache.0)?
+            .ok_or_else(|| SentryError::NoToken(workspace_id.to_string()))?;
+    let scope = integration_credentials::config_for_binding(PROVIDER, workspace_id, project_id)?
         .ok_or_else(|| SentryError::NoToken(workspace_id.to_string()))?;
     let scope: SentryScope = serde_json::from_str(&scope)?;
     Ok(SentryConfig {
@@ -336,11 +341,12 @@ pub async fn sentry_connect(
 #[tauri::command]
 pub async fn sentry_fetch_issues(
     workspace_id: String,
+    project_id: Option<String>,
     query: Option<String>,
     cursor: Option<String>,
     cache: State<'_, SentryTokenCache>,
 ) -> Result<SentryIssuesPage, SentryError> {
-    let cfg = read_config(&workspace_id, &cache)?;
+    let cfg = read_config(&workspace_id, project_id.as_deref(), &cache)?;
     let url = format!("{}/projects/{}/{}/issues/", BASE_URL, cfg.org, cfg.project);
     let mut params: Vec<(&str, String)> = vec![
         ("limit", PAGE_LIMIT.to_string()),
@@ -375,10 +381,11 @@ pub async fn sentry_fetch_issues(
 #[tauri::command]
 pub async fn sentry_fetch_issue(
     workspace_id: String,
+    project_id: Option<String>,
     issue_id: String,
     cache: State<'_, SentryTokenCache>,
 ) -> Result<SentryIssue, SentryError> {
-    let cfg = read_config(&workspace_id, &cache)?;
+    let cfg = read_config(&workspace_id, project_id.as_deref(), &cache)?;
     let url = format!("{}/issues/{}/", BASE_URL, issue_id);
     let res = http_client()
         .get(&url)
@@ -398,10 +405,11 @@ pub async fn sentry_fetch_issue(
 #[tauri::command]
 pub async fn sentry_fetch_issue_detail(
     workspace_id: String,
+    project_id: Option<String>,
     issue_id: String,
     cache: State<'_, SentryTokenCache>,
 ) -> Result<SentryIssueDetail, SentryError> {
-    let cfg = read_config(&workspace_id, &cache)?;
+    let cfg = read_config(&workspace_id, project_id.as_deref(), &cache)?;
     let url = format!("{}/issues/{}/events/latest/", BASE_URL, issue_id);
     let res = http_client()
         .get(&url)

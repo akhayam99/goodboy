@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
-import type { GitlabIntegrationBinding, WorkspaceId } from '@goodboy/types';
+import type { GitlabIntegrationBinding, ProjectId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { gitlabFetchIssue, type GitlabIssue } from './client';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
   readonly identifier: string;
+  readonly projectId?: ProjectId;
 };
 
 type Result = {
@@ -35,7 +36,7 @@ const parseIdentifier = (identifier: string): ParsedIdentifier | null => {
   return { projectPath, issueIid };
 };
 
-export const useGitlabIssue = ({ workspaceId, identifier }: Params): Result => {
+export const useGitlabIssue = ({ workspaceId, identifier, projectId }: Params): Result => {
   const host = useAppStore(
     useShallow((state) => {
       const integration = (state.workspaceIntegrations[workspaceId] ?? []).find(
@@ -62,7 +63,7 @@ export const useGitlabIssue = ({ workspaceId, identifier }: Params): Result => {
     setIssue(null);
     setError(null);
     setIsLoading(true);
-    gitlabFetchIssue(workspaceId, host, parsed.projectPath, parsed.issueIid)
+    gitlabFetchIssue(workspaceId, host, parsed.projectPath, parsed.issueIid, projectId)
       .then((nextIssue) => {
         if (isCancelled) {
           return;
@@ -85,7 +86,7 @@ export const useGitlabIssue = ({ workspaceId, identifier }: Params): Result => {
     return () => {
       isCancelled = true;
     };
-  }, [workspaceId, host, identifier, attempt]);
+  }, [workspaceId, host, identifier, projectId, attempt]);
 
   return { issue, isLoading, error, refetch: () => setAttempt((n) => n + 1) };
 };

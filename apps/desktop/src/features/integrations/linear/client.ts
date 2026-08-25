@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, ProjectId, WorkspaceId } from '@goodboy/types';
 
 export type LinearViewer = {
   id: string;
@@ -57,6 +57,7 @@ export type LinearIssueComment = {
 type Params = {
   readonly workspaceId: WorkspaceId;
   readonly issueId: string;
+  readonly projectId?: ProjectId;
 };
 
 export type LinearLinkedPr = {
@@ -114,22 +115,37 @@ export const linearConnect = async (
 export const linearFetchAssignedIssues = async (
   workspaceId: WorkspaceId,
   teamId?: string,
+  projectId?: ProjectId,
 ): Promise<LinearIssue[]> => {
   return invoke<LinearIssue[]>('linear_fetch_assigned_issues', {
     workspaceId,
     teamId: teamId ?? null,
+    ...(projectId != null ? { projectId } : {}),
   });
 };
 
-export const linearFetchIssue = async ({ workspaceId, issueId }: Params): Promise<LinearIssue> => {
-  return invoke<LinearIssue>('linear_fetch_issue', { workspaceId, issueId });
+export const linearFetchIssue = async ({
+  workspaceId,
+  issueId,
+  projectId,
+}: Params): Promise<LinearIssue> => {
+  return invoke<LinearIssue>('linear_fetch_issue', {
+    workspaceId,
+    issueId,
+    ...(projectId != null ? { projectId } : {}),
+  });
 };
 
 export const linearFetchIssueComments = async ({
   workspaceId,
   issueId,
+  projectId,
 }: Params): Promise<LinearIssueComment[]> => {
-  return invoke<LinearIssueComment[]>('linear_fetch_issue_comments', { workspaceId, issueId });
+  return invoke<LinearIssueComment[]>('linear_fetch_issue_comments', {
+    workspaceId,
+    issueId,
+    ...(projectId != null ? { projectId } : {}),
+  });
 };
 
 type CreateCommentParams = Params & {
@@ -140,8 +156,14 @@ export const linearCreateComment = async ({
   workspaceId,
   issueId,
   body,
+  projectId,
 }: CreateCommentParams): Promise<LinearIssueComment> => {
-  return invoke<LinearIssueComment>('linear_create_comment', { workspaceId, issueId, body });
+  return invoke<LinearIssueComment>('linear_create_comment', {
+    workspaceId,
+    issueId,
+    body,
+    ...(projectId != null ? { projectId } : {}),
+  });
 };
 
 type UpdateDescriptionParams = Params & {
@@ -152,6 +174,12 @@ export const linearUpdateIssueDescription = async ({
   workspaceId,
   issueId,
   description,
+  projectId,
 }: UpdateDescriptionParams): Promise<string> => {
-  return invoke<string>('linear_update_issue', { workspaceId, issueId, description });
+  return invoke<string>('linear_update_issue', {
+    workspaceId,
+    issueId,
+    description,
+    ...(projectId != null ? { projectId } : {}),
+  });
 };

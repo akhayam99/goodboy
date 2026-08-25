@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import type { GitlabIntegrationBinding, WorkspaceId } from '@goodboy/types';
+import type { GitlabIntegrationBinding, ProjectId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import {
   gitlabCreateIssueNote,
@@ -13,6 +13,7 @@ import { projectPathFromIssue } from '../issueProjectPath';
 type Params = {
   readonly issue: GitlabIssue | null;
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
 };
 
 type Result = {
@@ -23,7 +24,7 @@ type Result = {
   readonly post: ((body: string) => Promise<void>) | null;
 };
 
-export const useGitlabIssueNotes = ({ issue, workspaceId }: Params): Result => {
+export const useGitlabIssueNotes = ({ issue, workspaceId, projectId }: Params): Result => {
   const host = useAppStore((state) => {
     const integration = (state.workspaceIntegrations[workspaceId] ?? []).find(
       (candidate): candidate is GitlabIntegrationBinding => candidate.provider === 'gitlab',
@@ -48,7 +49,7 @@ export const useGitlabIssueNotes = ({ issue, workspaceId }: Params): Result => {
 
     let isCancelled = false;
     setIsLoading(true);
-    gitlabListIssueNotes({ workspaceId, host, projectPath, issueIid })
+    gitlabListIssueNotes({ workspaceId, host, projectPath, issueIid, projectId })
       .then((next) => {
         if (isCancelled) {
           return;
@@ -71,7 +72,7 @@ export const useGitlabIssueNotes = ({ issue, workspaceId }: Params): Result => {
     return () => {
       isCancelled = true;
     };
-  }, [workspaceId, host, projectPath, issueIid, reloadToken]);
+  }, [workspaceId, host, projectPath, issueIid, projectId, reloadToken]);
 
   const reload = useCallback(() => {
     setReloadToken((token) => token + 1);
@@ -82,10 +83,10 @@ export const useGitlabIssueNotes = ({ issue, workspaceId }: Params): Result => {
       if (host == null || projectPath == null || issueIid == null) {
         return;
       }
-      await gitlabCreateIssueNote({ workspaceId, host, projectPath, issueIid, body });
+      await gitlabCreateIssueNote({ workspaceId, host, projectPath, issueIid, body, projectId });
       setReloadToken((token) => token + 1);
     },
-    [workspaceId, host, projectPath, issueIid],
+    [workspaceId, host, projectPath, issueIid, projectId],
   );
 
   return {

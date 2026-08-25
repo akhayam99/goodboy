@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { GitlabIntegrationBinding, WorkspaceId } from '@goodboy/types';
+import type { GitlabIntegrationBinding, ProjectId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { gitlabUpdateIssueDescription, type GitlabIssue } from './client';
 import { projectPathFromIssue } from './issueProjectPath';
@@ -7,6 +7,7 @@ import { projectPathFromIssue } from './issueProjectPath';
 type Params = {
   readonly issue: GitlabIssue | null;
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
 };
 
 type Result = {
@@ -14,7 +15,7 @@ type Result = {
   readonly save: ((next: string) => Promise<void>) | null;
 };
 
-export const useGitlabIssueDescription = ({ issue, workspaceId }: Params): Result => {
+export const useGitlabIssueDescription = ({ issue, workspaceId, projectId }: Params): Result => {
   const host = useAppStore((state) => {
     const integration = (state.workspaceIntegrations[workspaceId] ?? []).find(
       (candidate): candidate is GitlabIntegrationBinding => candidate.provider === 'gitlab',
@@ -40,10 +41,11 @@ export const useGitlabIssueDescription = ({ issue, workspaceId }: Params): Resul
         projectPath,
         issueIid,
         description: next,
+        projectId,
       });
       setSaved(description);
     },
-    [workspaceId, host, projectPath, issueIid],
+    [workspaceId, host, projectPath, issueIid, projectId],
   );
 
   return {

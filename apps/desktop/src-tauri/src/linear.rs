@@ -102,8 +102,12 @@ async fn graphql<T: serde::de::DeserializeOwned>(
     serde_json::from_value(data).map_err(|e| LinearError::InvalidShape(e.to_string()))
 }
 
-fn read_token(workspace_id: &str, cache: &LinearTokenCache) -> Result<String, LinearError> {
-    integration_credentials::read_for_binding(PROVIDER, workspace_id, None, &cache.0)?
+fn read_token(
+    workspace_id: &str,
+    project_id: Option<&str>,
+    cache: &LinearTokenCache,
+) -> Result<String, LinearError> {
+    integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, &cache.0)?
         .ok_or_else(|| LinearError::NoToken(workspace_id.to_string()))
 }
 
@@ -344,10 +348,11 @@ pub async fn linear_connect(
 #[tauri::command]
 pub async fn linear_fetch_assigned_issues(
     workspace_id: String,
+    project_id: Option<String>,
     team_id: Option<String>,
     cache: State<'_, LinearTokenCache>,
 ) -> Result<Vec<LinearIssue>, LinearError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let mut filter = serde_json::json!({
         "assignee": { "isMe": { "eq": true } },
         "state": { "type": { "nin": ["completed", "canceled"] } }
@@ -367,10 +372,11 @@ pub async fn linear_fetch_assigned_issues(
 #[tauri::command]
 pub async fn linear_fetch_issue(
     workspace_id: String,
+    project_id: Option<String>,
     issue_id: String,
     cache: State<'_, LinearTokenCache>,
 ) -> Result<LinearIssue, LinearError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let resp: IssueResponse = graphql(
         &token,
         ISSUE_QUERY,
@@ -384,10 +390,11 @@ pub async fn linear_fetch_issue(
 #[tauri::command]
 pub async fn linear_fetch_issue_comments(
     workspace_id: String,
+    project_id: Option<String>,
     issue_id: String,
     cache: State<'_, LinearTokenCache>,
 ) -> Result<Vec<LinearIssueComment>, LinearError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let resp: IssueCommentsResponse = graphql(
         &token,
         ISSUE_COMMENTS_QUERY,
@@ -406,11 +413,12 @@ pub async fn linear_fetch_issue_comments(
 #[tauri::command]
 pub async fn linear_create_comment(
     workspace_id: String,
+    project_id: Option<String>,
     issue_id: String,
     body: String,
     cache: State<'_, LinearTokenCache>,
 ) -> Result<LinearIssueComment, LinearError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let resp: CommentCreateResponse = graphql(
         &token,
         COMMENT_CREATE_MUTATION,
@@ -431,11 +439,12 @@ pub async fn linear_create_comment(
 #[tauri::command]
 pub async fn linear_update_issue(
     workspace_id: String,
+    project_id: Option<String>,
     issue_id: String,
     description: String,
     cache: State<'_, LinearTokenCache>,
 ) -> Result<String, LinearError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let resp: IssueUpdateResponse = graphql(
         &token,
         ISSUE_UPDATE_MUTATION,

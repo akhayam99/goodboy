@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, ProjectId, WorkspaceId } from '@goodboy/types';
 
 export type SentryOrganization = {
   slug: string;
@@ -89,29 +89,42 @@ export const sentryFetchIssues = async (
   workspaceId: WorkspaceId,
   query?: string,
   cursor?: string,
+  projectId?: ProjectId,
 ): Promise<SentryIssuesPage> => {
   return invoke<SentryIssuesPage>('sentry_fetch_issues', {
     workspaceId,
     query: query ?? null,
     cursor: cursor ?? null,
+    ...(projectId != null ? { projectId } : {}),
   });
 };
 
 type FetchIssueParams = {
   readonly workspaceId: WorkspaceId;
   readonly issueId: string;
+  readonly projectId?: ProjectId;
 };
 
 export const sentryFetchIssue = async ({
   workspaceId,
   issueId,
+  projectId,
 }: FetchIssueParams): Promise<SentryIssue> => {
-  return invoke<SentryIssue>('sentry_fetch_issue', { workspaceId, issueId });
+  return invoke<SentryIssue>('sentry_fetch_issue', {
+    workspaceId,
+    issueId,
+    ...(projectId != null ? { projectId } : {}),
+  });
 };
 
 export const sentryFetchIssueDetail = async (
   workspaceId: WorkspaceId,
   issueId: string,
+  projectId?: ProjectId,
 ): Promise<SentryIssueDetail> => {
-  return invoke<SentryIssueDetail>('sentry_fetch_issue_detail', { workspaceId, issueId });
+  return invoke<SentryIssueDetail>('sentry_fetch_issue_detail', {
+    workspaceId,
+    issueId,
+    ...(projectId != null ? { projectId } : {}),
+  });
 };

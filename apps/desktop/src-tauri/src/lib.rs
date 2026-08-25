@@ -349,6 +349,7 @@ pub fn run() {
             github::gh_pr_diff,
             integration_credentials::integration_credentials_adopt,
             integration_credentials::integration_credential_forget,
+            integration_credentials::integration_credential_has_secret,
             linear::linear_validate_connection,
             linear::linear_connect,
             linear::linear_fetch_assigned_issues,

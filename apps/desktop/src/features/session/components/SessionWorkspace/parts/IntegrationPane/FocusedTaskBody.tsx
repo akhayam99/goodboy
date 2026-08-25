@@ -2,6 +2,7 @@ import type {
   SessionExternalTask,
   SessionExternalTaskProvider,
   SessionId,
+  ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
 import { StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
@@ -21,18 +22,26 @@ type Props = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
   readonly task: SessionExternalTask;
+  readonly projectId?: ProjectId;
   readonly isConnected: boolean;
 };
 
-export const FocusedTaskBody = ({ provider, sessionId, workspaceId, task, isConnected }: Props) => {
+export const FocusedTaskBody = ({
+  provider,
+  sessionId,
+  workspaceId,
+  task,
+  projectId,
+  isConnected,
+}: Props) => {
   const repo = useSessionRepo({ sessionId });
 
   if (isConnected && provider === 'linear') {
-    return <LinearTaskDetail workspaceId={workspaceId} task={task} />;
+    return <LinearTaskDetail workspaceId={workspaceId} projectId={projectId} task={task} />;
   }
 
   if (isConnected && provider === 'sentry') {
-    return <SentryTaskDetail workspaceId={workspaceId} task={task} />;
+    return <SentryTaskDetail workspaceId={workspaceId} projectId={projectId} task={task} />;
   }
 
   if (isConnected && provider === 'github') {
@@ -42,11 +51,11 @@ export const FocusedTaskBody = ({ provider, sessionId, workspaceId, task, isConn
   }
 
   if (isConnected && provider === 'gitlab') {
-    return <GitlabTaskDetail workspaceId={workspaceId} task={task} />;
+    return <GitlabTaskDetail workspaceId={workspaceId} projectId={projectId} task={task} />;
   }
 
   if (isConnected && provider === 'jira') {
-    return <JiraTaskDetail workspaceId={workspaceId} task={task} />;
+    return <JiraTaskDetail workspaceId={workspaceId} projectId={projectId} task={task} />;
   }
 
   if (isConnected && provider === 'slack') {

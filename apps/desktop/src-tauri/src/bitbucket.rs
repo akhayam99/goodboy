@@ -296,8 +296,12 @@ async fn send_no_content(
     Ok(())
 }
 
-fn read_token(workspace_id: &str, cache: &BitbucketTokenCache) -> Result<String, BitbucketError> {
-    integration_credentials::read_for_binding(PROVIDER, workspace_id, None, &cache.0)?
+fn read_token(
+    workspace_id: &str,
+    project_id: Option<&str>,
+    cache: &BitbucketTokenCache,
+) -> Result<String, BitbucketError> {
+    integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, &cache.0)?
         .ok_or_else(|| BitbucketError::NoToken(workspace_id.to_string()))
 }
 
@@ -908,13 +912,14 @@ pub async fn bitbucket_connect(
 #[tauri::command]
 pub async fn bitbucket_list_pull_requests(
     workspace_id: String,
+    project_id: Option<String>,
     workspace_slug: String,
     repo_slug: String,
     email: String,
     state: Option<String>,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<Vec<BitbucketPullRequest>, BitbucketError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -927,13 +932,14 @@ pub async fn bitbucket_list_pull_requests(
 #[tauri::command]
 pub async fn bitbucket_get_pull_request(
     workspace_id: String,
+    project_id: Option<String>,
     workspace_slug: String,
     repo_slug: String,
     email: String,
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketPullRequest, BitbucketError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -946,13 +952,14 @@ pub async fn bitbucket_get_pull_request(
 #[tauri::command]
 pub async fn bitbucket_pull_request_diff(
     workspace_id: String,
+    project_id: Option<String>,
     workspace_slug: String,
     repo_slug: String,
     email: String,
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<String, BitbucketError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -964,13 +971,14 @@ pub async fn bitbucket_pull_request_diff(
 #[tauri::command]
 pub async fn bitbucket_list_pull_request_comments(
     workspace_id: String,
+    project_id: Option<String>,
     workspace_slug: String,
     repo_slug: String,
     email: String,
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<Vec<BitbucketComment>, BitbucketError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -983,13 +991,14 @@ pub async fn bitbucket_list_pull_request_comments(
 #[tauri::command]
 pub async fn bitbucket_list_pull_request_statuses(
     workspace_id: String,
+    project_id: Option<String>,
     workspace_slug: String,
     repo_slug: String,
     email: String,
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<Vec<BitbucketStatus>, BitbucketError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1002,13 +1011,14 @@ pub async fn bitbucket_list_pull_request_statuses(
 #[tauri::command]
 pub async fn bitbucket_pull_request_for_branch(
     workspace_id: String,
+    project_id: Option<String>,
     workspace_slug: String,
     repo_slug: String,
     email: String,
     source_branch: String,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<Option<BitbucketPullRequest>, BitbucketError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1021,13 +1031,14 @@ pub async fn bitbucket_pull_request_for_branch(
 #[tauri::command]
 pub async fn bitbucket_approve_pull_request(
     workspace_id: String,
+    project_id: Option<String>,
     workspace_slug: String,
     repo_slug: String,
     email: String,
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketParticipant, BitbucketError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1041,13 +1052,14 @@ pub async fn bitbucket_approve_pull_request(
 #[tauri::command]
 pub async fn bitbucket_unapprove_pull_request(
     workspace_id: String,
+    project_id: Option<String>,
     workspace_slug: String,
     repo_slug: String,
     email: String,
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<(), BitbucketError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1059,13 +1071,14 @@ pub async fn bitbucket_unapprove_pull_request(
 #[tauri::command]
 pub async fn bitbucket_request_changes(
     workspace_id: String,
+    project_id: Option<String>,
     workspace_slug: String,
     repo_slug: String,
     email: String,
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketParticipant, BitbucketError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1079,13 +1092,14 @@ pub async fn bitbucket_request_changes(
 #[tauri::command]
 pub async fn bitbucket_unrequest_changes(
     workspace_id: String,
+    project_id: Option<String>,
     workspace_slug: String,
     repo_slug: String,
     email: String,
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<(), BitbucketError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1097,6 +1111,7 @@ pub async fn bitbucket_unrequest_changes(
 #[tauri::command]
 pub async fn bitbucket_merge_pull_request(
     workspace_id: String,
+    project_id: Option<String>,
     workspace_slug: String,
     repo_slug: String,
     email: String,
@@ -1105,7 +1120,7 @@ pub async fn bitbucket_merge_pull_request(
     message: Option<String>,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketPullRequest, BitbucketError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1126,13 +1141,14 @@ pub async fn bitbucket_merge_pull_request(
 #[tauri::command]
 pub async fn bitbucket_decline_pull_request(
     workspace_id: String,
+    project_id: Option<String>,
     workspace_slug: String,
     repo_slug: String,
     email: String,
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketPullRequest, BitbucketError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1146,6 +1162,7 @@ pub async fn bitbucket_decline_pull_request(
 #[tauri::command]
 pub async fn bitbucket_create_pull_request_comment(
     workspace_id: String,
+    project_id: Option<String>,
     workspace_slug: String,
     repo_slug: String,
     email: String,
@@ -1153,7 +1170,7 @@ pub async fn bitbucket_create_pull_request_comment(
     body: String,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketComment, BitbucketError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1173,6 +1190,7 @@ pub async fn bitbucket_create_pull_request_comment(
 #[tauri::command]
 pub async fn bitbucket_reply_to_pull_request_comment(
     workspace_id: String,
+    project_id: Option<String>,
     workspace_slug: String,
     repo_slug: String,
     email: String,
@@ -1181,7 +1199,7 @@ pub async fn bitbucket_reply_to_pull_request_comment(
     body: String,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketComment, BitbucketError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let credentials = Credentials {
         email: &email,
         token: &token,

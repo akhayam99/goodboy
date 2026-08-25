@@ -29,6 +29,7 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
     return (
       <IntegrationConnectedRow
         provider="slack"
+        credentialId={slack?.credentialId ?? null}
         primary={`Connected to ${slack.config.teamName}`}
         secondary={`as ${slack.config.botUserName ?? slack.config.botUserId}`}
         disconnectDescription="Unlinks this project from the Slack token. The token stays saved for your other projects."

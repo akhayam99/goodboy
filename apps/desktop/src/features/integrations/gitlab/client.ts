@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
+import type { IntegrationCredentialId, ProjectId, WorkspaceId } from '@goodboy/types';
 
 export type GitlabUser = {
   id: number;
@@ -39,8 +39,13 @@ export const gitlabConnect = async (
 export const gitlabFetchAssignedIssues = async (
   workspaceId: WorkspaceId,
   host: string,
+  projectId?: ProjectId,
 ): Promise<GitlabIssue[]> => {
-  return invoke<GitlabIssue[]>('gitlab_fetch_assigned_issues', { workspaceId, host });
+  return invoke<GitlabIssue[]>('gitlab_fetch_assigned_issues', {
+    workspaceId,
+    host,
+    ...(projectId != null ? { projectId } : {}),
+  });
 };
 
 export const gitlabFetchIssue = async (
@@ -48,9 +53,11 @@ export const gitlabFetchIssue = async (
   host: string,
   projectPath: string,
   issueIid: number,
+  projectId?: ProjectId,
 ): Promise<GitlabIssue> => {
   return invoke<GitlabIssue>('gitlab_fetch_issue', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     issueIid,
@@ -59,6 +66,7 @@ export const gitlabFetchIssue = async (
 
 type UpdateDescriptionParams = {
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
   readonly host: string;
   readonly projectPath: string;
   readonly issueIid: number;
@@ -67,6 +75,7 @@ type UpdateDescriptionParams = {
 
 export const gitlabUpdateIssueDescription = async ({
   workspaceId,
+  projectId,
   host,
   projectPath,
   issueIid,
@@ -74,6 +83,7 @@ export const gitlabUpdateIssueDescription = async ({
 }: UpdateDescriptionParams): Promise<string> => {
   return invoke<string>('gitlab_update_issue', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     issueIid,
@@ -119,17 +129,24 @@ export type GitlabMergeRequest = {
 export const gitlabFetchAssignedMrs = async (
   workspaceId: WorkspaceId,
   host: string,
+  projectId?: ProjectId,
 ): Promise<GitlabMergeRequest[]> => {
-  return invoke<GitlabMergeRequest[]>('gitlab_fetch_assigned_mrs', { workspaceId, host });
+  return invoke<GitlabMergeRequest[]>('gitlab_fetch_assigned_mrs', {
+    workspaceId,
+    host,
+    ...(projectId != null ? { projectId } : {}),
+  });
 };
 
 export const gitlabFetchProjectMrs = async (
   workspaceId: WorkspaceId,
   host: string,
   projectPath: string,
+  projectId?: ProjectId,
 ): Promise<GitlabMergeRequest[]> => {
   return invoke<GitlabMergeRequest[]>('gitlab_fetch_project_mrs', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
   });
@@ -159,9 +176,11 @@ export const gitlabMrForBranch = async (
   host: string,
   projectPath: string,
   sourceBranch: string,
+  projectId?: ProjectId,
 ): Promise<GitlabMergeRequest | null> => {
   return invoke<GitlabMergeRequest | null>('gitlab_mr_for_branch', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     sourceBranch,
@@ -170,6 +189,7 @@ export const gitlabMrForBranch = async (
 
 export const gitlabCreateMr = async (args: {
   workspaceId: WorkspaceId;
+  projectId?: ProjectId;
   host: string;
   projectPath: string;
   sourceBranch: string;
@@ -178,7 +198,11 @@ export const gitlabCreateMr = async (args: {
   description: string;
   draft: boolean;
 }): Promise<GitlabMergeRequest> => {
-  return invoke<GitlabMergeRequest>('gitlab_create_mr', args);
+  const { projectId, ...payload } = args;
+  return invoke<GitlabMergeRequest>('gitlab_create_mr', {
+    ...payload,
+    ...(projectId != null ? { projectId } : {}),
+  });
 };
 
 export const gitlabMrDiff = async (
@@ -186,9 +210,11 @@ export const gitlabMrDiff = async (
   host: string,
   projectPath: string,
   mrIid: number,
+  projectId?: ProjectId,
 ): Promise<string> => {
   return invoke<string>('gitlab_mr_diff', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     mrIid,
@@ -206,9 +232,11 @@ export const gitlabMrDiffRefs = async (
   host: string,
   projectPath: string,
   mrIid: number,
+  projectId?: ProjectId,
 ): Promise<GitlabDiffRefs> => {
   return invoke<GitlabDiffRefs>('gitlab_mr_diff_refs', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     mrIid,
@@ -232,9 +260,11 @@ export const gitlabCreateMrDiscussion = async (
   mrIid: number,
   body: string,
   position: GitlabDiscussionPosition,
+  projectId?: ProjectId,
 ): Promise<string> => {
   return invoke<string>('gitlab_create_mr_discussion', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     mrIid,
@@ -249,9 +279,11 @@ export const gitlabCreateMrNote = async (
   projectPath: string,
   mrIid: number,
   body: string,
+  projectId?: ProjectId,
 ): Promise<number> => {
   return invoke<number>('gitlab_create_mr_note', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     mrIid,
@@ -297,6 +329,7 @@ export type GitlabMrApprovalState = {
 
 type MrTarget = {
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
   readonly host: string;
   readonly projectPath: string;
   readonly mrIid: number;
@@ -304,12 +337,14 @@ type MrTarget = {
 
 export const gitlabListMrDiscussions = async ({
   workspaceId,
+  projectId,
   host,
   projectPath,
   mrIid,
 }: MrTarget): Promise<ReadonlyArray<GitlabMrDiscussion>> => {
   return invoke<ReadonlyArray<GitlabMrDiscussion>>('gitlab_list_mr_discussions', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     mrIid,
@@ -323,6 +358,7 @@ type ReplyParams = MrTarget & {
 
 export const gitlabReplyToMrDiscussion = async ({
   workspaceId,
+  projectId,
   host,
   projectPath,
   mrIid,
@@ -331,6 +367,7 @@ export const gitlabReplyToMrDiscussion = async ({
 }: ReplyParams): Promise<number> => {
   return invoke<number>('gitlab_reply_to_mr_discussion', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     mrIid,
@@ -346,6 +383,7 @@ type ResolveDiscussionParams = MrTarget & {
 
 export const gitlabResolveMrDiscussion = async ({
   workspaceId,
+  projectId,
   host,
   projectPath,
   mrIid,
@@ -354,6 +392,7 @@ export const gitlabResolveMrDiscussion = async ({
 }: ResolveDiscussionParams): Promise<GitlabMrDiscussion> => {
   return invoke<GitlabMrDiscussion>('gitlab_resolve_mr_discussion', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     mrIid,
@@ -372,6 +411,7 @@ export type GitlabIssueNote = {
 
 type IssueTarget = {
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
   readonly host: string;
   readonly projectPath: string;
   readonly issueIid: number;
@@ -379,12 +419,14 @@ type IssueTarget = {
 
 export const gitlabListIssueNotes = async ({
   workspaceId,
+  projectId,
   host,
   projectPath,
   issueIid,
 }: IssueTarget): Promise<ReadonlyArray<GitlabIssueNote>> => {
   return invoke<ReadonlyArray<GitlabIssueNote>>('gitlab_list_issue_notes', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     issueIid,
@@ -397,6 +439,7 @@ type CreateIssueNoteParams = IssueTarget & {
 
 export const gitlabCreateIssueNote = async ({
   workspaceId,
+  projectId,
   host,
   projectPath,
   issueIid,
@@ -404,6 +447,7 @@ export const gitlabCreateIssueNote = async ({
 }: CreateIssueNoteParams): Promise<number> => {
   return invoke<number>('gitlab_create_issue_note', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     issueIid,
@@ -413,12 +457,14 @@ export const gitlabCreateIssueNote = async ({
 
 export const gitlabMrApprovalState = async ({
   workspaceId,
+  projectId,
   host,
   projectPath,
   mrIid,
 }: MrTarget): Promise<GitlabMrApprovalState | null> => {
   return invoke<GitlabMrApprovalState | null>('gitlab_mr_approval_state', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     mrIid,
@@ -427,12 +473,14 @@ export const gitlabMrApprovalState = async ({
 
 export const gitlabApproveMr = async ({
   workspaceId,
+  projectId,
   host,
   projectPath,
   mrIid,
 }: MrTarget): Promise<GitlabMrApprovalState | null> => {
   return invoke<GitlabMrApprovalState | null>('gitlab_approve_mr', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     mrIid,
@@ -441,12 +489,14 @@ export const gitlabApproveMr = async ({
 
 export const gitlabUnapproveMr = async ({
   workspaceId,
+  projectId,
   host,
   projectPath,
   mrIid,
 }: MrTarget): Promise<GitlabMrApprovalState | null> => {
   return invoke<GitlabMrApprovalState | null>('gitlab_unapprove_mr', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     mrIid,
@@ -462,6 +512,7 @@ type UpdateMrStateParams = MrTarget & {
 
 export const gitlabUpdateMrState = async ({
   workspaceId,
+  projectId,
   host,
   projectPath,
   mrIid,
@@ -470,6 +521,7 @@ export const gitlabUpdateMrState = async ({
 }: UpdateMrStateParams): Promise<GitlabMergeRequest> => {
   return invoke<GitlabMergeRequest>('gitlab_update_mr_state', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     mrIid,
@@ -483,9 +535,11 @@ export const gitlabMergeMr = async (
   host: string,
   projectPath: string,
   mrIid: number,
+  projectId?: ProjectId,
 ): Promise<GitlabMergeRequest> => {
   return invoke<GitlabMergeRequest>('gitlab_merge_mr', {
     workspaceId,
+    ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     mrIid,

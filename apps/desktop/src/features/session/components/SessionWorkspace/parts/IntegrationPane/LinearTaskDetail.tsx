@@ -1,6 +1,6 @@
 import { StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
 import { Skeleton } from '@goodboy/ui';
-import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
+import type { ProjectId, SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { ErrorStrip } from '@goodboy/ui';
 import { HeaderBand } from '@goodboy/ui';
 import { LinearIssueDetail } from '../../../../../integrations/linear/LinearIssueDetail';
@@ -8,17 +8,21 @@ import { useLinearIssue } from '../../../../../integrations/linear/useLinearIssu
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
   readonly task: SessionExternalTask;
 };
 
-export const LinearTaskDetail = ({ workspaceId, task }: Props) => {
+export const LinearTaskDetail = ({ workspaceId, projectId, task }: Props) => {
   const { issue, isLoading, error, refetch } = useLinearIssue({
     workspaceId,
     issueId: task.externalId,
+    projectId,
   });
 
   if (issue != null) {
-    return <LinearIssueDetail issue={issue} workspaceId={workspaceId} fit="fill" />;
+    return (
+      <LinearIssueDetail issue={issue} workspaceId={workspaceId} projectId={projectId} fit="fill" />
+    );
   }
 
   return (

@@ -18,8 +18,11 @@ pub enum IntegrationCredentialError {
     MissingWorkspace,
     #[error("a credential id is required")]
     MissingCredential,
-    #[error("no {0} credential is stored under that id")]
-    NoCredential(String),
+    #[error("the {provider} key for this connection is missing from the keychain, paste it again to reconnect")]
+    MissingSecret {
+        provider: String,
+        credential_id: String,
+    },
     #[error("credential store error: {0}")]
     Store(String),
     #[error("secret store error: {0}")]
@@ -34,7 +37,7 @@ impl IntegrationCredentialError {
             IntegrationCredentialError::UnknownProvider(_) => "unknown_provider",
             IntegrationCredentialError::MissingWorkspace => "missing_workspace",
             IntegrationCredentialError::MissingCredential => "missing_credential",
-            IntegrationCredentialError::NoCredential(_) => "no_credential",
+            IntegrationCredentialError::MissingSecret { .. } => "missing_secret",
             IntegrationCredentialError::Store(_) => "store",
             IntegrationCredentialError::Secret(_) => "secret",
         }
@@ -127,17 +130,26 @@ fn global_credential_id(
     conn: &Connection,
     provider: &str,
 ) -> Result<Option<String>, IntegrationCredentialError> {
-    conn.query_row(
-        "SELECT c.id FROM integration_credentials c
-         WHERE c.provider = ?1
-           AND NOT EXISTS (SELECT 1 FROM integration_bindings b WHERE b.credential_id = c.id)
-         ORDER BY c.updated_at DESC, c.id ASC
-         LIMIT 1",
-        rusqlite::params![provider],
-        |row| row.get(0),
-    )
-    .optional()
-    .map_err(store_err)
+    Ok(global_credential_ids(conn, provider)?.into_iter().next())
+}
+
+/// Every credential no binding references, newest first.
+fn global_credential_ids(
+    conn: &Connection,
+    provider: &str,
+) -> Result<Vec<String>, IntegrationCredentialError> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT c.id FROM integration_credentials c
+             WHERE c.provider = ?1
+               AND NOT EXISTS (SELECT 1 FROM integration_bindings b WHERE b.credential_id = c.id)
+             ORDER BY c.updated_at DESC, c.id ASC",
+        )
+        .map_err(store_err)?;
+    let rows = stmt
+        .query_map(rusqlite::params![provider], |row| row.get(0))
+        .map_err(store_err)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(store_err)
 }
 
 fn config_for_binding_in(
@@ -212,8 +224,12 @@ fn read_for_credential(
     if let Some(hit) = cached(cache, credential_id) {
         return Ok(hit);
     }
-    let secret = secrets::read(&secret_key(credential_id))?
-        .ok_or_else(|| IntegrationCredentialError::NoCredential(provider.to_string()))?;
+    let secret = secrets::read(&secret_key(credential_id))?.ok_or_else(|| {
+        IntegrationCredentialError::MissingSecret {
+            provider: provider.to_string(),
+            credential_id: credential_id.to_string(),
+        }
+    })?;
     remember(cache, credential_id, &secret);
     Ok(secret)
 }
@@ -237,15 +253,54 @@ pub(crate) fn read_for_binding(
         return Err(IntegrationCredentialError::MissingWorkspace);
     }
     let conn = open_db()?;
-    let bound = credential_id_for_binding(&conn, provider, workspace_id, project_id)?;
-    let credential_id = match bound {
-        Some(id) => Some(id),
-        None => global_credential_id(&conn, provider)?,
-    };
-    let Some(credential_id) = credential_id else {
-        return Ok(None);
-    };
-    read_for_credential(provider, &credential_id, cache).map(Some)
+    resolve_and_read(
+        &conn,
+        provider,
+        workspace_id,
+        project_id,
+        |credential_id| match cached(cache, credential_id) {
+            Some(hit) => Ok(Some(hit)),
+            None => {
+                let found = secrets::read(&secret_key(credential_id))?;
+                if let Some(secret) = found.as_deref() {
+                    remember(cache, credential_id, secret);
+                }
+                Ok(found)
+            }
+        },
+    )
+}
+
+/// A bound credential is the scope's declared account, so a missing secret is
+/// an error rather than a reason to reach for another one. Only the unbound
+/// tier, where no scope declared anything, may skip a credential it cannot read.
+fn resolve_and_read<F>(
+    conn: &Connection,
+    provider: &str,
+    workspace_id: &str,
+    project_id: Option<&str>,
+    mut read_secret: F,
+) -> Result<Option<String>, IntegrationCredentialError>
+where
+    F: FnMut(&str) -> Result<Option<String>, secrets::SecretError>,
+{
+    if let Some(credential_id) =
+        credential_id_for_binding(conn, provider, workspace_id, project_id)?
+    {
+        return match read_secret(&credential_id)? {
+            Some(secret) => Ok(Some(secret)),
+            None => Err(IntegrationCredentialError::MissingSecret {
+                provider: provider.to_string(),
+                credential_id,
+            }),
+        };
+    }
+    for credential_id in global_credential_ids(conn, provider)? {
+        if let Some(secret) = read_secret(&credential_id)? {
+            return Ok(Some(secret));
+        }
+    }
+    Ok(None)
 }
 
 /// The provider-wide fallback alone, for callers that hold no workspace.
@@ -546,7 +601,55 @@ pub fn integration_credentials_adopt() -> Result<usize, IntegrationCredentialErr
     let legacy = adopt_with(&bindings, secrets::read, secrets::set, secrets::clear)?;
     let conn = open_db()?;
     let github = adopt_github_with(&conn, secrets::read, secrets::set, secrets::clear)?;
+    sweep_orphan_credentials(&conn, secrets::read)?;
     Ok(legacy + github)
+}
+
+/// A credential no binding claims and no keychain entry backs can never resolve
+/// to anything, and it would shadow a healthy one in the unbound tier. Only the
+/// row goes: a credential a scope still names stays, broken and visible.
+fn sweep_orphan_credentials<R>(
+    conn: &Connection,
+    mut read_secret: R,
+) -> Result<usize, IntegrationCredentialError>
+where
+    R: FnMut(&str) -> Result<Option<String>, secrets::SecretError>,
+{
+    let mut stmt = conn
+        .prepare(
+            "SELECT c.id FROM integration_credentials c
+             WHERE NOT EXISTS (SELECT 1 FROM integration_bindings b WHERE b.credential_id = c.id)",
+        )
+        .map_err(store_err)?;
+    let rows = stmt
+        .query_map([], |row| row.get::<_, String>(0))
+        .map_err(store_err)?;
+    let unbound = rows.collect::<Result<Vec<_>, _>>().map_err(store_err)?;
+    let mut swept = 0;
+    for credential_id in unbound {
+        if read_secret(&secret_key(&credential_id))?.is_some() {
+            continue;
+        }
+        conn.execute(
+            "DELETE FROM integration_credentials WHERE id = ?1",
+            rusqlite::params![credential_id],
+        )
+        .map_err(store_err)?;
+        swept += 1;
+    }
+    Ok(swept)
+}
+
+/// Whether the keychain still holds the secret a credential claims to own.
+/// A binding whose credential answers false is connected on paper only.
+#[tauri::command]
+pub fn integration_credential_has_secret(
+    credential_id: String,
+) -> Result<bool, IntegrationCredentialError> {
+    if credential_id.is_empty() {
+        return Err(IntegrationCredentialError::MissingCredential);
+    }
+    Ok(secrets::read(&secret_key(&credential_id))?.is_some())
 }
 
 /// Removes the secret itself. The row is deleted first on the database side,
@@ -671,6 +774,121 @@ mod tests {
         assert_eq!(with_override.as_deref(), Some("cred-proj"));
         assert_eq!(without.as_deref(), Some("cred-ws"));
         assert_eq!(other_project.as_deref(), Some("cred-ws"));
+    }
+
+    #[test]
+    fn a_project_override_is_read_even_when_the_workspace_key_is_gone() {
+        let conn = test_conn();
+        seed_credential(&conn, "cred-dead", "linear");
+        seed_credential(&conn, "cred-live", "linear");
+        seed_binding(&conn, "b-ws", "container-1", None, "linear", "cred-dead");
+        seed_binding(
+            &conn,
+            "b-proj",
+            "container-1",
+            Some("app-web"),
+            "linear",
+            "cred-live",
+        );
+        let read = |id: &str| match id {
+            "cred-live" => Ok(Some("live-token".to_string())),
+            _ => Ok(None),
+        };
+
+        let scoped = resolve_and_read(&conn, "linear", "container-1", Some("app-web"), read)
+            .expect("resolves");
+        let unscoped = resolve_and_read(&conn, "linear", "container-1", None, read);
+
+        assert_eq!(scoped.as_deref(), Some("live-token"));
+        assert!(matches!(
+            unscoped,
+            Err(IntegrationCredentialError::MissingSecret { ref credential_id, .. })
+                if credential_id == "cred-dead"
+        ));
+    }
+
+    #[test]
+    fn a_bound_credential_without_a_key_never_borrows_another_account() {
+        let conn = test_conn();
+        seed_credential(&conn, "cred-bound", "linear");
+        seed_credential(&conn, "cred-free", "linear");
+        seed_binding(&conn, "b-ws", "container-1", None, "linear", "cred-bound");
+        let read = |id: &str| match id {
+            "cred-free" => Ok(Some("someone-elses-token".to_string())),
+            _ => Ok(None),
+        };
+
+        let resolved = resolve_and_read(&conn, "linear", "container-1", None, read);
+
+        assert!(matches!(
+            resolved,
+            Err(IntegrationCredentialError::MissingSecret { .. })
+        ));
+    }
+
+    #[test]
+    fn the_unbound_tier_skips_a_credential_it_cannot_read() {
+        let conn = test_conn();
+        seed_credential(&conn, "cred-newer", "linear");
+        seed_credential(&conn, "cred-older", "linear");
+        conn.execute(
+            "UPDATE integration_credentials SET updated_at = 2 WHERE id = 'cred-newer'",
+            [],
+        )
+        .expect("touch");
+        let read = |id: &str| match id {
+            "cred-older" => Ok(Some("older-token".to_string())),
+            _ => Ok(None),
+        };
+
+        let resolved =
+            resolve_and_read(&conn, "linear", "container-1", None, read).expect("resolves");
+
+        assert_eq!(resolved.as_deref(), Some("older-token"));
+    }
+
+    #[test]
+    fn a_scope_with_no_binding_and_no_credential_resolves_to_nothing() {
+        let conn = test_conn();
+
+        let resolved =
+            resolve_and_read(&conn, "linear", "container-1", None, |_| Ok(None)).expect("resolves");
+
+        assert_eq!(resolved, None);
+    }
+
+    #[test]
+    fn the_sweep_drops_only_credentials_nothing_claims_and_nothing_backs() {
+        let conn = test_conn();
+        seed_credential(&conn, "cred-bound-dead", "linear");
+        seed_credential(&conn, "cred-free-dead", "linear");
+        seed_credential(&conn, "cred-free-live", "linear");
+        seed_binding(
+            &conn,
+            "b-ws",
+            "container-1",
+            None,
+            "linear",
+            "cred-bound-dead",
+        );
+        let read = |key: &str| match key {
+            "goodboy.credential.cred-free-live" => Ok(Some("live".to_string())),
+            _ => Ok(None),
+        };
+
+        let swept = sweep_orphan_credentials(&conn, read).expect("sweeps");
+        let again = sweep_orphan_credentials(&conn, read).expect("sweeps");
+        let left = conn
+            .prepare("SELECT id FROM integration_credentials ORDER BY id")
+            .expect("prepare")
+            .query_map([], |row| row.get::<_, String>(0))
+            .expect("query")
+            .collect::<Result<Vec<_>, _>>()
+            .expect("rows");
+
+        assert_eq!(swept, 1);
+        assert_eq!(again, 0);
+        assert_eq!(left, vec!["cred-bound-dead", "cred-free-live"]);
     }
 
     #[test]

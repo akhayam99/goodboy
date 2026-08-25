@@ -1,6 +1,6 @@
 import { StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
 import { Skeleton } from '@goodboy/ui';
-import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
+import type { ProjectId, SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { ErrorStrip } from '@goodboy/ui';
 import { HeaderBand } from '@goodboy/ui';
 import { JiraIssueDetail } from '../../../../../integrations/jira/JiraIssueDetail';
@@ -8,17 +8,21 @@ import { useJiraIssue } from '../../../../../integrations/jira/useJiraIssue';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
   readonly task: SessionExternalTask;
 };
 
-export const JiraTaskDetail = ({ workspaceId, task }: Props) => {
+export const JiraTaskDetail = ({ workspaceId, projectId, task }: Props) => {
   const { issue, isLoading, error, refetch } = useJiraIssue({
     workspaceId,
     issueKey: task.identifier,
+    projectId,
   });
 
   if (issue != null) {
-    return <JiraIssueDetail issue={issue} workspaceId={workspaceId} fit="fill" />;
+    return (
+      <JiraIssueDetail issue={issue} workspaceId={workspaceId} projectId={projectId} fit="fill" />
+    );
   }
 
   return (
