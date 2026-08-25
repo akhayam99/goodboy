@@ -225,7 +225,10 @@ mod tests {
         let argv = owned(&["linear", "issue", "ENG-1", "--project", "app"]);
 
         assert_eq!(project_scope(&args, &argv), "app");
-        assert_eq!(project_scope(&args, &owned(&["linear", "issue", "ENG-1"])), "");
+        assert_eq!(
+            project_scope(&args, &owned(&["linear", "issue", "ENG-1"])),
+            ""
+        );
     }
 
     #[test]

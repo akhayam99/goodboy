@@ -4,7 +4,7 @@ use tauri::State;
 use crate::db::{Db, DbError};
 
 // ---------------------------------------------------------------------------
-// Schema version — bump on breaking change
+// Schema version - bump on breaking change
 // ---------------------------------------------------------------------------
 
 const SCHEMA_VERSION: u32 = 2;
@@ -340,7 +340,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
         templates
     };
 
-    // permission rules — global + workspace scope only (no session-scoped rules; sessions are ephemeral)
+    // permission rules - global + workspace scope only (no session-scoped rules; sessions are ephemeral)
     let permission_rules = {
         let mut stmt = conn.prepare(
             "SELECT id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
@@ -386,7 +386,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
         rows.collect::<Result<Vec<_>, _>>()?
     };
 
-    // settings — only well-known keys (no api keys, no credentials)
+    // settings - only well-known keys (no api keys, no credentials)
     let settings = {
         fn get_setting(conn: &rusqlite::Connection, key: &str) -> Option<String> {
             conn.query_row(
@@ -526,7 +526,7 @@ pub fn import_config(
     let result = (|| -> Result<ImportStats, rusqlite::Error> {
         let now_ms = crate::util::now_ms();
 
-        // Workspaces — upsert (preserve existing data, add missing).
+        // Workspaces - upsert (preserve existing data, add missing).
         for w in &bundle.workspaces {
             let parallel_val: Option<i64> =
                 w.overrides.parallel_enabled.map(|v| if v { 1 } else { 0 });
@@ -576,7 +576,7 @@ pub fn import_config(
             }
         }
 
-        // Skills — upsert.
+        // Skills - upsert.
         for s in &bundle.skills {
             conn.execute(
                 "INSERT INTO skills
@@ -598,7 +598,7 @@ pub fn import_config(
             )?;
         }
 
-        // Phase templates + definitions — upsert.
+        // Phase templates + definitions - upsert.
         for t in &bundle.phase_templates {
             conn.execute(
                 "INSERT INTO workflows (id, workspace_id, name, description, created_at, updated_at)
@@ -632,7 +632,7 @@ pub fn import_config(
             }
         }
 
-        // Permission rules — upsert (global + workspace only).
+        // Permission rules - upsert (global + workspace only).
         for r in &bundle.permission_rules {
             conn.execute(
                 "INSERT INTO permission_rules
@@ -662,7 +662,7 @@ pub fn import_config(
             )?;
         }
 
-        // Budget rules — upsert.
+        // Budget rules - upsert.
         for b in &bundle.budget_rules {
             conn.execute(
                 "INSERT INTO budget_rules (id, provider, period, cap_usd, alert_threshold_pct, created_at)
@@ -683,7 +683,7 @@ pub fn import_config(
             )?;
         }
 
-        // Settings — upsert only non-null values.
+        // Settings - upsert only non-null values.
         let setting_pairs: &[(&str, Option<&str>)] = &[
             ("editor.binary", bundle.settings.editor_binary.as_deref()),
             (
@@ -802,10 +802,9 @@ fn workspace_projects(workspace: &WorkspaceBundle) -> Vec<ProjectBundle> {
 }
 
 fn normalized_kind(kind: &str) -> String {
-    if kind == "folder" {
-        "folder".to_string()
-    } else {
-        "repo".to_string()
+    match kind {
+        "folder" => "folder".to_string(),
+        _ => "repo".to_string(),
     }
 }
 

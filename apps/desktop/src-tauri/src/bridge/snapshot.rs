@@ -169,7 +169,7 @@ pub fn build() -> Result<Snapshot, BridgeError> {
          FROM workspaces w \
          LEFT JOIN projects p ON p.id = ( \
            SELECT id FROM projects WHERE workspace_id = w.id \
-           ORDER BY created_at ASC, id ASC LIMIT 1 \
+           ORDER BY disconnected_at IS NULL DESC, created_at ASC, id ASC LIMIT 1 \
          ) \
          WHERE w.deleted_at IS NULL",
     )?;

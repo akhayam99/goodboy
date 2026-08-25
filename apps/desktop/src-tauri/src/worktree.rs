@@ -2279,7 +2279,10 @@ mod rewrite_tests {
         );
         let exclude =
             std::fs::read_to_string(root.join(".git").join("info").join("exclude")).unwrap();
-        assert_eq!(exclude.lines().filter(|line| *line == ".goodboy/").count(), 1);
+        assert_eq!(
+            exclude.lines().filter(|line| *line == ".goodboy/").count(),
+            1
+        );
         let status = git_ok(&root, &["status", "--porcelain"]);
         assert!(!status.contains(".goodboy"), "{status}");
         assert!(!root.join(".gitignore").exists());
@@ -2297,7 +2300,10 @@ mod rewrite_tests {
         assert!(reused.reused);
         let exclude_path = root.join(".git").join("info").join("exclude");
         let exclude = std::fs::read_to_string(&exclude_path).unwrap();
-        assert_eq!(exclude.lines().filter(|line| *line == ".goodboy/").count(), 1);
+        assert_eq!(
+            exclude.lines().filter(|line| *line == ".goodboy/").count(),
+            1
+        );
 
         worktree_remove(
             root.to_string_lossy().into_owned(),
@@ -2328,7 +2334,10 @@ mod rewrite_tests {
         assert!(!root.join(".goodboy").exists());
         let exclude_path = root.join(".git").join("info").join("exclude");
         let exclude = std::fs::read_to_string(&exclude_path).unwrap();
-        assert_eq!(exclude.lines().filter(|line| *line == ".goodboy/").count(), 0);
+        assert_eq!(
+            exclude.lines().filter(|line| *line == ".goodboy/").count(),
+            0
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -2350,7 +2359,10 @@ mod rewrite_tests {
         assert!(Path::new(&survivor.worktree_path).is_dir());
         let exclude_path = root.join(".git").join("info").join("exclude");
         let exclude = std::fs::read_to_string(&exclude_path).unwrap();
-        assert_eq!(exclude.lines().filter(|line| *line == ".goodboy/").count(), 1);
+        assert_eq!(
+            exclude.lines().filter(|line| *line == ".goodboy/").count(),
+            1
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 }

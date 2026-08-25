@@ -286,7 +286,12 @@ mod tests {
         assert_eq!(created.slug, "study-plan");
         assert!(!created.reused);
         assert!(Path::new(&created.worktree_path).is_dir());
-        let marker = std::fs::read(Path::new(&created.worktree_path).join(".goodboy").join("session.json")).unwrap();
+        let marker = std::fs::read(
+            Path::new(&created.worktree_path)
+                .join(".goodboy")
+                .join("session.json"),
+        )
+        .unwrap();
         let marker = serde_json::from_slice::<SessionMarker>(&marker).unwrap();
         assert_eq!(marker.session_id, "session-1");
         assert_eq!(marker.workspace_id, "workspace-1");
@@ -294,8 +299,12 @@ mod tests {
         let first_created_at = marker.created_at.clone();
         let reused = session_dir_create(args()).unwrap();
         assert!(reused.reused);
-        let marker_after_reuse =
-            std::fs::read(Path::new(&created.worktree_path).join(".goodboy").join("session.json")).unwrap();
+        let marker_after_reuse = std::fs::read(
+            Path::new(&created.worktree_path)
+                .join(".goodboy")
+                .join("session.json"),
+        )
+        .unwrap();
         let marker_after_reuse =
             serde_json::from_slice::<SessionMarker>(&marker_after_reuse).unwrap();
         assert_eq!(marker_after_reuse.created_at, first_created_at);
@@ -354,7 +363,10 @@ mod tests {
             base_path: root.to_string_lossy().into_owned(),
             path: root.to_string_lossy().into_owned(),
         });
-        assert!(matches!(base_itself, Err(SessionDirError::OutsideWorkspace)));
+        assert!(matches!(
+            base_itself,
+            Err(SessionDirError::OutsideWorkspace)
+        ));
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -464,5 +476,4 @@ mod tests {
             Err(SessionDirError::InvalidDirectoryName)
         ));
     }
-
 }

@@ -199,10 +199,7 @@ mod tests {
 
     #[test]
     fn a_blank_reason_is_refused_before_anything_runs() {
-        let refused = request(&[
-            ("name", Value::from("app")),
-            ("reason", Value::from("   ")),
-        ]);
+        let refused = request(&[("name", Value::from("app")), ("reason", Value::from("   "))]);
 
         assert!(text_arg(&refused, "reason")
             .expect_err("blank reason")
