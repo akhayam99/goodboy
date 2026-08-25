@@ -62,7 +62,7 @@ export const OverviewResolve = ({ session, onSelectLens }: Props) => {
       >
         <CONCEPT_ICONS.resolve size={13} aria-hidden className="shrink-0 text-muted-foreground" />
         <span className="min-w-0 flex-1 truncate text-sm text-foreground">{label}</span>
-        {meta ? <Chip tone="accent" size="3xs" bordered={false} label={meta} /> : null}
+        {meta !== null ? <Chip tone="accent" size="3xs" bordered={false} label={meta} /> : null}
       </button>
     </section>
   );
