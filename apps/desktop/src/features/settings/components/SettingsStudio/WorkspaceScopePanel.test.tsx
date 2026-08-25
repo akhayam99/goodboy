@@ -35,10 +35,6 @@ vi.mock('../../../../features/skills/components/SkillsPanel', () => ({
   SkillsPanel: () => null,
 }));
 
-vi.mock('./WorkspaceMergeSection', () => ({
-  WorkspaceMergeSection: () => null,
-}));
-
 vi.mock('../../../../features/session/components/VerbositySelect', () => ({
   VerbositySelect: () => null,
 }));
