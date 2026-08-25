@@ -441,8 +441,12 @@ async fn fetch_paged<T: serde::de::DeserializeOwned>(
     Ok(collected)
 }
 
-fn read_token(workspace_id: &str, cache: &SlackTokenCache) -> Result<String, SlackError> {
-    integration_credentials::read_for_binding(PROVIDER, workspace_id, None, &cache.0)?
+fn read_token(
+    workspace_id: &str,
+    project_id: Option<&str>,
+    cache: &SlackTokenCache,
+) -> Result<String, SlackError> {
+    integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, &cache.0)?
         .ok_or_else(|| SlackError::NoToken(workspace_id.to_string()))
 }
 
@@ -869,74 +873,81 @@ pub async fn slack_connect(
 #[tauri::command]
 pub async fn slack_list_channels(
     workspace_id: String,
+    project_id: Option<String>,
     cache: State<'_, SlackTokenCache>,
 ) -> Result<Vec<SlackChannel>, SlackError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     list_channels(API_BASE, &token).await
 }
 
 #[tauri::command]
 pub async fn slack_list_thread_heads(
     workspace_id: String,
+    project_id: Option<String>,
     channel_id: String,
     cache: State<'_, SlackTokenCache>,
 ) -> Result<Vec<SlackMessage>, SlackError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     list_thread_heads(API_BASE, &token, &channel_id).await
 }
 
 #[tauri::command]
 pub async fn slack_get_thread(
     workspace_id: String,
+    project_id: Option<String>,
     channel_id: String,
     thread_ts: String,
     cache: State<'_, SlackTokenCache>,
 ) -> Result<Vec<SlackMessage>, SlackError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     get_thread(API_BASE, &token, &channel_id, &thread_ts).await
 }
 
 #[tauri::command]
 pub async fn slack_get_permalink(
     workspace_id: String,
+    project_id: Option<String>,
     channel_id: String,
     message_ts: String,
     cache: State<'_, SlackTokenCache>,
 ) -> Result<String, SlackError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     get_permalink(API_BASE, &token, &channel_id, &message_ts).await
 }
 
 #[tauri::command]
 pub async fn slack_list_users(
     workspace_id: String,
+    project_id: Option<String>,
     cache: State<'_, SlackTokenCache>,
 ) -> Result<Vec<SlackUser>, SlackError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     list_users(API_BASE, &token).await
 }
 
 #[tauri::command]
 pub async fn slack_post_reply(
     workspace_id: String,
+    project_id: Option<String>,
     channel_id: String,
     thread_ts: String,
     text: String,
     cache: State<'_, SlackTokenCache>,
 ) -> Result<SlackMessage, SlackError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     post_reply(API_BASE, &token, &channel_id, &thread_ts, &text).await
 }
 
 #[tauri::command]
 pub async fn slack_add_reaction(
     workspace_id: String,
+    project_id: Option<String>,
     channel_id: String,
     message_ts: String,
     name: String,
     cache: State<'_, SlackTokenCache>,
 ) -> Result<(), SlackError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     add_reaction(API_BASE, &token, &channel_id, &message_ts, &name).await
 }
 

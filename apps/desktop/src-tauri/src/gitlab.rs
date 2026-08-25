@@ -226,8 +226,12 @@ fn encode_project_path(project_path: &str) -> String {
     percent_encode(project_path.trim().trim_matches('/'))
 }
 
-fn read_token(workspace_id: &str, cache: &GitlabTokenCache) -> Result<String, GitlabError> {
-    integration_credentials::read_for_binding(PROVIDER, workspace_id, None, &cache.0)?
+fn read_token(
+    workspace_id: &str,
+    project_id: Option<&str>,
+    cache: &GitlabTokenCache,
+) -> Result<String, GitlabError> {
+    integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, &cache.0)?
         .ok_or_else(|| GitlabError::NoToken(workspace_id.to_string()))
 }
 
@@ -293,10 +297,11 @@ pub async fn gitlab_connect(
 #[tauri::command]
 pub async fn gitlab_fetch_assigned_issues(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Vec<GitlabIssue>, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     get_json(
         &host,
         &token,
@@ -308,12 +313,13 @@ pub async fn gitlab_fetch_assigned_issues(
 #[tauri::command]
 pub async fn gitlab_fetch_issue(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     issue_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabIssue, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     get_json(
         &host,
         &token,
@@ -329,13 +335,14 @@ pub async fn gitlab_fetch_issue(
 #[tauri::command]
 pub async fn gitlab_update_issue(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     issue_iid: i64,
     description: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<String, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     let body = serde_json::json!({ "description": description });
     let issue: GitlabIssue = send_json(
@@ -389,10 +396,11 @@ pub struct GitlabMergeRequest {
 #[tauri::command]
 pub async fn gitlab_fetch_assigned_mrs(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Vec<GitlabMergeRequest>, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     get_json(
         &host,
         &token,
@@ -404,11 +412,12 @@ pub async fn gitlab_fetch_assigned_mrs(
 #[tauri::command]
 pub async fn gitlab_fetch_project_mrs(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Vec<GitlabMergeRequest>, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     get_json(
         &host,
@@ -421,12 +430,13 @@ pub async fn gitlab_fetch_project_mrs(
 #[tauri::command]
 pub async fn gitlab_mr_for_branch(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     source_branch: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Option<GitlabMergeRequest>, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     let branch = percent_encode(&source_branch);
     let path = format!(
@@ -439,6 +449,7 @@ pub async fn gitlab_mr_for_branch(
 #[tauri::command]
 pub async fn gitlab_create_mr(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     source_branch: String,
@@ -448,7 +459,7 @@ pub async fn gitlab_create_mr(
     draft: bool,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabMergeRequest, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     let mr_title = if draft {
         format!("Draft: {title}")
@@ -518,12 +529,13 @@ fn assemble_mr_diff(changes: &[GitlabMrChange]) -> String {
 #[tauri::command]
 pub async fn gitlab_mr_diff(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<String, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     let payload: GitlabMrChanges = get_json(
         &host,
@@ -553,12 +565,13 @@ pub struct GitlabMrRefsPayload {
 #[tauri::command]
 pub async fn gitlab_mr_diff_refs(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabDiffRefs, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     let payload: GitlabMrRefsPayload = get_json(
         &host,
@@ -614,6 +627,7 @@ pub struct GitlabDiscussion {
 #[tauri::command]
 pub async fn gitlab_create_mr_discussion(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     mr_iid: i64,
@@ -621,7 +635,7 @@ pub async fn gitlab_create_mr_discussion(
     position: GitlabDiscussionPosition,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<String, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     let payload = discussion_payload(&body, &position);
     let discussion: GitlabDiscussion = send_json(
@@ -643,13 +657,14 @@ pub struct GitlabNote {
 #[tauri::command]
 pub async fn gitlab_create_mr_note(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     mr_iid: i64,
     body: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<i64, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     let note: GitlabNote = send_json(
         reqwest::Method::POST,
@@ -705,12 +720,13 @@ pub struct GitlabMrDiscussion {
 #[tauri::command]
 pub async fn gitlab_list_mr_discussions(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Vec<GitlabMrDiscussion>, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     get_json_paged(
         &host,
@@ -723,6 +739,7 @@ pub async fn gitlab_list_mr_discussions(
 #[tauri::command]
 pub async fn gitlab_reply_to_mr_discussion(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     mr_iid: i64,
@@ -730,7 +747,7 @@ pub async fn gitlab_reply_to_mr_discussion(
     body: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<i64, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     let discussion = percent_encode(&discussion_id);
     let note: GitlabNote = send_json(
@@ -760,6 +777,7 @@ fn mr_discussion_resolve_path(
 #[tauri::command]
 pub async fn gitlab_resolve_mr_discussion(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     mr_iid: i64,
@@ -767,7 +785,7 @@ pub async fn gitlab_resolve_mr_discussion(
     resolved: bool,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabMrDiscussion, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     send_json(
         reqwest::Method::PUT,
         &host,
@@ -794,12 +812,13 @@ pub struct GitlabIssueNote {
 #[tauri::command]
 pub async fn gitlab_list_issue_notes(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     issue_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Vec<GitlabIssueNote>, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     get_json_paged(
         &host,
@@ -812,13 +831,14 @@ pub async fn gitlab_list_issue_notes(
 #[tauri::command]
 pub async fn gitlab_create_issue_note(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     issue_iid: i64,
     body: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<i64, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     let note: GitlabNote = send_json(
         reqwest::Method::POST,
@@ -867,12 +887,13 @@ async fn read_approval_state(
 #[tauri::command]
 pub async fn gitlab_mr_approval_state(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Option<GitlabMrApprovalState>, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     read_approval_state(&host, &token, &encoded, mr_iid).await
 }
@@ -880,12 +901,13 @@ pub async fn gitlab_mr_approval_state(
 #[tauri::command]
 pub async fn gitlab_approve_mr(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Option<GitlabMrApprovalState>, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     send_no_content(
         reqwest::Method::POST,
@@ -901,12 +923,13 @@ pub async fn gitlab_approve_mr(
 #[tauri::command]
 pub async fn gitlab_unapprove_mr(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Option<GitlabMrApprovalState>, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     send_no_content(
         reqwest::Method::POST,
@@ -933,6 +956,7 @@ fn mr_update_payload(state_event: Option<&str>, title: Option<&str>) -> serde_js
 #[tauri::command]
 pub async fn gitlab_update_mr_state(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     mr_iid: i64,
@@ -940,7 +964,7 @@ pub async fn gitlab_update_mr_state(
     title: Option<String>,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabMergeRequest, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     let payload = mr_update_payload(state_event.as_deref(), title.as_deref());
     if payload.as_object().map(|map| map.is_empty()) == Some(true) {
@@ -961,12 +985,13 @@ pub async fn gitlab_update_mr_state(
 #[tauri::command]
 pub async fn gitlab_merge_mr(
     workspace_id: String,
+    project_id: Option<String>,
     host: String,
     project_path: String,
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabMergeRequest, GitlabError> {
-    let token = read_token(&workspace_id, &cache)?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
     send_json(
         reqwest::Method::PUT,

@@ -293,42 +293,43 @@ fn parse_version(stdout: &str) -> Option<String> {
         .and_then(|rest| rest.split_whitespace().next().map(|s| s.to_string()))
 }
 
-fn read_token_from<F>(
+fn read_token_with<F, G>(
     workspace_id: Option<&str>,
     project_id: Option<&str>,
-    mut resolve: F,
+    mut read_binding: F,
+    mut read_global: G,
 ) -> Option<String>
 where
-    F: FnMut(Option<&str>) -> Option<String>,
+    F: FnMut(&str, Option<&str>) -> Option<String>,
+    G: FnMut() -> Option<String>,
 {
-    let mut scopes: Vec<&str> = Vec::new();
-    for id in [workspace_id, project_id]
-        .into_iter()
-        .flatten()
-        .filter(|id| !id.is_empty())
-    {
-        if !scopes.contains(&id) {
-            scopes.push(id);
-        }
+    if let Some(workspace_id) = workspace_id.filter(|id| !id.is_empty()) {
+        return read_binding(workspace_id, project_id.filter(|id| !id.is_empty()));
     }
-    for scope in scopes {
-        if let Some(token) = resolve(Some(scope)) {
-            return Some(token);
-        }
-    }
-    resolve(None)
+    read_global()
 }
 
 pub(crate) fn read_token(workspace_id: Option<&str>, project_id: Option<&str>) -> Option<String> {
     let cache = integration_credentials::SecretCache::default();
-    read_token_from(workspace_id, project_id, |scope| match scope {
-        Some(id) => integration_credentials::read_for_binding(GITHUB_PROVIDER, id, None, &cache)
+    read_token_with(
+        workspace_id,
+        project_id,
+        |workspace_id, project_id| {
+            integration_credentials::read_for_binding(
+                GITHUB_PROVIDER,
+                workspace_id,
+                project_id,
+                &cache,
+            )
             .ok()
-            .flatten(),
-        None => integration_credentials::read_global(GITHUB_PROVIDER, &cache)
-            .ok()
-            .flatten(),
-    })
+            .flatten()
+        },
+        || {
+            integration_credentials::read_global(GITHUB_PROVIDER, &cache)
+                .ok()
+                .flatten()
+        },
+    )
 }
 
 pub(crate) fn token_for_workspace(workspace_id: Option<&str>) -> Option<String> {
@@ -495,7 +496,7 @@ pub async fn gh_pr_diff(
 #[cfg(test)]
 mod tests {
     use super::{
-        command_succeeds, read_token_from, run_binary, run_with_timeout, token_failure_message,
+        command_succeeds, read_token_with, run_binary, run_with_timeout, token_failure_message,
         validate_token_with, GhRunResult, GithubError, BAD_CREDENTIALS_MESSAGE,
         CERTIFICATE_MESSAGE, EMPTY_TOKEN_MESSAGE, EXPIRED_MESSAGE, GH_PROBE_TIMEOUT, GH_TIMEOUT,
         MISSING_SCOPE_MESSAGE, NETWORK_MESSAGE, RATE_LIMIT_MESSAGE, UNVERIFIED_MESSAGE,
@@ -826,76 +827,30 @@ mod tests {
     }
 
     #[test]
-    fn token_fallback_prefers_workspace_then_member_then_global() {
-        let mut reads: Vec<Option<String>> = Vec::new();
-        let token = read_token_from(Some("composite"), Some("member"), |scope| {
-            reads.push(scope.map(str::to_string));
-            (scope == Some("member")).then(|| "member-token".to_string())
-        });
-
-        assert_eq!(token.as_deref(), Some("member-token"));
-        assert_eq!(
-            reads,
-            vec![Some("composite".to_string()), Some("member".to_string())]
+    fn a_project_override_beats_the_workspace_binding() {
+        let token = read_token_with(
+            Some("workspace-1"),
+            Some("project-1"),
+            |workspace_id, project_id| {
+                assert_eq!(workspace_id, "workspace-1");
+                assert_eq!(project_id, Some("project-1"));
+                Some("project-token".to_string())
+            },
+            || panic!("a scoped read must not use the global credential"),
         );
 
-        let mut global_reads: Vec<Option<String>> = Vec::new();
-        let global = read_token_from(Some("composite"), Some("member"), |scope| {
-            global_reads.push(scope.map(str::to_string));
-            scope.is_none().then(|| "global-token".to_string())
-        });
-
-        assert_eq!(global.as_deref(), Some("global-token"));
-        assert_eq!(
-            global_reads,
-            vec![
-                Some("composite".to_string()),
-                Some("member".to_string()),
-                None,
-            ]
-        );
+        assert_eq!(token.as_deref(), Some("project-token"));
     }
 
     #[test]
-    fn clearing_one_workspace_binding_leaves_the_global_credential_serving_it() {
-        let mut reads: Vec<Option<String>> = Vec::new();
-        let token = read_token_from(Some("composite"), None, |scope| {
-            reads.push(scope.map(str::to_string));
-            scope.is_none().then(|| "global-token".to_string())
-        });
+    fn no_workspace_id_degrades_to_the_global_credential() {
+        let token = read_token_with(
+            None,
+            Some("project-1"),
+            |_, _| panic!("a project cannot resolve without a workspace"),
+            || Some("global-token".to_string()),
+        );
 
         assert_eq!(token.as_deref(), Some("global-token"));
-        assert_eq!(reads, vec![Some("composite".to_string()), None]);
-    }
-
-    #[test]
-    fn explicit_workspace_token_wins_before_member() {
-        let mut reads: Vec<Option<String>> = Vec::new();
-        let token = read_token_from(Some("composite"), Some("member"), |scope| {
-            reads.push(scope.map(str::to_string));
-            (scope == Some("composite")).then(|| "workspace-token".to_string())
-        });
-
-        assert_eq!(token.as_deref(), Some("workspace-token"));
-        assert_eq!(reads, vec![Some("composite".to_string())]);
-    }
-
-    #[test]
-    fn a_blank_or_repeated_scope_never_reaches_the_resolver() {
-        let mut reads: Vec<Option<String>> = Vec::new();
-        let token = read_token_from(Some(""), Some("member"), |scope| {
-            reads.push(scope.map(str::to_string));
-            None
-        });
-
-        assert_eq!(token, None);
-        assert_eq!(reads, vec![Some("member".to_string()), None]);
-
-        let mut dedup_reads: Vec<Option<String>> = Vec::new();
-        read_token_from(Some("same"), Some("same"), |scope| {
-            dedup_reads.push(scope.map(str::to_string));
-            None
-        });
-        assert_eq!(dedup_reads, vec![Some("same".to_string()), None]);
     }
 }
