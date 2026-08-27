@@ -391,17 +391,24 @@ export const discardWorkflowInSession = async (
   discardedAt: IsoDateTime,
 ): Promise<void> => {
   const updatedAt = Date.parse(discardedAt);
-  await db.execute('UPDATE session_workflows SET discarded_at = ? WHERE workflow_run_id = ?', [
-    updatedAt,
-    workflowRunId,
-  ]);
-  await db.execute(
-    `UPDATE session_plans
-     SET status = 'superseded', updated_at = ?
-     WHERE workflow_run_id = ? AND status = 'active'`,
-    [updatedAt, workflowRunId],
-  );
-  await bumpSessionUpdatedAt(db, sessionId, discardedAt);
+  await db.exec('BEGIN');
+  try {
+    await db.execute('UPDATE session_workflows SET discarded_at = ? WHERE workflow_run_id = ?', [
+      updatedAt,
+      workflowRunId,
+    ]);
+    await db.execute(
+      `UPDATE session_plans
+       SET status = 'superseded', updated_at = ?
+       WHERE workflow_run_id = ? AND status = 'active'`,
+      [updatedAt, workflowRunId],
+    );
+    await bumpSessionUpdatedAt(db, sessionId, discardedAt);
+    await db.exec('COMMIT');
+  } catch (err) {
+    await db.exec('ROLLBACK');
+    throw err;
+  }
 };
 
 export const restoreWorkflowInSession = async (
@@ -410,16 +417,23 @@ export const restoreWorkflowInSession = async (
   workflowRunId: WorkflowRunId,
   restoredAt: IsoDateTime,
 ): Promise<void> => {
-  await db.execute('UPDATE session_workflows SET discarded_at = NULL WHERE workflow_run_id = ?', [
-    workflowRunId,
-  ]);
-  await db.execute(
-    `UPDATE session_plans
-     SET status = 'active', updated_at = ?
-     WHERE workflow_run_id = ? AND status = 'superseded'`,
-    [Date.parse(restoredAt), workflowRunId],
-  );
-  await bumpSessionUpdatedAt(db, sessionId, restoredAt);
+  await db.exec('BEGIN');
+  try {
+    await db.execute('UPDATE session_workflows SET discarded_at = NULL WHERE workflow_run_id = ?', [
+      workflowRunId,
+    ]);
+    await db.execute(
+      `UPDATE session_plans
+       SET status = 'active', updated_at = ?
+       WHERE workflow_run_id = ? AND status = 'superseded'`,
+      [Date.parse(restoredAt), workflowRunId],
+    );
+    await bumpSessionUpdatedAt(db, sessionId, restoredAt);
+    await db.exec('COMMIT');
+  } catch (err) {
+    await db.exec('ROLLBACK');
+    throw err;
+  }
 };
 
 export const updateSessionWorkflowStep = async (
