@@ -7,6 +7,60 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.1
+
+The first week on the new shape. Scripts, integration keys and plans now
+follow the project they belong to, and the parts of the app that were still
+reading the old one are fixed.
+
+### [#1542, #1537] A script belongs to a project
+
+A script now names the project it belongs to and runs in that project's
+worktree for the session you are in, so a session that mounts several
+repositories runs each script where it was written to run. When that project
+is not mounted in the session the run is refused with the reason on the
+button, rather than running somewhere else.
+
+In a workspace with more than one project the list groups by project, chips
+filter it to one, and the editor picks the project for a new script. With a
+single project the panel looks exactly as it did.
+
+### [#1538] Integration keys resolve per project
+
+A session working in a project that has its own Linear, Sentry, GitLab, Jira
+or Bitbucket connection now uses that connection, and falls back to the
+workspace one otherwise. GitHub follows the same order.
+
+A connection whose key has gone missing from the keychain says so in
+settings instead of reporting itself as connected, which is what an upgraded
+workspace looked like when a key did not come across.
+
+### [#1536] The overview shows the review work waiting
+
+The session overview carries a Resolve section: the unresolved review
+comments on the session's pull request, the resolvers still open, or the
+resolutions waiting to be pushed, whichever applies. Clicking it opens
+resolve. With nothing waiting the section is not there.
+
+### [#1534] Group workspaces is gone from settings
+
+Settings no longer offers to merge whole workspaces into each other. Adding
+a project whose folder lives in another workspace still offers to move it
+across, which is the same job one project at a time.
+
+### Fixes
+
+- Scripts run again. Every script failed to start after the upgrade to
+  v0.2.0 [#1535]
+- Exporting and importing your configuration works again, and an exported
+  file now carries the projects of each workspace; a file from an older
+  version still imports [#1535]
+- The mobile companion builds its snapshot again [#1535]
+- The branch name on the overview updates after an agent renames the branch,
+  without a reload [#1540]
+- A plan whose workflow run was discarded no longer sits in the overview as
+  if it were still the plan of the session [#1541]
+
 ## Goodboy v0.2.0
 
 Goodboy changes shape: the workspace is now the place where a whole context
