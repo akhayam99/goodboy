@@ -399,7 +399,7 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   };
 }
 
-const buildProject = (): Project => ({
+const buildProject = (overrides: Partial<Project> = {}): Project => ({
   id: PROJECT_ID,
   workspaceId: WS_ID,
   name: 'repo',
@@ -408,6 +408,7 @@ const buildProject = (): Project => ({
   overrides: buildWorkspace().overrides,
   createdAt: NOW,
   updatedAt: NOW,
+  ...overrides,
 });
 
 function buildSession(overrides: Partial<Session> = {}): Session {
@@ -485,7 +486,7 @@ describe('store contract', () => {
       const snap = store.getState();
       resetState = {
         workspaces: [],
-        projects: [buildProject()],
+        projects: [buildProject(), buildProject({ id: PROJECT_ID_2, name: 'web' })],
         workspaceIntegrations: {},
         sessionExternalTasks: {},
         currentWorkspaceId: null,
@@ -611,6 +612,20 @@ describe('store contract', () => {
           script: expect.objectContaining({ projectId: PROJECT_ID_2 }),
         }),
       );
+    });
+
+    it('saveScript refuses a project that belongs to another workspace', async () => {
+      const store = await getStore();
+      store.setState({
+        projects: [buildProject(), buildProject({ id: PROJECT_ID_2, workspaceId: 'ws-other' })],
+      } as never);
+
+      await expect(
+        store
+          .getState()
+          .saveScript({ workspaceId: WS_ID, projectId: PROJECT_ID_2, name: 'x', body: 'echo' }),
+      ).rejects.toThrow(/does not belong/);
+      expect(upsertProjectScriptSpy).not.toHaveBeenCalled();
     });
 
     it('saveScript reassigns an existing script to the given project', async () => {

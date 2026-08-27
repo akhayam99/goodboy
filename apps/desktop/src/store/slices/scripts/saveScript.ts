@@ -19,6 +19,10 @@ type Params = {
 
 export const saveScript = (get: GetFn) => {
   return async ({ workspaceId, projectId, id, name, body }: Params) => {
+    const project = get().projects.find((candidate) => candidate.id === projectId);
+    if (project === undefined || project.workspaceId !== workspaceId) {
+      throw new Error(`project ${projectId} does not belong to workspace ${workspaceId}`);
+    }
     const now = new Date().toISOString() as IsoDateTime;
     const existing =
       id !== undefined
