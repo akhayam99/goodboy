@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Session, SessionId } from '@goodboy/types';
-import { useAppStore, useFilesTouched } from '../../../../store';
+import { useAppStore, useSessionLastTurnFinishedAt } from '../../../../store';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { worktreeStatus } from '../../../worktree/worktree';
 import { useIsBranchlessSession } from '../useIsBranchlessSession';
@@ -17,7 +17,7 @@ export const useSessionBranchSync = ({ session, isActive }: Params): void => {
   const sessionRepo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const projectWorktreePath = sessionRepo?.worktreePath ?? null;
   const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch);
-  const filesTouched = useFilesTouched(sessionId, isActive && !isBranchless);
+  const lastTurnFinishedAt = useSessionLastTurnFinishedAt(sessionId);
 
   useEffect(() => {
     if (!isActive || projectWorktreePath == null || isBranchless) return;
@@ -33,9 +33,9 @@ export const useSessionBranchSync = ({ session, isActive }: Params): void => {
       cancelled = true;
     };
   }, [
-    filesTouched.count,
     isActive,
     isBranchless,
+    lastTurnFinishedAt,
     projectWorktreePath,
     reconcileSessionBranch,
     sessionId,
