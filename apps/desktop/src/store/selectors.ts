@@ -588,7 +588,7 @@ export type FilesTouched = {
 
 const EMPTY_FILES_TOUCHED: FilesTouched = { paths: [], count: 0, additions: 0, deletions: 0 };
 
-const useSessionLastTurnFinishedAt = (sessionId: SessionId | null): string | null =>
+export const useSessionLastTurnFinishedAt = (sessionId: SessionId | null): string | null =>
   useAppStore((s) => {
     if (sessionId == null) {
       return null;

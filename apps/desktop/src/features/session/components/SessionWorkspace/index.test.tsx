@@ -121,6 +121,7 @@ vi.mock('../../../../store', () => ({
     return records[collection]?.[sessionId] !== undefined;
   },
   useFilesTouched: () => ({ paths: [], count: 0, additions: 0, deletions: 0 }),
+  useSessionLastTurnFinishedAt: () => null,
   useSessionPlans: () => [],
   useSessionOpenQuestions: () => hooks.openQuestions,
   useDiffComments: () => [],

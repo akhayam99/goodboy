@@ -7,6 +7,7 @@ export {
   useCurrentWorkspace,
   useDiffComments,
   useFilesTouched,
+  useSessionLastTurnFinishedAt,
   useMountDiffStats,
   useSessionAnsweredQuestions,
   useSessionById,
