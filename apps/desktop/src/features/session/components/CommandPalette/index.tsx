@@ -114,9 +114,6 @@ export const CommandPalette = ({
   ) as ReadonlyArray<Agent>;
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const runScript = useAppStore((s) => s.runScript);
-  const sessionWorktree = useAppStore((s) =>
-    currentSession ? (s.sessionWorktrees[currentSession.id]?.[0] ?? null) : null,
-  );
   const { showToast } = useToast();
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
@@ -198,14 +195,14 @@ export const CommandPalette = ({
       out.push({
         id: `script:${sc.id}`,
         label: sc.name,
-        sublabel: 'workspace script',
+        sublabel: 'project script',
         group: 'script',
         onSelect: () => {
-          if (!currentSession || !sessionWorktree) {
-            showToast('warning', `${sc.name}, open a session worktree to run scripts`);
+          if (currentSession == null) {
+            showToast('warning', `${sc.name}, open a session to run scripts`);
             return;
           }
-          void runScript(currentSession.id, sc.id, sessionWorktree).then((result) => {
+          void runScript({ sessionId: currentSession.id, scriptId: sc.id }).then((result) => {
             showToast(
               result.exitCode === 0 ? 'success' : 'error',
               result.exitCode === 0 ? `${sc.name}, done` : `${sc.name}, exited ${result.exitCode}`,
@@ -285,7 +282,6 @@ export const CommandPalette = ({
     agents,
     scripts,
     currentSession,
-    sessionWorktree,
     runScript,
     showToast,
     agentKindOverride,

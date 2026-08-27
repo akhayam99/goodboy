@@ -12,13 +12,12 @@ import {
   Terminal,
   X,
 } from 'lucide-react';
-import { useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { ScriptRunRecord, ScriptRunResult, ScriptRunStatus } from '../../scripts';
 
 type ScriptsSectionProps = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
-  readonly worktreePath: string | null;
   readonly forceExpanded?: boolean;
   readonly hideHeader?: boolean;
 };
@@ -31,7 +30,6 @@ type LogTarget = {
 export const ScriptsSection = ({
   sessionId,
   workspaceId,
-  worktreePath,
   forceExpanded = false,
   hideHeader = false,
 }: ScriptsSectionProps) => {
@@ -40,6 +38,8 @@ export const ScriptsSection = ({
   const setPanelSectionExpanded = useAppStore((s) => s.setPanelSectionExpanded);
   const [log, setLog] = useState<LogTarget | null>(null);
   const scripts = useAppStore((s) => s.projectScripts[workspaceId]);
+  const allProjects = useAppStore((s) => s.projects);
+  const mounts = useAppStore((s) => s.sessionProjectMounts[sessionId] ?? EMPTY_ARRAY);
   const runs = useAppStore((s) => s.scriptRuns[sessionId]);
   const loadScripts = useAppStore((s) => s.loadScripts);
   const runScript = useAppStore((s) => s.runScript);
@@ -52,12 +52,9 @@ export const ScriptsSection = ({
 
   const onRun = useCallback(
     (script: ProjectScript) => {
-      if (!worktreePath) {
-        return;
-      }
-      void runScript(sessionId, script.id, worktreePath);
+      void runScript({ sessionId, scriptId: script.id });
     },
-    [runScript, sessionId, worktreePath],
+    [runScript, sessionId],
   );
 
   const onCancel = useCallback(
@@ -72,6 +69,8 @@ export const ScriptsSection = ({
   }, []);
 
   const list = scripts ?? [];
+  const projects = allProjects.filter((project) => project.workspaceId === workspaceId);
+  const isMultiProject = projects.length > 1;
 
   const openScripts = () => setActiveLens(sessionId, 'scripts');
 
@@ -108,19 +107,28 @@ export const ScriptsSection = ({
         <>
           {list.length > 0 ? (
             <ul className="flex flex-col gap-1 pl-2">
-              {list.map((script) => (
-                <li key={script.id}>
-                  <ScriptRow
-                    script={script}
-                    run={runs?.[script.id] ?? null}
-                    disabled={!worktreePath}
-                    logOpen={log?.scriptId === script.id}
-                    onRun={() => onRun(script)}
-                    onCancel={() => onCancel(script.id)}
-                    onToggleLog={(anchor) => onToggleLog(script.id, anchor)}
-                  />
-                </li>
-              ))}
+              {list.map((script) => {
+                const project = projects.find((candidate) => candidate.id === script.projectId);
+                const projectName = project?.name ?? 'Project';
+                const mount = mounts.find((candidate) => candidate.projectId === script.projectId);
+                const disabledReason =
+                  mount === undefined ? `${projectName} is not mounted in this session` : null;
+                return (
+                  <li key={script.id}>
+                    <ScriptRow
+                      script={script}
+                      projectName={projectName}
+                      showProjectName={isMultiProject}
+                      run={runs?.[script.id] ?? null}
+                      disabledReason={disabledReason}
+                      logOpen={log?.scriptId === script.id}
+                      onRun={() => onRun(script)}
+                      onCancel={() => onCancel(script.id)}
+                      onToggleLog={(anchor) => onToggleLog(script.id, anchor)}
+                    />
+                  </li>
+                );
+              })}
             </ul>
           ) : null}
           <button
@@ -153,8 +161,10 @@ export const ScriptsSection = ({
 
 type ScriptRowProps = {
   readonly script: ProjectScript;
+  readonly projectName: string;
+  readonly showProjectName: boolean;
   readonly run: ScriptRunRecord | null;
-  readonly disabled: boolean;
+  readonly disabledReason: string | null;
   readonly logOpen: boolean;
   readonly onRun: () => void;
   readonly onCancel: () => void;
@@ -163,8 +173,10 @@ type ScriptRowProps = {
 
 function ScriptRow({
   script,
+  projectName,
+  showProjectName,
   run,
-  disabled,
+  disabledReason,
   logOpen,
   onRun,
   onCancel,
@@ -185,8 +197,11 @@ function ScriptRow({
       )}
     >
       <StatusDot status={status} />
-      <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
-        {script.name}
+      <span className="flex min-w-0 flex-1 items-baseline gap-1 text-xs">
+        <span className="min-w-0 truncate font-medium text-foreground">{script.name}</span>
+        {showProjectName ? (
+          <span className="shrink-0 text-2xs text-muted-foreground">· {projectName}</span>
+        ) : null}
       </span>
       {hasOutput ? (
         <button
@@ -222,11 +237,11 @@ function ScriptRow({
           </button>
         </Tooltip>
       ) : (
-        <Tooltip content="Run script" anchorClassName="shrink-0">
+        <Tooltip content={disabledReason ?? 'Run script'} anchorClassName="shrink-0">
           <button
             type="button"
             onClick={onRun}
-            disabled={disabled}
+            disabled={disabledReason != null}
             aria-label="Run script"
             className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-primary group-hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >

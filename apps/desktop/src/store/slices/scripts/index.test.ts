@@ -19,6 +19,7 @@ import type {
   ProviderRunId,
   Session,
   SessionId,
+  SessionProjectMount,
   Skill,
   SkillId,
   TelemetryRecord,
@@ -63,6 +64,14 @@ const deleteIntegrationBindingSpy = vi.fn(async () => undefined);
 const listProjectScriptsSpy = vi.fn(async () => [] as ReadonlyArray<ProjectScript>);
 const upsertProjectScriptSpy = vi.fn(async () => undefined);
 const deleteProjectScriptSpy = vi.fn(async () => undefined);
+const invokeScriptRunSpy: ReturnType<typeof vi.fn> = vi.fn(async () => undefined);
+let scriptExitHandler: ((payload: { runId: string; exitCode: number }) => void) | null = null;
+const listenScriptExitSpy = vi.fn(
+  async (handler: (payload: { runId: string; exitCode: number }) => void) => {
+    scriptExitHandler = handler;
+    return () => undefined;
+  },
+);
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
@@ -331,10 +340,10 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 });
 
 vi.mock('../../../features/scripts/scripts', () => ({
-  invokeScriptRun: vi.fn(async () => undefined),
+  invokeScriptRun: invokeScriptRunSpy,
   invokeScriptCancel: vi.fn(async () => undefined),
   listenScriptOutput: vi.fn(async () => () => undefined),
-  listenScriptExit: vi.fn(async () => () => undefined),
+  listenScriptExit: listenScriptExitSpy,
 }));
 
 vi.mock('../../../features/terminal/terminal', () => ({
@@ -356,6 +365,7 @@ vi.mock('../../../features/settings/config-export', () => ({
 const WS_ID = 'workspace-1' as WorkspaceId;
 const WS_ID_2 = 'workspace-2' as WorkspaceId;
 const PROJECT_ID = 'project-1' as ProjectId;
+const PROJECT_ID_2 = 'project-2' as ProjectId;
 const SESSION_ID = 'session-1' as SessionId;
 const SESSION_ID_2 = 'session-2' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -464,6 +474,7 @@ describe('store contract', () => {
     invokeListConsumptionsForPlanSpy.mockResolvedValue([]);
     invokeWorkspacesWithUnreadSpy.mockResolvedValue([]);
     listProjectScriptsSpy.mockResolvedValue([]);
+    scriptExitHandler = null;
     listIntegrationBindingsForWorkspaceSpy.mockResolvedValue([]);
     listDiffCommentsSpy.mockResolvedValue([]);
     dbGetSettingSpy.mockResolvedValue(null);
@@ -494,6 +505,8 @@ describe('store contract', () => {
         transcripts: {},
         messages: {},
         sessionWorktrees: {},
+        sessionProjectMounts: {},
+        sessionActiveProject: {},
         sessionBranches: {},
         sessionTelemetry: {},
         workspaceSummary: null,
@@ -581,6 +594,124 @@ describe('store contract', () => {
       store.setState({ projectScripts: { [WS_ID]: [script] } });
       await store.getState().deleteScript(script.id, WS_ID);
       expect(store.getState().projectScripts[WS_ID]).toEqual([]);
+    });
+
+    it('saveScript persists the required project id for a new script', async () => {
+      const store = await getStore();
+
+      await store.getState().saveScript({
+        workspaceId: WS_ID,
+        projectId: PROJECT_ID_2,
+        name: 'web setup',
+        body: 'echo web',
+      });
+
+      expect(upsertProjectScriptSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          script: expect.objectContaining({ projectId: PROJECT_ID_2 }),
+        }),
+      );
+    });
+
+    it('saveScript reassigns an existing script to the given project', async () => {
+      const store = await getStore();
+      const script: ProjectScript = {
+        id: 'sc-1' as ProjectScriptId,
+        projectId: PROJECT_ID,
+        name: 'setup',
+        body: 'echo api',
+        sortOrder: 0,
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+      store.setState({ projectScripts: { [WS_ID]: [script] } });
+
+      await store.getState().saveScript({
+        workspaceId: WS_ID,
+        projectId: PROJECT_ID_2,
+        id: script.id,
+        name: script.name,
+        body: script.body,
+      });
+
+      expect(upsertProjectScriptSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          script: expect.objectContaining({ id: script.id, projectId: PROJECT_ID_2 }),
+        }),
+      );
+    });
+
+    it("runScript invokes the script in its project's session mount", async () => {
+      const store = await getStore();
+      const script: ProjectScript = {
+        id: 'sc-1' as ProjectScriptId,
+        projectId: PROJECT_ID_2,
+        name: 'web setup',
+        body: 'echo web',
+        sortOrder: 0,
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+      const mounts: ReadonlyArray<SessionProjectMount> = [
+        {
+          projectId: PROJECT_ID,
+          mountName: 'api',
+          worktreePath: '/sessions/one/api',
+          repoRoot: '/repos/api',
+          branch: 'ak/one',
+        },
+        {
+          projectId: PROJECT_ID_2,
+          mountName: 'web',
+          worktreePath: '/sessions/one/web',
+          repoRoot: '/repos/web',
+          branch: 'ak/one',
+        },
+      ];
+      store.setState({
+        sessions: [buildSession({ activeProjectId: PROJECT_ID })],
+        sessionProjectMounts: { [SESSION_ID]: mounts },
+        projectScripts: { [WS_ID]: [script] },
+      });
+
+      const resultPromise = store
+        .getState()
+        .runScript({ sessionId: SESSION_ID, scriptId: script.id });
+      await vi.waitFor(() => expect(invokeScriptRunSpy).toHaveBeenCalledOnce());
+      const runId = invokeScriptRunSpy.mock.calls[0]?.[1];
+      if (runId === undefined || scriptExitHandler === null) {
+        throw new Error('script listeners were not ready');
+      }
+      scriptExitHandler({ runId, exitCode: 0 });
+      await resultPromise;
+
+      expect(invokeScriptRunSpy.mock.calls[0]?.[2]).toBe('/sessions/one/web');
+    });
+
+    it('runScript records an error and refuses to invoke when the project is unmounted', async () => {
+      const store = await getStore();
+      const script: ProjectScript = {
+        id: 'sc-1' as ProjectScriptId,
+        projectId: PROJECT_ID,
+        name: 'setup',
+        body: 'echo api',
+        sortOrder: 0,
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+      store.setState({
+        sessions: [buildSession()],
+        sessionProjectMounts: { [SESSION_ID]: [] },
+        projectScripts: { [WS_ID]: [script] },
+      });
+
+      const result = await store
+        .getState()
+        .runScript({ sessionId: SESSION_ID, scriptId: script.id });
+
+      expect(invokeScriptRunSpy).not.toHaveBeenCalled();
+      expect(store.getState().scriptRuns[SESSION_ID]?.[script.id]?.status).toBe('error');
+      expect(result.stderr).toBe('repo is not mounted in this session');
     });
   });
 });

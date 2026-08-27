@@ -115,7 +115,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     quickEmptyHint,
     onQuickActionSelect,
     dismissPopover,
-  } = useChatPrefix({ session, value, setValue, sessionWorktree, showToast, wrapperRef });
+  } = useChatPrefix({ session, value, setValue, showToast, wrapperRef });
 
   const routing = useTurnRouting({ session });
   const dispatch = useTurnDispatch({ sessionId: session.id, cleanupSentAttachments });
@@ -547,8 +547,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   wrapperRef.current?.querySelector('textarea')?.focus();
                 }}
                 disabled={providerDisconnected}
-                title="Run a workspace script"
-                aria-label="Run a workspace script"
+                title="Run a project script"
+                aria-label="Run a project script"
                 className="inline-flex h-7 w-7 items-center justify-center rounded-md font-mono text-sm text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 $

@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { ProjectScript } from '@goodboy/types';
+import type { Project, ProjectScript } from '@goodboy/types';
 import { ScriptRow } from './ScriptRow';
 
 const script = {
@@ -12,6 +12,8 @@ const script = {
   body: 'echo hi',
 } as ProjectScript;
 
+const projects = [{ id: 'project-1', name: 'API' }] as unknown as ReadonlyArray<Project>;
+
 afterEach(cleanup);
 
 describe('ScriptRow', () => {
@@ -20,11 +22,15 @@ describe('ScriptRow', () => {
     render(
       <ScriptRow
         script={script}
+        projects={projects}
+        projectName="API"
+        mountPath="/tmp/api"
         run={null}
         completedAt={undefined}
         expanded
         runnable
         canRun
+        runDisabledReason={null}
         copied={false}
         onToggle={vi.fn()}
         onSave={onSave}
@@ -50,11 +56,15 @@ describe('ScriptRow', () => {
     render(
       <ScriptRow
         script={script}
+        projects={projects}
+        projectName="API"
+        mountPath="/tmp/api"
         run={null}
         completedAt={undefined}
         expanded
         runnable
         canRun
+        runDisabledReason={null}
         copied={false}
         onToggle={vi.fn()}
         onSave={onSave}
@@ -75,18 +85,22 @@ describe('ScriptRow', () => {
     fireEvent.blur(textarea);
 
     expect(onSave).toHaveBeenCalledOnce();
-    expect(onSave).toHaveBeenCalledWith('setup', 'echo next');
+    expect(onSave).toHaveBeenCalledWith('setup', 'echo next', 'project-1');
   });
 
   it('places expand in navigation and run, copy, edit, and delete in lifecycle', () => {
     render(
       <ScriptRow
         script={script}
+        projects={projects}
+        projectName="API"
+        mountPath="/tmp/api"
         run={null}
         completedAt={undefined}
         expanded={false}
         runnable
         canRun
+        runDisabledReason={null}
         copied={false}
         onToggle={vi.fn()}
         onSave={vi.fn()}
@@ -116,11 +130,15 @@ describe('ScriptRow', () => {
     render(
       <ScriptRow
         script={script}
+        projects={projects}
+        projectName="API"
+        mountPath="/tmp/api"
         run={null}
         completedAt={undefined}
         expanded={false}
         runnable
         canRun
+        runDisabledReason={null}
         copied={false}
         onToggle={vi.fn()}
         onSave={vi.fn()}
