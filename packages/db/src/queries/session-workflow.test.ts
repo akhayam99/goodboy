@@ -31,6 +31,44 @@ const workflowId = 'wf-1' as WorkflowId;
 const workflowId2 = 'wf-2' as WorkflowId;
 const NOW = '2026-06-12T00:00:00.000Z' as IsoDateTime;
 
+type InsertActivePlanParams = {
+  readonly db: Database;
+  readonly workflowRunId: WorkflowRunId;
+};
+
+const insertActivePlan = async ({ db, workflowRunId }: InsertActivePlanParams): Promise<void> => {
+  await db.execute(
+    'INSERT INTO agents (id, session_id, ordinal, name, status, workflow_run_id) VALUES (?, ?, ?, ?, ?, ?)',
+    ['planner-1', sessionId, 0, 'Planner', 'completed', workflowRunId],
+  );
+  await db.execute(
+    `INSERT INTO session_plans (
+       id, session_id, agent_id, workflow_run_id, title, body_md, status, created_at, updated_at
+     ) VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+    [
+      'plan-1',
+      sessionId,
+      'planner-1',
+      workflowRunId,
+      'Plan',
+      'Body',
+      Date.parse(NOW),
+      Date.parse(NOW),
+    ],
+  );
+};
+
+type ReadPlanStatusParams = {
+  readonly db: Database;
+};
+
+const readPlanStatus = async ({ db }: ReadPlanStatusParams): Promise<string> => {
+  const rows = await db.select<{ readonly status: string }>(
+    "SELECT status FROM session_plans WHERE id = 'plan-1'",
+  );
+  return rows[0]?.status ?? '';
+};
+
 async function seed(): Promise<Database> {
   const db = makeTestDatabase();
   await migrate(db);
@@ -875,9 +913,11 @@ describe('session_workflows trigger-mode queries', () => {
         autoRun: true,
         updatedAt: NOW,
       });
+      await insertActivePlan({ db, workflowRunId: 'run-1' as WorkflowRunId });
       await discardWorkflowInSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs[0]!.discardedAt).toBe(NOW);
+      expect(await readPlanStatus({ db })).toBe('superseded');
     });
   });
 
@@ -891,10 +931,12 @@ describe('session_workflows trigger-mode queries', () => {
         autoRun: true,
         updatedAt: NOW,
       });
+      await insertActivePlan({ db, workflowRunId: 'run-1' as WorkflowRunId });
       await discardWorkflowInSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
       await restoreWorkflowInSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs[0]!.discardedAt).toBeUndefined();
+      expect(await readPlanStatus({ db })).toBe('active');
     });
   });
 

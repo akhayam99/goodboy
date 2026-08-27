@@ -1,22 +1,36 @@
-import { Eyebrow } from '@goodboy/ui';
-import type { Plan, Session } from '@goodboy/types';
+import { useMemo } from 'react';
+import { Chip, Eyebrow } from '@goodboy/ui';
+import type { Agent, Plan, Session } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { splitWorkflowRuns } from '../../../workflows/activeWorkflowRuns';
+import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 
 type Props = {
   readonly session: Session;
+  readonly agents: ReadonlyArray<Agent>;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
-export const OverviewPlans = ({ session, onSelectLens }: Props) => {
+export const OverviewPlans = ({ session, agents, onSelectLens }: Props) => {
+  const attachedRuns = useAttachedWorkflowRuns({ session });
+  const { active } = useMemo(
+    () => splitWorkflowRuns({ attachedRuns, agents }),
+    [agents, attachedRuns],
+  );
   const plans = useAppStore(
     (s) => s.sessionPlans[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<Plan>),
   );
   const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
+  const activeRunIds = new Set(active.map(({ run }) => run.id));
 
-  const active = plans.filter((plan) => plan.status === 'active');
-  if (active.length === 0) {
+  const actionable = plans.filter(
+    (plan) =>
+      plan.status === 'active' &&
+      (plan.workflowRunId == null || activeRunIds.has(plan.workflowRunId)),
+  );
+  if (actionable.length === 0) {
     return null;
   }
 
@@ -24,7 +38,7 @@ export const OverviewPlans = ({ session, onSelectLens }: Props) => {
     <section aria-label="Plan" className="flex flex-col gap-2">
       <Eyebrow label="Plan" className="px-0.5" />
       <ul className="flex flex-col gap-1">
-        {active.map((plan) => (
+        {actionable.map((plan) => (
           <li key={plan.id}>
             <button
               type="button"
@@ -40,6 +54,14 @@ export const OverviewPlans = ({ session, onSelectLens }: Props) => {
                 className="shrink-0 text-muted-foreground"
               />
               <span className="min-w-0 flex-1 truncate text-sm text-foreground">{plan.title}</span>
+              {plan.clusters != null && plan.clusters.length > 0 ? (
+                <Chip
+                  tone="neutral"
+                  size="3xs"
+                  bordered={false}
+                  label={`${plan.clusters.length} ${plan.clusters.length === 1 ? 'cluster' : 'clusters'}`}
+                />
+              ) : null}
             </button>
           </li>
         ))}
