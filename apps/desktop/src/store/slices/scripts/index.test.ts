@@ -617,7 +617,10 @@ describe('store contract', () => {
     it('saveScript refuses a project that belongs to another workspace', async () => {
       const store = await getStore();
       store.setState({
-        projects: [buildProject(), buildProject({ id: PROJECT_ID_2, workspaceId: 'ws-other' })],
+        projects: [
+          buildProject(),
+          buildProject({ id: PROJECT_ID_2, workspaceId: 'ws-other' as WorkspaceId }),
+        ],
       } as never);
 
       await expect(
