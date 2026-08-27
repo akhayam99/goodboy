@@ -92,7 +92,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       >
         <OverviewNextSteps session={session} agents={sessionAgents} />
         <OverviewResolve session={session} onSelectLens={onSelectLens} />
-        <OverviewPlans session={session} onSelectLens={onSelectLens} />
+        <OverviewPlans session={session} agents={sessionAgents} onSelectLens={onSelectLens} />
         <OverviewPrs session={session} onSelectLens={onSelectLens} />
         <TimelinePane
           session={session}

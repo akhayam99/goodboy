@@ -132,6 +132,7 @@ import { m131IntegrationBindings } from './m131-integration-bindings';
 import { m132WorkspaceProfileBio } from './m132-workspace-profile-bio';
 import { m133SessionEventProjectDetached } from './m133-session-event-project-detached';
 import { m134SessionActiveProjects } from './m134-session-active-projects';
+import { m135SupersedeDiscardedWorkflowPlans } from './m135-supersede-discarded-workflow-plans';
 
 export type Migration = {
   readonly version: number;
@@ -273,4 +274,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 132, sql: m132WorkspaceProfileBio },
   { version: 133, sql: m133SessionEventProjectDetached },
   { version: 134, sql: m134SessionActiveProjects },
+  { version: 135, sql: m135SupersedeDiscardedWorkflowPlans },
 ];
