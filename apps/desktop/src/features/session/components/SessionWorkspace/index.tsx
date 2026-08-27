@@ -258,7 +258,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               <ScriptsPanel
                 workspaceId={session.workspaceId}
                 sessionId={sessionId}
-                worktreePath={workingDir}
                 hasHostHeading
               />
             </PaneShell>

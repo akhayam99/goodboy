@@ -1,4 +1,4 @@
-import type { SessionId, ProjectScriptId } from '@goodboy/types';
+import type { ProjectScriptId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import {
   invokeScriptRun,
@@ -7,20 +7,26 @@ import {
   type ScriptRunRecord,
   type ScriptRunResult,
 } from '../../../features/scripts/scripts';
+import { resolveProjectMountPath } from '../worktrees/resolveProjectMountPath';
 import type { GetFn, SetFn } from './types';
 
+type Params = {
+  readonly sessionId: SessionId;
+  readonly scriptId: ProjectScriptId;
+  readonly cols?: number;
+  readonly rows?: number;
+};
+
+type WriteRunParams = {
+  readonly record: ScriptRunRecord;
+};
+
 export const runScript = (set: SetFn, get: GetFn) => {
-  return async (
-    sessionId: SessionId,
-    scriptId: ProjectScriptId,
-    cwd: string,
-    cols: number = 220,
-    rows: number = 50,
-  ) => {
+  return async ({ sessionId, scriptId, cols = 220, rows = 50 }: Params) => {
     const runId = crypto.randomUUID();
     const startedAt = Date.now();
 
-    const writeRun = (record: ScriptRunRecord) =>
+    const writeRun = ({ record }: WriteRunParams) =>
       set((state) => ({
         scriptRuns: {
           ...state.scriptRuns,
@@ -28,36 +34,57 @@ export const runScript = (set: SetFn, get: GetFn) => {
         },
       }));
 
-    writeRun({ status: 'pending', result: null, runId, startedAt });
+    writeRun({ record: { status: 'pending', result: null, runId, startedAt } });
+
+    const state = get();
+    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    const script =
+      session === undefined
+        ? undefined
+        : (state.projectScripts[session.workspaceId] ?? []).find(
+            (candidate) => candidate.id === scriptId,
+          );
+    const cwd =
+      script === undefined
+        ? null
+        : resolveProjectMountPath({ state, sessionId, projectId: script.projectId });
+    if (script === undefined || cwd === null) {
+      const project =
+        script === undefined
+          ? undefined
+          : state.projects.find((candidate) => candidate.id === script.projectId);
+      const message =
+        script === undefined
+          ? 'Script is not available in this session'
+          : `${project?.name ?? 'Script project'} is not mounted in this session`;
+      const result: ScriptRunResult = { stdout: '', stderr: message, exitCode: -1 };
+      writeRun({ record: { status: 'error', result, runId, startedAt } });
+      return result;
+    }
 
     let unlistenExit: () => void = () => undefined;
     let unlistenOutput: () => void = () => undefined;
-    let resolveResult!: (r: ScriptRunResult) => void;
-    let rejectResult!: (e: unknown) => void;
-    const resultPromise = new Promise<ScriptRunResult>((res, rej) => {
-      resolveResult = res;
-      rejectResult = rej;
+    let resolveResult: ((result: ScriptRunResult) => void) | null = null;
+    const resultPromise = new Promise<ScriptRunResult>((resolve) => {
+      resolveResult = resolve;
     });
 
-    const STDOUT_CAP = 64 * 1024;
-    const ANSI_RE = /\x1B\[[0-?]*[ -/]*[@-~]/g;
-    let stdoutBuf = '';
-    let truncated = false;
+    const stdoutCap = 64 * 1024;
+    const ansiPattern = /\x1B\[[0-?]*[ -/]*[@-~]/g;
+    let stdoutBuffer = '';
+    let isTruncated = false;
 
     unlistenOutput = await listenScriptOutput((payload) => {
-      if (payload.runId !== runId) {
-        return;
-      }
-      if (truncated) {
+      if (payload.runId !== runId || isTruncated) {
         return;
       }
       const chunk = atob(payload.data);
-      if (stdoutBuf.length + chunk.length > STDOUT_CAP) {
-        stdoutBuf = '…(truncated)\n' + (stdoutBuf + chunk).slice(-(STDOUT_CAP - 14));
-        truncated = true;
-      } else {
-        stdoutBuf += chunk;
+      if (stdoutBuffer.length + chunk.length > stdoutCap) {
+        stdoutBuffer = '…(truncated)\n' + (stdoutBuffer + chunk).slice(-(stdoutCap - 14));
+        isTruncated = true;
+        return;
       }
+      stdoutBuffer += chunk;
     });
 
     unlistenExit = await listenScriptExit((payload) => {
@@ -66,29 +93,35 @@ export const runScript = (set: SetFn, get: GetFn) => {
       }
       unlistenExit();
       unlistenOutput();
-      const curr = get().scriptRuns[sessionId]?.[scriptId];
-      if (!curr || curr.runId !== runId) {
+      const current = get().scriptRuns[sessionId]?.[scriptId];
+      if (current == null || current.runId !== runId) {
         return;
       }
-      const stdout = stdoutBuf.replace(ANSI_RE, '');
+      const stdout = stdoutBuffer.replace(ansiPattern, '');
       const result: ScriptRunResult = { stdout, stderr: '', exitCode: payload.exitCode };
       writeRun({
-        status: curr.status === 'cancelled' ? 'cancelled' : payload.exitCode === 0 ? 'ok' : 'error',
-        result,
-        runId,
-        startedAt,
+        record: {
+          status:
+            current.status === 'cancelled' ? 'cancelled' : payload.exitCode === 0 ? 'ok' : 'error',
+          result,
+          runId,
+          startedAt,
+        },
       });
-      resolveResult(result);
+      resolveResult?.(result);
     });
 
     try {
       await invokeScriptRun(scriptId, runId, cwd, cols, rows);
-    } catch (err) {
+    } catch (caughtError) {
       unlistenExit();
       unlistenOutput();
-      const result: ScriptRunResult = { stdout: '', stderr: formatError(err), exitCode: -1 };
-      writeRun({ status: 'error', result, runId, startedAt });
-      rejectResult(err);
+      const result: ScriptRunResult = {
+        stdout: '',
+        stderr: formatError(caughtError),
+        exitCode: -1,
+      };
+      writeRun({ record: { status: 'error', result, runId, startedAt } });
       return result;
     }
 

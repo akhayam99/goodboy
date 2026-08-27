@@ -6,6 +6,7 @@ import { Tooltip } from './Tooltip';
 export type CardActionProps = {
   readonly icon: LucideIcon;
   readonly label: string;
+  readonly tooltip?: string;
   readonly tone?: Tone;
   readonly size?: 'compact' | 'default';
   readonly reveal?: boolean;
@@ -20,6 +21,7 @@ export type CardActionProps = {
 export const CardAction = ({
   icon: Icon,
   label,
+  tooltip,
   tone = 'neutral',
   size = 'compact',
   reveal = false,
@@ -31,7 +33,7 @@ export const CardAction = ({
   onClick,
 }: CardActionProps) => (
   <Tooltip
-    content={label}
+    content={tooltip ?? label}
     side="top"
     anchorClassName={cn('shrink-0', size === 'compact' ? 'size-6' : 'size-7')}
   >

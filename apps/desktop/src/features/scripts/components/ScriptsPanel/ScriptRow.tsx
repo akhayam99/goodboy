@@ -1,23 +1,28 @@
 import { useEffect, useState } from 'react';
 import { Check, ChevronDown, ChevronRight, Copy, Pencil, Play, Square, Trash2 } from 'lucide-react';
 import { InlineConfirm, Textarea, cn } from '@goodboy/ui';
-import type { ProjectScript } from '@goodboy/types';
+import type { Project, ProjectId, ProjectScript } from '@goodboy/types';
 import { CardAction } from '@goodboy/ui';
 import { CardActionSlot } from '@goodboy/ui';
 import type { ScriptRunRecord } from '../../scripts';
 import { ScriptRunOutput } from './ScriptRunOutput';
 import { SCRIPT_RUN_PRESENTATION } from './scriptRunPresentation';
+import { ProjectSelect } from './ProjectSelect';
 
 type Props = {
   readonly script: ProjectScript;
+  readonly projects: ReadonlyArray<Project>;
+  readonly projectName: string;
+  readonly mountPath: string | null;
   readonly run: ScriptRunRecord | null;
   readonly completedAt: number | undefined;
   readonly expanded: boolean;
   readonly runnable: boolean;
   readonly canRun: boolean;
+  readonly runDisabledReason: string | null;
   readonly copied: boolean;
   readonly onToggle: () => void;
-  readonly onSave: (name: string, body: string) => void | Promise<void>;
+  readonly onSave: (name: string, body: string, projectId: ProjectId) => void | Promise<void>;
   readonly onRun: () => void;
   readonly onCancel: () => void;
   readonly onCopy: () => void;
@@ -34,6 +39,10 @@ type EditParams = {
   readonly field: EditField;
 };
 
+type ProjectChangeParams = {
+  readonly projectId: ProjectId;
+};
+
 const extractPreviewLine = ({ body }: PreviewParams): string => {
   const lines = body.split('\n');
   for (const line of lines) {
@@ -48,11 +57,15 @@ const extractPreviewLine = ({ body }: PreviewParams): string => {
 
 export const ScriptRow = ({
   script,
+  projects,
+  projectName,
+  mountPath,
   run,
   completedAt,
   expanded,
   runnable,
   canRun,
+  runDisabledReason,
   copied,
   onToggle,
   onSave,
@@ -64,6 +77,7 @@ export const ScriptRow = ({
   const [editingField, setEditingField] = useState<EditField | null>(null);
   const [nameDraft, setNameDraft] = useState(script.name);
   const [bodyDraft, setBodyDraft] = useState(script.body);
+  const [projectIdDraft, setProjectIdDraft] = useState(script.projectId);
   const [isDeleteArmed, setIsDeleteArmed] = useState(false);
   const status = run?.status ?? 'idle';
   const presentation = SCRIPT_RUN_PRESENTATION[status];
@@ -73,7 +87,8 @@ export const ScriptRow = ({
   useEffect(() => {
     setNameDraft(script.name);
     setBodyDraft(script.body);
-  }, [script.body, script.name]);
+    setProjectIdDraft(script.projectId);
+  }, [script.body, script.name, script.projectId]);
 
   useEffect(() => {
     if (!expanded) {
@@ -102,7 +117,17 @@ export const ScriptRow = ({
       setBodyDraft(script.body);
       return;
     }
-    void onSave(name, body);
+    void onSave(name, body, projectIdDraft);
+  };
+
+  const changeProject = ({ projectId }: ProjectChangeParams) => {
+    const name = nameDraft.trim();
+    const body = bodyDraft.trim();
+    setProjectIdDraft(projectId);
+    if (name === '' || body === '' || projectId === script.projectId) {
+      return;
+    }
+    void onSave(name, body, projectId);
   };
 
   const cancelEditing = ({ field }: EditParams) => {
@@ -161,6 +186,12 @@ export const ScriptRow = ({
               className="min-w-0 truncate text-left text-sm font-medium text-foreground"
             >
               {script.name}
+              {projects.length > 1 ? (
+                <span className="text-xs font-normal text-muted-foreground">
+                  {' · '}
+                  {projectName}
+                </span>
+              ) : null}
             </button>
           )}
           {!expanded && preview !== '' ? (
@@ -196,6 +227,7 @@ export const ScriptRow = ({
               <CardAction
                 icon={Play}
                 label="Run script"
+                tooltip={runDisabledReason ?? undefined}
                 disabled={!canRun}
                 size="default"
                 onClick={onRun}
@@ -238,6 +270,25 @@ export const ScriptRow = ({
 
         {expanded ? (
           <div className="col-span-2 flex flex-col gap-2">
+            {runnable ? (
+              <p
+                className="truncate font-mono text-2xs text-muted-foreground"
+                title={mountPath ?? undefined}
+              >
+                {mountPath ?? `${projectName} is not mounted in this session`}
+              </p>
+            ) : null}
+            {editingField !== null && projects.length > 1 ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Project</span>
+                <ProjectSelect
+                  projects={projects}
+                  projectId={projectIdDraft}
+                  ariaLabel="Edit script project"
+                  onChange={(projectId) => changeProject({ projectId })}
+                />
+              </div>
+            ) : null}
             {editingField === 'body' ? (
               <Textarea
                 autoFocus

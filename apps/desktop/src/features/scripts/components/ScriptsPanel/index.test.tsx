@@ -5,6 +5,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 
 type Script = {
   readonly id: string;
+  readonly projectId: string;
   readonly name: string;
   readonly body: string;
 };
@@ -18,6 +19,12 @@ type RunRecord = {
 const { state } = vi.hoisted(() => ({
   state: {
     scripts: [] as ReadonlyArray<Script>,
+    projects: [{ id: 'project-1', workspaceId: 'ws-1', name: 'API' }],
+    sessions: [{ id: 'session-1', activeProjectId: 'project-1' }],
+    sessionActiveProject: { 'session-1': 'project-1' } as Record<string, string>,
+    sessionProjectMounts: {
+      'session-1': [{ projectId: 'project-1', worktreePath: '/tmp/api' }],
+    } as Record<string, ReadonlyArray<{ projectId: string; worktreePath: string }>>,
     scriptRuns: {} as Record<string, Record<string, RunRecord>>,
     loadScripts: vi.fn(async () => undefined),
     saveScript: vi.fn(async () => undefined),
@@ -30,6 +37,10 @@ const { state } = vi.hoisted(() => ({
 vi.mock('../../../../store', () => {
   const getStoreState = () => ({
     projectScripts: { 'ws-1': state.scripts },
+    projects: state.projects,
+    sessions: state.sessions,
+    sessionActiveProject: state.sessionActiveProject,
+    sessionProjectMounts: state.sessionProjectMounts,
     scriptRuns: { 'session-1': state.scriptRuns['session-1'] ?? {} },
     loadScripts: state.loadScripts,
     saveScript: state.saveScript,
@@ -47,6 +58,12 @@ import { ScriptsPanel } from './index';
 
 beforeEach(() => {
   state.scripts = [];
+  state.projects = [{ id: 'project-1', workspaceId: 'ws-1', name: 'API' }];
+  state.sessions = [{ id: 'session-1', activeProjectId: 'project-1' }];
+  state.sessionActiveProject = { 'session-1': 'project-1' };
+  state.sessionProjectMounts = {
+    'session-1': [{ projectId: 'project-1', worktreePath: '/tmp/api' }],
+  };
   state.scriptRuns = {};
   state.loadScripts = vi.fn(async () => undefined);
   state.saveScript = vi.fn(async () => undefined);
@@ -64,13 +81,15 @@ describe('ScriptsPanel', () => {
     expect(state.loadScripts).toHaveBeenCalledWith('ws-1');
     expect(screen.getByText(/no scripts yet/i)).toBeDefined();
     expect(
-      screen.getByText(/scripts are shared across every session of this workspace/i),
-    ).toBeDefined();
+      screen.getAllByText(/scripts are shared across every session of the workspace/i).length,
+    ).toBeGreaterThan(0);
   });
 
   it('creates a new script in an inline card', async () => {
     state.saveScript = vi.fn(async () => {
-      state.scripts = [{ id: 's1', name: 'copy env', body: 'cp ../main/.env .env' }];
+      state.scripts = [
+        { id: 's1', projectId: 'project-1', name: 'copy env', body: 'cp ../main/.env .env' },
+      ];
     });
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
 
@@ -87,6 +106,7 @@ describe('ScriptsPanel', () => {
 
     expect(state.saveScript).toHaveBeenCalledWith({
       workspaceId: 'ws-1',
+      projectId: 'project-1',
       id: undefined,
       name: 'copy env',
       body: 'cp ../main/.env .env',
@@ -95,10 +115,15 @@ describe('ScriptsPanel', () => {
     expect(screen.getByTestId('script-card-s1')).toBeDefined();
     expect(screen.getByText('cp ../main/.env .env')).toBeDefined();
     expect(screen.queryByRole('button', { name: /close script panel/i })).toBeNull();
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(screen.queryByRole('combobox', { name: /project/i })).toBeNull();
+    expect(screen.queryByText('API')).toBeNull();
   });
 
   it('expands an existing script in place with its full command', () => {
-    state.scripts = [{ id: 's1', name: 'setup', body: '#!/bin/bash\necho hi' }];
+    state.scripts = [
+      { id: 's1', projectId: 'project-1', name: 'setup', body: '#!/bin/bash\necho hi' },
+    ];
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
 
     expect(screen.getByText('+1 line')).toBeDefined();
@@ -114,7 +139,7 @@ describe('ScriptsPanel', () => {
   });
 
   it('edits an existing command inline and commits on blur', async () => {
-    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit script' }));
@@ -126,6 +151,7 @@ describe('ScriptsPanel', () => {
 
     expect(state.saveScript).toHaveBeenCalledWith({
       workspaceId: 'ws-1',
+      projectId: 'project-1',
       id: 's1',
       name: 'setup',
       body: 'echo hi again',
@@ -133,7 +159,7 @@ describe('ScriptsPanel', () => {
   });
 
   it('edits an existing script name inline and commits with Cmd+Enter', async () => {
-    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
@@ -146,6 +172,7 @@ describe('ScriptsPanel', () => {
 
     expect(state.saveScript).toHaveBeenCalledWith({
       workspaceId: 'ws-1',
+      projectId: 'project-1',
       id: 's1',
       name: 'bootstrap',
       body: 'echo hi',
@@ -153,7 +180,7 @@ describe('ScriptsPanel', () => {
   });
 
   it('keeps the discard guard for an unfinished new script', () => {
-    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
 
     fireEvent.click(screen.getByRole('button', { name: /new script/i }));
@@ -169,7 +196,7 @@ describe('ScriptsPanel', () => {
   });
 
   it('deletes a script through its lifecycle action after confirmation', async () => {
-    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
 
     const lifecycleSlot = screen.getByRole('group', { name: 'Script lifecycle actions' });
@@ -186,22 +213,16 @@ describe('ScriptsPanel', () => {
   });
 
   it('runs a script without expanding it', () => {
-    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
-    render(
-      <ScriptsPanel
-        workspaceId={'ws-1' as never}
-        sessionId={'session-1' as never}
-        worktreePath="/tmp/work"
-      />,
-    );
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
+    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Run script' }));
-    expect(state.runScript).toHaveBeenCalledWith('session-1', 's1', '/tmp/work');
+    expect(state.runScript).toHaveBeenCalledWith({ sessionId: 'session-1', scriptId: 's1' });
     expect(screen.getByRole('button', { name: 'Expand setup' })).toBeDefined();
   });
 
   it('shows the last run output inside an expanded card', () => {
-    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
     state.scriptRuns = {
       'session-1': {
         s1: {
@@ -211,13 +232,7 @@ describe('ScriptsPanel', () => {
         },
       },
     };
-    render(
-      <ScriptsPanel
-        workspaceId={'ws-1' as never}
-        sessionId={'session-1' as never}
-        worktreePath="/tmp/work"
-      />,
-    );
+    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
 
     expect(screen.queryByText('completed output')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
@@ -226,14 +241,8 @@ describe('ScriptsPanel', () => {
   });
 
   it('renders an idle script row with no status border accent', () => {
-    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
-    render(
-      <ScriptsPanel
-        workspaceId={'ws-1' as never}
-        sessionId={'session-1' as never}
-        worktreePath="/tmp/work"
-      />,
-    );
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
+    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
 
     const row = screen.getByTestId('script-card-s1');
     expect(row.className).toContain('border-transparent');
@@ -249,7 +258,7 @@ describe('ScriptsPanel', () => {
     ['error', 'border-danger/40', null],
     ['cancelled', 'border-border', null],
   ] as const)('uses the %s run state for the row border', (status, borderClass, pulseClass) => {
-    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
     state.scriptRuns = {
       'session-1': {
         s1: {
@@ -259,13 +268,7 @@ describe('ScriptsPanel', () => {
         },
       },
     };
-    render(
-      <ScriptsPanel
-        workspaceId={'ws-1' as never}
-        sessionId={'session-1' as never}
-        worktreePath="/tmp/work"
-      />,
-    );
+    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
 
     const row = screen.getByTestId('script-card-s1');
     expect(row.className).toContain(borderClass);
@@ -273,5 +276,62 @@ describe('ScriptsPanel', () => {
       expect(row.className).toContain(pulseClass);
     }
     expect(row.querySelector('[role="img"]')).toBeNull();
+  });
+
+  it('groups the All view, filters by project, and explains an unmounted project', () => {
+    state.projects = [
+      { id: 'project-1', workspaceId: 'ws-1', name: 'API' },
+      { id: 'project-2', workspaceId: 'ws-1', name: 'Web' },
+    ];
+    state.scripts = [
+      { id: 's1', projectId: 'project-1', name: 'setup api', body: 'echo api' },
+      { id: 's2', projectId: 'project-2', name: 'deploy web', body: 'echo web' },
+    ];
+    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+
+    expect(screen.getByRole('tab', { name: 'All' })).toBeDefined();
+    expect(screen.getAllByText('API').length).toBeGreaterThan(1);
+    expect(screen.getAllByText('Web').length).toBeGreaterThan(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand deploy web' }));
+    expect(screen.getByText('Web is not mounted in this session')).toBeDefined();
+    expect(
+      (screen.getAllByRole('button', { name: 'Run script' })[1] as HTMLButtonElement).disabled,
+    ).toBe(true);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'API' }));
+    expect(screen.getByText('setup api')).toBeDefined();
+    expect(screen.queryByText('deploy web')).toBeNull();
+  });
+
+  it('defaults a new script to the active project and allows reassignment while editing', async () => {
+    state.projects = [
+      { id: 'project-1', workspaceId: 'ws-1', name: 'API' },
+      { id: 'project-2', workspaceId: 'ws-1', name: 'Web' },
+    ];
+    state.sessionActiveProject = { 'session-1': 'project-2' };
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
+    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /new script/i }));
+    expect(
+      (screen.getByRole('combobox', { name: 'New script project' }) as HTMLSelectElement).value,
+    ).toBe('project-2');
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit script' }));
+    await act(async () => {
+      fireEvent.change(screen.getByRole('combobox', { name: 'Edit script project' }), {
+        target: { value: 'project-2' },
+      });
+    });
+
+    expect(state.saveScript).toHaveBeenCalledWith({
+      workspaceId: 'ws-1',
+      projectId: 'project-2',
+      id: 's1',
+      name: 'setup',
+      body: 'echo hi',
+    });
   });
 });

@@ -46,7 +46,6 @@ function renderChatPrefix() {
       session,
       value: '~',
       setValue: vi.fn(),
-      sessionWorktree: null,
       showToast: vi.fn(),
       wrapperRef: { current: null },
     }),

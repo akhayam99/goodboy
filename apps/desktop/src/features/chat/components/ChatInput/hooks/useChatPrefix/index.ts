@@ -22,19 +22,11 @@ type Params = {
   readonly session: Session;
   readonly value: string;
   readonly setValue: (next: string) => void;
-  readonly sessionWorktree: string | null;
   readonly showToast: (kind: ToastKind, message: string) => void;
   readonly wrapperRef: RefObject<HTMLDivElement | null>;
 };
 
-export const useChatPrefix = ({
-  session,
-  value,
-  setValue,
-  sessionWorktree,
-  showToast,
-  wrapperRef,
-}: Params) => {
+export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef }: Params) => {
   const workspaceSkills = useAppStore(
     useShallow((s) => s.skills[session.workspaceId] ?? EMPTY_ARRAY),
   );
@@ -65,15 +57,11 @@ export const useChatPrefix = ({
 
   const onPickScript = useCallback(
     (script: ProjectScript) => {
-      if (!sessionWorktree) {
-        showToast('warning', `${script.name}, open a session worktree to run scripts`);
-        return;
-      }
       setValue('');
       setShowPopover(false);
-      void runScript(session.id, script.id, sessionWorktree);
+      void runScript({ sessionId: session.id, scriptId: script.id });
     },
-    [runScript, setValue, session.id, sessionWorktree, showToast],
+    [runScript, setValue, session.id],
   );
 
   const onPickSkill = useCallback(

@@ -1,6 +1,20 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Button, formatError, SectionHeader } from '@goodboy/ui';
-import type { SessionId, WorkspaceId, ProjectScript, ProjectScriptId } from '@goodboy/types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Button,
+  formatError,
+  SectionHeader,
+  SegmentedTabs,
+  type SegmentedTabOption,
+} from '@goodboy/ui';
+import type {
+  Project,
+  ProjectId,
+  SessionId,
+  WorkspaceId,
+  ProjectScript,
+  ProjectScriptId,
+  SessionProjectMount,
+} from '@goodboy/types';
 import { Plus } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
@@ -12,16 +26,16 @@ import { ScriptRow } from './ScriptRow';
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly sessionId?: SessionId;
-  readonly worktreePath?: string | null;
   readonly hasHostHeading?: boolean;
 };
 
 const SCRIPTS_HINT =
-  'Shell scripts you run by hand from inside a session. cwd is the session worktree. Scripts are shared across every session of this workspace.';
+  "Shell scripts you run by hand from inside a session. Each script belongs to a project and runs in that project's worktree for this session. Scripts are shared across every session of the workspace.";
 
 type NewDraft = {
   readonly name: string;
   readonly body: string;
+  readonly projectId: ProjectId | null;
 };
 
 type PendingNewAction = {
@@ -59,15 +73,32 @@ type SaveExistingParams = {
   readonly script: ProjectScript;
   readonly name: string;
   readonly body: string;
+  readonly projectId: ProjectId;
 };
 
-export const ScriptsPanel = ({
-  workspaceId,
-  sessionId,
-  worktreePath,
-  hasHostHeading = false,
-}: Props) => {
+type ProjectFilter = 'all' | ProjectId;
+
+type ScriptGroup = {
+  readonly key: string;
+  readonly label: string | null;
+  readonly scripts: ReadonlyArray<ProjectScript>;
+};
+
+const EMPTY_MOUNTS: ReadonlyArray<SessionProjectMount> = [];
+
+export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }: Props) => {
   const scripts = useAppStore((state) => state.projectScripts[workspaceId]);
+  const allProjects = useAppStore((state) => state.projects);
+  const sessionMounts = useAppStore((state) =>
+    sessionId == null ? EMPTY_MOUNTS : (state.sessionProjectMounts[sessionId] ?? EMPTY_MOUNTS),
+  );
+  const activeProjectId = useAppStore((state) => {
+    if (sessionId == null) {
+      return null;
+    }
+    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    return state.sessionActiveProject[sessionId] ?? session?.activeProjectId ?? null;
+  });
   const loadScripts = useAppStore((state) => state.loadScripts);
   const saveScript = useAppStore((state) => state.saveScript);
   const deleteScript = useAppStore((state) => state.deleteScript);
@@ -83,9 +114,51 @@ export const ScriptsPanel = ({
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<ProjectScriptId | null>(null);
   const [completedAt, setCompletedAt] = useState<Record<string, number>>({});
+  const [projectFilter, setProjectFilter] = useState<ProjectFilter>('all');
 
   const runnable = sessionId != null;
   const list = scripts ?? [];
+  const projects = useMemo(
+    () => allProjects.filter((project) => project.workspaceId === workspaceId),
+    [allProjects, workspaceId],
+  );
+  const projectById = useMemo(
+    () => new Map(projects.map((project) => [project.id, project])),
+    [projects],
+  );
+  const mountPathByProjectId = useMemo(
+    () => new Map(sessionMounts.map((mount) => [mount.projectId, mount.worktreePath])),
+    [sessionMounts],
+  );
+  const isMultiProject = projects.length > 1;
+  const defaultProjectId = activeProjectId ?? projects[0]?.id ?? null;
+  const projectFilterOptions = useMemo<ReadonlyArray<SegmentedTabOption<ProjectFilter>>>(
+    () => [
+      { value: 'all', label: 'All' },
+      ...projects.map((project) => ({ value: project.id, label: project.name })),
+    ],
+    [projects],
+  );
+  const groups = useMemo<ReadonlyArray<ScriptGroup>>(() => {
+    if (!isMultiProject) {
+      return [{ key: 'all', label: null, scripts: list }];
+    }
+    if (projectFilter !== 'all') {
+      return [
+        {
+          key: projectFilter,
+          label: null,
+          scripts: list.filter((script) => script.projectId === projectFilter),
+        },
+      ];
+    }
+    return projects.flatMap((project) => {
+      const projectScripts = list.filter((script) => script.projectId === project.id);
+      return projectScripts.length === 0
+        ? []
+        : [{ key: project.id, label: project.name, scripts: projectScripts }];
+    });
+  }, [isMultiProject, list, projectFilter, projects]);
   const newDraftDirty =
     newDraft != null && (newDraft.name.trim() !== '' || newDraft.body.trim() !== '');
 
@@ -124,7 +197,17 @@ export const ScriptsPanel = ({
       const previousIds = new Set(list.map((script) => script.id));
       setError(null);
       try {
-        await saveScript({ workspaceId, id: undefined, name, body });
+        if (newDraft.projectId == null) {
+          setError('project is required');
+          return { kind: 'failed' };
+        }
+        await saveScript({
+          workspaceId,
+          projectId: newDraft.projectId,
+          id: undefined,
+          name,
+          body,
+        });
         const savedScript =
           useAppStore
             .getState()
@@ -169,8 +252,8 @@ export const ScriptsPanel = ({
     }
     setExpandedId(null);
     setError(null);
-    setNewDraft({ name: '', body: '' });
-  }, [newDraft]);
+    setNewDraft({ name: '', body: '', projectId: defaultProjectId });
+  }, [defaultProjectId, newDraft]);
 
   const onCancelNew = useCallback(() => {
     if (newDraftDirty) {
@@ -207,20 +290,21 @@ export const ScriptsPanel = ({
   }, [pendingNewAction, saveNew]);
 
   const onSaveExisting = useCallback(
-    async ({ script, name, body }: SaveExistingParams) => {
+    async ({ script, name, body, projectId }: SaveExistingParams) => {
       const nextName = name.trim();
       const nextBody = body.trim();
       if (nextName === '' || nextBody === '') {
         setError('name and script body are required');
         return;
       }
-      if (nextName === script.name && nextBody === script.body) {
+      if (nextName === script.name && nextBody === script.body && projectId === script.projectId) {
         return;
       }
       setError(null);
       try {
         await saveScript({
           workspaceId,
+          projectId,
           id: script.id,
           name: nextName,
           body: nextBody,
@@ -256,12 +340,12 @@ export const ScriptsPanel = ({
 
   const onRun = useCallback(
     ({ script }: RunParams) => {
-      if (sessionId == null || worktreePath == null) {
+      if (sessionId == null) {
         return;
       }
-      void runScript(sessionId, script.id, worktreePath);
+      void runScript({ sessionId, scriptId: script.id });
     },
-    [runScript, sessionId, worktreePath],
+    [runScript, sessionId],
   );
 
   const onCancel = useCallback(
@@ -300,54 +384,95 @@ export const ScriptsPanel = ({
       {error !== null && newDraft === null ? <p className="text-xs text-danger">{error}</p> : null}
 
       <div className="flex min-h-0 flex-1 flex-col gap-2">
-        {newDraft != null ? (
-          <NewScriptCard
-            name={newDraft.name}
-            body={newDraft.body}
-            error={error}
-            onNameChange={(name) =>
-              setNewDraft((current) => (current == null ? null : { ...current, name }))
-            }
-            onBodyChange={(body) =>
-              setNewDraft((current) => (current == null ? null : { ...current, body }))
-            }
-            onSave={onSaveNew}
-            onCancel={onCancelNew}
+        {isMultiProject ? (
+          <SegmentedTabs
+            ariaLabel="Filter scripts by project"
+            options={projectFilterOptions}
+            value={projectFilter}
+            onChange={setProjectFilter}
+            size="sm"
+            className="max-w-full flex-wrap self-start"
           />
+        ) : null}
+        {newDraft != null ? (
+          newDraft.projectId != null ? (
+            <NewScriptCard
+              name={newDraft.name}
+              body={newDraft.body}
+              projects={projects}
+              projectId={newDraft.projectId}
+              error={error}
+              onNameChange={(name) =>
+                setNewDraft((current) => (current == null ? null : { ...current, name }))
+              }
+              onBodyChange={(body) =>
+                setNewDraft((current) => (current == null ? null : { ...current, body }))
+              }
+              onProjectChange={(projectId) =>
+                setNewDraft((current) => (current == null ? null : { ...current, projectId }))
+              }
+              onSave={onSaveNew}
+              onCancel={onCancelNew}
+            />
+          ) : null
         ) : null}
         {list.length === 0 && newDraft == null ? (
           <LensEmptyState
             tone={CONCEPT_TONE.scripts}
             icon={CONCEPT_ICONS.scripts}
             title="No scripts yet"
-            description="A script is a shell command you run by hand from a session, no agent, no tokens spent. Create one to run setup or checks from the session worktree."
+            description="Each script belongs to a project and runs in that project's worktree for this session. Scripts are shared across every session of the workspace."
             action={newScriptAction}
           />
         ) : (
-          <ul className="flex flex-col gap-2">
-            {list.map((script) => {
-              const run = runs?.[script.id] ?? null;
-              return (
-                <li key={script.id}>
-                  <ScriptRow
-                    script={script}
-                    run={run}
-                    completedAt={run == null ? undefined : completedAt[run.runId]}
-                    expanded={expandedId === script.id}
-                    runnable={runnable}
-                    canRun={worktreePath != null}
-                    copied={copiedId === script.id}
-                    onToggle={() => onToggle({ id: script.id })}
-                    onSave={(name, body) => onSaveExisting({ script, name, body })}
-                    onRun={() => onRun({ script })}
-                    onCancel={() => onCancel({ id: script.id })}
-                    onCopy={() => onCopy({ id: script.id, body: script.body })}
-                    onDelete={() => onDelete({ id: script.id })}
-                  />
-                </li>
-              );
-            })}
-          </ul>
+          <div className="flex flex-col gap-3">
+            {groups.map((group) => (
+              <div key={group.key} className="flex flex-col gap-1.5">
+                {group.label != null ? (
+                  <span className="px-0.5 text-xs font-medium text-muted-foreground">
+                    {group.label}
+                  </span>
+                ) : null}
+                <ul className="flex flex-col gap-2">
+                  {group.scripts.map((script) => {
+                    const run = runs?.[script.id] ?? null;
+                    const project = projectById.get(script.projectId) ?? null;
+                    const projectName = project?.name ?? 'Project';
+                    const mountPath = mountPathByProjectId.get(script.projectId) ?? null;
+                    const runDisabledReason =
+                      runnable && mountPath == null
+                        ? `${projectName} is not mounted in this session`
+                        : null;
+                    return (
+                      <li key={script.id}>
+                        <ScriptRow
+                          script={script}
+                          projects={projects}
+                          projectName={projectName}
+                          mountPath={mountPath}
+                          run={run}
+                          completedAt={run == null ? undefined : completedAt[run.runId]}
+                          expanded={expandedId === script.id}
+                          runnable={runnable}
+                          canRun={mountPath != null}
+                          runDisabledReason={runDisabledReason}
+                          copied={copiedId === script.id}
+                          onToggle={() => onToggle({ id: script.id })}
+                          onSave={(name, body, projectId) =>
+                            onSaveExisting({ script, name, body, projectId })
+                          }
+                          onRun={() => onRun({ script })}
+                          onCancel={() => onCancel({ id: script.id })}
+                          onCopy={() => onCopy({ id: script.id, body: script.body })}
+                          onDelete={() => onDelete({ id: script.id })}
+                        />
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 

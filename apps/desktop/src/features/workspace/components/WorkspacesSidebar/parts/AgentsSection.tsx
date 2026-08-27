@@ -154,11 +154,7 @@ export const AgentsSection = ({
             <p className="px-2 text-2xs text-danger">{section.spawnError}</p>
           )}
           <PlanReadySuggestion task={task} />
-          <ScriptsSection
-            sessionId={task.id}
-            workspaceId={task.workspaceId}
-            worktreePath={section.worktreePath}
-          />
+          <ScriptsSection sessionId={task.id} workspaceId={task.workspaceId} />
         </>
       )}
     </section>

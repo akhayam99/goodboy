@@ -205,6 +205,21 @@ export type {
   SystemAlertKind,
 } from './types';
 
+type SaveScriptParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly projectId: ProjectId;
+  readonly id?: ProjectScriptId;
+  readonly name: string;
+  readonly body: string;
+};
+
+type RunScriptParams = {
+  readonly sessionId: SessionId;
+  readonly scriptId: ProjectScriptId;
+  readonly cols?: number;
+  readonly rows?: number;
+};
+
 export type AppActions = {
   hydrate(): Promise<void>;
   retryHydrate(): Promise<void>;
@@ -503,20 +518,9 @@ export type AppActions = {
   deleteSkill(skillId: SkillId, workspaceId: WorkspaceId): Promise<void>;
   rescanSkills(workspaceId: WorkspaceId): Promise<void>;
   loadScripts(workspaceId: WorkspaceId): Promise<void>;
-  saveScript(input: {
-    workspaceId: WorkspaceId;
-    id?: ProjectScriptId;
-    name: string;
-    body: string;
-  }): Promise<void>;
+  saveScript(input: SaveScriptParams): Promise<void>;
   deleteScript(scriptId: ProjectScriptId, workspaceId: WorkspaceId): Promise<void>;
-  runScript(
-    sessionId: SessionId,
-    scriptId: ProjectScriptId,
-    cwd: string,
-    cols?: number,
-    rows?: number,
-  ): Promise<ScriptRunResult>;
+  runScript(input: RunScriptParams): Promise<ScriptRunResult>;
   cancelScript(sessionId: SessionId, scriptId: ProjectScriptId): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
   savePhaseTemplate(template: WorkflowUpsertArgs): Promise<Workflow>;

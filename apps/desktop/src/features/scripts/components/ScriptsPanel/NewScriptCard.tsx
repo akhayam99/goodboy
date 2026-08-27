@@ -1,12 +1,17 @@
 import { AlertTriangle } from 'lucide-react';
 import { Button, Divider, FieldRow, Input, Textarea } from '@goodboy/ui';
+import type { Project, ProjectId } from '@goodboy/types';
+import { ProjectSelect } from './ProjectSelect';
 
 type Props = {
   readonly name: string;
   readonly body: string;
+  readonly projects: ReadonlyArray<Project>;
+  readonly projectId: ProjectId;
   readonly error: string | null;
   readonly onNameChange: (value: string) => void;
   readonly onBodyChange: (value: string) => void;
+  readonly onProjectChange: (projectId: ProjectId) => void;
   readonly onSave: () => void;
   readonly onCancel: () => void;
 };
@@ -14,9 +19,12 @@ type Props = {
 export const NewScriptCard = ({
   name,
   body,
+  projects,
+  projectId,
   error,
   onNameChange,
   onBodyChange,
+  onProjectChange,
   onSave,
   onCancel,
 }: Props) => (
@@ -32,7 +40,20 @@ export const NewScriptCard = ({
         />
       </FieldRow>
       <Divider />
-      <FieldRow label="Command" help="Runs from the session worktree.">
+      {projects.length > 1 ? (
+        <>
+          <FieldRow label="Project">
+            <ProjectSelect
+              projects={projects}
+              projectId={projectId}
+              ariaLabel="New script project"
+              onChange={onProjectChange}
+            />
+          </FieldRow>
+          <Divider />
+        </>
+      ) : null}
+      <FieldRow label="Command" help="Runs from this project's worktree for the session.">
         <Textarea
           value={body}
           onChange={(event) => onBodyChange(event.target.value)}
