@@ -1,13 +1,14 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { WorktreeStatus } from '@goodboy/types';
 
 const { store } = vi.hoisted(() => ({
   store: {
     setSessionActiveProject: vi.fn(async () => undefined),
     emitNotification: vi.fn(),
+    updateProjectBaseBranch: vi.fn(async () => undefined),
     projects: [] as ReadonlyArray<{ id: string; baseBranch?: string | null }>,
   },
 }));
@@ -52,7 +53,10 @@ const renderControl = ({ status }: { readonly status: WorktreeStatus | null }) =
   );
 
 describe('ProjectSyncControl', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    store.projects = [{ id: 'project-1', baseBranch: 'develop' }];
+  });
   afterEach(cleanup);
 
   it('shows the behind badge only when behind is greater than zero', async () => {
@@ -71,5 +75,49 @@ describe('ProjectSyncControl', () => {
     expect(screen.queryByTestId('project-behind-badge')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Branch sync actions' }));
     expect(screen.getAllByText('--')).toHaveLength(2);
+  });
+
+  it('commits a trimmed base branch on Enter', async () => {
+    renderControl({ status: null });
+    fireEvent.click(screen.getByRole('button', { name: 'Branch sync actions' }));
+    fireEvent.click(screen.getByRole('button', { name: /Compared with develop/ }));
+    const input = screen.getByRole('textbox', { name: 'Base branch' });
+    fireEvent.change(input, { target: { value: '  release  ' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() =>
+      expect(store.updateProjectBaseBranch).toHaveBeenCalledWith({
+        projectId: 'project-1',
+        baseBranch: 'release',
+      }),
+    );
+  });
+
+  it('clears an empty base branch to null', async () => {
+    renderControl({ status: null });
+    fireEvent.click(screen.getByRole('button', { name: 'Branch sync actions' }));
+    fireEvent.click(screen.getByRole('button', { name: /Compared with develop/ }));
+    const input = screen.getByRole('textbox', { name: 'Base branch' });
+    fireEvent.change(input, { target: { value: '   ' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() =>
+      expect(store.updateProjectBaseBranch).toHaveBeenCalledWith({
+        projectId: 'project-1',
+        baseBranch: null,
+      }),
+    );
+  });
+
+  it('reverts the base branch edit on Escape', () => {
+    renderControl({ status: null });
+    fireEvent.click(screen.getByRole('button', { name: 'Branch sync actions' }));
+    fireEvent.click(screen.getByRole('button', { name: /Compared with develop/ }));
+    const input = screen.getByRole('textbox', { name: 'Base branch' });
+    fireEvent.change(input, { target: { value: 'release' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(store.updateProjectBaseBranch).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /Compared with develop/ })).toBeDefined();
   });
 });

@@ -4,6 +4,7 @@ import type { MountDiffStat } from '../../../../../../store';
 import { formatCardTime } from '../../../../../chat/utils/format-card-time';
 import { useHoverMarkViewed } from '../../../../hooks/useHoverMarkViewed';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
+import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import { railColumnX, type RailRow } from '../../../../timeline/railGeometry';
 import { TIMELINE_RHYTHM } from '../../../../timeline/timelineRhythm';
 import { TIMELINE_GUTTER } from './timelineLayout';
@@ -21,10 +22,9 @@ type Props = {
   readonly rail: RailRow;
   readonly railWidth: number;
   readonly sessionId: SessionId;
-  readonly openLabel: string;
+  readonly openTarget: TimelineOpenTarget | null;
   readonly action: TimelineRowAction | null;
   readonly diffStat?: MountDiffStat | null;
-  readonly onOpen: () => void;
 };
 
 const agentIdOf = ({ item }: { readonly item: TimelineRowItem }): AgentId | null =>
@@ -35,10 +35,9 @@ export const TimelineStreamRow = ({
   rail,
   railWidth,
   sessionId,
-  openLabel,
+  openTarget,
   action,
   diffStat = null,
-  onOpen,
 }: Props) => {
   const hover = useHoverMarkViewed({
     sessionId,
@@ -47,6 +46,24 @@ export const TimelineStreamRow = ({
   });
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
   const needsUser = item.markerState === 'needsUser' || item.markerState === 'question';
+  const contentClassName = cn(
+    'flex min-w-0 flex-1 items-center gap-2 rounded-md pl-2 pr-1.5 text-left',
+    openTarget == null
+      ? null
+      : 'motion-safe:transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]',
+    needsUser && tintClasses('warning').bgSoft,
+    !needsUser && item.hasUnread && tintClasses('primary').bgSoft,
+  );
+  const content = (
+    <>
+      <TimelineRowLabel item={item} diffStat={diffStat} />
+      {openTarget == null ? null : (
+        <span className="shrink-0 text-3xs text-muted-foreground opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+          {`${openTarget.label} ↵`}
+        </span>
+      )}
+    </>
+  );
 
   return (
     <div
@@ -78,21 +95,20 @@ export const TimelineStreamRow = ({
         )}
       </span>
       <div className={cn('flex min-w-0 flex-1 items-end gap-1', item.grade === 'step' && 'pr-1')}>
-        <button
-          type="button"
-          onClick={onOpen}
-          className={cn(
-            'flex min-w-0 flex-1 items-center gap-2 rounded-md pl-2 pr-1.5 text-left motion-safe:transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]',
-            needsUser && tintClasses('warning').bgSoft,
-            !needsUser && item.hasUnread && tintClasses('primary').bgSoft,
-          )}
-          style={{ height: boxHeight }}
-        >
-          <TimelineRowLabel item={item} diffStat={diffStat} />
-          <span className="shrink-0 text-3xs text-muted-foreground opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-            {`${openLabel} ↵`}
-          </span>
-        </button>
+        {openTarget == null ? (
+          <div className={contentClassName} style={{ height: boxHeight }}>
+            {content}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={openTarget.open}
+            className={contentClassName}
+            style={{ height: boxHeight }}
+          >
+            {content}
+          </button>
+        )}
         {action == null ? null : (
           <span
             data-testid="timeline-row-action"

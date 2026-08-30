@@ -88,16 +88,20 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         }
         animationClassName="animate-fade-in"
       >
-        <OverviewNextSteps session={session} agents={sessionAgents} />
-        <OverviewResolve session={session} />
-        <TimelinePane
-          session={session}
-          runs={runs}
-          actions={
-            <OverviewActions sessionId={sessionId} onOpenWorkflowBuilder={openWorkflowBuilder} />
-          }
-          kickoff={<SessionKickoff session={session} onOpenWorkflowBuilder={openWorkflowBuilder} />}
-        />
+        <div className="flex flex-col gap-6">
+          <OverviewNextSteps session={session} agents={sessionAgents} />
+          <OverviewResolve session={session} />
+          <TimelinePane
+            session={session}
+            runs={runs}
+            actions={
+              <OverviewActions sessionId={sessionId} onOpenWorkflowBuilder={openWorkflowBuilder} />
+            }
+            kickoff={
+              <SessionKickoff session={session} onOpenWorkflowBuilder={openWorkflowBuilder} />
+            }
+          />
+        </div>
       </PaneShell>
     </InspectorSplit>
   );

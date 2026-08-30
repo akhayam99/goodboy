@@ -103,7 +103,7 @@ export const OverviewResolve = ({ session }: Props) => {
   };
 
   return (
-    <section aria-label="Suggestions" className="flex flex-col gap-2">
+    <section aria-label="Suggestions" className="flex flex-col gap-2.5">
       <Eyebrow label="Suggestions" className="px-0.5" />
       {hasReviewSuggestion ? (
         <div className="flex w-full items-center gap-3 rounded-lg border-l-2 border-border-soft px-3 py-1.5">

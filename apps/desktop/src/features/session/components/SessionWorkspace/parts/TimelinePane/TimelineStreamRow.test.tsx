@@ -90,9 +90,8 @@ const renderRow = ({ onOpen = vi.fn(), action = null }: RenderParams = {}) =>
       rail={railOf()}
       railWidth={32}
       sessionId={SESSION_ID}
-      openLabel="Open chat"
+      openTarget={{ label: 'Open chat', open: onOpen }}
       action={action}
-      onOpen={onOpen}
     />,
   );
 
@@ -148,6 +147,25 @@ describe('TimelineStreamRow', () => {
 
     expect(screen.getByText('Open chat ↵').className).toContain('opacity-0');
     expect(screen.getByText('Open chat ↵').className).toContain('group-hover:opacity-100');
+  });
+
+  it('renders a plain row when it has no open target', () => {
+    render(
+      <TimelineStreamRow
+        item={itemOf()}
+        rail={railOf()}
+        railWidth={32}
+        sessionId={SESSION_ID}
+        openTarget={null}
+        action={null}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /Implement the parser/ })).toBeNull();
+    expect(screen.queryByText(/Open chat/)).toBeNull();
+    expect(screen.getByText('Implement the parser').parentElement?.className).not.toContain(
+      'hover:bg-muted/40',
+    );
   });
 
   it('boxes the trailing action to the same height as the row content line', () => {

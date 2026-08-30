@@ -217,9 +217,13 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
       return null;
     }
     if (stalledRunIds.has(entry.run.id)) {
+      const target = openTargetFor({ entry });
+      if (target == null) {
+        return null;
+      }
       return {
         label: 'Restart the step',
-        onAct: () => openTargetFor({ entry }).open(),
+        onAct: target.open,
       };
     }
     const advance = advanceByRunId.get(entry.run.id) ?? { kind: 'complete' as const };
@@ -252,7 +256,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
   }
 
   return (
-    <section aria-label="Activity" className="flex flex-col gap-2">
+    <section aria-label="Activity" className="flex flex-col gap-2.5">
       <SectionHeader
         label="Activity"
         className="px-0.5"
@@ -328,10 +332,9 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
                 rail={railRow}
                 railWidth={rail.width}
                 sessionId={sessionId}
-                openLabel={target.label}
+                openTarget={target}
                 action={actionFor({ item })}
                 diffStat={diffStatFor({ item })}
-                onOpen={target.open}
               />
             );
           })}

@@ -150,6 +150,21 @@ describe('useRebaseAgent', () => {
     expect(showToast.mock.calls[0]?.[2]?.title).toBe('Rebase started');
   });
 
+  it('offers a spawn toast action that selects the spawned agent', async () => {
+    state.spawnAgent.mockResolvedValueOnce('agent-new');
+    const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
+
+    await act(() => result.current.run());
+    const action = showToast.mock.calls[0]?.[2]?.action;
+    expect(action?.label).toBe('Open the rebase agent');
+
+    action?.onClick();
+
+    expect(state.selectAgent).toHaveBeenCalledWith(sessionId, 'agent-new');
+    expect(state.setActiveLens).toHaveBeenCalledWith(sessionId, 'agents');
+    expect(state.spawnAgent).toHaveBeenCalledTimes(1);
+  });
+
   it('offers an action that opens the agent once the rebase settles', async () => {
     const { result, rerender } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
 

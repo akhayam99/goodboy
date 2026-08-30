@@ -55,7 +55,7 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
   const goalText = session.goal === '' ? 'Untitled session' : session.goal;
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
         {rename.editing ? (
           <div ref={titleFieldRef} className="flex min-w-0 flex-1 flex-col gap-1">
@@ -98,7 +98,7 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
           <SessionDestructiveActions session={session} />
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1.5">
         <ContextChip sessionId={sessionId} onSelectLens={onSelectLens} />
         <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />

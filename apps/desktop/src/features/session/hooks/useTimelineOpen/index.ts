@@ -10,7 +10,7 @@ type EventTarget = {
   readonly label: string;
 };
 
-const EVENT_TARGET: Record<SessionEventKind, EventTarget> = {
+const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   worktree_created: { lens: 'files', label: 'Open files' },
   branch_created: { lens: 'files', label: 'Open files' },
   branch_switched: { lens: 'files', label: 'Open files' },
@@ -28,11 +28,11 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget> = {
   decisions_changed: { lens: 'decisions', label: 'Open decisions' },
   project_materialized: { lens: 'files', label: 'Open files' },
   project_materialization_refused: { lens: null, label: 'Open overview' },
-  project_detached: { lens: null, label: 'Open overview' },
+  project_detached: null,
   external_task_created: { lens: null, label: 'Open overview' },
 };
 
-const eventOpenTarget = ({ kind }: { readonly kind: SessionEventKind }): EventTarget =>
+const eventOpenTarget = ({ kind }: { readonly kind: SessionEventKind }): EventTarget | null =>
   EVENT_TARGET[kind];
 
 type Params = {
@@ -50,9 +50,9 @@ type TargetParams = {
 
 export const useTimelineOpen = ({
   sessionId,
-}: Params): ((params: TargetParams) => TimelineOpenTarget) =>
+}: Params): ((params: TargetParams) => TimelineOpenTarget | null) =>
   useCallback(
-    ({ entry }: TargetParams): TimelineOpenTarget => {
+    ({ entry }: TargetParams): TimelineOpenTarget | null => {
       const store = useAppStore.getState();
       if (entry.kind === 'run') {
         return {
@@ -95,6 +95,9 @@ export const useTimelineOpen = ({
       }
       if (entry.kind === 'event') {
         const target = eventOpenTarget({ kind: entry.event.kind });
+        if (target == null) {
+          return null;
+        }
         return {
           label: target.label,
           open: () => store.setActiveLens(sessionId, target.lens),

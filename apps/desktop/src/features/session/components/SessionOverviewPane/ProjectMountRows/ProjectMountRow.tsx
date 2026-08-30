@@ -1,7 +1,5 @@
-import { useState } from 'react';
-import { Folder, FolderGit2, MoreHorizontal } from 'lucide-react';
-import { OverflowMenu, Tooltip, cn, formatError } from '@goodboy/ui';
-import type { OverflowMenuItem } from '@goodboy/ui';
+import { Folder, FolderGit2 } from 'lucide-react';
+import { Tooltip } from '@goodboy/ui';
 import type {
   Project,
   PullRequestState,
@@ -16,6 +14,7 @@ import { PullRequestChip } from '../../../../github/components/PullRequestChip';
 import { DiffStat } from '../../DiffStat';
 import { ProjectBranchChip } from './ProjectBranchChip';
 import { ProjectSyncControl } from './ProjectSyncControl';
+import { ProjectDetachMenu } from './ProjectDetachMenu';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -40,10 +39,7 @@ export const ProjectMountRow = ({
   onSelectLens,
 }: Props) => {
   const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
-  const detachProject = useAppStore((state) => state.detachProject);
   const openMountDiff = useAppStore((state) => state.openMountDiff);
-  const emitNotification = useAppStore((state) => state.emitNotification);
-  const [isDetaching, setIsDetaching] = useState(false);
   const GlyphIcon = project?.kind === 'repo' ? FolderGit2 : Folder;
   const projectName = project?.name ?? mount.mountName;
   const changes = diffStat != null && (diffStat.additions > 0 || diffStat.deletions > 0);
@@ -52,36 +48,10 @@ export const ProjectMountRow = ({
     await setSessionActiveProject({ sessionId, projectId: mount.projectId });
     onSelectLens(lens);
   };
-  const detach = async () => {
-    setIsDetaching(true);
-    try {
-      await detachProject({ sessionId, projectId: mount.projectId });
-    } catch (error) {
-      void emitNotification(
-        'error',
-        'warning',
-        'could not detach the project',
-        formatError(error),
-        { sessionId, workspaceId: project?.workspaceId },
-      );
-    } finally {
-      setIsDetaching(false);
-    }
-  };
-  const menuItems: ReadonlyArray<OverflowMenuItem> = [
-    {
-      kind: 'item',
-      key: 'detach',
-      label: isDetaching ? `Detaching ${projectName}` : 'Detach project',
-      onClick: () => void detach(),
-      disabled: isDetaching,
-    },
-  ];
-
   return (
     <div
       data-testid="project-mount-row"
-      className="flex min-h-12 w-full items-center gap-3 border-b border-border-soft px-3 py-2 last:border-b-0"
+      className="flex min-h-10 w-full items-center gap-3 border-b border-border-soft px-3 py-1.5 last:border-b-0"
     >
       <div className="flex min-w-36 flex-1 items-center gap-2">
         <GlyphIcon size={14} aria-hidden className="shrink-0 text-muted-foreground" />
@@ -159,11 +129,14 @@ export const ProjectMountRow = ({
           <CONCEPT_ICONS.scripts size={13} aria-hidden />
         </button>
       </Tooltip>
-      <OverflowMenu
-        items={menuItems}
-        label={`${projectName} actions`}
-        triggerClassName={cn(ICON_BUTTON)}
-        trigger={<MoreHorizontal size={14} aria-hidden />}
+      <ProjectDetachMenu
+        sessionId={sessionId}
+        projectId={mount.projectId}
+        workspaceId={project?.workspaceId}
+        projectName={projectName}
+        worktreePath={mount.worktreePath}
+        worktreeStatus={worktreeStatus}
+        triggerClassName={ICON_BUTTON}
       />
     </div>
   );
