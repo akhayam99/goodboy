@@ -234,7 +234,6 @@ vi.mock('../../../../../features/session/agent-kind', () => ({
   isStandaloneAgent: (agent: Agent) =>
     agent.parentAgentId == null && !(agent.workflowRunId != null && agent.stepId != null),
 }));
-vi.mock('../../../../../shared/lib/errors', () => ({ formatError: (e: unknown) => String(e) }));
 
 import { AgentsSection } from './AgentsSection';
 

@@ -1,34 +1,10 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { Button, cn, Divider, formatError, Textarea } from '@goodboy/ui';
-import { AlertTriangle, ArrowRight, Folder, GitBranch } from 'lucide-react';
-import type {
-  Project,
-  ProjectId,
-  SessionExternalTaskProvider,
-  SessionId,
-  WorkspaceId,
-} from '@goodboy/types';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { Button, cn, formatError, Textarea } from '@goodboy/ui';
+import { AlertTriangle, ArrowRight } from 'lucide-react';
+import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
-import { isMissingBaseRefError } from '../../../../shared/lib/errors';
-import { isValidBranchSlug } from '../../../../shared/utils/isValidBranchSlug';
-import { sanitizeBranchPrefix } from '../../../../shared/utils/sanitizeBranchPrefix';
-import { validateSessionDirectoryName } from '../../../../shared/utils/validateSessionDirectoryName';
-import { deriveDefaultSessionDirectoryNameFromGoal } from '../../../../shared/utils/deriveDefaultSessionDirectoryNameFromGoal';
-import { buildSimpleSessionDirectoryPath } from '../../../../shared/utils/buildSimpleSessionDirectoryPath';
-import { sessionDirectoryNameValidationMessage } from '../../../../shared/utils/sessionDirectoryNameValidationMessage';
-import { DEFAULT_BRANCH_PREFIX } from '../../../settings/settings';
-import { removeWorktree } from '../../../worktree/worktree';
-import { useBranchConflict } from '../../../worktree/useBranchConflict';
-import { useSimpleSessionDirectoryConflict } from '../../../worktree/useSimpleSessionDirectoryConflict';
-import type { AdoptableBranch } from './adoptableBranch';
-import { BranchDetails } from './BranchDetails';
-import { ConfigToggle } from './ConfigToggle';
-import { FolderDetails } from './FolderDetails';
 import { LaunchedNotice } from './LaunchedNotice';
-import { ProjectChoice } from './ProjectChoice';
 
 type ExternalTask = {
   readonly provider: SessionExternalTaskProvider;
@@ -42,61 +18,23 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly linkedSessionId: SessionId | null;
   readonly goalSeed: string;
-  readonly branchSlugSeed: string;
   readonly externalTask: ExternalTask;
-  readonly adoptable?: AdoptableBranch | null;
-  readonly onSelectedProjectChange?: (project: Project | null) => void;
   readonly onClose: () => void;
 };
-
-const SLUG_MAX_LEN = 48;
 
 export const LaunchSessionPanel = ({
   workspaceId,
   linkedSessionId,
   goalSeed,
-  branchSlugSeed,
   externalTask,
-  adoptable: adoptableInput = null,
-  onSelectedProjectChange,
   onClose,
 }: Props) => {
   const createSession = useAppStore((state) => state.createSession);
-  const workspaceOverrides = useAppStore(
-    (state) => state.workspaceOverrides?.[workspaceId] ?? null,
-  );
-  const projects = useAppStore(
-    useShallow((state) =>
-      (state.projects ?? []).filter((project) => project.workspaceId === workspaceId),
-    ),
-  );
-  const [pickedProjectId, setPickedProjectId] = useState<ProjectId | null>(null);
-  const selectedProject =
-    projects.find((project) => project.id === pickedProjectId) ??
-    (projects.length === 1 ? (projects[0] ?? null) : null);
-  const hasProjectChoice = projects.length > 1;
-  const hasNoProject = projects.length === 0;
-  const rootPath = selectedProject?.rootPath ?? null;
-  const isFolderProject = selectedProject?.kind === 'folder';
-  const adoptable = isFolderProject ? null : adoptableInput;
   const { showToast } = useToast();
-  const configId = useId();
   const [goal, setGoal] = useState(goalSeed);
-  const [branchSlug, setBranchSlug] = useState(branchSlugSeed);
-  const [folderName, setFolderName] = useState(() =>
-    deriveDefaultSessionDirectoryNameFromGoal({ goal: goalSeed }),
-  );
-  const [folderNameTouched, setFolderNameTouched] = useState(false);
-  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
-  const [modeChoice, setModeChoice] = useState<'adopt' | 'fresh' | null>(null);
-  const [isConfigRevealed, setConfigRevealed] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [isBusy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const goalSeedRef = useRef(goalSeed);
-
-  useEffect(() => {
-    onSelectedProjectChange?.(selectedProject);
-  }, [onSelectedProjectChange, selectedProject]);
 
   useEffect(() => {
     const previousSeed = goalSeedRef.current;
@@ -104,105 +42,15 @@ export const LaunchSessionPanel = ({
     setGoal((current) => (current === previousSeed ? goalSeed : current));
   }, [goalSeed]);
 
-  useEffect(() => {
-    if (!isFolderProject || folderNameTouched) {
-      return;
-    }
-    const nextFolderName = deriveDefaultSessionDirectoryNameFromGoal({ goal });
-    if (nextFolderName === folderName) {
-      return;
-    }
-    setFolderName(nextFolderName);
-  }, [folderName, folderNameTouched, goal, isFolderProject]);
+  const canLaunch = goal.trim() !== '' && !isBusy;
 
-  useEffect(() => {
-    setBranchPrefix(workspaceOverrides?.defaultBranchPrefix ?? DEFAULT_BRANCH_PREFIX);
-  }, [workspaceId, workspaceOverrides?.defaultBranchPrefix]);
-
-  const mode = modeChoice ?? (adoptable == null ? 'fresh' : 'adopt');
-  const prefix = sanitizeBranchPrefix({ input: branchPrefix }) || DEFAULT_BRANCH_PREFIX;
-  const isSlugValid = isValidBranchSlug({ slug: branchSlug });
-  const folderValidation = validateSessionDirectoryName({ name: folderName });
-  const folderNameError = sessionDirectoryNameValidationMessage({ validation: folderValidation });
-  const folderPathPreview =
-    isFolderProject && rootPath != null
-      ? buildSimpleSessionDirectoryPath({
-          projectRoot: rootPath,
-          folderName,
-        })
-      : null;
-  const folderConflictPath =
-    isFolderProject && folderValidation.ok && folderPathPreview != null ? folderPathPreview : null;
-  const folderConflict = useSimpleSessionDirectoryConflict({ path: folderConflictPath });
-  const isAdopting = mode === 'adopt' && adoptable != null;
-  const adoptedBranch = isAdopting ? adoptable.branch : null;
-  const effectiveBranch = isFolderProject
-    ? null
-    : isAdopting
-      ? adoptedBranch
-      : isSlugValid
-        ? `${prefix}/${branchSlug.trim()}`
-        : null;
-  const conflict = useBranchConflict(effectiveBranch, rootPath);
-  const conflictSessionId = conflict?.kind === 'session' ? conflict.sessionId : null;
-  const conflictPath = conflict?.kind === 'worktree' ? conflict.path : null;
-  const openableSessionId = linkedSessionId ?? conflictSessionId;
-  const isMissingBase = error != null && isMissingBaseRefError(error);
-  const isBranchReady = isFolderProject
-    ? true
-    : isAdopting
-      ? adoptedBranch != null && !adoptable.isResolving
-      : isSlugValid;
-  const isFolderReady =
-    !isFolderProject || (folderValidation.ok && !folderConflict.exists && !folderConflict.checking);
-  const canLaunch =
-    selectedProject != null &&
-    goal.trim() !== '' &&
-    isBranchReady &&
-    isFolderReady &&
-    !busy &&
-    conflictPath == null;
-  const isResolvingAdopted = isAdopting && adoptable.isResolving;
-  const needsConfig =
-    conflictPath != null ||
-    isMissingBase ||
-    (isFolderProject && (folderNameError != null || folderConflict.exists)) ||
-    (!isFolderProject && !isBranchReady && !isResolvingAdopted);
-
-  useEffect(() => {
-    if (!needsConfig) {
-      return;
-    }
-    setConfigRevealed(true);
-  }, [needsConfig]);
-
-  const isConfigOpen = selectedProject != null && (isConfigRevealed || needsConfig);
-  const configLabel = isFolderProject
-    ? `sessions/${folderName}`
-    : isAdopting
-      ? isResolvingAdopted
-        ? 'resolving…'
-        : (adoptedBranch ?? 'no branch found')
-      : `${prefix}/${branchSlug}`;
-
-  const launch = async (eraseWorktreePath?: string) => {
-    if (selectedProject == null) {
-      return;
-    }
+  const launch = async () => {
     setError(null);
     setBusy(true);
     try {
-      if (eraseWorktreePath != null && rootPath != null) {
-        await removeWorktree(rootPath, eraseWorktreePath);
-      }
       const { session } = await createSession({
         workspaceId,
-        projectId: selectedProject.id,
         goal,
-        ...(isFolderProject
-          ? { folderName }
-          : { branchPrefix: prefix, branchSlug: branchSlug.trim() || undefined }),
-        ...(adoptedBranch != null ? { existingBranch: adoptedBranch } : {}),
         externalTasks: [externalTask],
       });
       showToast('success', `Session created: ${session.goal}`);
@@ -225,14 +73,8 @@ export const LaunchSessionPanel = ({
     void launch();
   };
 
-  if (openableSessionId != null) {
-    return (
-      <LaunchedNotice
-        sessionId={openableSessionId}
-        isLinkedToIssue={linkedSessionId != null}
-        onOpened={onClose}
-      />
-    );
+  if (linkedSessionId != null) {
+    return <LaunchedNotice sessionId={linkedSessionId} isLinkedToIssue onOpened={onClose} />;
   }
 
   return (
@@ -240,60 +82,6 @@ export const LaunchSessionPanel = ({
       aria-label="Launch session"
       className="flex flex-col gap-1 rounded-md bg-subtle/80 p-2 ring-1 ring-border-soft motion-safe:transition-shadow focus-within:ring-2 focus-within:ring-primary/40"
     >
-      {hasNoProject && (
-        <p className="flex items-start gap-1.5 px-1 pt-1 text-2xs leading-relaxed text-muted-foreground">
-          <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0" />
-          This workspace has no project yet. Add one in workspace settings, then launch from here.
-        </p>
-      )}
-
-      {hasProjectChoice && (
-        <div className="flex flex-col gap-3 px-1 pt-1">
-          <ProjectChoice
-            projects={projects}
-            selectedProjectId={selectedProject?.id ?? null}
-            onSelect={setPickedProjectId}
-            busy={busy}
-          />
-          <Divider />
-        </div>
-      )}
-
-      <div id={configId} className={cn('flex flex-col', isConfigOpen && 'gap-3 px-1')}>
-        {isConfigOpen ? (
-          <>
-            {isFolderProject ? (
-              <FolderDetails
-                folderName={folderName}
-                onFolderNameChange={(next) => {
-                  setFolderName(next);
-                  setFolderNameTouched(true);
-                }}
-                pathPreview={folderPathPreview}
-                nameError={folderNameError}
-                exists={folderConflict.exists}
-                isChecking={folderConflict.checking}
-                busy={busy}
-              />
-            ) : (
-              <BranchDetails
-                adoptable={adoptable}
-                mode={mode}
-                onModeChange={setModeChoice}
-                prefix={prefix}
-                branchSlug={branchSlug}
-                onBranchSlugChange={setBranchSlug}
-                slugMaxLength={SLUG_MAX_LEN}
-                conflictPath={conflictPath}
-                busy={busy}
-              />
-            )}
-            {isMissingBase && <BaseBranchGuide />}
-            <Divider />
-          </>
-        ) : null}
-      </div>
-
       <Textarea
         value={goal}
         onChange={(event) => setGoal(event.target.value)}
@@ -301,13 +89,13 @@ export const LaunchSessionPanel = ({
         autoGrow
         minRows={2}
         maxRows={10}
-        disabled={busy}
+        disabled={isBusy}
         aria-label="Session goal"
         placeholder="What should this session do?"
         className="border-0 bg-transparent px-2 leading-relaxed shadow-none focus-visible:shadow-none focus-visible:ring-0"
       />
 
-      {error != null && !isMissingBase && (
+      {error != null ? (
         <span
           role="alert"
           className="flex items-start gap-1.5 px-2 text-2xs leading-relaxed text-danger"
@@ -315,50 +103,18 @@ export const LaunchSessionPanel = ({
           <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0" />
           {error}
         </span>
-      )}
+      ) : null}
 
-      <footer className="flex items-center justify-between gap-3 px-1">
-        {selectedProject != null ? (
-          <ConfigToggle
-            icon={
-              isFolderProject ? (
-                <Folder size={11} aria-hidden />
-              ) : (
-                <GitBranch size={11} aria-hidden />
-              )
-            }
-            label={configLabel}
-            controls={configId}
-            isOpen={isConfigOpen}
-            needsAttention={needsConfig}
-            onToggle={() => setConfigRevealed(!isConfigOpen)}
-          />
-        ) : (
-          <span className="min-w-0 truncate text-2xs text-muted-foreground">
-            {hasNoProject ? 'No project to launch into' : 'Pick a project to configure the session'}
-          </span>
-        )}
-        {conflictPath != null ? (
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => void launch(conflictPath)}
-            disabled={busy || goal.trim() === ''}
-            className={cn('shrink-0', busy && 'animate-border-pulse')}
-          >
-            {busy ? 'Working…' : 'Erase worktree & launch'}
-          </Button>
-        ) : (
-          <Button
-            size="sm"
-            onClick={() => void launch()}
-            disabled={!canLaunch}
-            className={cn('shrink-0', busy && 'animate-border-pulse')}
-          >
-            {busy ? 'Launching…' : 'Launch session'}
-            {!busy && <ArrowRight size={13} aria-hidden />}
-          </Button>
-        )}
+      <footer className="flex items-center justify-end px-1">
+        <Button
+          size="sm"
+          onClick={() => void launch()}
+          disabled={!canLaunch}
+          className={cn('shrink-0', isBusy && 'animate-border-pulse')}
+        >
+          {isBusy ? 'Launching…' : 'Launch session'}
+          {!isBusy ? <ArrowRight size={13} aria-hidden /> : null}
+        </Button>
       </footer>
     </section>
   );

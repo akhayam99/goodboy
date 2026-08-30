@@ -37,7 +37,6 @@ vi.mock('../../../../store', () => ({
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
 }));
-vi.mock('../../../worktree/useBranchConflict', () => ({ useBranchConflict: () => null }));
 vi.mock('../../../worktree/worktree', () => ({ removeWorktree: vi.fn() }));
 vi.mock('../client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../client')>()),

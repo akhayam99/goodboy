@@ -5,7 +5,6 @@ import { LaunchSessionPanel } from '../../components/LaunchSessionPanel';
 import type { JiraIssue } from '../client';
 import { goalFromIssue } from '../goal-from-issue';
 import { JiraIssueDetail } from '../JiraIssueDetail';
-import { jiraBranchSlug } from './useJiraIssues';
 
 type Props = {
   readonly issue: JiraIssue | null;
@@ -49,7 +48,6 @@ export const IssueDetailPanel = ({
           workspaceId={workspaceId}
           linkedSessionId={sessionId}
           goalSeed={goalFromIssue({ issue })}
-          branchSlugSeed={jiraBranchSlug({ issue })}
           externalTask={{
             provider: 'jira',
             externalId: issue.id,

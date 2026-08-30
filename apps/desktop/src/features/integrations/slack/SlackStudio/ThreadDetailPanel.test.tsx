@@ -115,7 +115,6 @@ describe('ThreadDetailPanel', () => {
       identifier: '#eng-alerts › billing webhook fails on retry',
       title: 'billing webhook fails on retry',
     });
-    expect(h.launch?.branchSlugSeed).toBe('billing-webhook-fails-on-retry');
     expect(String(h.launch?.goalSeed)).toContain('Slack thread in #eng-alerts');
     expect(String(h.launch?.goalSeed)).toContain('ada: billing webhook fails on retry');
   });

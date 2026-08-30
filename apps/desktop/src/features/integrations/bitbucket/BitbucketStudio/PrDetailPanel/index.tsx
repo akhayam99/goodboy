@@ -13,7 +13,6 @@ import { BranchPair } from '@goodboy/ui';
 import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
 import { RefreshIconButton } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
-import { slugifyBranch } from '../../../../../shared/utils/slugifyBranch';
 import { openUrl } from '../../../../../shared/lib/editor';
 import { PrChecks } from '../../../../github/components/GitHubStudio/PrChecks';
 import { LaunchSessionPanel } from '../../../components/LaunchSessionPanel';
@@ -49,8 +48,6 @@ const SECTION_OPTIONS = [
   { value: 'checks', label: 'Checks', icon: ListChecks },
   { value: 'conversation', label: 'Conversation', icon: MessageSquare },
 ] as const;
-
-const BRANCH_SLUG_MAX_LEN = 48;
 
 const POST_BLOCKED =
   'Goodboy is still resolving this pull request on Bitbucket, so it cannot post a comment yet';
@@ -183,10 +180,6 @@ export const PrDetailPanel = ({
             workspaceId={workspaceId}
             linkedSessionId={sessionId}
             goalSeed={goalFromPullRequest({ pullRequest })}
-            branchSlugSeed={slugifyBranch({
-              input: pullRequest.title,
-              maxLength: BRANCH_SLUG_MAX_LEN,
-            })}
             externalTask={{
               provider: 'bitbucket',
               externalId: identifier,

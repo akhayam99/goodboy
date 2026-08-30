@@ -7,7 +7,6 @@ import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { resolveDetailFields, sentryIssueFields } from '../../../../shared/detail-fields';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
-import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
 import { goalFromSentry } from '../goal-from-sentry';
 import type { SentryIssue } from '../client';
@@ -26,8 +25,6 @@ type Props = {
 };
 
 type IssueSection = 'overview' | 'stack' | 'breadcrumbs';
-
-const SLUG_MAX_LEN = 30;
 
 export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
@@ -67,7 +64,6 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
       workspaceId={workspaceId}
       linkedSessionId={sessionId}
       goalSeed={goalFromSentry(issue, issueDetail)}
-      branchSlugSeed={slugifyBranch({ input: issue.title, maxLength: SLUG_MAX_LEN })}
       externalTask={{
         provider: 'sentry',
         externalId: issue.id,

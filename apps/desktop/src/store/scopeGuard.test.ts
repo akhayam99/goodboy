@@ -152,6 +152,9 @@ describe('buildScopeGuard', () => {
     expect(guard).toContain('This session has no materialized project mounts yet.');
     expect(guard).toContain('- app (repo) root: /tmp/app | NOT materialized');
     expect(guard).toContain('- web (repo) root: /tmp/web | NOT materialized');
+    expect(guard).toContain(
+      'Based on the goal, identify and materialize every relevant project before writing.',
+    );
     expect(guard).toContain('You may READ the project root paths listed above.');
     expect(guard).toContain(
       'ALL writes (Write/Edit/Bash file mutations) MUST resolve inside the session directory or a materialized project mount.',

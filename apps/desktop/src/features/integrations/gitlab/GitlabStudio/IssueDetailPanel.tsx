@@ -12,7 +12,6 @@ import { ExternalRefActions } from '../../../../shared/components/ExternalRefAct
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../goal-from-issue';
 import { issueIdentifier, type GitlabIssue } from '../client';
-import { gitlabBranchSlug } from './useGitlabIssues';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useGitlabIssueDescription } from '../useGitlabIssueDescription';
 import { useGitlabIssueNotes } from '../useGitlabIssueNotes';
@@ -59,7 +58,6 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
       workspaceId={workspaceId}
       linkedSessionId={sessionId}
       goalSeed={goalFromIssue(issue)}
-      branchSlugSeed={gitlabBranchSlug(issue)}
       externalTask={{
         provider: 'gitlab',
         externalId: String(issue.id),
