@@ -1,10 +1,5 @@
 import type { GitUnknownReason, WorkspaceGitStatus } from '@goodboy/types';
-import {
-  changedCount,
-  distanceBehind,
-  operationLabel,
-  unmergedCount,
-} from '../../../../shared/lib/gitStatus';
+import { changedCount, distanceBehind, unmergedCount } from '../../../../shared/lib/gitStatus';
 
 type Params = {
   readonly status: WorkspaceGitStatus | null;

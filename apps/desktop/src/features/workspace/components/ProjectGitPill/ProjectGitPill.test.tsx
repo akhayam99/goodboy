@@ -91,7 +91,7 @@ describe('ProjectGitPill', () => {
     cleanup();
     renderPill({ status: statusOf({}) });
     fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
-    expect(screen.getByText('Already up to date')).toBeDefined();
+    expect(screen.getByText('Already up to date.')).toBeDefined();
     expect(
       screen
         .getByRole('button', { name: /Fast-forward main to origin\/main/ })

@@ -263,11 +263,11 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
               blockedReason === 'already up to date' ? (
                 <span className="flex items-center gap-1 px-1 text-2xs leading-relaxed text-muted-foreground">
                   <Check size={11} aria-hidden />
-                  {capitalize({ value: blockedReason })}
+                  {`${capitalize({ value: blockedReason })}.`}
                 </span>
               ) : (
                 <span className="px-1 text-2xs leading-relaxed text-muted-foreground">
-                  {capitalize({ value: blockedReason })}
+                  {`${capitalize({ value: blockedReason })}.`}
                 </span>
               )
             ) : null}
