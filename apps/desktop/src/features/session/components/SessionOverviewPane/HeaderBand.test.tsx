@@ -37,6 +37,9 @@ vi.mock('./SessionDestructiveActions', () => ({
   SessionDestructiveActions: () => <button aria-label="Session actions" />,
 }));
 vi.mock('./ContextChip', () => ({ ContextChip: () => <span>Context</span> }));
+vi.mock('./SessionCostChip', () => ({
+  SessionCostChip: () => <span data-testid="session-cost-chip" />,
+}));
 vi.mock('./LinkedWorkChips', () => ({ LinkedWorkChips: () => <span>Linked work</span> }));
 vi.mock('./LinkIssueAction', () => ({ LinkIssueAction: () => <button>Link issue</button> }));
 vi.mock('./ProjectMountRows', () => ({
@@ -80,5 +83,15 @@ describe('HeaderBand', () => {
     const projects = screen.getByRole('region', { name: 'Mounted projects' });
     const goal = screen.getByText('Goal');
     expect(projects.compareDocumentPosition(goal) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('renders the session cost at the right edge of the context row', () => {
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+
+    const context = screen.getByText('Context');
+    const chip = screen.getByTestId('session-cost-chip');
+    expect(context.parentElement).toBe(chip.parentElement?.parentElement);
+    expect(chip.parentElement?.className).toContain('ml-auto');
+    expect(chip.parentElement?.lastElementChild).toBe(chip);
   });
 });
