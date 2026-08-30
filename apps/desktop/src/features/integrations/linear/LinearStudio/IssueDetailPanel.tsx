@@ -1,12 +1,8 @@
-import { useEffect, useState } from 'react';
-import { EmptyState, formatError } from '@goodboy/ui';
-import type { Project, SessionId, WorkspaceId } from '@goodboy/types';
-import { sanitizeBranchSlug } from '../../../../shared/utils/sanitizeBranchSlug';
-import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
-import { ghPrHeadBranch } from '../../../github/github';
+import { EmptyState } from '@goodboy/ui';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../goal-from-issue';
-import { issuePullRequests, type LinearIssue } from '../client';
+import type { LinearIssue } from '../client';
 import { LinearIssueDetail } from '../LinearIssueDetail';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
@@ -17,72 +13,7 @@ type Props = {
   readonly onClose: () => void;
 };
 
-const SLUG_MAX_LEN = 48;
-
-type Params = {
-  readonly issue: LinearIssue;
-};
-
-const branchSlugFor = ({ issue }: Params): string => {
-  const branchName = issue.branchName;
-  if (branchName != null && branchName !== '') {
-    const idx = branchName.indexOf('/');
-    const tail = idx >= 0 ? branchName.slice(idx + 1) : branchName;
-    const cleaned = sanitizeBranchSlug({ input: tail, maxLength: SLUG_MAX_LEN });
-    if (cleaned.length > 0) {
-      return cleaned;
-    }
-  }
-  return slugifyBranch({ input: issue.title, maxLength: SLUG_MAX_LEN });
-};
-
 export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Props) => {
-  const [launchProject, setLaunchProject] = useState<Project | null>(null);
-  const rootPath = launchProject?.rootPath ?? null;
-  const isFolderProject = launchProject?.kind === 'folder';
-
-  const adoptablePr =
-    issue != null && !isFolderProject
-      ? (issuePullRequests(issue).find((pr) => pr.repo != null && pr.repo !== '') ?? null)
-      : null;
-
-  const [prBranch, setPrBranch] = useState<string | null>(null);
-  const [prResolving, setPrResolving] = useState(false);
-  const [prError, setPrError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (adoptablePr?.repo == null || rootPath == null) {
-      setPrBranch(null);
-      setPrError(null);
-      setPrResolving(false);
-      return;
-    }
-    const prNumber = adoptablePr.number;
-    let cancelled = false;
-    setPrBranch(null);
-    setPrResolving(true);
-    setPrError(null);
-    ghPrHeadBranch(rootPath, prNumber, workspaceId)
-      .then((branch) => {
-        if (!cancelled) {
-          setPrBranch(branch);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setPrError(formatError(err));
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setPrResolving(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [adoptablePr?.repo, adoptablePr?.number, rootPath, workspaceId]);
-
   if (issue == null) {
     return (
       <div className="flex h-full items-center justify-center px-8">
@@ -105,7 +36,6 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
       workspaceId={workspaceId}
       linkedSessionId={sessionId}
       goalSeed={goalFromIssue(issue)}
-      branchSlugSeed={branchSlugFor({ issue })}
       externalTask={{
         provider: 'linear',
         externalId: issue.id,
@@ -113,18 +43,6 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         url: issue.url,
         title: issue.title,
       }}
-      onSelectedProjectChange={setLaunchProject}
-      adoptable={
-        launchProject != null && adoptablePr != null
-          ? {
-              label: `Continue on PR #${adoptablePr.number}`,
-              branch: prBranch,
-              hint: `Adopts the branch of PR #${adoptablePr.number}: the existing PR links to this session instead of starting a duplicate.`,
-              isResolving: prResolving,
-              error: prError,
-            }
-          : null
-      }
       onClose={onClose}
     />
   );

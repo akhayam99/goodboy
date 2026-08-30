@@ -30,7 +30,7 @@ type MaterializeLineParams = {
 
 const materializeLine = ({ isBridgeServing }: MaterializeLineParams): string => {
   const marker =
-    'To write into a project marked NOT materialized, emit on its own line: <<materialize: <project name> | <why you need it>>> and the mount is ready from your next turn.';
+    'Based on the goal, identify and materialize every relevant project before writing. To materialize a project marked NOT materialized, emit on its own line: <<materialize: <project name> | <why you need it>>> and the mount is ready from your next turn.';
   if (!isBridgeServing) {
     return marker;
   }

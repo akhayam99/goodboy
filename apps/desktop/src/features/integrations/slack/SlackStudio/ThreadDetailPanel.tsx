@@ -7,12 +7,7 @@ import { slackGetPermalink } from '../client';
 import { goalFromThread } from '../goal-from-thread';
 import { slackUserNames } from '../nameMaps';
 import { SlackThreadDetail } from '../SlackThreadDetail';
-import {
-  slackThreadBranchSlug,
-  slackThreadExternalId,
-  slackThreadIdentifier,
-  slackThreadTitle,
-} from '../threadFormulas';
+import { slackThreadExternalId, slackThreadIdentifier, slackThreadTitle } from '../threadFormulas';
 import { useSlackThread } from '../useSlackThread';
 import { useSlackThreadActions } from '../useSlackThreadActions';
 import type { SlackThreadRow } from './useSlackThreads';
@@ -101,7 +96,6 @@ export const ThreadDetailPanel = ({ row, workspaceId, sessionId, onClose }: Prop
             messages,
             userNames: slackUserNames({ users: thread.users }),
           })}
-          branchSlugSeed={slackThreadBranchSlug({ text: rootText })}
           externalTask={{
             provider: 'slack',
             externalId: slackThreadExternalId({ channelId, threadTs }),

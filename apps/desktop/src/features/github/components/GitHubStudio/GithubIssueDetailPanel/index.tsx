@@ -2,7 +2,6 @@ import { EmptyState } from '@goodboy/ui';
 import type { GithubIssue, SessionId, WorkspaceId } from '@goodboy/types';
 import { LaunchSessionPanel } from '../../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../../../goal-from-issue';
-import { githubBranchSlug } from '../useGithubIssues';
 import { GithubIssueDetail } from '../../../GithubIssueDetail';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 
@@ -43,7 +42,6 @@ export const GithubIssueDetailPanel = ({
       workspaceId={workspaceId}
       linkedSessionId={sessionId}
       goalSeed={goalFromIssue({ issue })}
-      branchSlugSeed={githubBranchSlug({ issue })}
       externalTask={{
         provider: 'github',
         externalId: String(issue.number),
