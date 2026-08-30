@@ -5,7 +5,6 @@ import { EmptyState, formatError } from '@goodboy/ui';
 import {
   buildCombinedCommentAgentArgs,
   buildCommentAgentArgs,
-  type CommentAgentArgs,
   type ResolveModelChoice,
 } from '../../../chat/spawn-from-comment';
 import { useResolverIndex } from '../../../session/hooks/useResolverIndex';
@@ -40,6 +39,7 @@ import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRep
 import { githubReviewTarget } from '../../../../store/slices/review-drafts/githubReviewTarget';
 import type { PublishPrReviewVerdict } from '../../../../store/slices/review-drafts/types';
 import { useToast } from '../../../../app/components/Toast';
+import { useResolverSpawner } from '../../../session/hooks/useResolverSpawner';
 
 const VERDICT_TOAST = {
   comment: 'Comment posted on the pull request',
@@ -84,12 +84,13 @@ export const PrDetailPanel = ({
   const reopenPr = useAppStore((s) => s.reopenPr);
   const requestReview = useAppStore((s) => s.requestReview);
   const publishPrReview = useAppStore((s) => s.publishPrReview);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const activateNextResolver = useAppStore((s) => s.activateNextResolver);
-  const setAgentConfig = useAppStore((s) => s.setAgentConfig);
+  const { spawnedResolverIds, resetSpawnedResolverIds, spawnResolver } = useResolverSpawner({
+    sessionId: (sessionId ?? '') as SessionId,
+  });
 
   const resolverIndex = useResolverIndex((sessionId ?? '') as SessionId);
   const resolverFor = useCallback(
@@ -103,7 +104,6 @@ export const PrDetailPanel = ({
   const [createOpen, setCreateOpen] = useState(false);
   const [section, setSection] = useState<PrSection>('overview');
   const [jumpThreadId, setJumpThreadId] = useState<string | null>(null);
-  const [spawnedResolverIds, setSpawnedResolverIds] = useState<ReadonlyArray<AgentId>>([]);
   const requestedPrRef = useRef<string | null>(null);
 
   const primary = github?.pr ?? null;
@@ -133,7 +133,7 @@ export const PrDetailPanel = ({
   useEffect(() => {
     setCreateOpen(false);
     setSection('overview');
-    setSpawnedResolverIds([]);
+    resetSpawnedResolverIds();
   }, [sessionId]);
 
   useEffect(() => {
@@ -199,34 +199,6 @@ export const PrDetailPanel = ({
 
   const onMutated = refreshActive;
 
-  const spawnResolver = async (
-    args: CommentAgentArgs,
-    choice: ResolveModelChoice,
-    deferKickoff: boolean,
-  ) => {
-    const agentId = await spawnAgent(sessionId, {
-      name: args.name,
-      model: args.model,
-      ...(args.provider !== undefined && { provider: args.provider }),
-      effort: args.effort,
-      initialPrompt: args.initialPrompt,
-      kindOverride: args.kind,
-      ...(args.sourceThreadId !== undefined && { sourceThreadId: args.sourceThreadId }),
-      ...(args.sourceThreadIds !== undefined && { sourceThreadIds: args.sourceThreadIds }),
-      sourceCommentUrl: args.sourceCommentUrl,
-      sourceKind: args.sourceKind,
-      ...(deferKickoff && { deferKickoff: true }),
-      focus: 'none',
-    });
-    await setAgentConfig(sessionId, agentId, {
-      ...(choice.provider !== undefined && { providerOverride: choice.provider }),
-      ...(choice.model !== undefined && { modelOverride: choice.model }),
-      effort: args.effort,
-    });
-    setSpawnedResolverIds((prev) => [...prev, agentId]);
-    return agentId;
-  };
-
   const openResolver = (agentId: AgentId) => {
     void (async () => {
       await setCurrentSession(sessionId);
@@ -262,11 +234,11 @@ export const PrDetailPanel = ({
       openResolver(existing.agent.id as AgentId);
       return;
     }
-    void spawnResolver(
-      buildCommentAgentArgs(thread.head, activePr, choice, thread.replies),
+    void spawnResolver({
+      args: buildCommentAgentArgs(thread.head, activePr, choice, thread.replies),
       choice,
-      false,
-    );
+      deferKickoff: false,
+    });
   };
 
   const onSpawnBatch = (
@@ -286,11 +258,11 @@ export const PrDetailPanel = ({
     void (async () => {
       for (const t of fresh) {
         const choice = choiceById[t.head.id] ?? {};
-        await spawnResolver(
-          buildCommentAgentArgs(t.head, activePr, choice, t.replies),
+        await spawnResolver({
+          args: buildCommentAgentArgs(t.head, activePr, choice, t.replies),
           choice,
-          true,
-        );
+          deferKickoff: true,
+        });
       }
       await activateNextResolver(sessionId);
     })();
@@ -308,7 +280,11 @@ export const PrDetailPanel = ({
       return;
     }
     void (async () => {
-      await spawnResolver(buildCombinedCommentAgentArgs(fresh, activePr, choice), choice, true);
+      await spawnResolver({
+        args: buildCombinedCommentAgentArgs(fresh, activePr, choice),
+        choice,
+        deferKickoff: true,
+      });
       await activateNextResolver(sessionId);
     })();
   };

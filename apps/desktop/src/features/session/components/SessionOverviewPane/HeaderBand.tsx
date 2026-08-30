@@ -6,17 +6,12 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { EditorMenu } from './EditorMenu';
-import { LensShortcutActions } from './LensShortcutActions';
-import { SessionGitActions } from '../SessionWorkspace/parts/SessionGitActions';
 import { SessionDestructiveActions } from './SessionDestructiveActions';
 import { LinkIssueAction } from './LinkIssueAction';
-import { MountChangesChip } from './MountChangesChip';
-import { ProjectChip } from './ProjectChip';
-import { BranchChip } from './BranchChip';
-import { BranchSyncStatus } from './BranchSyncStatus';
 import { ContextChip } from './ContextChip';
-import { StatusRowRequest } from './StatusRowRequest';
 import { LinkedWorkChips } from './LinkedWorkChips';
+import { MountProjectAction } from './ProjectMountRows/MountProjectAction';
+import { ProjectMountRows } from './ProjectMountRows';
 
 type Props = {
   readonly session: Session;
@@ -29,9 +24,6 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
   const pendingTitleFocus = useAppStore((s) => s.pendingTitleFocusSessionId);
   const clearPendingTitleFocus = useAppStore((s) => s.clearPendingTitleFocus);
-  const hasProjects = useAppStore((s) =>
-    s.projects.some((project) => project.workspaceId === session.workspaceId),
-  );
   const hasLinkedWork = useAppStore((s) => {
     const linkedIssues = s.sessionGithub[sessionId]?.linkedIssues ?? EMPTY_ARRAY;
     const externalTasks = s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY;
@@ -101,7 +93,7 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
         )}
         <div className="flex shrink-0 items-center gap-1">
           <EditorMenu sessionId={sessionId} density="compact" />
-          <LensShortcutActions onSelectLens={onSelectLens} />
+          <MountProjectAction sessionId={sessionId} workspaceId={session.workspaceId} />
           <SessionDestructiveActions session={session} />
         </div>
       </div>
@@ -112,22 +104,7 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
           <LinkIssueAction session={session} presentation="chip" isCollapsed={hasLinkedWork} />
         </div>
       </div>
-      {hasProjects ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <ProjectChip
-            sessionId={sessionId}
-            workspaceId={session.workspaceId}
-            onSelectLens={onSelectLens}
-          />
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-            <BranchSyncStatus sessionId={sessionId} />
-            <BranchChip sessionId={sessionId} />
-            <SessionGitActions session={session} density="compact" />
-            <MountChangesChip sessionId={sessionId} />
-            <StatusRowRequest sessionId={sessionId} />
-          </div>
-        </div>
-      ) : null}
+      <ProjectMountRows session={session} onSelectLens={onSelectLens} />
       {goal}
     </div>
   );

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Folder, FolderGit2 } from 'lucide-react';
 import { ScrollFade, cn, formatError } from '@goodboy/ui';
 import type { Project, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../../../store';
+import { useAppStore } from '../../../../../store';
 
 const MANUAL_REASON = 'added manually by the user';
 const SEARCH_THRESHOLD = 8;

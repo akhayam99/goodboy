@@ -1,0 +1,106 @@
+import { ArrowDown, ArrowUp, GitBranch, RefreshCw, Upload } from 'lucide-react';
+import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
+import type { ProjectId, SessionId, WorktreeStatus } from '@goodboy/types';
+import { useAppStore } from '../../../../../store';
+import { distanceAhead } from '../../../../../shared/lib/gitStatus';
+import { useRebaseAgent } from '../../../hooks/useRebaseAgent';
+import { usePushBranch } from '../../../hooks/usePushBranch';
+
+type Props = {
+  readonly sessionId: SessionId;
+  readonly projectId: ProjectId;
+  readonly status: WorktreeStatus | null;
+};
+
+export const ProjectSyncControl = ({ sessionId, projectId, status }: Props) => {
+  const dropdown = useDropdown({ width: 'w-64', expectedHeight: 160 });
+  const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
+  const emitNotification = useAppStore((state) => state.emitNotification);
+  const notify = ({ title, message }: { readonly title: string; readonly message: string }) => {
+    void emitNotification('error', 'error', title, message, { sessionId });
+  };
+  const rebase = useRebaseAgent({
+    sessionId,
+    status,
+    onError: (message) => notify({ title: 'Rebase failed', message }),
+  });
+  const push = usePushBranch({
+    sessionId,
+    onError: (message) => notify({ title: 'Push failed', message }),
+  });
+
+  const distance = status?.mainDistance.kind === 'known' ? status.mainDistance : null;
+  const upstreamAhead =
+    status == null ? null : distanceAhead({ distance: status.upstreamDistance });
+  const canPush = upstreamAhead != null && upstreamAhead > 0;
+  const targetProject = async ({ action }: { readonly action: () => Promise<void> }) => {
+    await setSessionActiveProject({ sessionId, projectId });
+    await action();
+  };
+
+  return (
+    <AnchoredPopover
+      dropdown={dropdown}
+      role="menu"
+      ariaLabel="Branch sync actions"
+      trigger={
+        <button
+          type="button"
+          aria-label="Branch sync actions"
+          aria-haspopup="menu"
+          aria-expanded={dropdown.open}
+          onClick={dropdown.toggle}
+          className="relative inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+        >
+          <RefreshCw size={13} aria-hidden />
+          {distance != null && distance.behind > 0 ? (
+            <span
+              data-testid="project-behind-badge"
+              className="absolute -right-1 -top-1 flex min-w-3.5 items-center justify-center rounded-full bg-warning px-1 text-[9px] font-semibold leading-3.5 text-warning-foreground"
+            >
+              {distance.behind}
+            </span>
+          ) : null}
+        </button>
+      }
+    >
+      <div className="flex flex-col py-1">
+        <div className="flex items-center gap-3 border-b border-border-soft px-3 py-2 text-xs tabular-nums text-muted-foreground">
+          <span className="font-medium text-foreground">Compared with main</span>
+          <span className="ml-auto flex items-center gap-1">
+            <ArrowDown size={11} aria-hidden />
+            {distance?.behind ?? '--'}
+          </span>
+          <span className="flex items-center gap-1">
+            <ArrowUp size={11} aria-hidden />
+            {distance?.ahead ?? '--'}
+          </span>
+        </div>
+        <button
+          type="button"
+          disabled={!rebase.canRebase || rebase.isRunning}
+          onClick={() => void targetProject({ action: rebase.run })}
+          className={cn(
+            'flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/40',
+            (!rebase.canRebase || rebase.isRunning) && 'opacity-40',
+          )}
+        >
+          <GitBranch size={12} aria-hidden />
+          {rebase.isRunning ? 'Rebasing on main' : 'Rebase on main'}
+        </button>
+        <button
+          type="button"
+          disabled={!canPush || push.isBusy}
+          onClick={() => void targetProject({ action: push.run })}
+          className={cn(
+            'flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/40',
+            (!canPush || push.isBusy) && 'opacity-40',
+          )}
+        >
+          <Upload size={12} aria-hidden />
+          {push.isBusy ? 'Pushing branch' : 'Push branch'}
+        </button>
+      </div>
+    </AnchoredPopover>
+  );
+};

@@ -216,9 +216,6 @@ vi.mock('./parts/ContextPane', () => ({
   ),
 }));
 vi.mock('./parts/PrPane', () => ({ PrPane: () => null }));
-vi.mock('./parts/ProjectsPane', () => ({
-  ProjectsPane: () => <div data-testid="projects-pane" />,
-}));
 vi.mock('./parts/FilesPane', () => ({ FilesPane: () => null }));
 vi.mock('./parts/IntegrationPane', () => ({
   IntegrationPane: ({ provider }: { provider: string }) => (
@@ -620,16 +617,7 @@ describe('SessionWorkspace pane metadata', () => {
   });
 });
 
-describe('SessionWorkspace projects lens', () => {
-  it('mounts the projects pane for the projects lens', () => {
-    store.activeLens = { [SESSION_ID]: 'projects' };
-    store.selectedAgentId = {};
-
-    render(<SessionWorkspace session={session} isActive />);
-
-    expect(screen.getByTestId('projects-pane')).toBeDefined();
-  });
-
+describe('SessionWorkspace overview layout', () => {
   it('leaves no scope strip between the crumb bar and the lens', () => {
     store.activeLens = { [SESSION_ID]: null };
     store.selectedAgentId = {};

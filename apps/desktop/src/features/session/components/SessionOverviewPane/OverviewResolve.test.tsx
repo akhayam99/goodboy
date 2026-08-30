@@ -1,24 +1,58 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
-import type { ResolverStatus } from '../../resolver-linkage';
 
 const state = vi.hoisted(() => ({
   sessionGithub: {} as Record<string, unknown>,
   sessionPendingResolutions: {} as Record<string, ReadonlyArray<unknown>>,
+  sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+  projects: [] as ReadonlyArray<unknown>,
+  activateNextResolver: vi.fn(async () => undefined),
 }));
 
 const resolvers = vi.hoisted(() => ({ links: [] as ReadonlyArray<unknown> }));
+const spawnResolver = vi.hoisted(() => vi.fn(async () => 'agent-1'));
+const statuses = vi.hoisted(() => ({ value: new Map<string, unknown>() }));
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
 }));
 
+vi.mock('../../../../shared/hooks/useSessionRoleModels', () => ({
+  useSessionRoleModels: () => null,
+}));
+
+vi.mock('../../../chat/spawn-from-comment', () => ({
+  buildCommentAgentArgs: vi.fn(() => ({ name: 'resolver', model: 'model', effort: 'medium' })),
+}));
+
+vi.mock('../../agent-kind', () => ({
+  kindRouting: () => ({ provider: 'anthropic', model: 'model', effort: 'medium' }),
+}));
+
 vi.mock('../../hooks/useResolverIndex', () => ({
   useResolverIndex: () => resolvers,
+}));
+
+vi.mock('../../hooks/useResolverSpawner', () => ({
+  useResolverSpawner: () => ({ spawnResolver }),
+}));
+
+vi.mock('../../hooks/useWorktreeStatuses', () => ({
+  useWorktreeStatuses: () => statuses.value,
+}));
+
+vi.mock('../../resolver-linkage', () => ({
+  resolverForComment: () => undefined,
+}));
+
+vi.mock('./SuggestionRebaseRow', () => ({
+  SuggestionRebaseRow: ({ projectName }: { readonly projectName: string }) => (
+    <div>Rebase {projectName} on main</div>
+  ),
 }));
 
 import { OverviewResolve } from './OverviewResolve';
@@ -36,18 +70,36 @@ const session = {
   workflowRuns: [],
 } as unknown as Session;
 
-const link = (status: ResolverStatus) => ({ agent: { id: `agent-${status}` }, status });
+const reviewComment = ({
+  id,
+  resolved = false,
+}: {
+  readonly id: string;
+  readonly resolved?: boolean;
+}) => ({
+  id,
+  threadId: id,
+  source: 'review',
+  resolved,
+  url: `https://example.com/${id}`,
+  createdAt: '2026-08-20T00:00:00.000Z',
+});
 
-const reviewComment = (resolved: boolean) => ({ source: 'review', resolved });
-
-const setUp = (next: {
-  readonly links?: ReadonlyArray<unknown>;
+const setUp = ({
+  comments = [],
+  mounts = [],
+}: {
   readonly comments?: ReadonlyArray<unknown>;
-  readonly pending?: ReadonlyArray<unknown>;
+  readonly mounts?: ReadonlyArray<unknown>;
 }) => {
-  resolvers.links = next.links ?? [];
-  state.sessionGithub = { [sessionId]: { detail: { comments: next.comments ?? [] } } };
-  state.sessionPendingResolutions = { [sessionId]: next.pending ?? [] };
+  state.sessionGithub = {
+    [sessionId]: { pr: { number: 42 }, detail: { comments } },
+  };
+  state.sessionPendingResolutions = { [sessionId]: [] };
+  state.sessionProjectMounts = { [sessionId]: mounts };
+  state.projects = [];
+  resolvers.links = [];
+  statuses.value = new Map();
 };
 
 afterEach(() => {
@@ -56,35 +108,55 @@ afterEach(() => {
 });
 
 describe('OverviewResolve', () => {
-  it('stays out of the way when nothing is waiting', () => {
+  it('omits the complete suggestions section when nothing is actionable', () => {
     setUp({});
-    const { container } = render(<OverviewResolve session={session} onSelectLens={vi.fn()} />);
+    const { container } = render(<OverviewResolve session={session} />);
 
     expect(container.firstChild).toBeNull();
   });
 
-  it('counts the unresolved review comments and opens the resolve lens', () => {
-    setUp({ comments: [reviewComment(false), reviewComment(false), reviewComment(true)] });
-    const onSelectLens = vi.fn();
-    render(<OverviewResolve session={session} onSelectLens={onSelectLens} />);
+  it('shows one review suggestion with the unresolved comment count', () => {
+    setUp({
+      comments: [reviewComment({ id: 'thread-1' }), reviewComment({ id: 'thread-2' })],
+    });
+    render(<OverviewResolve session={session} />);
 
-    fireEvent.click(screen.getByText('2 comments to resolve'));
-
-    expect(onSelectLens).toHaveBeenCalledWith('resolve');
+    expect(screen.getByRole('region', { name: 'Suggestions' })).toBeDefined();
+    expect(screen.getByText('Resolve review comments on PR #42')).toBeDefined();
+    expect(screen.getByText('2 comments')).toBeDefined();
   });
 
-  it('counts only the resolvers that have not settled', () => {
-    setUp({ links: [link('running'), link('awaiting'), link('resolved'), link('wontfix')] });
-    render(<OverviewResolve session={session} onSelectLens={vi.fn()} />);
+  it('wires the resolve CTA through the shared batch spawn flow', async () => {
+    setUp({
+      comments: [reviewComment({ id: 'thread-1' }), reviewComment({ id: 'thread-2' })],
+    });
+    render(<OverviewResolve session={session} />);
 
-    expect(screen.getByText('2 resolvers still open')).toBeTruthy();
-    expect(screen.getByText('1 running')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
+
+    await waitFor(() => expect(spawnResolver).toHaveBeenCalledTimes(2));
+    expect(state.activateNextResolver).toHaveBeenCalledWith(sessionId);
   });
 
-  it('falls back to the resolutions waiting to be pushed', () => {
-    setUp({ pending: [{ threadId: 'thread-1' }] });
-    render(<OverviewResolve session={session} onSelectLens={vi.fn()} />);
+  it('shows a rebase suggestion only for a mounted project behind main', () => {
+    const mount = {
+      projectId: 'project-1',
+      mountName: 'api',
+      worktreePath: '/worktree/api',
+    };
+    setUp({ mounts: [mount] });
+    state.projects = [{ id: 'project-1', name: 'API' }];
+    statuses.value = new Map([
+      [
+        '/worktree/api',
+        {
+          mainDistance: { kind: 'known', ahead: 0, behind: 3 },
+          upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+        },
+      ],
+    ]);
+    render(<OverviewResolve session={session} />);
 
-    expect(screen.getByText('1 resolution ready to push')).toBeTruthy();
+    expect(screen.getByText('Rebase API on main')).toBeDefined();
   });
 });
