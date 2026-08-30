@@ -178,6 +178,7 @@ export type SummarizerSessionStatus = {
 type AppSliceState = UpdaterState & ChangelogState & SlackThreadsSliceState & BugReportDraftState;
 
 export type AppState = AppSliceState & {
+  readonly selectedProjectIds: Readonly<Record<WorkspaceId, ReadonlyArray<string>>>;
   readonly workspaces: ReadonlyArray<Workspace>;
   readonly projects: ReadonlyArray<Project>;
   readonly workspaceIntegrations: Readonly<Record<WorkspaceId, ReadonlyArray<IntegrationBinding>>>;

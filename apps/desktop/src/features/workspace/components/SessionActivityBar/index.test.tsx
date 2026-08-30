@@ -9,6 +9,8 @@ const { state } = vi.hoisted(() => ({
     sessionGithub: {} as Record<string, unknown>,
     sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
     sessionExternalTasks: {} as Record<string, unknown>,
+    sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+    projects: [] as ReadonlyArray<unknown>,
     bulkUnarchiveTask: vi.fn(async () => undefined),
     bulkArchiveTask: vi.fn(async () => undefined),
     bulkDeleteTask: vi.fn(async () => undefined),
@@ -29,6 +31,10 @@ vi.mock('../../../../store', () => ({
 
 vi.mock('./SessionViewMenu', () => ({
   SessionViewMenu: () => null,
+}));
+
+vi.mock('../ProjectFilter', () => ({
+  ProjectFilter: () => <span data-testid="project-filter" />,
 }));
 
 vi.mock('../../../../features/providers/components/CostBadge', () => ({
@@ -96,6 +102,8 @@ beforeEach(() => {
   state.bulkArchiveTask.mockClear();
   state.bulkDeleteTask.mockClear();
   state.sessionExternalTasks = {};
+  state.sessionProjectMounts = {};
+  state.projects = [];
 });
 
 afterEach(cleanup);
@@ -105,6 +113,7 @@ describe('SessionActivityBar, baseline', () => {
     renderBar([]);
     expect(screen.getByText(/^Sessions$/)).toBeDefined();
     expect(screen.getByRole('button', { name: /create new session/i })).toBeDefined();
+    expect(screen.getByTestId('project-filter')).toBeDefined();
   });
 
   it('renders empty-state copy when no sessions in active tab', () => {
@@ -133,6 +142,19 @@ describe('SessionActivityBar, baseline', () => {
     expect(screen.queryByRole('button', { name: /create new session/i })).toBeNull();
     fireEvent(window, new CustomEvent('goodboy:new-session'));
     expect(screen.getByRole('button', { name: /create new session/i })).toBeDefined();
+  });
+
+  it('shows one project name when a session mounts the same project more than once', () => {
+    state.projects = [{ id: 'project-1', name: 'Goodboy' }];
+    state.sessionProjectMounts = {
+      'a-1': [
+        { projectId: 'project-1', mountName: 'desktop' },
+        { projectId: 'project-1', mountName: 'desktop-copy' },
+      ],
+    };
+    renderBar([], [makeSession('a-1', 'duplicate mounts')]);
+    expect(screen.getByLabelText('Project: Goodboy')).toBeDefined();
+    expect(screen.queryByLabelText(/2 projects/)).toBeNull();
   });
 });
 

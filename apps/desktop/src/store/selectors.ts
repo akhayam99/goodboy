@@ -13,6 +13,7 @@ import type {
   Session,
   SessionId,
   SessionPrFetchState,
+  SessionProjectMount,
   SessionStage,
   SessionStageInfo,
   SessionViewPrefs,
@@ -23,6 +24,7 @@ import type {
 import type { Workspace } from '@goodboy/types';
 import { isBranchlessSession } from '../shared/utils/isBranchlessSession';
 import { useAppStore } from './store';
+import { sessionMatchesProjectFilter } from './slices/sessionFilters';
 import type {
   AppState,
   SessionLoadingFlags,
@@ -50,6 +52,8 @@ export { agentHasUnread } from './slices/agents/agentHasUnread';
 const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
 const EMPTY_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
+const EMPTY_PROJECT_FILTER_IDS: ReadonlyArray<string> = [];
+const EMPTY_PROJECT_MOUNTS: ReadonlyArray<SessionProjectMount> = [];
 
 export const sumSessionCost = (records: readonly TelemetryRecord[]): number => {
   let sum = 0;
@@ -110,6 +114,50 @@ export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionVie
   }, [workspaceId, prefs, getSessionViewPrefs]);
 
   return prefs ?? DEFAULT_SESSION_VIEW_PREFS;
+};
+
+type UseSelectedProjectIdsParams = {
+  readonly workspaceId: WorkspaceId | null;
+};
+
+export const useSelectedProjectIds = ({
+  workspaceId,
+}: UseSelectedProjectIdsParams): ReadonlyArray<string> => {
+  const selectedProjectIds = useAppStore((state) =>
+    workspaceId !== null ? (state.selectedProjectIds[workspaceId] ?? null) : null,
+  );
+  const getSelectedProjectIds = useAppStore((state) => state.getSelectedProjectIds);
+
+  useEffect(() => {
+    if (workspaceId === null || selectedProjectIds !== null) {
+      return;
+    }
+    getSelectedProjectIds({ workspaceId });
+  }, [getSelectedProjectIds, selectedProjectIds, workspaceId]);
+
+  return selectedProjectIds ?? EMPTY_PROJECT_FILTER_IDS;
+};
+
+type UseProjectFilteredSessionsParams = UseSelectedProjectIdsParams & {
+  readonly sessions: ReadonlyArray<Session>;
+};
+
+export const useProjectFilteredSessions = ({
+  workspaceId,
+  sessions,
+}: UseProjectFilteredSessionsParams): ReadonlyArray<Session> => {
+  const selectedProjectIds = useSelectedProjectIds({ workspaceId });
+  const sessionProjectMounts = useAppStore((state) => state.sessionProjectMounts);
+  return useMemo(
+    () =>
+      sessions.filter((session) =>
+        sessionMatchesProjectFilter({
+          mounts: sessionProjectMounts[session.id] ?? EMPTY_PROJECT_MOUNTS,
+          selectedProjectIds,
+        }),
+      ),
+    [selectedProjectIds, sessionProjectMounts, sessions],
+  );
 };
 
 const EMPTY_GITHUB_STATE: Readonly<Record<string, never>> = Object.freeze({});
@@ -203,6 +251,7 @@ export const useSortedGroupedSessions = (
   workspaceId: WorkspaceId | null,
   sessions: ReadonlyArray<Session>,
 ): ReadonlyArray<GroupedSessions> => {
+  const filteredSessions = useProjectFilteredSessions({ workspaceId, sessions });
   const prefs = useSessionViewPrefs(workspaceId);
   const needsGithub = prefs.group === 'pr' || prefs.group === 'stage';
   const needsStage = prefs.group === 'stage';
@@ -239,7 +288,7 @@ export const useSortedGroupedSessions = (
   );
   return useMemo(() => {
     const partial: StageInfoState = {
-      sessions,
+      sessions: filteredSessions,
       workspaces,
       projects,
       sessionBranches,
@@ -256,13 +305,13 @@ export const useSortedGroupedSessions = (
     };
     const stages: Record<SessionId, SessionStage> = {};
     if (needsStage) {
-      for (const session of sessions) {
+      for (const session of filteredSessions) {
         stages[session.id as SessionId] = stageInfoOf(partial, session).stage;
       }
     }
-    return sortAndGroupSessions(sessions, prefs, sessionGithub, stages);
+    return sortAndGroupSessions(filteredSessions, prefs, sessionGithub, stages);
   }, [
-    sessions,
+    filteredSessions,
     prefs,
     needsStage,
     workspaces,
@@ -313,6 +362,7 @@ export const useStageGroupedSessions = (
   workspaceId: WorkspaceId | null,
   sessions: ReadonlyArray<Session>,
 ): ReadonlyArray<GroupedSessions> => {
+  const filteredSessions = useProjectFilteredSessions({ workspaceId, sessions });
   const prefs = useSessionViewPrefs(workspaceId);
   const sessionGithub = useAppStore((s) => s.sessionGithub);
   const sessionGitlabMr = useAppStore((s) => s.sessionGitlabMr);
@@ -330,7 +380,7 @@ export const useStageGroupedSessions = (
   const previousRef = useRef<ReadonlyArray<GroupedSessions> | null>(null);
   const grouped = useMemo(() => {
     const partial: StageInfoState = {
-      sessions,
+      sessions: filteredSessions,
       workspaces,
       projects,
       sessionBranches,
@@ -346,17 +396,17 @@ export const useStageGroupedSessions = (
       githubStatus,
     };
     const stages: Record<SessionId, SessionStage> = {};
-    for (const session of sessions) {
+    for (const session of filteredSessions) {
       stages[session.id as SessionId] = stageInfoOf(partial, session).stage;
     }
     return sortAndGroupSessions(
-      sessions,
+      filteredSessions,
       { sort: prefs.sort, group: 'stage' },
       sessionGithub,
       stages,
     );
   }, [
-    sessions,
+    filteredSessions,
     prefs.sort,
     workspaces,
     projects,

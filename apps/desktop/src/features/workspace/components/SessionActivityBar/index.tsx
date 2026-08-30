@@ -42,6 +42,8 @@ import { BulkActionBar } from '../BulkActionBar';
 import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
 import { SessionViewMenu } from './SessionViewMenu';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { ProjectChip } from '../ProjectChip';
+import { ProjectFilter } from '../ProjectFilter';
 
 type ActivityTab = 'active' | 'archived';
 
@@ -97,6 +99,28 @@ export const SessionActivityBar = ({
   );
 
   const prefs = useSessionViewPrefs(workspaceId);
+  const projects = useAppStore((state) => state.projects);
+  const sessionProjectMounts = useAppStore((state) => state.sessionProjectMounts);
+  const projectNamesBySession = useMemo(() => {
+    const projectNames = new Map(projects.map((project) => [project.id, project.name]));
+    const namesBySession = new Map<string, ReadonlyArray<string>>();
+    for (const session of [...sessions, ...archivedSessions]) {
+      const names = Array.from(
+        new Map(
+          (sessionProjectMounts[session.id] ?? EMPTY_ARRAY).map((mount) => [
+            mount.projectId,
+            projectNames.get(mount.projectId) ?? mount.mountName,
+          ]),
+        ).values(),
+      );
+      namesBySession.set(session.id, names);
+    }
+    return namesBySession;
+  }, [archivedSessions, projects, sessionProjectMounts, sessions]);
+  const filterSessions = useMemo(
+    () => [...sessions, ...archivedSessions],
+    [archivedSessions, sessions],
+  );
 
   const groupedActive = useSortedGroupedSessions(workspaceId, sessions);
   const groupedArchived = useSortedGroupedSessions(workspaceId, archivedSessions);
@@ -171,6 +195,7 @@ export const SessionActivityBar = ({
           <div className="mb-1 flex items-center justify-between gap-1 px-0.5">
             <Eyebrow label="Sessions" />
             <div className="flex items-center gap-0.5">
+              <ProjectFilter workspaceId={workspaceId} sessions={filterSessions} />
               <button
                 type="button"
                 onClick={() => {
@@ -257,6 +282,7 @@ export const SessionActivityBar = ({
                     <SessionActivityItem
                       key={session.id}
                       session={session}
+                      projectNames={projectNamesBySession.get(session.id) ?? EMPTY_ARRAY}
                       isActive={session.id === currentSessionId}
                       dimmed={isArchivedView}
                       selected={isSelected(session.id as SessionId)}
@@ -316,6 +342,7 @@ type SelectionClickEvent = {
 
 type SessionActivityItemProps = {
   session: Session;
+  projectNames: ReadonlyArray<string>;
   isActive: boolean;
   dimmed?: boolean;
   selected?: boolean;
@@ -325,6 +352,7 @@ type SessionActivityItemProps = {
 
 const SessionActivityItem = memo(function SessionActivityItem({
   session,
+  projectNames,
   isActive,
   dimmed,
   selected,
@@ -381,6 +409,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
           <span className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug">
             {session.goal}
           </span>
+          <ProjectChip projectNames={projectNames} />
           {externalTasks.map((task) => (
             <ExternalTaskChip
               key={`${task.provider}:${task.externalId}`}
