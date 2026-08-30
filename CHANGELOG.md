@@ -7,6 +7,51 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.2
+
+The session decides where it works. Projects mount as you go, and the app now
+shows them, filters by them, and gives each one its own controls.
+
+### [#1549] The overview gives each project its own row
+
+A session that mounts several projects used to show git state for one of them
+at a time. Now every mounted project gets its own row in the overview: the
+branch, the diff so far, its pull request, and terminal and scripts buttons
+that open in that project. Rebase and push live in a single sync control on
+the row, with a badge when the branch is behind main and the full
+ahead/behind detail one click away. Mounting another project is one action at
+the top of the page.
+
+The Plan and Pull requests lists are gone from the overview: plans keep their
+own view, and pull requests live on the project rows and in the activity
+trace. In their place, a Suggestions section appears only when there is
+something worth doing: review comments waiting for a resolver, or a branch
+behind main ready to rebase.
+
+### [#1550] Start a session from an issue without picking a project
+
+Launching a session from a Linear or GitHub issue, or from Sentry, GitLab,
+Jira, Slack or Bitbucket, no longer asks which project to use. The session
+starts empty and the agent mounts the projects the goal actually needs.
+Reviewing a pull request still opens on the repository the pull request
+belongs to.
+
+### [#1551] See and filter sessions by project
+
+Each session in the sidebar shows the project it has mounted, or a count with
+the names on hover when there are several. A shared filter in the sidebar and
+on the board narrows both to the projects you pick, with a bucket for
+sessions that have not mounted anything yet.
+
+### Fixes
+
+- An agent created between two workflow steps stays at its own time in the
+  activity trace instead of jumping below the workflow (#1547)
+- Merged shows purple with the merge icon everywhere, including the activity
+  trace, and approved uses the same check icon as the rest of the app (#1548)
+- Agent labels sit centered in their chip, with the chain link pinned to the
+  left edge when the agent is part of a chain (#1548)
+
 ## Goodboy v0.2.1
 
 The first week on the new shape. Scripts, integration keys and plans now
