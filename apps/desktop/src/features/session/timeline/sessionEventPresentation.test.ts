@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { SessionEvent, SessionEventKind, SessionEventPayload } from '@goodboy/types';
 import { SESSION_EVENT_KINDS } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
+import { PULL_REQUEST_PRESENTATION } from '../../../shared/pullRequestPresentation';
 import {
   sessionEventEmphasis,
   sessionEventGlyph,
@@ -237,9 +238,12 @@ describe('sessionEventLabel', () => {
 });
 
 describe('sessionEventEmphasis', () => {
-  it('celebrates an approval and a merge', () => {
+  it('uses the shared pull request colors', () => {
+    expect(sessionEventEmphasis({ kind: 'pr_created' })).toBe('success');
+    expect(sessionEventEmphasis({ kind: 'pr_ready' })).toBe('success');
     expect(sessionEventEmphasis({ kind: 'pr_approved' })).toBe('success');
-    expect(sessionEventEmphasis({ kind: 'pr_merged' })).toBe('success');
+    expect(sessionEventEmphasis({ kind: 'pr_merged' })).toBe('merged');
+    expect(sessionEventEmphasis({ kind: 'pr_closed' })).toBe('danger');
   });
 
   it('dims what was taken away', () => {
@@ -269,5 +273,22 @@ describe('sessionEventGlyph', () => {
     expect(glyph.icon).toBe(CONCEPT_ICONS.context);
     expect(glyph.tone).toBe(CONCEPT_TONE.context);
     expect(glyph.label).toBe('Context');
+  });
+
+  it('uses the shared pull request glyphs and tones', () => {
+    for (const [kind, state] of [
+      ['pr_created', 'open'],
+      ['pr_ready', 'open'],
+      ['pr_approved', 'approved'],
+      ['pr_merged', 'merged'],
+      ['pr_closed', 'closed'],
+    ] satisfies ReadonlyArray<
+      readonly [SessionEventKind, keyof typeof PULL_REQUEST_PRESENTATION]
+    >) {
+      const glyph = sessionEventGlyph({ kind });
+      const presentation = PULL_REQUEST_PRESENTATION[state];
+      expect(glyph.icon).toBe(presentation.icon);
+      expect(glyph.tone).toBe(presentation.tone);
+    }
   });
 });

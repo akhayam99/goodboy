@@ -1,77 +1,19 @@
+import { Chip, cn } from '@goodboy/ui';
 import {
-  Check,
-  CircleDashed,
-  GitMerge,
-  GitPullRequest,
-  GitPullRequestClosed,
-  GitPullRequestDraft,
-  ListChecks,
-} from 'lucide-react';
-import { Chip, cn, type Tone } from '@goodboy/ui';
-import type { PullRequestStateKind } from '@goodboy/types';
+  PULL_REQUEST_PRESENTATION,
+  type PullRequestPresentationState,
+} from '../../../../shared/pullRequestPresentation';
 
-type PrStateMeta = {
-  readonly icon: React.ElementType;
-  readonly label: string;
-  readonly textClass: string;
-  readonly tone: Tone;
+type MetaParams = {
+  readonly state: PullRequestPresentationState;
 };
 
-type PullRequestChipState = PullRequestStateKind | 'none';
-
-const PR_META: Record<PullRequestChipState, PrStateMeta> = {
-  none: {
-    icon: CircleDashed,
-    label: 'No pull request',
-    textClass: 'text-muted-foreground/50',
-    tone: 'neutral',
-  },
-  draft: {
-    icon: GitPullRequestDraft,
-    label: 'Draft',
-    textClass: 'text-muted-foreground',
-    tone: 'neutral',
-  },
-  open: {
-    icon: GitPullRequest,
-    label: 'In review',
-    textClass: 'text-success',
-    tone: 'success',
-  },
-  approved: {
-    icon: Check,
-    label: 'Approved',
-    textClass: 'text-success',
-    tone: 'success',
-  },
-  queued: {
-    icon: ListChecks,
-    label: 'Queued',
-    textClass: 'text-primary',
-    tone: 'primary',
-  },
-  merged: {
-    icon: GitMerge,
-    label: 'Merged',
-    textClass: 'text-merged',
-    tone: 'merged',
-  },
-  closed: {
-    icon: GitPullRequestClosed,
-    label: 'Closed',
-    textClass: 'text-danger',
-    tone: 'danger',
-  },
-};
-
-export const pullRequestMeta = (state: PullRequestChipState): PrStateMeta => {
-  return PR_META[state];
-};
+export const pullRequestMeta = ({ state }: MetaParams) => PULL_REQUEST_PRESENTATION[state];
 
 type Variant = 'icon' | 'compact' | 'badge';
 
 type Props = {
-  readonly state: PullRequestChipState;
+  readonly state: PullRequestPresentationState;
   readonly variant?: Variant;
   readonly number?: number;
   readonly iconSize?: number;
@@ -87,7 +29,7 @@ export const PullRequestChip = ({
   className,
   title,
 }: Props) => {
-  const meta = PR_META[state];
+  const meta = PULL_REQUEST_PRESENTATION[state];
   const Icon = meta.icon;
   const description = title ?? meta.label + (number !== undefined ? ` · #${number}` : '');
 

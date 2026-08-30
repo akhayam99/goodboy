@@ -335,7 +335,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
   const isAutoMode =
     stage === 'running' && session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
   const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);
-  const prMeta = prState ? pullRequestMeta(prState) : null;
+  const prMeta = prState != null ? pullRequestMeta({ state: prState }) : null;
   const externalTasks = useAppStore(
     (s) => s.sessionExternalTasks[session.id as SessionId] ?? EMPTY_ARRAY,
   );
