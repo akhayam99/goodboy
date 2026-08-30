@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { Filter, X } from 'lucide-react';
+import { ListFilter, X } from 'lucide-react';
 import { AnchoredPopover, cn, Divider, Eyebrow, Tooltip, useDropdown } from '@goodboy/ui';
 import type { Session, WorkspaceId } from '@goodboy/types';
 import {
@@ -126,7 +126,7 @@ export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
                 : 'text-muted-foreground/70 hover:bg-foreground/10 hover:text-foreground',
             )}
           >
-            <Filter size={11} aria-hidden />
+            <ListFilter size={11} aria-hidden />
             {activeCount > 0 ? <span className="tabular-nums">{activeCount}</span> : null}
           </button>
         </Tooltip>

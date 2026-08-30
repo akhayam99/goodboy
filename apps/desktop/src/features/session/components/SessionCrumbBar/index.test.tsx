@@ -38,10 +38,6 @@ vi.mock('./WorkflowAdvance', () => ({
   ),
 }));
 
-vi.mock('../SessionOverviewPane/SessionCostChip', () => ({
-  SessionCostChip: () => <span data-testid="session-cost-chip" />,
-}));
-
 vi.mock('@goodboy/ui', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/ui')>();
   return {
@@ -182,12 +178,12 @@ afterEach(() => {
 });
 
 describe('SessionCrumbBar', () => {
-  it('renders the ladder inside a divider-flanked strip, not a bordered bar', () => {
+  it('renders the ladder without a divider or bordered bar', () => {
     render(<SessionCrumbBar />);
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
     expect(nav.className).not.toContain('border-b');
     expect(nav.className).not.toContain('border-border-soft');
-    expect(screen.getByRole('separator', { hidden: true })).toBeDefined();
+    expect(screen.queryByRole('separator', { hidden: true })).toBeNull();
   });
 
   it('carries the stage label and reason as a tooltip on the crumb dot', () => {
@@ -206,16 +202,6 @@ describe('SessionCrumbBar', () => {
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
     expect(nav.querySelector('[data-tooltip="running"]')).not.toBeNull();
-  });
-
-  it('renders the session cost right-aligned at the end of the strip', () => {
-    render(<SessionCrumbBar />);
-
-    const chip = screen.getByTestId('session-cost-chip');
-    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
-    expect(nav.contains(chip)).toBe(true);
-    expect(chip.parentElement?.className).toContain('ml-auto');
-    expect(nav.lastElementChild).toBe(chip.parentElement);
   });
 
   it('lists the crumbs from useSessionCrumbs in order', () => {

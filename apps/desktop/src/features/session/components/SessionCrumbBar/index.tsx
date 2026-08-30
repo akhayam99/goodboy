@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Divider, StatusDot, Tooltip } from '@goodboy/ui';
+import { StatusDot, Tooltip } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -9,7 +9,6 @@ import {
   useSessionStageInfo,
 } from '../../../../store';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../session-stage';
-import { SessionCostChip } from '../SessionOverviewPane/SessionCostChip';
 import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
 import { useSelectedWorkflowRun } from '../../hooks/useSelectedWorkflowRun';
 import { agentHomeLens, classifyAgent, resolveRootAgent } from '../../agent-kind';
@@ -124,66 +123,58 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
     selectedWorkflowRun.run.discardedAt == null;
 
   return (
-    <>
-      <nav
-        aria-label="Breadcrumb"
-        className="flex h-8 min-w-0 shrink-0 items-center gap-1.5 bg-background px-4"
+    <nav
+      aria-label="Breadcrumb"
+      className="flex h-8 min-w-0 shrink-0 items-center gap-1.5 bg-background px-4"
+    >
+      <Tooltip
+        content={
+          stage.reason === ''
+            ? SESSION_STAGE_META[stage.stage].label
+            : `${SESSION_STAGE_META[stage.stage].label} · ${stage.reason}`
+        }
       >
-        <Tooltip
-          content={
-            stage.reason === ''
-              ? SESSION_STAGE_META[stage.stage].label
-              : `${SESSION_STAGE_META[stage.stage].label} · ${stage.reason}`
-          }
-        >
-          <span className="inline-flex shrink-0 items-center">
-            <StatusDot tone={STAGE_TONE[stage.stage]} size="sm" />
-          </span>
-        </Tooltip>
-        {crumbs.map((crumb, index) => (
-          <span key={crumb.id} className="flex min-w-0 items-center gap-1.5">
-            {index > 0 ? (
-              <ChevronRight size={12} aria-hidden className="shrink-0 text-muted-foreground/40" />
-            ) : null}
-            {index === crumbs.length - 1 && canSwitchAgent && selectedAgent != null ? (
-              <AgentSwitcherCrumb
-                label={crumb.label}
-                siblings={siblings}
-                selectedAgentId={selectedAgent.id}
-                onSelect={(id) => {
-                  void selectAgent(sessionId, id);
-                }}
-              />
-            ) : crumb.id === 'selected-parent' &&
-              parentAgent != null &&
-              parentSiblings.length > 1 ? (
-              <AgentSwitcherCrumb
-                label={crumb.label}
-                siblings={parentSiblings}
-                selectedAgentId={parentAgent.id}
-                onNavigate={crumb.onClick}
-                onSelect={(id) => {
-                  void selectAgent(sessionId, id);
-                }}
-              />
-            ) : (
-              <PlainCrumb crumb={crumb} isLast={index === crumbs.length - 1} />
-            )}
-          </span>
-        ))}
-        {canAdvanceRun ? (
-          <WorkflowAdvance
-            sessionId={sessionId}
-            run={selectedWorkflowRun.run}
-            workflow={selectedWorkflowRun.workflow}
-          />
-        ) : null}
-        <div className="ml-auto flex shrink-0 items-center">
-          <SessionCostChip sessionId={sessionId} />
-        </div>
-      </nav>
-      <Divider className="shrink-0" />
-    </>
+        <span className="inline-flex shrink-0 items-center">
+          <StatusDot tone={STAGE_TONE[stage.stage]} size="sm" />
+        </span>
+      </Tooltip>
+      {crumbs.map((crumb, index) => (
+        <span key={crumb.id} className="flex min-w-0 items-center gap-1.5">
+          {index > 0 ? (
+            <ChevronRight size={12} aria-hidden className="shrink-0 text-muted-foreground/40" />
+          ) : null}
+          {index === crumbs.length - 1 && canSwitchAgent && selectedAgent != null ? (
+            <AgentSwitcherCrumb
+              label={crumb.label}
+              siblings={siblings}
+              selectedAgentId={selectedAgent.id}
+              onSelect={(id) => {
+                void selectAgent(sessionId, id);
+              }}
+            />
+          ) : crumb.id === 'selected-parent' && parentAgent != null && parentSiblings.length > 1 ? (
+            <AgentSwitcherCrumb
+              label={crumb.label}
+              siblings={parentSiblings}
+              selectedAgentId={parentAgent.id}
+              onNavigate={crumb.onClick}
+              onSelect={(id) => {
+                void selectAgent(sessionId, id);
+              }}
+            />
+          ) : (
+            <PlainCrumb crumb={crumb} isLast={index === crumbs.length - 1} />
+          )}
+        </span>
+      ))}
+      {canAdvanceRun ? (
+        <WorkflowAdvance
+          sessionId={sessionId}
+          run={selectedWorkflowRun.run}
+          workflow={selectedWorkflowRun.workflow}
+        />
+      ) : null}
+    </nav>
   );
 };
 

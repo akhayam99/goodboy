@@ -12,6 +12,7 @@ import { ContextChip } from './ContextChip';
 import { LinkedWorkChips } from './LinkedWorkChips';
 import { MountProjectAction } from './ProjectMountRows/MountProjectAction';
 import { ProjectMountRows } from './ProjectMountRows';
+import { SessionCostChip } from './SessionCostChip';
 
 type Props = {
   readonly session: Session;
@@ -102,6 +103,7 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
         <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />
           <LinkIssueAction session={session} presentation="chip" isCollapsed={hasLinkedWork} />
+          <SessionCostChip sessionId={sessionId} />
         </div>
       </div>
       <ProjectMountRows session={session} onSelectLens={onSelectLens} />
