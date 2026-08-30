@@ -2,23 +2,18 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Session, Workspace, WorkspaceGitStatus, WorkspaceId } from '@goodboy/types';
+import type { Project, Session, Workspace, WorkspaceGitStatus, WorkspaceId } from '@goodboy/types';
 
-const { state, gitStatus, groups } = vi.hoisted(() => ({
+const { state, gitStatuses, groups } = vi.hoisted(() => ({
   state: {
     boardReady: true,
     archivedSessions: {} as Record<string, ReadonlyArray<Session>>,
     loadArchivedSessions: vi.fn(),
     workspaces: [] as ReadonlyArray<Workspace>,
-    projects: [] as ReadonlyArray<{
-      id: string;
-      workspaceId: string;
-      kind: string;
-      rootPath: string;
-    }>,
+    projects: [] as ReadonlyArray<Project>,
     bulkUnarchiveTask: vi.fn(async () => undefined),
   },
-  gitStatus: { current: null as WorkspaceGitStatus | null },
+  gitStatuses: { current: {} as Record<string, WorkspaceGitStatus | null> },
   groups: { current: [] as ReadonlyArray<{ key: string; sessions: ReadonlyArray<Session> }> },
 }));
 
@@ -29,8 +24,11 @@ vi.mock('../../../../store', () => ({
   useProjectFilteredSessions: ({ sessions }: { sessions: ReadonlyArray<Session> }) => sessions,
 }));
 
-vi.mock('../../hooks/useWorkspaceGitStatus', () => ({
-  useWorkspaceGitStatus: () => gitStatus.current,
+vi.mock('../../hooks/useProjectGitStatuses', () => ({
+  useProjectGitStatuses: () =>
+    state.projects
+      .filter((project) => project.kind === 'repo')
+      .map((project) => ({ project, status: gitStatuses.current[project.id] ?? null })),
 }));
 
 vi.mock('../../../onboarding/OnboardingWizard/steps/ProjectsStep', () => ({
@@ -39,9 +37,19 @@ vi.mock('../../../onboarding/OnboardingWizard/steps/ProjectsStep', () => ({
   ),
 }));
 
-vi.mock('../WorkspaceGitPanel', () => ({
-  WorkspaceGitPanel: ({ status }: { status: WorkspaceGitStatus }) => (
-    <div data-testid="git-panel">{status.state}</div>
+vi.mock('../ProjectGitPill', () => ({
+  ProjectGitPills: ({
+    entries,
+  }: {
+    entries: ReadonlyArray<{ project: Project; status: WorkspaceGitStatus | null }>;
+  }) => (
+    <div data-testid="git-pills">
+      {entries.map(({ project, status }) => (
+        <span key={project.id} data-testid="git-pill">
+          {project.name}:{status?.state ?? 'loading'}
+        </span>
+      ))}
+    </div>
   ),
 }));
 
@@ -122,13 +130,23 @@ const statusOf = (state: WorkspaceGitStatus['state']): WorkspaceGitStatus => ({
   inProgress: null,
 });
 
+const projectOf = ({
+  id,
+  kind = 'repo',
+  name = id,
+}: {
+  readonly id: string;
+  readonly kind?: Project['kind'];
+  readonly name?: string;
+}): Project => ({ id, workspaceId: wsId, kind, name, rootPath: `/tmp/${id}` }) as Project;
+
 beforeEach(() => {
   state.boardReady = true;
   state.archivedSessions = { [wsId]: [] };
   state.loadArchivedSessions = vi.fn();
   state.workspaces = [workspace];
-  state.projects = [{ id: 'proj-1', workspaceId: wsId, kind: 'repo', rootPath: '/tmp/fresh-idea' }];
-  gitStatus.current = null;
+  state.projects = [projectOf({ id: 'proj-1', name: 'fresh-idea' })];
+  gitStatuses.current = { 'proj-1': statusOf('ready') };
   groups.current = [];
 });
 afterEach(cleanup);
@@ -146,8 +164,8 @@ describe('StageBoard loading gate', () => {
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.queryByLabelText('Loading board')).toBeNull();
     expect(screen.getByText('Start your first session')).toBeDefined();
-    expect(screen.queryByText('Stage board')).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
+    expect(screen.getByText('Stage board')).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(2);
   });
 
   it('renders stage columns once ready with sessions', () => {
@@ -202,9 +220,8 @@ describe('StageBoard empty-projects gate', () => {
     const { rerender } = render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.getByTestId('projects-step')).toBeDefined();
 
-    state.projects = [
-      { id: 'proj-1', workspaceId: wsId, kind: 'repo', rootPath: '/tmp/fresh-idea' },
-    ];
+    state.projects = [projectOf({ id: 'proj-1' })];
+    gitStatuses.current = { 'proj-1': statusOf('ready') };
     rerender(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.queryByTestId('projects-step')).toBeNull();
     expect(screen.getByText('Start your first session')).toBeDefined();
@@ -212,16 +229,25 @@ describe('StageBoard empty-projects gate', () => {
 });
 
 describe('StageBoard git gate', () => {
-  it('replaces the start-a-session invitation with the git panel when there is no repository', () => {
-    gitStatus.current = statusOf('absent');
+  it('renders one pill per repo project and no pill for a folder project', () => {
+    state.projects = [
+      projectOf({ id: 'repo-a', name: 'Alpha' }),
+      projectOf({ id: 'folder-a', kind: 'folder', name: 'Notes' }),
+      projectOf({ id: 'repo-b', name: 'Beta' }),
+    ];
+    gitStatuses.current = {
+      'repo-a': statusOf('ready'),
+      'repo-b': statusOf('absent'),
+    };
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
-    expect(screen.getByTestId('git-panel').textContent).toBe('absent');
-    expect(screen.queryByText('Start your first session')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'New session' })).toBeNull();
+    expect(screen.getAllByTestId('git-pill')).toHaveLength(2);
+    expect(screen.getByText('Alpha:ready')).toBeDefined();
+    expect(screen.getByText('Beta:absent')).toBeDefined();
+    expect(screen.queryByText(/Notes:/)).toBeNull();
   });
 
-  it('offers New session as unavailable rather than failing when a repository is missing', () => {
-    gitStatus.current = statusOf('unborn');
+  it('blocks New session when the only repo project is absent', () => {
+    gitStatuses.current = { 'proj-1': statusOf('absent') };
     render(<StageBoard workspaceId={wsId} sessions={[session]} />);
     const button = screen.getByRole('button', { name: 'New session' });
     expect(button.hasAttribute('disabled')).toBe(true);
@@ -230,22 +256,28 @@ describe('StageBoard git gate', () => {
     );
   });
 
-  it('leaves the board alone once the repository is ready', () => {
-    gitStatus.current = statusOf('ready');
+  it('enables New session when one repo is ready even if another repo is broken', () => {
+    state.projects = [projectOf({ id: 'proj-1' }), projectOf({ id: 'proj-2' })];
+    gitStatuses.current = { 'proj-1': statusOf('ready'), 'proj-2': statusOf('missing') };
     render(<StageBoard workspaceId={wsId} sessions={[session]} />);
-    expect(screen.getByTestId('git-panel').textContent).toBe('ready');
     expect(screen.getByRole('button', { name: 'New session' }).hasAttribute('disabled')).toBe(
       false,
     );
   });
 
-  it('shows no git surface and no gate when the workspace reports no git state', () => {
-    gitStatus.current = null;
-    render(<StageBoard workspaceId={wsId} sessions={[]} />);
-    expect(screen.queryByTestId('git-panel')).toBeNull();
-    expect(screen.getByText('Start your first session')).toBeDefined();
+  it('enables New session when a folder project is available', () => {
+    state.projects = [projectOf({ id: 'folder-a', kind: 'folder' })];
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
     expect(screen.getByRole('button', { name: 'New session' }).hasAttribute('disabled')).toBe(
       false,
+    );
+  });
+
+  it('uses the unreachable reason when all repo projects are missing', () => {
+    gitStatuses.current = { 'proj-1': statusOf('missing') };
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
+    expect(screen.getByRole('button', { name: 'New session' }).getAttribute('title')).toBe(
+      'The project folder is unreachable',
     );
   });
 });
@@ -269,7 +301,12 @@ describe('StageBoard instant create', () => {
     window.addEventListener('goodboy:new-session', listener);
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'New session' }));
+    const buttons = screen.getAllByRole('button', { name: 'New session' });
+    const emptyStateButton = buttons[1];
+    if (emptyStateButton == null) {
+      throw new Error('Expected the empty state session button');
+    }
+    fireEvent.click(emptyStateButton);
 
     expect(listener).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:new-session', listener);
