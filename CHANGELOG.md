@@ -7,6 +7,34 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.3
+
+The board sheds its git banner and every project picks its own base branch.
+
+### [#1553] The board header carries a git pill per project
+
+The full-width main checkout band above the board is gone. Each repository
+project now shows a compact branch pill next to the board controls, with a
+count badge when there is something to act on: commits to pull, uncommitted
+changes, conflicts. The detail, the fast-forward action, open in editor and
+the first-time git setup guide all live in the pill. Workspaces with several
+projects finally see the state of each checkout, not just the first one.
+
+### [#1554] Choose the base branch per project
+
+Everything assumed main: new session branches, diffs, rebases, sync state and
+new pull requests. Each project now carries its own base branch, editable
+from the git pill on the board and from the workspace settings. Leave it
+empty and Goodboy follows the repository's default branch on its own.
+
+### Fixes
+
+- A burst of decision changes filled the activity trace with one row each;
+  consecutive rows now collapse into one with the summed counts. [#1555]
+- The session cost sits next to the context gauge instead of floating in the
+  breadcrumb, and stray dividers under the breadcrumb, the Board button and
+  the sidebar stage labels are gone. Filter buttons share one icon. [#1556]
+
 ## Goodboy v0.2.2
 
 The session decides where it works. Projects mount as you go, and the app now
