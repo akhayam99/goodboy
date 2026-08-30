@@ -191,9 +191,14 @@ const mergeConsecutiveDecisionRows = ({
     let added = 0;
     let removed = 0;
     let runIndex = index;
+    const newestDayKey = newest.at === null ? null : dayKeyOf({ at: newest.at });
     while (runIndex < drafts.length) {
       const draft = drafts[runIndex];
       if (draft === undefined || !isDecisionChangeRow({ draft }) || draft.entry.kind !== 'event') {
+        break;
+      }
+      const draftDayKey = draft.at === null ? null : dayKeyOf({ at: draft.at });
+      if (runIndex > index && draftDayKey !== newestDayKey) {
         break;
       }
       added += draft.entry.event.payload?.added ?? 0;

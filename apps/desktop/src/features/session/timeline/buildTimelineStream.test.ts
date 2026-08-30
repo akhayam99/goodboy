@@ -929,6 +929,37 @@ describe('buildTimelineStream, session events', () => {
     });
   });
 
+  it('keeps decision runs separate across a day boundary', () => {
+    const result = stream({
+      agents: [],
+      events: [
+        sessionEvent({
+          id: 'ev-yesterday',
+          kind: 'decisions_changed',
+          at: localIso({ day: 17, hour: 23 }),
+          payload: { added: 1, removed: 0 },
+        }),
+        sessionEvent({
+          id: 'ev-today',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 1 }),
+          payload: { added: 2, removed: 1 },
+        }),
+      ],
+    });
+    const rows = result.items.flatMap((item) => (item.kind === 'row' ? [item] : []));
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.entry.kind === 'event' ? rows[0].entry.event.payload : null).toEqual({
+      added: 2,
+      removed: 1,
+    });
+    expect(rows[1]?.entry.kind === 'event' ? rows[1].entry.event.payload : null).toEqual({
+      added: 1,
+      removed: 0,
+    });
+  });
+
   it('keeps decision runs separate across an agent row', () => {
     const result = stream({
       agents: [
