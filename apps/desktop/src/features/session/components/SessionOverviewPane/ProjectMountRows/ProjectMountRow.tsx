@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { Folder, FolderGit2, MoreHorizontal } from 'lucide-react';
 import { OverflowMenu, Tooltip, cn, formatError } from '@goodboy/ui';
 import type { OverflowMenuItem } from '@goodboy/ui';
-import type { Project, PullRequestState, SessionId, SessionProjectMount } from '@goodboy/types';
+import type {
+  Project,
+  PullRequestState,
+  SessionId,
+  SessionProjectMount,
+  WorktreeStatus,
+} from '@goodboy/types';
 import type { LensKind, MountDiffStat } from '../../../../../store';
 import { useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
@@ -17,6 +23,7 @@ type Props = {
   readonly mount: SessionProjectMount;
   readonly diffStat: MountDiffStat | null;
   readonly pullRequest: PullRequestState | null;
+  readonly worktreeStatus: WorktreeStatus | null;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
@@ -29,6 +36,7 @@ export const ProjectMountRow = ({
   mount,
   diffStat,
   pullRequest,
+  worktreeStatus,
   onSelectLens,
 }: Props) => {
   const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
@@ -89,7 +97,7 @@ export const ProjectMountRow = ({
         <ProjectSyncControl
           sessionId={sessionId}
           projectId={mount.projectId}
-          worktreePath={mount.worktreePath}
+          status={worktreeStatus}
         />
       ) : null}
       {changes ? (

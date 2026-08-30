@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { WorktreeStatus } from '@goodboy/types';
 
-const { worktreeStatus, store } = vi.hoisted(() => ({
-  worktreeStatus: vi.fn(),
+const { store } = vi.hoisted(() => ({
   store: {
     setSessionActiveProject: vi.fn(async () => undefined),
     emitNotification: vi.fn(),
@@ -14,7 +14,6 @@ const { worktreeStatus, store } = vi.hoisted(() => ({
 vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
 }));
-vi.mock('../../../../worktree/worktree', () => ({ worktreeStatus }));
 vi.mock('../../../hooks/useRebaseAgent', () => ({
   useRebaseAgent: () => ({ canRebase: false, isRunning: false, error: null, run: vi.fn() }),
 }));
@@ -24,35 +23,52 @@ vi.mock('../../../hooks/usePushBranch', () => ({
 
 import { ProjectSyncControl } from './ProjectSyncControl';
 
-const renderControl = () =>
+const makeStatus = ({ behind }: { readonly behind: number }): WorktreeStatus => ({
+  branch: 'feature',
+  head: 'abc123',
+  headSubject: 'Feature',
+  mainDistance: { kind: 'known', ahead: 1, behind },
+  upstreamDistance: { kind: 'known', ahead: 1, behind: 0 },
+  workingTree: {
+    kind: 'known',
+    staged: 0,
+    unstaged: 0,
+    untracked: 0,
+    unmerged: 0,
+    changed: 0,
+  },
+  upstream: 'origin/feature',
+  inProgress: null,
+});
+
+const renderControl = ({ status }: { readonly status: WorktreeStatus | null }) =>
   render(
     <ProjectSyncControl
       sessionId={'session-1' as never}
       projectId={'project-1' as never}
-      worktreePath="/worktree"
+      status={status}
     />,
   );
 
 describe('ProjectSyncControl', () => {
-  beforeEach(() => {
-    worktreeStatus.mockReset();
-  });
+  beforeEach(() => vi.clearAllMocks());
+  afterEach(cleanup);
 
   it('shows the behind badge only when behind is greater than zero', async () => {
-    worktreeStatus.mockResolvedValue({
-      mainDistance: { kind: 'known', ahead: 1, behind: 2 },
-      upstreamDistance: { kind: 'known', ahead: 1, behind: 0 },
-    });
-    const view = renderControl();
-    await waitFor(() => expect(screen.getByTestId('project-behind-badge').textContent).toBe('2'));
+    const behindStatus = makeStatus({ behind: 2 });
+    const view = renderControl({ status: behindStatus });
+    expect(screen.getByTestId('project-behind-badge').textContent).toBe('2');
 
     view.unmount();
-    worktreeStatus.mockResolvedValue({
-      mainDistance: { kind: 'known', ahead: 1, behind: 0 },
-      upstreamDistance: { kind: 'known', ahead: 1, behind: 0 },
-    });
-    renderControl();
-    await waitFor(() => expect(worktreeStatus).toHaveBeenCalled());
+    renderControl({ status: makeStatus({ behind: 0 }) });
     expect(screen.queryByTestId('project-behind-badge')).toBeNull();
+  });
+
+  it('shows placeholders and no badge before status is known', () => {
+    renderControl({ status: null });
+
+    expect(screen.queryByTestId('project-behind-badge')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Branch sync actions' }));
+    expect(screen.getAllByText('--')).toHaveLength(2);
   });
 });

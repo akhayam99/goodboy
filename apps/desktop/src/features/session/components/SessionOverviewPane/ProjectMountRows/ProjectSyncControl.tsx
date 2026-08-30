@@ -1,25 +1,21 @@
 import { ArrowDown, ArrowUp, GitBranch, RefreshCw, Upload } from 'lucide-react';
 import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
-import type { ProjectId, SessionId } from '@goodboy/types';
+import type { ProjectId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { distanceAhead } from '../../../../../shared/lib/gitStatus';
 import { useRebaseAgent } from '../../../hooks/useRebaseAgent';
 import { usePushBranch } from '../../../hooks/usePushBranch';
-import { useMemo } from 'react';
-import { useWorktreeStatuses } from '../../../hooks/useWorktreeStatuses';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly projectId: ProjectId;
-  readonly worktreePath: string;
+  readonly status: WorktreeStatus | null;
 };
 
-export const ProjectSyncControl = ({ sessionId, projectId, worktreePath }: Props) => {
+export const ProjectSyncControl = ({ sessionId, projectId, status }: Props) => {
   const dropdown = useDropdown({ width: 'w-64', expectedHeight: 160 });
   const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
   const emitNotification = useAppStore((state) => state.emitNotification);
-  const worktreePaths = useMemo(() => [worktreePath], [worktreePath]);
-  const status = useWorktreeStatuses({ worktreePaths }).get(worktreePath) ?? null;
   const notify = ({ title, message }: { readonly title: string; readonly message: string }) => {
     void emitNotification('error', 'error', title, message, { sessionId });
   };
@@ -73,11 +69,11 @@ export const ProjectSyncControl = ({ sessionId, projectId, worktreePath }: Props
           <span className="font-medium text-foreground">Compared with main</span>
           <span className="ml-auto flex items-center gap-1">
             <ArrowDown size={11} aria-hidden />
-            {distance?.behind ?? 0}
+            {distance?.behind ?? '--'}
           </span>
           <span className="flex items-center gap-1">
             <ArrowUp size={11} aria-hidden />
-            {distance?.ahead ?? 0}
+            {distance?.ahead ?? '--'}
           </span>
         </div>
         <button

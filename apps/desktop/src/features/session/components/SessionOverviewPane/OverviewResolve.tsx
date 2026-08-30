@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Button, Chip, Eyebrow } from '@goodboy/ui';
+import { Button, Chip, Eyebrow, formatError } from '@goodboy/ui';
 import type { Session, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
@@ -30,6 +30,7 @@ export const OverviewResolve = ({ session }: Props) => {
   );
   const projects = useAppStore((state) => state.projects);
   const activateNextResolver = useAppStore((state) => state.activateNextResolver);
+  const emitNotification = useAppStore((state) => state.emitNotification);
   const roleModels = useSessionRoleModels({ sessionId });
   const { spawnResolver } = useResolverSpawner({ sessionId });
   const worktreePaths = useMemo(() => mounts.map((mount) => mount.worktreePath), [mounts]);
@@ -86,7 +87,11 @@ export const OverviewResolve = ({ session }: Props) => {
       if (isBatch) {
         await activateNextResolver(sessionId);
       }
-    })();
+    })().catch((error: unknown) => {
+      void emitNotification('error', 'error', 'resolver failed to start', formatError(error), {
+        sessionId,
+      });
+    });
   };
 
   return (

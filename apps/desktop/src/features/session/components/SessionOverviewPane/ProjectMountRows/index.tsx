@@ -4,6 +4,7 @@ import type { LensKind } from '../../../../../store';
 import { EMPTY_ARRAY, useAppStore, useMountDiffStats } from '../../../../../store';
 import { MountProjectAction } from './MountProjectAction';
 import { ProjectMountRow } from './ProjectMountRow';
+import { useWorktreeStatuses } from '../../../hooks/useWorktreeStatuses';
 
 type Props = {
   readonly session: Session;
@@ -22,6 +23,8 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
   );
   const projectPrs = useAppStore((state) => state.sessionProjectPrs?.[session.id]);
   const diffStats = useMountDiffStats(session.id);
+  const worktreePaths = useMemo(() => mounts.map((mount) => mount.worktreePath), [mounts]);
+  const worktreeStatuses = useWorktreeStatuses({ worktreePaths });
 
   return (
     <section
@@ -46,6 +49,7 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
             mount={mount}
             diffStat={diffStats.get(mount.worktreePath) ?? null}
             pullRequest={projectPrs?.[mount.projectId]?.[0] ?? null}
+            worktreeStatus={worktreeStatuses.get(mount.worktreePath) ?? null}
             onSelectLens={onSelectLens}
           />
         ))
@@ -53,3 +57,4 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
     </section>
   );
 };
+import { useMemo } from 'react';
