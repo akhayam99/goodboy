@@ -162,6 +162,76 @@ const compareNewestFirst = ({
   return second.sortOrdinal - first.sortOrdinal || first.id.localeCompare(second.id);
 };
 
+const isDecisionChangeRow = ({ draft }: { readonly draft: DraftRow }): boolean =>
+  draft.groupId == null &&
+  draft.entry.kind === 'event' &&
+  draft.entry.event.kind === 'decisions_changed';
+
+type MergeDecisionRowsParams = {
+  readonly drafts: ReadonlyArray<DraftRow>;
+};
+
+const mergeConsecutiveDecisionRows = ({
+  drafts,
+}: MergeDecisionRowsParams): ReadonlyArray<DraftRow> => {
+  const merged: DraftRow[] = [];
+  let index = 0;
+
+  while (index < drafts.length) {
+    const newest = drafts[index];
+    if (newest === undefined) {
+      break;
+    }
+    if (!isDecisionChangeRow({ draft: newest }) || newest.entry.kind !== 'event') {
+      merged.push(newest);
+      index += 1;
+      continue;
+    }
+
+    let added = 0;
+    let removed = 0;
+    let runIndex = index;
+    const newestDayKey = newest.at === null ? null : dayKeyOf({ at: newest.at });
+    while (runIndex < drafts.length) {
+      const draft = drafts[runIndex];
+      if (draft === undefined || !isDecisionChangeRow({ draft }) || draft.entry.kind !== 'event') {
+        break;
+      }
+      const draftDayKey = draft.at === null ? null : dayKeyOf({ at: draft.at });
+      if (runIndex > index && draftDayKey !== newestDayKey) {
+        break;
+      }
+      added += draft.entry.event.payload?.added ?? 0;
+      removed += draft.entry.event.payload?.removed ?? 0;
+      runIndex += 1;
+    }
+
+    if (runIndex === index + 1) {
+      merged.push(newest);
+      index = runIndex;
+      continue;
+    }
+
+    merged.push({
+      ...newest,
+      entry: {
+        ...newest.entry,
+        event: {
+          ...newest.entry.event,
+          payload: {
+            ...newest.entry.event.payload,
+            added,
+            removed,
+          },
+        },
+      },
+    });
+    index = runIndex;
+  }
+
+  return merged;
+};
+
 const stepAgentsOf = ({ entry }: { readonly entry: TimelineRunEntry }): ReadonlyArray<Agent> =>
   entry.children.flatMap((child) => (child.kind === 'agent' ? [child.agent] : []));
 
@@ -556,8 +626,9 @@ export const buildTimelineStream = ({
   }
 
   const sorted = [...rows].sort((first, second) => compareNewestFirst({ first, second }));
+  const merged = mergeConsecutiveDecisionRows({ drafts: sorted });
   const withDays = withDayBreaks({
-    drafts: withPendingClusters({ drafts: withPendingAtFamilyHead({ drafts: sorted }) }),
+    drafts: withPendingClusters({ drafts: withPendingAtFamilyHead({ drafts: merged }) }),
     dayLabelFor,
   });
 

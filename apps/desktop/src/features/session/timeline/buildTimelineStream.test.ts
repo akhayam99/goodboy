@@ -10,6 +10,7 @@ import type {
   SessionEvent,
   SessionEventId,
   SessionEventKind,
+  SessionEventPayload,
   SessionId,
   Step,
   StepId,
@@ -880,17 +881,174 @@ type SessionEventParams = {
   readonly id: string;
   readonly kind: SessionEventKind;
   readonly at: string;
+  readonly payload?: SessionEventPayload;
 };
 
-const sessionEvent = ({ id, kind, at }: SessionEventParams): SessionEvent => ({
+const sessionEvent = ({ id, kind, at, payload }: SessionEventParams): SessionEvent => ({
   id: typedString<SessionEventId>({ value: id }),
   sessionId: SESSION_ID,
   kind,
-  payload: null,
+  payload: payload ?? null,
   createdAt: typedString<IsoDateTime>({ value: at }),
 });
 
 describe('buildTimelineStream, session events', () => {
+  it('merges three consecutive decision changes into the newest row', () => {
+    const newestAt = localIso({ day: 18, hour: 12 });
+    const result = stream({
+      agents: [],
+      events: [
+        sessionEvent({
+          id: 'ev-oldest',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 10 }),
+          payload: { added: 1, removed: 2 },
+        }),
+        sessionEvent({
+          id: 'ev-middle',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 11 }),
+          payload: { added: 3, removed: 1 },
+        }),
+        sessionEvent({
+          id: 'ev-newest',
+          kind: 'decisions_changed',
+          at: newestAt,
+          payload: { added: 2, removed: 4 },
+        }),
+      ],
+    });
+    const rows = result.items.flatMap((item) => (item.kind === 'row' ? [item] : []));
+    const row = rows[0];
+
+    expect(rows).toHaveLength(1);
+    expect(row?.at).toBe(newestAt);
+    expect(row?.entry.kind === 'event' ? row.entry.event.payload : null).toEqual({
+      added: 6,
+      removed: 7,
+    });
+  });
+
+  it('keeps decision runs separate across a day boundary', () => {
+    const result = stream({
+      agents: [],
+      events: [
+        sessionEvent({
+          id: 'ev-yesterday',
+          kind: 'decisions_changed',
+          at: localIso({ day: 17, hour: 23 }),
+          payload: { added: 1, removed: 0 },
+        }),
+        sessionEvent({
+          id: 'ev-today',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 1 }),
+          payload: { added: 2, removed: 1 },
+        }),
+      ],
+    });
+    const rows = result.items.flatMap((item) => (item.kind === 'row' ? [item] : []));
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.entry.kind === 'event' ? rows[0].entry.event.payload : null).toEqual({
+      added: 2,
+      removed: 1,
+    });
+    expect(rows[1]?.entry.kind === 'event' ? rows[1].entry.event.payload : null).toEqual({
+      added: 1,
+      removed: 0,
+    });
+  });
+
+  it('keeps decision runs separate across an agent row', () => {
+    const result = stream({
+      agents: [
+        agent({ id: 'interleaved', ordinal: 1, startedAt: localIso({ day: 18, hour: 11 }) }),
+      ],
+      events: [
+        sessionEvent({
+          id: 'ev-oldest',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 9 }),
+          payload: { added: 1, removed: 0 },
+        }),
+        sessionEvent({
+          id: 'ev-older',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 10 }),
+          payload: { added: 2, removed: 1 },
+        }),
+        sessionEvent({
+          id: 'ev-newer',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 12 }),
+          payload: { added: 3, removed: 2 },
+        }),
+        sessionEvent({
+          id: 'ev-newest',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 13 }),
+          payload: { added: 4, removed: 3 },
+        }),
+      ],
+    });
+    const rows = result.items.flatMap((item) => (item.kind === 'row' ? [item] : []));
+    const payloads = rows.flatMap((row) =>
+      row.entry.kind === 'event' ? [row.entry.event.payload] : [],
+    );
+
+    expect(rows.map((row) => row.id)).toEqual([
+      'event:ev-newest',
+      'agent:interleaved',
+      'event:ev-older',
+    ]);
+    expect(payloads).toEqual([
+      { added: 7, removed: 5 },
+      { added: 3, removed: 1 },
+    ]);
+  });
+
+  it('leaves a single decision change unchanged', () => {
+    const payload = { added: 1, removed: 2 };
+    const result = stream({
+      agents: [],
+      events: [
+        sessionEvent({
+          id: 'ev-only',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 12 }),
+          payload,
+        }),
+      ],
+    });
+    const row = result.items.find((item) => item.kind === 'row');
+
+    expect(row?.entry.kind === 'event' ? row.entry.event.payload : null).toBe(payload);
+  });
+
+  it('keeps the newest decision row id after merging', () => {
+    const result = stream({
+      agents: [],
+      events: [
+        sessionEvent({
+          id: 'ev-older',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 11 }),
+          payload: { added: 1, removed: 0 },
+        }),
+        sessionEvent({
+          id: 'ev-newest',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 12 }),
+          payload: { added: 1, removed: 0 },
+        }),
+      ],
+    });
+    const rows = result.items.flatMap((item) => (item.kind === 'row' ? [item] : []));
+
+    expect(rows.map((row) => row.id)).toEqual(['event:ev-newest']);
+  });
+
   it('keeps the worktree row at the bottom when creation events share an instant', () => {
     const at = localIso({ day: 18, hour: 8 });
     const result = stream({
