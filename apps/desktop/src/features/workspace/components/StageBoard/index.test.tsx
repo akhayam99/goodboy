@@ -44,9 +44,11 @@ vi.mock('../ProjectGitPill', () => ({
     entries: ReadonlyArray<{ project: Project; status: WorkspaceGitStatus | null }>;
   }) => (
     <div data-testid="git-pills">
-      {entries.map(({ project, status }) => (
+      {(entries.length >= 3 ? entries.slice(0, 1) : entries).map(({ project, status }) => (
         <span key={project.id} data-testid="git-pill">
-          {project.name}:{status?.state ?? 'loading'}
+          {entries.length >= 3
+            ? `${entries.length} repos`
+            : `${project.name}:${status?.state ?? 'loading'}`}
         </span>
       ))}
     </div>
@@ -244,6 +246,22 @@ describe('StageBoard git gate', () => {
     expect(screen.getByText('Alpha:ready')).toBeDefined();
     expect(screen.getByText('Beta:absent')).toBeDefined();
     expect(screen.queryByText(/Notes:/)).toBeNull();
+  });
+
+  it('renders one aggregate pill for three repo projects', () => {
+    state.projects = [
+      projectOf({ id: 'repo-a' }),
+      projectOf({ id: 'repo-b' }),
+      projectOf({ id: 'repo-c' }),
+    ];
+    gitStatuses.current = {
+      'repo-a': statusOf('ready'),
+      'repo-b': statusOf('ready'),
+      'repo-c': statusOf('ready'),
+    };
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.getAllByTestId('git-pill')).toHaveLength(1);
+    expect(screen.getByText('3 repos')).toBeDefined();
   });
 
   it('blocks New session when the only repo project is absent', () => {

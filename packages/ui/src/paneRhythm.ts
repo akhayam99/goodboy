@@ -23,11 +23,11 @@ export const PANE_RHYTHM = {
     row: 'px-2 py-1.5',
   },
   board: {
-    pad: 'p-5',
+    pad: 'px-6 py-5',
     colGap: 'gap-3',
     colWidth: 'w-[17rem] min-w-[15rem]',
-    cardGap: 'gap-2',
-    colStack: 'gap-3',
+    cardGap: 'gap-2.5',
+    colStack: 'gap-2.5',
   },
   sessionList: {
     pad: 'px-2 py-2',

@@ -19,6 +19,7 @@ vi.mock('../../../../store', () => ({
 }));
 
 import { ProjectGitPill } from './ProjectGitPill';
+import { ProjectGitPills } from './index';
 
 const project = {
   id: 'project-1' as ProjectId,
@@ -81,7 +82,7 @@ describe('ProjectGitPill', () => {
     expect(screen.getByLabelText('copy command: Create the repository')).toBeDefined();
   });
 
-  it('fast-forwards the correct project and exposes the disabled reason', () => {
+  it('fast-forwards the correct project and shows the disabled reason inline', () => {
     renderPill({ status: statusOf({ behind: 2 }) });
     fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
     fireEvent.click(screen.getByRole('button', { name: /Fast-forward main to origin\/main/ }));
@@ -90,11 +91,12 @@ describe('ProjectGitPill', () => {
     cleanup();
     renderPill({ status: statusOf({}) });
     fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
+    expect(screen.getByText('Already up to date.')).toBeDefined();
     expect(
       screen
         .getByRole('button', { name: /Fast-forward main to origin\/main/ })
-        .getAttribute('title'),
-    ).toBe('already up to date');
+        .hasAttribute('title'),
+    ).toBe(false);
   });
 
   it('renders an editor launch error as an alert', async () => {
@@ -111,5 +113,75 @@ describe('ProjectGitPill', () => {
     renderPill({ status: statusOf({ state: 'missing' }) });
     expect(screen.getByText('Unreachable')).toBeDefined();
     expect(screen.queryByText('Git setup')).toBeNull();
+  });
+});
+
+describe('ProjectGitPills', () => {
+  const entryOf = ({
+    id,
+    name,
+    status,
+  }: {
+    readonly id: string;
+    readonly name: string;
+    readonly status: WorkspaceGitStatus;
+  }) => ({
+    project: { ...project, id: id as ProjectId, name },
+    status,
+  });
+
+  it('renders one aggregate trigger with the summed actionable count', () => {
+    render(
+      <ProjectGitPills
+        entries={[
+          entryOf({ id: 'one', name: 'One', status: statusOf({ behind: 2 }) }),
+          entryOf({ id: 'two', name: 'Two', status: statusOf({ changed: 3 }) }),
+          entryOf({ id: 'three', name: 'Three', status: statusOf({ unmerged: 1 }) }),
+        ]}
+      />,
+    );
+    expect(screen.getByRole('button', { name: '3 repository git statuses' })).toBeDefined();
+    expect(screen.getByTestId('project-git-summary-count').textContent).toBe('6');
+  });
+
+  it('shows the aggregate warning instead of the count', () => {
+    render(
+      <ProjectGitPills
+        entries={[
+          entryOf({ id: 'one', name: 'One', status: statusOf({ behind: 2 }) }),
+          entryOf({ id: 'two', name: 'Two', status: statusOf({ state: 'absent' }) }),
+          entryOf({ id: 'three', name: 'Three', status: statusOf({ changed: 1 }) }),
+        ]}
+      />,
+    );
+    expect(screen.getByTestId('project-git-summary-warning')).toBeDefined();
+    expect(screen.queryByTestId('project-git-summary-count')).toBeNull();
+  });
+
+  it('drills into project detail and returns to the sorted list', () => {
+    render(
+      <ProjectGitPills
+        entries={[
+          entryOf({ id: 'alpha', name: 'Alpha', status: statusOf({ behind: 1 }) }),
+          entryOf({ id: 'warning', name: 'Warning', status: statusOf({ state: 'absent' }) }),
+          entryOf({ id: 'beta', name: 'Beta', status: statusOf({ changed: 3 }) }),
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '3 repository git statuses' }));
+    const rows = screen
+      .getAllByRole('button')
+      .filter((button) =>
+        ['Warning', 'Beta', 'Alpha'].some((name) => button.textContent?.includes(name) === true),
+      );
+    expect(rows.map((row) => row.textContent)).toEqual([
+      expect.stringContaining('Warning'),
+      expect.stringContaining('Beta'),
+      expect.stringContaining('Alpha'),
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: /Beta/ }));
+    expect(screen.getByText('3 uncommitted')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Beta' }));
+    expect(screen.getByRole('button', { name: /Warning/ })).toBeDefined();
   });
 });

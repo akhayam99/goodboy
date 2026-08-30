@@ -141,11 +141,11 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         : 'This project needs a git repository with one commit first';
 
   return (
-    <div className={cn('flex h-full w-full flex-col gap-4', PANE_RHYTHM.board.pad)}>
+    <div className={cn('flex h-full w-full flex-col gap-5', PANE_RHYTHM.board.pad)}>
       {pending || !empty || hasProjects ? (
         <>
           <div className="flex shrink-0 items-center justify-between gap-4">
-            <span className="flex items-baseline gap-2">
+            <span className="flex min-w-0 items-baseline gap-2">
               <Eyebrow label="Stage board" />
               <span className="text-2xs tabular-nums text-muted-foreground/60">
                 {activeSessions.length}
@@ -156,7 +156,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                 </span>
               )}
             </span>
-            <span className="flex items-center gap-1.5">
+            <span className="flex shrink-0 items-center gap-1.5">
               <ProjectGitPills entries={projectGitStatuses} />
               <ProjectFilter workspaceId={workspaceId} sessions={filterSessions} />
               <button
