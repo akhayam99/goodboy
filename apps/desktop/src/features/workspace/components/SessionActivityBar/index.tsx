@@ -105,8 +105,13 @@ export const SessionActivityBar = ({
     const projectNames = new Map(projects.map((project) => [project.id, project.name]));
     const namesBySession = new Map<string, ReadonlyArray<string>>();
     for (const session of [...sessions, ...archivedSessions]) {
-      const names = (sessionProjectMounts[session.id] ?? EMPTY_ARRAY).map(
-        (mount) => projectNames.get(mount.projectId) ?? mount.mountName,
+      const names = Array.from(
+        new Map(
+          (sessionProjectMounts[session.id] ?? EMPTY_ARRAY).map((mount) => [
+            mount.projectId,
+            projectNames.get(mount.projectId) ?? mount.mountName,
+          ]),
+        ).values(),
       );
       namesBySession.set(session.id, names);
     }

@@ -26,7 +26,10 @@ type UpdateOptionParams = {
   readonly checked: boolean;
 };
 
-const MENU_WIDTH = 240;
+const MENU_WIDTH = {
+  className: 'w-[240px]',
+  expected: 240,
+};
 
 export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
   const selectedProjectIds = useSelectedProjectIds({ workspaceId });
@@ -36,8 +39,8 @@ export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdown = useDropdown({
     align: 'end',
-    width: 'w-[240px]',
-    expectedWidth: MENU_WIDTH,
+    width: MENU_WIDTH.className,
+    expectedWidth: MENU_WIDTH.expected,
     expectedHeight: 300,
     isEscapeEnabled: false,
   });

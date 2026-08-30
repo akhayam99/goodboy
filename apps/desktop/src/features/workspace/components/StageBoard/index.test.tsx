@@ -281,12 +281,20 @@ describe('StageBoard selection', () => {
   const shelved = { id: 's-9' } as Session;
 
   it('offers the alt-click hint only once the board holds more than one session', () => {
+    groups.current = [{ key: 'building', sessions: [session] }];
     render(<StageBoard workspaceId={wsId} sessions={[session]} />);
     expect(screen.queryByText(/lasso/)).toBeNull();
 
     cleanup();
+    groups.current = [{ key: 'building', sessions: [session, other] }];
     render(<StageBoard workspaceId={wsId} sessions={[session, other]} />);
     expect(screen.getByText('⌥click to select · drag to lasso')).toBeDefined();
+  });
+
+  it('hides the alt-click hint when the project filter leaves one visible session', () => {
+    groups.current = [{ key: 'building', sessions: [session] }];
+    render(<StageBoard workspaceId={wsId} sessions={[session, other]} />);
+    expect(screen.queryByText(/lasso/)).toBeNull();
   });
 
   it('raises a single bulk bar for the whole board, not one per column', () => {

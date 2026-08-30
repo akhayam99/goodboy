@@ -143,6 +143,19 @@ describe('SessionActivityBar, baseline', () => {
     fireEvent(window, new CustomEvent('goodboy:new-session'));
     expect(screen.getByRole('button', { name: /create new session/i })).toBeDefined();
   });
+
+  it('shows one project name when a session mounts the same project more than once', () => {
+    state.projects = [{ id: 'project-1', name: 'Goodboy' }];
+    state.sessionProjectMounts = {
+      'a-1': [
+        { projectId: 'project-1', mountName: 'desktop' },
+        { projectId: 'project-1', mountName: 'desktop-copy' },
+      ],
+    };
+    renderBar([], [makeSession('a-1', 'duplicate mounts')]);
+    expect(screen.getByLabelText('Project: Goodboy')).toBeDefined();
+    expect(screen.queryByLabelText(/2 projects/)).toBeNull();
+  });
 });
 
 describe('SessionActivityBar, bulk selection', () => {

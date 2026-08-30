@@ -152,7 +152,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
               <span className="text-2xs tabular-nums text-muted-foreground/60">
                 {activeSessions.length}
               </span>
-              {sessions.length > 1 && (
+              {activeSessions.length > 1 && (
                 <span className="hidden text-3xs text-muted-foreground/50 sm:inline">
                   ⌥click to select · drag to lasso
                 </span>
