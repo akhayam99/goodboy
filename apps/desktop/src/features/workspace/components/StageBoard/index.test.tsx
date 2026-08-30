@@ -273,6 +273,14 @@ describe('StageBoard git gate', () => {
     );
   });
 
+  it('reports a status read in progress instead of the setup reason while loading', () => {
+    gitStatuses.current = {};
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
+    const button = screen.getByRole('button', { name: 'New session' });
+    expect(button.hasAttribute('disabled')).toBe(true);
+    expect(button.getAttribute('title')).toBe('Reading git status');
+  });
+
   it('uses the unreachable reason when all repo projects are missing', () => {
     gitStatuses.current = { 'proj-1': statusOf('missing') };
     render(<StageBoard workspaceId={wsId} sessions={[session]} />);

@@ -106,4 +106,10 @@ describe('ProjectGitPill', () => {
       expect(screen.getByRole('alert').textContent).toContain('editor unavailable'),
     );
   });
+
+  it('labels an unreachable checkout instead of calling it setup', () => {
+    renderPill({ status: statusOf({ state: 'missing' }) });
+    expect(screen.getByText('Unreachable')).toBeDefined();
+    expect(screen.queryByText('Git setup')).toBeNull();
+  });
 });

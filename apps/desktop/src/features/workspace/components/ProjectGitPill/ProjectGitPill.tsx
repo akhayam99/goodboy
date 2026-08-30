@@ -146,7 +146,11 @@ export const ProjectGitPill = ({ project, status, shouldShowProjectName }: Props
   const changed = isReady ? (changedCount({ workingTree: status.workingTree }) ?? 0) : 0;
   const unmerged = isReady ? (unmergedCount({ workingTree: status.workingTree }) ?? 0) : 0;
   const actionableCount = behind + changed + unmerged;
-  const branch = isReady ? (status.branch ?? 'detached HEAD') : 'Git setup';
+  const branch = isReady
+    ? (status.branch ?? 'detached HEAD')
+    : status?.state === 'missing'
+      ? 'Unreachable'
+      : 'Git setup';
   const label = shouldShowProjectName ? `${project.name} · ${branch}` : branch;
   const blockedReason = isReady ? blockedReasonOf({ status }) : null;
   const canPull = isReady && blockedReason == null && !pulling;

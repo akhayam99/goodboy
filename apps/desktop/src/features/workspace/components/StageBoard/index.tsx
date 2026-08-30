@@ -131,11 +131,14 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const areAllRepoProjectsMissing =
     projectGitStatuses.length > 0 &&
     projectGitStatuses.every(({ status }) => status?.state === 'missing');
+  const statusesPending = projectGitStatuses.some(({ status }) => status === null);
   const blockedReason = !hasProjects
     ? 'Link a project first'
-    : areAllRepoProjectsMissing
-      ? 'The project folder is unreachable'
-      : 'This project needs a git repository with one commit first';
+    : statusesPending
+      ? 'Reading git status'
+      : areAllRepoProjectsMissing
+        ? 'The project folder is unreachable'
+        : 'This project needs a git repository with one commit first';
 
   return (
     <div className={cn('flex h-full w-full flex-col gap-4', PANE_RHYTHM.board.pad)}>
