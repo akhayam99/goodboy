@@ -520,7 +520,7 @@ describe('buildTimelineStream', () => {
     ]);
   });
 
-  it('lifts a pending block above every dated entry, standalone agents included', () => {
+  it('places a pending block above its run newest dated row', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
       agents: RUN_WITH_PENDING_AGENTS,
@@ -528,8 +528,8 @@ describe('buildTimelineStream', () => {
 
     expect(items.map(labelOf)).toEqual([
       'now',
-      'cluster:3',
       'entry:agent:built-by-hand',
+      'cluster:3',
       'step:agent:implement',
       'step:agent:plan',
       'entry:run:run-1',
@@ -571,7 +571,7 @@ describe('buildTimelineStream', () => {
 
     expect(clusterRail?.joins.map((join) => `${join.kind}:${join.dash}`)).toEqual(['merge:dashed']);
     expect(clusterRail?.segments.filter((segment) => segment.column > 0)).toEqual([]);
-    expect(clusterRail?.joins[0]?.path).toBe('M 24 48 C 24 39.16, 16.84 24, 8 24');
+    expect(clusterRail?.joins[0]?.path).toBe('M 24 60 C 24 51.16, 16.84 36, 8 36');
     expect(clusterRail?.markerColumn).toBe(0);
     expect(nowRail?.segments.filter((segment) => segment.column > 0)).toEqual([]);
   });
@@ -615,9 +615,9 @@ describe('buildTimelineStream', () => {
     expect(items.map(labelOf)).toEqual([
       'now',
       'cluster:2',
-      'cluster:2',
       'step:agent:b-running',
       'entry:run:run-2',
+      'cluster:2',
       'step:agent:a-done',
       'entry:run:run-1',
     ]);
@@ -656,8 +656,8 @@ describe('buildTimelineStream', () => {
 
     expect(items.map(labelOf)).toEqual([
       'now',
-      'step:agent:todo',
       'entry:agent:built-by-hand',
+      'step:agent:todo',
       'day:Aug 10',
       'step:agent:done',
       'entry:run:run-1',
@@ -727,7 +727,7 @@ describe('buildTimelineStream', () => {
     expect(layout.columnByGroupId.get('lane:agent:implement')).toBe(2);
   });
 
-  it('keeps a run whole when a standalone agent ran between two of its steps', () => {
+  it('draws a run lane behind a standalone agent between two steps', () => {
     const { items, groups } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
       agents: [
@@ -752,12 +752,43 @@ describe('buildTimelineStream', () => {
     expect(items.map(labelOf)).toEqual([
       'now',
       'step:agent:step-two',
+      'entry:agent:loose',
       'step:agent:step-one',
       'entry:run:run-1',
-      'entry:agent:loose',
     ]);
     expect(layout.rows[looseIndex]?.markerColumn).toBe(0);
-    expect(layout.rows[looseIndex]?.segments.filter((segment) => segment.column > 0)).toEqual([]);
+    expect(layout.rows[looseIndex]?.segments.filter((segment) => segment.column > 0)).toHaveLength(
+      1,
+    );
+  });
+
+  it('orders workflow steps and standalone agents by each row timestamp', () => {
+    const { items } = stream({
+      workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
+      agents: [
+        agent({
+          id: 'step-one',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({ id: 'loose', ordinal: 2, startedAt: localIso({ day: 18, hour: 9, minute: 30 }) }),
+        agent({
+          id: 'step-two',
+          ordinal: 3,
+          startedAt: localIso({ day: 18, hour: 10 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'step:agent:step-two',
+      'entry:agent:loose',
+      'step:agent:step-one',
+      'entry:run:run-1',
+    ]);
   });
 
   it('keeps a chain with its parent when the children landed a day later', () => {
@@ -796,12 +827,12 @@ describe('buildTimelineStream', () => {
       'now',
       'step:agent:cluster-child',
       'day:Yesterday',
-      'entry:agent:cluster-parent',
       'entry:event:ev-decision',
       'entry:agent:elenca',
+      'entry:agent:cluster-parent',
     ]);
-    expect(laneSegmentsOf({ id: 'event:ev-decision' })).toEqual([]);
-    expect(laneSegmentsOf({ id: 'agent:elenca' })).toEqual([]);
+    expect(laneSegmentsOf({ id: 'event:ev-decision' })).toHaveLength(1);
+    expect(laneSegmentsOf({ id: 'agent:elenca' })).toHaveLength(1);
     const dayIndex = items.findIndex((item) => item.kind === 'day');
 
     expect(layout.rows[dayIndex]?.segments.filter((segment) => segment.column > 0)).toHaveLength(1);
@@ -1366,7 +1397,7 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
     agent({ id: 'review', ordinal: 5, status: 'pending', workflowRunId: RUN_ID }),
   ];
 
-  it('anchors a waiting parent under its children instead of lifting it to the head', () => {
+  it('places every waiting family row above the newest dated family row', () => {
     const { items } = stream({
       workflows: PLAN_RUN_WORKFLOWS,
       agents: CLUSTER_RUN_AGENTS,
@@ -1376,9 +1407,9 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
       'now',
       'step:agent:review',
       'step:agent:sub-3',
+      'step:agent:implement',
       'step:agent:sub-2',
       'step:agent:sub-1',
-      'step:agent:implement',
       'entry:run:run-1',
     ]);
   });

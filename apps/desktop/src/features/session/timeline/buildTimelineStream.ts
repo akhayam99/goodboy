@@ -104,7 +104,6 @@ type DraftRow = {
   readonly markerState: TimelineMarkerState;
   readonly hasUnread: boolean;
   readonly isPending: boolean;
-  readonly isSubagent: boolean;
 };
 
 type DraftCluster = {
@@ -180,11 +179,6 @@ const isRunFinished = ({ entry }: { readonly entry: TimelineRunEntry }): boolean
   });
 };
 
-type DraftBlock = {
-  readonly key: Sortable;
-  readonly rows: ReadonlyArray<DraftRow>;
-};
-
 type EmitContext = {
   readonly unreadAgentIds: ReadonlySet<string>;
   readonly blockedRunIds: ReadonlySet<string>;
@@ -207,29 +201,6 @@ const hasUnreadDescendant = ({
       unreadAgentIds.has(child.agent.id) || hasUnreadDescendant({ entry: child, unreadAgentIds }),
   );
 
-const sortableOf = ({ row }: { readonly row: DraftRow }): Sortable => ({
-  at: row.at,
-  sortOrdinal: row.sortOrdinal,
-  id: row.id,
-});
-
-const blockOf = ({
-  rows,
-  origin,
-}: {
-  readonly rows: ReadonlyArray<DraftRow>;
-  readonly origin: DraftRow;
-}): DraftBlock => ({ key: sortableOf({ row: rows[0] ?? origin }), rows });
-
-const nestedFirst = ({
-  blocks,
-}: {
-  readonly blocks: ReadonlyArray<DraftBlock>;
-}): ReadonlyArray<DraftRow> =>
-  [...blocks]
-    .sort((first, second) => compareNewestFirst({ first: first.key, second: second.key }))
-    .flatMap((block) => block.rows);
-
 type EmitAgentParams = {
   readonly entry: TimelineAgentEntry;
   readonly grade: TimelineRowGrade;
@@ -238,11 +209,10 @@ type EmitAgentParams = {
   readonly familyId: string | null;
   readonly groupId: string | null;
   readonly showSubagents: boolean;
-  readonly isSubagent: boolean;
   readonly context: EmitContext;
 };
 
-const agentBlock = ({
+const agentRows = ({
   entry,
   grade,
   identity,
@@ -250,11 +220,10 @@ const agentBlock = ({
   familyId,
   groupId,
   showSubagents,
-  isSubagent,
   context,
-}: EmitAgentParams): DraftBlock => {
+}: EmitAgentParams): ReadonlyArray<DraftRow> => {
   const childLaneId = laneIdOf({ entryId: entry.id });
-  const nested: DraftBlock[] = [];
+  const nested: DraftRow[] = [];
   if (showSubagents && entry.children.length > 0) {
     context.groups.push({
       id: childLaneId,
@@ -269,19 +238,17 @@ const agentBlock = ({
           : 'open',
     });
     for (const child of entry.children) {
-      const block = agentBlock({
-        entry: child,
-        grade: 'step',
-        identity,
-        isMuted,
-        familyId,
-        groupId: childLaneId,
-        showSubagents,
-        isSubagent: true,
-        context,
-      });
       nested.push(
-        child.agent.status === 'pending' ? { ...block, key: { ...block.key, at: null } } : block,
+        ...agentRows({
+          entry: child,
+          grade: 'step',
+          identity,
+          isMuted,
+          familyId,
+          groupId: childLaneId,
+          showSubagents,
+          context,
+        }),
       );
     }
   }
@@ -301,9 +268,8 @@ const agentBlock = ({
         markerState: 'done',
         hasUnread: false,
         isPending: false,
-        isSubagent,
       };
-      nested.push({ key: sortableOf({ row }), rows: [row] });
+      nested.push(row);
     }
   }
   const origin: DraftRow = {
@@ -326,9 +292,8 @@ const agentBlock = ({
       context.unreadAgentIds.has(entry.agent.id) ||
       (!showSubagents && hasUnreadDescendant({ entry, unreadAgentIds: context.unreadAgentIds })),
     isPending: entry.agent.status === 'pending',
-    isSubagent,
   };
-  return blockOf({ rows: [...nestedFirst({ blocks: nested }), origin], origin });
+  return [...nested, origin];
 };
 
 type EmitRunParams = {
@@ -336,7 +301,7 @@ type EmitRunParams = {
   readonly context: EmitContext;
 };
 
-const runBlock = ({ entry, context }: EmitRunParams): DraftBlock => {
+const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => {
   const laneId = laneIdOf({ entryId: entry.id });
   const isFinished = isRunFinished({ entry });
   const needsUser = context.blockedRunIds.has(entry.run.id);
@@ -350,11 +315,11 @@ const runBlock = ({ entry, context }: EmitRunParams): DraftBlock => {
     originRowId: entry.id,
     shape,
   });
-  const nested: DraftBlock[] = [];
+  const nested: DraftRow[] = [];
   for (const child of entry.children) {
     if (child.kind === 'agent') {
       nested.push(
-        agentBlock({
+        ...agentRows({
           entry: child,
           grade: 'step',
           identity: entry.identity,
@@ -362,7 +327,6 @@ const runBlock = ({ entry, context }: EmitRunParams): DraftBlock => {
           familyId: entry.id,
           groupId: laneId,
           showSubagents: context.showWorkflowSubagents,
-          isSubagent: false,
           context,
         }),
       );
@@ -385,9 +349,8 @@ const runBlock = ({ entry, context }: EmitRunParams): DraftBlock => {
       markerState: 'done',
       hasUnread: false,
       isPending: false,
-      isSubagent: false,
     };
-    nested.push({ key: sortableOf({ row }), rows: [row] });
+    nested.push(row);
   }
   const steps = stepAgentsOf({ entry });
   const origin: DraftRow = {
@@ -414,51 +377,52 @@ const runBlock = ({ entry, context }: EmitRunParams): DraftBlock => {
     }),
     hasUnread: steps.some((agent) => context.unreadAgentIds.has(agent.id)),
     isPending: false,
-    isSubagent: false,
   };
-  return blockOf({ rows: [...nestedFirst({ blocks: nested }), origin], origin });
+  return [...nested, origin];
 };
 
 const isPendingStep = ({ draft }: { readonly draft: DraftRow }): boolean =>
   draft.grade === 'step' && draft.markerState === 'pending';
 
-const isFamilyAnchored = ({ draft }: { readonly draft: DraftRow }): boolean =>
-  draft.isSubagent || (draft.entry.kind === 'agent' && draft.entry.children.length > 0);
-
-const blockKeyOf = ({ block }: { readonly block: DraftBlock }): Sortable => {
-  const dated = block.rows.find((row) => !isPendingStep({ draft: row }));
-  return dated === undefined ? block.key : sortableOf({ row: dated });
-};
-
 type HeadParams = {
   readonly drafts: ReadonlyArray<DraftRow>;
 };
 
-const withPendingAtHead = ({ drafts }: HeadParams): ReadonlyArray<DraftRow> => {
-  const laneRankById = new Map<string, number>();
-  for (const [index, draft] of drafts.entries()) {
-    if (draft.familyId === draft.id) {
-      laneRankById.set(draft.id, index);
+const withPendingAtFamilyHead = ({ drafts }: HeadParams): ReadonlyArray<DraftRow> => {
+  const pendingByFamilyId = new Map<string, DraftRow[]>();
+  const unanchored: DraftRow[] = [];
+  for (const draft of drafts) {
+    if (!isPendingStep({ draft }) || draft.familyId == null || draft.familyId === draft.id) {
+      unanchored.push(draft);
+      continue;
     }
+    const pending = pendingByFamilyId.get(draft.familyId) ?? [];
+    pending.push({ ...draft, at: null });
+    pendingByFamilyId.set(draft.familyId, pending);
   }
-  const laneRankOf = ({ draft }: { readonly draft: DraftRow }): number =>
-    draft.familyId == null ? drafts.length : (laneRankById.get(draft.familyId) ?? drafts.length);
-  const future = drafts
-    .filter((draft) => isPendingStep({ draft }) && !isFamilyAnchored({ draft }))
-    .map((draft) => ({ ...draft, at: null }))
-    .sort(
+  for (const pending of pendingByFamilyId.values()) {
+    pending.sort(
       (first, second) =>
-        laneRankOf({ draft: first }) - laneRankOf({ draft: second }) ||
-        (first.groupId ?? '').localeCompare(second.groupId ?? '') ||
-        second.sortOrdinal - first.sortOrdinal ||
-        first.id.localeCompare(second.id),
+        second.sortOrdinal - first.sortOrdinal || first.id.localeCompare(second.id),
     );
-  return [
-    ...future,
-    ...drafts
-      .filter((draft) => !isPendingStep({ draft }) || isFamilyAnchored({ draft }))
-      .map((draft) => (isPendingStep({ draft }) ? { ...draft, at: null } : draft)),
-  ];
+  }
+  const result: DraftRow[] = [];
+  for (const draft of unanchored) {
+    const familyId = draft.familyId;
+    if (familyId != null) {
+      const pending = pendingByFamilyId.get(familyId);
+      if (pending !== undefined) {
+        result.push(...pending);
+        pendingByFamilyId.delete(familyId);
+      }
+    }
+    result.push(draft);
+  }
+  const remaining = [...pendingByFamilyId.values()]
+    .flat()
+    .map((draft) => ({ ...draft, at: null }))
+    .sort((first, second) => compareNewestFirst({ first, second }));
+  return [...remaining, ...result];
 };
 
 type ClusterParams = {
@@ -551,16 +515,16 @@ export const buildTimelineStream = ({
     showPlans,
     showQuestions,
   };
-  const blocks: DraftBlock[] = [];
+  const rows: DraftRow[] = [];
 
   for (const entry of entries) {
     if (entry.kind === 'run') {
-      blocks.push(runBlock({ entry, context }));
+      rows.push(...runRows({ entry, context }));
       continue;
     }
     if (entry.kind === 'agent') {
-      blocks.push(
-        agentBlock({
+      rows.push(
+        ...agentRows({
           entry,
           grade: 'entry',
           identity: entry.chain?.identity ?? null,
@@ -568,7 +532,6 @@ export const buildTimelineStream = ({
           familyId: entry.id,
           groupId: null,
           showSubagents: context.showAgentSubagents,
-          isSubagent: false,
           context,
         }),
       );
@@ -588,21 +551,13 @@ export const buildTimelineStream = ({
       markerState: 'done',
       hasUnread: false,
       isPending: false,
-      isSubagent: false,
     };
-    blocks.push({ key: sortableOf({ row }), rows: [row] });
+    rows.push(row);
   }
 
-  const sorted = [...blocks]
-    .sort((first, second) =>
-      compareNewestFirst({
-        first: blockKeyOf({ block: first }),
-        second: blockKeyOf({ block: second }),
-      }),
-    )
-    .flatMap((block) => block.rows);
+  const sorted = [...rows].sort((first, second) => compareNewestFirst({ first, second }));
   const withDays = withDayBreaks({
-    drafts: withPendingClusters({ drafts: withPendingAtHead({ drafts: sorted }) }),
+    drafts: withPendingClusters({ drafts: withPendingAtFamilyHead({ drafts: sorted }) }),
     dayLabelFor,
   });
 
