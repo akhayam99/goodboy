@@ -26,6 +26,7 @@ vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: (selector: (s: typeof state) => unknown) => selector(state),
   useStageGroupedSessions: () => groups.current,
+  useProjectFilteredSessions: ({ sessions }: { sessions: ReadonlyArray<Session> }) => sessions,
 }));
 
 vi.mock('../../hooks/useWorkspaceGitStatus', () => ({
@@ -42,6 +43,10 @@ vi.mock('../WorkspaceGitPanel', () => ({
   WorkspaceGitPanel: ({ status }: { status: WorkspaceGitStatus }) => (
     <div data-testid="git-panel">{status.state}</div>
   ),
+}));
+
+vi.mock('../ProjectFilter', () => ({
+  ProjectFilter: () => <span data-testid="project-filter" />,
 }));
 
 vi.mock('./useBoardNavigation', () => ({
@@ -150,6 +155,7 @@ describe('StageBoard loading gate', () => {
     expect(screen.queryByLabelText('Loading board')).toBeNull();
     expect(screen.getAllByTestId('stage-column').length).toBeGreaterThan(0);
     expect(screen.getByText('Stage board')).toBeDefined();
+    expect(screen.getByTestId('project-filter')).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
   });
 

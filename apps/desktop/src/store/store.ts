@@ -125,6 +125,11 @@ import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
 import type { PanelSection } from './slices/sidebar/types';
 import { createSessionViewSlice } from './slices/session-view';
+import { createSessionFiltersSlice } from './slices/sessionFilters';
+import type {
+  GetSelectedProjectIdsParams,
+  SetSelectedProjectIdsParams,
+} from './slices/sessionFilters/types';
 import { createInitialSessionViewState } from './slices/session-view/createInitialSessionViewState';
 import type {
   DiffFocus,
@@ -221,6 +226,8 @@ type RunScriptParams = {
 };
 
 export type AppActions = {
+  getSelectedProjectIds(params: GetSelectedProjectIdsParams): ReadonlyArray<string>;
+  setSelectedProjectIds(params: SetSelectedProjectIdsParams): void;
   hydrate(): Promise<void>;
   retryHydrate(): Promise<void>;
   checkForUpdates(): Promise<void>;
@@ -864,6 +871,7 @@ export const initialState: AppState = {
   ...initialChangelogState,
   ...initialBugReportDraftState,
   ...createInitialSessionViewState({}),
+  selectedProjectIds: {},
   workspaces: [],
   projects: [],
   workspaceIntegrations: {},
@@ -1017,6 +1025,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createIntegrationsSlice(set, get),
   ...createSidebarSlice(set, get),
   ...createSessionViewSlice(set, get),
+  ...createSessionFiltersSlice({ set, get }),
   ...createTerminalSlice(set, get),
   ...createScriptsSlice(set, get),
   ...createPermissionsSlice(set, get),

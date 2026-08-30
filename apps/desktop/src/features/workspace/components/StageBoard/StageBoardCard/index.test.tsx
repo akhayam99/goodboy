@@ -27,6 +27,8 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
     sessionGitlabMr: {} as Record<string, { mr: GitlabMergeRequest | null }>,
     sessionExternalTasks: {} as Record<string, ReadonlyArray<SessionExternalTask>>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
+    sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+    projects: [] as ReadonlyArray<unknown>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     reviewDrafts: {} as Record<string, ReadonlyArray<unknown>>,
     loadReviewDrafts: vi.fn(async () => undefined),
@@ -119,6 +121,8 @@ beforeEach(() => {
   state.sessionGitlabMr = {};
   state.sessionExternalTasks = {};
   state.sessionWorktrees = {};
+  state.sessionProjectMounts = {};
+  state.projects = [];
   state.sessionPhaseRuns = {};
   state.reviewDrafts = {};
   state.loadReviewDrafts.mockClear();

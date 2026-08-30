@@ -9,6 +9,8 @@ const { state } = vi.hoisted(() => ({
     sessionGithub: {} as Record<string, unknown>,
     sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
     sessionExternalTasks: {} as Record<string, unknown>,
+    sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+    projects: [] as ReadonlyArray<unknown>,
     bulkUnarchiveTask: vi.fn(async () => undefined),
     bulkArchiveTask: vi.fn(async () => undefined),
     bulkDeleteTask: vi.fn(async () => undefined),
@@ -29,6 +31,10 @@ vi.mock('../../../../store', () => ({
 
 vi.mock('./SessionViewMenu', () => ({
   SessionViewMenu: () => null,
+}));
+
+vi.mock('../ProjectFilter', () => ({
+  ProjectFilter: () => <span data-testid="project-filter" />,
 }));
 
 vi.mock('../../../../features/providers/components/CostBadge', () => ({
@@ -96,6 +102,8 @@ beforeEach(() => {
   state.bulkArchiveTask.mockClear();
   state.bulkDeleteTask.mockClear();
   state.sessionExternalTasks = {};
+  state.sessionProjectMounts = {};
+  state.projects = [];
 });
 
 afterEach(cleanup);
@@ -105,6 +113,7 @@ describe('SessionActivityBar, baseline', () => {
     renderBar([]);
     expect(screen.getByText(/^Sessions$/)).toBeDefined();
     expect(screen.getByRole('button', { name: /create new session/i })).toBeDefined();
+    expect(screen.getByTestId('project-filter')).toBeDefined();
   });
 
   it('renders empty-state copy when no sessions in active tab', () => {

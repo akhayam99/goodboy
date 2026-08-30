@@ -17,6 +17,7 @@ export const STORAGE_PREFIXES = {
   workSurfaceView: `${PREFIX}work-surface-view:`,
   diffReviewed: `${PREFIX}diff-reviewed:`,
   sessionView: `${PREFIX}session-view:`,
+  sessionFilters: `${PREFIX}session-filters:`,
   cursorMaxMode: `${PREFIX}cursor-max-mode:`,
 } as const;
 

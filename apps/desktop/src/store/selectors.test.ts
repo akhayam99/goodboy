@@ -138,6 +138,8 @@ beforeEach(() => {
     sessionOpenQuestions: {},
     sessionViewPrefs: {},
     getSessionViewPrefs: vi.fn(),
+    selectedProjectIds: {},
+    getSelectedProjectIds: vi.fn(),
     sessions: [],
     workspaces: [],
     projects: [],
@@ -576,5 +578,38 @@ describe('useMountDiffStats', () => {
 
     expect(result.current.size).toBe(0);
     expect(changedFiles).not.toHaveBeenCalled();
+  });
+});
+
+describe('shared project filtering', () => {
+  it('feeds the same project selection into sidebar and board grouping', () => {
+    const mounted = createSession(SESSION_ID);
+    const unmounted = createSession('session-2' as SessionId);
+    setProjectScope();
+    store.state.selectedProjectIds = { [WORKSPACE_ID]: [PROJECT_ID] };
+    store.state.sessionProjectMounts = {
+      [SESSION_ID]: [
+        {
+          projectId: PROJECT_ID,
+          mountName: 'project',
+          repoRoot: '/tmp/ws',
+          worktreePath: '/tmp/ws-worktree',
+          branch: 'ak/feat-thing',
+        },
+      ],
+      [unmounted.id]: [],
+    };
+    const { result } = renderHook(() => ({
+      sidebar: useSortedGroupedSessions(WORKSPACE_ID, [mounted, unmounted]),
+      board: useStageGroupedSessions(WORKSPACE_ID, [mounted, unmounted]),
+    }));
+    const sidebarIds = result.current.sidebar.flatMap((group) =>
+      group.sessions.map((session) => session.id),
+    );
+    const boardIds = result.current.board.flatMap((group) =>
+      group.sessions.map((session) => session.id),
+    );
+    expect(sidebarIds).toEqual([SESSION_ID]);
+    expect(boardIds).toEqual([SESSION_ID]);
   });
 });

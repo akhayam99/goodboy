@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button, cn, Divider, EmptyState, Eyebrow, Skeleton } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useStageGroupedSessions } from '../../../../store';
+import {
+  EMPTY_ARRAY,
+  useAppStore,
+  useProjectFilteredSessions,
+  useStageGroupedSessions,
+} from '../../../../store';
 import { STAGE_ORDER } from '../../../../store/slices/session-view/types';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { PANE_RHYTHM } from '@goodboy/ui';
@@ -17,6 +22,7 @@ import { ProjectsStep } from '../../../onboarding/OnboardingWizard/steps/Project
 import { StageColumn } from './StageColumn';
 import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
+import { ProjectFilter } from '../ProjectFilter';
 
 type Confirm = { readonly kind: 'archive' | 'delete'; readonly session: Session };
 
@@ -67,6 +73,8 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const nav = useBoardNavigation();
   const archivedList = useAppStore((s) => s.archivedSessions[workspaceId]);
   const archived = archivedList ?? EMPTY_ARRAY;
+  const filteredArchived = useProjectFilteredSessions({ workspaceId, sessions: archived });
+  const filterSessions = useMemo(() => [...sessions, ...archived], [archived, sessions]);
   const boardReady = useAppStore((s) => s.boardReady);
   const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
   const rootPath = useAppStore((s) => primaryProjectRoot({ projects: s.projects, workspaceId }));
@@ -98,11 +106,11 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     () => STAGES.flatMap((stage) => [...(byStage.get(stage) ?? EMPTY_ARRAY)]),
     [byStage],
   );
-  const selection = useBoardSelection({ activeSessions, archivedSessions: archived });
+  const selection = useBoardSelection({ activeSessions, archivedSessions: filteredArchived });
   const columnsRef = useRef<HTMLDivElement | null>(null);
   const onLassoSelect = useCallback(
     (ids: ReadonlyArray<SessionId>, mode: 'replace' | 'add') => {
-      const archivedIds = new Set(archived.map((session) => session.id as SessionId));
+      const archivedIds = new Set(filteredArchived.map((session) => session.id as SessionId));
       const inArchived = ids.filter((id) => archivedIds.has(id));
       const inActive = ids.filter((id) => !archivedIds.has(id));
       if (inArchived.length > inActive.length) {
@@ -111,7 +119,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
       }
       selection.active.selectIds(inActive, mode);
     },
-    [archived, selection],
+    [filteredArchived, selection],
   );
   const lasso = useDragLasso<SessionId>({ containerRef: columnsRef, onSelect: onLassoSelect });
 
@@ -142,7 +150,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
             <span className="flex items-baseline gap-2">
               <Eyebrow label="Stage board" />
               <span className="text-2xs tabular-nums text-muted-foreground/60">
-                {sessions.length}
+                {activeSessions.length}
               </span>
               {sessions.length > 1 && (
                 <span className="hidden text-3xs text-muted-foreground/50 sm:inline">
@@ -151,6 +159,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
               )}
             </span>
             <span className="flex items-center gap-1.5">
+              <ProjectFilter workspaceId={workspaceId} sessions={filterSessions} />
               <button
                 type="button"
                 onClick={() =>
@@ -239,7 +248,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
             <StageColumn
               key="archived"
               spec={{ kind: 'archived' }}
-              sessions={archived}
+              sessions={filteredArchived}
               nav={nav}
               selection={selection.archived}
               onArchive={onArchive}
