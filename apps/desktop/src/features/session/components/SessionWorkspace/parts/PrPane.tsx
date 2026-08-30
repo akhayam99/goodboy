@@ -245,7 +245,7 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
                   <span className="font-mono text-2xs tabular-nums text-muted-foreground">
                     !{mergeRequest.iid}
                   </span>
-                  <StateBadge>{pullRequestMeta(mergeRequestState).label}</StateBadge>
+                  <StateBadge>{pullRequestMeta({ state: mergeRequestState }).label}</StateBadge>
                   <span className="min-w-0 truncate text-sm text-muted-foreground">
                     {mergeRequest.title}
                   </span>
@@ -604,7 +604,9 @@ const LinkedPullRequestsSection = ({
                   : `Show pull request #${candidate.number}`
               }
               tooltip={isSelected ? 'Open this pull request' : 'Show this pull request instead'}
-              attribution={<StateBadge>{pullRequestMeta(candidate.state).label}</StateBadge>}
+              attribution={
+                <StateBadge>{pullRequestMeta({ state: candidate.state }).label}</StateBadge>
+              }
               onClick={() => (isSelected ? onOpenSelected() : onSelect(candidate.number))}
               actions={
                 <ExternalRefActions

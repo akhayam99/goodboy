@@ -3,9 +3,6 @@ import {
   FolderMinus,
   FolderPlus,
   GitBranch,
-  GitMerge,
-  GitPullRequest,
-  GitPullRequestClosed,
   Link2,
   Link2Off,
   Trash2,
@@ -14,8 +11,22 @@ import type { LucideIcon } from 'lucide-react';
 import type { SessionEvent, SessionEventKind, SessionEventPayload } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
+import {
+  PULL_REQUEST_PRESENTATION,
+  type PullRequestPresentationState,
+} from '../../../shared/pullRequestPresentation';
 
-export type SessionEventEmphasis = 'plain' | 'muted' | 'success';
+export type SessionEventEmphasis = 'plain' | 'muted' | 'success' | 'merged' | 'danger';
+
+type PullRequestEventKind = Extract<SessionEventKind, `pr_${string}`>;
+
+const PR_EVENT_STATE = {
+  pr_created: 'open',
+  pr_ready: 'open',
+  pr_approved: 'approved',
+  pr_merged: 'merged',
+  pr_closed: 'closed',
+} satisfies Record<PullRequestEventKind, PullRequestPresentationState>;
 
 const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
   worktree_created: 'plain',
@@ -23,11 +34,11 @@ const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
   branch_switched: 'plain',
   issue_linked: 'plain',
   issue_unlinked: 'muted',
-  pr_created: 'plain',
-  pr_ready: 'plain',
-  pr_approved: 'success',
-  pr_merged: 'success',
-  pr_closed: 'muted',
+  pr_created: PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_created].tone,
+  pr_ready: PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_ready].tone,
+  pr_approved: PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_approved].tone,
+  pr_merged: PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_merged].tone,
+  pr_closed: PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_closed].tone,
   workflow_started: 'plain',
   workflow_discarded: 'muted',
   workflow_restored: 'plain',
@@ -51,11 +62,11 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   branch_switched: { icon: GitBranch, tone: 'info', label: 'Branch' },
   issue_linked: { icon: Link2, tone: 'neutral', label: 'Issue' },
   issue_unlinked: { icon: Link2Off, tone: 'neutral', label: 'Issue' },
-  pr_created: { icon: GitPullRequest, tone: 'primary', label: 'Pull request' },
-  pr_ready: { icon: GitPullRequest, tone: 'primary', label: 'Pull request' },
-  pr_approved: { icon: CONCEPT_ICONS.checks, tone: 'success', label: 'Pull request' },
-  pr_merged: { icon: GitMerge, tone: 'success', label: 'Pull request' },
-  pr_closed: { icon: GitPullRequestClosed, tone: 'neutral', label: 'Pull request' },
+  pr_created: { ...PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_created], label: 'Pull request' },
+  pr_ready: { ...PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_ready], label: 'Pull request' },
+  pr_approved: { ...PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_approved], label: 'Pull request' },
+  pr_merged: { ...PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_merged], label: 'Pull request' },
+  pr_closed: { ...PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_closed], label: 'Pull request' },
   workflow_started: { icon: CONCEPT_ICONS.workflows, tone: 'accent', label: 'Workflow' },
   workflow_discarded: { icon: CONCEPT_ICONS.workflows, tone: 'neutral', label: 'Workflow' },
   workflow_restored: { icon: CONCEPT_ICONS.workflows, tone: 'accent', label: 'Workflow' },

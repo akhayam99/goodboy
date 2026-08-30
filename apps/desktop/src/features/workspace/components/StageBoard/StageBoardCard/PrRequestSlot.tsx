@@ -18,7 +18,7 @@ type Props = {
 
 export const PrRequestSlot = ({ linkedRequest, isGitlab, prFetchState, onOpen }: Props) => {
   if (linkedRequest.state !== 'none') {
-    const meta = pullRequestMeta(linkedRequest.state);
+    const meta = pullRequestMeta({ state: linkedRequest.state });
     const numberSuffix =
       linkedRequest.number === undefined
         ? ''

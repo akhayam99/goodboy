@@ -150,7 +150,8 @@ describe('TimelineRowLabel', () => {
       isChained: true,
     });
 
-    expect(container.querySelector('svg')).not.toBeNull();
+    expect(container.querySelector('svg')?.classList.contains('absolute')).toBe(true);
+    expect(screen.getByText(AGENT_KIND_META.planner.label).className).toContain('justify-center');
   });
 
   it('marks a chained descendant too, on the step row it lives on', () => {

@@ -81,12 +81,16 @@ const chipOf = ({ entry, grade }: ChipParams) => {
     <Chip
       tone="neutral"
       label={palette.label}
-      icon={isChained ? <CONCEPT_ICONS.chain size={10} aria-hidden /> : null}
+      icon={
+        isChained ? (
+          <CONCEPT_ICONS.chain className="absolute left-1.5" size={10} aria-hidden />
+        ) : null
+      }
       shape="badge"
       size="3xs"
       width="md"
       uppercase
-      className={cn('shrink-0', palette.fg)}
+      className={cn('relative shrink-0', palette.fg)}
     />
   );
 };
@@ -119,13 +123,17 @@ export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
           isStep ? 'text-xs leading-4' : 'text-sm leading-5',
           emphasis === 'success'
             ? 'text-success'
-            : emphasis === 'muted'
-              ? 'text-muted-foreground'
-              : item.markerState === 'running' || item.hasUnread
-                ? 'font-medium text-foreground'
-                : isStep
-                  ? 'text-foreground/85'
-                  : 'text-foreground',
+            : emphasis === 'merged'
+              ? 'text-merged'
+              : emphasis === 'danger'
+                ? 'text-danger'
+                : emphasis === 'muted'
+                  ? 'text-muted-foreground'
+                  : item.markerState === 'running' || item.hasUnread
+                    ? 'font-medium text-foreground'
+                    : isStep
+                      ? 'text-foreground/85'
+                      : 'text-foreground',
         )}
       >
         {segments.map((segment, index) =>

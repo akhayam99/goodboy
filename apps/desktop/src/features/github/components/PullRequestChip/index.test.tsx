@@ -40,9 +40,9 @@ describe('PullRequestChip', () => {
 
 describe('pullRequestMeta', () => {
   it('exposes a label for every state', () => {
-    expect(pullRequestMeta('open').label).toBe('In review');
-    expect(pullRequestMeta('queued').label).toBe('Queued');
-    expect(pullRequestMeta('closed').label).toBe('Closed');
-    expect(pullRequestMeta('none').label).toBe('No pull request');
+    expect(pullRequestMeta({ state: 'open' }).label).toBe('In review');
+    expect(pullRequestMeta({ state: 'queued' }).label).toBe('Queued');
+    expect(pullRequestMeta({ state: 'closed' }).label).toBe('Closed');
+    expect(pullRequestMeta({ state: 'none' }).label).toBe('No pull request');
   });
 });
