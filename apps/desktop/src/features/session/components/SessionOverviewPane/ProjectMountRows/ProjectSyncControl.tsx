@@ -58,8 +58,14 @@ export const ProjectSyncControl = ({ sessionId, projectId, status }: Props) => {
   };
   const commitBaseEdit = async () => {
     const value = baseDraft.trim();
+    const next = value === '' ? null : value;
+    if (next === (configuredBaseBranch ?? null)) {
+      setBaseError(null);
+      setIsEditingBase(false);
+      return;
+    }
     try {
-      await updateProjectBaseBranch({ projectId, baseBranch: value === '' ? null : value });
+      await updateProjectBaseBranch({ projectId, baseBranch: next });
       setBaseError(null);
       setIsEditingBase(false);
     } catch (error) {
@@ -115,7 +121,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, status }: Props) => {
                     return;
                   }
                   event.preventDefault();
-                  void commitBaseEdit();
+                  event.currentTarget.blur();
                 }}
                 className="h-7 font-mono text-xs"
               />

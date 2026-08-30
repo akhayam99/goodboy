@@ -39,6 +39,7 @@ export const ProjectDetachMenu = ({
     try {
       await detachProject({ sessionId, projectId });
       dropdown.close();
+      setIsConfirming(false);
       if (!isClean) {
         showToast('info', `Worktree kept at ${worktreePath}`);
       }
