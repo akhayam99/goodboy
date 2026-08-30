@@ -14,6 +14,7 @@ type ProjectRow = OverrideRow & {
   readonly name: string;
   readonly root_path: string;
   readonly kind: 'repo' | 'folder';
+  readonly base_branch: string | null;
   readonly created_at: number;
   readonly updated_at: number;
   readonly disconnected_at: number | null;
@@ -30,6 +31,7 @@ const toDomain = ({ row }: ToDomainParams): Project => ({
   name: row.name,
   rootPath: row.root_path,
   kind: row.kind,
+  baseBranch: row.base_branch,
   overrides: overridesFromRow({ row }),
   createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
   updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
@@ -65,8 +67,8 @@ export const insertProject = async ({ db, project }: InsertProjectParams): Promi
        id, workspace_id, name, root_path, default_provider_id, default_workflow_id,
        default_branch_prefix, parallel_enabled, created_at, updated_at, disconnected_at,
        default_verbosity, last_accessed_at, provider_bindings, parallel_agents, kind,
-       task_models, role_models, provider_pool
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       task_models, role_models, provider_pool, base_branch
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       project.id,
       project.workspaceId,
@@ -87,6 +89,7 @@ export const insertProject = async ({ db, project }: InsertProjectParams): Promi
       serializeObject({ value: project.overrides.taskModels }),
       serializeObject({ value: project.overrides.roleModels }),
       serializeProviderPool({ providerPool: project.overrides.providerPool }),
+      project.baseBranch,
     ],
   );
 };
@@ -229,6 +232,24 @@ export const renameProject = async ({ db, id, name }: RenameProjectParams): Prom
     name,
     Date.now(),
     id,
+  ]);
+};
+
+type UpdateProjectBaseBranchParams = {
+  readonly db: Database;
+  readonly projectId: ProjectId;
+  readonly baseBranch: string | null;
+};
+
+export const updateProjectBaseBranch = async ({
+  db,
+  projectId,
+  baseBranch,
+}: UpdateProjectBaseBranchParams): Promise<void> => {
+  await db.execute('UPDATE projects SET base_branch = ?, updated_at = ? WHERE id = ?', [
+    baseBranch,
+    Date.now(),
+    projectId,
   ]);
 };
 

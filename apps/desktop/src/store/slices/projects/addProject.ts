@@ -131,6 +131,7 @@ export const addProject = (set: SetFn, get: GetFn) => {
       name: projectName,
       rootPath: resolvedRoot,
       kind: isRepo ? 'repo' : 'folder',
+      baseBranch: null,
       overrides: EMPTY_OVERRIDES,
       createdAt: now,
       updatedAt: now,

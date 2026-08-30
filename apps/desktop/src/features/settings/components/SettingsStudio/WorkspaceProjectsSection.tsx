@@ -10,6 +10,7 @@ import { useProjectAdoption } from '../../../../shared/hooks/useProjectAdoption'
 import { DetectedRepoList } from '../../../../shared/components/DetectedRepoList';
 import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
 import { useToast } from '../../../../app/components/Toast';
+import { ProjectBaseBranchInput } from './ProjectBaseBranchInput';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -182,6 +183,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
                     {project.rootPath}
                   </span>
                 </span>
+                {project.kind === 'repo' ? <ProjectBaseBranchInput project={project} /> : null}
                 <Tooltip content={`Disconnect ${project.name}`} anchorClassName="shrink-0">
                   <button
                     type="button"

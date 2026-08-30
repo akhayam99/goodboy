@@ -25,20 +25,6 @@ type Pending = {
   readonly creationId: SessionCreationId;
 };
 
-const REBASE_AGENT_NAME = 'Rebase on main';
-
-const REBASE_PROGRESS_LABEL = 'Rebasing on main';
-
-const REBASE_PROMPT = [
-  'Rebase this session branch onto origin/main.',
-  '- Fetch origin main before rebasing.',
-  "- Rebase the session branch onto origin/main and resolve conflicts by favoring the branch's intent.",
-  "- Run the repository's typecheck to confirm nothing broke.",
-  '- Push the rebased branch with --force-with-lease.',
-  '- Never merge and never touch other branches.',
-  '- If a conflict cannot be resolved confidently, stop and report the conflicting files.',
-].join('\n');
-
 export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result => {
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +39,25 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
   const workspaceOverrides = useAppStore((state) =>
     session == null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null),
   );
+  const baseBranch = useAppStore((state) => {
+    if (sessionId == null) {
+      return 'main';
+    }
+    const activeProjectId =
+      session?.activeProjectId ?? state.sessionProjectMounts[sessionId]?.[0]?.projectId;
+    return state.projects.find((project) => project.id === activeProjectId)?.baseBranch ?? 'main';
+  });
+  const rebaseAgentName = `Rebase on ${baseBranch}`;
+  const rebaseProgressLabel = `Rebasing on ${baseBranch}`;
+  const rebasePrompt = [
+    `Rebase this session branch onto origin/${baseBranch}.`,
+    `- Fetch origin ${baseBranch} before rebasing.`,
+    `- Rebase the session branch onto origin/${baseBranch} and resolve conflicts by favoring the branch's intent.`,
+    "- Run the repository's typecheck to confirm nothing broke.",
+    '- Push the rebased branch with --force-with-lease.',
+    '- Never merge and never touch other branches.',
+    '- If a conflict cannot be resolved confidently, stop and report the conflicting files.',
+  ].join('\n');
   const phaseRuns = useAppStore((state) =>
     sessionId == null ? null : (state.sessionPhaseRuns[sessionId] ?? null),
   );
@@ -74,7 +79,7 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
   const isAgentRunning =
     phaseRuns?.some(
       (agent) =>
-        agent.name === REBASE_AGENT_NAME &&
+        agent.name === rebaseAgentName &&
         (agent.status === 'pending' || agent.status === 'running'),
     ) === true;
   const isRunning = isStarting || isAgentRunning;
@@ -115,7 +120,9 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
     setPending(null);
     showToast(
       isFailed ? 'error' : 'success',
-      isFailed ? 'The rebase agent stopped before finishing.' : 'This branch is rebased on main.',
+      isFailed
+        ? 'The rebase agent stopped before finishing.'
+        : `This branch is rebased on ${baseBranch}.`,
       {
         title: isFailed ? 'Rebase failed' : 'Rebase done',
         action: {
@@ -127,7 +134,16 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
         },
       },
     );
-  }, [endSessionCreation, pending, phaseRuns, selectAgent, sessionId, setActiveLens, showToast]);
+  }, [
+    baseBranch,
+    endSessionCreation,
+    pending,
+    phaseRuns,
+    selectAgent,
+    sessionId,
+    setActiveLens,
+    showToast,
+  ]);
 
   const run = async (): Promise<void> => {
     if (!canRebase || isRunning || sessionId == null || config.provider === '') {
@@ -137,21 +153,25 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
     setIsStarting(true);
     const creationId = beginSessionCreation(sessionId, {
       kind: 'branch',
-      label: REBASE_PROGRESS_LABEL,
+      label: rebaseProgressLabel,
     });
     try {
       const agentId = await spawnAgent(sessionId, {
-        name: REBASE_AGENT_NAME,
-        initialPrompt: REBASE_PROMPT,
+        name: rebaseAgentName,
+        initialPrompt: rebasePrompt,
         model: config.model,
         provider: config.provider,
         effort: config.effort,
         focus: 'none',
       });
       setPending({ agentId, creationId });
-      showToast('info', 'An agent is rebasing this branch on main. You can keep working.', {
-        title: 'Rebase started',
-      });
+      showToast(
+        'info',
+        `An agent is rebasing this branch on ${baseBranch}. You can keep working.`,
+        {
+          title: 'Rebase started',
+        },
+      );
     } catch (failure) {
       endSessionCreation(sessionId, creationId);
       const message = formatError(failure);

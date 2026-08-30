@@ -3,7 +3,10 @@ import type { WorktreeStatus } from '@goodboy/types';
 import { worktreeStatus } from '../../../worktree/worktree';
 
 type Params = {
-  readonly worktreePaths: ReadonlyArray<string>;
+  readonly targets: ReadonlyArray<{
+    readonly worktreePath: string;
+    readonly baseBranch?: string;
+  }>;
 };
 
 type StatusEntry = readonly [string, WorktreeStatus];
@@ -11,13 +14,11 @@ type StatusEntry = readonly [string, WorktreeStatus];
 const REFRESH_MS = 30_000;
 const EMPTY_STATUSES: ReadonlyMap<string, WorktreeStatus> = new Map();
 
-export const useWorktreeStatuses = ({
-  worktreePaths,
-}: Params): ReadonlyMap<string, WorktreeStatus> => {
+export const useWorktreeStatuses = ({ targets }: Params): ReadonlyMap<string, WorktreeStatus> => {
   const [statuses, setStatuses] = useState<ReadonlyMap<string, WorktreeStatus>>(EMPTY_STATUSES);
 
   useEffect(() => {
-    if (worktreePaths.length === 0) {
+    if (targets.length === 0) {
       setStatuses(EMPTY_STATUSES);
       return;
     }
@@ -27,9 +28,9 @@ export const useWorktreeStatuses = ({
         return;
       }
       void Promise.all(
-        worktreePaths.map(async (worktreePath) => {
+        targets.map(async ({ worktreePath, baseBranch }) => {
           try {
-            const status = await worktreeStatus(worktreePath);
+            const status = await worktreeStatus({ worktreePath, baseBranch });
             const entry: StatusEntry = [worktreePath, status];
             return entry;
           } catch {
@@ -49,7 +50,7 @@ export const useWorktreeStatuses = ({
       isStale = true;
       clearInterval(timer);
     };
-  }, [worktreePaths]);
+  }, [targets]);
 
   return statuses;
 };

@@ -34,6 +34,7 @@ export {
   renameProject,
   touchProjectLastAccessed,
   updateProjectKind,
+  updateProjectBaseBranch,
   deleteProject,
 } from './queries/project';
 export {

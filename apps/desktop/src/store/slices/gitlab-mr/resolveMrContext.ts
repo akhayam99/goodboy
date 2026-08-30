@@ -1,4 +1,4 @@
-import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
+import type { GitlabIntegrationBinding, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { worktreeRemoteUrl } from '../../../features/worktree/worktree';
 import { projectPathFromRemoteUrl } from '../../../shared/lib/remoteHost';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
@@ -7,6 +7,7 @@ import type { GetFn } from './types';
 export type MrContext = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
+  readonly projectId: ProjectId;
   readonly rootPath: string;
   readonly branch: string;
   readonly host: string;
@@ -41,6 +42,7 @@ export const resolveMrContext = async (
   return {
     sessionId,
     workspaceId: session.workspaceId,
+    projectId: repo.projectId,
     rootPath: repo.repoRoot,
     branch: repo.branch,
     host: integration.config.host,

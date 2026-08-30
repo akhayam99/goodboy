@@ -140,16 +140,32 @@ export const worktreeList = async (repoPath: string): Promise<ReadonlyArray<Work
   return invoke<ReadonlyArray<WorktreeEntry>>('worktree_list', { repoPath });
 };
 
-export const worktreeDiff = async (worktreePath: string, base?: string): Promise<string> => {
-  return invoke<string>('worktree_diff', { worktreePath, base: base ?? null });
+type WorktreeBaseParams = {
+  readonly worktreePath: string;
+  readonly baseBranch?: string;
 };
 
-export const worktreeDiffFile = async (
-  worktreePath: string,
-  path: string,
-  base?: string,
-): Promise<string> => {
-  return invoke<string>('worktree_diff_file', { worktreePath, base: base ?? null, path });
+export const worktreeDiff = async ({
+  worktreePath,
+  baseBranch,
+}: WorktreeBaseParams): Promise<string> => {
+  return invoke<string>('worktree_diff', { worktreePath, baseBranch: baseBranch ?? null });
+};
+
+type WorktreeDiffFileParams = WorktreeBaseParams & {
+  readonly path: string;
+};
+
+export const worktreeDiffFile = async ({
+  worktreePath,
+  path,
+  baseBranch,
+}: WorktreeDiffFileParams): Promise<string> => {
+  return invoke<string>('worktree_diff_file', {
+    worktreePath,
+    baseBranch: baseBranch ?? null,
+    path,
+  });
 };
 
 export const worktreeRemoteUrl = async (repoPath: string): Promise<string | null> => {
@@ -166,13 +182,13 @@ export type ChangedFilesSummary = {
   readonly numstat: string;
 };
 
-export const worktreeChangedFiles = async (
-  worktreePath: string,
-  base?: string,
-): Promise<ChangedFilesSummary> => {
+export const worktreeChangedFiles = async ({
+  worktreePath,
+  baseBranch,
+}: WorktreeBaseParams): Promise<ChangedFilesSummary> => {
   return invoke<ChangedFilesSummary>('worktree_changed_files', {
     worktreePath,
-    base: base ?? null,
+    baseBranch: baseBranch ?? null,
   });
 };
 
@@ -221,8 +237,14 @@ export const worktreeDiffWorking = async (
   return invoke<string>('worktree_diff_working', { worktreePath, scope });
 };
 
-export const worktreeStatus = async (worktreePath: string): Promise<WorktreeStatus> => {
-  return invoke<WorktreeStatus>('worktree_status', { worktreePath });
+export const worktreeStatus = async ({
+  worktreePath,
+  baseBranch,
+}: WorktreeBaseParams): Promise<WorktreeStatus> => {
+  return invoke<WorktreeStatus>('worktree_status', {
+    worktreePath,
+    baseBranch: baseBranch ?? null,
+  });
 };
 
 export type LocalBranchInfo = {

@@ -266,19 +266,18 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
             }
         }
     } else {
-        // Cut from `origin/<base>`, not the local checkout, so a stale or
-        // dirty local `main` cannot leak unrelated commits into the new
-        // branch. We fetch first (best-effort, tolerates offline) and then
-        // resolve the actual base ref to use.
-        let base = args
+        let configured_base = args
             .base_branch
             .as_deref()
             .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .unwrap_or("main")
-            .to_string();
-        try_fetch_origin(&repo_path, &base);
-        let base_ref = resolve_origin_base(&repo_path, &base)?;
+            .filter(|s| !s.is_empty());
+        let detected_base = configured_base
+            .map(str::to_string)
+            .or_else(|| resolve_origin_head(&repo_path));
+        if let Some(base) = detected_base.as_deref() {
+            try_fetch_origin(&repo_path, base);
+        }
+        let base_ref = resolve_origin_base(&repo_path, configured_base)?;
         git(
             &repo_path,
             &[
@@ -651,22 +650,19 @@ pub fn worktree_remote_url(repo_path: String) -> Option<String> {
 }
 
 #[tauri::command]
-pub fn worktree_diff(worktree_path: String, base: Option<String>) -> Result<String, WorktreeError> {
+pub fn worktree_diff(
+    worktree_path: String,
+    base_branch: Option<String>,
+) -> Result<String, WorktreeError> {
     let p = Path::new(&worktree_path);
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
-    let user_base = base.unwrap_or_else(|| "main".to_string());
-    // Prefer `origin/<base>` so the diff reflects what GitHub will show on the
-    // PR. The local copy of `<base>` is checked only as a fallback for repos
-    // where `origin/<base>` doesn't exist (e.g. fresh clone without fetch).
-    let candidates = [format!("origin/{user_base}"), user_base.clone()];
-    let resolved = candidates
-        .iter()
-        .find_map(|cand| git(p, &["merge-base", "HEAD", cand]).ok())
-        .map(|s| s.trim().to_string())
+    let configured_base = normalized_base(base_branch.as_deref());
+    let resolved = resolve_base(p, configured_base)
+        .map(|(_, merge_base)| merge_base)
         .ok_or_else(|| WorktreeError::Git {
-            message: format!("cannot resolve merge-base against origin/{user_base} or {user_base}"),
+            message: "cannot resolve base branch merge-base".to_string(),
         })?;
     let tracked = git(p, &["diff", &resolved])?;
     Ok(format!("{tracked}{}", untracked_new_file_diffs(p)))
@@ -680,7 +676,7 @@ pub fn worktree_diff(worktree_path: String, base: Option<String>) -> Result<Stri
 #[tauri::command]
 pub fn worktree_diff_file(
     worktree_path: String,
-    base: Option<String>,
+    base_branch: Option<String>,
     path: String,
 ) -> Result<String, WorktreeError> {
     let p = Path::new(&worktree_path);
@@ -688,16 +684,11 @@ pub fn worktree_diff_file(
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
     let rel = confine_rel_path(p, &path)?;
-    let user_base = base.unwrap_or_else(|| "main".to_string());
-    // Same merge-base resolution as `worktree_diff` so the single-file diff lines
-    // up with the whole-worktree diff and the numstat slot.
-    let candidates = [format!("origin/{user_base}"), user_base.clone()];
-    let resolved = candidates
-        .iter()
-        .find_map(|cand| git(p, &["merge-base", "HEAD", cand]).ok())
-        .map(|s| s.trim().to_string())
+    let configured_base = normalized_base(base_branch.as_deref());
+    let resolved = resolve_base(p, configured_base)
+        .map(|(_, merge_base)| merge_base)
         .ok_or_else(|| WorktreeError::Git {
-            message: format!("cannot resolve merge-base against origin/{user_base} or {user_base}"),
+            message: "cannot resolve base branch merge-base".to_string(),
         })?;
     // `-- <path>` scopes the diff to the one file. Pathspec is anchored at the
     // worktree root (already confined above), so no traversal is possible.
@@ -784,30 +775,17 @@ pub struct ChangedFilesSummary {
 #[tauri::command]
 pub fn worktree_changed_files(
     worktree_path: String,
-    base: Option<String>,
+    base_branch: Option<String>,
 ) -> Result<ChangedFilesSummary, WorktreeError> {
     let p = Path::new(&worktree_path);
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
-    let user_base = base.unwrap_or_else(|| "main".to_string());
-    // `origin/<base>` first so the count matches what GitHub will show on the
-    // PR (target = origin/main on the server). The local ref and master
-    // variants are fallbacks for unusual setups. Must match the order in
-    // `worktree_diff` above — otherwise the chip count and the dialog body
-    // can resolve different merge-bases and disagree.
-    let candidates = [
-        format!("origin/{user_base}"),
-        user_base.clone(),
-        "origin/master".to_string(),
-        "master".to_string(),
-    ];
-    let resolved = candidates
-        .iter()
-        .find_map(|cand| git(p, &["merge-base", "HEAD", cand]).ok())
-        .map(|s| s.trim().to_string())
+    let configured_base = normalized_base(base_branch.as_deref());
+    let resolved = resolve_base(p, configured_base)
+        .map(|(_, merge_base)| merge_base)
         .ok_or_else(|| WorktreeError::Git {
-            message: format!("cannot resolve merge-base against origin/{user_base} or {user_base}"),
+            message: "cannot resolve base branch merge-base".to_string(),
         })?;
     let tracked_numstat = git(p, &["diff", "--numstat", &resolved]).unwrap_or_default();
     let mut additions: u32 = 0;
@@ -1209,7 +1187,10 @@ pub fn worktree_diff_working(
 }
 
 #[tauri::command]
-pub fn worktree_status(worktree_path: String) -> Result<WorktreeStatus, WorktreeError> {
+pub fn worktree_status(
+    worktree_path: String,
+    base_branch: Option<String>,
+) -> Result<WorktreeStatus, WorktreeError> {
     let p = Path::new(&worktree_path);
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
@@ -1225,8 +1206,9 @@ pub fn worktree_status(worktree_path: String) -> Result<WorktreeStatus, Worktree
         .filter(|s| !s.is_empty());
     let upstream = resolve_upstream(p);
     let upstream_distance = distance_from_upstream(p, branch.as_ref(), upstream.as_ref());
-    let main_distance = match resolve_main(p) {
-        Some((main_ref, _)) => distance_between(p, main_ref, "HEAD"),
+    let configured_base = normalized_base(base_branch.as_deref());
+    let main_distance = match resolve_base(p, configured_base) {
+        Some((main_ref, _)) => distance_between(p, &main_ref, "HEAD"),
         None => GitDistance::Unknown {
             reason: GitUnknownReason::MainRefUnresolved,
         },
@@ -1352,19 +1334,48 @@ fn operation_label(operation: GitOperation) -> &'static str {
 }
 
 fn resolve_branch_range(cwd: &Path) -> String {
-    resolve_main(cwd)
+    resolve_base(cwd, None)
         .map(|(_, merge_base)| format!("{merge_base}..HEAD"))
         .unwrap_or_else(|| "HEAD".to_string())
 }
 
-pub(crate) fn resolve_main(cwd: &Path) -> Option<(&'static str, String)> {
-    for main_ref in ["origin/main", "origin/master", "main", "master"] {
-        let merge_base = git(cwd, &["merge-base", "HEAD", main_ref])
+fn normalized_base(base: Option<&str>) -> Option<&str> {
+    base.map(str::trim).filter(|candidate| !candidate.is_empty())
+}
+
+fn resolve_origin_head(cwd: &Path) -> Option<String> {
+    git(cwd, &["symbolic-ref", "refs/remotes/origin/HEAD"])
+        .ok()
+        .map(|output| output.trim().to_string())
+        .and_then(|reference| reference.strip_prefix("refs/remotes/origin/").map(str::to_string))
+        .filter(|branch| !branch.is_empty())
+}
+
+fn base_candidates(cwd: &Path, configured_base: Option<&str>) -> Vec<String> {
+    if let Some(base) = configured_base {
+        return vec![format!("origin/{base}"), base.to_string()];
+    }
+    let mut candidates = Vec::new();
+    if let Some(base) = resolve_origin_head(cwd) {
+        candidates.push(format!("origin/{base}"));
+        candidates.push(base);
+    }
+    for fallback in ["origin/main", "origin/master", "main", "master"] {
+        if candidates.iter().all(|candidate| candidate != fallback) {
+            candidates.push(fallback.to_string());
+        }
+    }
+    candidates
+}
+
+pub(crate) fn resolve_base(cwd: &Path, configured_base: Option<&str>) -> Option<(String, String)> {
+    for base_ref in base_candidates(cwd, configured_base) {
+        let merge_base = git(cwd, &["merge-base", "HEAD", &base_ref])
             .ok()
             .map(|out| out.trim().to_string())
             .filter(|sha| !sha.is_empty());
         if let Some(merge_base) = merge_base {
-            return Some((main_ref, merge_base));
+            return Some((base_ref, merge_base));
         }
     }
     None
@@ -1543,19 +1554,11 @@ fn try_fetch_origin(repo_path: &Path, base: &str) {
 /// base branch. Falls back to `origin/master` if base is "main" and only
 /// `master` exists on the remote, then to the local branch as a last resort.
 /// Errors only when none of those refs exist.
-fn resolve_origin_base(repo_path: &Path, base: &str) -> Result<String, WorktreeError> {
-    let mut candidates: Vec<String> = vec![format!("origin/{base}")];
-    if base == "main" {
-        candidates.push("origin/master".to_string());
-    } else if base == "master" {
-        candidates.push("origin/main".to_string());
-    }
-    candidates.push(base.to_string());
-    if base == "main" {
-        candidates.push("master".to_string());
-    } else if base == "master" {
-        candidates.push("main".to_string());
-    }
+fn resolve_origin_base(
+    repo_path: &Path,
+    configured_base: Option<&str>,
+) -> Result<String, WorktreeError> {
+    let candidates = base_candidates(repo_path, configured_base);
     for cand in &candidates {
         if git(repo_path, &["rev-parse", "--verify", "--quiet", cand]).is_ok() {
             return Ok(cand.clone());
@@ -1813,7 +1816,7 @@ mod rewrite_tests {
         git_ok(&root, &["push", "origin", "main"]);
         git_ok(&root, &["checkout", "feature"]);
 
-        let status = worktree_status(root.to_string_lossy().into_owned()).unwrap();
+        let status = worktree_status(root.to_string_lossy().into_owned(), None).unwrap();
 
         assert_eq!(
             status.main_distance,
@@ -1851,9 +1854,9 @@ mod rewrite_tests {
         git_ok(&root, &["config", "commit.gpgsign", "false"]);
         commit(&root, "base.txt", "base", "base");
 
-        let status = worktree_status(root.to_string_lossy().into_owned()).unwrap();
+        let status = worktree_status(root.to_string_lossy().into_owned(), None).unwrap();
 
-        assert_eq!(super::resolve_main(&root), None);
+        assert_eq!(super::resolve_base(&root, None), None);
         assert_eq!(
             status.main_distance,
             GitDistance::Unknown {
@@ -1915,12 +1918,13 @@ mod rewrite_tests {
         git_ok(&root, &["checkout", "-b", "feature"]);
         commit(&root, "feature.txt", "feature", "feature");
 
-        let (main_ref, merge_base) = super::resolve_main(&root).expect("master resolves as main");
+        let (main_ref, merge_base) =
+            super::resolve_base(&root, None).expect("master resolves as main");
 
         assert_eq!(main_ref, "master");
         assert_eq!(merge_base, base);
         assert_eq!(
-            worktree_status(root.to_string_lossy().into_owned())
+            worktree_status(root.to_string_lossy().into_owned(), None)
                 .unwrap()
                 .main_distance,
             GitDistance::Known {

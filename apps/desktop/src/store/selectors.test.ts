@@ -472,7 +472,7 @@ describe('useMountDiffStats', () => {
         worktreeRow({ id: 'wt-2', worktreePath: '/tmp/b' }),
       ],
     };
-    changedFiles.mockImplementation((path: string) =>
+    changedFiles.mockImplementation(({ worktreePath: path }: { worktreePath: string }) =>
       Promise.resolve(
         path === '/tmp/a'
           ? { paths: ['x.ts'], additions: 2000, deletions: 200, numstat: '' }
@@ -494,7 +494,7 @@ describe('useMountDiffStats', () => {
         worktreeRow({ id: 'wt-2', worktreePath: '/tmp/gone' }),
       ],
     };
-    changedFiles.mockImplementation((path: string) =>
+    changedFiles.mockImplementation(({ worktreePath: path }: { worktreePath: string }) =>
       path === '/tmp/gone'
         ? Promise.reject(new Error('not a worktree'))
         : Promise.resolve({ paths: ['x.ts'], additions: 3, deletions: 1, numstat: '' }),
@@ -520,7 +520,7 @@ describe('useMountDiffStats', () => {
 
     await waitFor(() => expect(result.current.size).toBe(1));
     expect(changedFiles).toHaveBeenCalledTimes(1);
-    expect(changedFiles).toHaveBeenCalledWith('/tmp/b');
+    expect(changedFiles).toHaveBeenCalledWith({ worktreePath: '/tmp/b' });
   });
 
   it('refetches when the last turn finishes', async () => {

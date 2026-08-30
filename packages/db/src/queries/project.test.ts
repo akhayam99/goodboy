@@ -19,6 +19,7 @@ import {
   reconnectProject,
   renameProject,
   updateProjectKind,
+  updateProjectBaseBranch,
 } from './project';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
@@ -49,6 +50,7 @@ const makeProject = ({ id = 'project-1', overrides = {} }: MakeProjectParams): P
   name: id,
   rootPath: `/tmp/${id}`,
   kind: 'repo',
+  baseBranch: null,
   overrides: EMPTY_OVERRIDES,
   createdAt: at({ value: '2026-08-22T10:00:00Z' }),
   updatedAt: at({ value: '2026-08-22T10:05:00Z' }),
@@ -125,6 +127,16 @@ describe('project queries', () => {
     expect(stored?.kind).toBe('repo');
     expect(stored?.rootPath).toBe('/tmp/repository');
     expect(stored?.name).toBe('Repository');
+  });
+
+  it('updates and clears the project base branch', async () => {
+    const db = await makeDb();
+    const project = makeProject({});
+    await insertProject({ db, project });
+    await updateProjectBaseBranch({ db, projectId: project.id, baseBranch: 'develop' });
+    expect((await getProjectById({ db, id: project.id }))?.baseBranch).toBe('develop');
+    await updateProjectBaseBranch({ db, projectId: project.id, baseBranch: null });
+    expect((await getProjectById({ db, id: project.id }))?.baseBranch).toBeNull();
   });
 
   it('disconnects, reconnects, and deletes a project', async () => {

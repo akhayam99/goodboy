@@ -33,8 +33,16 @@ export const OverviewResolve = ({ session }: Props) => {
   const emitNotification = useAppStore((state) => state.emitNotification);
   const roleModels = useSessionRoleModels({ sessionId });
   const { spawnResolver } = useResolverSpawner({ sessionId });
-  const worktreePaths = useMemo(() => mounts.map((mount) => mount.worktreePath), [mounts]);
-  const worktreeStatuses = useWorktreeStatuses({ worktreePaths });
+  const worktreeTargets = useMemo(
+    () =>
+      mounts.map((mount) => ({
+        worktreePath: mount.worktreePath,
+        baseBranch:
+          projects.find((project) => project.id === mount.projectId)?.baseBranch ?? undefined,
+      })),
+    [mounts, projects],
+  );
+  const worktreeStatuses = useWorktreeStatuses({ targets: worktreeTargets });
   const pendingThreadIds = new Set(pendingResolutions.map((resolution) => resolution.threadId));
   const unresolvedThreads = groupThreads(github?.detail?.comments ?? []).filter((thread) => {
     if (thread.head.source !== 'review' || thread.head.resolved !== false) {
@@ -120,6 +128,9 @@ export const OverviewResolve = ({ session }: Props) => {
           projectId={mount.projectId}
           projectName={
             projects.find((project) => project.id === mount.projectId)?.name ?? mount.mountName
+          }
+          baseBranch={
+            projects.find((project) => project.id === mount.projectId)?.baseBranch ?? 'main'
           }
           status={status}
           behind={behind}

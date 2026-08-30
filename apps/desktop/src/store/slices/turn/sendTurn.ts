@@ -1024,7 +1024,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         // must not fail the turn.
         if (activeMount !== undefined && !isSessionDirScope) {
           try {
-            const changed = await worktreeChangedFiles(workingDir);
+            const changed = await worktreeChangedFiles({ worktreePath: workingDir });
             await upsertContextSlot(
               tauriDatabase,
               sessionId,

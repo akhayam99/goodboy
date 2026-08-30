@@ -6,6 +6,7 @@ import { fastForwardProjectCheckout } from './fastForwardProjectCheckout';
 import { loadProjectGitStatus } from './loadProjectGitStatus';
 import { previewProjectAdoption } from './previewProjectAdoption';
 import { removeProject } from './removeProject';
+import { updateProjectBaseBranch } from './updateProjectBaseBranch';
 import type { GetFn, SetFn } from './types';
 
 export const createProjectsSlice = (set: SetFn, get: GetFn) => ({
@@ -17,4 +18,5 @@ export const createProjectsSlice = (set: SetFn, get: GetFn) => ({
   convertProjectToRepo: convertProjectToRepo(set, get),
   loadProjectGitStatus: loadProjectGitStatus(set, get),
   fastForwardProjectCheckout: fastForwardProjectCheckout(set, get),
+  updateProjectBaseBranch: updateProjectBaseBranch(set, get),
 });

@@ -8,6 +8,7 @@ const { store } = vi.hoisted(() => ({
   store: {
     setSessionActiveProject: vi.fn(async () => undefined),
     emitNotification: vi.fn(),
+    projects: [] as ReadonlyArray<{ id: string; baseBranch?: string | null }>,
   },
 }));
 

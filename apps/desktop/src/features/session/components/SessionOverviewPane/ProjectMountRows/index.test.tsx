@@ -53,7 +53,12 @@ describe('ProjectMountRows', () => {
     render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
 
     expect(useWorktreeStatuses).toHaveBeenCalledTimes(1);
-    expect(useWorktreeStatuses).toHaveBeenCalledWith({ worktreePaths: ['/api', '/web'] });
+    expect(useWorktreeStatuses).toHaveBeenCalledWith({
+      targets: [
+        { worktreePath: '/api', baseBranch: undefined },
+        { worktreePath: '/web', baseBranch: undefined },
+      ],
+    });
   });
 
   it('renders one row per mount in mount order', () => {

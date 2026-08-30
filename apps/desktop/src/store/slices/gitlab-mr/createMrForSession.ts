@@ -20,12 +20,15 @@ export const createMrForSession = (_set: SetFn, get: GetFn) => {
       );
     }
     try {
+      const projectBaseBranch = get().projects.find(
+        (project) => project.id === ctx.projectId,
+      )?.baseBranch;
       await gitlabCreateMr({
         workspaceId: ctx.workspaceId,
         host: ctx.host,
         projectPath: ctx.projectPath,
         sourceBranch: ctx.branch,
-        targetBranch: opts?.targetBranch?.trim() || 'main',
+        targetBranch: opts?.targetBranch?.trim() || projectBaseBranch || 'main',
         title: opts?.title?.trim() || ctx.goal,
         description: opts?.description ?? '',
         draft: opts?.draft ?? true,
