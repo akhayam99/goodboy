@@ -16,6 +16,9 @@ export const ProjectSyncControl = ({ sessionId, projectId, status }: Props) => {
   const dropdown = useDropdown({ width: 'w-64', expectedHeight: 160 });
   const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
   const emitNotification = useAppStore((state) => state.emitNotification);
+  const baseBranch = useAppStore(
+    (state) => state.projects.find((project) => project.id === projectId)?.baseBranch ?? 'main',
+  );
   const notify = ({ title, message }: { readonly title: string; readonly message: string }) => {
     void emitNotification('error', 'error', title, message, { sessionId });
   };
@@ -66,7 +69,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, status }: Props) => {
     >
       <div className="flex flex-col py-1">
         <div className="flex items-center gap-3 border-b border-border-soft px-3 py-2 text-xs tabular-nums text-muted-foreground">
-          <span className="font-medium text-foreground">Compared with main</span>
+          <span className="font-medium text-foreground">Compared with {baseBranch}</span>
           <span className="ml-auto flex items-center gap-1">
             <ArrowDown size={11} aria-hidden />
             {distance?.behind ?? '--'}
@@ -86,7 +89,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, status }: Props) => {
           )}
         >
           <GitBranch size={12} aria-hidden />
-          {rebase.isRunning ? 'Rebasing on main' : 'Rebase on main'}
+          {rebase.isRunning ? `Rebasing on ${baseBranch}` : `Rebase on ${baseBranch}`}
         </button>
         <button
           type="button"

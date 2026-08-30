@@ -528,7 +528,7 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       if (!worktreePath) {
         throw new BridgeSafeError('session worktree is not available');
       }
-      const diff = await worktreeDiffFile(worktreePath, path);
+      const diff = await worktreeDiffFile({ worktreePath, path });
       return { diff };
     }
 

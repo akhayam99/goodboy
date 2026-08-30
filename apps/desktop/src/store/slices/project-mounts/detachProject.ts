@@ -20,7 +20,7 @@ type MountParams = {
 
 const hasUncommittedWork = async ({ mount }: MountParams): Promise<boolean> => {
   try {
-    const status = await worktreeStatus(mount.worktreePath);
+    const status = await worktreeStatus({ worktreePath: mount.worktreePath });
     if (status.workingTree.kind !== 'known') {
       return true;
     }

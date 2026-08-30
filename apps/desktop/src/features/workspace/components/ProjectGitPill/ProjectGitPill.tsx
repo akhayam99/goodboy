@@ -135,8 +135,11 @@ export const ProjectGitPill = ({ project, status, shouldShowProjectName }: Props
   });
   const [openError, setOpenError] = useState<string | null>(null);
   const [pullError, setPullError] = useState<string | null>(null);
+  const [baseBranch, setBaseBranch] = useState(project.baseBranch ?? '');
+  const [baseBranchError, setBaseBranchError] = useState<string | null>(null);
   const pulling = useAppStore((state) => state.projectCheckoutPulling[project.id] === true);
   const fastForwardProjectCheckout = useAppStore((state) => state.fastForwardProjectCheckout);
+  const updateProjectBaseBranch = useAppStore((state) => state.updateProjectBaseBranch);
   const isReady = status?.state === 'ready';
   const details = isReady ? detailsOf({ status }) : [];
   const notes = isReady ? unknownNotesOf({ status }) : [];
@@ -175,6 +178,21 @@ export const ProjectGitPill = ({ project, status, shouldShowProjectName }: Props
       await fastForwardProjectCheckout({ projectId: project.id });
     } catch (error) {
       setPullError(formatError(error));
+    }
+  };
+
+  const commitBaseBranch = async () => {
+    const nextBaseBranch = baseBranch.trim() || null;
+    if (nextBaseBranch === project.baseBranch) {
+      setBaseBranch(project.baseBranch ?? '');
+      return;
+    }
+    setBaseBranchError(null);
+    try {
+      await updateProjectBaseBranch({ projectId: project.id, baseBranch: nextBaseBranch });
+      setBaseBranch(nextBaseBranch ?? '');
+    } catch (error) {
+      setBaseBranchError(formatError(error));
     }
   };
 
@@ -259,6 +277,29 @@ export const ProjectGitPill = ({ project, status, shouldShowProjectName }: Props
               ))}
             </div>
             <div className="flex flex-col gap-1 border-t border-border-soft pt-2">
+              <label className="flex items-center gap-2 text-2xs text-muted-foreground">
+                <span className="shrink-0">Base branch</span>
+                <input
+                  type="text"
+                  value={baseBranch}
+                  placeholder="main"
+                  aria-label={`${project.name} base branch`}
+                  onChange={(event) => setBaseBranch(event.target.value)}
+                  onBlur={() => void commitBaseBranch()}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      event.currentTarget.blur();
+                    }
+                  }}
+                  className="h-7 min-w-0 flex-1 rounded-md border border-border bg-background px-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </label>
+              {baseBranchError != null ? (
+                <span role="alert" className="text-2xs text-danger">
+                  {baseBranchError}
+                </span>
+              ) : null}
               <Button
                 size="sm"
                 variant="ghost"

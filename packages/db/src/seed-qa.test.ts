@@ -57,6 +57,7 @@ describe.skipIf(!shouldSeed)('qa seed', () => {
       name: 'QA Sandbox',
       rootPath: '/tmp/goodboy-qa-sandbox',
       kind: 'folder',
+      baseBranch: null,
       overrides: workspace.overrides,
       createdAt: now,
       updatedAt: now,

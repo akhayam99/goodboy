@@ -19,6 +19,8 @@ const { showToast, state, fixtures } = vi.hoisted(() => ({
   state: {
     settings: {} as Record<string, string>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionProjectMounts: {} as Record<string, ReadonlyArray<{ projectId: string }>>,
+    projects: [] as ReadonlyArray<{ id: string; baseBranch?: string | null }>,
     sessions: [
       {
         id: 's1',
@@ -451,7 +453,9 @@ describe('DiffViewerPane', () => {
       />,
     );
 
-    await waitFor(() => expect(worktreeDiff).toHaveBeenCalledWith('/tmp/worktree'));
+    await waitFor(() =>
+      expect(worktreeDiff).toHaveBeenCalledWith({ worktreePath: '/tmp/worktree' }),
+    );
     expect(worktreeDiffWorking).not.toHaveBeenCalled();
   });
 });

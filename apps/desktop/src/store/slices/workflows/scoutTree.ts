@@ -286,7 +286,7 @@ const canFanOutByRole = async ({
       return false;
     }
     try {
-      const changed = await worktreeChangedFiles(worktreePath);
+      const changed = await worktreeChangedFiles({ worktreePath });
       const diffLines = changed.additions + changed.deletions;
       return changed.paths.length > 15 || diffLines > 800;
     } catch {

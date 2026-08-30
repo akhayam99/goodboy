@@ -18,8 +18,8 @@ describe('useWorktreeStatuses', () => {
   it('keeps one stable empty state without scheduling a poll when no paths exist', () => {
     vi.useFakeTimers();
     const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
-    const worktreePaths: ReadonlyArray<string> = [];
-    const view = renderHook(() => useWorktreeStatuses({ worktreePaths }));
+    const targets: ReadonlyArray<{ worktreePath: string }> = [];
+    const view = renderHook(() => useWorktreeStatuses({ targets }));
     const initialStatuses = view.result.current;
 
     view.rerender();

@@ -25,6 +25,8 @@ const { showToast, state } = vi.hoisted(() => ({
         },
       },
     },
+    sessionProjectMounts: {} as Record<string, ReadonlyArray<{ projectId: string }>>,
+    projects: [] as ReadonlyArray<{ id: string; baseBranch?: string | null }>,
     sessionPhaseRuns: {} as Record<
       string,
       ReadonlyArray<{ id: string; name: string; status: string }>

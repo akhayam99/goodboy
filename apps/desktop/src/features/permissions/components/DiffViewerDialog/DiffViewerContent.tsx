@@ -94,7 +94,7 @@ const loadDiffForView = (worktreePath: string, view: DiffView): Promise<string> 
   if (view.kind === 'commit') {
     return worktreeDiffCommit(worktreePath, view.sha);
   }
-  return worktreeDiff(worktreePath);
+  return worktreeDiff({ worktreePath });
 };
 
 const emptyStateLabel = (view: DiffView, isGitAware: boolean): string => {
@@ -410,7 +410,7 @@ export const DiffViewerContent = ({
       return;
     }
     let cancelled = false;
-    Promise.all([listBranchCommits(worktreePath), worktreeStatus(worktreePath)])
+    Promise.all([listBranchCommits(worktreePath), worktreeStatus({ worktreePath })])
       .then(([c, s]) => {
         if (cancelled) {
           return;

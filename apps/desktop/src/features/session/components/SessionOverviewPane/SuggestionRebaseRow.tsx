@@ -7,6 +7,7 @@ type Props = {
   readonly sessionId: SessionId;
   readonly projectId: ProjectId;
   readonly projectName: string;
+  readonly baseBranch: string;
   readonly behind: number;
   readonly status: WorktreeStatus;
 };
@@ -15,6 +16,7 @@ export const SuggestionRebaseRow = ({
   sessionId,
   projectId,
   projectName,
+  baseBranch,
   behind,
   status,
 }: Props) => {
@@ -35,7 +37,7 @@ export const SuggestionRebaseRow = ({
   return (
     <div className="flex w-full items-center gap-3 rounded-lg border-l-2 border-border-soft px-3 py-1.5">
       <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-        Rebase {projectName} on main
+        Rebase {projectName} on {baseBranch}
       </span>
       <Chip tone="warning" size="3xs" bordered={false} label={`${behind} behind`} />
       <Button

@@ -877,7 +877,7 @@ describe('queryFileDiff (read-only single-file diff RPC)', () => {
     // store (never the phone) and only the file name is forwarded.
     expect(invokeMock).toHaveBeenCalledWith('worktree_diff_file', {
       worktreePath: '/wt/s1',
-      base: null,
+      baseBranch: null,
       path: 'x.ts',
     });
   });

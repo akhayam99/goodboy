@@ -23,8 +23,16 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
   );
   const projectPrs = useAppStore((state) => state.sessionProjectPrs?.[session.id]);
   const diffStats = useMountDiffStats(session.id);
-  const worktreePaths = useMemo(() => mounts.map((mount) => mount.worktreePath), [mounts]);
-  const worktreeStatuses = useWorktreeStatuses({ worktreePaths });
+  const worktreeTargets = useMemo(
+    () =>
+      mounts.map((mount) => ({
+        worktreePath: mount.worktreePath,
+        baseBranch:
+          projects.find((project) => project.id === mount.projectId)?.baseBranch ?? undefined,
+      })),
+    [mounts, projects],
+  );
+  const worktreeStatuses = useWorktreeStatuses({ targets: worktreeTargets });
 
   return (
     <section

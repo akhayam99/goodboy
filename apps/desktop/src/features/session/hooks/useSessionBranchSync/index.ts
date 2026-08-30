@@ -22,7 +22,7 @@ export const useSessionBranchSync = ({ session, isActive }: Params): void => {
   useEffect(() => {
     if (!isActive || projectWorktreePath == null || isBranchless) return;
     let cancelled = false;
-    worktreeStatus(projectWorktreePath)
+    worktreeStatus({ worktreePath: projectWorktreePath })
       .then((status) => {
         if (!cancelled && status.branch) {
           void reconcileSessionBranch(sessionId, status.branch);

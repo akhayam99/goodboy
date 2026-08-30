@@ -33,6 +33,9 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     }
 
     const linkedTasks = get().sessionExternalTasks[sessionId] ?? [];
+    const projectBaseBranch = get().projects.find(
+      (project) => project.id === repo.projectId,
+    )?.baseBranch;
     const args = ['pr', 'create'];
     const hasFields = opts?.title !== undefined || opts?.body !== undefined;
     if (hasFields) {
@@ -48,8 +51,9 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     } else {
       args.push('--fill');
     }
-    if (opts?.base?.trim()) {
-      args.push('--base', opts.base.trim());
+    const baseBranch = opts?.base?.trim() || projectBaseBranch;
+    if (baseBranch != null && baseBranch !== '') {
+      args.push('--base', baseBranch);
     }
     if ((opts?.draft ?? true) === true) {
       args.push('--draft');

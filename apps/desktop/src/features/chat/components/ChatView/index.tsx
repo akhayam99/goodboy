@@ -247,7 +247,9 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   }, [selectedAgentId]);
   const diffLoader = useMemo(
     () =>
-      diffWorktreePath != null && !isBranchless ? () => worktreeDiff(diffWorktreePath) : undefined,
+      diffWorktreePath != null && !isBranchless
+        ? () => worktreeDiff({ worktreePath: diffWorktreePath })
+        : undefined,
     [diffWorktreePath, isBranchless],
   );
 

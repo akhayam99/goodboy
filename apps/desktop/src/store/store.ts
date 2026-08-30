@@ -280,6 +280,10 @@ export type AppActions = {
   }): Promise<ProjectAttachConflict | null>;
   removeProject(input: { projectId: ProjectId }): Promise<void>;
   convertProjectToRepo(input: { projectId: ProjectId; remoteUrl: string }): Promise<Project>;
+  updateProjectBaseBranch(input: {
+    projectId: ProjectId;
+    baseBranch: string | null;
+  }): Promise<void>;
   renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;
   updateWorkspaceProfile(input: {
     workspaceId: WorkspaceId;

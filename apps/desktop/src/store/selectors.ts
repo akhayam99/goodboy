@@ -679,7 +679,7 @@ export const useFilesTouched = (
       return;
     }
     let cancelled = false;
-    worktreeChangedFiles(workingDir)
+    worktreeChangedFiles({ worktreePath: workingDir })
       .then((summary) => {
         if (cancelled) {
           return;
@@ -766,7 +766,7 @@ const loadMountDiffStat = ({
   if (pending !== undefined) {
     return pending;
   }
-  const request = worktreeChangedFiles(worktreePath)
+  const request = worktreeChangedFiles({ worktreePath })
     .then((summary) => ({ additions: summary.additions, deletions: summary.deletions }))
     .catch(() => ({ additions: 0, deletions: 0 }));
   inFlightMountDiffStats.set(key, request);
