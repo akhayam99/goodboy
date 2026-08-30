@@ -1,36 +1,35 @@
-import { Eyebrow } from '@goodboy/ui';
+import { CommandPreview, CopyButton, Eyebrow } from '@goodboy/ui';
 import type { WorkspaceGitState } from '@goodboy/types';
-import { CommandPreview } from '@goodboy/ui';
-import { CopyButton } from '@goodboy/ui';
 import { initCommands } from './initCommands';
+
+type InitState = Extract<WorkspaceGitState, 'absent' | 'unborn'>;
 
 type Props = {
   readonly rootPath: string;
-  readonly state: WorkspaceGitState;
+  readonly state: InitState;
 };
 
-const HEADLINE = {
+const HEADLINE: Record<InitState, string> = {
   absent: 'This folder has no git repository yet',
   unborn: 'This repository has no commits yet',
-} as const;
+};
 
-const LEDE = {
+const LEDE: Record<InitState, string> = {
   absent:
     'Goodboy runs every session in its own worktree, and a worktree needs a repository with at least one commit. Run these yourself, in this order. Nothing here touches your files until you do.',
   unborn:
     'The repository exists but has nothing to branch from. Commit once and sessions unlock. Goodboy never commits for you.',
-} as const;
+};
 
 export const InitGuide = ({ rootPath, state }: Props) => {
   const steps = initCommands({ rootPath, state });
-  const variant = state === 'unborn' ? 'unborn' : 'absent';
 
   return (
-    <section aria-label="Set up git for this project" className="flex flex-col gap-3">
+    <section aria-label="Set up git for this project" className="flex flex-col gap-3 p-3">
       <div className="flex flex-col gap-1.5">
         <Eyebrow label="Git setup" muted />
-        <h3 className="text-xs font-semibold text-foreground">{HEADLINE[variant]}</h3>
-        <p className="text-xs leading-relaxed text-muted-foreground">{LEDE[variant]}</p>
+        <h3 className="text-xs font-semibold text-foreground">{HEADLINE[state]}</h3>
+        <p className="text-xs leading-relaxed text-muted-foreground">{LEDE[state]}</p>
         <p className="text-2xs text-muted-foreground/70">
           Sessions stay unavailable until the first commit exists.
         </p>

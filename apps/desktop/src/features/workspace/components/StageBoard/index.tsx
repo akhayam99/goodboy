@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Plus } from 'lucide-react';
 import { Button, cn, Divider, EmptyState, Eyebrow, Skeleton } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
@@ -13,16 +14,15 @@ import { DogMascot } from '../../../../shared/components/DogMascot';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { ArchiveSessionConfirm } from '../../../session/components/ArchiveSessionConfirm';
 import { DeleteSessionConfirm } from '../../../session/components/DeleteSessionConfirm';
-import { WorkspaceGitPanel } from '../WorkspaceGitPanel';
 import { BulkActionBar } from '../BulkActionBar';
-import { useWorkspaceGitStatus } from '../../hooks/useWorkspaceGitStatus';
-import { primaryProjectRoot } from '../../primaryProjectRoot';
+import { useProjectGitStatuses } from '../../hooks/useProjectGitStatuses';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { ProjectsStep } from '../../../onboarding/OnboardingWizard/steps/ProjectsStep';
 import { StageColumn } from './StageColumn';
 import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
 import { ProjectFilter } from '../ProjectFilter';
+import { ProjectGitPills } from '../ProjectGitPill';
 
 type Confirm = { readonly kind: 'archive' | 'delete'; readonly session: Session };
 
@@ -77,14 +77,14 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const filterSessions = useMemo(() => [...sessions, ...archived], [archived, sessions]);
   const boardReady = useAppStore((s) => s.boardReady);
   const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
-  const rootPath = useAppStore((s) => primaryProjectRoot({ projects: s.projects, workspaceId }));
   const workspace = useAppStore(
     (s) => s.workspaces.find((candidate) => candidate.id === workspaceId) ?? null,
   );
-  const hasProjects = useAppStore((s) =>
-    s.projects.some((project) => project.workspaceId === workspaceId),
+  const workspaceProjects = useAppStore(
+    useShallow((s) => s.projects.filter((project) => project.workspaceId === workspaceId)),
   );
-  const gitStatus = useWorkspaceGitStatus({ workspaceId });
+  const hasProjects = workspaceProjects.length > 0;
+  const projectGitStatuses = useProjectGitStatuses({ workspaceId });
   const [confirm, setConfirm] = useState<Confirm | null>(null);
 
   const onArchive = useCallback((session: Session) => setConfirm({ kind: 'archive', session }), []);
@@ -125,26 +125,24 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
 
   const empty = sessions.length === 0 && archived.length === 0;
   const pending = !boardReady || (sessions.length === 0 && archivedList === undefined);
-  const gitReady = gitStatus === null || gitStatus.state === 'ready';
-  const showGitPanel = rootPath != null && gitStatus !== null && (!gitReady || !empty);
+  const hasUsableProject =
+    workspaceProjects.some((project) => project.kind === 'folder') ||
+    projectGitStatuses.some(({ status }) => status?.state === 'ready');
+  const areAllRepoProjectsMissing =
+    projectGitStatuses.length > 0 &&
+    projectGitStatuses.every(({ status }) => status?.state === 'missing');
+  const statusesPending = projectGitStatuses.some(({ status }) => status === null);
   const blockedReason = !hasProjects
     ? 'Link a project first'
-    : gitStatus?.state === 'missing'
-      ? 'The project folder is unreachable'
-      : 'This project needs a git repository with one commit first';
+    : statusesPending
+      ? 'Reading git status'
+      : areAllRepoProjectsMissing
+        ? 'The project folder is unreachable'
+        : 'This project needs a git repository with one commit first';
 
   return (
     <div className={cn('flex h-full w-full flex-col gap-4', PANE_RHYTHM.board.pad)}>
-      {showGitPanel && rootPath != null && gitStatus !== null && (
-        <>
-          <div className="shrink-0">
-            <WorkspaceGitPanel rootPath={rootPath} status={gitStatus} />
-          </div>
-          <Divider />
-        </>
-      )}
-
-      {pending || !empty ? (
+      {pending || !empty || hasProjects ? (
         <>
           <div className="flex shrink-0 items-center justify-between gap-4">
             <span className="flex items-baseline gap-2">
@@ -159,6 +157,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
               )}
             </span>
             <span className="flex items-center gap-1.5">
+              <ProjectGitPills entries={projectGitStatuses} />
               <ProjectFilter workspaceId={workspaceId} sessions={filterSessions} />
               <button
                 type="button"
@@ -177,8 +176,8 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
               <Button
                 size="sm"
                 onClick={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}
-                disabled={!gitReady || !hasProjects}
-                title={gitReady && hasProjects ? undefined : blockedReason}
+                disabled={!hasUsableProject}
+                title={hasUsableProject ? undefined : blockedReason}
               >
                 <Plus size={14} aria-hidden />
                 New session
@@ -201,7 +200,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         </div>
       )}
 
-      {!pending && hasProjects && empty && gitReady && (
+      {!pending && hasProjects && empty && hasUsableProject && (
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
             illustration={<DogMascot size={72} className="text-primary" />}
