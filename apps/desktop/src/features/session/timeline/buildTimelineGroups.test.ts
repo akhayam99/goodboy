@@ -231,7 +231,7 @@ describe('buildTimelineGroups', () => {
     );
   });
 
-  it('keeps a run and its steps as one contiguous block with workflow ordinals', () => {
+  it('keeps workflow membership and ordinals as run metadata', () => {
     const model = build({
       workflows: [attachedWorkflow()],
       agents: [
