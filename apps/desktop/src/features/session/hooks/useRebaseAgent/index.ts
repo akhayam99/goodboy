@@ -170,6 +170,13 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
         `An agent is rebasing this branch on ${baseBranch}. You can keep working.`,
         {
           title: 'Rebase started',
+          action: {
+            label: 'Open the rebase agent',
+            onClick: () => {
+              setActiveLens(sessionId, 'agents');
+              void selectAgent(sessionId, agentId);
+            },
+          },
         },
       );
     } catch (failure) {
