@@ -7,6 +7,32 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.4
+
+The board scales past a handful of projects and the overview earns its keep.
+
+### [#1558] One git pill however many projects you mount
+
+Three or more repository projects now share a single pill in the board
+header: a summed badge for everything that needs action, a warning when any
+checkout does, and a popover that lists every project sorted by urgency.
+One click drills into the full detail for a project: counts, base branch,
+fast-forward, open in editor. Two projects or fewer keep their own pills.
+When fast-forward is blocked, the reason now reads right under the button
+instead of hiding in a tooltip.
+
+### [#1559] Detach with confidence, edit the base where you see it
+
+Detaching a project now confirms inline: a clean worktree says it will be
+removed, uncommitted changes stay on disk with the path spelled out and a
+toast to find them later. The base branch is editable right on the
+"Compared with" row of the sync popover, where the comparison already
+lives. The rebase toast can open its agent the moment it starts, and
+detached-project rows in the trace stopped pretending to be links.
+
+Both surfaces also breathe better: a shared gutter, clearer section
+separation and denser project rows.
+
 ## Goodboy v0.2.3
 
 The board sheds its git banner and every project picks its own base branch.
