@@ -81,16 +81,12 @@ const chipOf = ({ entry, grade }: ChipParams) => {
     <Chip
       tone="neutral"
       label={palette.label}
-      icon={
-        isChained ? (
-          <CONCEPT_ICONS.chain className="absolute left-1.5" size={10} aria-hidden />
-        ) : null
-      }
+      icon={isChained ? <CONCEPT_ICONS.chain size={10} aria-hidden /> : null}
       shape="badge"
       size="3xs"
       width="md"
       uppercase
-      className={cn('relative shrink-0', palette.fg)}
+      className={cn('shrink-0', palette.fg)}
     />
   );
 };
