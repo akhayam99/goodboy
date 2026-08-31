@@ -46,8 +46,21 @@ describe('deriveSessionStage pull request freshness', () => {
 
   it('claims no PR only once the fetch has landed', () => {
     const info = deriveSessionStage({ session, pr: null, ...signals, prFetchState: 'known' });
-    expect(info.stage).toBe('building');
-    expect(info.reason).toBe('no PR yet');
+    expect(info).toEqual({ stage: 'building', reason: 'no PR yet', attention: null });
+  });
+
+  it('keeps the open-question attention reason', () => {
+    const info = deriveSessionStage({
+      session,
+      pr: null,
+      hasUnread: false,
+      openQuestionCount: 1,
+    });
+    expect(info).toEqual({
+      stage: 'attention',
+      reason: '1 open question',
+      attention: 'open-question',
+    });
   });
 
   it('says GitHub is unreachable rather than claiming no PR when the fetch failed', () => {

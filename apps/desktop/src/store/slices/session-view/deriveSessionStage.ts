@@ -37,7 +37,7 @@ export const deriveSessionStage = ({
   const label = requestLabel ?? (pr === null ? '' : `PR #${pr.number}`);
   if (isBranchless) {
     if (session.state.kind === 'running' || session.state.kind === 'starting' || hasRunningAgent) {
-      return { stage: 'running', reason: 'agent running' };
+      return { stage: 'running', reason: 'agent running', attention: null };
     }
     if (session.state.kind === 'error') {
       return { stage: 'attention', reason: 'agent errored', attention: 'agent-error' };
@@ -55,16 +55,16 @@ export const deriveSessionStage = ({
     if (hasUnread) {
       return { stage: 'attention', reason: 'unread agent reply', attention: 'unread-reply' };
     }
-    return { stage: 'building', reason: 'ready for work' };
+    return { stage: 'building', reason: 'ready for work', attention: null };
   }
   if (session.state.kind === 'error') {
     return { stage: 'attention', reason: 'agent errored', attention: 'agent-error' };
   }
   if (session.state.kind === 'running' || session.state.kind === 'starting') {
-    return { stage: 'running', reason: 'agent running' };
+    return { stage: 'running', reason: 'agent running', attention: null };
   }
   if (hasRunningAgent) {
-    return { stage: 'running', reason: 'agent running' };
+    return { stage: 'running', reason: 'agent running', attention: null };
   }
   if (isPrLive(pr) && pr.checks === 'failure') {
     return { stage: 'attention', reason: `${label}: CI failed`, attention: 'ci-failed' };
@@ -97,28 +97,28 @@ export const deriveSessionStage = ({
     return { stage: 'attention', reason: 'unread agent reply', attention: 'unread-reply' };
   }
   if (isPrReview && pr === null) {
-    return { stage: 'review', reason: 'reviewing an external PR' };
+    return { stage: 'review', reason: 'reviewing an external PR', attention: null };
   }
   if (pr === null && prFetchState === 'unknown') {
-    return { stage: 'building', reason: 'checking GitHub' };
+    return { stage: 'building', reason: 'checking GitHub', attention: null };
   }
   if (pr === null && prFetchState === 'unreachable') {
-    return { stage: 'building', reason: 'GitHub unreachable' };
+    return { stage: 'building', reason: 'GitHub unreachable', attention: null };
   }
   if (pr === null) {
-    return { stage: 'building', reason: 'no PR yet' };
+    return { stage: 'building', reason: 'no PR yet', attention: null };
   }
   if (pr.state === 'merged') {
-    return { stage: 'done', reason: `${label} merged` };
+    return { stage: 'done', reason: `${label} merged`, attention: null };
   }
   if (pr.state === 'closed') {
-    return { stage: 'done', reason: `${label} closed` };
+    return { stage: 'done', reason: `${label} closed`, attention: null };
   }
   if (pr.isDraft) {
-    return { stage: 'review', reason: `draft ${label}` };
+    return { stage: 'review', reason: `draft ${label}`, attention: null };
   }
   if (pr.checks === 'pending') {
-    return { stage: 'review', reason: `${label}: CI running` };
+    return { stage: 'review', reason: `${label}: CI running`, attention: null };
   }
-  return { stage: 'review', reason: `${label} awaiting review` };
+  return { stage: 'review', reason: `${label} awaiting review`, attention: null };
 };
