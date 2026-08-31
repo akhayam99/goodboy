@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   CircleHelp,
   CircleStop,
@@ -101,6 +101,12 @@ export const OrchestratorPanel = ({
   const pulseTone = state.tone === 'neutral' ? 'info' : state.tone;
   const isRunOver = state.phase === 'done';
   const isStepInFlight = isOrchestrating || agents.some((agent) => agent.status === 'running');
+  const showStopNow = isStepInFlight && run.orchestrationStop?.kind !== 'operator';
+  useEffect(() => {
+    if (!showStopNow) {
+      setIsStopArmed(false);
+    }
+  }, [showStopNow]);
 
   const guard = async (action: () => Promise<void>) => {
     if (busy) {
@@ -276,7 +282,7 @@ export const OrchestratorPanel = ({
               <Markdown text={state.detail} className="text-2xs leading-relaxed" />
             </div>
           ) : null}
-          {isStepInFlight && run.orchestrationStop?.kind !== 'operator' ? (
+          {showStopNow ? (
             <div className="relative flex">
               <button
                 type="button"

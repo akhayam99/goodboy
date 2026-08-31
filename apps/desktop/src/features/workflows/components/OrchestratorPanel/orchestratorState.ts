@@ -110,7 +110,7 @@ export const resolveOrchestratorState = ({
       sentence: OPERATOR_STOP_IN_FLIGHT.sentence,
     };
   }
-  if (hasRunningStep && run.autoRun === false) {
+  if (hasRunningStep && run.autoRun === false && run.orchestrationStop?.kind !== 'operator') {
     return {
       ...base,
       phase: 'stopping-graceful',
