@@ -27,6 +27,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/co
 import { STAGE_TONE } from '../../../../session/session-stage';
 import { sessionCardShell } from '../../../../session/components/sessionCardShell';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
+import { useOpenSession } from '../../../../../shared/hooks/useOpenSession';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
 import { PrRequestSlot } from './PrRequestSlot';
@@ -85,6 +86,7 @@ export const StageBoardCard = memo(function StageBoardCard({
   const isPrReview = useMemo(() => isPrReviewSession({ agents: phaseRuns }), [phaseRuns]);
   const reviewDrafts = useAppStore((s) => s.reviewDrafts[id]);
   const loadReviewDrafts = useAppStore((s) => s.loadReviewDrafts);
+  const openSession = useOpenSession();
 
   useEffect(() => {
     if (!isPrReview || reviewDrafts != null) {
@@ -180,6 +182,11 @@ export const StageBoardCard = memo(function StageBoardCard({
               tone="draft"
               size="3xs"
               bordered={false}
+              ariaLabel={`Review ${reviewDraftCount} draft ${reviewDraftCount === 1 ? 'comment' : 'comments'}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                openSession({ sessionId: id, lens: 'review' });
+              }}
               icon={<MessageSquareDiff size={10} aria-hidden />}
               label={<span className="tabular-nums">{reviewDraftCount}</span>}
               trailing={<span>draft {reviewDraftCount === 1 ? 'comment' : 'comments'}</span>}

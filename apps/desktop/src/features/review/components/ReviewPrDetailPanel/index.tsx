@@ -78,7 +78,7 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
     setError(null);
     try {
       const sessionId = await startPrReviewSession(workspaceId, pr);
-      openSession(sessionId, onClose);
+      openSession({ sessionId, lens: 'review', onOpened: onClose });
     } catch (launchError) {
       setError(formatError(launchError));
       setBusy(false);

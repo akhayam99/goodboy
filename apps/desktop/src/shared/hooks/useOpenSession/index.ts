@@ -1,14 +1,28 @@
 import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../store';
+import { useAppStore, type LensKind } from '../../../store';
 
-export const useOpenSession = (): ((sessionId: SessionId, onOpened?: () => void) => void) => {
+type Params = {
+  readonly sessionId: SessionId;
+  readonly lens?: LensKind;
+  readonly onOpened?: () => void;
+};
+
+export const useOpenSession = (): ((params: Params) => Promise<void>) => {
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
   return useCallback(
-    (sessionId: SessionId, onOpened?: () => void) => {
-      void setCurrentSession(sessionId);
+    async ({ sessionId, lens, onOpened }: Params) => {
+      try {
+        await setCurrentSession(sessionId);
+      } catch {
+        return;
+      }
+      if (lens !== undefined) {
+        setActiveLens(sessionId, lens);
+      }
       onOpened?.();
     },
-    [setCurrentSession],
+    [setActiveLens, setCurrentSession],
   );
 };

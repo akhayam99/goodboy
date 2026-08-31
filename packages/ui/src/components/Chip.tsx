@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { cn } from '../cn';
 import { tintClasses, type Tone } from '../tint';
 
@@ -20,7 +20,7 @@ export type ChipProps = {
   readonly title?: string;
   readonly ariaLabel?: string;
   readonly testId?: string;
-  readonly onClick?: () => void;
+  readonly onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
   readonly disabled?: boolean;
   readonly expanded?: boolean;
   readonly hasPopup?: 'dialog' | 'menu' | 'listbox' | 'true';
