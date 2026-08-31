@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Project, SessionId, SessionProjectMount } from '@goodboy/types';
 
-const { store } = vi.hoisted(() => ({
+const { store, remoteKind } = vi.hoisted(() => ({
+  remoteKind: { current: 'github' as string | null },
   store: {
     setSessionActiveProject: vi.fn(async () => undefined),
     setScriptsLensScope: vi.fn(),
@@ -25,6 +26,9 @@ vi.mock('./ProjectSyncControl', () => ({
 }));
 vi.mock('./ProjectDetachMenu', () => ({
   ProjectDetachMenu: () => <span data-testid="detach-menu" />,
+}));
+vi.mock('../../../../worktree/useRemoteHostKind', () => ({
+  useRemoteHostKind: () => remoteKind.current,
 }));
 
 import { ProjectMountRow } from './ProjectMountRow';
@@ -67,6 +71,7 @@ const renderRow = ({
 beforeEach(() => {
   store.setSessionActiveProject.mockClear();
   store.setSessionActiveProject.mockResolvedValue(undefined);
+  remoteKind.current = 'github';
 });
 
 afterEach(cleanup);
@@ -97,5 +102,19 @@ describe('ProjectMountRow create pr action', () => {
     });
     expect(screen.queryByRole('button', { name: 'Create a PR for API' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Open PR #12' })).toBeDefined();
+  });
+
+  it('offers create mr on a gitlab remote', () => {
+    remoteKind.current = 'gitlab';
+    renderRow({ diffStat: { additions: 1, deletions: 0 } });
+    expect(screen.getByRole('button', { name: 'Create a PR for API' }).textContent).toBe(
+      'Create MR',
+    );
+  });
+
+  it('hides the action when the remote kind is unknown', () => {
+    remoteKind.current = null;
+    renderRow({ diffStat: { additions: 1, deletions: 0 } });
+    expect(screen.queryByRole('button', { name: 'Create a PR for API' })).toBeNull();
   });
 });

@@ -11,6 +11,7 @@ import type { LensKind, MountDiffStat } from '../../../../../store';
 import { useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { PullRequestChip } from '../../../../github/components/PullRequestChip';
+import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { DiffStat } from '../../DiffStat';
 import { ProjectBranchChip } from './ProjectBranchChip';
 import { ProjectSyncControl } from './ProjectSyncControl';
@@ -44,6 +45,7 @@ export const ProjectMountRow = ({
   const GlyphIcon = project?.kind === 'repo' ? FolderGit2 : Folder;
   const projectName = project?.name ?? mount.mountName;
   const changes = diffStat != null && (diffStat.additions > 0 || diffStat.deletions > 0);
+  const remoteKind = useRemoteHostKind({ sessionId });
 
   const openLens = async ({ lens }: { readonly lens: LensKind }) => {
     await setSessionActiveProject({ sessionId, projectId: mount.projectId });
@@ -92,20 +94,25 @@ export const ProjectMountRow = ({
       ) : (
         <span className="text-xs text-muted-foreground/50">No changes</span>
       )}
-      {pullRequest == null && changes ? (
+      {pullRequest == null && changes && remoteKind != null ? (
         <button
           type="button"
           aria-label={`Create a PR for ${projectName}`}
           onClick={() => {
             void setSessionActiveProject({ sessionId, projectId: mount.projectId }).then(() => {
               window.dispatchEvent(
-                new CustomEvent('goodboy:open-github-session', { detail: { sessionId } }),
+                new CustomEvent(
+                  remoteKind === 'gitlab'
+                    ? 'goodboy:open-gitlab-mr'
+                    : 'goodboy:open-github-session',
+                  { detail: { sessionId } },
+                ),
               );
             });
           }}
           className="rounded-md px-1.5 py-1 text-xs text-muted-foreground/70 hover:bg-muted/40 hover:text-foreground"
         >
-          Create PR
+          {remoteKind === 'gitlab' ? 'Create MR' : 'Create PR'}
         </button>
       ) : null}
       {pullRequest != null ? (
