@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
-const MAX_SLUG_LEN: usize = 40;
+const MAX_SLUG_LEN: usize = 48;
 
 #[derive(Debug, Error)]
 pub enum WorktreeError {
@@ -175,7 +175,7 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
         .map(str::trim)
         .filter(|s| !s.is_empty());
     let worktree_path = match explicit_dir {
-        Some(name) => parent.join(name),
+        Some(name) => parent.join(sanitize_slug(name)),
         None => parent.join(format!("{}-{dir_slug}", args.branch_prefix)),
     };
 

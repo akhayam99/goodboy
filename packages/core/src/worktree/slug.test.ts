@@ -14,9 +14,9 @@ describe('sanitizeSlug', () => {
     expect(sanitizeSlug('---hi---')).toBe('hi');
   });
 
-  it('truncates to max 40 chars without trailing hyphen', () => {
+  it('truncates to max 48 chars without trailing hyphen', () => {
     const long = 'a'.repeat(60);
-    expect(sanitizeSlug(long)).toHaveLength(40);
+    expect(sanitizeSlug(long)).toHaveLength(48);
   });
 
   it('falls back to a stable hash for empty input', () => {
