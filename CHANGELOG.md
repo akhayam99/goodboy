@@ -7,6 +7,35 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.5
+
+Branches get real names, scripts get their bearings and every workflow gets
+its own color.
+
+### [#1561] Branches named after the work, prefixed the way you asked
+
+A session linked to GRW-1220 used to mount a branch called
+goodboy/untitled-session-48c535d9. The branch prefix setting is now honored
+everywhere a branch is cut, resolving project, workspace and global scopes
+in that order. The name derives when the project mounts: the linked task
+identifier plus the goal, so the same session now yields
+ak/grw-1220-applicare-nuove-icone-alla-navbar. Sessions without a task use
+their goal; untitled ones fall back to a short session id.
+
+### [#1562] Scripts open where you are
+
+Opening scripts from a project row lands on that project's scripts, with
+All one click away. The overview header regains a scripts shortcut for the
+workspace-wide view. Projects and scripts sort alphabetically, and group
+headers carry a count so long lists stay scannable.
+
+### [#1563] Every workflow lane keeps its own color
+
+Two workflows in one session could draw the same color in the activity
+trace, and one palette slot was nearly identical to the app accent. Lanes
+now take distinct colors in creation order, starting from violet, and the
+look-alike slot is gone.
+
 ## Goodboy v0.2.4
 
 The board scales past a handful of projects and the overview earns its keep.
