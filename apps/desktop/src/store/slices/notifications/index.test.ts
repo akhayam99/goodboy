@@ -556,6 +556,7 @@ describe('store contract', () => {
       expect(ns).toHaveLength(1);
       expect(ns[0]?.title).toBe('oops');
       expect(ns[0]?.read).toBe(false);
+      expect(ns[0]?.coalesceKey).toBe('error:global:error');
       expect(insertNotificationSpy).toHaveBeenCalledTimes(1);
     });
 
@@ -571,7 +572,10 @@ describe('store contract', () => {
       expect(ns[0]?.action).toEqual({ kind: 'retry-summarizer', sessionId: SESSION_ID });
       expect(insertNotificationSpy).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ action: { kind: 'retry-summarizer', sessionId: SESSION_ID } }),
+        expect.objectContaining({
+          action: { kind: 'retry-summarizer', sessionId: SESSION_ID },
+          coalesceKey: `error:${SESSION_ID}:error`,
+        }),
       );
     });
 

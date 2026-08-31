@@ -1,22 +1,13 @@
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
-import {
-  extractMarkers,
-  extractStepDone,
-  fallbackStepOutputSummary,
-  resolveTaskModel,
-} from '@goodboy/core';
+import { extractMarkers, extractStepDone } from '@goodboy/core';
 import { updateSessionWorkflowStep } from '@goodboy/db';
-import { shortModel } from '../../../features/session/agent-row-format';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
-import { stepForAgent } from '../../../features/workflows/stepForAgent';
 import { composeStepBoundary } from '../../kickoff';
-import { summarizeAgentOutput } from '../../summarizeAgentOutput';
-import { degradedNotifiedAgents } from '../../../shared/utils/degradedNotifiedAgents';
-import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { resumeClusterChildren, unsettledClusterChildren } from './clusterImplementation';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
+import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 
 const MAX_CONTINUE = 1;
 
@@ -112,49 +103,12 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
     }
 
     continueAttempts.delete(agentId);
-    const session = get().sessions.find((candidate) => candidate.id === sessionId);
-    let outputSummary: string;
-    if (session == null) {
-      outputSummary = fallbackStepOutputSummary({ output: assistantText });
-    } else {
-      const taskModel = resolveTaskModel(
-        'summarizer',
-        get().workspaceOverrides?.[session.workspaceId]?.taskModels,
-        session.providerPreference.defaultProvider,
-      );
-      const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
-      const expectedOutput =
-        stepForAgent({
-          agent,
-          workflowRuns: session.workflowRuns,
-          workflows: [
-            ...(get().phaseTemplates?.[session.workspaceId] ?? []),
-            ...(get().sessionWorkflows?.[sessionId] ?? []),
-          ],
-        })?.expectedOutput ?? '';
-      const result = await summarizeAgentOutput({
-        agentId,
-        output: assistantText,
-        taskModel,
-        ...(worktreePath != null && { workingDir: worktreePath }),
-        ...(expectedOutput !== '' && { expectedOutput }),
-      });
-      outputSummary = result.summary;
-      if (result.degraded && !degradedNotifiedAgents.has(agentId)) {
-        degradedNotifiedAgents.add(agentId);
-        const modelLabel = `${taskModel.providerId}/${shortModel(taskModel.model)}`;
-        void get().emitNotification(
-          'summarizer-degraded',
-          'warning',
-          `step summary degraded: ${agent.name}`,
-          `${modelLabel}: ${result.error ?? 'summarization failed'}`,
-          {
-            sessionId,
-            action: { kind: 'retry-step-summary', sessionId, agentId },
-          },
-        );
-      }
-    }
+    const outputSummary = await summarizeWorkflowAgentOutput({
+      get,
+      sessionId,
+      agent,
+      output: assistantText,
+    });
     await invokeAgentUpdateStatus(agentId, {
       status: 'completed',
       outputSummary,

@@ -254,6 +254,7 @@ describe('advanceScoutTree split decision', () => {
       {
         sessionId: SID,
         action: { kind: 'retry-step-summary', sessionId: SID, agentId: scout.id },
+        coalesceKey: `step-summary-degraded:${scout.id}`,
       },
     );
   });

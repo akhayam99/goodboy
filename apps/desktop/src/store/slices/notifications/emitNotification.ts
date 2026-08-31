@@ -14,6 +14,7 @@ type Params = {
   sessionId?: SessionId;
   workspaceId?: WorkspaceId;
   action?: NotificationAction;
+  coalesceKey?: string;
 };
 
 export const emitNotification = (set: SetFn) => {
@@ -35,6 +36,9 @@ export const emitNotification = (set: SetFn) => {
       workspaceId: opts?.workspaceId ?? null,
       read: false,
       action: opts?.action ?? null,
+      coalesceKey:
+        opts?.coalesceKey ??
+        `${kind}:${opts?.sessionId ?? opts?.workspaceId ?? 'global'}:${severity}`,
     };
     await insertNotification(tauriDatabase, n);
     set((state) => ({

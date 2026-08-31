@@ -25,6 +25,7 @@ function notif(over: NotifOverride): Notification {
     workspaceId: over.workspaceId ?? null,
     read: false,
     action: null,
+    coalesceKey: null,
   };
 }
 

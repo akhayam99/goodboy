@@ -7,18 +7,18 @@ import type {
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
-import { extractClusterDone, fallbackStepOutputSummary } from '@goodboy/core';
+import { extractClusterDone } from '@goodboy/core';
 import {
   invokeAgentInsert,
   invokeAgentList,
   invokeAgentUpdateStatus,
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
-import { degradedNotifiedAgents } from '../../../shared/utils/degradedNotifiedAgents';
 import { composeKickoff, composeUnitBoundary } from '../../kickoff';
 import { childRoutingFromParent } from './childRoutingFromParent';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
+import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 
 const MAX_CONTINUE = 1;
 
@@ -562,20 +562,15 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     }
 
     continueAttempts.delete(childAgentId);
-    const usesFallbackSummary = assistantText.length > 0;
-    const outputSummary = usesFallbackSummary
-      ? fallbackStepOutputSummary({ output: assistantText })
-      : 'advanced to next cluster manually';
-    if (usesFallbackSummary && !degradedNotifiedAgents.has(childAgentId)) {
-      degradedNotifiedAgents.add(childAgentId);
-      void get().emitNotification(
-        'summarizer-degraded',
-        'warning',
-        `step summary degraded: ${child.name}`,
-        'cluster continuation summaries skip the LLM summarizer, showing raw output instead.',
-        { sessionId, action: { kind: 'retry-step-summary', sessionId, agentId: childAgentId } },
-      );
-    }
+    const outputSummary =
+      assistantText.length > 0
+        ? await summarizeWorkflowAgentOutput({
+            get,
+            sessionId,
+            agent: child,
+            output: assistantText,
+          })
+        : 'advanced to next cluster manually';
     await invokeAgentUpdateStatus(childAgentId, {
       status: 'completed',
       outputSummary,

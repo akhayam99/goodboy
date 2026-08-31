@@ -42,6 +42,7 @@ export type Notification = {
   readonly workspaceId: WorkspaceId | null;
   readonly read: boolean;
   readonly action: NotificationAction | null;
+  readonly coalesceKey: string | null;
 };
 
 type NotificationRow = {
@@ -55,6 +56,7 @@ type NotificationRow = {
   workspace_id: string | null;
   read: number;
   action: string | null;
+  coalesce_key: string | null;
 };
 
 function parseAction(raw: string | null): NotificationAction | null {
@@ -84,13 +86,14 @@ function toNotification(row: NotificationRow): Notification {
     workspaceId: row.workspace_id ? (row.workspace_id as WorkspaceId) : null,
     read: row.read !== 0,
     action: parseAction(row.action),
+    coalesceKey: row.coalesce_key,
   };
 }
 
 export const insertNotification = async (db: Database, n: Notification): Promise<void> => {
   await db.execute(
-    `INSERT INTO notifications (id, ts, kind, title, body, severity, session_id, workspace_id, read, action)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO notifications (id, ts, kind, title, body, severity, session_id, workspace_id, read, action, coalesce_key)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       n.id,
       Date.parse(n.ts),
@@ -102,6 +105,7 @@ export const insertNotification = async (db: Database, n: Notification): Promise
       n.workspaceId ?? null,
       n.read ? 1 : 0,
       serializeAction(n.action),
+      n.coalesceKey,
     ],
   );
 };

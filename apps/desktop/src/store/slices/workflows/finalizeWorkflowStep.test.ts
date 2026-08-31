@@ -39,7 +39,6 @@ vi.mock('../../../features/workflows/workflows', () => ({
 
 import { finalizeWorkflowStep } from './finalizeWorkflowStep';
 import { SUMMARY_TIMEOUT_MS, stepSummaryDegraded } from '../../summarizeAgentOutput';
-import { degradedNotifiedAgents } from '../../../shared/utils/degradedNotifiedAgents';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -129,7 +128,6 @@ describe('finalizeWorkflowStep output summary', () => {
   beforeEach(() => {
     invokeAgentListSpy.mockResolvedValue([{ ...agent, status: 'completed' }]);
     invokeAgentUpdateStatusSpy.mockResolvedValue({ ...agent, status: 'completed' });
-    degradedNotifiedAgents.clear();
     stepSummaryDegraded.clear();
   });
 
@@ -209,7 +207,7 @@ describe('finalizeWorkflowStep output summary', () => {
     );
   });
 
-  it('emits degraded notification only once per agent (dedup)', async () => {
+  it('appends degraded notifications with the same coalesce key', async () => {
     const assistantText = 'short output';
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     summarizeStepOutputSpy.mockRejectedValue(new Error('timeout'));
@@ -235,7 +233,16 @@ describe('finalizeWorkflowStep output summary', () => {
     await finalize(SESSION_ID, AGENT_ID, assistantText, false, { force: true });
     await finalize(SESSION_ID, AGENT_ID, assistantText, false, { force: true });
 
-    expect(state.emitNotification).toHaveBeenCalledTimes(1);
+    expect(state.emitNotification).toHaveBeenCalledTimes(2);
+    expect(state.emitNotification).toHaveBeenLastCalledWith(
+      'summarizer-degraded',
+      'warning',
+      expect.any(String),
+      expect.any(String),
+      expect.objectContaining({
+        coalesceKey: `step-summary-degraded:${agent.workflowRunId}:${agent.stepId}`,
+      }),
+    );
   });
 
   it('uses the fallback when summarization exceeds the timeout budget', async () => {
@@ -473,6 +480,5 @@ describe('finalizeWorkflowStep output summary', () => {
     await finalize(SESSION_ID, AGENT_ID, 'short output', false, { force: true });
 
     expect(state.emitNotification).not.toHaveBeenCalled();
-    expect(degradedNotifiedAgents.has(AGENT_ID)).toBe(false);
   });
 });

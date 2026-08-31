@@ -5,6 +5,7 @@ import type {
   PlanConsumption,
   PlanWithCount,
   SessionId,
+  StepId,
   WorkflowRunId,
 } from '@goodboy/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -22,6 +23,7 @@ const hoisted = vi.hoisted(() => {
     invokeAgentList: vi.fn(async () => [] as Agent[]),
     invokeAgentUpdateStatus: vi.fn(async () => undefined),
     invokeListConsumptionsForPlan: vi.fn(async () => [] as ReadonlyArray<PlanConsumption>),
+    summarizeAgentOutput: vi.fn(async () => ({ summary: 'model summary', degraded: false })),
   };
 });
 
@@ -33,6 +35,10 @@ vi.mock('../../../features/workflows/workflows', () => ({
 
 vi.mock('../../../features/plans/plans', () => ({
   listConsumptionsForPlan: hoisted.invokeListConsumptionsForPlan,
+}));
+
+vi.mock('../../summarizeAgentOutput', () => ({
+  summarizeAgentOutput: hoisted.summarizeAgentOutput,
 }));
 
 import {
@@ -217,6 +223,7 @@ const sessionRow = (autoRun: boolean) =>
     workspaceId: 'w1',
     autoRun,
     workflowRuns: [{ id: 'wf-1', workflowId: 'flow-1' }],
+    providerPreference: { defaultProvider: 'anthropic' },
   }) as unknown as Record<string, unknown>;
 
 function makeStore(initial: Record<string, unknown>) {
@@ -230,6 +237,11 @@ function makeStore(initial: Record<string, unknown>) {
     sessionPlans: {},
     planConsumptions: {},
     sessions: [sessionRow(true)],
+    sessionProjectMounts: {},
+    sessionActiveProject: {},
+    sessionWorktrees: {},
+    sessionBranches: {},
+    workspaces: [],
     transcripts: {},
     agentTurnState: {},
     agentKindOverride: {},
@@ -271,6 +283,7 @@ afterEach(() => {
   vi.clearAllMocks();
   hoisted.invokeAgentList.mockResolvedValue([]);
   hoisted.invokeListConsumptionsForPlan.mockResolvedValue([]);
+  hoisted.summarizeAgentOutput.mockResolvedValue({ summary: 'model summary', degraded: false });
 });
 
 describe('fanOutClusters', () => {
@@ -635,14 +648,14 @@ describe('advanceClusterImplementation', () => {
     expect(state.selectedAgentId).toBe(PARENT);
   });
 
-  it('stores deterministic head and tail output for a completed cluster', async () => {
+  it('stores a successful model summary without a degraded notification', async () => {
     const child = childAgent({
       id: 'summary-child',
       ordinal: 0,
       status: 'running',
       name: 'summary-child',
     });
-    const assistantText = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
+    const assistantText = 'completed the cluster';
     const { get, set, emitNotification } = makeStore({
       sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
       sessionPlans: { [SID]: [plan({})] },
@@ -657,33 +670,60 @@ describe('advanceClusterImplementation', () => {
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
       child.id,
       expect.objectContaining({
-        outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
+        outputSummary: 'model summary',
       }),
     );
-    expect(emitNotification).toHaveBeenCalledWith(
+    expect(hoisted.summarizeAgentOutput).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: child.id, output: assistantText }),
+    );
+    expect(emitNotification).not.toHaveBeenCalledWith(
       'summarizer-degraded',
-      'warning',
-      expect.stringContaining('summary-child'),
-      expect.any(String),
-      { sessionId: SID, action: { kind: 'retry-step-summary', sessionId: SID, agentId: child.id } },
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
     );
   });
 
-  it('notifies the degraded summary only once for the same child (dedupe)', async () => {
-    const child = childAgent({ id: 'dedupe-child', ordinal: 0, status: 'running' });
+  it('stores the fallback and emits one keyed warning when summarization fails', async () => {
+    const child = childAgent({
+      id: 'degraded-child',
+      ordinal: 0,
+      status: 'running',
+      workflowRunId: 'wf-1' as WorkflowRunId,
+      stepId: 'step-1' as StepId,
+    });
     const { get, set, emitNotification } = makeStore({
       sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
     });
+    hoisted.summarizeAgentOutput.mockResolvedValue({
+      summary: 'deterministic fallback',
+      degraded: true,
+      error: 'provider failed',
+    } as { summary: string; degraded: boolean });
     hoisted.invokeAgentList.mockResolvedValue([
       container({ status: 'running' }),
-      childAgent({ id: 'dedupe-child', ordinal: 0, status: 'completed' }),
+      childAgent({ id: 'degraded-child', ordinal: 0, status: 'completed' }),
     ]);
-    const advance = advanceClusterImplementation(set, get);
 
-    await advance(SID, child.id, 'raw output', { force: true });
-    await advance(SID, child.id, 'raw output again', { force: true });
+    await advanceClusterImplementation(set, get)(SID, child.id, 'raw output', { force: true });
 
     expect(emitNotification).toHaveBeenCalledTimes(1);
+    expect(emitNotification).toHaveBeenCalledWith(
+      'summarizer-degraded',
+      'warning',
+      expect.stringContaining('child-0'),
+      expect.stringContaining('provider failed'),
+      {
+        sessionId: SID,
+        action: { kind: 'retry-step-summary', sessionId: SID, agentId: child.id },
+        coalesceKey: 'step-summary-degraded:wf-1:step-1',
+      },
+    );
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      child.id,
+      expect.objectContaining({ outputSummary: 'deterministic fallback' }),
+    );
   });
 
   it('does not notify degraded when the child advances with no output to summarize', async () => {

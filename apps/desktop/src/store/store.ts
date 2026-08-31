@@ -800,7 +800,12 @@ export type AppActions = {
     severity: NotificationSeverity,
     title: string,
     body?: string,
-    opts?: { sessionId?: SessionId; workspaceId?: WorkspaceId; action?: NotificationAction },
+    opts?: {
+      sessionId?: SessionId;
+      workspaceId?: WorkspaceId;
+      action?: NotificationAction;
+      coalesceKey?: string;
+    },
   ): Promise<void>;
   retryStepSummary(params: {
     sessionId: SessionId;

@@ -133,7 +133,7 @@ describe('transient popover stacking above a full-page studio', () => {
       fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
     });
 
-    expect(screen.getByText(/nothing to catch up on/i)).toBeDefined();
+    expect(screen.getByText(/no notifications/i)).toBeDefined();
 
     const backdrop = document.body.querySelector('.z-popover-backdrop');
     const popoverPanel = document.body.querySelector('.z-popover');
