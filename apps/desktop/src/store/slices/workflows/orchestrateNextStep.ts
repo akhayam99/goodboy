@@ -448,6 +448,26 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
     options?: OrchestrateOptions,
   ): Promise<void> => {
     if (orchestrationInFlight.has(workflowRunId)) {
+      set((state) => {
+        const previous = state.pendingOrchestrations?.[workflowRunId];
+        const extraHint = options?.extraHints?.trim() ?? '';
+        const extraHints = [...(previous?.extraHints ?? [])];
+        if (extraHint !== '' && !extraHints.includes(extraHint)) {
+          extraHints.push(extraHint);
+        }
+        const routing = options?.routing ?? previous?.routing;
+        return {
+          pendingOrchestrations: {
+            ...(state.pendingOrchestrations ?? {}),
+            [workflowRunId]: {
+              sessionId,
+              bypassGate: (previous?.bypassGate ?? false) || (options?.bypassGate ?? false),
+              extraHints,
+              ...(routing != null && { routing }),
+            },
+          },
+        };
+      });
       return;
     }
     orchestrationInFlight.add(workflowRunId);
@@ -777,6 +797,23 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
     } finally {
       orchestrationInFlight.delete(workflowRunId);
       setDeciding({ set, workflowRunId, isDeciding: false });
+      const pending = get().pendingOrchestrations?.[workflowRunId];
+      if (pending != null) {
+        set((state) => ({
+          pendingOrchestrations: Object.fromEntries(
+            Object.entries(state.pendingOrchestrations ?? {}).filter(
+              ([pendingWorkflowRunId]) => pendingWorkflowRunId !== workflowRunId,
+            ),
+          ),
+        }));
+        queueMicrotask(() => {
+          void get().orchestrateNextStep(pending.sessionId, workflowRunId, {
+            ...(pending.bypassGate && { bypassGate: true }),
+            ...(pending.extraHints.length > 0 && { extraHints: pending.extraHints.join('\n\n') }),
+            ...(pending.routing != null && { routing: pending.routing }),
+          });
+        });
+      }
     }
   };
 };
