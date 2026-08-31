@@ -1,8 +1,8 @@
 import type { SessionId } from '@goodboy/types';
 
 export type SessionMaterializationSeed = {
-  readonly branchPrefix: string;
-  readonly sessionSlug: string;
+  readonly branchPrefix?: string;
+  readonly sessionSlug?: string;
   readonly existingBranch?: string;
   readonly fallbackRef?: string;
   readonly folderName?: string;

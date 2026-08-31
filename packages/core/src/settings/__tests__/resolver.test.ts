@@ -113,6 +113,23 @@ describe('resolveSettings', () => {
     expect(result.defaultVerbosity).toBe('verbose');
   });
 
+  it('resolves session then project then workspace then global', () => {
+    const result = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: { ...NULL_OVERRIDE, defaultBranchPrefix: 'workspace' },
+      projectOverride: { ...NULL_OVERRIDE, defaultBranchPrefix: 'project' },
+    });
+    expect(result.defaultBranchPrefix).toBe('project');
+
+    const sessionResult = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: { ...NULL_OVERRIDE, defaultBranchPrefix: 'workspace' },
+      projectOverride: { ...NULL_OVERRIDE, defaultBranchPrefix: 'project' },
+      sessionOverride: { ...NULL_OVERRIDE, defaultBranchPrefix: 'session' },
+    });
+    expect(sessionResult.defaultBranchPrefix).toBe('session');
+  });
+
   it('null-fields session falls back to workspace', () => {
     const wsOverride: OverrideSettings = {
       defaultProviderId: 'cursor' as ProviderId,

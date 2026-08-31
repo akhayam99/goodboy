@@ -379,6 +379,7 @@ export type AppActions = {
     sessionId: SessionId;
     projectId: ProjectId;
     reason: string;
+    taskIdentifiers?: ReadonlyArray<string>;
   }): Promise<SessionProjectMount>;
   detachProject(input: { sessionId: SessionId; projectId: ProjectId }): Promise<void>;
   linkSessionExternalTask(

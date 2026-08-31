@@ -7,19 +7,20 @@ import {
   type SessionWorktree,
 } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
-import { detectRepoSlug } from '@goodboy/core';
+import { detectRepoSlug, resolveSettings } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { tauriGhRunner } from '../../../features/github/github';
 import { createSessionDir, createWorktree } from '../../../features/worktree/worktree';
 import { DEFAULT_BRANCH_PREFIX } from '../../../features/settings/settings';
 import { consumeAdoptionSeed, materializationSeedFor } from './materializationSeeds';
-import { slugifyDir } from './slugifyDir';
+import { deriveBranchName } from './deriveBranchName';
 import type { GetFn, SetFn } from './types';
 
 export type MaterializeProjectInput = {
   readonly sessionId: SessionId;
   readonly projectId: ProjectId;
   readonly reason: string;
+  readonly taskIdentifiers?: ReadonlyArray<string>;
 };
 
 type StampRepoSlugParams = {
@@ -78,6 +79,7 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
     sessionId,
     projectId,
     reason,
+    taskIdentifiers,
   }: MaterializeProjectInput): Promise<SessionProjectMount> => {
     const trimmedReason = reason.trim();
     if (trimmedReason === '') {
@@ -129,8 +131,45 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
       return persistedMount;
     }
     const seed = materializationSeedFor({ sessionId });
-    const sessionSlug = seed?.sessionSlug ?? `${slugifyDir(session.goal)}-${sessionId.slice(0, 8)}`;
-    const prefix = seed?.branchPrefix ?? DEFAULT_BRANCH_PREFIX;
+    const resolved = resolveSettings({
+      global: {
+        defaultProviderId: session.providerPreference.defaultProvider,
+        defaultWorkflowId: null,
+        defaultBranchPrefix: DEFAULT_BRANCH_PREFIX,
+        parallelEnabled: false,
+        defaultVerbosity: 'normal',
+      },
+      workspaceOverride: get().workspaceOverrides[session.workspaceId] ?? null,
+      projectOverride: project.overrides,
+    });
+    const prefix = seed?.branchPrefix ?? resolved.defaultBranchPrefix;
+    const liveSessionIds: ReadonlySet<string> = new Set(
+      get()
+        .sessions.filter(
+          (candidate) =>
+            candidate.workspaceId === session.workspaceId && candidate.id !== sessionId,
+        )
+        .map((candidate) => candidate.id),
+    );
+    const recordBranches = Object.entries(get().sessionWorktreeRecords ?? {}).flatMap(
+      ([candidateId, records]) =>
+        liveSessionIds.has(candidateId) ? records.map((record) => record.branch) : [],
+    );
+    const mountBranches = Object.entries(get().sessionProjectMounts).flatMap(
+      ([candidateId, mounts]) =>
+        liveSessionIds.has(candidateId) ? mounts.map((mount) => mount.branch) : [],
+    );
+    const storedIdentifiers = (get().sessionExternalTasks[sessionId] ?? []).map(
+      (task) => task.identifier,
+    );
+    const sessionSlug = deriveBranchName({
+      prefix,
+      sessionId,
+      goal: session.goal,
+      ...(seed?.sessionSlug !== undefined ? { explicitSlug: seed.sessionSlug } : {}),
+      taskIdentifiers: storedIdentifiers.length > 0 ? storedIdentifiers : taskIdentifiers,
+      existingBranches: [...recordBranches, ...mountBranches],
+    });
     const hasRepoMount = rows.some((row) => row.projectId !== undefined && row.branch !== '');
     const adoptedBranch = hasRepoMount ? undefined : seed?.existingBranch;
     const adoptedFallbackRef = adoptedBranch === undefined ? undefined : seed?.fallbackRef;
@@ -143,7 +182,7 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
               branchPrefix: prefix,
               slug: sessionSlug,
               parentDir: `${project.rootPath}/.goodboy/worktrees`,
-              dirName: sessionSlug,
+              ...(adoptedBranch === undefined ? { dirName: sessionSlug } : {}),
               baseBranch: project.baseBranch ?? undefined,
               ...(adoptedBranch !== undefined ? { existingBranch: adoptedBranch } : {}),
               ...(adoptedFallbackRef !== undefined ? { fallbackRef: adoptedFallbackRef } : {}),

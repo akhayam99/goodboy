@@ -1,4 +1,4 @@
-const UNTITLED_BASE = 'Untitled session';
+export const UNTITLED_BASE = 'Untitled session';
 
 const UNTITLED_PATTERN = /^untitled session(?: (\d+))?$/i;
 
