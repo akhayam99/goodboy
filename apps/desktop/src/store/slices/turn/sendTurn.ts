@@ -67,7 +67,6 @@ import {
   kindWritesFiles,
 } from '../../../features/session/agent-kind';
 import { slotsForKind } from '../../../features/providers/slot-routing';
-import { formatInteger } from '../../../shared/utils/formatInteger';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
@@ -670,21 +669,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       const ratio = estimated / ctxWindow;
       if (ratio >= 0.85) {
         const pct = Math.round(ratio * 100);
-        const msg = `ctx estimate: ${formatInteger(estimated)} / ${formatInteger(ctxWindow)} (${pct}%). consider /compact`;
-        if (import.meta.env.DEV) {
-          console.warn(msg);
-        }
-        set((state) => ({
-          systemAlerts: [
-            ...state.systemAlerts,
-            {
-              id: crypto.randomUUID(),
-              kind: 'context-soft-cap' as const,
-              message: msg,
-              createdAt: now(),
-            },
-          ],
-        }));
+        void get().emitNotification(
+          'error',
+          'warning',
+          'Context near the limit',
+          `This turn is estimated at ${estimated.toLocaleString()} of ${ctxWindow.toLocaleString()} tokens (${pct}%). Consider /compact.`,
+          {
+            sessionId,
+            workspaceId: session.workspaceId,
+            coalesceKey: `context-soft-cap:${sessionId}`,
+          },
+        );
       }
     }
 

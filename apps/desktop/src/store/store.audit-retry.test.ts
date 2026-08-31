@@ -434,7 +434,7 @@ describe('audit retry queue, drain worker (happy path)', () => {
     expect(auditRetryUpdateSpy).not.toHaveBeenCalled();
   });
 
-  it('max-attempts exhausted: emits system alert', async () => {
+  it('max-attempts exhausted: emits an error notification', async () => {
     const entry = { ...makeRetryEntry({ id: 'retry-exhausted', attempts: 4 }), updatedAt: 0 };
     auditRetryDrainSpy.mockResolvedValue([entry]);
     permissionAuditInsertSpy.mockRejectedValue(new Error('permanent failure'));
@@ -442,11 +442,16 @@ describe('audit retry queue, drain worker (happy path)', () => {
     const mod = await import('./store');
     await runHydrate();
 
-    const { systemAlerts } = mod.useAppStore.getState();
-    const alert = systemAlerts.find((a) => a.kind === 'audit-retry-exhausted');
-    expect(alert).toBeDefined();
-    expect(alert?.kind).toBe('audit-retry-exhausted');
-    expect(alert?.message).toContain('5 attempts');
+    await vi.waitFor(() => {
+      expect(mod.useAppStore.getState().notifications).toEqual([
+        expect.objectContaining({
+          kind: 'error',
+          severity: 'error',
+          coalesceKey: 'audit-retry:exhausted',
+        }),
+      ]);
+    });
+    expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-exhausted');
   });
 
   it('drain skips rows with invalid JSON payload (deletes them)', async () => {
@@ -489,7 +494,7 @@ describe('audit retry queue, drain worker (happy path)', () => {
     expect(permissionAuditInsertSpy).not.toHaveBeenCalled();
   });
 
-  it('corrupt payload: emits system alert', async () => {
+  it('corrupt payload: emits a warning notification and deletes the entry', async () => {
     const entry = {
       ...makeRetryEntry({ id: 'retry-bad-json', payloadJson: 'not-json' }),
       updatedAt: 0,
@@ -499,11 +504,16 @@ describe('audit retry queue, drain worker (happy path)', () => {
     const mod = await import('./store');
     await runHydrate();
 
-    const { systemAlerts } = mod.useAppStore.getState();
-    const alert = systemAlerts.find((a) => a.kind === 'audit-retry-corrupt');
-    expect(alert).toBeDefined();
-    expect(alert?.kind).toBe('audit-retry-corrupt');
-    expect(alert?.message).toContain('corrupt payload');
+    await vi.waitFor(() => {
+      expect(mod.useAppStore.getState().notifications).toEqual([
+        expect.objectContaining({
+          kind: 'error',
+          severity: 'warning',
+          coalesceKey: 'audit-retry:corrupt',
+        }),
+      ]);
+    });
+    expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-bad-json');
   });
 
   it('backoff: skips entry whose updatedAt is too recent for attempt count', async () => {

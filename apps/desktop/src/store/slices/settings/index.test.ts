@@ -489,7 +489,6 @@ describe('store contract', () => {
         sessionBudgets: {},
         providerSpendBreakdown: [],
         budgetAlerts: [],
-        systemAlerts: [],
         skills: {},
         projectScripts: {},
         scriptRuns: {},
@@ -533,20 +532,6 @@ describe('store contract', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
-  });
-
-  describe('system alerts', () => {
-    it('dismissSystemAlert removes the matching alert', async () => {
-      const store = await getStore();
-      store.setState({
-        systemAlerts: [
-          { id: 'a1', kind: 'context-soft-cap', message: 'x', createdAt: NOW } as never,
-          { id: 'a2', kind: 'context-soft-cap', message: 'y', createdAt: NOW } as never,
-        ],
-      });
-      store.getState().dismissSystemAlert('a1');
-      expect(store.getState().systemAlerts.map((a) => a.id)).toEqual(['a2']);
-    });
   });
 
   describe('settings', () => {
