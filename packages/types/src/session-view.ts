@@ -28,7 +28,7 @@ export type SessionPrFetchState = 'unknown' | 'unreachable' | 'known';
 export type SessionStageInfo = Readonly<{
   stage: SessionStage;
   reason: string;
-  attention?: SessionAttentionReason;
+  attention: SessionAttentionReason | null;
 }>;
 
 export type SessionPrGroup =
