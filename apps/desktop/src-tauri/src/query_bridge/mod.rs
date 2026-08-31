@@ -46,6 +46,10 @@ fn socket_path() -> Option<&'static Path> {
         .as_deref()
 }
 
+pub(crate) fn socket_directory() -> Option<&'static Path> {
+    socket_path()?.parent()
+}
+
 fn abandoned_sockets<'a>(
     file_names: impl Iterator<Item = &'a str>,
     is_alive: &dyn Fn(u32) -> bool,

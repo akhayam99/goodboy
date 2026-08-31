@@ -54,6 +54,7 @@ describe('runTurn', () => {
       provider: 'anthropic',
       model: 'claude-sonnet-4-6',
       workingDir: '/tmp/worktree',
+      writableRoots: [],
       prompt: 'hello',
     })[Symbol.asyncIterator]();
 
@@ -79,6 +80,7 @@ describe('runTurn', () => {
       provider: 'cursor',
       model: 'gpt-5.5-high',
       workingDir: '/tmp/worktree',
+      writableRoots: [],
       prompt: 'hello',
     })[Symbol.asyncIterator]();
 
@@ -116,6 +118,7 @@ describe('runTurn', () => {
       provider: 'cursor',
       model: 'gpt-5.6-sol-high',
       workingDir: '/tmp/worktree',
+      writableRoots: [],
       prompt: 'hello',
     })[Symbol.asyncIterator]();
 
@@ -165,6 +168,7 @@ describe('runTurn', () => {
       provider: 'cursor',
       model: 'gpt-5.6-sol-high',
       workingDir: '/tmp/worktree',
+      writableRoots: [],
       prompt: 'hello',
     })[Symbol.asyncIterator]();
 
@@ -194,6 +198,7 @@ describe('runTurn', () => {
       provider: 'cursor',
       model: 'gpt-5.5-high',
       workingDir: '/tmp/worktree',
+      writableRoots: [],
       prompt: 'hello',
     })[Symbol.asyncIterator]();
 

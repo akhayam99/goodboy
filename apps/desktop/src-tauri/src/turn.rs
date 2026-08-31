@@ -48,6 +48,8 @@ pub struct SpawnArgs {
     pub run_id: String,
     pub model: String,
     pub working_dir: String,
+    #[serde(default)]
+    pub writable_roots: Vec<String>,
     pub prompt: String,
     #[serde(default)]
     pub binary: Option<String>,
@@ -178,6 +180,14 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
             } else {
                 v.push("-s".to_string());
                 v.push("workspace-write".to_string());
+                for root in args.writable_roots {
+                    v.push("--add-dir".to_string());
+                    v.push(root.to_string());
+                }
+                if let Some(socket_directory) = args.query_socket_directory {
+                    v.push("--add-dir".to_string());
+                    v.push(socket_directory.to_string());
+                }
             }
             if let Some(eff) = args.effort {
                 v.push("-c".to_string());
@@ -263,6 +273,8 @@ struct SpawnOneArgs<'a> {
     pub binary: &'a str,
     pub model: &'a str,
     pub working_dir: &'a str,
+    pub writable_roots: &'a [String],
+    pub query_socket_directory: Option<&'a str>,
     pub prompt: &'a str,
     pub permission_mode: &'a str,
     pub allowed_tools: &'a [String],
@@ -388,6 +400,12 @@ pub fn turn_spawn(
             binary,
             model: &args.model,
             working_dir: &args.working_dir,
+            writable_roots: &args.writable_roots,
+            query_socket_directory: if crate::query_bridge::is_serving() {
+                crate::query_bridge::socket_directory().and_then(|path| path.to_str())
+            } else {
+                None
+            },
             prompt: &args.prompt,
             permission_mode: &permission_mode,
             allowed_tools: &args.allowed_tools,
@@ -509,6 +527,8 @@ mod tests {
             binary: "echo",
             model: "claude-3",
             working_dir: "/tmp",
+            writable_roots: &[],
+            query_socket_directory: Some("/tmp/goodboy-query"),
             prompt: "hello",
             permission_mode: "default",
             allowed_tools: &allowed,
@@ -537,6 +557,8 @@ mod tests {
             binary: "claude",
             model: "claude-3",
             working_dir: "/tmp",
+            writable_roots: empty,
+            query_socket_directory: Some("/tmp/goodboy-query"),
             prompt: "hi",
             permission_mode: "default",
             allowed_tools: empty,
@@ -623,6 +645,16 @@ mod tests {
     }
 
     #[test]
+    fn claude_args_ignore_writable_directories() {
+        let empty: Vec<String> = vec![];
+        let roots = vec!["/repo/one/.git".to_string()];
+        let mut args = make_args(None, None, &empty);
+        args.writable_roots = &roots;
+        let cli = build_provider_cli_args("claude", &args);
+        assert!(!cli.iter().any(|arg| arg == "--add-dir"));
+    }
+
+    #[test]
     fn codex_args_use_cd_not_cwd() {
         let empty: Vec<String> = vec![];
         let args = make_args(None, None, &empty);
@@ -644,10 +676,21 @@ mod tests {
     #[test]
     fn codex_args_default_to_workspace_write_sandbox() {
         let empty: Vec<String> = vec![];
-        let args = make_args(None, None, &empty);
+        let roots = vec!["/repo/one/.git".to_string(), "/repo/two/.git".to_string()];
+        let mut args = make_args(None, None, &empty);
+        args.writable_roots = &roots;
         let cli = build_provider_cli_args("codex", &args);
         let idx = cli.iter().position(|a| a == "-s").expect("-s");
         assert_eq!(cli[idx + 1], "workspace-write");
+        let added_directories: Vec<&str> = cli
+            .windows(2)
+            .filter(|pair| pair[0] == "--add-dir")
+            .map(|pair| pair[1].as_str())
+            .collect();
+        assert_eq!(
+            added_directories,
+            vec!["/repo/one/.git", "/repo/two/.git", "/tmp/goodboy-query"]
+        );
         assert!(!cli
             .iter()
             .any(|a| a == "--dangerously-bypass-approvals-and-sandbox"));
@@ -733,6 +776,7 @@ mod tests {
             .iter()
             .any(|a| a == "--dangerously-bypass-approvals-and-sandbox"));
         assert!(!cli.iter().any(|a| a == "-s"));
+        assert!(!cli.iter().any(|a| a == "--add-dir"));
         assert!(cli.iter().any(|a| a == "--skip-git-repo-check"));
     }
 
@@ -782,6 +826,8 @@ mod tests {
             binary: "codex",
             model: "gpt-5.5",
             working_dir: "/tmp",
+            writable_roots: &[],
+            query_socket_directory: Some("/tmp/goodboy-query"),
             prompt: "say hello",
             permission_mode: "default",
             allowed_tools: &allowed,

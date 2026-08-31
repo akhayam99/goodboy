@@ -32,7 +32,7 @@ const materializeLine = ({ isBridgeServing }: MaterializeLineParams): string => 
   const marker =
     'Based on the goal, identify and materialize every relevant project before writing. To materialize a project marked NOT materialized, emit on its own line: <<materialize: <project name> | <why you need it>>> and the mount is ready from your next turn.';
   if (!isBridgeServing) {
-    return marker;
+    return `${marker} After emitting the marker, end your turn. The mount is ready on the next one.`;
   }
   return `${marker} For an immediate mount, run \`"$GOODBOY_BIN" query project materialize <name> --reason "<why you need it>"\`; it prints the mount path and branch.`;
 };
