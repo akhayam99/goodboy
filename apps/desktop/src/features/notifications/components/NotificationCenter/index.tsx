@@ -269,7 +269,8 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
             <button
               type="button"
               onClick={() => setExpanded((value) => !value)}
-              aria-label="Expand notifications"
+              aria-label={expanded ? 'Collapse notifications' : 'Expand notifications'}
+              aria-expanded={expanded}
             >
               <ChevronRight
                 size={12}
