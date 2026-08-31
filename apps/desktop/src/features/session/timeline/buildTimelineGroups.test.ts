@@ -264,15 +264,53 @@ describe('buildTimelineGroups', () => {
     ).toEqual(['2', '1']);
   });
 
-  it('gives a run a stable identity colour derived from its id', () => {
-    const first = build({ workflows: [attachedWorkflow()], agents: [] });
-    const second = build({ workflows: [attachedWorkflow()], agents: [] });
-    const firstRun = first.entries[0];
-    const secondRun = second.entries[0];
-
-    expect(firstRun?.kind === 'run' ? firstRun.identity.stroke : null).toBe(
-      secondRun?.kind === 'run' ? secondRun.identity.stroke : undefined,
+  it('assigns runs distinct slots in creation order', () => {
+    const model = build({
+      workflows: [
+        attachedWorkflow({ createdAt: '2026-08-17T08:00:00Z' }),
+        attachedWorkflow({ runId: OTHER_RUN_ID, createdAt: '2026-08-17T09:00:00Z' }),
+      ],
+      agents: [],
+    });
+    const identities = model.entries.flatMap((entry) =>
+      entry.kind === 'run' ? [[entry.run.id, entry.identity.index] satisfies [string, number]] : [],
     );
+
+    expect(identities).toEqual([
+      ['run-2', 1],
+      ['run-1', 0],
+    ]);
+  });
+
+  it('keeps existing run identities when a later run is appended', () => {
+    const firstTwo = [
+      attachedWorkflow({ createdAt: '2026-08-17T08:00:00Z' }),
+      attachedWorkflow({ runId: OTHER_RUN_ID, createdAt: '2026-08-17T09:00:00Z' }),
+    ];
+    const before = build({ workflows: firstTwo, agents: [] });
+    const after = build({
+      workflows: [
+        ...firstTwo,
+        attachedWorkflow({
+          runId: typedString<WorkflowRunId>({ value: 'run-3' }),
+          createdAt: '2026-08-17T10:00:00Z',
+        }),
+      ],
+      agents: [],
+    });
+    const indexesOf = ({ model }: { readonly model: ReturnType<typeof build> }) =>
+      new Map(
+        model.entries.flatMap((entry) =>
+          entry.kind === 'run'
+            ? [[entry.run.id, entry.identity.index] satisfies [string, number]]
+            : [],
+        ),
+      );
+    const beforeIndexes = indexesOf({ model: before });
+    const afterIndexes = indexesOf({ model: after });
+
+    expect(afterIndexes.get(WORKFLOW_RUN_ID)).toBe(beforeIndexes.get(WORKFLOW_RUN_ID));
+    expect(afterIndexes.get(OTHER_RUN_ID)).toBe(beforeIndexes.get(OTHER_RUN_ID));
   });
 
   it('nests a sub-agent under its parent with the parent ordinal as its prefix', () => {
@@ -561,6 +599,31 @@ describe('buildTimelineGroups, session events', () => {
 });
 
 describe('buildTimelineGroups, agent chains', () => {
+  it('shares one creation-ordered identity sequence across runs and chains', () => {
+    const model = build({
+      workflows: [
+        attachedWorkflow({ createdAt: '2026-08-17T08:00:00Z' }),
+        attachedWorkflow({ runId: OTHER_RUN_ID, createdAt: '2026-08-17T10:00:00Z' }),
+      ],
+      agents: [
+        agent({ id: 'planner', ordinal: 0, startedAt: '2026-08-17T09:00:00Z' }),
+        agent({
+          id: 'implementer',
+          ordinal: 1,
+          parentAgentId: 'planner',
+          startedAt: '2026-08-17T09:30:00Z',
+        }),
+      ],
+    });
+    const firstRun = model.entries.find((entry) => entry.id === 'run:run-1');
+    const chain = model.entries.find((entry) => entry.id === 'agent:planner');
+    const secondRun = model.entries.find((entry) => entry.id === 'run:run-2');
+
+    expect(firstRun?.kind === 'run' ? firstRun.identity.index : null).toBe(0);
+    expect(chain?.kind === 'agent' ? chain.chain?.identity.index : null).toBe(1);
+    expect(secondRun?.kind === 'run' ? secondRun.identity.index : null).toBe(2);
+  });
+
   it('marks a standalone agent with descendants as a chain without renaming it', () => {
     const model = build({
       agents: [

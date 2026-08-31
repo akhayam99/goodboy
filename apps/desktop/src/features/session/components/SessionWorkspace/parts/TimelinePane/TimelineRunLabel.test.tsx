@@ -42,7 +42,7 @@ const entryOf = ({
     at: '2026-08-18T09:00:00Z',
     run: { id: runId, goal, discardedAt },
     workflow: { name, origin: ORIGIN_OF[kind] },
-    identity: runIdentity({ runId }),
+    identity: runIdentity({ runId, laneIndex: 0 }),
     children: [],
     producedPlan: null,
   }) as unknown as TimelineRunEntry;
@@ -64,7 +64,7 @@ describe('TimelineRunLabel', () => {
     render(<TimelineRunLabel entry={entryOf()} />);
     const { className } = chipOf();
 
-    expect(className).toContain(runIdentity({ runId: 'run-7' }).chip);
+    expect(className).toContain(runIdentity({ runId: 'run-7', laneIndex: 0 }).chip);
     for (const tone of ['primary', 'accent', 'success', 'danger', 'warning', 'info']) {
       expect(className).not.toContain(`bg-${tone}`);
       expect(className).not.toContain(`text-${tone}`);
@@ -105,7 +105,7 @@ describe('TimelineRunLabel', () => {
     render(<TimelineRunLabel entry={entryOf()} />);
 
     expect(screen.getByText('Refactor (example)').className).toContain('text-foreground');
-    expect(chipOf().className).toContain(runIdentity({ runId: 'run-7' }).chip);
+    expect(chipOf().className).toContain(runIdentity({ runId: 'run-7', laneIndex: 0 }).chip);
   });
 
   it('reads a discarded run in the muted register the discard event next to it uses', () => {
@@ -120,13 +120,13 @@ describe('TimelineRunLabel', () => {
   it('hollows the chip of a discarded run without spending a word on it', () => {
     render(<TimelineRunLabel entry={entryOf({ discardedAt: '2026-08-18T10:00:00Z' })} />);
 
-    expect(chipOf().className).toContain(runIdentity({ runId: 'run-7' }).mutedChip);
-    expect(chipOf().className).not.toContain(runIdentity({ runId: 'run-7' }).chip);
+    expect(chipOf().className).toContain(runIdentity({ runId: 'run-7', laneIndex: 0 }).mutedChip);
+    expect(chipOf().className).not.toContain(runIdentity({ runId: 'run-7', laneIndex: 0 }).chip);
     expect(screen.queryByText('Discarded')).toBeNull();
   });
 
   it('keeps the run identity hue on a discarded run so it stays that run', () => {
-    const { mutedChip } = runIdentity({ runId: 'run-7' });
+    const { mutedChip } = runIdentity({ runId: 'run-7', laneIndex: 0 });
 
     render(<TimelineRunLabel entry={entryOf({ discardedAt: '2026-08-18T10:00:00Z' })} />);
 

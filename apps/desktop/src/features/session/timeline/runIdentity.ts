@@ -36,24 +36,15 @@ const IDENTITIES: ReadonlyArray<RunIdentity> = [
     mutedChip: 'bg-transparent text-run-5 ring-run-5/20',
     index: 4,
   },
-  {
-    stroke: 'var(--color-run-6)',
-    chip: 'bg-run-6/12 text-run-6 ring-run-6/35',
-    mutedChip: 'bg-transparent text-run-6 ring-run-6/20',
-    index: 5,
-  },
 ];
 
 type Params = {
   readonly runId: string;
+  readonly laneIndex: number;
 };
 
-export const runIdentity = ({ runId }: Params): RunIdentity => {
-  let hash = 0;
-  for (let position = 0; position < runId.length; position += 1) {
-    hash = (hash * 31 + runId.charCodeAt(position)) % 1_000_003;
-  }
-  const identity = IDENTITIES[hash % IDENTITIES.length];
+export const runIdentity = ({ runId: _runId, laneIndex }: Params): RunIdentity => {
+  const identity = IDENTITIES[laneIndex % IDENTITIES.length];
   if (identity === undefined) {
     throw new Error('run identity palette is empty');
   }
