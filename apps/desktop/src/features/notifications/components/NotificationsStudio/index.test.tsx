@@ -52,6 +52,7 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
     workspaceId: 'ws-1',
     read: false,
     action: null,
+    coalesceKey: null,
     ...overrides,
   }) as unknown as Notification;
 

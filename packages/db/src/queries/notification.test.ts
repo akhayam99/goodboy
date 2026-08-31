@@ -33,10 +33,19 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
   workspaceId: null,
   read: false,
   action: null,
+  coalesceKey: null,
   ...overrides,
 });
 
 describe('notification queries', () => {
+  it('round-trips a coalesce key', async () => {
+    const db = await seed({});
+    await insertNotification(db, buildNotification({ coalesceKey: 'error:global:error' }));
+
+    const rows = await listNotifications(db);
+
+    expect(rows[0]?.coalesceKey).toBe('error:global:error');
+  });
   it('marks a single notification read and leaves the others unread', async () => {
     const db = await seed({});
     await insertNotification(db, buildNotification({ id: 'n1' }));

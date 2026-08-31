@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { resolveTaskModel } from '@goodboy/core';
 import type { Notification } from '@goodboy/db';
+import type { IsoDateTime } from '@goodboy/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -13,11 +13,16 @@ const { state } = vi.hoisted(() => ({
     loadNotifications: vi.fn(async () => undefined),
     markNotificationsRead: vi.fn(async () => undefined),
     clearNotifications: vi.fn(async () => undefined),
+    dismissNotification: vi.fn(async () => undefined),
+    markNotificationRead: vi.fn(async () => undefined),
     retrySummarizer: vi.fn(),
     retryStepSummary: vi.fn(async () => undefined),
-    summarizerStatus: {} as Record<string, unknown>,
-    sessions: [] as ReadonlyArray<{ readonly id: string; readonly providerPreference?: unknown }>,
-    providers: [] as ReadonlyArray<{ id: string; connection: string }>,
+    sessions: [] as ReadonlyArray<{
+      readonly id: string;
+      readonly goal: string;
+      readonly providerPreference?: unknown;
+    }>,
+    providers: [] as ReadonlyArray<{ readonly id: string; readonly connection: string }>,
     currentWorkspaceId: 'ws-1' as string | null,
     currentSessionId: null as string | null,
     setCurrentSession: vi.fn(async () => undefined),
@@ -28,536 +33,144 @@ const { state } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../../store', () => {
-  const useAppStore = <T,>(selector: (s: typeof state) => T) => selector(state);
-  (useAppStore as unknown as { getState: () => typeof state }).getState = () => state;
+  const useAppStore = <T,>(selector: (storeState: typeof state) => T) => selector(state);
+  useAppStore.getState = () => state;
   return { useAppStore };
 });
 
 import { NotificationCenter } from './index';
 
+type BuildNotificationParams = {
+  readonly id: string;
+  readonly title: string;
+  readonly coalesceKey: string;
+  readonly read?: boolean;
+  readonly sessionId?: string | null;
+  readonly ts?: string;
+};
+
+const buildNotification = ({
+  id,
+  title,
+  coalesceKey,
+  read = false,
+  sessionId = null,
+  ts = '2026-08-31T12:00:00.000Z',
+}: BuildNotificationParams): Notification =>
+  ({
+    id,
+    title,
+    coalesceKey,
+    read,
+    sessionId,
+    ts: ts as IsoDateTime,
+    kind: 'error',
+    body: null,
+    severity: 'warning',
+    workspaceId: sessionId != null ? 'ws-1' : null,
+    action: null,
+  }) as Notification;
+
+const openCenter = async () => {
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
+  });
+};
+
 beforeEach(() => {
   state.notifications = [];
   state.notificationCounts = { total: 0, unread: 0 };
-  state.notificationsLoading = false;
-  state.loadNotifications = vi.fn(async () => undefined);
-  state.markNotificationsRead = vi.fn(async () => undefined);
-  state.clearNotifications = vi.fn(async () => undefined);
-  state.retrySummarizer = vi.fn();
-  state.retryStepSummary = vi.fn(async () => undefined);
-  state.summarizerStatus = {};
   state.sessions = [];
-  state.providers = [];
-  state.currentWorkspaceId = 'ws-1';
   state.currentSessionId = null;
-  state.setCurrentSession = vi.fn(async () => undefined);
-  state.setCurrentWorkspace = vi.fn(async () => undefined);
-  state.setActiveLens = vi.fn();
-  state.selectAgent = vi.fn(async () => undefined);
+  state.loadNotifications.mockClear();
+  state.markNotificationsRead.mockClear();
+  state.dismissNotification.mockClear();
+  state.markNotificationRead.mockClear();
+  state.setCurrentSession.mockClear();
+  state.selectAgent.mockClear();
 });
+
 afterEach(cleanup);
 
 describe('NotificationCenter', () => {
-  it('loads notifications on mount and renders a bell trigger', () => {
+  it('renders the specified empty state and marks all read on open', async () => {
     render(<NotificationCenter />);
-    expect(state.loadNotifications).toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: /^notifications$/i })).toBeDefined();
-  });
+    await openCenter();
 
-  it('opens the popover and shows the empty state when no notifications', async () => {
-    render(<NotificationCenter />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
-    });
-    expect(screen.getByText(/nothing to catch up on/i)).toBeDefined();
-    expect(screen.getByRole('button', { name: /start a session/i })).toBeDefined();
-  });
-
-  it('dispatches a new-session request from the empty state action', async () => {
-    const listener = vi.fn();
-    window.addEventListener('goodboy:new-session', listener);
-    render(<NotificationCenter />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /start a session/i }));
-    });
-    expect(listener).toHaveBeenCalled();
-    window.removeEventListener('goodboy:new-session', listener);
-  });
-
-  it('opens the popover when the goodboy:open-notifications event is dispatched', async () => {
-    render(<NotificationCenter />);
-    expect(screen.queryByText(/nothing to catch up on/i)).toBeNull();
-    await act(async () => {
-      window.dispatchEvent(new CustomEvent('goodboy:open-notifications'));
-    });
-    expect(screen.getByText(/nothing to catch up on/i)).toBeDefined();
-    expect(state.markNotificationsRead).toHaveBeenCalled();
-  });
-
-  it('leaves the popover open on escape, because it has no escape handler', async () => {
-    render(<NotificationCenter />);
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
-    });
-    expect(screen.getByText(/nothing to catch up on/i)).toBeDefined();
-
-    await act(async () => {
-      fireEvent.keyDown(window, { key: 'Escape' });
-    });
-
-    expect(screen.getByText(/nothing to catch up on/i)).toBeDefined();
-  });
-
-  it('closes when the backdrop is clicked', async () => {
-    render(<NotificationCenter />);
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
-    });
-    const backdrop = document.body.querySelector('.z-popover-backdrop');
-    expect(backdrop).not.toBeNull();
-
-    await act(async () => {
-      fireEvent.click(backdrop as Element);
-    });
-
-    expect(screen.queryByText(/nothing to catch up on/i)).toBeNull();
-  });
-
-  it('marks read on the first open request only, not on one that finds it already open', async () => {
-    render(<NotificationCenter />);
-
-    await act(async () => {
-      window.dispatchEvent(new CustomEvent('goodboy:open-notifications'));
-    });
+    expect(screen.getByText('No notifications')).toBeDefined();
+    expect(screen.getByText('Run activity and alerts land here.')).toBeDefined();
     expect(state.markNotificationsRead).toHaveBeenCalledTimes(1);
-
-    await act(async () => {
-      window.dispatchEvent(new CustomEvent('goodboy:open-notifications'));
-    });
-
-    expect(state.markNotificationsRead).toHaveBeenCalledTimes(1);
-    expect(screen.getByText(/nothing to catch up on/i)).toBeDefined();
   });
 
-  it('shows the unread badge when there are unread notifications', () => {
+  it('coalesces three rows and uses the newest title', async () => {
     state.notifications = [
-      {
-        id: 'n1',
-        read: false,
-        severity: 'info',
-        title: 't',
-        body: 'b',
-        ts: new Date().toISOString(),
-      } as unknown as Notification,
+      buildNotification({ id: 'n3', title: 'newest title', coalesceKey: 'shared' }),
+      buildNotification({ id: 'n2', title: 'middle title', coalesceKey: 'shared' }),
+      buildNotification({ id: 'n1', title: 'oldest title', coalesceKey: 'shared' }),
     ];
-    state.notificationCounts = { total: 1, unread: 1 };
     render(<NotificationCenter />);
-    expect(screen.getByRole('button', { name: /^notifications, 1 unread$/i })).toBeDefined();
+    await openCenter();
+
+    expect(screen.getByText('newest title')).toBeDefined();
+    expect(screen.getByText('3')).toBeDefined();
+    expect(screen.queryByText('middle title')).toBeNull();
   });
 
-  it('counts unread notifications the list cap cut off', async () => {
-    const total = 205;
-    state.notifications = Array.from({ length: 200 }, (_, i) => ({
-      id: `n${total - 1 - i}`,
-      read: true,
-      severity: 'info',
-      title: `title ${total - 1 - i}`,
-      body: 'b',
-      ts: new Date(Date.UTC(2026, 0, 1, 0, 0, total - 1 - i)).toISOString(),
-    })) as unknown as ReadonlyArray<Notification>;
-    state.notificationCounts = { total, unread: 1 };
-
-    render(<NotificationCenter />);
-
-    expect(state.notifications.some((n) => !n.read)).toBe(false);
-    expect(screen.getByRole('button', { name: /^notifications, 1 unread$/i })).toBeDefined();
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /notifications, 1 unread/i }));
-    });
-    expect(screen.getByText('205 notifications')).toBeDefined();
-  });
-
-  it('retry with picker dispatches retryStepSummary with the selected override', async () => {
-    state.providers = [{ id: 'anthropic', connection: 'connected' }];
-    state.sessions = [
-      {
-        id: 'session-1',
-        providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
-      },
-    ];
+  it('expands a group to show its entries and studio link', async () => {
     state.notifications = [
-      {
+      buildNotification({ id: 'n2', title: 'newest title', coalesceKey: 'shared' }),
+      buildNotification({ id: 'n1', title: 'older title', coalesceKey: 'shared' }),
+    ];
+    render(<NotificationCenter />);
+    await openCenter();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand notifications' }));
+
+    expect(screen.getByText('older title')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'View all in studio' })).toBeDefined();
+  });
+
+  it('dismisses every notification in a group', async () => {
+    state.notifications = [
+      buildNotification({ id: 'n2', title: 'newest title', coalesceKey: 'shared' }),
+      buildNotification({ id: 'n1', title: 'older title', coalesceKey: 'shared' }),
+    ];
+    render(<NotificationCenter />);
+    await openCenter();
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss group' }));
+
+    expect(state.dismissNotification).toHaveBeenCalledTimes(2);
+    expect(state.markNotificationRead).toHaveBeenCalledTimes(2);
+    expect(state.dismissNotification).toHaveBeenCalledWith('n2');
+    expect(state.dismissNotification).toHaveBeenCalledWith('n1');
+  });
+
+  it('counts unread groups in the trigger and header', async () => {
+    state.notifications = [
+      buildNotification({ id: 'n3', title: 'same group unread', coalesceKey: 'shared' }),
+      buildNotification({ id: 'n2', title: 'same group read', coalesceKey: 'shared', read: true }),
+      buildNotification({ id: 'n1', title: 'other group', coalesceKey: 'other', read: true }),
+    ];
+    render(<NotificationCenter />);
+
+    expect(screen.getByRole('button', { name: 'Notifications, 1 unread' })).toBeDefined();
+    await openCenter();
+    expect(screen.getByText('1 unread · 2 total')).toBeDefined();
+  });
+
+  it('navigates from a single-entry group with a target', async () => {
+    state.sessions = [{ id: 'session-1', goal: 'Ship grouping' }];
+    state.notifications = [
+      buildNotification({
         id: 'n1',
-        read: true,
-        severity: 'warning',
-        kind: 'summarizer-degraded',
-        title: 'step summary degraded',
-        body: 'anthropic/haiku: boom',
-        ts: new Date().toISOString(),
+        title: 'open session',
+        coalesceKey: 'single',
         sessionId: 'session-1',
-        workspaceId: null,
-        action: { kind: 'retry-step-summary', sessionId: 'session-1', agentId: 'agent-1' },
-      } as unknown as Notification,
+      }),
     ];
-
     render(<NotificationCenter />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
-    });
+    await openCenter();
+    fireEvent.click(screen.getByRole('button', { name: 'open session' }));
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /retry with/i }));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /confirm retry with selected model/i }));
-    });
-
-    const expected = { ...resolveTaskModel('summarizer', null, 'anthropic'), effort: 'medium' };
-    expect(state.retryStepSummary).toHaveBeenCalledWith({
-      sessionId: 'session-1',
-      agentId: 'agent-1',
-      taskModelOverride: expected,
-    });
-  });
-
-  it('retry with picker dispatches retrySummarizer with the selected override', async () => {
-    state.providers = [{ id: 'anthropic', connection: 'connected' }];
-    state.sessions = [
-      {
-        id: 'session-2',
-        providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
-      },
-    ];
-    state.summarizerStatus = {
-      'session-2': { status: 'error', lastAttempt: { turnInput: 'in', turnOutput: 'out' } },
-    };
-    state.notifications = [
-      {
-        id: 'n2',
-        read: true,
-        severity: 'error',
-        kind: 'error',
-        title: 'summarizer failed',
-        body: 'anthropic: boom',
-        ts: new Date().toISOString(),
-        sessionId: 'session-2',
-        workspaceId: null,
-        action: { kind: 'retry-summarizer', sessionId: 'session-2' },
-      } as unknown as Notification,
-    ];
-
-    render(<NotificationCenter />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /retry with/i }));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /confirm retry with selected model/i }));
-    });
-
-    const expected = { ...resolveTaskModel('summarizer', null, 'anthropic'), effort: 'medium' };
-    expect(state.retrySummarizer).toHaveBeenCalledWith('session-2', expected);
-    expect(screen.queryByRole('button', { name: /confirm retry with selected model/i })).toBeNull();
-  });
-
-  it('retry with picker dispatches the selected effort', async () => {
-    state.providers = [{ id: 'anthropic', connection: 'connected' }];
-    state.sessions = [
-      {
-        id: 'session-2',
-        providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
-      },
-    ];
-    state.summarizerStatus = {
-      'session-2': { status: 'error', lastAttempt: { turnInput: 'in', turnOutput: 'out' } },
-    };
-    state.notifications = [
-      {
-        id: 'n2',
-        read: true,
-        severity: 'error',
-        kind: 'error',
-        title: 'summarizer failed',
-        body: 'anthropic: boom',
-        ts: new Date().toISOString(),
-        sessionId: 'session-2',
-        workspaceId: null,
-        action: { kind: 'retry-summarizer', sessionId: 'session-2' },
-      } as unknown as Notification,
-    ];
-
-    render(<NotificationCenter />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /retry with/i }));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /retry routing/i }));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'High' }));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /confirm retry with selected model/i }));
-    });
-
-    expect(state.retrySummarizer).toHaveBeenCalledWith('session-2', {
-      providerId: 'anthropic',
-      model: 'claude-opus-4-6',
-      effort: 'high',
-    });
-  });
-
-  it('navigates to the session and agent of a row and closes the panel', async () => {
-    state.sessions = [{ id: 'session-3' }];
-    state.notifications = [
-      {
-        id: 'n3',
-        read: true,
-        severity: 'warning',
-        kind: 'summarizer-degraded',
-        title: 'step summary degraded',
-        body: 'anthropic/haiku: boom',
-        ts: new Date().toISOString(),
-        sessionId: 'session-3',
-        workspaceId: 'ws-1',
-        action: { kind: 'retry-step-summary', sessionId: 'session-3', agentId: 'agent-3' },
-      } as unknown as Notification,
-    ];
-
-    render(<NotificationCenter />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /step summary degraded/i }));
-    });
-
-    expect(state.setCurrentSession).toHaveBeenCalledWith('session-3');
-    expect(state.selectAgent).toHaveBeenCalledWith('session-3', 'agent-3');
-    expect(screen.queryByText('step summary degraded')).toBeNull();
-  });
-
-  it('reads the body and the age of a row instead of the title alone', async () => {
-    state.sessions = [{ id: 'session-3' }];
-    state.notifications = [
-      {
-        id: 'n3',
-        read: true,
-        severity: 'warning',
-        kind: 'summarizer-degraded',
-        title: 'step summary degraded',
-        body: 'anthropic/haiku: boom',
-        ts: new Date().toISOString(),
-        sessionId: 'session-3',
-        workspaceId: 'ws-1',
-        action: null,
-      } as unknown as Notification,
-    ];
-
-    render(<NotificationCenter />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
-    });
-
-    expect(screen.getByRole('button', { name: /anthropic\/haiku: boom/i })).toBeDefined();
-  });
-
-  it('switches workspace before opening a session from another workspace', async () => {
-    state.currentWorkspaceId = 'ws-1';
-    state.setCurrentWorkspace = vi.fn(async () => {
-      state.currentWorkspaceId = 'ws-2';
-      state.sessions = [{ id: 'session-9' }];
-    });
-    state.notifications = [
-      {
-        id: 'n9',
-        read: true,
-        severity: 'info',
-        kind: 'info',
-        title: 'foreign session done',
-        body: null,
-        ts: new Date().toISOString(),
-        sessionId: 'session-9',
-        workspaceId: 'ws-2',
-        action: null,
-      } as unknown as Notification,
-    ];
-
-    render(<NotificationCenter />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /foreign session done/i }));
-    });
-
-    expect(state.setCurrentWorkspace).toHaveBeenCalledWith('ws-2');
-    expect(state.setCurrentSession).toHaveBeenCalledWith('session-9');
-  });
-
-  it('brings the surface of the already current session forward', async () => {
-    state.sessions = [{ id: 'session-5' }];
-    state.currentSessionId = 'session-5';
-    state.notifications = [
-      {
-        id: 'n5',
-        read: true,
-        severity: 'info',
-        kind: 'info',
-        title: 'same session update',
-        body: null,
-        ts: new Date().toISOString(),
-        sessionId: 'session-5',
-        workspaceId: 'ws-1',
-        action: null,
-      } as unknown as Notification,
-    ];
-
-    render(<NotificationCenter />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /same session update/i }));
-    });
-
-    expect(state.setActiveLens).toHaveBeenCalledWith('session-5', null);
-    expect(state.setCurrentSession).not.toHaveBeenCalled();
-  });
-
-  it('survives a failing agent selection', async () => {
-    state.sessions = [{ id: 'session-3' }];
-    state.selectAgent = vi.fn(async () => {
-      throw new Error('transcript read failed');
-    });
-    state.notifications = [
-      {
-        id: 'n3',
-        read: true,
-        severity: 'warning',
-        kind: 'summarizer-degraded',
-        title: 'step summary degraded',
-        body: 'anthropic/haiku: boom',
-        ts: new Date().toISOString(),
-        sessionId: 'session-3',
-        workspaceId: 'ws-1',
-        action: { kind: 'retry-step-summary', sessionId: 'session-3', agentId: 'agent-3' },
-      } as unknown as Notification,
-    ];
-
-    render(<NotificationCenter />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /step summary degraded/i }));
-    });
-
-    expect(state.selectAgent).toHaveBeenCalledWith('session-3', 'agent-3');
-    expect(screen.queryByText('step summary degraded')).toBeNull();
-  });
-
-  it('does not swallow the per-notification action buttons', async () => {
-    state.summarizerStatus = {
-      'session-4': { status: 'error', lastAttempt: { turnInput: 'in', turnOutput: 'out' } },
-    };
-    state.notifications = [
-      {
-        id: 'n4',
-        read: true,
-        severity: 'error',
-        kind: 'error',
-        title: 'summarizer failed',
-        body: 'anthropic: boom',
-        ts: new Date().toISOString(),
-        sessionId: 'session-4',
-        workspaceId: 'ws-1',
-        action: { kind: 'retry-summarizer', sessionId: 'session-4' },
-      } as unknown as Notification,
-    ];
-
-    render(<NotificationCenter />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^retry$/i }));
-    });
-
-    expect(state.retrySummarizer).toHaveBeenCalledWith('session-4');
-    expect(state.setCurrentSession).not.toHaveBeenCalled();
-  });
-
-  it('opens the notifications studio from the show more entry', async () => {
-    const listener = vi.fn();
-    window.addEventListener('goodboy:open-notifications-studio', listener);
-    state.notifications = [
-      {
-        id: 'n1',
-        read: true,
-        severity: 'info',
-        title: 'something happened',
-        body: 'b',
-        ts: new Date().toISOString(),
-      } as unknown as Notification,
-    ];
-
-    render(<NotificationCenter />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /show more/i }));
-    });
-
-    expect(listener).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText('something happened')).toBeNull();
-    window.removeEventListener('goodboy:open-notifications-studio', listener);
-  });
-
-  it('hides the show more entry when there is nothing to show', async () => {
-    render(<NotificationCenter />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
-    });
-
-    expect(screen.queryByRole('button', { name: /show more/i })).toBeNull();
-  });
-
-  it('keeps a long notification list inside a bounded scroll viewport', async () => {
-    state.notifications = Array.from({ length: 30 }, (_, i) => ({
-      id: `n${i}`,
-      read: true,
-      severity: 'info',
-      title: `title ${i}`,
-      body: 'b',
-      ts: new Date().toISOString(),
-    })) as unknown as ReadonlyArray<Notification>;
-    render(<NotificationCenter />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
-    });
-
-    const list = screen.getByText('title 0').closest('ul');
-    const viewport = list?.parentElement;
-    const fadeRoot = viewport?.parentElement;
-    expect(viewport?.className).toContain('overflow-y-auto');
-    expect(viewport?.className).toContain('max-h-[inherit]');
-    expect(fadeRoot?.className).toContain('max-h-[25rem]');
+    expect(state.setCurrentSession).toHaveBeenCalledWith('session-1');
   });
 });

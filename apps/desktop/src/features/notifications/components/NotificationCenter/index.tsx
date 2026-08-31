@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Bell, Trash2 } from 'lucide-react';
+import { Bell, ChevronRight, RotateCcw, Trash2, X } from 'lucide-react';
 import {
   AnchoredPopover,
-  Button,
   cn,
   Divider,
   EmptyState,
@@ -12,7 +11,6 @@ import {
   Tooltip,
   useDropdown,
 } from '@goodboy/ui';
-import { Fragment } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Notification, NotificationAction } from '@goodboy/db';
 import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
@@ -22,7 +20,6 @@ import { mapNotificationAction } from '../NotificationToastBridge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { NOTIFICATION_SEVERITY } from '../../severity';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
 import { sendNotificationToDevelopers } from '../../../settings/sendNotificationToDevelopers';
 
@@ -34,11 +31,12 @@ const OPEN_EVENT = 'goodboy:open-notifications';
 
 export const NotificationCenter = () => {
   const notifications = useAppStore((s) => s.notifications);
-  const notificationCounts = useAppStore((s) => s.notificationCounts);
   const notificationsLoading = useAppStore((s) => s.notificationsLoading);
   const loadNotifications = useAppStore((s) => s.loadNotifications);
   const markNotificationsRead = useAppStore((s) => s.markNotificationsRead);
   const clearNotifications = useAppStore((s) => s.clearNotifications);
+  const dismissNotification = useAppStore((s) => s.dismissNotification);
+  const markNotificationRead = useAppStore((s) => s.markNotificationRead);
   const dropdown = useDropdown({
     align: 'center',
     width: 'w-96',
@@ -78,7 +76,9 @@ export const NotificationCenter = () => {
     }
   };
 
-  const { total, unread } = notificationCounts;
+  const groups = groupNotifications({ notifications });
+  const total = groups.length;
+  const unread = groups.filter((group) => group.some((notification) => !notification.read)).length;
 
   return (
     <div role="region" aria-label="Notifications" aria-live="polite">
@@ -115,7 +115,9 @@ export const NotificationCenter = () => {
       >
         <header className="flex items-center justify-between gap-2 px-3 py-2">
           <span className="text-xs font-semibold text-foreground">
-            {total} {total === 1 ? 'notification' : 'notifications'}
+            {unread > 0
+              ? `${unread} unread · ${total} total`
+              : `${total} ${total === 1 ? 'notification' : 'notifications'}`}
           </span>
           {notifications.length > 0 && (
             <button
@@ -149,70 +151,63 @@ export const NotificationCenter = () => {
           </div>
         ) : notifications.length === 0 ? (
           <EmptyState
-            icon={CONCEPT_ICONS.notifications}
+            icon={Bell}
             tone={CONCEPT_TONE.notifications}
-            title="Nothing to catch up on"
-            description="Session milestones, retries, and budget alerts land here as they happen, so you don't have to babysit a running session."
+            title="No notifications"
+            description="Run activity and alerts land here."
             size="inline"
-            action={
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => {
-                  close();
-                  window.dispatchEvent(new CustomEvent('goodboy:new-session'));
-                }}
-              >
-                Start a session
-              </Button>
-            }
             className="px-3 py-6"
           />
         ) : (
           <ScrollFade className="max-h-[25rem]" fadeSize={16} fadeFrom="elevated">
             <ul>
-              {notifications.map((n, i) => (
-                <Fragment key={n.id}>
-                  {i > 0 && (
-                    <li aria-hidden className="px-3">
-                      <Divider />
-                    </li>
-                  )}
-                  <NotificationItem notification={n} onNavigated={close} />
-                </Fragment>
+              {groups.map((group) => (
+                <NotificationGroup
+                  key={group[0]?.coalesceKey ?? group[0]?.id}
+                  notifications={group}
+                  onNavigated={close}
+                  onDismiss={() => {
+                    for (const notification of group) {
+                      void markNotificationRead(notification.id);
+                      void dismissNotification(notification.id);
+                    }
+                  }}
+                />
               ))}
             </ul>
           </ScrollFade>
-        )}
-        {notifications.length > 0 && (
-          <>
-            <Divider />
-            <footer className="flex items-center justify-end px-3 py-2">
-              <button
-                type="button"
-                onClick={() => {
-                  close();
-                  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT));
-                }}
-                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                Show more
-                <ArrowRight size={11} aria-hidden />
-              </button>
-            </footer>
-          </>
         )}
       </AnchoredPopover>
     </div>
   );
 };
 
-type NotificationItemProps = {
-  readonly notification: Notification;
-  readonly onNavigated: () => void;
+type GroupNotificationsParams = {
+  readonly notifications: ReadonlyArray<Notification>;
 };
 
-const NotificationItem = ({ notification: n, onNavigated }: NotificationItemProps) => {
+const groupNotifications = ({ notifications }: GroupNotificationsParams) => {
+  const groups = new Map<string, Array<Notification>>();
+  for (const notification of notifications) {
+    const key = notification.coalesceKey ?? notification.id;
+    const group = groups.get(key) ?? [];
+    group.push(notification);
+    groups.set(key, group);
+  }
+  return [...groups.values()];
+};
+
+type NotificationGroupProps = {
+  readonly notifications: ReadonlyArray<Notification>;
+  readonly onNavigated: () => void;
+  readonly onDismiss: () => void;
+};
+
+const NotificationGroup = ({ notifications, onNavigated, onDismiss }: NotificationGroupProps) => {
+  const n = notifications[0];
+  if (n == null) {
+    return null;
+  }
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
@@ -224,34 +219,21 @@ const NotificationItem = ({ notification: n, onNavigated }: NotificationItemProp
       ? n.action
       : null;
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const sessionId = n.sessionId;
   const agentId = n.action?.kind === 'retry-step-summary' ? n.action.agentId : null;
   const canSendToDevelopers = n.severity === 'warning' || n.severity === 'error';
 
-  const severity = NOTIFICATION_SEVERITY[n.severity];
-  const SeverityIcon = severity.icon;
-
-  const body = (
-    <>
-      <span className={cn('mt-0.5 shrink-0', tintClasses(severity.tone).icon)}>
-        <SeverityIcon size={13} aria-hidden />
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-xs font-medium leading-snug text-foreground">{n.title}</span>
-        {n.body != null && n.body !== '' ? (
-          <span
-            title={n.body}
-            className="line-clamp-2 whitespace-pre-wrap break-words text-xs leading-snug text-muted-foreground"
-          >
-            {n.body}
-          </span>
-        ) : null}
-        <span className="text-2xs text-muted-foreground/70">
-          {formatRelativeAge({ fromIso: n.ts })}
-        </span>
-      </span>
-    </>
-  );
+  const isUnread = notifications.some((notification) => !notification.read);
+  const source =
+    useAppStore((s) => s.sessions.find((session) => session.id === n.sessionId)?.goal) ?? 'Goodboy';
+  const border =
+    n.severity === 'error'
+      ? 'border-l-danger/40'
+      : n.severity === 'warning'
+        ? 'border-l-warning/40'
+        : 'border-l-transparent';
+  const ConceptIcon = CONCEPT_ICONS.notifications;
 
   const navigate = () => {
     if (sessionId == null) {
@@ -280,56 +262,136 @@ const NotificationItem = ({ notification: n, onNavigated }: NotificationItemProp
   };
 
   return (
-    <li className={cn('flex flex-col gap-1 px-3 py-2.5', !n.read && 'bg-muted/40')}>
-      {sessionId == null ? (
-        <span className="flex items-start gap-2">{body}</span>
-      ) : (
-        <button
-          type="button"
-          onClick={navigate}
-          className="flex w-full items-start gap-2 rounded-md text-left transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-        >
-          {body}
-        </button>
-      )}
-      {action != null || canSendToDevelopers ? (
-        <div className="flex items-center gap-1.5 pl-5">
+    <li className={cn('group flex flex-col gap-1 border-l-2 px-3 py-2', border)}>
+      <div className="flex items-center gap-2">
+        {notifications.length > 1 ? (
+          <Tooltip content={expanded ? 'Collapse the group' : 'Expand the group'}>
+            <button
+              type="button"
+              onClick={() => setExpanded((value) => !value)}
+              aria-label="Expand notifications"
+            >
+              <ChevronRight
+                size={12}
+                className={cn('transition-transform', expanded && 'rotate-90')}
+              />
+            </button>
+          </Tooltip>
+        ) : null}
+        <ConceptIcon
+          size={14}
+          className={tintClasses(CONCEPT_TONE.notifications).icon}
+          aria-hidden
+        />
+        {notifications.length === 1 && sessionId != null ? (
+          <button type="button" onClick={navigate} className="min-w-0 flex-1 truncate text-left">
+            <span
+              className={cn(
+                'text-xs',
+                isUnread ? 'font-semibold text-foreground' : 'text-muted-foreground',
+              )}
+            >
+              {n.title}
+            </span>
+          </button>
+        ) : (
+          <span
+            className={cn(
+              'min-w-0 flex-1 truncate text-xs',
+              isUnread ? 'font-semibold text-foreground' : 'text-muted-foreground',
+            )}
+          >
+            {n.title}
+          </span>
+        )}
+        {notifications.length > 1 ? (
+          <span className="rounded-full bg-muted px-1.5 text-3xs tabular-nums text-muted-foreground">
+            {notifications.length}
+          </span>
+        ) : null}
+        <span className="text-3xs text-muted-foreground tabular-nums">
+          {formatRelativeAge({ fromIso: n.ts })}
+        </span>
+        <span className="hidden items-center gap-0.5 group-hover:flex">
           {action != null ? (
-            <button
-              type="button"
-              className="rounded px-1.5 py-0.5 text-2xs font-medium text-foreground/80 ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
-              onClick={action.onClick}
-            >
-              {action.label}
-            </button>
+            <Tooltip content="Retry">
+              <button
+                type="button"
+                className="rounded p-1 hover:bg-muted"
+                onClick={action.onClick}
+                aria-label="Retry"
+              >
+                <RotateCcw size={11} />
+              </button>
+            </Tooltip>
           ) : null}
-          {retryAction != null && (
+          <Tooltip content="Dismiss the group">
             <button
               type="button"
-              className="rounded px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-muted hover:text-foreground"
-              onClick={() => setPickerOpen((v) => !v)}
+              className="rounded p-1 hover:bg-muted"
+              onClick={onDismiss}
+              aria-label="Dismiss group"
             >
-              Retry with…
+              <X size={11} />
             </button>
-          )}
-          {canSendToDevelopers ? (
-            <button
-              type="button"
-              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-muted hover:text-foreground"
-              onClick={() => {
-                sendNotificationToDevelopers({ notification: n });
-                onNavigated();
-              }}
-            >
-              <CONCEPT_ICONS.reportIssue size={11} aria-hidden />
-              Send to developers
-            </button>
+          </Tooltip>
+        </span>
+      </div>
+      <span className="truncate pl-5 text-2xs text-muted-foreground">{source}</span>
+      {expanded ? (
+        <div className="flex flex-col gap-2 border-l border-border-soft pl-3">
+          {notifications.slice(0, 5).map((entry) => (
+            <div key={entry.id} className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 text-2xs text-muted-foreground">
+                <span className="min-w-0 flex-1 truncate">{entry.title}</span>
+                <span>{formatRelativeAge({ fromIso: entry.ts })}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {entry.action != null &&
+                mapNotificationAction(entry.action, useAppStore.getState()) != null ? (
+                  <button
+                    type="button"
+                    className="rounded px-1.5 py-0.5 text-2xs hover:bg-muted"
+                    onClick={mapNotificationAction(entry.action, useAppStore.getState())?.onClick}
+                  >
+                    Retry
+                  </button>
+                ) : null}
+                {entry.action?.kind === 'retry-summarizer' ||
+                entry.action?.kind === 'retry-step-summary' ? (
+                  <button
+                    type="button"
+                    className="rounded px-1.5 py-0.5 text-2xs hover:bg-muted"
+                    onClick={() => setPickerOpen((value) => !value)}
+                  >
+                    Retry with…
+                  </button>
+                ) : null}
+                {canSendToDevelopers ? (
+                  <button
+                    type="button"
+                    className="rounded px-1.5 py-0.5 text-2xs hover:bg-muted"
+                    onClick={() => sendNotificationToDevelopers({ notification: entry })}
+                  >
+                    Send to developers
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ))}
+          {pickerOpen && retryAction != null ? (
+            <RetryWithPicker action={retryAction} onDone={() => setPickerOpen(false)} />
           ) : null}
-        </div>
-      ) : null}
-      {action != null && pickerOpen && retryAction != null ? (
-        <div className="pl-5">
-          <RetryWithPicker action={retryAction} onDone={() => setPickerOpen(false)} />
+          <button
+            type="button"
+            className="text-left text-2xs font-medium text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              onNavigated();
+              window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT));
+            }}
+          >
+            View all in studio
+          </button>
         </div>
       ) : null}
     </li>
@@ -346,7 +408,7 @@ type RetryWithPickerProps = {
   readonly onDone: () => void;
 };
 
-function RetryWithPicker({ action, onDone }: RetryWithPickerProps) {
+const RetryWithPicker = ({ action, onDone }: RetryWithPickerProps) => {
   const connectedProviderIds = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
   );
@@ -421,4 +483,4 @@ function RetryWithPicker({ action, onDone }: RetryWithPickerProps) {
       </button>
     </div>
   );
-}
+};

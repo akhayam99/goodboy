@@ -15,7 +15,6 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import { completeResolvedAgent } from './completeResolvedAgent';
-import { degradedNotifiedAgents } from '../../../shared/utils/degradedNotifiedAgents';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -188,7 +187,6 @@ describe('completeResolvedAgent', () => {
     state.sessionPhaseRuns = {
       [SESSION_ID]: [{ ...agent, kind: 'implementer', sourceThreadIds: undefined }],
     };
-    degradedNotifiedAgents.clear();
 
     await completeResolvedAgent({
       set,
@@ -204,6 +202,5 @@ describe('completeResolvedAgent', () => {
       expect.objectContaining({ status: 'completed' }),
     );
     expect(state.emitNotification).not.toHaveBeenCalled();
-    expect(degradedNotifiedAgents.has(AGENT_ID)).toBe(false);
   });
 });
