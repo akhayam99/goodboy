@@ -4,7 +4,6 @@ import type {
   ProjectId,
   ProviderRunId,
   SessionExternalTask,
-  TurnState,
   Workflow,
   WorkspaceId,
 } from '@goodboy/types';
@@ -18,9 +17,7 @@ import {
   summarizeWorkspaceProviderTelemetry,
   summarizeWorkspaceTelemetry,
   touchWorkspaceLastAccessed,
-  updateAgentStatus,
   updateSessionActiveProject,
-  updateSessionState,
 } from '@goodboy/db';
 import type { SessionWorktree } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -39,6 +36,7 @@ import {
   SETTING_LAST_WORKSPACE_ID,
 } from '../../../features/settings/settings';
 import { buildProviderSpendBreakdown } from '../budget';
+import { reconcileLoadedAgent, reconcileLoadedSessions } from '../sessions/reconcileSessionRuns';
 import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMounts';
 import { clearPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
@@ -107,33 +105,11 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       const loadedSessions = await listSessionsForWorkspace(tauriDatabase, id);
       const liveRunIds = await listLiveRunIds();
       const recoveryNow = new Date().toISOString() as IsoDateTime;
-      const sessions = await Promise.all(
-        loadedSessions.map(async (s) => {
-          if (s.state.kind !== 'running') {
-            return s;
-          }
-          if (liveRunIds.has(s.state.runId)) {
-            await cancelTurn(s.state.runId).catch(() => undefined);
-          }
-          const idleState: TurnState = { kind: 'idle', lastActivityAt: recoveryNow };
-          await updateSessionState(tauriDatabase, s.id, idleState, recoveryNow).catch(
-            () => undefined,
-          );
-          return { ...s, state: idleState, updatedAt: recoveryNow };
-        }),
-      );
-      const recoverOrphanAgent = async (run: Agent): Promise<Agent> => {
-        if (run.status !== 'running') {
-          return run;
-        }
-        if (run.runId && liveRunIds.has(run.runId)) {
-          await cancelTurn(run.runId).catch(() => undefined);
-        }
-        await updateAgentStatus(tauriDatabase, run.id, { status: 'pending' }).catch(
-          () => undefined,
-        );
-        return { ...run, status: 'pending' };
-      };
+      const sessions = await reconcileLoadedSessions({
+        sessions: loadedSessions,
+        liveRunIds,
+        now: recoveryNow,
+      });
       const sessionIds = sessions.map((s) => s.id);
       const [loadedWorktreesBySession, agentsBySession, externalTasks] = await Promise.all([
         listWorktreesForSessions(tauriDatabase, sessionIds),
@@ -178,7 +154,11 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
             sessionBranches[s.id] = primaryRow.branch;
           }
         }
-        const runs = await Promise.all((agentsBySession.get(s.id) ?? []).map(recoverOrphanAgent));
+        const runs = await Promise.all(
+          (agentsBySession.get(s.id) ?? []).map((agent) =>
+            reconcileLoadedAgent({ agent, liveRunIds }),
+          ),
+        );
         sessionPhaseRuns[s.id] = runs;
         for (const run of runs) {
           if (run.kind) {
