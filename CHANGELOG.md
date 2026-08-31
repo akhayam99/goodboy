@@ -7,6 +7,41 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.6
+
+Codex agents stop fighting their sandbox, stopping a run stops being
+destructive, and the notification panel learns to count.
+
+### [#1565] Codex agents can commit and mount again
+
+Codex agents in session worktrees died on every commit because the sandbox
+blocked git's own metadata, and mounts requested mid-run never appeared.
+The sandbox now covers each mounted repository's git directory and the
+in-app query bridge, so commits land and a requested project is ready
+inside the same run. A failed turn no longer loses the mounts it asked
+for.
+
+### [#1567] Pausing autorun lets the step finish
+
+Turning autorun off used to kill the step in flight. It is now an instant,
+safe pause: the running step completes and no new one starts. The
+immediate kill is a separate Stop now action with its own confirmation.
+
+### [#1568] One notification per story
+
+Cluster handoffs now produce a real summary instead of raw output behind a
+permanent warning, and the notification panel folds repeats into a single
+group with a count, inline expansion and per-group retry and dismiss. The
+bell badge counts stories, not repeats.
+
+### Fixes
+
+- A project row with changes and no pull request offers Create PR again,
+  or Create MR on GitLab remotes, opening the studio on the create panel.
+  [#1572]
+- The chain glyph on trace chips sits beside the label again instead of
+  overlapping it. [#1566]
+
 ## Goodboy v0.2.5
 
 Branches get real names, scripts get their bearings and every workflow gets
