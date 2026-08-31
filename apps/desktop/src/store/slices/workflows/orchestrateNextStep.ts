@@ -460,7 +460,8 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         run == null ||
         run.executionMode !== 'dynamic' ||
         run.discardedAt != null ||
-        run.orchestrationOutcome != null
+        run.orchestrationOutcome != null ||
+        run.orchestrationStop?.kind === 'operator'
       ) {
         return;
       }

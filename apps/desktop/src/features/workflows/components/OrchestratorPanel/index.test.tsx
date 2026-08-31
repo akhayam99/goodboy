@@ -158,7 +158,7 @@ describe('OrchestratorPanel state ladder', () => {
   it('says where the run got to before offering the next decision', () => {
     renderPanel({ agents: [agent(0, 'completed'), agent(1, 'completed')] });
 
-    expect(sentence()).toContain('Step 2 done · ready to continue');
+    expect(sentence()).toContain('Paused · autorun is off');
     fireEvent.click(screen.getByTestId('workflow-orchestrate-next-cta'));
 
     expect(storeState['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
@@ -209,6 +209,7 @@ describe('OrchestratorPanel state ladder', () => {
   it('names the step it waits on and how long it has been running', () => {
     const startedAt = new Date(Date.now() - 90_000).toISOString() as IsoDateTime;
     renderPanel({
+      runOverride: run({ autoRun: true }),
       agents: [
         agent(0, 'completed'),
         agent(1, 'running', { name: 'implement language-id remap', startedAt }),
@@ -219,6 +220,30 @@ describe('OrchestratorPanel state ladder', () => {
     expect(screen.getByTestId('orchestrator-elapsed').textContent).toContain('1m 30s');
     expect(screen.getByTestId('orchestrator-panel').className).not.toContain('spin-border');
     expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
+  });
+
+  it('confirms Stop now and dispatches the hard stop while autorun is on', () => {
+    renderPanel({
+      runOverride: run({ autoRun: true }),
+      agents: [agent(0, 'running')],
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop now' }));
+
+    const confirm = screen.getByRole('group', { name: 'Stop now?' });
+    expect(confirm.textContent).toContain(
+      'The step in flight is cancelled and marked skipped. Everything it already wrote is kept.',
+    );
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Stop now' }));
+
+    expect(storeState['stopWorkflowRunNow']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+  });
+
+  it('keeps Stop now available during a graceful pause', () => {
+    renderPanel({ agents: [agent(0, 'running')] });
+
+    expect(sentence()).toContain('Finishing the step in flight · autorun is off');
+    expect(screen.getByRole('button', { name: 'Stop now' })).toBeDefined();
   });
 
   it('sends the user to the questions lens when one gates the run', () => {
@@ -292,7 +317,7 @@ describe('OrchestratorPanel state ladder', () => {
       agents: [agent(0, 'completed')],
     });
 
-    expect(sentence()).toContain('ready to continue');
+    expect(sentence()).toContain('Paused · autorun is off');
     fireEvent.click(screen.getByTestId('workflow-orchestrate-next-cta'));
 
     expect(storeState['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
