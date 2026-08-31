@@ -21,6 +21,7 @@ import type {
 } from '@goodboy/types';
 import type { SessionWorktree } from '@goodboy/db';
 import { buildTimelineGroups, type TimelineAgentEntry } from './buildTimelineGroups';
+import { runIdentity, runIdentitySeed } from './runIdentity';
 
 type TypedStringParams = {
   readonly value: string;
@@ -132,6 +133,7 @@ const question = ({
 });
 
 type BuildParams = {
+  readonly sessionId?: SessionId;
   readonly agents: ReadonlyArray<Agent>;
   readonly workflows?: ReadonlyArray<ReturnType<typeof attachedWorkflow>>;
   readonly questions?: ReadonlyArray<OpenQuestion>;
@@ -141,6 +143,7 @@ type BuildParams = {
 };
 
 const build = ({
+  sessionId = SESSION_ID,
   agents,
   workflows = [],
   questions = [],
@@ -149,6 +152,7 @@ const build = ({
   events = [],
 }: BuildParams) =>
   buildTimelineGroups({
+    sessionId,
     agents,
     workflows,
     plans: [],
@@ -276,9 +280,11 @@ describe('buildTimelineGroups', () => {
       entry.kind === 'run' ? [[entry.run.id, entry.identity.index] satisfies [string, number]] : [],
     );
 
+    const seed = runIdentitySeed({ sessionId: SESSION_ID });
+
     expect(identities).toEqual([
-      ['run-2', 1],
-      ['run-1', 0],
+      ['run-2', runIdentity({ laneIndex: 1, seed }).index],
+      ['run-1', runIdentity({ laneIndex: 0, seed }).index],
     ]);
   });
 
@@ -308,9 +314,58 @@ describe('buildTimelineGroups', () => {
       );
     const beforeIndexes = indexesOf({ model: before });
     const afterIndexes = indexesOf({ model: after });
+    const seed = runIdentitySeed({ sessionId: SESSION_ID });
 
-    expect(afterIndexes.get(WORKFLOW_RUN_ID)).toBe(beforeIndexes.get(WORKFLOW_RUN_ID));
-    expect(afterIndexes.get(OTHER_RUN_ID)).toBe(beforeIndexes.get(OTHER_RUN_ID));
+    expect(beforeIndexes.get(WORKFLOW_RUN_ID)).toBe(runIdentity({ laneIndex: 0, seed }).index);
+    expect(beforeIndexes.get(OTHER_RUN_ID)).toBe(runIdentity({ laneIndex: 1, seed }).index);
+    expect(afterIndexes.get(WORKFLOW_RUN_ID)).toBe(runIdentity({ laneIndex: 0, seed }).index);
+    expect(afterIndexes.get(OTHER_RUN_ID)).toBe(runIdentity({ laneIndex: 1, seed }).index);
+  });
+
+  it('assigns adjacent lanes different palette indices for every seed', () => {
+    for (let seed = 0; seed < 5; seed += 1) {
+      for (let laneIndex = 0; laneIndex < 5; laneIndex += 1) {
+        const current = runIdentity({ laneIndex, seed });
+        const adjacent = runIdentity({ laneIndex: laneIndex + 1, seed });
+
+        expect(current.index).not.toBe(adjacent.index);
+      }
+    }
+  });
+
+  it('starts different sessions at different lane-zero indices', () => {
+    const firstSessionId = typedString<SessionId>({ value: 'session-alpha' });
+    const secondSessionId = typedString<SessionId>({ value: 'session-beta' });
+    const firstSeed = runIdentitySeed({ sessionId: firstSessionId });
+    const secondSeed = runIdentitySeed({ sessionId: secondSessionId });
+
+    expect(firstSeed).not.toBe(secondSeed);
+
+    const first = build({ sessionId: firstSessionId, workflows: [attachedWorkflow()], agents: [] });
+    const second = build({
+      sessionId: secondSessionId,
+      workflows: [attachedWorkflow()],
+      agents: [],
+    });
+    const firstRun = first.entries.find((entry) => entry.kind === 'run');
+    const secondRun = second.entries.find((entry) => entry.kind === 'run');
+
+    expect(firstRun?.kind === 'run' ? firstRun.identity.index : null).not.toBe(
+      secondRun?.kind === 'run' ? secondRun.identity.index : null,
+    );
+  });
+
+  it('returns identical identity indices for identical builds', () => {
+    const workflows = [
+      attachedWorkflow({ createdAt: '2026-08-17T08:00:00Z' }),
+      attachedWorkflow({ runId: OTHER_RUN_ID, createdAt: '2026-08-17T09:00:00Z' }),
+    ];
+    const identityIndexesOf = ({ model }: { readonly model: ReturnType<typeof build> }) =>
+      model.entries.flatMap((entry) => (entry.kind === 'run' ? [entry.identity.index] : []));
+
+    expect(identityIndexesOf({ model: build({ workflows, agents: [] }) })).toEqual(
+      identityIndexesOf({ model: build({ workflows, agents: [] }) }),
+    );
   });
 
   it('nests a sub-agent under its parent with the parent ordinal as its prefix', () => {
@@ -618,10 +673,17 @@ describe('buildTimelineGroups, agent chains', () => {
     const firstRun = model.entries.find((entry) => entry.id === 'run:run-1');
     const chain = model.entries.find((entry) => entry.id === 'agent:planner');
     const secondRun = model.entries.find((entry) => entry.id === 'run:run-2');
+    const seed = runIdentitySeed({ sessionId: SESSION_ID });
 
-    expect(firstRun?.kind === 'run' ? firstRun.identity.index : null).toBe(0);
-    expect(chain?.kind === 'agent' ? chain.chain?.identity.index : null).toBe(1);
-    expect(secondRun?.kind === 'run' ? secondRun.identity.index : null).toBe(2);
+    expect(firstRun?.kind === 'run' ? firstRun.identity.index : null).toBe(
+      runIdentity({ laneIndex: 0, seed }).index,
+    );
+    expect(chain?.kind === 'agent' ? chain.chain?.identity.index : null).toBe(
+      runIdentity({ laneIndex: 1, seed }).index,
+    );
+    expect(secondRun?.kind === 'run' ? secondRun.identity.index : null).toBe(
+      runIdentity({ laneIndex: 2, seed }).index,
+    );
   });
 
   it('marks a standalone agent with descendants as a chain without renaming it', () => {

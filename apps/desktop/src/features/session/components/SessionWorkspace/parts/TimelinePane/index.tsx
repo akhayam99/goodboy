@@ -80,6 +80,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
   const model = useMemo(
     () =>
       buildTimelineGroups({
+        sessionId,
         agents,
         workflows,
         plans,
@@ -89,7 +90,17 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
         events,
         agentKindOverride,
       }),
-    [agentKindOverride, agents, events, externalTasks, plans, questions, workflows, worktrees],
+    [
+      agentKindOverride,
+      agents,
+      events,
+      externalTasks,
+      plans,
+      questions,
+      sessionId,
+      workflows,
+      worktrees,
+    ],
   );
 
   const visibleEntries = useMemo(
