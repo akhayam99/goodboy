@@ -231,11 +231,8 @@ function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo 
   });
 }
 
-export const useSessionStageInfo = (session: Session): SessionStageInfo => {
-  const stage = useAppStore((s) => stageInfoOf(s, session).stage);
-  const reason = useAppStore((s) => stageInfoOf(s, session).reason);
-  return useMemo(() => ({ stage, reason }), [stage, reason]);
-};
+export const useSessionStageInfo = (session: Session): SessionStageInfo =>
+  useAppStore(useShallow((s) => stageInfoOf(s, session)));
 
 export const useSessionPrFetchState = (sessionId: SessionId): SessionPrFetchState =>
   useAppStore((s) =>
