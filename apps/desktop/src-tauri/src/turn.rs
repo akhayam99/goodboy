@@ -401,8 +401,11 @@ pub fn turn_spawn(
             model: &args.model,
             working_dir: &args.working_dir,
             writable_roots: &args.writable_roots,
-            query_socket_directory: crate::query_bridge::socket_directory()
-                .and_then(|path| path.to_str()),
+            query_socket_directory: if crate::query_bridge::is_serving() {
+                crate::query_bridge::socket_directory().and_then(|path| path.to_str())
+            } else {
+                None
+            },
             prompt: &args.prompt,
             permission_mode: &permission_mode,
             allowed_tools: &args.allowed_tools,
