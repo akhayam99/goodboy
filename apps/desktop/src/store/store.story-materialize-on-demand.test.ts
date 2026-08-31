@@ -131,6 +131,7 @@ describe('story: an agent works from its own project and reads the others', () =
     expect(storySpies.createWorktree).not.toHaveBeenCalled();
     expect(storySpies.scratchDirPrepare).not.toHaveBeenCalled();
     expect(spawnedArgs()['workingDir']).toBe(APP_MOUNT_PATH);
+    expect(spawnedArgs()['writableRoots']).toEqual(['/tmp/app/.git']);
     const systemPrompt = String(spawnedArgs()['systemPrompt']);
     expect(systemPrompt).toContain('[worktree-scope]');
     expect(systemPrompt).toContain(
@@ -140,6 +141,19 @@ describe('story: an agent works from its own project and reads the others', () =
     expect(systemPrompt).not.toContain('NOT materialized');
     expect(useAppStore.getState().sessionBranches[SESSION_ID]).toBe(APP_BRANCH);
     expect(recordedEventKinds()).not.toContain('project_materialized');
+  });
+
+  it('passes deduplicated repository git directories and excludes folder mounts', async () => {
+    seedSession([appProject, webProject]);
+    useAppStore.setState({
+      sessionProjectMounts: {
+        [SESSION_ID]: [appMount, appMount, { ...webMount, branch: '' }],
+      },
+    } as never);
+
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
+
+    expect(spawnedArgs()['writableRoots']).toEqual(['/tmp/app/.git']);
   });
 
   it('teaches the materialize marker for the projects that are not mounted yet', async () => {
@@ -269,6 +283,28 @@ describe('story: an agent asks for write access with the materialize marker', ()
     });
     expect(useAppStore.getState().sessionBranches[SESSION_ID]).toBe(APP_BRANCH);
     expect(stripControlMarkers(assistantText)).not.toContain('<<materialize');
+  });
+
+  it('mounts the requested project when the provider fails after emitting the marker', async () => {
+    seedSession([appProject, webProject]);
+    storySpies.createWorktree.mockResolvedValueOnce({
+      worktreePath: WEB_MOUNT_PATH,
+      branchName: WEB_BRANCH,
+      slug: 'goal-12345678',
+      reused: false,
+    } as never);
+    storySpies.runTurn.mockImplementation(async function* failedTurn() {
+      yield* assistantTurnStream('<<materialize: web | need to patch the router>>')();
+      throw new Error('provider failed after responding');
+    });
+
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' }),
+    ).rejects.toThrow('provider failed after responding');
+
+    expect(storySpies.createWorktree).toHaveBeenCalledWith(
+      expect.objectContaining({ repoPath: '/tmp/web' }),
+    );
   });
 
   it('refuses an unknown project name and notes it inline for the user', async () => {

@@ -74,6 +74,9 @@ describe('buildScopeGuard', () => {
     expect(guard).toContain('- web (repo) root: /tmp/web | NOT materialized');
     expect(guard).toContain('You may READ the project root paths listed above.');
     expect(guard).toContain('<<materialize: <project name> | <why you need it>>>');
+    expect(guard).toContain(
+      'After emitting the marker, end your turn. The mount is ready on the next one.',
+    );
     expect(guard).not.toContain('GOODBOY_BIN');
   });
 
@@ -90,6 +93,7 @@ describe('buildScopeGuard', () => {
       .filter((line) => line.includes('<<materialize:') || line.includes('GOODBOY_BIN'));
     expect(materializeLines).toHaveLength(1);
     expect(materializeLines[0]).toContain('query project materialize');
+    expect(guard).not.toContain('After emitting the marker, end your turn.');
   });
 
   it('suppresses the materialize instruction for kinds that cannot write', () => {

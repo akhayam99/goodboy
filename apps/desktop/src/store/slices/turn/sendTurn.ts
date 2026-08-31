@@ -767,6 +767,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       .filter((block) => block.length > 0)
       .join('\n\n');
     const fullSystemPrompt = kindSystemPrompt ? `${guards}\n\n${kindSystemPrompt}` : guards;
+    const writableRoots = Array.from(
+      new Set(
+        scopeMounts.filter((mount) => mount.branch !== '').map((mount) => `${mount.repoRoot}/.git`),
+      ),
+    );
 
     if (provider !== 'anthropic') {
       resolvedPrompt = `${guards}\n\n${
@@ -784,6 +789,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         provider,
         model: spawnModel,
         workingDir,
+        writableRoots,
         prompt: resolvedPrompt,
         binary: providerInfo?.binary,
         workspaceId: session.workspaceId,
@@ -1189,6 +1195,16 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       await insertMessage(tauriDatabase, assistantMessage);
     }
 
+    if (!turnWasCancelled && assistantText.length > 0) {
+      await captureMaterializeRequestsFromTurn({
+        get,
+        sessionId,
+        agentId: activeAgentId,
+        runId,
+        assistantText,
+      });
+    }
+
     if (!lastError && !turnWasCancelled && assistantText.length > 0) {
       enqueueSummarizer(set, get, sessionId, resolvedPrompt, assistantText);
       const capturedPlan = await capturePlanFromTurn(
@@ -1203,13 +1219,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         sessionId,
         agentId: activeAgentId,
         agentKind: earlyAgentKind,
-        assistantText,
-      });
-      await captureMaterializeRequestsFromTurn({
-        get,
-        sessionId,
-        agentId: activeAgentId,
-        runId,
         assistantText,
       });
       void emitTurnNudges(set, get, sessionId, activeAgentId, assistantText, capturedPlan);
