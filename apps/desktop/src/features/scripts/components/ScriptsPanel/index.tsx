@@ -116,9 +116,16 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<ProjectScriptId | null>(null);
   const [completedAt, setCompletedAt] = useState<Record<string, number>>({});
-  const [projectFilter, setProjectFilter] = useState<ProjectFilter>(
-    () => scriptsLensScope?.projectId ?? 'all',
-  );
+  const [projectFilter, setProjectFilter] = useState<ProjectFilter>(() => {
+    const scoped = scriptsLensScope?.projectId;
+    if (scoped == null) {
+      return 'all';
+    }
+    const belongs = allProjects.some(
+      (project) => project.id === scoped && project.workspaceId === workspaceId,
+    );
+    return belongs ? scoped : 'all';
+  });
 
   const runnable = sessionId != null;
   const list = scripts ?? [];
