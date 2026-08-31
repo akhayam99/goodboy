@@ -3,15 +3,24 @@ import type { GlobalSettings, OverrideSettings, ResolvedSettings } from '@goodbo
 export type ResolveSettingsInput = {
   readonly global: GlobalSettings;
   readonly workspaceOverride?: OverrideSettings | null;
+  readonly projectOverride?: OverrideSettings | null;
   readonly sessionOverride?: OverrideSettings | null;
 };
 
 export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings => {
-  const { global: g, workspaceOverride: ws, sessionOverride: sess } = input;
+  const {
+    global: g,
+    workspaceOverride: ws,
+    projectOverride: project,
+    sessionOverride: sess,
+  } = input;
 
   const resolvedWorkflowId = (() => {
     if (sess?.defaultWorkflowId !== undefined) {
       return sess.defaultWorkflowId;
+    }
+    if (project?.defaultWorkflowId !== undefined) {
+      return project.defaultWorkflowId;
     }
     if (ws?.defaultWorkflowId !== undefined) {
       return ws.defaultWorkflowId;
@@ -20,11 +29,23 @@ export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings =
   })();
 
   return {
-    defaultProviderId: sess?.defaultProviderId ?? ws?.defaultProviderId ?? g.defaultProviderId,
+    defaultProviderId:
+      sess?.defaultProviderId ??
+      project?.defaultProviderId ??
+      ws?.defaultProviderId ??
+      g.defaultProviderId,
     defaultWorkflowId: resolvedWorkflowId,
     defaultBranchPrefix:
-      sess?.defaultBranchPrefix ?? ws?.defaultBranchPrefix ?? g.defaultBranchPrefix,
-    parallelEnabled: sess?.parallelEnabled ?? ws?.parallelEnabled ?? g.parallelEnabled,
-    defaultVerbosity: sess?.defaultVerbosity ?? ws?.defaultVerbosity ?? g.defaultVerbosity,
+      sess?.defaultBranchPrefix ??
+      project?.defaultBranchPrefix ??
+      ws?.defaultBranchPrefix ??
+      g.defaultBranchPrefix,
+    parallelEnabled:
+      sess?.parallelEnabled ?? project?.parallelEnabled ?? ws?.parallelEnabled ?? g.parallelEnabled,
+    defaultVerbosity:
+      sess?.defaultVerbosity ??
+      project?.defaultVerbosity ??
+      ws?.defaultVerbosity ??
+      g.defaultVerbosity,
   };
 };

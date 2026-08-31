@@ -28,10 +28,7 @@ import {
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 import { kindRouting, AGENT_KIND_META, type AgentKind } from '../../../features/session/agent-kind';
-import {
-  SETTING_LAST_SESSION_ID,
-  DEFAULT_BRANCH_PREFIX,
-} from '../../../features/settings/settings';
+import { SETTING_LAST_SESSION_ID } from '../../../features/settings/settings';
 import { markSessionMobileShared } from '../../../features/companion/mobileConfinement';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import { clampTitle } from './titleLimit';
@@ -39,7 +36,6 @@ import { preSpawnWorkflowAgents } from '../workflows/preSpawnWorkflowAgents';
 import { discardUncreatedSession } from './discardUncreatedSession';
 import { rememberMaterializationSeed } from './materializationSeeds';
 import { resolveSessionProject } from './resolveSessionProject';
-import { slugifyDir } from './slugifyDir';
 import type { GetFn, SetFn } from './types';
 
 type ExternalTaskInput = {
@@ -100,9 +96,8 @@ export const createSession = (set: SetFn, get: GetFn) => {
     const projects = await listProjectsForWorkspace({ db: tauriDatabase, workspaceId });
     const project = projectId !== undefined ? resolveSessionProject({ projects, projectId }) : null;
 
-    const prefix = branchPrefix?.trim() || DEFAULT_BRANCH_PREFIX;
-    const slugSeed =
-      branchSlug?.trim() || (goal.trim().length > 0 ? goal : `session-${Date.now()}`);
+    const trimmedPrefix = branchPrefix?.trim();
+    const trimmedBranchSlug = branchSlug?.trim();
     const trimmedExisting = existingBranch?.trim();
     const trimmedFallbackRef = fallbackRef?.trim();
     const trimmedFolderName = folderName?.trim();
@@ -110,12 +105,22 @@ export const createSession = (set: SetFn, get: GetFn) => {
     if (mobileShared) {
       markSessionMobileShared(sessionId);
     }
-    const dirSlug = `${slugifyDir(slugSeed)}-${sessionId.slice(0, 8)}`;
+    const existingSeparator = trimmedExisting?.lastIndexOf('/') ?? -1;
+    const existingPrefix =
+      existingSeparator > 0 ? trimmedExisting?.slice(0, existingSeparator) : undefined;
     rememberMaterializationSeed({
       sessionId,
       seed: {
-        branchPrefix: prefix,
-        sessionSlug: branchSlug?.trim() ? slugifyDir(branchSlug) : dirSlug,
+        ...(trimmedPrefix !== undefined && trimmedPrefix !== ''
+          ? { branchPrefix: trimmedPrefix }
+          : existingPrefix !== undefined
+            ? { branchPrefix: existingPrefix }
+            : {}),
+        ...(trimmedBranchSlug !== undefined && trimmedBranchSlug !== ''
+          ? { sessionSlug: trimmedBranchSlug }
+          : trimmedExisting !== undefined && trimmedExisting !== ''
+            ? { sessionSlug: trimmedExisting }
+            : {}),
         ...(trimmedExisting !== undefined && trimmedExisting !== ''
           ? { existingBranch: trimmedExisting }
           : {}),
@@ -155,7 +160,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     const session: Session = {
       id: sessionId,
       workspaceId,
-      goal: clampTitle(goal.trim() || dirSlug),
+      goal: clampTitle(goal.trim()),
       state: initialState,
       contextSlots: [],
       providerPreference: providerPreference ?? inheritedPreference,
@@ -201,6 +206,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
             trimmedExisting !== undefined && trimmedExisting !== ''
               ? `adopted existing branch ${trimmedExisting}`
               : 'the session works in this project',
+          taskIdentifiers: (externalTasks ?? []).map((task) => task.identifier),
         });
       } catch (error) {
         await discardUncreatedSession({ set, sessionId: session.id });
@@ -242,7 +248,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       });
     }
 
-    const goalText = omitGoalSlot ? '' : goal.trim() || dirSlug;
+    const goalText = omitGoalSlot ? '' : goal.trim();
     if (goalText.length > 0) {
       await upsertContextSlot(tauriDatabase, session.id, {
         key: 'goal',

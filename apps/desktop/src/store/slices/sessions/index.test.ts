@@ -37,6 +37,7 @@ import type {
   ProjectScript,
   ProjectScriptId,
 } from '@goodboy/types';
+import { materializationSeedFor } from './materializationSeeds';
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(async () => null),
@@ -1276,6 +1277,140 @@ describe('store contract', () => {
 
       const kinds = vi.mocked(db.insertSessionEvent).mock.calls.map(([{ event }]) => event.kind);
       expect(kinds).toEqual(['project_materialized', 'external_task_created']);
+    });
+
+    it('passes task identifiers into the initial materialization', async () => {
+      const store = await getStore();
+      store.setState({ currentWorkspaceId: WS_ID });
+
+      await store.getState().createSession({
+        workspaceId: WS_ID,
+        projectId: PROJECT_ID,
+        goal: '[GRW-1220] [FE] Applicare nuove icone alla navbar',
+        externalTasks: [
+          {
+            provider: 'linear',
+            externalId: 'issue-1220',
+            identifier: 'GRW-1220',
+            url: 'https://linear.app/acme/issue/GRW-1220',
+            title: 'Applicare nuove icone alla navbar',
+          },
+        ],
+      });
+
+      expect(createWorktreeSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          slug: 'grw-1220-applicare-nuove-icone-alla-navbar',
+        }),
+      );
+    });
+
+    it('does not freeze the default prefix or ordinary slug in the seed', async () => {
+      const store = await getStore();
+      listProjectsForWorkspaceSpy.mockResolvedValueOnce([]);
+      store.setState({ currentWorkspaceId: WS_ID, projects: [] });
+
+      const { session } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'Study plan' });
+
+      expect(materializationSeedFor({ sessionId: session.id })).toEqual({});
+    });
+
+    it('uses the project branch prefix before the workspace prefix', async () => {
+      const store = await getStore();
+      const project = buildProject({
+        overrides: { ...buildWorkspace().overrides, defaultBranchPrefix: 'project-prefix' },
+      });
+      listProjectsForWorkspaceSpy.mockResolvedValueOnce([project]);
+      store.setState({
+        currentWorkspaceId: WS_ID,
+        projects: [project],
+        workspaceOverrides: {
+          [WS_ID]: { ...buildWorkspace().overrides, defaultBranchPrefix: 'workspace-prefix' },
+        },
+      });
+
+      await store.getState().createSession({
+        workspaceId: WS_ID,
+        projectId: PROJECT_ID,
+        goal: 'Study plan',
+      });
+
+      expect(createWorktreeSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ branchPrefix: 'project-prefix' }),
+      );
+    });
+
+    it('uses the workspace branch prefix when the project has none', async () => {
+      const store = await getStore();
+      store.setState({
+        currentWorkspaceId: WS_ID,
+        workspaceOverrides: {
+          [WS_ID]: { ...buildWorkspace().overrides, defaultBranchPrefix: 'workspace-prefix' },
+        },
+      });
+
+      await store.getState().createSession({
+        workspaceId: WS_ID,
+        projectId: PROJECT_ID,
+        goal: 'Study plan',
+      });
+
+      expect(createWorktreeSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ branchPrefix: 'workspace-prefix' }),
+      );
+    });
+
+    it('uses the session slug for an untitled mount', async () => {
+      const store = await getStore();
+      store.setState({ currentWorkspaceId: WS_ID });
+
+      const { session } = await store.getState().createSession({
+        workspaceId: WS_ID,
+        projectId: PROJECT_ID,
+        goal: 'Untitled session',
+      });
+
+      expect(createWorktreeSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ slug: `session-${session.id.slice(0, 8)}` }),
+      );
+    });
+
+    it('keeps an explicit branch slug untouched', async () => {
+      const store = await getStore();
+      store.setState({ currentWorkspaceId: WS_ID });
+
+      await store.getState().createSession({
+        workspaceId: WS_ID,
+        projectId: PROJECT_ID,
+        goal: 'Study plan',
+        branchSlug: 'Foreign_Feature/Exact',
+      });
+
+      expect(createWorktreeSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ slug: 'Foreign_Feature/Exact' }),
+      );
+    });
+
+    it('pins a foreign prefix and verbatim slug for existing branch adoption', async () => {
+      const store = await getStore();
+      store.setState({ currentWorkspaceId: WS_ID });
+
+      await store.getState().createSession({
+        workspaceId: WS_ID,
+        projectId: PROJECT_ID,
+        goal: 'Review parser fix',
+        existingBranch: 'alice/fix-parser',
+      });
+
+      expect(createWorktreeSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          branchPrefix: 'alice',
+          slug: 'alice/fix-parser',
+          existingBranch: 'alice/fix-parser',
+        }),
+      );
     });
   });
 

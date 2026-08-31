@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-const MAX_SLUG_LENGTH = 40;
+const MAX_SLUG_LENGTH = 48;
 
 export const sanitizeSlug = (input: string): string => {
   const cleaned = input
