@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { Project, SessionId, SessionProjectMount } from '@goodboy/types';
+import type { Project, PullRequestState, SessionId, SessionProjectMount } from '@goodboy/types';
 
 const { store, remoteKind } = vi.hoisted(() => ({
   remoteKind: { current: 'github' as string | null },
@@ -54,7 +54,7 @@ const renderRow = ({
   pullRequest = null,
 }: {
   readonly diffStat?: { additions: number; deletions: number } | null;
-  readonly pullRequest?: { number: number; state: 'open'; isDraft: boolean } | null;
+  readonly pullRequest?: PullRequestState | null;
 }) =>
   render(
     <ProjectMountRow
@@ -62,7 +62,7 @@ const renderRow = ({
       project={project}
       mount={mount}
       diffStat={diffStat}
-      pullRequest={pullRequest as never}
+      pullRequest={pullRequest ?? null}
       worktreeStatus={null}
       onSelectLens={vi.fn()}
     />,
@@ -86,6 +86,8 @@ describe('ProjectMountRow create pr action', () => {
     fireEvent.click(action);
 
     await waitFor(() => expect(listener).toHaveBeenCalledTimes(1));
+    const event = listener.mock.calls[0]?.[0] as CustomEvent<{ sessionId: SessionId }>;
+    expect(event.detail).toEqual({ sessionId });
     expect(store.setSessionActiveProject).toHaveBeenCalledWith({ sessionId, projectId: 'api' });
     window.removeEventListener('goodboy:open-github-session', listener);
   });
@@ -98,7 +100,7 @@ describe('ProjectMountRow create pr action', () => {
   it('hides create pr when a pr already exists', () => {
     renderRow({
       diffStat: { additions: 3, deletions: 1 },
-      pullRequest: { number: 12, state: 'open', isDraft: false },
+      pullRequest: { number: 12, state: 'open', isDraft: false } as PullRequestState,
     });
     expect(screen.queryByRole('button', { name: 'Create a PR for API' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Open PR #12' })).toBeDefined();
