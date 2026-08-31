@@ -682,6 +682,9 @@ export const App = () => {
     if (!id) {
       return;
     }
+    if (kind === 'scripts') {
+      s.setScriptsLensScope({ scope: null });
+    }
     s.setActiveLens(id, kind != null && s.activeLens[id] === kind ? null : kind);
   }, []);
 

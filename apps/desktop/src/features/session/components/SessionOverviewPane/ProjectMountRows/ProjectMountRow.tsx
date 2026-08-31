@@ -39,6 +39,7 @@ export const ProjectMountRow = ({
   onSelectLens,
 }: Props) => {
   const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
+  const setScriptsLensScope = useAppStore((state) => state.setScriptsLensScope);
   const openMountDiff = useAppStore((state) => state.openMountDiff);
   const GlyphIcon = project?.kind === 'repo' ? FolderGit2 : Folder;
   const projectName = project?.name ?? mount.mountName;
@@ -46,6 +47,9 @@ export const ProjectMountRow = ({
 
   const openLens = async ({ lens }: { readonly lens: LensKind }) => {
     await setSessionActiveProject({ sessionId, projectId: mount.projectId });
+    if (lens === 'scripts') {
+      setScriptsLensScope({ scope: { projectId: mount.projectId } });
+    }
     onSelectLens(lens);
   };
   return (

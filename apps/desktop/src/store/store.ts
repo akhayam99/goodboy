@@ -836,6 +836,7 @@ export type AppActions = {
   runPlan(sessionId: SessionId, planId: PlanId): Promise<AgentId | null>;
   dismissSessionNudge(sessionId: SessionId, outcome?: 'accepted' | 'dismissed'): Promise<void>;
   acceptSessionNudgeHandoff(sessionId: SessionId): Promise<AgentId | null>;
+  setScriptsLensScope(params: { readonly scope: { readonly projectId: ProjectId } | null }): void;
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;

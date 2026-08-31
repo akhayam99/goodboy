@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
 const { store } = vi.hoisted(() => ({
@@ -11,6 +11,7 @@ const { store } = vi.hoisted(() => ({
     clearPendingTitleFocus: vi.fn(),
     sessionGithub: {},
     sessionExternalTasks: {},
+    setScriptsLensScope: vi.fn(),
   },
 }));
 
@@ -67,14 +68,22 @@ describe('HeaderBand', () => {
   beforeEach(() => {
     store.pendingTitleFocusSessionId = null;
     store.clearPendingTitleFocus.mockClear();
+    store.setScriptsLensScope.mockClear();
   });
 
-  it('puts mount with the title actions and removes terminal and scripts shortcuts', () => {
-    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+  it('puts Scripts first in the title actions and opens it without scope', () => {
+    const onSelectLens = vi.fn();
+    render(<HeaderBand session={session} onSelectLens={onSelectLens} goal={<div>Goal</div>} />);
 
     expect(screen.getByRole('button', { name: 'Mount a project' })).toBeDefined();
     expect(screen.queryByRole('button', { name: /terminal/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /scripts/i })).toBeNull();
+    const scripts = screen.getByRole('button', { name: 'Scripts' });
+    expect(scripts.parentElement?.firstElementChild).toBe(scripts);
+
+    fireEvent.click(scripts);
+
+    expect(store.setScriptsLensScope).toHaveBeenCalledWith({ scope: null });
+    expect(onSelectLens).toHaveBeenCalledWith('scripts');
   });
 
   it('renders mounted projects before the goal', () => {

@@ -104,6 +104,8 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
   const deleteScript = useAppStore((state) => state.deleteScript);
   const runScript = useAppStore((state) => state.runScript);
   const cancelScript = useAppStore((state) => state.cancelScript);
+  const scriptsLensScope = useAppStore((state) => state.scriptsLensScope);
+  const setScriptsLensScope = useAppStore((state) => state.setScriptsLensScope);
   const runs = useAppStore((state) =>
     sessionId != null ? state.scriptRuns[sessionId] : undefined,
   );
@@ -114,7 +116,16 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<ProjectScriptId | null>(null);
   const [completedAt, setCompletedAt] = useState<Record<string, number>>({});
-  const [projectFilter, setProjectFilter] = useState<ProjectFilter>('all');
+  const [projectFilter, setProjectFilter] = useState<ProjectFilter>(() => {
+    const scoped = scriptsLensScope?.projectId;
+    if (scoped == null) {
+      return 'all';
+    }
+    const belongs = allProjects.some(
+      (project) => project.id === scoped && project.workspaceId === workspaceId,
+    );
+    return belongs ? scoped : 'all';
+  });
 
   const runnable = sessionId != null;
   const list = scripts ?? [];
@@ -135,29 +146,39 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
   const projectFilterOptions = useMemo<ReadonlyArray<SegmentedTabOption<ProjectFilter>>>(
     () => [
       { value: 'all', label: 'All' },
-      ...projects.map((project) => ({ value: project.id, label: project.name })),
+      ...[...projects]
+        .sort((left, right) => left.name.localeCompare(right.name))
+        .map((project) => ({ value: project.id, label: project.name })),
     ],
     [projects],
   );
   const groups = useMemo<ReadonlyArray<ScriptGroup>>(() => {
+    const sortScripts = (groupScripts: ReadonlyArray<ProjectScript>) =>
+      [...groupScripts].sort((left, right) =>
+        left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }),
+      );
     if (!isMultiProject) {
-      return [{ key: 'all', label: null, scripts: list }];
+      return [{ key: 'all', label: null, scripts: sortScripts(list) }];
     }
     if (projectFilter !== 'all') {
       return [
         {
           key: projectFilter,
           label: null,
-          scripts: list.filter((script) => script.projectId === projectFilter),
+          scripts: sortScripts(list.filter((script) => script.projectId === projectFilter)),
         },
       ];
     }
-    return projects.flatMap((project) => {
-      const projectScripts = list.filter((script) => script.projectId === project.id);
-      return projectScripts.length === 0
-        ? []
-        : [{ key: project.id, label: project.name, scripts: projectScripts }];
-    });
+    return [...projects]
+      .sort((left, right) => left.name.localeCompare(right.name))
+      .flatMap((project) => {
+        const projectScripts = sortScripts(
+          list.filter((script) => script.projectId === project.id),
+        );
+        return projectScripts.length === 0
+          ? []
+          : [{ key: project.id, label: project.name, scripts: projectScripts }];
+      });
   }, [isMultiProject, list, projectFilter, projects]);
   const newDraftDirty =
     newDraft != null && (newDraft.name.trim() !== '' || newDraft.body.trim() !== '');
@@ -165,6 +186,10 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
   useEffect(() => {
     void loadScripts(workspaceId);
   }, [workspaceId, loadScripts]);
+
+  useEffect(() => {
+    setScriptsLensScope({ scope: null });
+  }, [setScriptsLensScope]);
 
   useEffect(() => {
     if (runs === undefined) {
@@ -425,13 +450,19 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
             action={newScriptAction}
           />
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             {groups.map((group) => (
               <div key={group.key} className="flex flex-col gap-1.5">
                 {group.label != null ? (
-                  <span className="px-0.5 text-xs font-medium text-muted-foreground">
-                    {group.label}
-                  </span>
+                  <div className="flex items-center gap-2 px-0.5">
+                    <span className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+                      {group.label}
+                    </span>
+                    <span className="text-2xs tabular-nums text-muted-foreground/50">
+                      {group.scripts.length}
+                    </span>
+                    <span className="h-px flex-1 bg-border/40" aria-hidden />
+                  </div>
                 ) : null}
                 <ul className="flex flex-col gap-2">
                   {group.scripts.map((script) => {

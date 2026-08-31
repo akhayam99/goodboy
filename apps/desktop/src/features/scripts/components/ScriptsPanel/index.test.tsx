@@ -31,6 +31,8 @@ const { state } = vi.hoisted(() => ({
     deleteScript: vi.fn(async () => undefined),
     runScript: vi.fn(async () => undefined),
     cancelScript: vi.fn(async () => undefined),
+    scriptsLensScope: null as { readonly projectId: string } | null,
+    setScriptsLensScope: vi.fn(),
   },
 }));
 
@@ -47,6 +49,8 @@ vi.mock('../../../../store', () => {
     deleteScript: state.deleteScript,
     runScript: state.runScript,
     cancelScript: state.cancelScript,
+    scriptsLensScope: state.scriptsLensScope,
+    setScriptsLensScope: state.setScriptsLensScope,
   });
   const useAppStore = <T,>(selector: (storeState: ReturnType<typeof getStoreState>) => T) =>
     selector(getStoreState());
@@ -70,11 +74,70 @@ beforeEach(() => {
   state.deleteScript = vi.fn(async () => undefined);
   state.runScript = vi.fn(async () => undefined);
   state.cancelScript = vi.fn(async () => undefined);
+  state.scriptsLensScope = null;
+  state.setScriptsLensScope = vi.fn();
 });
 
 afterEach(cleanup);
 
 describe('ScriptsPanel', () => {
+  it('consumes a scoped open and preselects its project tab', () => {
+    state.projects = [
+      { id: 'project-1', workspaceId: 'ws-1', name: 'API' },
+      { id: 'project-2', workspaceId: 'ws-1', name: 'Web' },
+    ];
+    state.scriptsLensScope = { projectId: 'project-2' };
+    state.scripts = [
+      { id: 's1', projectId: 'project-1', name: 'setup api', body: 'echo api' },
+      { id: 's2', projectId: 'project-2', name: 'deploy web', body: 'echo web' },
+    ];
+
+    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+
+    expect(screen.getByRole('tab', { name: 'Web' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByText('deploy web')).toBeDefined();
+    expect(screen.queryByText('setup api')).toBeNull();
+    expect(state.setScriptsLensScope).toHaveBeenCalledWith({ scope: null });
+  });
+
+  it('uses All for a generic open', () => {
+    state.projects = [
+      { id: 'project-1', workspaceId: 'ws-1', name: 'API' },
+      { id: 'project-2', workspaceId: 'ws-1', name: 'Web' },
+    ];
+    state.scripts = [
+      { id: 's1', projectId: 'project-1', name: 'setup api', body: 'echo api' },
+      { id: 's2', projectId: 'project-2', name: 'deploy web', body: 'echo web' },
+    ];
+
+    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+
+    expect(screen.getByRole('tab', { name: 'All' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByText('setup api')).toBeDefined();
+    expect(screen.getByText('deploy web')).toBeDefined();
+  });
+
+  it('orders project tabs, groups, and scripts alphabetically', () => {
+    state.projects = [
+      { id: 'project-2', workspaceId: 'ws-1', name: 'Web' },
+      { id: 'project-1', workspaceId: 'ws-1', name: 'API' },
+    ];
+    state.scripts = [
+      { id: 's2', projectId: 'project-1', name: 'zebra', body: 'echo z' },
+      { id: 's3', projectId: 'project-2', name: 'deploy', body: 'echo deploy' },
+      { id: 's1', projectId: 'project-1', name: 'Alpha', body: 'echo a' },
+    ];
+
+    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['All', 'API', 'Web']);
+    expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      expect.stringContaining('Alpha'),
+      expect.stringContaining('zebra'),
+      expect.stringContaining('deploy'),
+    ]);
+  });
+
   it('loads scripts and renders the empty hint when none exist', () => {
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
 
@@ -129,6 +192,8 @@ describe('ScriptsPanel', () => {
     expect(screen.getByText('+1 line')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
 
+    expect(screen.getByTestId('script-card-s1').className).toContain('bg-muted/20');
+    expect(screen.getByTestId('script-card-s1').className).not.toContain('bg-card/40');
     expect(
       screen.getByText(
         (_, element) =>
@@ -246,6 +311,8 @@ describe('ScriptsPanel', () => {
 
     const row = screen.getByTestId('script-card-s1');
     expect(row.className).toContain('border-transparent');
+    expect(row.className).toContain('bg-card/40');
+    expect(row.className).not.toContain('bg-muted/20');
     expect(row.className).not.toContain('border-info/50');
     expect(row.className).not.toContain('border-success/40');
     expect(row.className).not.toContain('border-danger/40');
