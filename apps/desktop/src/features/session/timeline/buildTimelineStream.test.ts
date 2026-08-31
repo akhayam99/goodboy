@@ -26,7 +26,6 @@ import { buildTimelineGroups } from './buildTimelineGroups';
 import { buildTimelineStream, type TimelineStreamItem } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
 import { layoutTimelineRail } from './railGeometry';
-import { runIdentity } from './runIdentity';
 import { markerCenterY, TIMELINE_RHYTHM } from './timelineRhythm';
 
 type TypedStringParams = {
@@ -623,10 +622,7 @@ describe('buildTimelineStream', () => {
       'entry:run:run-1',
     ]);
     expect(clusters.map(({ item }) => item.groupId)).toEqual(['lane:run:run-2', 'lane:run:run-1']);
-    expect(clusters.map(({ item }) => item.identity.index)).toEqual([
-      runIdentity({ runId: OTHER_RUN_ID }).index,
-      runIdentity({ runId: RUN_ID }).index,
-    ]);
+    expect(clusters.map(({ item }) => item.identity.index)).toEqual([1, 0]);
     expect(clusters.every(({ rail }) => rail?.markerColumn === 0)).toBe(true);
     expect(
       new Set(clusters.flatMap(({ rail }) => rail?.joins.map((join) => join.laneColumn) ?? []))

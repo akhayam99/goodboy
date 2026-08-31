@@ -119,6 +119,11 @@ type SortableEntry = {
   readonly id: string;
 };
 
+type LaneOwner = {
+  readonly id: string;
+  readonly createdAt: string | null;
+};
+
 const timestampForWorktree = ({ worktree }: WorktreeParams): string =>
   new Date(worktree.createdAt).toISOString();
 
@@ -180,6 +185,32 @@ export const buildTimelineGroups = ({
     const siblings = childrenByParentId.get(agent.parentAgentId) ?? [];
     childrenByParentId.set(agent.parentAgentId, [...siblings, agent]);
   }
+
+  const chainRoots = byOrdinal.filter(
+    (agent) => agent.parentAgentId == null && (childrenByParentId.get(agent.id) ?? []).length > 0,
+  );
+  const laneOwners: ReadonlyArray<LaneOwner> = [
+    ...workflows.flatMap(({ run }) =>
+      run.createdAt == null ? [] : [{ id: run.id, createdAt: run.createdAt }],
+    ),
+    ...chainRoots.map((agent) => ({
+      id: agent.id,
+      createdAt: creations.get(agent.id)?.at ?? null,
+    })),
+  ].sort(
+    (first, second) =>
+      (first.createdAt ?? '').localeCompare(second.createdAt ?? '') ||
+      first.id.localeCompare(second.id),
+  );
+  const laneIndexById = new Map(laneOwners.map((owner, laneIndex) => [owner.id, laneIndex]));
+
+  const identityFor = ({ runId }: { readonly runId: string }): RunIdentity => {
+    const laneIndex = laneIndexById.get(runId);
+    if (laneIndex === undefined) {
+      throw new Error(`lane identity is missing for ${runId}`);
+    }
+    return runIdentity({ runId, laneIndex });
+  };
 
   const stepsByRunId = new Map<string, ReadonlyArray<Agent>>();
   for (const agent of byOrdinal) {
@@ -261,7 +292,7 @@ export const buildTimelineGroups = ({
         at: run.createdAt,
         run,
         workflow,
-        identity: runIdentity({ runId: run.id }),
+        identity: identityFor({ runId: run.id }),
         children,
         producedPlan,
       },
@@ -285,7 +316,7 @@ export const buildTimelineGroups = ({
       return buildAgentEntry({
         agent,
         stepLabel: null,
-        chain: hasDescendants ? { identity: runIdentity({ runId: agent.id }) } : null,
+        chain: hasDescendants ? { identity: identityFor({ runId: agent.id }) } : null,
       });
     });
   const standalonePlans: ReadonlyArray<TimelinePlanEntry> = plans

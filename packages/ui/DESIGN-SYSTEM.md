@@ -135,10 +135,10 @@ readable as part of that run at a glance, and stage cannot carry that: two
 workflows running at once are both `info`, which is exactly the pair a reader
 needs to tell apart.
 
-So the lane of a run takes an **identity** colour from a six-entry palette,
-`--color-run-1` to `--color-run-6` in `apps/desktop/src/styles.css`, picked
-deterministically from the run id so it is stable across reloads and across
-sessions. `runIdentity` in
+So the lane of a run takes an **identity** colour from a five-entry palette,
+`--color-run-1` to `--color-run-5` in `apps/desktop/src/styles.css`, assigned
+sequentially across workflow runs and agent chains by creation time and id.
+`runIdentity` in
 `apps/desktop/src/features/session/timeline/runIdentity.ts` is the only accessor.
 It hands out exactly two readings of one slot: `stroke` for an SVG lane and
 `chip` for the run's own chip, and `runIdentityStroke` beside it resolves a
