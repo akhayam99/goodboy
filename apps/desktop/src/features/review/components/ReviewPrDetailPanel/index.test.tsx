@@ -83,7 +83,11 @@ describe('ReviewPrDetailPanel', () => {
 
     await waitFor(() => {
       expect(h.startPrReviewSession).toHaveBeenCalledWith(WORKSPACE_ID, PR);
-      expect(h.openSession).toHaveBeenCalledWith('session-9', onClose);
+      expect(h.openSession).toHaveBeenCalledWith({
+        sessionId: 'session-9',
+        lens: 'review',
+        onOpened: onClose,
+      });
     });
   });
 

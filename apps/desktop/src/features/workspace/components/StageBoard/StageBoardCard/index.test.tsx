@@ -32,6 +32,8 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     reviewDrafts: {} as Record<string, ReadonlyArray<unknown>>,
     loadReviewDrafts: vi.fn(async () => undefined),
+    setCurrentSession: vi.fn(async () => undefined),
+    setActiveLens: vi.fn(),
   },
   hooks: {
     stage: 'building' as SessionStage,
@@ -126,6 +128,8 @@ beforeEach(() => {
   state.sessionPhaseRuns = {};
   state.reviewDrafts = {};
   state.loadReviewDrafts.mockClear();
+  state.setCurrentSession.mockClear();
+  state.setActiveLens.mockClear();
   useDynamicActionsMock.mockReset();
   useDynamicActionsMock.mockReturnValue([]);
   nav.selectCard.mockClear();
@@ -358,7 +362,13 @@ describe('StageBoardCard review drafts', () => {
     };
     render(<StageBoardCard session={session} nav={nav} />);
 
-    expect(screen.getByText('draft comments').previousElementSibling?.textContent).toBe('2');
+    const chip = screen.getByRole('button', { name: 'Review 2 draft comments' });
+    expect(chip.tagName).toBe('BUTTON');
+
+    fireEvent.click(chip);
+
+    expect(state.setCurrentSession).toHaveBeenCalledWith(SESSION_ID);
+    expect(nav.selectCard).not.toHaveBeenCalled();
   });
 
   it('loads drafts once for review sessions and hides the chip elsewhere', () => {

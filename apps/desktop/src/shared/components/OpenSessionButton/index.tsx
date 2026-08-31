@@ -20,7 +20,7 @@ export const OpenSessionButton = ({
 }: Props) => {
   const openSession = useOpenSession();
   return (
-    <Button size={size} variant={variant} onClick={() => openSession(sessionId, onOpened)}>
+    <Button size={size} variant={variant} onClick={() => openSession({ sessionId, onOpened })}>
       <MessagesSquare size={14} aria-hidden />
       {label}
     </Button>
