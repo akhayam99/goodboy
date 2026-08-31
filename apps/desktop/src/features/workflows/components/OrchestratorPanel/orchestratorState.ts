@@ -9,6 +9,7 @@ import type {
 
 type OrchestratorPhase =
   | 'deciding'
+  | 'stopping-graceful'
   | 'stopping'
   | 'waiting'
   | 'automatic'
@@ -99,6 +100,7 @@ export const resolveOrchestratorState = ({
   const ordered = [...agents].sort((left, right) => left.ordinal - right.ordinal);
   const doneCount = ordered.filter(isDone).length;
   const base = { detail: null, waitingSince: null };
+  const hasRunningStep = agents.some((agent) => agent.status === 'running');
 
   if (isOrchestrating && run.orchestrationStop?.kind === 'operator') {
     return {
@@ -106,6 +108,14 @@ export const resolveOrchestratorState = ({
       phase: OPERATOR_STOP_IN_FLIGHT.phase,
       tone: OPERATOR_STOP_IN_FLIGHT.tone,
       sentence: OPERATOR_STOP_IN_FLIGHT.sentence,
+    };
+  }
+  if (hasRunningStep && run.autoRun === false) {
+    return {
+      ...base,
+      phase: 'stopping-graceful',
+      tone: 'neutral',
+      sentence: 'Finishing the step in flight · autorun is off',
     };
   }
   if (isOrchestrating) {
@@ -196,6 +206,14 @@ export const resolveOrchestratorState = ({
       phase: 'ready-first',
       tone: 'neutral',
       sentence: 'Ready to plan the first step',
+    };
+  }
+  if (run.autoRun === false) {
+    return {
+      ...base,
+      phase: 'ready-mid',
+      tone: 'neutral',
+      sentence: 'Paused · autorun is off',
     };
   }
   return {

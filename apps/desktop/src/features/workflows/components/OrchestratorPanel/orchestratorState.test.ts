@@ -80,6 +80,22 @@ describe('resolveOrchestratorState', () => {
     expect(state.sentence).toBe('Stopping · waiting for the decision already in flight');
   });
 
+  it('reports a graceful pause while a step finishes with autorun off', () => {
+    const state = resolve({ agents: [makeAgent(0, 'running')] });
+
+    expect(state.phase).toBe('stopping-graceful');
+    expect(state.tone).toBe('neutral');
+    expect(state.sentence).toBe('Finishing the step in flight · autorun is off');
+  });
+
+  it('reports a normal pause after the graceful step finishes', () => {
+    const state = resolve({ agents: [makeAgent(0, 'completed')] });
+
+    expect(state.phase).toBe('ready-mid');
+    expect(state.tone).toBe('neutral');
+    expect(state.sentence).toBe('Paused · autorun is off');
+  });
+
   it('never claims the run is stopped before the decision returns', () => {
     const stopped = resolve({
       run: makeRun({ orchestrationStop: { kind: 'operator', message: 'you stopped this run' } }),
@@ -155,12 +171,13 @@ describe('resolveOrchestratorState', () => {
     });
 
     expect(state.phase).toBe('ready-mid');
-    expect(state.sentence).toBe('Step 1 done · ready to continue');
+    expect(state.sentence).toBe('Paused · autorun is off');
   });
 
   it('waits on the running step and carries its start time', () => {
     const startedAt = '2025-01-01T00:00:00.000Z' as IsoDateTime;
     const state = resolve({
+      run: makeRun({ autoRun: true }),
       agents: [makeAgent(0, 'completed'), makeAgent(1, 'running', { startedAt })],
     });
 

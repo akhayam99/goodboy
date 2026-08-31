@@ -278,6 +278,25 @@ beforeEach(() => {
 });
 
 describe('orchestrateNextStep', () => {
+  it('returns before doing work when the run already has an operator stop', async () => {
+    const state = baseState();
+    const sessions = state['sessions'] as ReadonlyArray<Session>;
+    state['sessions'] = [
+      {
+        ...sessions[0]!,
+        workflowRuns: [{ ...sessions[0]!.workflowRuns[0]!, orchestrationStop: OPERATOR_STOP }],
+      },
+    ];
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(decideSpy).not.toHaveBeenCalled();
+    expect(listOpenQuestionsSpy).not.toHaveBeenCalled();
+    expect(updateStopSpy).not.toHaveBeenCalled();
+    expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
+  });
+
   it('appends a real step and agent, emits the decision, and activates it', async () => {
     decideSpy.mockResolvedValue({
       usage: NO_USAGE,

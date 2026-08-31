@@ -20,7 +20,6 @@ import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 
 const storeMocks = vi.hoisted(() => ({
   renameWorkflow: vi.fn(async () => undefined),
-  stopWorkflowRunNow: vi.fn(async () => undefined),
   orchestratingWorkflowRuns: {} as Record<string, boolean>,
   runSpendUsd: 0,
 }));
@@ -32,7 +31,6 @@ vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(selector: (state: unknown) => T) =>
     selector({
       renameWorkflow: storeMocks.renameWorkflow,
-      stopWorkflowRunNow: storeMocks.stopWorkflowRunNow,
       orchestratingWorkflowRuns: storeMocks.orchestratingWorkflowRuns,
       agentEffortOverride: {},
     }),
@@ -210,7 +208,6 @@ const renderDetail = ({
 
 beforeEach(() => {
   storeMocks.renameWorkflow.mockClear();
-  storeMocks.stopWorkflowRunNow.mockClear();
 });
 
 afterEach(() => {
@@ -279,10 +276,10 @@ describe('WorkflowRow detail dashboard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
 
     expect(setAutoRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
-    expect(screen.queryByRole('group', { name: 'Stop this run?' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Stop now?' })).toBeNull();
   });
 
-  it('names the consequence before stopping a step in flight', () => {
+  it('turns autorun off immediately while a step is in flight', () => {
     const setAutoRun = vi.fn(async () => undefined);
     const running = agents.map((agent, index) =>
       index === 1 ? { ...agent, status: 'running' as const } : agent,
@@ -295,13 +292,8 @@ describe('WorkflowRow detail dashboard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
 
-    const confirm = screen.getByRole('group', { name: 'Stop this run?' });
-    expect(confirm.textContent).toContain('the step in flight is skipped');
-    expect(setAutoRun).not.toHaveBeenCalled();
-
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Stop the run' }));
-
-    expect(storeMocks.stopWorkflowRunNow).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(setAutoRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
+    expect(screen.queryByRole('group', { name: 'Stop now?' })).toBeNull();
   });
 
   it('keeps completed detail navigation non-empty without lifecycle actions in it', () => {
@@ -441,8 +433,9 @@ describe('WorkflowRow substep disclosure', () => {
   });
 });
 
-describe('WorkflowRow sidebar autorun stop', () => {
-  it('wires the sidebar stop confirmation to stopWorkflowRunNow independently of the detail mount', () => {
+describe('WorkflowRow sidebar autorun pause', () => {
+  it('turns autorun off immediately without a hard-stop confirmation', () => {
+    const setAutoRun = vi.fn(async () => undefined);
     const running = agents.map((agent, index) =>
       index === 1 ? { ...agent, status: 'running' as const } : agent,
     );
@@ -450,26 +443,30 @@ describe('WorkflowRow sidebar autorun stop', () => {
       runOverride: { ...run, autoRun: true },
       agentsOverride: running,
       variant: 'sidebar',
+      setWorkflowRunAutoRun: setAutoRun,
     });
 
     expect(screen.queryByRole('heading', { name: 'Refactor' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
-    const confirm = screen.getByRole('group', { name: 'Stop this run?' });
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Stop the run' }));
 
-    expect(storeMocks.stopWorkflowRunNow).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(setAutoRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
+    expect(screen.queryByRole('group', { name: 'Stop now?' })).toBeNull();
   });
 });
 
 describe('WorkflowRow step-in-flight predicate', () => {
-  it('arms the stop confirm while the orchestrator is deciding, even with no agent running', () => {
+  it('turns autorun off while the orchestrator is deciding, even with no agent running', () => {
+    const setAutoRun = vi.fn(async () => undefined);
     storeMocks.orchestratingWorkflowRuns[RUN_ID] = true;
-    renderDetail({ runOverride: { ...run, autoRun: true } });
+    renderDetail({
+      runOverride: { ...run, autoRun: true },
+      setWorkflowRunAutoRun: setAutoRun,
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
 
-    expect(screen.getByRole('group', { name: 'Stop this run?' })).toBeDefined();
+    expect(setAutoRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
   });
 
   it('reads the collapsed row as stopping while the decision is still in flight', () => {
@@ -566,7 +563,9 @@ describe('WorkflowRow dynamic runs', () => {
     renderDetail({ runOverride: dynamicRun, agentsOverride: doneAgents, actionableStepId: null });
 
     expect(screen.queryByText('Completed')).toBeNull();
-    expect(screen.getByTestId('orchestrator-state').textContent).toContain('ready to continue');
+    expect(screen.getByTestId('orchestrator-state').textContent).toContain(
+      'Paused · autorun is off',
+    );
   });
 
   it('leaves the orchestrator phase to the strip instead of a second pill', () => {

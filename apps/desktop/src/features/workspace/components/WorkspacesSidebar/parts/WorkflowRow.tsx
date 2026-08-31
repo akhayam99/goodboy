@@ -148,7 +148,6 @@ export const WorkflowRow = ({
   const sessionEffort = task.effort ?? null;
   const isOrchestrating = useAppStore((s) => s.orchestratingWorkflowRuns?.[run.id] ?? false);
   const restoreWorkflow = useAppStore((s) => s.restoreWorkflow);
-  const stopWorkflowRunNow = useAppStore((s) => s.stopWorkflowRunNow);
   const workflowRun = run;
   const isDiscarded = run.discardedAt != null;
   const wfAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
@@ -175,7 +174,6 @@ export const WorkflowRow = ({
       ? run.id === focusedWorkflowRunId
       : (workflowExpand?.[run.id] ?? defaultExpanded);
   const hasStarted = wfAgents.length > 0;
-  const isStepInFlight = isOrchestrating || wfAgents.some((agent) => agent.status === 'running');
   const isQueuedManual = !isDiscarded && run.triggerMode === 'manual' && !hasStarted;
   const predecessorName = run.chainAfterId
     ? (workflowNameByRunId.get(run.chainAfterId) ?? 'previous')
@@ -339,9 +337,7 @@ export const WorkflowRow = ({
                 <WorkflowAutorunToggle
                   variant="detail"
                   isOn={run.autoRun}
-                  isStepInFlight={isStepInFlight}
                   onToggle={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
-                  onStopNow={() => void stopWorkflowRunNow(task.id, run.id)}
                 />
               ) : null}
               <Divider orientation="vertical" className="h-5 self-center" />
@@ -372,9 +368,7 @@ export const WorkflowRow = ({
                   <WorkflowAutorunToggle
                     variant="sidebar"
                     isOn={run.autoRun}
-                    isStepInFlight={isStepInFlight}
                     onToggle={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
-                    onStopNow={() => void stopWorkflowRunNow(task.id, run.id)}
                   />
                 ) : null}
                 <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />

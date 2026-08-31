@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   CircleHelp,
+  CircleStop,
   Eraser,
   PenLine,
   Play,
@@ -9,7 +10,7 @@ import {
   Users,
   Wallet,
 } from 'lucide-react';
-import { Eyebrow, Markdown, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { Eyebrow, InlineConfirm, Markdown, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type {
   Agent,
@@ -71,6 +72,7 @@ export const OrchestratorPanel = ({
   const [hintsDraft, setHintsDraft] = useState(run.orchestratorHints ?? '');
   const [continueNote, setContinueNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const [isStopArmed, setIsStopArmed] = useState(false);
   const savedHints = run.orchestratorHints ?? '';
   const continueOpen = openDrawer === 'continue';
   const hintsOpen = openDrawer === 'hints';
@@ -91,7 +93,11 @@ export const OrchestratorPanel = ({
   const elapsed = useElapsedLabel({ since: state.waitingSince });
   const tint = tintClasses(state.tone);
   const isDeciding = state.phase === 'deciding';
-  const isPulsing = isDeciding || state.phase === 'automatic' || state.phase === 'stopping';
+  const isPulsing =
+    isDeciding ||
+    state.phase === 'automatic' ||
+    state.phase === 'stopping' ||
+    state.phase === 'stopping-graceful';
   const pulseTone = state.tone === 'neutral' ? 'info' : state.tone;
   const isRunOver = state.phase === 'done';
   const isStepInFlight = isOrchestrating || agents.some((agent) => agent.status === 'running');
@@ -270,6 +276,34 @@ export const OrchestratorPanel = ({
               <Markdown text={state.detail} className="text-2xs leading-relaxed" />
             </div>
           ) : null}
+          {isStepInFlight && run.orchestrationStop?.kind !== 'operator' ? (
+            <div className="relative flex">
+              <button
+                type="button"
+                aria-expanded={isStopArmed}
+                onClick={() => setIsStopArmed(true)}
+                className="rounded px-1.5 text-2xs text-danger hover:bg-danger/10"
+              >
+                Stop now
+              </button>
+              {isStopArmed ? (
+                <div className="absolute left-0 top-full z-popover w-72 rounded-lg bg-background shadow-lg">
+                  <InlineConfirm
+                    role="alert"
+                    icon={<CircleStop size={12} aria-hidden />}
+                    title="Stop now?"
+                    description="The step in flight is cancelled and marked skipped. Everything it already wrote is kept."
+                    confirmLabel="Stop now"
+                    onConfirm={() => {
+                      setIsStopArmed(false);
+                      void stopWorkflowRunNow(sessionId, run.id);
+                    }}
+                    onCancel={() => setIsStopArmed(false)}
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
@@ -277,9 +311,7 @@ export const OrchestratorPanel = ({
             <WorkflowAutorunToggle
               variant="detail"
               isOn={run.autoRun === true}
-              isStepInFlight={isStepInFlight}
               onToggle={() => void setWorkflowRunAutoRun(sessionId, run.id, run.autoRun !== true)}
-              onStopNow={() => void stopWorkflowRunNow(sessionId, run.id)}
             />
           )}
           {primaryAction}
