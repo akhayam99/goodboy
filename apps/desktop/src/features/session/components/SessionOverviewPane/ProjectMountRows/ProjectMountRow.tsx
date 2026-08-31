@@ -92,6 +92,22 @@ export const ProjectMountRow = ({
       ) : (
         <span className="text-xs text-muted-foreground/50">No changes</span>
       )}
+      {pullRequest == null && changes ? (
+        <button
+          type="button"
+          aria-label={`Create a PR for ${projectName}`}
+          onClick={() => {
+            void setSessionActiveProject({ sessionId, projectId: mount.projectId }).then(() => {
+              window.dispatchEvent(
+                new CustomEvent('goodboy:open-github-session', { detail: { sessionId } }),
+              );
+            });
+          }}
+          className="rounded-md px-1.5 py-1 text-xs text-muted-foreground/70 hover:bg-muted/40 hover:text-foreground"
+        >
+          Create PR
+        </button>
+      ) : null}
       {pullRequest != null ? (
         <button
           type="button"
