@@ -669,17 +669,19 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       const ratio = estimated / ctxWindow;
       if (ratio >= 0.85) {
         const pct = Math.round(ratio * 100);
-        void get().emitNotification(
-          'error',
-          'warning',
-          'Context near the limit',
-          `This turn is estimated at ${estimated.toLocaleString()} of ${ctxWindow.toLocaleString()} tokens (${pct}%). Consider /compact.`,
-          {
-            sessionId,
-            workspaceId: session.workspaceId,
-            coalesceKey: `context-soft-cap:${sessionId}`,
-          },
-        );
+        void get()
+          .emitNotification(
+            'error',
+            'warning',
+            'Context near the limit',
+            `This turn is estimated at ${estimated.toLocaleString()} of ${ctxWindow.toLocaleString()} tokens (${pct}%). Consider /compact.`,
+            {
+              sessionId,
+              workspaceId: session.workspaceId,
+              coalesceKey: `context-soft-cap:${sessionId}`,
+            },
+          )
+          .catch(() => undefined);
       }
     }
 
