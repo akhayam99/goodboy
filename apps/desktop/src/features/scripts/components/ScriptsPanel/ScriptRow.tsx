@@ -150,7 +150,7 @@ export const ScriptRow = ({
           expanded ? 'grid-rows-[auto_auto] gap-y-2' : 'grid-rows-[auto]',
           presentation.borderClass,
           presentation.pulseClass,
-          expanded && 'bg-muted/20',
+          expanded ? 'bg-muted/20' : 'bg-card/40',
         )}
       >
         <div className="col-start-1 row-start-1 flex min-w-0 flex-col gap-0.5">

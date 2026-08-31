@@ -17,6 +17,7 @@ type MockState = {
   runScript: ReturnType<typeof vi.fn>;
   cancelScript: ReturnType<typeof vi.fn>;
   setActiveLens: ReturnType<typeof vi.fn>;
+  setScriptsLensScope: ReturnType<typeof vi.fn>;
 };
 
 const { state } = vi.hoisted<{ state: MockState }>(() => ({
@@ -31,6 +32,7 @@ const { state } = vi.hoisted<{ state: MockState }>(() => ({
     runScript: vi.fn(async () => undefined),
     cancelScript: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
+    setScriptsLensScope: vi.fn(),
   },
 }));
 

@@ -45,6 +45,7 @@ export const ScriptsSection = ({
   const runScript = useAppStore((s) => s.runScript);
   const cancelScript = useAppStore((s) => s.cancelScript);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const setScriptsLensScope = useAppStore((s) => s.setScriptsLensScope);
 
   useEffect(() => {
     void loadScripts(workspaceId);
@@ -72,7 +73,10 @@ export const ScriptsSection = ({
   const projects = allProjects.filter((project) => project.workspaceId === workspaceId);
   const isMultiProject = projects.length > 1;
 
-  const openScripts = () => setActiveLens(sessionId, 'scripts');
+  const openScripts = () => {
+    setScriptsLensScope({ scope: null });
+    setActiveLens(sessionId, 'scripts');
+  };
 
   const logScript = log ? list.find((s) => s.id === log.scriptId) : null;
   const logResult = log ? (runs?.[log.scriptId]?.result ?? null) : null;

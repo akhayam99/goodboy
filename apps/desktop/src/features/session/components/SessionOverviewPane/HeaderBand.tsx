@@ -11,6 +11,7 @@ import { LinkIssueAction } from './LinkIssueAction';
 import { ContextChip } from './ContextChip';
 import { LinkedWorkChips } from './LinkedWorkChips';
 import { MountProjectAction } from './ProjectMountRows/MountProjectAction';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { ProjectMountRows } from './ProjectMountRows';
 import { SessionCostChip } from './SessionCostChip';
 
@@ -20,11 +21,15 @@ type Props = {
   readonly goal: ReactNode;
 };
 
+const ICON_BUTTON =
+  'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
+
 export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
   const sessionId = session.id as SessionId;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
   const pendingTitleFocus = useAppStore((s) => s.pendingTitleFocusSessionId);
   const clearPendingTitleFocus = useAppStore((s) => s.clearPendingTitleFocus);
+  const setScriptsLensScope = useAppStore((s) => s.setScriptsLensScope);
   const hasLinkedWork = useAppStore((s) => {
     const linkedIssues = s.sessionGithub[sessionId]?.linkedIssues ?? EMPTY_ARRAY;
     const externalTasks = s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY;
@@ -53,6 +58,11 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
   }, [rename.editing]);
 
   const goalText = session.goal === '' ? 'Untitled session' : session.goal;
+
+  const openScripts = () => {
+    setScriptsLensScope({ scope: null });
+    onSelectLens('scripts');
+  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -93,6 +103,16 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
           </Tooltip>
         )}
         <div className="flex shrink-0 items-center gap-1">
+          <Tooltip content="Scripts (⌘⌥S)">
+            <button
+              type="button"
+              aria-label="Scripts"
+              onClick={openScripts}
+              className={ICON_BUTTON}
+            >
+              <CONCEPT_ICONS.scripts size={13} aria-hidden />
+            </button>
+          </Tooltip>
           <EditorMenu sessionId={sessionId} density="compact" />
           <MountProjectAction sessionId={sessionId} workspaceId={session.workspaceId} />
           <SessionDestructiveActions session={session} />
