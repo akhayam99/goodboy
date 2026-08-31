@@ -14,7 +14,7 @@ type EvidenceParams = {
   readonly agent: Agent;
 };
 
-const earliestEvidence = ({ agent }: EvidenceParams): string | null => {
+export const earliestEvidence = ({ agent }: EvidenceParams): string | null => {
   const known: ReadonlyArray<string> = [agent.startedAt, agent.completedAt].filter(
     (value): value is NonNullable<typeof value> => value != null,
   );

@@ -10,7 +10,7 @@ import type {
 } from '@goodboy/types';
 import { classifyAgent, type AgentKind } from '../agent-kind';
 import { attachedQuestionsFor } from './attachedQuestions';
-import { resolveAgentCreation, type AgentCreation } from './agentCreation';
+import { earliestEvidence, resolveAgentCreation, type AgentCreation } from './agentCreation';
 import { runIdentity, type RunIdentity } from './runIdentity';
 
 export type TimelineChain = {
@@ -195,11 +195,11 @@ export const buildTimelineGroups = ({
     ),
     ...chainRoots.map((agent) => ({
       id: agent.id,
-      createdAt: creations.get(agent.id)?.at ?? null,
+      createdAt: earliestEvidence({ agent }),
     })),
   ].sort(
     (first, second) =>
-      (first.createdAt ?? '').localeCompare(second.createdAt ?? '') ||
+      (first.createdAt ?? '￿').localeCompare(second.createdAt ?? '￿') ||
       first.id.localeCompare(second.id),
   );
   const laneIndexById = new Map(laneOwners.map((owner, laneIndex) => [owner.id, laneIndex]));
