@@ -7,6 +7,86 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.7
+
+Errors stop hiding, work survives a refresh, and agents route around a
+provider that hits its limit instead of dying on it.
+
+### [#1590] A provider at its usage limit is routed around
+
+When a provider announces its usage limit mid-run, the turn now fails
+properly, reroutes to another connected provider, and puts the limited one
+on cooldown until the reset time the message declares. If no alternative
+exists, one notification names the reset time and the run retries itself
+when it arrives. Before, the error was swallowed and every retry burned
+against the same wall.
+
+### [#1588] Scripts and terminals survive a refresh
+
+Reloading the app no longer orphans running scripts and terminals: the
+processes always survived in the background, but the interface forgot
+them, leaving servers holding ports with no way to see or stop them. The
+app now re-attaches at startup, the running indicator returns, and stop
+works on recovered runs. [#1592] adds a small activity dot on each project
+row's terminal and scripts icons while something is alive there.
+
+### [#1591] Chained workflows start when their predecessor finishes
+
+An after-run workflow could miss its predecessor's completion and wait
+forever, most visibly behind orchestrated runs. Every completion path now
+wakes the chain evaluation, and loading a workspace un-stalls chains left
+behind by earlier versions.
+
+### [#1584] The resolver judges threads on the merits
+
+The fix and analyze preset modes are gone: one hint field remains, and the
+resolver decides per thread whether to implement the change or leave a
+justified wontfix, never steered by a preset. [#1594] also gives the
+resolver its own row in the Provider Studio role models, so its default
+model is finally yours to set.
+
+### [#1583] Replies follow the language you write
+
+The reply language now anchors to the latest message you wrote in the
+session instead of the goal's language, so writing Italian into an
+English-goal session no longer earns an English answer. Machine-initiated
+steps still fall back to the goal.
+
+### [#1575] Errors reach the bell
+
+System failures (audit retries, context near the limit) were collected in
+a state no surface ever rendered. They now land in the notification bell
+as coalesced, persisted entries.
+
+### Fixes
+
+- Session delete keeps what analytics and links need and purges the heavy
+  data: transcripts and turn events go, metrics keep counting. [#1582]
+- Deleting or archiving a session evicts every per-session cache through
+  one declared registry with a compile-time completeness gate. [#1580]
+- Sessions left running by a crash reconcile on every load, not only on a
+  workspace switch. [#1576]
+- The needs-you popover shows its per-reason icon and tone again. [#1574]
+- The draft-comments chip on a board card opens the review board, and
+  Review locally lands inside it. [#1577]
+- Workflow lane colors start from a per-session seed: the first lane is no
+  longer always violet, adjacent lanes stay far apart in tone. [#1578]
+- The orchestrator queues concurrent decide and advance requests instead
+  of dropping them, so a turn finishing mid-decision cannot stall a run.
+  [#1579]
+- While the orchestrator chooses the next step, the timeline shows a
+  spinner in the lane color and the board reports the session as running.
+  [#1593]
+- A plan produced by an agent chain joins the chain's colored lane on the
+  timeline instead of floating on the spine. [#1586]
+- Claude turns no longer see personal claude.ai connectors: integrations
+  flow through the app, identical for every provider. [#1587]
+- Codex agents reach the network and the in-app bridge from their sandbox,
+  so pushes and bridge verbs work without switching provider. [#1585]
+- The worktree menu (open in editor, copy path) sits on each project row
+  and targets that mount; the header keeps it only for sessions without a
+  repository. [#1595]
+
 ## Goodboy v0.2.6
 
 Codex agents stop fighting their sandbox, stopping a run stops being
