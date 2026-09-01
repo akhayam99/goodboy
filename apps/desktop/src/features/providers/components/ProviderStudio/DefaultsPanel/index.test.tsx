@@ -302,7 +302,34 @@ describe('DefaultsPanel', () => {
     expect(screen.getByText('Debugger')).toBeDefined();
     expect(screen.getByText('Planner')).toBeDefined();
     expect(screen.getByText('Reviewer')).toBeDefined();
+    expect(screen.getByText('Resolver')).toBeDefined();
     expect(screen.getByText('Custom')).toBeDefined();
+  });
+
+  it('reads the resolver role with no override as its compiled default', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    openRolesTab();
+
+    expect(screen.getByRole('button', { name: 'Resolver routing model' }).textContent).toBe(
+      'sonnet-5',
+    );
+    expect(screen.getByLabelText('Resolver routing status: default').textContent).toBe('default');
+  });
+
+  it('persists a resolver role model of its own', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    openRolesTab();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Resolver routing model' }));
+
+    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({
+        roleModels: {
+          resolver: { providerId: 'anthropic', model: 'sonnet-4.6', effort: 'medium' },
+        },
+      }),
+    );
   });
 
   it('reads a role with no override as its compiled default', () => {

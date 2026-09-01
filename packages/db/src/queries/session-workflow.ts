@@ -90,6 +90,7 @@ const ROLE_MODEL_ROLES = [
   'reviewer',
   'investigator',
   'tester',
+  'resolver',
   'custom',
 ] satisfies ReadonlyArray<AgentRole>;
 

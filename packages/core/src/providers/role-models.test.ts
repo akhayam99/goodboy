@@ -90,6 +90,43 @@ describe('resolveRoleRouting', () => {
     expect(resolved.isOverride).toBe(false);
   });
 
+  it('resolves the resolver role to its compiled default with no stored preference', () => {
+    expect(resolveRoleRouting({ role: 'resolver', prefs: null })).toEqual({
+      provider: ROLE_DEFAULTS.resolver.provider,
+      model: ROLE_DEFAULTS.resolver.model,
+      effort: ROLE_DEFAULTS.resolver.effort,
+      isOverride: false,
+    });
+  });
+
+  it('gives the resolver role its own pin and fallback, not the custom one', () => {
+    const prefs: RoleModelPreferences = {
+      custom: { providerId: 'anthropic', model: 'claude-haiku-4-5', effort: 'low' },
+      resolver: {
+        providerId: 'anthropic',
+        model: 'claude-opus-5',
+        effort: 'high',
+        fallback: { providerId: 'codex', model: 'gpt-5.6' },
+      },
+    };
+    const resolved = resolveRoleRouting({ role: 'resolver', prefs });
+
+    expect(resolved.model).toBe('opus-5');
+    expect(resolved.effort).toBe('high');
+    expect(resolved.isOverride).toBe(true);
+    expect(resolved.fallback).toEqual({ provider: 'codex', model: 'gpt-5.6', effort: 'high' });
+  });
+
+  it('leaves the resolver on its compiled default when only the custom role is pinned', () => {
+    const prefs: RoleModelPreferences = {
+      custom: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'high' },
+    };
+    const resolved = resolveRoleRouting({ role: 'resolver', prefs });
+
+    expect(resolved.model).toBe(ROLE_DEFAULTS.resolver.model);
+    expect(resolved.isOverride).toBe(false);
+  });
+
   it('leaves the fallback absent when the role has no stored preference', () => {
     expect(resolveRoleRouting({ role: 'planner', prefs: null }).fallback).toBeUndefined();
   });

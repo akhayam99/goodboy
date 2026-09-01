@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { CommentAgentArgs, ResolveModelChoice } from '../../../chat/spawn-from-comment';
+import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { useAppStore } from '../../../../store';
+import { kindRouting } from '../../agent-kind';
 
 type SpawnParams = {
   readonly args: CommentAgentArgs;
@@ -22,14 +24,19 @@ type Result = {
 export const useResolverSpawner = ({ sessionId }: Params): Result => {
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const setAgentConfig = useAppStore((state) => state.setAgentConfig);
+  const roleModels = useSessionRoleModels({ sessionId });
   const [spawnedResolverIds, setSpawnedResolverIds] = useState<ReadonlyArray<AgentId>>([]);
 
   const spawnResolver = async ({ args, choice, deferKickoff }: SpawnParams): Promise<AgentId> => {
+    const roleDefault = kindRouting({ kind: 'resolver', roleModels });
+    const provider = choice.provider ?? roleDefault.provider;
+    const model = choice.model ?? roleDefault.model;
+    const effort = choice.effort ?? roleDefault.effort;
     const agentId = await spawnAgent(sessionId, {
       name: args.name,
-      model: args.model,
-      ...(args.provider !== undefined && { provider: args.provider }),
-      effort: args.effort,
+      model,
+      provider,
+      effort,
       initialPrompt: args.initialPrompt,
       kindOverride: args.kind,
       ...(args.sourceThreadId !== undefined && { sourceThreadId: args.sourceThreadId }),
@@ -40,9 +47,9 @@ export const useResolverSpawner = ({ sessionId }: Params): Result => {
       focus: 'none',
     });
     await setAgentConfig(sessionId, agentId, {
-      ...(choice.provider !== undefined && { providerOverride: choice.provider }),
-      ...(choice.model !== undefined && { modelOverride: choice.model }),
-      effort: args.effort,
+      providerOverride: provider,
+      modelOverride: model,
+      effort,
     });
     setSpawnedResolverIds((current) => [...current, agentId]);
     return agentId;
