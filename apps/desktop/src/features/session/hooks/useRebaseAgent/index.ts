@@ -54,7 +54,7 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
     `- Fetch origin ${baseBranch} before rebasing.`,
     `- Rebase the session branch onto origin/${baseBranch} and resolve conflicts by favoring the branch's intent.`,
     "- Run the repository's typecheck to confirm nothing broke.",
-    '- Push the rebased branch with --force-with-lease.',
+    '- Push the rebased branch with "$GOODBOY_BIN" query github push --force-with-lease; fall back to git push --force-with-lease only if the bridge is unavailable.',
     '- Never merge and never touch other branches.',
     '- If a conflict cannot be resolved confidently, stop and report the conflicting files.',
   ].join('\n');

@@ -180,6 +180,8 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
             } else {
                 v.push("-s".to_string());
                 v.push("workspace-write".to_string());
+                v.push("-c".to_string());
+                v.push("sandbox_workspace_write.network_access=true".to_string());
                 for root in args.writable_roots {
                     v.push("--add-dir".to_string());
                     v.push(root.to_string());
@@ -682,6 +684,9 @@ mod tests {
         let cli = build_provider_cli_args("codex", &args);
         let idx = cli.iter().position(|a| a == "-s").expect("-s");
         assert_eq!(cli[idx + 1], "workspace-write");
+        assert!(cli.windows(2).any(|pair| {
+            pair[0] == "-c" && pair[1] == "sandbox_workspace_write.network_access=true"
+        }));
         let added_directories: Vec<&str> = cli
             .windows(2)
             .filter(|pair| pair[0] == "--add-dir")
@@ -702,8 +707,9 @@ mod tests {
         let mut args = make_args(None, None, &empty);
         args.effort = Some("high");
         let cli = build_provider_cli_args("codex", &args);
-        let idx = cli.iter().position(|a| a == "-c").expect("-c");
-        assert_eq!(cli[idx + 1], "model_reasoning_effort=\"high\"");
+        assert!(cli
+            .windows(2)
+            .any(|pair| pair[0] == "-c" && pair[1] == "model_reasoning_effort=\"high\""));
     }
 
     #[test]
@@ -777,6 +783,9 @@ mod tests {
             .any(|a| a == "--dangerously-bypass-approvals-and-sandbox"));
         assert!(!cli.iter().any(|a| a == "-s"));
         assert!(!cli.iter().any(|a| a == "--add-dir"));
+        assert!(!cli.windows(2).any(|pair| {
+            pair[0] == "-c" && pair[1] == "sandbox_workspace_write.network_access=true"
+        }));
         assert!(cli.iter().any(|a| a == "--skip-git-repo-check"));
     }
 
