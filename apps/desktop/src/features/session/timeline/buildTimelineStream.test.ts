@@ -1473,6 +1473,66 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
 
   const PLAN_RUN_WORKFLOWS = [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })];
 
+  type StandalonePlanParams = {
+    readonly id: string;
+    readonly agentId: string;
+  };
+
+  const standalonePlan = ({ id, agentId }: StandalonePlanParams): PlanWithCount => ({
+    id: typedString<PlanId>({ value: id }),
+    sessionId: SESSION_ID,
+    agentId: typedString<AgentId>({ value: agentId }),
+    title: id,
+    bodyMd: '',
+    status: 'active',
+    createdAt: typedString<IsoDateTime>({ value: localIso({ day: 18, hour: 9, minute: 15 }) }),
+    updatedAt: typedString<IsoDateTime>({ value: localIso({ day: 18, hour: 9, minute: 15 }) }),
+    consumptionCount: 0,
+  });
+
+  it('joins plans authored by a chain root and child to the root lane', () => {
+    const { items } = stream({
+      agents: [
+        agent({ id: 'planner', ordinal: 0, startedAt: localIso({ day: 18, hour: 9 }) }),
+        agent({
+          id: 'implementer',
+          ordinal: 1,
+          parentAgentId: 'planner',
+          startedAt: localIso({ day: 18, hour: 10 }),
+        }),
+      ],
+      plans: [
+        standalonePlan({ id: 'root-plan', agentId: 'planner' }),
+        standalonePlan({ id: 'child-plan', agentId: 'implementer' }),
+      ],
+    });
+    const root = items.find((item) => item.kind === 'row' && item.id === 'agent:planner');
+    const planRows = items.filter(
+      (item) =>
+        item.kind === 'row' && (item.id === 'plan:root-plan' || item.id === 'plan:child-plan'),
+    );
+
+    expect(planRows.map((item) => item.groupId)).toEqual([
+      'lane:agent:planner',
+      'lane:agent:planner',
+    ]);
+    expect(planRows.map((item) => (item.kind === 'row' ? item.identity : null))).toEqual([
+      root?.kind === 'row' ? root.identity : null,
+      root?.kind === 'row' ? root.identity : null,
+    ]);
+  });
+
+  it('keeps a plan authored outside a chain on the spine', () => {
+    const { items } = stream({
+      agents: [agent({ id: 'solo', ordinal: 0, startedAt: localIso({ day: 18, hour: 9 }) })],
+      plans: [standalonePlan({ id: 'solo-plan', agentId: 'solo' })],
+    });
+    const planRow = items.find((item) => item.kind === 'row' && item.id === 'plan:solo-plan');
+
+    expect(planRow?.groupId).toBeNull();
+    expect(planRow?.kind === 'row' ? planRow.identity : 'missing').toBeNull();
+  });
+
   it('keeps a run plan in the stream by default', () => {
     const { items } = stream({
       workflows: PLAN_RUN_WORKFLOWS,
