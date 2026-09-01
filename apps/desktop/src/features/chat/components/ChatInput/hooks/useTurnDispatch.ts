@@ -39,6 +39,7 @@ export const useTurnDispatch = ({ sessionId, cleanupSentAttachments }: UseTurnDi
           sessionId,
           agentId,
           content,
+          origin: 'operator',
           ...(atts.length > 0 ? { attachments: atts.map(toAttachmentInput) } : {}),
           override,
           ...(force ? { force: true } : {}),

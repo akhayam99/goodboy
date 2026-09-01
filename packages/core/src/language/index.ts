@@ -1,5 +1,5 @@
 export {
-  SESSION_LANGUAGE_TURN_RULE,
   sessionLanguageRule,
+  sessionLanguageTurnRule,
   type SessionLanguageRuleParams,
 } from './sessionLanguage';

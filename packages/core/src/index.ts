@@ -100,8 +100,8 @@ export {
 export { classifyFirstTurn, type AgentKindLabel } from './first-turn-classifier';
 
 export {
-  SESSION_LANGUAGE_TURN_RULE,
   sessionLanguageRule,
+  sessionLanguageTurnRule,
   type SessionLanguageRuleParams,
 } from './language';
 

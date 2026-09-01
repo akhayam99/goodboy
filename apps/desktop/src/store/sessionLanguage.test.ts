@@ -108,16 +108,20 @@ describe('resolveSessionLanguageGoal', () => {
 
 describe('buildSessionLanguageGuard', () => {
   it('quotes the goal and pins the turn to the language it is written in', () => {
-    const guard = buildSessionLanguageGuard({ goal: ITALIAN_GOAL });
+    const guard = buildSessionLanguageGuard({
+      anchor: { source: 'goal', text: ITALIAN_GOAL },
+    });
 
     expect(guard).toContain('[session-language]');
+    expect(guard).toContain('The operator stated the goal of this session as:');
     expect(guard).toContain(ITALIAN_GOAL);
     expect(guard).toContain('Answer in the language that goal is written in');
-    expect(guard).toContain('[/session-language]');
   });
 
   it('states that a plan or a summary in another language changes nothing', () => {
-    const guard = buildSessionLanguageGuard({ goal: ITALIAN_GOAL });
+    const guard = buildSessionLanguageGuard({
+      anchor: { source: 'goal', text: ITALIAN_GOAL },
+    });
 
     expect(guard).toContain(
       'whatever language the plan, the carried context, the step summaries, or your own tooling use',
@@ -125,7 +129,18 @@ describe('buildSessionLanguageGuard', () => {
     expect(guard).toContain('never by anything it asks for');
   });
 
-  it('emits nothing when there is no goal to pin to', () => {
-    expect(buildSessionLanguageGuard({ goal: '   ' })).toBe('');
+  it('quotes the latest message and pins the turn to its language', () => {
+    const guard = buildSessionLanguageGuard({
+      anchor: { source: 'message', text: ITALIAN_GOAL },
+    });
+
+    expect(guard).toContain('The operator last wrote to this session:');
+    expect(guard).toContain('Answer in the language that message is written in');
+    expect(guard).toContain('The message fixes that language');
+  });
+
+  it('emits nothing when either anchor source has blank text', () => {
+    expect(buildSessionLanguageGuard({ anchor: { source: 'goal', text: '   ' } })).toBe('');
+    expect(buildSessionLanguageGuard({ anchor: { source: 'message', text: '   ' } })).toBe('');
   });
 });

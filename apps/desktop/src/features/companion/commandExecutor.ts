@@ -611,6 +611,7 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
           sessionId,
           ...(agentId ? { agentId } : {}),
           content,
+          origin: 'operator',
           ...(attachments.length > 0 ? { attachments } : {}),
           ...(override ? { override } : {}),
         })
