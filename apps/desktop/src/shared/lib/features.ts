@@ -10,8 +10,3 @@ export const SESSION_FEATURES = {
   branchSwitching: true,
   verbosity: true,
 } as const;
-
-export const AGENT_FEATURES = {
-  parallelAgents: true,
-  maxParallelism: 4,
-} as const;

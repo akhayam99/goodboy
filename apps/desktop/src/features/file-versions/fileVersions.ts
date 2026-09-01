@@ -7,7 +7,7 @@ export type SnapshotManifestEntry = Readonly<{
   contentHash: string;
 }>;
 
-export type SnapshotSkippedEntry = Readonly<{
+type SnapshotSkippedEntry = Readonly<{
   relativePath: string;
   reason: string;
   sizeBytes?: number;
@@ -45,14 +45,14 @@ export type FinalizeSnapshotResult = Readonly<{
   kept: ReadonlyArray<FinalizedVersion>;
 }>;
 
-export type StagedSnapshotRun = Readonly<{
+type StagedSnapshotRun = Readonly<{
   sessionId: SessionId;
   runId: string;
   sessionDir: string;
   manifest: ReadonlyArray<SnapshotManifestEntry>;
 }>;
 
-export type SkippedStagedSnapshotRun = Readonly<{
+type SkippedStagedSnapshotRun = Readonly<{
   sessionId: SessionId;
   runId: string;
   reason: string;

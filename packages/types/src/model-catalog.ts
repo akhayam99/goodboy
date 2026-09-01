@@ -121,13 +121,13 @@ export type VariantAxis = {
   readonly activeId: string | null;
 };
 
-export type ModelAxisOption = {
+type ModelAxisOption = {
   readonly id: string;
   readonly label: string;
   readonly modelKey: ModelKey;
 };
 
-export type ModelAxis = {
+type ModelAxis = {
   readonly label: string;
   readonly options: ReadonlyArray<ModelAxisOption>;
   readonly activeId: string | null;

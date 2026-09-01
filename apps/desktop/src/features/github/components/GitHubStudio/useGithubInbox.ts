@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { PullRequestState, Session, SessionPrGroup } from '@goodboy/types';
 import { useAppStore, useSessions } from '../../../../store';
 
-export type InboxRow = {
+type InboxRow = {
   readonly session: Session;
   readonly pr: PullRequestState | null;
   readonly attention: boolean;

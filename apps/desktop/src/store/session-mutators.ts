@@ -11,22 +11,6 @@ export const EMPTY_LOADING: SessionLoadingFlags = {
   summary: false,
 };
 
-export const applySessionUpdate = (
-  set: SetFn,
-  sessionId: SessionId,
-  state: TurnState,
-  agentId?: AgentId,
-): void => {
-  set((store) => ({
-    sessions: store.sessions.map((s) =>
-      s.id === sessionId ? { ...s, state, updatedAt: new Date().toISOString() as IsoDateTime } : s,
-    ),
-    ...(agentId !== undefined && {
-      agentTurnState: { ...store.agentTurnState, [agentId]: state },
-    }),
-  }));
-};
-
 export const deriveSessionState = (
   agentStates: ReadonlyArray<TurnState>,
   now: IsoDateTime,

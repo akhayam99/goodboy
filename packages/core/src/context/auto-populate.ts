@@ -16,7 +16,7 @@ import { ContextEngine } from './engine';
 import { extractMarkers, mergeIntoSlot, removeFromSlot } from './extractors';
 import type { SlotKey } from './slots';
 
-export type AgentContext = {
+type AgentContext = {
   readonly agentId: AgentId;
   readonly workflowId?: WorkflowId;
   readonly workflowRunId?: WorkflowRunId;

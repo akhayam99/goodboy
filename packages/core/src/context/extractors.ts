@@ -30,7 +30,6 @@ export {
   type ExtractedHandoff,
   type ExtractedMaterializeRequest,
   type ExtractedPlan,
-  type ExtractedQuestion,
   type ExtractedReviewComment,
   type ExtractedScoutArea,
   type PlanReadinessInput,

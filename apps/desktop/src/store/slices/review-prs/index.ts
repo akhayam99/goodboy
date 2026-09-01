@@ -10,4 +10,3 @@ export const createReviewPrsSlice = (set: SetFn, get: GetFn) => {
 };
 
 export { selectReviewPrs } from './selectReviewPrs';
-export type { ReviewPrsState } from './types';

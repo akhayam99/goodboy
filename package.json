@@ -25,6 +25,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "knip": "knip",
+    "knip:production": "knip --workspace apps/desktop --production --include files,exports,types",
     "check:tauri-commands": "node scripts/check-tauri-commands.mjs",
     "prepare": "lefthook install"
   },

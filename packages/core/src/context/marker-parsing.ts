@@ -114,7 +114,7 @@ const stripBlocks = (text: string, open: string, close: string): string => {
 };
 const HANDOFF_ATTR_RE = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/g;
 
-export type ExtractedQuestion = {
+type ExtractedQuestion = {
   readonly text: string;
   readonly suggestedAnswers: ReadonlyArray<string>;
   readonly recommendedAnswer: string | null;

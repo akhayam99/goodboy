@@ -6,7 +6,7 @@ type Drag =
   | { kind: 'library'; stepDefId: string; label: string }
   | { kind: 'step'; fromIndex: number; label: string };
 
-export type DragGhostDescriptor = { label: string; x: number; y: number };
+type DragGhostDescriptor = { label: string; x: number; y: number };
 
 type Params = {
   enabled: boolean;

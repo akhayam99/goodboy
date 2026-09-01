@@ -2,7 +2,7 @@ import type { AgentId } from '@goodboy/types';
 import { isAgentFinished } from '../../agent-lifecycle';
 import type { ResolverLink } from '../../resolver-linkage';
 
-export const isResolverSettled = ({ agent, status }: ResolverLink): boolean =>
+const isResolverSettled = ({ agent, status }: ResolverLink): boolean =>
   isAgentFinished({ agent, resolverStatus: status });
 
 type Params = {

@@ -12,7 +12,7 @@ import { gitlabFetchAssignedIssues, type GitlabIssue } from '../client';
 
 const SLUG_MAX_LEN = 48;
 
-export const slugify = (input: string): string => {
+const slugify = (input: string): string => {
   return slugifyBranch({ input, maxLength: SLUG_MAX_LEN });
 };
 
@@ -27,7 +27,7 @@ export const projectPathFromIssue = (issue: GitlabIssue): string => {
   return path || 'issues';
 };
 
-export type GitlabIssueRow = {
+type GitlabIssueRow = {
   readonly issue: GitlabIssue;
   readonly sessionId: SessionId | null;
 };

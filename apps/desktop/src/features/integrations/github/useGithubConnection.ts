@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { GhTokenStatus, WorkspaceId } from '@goodboy/types';
 import { ghStatus } from '../../github/github';
 
-export const GITHUB_CONNECTION_CHANGED_EVENT = 'goodboy:github-connection-changed';
+const GITHUB_CONNECTION_CHANGED_EVENT = 'goodboy:github-connection-changed';
 
 export const notifyGithubConnectionChanged = () => {
   window.dispatchEvent(new CustomEvent(GITHUB_CONNECTION_CHANGED_EVENT));

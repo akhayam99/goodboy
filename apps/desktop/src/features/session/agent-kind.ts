@@ -66,7 +66,7 @@ export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
   'generic',
 ];
 
-export const PLAN_CONSUMING_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>([
+const PLAN_CONSUMING_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>([
   'implementer',
   'debugger',
   'generic',
@@ -255,7 +255,7 @@ export const agentKindPalette = ({ kind }: AgentKindPaletteParams): AgentKindPal
   return { ...UNKNOWN_KIND_STYLE, label: unknownKindLabel({ kind }) };
 };
 
-export const AGENT_ROLES: ReadonlyArray<AgentRole> = [
+const AGENT_ROLES: ReadonlyArray<AgentRole> = [
   'scout',
   'planner',
   'implementer',

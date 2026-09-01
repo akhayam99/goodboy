@@ -167,4 +167,4 @@ type RegisteredKey =
   (typeof SESSION_EVICTION)[number]['key'] | (typeof NON_SESSION_STATE_KEYS)[number];
 type UnregisteredKey = Exclude<keyof AppState, RegisteredKey>;
 
-export const allStateKeysClassified: UnregisteredKey extends never ? true : UnregisteredKey = true;
+const allStateKeysClassified: UnregisteredKey extends never ? true : UnregisteredKey = true;

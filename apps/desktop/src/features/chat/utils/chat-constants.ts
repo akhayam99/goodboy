@@ -119,9 +119,7 @@ export const modelLabel = (id: string): string => {
   return label === '' ? id : label;
 };
 
-export type { ModelFamily };
-
-export type ParsedModel = {
+type ParsedModel = {
   readonly family: ModelFamily;
   readonly subfamily: string | null;
   readonly variantLabel: string;
@@ -247,7 +245,7 @@ export const modelTier = (model: string): CostTier => {
   return 'mid';
 };
 
-export const modelWeight = (model: string): number => {
+const modelWeight = (model: string): number => {
   return getModelDescriptor(model)?.weight ?? FALLBACK_WEIGHT;
 };
 

@@ -13,8 +13,6 @@ export type {
   ProviderConnectState,
   ProviderConnectStep,
   ProviderLifecycleMap,
-  ProviderLifecyclePhase,
-  ProviderLifecycleState,
 } from './types';
 export { INITIAL_CONNECT_MAP, INITIAL_LIFECYCLE_MAP } from './types';
 

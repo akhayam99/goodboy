@@ -60,6 +60,9 @@ jobs:
       - name: knip
         run: pnpm knip --include files,duplicates,unlisted
 
+      - name: knip production
+        run: pnpm run knip:production
+
       - name: test
         run: pnpm turbo run test --affected --continue
 

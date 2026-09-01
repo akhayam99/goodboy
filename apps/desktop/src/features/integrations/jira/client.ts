@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { IntegrationCredentialId, ProjectId, WorkspaceId } from '@goodboy/types';
 
-export type JiraAvatarUrls = {
+type JiraAvatarUrls = {
   readonly '48x48': string | null;
   readonly '24x24': string | null;
 };
@@ -41,7 +41,7 @@ export type JiraComment = {
   readonly updated: string;
 };
 
-export type JiraTransitionTarget = {
+type JiraTransitionTarget = {
   readonly id: string;
   readonly name: string;
 };
@@ -53,7 +53,7 @@ export type JiraTransition = {
   readonly hasScreen: boolean;
 };
 
-export type JiraSite = {
+type JiraSite = {
   readonly workspaceId: WorkspaceId;
   readonly projectId?: ProjectId;
   readonly siteUrl: string;

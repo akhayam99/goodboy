@@ -102,7 +102,7 @@ export type GitlabMergeStatus =
   | 'cannot_be_merged_recheck'
   | null;
 
-export type GitlabMrAuthor = {
+type GitlabMrAuthor = {
   username: string;
   name: string;
   avatarUrl: string | null;
@@ -291,7 +291,7 @@ export const gitlabCreateMrNote = async (
   });
 };
 
-export type GitlabNotePosition = {
+type GitlabNotePosition = {
   newPath: string | null;
   oldPath: string | null;
   newLine: number | null;
@@ -315,7 +315,7 @@ export type GitlabMrDiscussion = {
   notes: ReadonlyArray<GitlabMrNote>;
 };
 
-export type GitlabMrApproval = {
+type GitlabMrApproval = {
   user: GitlabMrAuthor;
 };
 

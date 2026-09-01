@@ -1,6 +1,6 @@
 export type BreadcrumbCrumb = { id: string; label: string; onClick?: () => void };
 
-export type BreadcrumbChrome =
+type BreadcrumbChrome =
   | { kind: 'none' }
   | { kind: 'workspace-launcher' }
   | { kind: 'workspace-create' }

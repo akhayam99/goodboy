@@ -65,7 +65,7 @@ type ProviderIdsAreTotal =
   Exclude<ProviderId, (typeof PROVIDER_IDS)[number]> extends never ? true : false;
 type _ProviderIdsTotalCheck = Expect<ProviderIdsAreTotal>;
 
-export const toProviderId = (provider: string): ProviderId | null => {
+const toProviderId = (provider: string): ProviderId | null => {
   return PROVIDER_IDS.includes(provider as ProviderId) ? (provider as ProviderId) : null;
 };
 

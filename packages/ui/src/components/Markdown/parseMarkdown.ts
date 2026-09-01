@@ -15,7 +15,7 @@ export type Block =
   | { kind: 'callout'; tag: string; content: string }
   | { kind: 'paragraph'; content: string; isTree: boolean };
 
-export type ListItem = {
+type ListItem = {
   readonly content: string;
   readonly children: ReadonlyArray<Block>;
 };

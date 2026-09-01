@@ -21,7 +21,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 
 const planTint = tintClasses(CONCEPT_TONE.plans);
 
-export type AdvanceParams = {
+type AdvanceParams = {
   readonly step: Step;
   readonly model: string;
   readonly verbosity: VerbosityLevel | undefined;

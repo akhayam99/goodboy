@@ -14,7 +14,7 @@ import { attachedQuestionsFor } from './attachedQuestions';
 import { earliestEvidence, resolveAgentCreation, type AgentCreation } from './agentCreation';
 import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
 
-export type TimelineChain = {
+type TimelineChain = {
   readonly identity: RunIdentity;
 };
 

@@ -3,7 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 
-export type BudgetDataScope = 'rules' | 'alerts' | 'telemetry' | 'sessionBudgets';
+type BudgetDataScope = 'rules' | 'alerts' | 'telemetry' | 'sessionBudgets';
 
 export type BudgetData = {
   readonly rules: QueryResult<void>;

@@ -21,7 +21,7 @@ import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import type { GetFn, SetFn } from './types';
 
 export const SCOUT_DEPTH_CAP = 2;
-export const FAN_OUT_DEPTH_CAP = 1;
+const FAN_OUT_DEPTH_CAP = 1;
 export const FAN_OUT_MAX_CHILDREN = 4;
 
 const resolveContainerModel = (get: GetFn, container: Agent): string => {

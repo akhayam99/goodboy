@@ -5,7 +5,7 @@ type Params = {
   readonly hasActiveSession: boolean;
 };
 
-export type PeekSource = 'edge' | 'anchor';
+type PeekSource = 'edge' | 'anchor';
 
 const OPEN_DELAY_MS: Record<PeekSource, number> = {
   edge: 150,
