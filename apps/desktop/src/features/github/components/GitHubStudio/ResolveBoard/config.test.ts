@@ -14,8 +14,7 @@ describe('ResolveBoard config', () => {
     expect(clampEffort('gpt-5.5', 'minimal')).toBe('low');
   });
 
-  it('defaultConfig seeds fix mode with an empty hint', () => {
-    expect(DEFAULT_CONFIG.mode).toBe('fix');
+  it('defaultConfig seeds an empty hint', () => {
     expect(DEFAULT_CONFIG.hint).toBe('');
   });
 
@@ -23,21 +22,19 @@ describe('ResolveBoard config', () => {
     expect(configFor({ provider: 'anthropic', base: DEFAULT_CONFIG })).toEqual(DEFAULT_CONFIG);
   });
 
-  it('configFor uses the provider default model and keeps mode and hint', () => {
+  it('configFor uses the provider default model and keeps the hint', () => {
     const cfg = configFor({
       provider: 'codex',
-      base: { ...DEFAULT_CONFIG, mode: 'analyze', hint: 'careful' },
+      base: { ...DEFAULT_CONFIG, hint: 'careful' },
     });
     expect(cfg.provider).toBe('codex');
     expect(cfg.model).not.toBe(DEFAULT_CONFIG.model);
-    expect(cfg.mode).toBe('analyze');
     expect(cfg.hint).toBe('careful');
   });
 
-  it('sameConfig compares routing, mode and hint', () => {
+  it('sameConfig compares routing and hint', () => {
     expect(sameConfig(DEFAULT_CONFIG, { ...DEFAULT_CONFIG })).toBe(true);
     expect(sameConfig(DEFAULT_CONFIG, { ...DEFAULT_CONFIG, effort: 'high' })).toBe(false);
-    expect(sameConfig(DEFAULT_CONFIG, { ...DEFAULT_CONFIG, mode: 'analyze' })).toBe(false);
     expect(sameConfig(DEFAULT_CONFIG, { ...DEFAULT_CONFIG, hint: 'x' })).toBe(false);
   });
 

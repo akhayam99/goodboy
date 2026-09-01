@@ -1,14 +1,12 @@
 import type { ProviderId, RoleModelPreferences } from '@goodboy/types';
 import { getDefaultTurnModel } from '@goodboy/core';
 import { clampEffort, type EffortLevel } from '../../../../chat/utils/chat-constants';
-import type { ResolveMode } from '../../../../chat/spawn-from-comment';
 import { kindRouting } from '../../../../session/agent-kind';
 
 export type CardConfig = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly effort: EffortLevel;
-  readonly mode: ResolveMode;
   readonly hint: string;
 };
 
@@ -22,7 +20,6 @@ export const defaultConfig = ({ roleModels }: DefaultParams): CardConfig => {
     provider: routing.provider,
     model: routing.model,
     effort: routing.effort,
-    mode: 'fix',
     hint: '',
   };
 };
@@ -39,11 +36,7 @@ export const configFor = ({ provider, base }: ConfigForParams): CardConfig => {
 
 export const sameConfig = (a: CardConfig, b: CardConfig): boolean => {
   return (
-    a.provider === b.provider &&
-    a.model === b.model &&
-    a.effort === b.effort &&
-    a.mode === b.mode &&
-    a.hint === b.hint
+    a.provider === b.provider && a.model === b.model && a.effort === b.effort && a.hint === b.hint
   );
 };
 

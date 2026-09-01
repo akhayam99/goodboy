@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  extractAllCommentAnalysis,
   extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,
@@ -59,11 +58,9 @@ const realIds = <T extends { readonly threadId: string }>(markers: ReadonlyArray
   markers.filter((marker) => isReviewThreadId(marker.threadId));
 
 const outcomeIds = (prompt: string): ReadonlyArray<string> =>
-  [
-    ...realIds(extractAllCommentResolved(prompt)),
-    ...realIds(extractAllCommentWontfix(prompt)),
-    ...realIds(extractAllCommentAnalysis(prompt)),
-  ].map((marker) => marker.threadId);
+  [...realIds(extractAllCommentResolved(prompt)), ...realIds(extractAllCommentWontfix(prompt))].map(
+    (marker) => marker.threadId,
+  );
 
 const occurrences = ({ text, needle }: { text: string; needle: string }): number =>
   text.split(needle).length - 1;
@@ -166,34 +163,6 @@ describe('spawn-from-comment', () => {
     expect(new Set(replies.map((reply) => reply.body)).size).toBe(3);
   });
 
-  it('asks for one analysis marker per thread and no fix marker in analyze mode', () => {
-    const prompt = buildCombinedCommentAgentArgs(threadsOf(2), PR, {
-      mode: 'analyze',
-    }).initialPrompt;
-
-    expect(realIds(extractAllCommentAnalysis(prompt)).map((marker) => marker.threadId)).toEqual([
-      'PRRT_1',
-      'PRRT_2',
-    ]);
-    expect(realIds(extractAllCommentAnalysis(prompt)).map((marker) => marker.verdict)).toEqual([
-      'fix',
-      'wontfix',
-    ]);
-    expect(realIds(extractAllCommentResolved(prompt))).toEqual([]);
-    expect(prompt).toContain('Analysis mode: do not modify or commit any file');
-    expect(prompt).toContain('summary must be one paragraph of plain text with no double quotes');
-  });
-
-  it('keeps the phrase the resolver role prompt reads as analysis mode', () => {
-    const analyze = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR, {
-      mode: 'analyze',
-    }).initialPrompt;
-    const fix = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR).initialPrompt;
-
-    expect(analyze).toContain('Analysis mode');
-    expect(fix).not.toContain('Analysis mode');
-  });
-
   it('states the reply contract once, however many threads it hands over', () => {
     const one = buildCombinedCommentAgentArgs(threadsOf(1), PR).initialPrompt;
     const four = buildCombinedCommentAgentArgs(threadsOf(4), PR).initialPrompt;
@@ -226,10 +195,9 @@ describe('spawn-from-comment', () => {
     expect(prompt).not.toContain('comment-reply');
   });
 
-  it('keeps the omitted and explicit fix-mode prompts byte-identical', () => {
-    const omitted = buildCommentAgentArgs(makeComment(), PR).initialPrompt;
-    expect(omitted).toBe(buildCommentAgentArgs(makeComment(), PR, { mode: 'fix' }).initialPrompt);
-    expect(omitted).toBe(
+  it('uses the neutral resolver instruction for a single kickoff', () => {
+    const prompt = buildCommentAgentArgs(makeComment(), PR).initialPrompt;
+    expect(prompt).toBe(
       [
         'Resolve 1 thread on PR #9108, branch `kay/foo`.',
         '',
@@ -241,8 +209,7 @@ describe('spawn-from-comment', () => {
         '> this should use a helper',
         '',
         'What to do',
-        'Fix the thread above in one pass, committing locally as you go.',
-        'Leave a thread unchanged when the change it asks for is wrong, and say why in its outcome marker.',
+        'Judge the thread above on the merits in one pass. When a thread asks for the right change, implement it and commit locally as you go. When the change it asks for is wrong or not worth making, leave the code unchanged and give the reason in its outcome marker. Never default to either outcome: read the code first, then decide per thread.',
       ].join('\n'),
     );
   });
@@ -288,23 +255,12 @@ describe('spawn-from-comment', () => {
     expect(args.initialPrompt).toContain('handle the second issue');
   });
 
-  it('keeps the omitted and explicit fix-mode combined prompts byte-identical', () => {
+  it('uses the neutral resolver instruction for a combined kickoff', () => {
     const threads = threadsOf(2);
-    const omitted = buildCombinedCommentAgentArgs(threads, PR).initialPrompt;
-    const explicit = buildCombinedCommentAgentArgs(threads, PR, {
-      mode: 'fix',
-      hint: '  ',
-    }).initialPrompt;
-    expect(omitted).toBe(explicit);
-    expect(omitted).not.toContain('Operator notes');
-    expect(omitted).not.toContain('read-only');
-  });
-
-  it('marks the mode on the args only when it is not the default fix', () => {
-    expect(buildCombinedCommentAgentArgs(threadsOf(2), PR).mode).toBeUndefined();
-    expect(buildCombinedCommentAgentArgs(threadsOf(2), PR, { mode: 'analyze' }).mode).toBe(
-      'analyze',
+    const prompt = buildCombinedCommentAgentArgs(threads, PR, { hint: '  ' }).initialPrompt;
+    expect(prompt).toContain(
+      'Judge all 2 threads above on the merits in one pass. When a thread asks for the right change, implement it and commit locally as you go. When the change it asks for is wrong or not worth making, leave the code unchanged and give the reason in its outcome marker. Never default to either outcome: read the code first, then decide per thread.',
     );
-    expect(buildCommentAgentArgs(makeComment(), PR, { mode: 'analyze' }).mode).toBe('analyze');
+    expect(prompt).not.toContain('Operator notes');
   });
 });

@@ -352,10 +352,9 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     expect(sendTurn.mock.calls[0]?.[0]?.content).toContain('fix the typo in README');
   });
 
-  it('stores mode instructions and hint for a deferred batch resolver', async () => {
+  it('stores neutral instructions and a hint for a deferred batch resolver', async () => {
     const { getState, sendTurn, spawn } = buildHarness([]);
     const args = buildCommentAgentArgs(COMMENT, PR, {
-      mode: 'analyze',
       hint: 'Avoid schema changes.',
     });
 
@@ -366,7 +365,7 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     });
 
     const kickoff = getState().pendingResolverKickoff[INSERTED_ID];
-    expect(kickoff).toContain('Analysis mode: do not modify or commit any file');
+    expect(kickoff).toContain('Judge the thread above on the merits in one pass.');
     expect(kickoff).toContain('Operator notes\nAvoid schema changes.');
     expect(sendTurn).not.toHaveBeenCalled();
   });

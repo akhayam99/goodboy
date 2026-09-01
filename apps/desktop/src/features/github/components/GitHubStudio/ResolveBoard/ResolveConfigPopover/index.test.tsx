@@ -15,7 +15,6 @@ const CONFIG: CardConfig = {
   provider: 'anthropic',
   model: 'claude-sonnet-4-5',
   effort: 'medium',
-  mode: 'fix',
   hint: '',
 };
 
@@ -44,24 +43,16 @@ const open = () => {
 afterEach(cleanup);
 
 describe('ResolveConfigPopover', () => {
-  it('opens a portaled dialog with mode, instructions and routing sections', () => {
+  it('opens a portaled dialog with instructions and routing sections', () => {
     renderPopover();
     expect(screen.queryByRole('dialog', { name: 'Configure resolver' })).toBeNull();
 
     open();
     const dialog = screen.getByRole('dialog', { name: 'Configure resolver' });
     expect(dialog.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
-    expect(screen.getByText('Mode')).toBeDefined();
     expect(screen.getByText('Instructions')).toBeDefined();
     expect(screen.getByText('Provider')).toBeDefined();
-  });
-
-  it('reports a mode change through onChange', () => {
-    const onChange = vi.fn();
-    renderPopover({ onChange });
-    open();
-    fireEvent.click(screen.getByRole('tab', { name: 'Analyze' }));
-    expect(onChange).toHaveBeenCalledWith({ ...CONFIG, mode: 'analyze' });
+    expect(screen.queryByRole('tab')).toBeNull();
   });
 
   it('reports hint edits through onChange', () => {

@@ -25,12 +25,6 @@ const REPLY_CONTRACT: ReadonlyArray<string> = [
   '- Renaming this one alone would break the convention in about 50 sibling routes.',
 ];
 
-const ANALYSIS_SUMMARY_PLAIN_TEXT =
-  'The summary must be one paragraph of plain text with no double quotes.';
-
-const ANALYSIS_SUMMARY_SCOPE =
-  'That plain-text rule covers the summary attribute only: the <<comment-reply>> block stays markdown and keeps the reply contract above.';
-
 const EXAMPLE_SHA = 'a1b2c3d';
 
 const EXAMPLE_REPLIES: ReadonlyArray<string> = [
@@ -41,13 +35,6 @@ const EXAMPLE_REPLIES: ReadonlyArray<string> = [
 const EXAMPLE_FALLBACK_REPLY = 'The answer for this thread, written to the contract below.';
 
 const EXAMPLE_WONTFIX_REASON = 'the naming follows the convention of every sibling route';
-
-const EXAMPLE_ANALYSIS_SUMMARIES = {
-  fix: 'the guard runs after the lookup, so an empty batch reaches resolveOne and throws',
-  wontfix: 'the naming follows the convention of every sibling route, renaming one breaks the rest',
-} as const;
-
-export type ResolveMode = 'fix' | 'analyze';
 
 function shortPath(path: string): string {
   const segments = path.split('/');
@@ -105,17 +92,11 @@ const threadBlock = ({
 
 const outcomeExample = ({
   threadId,
-  mode,
   isWontfix,
 }: {
   readonly threadId: string;
-  readonly mode: ResolveMode;
   readonly isWontfix: boolean;
 }): string => {
-  if (mode === 'analyze') {
-    const verdict = isWontfix ? 'wontfix' : 'fix';
-    return `<<comment-analysis threadId="${threadId}" verdict="${verdict}" summary="${EXAMPLE_ANALYSIS_SUMMARIES[verdict]}">>`;
-  }
   if (isWontfix) {
     return `<<comment-wontfix threadId="${threadId}" reason="${EXAMPLE_WONTFIX_REASON}">>`;
   }
@@ -124,39 +105,18 @@ const outcomeExample = ({
 
 const workedExample = ({
   threadIds,
-  mode,
 }: {
   readonly threadIds: ReadonlyArray<string>;
-  readonly mode: ResolveMode;
 }): ReadonlyArray<string> =>
   threadIds.flatMap((threadId, index) => [
-    outcomeExample({ threadId, mode, isWontfix: index === 1 }),
+    outcomeExample({ threadId, isWontfix: index === 1 }),
     `<<comment-reply id="${threadId}">>${EXAMPLE_REPLIES[index] ?? EXAMPLE_FALLBACK_REPLY}<</comment-reply>>`,
   ]);
 
-const outcomeForms = ({ mode }: { readonly mode: ResolveMode }): ReadonlyArray<string> => {
-  if (mode === 'analyze') {
-    return [
-      'The outcome marker carries your verdict, and nothing else closes the thread:',
-      '<<comment-analysis threadId="the id above" verdict="fix" summary="one plain-text paragraph">> when the thread deserves a change.',
-      '<<comment-analysis threadId="the id above" verdict="wontfix" summary="one plain-text paragraph">> when it does not.',
-      ANALYSIS_SUMMARY_PLAIN_TEXT,
-      ANALYSIS_SUMMARY_SCOPE,
-    ];
-  }
-  return [
-    'Pick one outcome marker per thread:',
-    '<<comment-resolved threadId="the id above" commitSha="the sha you committed">> when the change is committed.',
-    '<<comment-wontfix threadId="the id above" reason="one plain-text line">> when the thread closes with no change.',
-  ];
-};
-
 const reportingSection = ({
   threadIds,
-  mode,
 }: {
   readonly threadIds: ReadonlyArray<string>;
-  readonly mode: ResolveMode;
 }): ReadonlyArray<string> => {
   const count = threadIds.length;
   const noun = count === 1 ? 'thread' : 'threads';
@@ -166,60 +126,45 @@ const reportingSection = ({
     RESOLVER_KICKOFF_LABELS.reporting,
     `Report every thread at the end of the same turn: exactly one outcome marker and exactly one reply block for ${subject}, each on its own line.`,
     'Never emit two outcome markers for one thread id, never leave a thread id without one, and never reuse a reply on another thread id.',
-    ...outcomeForms({ mode }),
+    'Pick one outcome marker per thread:',
+    '<<comment-resolved threadId="the id above" commitSha="the sha you committed">> after a commit.',
+    '<<comment-wontfix threadId="the id above" reason="one plain-text line">> without a change.',
     'The reply block carries the answer the reviewer reads, and it posts only on the thread whose id it names:',
     '<<comment-reply id="the id above">>the answer for that thread<</comment-reply>>',
     `A complete report for the ${count} ${noun} of this run reads exactly like this:`,
-    ...workedExample({ threadIds, mode }),
+    ...workedExample({ threadIds }),
   ];
 };
 
-const instructionsSection = ({
-  mode,
-  count,
-}: {
-  readonly mode: ResolveMode;
-  readonly count: number;
-}): ReadonlyArray<string> => {
+const instructionsSection = ({ count }: { readonly count: number }): ReadonlyArray<string> => {
   const target = count === 1 ? 'the thread above' : `all ${count} threads above`;
-  const decide = count === 1 ? 'decide whether it deserves' : 'decide for each whether it deserves';
-  if (mode === 'analyze') {
-    return [
-      RESOLVER_KICKOFF_LABELS.instructions,
-      `Investigate ${target} in one pass and ${decide} a change.`,
-      'Analysis mode: do not modify or commit any file, this run is read-only.',
-    ];
-  }
   return [
     RESOLVER_KICKOFF_LABELS.instructions,
-    `Fix ${target} in one pass, committing locally as you go.`,
-    'Leave a thread unchanged when the change it asks for is wrong, and say why in its outcome marker.',
+    `Judge ${target} on the merits in one pass. When a thread asks for the right change, implement it and commit locally as you go. When the change it asks for is wrong or not worth making, leave the code unchanged and give the reason in its outcome marker. Never default to either outcome: read the code first, then decide per thread.`,
   ];
 };
 
 type KickoffParams = {
   readonly threads: ReadonlyArray<CommentThread>;
   readonly pr: PullRequestState;
-  readonly mode: ResolveMode;
   readonly hint: string;
 };
 
-const buildResolverKickoff = ({ threads, pr, mode, hint }: KickoffParams): string => {
-  const verb = mode === 'analyze' ? 'Analyze' : 'Resolve';
+const buildResolverKickoff = ({ threads, pr, hint }: KickoffParams): string => {
   const noun = threads.length === 1 ? 'thread' : 'threads';
   const lines: Array<string> = [
-    `${verb} ${threads.length} ${noun} on PR #${pr.number}, branch \`${pr.headBranch}\`.`,
+    `Resolve ${threads.length} ${noun} on PR #${pr.number}, branch \`${pr.headBranch}\`.`,
   ];
   for (const [index, thread] of threads.entries()) {
     lines.push('', ...threadBlock({ thread, position: index + 1, total: threads.length }));
   }
-  lines.push('', ...instructionsSection({ mode, count: threads.length }));
+  lines.push('', ...instructionsSection({ count: threads.length }));
   const threadIds = threads.flatMap((thread) => {
     const threadId = threadIdOf({ comment: thread.head });
     return threadId === '' ? [] : [threadId];
   });
   if (threadIds.length > 0) {
-    lines.push('', ...reportingSection({ threadIds, mode }));
+    lines.push('', ...reportingSection({ threadIds }));
     lines.push('', RESOLVER_KICKOFF_LABELS.replyContract, ...REPLY_CONTRACT);
   }
   const operatorNotes = hint.trim();
@@ -240,7 +185,6 @@ export type CommentAgentArgs = {
   readonly sourceThreadIds?: ReadonlyArray<string>;
   readonly sourceCommentUrl: string;
   readonly sourceKind: AgentSourceKind;
-  readonly mode?: ResolveMode;
 };
 
 export const buildCombinedCommentAgentArgs = (
@@ -256,18 +200,16 @@ export const buildCombinedCommentAgentArgs = (
   const sourceThreadIds = threads.flatMap((thread) =>
     thread.head.threadId != null ? [thread.head.threadId] : [],
   );
-  const mode = choice.mode ?? 'fix';
   return {
     name: `resolve: ${threads.length} review threads`,
     kind: 'resolver',
     model: choice.model ?? defaults.model,
     ...(choice.provider !== undefined && { provider: choice.provider }),
     effort: choice.effort ?? defaults.effort,
-    initialPrompt: buildResolverKickoff({ threads, pr, mode, hint: choice.hint ?? '' }),
+    initialPrompt: buildResolverKickoff({ threads, pr, hint: choice.hint ?? '' }),
     sourceThreadIds,
     sourceCommentUrl: first.head.url,
     sourceKind: 'review_comment',
-    ...(mode !== 'fix' && { mode }),
   };
 };
 
@@ -275,7 +217,6 @@ export type ResolveModelChoice = {
   readonly provider?: ProviderId;
   readonly model?: string;
   readonly effort?: EffortLevel;
-  readonly mode?: ResolveMode;
   readonly hint?: string;
 };
 
@@ -286,7 +227,6 @@ export const buildCommentAgentArgs = (
   replies: ReadonlyArray<PrComment> = [],
 ): CommentAgentArgs => {
   const defaults = kindRouting({ kind: 'resolver' });
-  const mode = choice.mode ?? 'fix';
   return {
     name: buildCommentAgentTitle(c),
     kind: 'resolver',
@@ -296,13 +236,11 @@ export const buildCommentAgentArgs = (
     initialPrompt: buildResolverKickoff({
       threads: [{ head: c, replies }],
       pr,
-      mode,
       hint: choice.hint ?? '',
     }),
     ...(c.source === 'review' && c.threadId ? { sourceThreadId: c.threadId } : {}),
     sourceCommentUrl: c.url,
     sourceKind: c.source === 'review' ? 'review_comment' : 'issue_comment',
-    ...(mode !== 'fix' && { mode }),
   };
 };
 
