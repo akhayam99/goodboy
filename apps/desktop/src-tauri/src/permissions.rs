@@ -91,27 +91,6 @@ pub struct PermissionAuditInsertInput {
     pub decided_at: String,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct PermissionAuditQueryInput {
-    #[serde(rename = "sessionId")]
-    pub session_id: Option<String>,
-    #[serde(rename = "workspaceId")]
-    pub workspace_id: Option<String>,
-    #[serde(rename = "fromAt")]
-    pub from_at: Option<String>,
-    #[serde(rename = "toAt")]
-    pub to_at: Option<String>,
-    pub limit: Option<i64>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct PermissionAuditClearInput {
-    #[serde(rename = "sessionId")]
-    pub session_id: Option<String>,
-    #[serde(rename = "workspaceId")]
-    pub workspace_id: Option<String>,
-}
-
 // ---------------------------------------------------------------------------
 // Error type
 // ---------------------------------------------------------------------------
@@ -122,12 +101,8 @@ pub enum PermissionError {
     Db(#[from] rusqlite::Error),
     #[error("db mutex poisoned")]
     Poisoned,
-    #[error("permission rule not found: {0}")]
-    RuleNotFound(String),
     #[error("invalid scope: {0}")]
     InvalidScope(String),
-    #[error("clear requires sessionId or workspaceId")]
-    ClearScopeRequired,
 }
 
 impl Serialize for PermissionError {
@@ -150,9 +125,7 @@ impl PermissionError {
         match self {
             PermissionError::Db(_) => "db",
             PermissionError::Poisoned => "poisoned",
-            PermissionError::RuleNotFound(_) => "rule_not_found",
             PermissionError::InvalidScope(_) => "invalid_scope",
-            PermissionError::ClearScopeRequired => "clear_scope_required",
         }
     }
 }
@@ -229,39 +202,6 @@ pub fn permission_rule_list(
     })?;
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(PermissionError::Db)
-}
-
-#[tauri::command]
-pub fn permission_rule_get(
-    state: State<'_, Db>,
-    id: String,
-) -> Result<Option<PermissionRuleRow>, PermissionError> {
-    let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
-    let mut stmt = conn.prepare(
-        "SELECT id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
-                decision, priority, created_at, updated_at
-         FROM permission_rules
-         WHERE id = ?1
-         LIMIT 1",
-    )?;
-    let mut rows = stmt.query_map(rusqlite::params![id], |row| {
-        Ok(PermissionRuleRow {
-            id: row.get(0)?,
-            scope: row.get(1)?,
-            workspace_id: row.get(2)?,
-            session_id: row.get(3)?,
-            pattern_tool: row.get(4)?,
-            pattern_args_matcher: row.get(5)?,
-            decision: row.get(6)?,
-            priority: row.get(7)?,
-            created_at: crate::util::ms_to_iso(row.get(8)?),
-            updated_at: crate::util::ms_to_iso(row.get(9)?),
-        })
-    })?;
-    match rows.next() {
-        Some(r) => Ok(Some(r.map_err(PermissionError::Db)?)),
-        None => Ok(None),
-    }
 }
 
 #[tauri::command]
@@ -361,27 +301,6 @@ pub fn permission_rule_upsert(
     })
 }
 
-#[tauri::command]
-pub fn permission_rule_delete(state: State<'_, Db>, id: String) -> Result<(), PermissionError> {
-    let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
-
-    let exists: bool = {
-        let mut stmt = conn.prepare("SELECT 1 FROM permission_rules WHERE id = ?1 LIMIT 1")?;
-        let mut rows = stmt.query_map(rusqlite::params![id], |_| Ok(()))?;
-        rows.next().is_some()
-    };
-
-    if !exists {
-        return Err(PermissionError::RuleNotFound(id));
-    }
-
-    conn.execute(
-        "DELETE FROM permission_rules WHERE id = ?1",
-        rusqlite::params![id],
-    )?;
-    Ok(())
-}
-
 // ---------------------------------------------------------------------------
 // Commands — permission audit log
 // ---------------------------------------------------------------------------
@@ -427,155 +346,6 @@ pub fn permission_audit_insert(
         requested_at: input.requested_at,
         decided_at: input.decided_at,
     })
-}
-
-#[tauri::command]
-pub fn permission_audit_list(
-    state: State<'_, Db>,
-    input: PermissionAuditQueryInput,
-) -> Result<Vec<PermissionAuditRow>, PermissionError> {
-    let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
-    let limit = input.limit.unwrap_or(1000);
-
-    // Build query dynamically based on filters present.
-    // workspaceId filter uses a subquery on sessions table.
-    let sql = build_audit_list_sql(&input);
-
-    let mut stmt = conn.prepare(&sql)?;
-
-    // Bind params in order matching placeholders.
-    let mut param_idx: usize = 1;
-    let mut params: Vec<Option<String>> = Vec::new();
-
-    if input.session_id.is_some() {
-        params.push(input.session_id.clone());
-        param_idx += 1;
-    }
-    if input.workspace_id.is_some() {
-        params.push(input.workspace_id.clone());
-        param_idx += 1;
-    }
-    if input.from_at.is_some() {
-        params.push(
-            input
-                .from_at
-                .as_deref()
-                .and_then(crate::util::iso_to_ms)
-                .map(|value| value.to_string()),
-        );
-        param_idx += 1;
-    }
-    if input.to_at.is_some() {
-        params.push(
-            input
-                .to_at
-                .as_deref()
-                .and_then(crate::util::iso_to_ms)
-                .map(|value| value.to_string()),
-        );
-        param_idx += 1;
-    }
-    // limit as last param
-    let _ = param_idx; // silence unused warning
-
-    let rows = stmt.query_map(
-        rusqlite::params_from_iter(
-            params
-                .into_iter()
-                .map(|v| v.unwrap_or_default())
-                .chain(std::iter::once(limit.to_string())),
-        ),
-        |row| {
-            Ok(PermissionAuditRow {
-                id: row.get(0)?,
-                run_id: row.get(1)?,
-                session_id: row.get(2)?,
-                tool_use_id: row.get(3)?,
-                tool_name: row.get(4)?,
-                input_json: row.get(5)?,
-                decision: row.get(6)?,
-                rule_id: row.get(7)?,
-                decided_by: row.get(8)?,
-                requested_at: crate::util::ms_to_iso(row.get(9)?),
-                decided_at: crate::util::ms_to_iso(row.get(10)?),
-            })
-        },
-    )?;
-    rows.collect::<Result<Vec<_>, _>>()
-        .map_err(PermissionError::Db)
-}
-
-fn build_audit_list_sql(input: &PermissionAuditQueryInput) -> String {
-    let mut conditions: Vec<String> = Vec::new();
-    let mut idx: usize = 1;
-
-    if input.session_id.is_some() {
-        conditions.push(format!("pal.session_id = ?{idx}"));
-        idx += 1;
-    }
-    if input.workspace_id.is_some() {
-        conditions.push(format!(
-            "pal.session_id IN (SELECT id FROM sessions WHERE workspace_id = ?{idx})"
-        ));
-        idx += 1;
-    }
-    if input.from_at.is_some() {
-        conditions.push(format!("pal.requested_at >= ?{idx}"));
-        idx += 1;
-    }
-    if input.to_at.is_some() {
-        conditions.push(format!("pal.requested_at <= ?{idx}"));
-        idx += 1;
-    }
-
-    let where_clause = if conditions.is_empty() {
-        String::new()
-    } else {
-        format!("WHERE {}", conditions.join(" AND "))
-    };
-
-    format!(
-        "SELECT pal.id, pal.run_id, pal.session_id, pal.tool_use_id, pal.tool_name,
-                pal.input_json, pal.decision, pal.rule_id, pal.decided_by,
-                pal.requested_at, pal.decided_at
-         FROM permission_audit_log pal
-         {where_clause}
-         ORDER BY pal.requested_at DESC
-         LIMIT ?{idx}"
-    )
-}
-
-#[tauri::command]
-pub fn permission_audit_clear(
-    state: State<'_, Db>,
-    input: PermissionAuditClearInput,
-) -> Result<(), PermissionError> {
-    let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
-    clear_permission_audit(&conn, input)
-}
-
-fn clear_permission_audit(
-    conn: &rusqlite::Connection,
-    input: PermissionAuditClearInput,
-) -> Result<(), PermissionError> {
-    match (input.session_id, input.workspace_id) {
-        (Some(session_id), _) => {
-            conn.execute(
-                "DELETE FROM permission_audit_log WHERE session_id = ?1",
-                rusqlite::params![session_id],
-            )?;
-        }
-        (None, Some(workspace_id)) => {
-            conn.execute(
-                "DELETE FROM permission_audit_log
-             WHERE session_id IN (SELECT id FROM sessions WHERE workspace_id = ?1)",
-                rusqlite::params![workspace_id],
-            )?;
-        }
-        (None, None) => return Err(PermissionError::ClearScopeRequired),
-    }
-
-    Ok(())
 }
 
 // ---------------------------------------------------------------------------
@@ -680,46 +450,4 @@ pub fn permission_audit_retry_delete(
         rusqlite::params![id],
     )?;
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use rusqlite::Connection;
-
-    use super::{clear_permission_audit, PermissionAuditClearInput};
-
-    #[test]
-    fn workspace_clear_matches_audit_session_ids_to_sessions() {
-        let conn = Connection::open_in_memory().unwrap();
-        conn.execute_batch(
-            "CREATE TABLE sessions (id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL);
-             CREATE TABLE agents (id TEXT PRIMARY KEY, session_id TEXT NOT NULL);
-             CREATE TABLE permission_audit_log (id TEXT PRIMARY KEY, session_id TEXT NOT NULL);
-             INSERT INTO sessions VALUES ('session-a', 'workspace-a');
-             INSERT INTO sessions VALUES ('session-b', 'workspace-b');
-             INSERT INTO agents VALUES ('agent-a', 'session-a');
-             INSERT INTO agents VALUES ('agent-b', 'session-b');
-             INSERT INTO permission_audit_log VALUES ('audit-a', 'session-a');
-             INSERT INTO permission_audit_log VALUES ('audit-b', 'session-b');",
-        )
-        .unwrap();
-
-        clear_permission_audit(
-            &conn,
-            PermissionAuditClearInput {
-                session_id: None,
-                workspace_id: Some("workspace-a".to_string()),
-            },
-        )
-        .unwrap();
-
-        let remaining: Vec<String> = conn
-            .prepare("SELECT id FROM permission_audit_log ORDER BY id")
-            .unwrap()
-            .query_map([], |row| row.get(0))
-            .unwrap()
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap();
-        assert_eq!(remaining, vec!["audit-b"]);
-    }
 }

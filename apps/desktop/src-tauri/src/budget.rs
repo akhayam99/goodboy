@@ -416,53 +416,6 @@ pub fn check_provider_budget(
     provider_budget_status(&conn, &provider, &period)
 }
 
-#[tauri::command]
-pub fn check_session_budget(
-    state: State<'_, Db>,
-    session_id: String,
-) -> Result<BudgetCheckResult, DbError> {
-    let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
-
-    let cap: Option<f64> = {
-        let mut stmt =
-            conn.prepare("SELECT soft_cap_usd FROM session_budgets WHERE session_id = ?1 LIMIT 1")?;
-        let mut rows = stmt.query_map(rusqlite::params![session_id], |row| row.get(0))?;
-        match rows.next() {
-            Some(r) => Some(r.map_err(DbError::Sqlite)?),
-            None => None,
-        }
-    };
-
-    let Some(cap_usd) = cap else {
-        return Ok(BudgetCheckResult {
-            remaining_usd: f64::INFINITY,
-            pct: 0.0,
-            exceeded: false,
-            over_threshold: false,
-        });
-    };
-
-    let spent: f64 = conn.query_row(
-        "SELECT COALESCE(SUM(estimated_cost_usd), 0) FROM telemetry_records WHERE session_id = ?1",
-        rusqlite::params![session_id],
-        |row| row.get(0),
-    )?;
-
-    let remaining = cap_usd - spent;
-    let pct = if cap_usd > 0.0 {
-        (spent / cap_usd) * 100.0
-    } else {
-        0.0
-    };
-
-    Ok(BudgetCheckResult {
-        remaining_usd: remaining,
-        pct,
-        exceeded: spent > cap_usd,
-        over_threshold: false,
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
