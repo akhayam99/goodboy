@@ -12,6 +12,7 @@ import { CommandPalette } from './features/session/components/CommandPalette';
 import { BootSplash } from './app/components/BootSplash';
 import { KeepAliveWorkSurface } from './app/components/KeepAliveWorkSurface';
 import { AppTopBar } from './app/components/AppTopBar';
+import { useAppShortcuts } from './app/hooks/useAppShortcuts';
 import { NoWorkspaceScreen } from './app/components/AppEmptyState';
 import { StageBoard } from './features/workspace/components/StageBoard';
 import { DeleteSessionConfirm } from './features/session/components/DeleteSessionConfirm';
@@ -60,12 +61,10 @@ import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { listenProjectMaterializeRequests } from './features/session/projectMaterializeBridge';
 import { markStepComplete } from './features/onboarding/onboarding-store';
 import { OPEN_COMMAND_PALETTE_EVENT } from './features/onboarding/openCommandPaletteEvent';
-import { useShortcut } from './shared/keyboard/useShortcut';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
 import { useZoomShortcuts } from './shared/hooks/useZoomShortcuts';
 import { useCommitLinkInterceptor } from './shared/hooks/useCommitLinkInterceptor';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
-import { isBranchlessSession } from './shared/utils/isBranchlessSession';
 import {
   useAppStore,
   useCurrentSession,
@@ -73,7 +72,6 @@ import {
   useSessionById,
   useSessions,
   useWorkspaces,
-  type LensKind,
 } from './store';
 import { useGithubPolling } from './features/github/hooks/useGithubPolling';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
@@ -102,6 +100,7 @@ export const App = () => {
       : primaryProjectRoot({ projects: s.projects, workspaceId: currentWorkspaceId }),
   );
   const currentSession = useCurrentSession();
+  const currentWorkspaceSessions = useSessions();
   const hasActiveSession = currentSession != null;
   const sessionSidebar = useSessionSidebarVisibility({ hasActiveSession });
   const githubConnection = useGithubConnection({ workspaceId: currentWorkspace?.id ?? null });
@@ -599,17 +598,19 @@ export const App = () => {
     closeAllStudios();
     setChangelogStudioOpen(true);
   }, [closeAllStudios]);
-  const openDeleteSession = useCallback(() => {
-    if (currentSession) {
-      setDeleteSessionId(currentSession.id);
-      setDeleteOpen(true);
+  const armDeleteConfirm = useCallback(() => {
+    if (currentSession == null) {
+      return;
     }
+    setDeleteSessionId(currentSession.id);
+    setDeleteOpen(true);
   }, [currentSession]);
-  const openArchiveSession = useCallback(() => {
-    if (currentSession) {
-      setArchiveSessionId(currentSession.id);
-      setArchiveOpen(true);
+  const armArchiveConfirm = useCallback(() => {
+    if (currentSession == null) {
+      return;
     }
+    setArchiveSessionId(currentSession.id);
+    setArchiveOpen(true);
   }, [currentSession]);
 
   const openShortcutHelp = useCallback(() => {
@@ -627,96 +628,6 @@ export const App = () => {
     window.addEventListener(OPEN_COMMAND_PALETTE_EVENT, handler);
     return () => window.removeEventListener(OPEN_COMMAND_PALETTE_EVENT, handler);
   }, [openPalette]);
-  const openWorkspace = useAppStore((s) => s.openWorkspace);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const lensGo = useAppStore((s) => s.lensGo);
-  const currentWorkspaceSessions = useSessions();
-
-  const selectWorkspaceByIndex = useCallback(
-    (idx: number) => {
-      const w = workspaces[idx];
-      if (w) {
-        void openWorkspace(w.id, w.name);
-      }
-    },
-    [workspaces, openWorkspace],
-  );
-
-  const navigateSession = useCallback(
-    (delta: number) => {
-      const list = currentWorkspaceSessions;
-      if (list.length === 0) {
-        return;
-      }
-      if (!currentSession) {
-        const target = delta >= 0 ? list[0] : list[list.length - 1];
-        if (target) {
-          void setCurrentSession(target.id);
-        }
-        return;
-      }
-      const idx = list.findIndex((s) => s.id === currentSession.id);
-      if (idx === -1) {
-        return;
-      }
-      const next = list[idx + delta];
-      if (next) {
-        void setCurrentSession(next.id);
-      }
-    },
-    [currentWorkspaceSessions, currentSession, setCurrentSession],
-  );
-
-  const navigateLens = useCallback(
-    (delta: number) => {
-      if (currentSession) {
-        lensGo(currentSession.id, delta);
-      }
-    },
-    [currentSession, lensGo],
-  );
-
-  const goToLens = useCallback((kind: LensKind | null) => {
-    const s = useAppStore.getState();
-    const id = s.currentSessionId;
-    if (!id) {
-      return;
-    }
-    if (kind === 'scripts') {
-      s.setScriptsLensScope({ scope: null });
-    }
-    s.setActiveLens(id, kind != null && s.activeLens[id] === kind ? null : kind);
-  }, []);
-
-  const isExploreSession = useAppStore((s) => {
-    const sessionId = s.currentSessionId;
-    if (sessionId == null) {
-      return false;
-    }
-    const session = s.sessions.find((candidate) => candidate.id === sessionId);
-    if (session == null) {
-      return false;
-    }
-    return isBranchlessSession({
-      branch: s.sessionBranches[sessionId],
-    });
-  });
-
-  const openNewSession = useCallback(() => {
-    if (!currentWorkspace) {
-      return;
-    }
-    window.dispatchEvent(new CustomEvent('goodboy:new-session'));
-  }, [currentWorkspace]);
-
-  const openModelPicker = useCallback(() => {
-    window.dispatchEvent(new CustomEvent('goodboy:open-model-picker'));
-  }, []);
-
-  const openPermissionPicker = useCallback(() => {
-    window.dispatchEvent(new CustomEvent('goodboy:open-permission-picker'));
-  }, []);
-
   const currentSessionId = useAppStore((s) => s.currentSessionId);
   const currentSessionWorktree = useAppStore((state) =>
     currentSessionId == null
@@ -740,55 +651,14 @@ export const App = () => {
     return ghCommitDiff(commitDiff.repo, commitDiff.sha);
   }, [commitDiff, currentSessionWorktree]);
 
-  useShortcut('settings.open', openSettings);
-  useShortcut('settings.shortcuts', openShortcutHelp);
-  useShortcut('palette.open', () => openPalette());
-  useShortcut('session.new', openNewSession);
-  useShortcut('workspace.switcher', () =>
-    window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher')),
-  );
-  useShortcut('column.toggle', sessionSidebar.toggle);
-  useShortcut('lens.back', () => navigateLens(-1));
-  useShortcut('lens.forward', () => navigateLens(1));
-  useShortcut('workspace.1', () => selectWorkspaceByIndex(0));
-  useShortcut('workspace.2', () => selectWorkspaceByIndex(1));
-  useShortcut('workspace.3', () => selectWorkspaceByIndex(2));
-  useShortcut('workspace.4', () => selectWorkspaceByIndex(3));
-  useShortcut('workspace.5', () => selectWorkspaceByIndex(4));
-  useShortcut('workspace.6', () => selectWorkspaceByIndex(5));
-  useShortcut('workspace.7', () => selectWorkspaceByIndex(6));
-  useShortcut('workspace.8', () => selectWorkspaceByIndex(7));
-  useShortcut('workspace.9', () => selectWorkspaceByIndex(8));
-
-  useShortcut('session.delete', openDeleteSession);
-  useShortcut('session.archive', openArchiveSession);
-  useShortcut('session.model', openModelPicker);
-  useShortcut('session.permissions', openPermissionPicker);
-  useShortcut('session.prev', () => navigateSession(-1));
-  useShortcut('session.next', () => navigateSession(1));
-  useShortcut('session.board', () => void setCurrentSession(null));
-
-  useShortcut('lens.overview', () => goToLens(null));
-  useShortcut('lens.context', () => goToLens('context'));
-  useShortcut('lens.goal', () => goToLens('goal'));
-  useShortcut('lens.decisions', () => goToLens('decisions'));
-  useShortcut('lens.summary', () => goToLens('last_output_summary'));
-  useShortcut('lens.workflows', () => goToLens('workflows'));
-  useShortcut('lens.agents', () => goToLens('agents'));
-  useShortcut('lens.resolve', () => goToLens('resolve'));
-  useShortcut('lens.review', () => goToLens('review'));
-  useShortcut('lens.questions', () => goToLens('questions'));
-  useShortcut('lens.files', () => goToLens('files'), !isExploreSession);
-  useShortcut('lens.explore', () => goToLens('explore'), isExploreSession);
-  useShortcut('lens.plans', () => goToLens('plans'));
-  useShortcut('lens.scripts', () => goToLens('scripts'));
-  useShortcut('lens.terminal', () => goToLens('terminal'));
-  useShortcut('lens.pr', () => goToLens('pr'));
-  useShortcut('lens.linear', () => goToLens('linear'));
-  useShortcut('lens.sentry', () => goToLens('sentry'));
-  useShortcut('lens.gitlab_issues', () => goToLens('gitlab_issues'));
-  useShortcut('lens.jira_issues', () => goToLens('jira_issues'));
-  useShortcut('lens.slack_threads', () => goToLens('slack_threads'));
+  useAppShortcuts({
+    armArchiveConfirm,
+    armDeleteConfirm,
+    openPalette,
+    openSettings,
+    openShortcutHelp,
+    toggleSidebar: sessionSidebar.toggle,
+  });
 
   const renderedSessionIds = useMemo<ReadonlyArray<SessionId>>(() => {
     const cid = currentSession?.id ?? null;
