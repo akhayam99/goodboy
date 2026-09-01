@@ -61,6 +61,24 @@ const ROWS: ReadonlyArray<Row> = [
     expected: { provider: 'codex', model: 'gpt-5.6' },
   },
   {
+    name: 'an account usage limit crosses to another provider on the first attempt',
+    failure: 'usage_limit',
+    provider: 'anthropic',
+    model: 'opus-5',
+    attempt: 0,
+    connectedProviders: CONNECTED,
+    expected: { provider: 'codex', model: 'gpt-5.6' },
+  },
+  {
+    name: 'an account usage limit gives up when no other provider is connected',
+    failure: 'usage_limit',
+    provider: 'anthropic',
+    model: 'opus-5',
+    attempt: 0,
+    connectedProviders: ['anthropic'],
+    expected: null,
+  },
+  {
     name: 'unreachable retries the same provider and model once',
     failure: 'unreachable',
     provider: 'anthropic',
@@ -214,6 +232,32 @@ describe('planTurnFallback', () => {
         preferred: { provider: 'anthropic', model: 'opus-5' },
       }),
     ).toEqual({ provider: 'anthropic', model: 'sonnet-5' });
+  });
+
+  it('never drops an account usage limit onto a cheaper model of the same provider', () => {
+    expect(
+      planTurnFallback({
+        failure: 'usage_limit',
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 0,
+        connectedProviders: CONNECTED,
+        preferred: { provider: 'anthropic', model: 'haiku-4.5' },
+      }),
+    ).toEqual({ provider: 'codex', model: 'gpt-5.6' });
+  });
+
+  it('keeps a role fallback on another provider for an account usage limit', () => {
+    expect(
+      planTurnFallback({
+        failure: 'usage_limit',
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 0,
+        connectedProviders: CONNECTED,
+        preferred: { provider: 'codex', model: 'gpt-5.4-mini' },
+      }),
+    ).toEqual({ provider: 'codex', model: 'gpt-5.4-mini' });
   });
 
   it('never returns a role fallback for an unclassified failure', () => {

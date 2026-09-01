@@ -19,6 +19,7 @@ export const resolveErrorTurnMessage = ({ message, providerId, identity }: Param
         ? `The model "${classification.model}" requires Max Mode. Enable Max Mode or choose another model.`
         : `The model "${classification.model}" is not available with this Codex account. Choose a model supported by your account.`;
     case 'rate_limit':
+    case 'usage_limit':
     case 'unreachable':
     case 'other':
       return message;

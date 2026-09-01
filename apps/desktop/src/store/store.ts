@@ -918,6 +918,7 @@ export const initialState: AppState = {
   providerLifecycle: INITIAL_LIFECYCLE_MAP,
   providerConnect: INITIAL_CONNECT_MAP,
   providerCredentials: [],
+  providerCooldowns: {},
   hydrated: false,
   bootPhase: 'pending',
   error: null,

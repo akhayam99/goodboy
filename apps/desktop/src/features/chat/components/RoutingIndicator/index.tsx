@@ -79,7 +79,8 @@ export const RoutingIndicator = ({
   const isFallback =
     decision.reason === 'fallback-budget' ||
     decision.reason === 'fallback-threshold' ||
-    decision.reason === 'fallback-disconnected';
+    decision.reason === 'fallback-disconnected' ||
+    decision.reason === 'fallback-cooldown';
   if (!isFallback || !decision.fallbackFrom) {
     return null;
   }
@@ -89,6 +90,7 @@ export const RoutingIndicator = ({
     'fallback-budget': `Budget exceeded for ${fromLabel}`,
     'fallback-threshold': `${fromLabel} past its budget threshold`,
     'fallback-disconnected': `${fromLabel} disconnected`,
+    'fallback-cooldown': `${fromLabel} at its usage limit`,
   };
   const cause = causeByReason[decision.reason] ?? `${fromLabel} disconnected`;
 

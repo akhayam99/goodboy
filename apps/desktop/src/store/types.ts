@@ -66,6 +66,7 @@ import type {
   ProviderInfo,
   ProviderStatus,
 } from '../features/providers/providers';
+import type { ProviderCooldowns } from '../features/providers/routing';
 import type { ScriptRunRecord } from '../features/scripts/scripts';
 import type { DetectedEditor } from '../shared/lib/editor';
 import type { TerminalTab, TerminalTabId } from '../shared/types/terminal';
@@ -204,6 +205,7 @@ export type AppState = AppSliceState & {
   readonly providerLifecycle: ProviderLifecycleMap;
   readonly providerConnect: ProviderConnectMap;
   readonly providerCredentials: ReadonlyArray<ProviderCredential>;
+  readonly providerCooldowns: ProviderCooldowns;
   readonly hydrated: boolean;
   readonly bootPhase: BootPhase;
   readonly error: string | null;

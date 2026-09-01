@@ -13,6 +13,8 @@ const reasonFor = ({ failure }: { readonly failure: TurnFailureKind }): string =
       return 'rejected the credentials';
     case 'rate_limit':
       return 'hit a usage limit';
+    case 'usage_limit':
+      return 'is at its account usage limit';
     case 'unreachable':
       return 'was unreachable';
     case 'model_not_available':

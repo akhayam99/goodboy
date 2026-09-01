@@ -158,6 +158,15 @@ export async function* runTurn(
           unparsedOutput.push(event.payload.line.trim());
         }
         for (const ev of parsedEvents) {
+          if (
+            ev.kind === 'error' &&
+            classifyProviderError({ message: ev.message }).kind === 'usage_limit'
+          ) {
+            receivedResponseEvent = true;
+            error = new Error(ev.message);
+            ended = true;
+            break;
+          }
           if (ev.kind === 'assistant_text' || ev.kind === 'done' || ev.kind === 'error') {
             receivedResponseEvent = true;
           }

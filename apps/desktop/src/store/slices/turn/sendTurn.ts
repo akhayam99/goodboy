@@ -57,7 +57,7 @@ import {
 import { encodeAuthRequiredMessage, runTurn } from '../../../features/chat/turn';
 import { classifyProviderError } from '../../../features/chat/classifyProviderError';
 import { createTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
-import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
+import { EFFORT_LEVELS, PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
 import {
@@ -137,6 +137,13 @@ type Input = {
 };
 
 const NOT_BLOCKED: SendTurnResult = { blockedOverBudget: false };
+
+const USAGE_LIMIT_COOLDOWN_MS = 30 * 60 * 1000;
+const MIN_USAGE_LIMIT_RETRY_MS = 1_000;
+const MAX_TIMEOUT_MS = 2_147_483_647;
+
+const formatResetTime = ({ resetAtMs }: { readonly resetAtMs: number }): string =>
+  new Date(resetAtMs).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
 // Machine-derived context slot carrying `git diff --numstat` lines for the
 // session's changed files (vs the same merge-base as the desktop file-changes
@@ -367,6 +374,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       sessionPreference: routingPreference,
       turnOverride: effectiveOverride,
       connectedProviders,
+      cooldowns: get().providerCooldowns,
       ...(force === true ? { force: true } : {}),
     });
 
@@ -1090,6 +1098,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             });
       const cancelledBeforeFailure = cancelledRunIds.delete(runId);
       const failure = classifyProviderError({ message: rawMessage });
+      const usageLimitResetAtMs =
+        failure.kind === 'usage_limit' ? (failure.resetAtMs ?? null) : null;
+      if (failure.kind === 'usage_limit') {
+        const cooldownUntil = usageLimitResetAtMs ?? Date.now() + USAGE_LIMIT_COOLDOWN_MS;
+        set((state) => ({
+          providerCooldowns: { ...state.providerCooldowns, [provider]: cooldownUntil },
+        }));
+      }
       const preferredFallback = resolveRoleRouting({
         role: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
         prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
@@ -1149,6 +1165,46 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             attachmentRefs,
           },
         });
+      }
+      if (failure.kind === 'usage_limit' && !cancelledBeforeFailure) {
+        const resetLabel =
+          usageLimitResetAtMs != null ? formatResetTime({ resetAtMs: usageLimitResetAtMs }) : null;
+        void get()
+          .emitNotification(
+            'error',
+            'warning',
+            'Provider at its usage limit',
+            resetLabel != null
+              ? `${PROVIDER_LABEL[provider]} is at its usage limit. Retrying at ${resetLabel}.`
+              : `${PROVIDER_LABEL[provider]} is at its usage limit. Retry it when the limit resets.`,
+            {
+              sessionId,
+              workspaceId: session.workspaceId,
+              coalesceKey: `provider-usage-limit:${provider}`,
+            },
+          )
+          .catch(() => undefined);
+        if (usageLimitResetAtMs != null) {
+          const delayMs = Math.min(
+            Math.max(usageLimitResetAtMs - Date.now(), MIN_USAGE_LIMIT_RETRY_MS),
+            MAX_TIMEOUT_MS,
+          );
+          setTimeout(() => {
+            void run({
+              sessionId,
+              agentId: activeAgentId,
+              content,
+              ...(override !== undefined && { override }),
+              ...(force === true ? { force: true } : {}),
+              retry: {
+                attempt: 0,
+                provider,
+                model: modelSelection.key,
+                attachmentRefs,
+              },
+            }).catch(() => undefined);
+          }, delayMs);
+        }
       }
       const errorState: TurnState = {
         kind: 'error',
