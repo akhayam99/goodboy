@@ -2,6 +2,7 @@ import { cancelScript } from './cancelScript';
 import { deleteScript } from './deleteScript';
 import { loadScripts } from './loadScripts';
 import { runScript } from './runScript';
+import { reattachScriptRuns } from './reattachScriptRuns';
 import { saveScript } from './saveScript';
 import type { GetFn, SetFn } from './types';
 
@@ -11,6 +12,7 @@ export const createScriptsSlice = (set: SetFn, get: GetFn) => {
     saveScript: saveScript(get),
     deleteScript: deleteScript(set),
     runScript: runScript(set, get),
+    reattachScriptRuns: reattachScriptRuns(set, get),
     cancelScript: cancelScript(set, get),
   };
 };

@@ -357,6 +357,10 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 
 vi.mock('../../../features/scripts/scripts', () => ({
   invokeScriptRun: vi.fn(async () => undefined),
+  invokeScriptListLive: vi.fn(async () => {
+    await invokeSpy('workspace_script_list_live');
+    return [];
+  }),
   invokeScriptCancel: vi.fn(async () => undefined),
   listenScriptOutput: vi.fn(async () => () => undefined),
   listenScriptExit: vi.fn(async () => () => undefined),
@@ -364,6 +368,10 @@ vi.mock('../../../features/scripts/scripts', () => ({
 
 vi.mock('../../../features/terminal/terminal', () => ({
   invokeTerminalOpen: vi.fn(async () => undefined),
+  invokeTerminalListLive: vi.fn(async () => {
+    await invokeSpy('terminal_list_live');
+    return [];
+  }),
   invokeTerminalClose: vi.fn(async () => undefined),
 }));
 
@@ -575,6 +583,17 @@ describe('store contract', () => {
       const s = store.getState();
       expect(s.hydrated).toBe(true);
       expect(s.bootPhase).toBe('ready');
+    });
+
+    it('reattaches live scripts and terminals during hydration', async () => {
+      const store = await getStore();
+
+      await store.getState().hydrate();
+
+      await vi.waitFor(() => {
+        expect(invokeSpy).toHaveBeenCalledWith('workspace_script_list_live');
+        expect(invokeSpy).toHaveBeenCalledWith('terminal_list_live');
+      });
     });
 
     it('reports the elapsed time of every boot breadcrumb that awaits work', async () => {
