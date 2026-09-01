@@ -39,6 +39,16 @@ impl TerminalRegistry {
     pub fn new() -> Self {
         Self::default()
     }
+
+    fn list_live(&self) -> Result<Vec<LiveTerminal>, TerminalError> {
+        let map = self.0.lock().map_err(|_| TerminalError::Poisoned)?;
+        Ok(map.keys().cloned().map(|id| LiveTerminal { id }).collect())
+    }
+}
+
+#[derive(Serialize, Clone, Debug, PartialEq, Eq)]
+pub struct LiveTerminal {
+    id: String,
 }
 
 /// Drains every live terminal, killing the whole pty session behind each
@@ -271,6 +281,13 @@ pub async fn terminal_open(
 }
 
 #[tauri::command]
+pub fn terminal_list_live(
+    registry: State<'_, TerminalRegistry>,
+) -> Result<Vec<LiveTerminal>, TerminalError> {
+    registry.list_live()
+}
+
+#[tauri::command]
 pub fn terminal_write(
     registry: State<'_, TerminalRegistry>,
     session_id: String,
@@ -347,6 +364,24 @@ pub fn terminal_close(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn registry_lists_open_terminal_keys() {
+        let registry = TerminalRegistry::new();
+        let slot = Arc::new(Mutex::new(None));
+        registry
+            .0
+            .lock()
+            .unwrap()
+            .insert("session-1::t1".to_string(), slot);
+
+        assert_eq!(
+            registry.list_live().unwrap(),
+            vec![LiveTerminal {
+                id: "session-1::t1".to_string()
+            }]
+        );
+    }
 
     #[cfg(unix)]
     fn read_announced_pid(reader: &mut Box<dyn Read + Send>) -> libc::pid_t {

@@ -535,6 +535,7 @@ export type AppActions = {
   saveScript(input: SaveScriptParams): Promise<void>;
   deleteScript(scriptId: ProjectScriptId, workspaceId: WorkspaceId): Promise<void>;
   runScript(input: RunScriptParams): Promise<ScriptRunResult>;
+  reattachScriptRuns(): Promise<void>;
   cancelScript(sessionId: SessionId, scriptId: ProjectScriptId): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
   savePhaseTemplate(template: WorkflowUpsertArgs): Promise<Workflow>;
@@ -865,6 +866,7 @@ export type AppActions = {
   openTerminal(sessionId: SessionId, cwd: string | null, cols: number, rows: number): Promise<void>;
   closeTerminal(sessionId: SessionId): Promise<void>;
   addTerminalTab(sessionId: SessionId, cwd: string | null): TerminalTabId;
+  reattachTerminalTabs(): Promise<void>;
   closeTerminalTab(sessionId: SessionId, tabId: TerminalTabId): void;
   setActiveTerminalTab(sessionId: SessionId, tabId: TerminalTabId): void;
   setTerminalTabStatus(sessionId: SessionId, tabId: TerminalTabId, status: TerminalTabStatus): void;

@@ -194,6 +194,12 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           phase: 'restoring-session',
           detail: `ms=${Date.now() - restoringSessionAt}`,
         });
+        void get()
+          .reattachScriptRuns()
+          .catch(() => {});
+        void get()
+          .reattachTerminalTabs()
+          .catch(() => {});
         set({ bootPhase: 'ready', hydrated: true });
         recordBootBreadcrumb({
           phase: 'ready',

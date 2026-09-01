@@ -100,6 +100,7 @@ fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
                 cli_args.push("--tools".to_string());
                 cli_args.push(String::new());
             }
+            crate::aux_spawn::push_claude_mcp_deny(&mut cli_args);
             crate::aux_spawn::push_effort_args("anthropic", args.effort.as_deref(), &mut cli_args);
             Ok(cli_args)
         }
@@ -205,12 +206,28 @@ mod tests {
         let cli = build_cli_args(&args).expect("anthropic args");
         let idx = cli.iter().position(|a| a == "--tools").expect("--tools");
         assert_eq!(cli[idx + 1], "");
+        assert!(cli
+            .windows(2)
+            .any(|pair| pair[0] == "--disallowedTools" && pair[1] == "mcp__*"));
     }
 
     #[test]
     fn anthropic_args_keep_tools_by_default() {
         let cli = build_cli_args(&make_args("anthropic")).expect("anthropic args");
         assert!(!cli.iter().any(|a| a == "--tools"));
+        assert!(cli
+            .windows(2)
+            .any(|pair| pair[0] == "--disallowedTools" && pair[1] == "mcp__*"));
+    }
+
+    #[test]
+    fn cursor_and_codex_args_do_not_deny_mcp_tools() {
+        for provider_id in ["cursor", "codex"] {
+            let cli = build_cli_args(&make_args(provider_id)).expect("provider args");
+            assert!(!cli
+                .windows(2)
+                .any(|pair| pair[0] == "--disallowedTools" && pair[1] == "mcp__*"));
+        }
     }
 
     #[test]

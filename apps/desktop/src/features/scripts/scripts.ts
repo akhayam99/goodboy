@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import type { ProjectScriptId } from '@goodboy/types';
+import type { ProjectScriptId, SessionId } from '@goodboy/types';
 
 export type ScriptRunResult = {
   readonly stdout: string;
@@ -27,14 +27,35 @@ export type ScriptExitPayload = {
   readonly exitCode: number;
 };
 
-export const invokeScriptRun = (
-  scriptId: ProjectScriptId,
-  runId: string,
-  cwd: string,
-  cols: number,
-  rows: number,
-): Promise<void> => {
-  return invoke<void>('workspace_script_run', { scriptId, runId, cwd, cols, rows });
+export type LiveScriptRun = {
+  readonly runId: string;
+  readonly scriptId: ProjectScriptId;
+  readonly sessionId: SessionId;
+  readonly startedAt: number;
+};
+
+type InvokeScriptRunParams = {
+  readonly scriptId: ProjectScriptId;
+  readonly runId: string;
+  readonly sessionId: SessionId;
+  readonly cwd: string;
+  readonly cols: number;
+  readonly rows: number;
+};
+
+export const invokeScriptRun = ({
+  scriptId,
+  runId,
+  sessionId,
+  cwd,
+  cols,
+  rows,
+}: InvokeScriptRunParams): Promise<void> => {
+  return invoke<void>('workspace_script_run', { scriptId, runId, sessionId, cwd, cols, rows });
+};
+
+export const invokeScriptListLive = (): Promise<ReadonlyArray<LiveScriptRun>> => {
+  return invoke<ReadonlyArray<LiveScriptRun>>('workspace_script_list_live');
 };
 
 export const invokeScriptCancel = (runId: string): Promise<void> => {

@@ -336,10 +336,14 @@ vi.mock('../../../features/scripts/scripts', () => ({
 }));
 
 const invokeTerminalCloseSpy = vi.fn(async () => undefined);
+const invokeTerminalListLiveSpy = vi.fn<() => Promise<ReadonlyArray<{ id: string }>>>(
+  async () => [],
+);
 
 vi.mock('../../../features/terminal/terminal', () => ({
   invokeTerminalOpen: vi.fn(async () => undefined),
   invokeTerminalClose: invokeTerminalCloseSpy,
+  invokeTerminalListLive: invokeTerminalListLiveSpy,
   invokeTerminalWrite: vi.fn(async () => undefined),
   invokeTerminalResize: vi.fn(async () => undefined),
 }));
@@ -462,6 +466,7 @@ describe('store contract', () => {
     listDiffCommentsSpy.mockResolvedValue([]);
     dbGetSettingSpy.mockResolvedValue(null);
     ghStatusSpy.mockResolvedValue({ available: true, mode: 'gh-cli', scopes: [] });
+    invokeTerminalListLiveSpy.mockResolvedValue([]);
 
     const store = await getStore();
     if (!resetState) {
@@ -577,6 +582,20 @@ describe('store contract', () => {
       expect(second).not.toBe(first);
       expect(store.getState().terminalTabs[SESSION_ID]).toHaveLength(2);
       expect(store.getState().activeTerminalTab[SESSION_ID]).toBe(second);
+    });
+
+    it('reattaches live terminal tabs and makes the first tab active', async () => {
+      const store = await getStore();
+      invokeTerminalListLiveSpy.mockResolvedValueOnce([
+        { id: `${SESSION_ID}::t2` },
+        { id: `${SESSION_ID}::t1` },
+      ]);
+
+      await store.getState().reattachTerminalTabs();
+
+      const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
+      expect(tabs.map((tab) => tab.id)).toEqual([`${SESSION_ID}::t1`, `${SESSION_ID}::t2`]);
+      expect(store.getState().activeTerminalTab[SESSION_ID]).toBe(`${SESSION_ID}::t1`);
     });
 
     it('setActiveTerminalTab switches the active tab', async () => {
