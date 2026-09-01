@@ -17,15 +17,21 @@ export const acceptSessionNudgeHandoff = (set: SetFn, get: GetFn) => {
         return await get().spawnAgent(sessionId, {
           triggeredPlanId: nudge.planId,
           kindOverride: 'implementer',
+          parentAgentId: nudge.agentId,
           focus: 'none',
         });
       }
-      return await get().spawnAgent(sessionId, { kindOverride: 'implementer', focus: 'none' });
+      return await get().spawnAgent(sessionId, {
+        kindOverride: 'implementer',
+        parentAgentId: nudge.agentId,
+        focus: 'none',
+      });
     }
     if (nudge.kind === 'handoff-suggested') {
       return await get().spawnAgent(sessionId, {
         kindOverride: nudge.targetKind,
         ...(nudge.planId !== null && { triggeredPlanId: nudge.planId }),
+        parentAgentId: nudge.agentId,
         focus: 'none',
       });
     }
