@@ -2,6 +2,11 @@ use std::process::Command;
 
 pub const CLAUDE_SETTING_SOURCES: &str = "project,local";
 
+pub fn push_claude_mcp_deny(args: &mut Vec<String>) {
+    args.push("--disallowedTools".to_string());
+    args.push("mcp__*".to_string());
+}
+
 /// Strip env vars that signal "running inside another Claude Code / Agent SDK
 /// session". When Goodboy is launched from such a context the vars propagate to
 /// children; the claude CLI then either refuses with a nested-session error or
@@ -46,6 +51,16 @@ mod tests {
     fn setting_sources_keeps_project_and_local_only() {
         assert_eq!(CLAUDE_SETTING_SOURCES, "project,local");
         assert!(!CLAUDE_SETTING_SOURCES.contains("user"));
+    }
+
+    #[test]
+    fn push_claude_mcp_deny_adds_flag_and_pattern() {
+        let mut args = Vec::new();
+        push_claude_mcp_deny(&mut args);
+        assert_eq!(
+            args,
+            vec!["--disallowedTools".to_string(), "mcp__*".to_string()]
+        );
     }
 
     #[test]
