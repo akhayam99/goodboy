@@ -47,7 +47,6 @@ export {
   type ExtractedHandoff,
   type ExtractedMaterializeRequest,
   type ExtractedPlan,
-  type ExtractedQuestion,
   type ExtractedReviewComment,
   type PlanReadinessInput,
   type PlanReadinessResult,

@@ -1,4 +1,4 @@
-export type ResolverFollowUpIntent = 'fix' | 'redo' | 'rework' | 'custom';
+type ResolverFollowUpIntent = 'fix' | 'redo' | 'rework' | 'custom';
 
 type Params = {
   readonly threadId: string;

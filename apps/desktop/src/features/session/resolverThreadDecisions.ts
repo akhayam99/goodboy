@@ -4,7 +4,7 @@ import type { ResolverThreadSettlement } from './resolverThreadSettlements';
 
 export type ResolverThreadNotes = 'none' | 'optional' | 'required';
 
-export type ResolverThreadDecision = {
+type ResolverThreadDecision = {
   readonly action: ResolverAction;
   readonly hint: string;
   readonly notes: ResolverThreadNotes;

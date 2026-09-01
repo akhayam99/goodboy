@@ -24,7 +24,7 @@ export const PR_FIELDS = [
   'autoMergeRequest',
 ] as const;
 
-export type RawStatusCheck = {
+type RawStatusCheck = {
   state?: string | null;
   status?: string | null;
   conclusion?: string | null;

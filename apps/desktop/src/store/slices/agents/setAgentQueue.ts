@@ -1,7 +1,7 @@
 import type { AgentId, TurnProviderOverride } from '@goodboy/types';
 import type { SetFn } from './types';
 
-export type QueuedAttachment = Readonly<{
+type QueuedAttachment = Readonly<{
   id: string;
   fileName: string;
   mimeType: string;

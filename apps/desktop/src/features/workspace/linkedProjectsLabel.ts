@@ -5,7 +5,7 @@ type Params = {
   readonly workspaceId: WorkspaceId | null;
 };
 
-export const linkedProjectCount = ({ projects, workspaceId }: Params): number =>
+const linkedProjectCount = ({ projects, workspaceId }: Params): number =>
   workspaceId === null || projects === undefined
     ? 0
     : projects.filter(

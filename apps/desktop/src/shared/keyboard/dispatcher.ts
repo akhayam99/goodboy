@@ -9,7 +9,7 @@ type Parsed = {
   readonly alt: boolean;
 };
 
-export const parseCombo = (combo: string): Parsed => {
+const parseCombo = (combo: string): Parsed => {
   const parts = combo.split('+');
   return {
     code: parts[parts.length - 1] ?? '',
@@ -82,5 +82,3 @@ export const registerShortcut = (id: ShortcutId, handler: () => void): (() => vo
     stopListening();
   };
 };
-
-export const registeredShortcutIds = (): ReadonlyArray<ShortcutId> => [...registrations.keys()];

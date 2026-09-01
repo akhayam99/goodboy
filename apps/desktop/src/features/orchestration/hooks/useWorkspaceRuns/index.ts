@@ -21,7 +21,7 @@ import {
   type SpawnNodeStatus,
 } from '../../components/SpawnTree/lib';
 
-export type StepModel = {
+type StepModel = {
   readonly stepId: string;
   readonly name: string;
   readonly kind: AgentKind;
@@ -30,7 +30,7 @@ export type StepModel = {
   readonly children: ReadonlyArray<SpawnNode>;
 };
 
-export type RunLaneModel = {
+type RunLaneModel = {
   readonly runId: string;
   readonly workflowName: string;
   readonly sessionId: SessionId;
@@ -42,7 +42,7 @@ export type RunLaneModel = {
   readonly costUsd: number;
 };
 
-export type RunsAggregate = {
+type RunsAggregate = {
   readonly runCount: number;
   readonly agentCount: number;
   readonly runningCount: number;

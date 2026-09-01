@@ -39,7 +39,7 @@ type Params = {
   readonly hasOtherActiveResolvers: boolean;
 };
 
-export type ResolverThreadRunParams = {
+type ResolverThreadRunParams = {
   readonly threadId: string;
   readonly kind: ResolverActionKind;
   readonly text: string;

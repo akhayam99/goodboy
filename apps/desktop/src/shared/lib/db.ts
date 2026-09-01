@@ -14,7 +14,7 @@ export const DATABASE_FILE_HINT = '~/.goodboy/data.db';
 
 export const DATABASE_UNAVAILABLE_MESSAGE = `Goodboy could not open its database, so it started with nothing loaded. It cannot run until ${DATABASE_FILE_HINT} is moved aside; a fresh one is created on the next launch.`;
 
-export class DatabaseUnavailableError extends Error {
+class DatabaseUnavailableError extends Error {
   constructor() {
     super(DATABASE_UNAVAILABLE_MESSAGE);
     this.name = 'DatabaseUnavailableError';

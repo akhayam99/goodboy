@@ -12,7 +12,7 @@ import { useFileDropTarget } from '../../../../shared/hooks/useFileDropTarget';
 import { readDroppedAttachment } from '../../../../shared/lib/readDroppedAttachment';
 import { readFileAsDataUrl } from '../../../chat/components/ChatInput/lib';
 
-export const BUG_REPORT_MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const BUG_REPORT_MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 type DroppedPaths = {
   readonly paths: ReadonlyArray<string>;

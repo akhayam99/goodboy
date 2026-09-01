@@ -92,10 +92,6 @@ export const getProviderStatus = async (id: ProviderId): Promise<ProviderStatus>
 
 export const getCursorStatus = (): Promise<ProviderStatus> => getProviderStatus('cursor');
 export const getCodexStatus = (): Promise<ProviderStatus> => getProviderStatus('codex');
-export const getGeminiStatus = (): Promise<ProviderStatus> => getProviderStatus('gemini');
-export const getOpenCodeStatus = (): Promise<ProviderStatus> => getProviderStatus('opencode');
-export const getOpenRouterStatus = (): Promise<ProviderStatus> => getProviderStatus('openrouter');
-export const getMoonshotStatus = (): Promise<ProviderStatus> => getProviderStatus('moonshot');
 
 type RefreshParams = {
   readonly id: ProviderId;

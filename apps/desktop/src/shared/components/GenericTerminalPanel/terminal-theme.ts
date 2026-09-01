@@ -5,7 +5,7 @@ import type { ITheme } from '@xterm/xterm';
  * canvas tokens at runtime (see {@link resolveTerminalTheme}); the ANSI ramp
  * stays fixed so program output keeps stable, recognizable colors across themes.
  */
-export const LIGHT_THEME: ITheme = {
+const LIGHT_THEME: ITheme = {
   background: '#f8f8f8',
   foreground: '#1a1a2e',
   cursor: '#4078f2',
@@ -28,7 +28,7 @@ export const LIGHT_THEME: ITheme = {
   brightWhite: '#ffffff',
 };
 
-export const DARK_THEME: ITheme = {
+const DARK_THEME: ITheme = {
   background: '#1a1a1f',
   foreground: '#e6e6e6',
   cursor: '#8ab4f8',

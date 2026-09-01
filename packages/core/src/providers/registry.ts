@@ -12,7 +12,6 @@ import { GeminiAdapter } from './gemini/adapter';
 import { OpenCodeAdapter } from './opencode/adapter';
 import { PROVIDER_CAPABILITIES } from './capabilities';
 
-export type { ProviderRegistryCapabilities };
 export { getCapabilities } from './capabilities';
 
 export type ProviderDeps = {

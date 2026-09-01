@@ -8,7 +8,7 @@ import {
   type LinearIssue,
 } from '../client';
 
-export type LinearGroupKey = 'started' | 'unstarted' | 'backlog' | 'triage' | 'other';
+type LinearGroupKey = 'started' | 'unstarted' | 'backlog' | 'triage' | 'other';
 
 const GROUP_ORDER: ReadonlyArray<LinearGroupKey> = [
   'started',
@@ -41,7 +41,7 @@ function groupKeyForStateType(type: string): LinearGroupKey {
   }
 }
 
-export type LinearIssueRow = {
+type LinearIssueRow = {
   readonly issue: LinearIssue;
   readonly sessionId: SessionId | null;
 };
@@ -84,7 +84,7 @@ export type SessionPrRef = {
   readonly repo: string | null;
 };
 
-export const sessionPrRefFromUrl = (number: number, url: string): SessionPrRef => {
+const sessionPrRefFromUrl = (number: number, url: string): SessionPrRef => {
   return { number, repo: prRepoFromUrl(url) };
 };
 

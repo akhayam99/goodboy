@@ -5,7 +5,7 @@ import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { useAppStore } from '../../../../store';
 import { ghAssignedIssues, tauriGhRunner } from '../../github';
 
-export type GithubIssueRow = Readonly<{
+type GithubIssueRow = Readonly<{
   issue: GithubIssue;
   sessionId: SessionId | null;
 }>;

@@ -5,19 +5,19 @@ import type {
   SlackUser,
 } from '../../../features/integrations/slack/client';
 
-export type SlackChannelsEntry = {
+type SlackChannelsEntry = {
   readonly channels: ReadonlyArray<SlackChannel>;
   readonly loading: boolean;
   readonly error: string | null;
 };
 
-export type SlackThreadHeadsEntry = {
+type SlackThreadHeadsEntry = {
   readonly heads: ReadonlyArray<SlackMessage>;
   readonly loading: boolean;
   readonly error: string | null;
 };
 
-export type SlackThreadEntry = {
+type SlackThreadEntry = {
   readonly messages: ReadonlyArray<SlackMessage>;
   readonly fetchedAt: IsoDateTime | null;
   readonly loading: boolean;

@@ -11,7 +11,6 @@ import { withdrawBitbucketPrChanges } from './withdrawBitbucketPrChanges';
 import type { GetFn, SetFn } from './types';
 
 export { initialBitbucketPrState } from './state';
-export type { BitbucketPrSliceState, SessionBitbucketPrEntry } from './state';
 export type { RefreshSessionBitbucketPrOptions } from './refreshSessionBitbucketPr';
 export type {
   BitbucketPrCommentParams,

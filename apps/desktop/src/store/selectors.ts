@@ -41,7 +41,6 @@ import {
 import { agentHasUnread } from './slices/agents/agentHasUnread';
 import { sessionPrFetchState } from './slices/github/sessionPrFetchState';
 import { isSessionPrFetchable } from './slices/github/resolveSessionPrFetch';
-import { resolveSessionRepo } from './slices/worktrees/resolveSessionRepo';
 import { runSpendUsd } from './slices/workflows/runSpendUsd';
 import {
   executedAgentRouting,
@@ -644,15 +643,6 @@ const EMPTY_PLANS: ReadonlyArray<PlanWithCount> = [];
 export const useSessionPlans = (sessionId: SessionId | null): ReadonlyArray<PlanWithCount> =>
   useAppStore((s) => (sessionId ? (s.sessionPlans[sessionId] ?? EMPTY_PLANS) : EMPTY_PLANS));
 
-export type FilesTouched = {
-  readonly paths: ReadonlyArray<string>;
-  readonly count: number;
-  readonly additions: number;
-  readonly deletions: number;
-};
-
-const EMPTY_FILES_TOUCHED: FilesTouched = { paths: [], count: 0, additions: 0, deletions: 0 };
-
 export const useSessionLastTurnFinishedAt = (sessionId: SessionId | null): string | null =>
   useAppStore((s) => {
     if (sessionId == null) {
@@ -671,57 +661,6 @@ export const useSessionLastTurnFinishedAt = (sessionId: SessionId | null): strin
     }
     return max;
   });
-
-export const useFilesTouched = (
-  sessionId: SessionId | null,
-  isActive: boolean = true,
-): FilesTouched => {
-  const workingDir = useAppStore((s) =>
-    sessionId == null ? null : (resolveSessionRepo({ state: s, sessionId })?.worktreePath ?? null),
-  );
-  const lastTurnFinishedAt = useSessionLastTurnFinishedAt(sessionId);
-  const summarizerLastUpdate = useAppStore((s) =>
-    sessionId ? (s.summarizerStatus[sessionId]?.lastUpdate ?? null) : null,
-  );
-
-  const [state, setState] = useState<FilesTouched>(EMPTY_FILES_TOUCHED);
-
-  useEffect(() => {
-    if (!isActive || !workingDir) {
-      if (!workingDir) {
-        setState(EMPTY_FILES_TOUCHED);
-      }
-      return;
-    }
-    let cancelled = false;
-    worktreeChangedFiles({ worktreePath: workingDir })
-      .then((summary) => {
-        if (cancelled) {
-          return;
-        }
-        setState(
-          summary.paths.length === 0
-            ? EMPTY_FILES_TOUCHED
-            : {
-                paths: summary.paths,
-                count: summary.paths.length,
-                additions: summary.additions,
-                deletions: summary.deletions,
-              },
-        );
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setState(EMPTY_FILES_TOUCHED);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [isActive, workingDir, lastTurnFinishedAt, summarizerLastUpdate]);
-
-  return state;
-};
 
 export type MountDiffStat = {
   readonly additions: number;

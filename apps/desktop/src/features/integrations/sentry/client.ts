@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { IntegrationCredentialId, ProjectId, WorkspaceId } from '@goodboy/types';
 
-export type SentryOrganization = {
+type SentryOrganization = {
   slug: string;
   name: string;
 };
@@ -12,7 +12,7 @@ export type SentryProject = {
   organization: SentryOrganization;
 };
 
-export type SentryIssueMetadata = {
+type SentryIssueMetadata = {
   type: string | null;
   value: string | null;
 };

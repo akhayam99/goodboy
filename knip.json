@@ -1,13 +1,32 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreExportsUsedInFile": true,
   "workspaces": {
     ".": {
       "entry": ["package.json"],
       "ignoreDependencies": ["@commitlint/cli"]
     },
     "apps/desktop": {
-      "entry": ["src/**/*.test.{ts,tsx}"],
+      "entry": ["src/main.tsx"],
       "project": ["src/**/*.{ts,tsx}"],
+      "ignore": [
+        "src/features/companion/commandExecutor.ts",
+        "src/features/github/components/GitHubStudio/useGithubIssues.ts",
+        "src/features/integrations/gitlab/GitlabStudio/useGitlabIssues.ts",
+        "src/features/integrations/gitlab/GitlabStudio/useGitlabMrs/index.ts",
+        "src/features/integrations/jira/JiraStudio/useJiraIssues.ts",
+        "src/features/integrations/linear/LinearStudio/useLinearIssues.ts",
+        "src/features/integrations/sentry/SentryStudio/useSentryIssues.ts",
+        "src/features/session/timeline/activityFilter.ts",
+        "src/features/session/timeline/railGeometry.ts",
+        "src/features/session/timeline/sessionEventPresentation.ts",
+        "src/store/selectors.ts"
+      ],
+      "ignoreFiles": [
+        "scripts/generate-icons.mjs",
+        "src/__tests__/**",
+        "src/store/storyHarness.ts"
+      ],
       "ignoreDependencies": ["tailwindcss"]
     },
     "packages/core": {

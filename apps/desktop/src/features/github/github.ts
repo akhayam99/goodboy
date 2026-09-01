@@ -3,28 +3,13 @@ import { formatError } from '@goodboy/ui';
 import {
   createIssueComment,
   detectRepoSlug,
-  fetchPrDetail,
   ghRunJson,
   listAssignedIssues,
   listIssueComments,
-  listPrsForBranch,
   updateIssueBody,
 } from '@goodboy/core';
-import type { GhRunner, GhResult, GhRunOptions, PrCacheStore } from '@goodboy/core';
-import type {
-  GhTokenStatus,
-  GithubIssue,
-  GithubIssueComment,
-  GithubPrCacheEntry,
-  PrDetail,
-  PullRequestState,
-} from '@goodboy/types';
-import {
-  getGithubPrCache,
-  upsertGithubPrCache,
-  deleteGithubPrCache,
-  type Database,
-} from '@goodboy/db';
+import type { GhRunner, GhResult, GhRunOptions } from '@goodboy/core';
+import type { GhTokenStatus, GithubIssue, GithubIssueComment } from '@goodboy/types';
 
 type RawGhRunResult = {
   stdout: string;
@@ -117,18 +102,6 @@ export const gitPush = async (
     const msg = formatError(err);
     throw new Error(`git push failed: ${msg}`, { cause: err });
   }
-};
-
-export const ghPrsForBranch = async (
-  cwd: string,
-  branch: string,
-  workspaceId?: string,
-): Promise<ReadonlyArray<PullRequestState>> => {
-  const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
-  if (!slug) {
-    return [];
-  }
-  return listPrsForBranch(tauriGhRunner, slug, branch, { cwd, workspaceId });
 };
 
 export const ghAssignedIssues = async (
@@ -248,51 +221,6 @@ export const ghCreateIssueComment = async ({
   });
 };
 
-export const ghPrDetailByNumber = async (
-  cwd: string,
-  prNumber: number,
-  workspaceId?: string,
-): Promise<PrDetail | null> => {
-  const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
-  if (!slug) {
-    return null;
-  }
-  return fetchPrDetail(tauriGhRunner, slug, prNumber, { cwd, workspaceId });
-};
-
-export const ghPrHeadBranch = async (
-  cwd: string,
-  prNumber: number,
-  workspaceId?: string,
-): Promise<string> => {
-  const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
-  if (!slug) {
-    throw new Error('could not detect a GitHub repository for this project');
-  }
-  const res = await tauriGhRunner.run(
-    [
-      'pr',
-      'view',
-      String(prNumber),
-      '--repo',
-      slug,
-      '--json',
-      'headRefName',
-      '--jq',
-      '.headRefName',
-    ],
-    { cwd, workspaceId },
-  );
-  if (res.exitCode !== 0) {
-    throw new Error(res.stderr.trim() || `gh pr view #${prNumber} exited ${res.exitCode}`);
-  }
-  const branch = res.stdout.trim();
-  if (!branch) {
-    throw new Error(`PR #${prNumber} has no head branch`);
-  }
-  return branch;
-};
-
 export const ghBaseBranches = async (
   cwd: string,
   workspaceId?: string,
@@ -374,38 +302,4 @@ export const tauriGhRunner: GhRunner = {
       throw new Error(`gh run [${args.join(' ')}] failed: ${msg}`, { cause: err });
     }
   },
-};
-
-export const createTauriPrCacheStore = (db: Database): PrCacheStore => {
-  return {
-    async get(repoSlug, branch) {
-      try {
-        const entry = await getGithubPrCache(db, repoSlug, branch);
-        return entry as GithubPrCacheEntry | null;
-      } catch (err) {
-        const msg = formatError(err);
-        throw new Error(`PR cache get for ${repoSlug}/${branch} failed: ${msg}`, { cause: err });
-      }
-    },
-    async upsert(entry) {
-      try {
-        await upsertGithubPrCache(db, entry);
-      } catch (err) {
-        const msg = formatError(err);
-        throw new Error(`PR cache upsert for ${entry.repoSlug}/${entry.branch} failed: ${msg}`, {
-          cause: err,
-        });
-      }
-    },
-    async invalidate(repoSlug, branch) {
-      try {
-        await deleteGithubPrCache(db, repoSlug, branch);
-      } catch (err) {
-        const msg = formatError(err);
-        throw new Error(`PR cache invalidate for ${repoSlug}/${branch} failed: ${msg}`, {
-          cause: err,
-        });
-      }
-    },
-  };
 };

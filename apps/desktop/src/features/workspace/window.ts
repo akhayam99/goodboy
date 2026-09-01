@@ -9,7 +9,7 @@ const PRESENCE_EVENT = 'goodboy:presence';
 const PRESENCE_REQUEST_EVENT = 'goodboy:presence-request';
 const WINDOW_CLOSING_EVENT = 'goodboy:window-closing';
 
-export type PresencePayload = {
+type PresencePayload = {
   readonly label: string;
   readonly workspaceId: WorkspaceId | null;
 };

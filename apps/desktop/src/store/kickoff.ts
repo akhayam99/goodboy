@@ -40,7 +40,7 @@ type BoundaryParams = {
 export const composeUnitBoundary = ({ unit, marker }: BoundaryParams): string =>
   `**Scope** this ${unit} only, never a later one. Emit \`${marker}\` on its own line once it is truly done.`;
 
-export const stepBoundaryMarker = (agentId: AgentId): string => `<<step-done id="${agentId}">>`;
+const stepBoundaryMarker = (agentId: AgentId): string => `<<step-done id="${agentId}">>`;
 
 export const composeStepBoundary = (agentId: AgentId): string =>
   composeUnitBoundary({ unit: 'step', marker: stepBoundaryMarker(agentId) });

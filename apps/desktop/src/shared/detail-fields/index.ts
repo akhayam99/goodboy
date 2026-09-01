@@ -9,7 +9,4 @@ export { gitlabMergeRequestFields } from './gitlabMergeRequestFields';
 export { bitbucketPullRequestFields } from './bitbucketPullRequestFields';
 export { jiraIssueFields } from './jiraIssueFields';
 export { slackThreadFields, type SlackThreadProperties } from './slackThreadFields';
-export {
-  sessionPullRequestFields,
-  type SessionPullRequestProperties,
-} from './sessionPullRequestFields';
+export { sessionPullRequestFields } from './sessionPullRequestFields';

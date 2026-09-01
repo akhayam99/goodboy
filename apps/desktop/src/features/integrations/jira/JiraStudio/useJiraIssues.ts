@@ -15,7 +15,7 @@ type BranchSlugParams = {
 export const jiraBranchSlug = ({ issue }: BranchSlugParams): string =>
   `${issue.key.toLowerCase()}-${slugifyBranch({ input: issue.summary, maxLength: SLUG_MAX_LEN })}`;
 
-export type JiraIssueRow = {
+type JiraIssueRow = {
   readonly issue: JiraIssue;
   readonly sessionId: SessionId | null;
 };

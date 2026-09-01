@@ -3,7 +3,7 @@ import { getCurrentWebview } from '@tauri-apps/api/webview';
 const STORAGE_KEY = 'goodboy:zoom';
 const MIN = 0.5;
 const MAX = 2.5;
-export const ZOOM_STEP = 0.1;
+const ZOOM_STEP = 0.1;
 
 function clamp(factor: number): number {
   const rounded = Math.round(factor * 100) / 100;

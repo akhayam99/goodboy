@@ -56,7 +56,7 @@ export const DEFAULT_ACTIVITY_FILTER: ActivityFilter = {
   agentSubagents: true,
 };
 
-export const ACTIVITY_FILTER_STORAGE_KEY = 'goodboy:activity-filter';
+const ACTIVITY_FILTER_STORAGE_KEY = 'goodboy:activity-filter';
 
 const CATEGORY_BY_EVENT_KIND: Record<SessionEventKind, ActivityCategory> = {
   worktree_created: 'worktree',

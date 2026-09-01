@@ -255,7 +255,7 @@ export type LinearIntegrationBinding = IntegrationBindingBase &
     config: LinearIntegrationConfig;
   }>;
 
-export type SentryIntegrationBinding = IntegrationBindingBase &
+type SentryIntegrationBinding = IntegrationBindingBase &
   Readonly<{
     provider: 'sentry';
     config: SentryIntegrationConfig;

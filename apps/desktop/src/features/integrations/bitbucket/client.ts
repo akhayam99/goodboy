@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { IntegrationCredentialId, ProjectId, WorkspaceId } from '@goodboy/types';
 
-export type BitbucketUser = {
+type BitbucketUser = {
   readonly uuid: string;
   readonly accountId: string | null;
   readonly nickname: string;
@@ -9,7 +9,7 @@ export type BitbucketUser = {
   readonly avatarUrl: string | null;
 };
 
-export type BitbucketWorkspace = {
+type BitbucketWorkspace = {
   readonly uuid: string;
   readonly slug: string;
   readonly name: string;
@@ -51,7 +51,7 @@ export type BitbucketPullRequest = {
   readonly webUrl: string | null;
 };
 
-export type BitbucketInline = {
+type BitbucketInline = {
   readonly path: string;
   readonly from: number | null;
   readonly to: number | null;

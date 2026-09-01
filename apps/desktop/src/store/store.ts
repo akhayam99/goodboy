@@ -15,7 +15,6 @@ import type {
   ClaudePermissionMode,
   AttachmentInput,
   GoalAttachmentOwner,
-  GlobalSettings,
   OverrideSettings,
   OpenQuestion,
   OpenQuestionId,
@@ -42,7 +41,6 @@ import type {
   CredentialId,
   FileVersionId,
   ProviderRunId,
-  ResolvedSettings,
   VerbosityLevel,
   SkillId,
   TurnEvent,
@@ -70,12 +68,8 @@ import type {
   PrReviewDraft,
   RoleModelPreferences,
 } from '@goodboy/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
-import { resolveSettings } from '@goodboy/core';
 import type { ExtractedReviewComment } from '@goodboy/core';
 import { buildProviderList, type ProviderStatus } from '../features/providers/providers';
-import { DEFAULT_BRANCH_PREFIX } from '../features/settings/settings';
-import { AGENT_FEATURES } from '../shared/lib/features';
 import { type RewrittenHead } from '../features/worktree/worktree';
 import { type SkillUpsertArgs } from '../features/skills/skills';
 import type { ScriptRunResult } from '../features/scripts/scripts';
@@ -224,7 +218,7 @@ type RunScriptParams = {
   readonly rows?: number;
 };
 
-export type AppActions = {
+type AppActions = {
   evictSession(params: { readonly sessionId: SessionId; readonly mode: EvictionMode }): void;
   getSelectedProjectIds(params: GetSelectedProjectIdsParams): ReadonlyArray<string>;
   setSelectedProjectIds(params: SetSelectedProjectIdsParams): void;
@@ -1060,23 +1054,3 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createChangelogSlice(set, get),
   ...createBugReportDraftSlice(set, get),
 }));
-
-export const useResolvedSettings = (sessionId: SessionId | null): ResolvedSettings => {
-  return useAppStore((state) => {
-    const session = sessionId ? (state.sessions.find((s) => s.id === sessionId) ?? null) : null;
-    const workspaceId = session?.workspaceId ?? null;
-
-    const globalSettings: GlobalSettings = {
-      defaultProviderId: DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
-      defaultWorkflowId: null,
-      defaultBranchPrefix: DEFAULT_BRANCH_PREFIX,
-      parallelEnabled: AGENT_FEATURES.parallelAgents,
-      defaultVerbosity: 'normal',
-    };
-
-    const workspaceOverride = workspaceId ? (state.workspaceOverrides[workspaceId] ?? null) : null;
-    const sessionOverride = sessionId ? (state.sessionOverrides[sessionId] ?? null) : null;
-
-    return resolveSettings({ global: globalSettings, workspaceOverride, sessionOverride });
-  });
-};

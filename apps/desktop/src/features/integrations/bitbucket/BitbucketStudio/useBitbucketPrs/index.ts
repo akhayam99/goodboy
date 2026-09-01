@@ -43,7 +43,7 @@ const bucketOf = ({ pullRequest }: BucketParams): string => {
   return 'Closed';
 };
 
-export const buildBitbucketPrGroups = ({
+const buildBitbucketPrGroups = ({
   pullRequests,
 }: GroupsParams): ReadonlyArray<BitbucketPrGroup> => {
   const buckets = new Map<string, BitbucketPullRequest[]>();

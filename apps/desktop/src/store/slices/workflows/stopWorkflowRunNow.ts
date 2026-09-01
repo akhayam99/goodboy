@@ -5,7 +5,7 @@ import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/work
 import { persistOrchestrationStop } from './orchestrateNextStep';
 import type { GetFn, SetFn } from './types';
 
-export const OPERATOR_STOP_MESSAGE =
+const OPERATOR_STOP_MESSAGE =
   'You stopped this run. The step in flight was skipped and everything it had already written is kept.';
 
 type Params = {

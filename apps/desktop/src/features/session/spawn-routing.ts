@@ -3,7 +3,7 @@ import type { AgentEffort, ProviderId, RoleModelPreferences, Session } from '@go
 import { clampEffort } from '../chat/utils/chat-constants';
 import { isRightSizedKind, kindRouting, type AgentKind, type AgentKindRouting } from './agent-kind';
 
-export type SpawnRoutingOrigin = 'chat' | 'right-sized' | 'role-default';
+type SpawnRoutingOrigin = 'chat' | 'right-sized' | 'role-default';
 
 export type SpawnRouting = AgentKindRouting & {
   readonly origin: SpawnRoutingOrigin;

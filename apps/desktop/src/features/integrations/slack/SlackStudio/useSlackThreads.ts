@@ -5,7 +5,7 @@ import { slackChannelKey } from '../../../../store/slices/slack-threads';
 import type { SlackChannel, SlackMessage, SlackUser } from '../client';
 import { slackThreadExternalId } from '../threadFormulas';
 
-export const CHANNEL_FETCH_CAP = 12;
+const CHANNEL_FETCH_CAP = 12;
 
 export type SlackThreadRow = {
   readonly channel: SlackChannel;
@@ -24,7 +24,7 @@ type SessionMatchParams = {
   readonly sessionExternalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>;
 };
 
-export const resolveThreadSessions = ({
+const resolveThreadSessions = ({
   sessions,
   sessionExternalTasks,
 }: SessionMatchParams): ReadonlyMap<string, SessionId> => {
@@ -48,7 +48,7 @@ type GroupParams = {
   readonly sessionIdByExternalId: ReadonlyMap<string, SessionId>;
 };
 
-export const buildThreadGroups = ({
+const buildThreadGroups = ({
   channels,
   headsByChannelId,
   sessionIdByExternalId,

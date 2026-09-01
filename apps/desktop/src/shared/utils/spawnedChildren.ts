@@ -1,6 +1,6 @@
 import type { Agent, AgentId, AgentStatus, TurnState } from '@goodboy/types';
 
-export type SpawnAssignment = Readonly<{
+type SpawnAssignment = Readonly<{
   name: string;
   text: string;
 }>;

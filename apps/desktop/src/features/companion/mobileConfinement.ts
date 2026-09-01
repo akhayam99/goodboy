@@ -73,7 +73,7 @@ const CREATE_SESSION_PROVIDERS: ReadonlySet<string> = new Set<WorkspaceIntegrati
   'jira',
 ]);
 
-export const isCreateSessionProvider = (v: unknown): v is WorkspaceIntegrationProvider =>
+const isCreateSessionProvider = (v: unknown): v is WorkspaceIntegrationProvider =>
   typeof v === 'string' && CREATE_SESSION_PROVIDERS.has(v);
 
 export type CreateSessionGate =
@@ -131,7 +131,7 @@ export const clearMobileCreateRateState = (): void => {
   mobileCreatePending = 0;
 };
 
-export type MobileCreateReservation = {
+type MobileCreateReservation = {
   readonly commit: (now?: number) => void;
   readonly release: () => void;
 };
@@ -143,10 +143,6 @@ const pruneExpired = (now: number): void => {
     mobileCreateTimestamps.shift();
     head = mobileCreateTimestamps[0];
   }
-};
-
-export const noteMobileSessionCreated = (now: number = Date.now()): void => {
-  mobileCreateTimestamps.push(now);
 };
 
 const isRateLimited = (now: number): boolean => {

@@ -3,7 +3,7 @@ import { pruneArchivedTranscripts } from './pruneArchivedTranscripts';
 import { removeArchivedWorktrees } from './removeArchivedWorktrees';
 import type { GetFn, SetFn } from './types';
 
-export type { ArchivedWorktreeTarget, StorageStats, WorktreeRemovalResult } from './types';
+export type { StorageStats } from './types';
 
 export const createStorageSlice = (set: SetFn, get: GetFn) => {
   return {

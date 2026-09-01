@@ -6,7 +6,6 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { WORKSPACE_FEATURES } from '../../../../../../shared/lib/features';
 import type { ToastKind } from '../../../../../../app/components/Toast';
 import {
-  QuickActionsPopover,
   buildAgentActions,
   buildScriptActions,
   buildSkillActions,
@@ -15,8 +14,6 @@ import {
   type QuickActionItem,
 } from '../../../../../quick-actions';
 import { CHAT_PREFIX_RE } from '../../lib';
-
-export { QuickActionsPopover };
 
 type Params = {
   readonly session: Session;

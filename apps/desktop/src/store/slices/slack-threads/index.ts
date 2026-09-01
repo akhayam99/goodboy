@@ -7,12 +7,6 @@ import { replyToSlackThread } from './replyToSlackThread';
 import type { GetFn, SetFn } from './types';
 
 export { initialSlackThreadsState, slackChannelKey, slackThreadKey } from './state';
-export type {
-  SlackChannelsEntry,
-  SlackThreadEntry,
-  SlackThreadHeadsEntry,
-  SlackThreadsSliceState,
-} from './state';
 export type { RefreshSlackThreadOptions } from './refreshSlackThread';
 export type {
   SlackChannelParams,
