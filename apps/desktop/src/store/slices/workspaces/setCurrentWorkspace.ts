@@ -252,6 +252,18 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           phaseTemplates: { ...state.phaseTemplates, [id]: mergedTemplates },
           stepLibrary: { ...state.stepLibrary, [id]: stepLibrary },
         }));
+        for (const session of get().sessions) {
+          const hasQueuedChain = session.workflowRuns.some(
+            (run) =>
+              run.discardedAt == null &&
+              run.triggerMode === 'after_run' &&
+              run.chainAfterId != null,
+          );
+          if (!hasQueuedChain) {
+            continue;
+          }
+          void get().maybeAutoAdvanceWorkflow(session.id);
+        }
         if (import.meta.env.DEV) {
           console.log(`[perf] workspace:deferred ${(performance.now() - tWsDefer).toFixed(0)}ms`);
         }

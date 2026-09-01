@@ -1,10 +1,12 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   BudgetAlert,
   IsoDateTime,
   ProviderRunId,
   Session,
   SessionId,
+  WorkflowId,
+  WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
 import { buildStorySession, resetStorySpies, storySpies } from './storyHarness';
@@ -182,5 +184,104 @@ describe('setCurrentWorkspace, session-scoped state cleanup', () => {
       expect(useAppStore.getState().budgetAlerts).toEqual([alert]);
     });
     expect(storySpies.invokeBudgetAlertsList).toHaveBeenCalledOnce();
+  });
+});
+
+describe('setCurrentWorkspace, queued chain self-heal', () => {
+  const SESSION_CHAINED = 'session-chained' as SessionId;
+  const SESSION_PLAIN = 'session-plain' as SessionId;
+  const PRED_RUN = 'run-pred' as WorkflowRunId;
+  const CHAINED_RUN = 'run-chained' as WorkflowRunId;
+  const WF_ID = 'workflow-1' as WorkflowId;
+
+  const chainedSession = (): Session =>
+    buildStorySession({
+      id: SESSION_CHAINED,
+      workspaceId: WS_B,
+      goal: 'chain the runs',
+      state: { kind: 'idle', lastActivityAt: NOW },
+      workflowRuns: [
+        {
+          id: PRED_RUN,
+          workflowId: WF_ID,
+          ordinal: 0,
+          currentStep: 0,
+          autoRun: true,
+          triggerMode: 'immediate',
+          executionMode: 'static',
+        },
+        {
+          id: CHAINED_RUN,
+          workflowId: WF_ID,
+          ordinal: 1,
+          currentStep: 0,
+          autoRun: true,
+          triggerMode: 'after_run',
+          chainAfterId: PRED_RUN,
+          executionMode: 'static',
+        },
+      ],
+    });
+
+  const advance = vi.fn(async () => undefined);
+  const originalAdvance = { current: null as null | ((sessionId: SessionId) => Promise<void>) };
+
+  beforeEach(async () => {
+    resetStorySpies();
+    advance.mockClear();
+    originalAdvance.current = useAppStore.getState().maybeAutoAdvanceWorkflow;
+    useAppStore.setState({ maybeAutoAdvanceWorkflow: advance });
+    const { listSessionsForWorkspace } = await import('@goodboy/db');
+    vi.mocked(listSessionsForWorkspace).mockResolvedValue([
+      chainedSession(),
+      buildStorySession({
+        id: SESSION_PLAIN,
+        workspaceId: WS_B,
+        goal: 'no chain here',
+        state: { kind: 'idle', lastActivityAt: NOW },
+      }),
+    ]);
+  });
+
+  afterEach(async () => {
+    if (originalAdvance.current != null) {
+      useAppStore.setState({ maybeAutoAdvanceWorkflow: originalAdvance.current });
+    }
+    const { listSessionsForWorkspace } = await import('@goodboy/db');
+    vi.mocked(listSessionsForWorkspace).mockResolvedValue([]);
+  });
+
+  it('wakes the advance for a session holding a queued after_run chain', async () => {
+    await useAppStore.getState().setCurrentWorkspace(WS_B);
+
+    await vi.waitFor(() => {
+      expect(advance).toHaveBeenCalledWith(SESSION_CHAINED);
+    });
+    expect(advance).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves sessions without a queued chain alone', async () => {
+    const { listSessionsForWorkspace } = await import('@goodboy/db');
+    vi.mocked(listSessionsForWorkspace).mockResolvedValue([
+      buildStorySession({
+        id: SESSION_PLAIN,
+        workspaceId: WS_B,
+        goal: 'no chain here',
+        state: { kind: 'idle', lastActivityAt: NOW },
+      }),
+      buildStorySession({
+        id: SESSION_IDLE,
+        workspaceId: WS_B,
+        goal: 'still no chain',
+        state: { kind: 'idle', lastActivityAt: NOW },
+      }),
+    ]);
+
+    await useAppStore.getState().setCurrentWorkspace(WS_B);
+
+    await vi.waitFor(() => {
+      expect(storySpies.invokeBudgetAlertsList).toHaveBeenCalled();
+    });
+    expect(advance).not.toHaveBeenCalled();
   });
 });
