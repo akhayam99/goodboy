@@ -197,6 +197,7 @@ import type { SlackConnection } from '../features/integrations/slack/client';
 import type { JiraUser } from '../features/integrations/jira/client';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { AppState } from './types';
+import type { EvictionMode } from './sessionEviction';
 export type { ProviderSpendEntry };
 export type {
   AppState,
@@ -227,6 +228,7 @@ type RunScriptParams = {
 };
 
 export type AppActions = {
+  evictSession(params: { readonly sessionId: SessionId; readonly mode: EvictionMode }): void;
   getSelectedProjectIds(params: GetSelectedProjectIdsParams): ReadonlyArray<string>;
   setSelectedProjectIds(params: SetSelectedProjectIdsParams): void;
   hydrate(): Promise<void>;

@@ -46,57 +46,6 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
     dropPendingTurnEvents({
       agentIds: (get().sessionPhaseRuns[sessionId] ?? []).map((agent) => agent.id),
     });
-    set((state) => {
-      const phaseRuns = state.sessionPhaseRuns[sessionId] ?? [];
-      const nextTranscripts = { ...state.transcripts };
-      const nextMessages = { ...state.messages };
-      for (const agent of phaseRuns) {
-        delete nextTranscripts[agent.id];
-        delete nextMessages[agent.id];
-      }
-      const nextWorktrees = { ...state.sessionWorktrees };
-      delete nextWorktrees[sessionId];
-      const nextWorktreeRecords = { ...state.sessionWorktreeRecords };
-      delete nextWorktreeRecords[sessionId];
-      const nextMounts = { ...state.sessionProjectMounts };
-      delete nextMounts[sessionId];
-      const nextActiveMount = { ...state.sessionActiveProject };
-      delete nextActiveMount[sessionId];
-      const nextBranches = { ...state.sessionBranches };
-      delete nextBranches[sessionId];
-      const nextPhaseRuns = { ...state.sessionPhaseRuns };
-      delete nextPhaseRuns[sessionId];
-      const nextGithub = { ...state.sessionGithub };
-      delete nextGithub[sessionId];
-      const nextProjectPrs = { ...state.sessionProjectPrs };
-      delete nextProjectPrs[sessionId];
-      const nextSelectedPrNumber = { ...state.sessionSelectedPrNumber };
-      delete nextSelectedPrNumber[sessionId];
-      const nextLoading = { ...state.sessionLoading };
-      delete nextLoading[sessionId];
-      const nextSelected = { ...state.selectedAgentId };
-      delete nextSelected[sessionId];
-      const nextOpenQs = { ...state.sessionOpenQuestions };
-      delete nextOpenQs[sessionId];
-      const nextWorkflows = { ...state.sessionWorkflows };
-      delete nextWorkflows[sessionId];
-      return {
-        transcripts: nextTranscripts,
-        messages: nextMessages,
-        sessionWorktrees: nextWorktrees,
-        sessionWorktreeRecords: nextWorktreeRecords,
-        sessionProjectMounts: nextMounts,
-        sessionActiveProject: nextActiveMount,
-        sessionBranches: nextBranches,
-        sessionPhaseRuns: nextPhaseRuns,
-        sessionGithub: nextGithub,
-        sessionProjectPrs: nextProjectPrs,
-        sessionSelectedPrNumber: nextSelectedPrNumber,
-        sessionLoading: nextLoading,
-        selectedAgentId: nextSelected,
-        sessionOpenQuestions: nextOpenQs,
-        sessionWorkflows: nextWorkflows,
-      };
-    });
+    get().evictSession({ sessionId, mode: 'archive' });
   };
 };

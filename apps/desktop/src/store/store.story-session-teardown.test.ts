@@ -128,6 +128,7 @@ type Store = {
   sessionExternalTasks: Record<string, ReadonlyArray<{ readonly branch?: string }>>;
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
   closeSessionTerminals: () => Promise<void>;
+  evictSession: () => void;
   emitNotification: () => void;
   recordSessionEvent: () => Promise<void>;
 };
@@ -164,6 +165,7 @@ const makeStore = ({ projects, mounts, branch, activeProjectId }: MakeStoreParam
   sessionExternalTasks: {},
   sessionPhaseRuns: {},
   closeSessionTerminals: vi.fn(async () => undefined),
+  evictSession: vi.fn(),
   emitNotification: vi.fn(),
   recordSessionEvent: vi.fn(async () => undefined),
 });
