@@ -1,0 +1,339 @@
+import type {
+  ProviderId,
+  ProviderLifecycleAction,
+  Session,
+  SessionId,
+  Workspace,
+} from '@goodboy/types';
+import { ArchiveSessionConfirm } from '../../../features/session/components/ArchiveSessionConfirm';
+import { CommandPalette } from '../../../features/session/components/CommandPalette';
+import { DeleteSessionConfirm } from '../../../features/session/components/DeleteSessionConfirm';
+import { SettingsStudio } from '../../../features/settings/components/SettingsStudio';
+import { GuideStudio } from '../../../features/settings/components/GuideStudio';
+import { ReportIssueStudio } from '../../../features/settings/components/ReportIssueStudio';
+import { WorkspaceLinkStudio } from '../../../features/workspace/components/WorkspaceLinkStudio';
+import { ConvertWorkspaceDialog } from '../../../features/workspace/components/ConvertWorkspaceDialog';
+import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
+import { WorkflowStudio } from '../../../features/workflows/components/WorkflowStudio';
+import { GitHubStudio } from '../../../features/github/components/GitHubStudio';
+import { LinearStudio } from '../../../features/integrations/linear/LinearStudio';
+import { SentryStudio } from '../../../features/integrations/sentry/SentryStudio';
+import { BitbucketWorkspaceStudio } from '../../../features/integrations/bitbucket/BitbucketWorkspaceStudio';
+import { GitlabStudio } from '../../../features/integrations/gitlab/GitlabStudio';
+import { JiraStudio } from '../../../features/integrations/jira/JiraStudio';
+import { SlackStudio } from '../../../features/integrations/slack/SlackStudio';
+import { ProviderStudio } from '../../../features/providers/components/ProviderStudio';
+import { BudgetStudio } from '../../../features/budget/components/BudgetStudio';
+import type { BudgetScope } from '../../../features/budget/components/BudgetStudio/lib';
+import { ImpactStudio } from '../../../features/impact/components/ImpactStudio';
+import { ChangelogStudio } from '../../../features/changelog/components/ChangelogStudio';
+import { NotificationsStudio } from '../../../features/notifications/components/NotificationsStudio';
+import { DiffViewerDialog } from '../../../features/permissions/components/DiffViewerDialog';
+import { OnboardingWizard } from '../../../features/onboarding/OnboardingWizard';
+import { CompanionStudio } from '../../../features/companion/CompanionStudio';
+import type { CommitDiffTarget } from '../../../shared/hooks/useCommitLinkInterceptor';
+
+type Props = {
+  readonly currentWorkspace: Workspace | null;
+  readonly workspaceProjectRoot: string | null;
+  readonly isWorkspaceLauncherBranch: boolean;
+  readonly companionOpen: boolean;
+  readonly appSettingsOpen: boolean;
+  readonly appSettingsFocus: string | undefined;
+  readonly guideStudioOpen: boolean;
+  readonly reportIssueStudioOpen: boolean;
+  readonly deleteOpen: boolean;
+  readonly deleteTargetSession: Session | null;
+  readonly archiveOpen: boolean;
+  readonly archiveTargetSession: Session | null;
+  readonly paletteOpen: boolean;
+  readonly palettePrefix: string;
+  readonly addWorkspaceOpen: boolean;
+  readonly convertWorkspaceOpen: boolean;
+  readonly workflowStudioOpen: boolean;
+  readonly linearStudioOpen: boolean;
+  readonly linearStudioFocus: string | null;
+  readonly sentryStudioOpen: boolean;
+  readonly sentryStudioFocus: string | null;
+  readonly gitlabStudioOpen: boolean;
+  readonly gitlabStudioFocus: string | null;
+  readonly jiraStudioOpen: boolean;
+  readonly jiraStudioFocus: string | null;
+  readonly bitbucketStudioOpen: boolean;
+  readonly slackStudioOpen: boolean;
+  readonly slackStudioFocus: string | null;
+  readonly providerStudioOpen: boolean;
+  readonly providerStudioFocus: ProviderId | null;
+  readonly providerStudioAction: ProviderLifecycleAction | null;
+  readonly githubStudioOpen: boolean;
+  readonly githubStudioSession: SessionId | null;
+  readonly githubStudioPrNumber: number | null;
+  readonly githubStudioThreadId: string | null;
+  readonly githubStudioIssueId: string | null;
+  readonly githubStudioTab: 'pull-requests' | 'issues' | null;
+  readonly budgetStudioOpen: boolean;
+  readonly budgetStudioScope: BudgetScope | undefined;
+  readonly impactStudioOpen: boolean;
+  readonly changelogStudioOpen: boolean;
+  readonly notificationsStudioOpen: boolean;
+  readonly commitDiff: CommitDiffTarget | null;
+  readonly commitDiffLoader: () => Promise<string>;
+  readonly closeAppSettings: () => void;
+  readonly closeGuideStudio: () => void;
+  readonly closeReportIssueStudio: () => void;
+  readonly closePalette: () => void;
+  readonly openSettingsFromPalette: () => void;
+  readonly closePaletteForNewSession: () => void;
+  readonly openProvidersFromPalette: () => void;
+  readonly openShortcutHelpFromPalette: () => void;
+  readonly closeAddWorkspace: () => void;
+  readonly offerWorkspaceRepo: () => void;
+  readonly closeConvertWorkspace: () => void;
+  readonly closeWorkflowStudio: () => void;
+  readonly closeGithubStudio: () => void;
+  readonly closeProviderStudio: () => void;
+  readonly closeBudgetStudio: () => void;
+  readonly closeImpactStudio: () => void;
+  readonly closeChangelogStudio: () => void;
+  readonly closeNotificationsStudio: () => void;
+  readonly closeLinearStudio: () => void;
+  readonly closeSentryStudio: () => void;
+  readonly closeGitlabStudio: () => void;
+  readonly closeJiraStudio: () => void;
+  readonly closeBitbucketStudio: () => void;
+  readonly closeSlackStudio: () => void;
+  readonly closeCommitDiff: () => void;
+  readonly closeDeleteConfirm: () => void;
+  readonly closeArchiveConfirm: () => void;
+  readonly closeCompanion: () => void;
+};
+
+export const AppOverlayRouter = ({
+  currentWorkspace,
+  workspaceProjectRoot,
+  isWorkspaceLauncherBranch,
+  companionOpen,
+  appSettingsOpen,
+  appSettingsFocus,
+  guideStudioOpen,
+  reportIssueStudioOpen,
+  deleteOpen,
+  deleteTargetSession,
+  archiveOpen,
+  archiveTargetSession,
+  paletteOpen,
+  palettePrefix,
+  addWorkspaceOpen,
+  convertWorkspaceOpen,
+  workflowStudioOpen,
+  linearStudioOpen,
+  linearStudioFocus,
+  sentryStudioOpen,
+  sentryStudioFocus,
+  gitlabStudioOpen,
+  gitlabStudioFocus,
+  jiraStudioOpen,
+  jiraStudioFocus,
+  bitbucketStudioOpen,
+  slackStudioOpen,
+  slackStudioFocus,
+  providerStudioOpen,
+  providerStudioFocus,
+  providerStudioAction,
+  githubStudioOpen,
+  githubStudioSession,
+  githubStudioPrNumber,
+  githubStudioThreadId,
+  githubStudioIssueId,
+  githubStudioTab,
+  budgetStudioOpen,
+  budgetStudioScope,
+  impactStudioOpen,
+  changelogStudioOpen,
+  notificationsStudioOpen,
+  commitDiff,
+  commitDiffLoader,
+  closeAppSettings,
+  closeGuideStudio,
+  closeReportIssueStudio,
+  closePalette,
+  openSettingsFromPalette,
+  closePaletteForNewSession,
+  openProvidersFromPalette,
+  openShortcutHelpFromPalette,
+  closeAddWorkspace,
+  offerWorkspaceRepo,
+  closeConvertWorkspace,
+  closeWorkflowStudio,
+  closeGithubStudio,
+  closeProviderStudio,
+  closeBudgetStudio,
+  closeImpactStudio,
+  closeChangelogStudio,
+  closeNotificationsStudio,
+  closeLinearStudio,
+  closeSentryStudio,
+  closeGitlabStudio,
+  closeJiraStudio,
+  closeBitbucketStudio,
+  closeSlackStudio,
+  closeCommitDiff,
+  closeDeleteConfirm,
+  closeArchiveConfirm,
+  closeCompanion,
+}: Props) => {
+  const addWorkspaceSurface = addWorkspaceOpen ? (
+    <WorkspaceLinkStudio onClose={closeAddWorkspace} onOfferRepo={offerWorkspaceRepo} />
+  ) : null;
+
+  if (isWorkspaceLauncherBranch) {
+    return addWorkspaceSurface ?? <WorkspaceLauncher />;
+  }
+
+  return (
+    <>
+      {appSettingsOpen ? (
+        <SettingsStudio initialFocus={appSettingsFocus} onClose={closeAppSettings} />
+      ) : null}
+      {guideStudioOpen ? <GuideStudio onClose={closeGuideStudio} /> : null}
+      {reportIssueStudioOpen ? <ReportIssueStudio onClose={closeReportIssueStudio} /> : null}
+      {paletteOpen ? (
+        <CommandPalette
+          initialQuery={palettePrefix}
+          onClose={closePalette}
+          onOpenSettings={openSettingsFromPalette}
+          onNewSession={closePaletteForNewSession}
+          onOpenProviders={openProvidersFromPalette}
+          onOpenShortcutHelp={openShortcutHelpFromPalette}
+        />
+      ) : null}
+      {addWorkspaceSurface}
+      {currentWorkspace !== null ? (
+        <ConvertWorkspaceDialog
+          open={convertWorkspaceOpen}
+          workspace={currentWorkspace}
+          onClose={closeConvertWorkspace}
+        />
+      ) : null}
+      {workflowStudioOpen && currentWorkspace !== null ? (
+        <WorkflowStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          onClose={closeWorkflowStudio}
+        />
+      ) : null}
+      {githubStudioOpen && currentWorkspace !== null ? (
+        <GitHubStudio
+          workspaceId={currentWorkspace.id}
+          rootPath={workspaceProjectRoot ?? ''}
+          workspaceName={currentWorkspace.name}
+          initialSessionId={githubStudioSession}
+          initialPrNumber={githubStudioPrNumber}
+          initialThreadId={githubStudioThreadId}
+          initialIssueExternalId={githubStudioIssueId}
+          initialTab={githubStudioTab}
+          onClose={closeGithubStudio}
+        />
+      ) : null}
+      {providerStudioOpen && currentWorkspace !== null ? (
+        <ProviderStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          initialFocus={providerStudioFocus}
+          initialAction={providerStudioAction}
+          onClose={closeProviderStudio}
+        />
+      ) : null}
+      {budgetStudioOpen && currentWorkspace !== null ? (
+        <BudgetStudio
+          workspaceName={currentWorkspace.name}
+          initialScope={budgetStudioScope}
+          onClose={closeBudgetStudio}
+        />
+      ) : null}
+      {impactStudioOpen && currentWorkspace !== null ? (
+        <ImpactStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          onClose={closeImpactStudio}
+        />
+      ) : null}
+      {changelogStudioOpen && currentWorkspace !== null ? (
+        <ChangelogStudio workspaceName={currentWorkspace.name} onClose={closeChangelogStudio} />
+      ) : null}
+      {notificationsStudioOpen && currentWorkspace !== null ? (
+        <NotificationsStudio
+          workspaceName={currentWorkspace.name}
+          onClose={closeNotificationsStudio}
+        />
+      ) : null}
+      {linearStudioOpen && currentWorkspace !== null ? (
+        <LinearStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          initialIssueId={linearStudioFocus}
+          onClose={closeLinearStudio}
+        />
+      ) : null}
+      {sentryStudioOpen && currentWorkspace !== null ? (
+        <SentryStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          initialIssueId={sentryStudioFocus}
+          onClose={closeSentryStudio}
+        />
+      ) : null}
+      {gitlabStudioOpen && currentWorkspace !== null ? (
+        <GitlabStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          initialIssueId={gitlabStudioFocus}
+          onClose={closeGitlabStudio}
+        />
+      ) : null}
+      {jiraStudioOpen && currentWorkspace !== null ? (
+        <JiraStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          initialIssueId={jiraStudioFocus}
+          onClose={closeJiraStudio}
+        />
+      ) : null}
+      {bitbucketStudioOpen && currentWorkspace !== null ? (
+        <BitbucketWorkspaceStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          onClose={closeBitbucketStudio}
+        />
+      ) : null}
+      {slackStudioOpen && currentWorkspace !== null ? (
+        <SlackStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          initialThreadTs={slackStudioFocus}
+          onClose={closeSlackStudio}
+        />
+      ) : null}
+      {commitDiff !== null ? (
+        <DiffViewerDialog
+          open
+          onClose={closeCommitDiff}
+          title={`Commit ${commitDiff.sha.slice(0, 7)}`}
+          loader={commitDiffLoader}
+        />
+      ) : null}
+      {deleteTargetSession !== null && deleteOpen ? (
+        <div className="fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-background shadow-lg">
+          <DeleteSessionConfirm session={deleteTargetSession} onClose={closeDeleteConfirm} />
+        </div>
+      ) : null}
+      {archiveTargetSession !== null && archiveOpen ? (
+        <div className="fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-background shadow-lg">
+          <ArchiveSessionConfirm session={archiveTargetSession} onClose={closeArchiveConfirm} />
+        </div>
+      ) : null}
+      {companionOpen ? <CompanionStudio onClose={closeCompanion} /> : null}
+      <OnboardingWizard />
+    </>
+  );
+};

@@ -10,7 +10,8 @@ const EVENT_CONSTANT = 'NOTIFICATIONS_STUDIO_EVENT';
 const STUDIO_COMPONENT = 'NotificationsStudio';
 
 const DISPATCHER_FILE = 'features/notifications/components/NotificationCenter/index.tsx';
-const MOUNT_FILE = 'App.tsx';
+const EVENT_LISTENER_FILE = 'app/hooks/useAppOverlays/index.ts';
+const MOUNT_FILE = 'app/components/AppOverlayRouter/index.tsx';
 
 function listSourceFiles(dir: string, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -82,7 +83,7 @@ describe('the notifications studio has exactly one entrance', () => {
     expect(dispatchers).toHaveLength(1);
   });
 
-  it('only App.tsx mounts the studio', () => {
+  it('only AppOverlayRouter mounts the studio', () => {
     const mounts = files.flatMap((path) => scan(path, mountsStudio));
 
     if (mounts.length !== 1 || mounts[0]?.file !== MOUNT_FILE) {
@@ -99,13 +100,13 @@ describe('the notifications studio has exactly one entrance', () => {
     const unexpected = referrers.filter(
       (hit) =>
         hit.file !== DISPATCHER_FILE &&
-        hit.file !== MOUNT_FILE &&
+        hit.file !== EVENT_LISTENER_FILE &&
         hit.file !== 'features/notifications/studioEvent.ts',
     );
 
     if (unexpected.length > 0) {
       throw new Error(
-        `Only the bell (${DISPATCHER_FILE}), the app shell (${MOUNT_FILE}), and the event ` +
+        `Only the bell (${DISPATCHER_FILE}), the app overlay hook (${EVENT_LISTENER_FILE}), and the event ` +
           `declaration may reference ${EVENT_NAME}. Found ${unexpected.length} other ` +
           `reference(s).\n\n${format(unexpected)}`,
       );
