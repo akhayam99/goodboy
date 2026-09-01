@@ -816,6 +816,7 @@ describe('store contract', () => {
         currentSessionId: SESSION_ID,
         sessionProjectPrs: { [SESSION_ID_2]: {} },
         sessionSelectedPrNumber: { [SESSION_ID_2]: 40 },
+        sessionTelemetry: { [SESSION_ID_2]: [] },
       });
       await store.getState().archiveTask(SESSION_ID_2);
       const s = store.getState();
@@ -824,6 +825,7 @@ describe('store contract', () => {
       expect(s.archivedSessions[WS_ID]?.map((x) => x.id)).toEqual([SESSION_ID_2]);
       expect(s.sessionProjectPrs[SESSION_ID_2]).toBeUndefined();
       expect(s.sessionSelectedPrNumber[SESSION_ID_2]).toBeUndefined();
+      expect(s.sessionTelemetry[SESSION_ID_2]).toBeUndefined();
     });
 
     it('unarchiveTask restores a session from archived cache to active when in same workspace', async () => {
@@ -875,6 +877,7 @@ describe('store contract', () => {
         archivedSessions: { [WS_ID]: [archived] },
         sessionProjectPrs: { [SESSION_ID]: {} },
         sessionSelectedPrNumber: { [SESSION_ID]: 40 },
+        terminalTabs: { [SESSION_ID]: [] },
       });
       await store.getState().deleteTask(SESSION_ID);
       const s = store.getState();
@@ -882,6 +885,7 @@ describe('store contract', () => {
       expect(s.currentSessionId).toBeNull();
       expect(s.sessionProjectPrs[SESSION_ID]).toBeUndefined();
       expect(s.sessionSelectedPrNumber[SESSION_ID]).toBeUndefined();
+      expect(s.terminalTabs[SESSION_ID]).toBeUndefined();
     });
 
     it('deleteTask purges file versions for a branchless session', async () => {

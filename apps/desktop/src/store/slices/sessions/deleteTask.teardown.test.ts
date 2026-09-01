@@ -51,6 +51,7 @@ const makeStore = () => ({
     await new Promise((resolve) => setTimeout(resolve, 5));
     order.push('terminals closed');
   }),
+  evictSession: vi.fn(),
   emitNotification: vi.fn(async () => undefined),
 });
 

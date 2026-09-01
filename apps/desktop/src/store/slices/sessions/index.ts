@@ -7,6 +7,7 @@ import { bulkUnarchiveTask } from './bulkUnarchiveTask';
 import { createSession } from './createSession';
 import { createUntitledSession } from './createUntitledSession';
 import { deleteTask } from './deleteTask';
+import { evictSession } from './evictSession';
 import { linkSessionExternalTask } from './linkSessionExternalTask';
 import { materializeProject } from './materializeProject';
 import { renameTask } from './renameTask';
@@ -21,6 +22,7 @@ import type { GetFn, SetFn } from './types';
 
 export const createSessionsSlice = (set: SetFn, get: GetFn) => {
   return {
+    evictSession: evictSession({ set, get }),
     renameTask: renameTask(set, get),
     autoTitleSession: autoTitleSession(set, get),
     setSessionConfig: setSessionConfig(set, get),
