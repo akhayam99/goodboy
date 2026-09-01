@@ -21,6 +21,6 @@ describe('OpenSessionButton', () => {
     const onOpened = vi.fn();
     render(<OpenSessionButton sessionId={'s1' as SessionId} onOpened={onOpened} />);
     fireEvent.click(screen.getByRole('button', { name: /open session/i }));
-    expect(openSession).toHaveBeenCalledWith('s1', onOpened);
+    expect(openSession).toHaveBeenCalledWith({ sessionId: 's1', onOpened });
   });
 });

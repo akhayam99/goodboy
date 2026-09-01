@@ -26,6 +26,7 @@ import { buildTimelineGroups } from './buildTimelineGroups';
 import { buildTimelineStream, type TimelineStreamItem } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
 import { layoutTimelineRail } from './railGeometry';
+import { runIdentity, runIdentitySeed } from './runIdentity';
 import { markerCenterY, TIMELINE_RHYTHM } from './timelineRhythm';
 
 type TypedStringParams = {
@@ -189,6 +190,7 @@ const stream = ({
 }: StreamParams) =>
   buildTimelineStream({
     entries: buildTimelineGroups({
+      sessionId: SESSION_ID,
       agents,
       workflows,
       plans,
@@ -611,6 +613,7 @@ describe('buildTimelineStream', () => {
     const clusters = items.flatMap((item, index) =>
       item.kind === 'cluster' ? [{ item, rail: layout.rows[index] }] : [],
     );
+    const seed = runIdentitySeed({ sessionId: SESSION_ID });
 
     expect(items.map(labelOf)).toEqual([
       'now',
@@ -622,7 +625,10 @@ describe('buildTimelineStream', () => {
       'entry:run:run-1',
     ]);
     expect(clusters.map(({ item }) => item.groupId)).toEqual(['lane:run:run-2', 'lane:run:run-1']);
-    expect(clusters.map(({ item }) => item.identity.index)).toEqual([1, 0]);
+    expect(clusters.map(({ item }) => item.identity.index)).toEqual([
+      runIdentity({ laneIndex: 1, seed }).index,
+      runIdentity({ laneIndex: 0, seed }).index,
+    ]);
     expect(clusters.every(({ rail }) => rail?.markerColumn === 0)).toBe(true);
     expect(
       new Set(clusters.flatMap(({ rail }) => rail?.joins.map((join) => join.laneColumn) ?? []))

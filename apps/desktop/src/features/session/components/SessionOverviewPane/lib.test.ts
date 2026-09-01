@@ -3,7 +3,7 @@ import type { OpenQuestion, SessionStageInfo } from '@goodboy/types';
 import { resolveAttentionLens, selectOpenQuestions } from './lib';
 
 const stage = (over: Partial<SessionStageInfo>): SessionStageInfo =>
-  ({ stage: 'building', reason: '', ...over }) as SessionStageInfo;
+  ({ stage: 'building', reason: '', attention: null, ...over }) satisfies SessionStageInfo;
 
 const question = (over: Partial<OpenQuestion>): OpenQuestion =>
   ({ status: 'open', text: 'q', ...over }) as unknown as OpenQuestion;

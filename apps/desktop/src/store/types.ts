@@ -19,6 +19,7 @@ import type {
   Message,
   OpenQuestion,
   OpenQuestionId,
+  OrchestratorRouting,
   OverrideSettings,
   PendingResolution,
   PlanConsumption,
@@ -166,6 +167,13 @@ export type SummarizerSessionStatus = {
   } | null;
 };
 
+export type PendingOrchestration = {
+  readonly sessionId: SessionId;
+  readonly bypassGate: boolean;
+  readonly extraHints: ReadonlyArray<string>;
+  readonly routing?: OrchestratorRouting;
+};
+
 type AppSliceState = UpdaterState & ChangelogState & SlackThreadsSliceState & BugReportDraftState;
 
 export type AppState = AppSliceState & {
@@ -232,6 +240,8 @@ export type AppState = AppSliceState & {
   readonly sessionWorkflows: Readonly<Record<SessionId, ReadonlyArray<Workflow>>>;
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>;
   readonly orchestratingWorkflowRuns: Readonly<Record<WorkflowRunId, boolean>>;
+  readonly pendingOrchestrations: Readonly<Record<WorkflowRunId, PendingOrchestration>>;
+  readonly pendingAdvanceSessions: ReadonlySet<SessionId>;
   readonly announcedWorkflowBlocks: Readonly<Record<WorkflowRunId, string>>;
   readonly announcedRunBudget: Readonly<Record<WorkflowRunId, number>>;
   readonly selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;

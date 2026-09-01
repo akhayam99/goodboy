@@ -206,6 +206,7 @@ export type {
   SessionLoadingFlags,
   SessionNudge,
   SummarizerSessionStatus,
+  PendingOrchestration,
 } from './types';
 
 type SaveScriptParams = {
@@ -946,6 +947,8 @@ export const initialState: AppState = {
   sessionWorkflows: {},
   sessionPhaseRuns: {},
   orchestratingWorkflowRuns: {},
+  pendingOrchestrations: {},
+  pendingAdvanceSessions: new Set<SessionId>(),
   announcedWorkflowBlocks: {},
   announcedRunBudget: {},
   selectedAgentId: {},

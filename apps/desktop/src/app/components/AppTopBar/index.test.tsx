@@ -33,7 +33,7 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
       }>,
       rollup: { attentionCount: 0, runningCount: 0, todaySpend: 0 },
       reasons: {} as Record<string, string>,
-      attention: {} as Record<string, string | undefined>,
+      attention: {} as Record<string, string | null>,
     },
     store: {
       setCurrentSession: vi.fn(async () => undefined),
@@ -59,7 +59,7 @@ vi.mock('../../../store', () => ({
   useSessionStageInfo: (session: Session) => ({
     stage: 'attention',
     reason: hooks.reasons[session.id] ?? 'Needs attention',
-    attention: hooks.attention[session.id],
+    attention: hooks.attention[session.id] ?? null,
   }),
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
 }));
@@ -230,20 +230,21 @@ describe('AppTopBar', () => {
     expect(screen.queryByText('PR #42: CI failed')).toBeNull();
   });
 
-  it('marks each row with the icon of its own reason, not a repeated dot', () => {
+  it('renders the open-question icon and tone instead of the sessions fallback', () => {
     hooks.sessions = [ATTENTION_SESSION];
     hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
     hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 0 };
     hooks.reasons = { [ATTENTION_SESSION_ID]: 'PR #42: CI failed' };
-    hooks.attention = { [ATTENTION_SESSION_ID]: 'ci-failed' };
+    hooks.attention = { [ATTENTION_SESSION_ID]: 'open-question' };
     renderBar();
 
     fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));
 
     const row = screen.getByTitle('Review the failing checks · PR #42: CI failed');
     const icon = row.querySelector('svg');
-    expect(icon?.getAttribute('class')).toContain('text-danger');
-    expect(row.querySelector('[class*="bg-warning"]')).toBeNull();
+    expect(icon?.getAttribute('class')).toContain('text-warning');
+    expect(icon?.getAttribute('class')).toContain('lucide-circle-question-mark');
+    expect(icon?.getAttribute('class')).not.toContain('lucide-circle-play');
   });
 
   it('closes the needs-you dialog on Escape', () => {

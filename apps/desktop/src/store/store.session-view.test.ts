@@ -318,18 +318,18 @@ describe('deriveSessionStage', () => {
 
   it('no PR and quiet → building', () => {
     const info = deriveSessionStage({ session: base(1), pr: null, ...signals });
-    expect(info).toEqual({ stage: 'building', reason: 'no PR yet' });
+    expect(info).toEqual({ stage: 'building', reason: 'no PR yet', attention: null });
   });
 
   it('open PR and quiet → review', () => {
     const info = deriveSessionStage({ session: base(1), pr: makePr(), ...signals });
-    expect(info).toEqual({ stage: 'review', reason: 'PR #1 awaiting review' });
+    expect(info).toEqual({ stage: 'review', reason: 'PR #1 awaiting review', attention: null });
   });
 
   it('draft PR → review with draft reason', () => {
     const pr = makePr({ isDraft: true });
     const info = deriveSessionStage({ session: base(1), pr, ...signals });
-    expect(info).toEqual({ stage: 'review', reason: 'draft PR #1' });
+    expect(info).toEqual({ stage: 'review', reason: 'draft PR #1', attention: null });
   });
 
   it('unread beats merged', () => {
@@ -341,7 +341,7 @@ describe('deriveSessionStage', () => {
   it('merged PR and quiet → done', () => {
     const pr = makePr({ state: 'merged' });
     const info = deriveSessionStage({ session: base(1), pr, ...signals });
-    expect(info).toEqual({ stage: 'done', reason: 'PR #1 merged' });
+    expect(info).toEqual({ stage: 'done', reason: 'PR #1 merged', attention: null });
   });
 
   it('idle state + running standalone agent → running', () => {
@@ -376,7 +376,7 @@ describe('deriveSessionStage', () => {
       state: { kind: 'starting', startedAt: '2024-01-01T00:00:00.000Z' as never },
     };
     const info = deriveSessionStage({ session, pr: null, ...signals });
-    expect(info).toEqual({ stage: 'running', reason: 'agent running' });
+    expect(info).toEqual({ stage: 'running', reason: 'agent running', attention: null });
   });
 
   it('running agent outranks open questions', () => {
@@ -409,7 +409,7 @@ describe('deriveSessionStage', () => {
       hasRunningAgent: true,
       isBranchless: true,
     });
-    expect(info).toEqual({ stage: 'running', reason: 'agent running' });
+    expect(info).toEqual({ stage: 'running', reason: 'agent running', attention: null });
   });
 
   it('branchless sessions derive attention from questions or unread replies', () => {
@@ -446,7 +446,7 @@ describe('deriveSessionStage', () => {
       ...signals,
       isBranchless: true,
     });
-    expect(info).toEqual({ stage: 'building', reason: 'ready for work' });
+    expect(info).toEqual({ stage: 'building', reason: 'ready for work', attention: null });
   });
 });
 

@@ -254,7 +254,11 @@ const harness = (state: State) => {
     }
     Object.assign(state, updater as State);
   });
-  return { set: set as never, get: (() => state) as never };
+  const get = () => state;
+  if (typeof state['orchestrateNextStep'] !== 'function') {
+    state['orchestrateNextStep'] = orchestrateNextStep(set as never, get as never);
+  }
+  return { set: set as never, get: get as never };
 };
 
 beforeEach(() => {
@@ -278,6 +282,105 @@ beforeEach(() => {
 });
 
 describe('orchestrateNextStep', () => {
+  it('queues one merged rerun while orchestration is in flight', async () => {
+    const openQuestionsGate: { release: (() => void) | null } = { release: null };
+    listOpenQuestionsSpy.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          openQuestionsGate.release = () => resolve([]);
+        }),
+    );
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
+      decision: { action: 'done', reason: 'all set' },
+    });
+    const state = baseState();
+    state['pendingOrchestrations'] = {};
+    const { set, get } = harness(state);
+    const orchestrate = vi.fn(orchestrateNextStep(set, get));
+    state['orchestrateNextStep'] = orchestrate;
+
+    const first = orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
+    await vi.waitFor(() => expect(listOpenQuestionsSpy).toHaveBeenCalledTimes(1));
+    await orchestrate(SESSION_ID, WORKFLOW_RUN_ID, {
+      bypassGate: true,
+      extraHints: ' first pending hint ',
+      routing: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
+    });
+
+    expect(decideSpy).not.toHaveBeenCalled();
+    expect(state['pendingOrchestrations']).toEqual({
+      [WORKFLOW_RUN_ID]: {
+        sessionId: SESSION_ID,
+        bypassGate: true,
+        extraHints: ['first pending hint'],
+        routing: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
+      },
+    });
+
+    if (openQuestionsGate.release == null) {
+      throw new Error('open questions gate was not reached');
+    }
+    openQuestionsGate.release();
+    await first;
+    await vi.waitFor(() => expect(orchestrate).toHaveBeenCalledTimes(3));
+
+    expect(orchestrate).toHaveBeenLastCalledWith(SESSION_ID, WORKFLOW_RUN_ID, {
+      bypassGate: true,
+      extraHints: 'first pending hint',
+      routing: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
+    });
+    expect(state['pendingOrchestrations']).toEqual({});
+  });
+
+  it('coalesces three concurrent calls into one rerun with deduped hints and last routing', async () => {
+    const openQuestionsGate: { release: (() => void) | null } = { release: null };
+    listOpenQuestionsSpy.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          openQuestionsGate.release = () => resolve([]);
+        }),
+    );
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
+      decision: { action: 'done', reason: 'all set' },
+    });
+    const state = baseState();
+    state['pendingOrchestrations'] = {};
+    const { set, get } = harness(state);
+    const orchestrate = vi.fn(orchestrateNextStep(set, get));
+    state['orchestrateNextStep'] = orchestrate;
+
+    const first = orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
+    await vi.waitFor(() => expect(listOpenQuestionsSpy).toHaveBeenCalledTimes(1));
+    await orchestrate(SESSION_ID, WORKFLOW_RUN_ID, {
+      extraHints: 'first hint',
+      routing: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+    });
+    await orchestrate(SESSION_ID, WORKFLOW_RUN_ID, {
+      bypassGate: true,
+      extraHints: 'second hint',
+      routing: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
+    });
+    await orchestrate(SESSION_ID, WORKFLOW_RUN_ID, { extraHints: 'first hint' });
+
+    if (openQuestionsGate.release == null) {
+      throw new Error('open questions gate was not reached');
+    }
+    openQuestionsGate.release();
+    await first;
+    await vi.waitFor(() => expect(orchestrate).toHaveBeenCalledTimes(5));
+
+    expect(orchestrate).toHaveBeenLastCalledWith(SESSION_ID, WORKFLOW_RUN_ID, {
+      bypassGate: true,
+      extraHints: 'first hint\n\nsecond hint',
+      routing: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
+    });
+    expect(state['pendingOrchestrations']).toEqual({});
+  });
+
   it('returns before doing work when the run already has an operator stop', async () => {
     const state = baseState();
     const sessions = state['sessions'] as ReadonlyArray<Session>;

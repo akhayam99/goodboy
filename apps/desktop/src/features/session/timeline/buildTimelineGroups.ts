@@ -5,13 +5,14 @@ import type {
   PlanWithCount,
   SessionEvent,
   SessionExternalTask,
+  SessionId,
   Workflow,
   WorkflowRun,
 } from '@goodboy/types';
 import { classifyAgent, type AgentKind } from '../agent-kind';
 import { attachedQuestionsFor } from './attachedQuestions';
 import { earliestEvidence, resolveAgentCreation, type AgentCreation } from './agentCreation';
-import { runIdentity, type RunIdentity } from './runIdentity';
+import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
 
 export type TimelineChain = {
   readonly identity: RunIdentity;
@@ -99,6 +100,7 @@ type AttachedWorkflow = {
 };
 
 type Params = {
+  readonly sessionId: SessionId;
   readonly agents: ReadonlyArray<Agent>;
   readonly workflows: ReadonlyArray<AttachedWorkflow>;
   readonly plans: ReadonlyArray<PlanWithCount>;
@@ -164,6 +166,7 @@ const compareNewestFirst = (first: SortableEntry, second: SortableEntry): number
 };
 
 export const buildTimelineGroups = ({
+  sessionId,
   agents,
   workflows,
   plans,
@@ -173,6 +176,7 @@ export const buildTimelineGroups = ({
   events,
   agentKindOverride,
 }: Params): TimelineModel => {
+  const seed = runIdentitySeed({ sessionId });
   const liveAgents = agents.filter((agent) => agent.deletedAt == null);
   const creations = resolveAgentCreation({ agents: liveAgents });
   const byOrdinal = [...liveAgents].sort((first, second) => first.ordinal - second.ordinal);
@@ -209,7 +213,7 @@ export const buildTimelineGroups = ({
     if (laneIndex === undefined) {
       throw new Error(`lane identity is missing for ${runId}`);
     }
-    return runIdentity({ runId, laneIndex });
+    return runIdentity({ laneIndex, seed });
   };
 
   const stepsByRunId = new Map<string, ReadonlyArray<Agent>>();

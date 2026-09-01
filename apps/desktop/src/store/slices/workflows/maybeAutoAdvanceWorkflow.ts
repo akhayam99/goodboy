@@ -231,6 +231,9 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
 export const maybeAutoAdvanceWorkflow = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
     if (advanceInFlight.has(sessionId)) {
+      set((state) => ({
+        pendingAdvanceSessions: new Set([...(state.pendingAdvanceSessions ?? []), sessionId]),
+      }));
       return;
     }
     advanceInFlight.add(sessionId);
@@ -238,6 +241,15 @@ export const maybeAutoAdvanceWorkflow = (set: SetFn, get: GetFn) => {
       await runAdvance({ set, get, sessionId });
     } finally {
       advanceInFlight.delete(sessionId);
+      const pendingAdvanceSessions = get().pendingAdvanceSessions ?? new Set<SessionId>();
+      if (pendingAdvanceSessions.has(sessionId)) {
+        const nextPendingAdvanceSessions = new Set(pendingAdvanceSessions);
+        nextPendingAdvanceSessions.delete(sessionId);
+        set({ pendingAdvanceSessions: nextPendingAdvanceSessions });
+        queueMicrotask(() => {
+          void get().maybeAutoAdvanceWorkflow(sessionId);
+        });
+      }
     }
   };
 };

@@ -75,6 +75,8 @@ const listPendingResolutionsForSessionSpy = vi.fn(
 const getWorkspaceByIdSpy = vi.fn();
 const listProjectsForWorkspaceSpy = vi.fn();
 const upsertSessionExternalTaskSpy = vi.fn(async () => undefined);
+const updateSessionStateSpy = vi.fn(async () => undefined);
+const listLiveRunIdsSpy = vi.fn(async () => new Set<string>());
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
@@ -131,7 +133,7 @@ vi.mock('@goodboy/db', () => ({
   updateSessionAutoRun: vi.fn(async () => undefined),
   updateSessionTitleUserEdited: vi.fn(async () => undefined),
   updateSessionActiveProject: vi.fn(async () => undefined),
-  updateSessionState: vi.fn(async () => undefined),
+  updateSessionState: updateSessionStateSpy,
   attachWorkflowToSession: vi.fn(async () => undefined),
   detachWorkflowFromSession: vi.fn(async () => undefined),
   updateWorkflowOrder: vi.fn(async () => undefined),
@@ -191,6 +193,7 @@ vi.mock('../../../features/onboarding/onboarding-store', () => ({
 vi.mock('../../../features/chat/turn', () => ({
   runTurn: vi.fn(),
   cancelTurn: vi.fn(async () => undefined),
+  listLiveRunIds: listLiveRunIdsSpy,
   writeAttachment: vi.fn(async () => 'rel/path'),
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
@@ -621,6 +624,27 @@ describe('store contract', () => {
       expect(ss).toHaveLength(2);
       expect(ss[0]?.id).toBe(SESSION_ID);
       expect(ss[1]?.goal).toBe('two');
+    });
+
+    it('refreshSessions reconciles a database-running session before storing it', async () => {
+      const store = await getStore();
+      const { listSessionsForWorkspace } = await import('@goodboy/db');
+      (listSessionsForWorkspace as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+        buildSession({ state: { kind: 'running', runId: RUN_ID, startedAt: NOW } }),
+      ]);
+      listLiveRunIdsSpy.mockResolvedValueOnce(new Set());
+
+      await store.getState().refreshSessions(WS_ID);
+
+      expect(
+        store.getState().sessions.filter((session) => session.state.kind === 'running'),
+      ).toHaveLength(0);
+      expect(updateSessionStateSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        SESSION_ID,
+        expect.objectContaining({ kind: 'idle' }),
+        expect.any(String),
+      );
     });
 
     it('setCurrentSession reads the context slots the database holds', async () => {

@@ -38,13 +38,25 @@ const IDENTITIES: ReadonlyArray<RunIdentity> = [
   },
 ];
 
-type Params = {
-  readonly runId: string;
-  readonly laneIndex: number;
+const IDENTITY_STRIDE = 2;
+
+export const runIdentitySeed = ({ sessionId }: { readonly sessionId: string }): number => {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < sessionId.length; index += 1) {
+    hash ^= sessionId.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash % IDENTITIES.length;
 };
 
-export const runIdentity = ({ runId: _runId, laneIndex }: Params): RunIdentity => {
-  const identity = IDENTITIES[laneIndex % IDENTITIES.length];
+export const runIdentity = ({
+  laneIndex,
+  seed,
+}: {
+  readonly laneIndex: number;
+  readonly seed: number;
+}): RunIdentity => {
+  const identity = IDENTITIES[(seed + laneIndex * IDENTITY_STRIDE) % IDENTITIES.length];
   if (identity === undefined) {
     throw new Error('run identity palette is empty');
   }

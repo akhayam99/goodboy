@@ -128,7 +128,11 @@ const harness = (state: StoreState) => {
     }
     Object.assign(state, updater as StoreState);
   });
-  return { set: set as never, get: (() => state) as never };
+  const get = () => state;
+  if (typeof state['maybeAutoAdvanceWorkflow'] !== 'function') {
+    state['maybeAutoAdvanceWorkflow'] = maybeAutoAdvanceWorkflow(set as never, get as never);
+  }
+  return { set: set as never, get: get as never };
 };
 
 beforeEach(() => {
@@ -138,6 +142,37 @@ beforeEach(() => {
 });
 
 describe('maybeAutoAdvanceWorkflow', () => {
+  it('reruns once when another advance arrives in flight', async () => {
+    const openQuestionsGate: { release: (() => void) | null } = { release: null };
+    listOpenQuestionsSpy.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          openQuestionsGate.release = () => resolve([]);
+        }),
+    );
+    const state = baseState(['s0'], [makeAgent('s0', 'pending', 0)]);
+    state['pendingAdvanceSessions'] = new Set<SessionId>();
+    const { set, get } = harness(state);
+    const advance = vi.fn(maybeAutoAdvanceWorkflow(set, get));
+    state['maybeAutoAdvanceWorkflow'] = advance;
+
+    const first = advance(SESSION_ID);
+    await vi.waitFor(() => expect(listOpenQuestionsSpy).toHaveBeenCalledTimes(1));
+    await advance(SESSION_ID);
+
+    expect(state['pendingAdvanceSessions']).toEqual(new Set([SESSION_ID]));
+
+    if (openQuestionsGate.release == null) {
+      throw new Error('open questions query was not reached');
+    }
+    openQuestionsGate.release();
+    await first;
+    await vi.waitFor(() => expect(advance).toHaveBeenCalledTimes(3));
+    await vi.waitFor(() => expect(state['activateWorkflowAgent']).toHaveBeenCalledTimes(2));
+
+    expect(state['pendingAdvanceSessions']).toEqual(new Set());
+  });
+
   it('activates the next pending step once its predecessors are done', async () => {
     const state = baseState(
       ['s0', 's1', 's2'],
@@ -264,7 +299,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
     expect(state['emitNotification']).not.toHaveBeenCalled();
   });
 
-  it('spawns a single agent when two advances race', async () => {
+  it('reruns after two advances race', async () => {
     let release = () => {};
     const gate = new Promise<void>((resolve) => {
       release = resolve;
@@ -279,7 +314,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
     const second = advance(SESSION_ID);
     release();
     await Promise.all([first, second]);
-    expect(state['activateWorkflowAgent']).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(state['activateWorkflowAgent']).toHaveBeenCalledTimes(2));
   });
 
   it('starts a chained run and activates its first step in the same pass', async () => {
