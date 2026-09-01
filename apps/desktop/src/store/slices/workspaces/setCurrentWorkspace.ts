@@ -78,9 +78,6 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       summarizerStatus: {},
       budgetAlerts: [],
       unknownPayloadCounts: {},
-      sidebarSessionSearch: '',
-      sidebarStateFilter: [],
-      sidebarProviderFilter: [],
       sessionLoading: {},
       boardReady: false,
     });

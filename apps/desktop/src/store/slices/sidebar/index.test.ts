@@ -502,11 +502,7 @@ describe('store contract', () => {
         detectedEditors: [],
         workspaceOverrides: {},
         sessionOverrides: {},
-        sidebarWorkspaceSearch: '',
-        sidebarSessionSearch: '',
         unreadWorkspaceIds: new Set<WorkspaceId>(),
-        sidebarStateFilter: [],
-        sidebarProviderFilter: [],
         githubStatus: null,
         sessionGithub: {},
         volatilePermissionAllows: new Set<string>(),
@@ -535,30 +531,6 @@ describe('store contract', () => {
   });
 
   describe('sidebar', () => {
-    it('setSidebarWorkspaceSearch stores the query', async () => {
-      const store = await getStore();
-      store.getState().setSidebarWorkspaceSearch('foo');
-      expect(store.getState().sidebarWorkspaceSearch).toBe('foo');
-    });
-
-    it('setSidebarSessionSearch stores the query', async () => {
-      const store = await getStore();
-      store.getState().setSidebarSessionSearch('bar');
-      expect(store.getState().sidebarSessionSearch).toBe('bar');
-    });
-
-    it('setSidebarStateFilter stores the array', async () => {
-      const store = await getStore();
-      store.getState().setSidebarStateFilter(['running', 'idle']);
-      expect(store.getState().sidebarStateFilter).toEqual(['running', 'idle']);
-    });
-
-    it('setSidebarProviderFilter stores the array', async () => {
-      const store = await getStore();
-      store.getState().setSidebarProviderFilter(['anthropic']);
-      expect(store.getState().sidebarProviderFilter).toEqual(['anthropic']);
-    });
-
     it('setPanelSectionExpanded merges per-session without clobbering siblings', async () => {
       const store = await getStore();
       store.getState().setPanelSectionExpanded(SESSION_ID, 'workflow', true);

@@ -44,7 +44,6 @@ import type {
   ProviderRunId,
   ResolvedSettings,
   VerbosityLevel,
-  TurnState,
   SkillId,
   TurnEvent,
   TurnProviderOverride,
@@ -634,11 +633,7 @@ export type AppActions = {
   bulkUnarchiveTask(ids: ReadonlyArray<SessionId>): Promise<void>;
   setSessionConfig(sessionId: SessionId, fields: SessionConfigUpdate): Promise<void>;
   setAgentConfig(sessionId: SessionId, agentId: AgentId, fields: AgentConfigUpdate): Promise<void>;
-  setSidebarWorkspaceSearch(query: string): void;
-  setSidebarSessionSearch(query: string): void;
   refreshUnreadWorkspaces(): Promise<void>;
-  setSidebarStateFilter(states: ReadonlyArray<TurnState['kind']>): void;
-  setSidebarProviderFilter(providers: ReadonlyArray<ProviderId>): void;
   setPanelSectionExpanded(sessionId: SessionId, section: PanelSection, expanded: boolean): void;
   exportConfig(): Promise<string | null>;
   importConfig(): Promise<import('@goodboy/types').ConfigBundleImportResult | null>;
@@ -966,11 +961,7 @@ export const initialState: AppState = {
   detectedEditors: [],
   workspaceOverrides: {},
   sessionOverrides: {},
-  sidebarWorkspaceSearch: '',
-  sidebarSessionSearch: '',
   unreadWorkspaceIds: new Set<WorkspaceId>(),
-  sidebarStateFilter: [],
-  sidebarProviderFilter: [],
   sessionPanelExpanded: {},
   githubStatus: null,
   sessionGithub: {},

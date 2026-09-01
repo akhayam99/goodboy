@@ -1,7 +1,6 @@
 export const WORKSPACE_FEATURES = {
   workflows: true,
   skills: false,
-  contextPanel: true,
   permissions: true,
 } as const;
 
