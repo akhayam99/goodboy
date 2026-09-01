@@ -58,8 +58,10 @@ type State = {
   agentKindOverride: Record<AgentId, never>;
   resolverState: Record<AgentId, string>;
   resolverThreadOutcomes: Record<AgentId, Readonly<Record<string, ResolverThreadOutcome>>>;
+  sessionPendingResolutions: Record<SessionId, ReadonlyArray<never>>;
   refreshUnreadWorkspaces: ReturnType<typeof vi.fn>;
   activateNextResolver: ReturnType<typeof vi.fn>;
+  queueResolution: ReturnType<typeof vi.fn>;
 };
 
 const createHarness = (): { state: State; set: SetFn; get: GetFn } => {
@@ -68,8 +70,10 @@ const createHarness = (): { state: State; set: SetFn; get: GetFn } => {
     agentKindOverride: {},
     resolverState: {},
     resolverThreadOutcomes: {},
+    sessionPendingResolutions: {},
     refreshUnreadWorkspaces: vi.fn(async () => undefined),
     activateNextResolver: vi.fn(async () => undefined),
+    queueResolution: vi.fn(async () => undefined),
   };
   const set = ((update: unknown) => {
     if (typeof update === 'function') {
