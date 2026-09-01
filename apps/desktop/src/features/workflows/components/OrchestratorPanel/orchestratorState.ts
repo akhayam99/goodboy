@@ -6,6 +6,7 @@ import type {
   WorkflowOrchestrationStopKind,
   WorkflowRun,
 } from '@goodboy/types';
+import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../orchestratorCopy';
 
 type OrchestratorPhase =
   | 'deciding'
@@ -119,7 +120,12 @@ export const resolveOrchestratorState = ({
     };
   }
   if (isOrchestrating) {
-    return { ...base, phase: 'deciding', tone: 'info', sentence: 'Choosing the next step' };
+    return {
+      ...base,
+      phase: 'deciding',
+      tone: 'info',
+      sentence: ORCHESTRATOR_DECIDING_SENTENCE,
+    };
   }
   if (run.orchestrationOutcome === 'done') {
     const steps = `${ordered.length} ${ordered.length === 1 ? 'step' : 'steps'}`;

@@ -3,10 +3,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
-import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
+import type {
+  TimelineAgentEntry,
+  TimelineRunEntry,
+} from '../../../../timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
+import type { TimelineMarkerState } from '../../../../timeline/markerState';
 import type { RailRow } from '../../../../timeline/railGeometry';
+import { runIdentity } from '../../../../timeline/runIdentity';
 import { TIMELINE_RHYTHM } from '../../../../timeline/timelineRhythm';
+import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../../../../workflows/orchestratorCopy';
 
 vi.mock('../../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
@@ -67,6 +73,33 @@ const itemOf = (): TimelineRowItem => ({
   groupId: 'lane:run:one',
   isPending: false,
   gap: 'sibling',
+});
+
+const runEntryOf = (): TimelineRunEntry =>
+  ({
+    kind: 'run',
+    id: 'run:one',
+    at: '2026-08-17T09:04:00Z',
+    run: { id: 'one', goal: 'Ship the parser', discardedAt: null },
+    workflow: { name: 'Orchestrated workflow 3', origin: 'orchestrated' },
+    identity: runIdentity({ laneIndex: 0, seed: 0 }),
+    children: [],
+    producedPlan: null,
+  }) as unknown as TimelineRunEntry;
+
+const runItemOf = ({
+  markerState,
+}: {
+  readonly markerState: TimelineMarkerState;
+}): TimelineRowItem => ({
+  ...itemOf(),
+  id: 'run:one',
+  grade: 'entry',
+  entry: runEntryOf(),
+  identity: runIdentity({ laneIndex: 0, seed: 0 }),
+  ordinal: null,
+  markerState,
+  groupId: null,
 });
 
 const railOf = (): RailRow => ({
@@ -175,6 +208,41 @@ describe('TimelineStreamRow', () => {
 
     expect(wrapper.getAttribute('style')).toBe(content.getAttribute('style'));
     expect(wrapper.className).toContain('items-center');
+  });
+
+  it('spins the run marker in its lane hue while the orchestrator is choosing', () => {
+    const { container } = render(
+      <TimelineStreamRow
+        item={runItemOf({ markerState: 'deciding' })}
+        rail={railOf()}
+        railWidth={32}
+        sessionId={SESSION_ID}
+        openTarget={null}
+        action={null}
+      />,
+    );
+    const marker = container.querySelector('[class*="spin-border"]');
+
+    expect(marker?.className).toContain(runIdentity({ laneIndex: 0, seed: 0 }).spin);
+    expect(screen.getByText(ORCHESTRATOR_DECIDING_SENTENCE)).toBeDefined();
+    expect(screen.queryByLabelText('Not started')).toBeNull();
+  });
+
+  it('leaves a run with no decision in flight on the idle clock and no sentence', () => {
+    const { container } = render(
+      <TimelineStreamRow
+        item={runItemOf({ markerState: 'pending' })}
+        rail={railOf()}
+        railWidth={32}
+        sessionId={SESSION_ID}
+        openTarget={null}
+        action={null}
+      />,
+    );
+
+    expect(screen.getByLabelText('Not started')).toBeDefined();
+    expect(container.querySelector('[class*="spin-border"]')).toBeNull();
+    expect(screen.queryByText(ORCHESTRATOR_DECIDING_SENTENCE)).toBeNull();
   });
 
   it('reserves the same box for a step whatever trailing metadata it carries', () => {

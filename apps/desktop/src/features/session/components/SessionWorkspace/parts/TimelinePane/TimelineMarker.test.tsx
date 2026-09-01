@@ -4,7 +4,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { tintClasses } from '@goodboy/ui';
 import type { TimelineMarkerState } from '../../../../timeline/markerState';
+import { runIdentity } from '../../../../timeline/runIdentity';
 import { TIMELINE_RHYTHM, type TimelineRowGrade } from '../../../../timeline/timelineRhythm';
+import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../../../../workflows/orchestratorCopy';
 import { TimelineMarker } from './TimelineMarker';
 import { TIMELINE_SURFACE_FILL } from './timelineLayout';
 
@@ -14,6 +16,7 @@ const STATES = [
   'done',
   'failed',
   'running',
+  'deciding',
   'pending',
   'skipped',
   'needsUser',
@@ -26,6 +29,7 @@ const LABELS: Record<TimelineMarkerState, string> = {
   done: 'Done',
   failed: 'Failed',
   running: 'Running',
+  deciding: ORCHESTRATOR_DECIDING_SENTENCE,
   pending: 'Not started',
   skipped: 'Skipped',
   needsUser: 'Needs you',
@@ -125,9 +129,11 @@ describe('TimelineMarker', () => {
     expect(rootOf({ state: 'failed' }).className).toContain('bg-danger');
   });
 
-  it('animates running and nothing else', () => {
-    expect(rootOf({ state: 'running' }).className).toContain('spin-border');
-    cleanup();
+  it('animates the two live states and nothing else', () => {
+    for (const state of ['running', 'deciding'] satisfies ReadonlyArray<TimelineMarkerState>) {
+      expect(rootOf({ state }).className).toContain('spin-border');
+      cleanup();
+    }
     for (const state of [
       'done',
       'failed',
@@ -137,6 +143,28 @@ describe('TimelineMarker', () => {
       expect(rootOf({ state }).className).not.toContain('spin-border');
       cleanup();
     }
+  });
+
+  it('spins the deciding marker in the lane identity hue instead of the info tone', () => {
+    const identity = runIdentity({ laneIndex: 0, seed: 0 });
+    const { container } = render(
+      <TimelineMarker state="deciding" grade="entry" identity={identity} />,
+    );
+
+    expect(container.firstElementChild?.className).toContain(identity.spin);
+    expect(container.firstElementChild?.className).not.toContain('spin-border-info');
+  });
+
+  it('falls back to the info tone when a deciding marker has no lane', () => {
+    expect(rootOf({ state: 'deciding' }).className).toContain('spin-border-info');
+  });
+
+  it('leaves the deciding marker without the dot that says a step is working', () => {
+    const root = rootOf({ state: 'deciding' });
+
+    expect(screen.getByLabelText(ORCHESTRATOR_DECIDING_SENTENCE)).toBeDefined();
+    expect(root.querySelector('[class*="bg-info"]')).toBeNull();
+    expect(root.querySelector('svg')).toBeNull();
   });
 
   it('draws running as the ring plus a pulsing dot at its centre', () => {
@@ -152,6 +180,7 @@ describe('TimelineMarker', () => {
     for (const state of [
       'done',
       'failed',
+      'deciding',
       'pending',
       'skipped',
       'needsUser',

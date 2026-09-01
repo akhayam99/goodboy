@@ -243,6 +243,9 @@ export const useWorkspaceRuns = (
           ? runs.some((r) => agentHasUnread(r, isCurrent && r.id === selected))
           : false;
         const hasRunningAgent = runs ? runs.some((r) => r.status === 'running') : false;
+        const isDecidingWorkflow = session.workflowRuns.some(
+          (run) => s.orchestratingWorkflowRuns?.[run.id] === true && run.discardedAt == null,
+        );
         const openQuestionCount = (s.sessionOpenQuestions[id] ?? []).filter(
           (q) => q.status === 'open',
         ).length;
@@ -252,6 +255,7 @@ export const useWorkspaceRuns = (
           hasUnread,
           openQuestionCount,
           hasRunningAgent,
+          isDecidingWorkflow,
           isPrReview: isPrReviewSession({ agents: runs ?? [] }),
           isBranchless: isBranchlessSession({ branch: s.sessionBranches[id] }),
         }).stage;

@@ -3,7 +3,9 @@ import type { LucideIcon } from 'lucide-react';
 import { cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type { TimelineMarkerState } from '../../../../timeline/markerState';
+import type { RunIdentity } from '../../../../timeline/runIdentity';
 import { TIMELINE_RHYTHM, type TimelineRowGrade } from '../../../../timeline/timelineRhythm';
+import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../../../../workflows/orchestratorCopy';
 import { TimelineEmphasisMarker } from './TimelineEmphasisMarker';
 import { TIMELINE_SURFACE_FILL } from './timelineLayout';
 
@@ -11,6 +13,7 @@ type Props = {
   readonly state: TimelineMarkerState;
   readonly grade: TimelineRowGrade;
   readonly hasUnread?: boolean;
+  readonly identity?: RunIdentity | null;
 };
 
 type CircleState = Exclude<TimelineMarkerState, 'needsUser' | 'question'>;
@@ -30,6 +33,12 @@ const CIRCLE: Record<CircleState, CircleSpec> = {
   skipped: { tone: 'neutral', icon: Minus, fill: 'soft', label: 'Skipped' },
   pending: { tone: 'neutral', icon: Clock, fill: 'hollow', label: 'Not started' },
   running: { tone: 'info', icon: null, fill: 'hollow', label: 'Running' },
+  deciding: {
+    tone: 'info',
+    icon: null,
+    fill: 'hollow',
+    label: ORCHESTRATOR_DECIDING_SENTENCE,
+  },
 };
 
 const SHAPE: Record<
@@ -70,7 +79,7 @@ const glyphClasses = ({ fill, tone }: FillParams): string => {
   return tintClasses(tone).icon;
 };
 
-export const TimelineMarker = ({ state, grade, hasUnread = false }: Props) => {
+export const TimelineMarker = ({ state, grade, hasUnread = false, identity = null }: Props) => {
   const { markerSize, glyphSize, dotSize } = TIMELINE_RHYTHM.grade[grade];
   const unread = hasUnread ? (
     <span
@@ -100,6 +109,7 @@ export const TimelineMarker = ({ state, grade, hasUnread = false }: Props) => {
         'relative inline-flex items-center justify-center rounded-full',
         surfaceClasses({ fill: spec.fill, tone: spec.tone }),
         state === 'running' && 'spin-border spin-border-info',
+        state === 'deciding' && cn('spin-border', identity?.spin ?? 'spin-border-info'),
       )}
       style={{ width: markerSize, height: markerSize }}
       aria-label={Glyph === null ? spec.label : undefined}

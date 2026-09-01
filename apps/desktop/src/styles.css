@@ -499,6 +499,21 @@ dialog[open]::backdrop {
 .spin-border-primary {
   --spin-border-color: var(--color-primary);
 }
+.spin-border-run-1 {
+  --spin-border-color: var(--color-run-1);
+}
+.spin-border-run-2 {
+  --spin-border-color: var(--color-run-2);
+}
+.spin-border-run-3 {
+  --spin-border-color: var(--color-run-3);
+}
+.spin-border-run-4 {
+  --spin-border-color: var(--color-run-4);
+}
+.spin-border-run-5 {
+  --spin-border-color: var(--color-run-5);
+}
 
 @media (prefers-reduced-motion: no-preference) {
   .animate-border-pulse {
