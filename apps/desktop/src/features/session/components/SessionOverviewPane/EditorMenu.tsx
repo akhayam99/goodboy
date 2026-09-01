@@ -15,13 +15,26 @@ const FULL_TRIGGER_BUTTON =
 const COMPACT_TRIGGER_BUTTON =
   'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
 
+type FolderTarget = {
+  readonly name: string;
+  readonly worktreePath: string;
+};
+
 type Props = {
   readonly sessionId: SessionId;
   readonly density?: Density;
+  readonly target?: FolderTarget | null;
+  readonly triggerClassName?: string;
 };
 
-export const EditorMenu = ({ sessionId, density = 'full' }: Props) => {
-  const worktreePath = useAppStore((s) => s.sessionWorktrees[sessionId]?.[0] ?? null);
+export const EditorMenu = ({
+  sessionId,
+  density = 'full',
+  target = null,
+  triggerClassName,
+}: Props) => {
+  const sessionWorktreePath = useAppStore((s) => s.sessionWorktrees[sessionId]?.[0] ?? null);
+  const worktreePath = target === null ? sessionWorktreePath : target.worktreePath;
   const detectedEditors = useAppStore((s) => s.detectedEditors);
   const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors);
   const { showToast } = useToast();
@@ -95,15 +108,21 @@ export const EditorMenu = ({ sessionId, density = 'full' }: Props) => {
     ];
   }, [detectedEditors, worktreePath]);
 
-  const triggerClassName = density === 'compact' ? COMPACT_TRIGGER_BUTTON : FULL_TRIGGER_BUTTON;
+  const densityTriggerClassName =
+    density === 'compact' ? COMPACT_TRIGGER_BUTTON : FULL_TRIGGER_BUTTON;
+  const label = target === null ? 'Open worktree' : `Open the folder of ${target.name}`;
+  const tooltip =
+    target === null
+      ? 'Open the worktree in an editor, or copy its path'
+      : `Open ${target.name} in an editor, or copy its path`;
 
   return (
     <OverflowMenu
       items={items}
-      label="Open worktree"
-      tooltip="Open the worktree in an editor, or copy its path"
+      label={label}
+      tooltip={tooltip}
       align="left"
-      triggerClassName={triggerClassName}
+      triggerClassName={triggerClassName ?? densityTriggerClassName}
       trigger={
         <>
           <FolderOpen size={13} aria-hidden />

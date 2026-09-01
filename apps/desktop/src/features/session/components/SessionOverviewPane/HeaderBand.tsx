@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Input, Tooltip } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
+import type { Session, SessionId, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
@@ -34,6 +34,13 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
     const linkedIssues = s.sessionGithub[sessionId]?.linkedIssues ?? EMPTY_ARRAY;
     const externalTasks = s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY;
     return linkedIssues.length > 0 || externalTasks.length > 0;
+  });
+  const hasRepoMount = useAppStore((s) => {
+    const mounts =
+      s.sessionProjectMounts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<SessionProjectMount>);
+    return mounts.some((mount) =>
+      s.projects.some((project) => project.id === mount.projectId && project.kind === 'repo'),
+    );
   });
   const titleFieldRef = useRef<HTMLDivElement | null>(null);
   const selectOnEditRef = useRef(false);
@@ -113,7 +120,7 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
               <CONCEPT_ICONS.scripts size={13} aria-hidden />
             </button>
           </Tooltip>
-          <EditorMenu sessionId={sessionId} density="compact" />
+          {hasRepoMount ? null : <EditorMenu sessionId={sessionId} density="compact" />}
           <MountProjectAction sessionId={sessionId} workspaceId={session.workspaceId} />
           <SessionDestructiveActions session={session} />
         </div>
