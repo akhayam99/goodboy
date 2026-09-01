@@ -274,6 +274,7 @@ export const ROLE_TO_KIND: Record<AgentRole, AgentKind> = {
   reviewer: 'reviewer',
   tester: 'tester',
   investigator: 'debugger',
+  resolver: 'resolver',
   custom: 'generic',
 };
 
@@ -286,7 +287,7 @@ export const KIND_TO_ROLE: Record<AgentKind, AgentRole> = {
   reviewer: 'reviewer',
   'pr-reviewer': 'reviewer',
   docs: 'custom',
-  resolver: 'custom',
+  resolver: 'resolver',
   generic: 'custom',
 };
 
@@ -297,6 +298,7 @@ export const ROLE_LABEL: Record<AgentRole, string> = {
   reviewer: 'Reviewer',
   tester: 'Tester',
   investigator: 'Debugger',
+  resolver: 'Resolver',
   custom: 'Custom',
 };
 

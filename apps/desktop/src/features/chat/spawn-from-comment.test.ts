@@ -84,32 +84,23 @@ describe('spawn-from-comment', () => {
     ).toBe('resolve: alice comment');
   });
 
-  it('builds args as a resolver agent with sonnet defaults', () => {
+  it('builds args as a resolver agent carrying the comment context', () => {
     const args = buildCommentAgentArgs(makeComment(), PR);
     expect(args.name).toBe('resolve: alice on foo.ts:42');
     expect(args.kind).toBe('resolver');
-    expect(args.effort).toBe('medium');
-    expect(args.provider).toBeUndefined();
     expect(args.initialPrompt).toContain('src/foo.ts:42');
     expect(args.initialPrompt).toContain('this should use a helper');
     expect(args.initialPrompt).toContain('#9108');
   });
 
-  it('honors a provider/model/effort choice and links the source comment', () => {
+  it('links the source comment of a review thread', () => {
     const args = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR, {
       provider: 'codex',
       model: 'gpt-5-codex',
       effort: 'high',
     });
-    expect(args.provider).toBe('codex');
-    expect(args.model).toBe('gpt-5-codex');
-    expect(args.effort).toBe('high');
     expect(args.sourceThreadId).toBe('PRRT_7');
     expect(args.sourceCommentUrl).toBe('https://github.com/o/r/pull/9108#discussion_r1');
-  });
-
-  it('falls back to the resolver default effort when unspecified', () => {
-    expect(buildCommentAgentArgs(makeComment(), PR).effort).toBe('medium');
   });
 
   it('omits sourceThreadId for issue comments but keeps the url', () => {

@@ -11,6 +11,7 @@ describe('ROLE_DEFAULTS', () => {
       'reviewer',
       'investigator',
       'tester',
+      'resolver',
       'custom',
     ];
     for (const role of expected) {
@@ -48,6 +49,13 @@ describe('ROLE_DEFAULTS', () => {
   it('routes balanced roles to sonnet', () => {
     expect(ROLE_DEFAULTS.implementer.model).toMatch(/sonnet/);
     expect(ROLE_DEFAULTS.reviewer.model).toMatch(/sonnet/);
+    expect(ROLE_DEFAULTS.resolver.model).toMatch(/sonnet/);
+  });
+
+  it('keeps the resolver on the same routing the resolve UI spawned before it had a role', () => {
+    expect(ROLE_DEFAULTS.resolver.provider).toBe(ROLE_DEFAULTS.custom.provider);
+    expect(ROLE_DEFAULTS.resolver.model).toBe(ROLE_DEFAULTS.custom.model);
+    expect(ROLE_DEFAULTS.resolver.effort).toBe(ROLE_DEFAULTS.custom.effort);
   });
 
   it('every default uses anthropic provider for now', () => {
@@ -63,6 +71,7 @@ describe('ROLE_DEFAULTS', () => {
     expect(ROLE_DEFAULTS.investigator.fanOut.mode).toBe('conditional');
     expect(ROLE_DEFAULTS.planner.fanOut.mode).toBe('never');
     expect(ROLE_DEFAULTS.implementer.fanOut.mode).toBe('never');
+    expect(ROLE_DEFAULTS.resolver.fanOut.mode).toBe('never');
     expect(ROLE_DEFAULTS.custom.fanOut.mode).toBe('never');
   });
 });

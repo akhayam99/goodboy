@@ -1,7 +1,6 @@
 import type { AgentSourceKind, PrComment, ProviderId, PullRequestState } from '@goodboy/types';
 import type { AgentKind } from '../session/agent-kind';
 import type { CommentThread } from '../github/comment-threads';
-import { kindRouting } from '../session/agent-kind';
 import { prCommentLocation } from '../session/pr-comment-location';
 import { RESOLVER_KICKOFF_LABELS } from './utils/resolverKickoffLabels';
 import type { EffortLevel } from './utils/chat-constants';
@@ -177,9 +176,6 @@ const buildResolverKickoff = ({ threads, pr, hint }: KickoffParams): string => {
 export type CommentAgentArgs = {
   readonly name: string;
   readonly kind: AgentKind;
-  readonly model: string;
-  readonly provider?: ProviderId;
-  readonly effort: EffortLevel;
   readonly initialPrompt: string;
   readonly sourceThreadId?: string;
   readonly sourceThreadIds?: ReadonlyArray<string>;
@@ -192,7 +188,6 @@ export const buildCombinedCommentAgentArgs = (
   pr: PullRequestState,
   choice: ResolveModelChoice = {},
 ): CommentAgentArgs => {
-  const defaults = kindRouting({ kind: 'resolver' });
   const first = threads[0];
   if (first === undefined) {
     throw new Error('combined resolver requires at least one thread');
@@ -203,9 +198,6 @@ export const buildCombinedCommentAgentArgs = (
   return {
     name: `resolve: ${threads.length} review threads`,
     kind: 'resolver',
-    model: choice.model ?? defaults.model,
-    ...(choice.provider !== undefined && { provider: choice.provider }),
-    effort: choice.effort ?? defaults.effort,
     initialPrompt: buildResolverKickoff({ threads, pr, hint: choice.hint ?? '' }),
     sourceThreadIds,
     sourceCommentUrl: first.head.url,
@@ -226,13 +218,9 @@ export const buildCommentAgentArgs = (
   choice: ResolveModelChoice = {},
   replies: ReadonlyArray<PrComment> = [],
 ): CommentAgentArgs => {
-  const defaults = kindRouting({ kind: 'resolver' });
   return {
     name: buildCommentAgentTitle(c),
     kind: 'resolver',
-    model: choice.model ?? defaults.model,
-    ...(choice.provider !== undefined && { provider: choice.provider }),
-    effort: choice.effort ?? defaults.effort,
     initialPrompt: buildResolverKickoff({
       threads: [{ head: c, replies }],
       pr,

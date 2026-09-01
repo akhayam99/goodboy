@@ -15,7 +15,14 @@ import type { VerbosityLevel } from './settings';
 export type AgentEffort = ModelEffort;
 
 export type AgentRole =
-  'scout' | 'planner' | 'implementer' | 'reviewer' | 'investigator' | 'tester' | 'custom';
+  | 'scout'
+  | 'planner'
+  | 'implementer'
+  | 'reviewer'
+  | 'investigator'
+  | 'tester'
+  | 'resolver'
+  | 'custom';
 
 export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 

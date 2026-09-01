@@ -13,11 +13,7 @@ export type RoleDefaults = {
 export type RoleFanOutMode = 'natural' | 'conditional' | 'never';
 
 export type RoleFanOutPartitionKey =
-  | 'codebase-area'
-  | 'diff-aspect'
-  | 'module-under-test'
-  | 'top-stack-file'
-  | null;
+  'codebase-area' | 'diff-aspect' | 'module-under-test' | 'top-stack-file' | null;
 
 export type RoleFanOutCapability = {
   readonly mode: RoleFanOutMode;
@@ -91,6 +87,17 @@ export const ROLE_DEFAULTS = {
       partitionKey: 'module-under-test',
       condition:
         'only when at least two disjoint modules can be tested without shared fixtures or helpers',
+    },
+  },
+  resolver: {
+    provider: 'anthropic',
+    model: 'sonnet-5',
+    effort: 'medium',
+    description: 'address a review comment with one local commit',
+    fanOut: {
+      mode: 'never',
+      partitionKey: null,
+      condition: null,
     },
   },
   custom: {
