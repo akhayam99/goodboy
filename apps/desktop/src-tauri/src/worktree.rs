@@ -479,7 +479,16 @@ pub(crate) fn remove_worktree_with(
 }
 
 #[tauri::command]
-pub fn worktree_remove(repo_path: String, worktree_path: String) -> Result<(), WorktreeError> {
+pub async fn worktree_remove(
+    repo_path: String,
+    worktree_path: String,
+) -> Result<(), WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_remove_blocking(repo_path, worktree_path))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_remove_blocking(repo_path: String, worktree_path: String) -> Result<(), WorktreeError> {
     remove_worktree_with(Path::new(&repo_path), &worktree_path, &mut |cwd, args| {
         git(cwd, args)
     })
@@ -531,7 +540,13 @@ pub(crate) fn tidy_goodboy_dir(repo_path: &Path) {
 }
 
 #[tauri::command]
-pub fn worktree_tidy_goodboy(repo_path: String) -> Result<(), WorktreeError> {
+pub async fn worktree_tidy_goodboy(repo_path: String) -> Result<(), WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_tidy_goodboy_blocking(repo_path))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_tidy_goodboy_blocking(repo_path: String) -> Result<(), WorktreeError> {
     tidy_goodboy_dir(Path::new(&repo_path));
     Ok(())
 }
@@ -656,7 +671,13 @@ pub async fn worktree_orphans(
 }
 
 #[tauri::command]
-pub fn worktree_orphan_remove(repo_path: String, path: String) -> Result<(), WorktreeError> {
+pub async fn worktree_orphan_remove(repo_path: String, path: String) -> Result<(), WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_orphan_remove_blocking(repo_path, path))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_orphan_remove_blocking(repo_path: String, path: String) -> Result<(), WorktreeError> {
     let repo = Path::new(&repo_path);
     let parent = worktrees_parent(repo);
     let target = Path::new(&path);
@@ -1291,7 +1312,17 @@ fn ff_merge_args(upstream: &str) -> Vec<&str> {
 }
 
 #[tauri::command]
-pub fn checkout_fast_forward(checkout_path: String) -> Result<FastForwardResult, WorktreeError> {
+pub async fn checkout_fast_forward(
+    checkout_path: String,
+) -> Result<FastForwardResult, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || checkout_fast_forward_blocking(checkout_path))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn checkout_fast_forward_blocking(
+    checkout_path: String,
+) -> Result<FastForwardResult, WorktreeError> {
     let p = Path::new(&checkout_path);
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(checkout_path));
@@ -1782,7 +1813,7 @@ fn parse_porcelain(stdout: &str) -> Vec<WorktreeInfo> {
 #[cfg(test)]
 mod rewrite_tests {
     use super::{
-        worktree_amend_commit, worktree_create, worktree_remove, worktree_squash_commits,
+        worktree_amend_commit, worktree_create, worktree_remove_blocking, worktree_squash_commits,
         worktree_status, CreateArgs, GitDistance, GitUnknownReason, GitWorkingTree, RewriteArgs,
     };
     use std::path::{Path, PathBuf};
@@ -2007,7 +2038,8 @@ mod rewrite_tests {
         git_ok(&root, &["push", "origin", "main"]);
 
         super::git_argv_log::reset();
-        let pulled = super::checkout_fast_forward(copy.to_string_lossy().into_owned()).unwrap();
+        let pulled =
+            super::checkout_fast_forward_blocking(copy.to_string_lossy().into_owned()).unwrap();
         let merge_invocations: Vec<Vec<String>> = super::git_argv_log::recorded()
             .into_iter()
             .filter(|argv| argv.iter().any(|arg| arg == "merge"))
@@ -2043,7 +2075,7 @@ mod rewrite_tests {
         let before = git_ok(&root, &["rev-parse", "HEAD"]);
 
         let refusal =
-            super::checkout_fast_forward(root.to_string_lossy().into_owned()).unwrap_err();
+            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned()).unwrap_err();
 
         assert!(format!("{refusal}").contains("uncommitted changes"));
         assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), before);
@@ -2060,7 +2092,7 @@ mod rewrite_tests {
         commit(&root, "base.txt", "base", "base");
 
         let refusal =
-            super::checkout_fast_forward(root.to_string_lossy().into_owned()).unwrap_err();
+            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned()).unwrap_err();
 
         assert!(format!("{refusal}").contains("no upstream"));
         std::fs::remove_dir_all(root).unwrap();
@@ -2078,7 +2110,7 @@ mod rewrite_tests {
         let merge = super::git(&root, &["merge", "feature"]);
 
         let refusal =
-            super::checkout_fast_forward(root.to_string_lossy().into_owned()).unwrap_err();
+            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned()).unwrap_err();
 
         assert!(merge.is_err());
         assert!(format!("{refusal}").contains("merge in progress"));
@@ -2094,7 +2126,7 @@ mod rewrite_tests {
         std::fs::write(root.join(".git").join("index"), "not an index").unwrap();
 
         let refusal =
-            super::checkout_fast_forward(root.to_string_lossy().into_owned()).unwrap_err();
+            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned()).unwrap_err();
 
         assert!(format!("{refusal}").contains("git status could not be read"));
         assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), before);
@@ -2361,7 +2393,7 @@ mod rewrite_tests {
             1
         );
 
-        worktree_remove(
+        worktree_remove_blocking(
             root.to_string_lossy().into_owned(),
             created.worktree_path.clone(),
         )
@@ -2380,7 +2412,7 @@ mod rewrite_tests {
         push_to_new_remote(&root);
         let created = create_session_mount(&root, "goal-tidy0001");
 
-        worktree_remove(
+        worktree_remove_blocking(
             root.to_string_lossy().into_owned(),
             created.worktree_path.clone(),
         )
@@ -2405,7 +2437,7 @@ mod rewrite_tests {
         let removed = create_session_mount(&root, "goal-tidy0002");
         let survivor = create_session_mount(&root, "goal-tidy0003");
 
-        worktree_remove(
+        worktree_remove_blocking(
             root.to_string_lossy().into_owned(),
             removed.worktree_path.clone(),
         )
@@ -2425,7 +2457,9 @@ mod rewrite_tests {
 
 #[cfg(test)]
 mod teardown_tests {
-    use super::{collect_orphans, remove_worktree_with, worktree_orphan_remove, WorktreeError};
+    use super::{
+        collect_orphans, remove_worktree_with, worktree_orphan_remove_blocking, WorktreeError,
+    };
     use std::path::{Path, PathBuf};
 
     fn temp_root(name: &str) -> PathBuf {
@@ -2551,7 +2585,7 @@ mod teardown_tests {
         let outside = root.join("precious");
         std::fs::create_dir_all(&outside).unwrap();
 
-        let outcome = worktree_orphan_remove(
+        let outcome = worktree_orphan_remove_blocking(
             root.to_string_lossy().into_owned(),
             outside.to_string_lossy().into_owned(),
         );
