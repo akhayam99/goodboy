@@ -2,8 +2,8 @@ import type { ProviderRunId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import {
   deleteGithubPrCacheForWorktreePath,
-  deleteSession as deleteSessionFromDb,
   listWorktreesForSession,
+  purgeSessionForDelete,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
@@ -103,7 +103,7 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
     }
     const sessionGoal = session.goal;
     const sessionWorkspaceId = session.workspaceId;
-    await deleteSessionFromDb(tauriDatabase, sessionId);
+    await purgeSessionForDelete({ db: tauriDatabase, id: sessionId });
     dropPendingTurnEvents({
       agentIds: (get().sessionPhaseRuns[sessionId] ?? []).map((agent) => agent.id),
     });

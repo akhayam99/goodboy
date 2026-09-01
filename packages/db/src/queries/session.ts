@@ -409,6 +409,44 @@ export const deleteSession = async (db: Database, id: SessionId): Promise<void> 
   await db.execute('DELETE FROM sessions WHERE id = ?', [id]);
 };
 
+export const purgeSessionForDelete = async ({
+  db,
+  id,
+}: {
+  readonly db: Database;
+  readonly id: SessionId;
+}): Promise<void> => {
+  await db.exec('BEGIN');
+  try {
+    await db.execute('DELETE FROM messages WHERE session_id = ?', [id]);
+    await db.execute(
+      'DELETE FROM turn_events WHERE agent_id IN (SELECT id FROM agents WHERE session_id = ?)',
+      [id],
+    );
+    await db.execute('DELETE FROM file_versions WHERE session_id = ?', [id]);
+    await db.execute('DELETE FROM context_slots WHERE session_id = ?', [id]);
+    await db.execute('DELETE FROM context_slot_history WHERE session_id = ?', [id]);
+    await db.execute(
+      `DELETE FROM goal_attachments
+       WHERE session_id = ?
+          OR workflow_run_id IN (
+            SELECT workflow_run_id FROM session_workflows WHERE session_id = ?
+          )`,
+      [id, id],
+    );
+    const now = Date.now();
+    await db.execute('UPDATE sessions SET deleted_at = ?, updated_at = ? WHERE id = ?', [
+      now,
+      now,
+      id,
+    ]);
+    await db.exec('COMMIT');
+  } catch (error) {
+    await db.exec('ROLLBACK');
+    throw error;
+  }
+};
+
 export const softDeleteSession = async (db: Database, id: SessionId): Promise<void> => {
   await db.execute('UPDATE sessions SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
 };
