@@ -507,6 +507,7 @@ export type AppActions = {
     attachments?: ReadonlyArray<AttachmentInput>;
     override?: TurnProviderOverride;
     force?: boolean;
+    origin?: 'operator';
   }): Promise<SendTurnResult>;
   cancelCurrentTurn(sessionId: SessionId, agentId?: AgentId): Promise<void>;
   retrySummarizer(sessionId: SessionId, taskModelOverride?: TaskModelPreference): void;
@@ -929,6 +930,7 @@ export const initialState: AppState = {
   sessionWorktreeRecords: {},
   orphanWorktrees: {},
   sessionProjectMounts: {},
+  sessionLanguageAnchor: {},
   sessionActiveProject: {},
   sessionBranches: {},
   sessionTelemetry: {},

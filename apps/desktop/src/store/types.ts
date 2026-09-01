@@ -222,6 +222,7 @@ export type AppState = AppSliceState & {
   readonly sessionWorktreeRecords?: Readonly<Record<string, ReadonlyArray<SessionWorktree>>>;
   readonly orphanWorktrees: Readonly<Record<string, ReadonlyArray<OrphanWorktree>>>;
   readonly sessionProjectMounts: Readonly<Record<string, ReadonlyArray<SessionProjectMount>>>;
+  readonly sessionLanguageAnchor: Readonly<Record<SessionId, string>>;
   readonly sessionActiveProject: Readonly<Record<string, ProjectId>>;
   readonly sessionBranches: Readonly<Record<string, string>>;
   readonly sessionTelemetry: Readonly<Record<string, ReadonlyArray<TelemetryRecord>>>;

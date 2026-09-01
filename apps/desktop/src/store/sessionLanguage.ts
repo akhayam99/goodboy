@@ -1,5 +1,5 @@
 import type { Session, Workflow, WorkflowRunId } from '@goodboy/types';
-import { SESSION_LANGUAGE_TURN_RULE } from '@goodboy/core';
+import { sessionLanguageTurnRule } from '@goodboy/core';
 
 type SourceParams = {
   readonly session: Session;
@@ -30,19 +30,26 @@ export const resolveSessionLanguageGoal = ({
 };
 
 type GuardParams = {
-  readonly goal: string;
+  readonly anchor: {
+    readonly source: 'goal' | 'message';
+    readonly text: string;
+  };
 };
 
-export const buildSessionLanguageGuard = ({ goal }: GuardParams): string => {
-  const trimmed = goal.trim();
+export const buildSessionLanguageGuard = ({ anchor }: GuardParams): string => {
+  const trimmed = anchor.text.trim();
   if (trimmed.length === 0) {
     return '';
   }
+  const header =
+    anchor.source === 'goal'
+      ? 'The operator stated the goal of this session as:'
+      : 'The operator last wrote to this session:';
   return [
     '[session-language]',
-    'The operator stated the goal of this session as:',
+    header,
     trimmed,
-    SESSION_LANGUAGE_TURN_RULE,
+    sessionLanguageTurnRule({ anchorLabel: anchor.source }),
     '[/session-language]',
   ].join('\n');
 };

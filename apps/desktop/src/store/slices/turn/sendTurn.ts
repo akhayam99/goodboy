@@ -128,6 +128,7 @@ type Input = {
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;
   force?: boolean;
+  origin?: 'operator';
   retry?: {
     readonly attempt: number;
     readonly provider: ProviderId;
@@ -152,12 +153,22 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     attachments,
     override,
     force,
+    origin,
     retry,
   }: Input): Promise<SendTurnResult> => {
     const before = get();
     const session = before.sessions.find((s) => s.id === sessionId);
     if (!session) {
       throw new Error(`session not found: ${sessionId}`);
+    }
+    const operatorAnchor = content.trim();
+    if (origin === 'operator' && operatorAnchor.length > 0) {
+      set((state) => ({
+        sessionLanguageAnchor: {
+          ...state.sessionLanguageAnchor,
+          [sessionId]: operatorAnchor.slice(0, 280),
+        },
+      }));
     }
     const workspaceProjects = before.projects.filter(
       (project) => project.workspaceId === session.workspaceId,
@@ -740,14 +751,21 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       isSessionDirScope,
       canWrite: kindWritesFiles(earlyAgentKind),
     });
+    const anchorText = get().sessionLanguageAnchor[sessionId] ?? '';
     const languageGuard = buildSessionLanguageGuard({
-      goal: resolveSessionLanguageGoal({
-        session,
-        workflows: get().phaseTemplates[session.workspaceId] ?? [],
-        ...(agentRowEarly?.workflowRunId != null && {
-          workflowRunId: agentRowEarly.workflowRunId,
-        }),
-      }),
+      anchor:
+        anchorText.length > 0
+          ? { source: 'message', text: anchorText }
+          : {
+              source: 'goal',
+              text: resolveSessionLanguageGoal({
+                session,
+                workflows: get().phaseTemplates[session.workspaceId] ?? [],
+                ...(agentRowEarly?.workflowRunId != null && {
+                  workflowRunId: agentRowEarly.workflowRunId,
+                }),
+              }),
+            },
     });
     const githubMode = get().githubStatus?.mode;
     const isGithubConnected = githubMode === 'pat' || githubMode === 'gh-cli';

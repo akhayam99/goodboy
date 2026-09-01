@@ -66,7 +66,7 @@ const buildSession = (runGoal: string): Session =>
   buildStorySession({
     id: SESSION_ID,
     workspaceId: WORKSPACE_ID,
-    goal: 'unused session goal',
+    goal: '',
     state: { kind: 'idle', lastActivityAt: NOW },
     workflowRuns: [
       {
@@ -82,12 +82,14 @@ const buildSession = (runGoal: string): Session =>
     ],
   });
 
-const buildWorkflow = (): Workflow => ({
+const buildWorkflow = ({
+  goal = 'Consolidate the design system onto packages/ui',
+} = {}): Workflow => ({
   id: WORKFLOW_ID,
   workspaceId: WORKSPACE_ID,
   name: 'flow',
   description: '',
-  goal: 'Consolidate the design system onto packages/ui',
+  goal,
   steps: [],
   createdAt: NOW,
   updatedAt: NOW,
@@ -123,7 +125,7 @@ describe('sendTurn session language guard', () => {
     storySpies.invokeAgentList.mockResolvedValue([stepAgent, clusterAgent] as never);
   });
 
-  const setup = (runGoal: string) => {
+  const setup = ({ runGoal, workflowGoal }: { runGoal: string; workflowGoal?: string }) => {
     useAppStore.setState({
       sessions: [buildSession(runGoal)],
       projects: [],
@@ -141,7 +143,8 @@ describe('sendTurn session language guard', () => {
       },
       sessionPhaseRuns: { [SESSION_ID]: [stepAgent, clusterAgent] },
       selectedAgentId: { [SESSION_ID]: STEP_AGENT_ID },
-      phaseTemplates: { [WORKSPACE_ID]: [buildWorkflow()] },
+      phaseTemplates: { [WORKSPACE_ID]: [buildWorkflow({ goal: workflowGoal })] },
+      sessionLanguageAnchor: {},
       workspaces: [
         buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws', sessionsRoot: '/tmp' }),
       ],
@@ -155,7 +158,7 @@ describe('sendTurn session language guard', () => {
     );
 
   it('pins an Italian run to Italian for the step agent', async () => {
-    setup(ITALIAN_GOAL);
+    setup({ runGoal: ITALIAN_GOAL });
     await useAppStore
       .getState()
       .sendTurn({ sessionId: SESSION_ID, agentId: STEP_AGENT_ID, content: 'go' });
@@ -167,7 +170,7 @@ describe('sendTurn session language guard', () => {
   });
 
   it('pins an English run to English through the same rule', async () => {
-    setup(ENGLISH_GOAL);
+    setup({ runGoal: ENGLISH_GOAL });
     await useAppStore
       .getState()
       .sendTurn({ sessionId: SESSION_ID, agentId: STEP_AGENT_ID, content: 'go' });
@@ -178,7 +181,7 @@ describe('sendTurn session language guard', () => {
   });
 
   it('hands a sub-step the run goal rather than the context it was fanned out with', async () => {
-    setup(ITALIAN_GOAL);
+    setup({ runGoal: ITALIAN_GOAL });
     await useAppStore
       .getState()
       .sendTurn({ sessionId: SESSION_ID, agentId: CLUSTER_AGENT_ID, content: 'go' });
@@ -192,7 +195,7 @@ describe('sendTurn session language guard', () => {
   });
 
   it('keeps the worktree scope guard alongside the language guard', async () => {
-    setup(ITALIAN_GOAL);
+    setup({ runGoal: ITALIAN_GOAL });
     await useAppStore
       .getState()
       .sendTurn({ sessionId: SESSION_ID, agentId: STEP_AGENT_ID, content: 'go' });
@@ -200,5 +203,62 @@ describe('sendTurn session language guard', () => {
     const systemPrompt = systemPromptFor();
     expect(systemPrompt).toContain('[worktree-scope]');
     expect(systemPrompt).toContain('[session-language]');
+  });
+
+  it('pins an operator turn to the capped latest message', async () => {
+    setup({ runGoal: ITALIAN_GOAL });
+    const content = `Messaggio recente ${'x'.repeat(300)}`;
+
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      agentId: STEP_AGENT_ID,
+      content,
+      origin: 'operator',
+    });
+
+    const anchor = useAppStore.getState().sessionLanguageAnchor[SESSION_ID];
+    expect(anchor).toBe(content.slice(0, 280));
+    expect(systemPromptFor()).toContain('The operator last wrote to this session:');
+    expect(systemPromptFor()).toContain('Answer in the language that message is written in');
+  });
+
+  it('uses the message anchor for a later machine turn', async () => {
+    setup({ runGoal: ITALIAN_GOAL });
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      agentId: STEP_AGENT_ID,
+      content: 'Scrivi il riepilogo',
+      origin: 'operator',
+    });
+    storySpies.runTurn.mockClear();
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: STEP_AGENT_ID, content: 'machine continuation' });
+
+    expect(systemPromptFor()).toContain('Scrivi il riepilogo');
+    expect(systemPromptFor()).toContain('Answer in the language that message is written in');
+  });
+
+  it('omits the guard for a machine turn with no goal or message anchor', async () => {
+    setup({ runGoal: '', workflowGoal: '' });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: STEP_AGENT_ID, content: 'machine continuation' });
+
+    expect(systemPromptFor()).not.toContain('[session-language]');
+  });
+
+  it('keeps the guard with a blank goal when a message anchor exists', async () => {
+    setup({ runGoal: '', workflowGoal: '' });
+    useAppStore.setState({ sessionLanguageAnchor: { [SESSION_ID]: 'Continua in italiano' } });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: STEP_AGENT_ID, content: 'machine continuation' });
+
+    expect(systemPromptFor()).toContain('[session-language]');
+    expect(systemPromptFor()).toContain('Continua in italiano');
   });
 });
