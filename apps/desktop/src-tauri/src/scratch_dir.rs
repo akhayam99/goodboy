@@ -76,7 +76,13 @@ pub fn scratch_dir_prepare(session_id: String) -> Result<String, ScratchDirError
 }
 
 #[tauri::command]
-pub fn scratch_dir_remove(session_id: String) -> Result<(), ScratchDirError> {
+pub async fn scratch_dir_remove(session_id: String) -> Result<(), ScratchDirError> {
+    tauri::async_runtime::spawn_blocking(move || scratch_dir_remove_blocking(session_id))
+        .await
+        .map_err(|e| ScratchDirError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn scratch_dir_remove_blocking(session_id: String) -> Result<(), ScratchDirError> {
     remove_in(&goodboy_root()?, &session_id)
 }
 

@@ -230,7 +230,13 @@ pub fn session_dir_create(args: CreateArgs) -> Result<CreatedSessionDir, Session
 }
 
 #[tauri::command]
-pub fn session_dir_remove(args: RemoveArgs) -> Result<(), SessionDirError> {
+pub async fn session_dir_remove(args: RemoveArgs) -> Result<(), SessionDirError> {
+    tauri::async_runtime::spawn_blocking(move || session_dir_remove_blocking(args))
+        .await
+        .map_err(|e| SessionDirError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn session_dir_remove_blocking(args: RemoveArgs) -> Result<(), SessionDirError> {
     let base = absolute_path(expand_home(&args.base_path)?)?;
     let target = absolute_path(expand_home(&args.path)?)?;
     let is_contained = match (std::fs::canonicalize(&base), std::fs::canonicalize(&target)) {
@@ -346,20 +352,20 @@ mod tests {
         })
         .unwrap();
 
-        super::session_dir_remove(super::RemoveArgs {
+        super::session_dir_remove_blocking(super::RemoveArgs {
             base_path: root.to_string_lossy().into_owned(),
             path: created.worktree_path.clone(),
         })
         .unwrap();
         assert!(!Path::new(&created.worktree_path).exists());
 
-        let outside = super::session_dir_remove(super::RemoveArgs {
+        let outside = super::session_dir_remove_blocking(super::RemoveArgs {
             base_path: root.to_string_lossy().into_owned(),
             path: std::env::temp_dir().to_string_lossy().into_owned(),
         });
         assert!(matches!(outside, Err(SessionDirError::OutsideWorkspace)));
 
-        let base_itself = super::session_dir_remove(super::RemoveArgs {
+        let base_itself = super::session_dir_remove_blocking(super::RemoveArgs {
             base_path: root.to_string_lossy().into_owned(),
             path: root.to_string_lossy().into_owned(),
         });
