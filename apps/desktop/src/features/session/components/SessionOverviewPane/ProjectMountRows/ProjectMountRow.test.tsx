@@ -12,6 +12,12 @@ const { store, remoteKind } = vi.hoisted(() => ({
     openMountDiff: vi.fn(async () => undefined),
     projects: [] as ReadonlyArray<{ id: string; baseBranch?: string | null }>,
     emitNotification: vi.fn(),
+    terminalTabs: {} as Record<
+      string,
+      ReadonlyArray<{ id: string; projectId?: string; status: string }>
+    >,
+    scriptRuns: {} as Record<string, Record<string, { status: string }>>,
+    projectScripts: {} as Record<string, ReadonlyArray<{ id: string; projectId: string }>>,
   },
 }));
 
@@ -31,6 +37,7 @@ vi.mock('../../../../worktree/useRemoteHostKind', () => ({
   useRemoteHostKind: () => remoteKind.current,
 }));
 
+import { tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
 import { ProjectMountRow } from './ProjectMountRow';
 
 const sessionId = 'session-1' as SessionId;
@@ -39,6 +46,7 @@ const project = {
   id: 'api',
   name: 'API',
   kind: 'repo',
+  workspaceId: 'ws-1',
 } as Project;
 
 const mount = {
@@ -72,6 +80,14 @@ beforeEach(() => {
   store.setSessionActiveProject.mockClear();
   store.setSessionActiveProject.mockResolvedValue(undefined);
   remoteKind.current = 'github';
+  store.terminalTabs = {};
+  store.scriptRuns = {};
+  store.projectScripts = {
+    'ws-1': [
+      { id: 'script-api', projectId: 'api' },
+      { id: 'script-web', projectId: 'web' },
+    ],
+  };
 });
 
 afterEach(cleanup);
@@ -118,5 +134,81 @@ describe('ProjectMountRow create pr action', () => {
     remoteKind.current = null;
     renderRow({ diffStat: { additions: 1, deletions: 0 } });
     expect(screen.queryByRole('button', { name: 'Create a PR for API' })).toBeNull();
+  });
+});
+
+describe('ProjectMountRow activity dots', () => {
+  it('marks the terminal icon when a live tab belongs to the project', () => {
+    store.terminalTabs = {
+      [sessionId]: [{ id: `${sessionId}::t1`, projectId: 'api', status: 'running' }],
+    };
+    renderRow({});
+    expect(screen.getByTestId('terminal-activity-dot')).toBeDefined();
+    expect(screen.queryByTestId('scripts-activity-dot')).toBeNull();
+  });
+
+  it('leaves the terminal icon bare when the live tab belongs to another project', () => {
+    store.terminalTabs = {
+      [sessionId]: [{ id: `${sessionId}::t1`, projectId: 'web', status: 'running' }],
+    };
+    renderRow({});
+    expect(screen.queryByTestId('terminal-activity-dot')).toBeNull();
+  });
+
+  it('leaves the terminal icon bare when the only tab of the project has exited', () => {
+    store.terminalTabs = {
+      [sessionId]: [{ id: `${sessionId}::t1`, projectId: 'api', status: 'exited' }],
+    };
+    renderRow({});
+    expect(screen.queryByTestId('terminal-activity-dot')).toBeNull();
+  });
+
+  it('marks the scripts icon when a pending run belongs to the project', () => {
+    store.scriptRuns = { [sessionId]: { 'script-api': { status: 'pending' } } };
+    renderRow({});
+    expect(screen.getByTestId('scripts-activity-dot')).toBeDefined();
+    expect(screen.queryByTestId('terminal-activity-dot')).toBeNull();
+  });
+
+  it('leaves the scripts icon bare when the pending run belongs to another project', () => {
+    store.scriptRuns = { [sessionId]: { 'script-web': { status: 'pending' } } };
+    renderRow({});
+    expect(screen.queryByTestId('scripts-activity-dot')).toBeNull();
+  });
+
+  it('leaves the scripts icon bare when the run of the project has finished', () => {
+    store.scriptRuns = { [sessionId]: { 'script-api': { status: 'ok' } } };
+    renderRow({});
+    expect(screen.queryByTestId('scripts-activity-dot')).toBeNull();
+  });
+
+  it('carries the counts in the tooltips', () => {
+    store.terminalTabs = {
+      [sessionId]: [
+        { id: `${sessionId}::t1`, projectId: 'api', status: 'running' },
+        { id: `${sessionId}::t2`, projectId: 'api', status: 'running' },
+        { id: `${sessionId}::t3`, projectId: 'web', status: 'running' },
+      ],
+    };
+    store.scriptRuns = { [sessionId]: { 'script-api': { status: 'pending' } } };
+    renderRow({});
+
+    expect(
+      tooltipTextOf({ element: screen.getByRole('button', { name: 'Open terminal for API' }) }),
+    ).toBe('Open terminal in API, 2 running');
+    expect(
+      tooltipTextOf({ element: screen.getByRole('button', { name: 'Open scripts for API' }) }),
+    ).toBe('Open scripts for API, 1 running');
+  });
+
+  it('keeps the plain tooltips when nothing runs for the project', () => {
+    renderRow({});
+
+    expect(
+      tooltipTextOf({ element: screen.getByRole('button', { name: 'Open terminal for API' }) }),
+    ).toBe('Open terminal in API');
+    expect(
+      tooltipTextOf({ element: screen.getByRole('button', { name: 'Open scripts for API' }) }),
+    ).toBe('Open scripts for API');
   });
 });

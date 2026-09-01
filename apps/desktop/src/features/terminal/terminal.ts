@@ -13,6 +13,7 @@ export type TerminalExitPayload = {
 
 export type LiveTerminal = {
   readonly id: string;
+  readonly cwd: string;
 };
 
 export const invokeTerminalListLive = (): Promise<ReadonlyArray<LiveTerminal>> => {

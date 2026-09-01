@@ -1,4 +1,4 @@
-import type { SessionId } from '@goodboy/types';
+import type { ProjectId, SessionId } from '@goodboy/types';
 
 export type TerminalTabId = string & { readonly __brand: 'TerminalTabId' };
 
@@ -9,6 +9,7 @@ export type TerminalTab = {
   readonly sessionId: SessionId;
   readonly title: string;
   readonly cwd: string | null;
+  readonly projectId?: ProjectId;
   readonly status: TerminalTabStatus;
   readonly createdAt: number;
 };

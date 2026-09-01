@@ -16,6 +16,7 @@ import { DiffStat } from '../../DiffStat';
 import { ProjectBranchChip } from './ProjectBranchChip';
 import { ProjectSyncControl } from './ProjectSyncControl';
 import { ProjectDetachMenu } from './ProjectDetachMenu';
+import { useProjectActivity } from './useProjectActivity';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -28,7 +29,15 @@ type Props = {
 };
 
 const ICON_BUTTON =
-  'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
+  'relative inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
+
+const ACTIVITY_DOT = 'absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-success';
+
+type SuffixParams = {
+  readonly count: number;
+};
+
+const runningSuffix = ({ count }: SuffixParams) => (count > 0 ? `, ${count} running` : '');
 
 export const ProjectMountRow = ({
   sessionId,
@@ -46,6 +55,11 @@ export const ProjectMountRow = ({
   const projectName = project?.name ?? mount.mountName;
   const changes = diffStat != null && (diffStat.additions > 0 || diffStat.deletions > 0);
   const remoteKind = useRemoteHostKind({ sessionId });
+  const activity = useProjectActivity({
+    sessionId,
+    projectId: mount.projectId,
+    workspaceId: project?.workspaceId ?? null,
+  });
 
   const openLens = async ({ lens }: { readonly lens: LensKind }) => {
     await setSessionActiveProject({ sessionId, projectId: mount.projectId });
@@ -136,7 +150,9 @@ export const ProjectMountRow = ({
           <span className="font-mono">#{pullRequest.number}</span>
         </button>
       ) : null}
-      <Tooltip content={`Open terminal in ${projectName}`}>
+      <Tooltip
+        content={`Open terminal in ${projectName}${runningSuffix({ count: activity.liveTerminals })}`}
+      >
         <button
           type="button"
           aria-label={`Open terminal for ${projectName}`}
@@ -144,9 +160,14 @@ export const ProjectMountRow = ({
           className={ICON_BUTTON}
         >
           <CONCEPT_ICONS.terminal size={13} aria-hidden />
+          {activity.liveTerminals > 0 ? (
+            <span data-testid="terminal-activity-dot" aria-hidden className={ACTIVITY_DOT} />
+          ) : null}
         </button>
       </Tooltip>
-      <Tooltip content={`Open scripts for ${projectName}`}>
+      <Tooltip
+        content={`Open scripts for ${projectName}${runningSuffix({ count: activity.runningScripts })}`}
+      >
         <button
           type="button"
           aria-label={`Open scripts for ${projectName}`}
@@ -154,6 +175,9 @@ export const ProjectMountRow = ({
           className={ICON_BUTTON}
         >
           <CONCEPT_ICONS.scripts size={13} aria-hidden />
+          {activity.runningScripts > 0 ? (
+            <span data-testid="scripts-activity-dot" aria-hidden className={ACTIVITY_DOT} />
+          ) : null}
         </button>
       </Tooltip>
       <ProjectDetachMenu

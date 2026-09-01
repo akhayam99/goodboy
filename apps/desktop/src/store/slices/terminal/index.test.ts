@@ -14,6 +14,7 @@ import type {
   PlanConsumptionId,
   PlanId,
   PlanWithCount,
+  ProjectId,
   ProviderRunId,
   Session,
   SessionId,
@@ -336,7 +337,7 @@ vi.mock('../../../features/scripts/scripts', () => ({
 }));
 
 const invokeTerminalCloseSpy = vi.fn(async () => undefined);
-const invokeTerminalListLiveSpy = vi.fn<() => Promise<ReadonlyArray<{ id: string }>>>(
+const invokeTerminalListLiveSpy = vi.fn<() => Promise<ReadonlyArray<{ id: string; cwd: string }>>>(
   async () => [],
 );
 
@@ -537,6 +538,8 @@ describe('store contract', () => {
         terminalSessions: {},
         terminalTabs: {},
         activeTerminalTab: {},
+        sessionActiveProject: {},
+        sessionProjectMounts: {},
       };
     }
     store.setState(resetState as never);
@@ -587,8 +590,8 @@ describe('store contract', () => {
     it('reattaches live terminal tabs and makes the first tab active', async () => {
       const store = await getStore();
       invokeTerminalListLiveSpy.mockResolvedValueOnce([
-        { id: `${SESSION_ID}::t2` },
-        { id: `${SESSION_ID}::t1` },
+        { id: `${SESSION_ID}::t2`, cwd: '/worktrees/api' },
+        { id: `${SESSION_ID}::t1`, cwd: '/worktrees/api' },
       ]);
 
       await store.getState().reattachTerminalTabs();
@@ -596,6 +599,54 @@ describe('store contract', () => {
       const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
       expect(tabs.map((tab) => tab.id)).toEqual([`${SESSION_ID}::t1`, `${SESSION_ID}::t2`]);
       expect(store.getState().activeTerminalTab[SESSION_ID]).toBe(`${SESSION_ID}::t1`);
+    });
+
+    it('addTerminalTab tags the tab with the active project of the session', async () => {
+      const store = await getStore();
+      store.setState({ sessionActiveProject: { [SESSION_ID]: 'api' as ProjectId } });
+
+      const id = store.getState().addTerminalTab(SESSION_ID, '/worktrees/api');
+
+      const tab = (store.getState().terminalTabs[SESSION_ID] ?? []).find(
+        (candidate) => candidate.id === id,
+      );
+      expect(tab?.projectId).toBe('api');
+    });
+
+    it('addTerminalTab leaves the project undefined when the session has no active project', async () => {
+      const store = await getStore();
+      const id = store.getState().addTerminalTab(SESSION_ID, null);
+      const tab = (store.getState().terminalTabs[SESSION_ID] ?? []).find(
+        (candidate) => candidate.id === id,
+      );
+      expect(tab?.projectId).toBeUndefined();
+    });
+
+    it('a reattached tab regains its project from the cwd of the live terminal', async () => {
+      const store = await getStore();
+      store.setState({
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            {
+              projectId: 'api' as ProjectId,
+              mountName: 'API',
+              worktreePath: '/worktrees/api',
+              repoRoot: '/repo/api',
+              branch: 'feat/api',
+            },
+          ],
+        },
+      });
+      invokeTerminalListLiveSpy.mockResolvedValueOnce([
+        { id: `${SESSION_ID}::t1`, cwd: '/worktrees/api' },
+        { id: `${SESSION_ID}::t2`, cwd: '/somewhere/else' },
+      ]);
+
+      await store.getState().reattachTerminalTabs();
+
+      const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
+      expect(tabs.map((tab) => tab.projectId)).toEqual(['api', undefined]);
+      expect(tabs.map((tab) => tab.cwd)).toEqual(['/worktrees/api', '/somewhere/else']);
     });
 
     it('setActiveTerminalTab switches the active tab', async () => {
