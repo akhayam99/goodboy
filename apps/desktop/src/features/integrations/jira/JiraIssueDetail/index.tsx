@@ -54,6 +54,7 @@ export const JiraIssueDetail = ({
       dock={dock}
       header={
         <HeaderBand
+          title={live.summary}
           meta={
             <>
               <span className="font-mono text-2xs tabular-nums text-muted-foreground">
@@ -64,7 +65,6 @@ export const JiraIssueDetail = ({
               </StateBadge>
             </>
           }
-          title={live.summary}
           actions={
             <>
               {actions.assign != null && (

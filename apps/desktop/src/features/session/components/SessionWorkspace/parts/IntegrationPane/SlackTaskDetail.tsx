@@ -34,10 +34,10 @@ export const SlackTaskDetail = ({ workspaceId, task }: Props) => {
         fit="fill"
         header={
           <HeaderBand
+            title={task.title}
             meta={
               <span className="font-mono text-2xs text-muted-foreground">{task.identifier}</span>
             }
-            title={task.title}
           />
         }
       >

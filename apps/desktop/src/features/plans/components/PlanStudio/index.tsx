@@ -3,6 +3,7 @@ import { ArchiveRestore, Eye, Pencil, Play, RotateCw, Trash2 } from 'lucide-reac
 import {
   Button,
   Divider,
+  HeaderBand,
   InlineConfirm,
   Markdown,
   ScrollFade,
@@ -130,15 +131,11 @@ export const PlanStudio = ({ sessionId }: Props) => {
     return (
       <FocusedPane lens="Plans" count={plans.length}>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <div className={cn('flex shrink-0 flex-col gap-2', PANE_RHYTHM.header)}>
-            <div className="flex shrink-0 items-start gap-3">
-              <div className="flex min-w-0 flex-1 flex-col gap-1 text-2xs text-muted-foreground">
-                <div className="flex min-w-0 items-center gap-2">
-                  <h2 className="min-w-0 truncate text-sm font-medium text-foreground">
-                    {selected.title}
-                  </h2>
-                  <PlanStatusChip status={selected.status} />
-                </div>
+          <div className={cn('flex shrink-0 flex-col gap-2', PANE_RHYTHM.body)}>
+            <HeaderBand
+              title={selected.title}
+              meta={<PlanStatusChip status={selected.status} />}
+              subtitle={
                 <PlanProvenance
                   creatorName={selectedAgentName}
                   creatorAgentId={selected.agentId}
@@ -148,136 +145,138 @@ export const PlanStudio = ({ sessionId }: Props) => {
                   agents={agents}
                   onAgentClick={handleAgentClick}
                 />
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-1.5">
-                {deleteArmed ? (
-                  <InlineConfirm
-                    role="danger"
-                    icon={<Trash2 size={12} aria-hidden />}
-                    title={`Delete "${selected.title}"?`}
-                    description="Moves this plan to discarded plans, where it can still be restored."
-                    confirmLabel={`Delete ${selected.title}`}
-                    autoDisarmMs={4000}
-                    onConfirm={() => {
-                      handleDiscard(selected);
-                      setDeleteArmed(false);
-                    }}
-                    onCancel={() => setDeleteArmed(false)}
-                    className="shrink-0"
-                  />
-                ) : replayArmed ? (
-                  <InlineConfirm
-                    role="alert"
-                    icon={<RotateCw size={12} aria-hidden />}
-                    title="Replay this plan?"
-                    description="It already ran once. Replaying spawns a new agent to execute it again."
-                    confirmLabel="Replay"
-                    autoDisarmMs={4000}
-                    isBusy={spawning}
-                    onConfirm={async () => {
-                      await handleTrigger();
-                      setReplayArmed(false);
-                    }}
-                    onCancel={() => setReplayArmed(false)}
-                    className="shrink-0"
-                  />
-                ) : (
-                  <div className="flex items-center gap-2">
-                    {selected.status !== 'discarded' ? (
-                      selected.status === 'consumed' ? (
-                        <Button
-                          variant="warning"
-                          emphasis="outline"
-                          size="sm"
-                          onClick={() => setReplayArmed(true)}
-                          disabled={spawning}
-                          title="Plan already ran, click to replay and confirm"
-                          className={cn(spawning && 'cursor-not-allowed animate-border-pulse')}
-                        >
-                          <RotateCw size={12} aria-hidden />
-                          Replay
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => void handleTrigger()}
-                          disabled={spawning}
-                          className={cn(spawning && 'cursor-not-allowed animate-border-pulse')}
-                          title={
-                            selected.status === 'active'
-                              ? 'Spawn new agent to execute this plan'
-                              : 'Replay this plan'
-                          }
-                        >
-                          {selected.status === 'active' ? (
-                            <Play size={12} aria-hidden className="fill-current" />
-                          ) : (
+              }
+              actions={
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  {deleteArmed ? (
+                    <InlineConfirm
+                      role="danger"
+                      icon={<Trash2 size={12} aria-hidden />}
+                      title={`Delete "${selected.title}"?`}
+                      description="Moves this plan to discarded plans, where it can still be restored."
+                      confirmLabel={`Delete ${selected.title}`}
+                      autoDisarmMs={4000}
+                      onConfirm={() => {
+                        handleDiscard(selected);
+                        setDeleteArmed(false);
+                      }}
+                      onCancel={() => setDeleteArmed(false)}
+                      className="shrink-0"
+                    />
+                  ) : replayArmed ? (
+                    <InlineConfirm
+                      role="alert"
+                      icon={<RotateCw size={12} aria-hidden />}
+                      title="Replay this plan?"
+                      description="It already ran once. Replaying spawns a new agent to execute it again."
+                      confirmLabel="Replay"
+                      autoDisarmMs={4000}
+                      isBusy={spawning}
+                      onConfirm={async () => {
+                        await handleTrigger();
+                        setReplayArmed(false);
+                      }}
+                      onCancel={() => setReplayArmed(false)}
+                      className="shrink-0"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      {selected.status !== 'discarded' ? (
+                        selected.status === 'consumed' ? (
+                          <Button
+                            variant="warning"
+                            emphasis="outline"
+                            size="sm"
+                            onClick={() => setReplayArmed(true)}
+                            disabled={spawning}
+                            title="Plan already ran, click to replay and confirm"
+                            className={cn(spawning && 'cursor-not-allowed animate-border-pulse')}
+                          >
                             <RotateCw size={12} aria-hidden />
-                          )}
-                          {selected.status === 'active' ? 'Start' : 'Replay'}
-                        </Button>
-                      )
-                    ) : null}
-                    {selected.status === 'consumed' ? (
-                      <Tooltip content="Consumed plans cannot be deleted">
-                        <span
-                          className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"
-                          aria-label="Consumed plans cannot be deleted"
-                        >
-                          <Trash2 size={13} aria-hidden />
-                        </span>
-                      </Tooltip>
-                    ) : selected.status === 'discarded' ? (
-                      <Tooltip content="Restore plan">
-                        <button
-                          type="button"
-                          onClick={() => handleRestore(selected)}
-                          aria-label="Restore plan"
-                          className="inline-flex items-center justify-center rounded-md border border-info/20 p-1.5 text-info transition hover:border-info/40 hover:bg-info/10"
-                        >
-                          <ArchiveRestore size={13} aria-hidden />
-                        </button>
-                      </Tooltip>
-                    ) : (
-                      <Tooltip content="Delete plan (soft delete, click restore to recover)">
-                        <button
-                          type="button"
-                          onClick={() => setDeleteArmed(true)}
-                          aria-label="Delete plan"
-                          className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
-                        >
-                          <Trash2 size={13} aria-hidden />
-                        </button>
-                      </Tooltip>
-                    )}
-                  </div>
-                )}
-                <SegmentedTabs
-                  ariaLabel="Content mode"
-                  options={[
-                    { value: 'preview', label: 'Preview', icon: Eye },
-                    {
-                      value: 'edit',
-                      label: 'Edit',
-                      icon: Pencil,
-                      ...(selected.status === 'discarded' && {
-                        hint: 'Restore the plan to edit it',
-                      }),
-                      disabled: selected.status === 'discarded',
-                    },
-                  ]}
-                  value={mode}
-                  onChange={(nextMode) => {
-                    if (nextMode === 'preview' && mode === 'edit') {
-                      commitEdit();
-                    }
-                    setMode(nextMode);
-                  }}
-                  size="sm"
-                />
-              </div>
-            </div>
+                            Replay
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => void handleTrigger()}
+                            disabled={spawning}
+                            className={cn(spawning && 'cursor-not-allowed animate-border-pulse')}
+                            title={
+                              selected.status === 'active'
+                                ? 'Spawn new agent to execute this plan'
+                                : 'Replay this plan'
+                            }
+                          >
+                            {selected.status === 'active' ? (
+                              <Play size={12} aria-hidden className="fill-current" />
+                            ) : (
+                              <RotateCw size={12} aria-hidden />
+                            )}
+                            {selected.status === 'active' ? 'Start' : 'Replay'}
+                          </Button>
+                        )
+                      ) : null}
+                      {selected.status === 'consumed' ? (
+                        <Tooltip content="Consumed plans cannot be deleted">
+                          <span
+                            className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"
+                            aria-label="Consumed plans cannot be deleted"
+                          >
+                            <Trash2 size={13} aria-hidden />
+                          </span>
+                        </Tooltip>
+                      ) : selected.status === 'discarded' ? (
+                        <Tooltip content="Restore plan">
+                          <button
+                            type="button"
+                            onClick={() => handleRestore(selected)}
+                            aria-label="Restore plan"
+                            className="inline-flex items-center justify-center rounded-md border border-info/20 p-1.5 text-info transition hover:border-info/40 hover:bg-info/10"
+                          >
+                            <ArchiveRestore size={13} aria-hidden />
+                          </button>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip content="Delete plan (soft delete, click restore to recover)">
+                          <button
+                            type="button"
+                            onClick={() => setDeleteArmed(true)}
+                            aria-label="Delete plan"
+                            className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
+                          >
+                            <Trash2 size={13} aria-hidden />
+                          </button>
+                        </Tooltip>
+                      )}
+                    </div>
+                  )}
+                  <SegmentedTabs
+                    ariaLabel="Content mode"
+                    options={[
+                      { value: 'preview', label: 'Preview', icon: Eye },
+                      {
+                        value: 'edit',
+                        label: 'Edit',
+                        icon: Pencil,
+                        ...(selected.status === 'discarded' && {
+                          hint: 'Restore the plan to edit it',
+                        }),
+                        disabled: selected.status === 'discarded',
+                      },
+                    ]}
+                    value={mode}
+                    onChange={(nextMode) => {
+                      if (nextMode === 'preview' && mode === 'edit') {
+                        commitEdit();
+                      }
+                      setMode(nextMode);
+                    }}
+                    size="sm"
+                  />
+                </div>
+              }
+            />
           </div>
           <Divider />
           <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>

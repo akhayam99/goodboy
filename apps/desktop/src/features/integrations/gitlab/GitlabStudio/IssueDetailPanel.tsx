@@ -73,6 +73,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     <StudioDetailLayout
       header={
         <HeaderBand
+          title={issue.title}
           meta={
             <>
               <span className="font-mono text-2xs tabular-nums text-muted-foreground">
@@ -81,7 +82,6 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
               <StateBadge>{issue.state}</StateBadge>
             </>
           }
-          title={issue.title}
           actions={<ExternalRefActions url={issue.webUrl} label="issue" hostLabel="GitLab" />}
         />
       }

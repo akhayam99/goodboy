@@ -207,20 +207,22 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
         fit="fill"
         header={
           <HeaderBand
-            meta={<SessionBranchTag branch={sessionBranch} />}
-            title={hostTitle({ remoteKind, providerCount, activeProvider })}
-            subtitle={
-              bitbucketPr != null ? (
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
+            title={bitbucketPr?.title ?? hostTitle({ remoteKind, providerCount, activeProvider })}
+            meta={
+              <>
+                <span className="text-2xs font-medium text-muted-foreground">
+                  {hostTitle({ remoteKind, providerCount, activeProvider })}
+                </span>
+                <SessionBranchTag branch={sessionBranch} />
+                {bitbucketPr != null ? (
                   <span className="font-mono text-2xs tabular-nums text-muted-foreground">
                     #{bitbucketPr.id}
                   </span>
+                ) : null}
+                {bitbucketPr != null ? (
                   <StateBadge>{bitbucketPr.state.toLowerCase()}</StateBadge>
-                  <span className="min-w-0 truncate text-sm text-muted-foreground">
-                    {bitbucketPr.title}
-                  </span>
-                </div>
-              ) : null
+                ) : null}
+              </>
             }
           />
         }
@@ -237,20 +239,22 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
         fit="fill"
         header={
           <HeaderBand
-            meta={<SessionBranchTag branch={sessionBranch} />}
-            title={hostTitle({ remoteKind, providerCount, activeProvider })}
-            subtitle={
-              mergeRequest != null && mergeRequestState != null ? (
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
+            title={mergeRequest?.title ?? hostTitle({ remoteKind, providerCount, activeProvider })}
+            meta={
+              <>
+                <span className="text-2xs font-medium text-muted-foreground">
+                  {hostTitle({ remoteKind, providerCount, activeProvider })}
+                </span>
+                <SessionBranchTag branch={sessionBranch} />
+                {mergeRequest != null ? (
                   <span className="font-mono text-2xs tabular-nums text-muted-foreground">
                     !{mergeRequest.iid}
                   </span>
+                ) : null}
+                {mergeRequestState != null ? (
                   <StateBadge>{pullRequestMeta({ state: mergeRequestState }).label}</StateBadge>
-                  <span className="min-w-0 truncate text-sm text-muted-foreground">
-                    {mergeRequest.title}
-                  </span>
-                </div>
-              ) : null
+                ) : null}
+              </>
             }
           />
         }
@@ -407,8 +411,8 @@ const GithubPrCard = ({
       fit="fill"
       header={
         <HeaderBand
-          meta={<SessionBranchTag branch={branch} />}
           title={hostTitle({ remoteKind, providerCount, activeProvider })}
+          meta={<SessionBranchTag branch={branch} />}
         />
       }
       {...(tabs != null && { tabs })}
@@ -494,13 +498,15 @@ const GithubPrCard = ({
       fit="fill"
       header={
         <HeaderBand
-          meta={<SessionBranchTag branch={branch} />}
-          title={hostTitle({ remoteKind, providerCount, activeProvider })}
-          subtitle={
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+          title={pr.title}
+          meta={
+            <>
+              <span className="text-2xs font-medium text-muted-foreground">
+                {hostTitle({ remoteKind, providerCount, activeProvider })}
+              </span>
+              <SessionBranchTag branch={branch} />
               <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={12} />
-              <span className="min-w-0 truncate text-sm text-muted-foreground">{pr.title}</span>
-            </div>
+            </>
           }
           actions={
             <>

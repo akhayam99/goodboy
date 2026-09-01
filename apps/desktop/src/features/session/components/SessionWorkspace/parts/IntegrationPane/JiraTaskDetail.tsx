@@ -30,12 +30,12 @@ export const JiraTaskDetail = ({ workspaceId, projectId, task }: Props) => {
       fit="fill"
       header={
         <HeaderBand
+          title={task.title}
           meta={
             <span className="font-mono text-2xs tabular-nums text-muted-foreground">
               {task.identifier}
             </span>
           }
-          title={task.title}
         />
       }
     >

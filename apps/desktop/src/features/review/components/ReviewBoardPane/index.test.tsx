@@ -251,8 +251,13 @@ describe('ReviewBoardPane', () => {
   it('states its section title with the reviewed record below it', () => {
     render(<ReviewBoardPane session={SESSION} />);
 
-    expect(screen.getByRole('heading', { name: 'Review board' })).toBeDefined();
-    expect(screen.getByText('acme/web #41')).toBeDefined();
+    const title = screen.getByRole('heading', { level: 2, name: 'Review board' });
+    const record = screen.getByText('acme/web #41');
+    const layoutControl = screen.getByRole('tab', { name: 'Unified' });
+
+    expect(title.className).toContain('text-xl');
+    expect(title.parentElement?.contains(layoutControl)).toBe(true);
+    expect(title.compareDocumentPosition(record) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('states its section title with no reviewed record', () => {

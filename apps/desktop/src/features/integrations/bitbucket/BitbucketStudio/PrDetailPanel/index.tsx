@@ -109,12 +109,12 @@ export const PrDetailPanel = ({
       header={
         <>
           <HeaderBand
+            title={pullRequest.title}
             meta={
               <StateBadge tone={pullRequestStateTone({ state: pullRequest.state })}>
                 #{pullRequest.id} · {pullRequest.state.toLowerCase()}
               </StateBadge>
             }
-            title={pullRequest.title}
             subtitle={
               <BranchPair
                 headBranch={pullRequest.sourceBranch}

@@ -64,6 +64,7 @@ export const GithubIssueDetail = ({
       fit={fit}
       header={
         <HeaderBand
+          title={issue.title}
           meta={
             <>
               <span className="font-mono text-2xs tabular-nums text-muted-foreground">
@@ -72,7 +73,6 @@ export const GithubIssueDetail = ({
               <StateBadge>{issue.state.toLowerCase()}</StateBadge>
             </>
           }
-          title={issue.title}
           actions={
             <>
               {headerActions}

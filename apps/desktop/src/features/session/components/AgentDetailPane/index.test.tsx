@@ -65,6 +65,19 @@ beforeEach(() => {
 });
 
 describe('AgentDetailPane', () => {
+  it('places the title at the shared detail inset above agent metadata', () => {
+    render(
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
+    );
+
+    const title = screen.getByRole('heading', { level: 2, name: 'Implement chat' });
+    const status = screen.getByText('running');
+
+    expect(title.className).toContain('text-xl');
+    expect(title.closest('.px-6')?.className).toContain('py-5');
+    expect(title.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('opens on the brief and keeps transcript one tab away', () => {
     render(
       <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,

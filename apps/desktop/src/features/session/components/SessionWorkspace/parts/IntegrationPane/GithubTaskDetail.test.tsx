@@ -115,4 +115,17 @@ describe('GithubTaskDetail', () => {
 
     expect(useGithubIssueMock).toHaveBeenCalledWith(expect.objectContaining({ issueNumber: 7 }));
   });
+
+  it('uses the issue identifier as the title when no linked task supplies one', () => {
+    useGithubIssueMock.mockReturnValue({
+      issue: null,
+      isLoading: true,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    render(<GithubTaskDetail workspaceId={WORKSPACE_ID} rootPath="/repo" issueNumber={7} />);
+
+    expect(screen.getByRole('heading', { level: 2, name: '#7' })).toBeDefined();
+  });
 });

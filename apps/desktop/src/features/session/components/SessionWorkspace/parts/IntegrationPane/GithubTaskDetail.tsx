@@ -36,12 +36,12 @@ export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber }: P
       fit="fill"
       header={
         <HeaderBand
+          title={task?.title ?? `#${resolvedIssueNumber}`}
           meta={
             <span className="font-mono text-2xs tabular-nums text-muted-foreground">
               {task?.identifier ?? `#${resolvedIssueNumber}`}
             </span>
           }
-          title={task?.title ?? 'GitHub issue'}
         />
       }
     >
