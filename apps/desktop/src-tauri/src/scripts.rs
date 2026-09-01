@@ -17,8 +17,8 @@ use crate::db::{Db, DbError};
 // ---------------------------------------------------------------------------
 
 struct PtyRun {
-    writer: Box<dyn Write + Send>,
-    master: Box<dyn portable_pty::MasterPty + Send>,
+    _writer: Box<dyn Write + Send>,
+    _master: Box<dyn portable_pty::MasterPty + Send>,
     child: Box<dyn portable_pty::Child + Send + Sync>,
 }
 
@@ -204,8 +204,8 @@ pub async fn workspace_script_run(
             .map_err(|e| ScriptError::Io(e.to_string()))?;
 
         let slot: PtySlot = Arc::new(Mutex::new(Some(PtyRun {
-            writer,
-            master: pair.master,
+            _writer: writer,
+            _master: pair.master,
             child,
         })));
 
@@ -296,66 +296,6 @@ pub fn workspace_script_list_live(
     registry: State<'_, ScriptRegistry>,
 ) -> Result<Vec<LiveScriptRun>, ScriptError> {
     registry.list_live()
-}
-
-// ---------------------------------------------------------------------------
-// Command — send keyboard input to a running pty
-// ---------------------------------------------------------------------------
-
-#[tauri::command]
-pub fn workspace_script_write(
-    registry: State<'_, ScriptRegistry>,
-    run_id: String,
-    data: String,
-) -> Result<(), ScriptError> {
-    let bytes = STANDARD
-        .decode(&data)
-        .map_err(|e| ScriptError::Io(e.to_string()))?;
-
-    let slot = {
-        let map = registry.0.lock().map_err(|_| ScriptError::Poisoned)?;
-        map.get(&run_id).map(|slot| Arc::clone(&slot.run))
-    };
-
-    if let Some(slot) = slot {
-        if let Ok(mut guard) = slot.lock() {
-            if let Some(run) = guard.as_mut() {
-                let _ = run.writer.write_all(&bytes);
-            }
-        }
-    }
-    Ok(())
-}
-
-// ---------------------------------------------------------------------------
-// Command — resize the pty window
-// ---------------------------------------------------------------------------
-
-#[tauri::command]
-pub fn workspace_script_resize(
-    registry: State<'_, ScriptRegistry>,
-    run_id: String,
-    cols: u16,
-    rows: u16,
-) -> Result<(), ScriptError> {
-    let slot = {
-        let map = registry.0.lock().map_err(|_| ScriptError::Poisoned)?;
-        map.get(&run_id).map(|slot| Arc::clone(&slot.run))
-    };
-
-    if let Some(slot) = slot {
-        if let Ok(guard) = slot.lock() {
-            if let Some(run) = guard.as_ref() {
-                let _ = run.master.resize(PtySize {
-                    rows,
-                    cols,
-                    pixel_width: 0,
-                    pixel_height: 0,
-                });
-            }
-        }
-    }
-    Ok(())
 }
 
 // ---------------------------------------------------------------------------

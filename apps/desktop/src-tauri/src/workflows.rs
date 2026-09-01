@@ -431,56 +431,6 @@ pub fn workflow_list(
     Ok(result)
 }
 
-#[tauri::command]
-pub fn workflow_get(state: State<'_, Db>, id: String) -> Result<Option<WorkflowRow>, PhaseError> {
-    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
-    let mut stmt = conn.prepare(
-        "SELECT id, workspace_id, name, description, goal, process_text, created_at, updated_at,
-                deleted_at, is_preset, origin
-         FROM workflows
-         WHERE id = ?1
-         LIMIT 1",
-    )?;
-    let mut rows = stmt.query_map(rusqlite::params![id], |row| {
-        Ok((
-            row.get::<_, String>(0)?,
-            row.get::<_, String>(1)?,
-            row.get::<_, String>(2)?,
-            row.get::<_, String>(3)?,
-            row.get::<_, Option<String>>(4)?,
-            row.get::<_, Option<String>>(5)?,
-            row.get::<_, i64>(6)?,
-            row.get::<_, i64>(7)?,
-            row.get::<_, Option<i64>>(8)?,
-            row.get::<_, i64>(9)?,
-            row.get::<_, Option<String>>(10)?,
-        ))
-    })?;
-    match rows.next() {
-        Some(r) => {
-            let (rid, ws, name, desc, goal, process, created, updated, deleted, is_preset, origin) =
-                r.map_err(PhaseError::Db)?;
-            let template = row_to_template(
-                &conn,
-                rid,
-                ws,
-                name,
-                desc,
-                goal,
-                process,
-                created,
-                updated,
-                deleted,
-                is_preset != 0,
-                origin,
-            )
-            .map_err(PhaseError::Db)?;
-            Ok(Some(template))
-        }
-        None => Ok(None),
-    }
-}
-
 fn live_name_taken(
     conn: &rusqlite::Connection,
     workspace_id: &str,

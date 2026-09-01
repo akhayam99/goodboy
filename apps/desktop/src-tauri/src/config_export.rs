@@ -209,7 +209,6 @@ impl From<DbError> for ConfigExportError {
 // export_config command
 // ---------------------------------------------------------------------------
 
-#[tauri::command]
 pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportError> {
     let conn = state.0.lock().map_err(|_| ConfigExportError::Poisoned)?;
 
@@ -445,7 +444,6 @@ pub struct ImportResult {
     pub stats: ImportStats,
 }
 
-#[tauri::command]
 pub fn import_config(
     state: State<'_, Db>,
     bundle: ConfigBundle,
