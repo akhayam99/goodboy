@@ -7,6 +7,50 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.8
+
+Base branches become a real picker, suggested next steps stop spawning
+twice, and the resolver keeps one commit per thread instead of stacking
+them.
+
+### [#1597] Base branch is a searchable select
+
+The three base branch fields (overview project row, git pill, settings)
+were free-text inputs even though the branches are known. They are now a
+searchable select that fetches the repo's local and remote branches the
+moment the picker opens, never on page render. Typing still works: an
+unlisted branch can be committed as free text, and one action returns to
+the default.
+
+### [#1598] The suggested next step is a real card with a real state
+
+The next-step suggestion in the transcript was a bare chip: clicking it
+spawned an agent, then stayed clickable and could spawn duplicates, with
+no trace of what it started. It is now a proper card that follows its
+spawned agent: while the agent runs it shows the live status, when it
+ends it says so, and a second spawn is impossible. The spawned agent is
+linked back to the message that suggested it.
+
+### [#1599] The resolver amends instead of stacking commits
+
+Asking the resolver for further changes on a thread it already resolved
+produced a new commit every time, even though the resolution was still
+local. The resolver now amends its own unpushed resolution commit, keeping
+one commit per thread, and the queued resolution follows the new commit so
+the batch push resolves GitHub threads against a commit that exists. Once
+a commit is on a remote the resolver falls back to normal commits and
+never rewrites shared history.
+
+### Under the hood
+
+App.tsx went from 1163 lines to a 335-line shell: shortcuts live in a
+dedicated hook [#1600] and every workspace overlay sits behind one overlay
+router [#1603], with no behavior change. Dead weight left with [#1601]
+(test-only panes and a sidebar filter subsystem no UI reached) and [#1602]
+(eight tauri commands nothing invokes). A new CI gate [#1604] keeps the
+rust command registry and the frontend invocations in lockstep both ways,
+and the event bus inventory landed in docs/event-bus.md.
+
 ## Goodboy v0.2.7
 
 Errors stop hiding, work survives a refresh, and agents route around a
