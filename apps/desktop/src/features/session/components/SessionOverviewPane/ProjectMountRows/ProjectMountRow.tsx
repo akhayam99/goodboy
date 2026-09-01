@@ -13,6 +13,7 @@ import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { PullRequestChip } from '../../../../github/components/PullRequestChip';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { DiffStat } from '../../DiffStat';
+import { EditorMenu } from '../EditorMenu';
 import { ProjectBranchChip } from './ProjectBranchChip';
 import { ProjectSyncControl } from './ProjectSyncControl';
 import { ProjectDetachMenu } from './ProjectDetachMenu';
@@ -150,6 +151,12 @@ export const ProjectMountRow = ({
           <span className="font-mono">#{pullRequest.number}</span>
         </button>
       ) : null}
+      <EditorMenu
+        sessionId={sessionId}
+        density="compact"
+        target={{ name: projectName, worktreePath: mount.worktreePath }}
+        triggerClassName={ICON_BUTTON}
+      />
       <Tooltip
         content={`Open terminal in ${projectName}${runningSuffix({ count: activity.liveTerminals })}`}
       >

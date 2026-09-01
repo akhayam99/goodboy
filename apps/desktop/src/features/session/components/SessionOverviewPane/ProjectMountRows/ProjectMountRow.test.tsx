@@ -2,6 +2,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import type { OverflowMenuItem } from '@goodboy/ui';
 import type { Project, PullRequestState, SessionId, SessionProjectMount } from '@goodboy/types';
 
 const { store, remoteKind } = vi.hoisted(() => ({
@@ -12,6 +14,9 @@ const { store, remoteKind } = vi.hoisted(() => ({
     openMountDiff: vi.fn(async () => undefined),
     projects: [] as ReadonlyArray<{ id: string; baseBranch?: string | null }>,
     emitNotification: vi.fn(),
+    sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
+    detectedEditors: [] as ReadonlyArray<{ binary: string; label: string }>,
+    loadDetectedEditors: vi.fn(async () => undefined),
     terminalTabs: {} as Record<
       string,
       ReadonlyArray<{ id: string; projectId?: string; status: string }>
@@ -36,8 +41,50 @@ vi.mock('./ProjectDetachMenu', () => ({
 vi.mock('../../../../worktree/useRemoteHostKind', () => ({
   useRemoteHostKind: () => remoteKind.current,
 }));
+vi.mock('../../../../../app/components/Toast', () => ({
+  useToast: () => ({ showToast: vi.fn() }),
+}));
+vi.mock('../../../../../shared/lib/editor', () => ({
+  openInEditor: vi.fn(async () => undefined),
+}));
+vi.mock('@goodboy/ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/ui')>();
+  const { Tooltip } = actual;
+  return {
+    ...actual,
+    OverflowMenu: ({
+      items,
+      label,
+      tooltip,
+      triggerClassName,
+      trigger,
+    }: {
+      readonly items: ReadonlyArray<OverflowMenuItem>;
+      readonly label: string;
+      readonly tooltip: string;
+      readonly triggerClassName: string;
+      readonly trigger: ReactNode;
+    }) => (
+      <span>
+        <Tooltip content={tooltip}>
+          <button type="button" aria-label={label} className={triggerClassName}>
+            {trigger}
+          </button>
+        </Tooltip>
+        {items.map((item) =>
+          item.kind === 'item' ? (
+            <button key={item.key} type="button" onClick={item.onClick}>
+              {item.label}
+            </button>
+          ) : null,
+        )}
+      </span>
+    ),
+  };
+});
 
 import { tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
+import { openInEditor } from '../../../../../shared/lib/editor';
 import { ProjectMountRow } from './ProjectMountRow';
 
 const sessionId = 'session-1' as SessionId;
@@ -88,6 +135,9 @@ beforeEach(() => {
       { id: 'script-web', projectId: 'web' },
     ],
   };
+  store.sessionWorktrees = { [sessionId]: ['/session-root'] };
+  store.detectedEditors = [{ binary: 'code', label: 'VS Code' }];
+  vi.mocked(openInEditor).mockClear();
 });
 
 afterEach(cleanup);
@@ -134,6 +184,38 @@ describe('ProjectMountRow create pr action', () => {
     remoteKind.current = null;
     renderRow({ diffStat: { additions: 1, deletions: 0 } });
     expect(screen.queryByRole('button', { name: 'Create a PR for API' })).toBeNull();
+  });
+});
+
+describe('ProjectMountRow folder action', () => {
+  it('names the folder action after the project and reads it out in the tooltip', () => {
+    renderRow({});
+
+    const folder = screen.getByRole('button', { name: 'Open the folder of API' });
+    expect(tooltipTextOf({ element: folder })).toBe('Open API in an editor, or copy its path');
+  });
+
+  it('opens the worktree of the mount, not the first worktree of the session', () => {
+    renderRow({});
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open the folder of API' }));
+    fireEvent.click(screen.getByRole('button', { name: 'VS Code' }));
+
+    expect(openInEditor).toHaveBeenCalledWith('/api', 'code');
+  });
+
+  it('leads the trio folder, terminal, scripts', () => {
+    renderRow({});
+
+    const folder = screen.getByRole('button', { name: 'Open the folder of API' });
+    const terminal = screen.getByRole('button', { name: 'Open terminal for API' });
+    const scripts = screen.getByRole('button', { name: 'Open scripts for API' });
+    expect(
+      folder.compareDocumentPosition(terminal) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      terminal.compareDocumentPosition(scripts) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 });
 

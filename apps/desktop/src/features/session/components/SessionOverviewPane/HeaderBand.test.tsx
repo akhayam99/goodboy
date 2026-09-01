@@ -12,6 +12,8 @@ const { store } = vi.hoisted(() => ({
     sessionGithub: {},
     sessionExternalTasks: {},
     setScriptsLensScope: vi.fn(),
+    sessionProjectMounts: {} as Record<string, ReadonlyArray<{ projectId: string }>>,
+    projects: [] as ReadonlyArray<{ id: string; kind: string }>,
   },
 }));
 
@@ -69,6 +71,8 @@ describe('HeaderBand', () => {
     store.pendingTitleFocusSessionId = null;
     store.clearPendingTitleFocus.mockClear();
     store.setScriptsLensScope.mockClear();
+    store.sessionProjectMounts = {};
+    store.projects = [];
   });
 
   it('puts Scripts first in the title actions and opens it without scope', () => {
@@ -92,6 +96,29 @@ describe('HeaderBand', () => {
     const projects = screen.getByRole('region', { name: 'Mounted projects' });
     const goal = screen.getByText('Goal');
     expect(projects.compareDocumentPosition(goal) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps the folder action for a session with no mount', () => {
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+
+    expect(screen.getByRole('button', { name: 'Open worktree' })).toBeDefined();
+  });
+
+  it('keeps the folder action when every mount is a plain folder', () => {
+    store.sessionProjectMounts = { 'session-1': [{ projectId: 'docs' }] };
+    store.projects = [{ id: 'docs', kind: 'folder' }];
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+
+    expect(screen.getByRole('button', { name: 'Open worktree' })).toBeDefined();
+  });
+
+  it('drops the folder action once a repo is mounted, since the row owns it', () => {
+    store.sessionProjectMounts = { 'session-1': [{ projectId: 'api' }] };
+    store.projects = [{ id: 'api', kind: 'repo' }];
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+
+    expect(screen.queryByRole('button', { name: 'Open worktree' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Mount a project' })).toBeDefined();
   });
 
   it('renders the session cost at the right edge of the context row', () => {
