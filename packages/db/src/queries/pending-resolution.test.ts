@@ -77,4 +77,39 @@ describe('pending_resolutions queries', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]?.replyPostedAt).not.toBeNull();
   });
+
+  it('updates the sha of an existing queued thread without stacking a row', async () => {
+    const db = await seed({});
+    await queuePendingResolution({
+      db,
+      id: 'pending-1',
+      sessionId,
+      prNumber: 42,
+      threadId: 'PRRT_1',
+      commitSha: 'aaaaaaaaaaaaaaaa',
+      reply: 'first fix',
+      outcome: 'resolved',
+    });
+    await queuePendingResolution({
+      db,
+      id: 'pending-2',
+      sessionId,
+      prNumber: 42,
+      threadId: 'PRRT_1',
+      commitSha: 'bbbbbbbbbbbbbbbb',
+      reply: 'adjusted fix',
+      outcome: 'resolved',
+    });
+
+    const rows = await listPendingResolutionsForSession({ db, sessionId });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      id: 'pending-1',
+      threadId: 'PRRT_1',
+      commitSha: 'bbbbbbbbbbbbbbbb',
+      reply: 'adjusted fix',
+      outcome: 'resolved',
+    });
+  });
 });
