@@ -75,6 +75,7 @@ export {
   listArchivedSessionRefs,
   renameSession,
   deleteSession,
+  purgeSessionForDelete,
   softDeleteSession,
   restoreSession,
   archiveSession,

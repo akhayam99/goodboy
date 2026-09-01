@@ -449,7 +449,6 @@ const selectPullRequests = async ({
               WHERE sw2.branch = g.branch
                 AND sw2.repo_slug = g.repo_slug
                 AND s2.workspace_id = s.workspace_id
-                AND s2.deleted_at IS NULL
            )),
          0
        ) AS spend_usd
@@ -457,7 +456,6 @@ const selectPullRequests = async ({
      JOIN session_worktrees sw ON sw.branch = g.branch AND sw.repo_slug = g.repo_slug
      JOIN sessions s ON s.id = sw.session_id
     WHERE s.workspace_id = ?
-      AND s.deleted_at IS NULL
       AND g.pr_json IS NOT NULL
       AND g.fetched_at >= ?
       AND (? IS NULL OR julianday(json_extract(g.pr_json, '$.updatedAt')) >= julianday(?))

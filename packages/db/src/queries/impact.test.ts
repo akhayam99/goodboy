@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { WorkspaceId } from '@goodboy/types';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
 import { migrate } from '../migrations/runner';
 import { makeTestDatabase } from '../test-helpers/test-db';
@@ -15,6 +15,7 @@ import {
   getRightSizeNudgeOutcomes,
   getTurnDistribution,
 } from './impact';
+import { purgeSessionForDelete } from './session';
 
 const workspaceId = 'w1' as WorkspaceId;
 const otherWorkspaceId = 'w2' as WorkspaceId;
@@ -275,11 +276,17 @@ describe('pull request outcomes', () => {
         RECENT,
       ],
     );
+    await addTelemetry({
+      db,
+      seed: { id: 't-s1', runId: 'r-s1', sessionId: 's1', at: RECENT, cost: 2.5 },
+    });
+
+    await purgeSessionForDelete({ db, id: 's1' as SessionId });
 
     const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
 
     expect(result).toMatchObject({ open: 0, merged: 1, closed: 0 });
-    expect(result.entries[0]).toMatchObject({ number: 8, sessionId: 's1' });
+    expect(result.entries[0]).toMatchObject({ number: 8, sessionId: 's1', spendUsd: 2.5 });
   });
 
   it('does not double-count spend when a multi-project session has two worktree rows on one branch', async () => {
