@@ -54,6 +54,9 @@ jobs:
       - name: typecheck
         run: pnpm turbo run typecheck --affected
 
+      - name: tauri commands
+        run: pnpm run check:tauri-commands
+
       - name: knip
         run: pnpm knip --include files,duplicates,unlisted
 
