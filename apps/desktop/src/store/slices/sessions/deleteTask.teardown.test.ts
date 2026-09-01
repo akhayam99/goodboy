@@ -70,10 +70,7 @@ describe('deleting a session', () => {
     await deleteTask(vi.fn(), (() => store) as never)(SESSION_ID);
 
     expect(order).toEqual(['terminals closed', 'worktree removed']);
-    expect(deleteGithubPrCacheForWorktreePath).toHaveBeenCalledWith({
-      db: {},
-      worktreePath: '/repo/.goodboy/worktrees/gb-ghost',
-    });
+    expect(deleteGithubPrCacheForWorktreePath).not.toHaveBeenCalled();
     expect(purgeSessionForDelete).toHaveBeenCalledWith({ db: {}, id: SESSION_ID });
   });
 

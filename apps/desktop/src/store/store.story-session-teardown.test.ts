@@ -10,6 +10,7 @@ const {
   listWorktreesForSession,
   updateSessionWorktreeBranch,
   deleteSession,
+  purgeSessionForDelete,
   deleteFileVersionsForSession,
   fileVersionsPurgeSession,
   detectRepoSlug,
@@ -25,6 +26,7 @@ const {
   listWorktreesForSession: vi.fn(async () => [] as ReadonlyArray<unknown>),
   updateSessionWorktreeBranch: vi.fn(async () => undefined),
   deleteSession: vi.fn(async () => undefined),
+  purgeSessionForDelete: vi.fn(async () => undefined),
   deleteFileVersionsForSession: vi.fn(async () => undefined),
   fileVersionsPurgeSession: vi.fn(async () => undefined),
   detectRepoSlug: vi.fn(async () => 'acme/widgets'),
@@ -37,6 +39,7 @@ vi.mock('@goodboy/db', () => ({
   listWorktreesForSession,
   updateSessionWorktreeBranch,
   deleteSession,
+  purgeSessionForDelete,
   deleteFileVersionsForSession,
 }));
 
@@ -298,7 +301,7 @@ describe('story: deleting a session that never did any work', () => {
       (call) => call[0],
     );
     expect(notificationKinds).not.toContain('error');
-    expect(deleteSession).toHaveBeenCalledOnce();
+    expect(purgeSessionForDelete).toHaveBeenCalledOnce();
   });
 });
 
@@ -333,7 +336,7 @@ describe('story: a branchless folder session lives and dies without git', () => 
       path: CONTAINER_PATH,
     });
     expect(fileVersionsPurgeSession).toHaveBeenCalledWith({ sessionId: SESSION_ID });
-    expect(deleteSession).toHaveBeenCalledOnce();
+    expect(purgeSessionForDelete).toHaveBeenCalledOnce();
   });
 
   it('never refreshes a pull request', async () => {
@@ -474,7 +477,7 @@ describe('story: a two-project session routes git work through the active mount'
       basePath: '/tmp/sessions',
       path: CONTAINER_PATH,
     });
-    expect(deleteSession).toHaveBeenCalledOnce();
+    expect(purgeSessionForDelete).toHaveBeenCalledOnce();
   });
 
   it('keeps every worktree and the container on disk when the session is archived', async () => {
@@ -519,7 +522,7 @@ describe('story: deleting a session created before project mounts existed', () =
       basePath: '/tmp/sessions',
       path: CONTAINER_PATH,
     });
-    expect(deleteSession).toHaveBeenCalledOnce();
+    expect(purgeSessionForDelete).toHaveBeenCalledOnce();
   });
 
   it('falls back to a plain directory removal when no project matches the row', async () => {
@@ -540,6 +543,6 @@ describe('story: deleting a session created before project mounts existed', () =
       basePath: '/tmp/sessions',
       path: CONTAINER_PATH,
     });
-    expect(deleteSession).toHaveBeenCalledOnce();
+    expect(purgeSessionForDelete).toHaveBeenCalledOnce();
   });
 });

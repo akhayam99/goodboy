@@ -165,7 +165,7 @@ describe('purgeSessionForDelete', () => {
       ['session_workflows', 'session_id', sessionId],
       ['session_worktrees', 'session_id', sessionId],
       ['diff_comments', 'session_id', sessionId],
-    ]) {
+    ] as const) {
       await expect(countRows({ db, table, column, value })).resolves.toBe(1);
     }
     await expect(

@@ -419,10 +419,7 @@ export const purgeSessionForDelete = async ({
   await db.exec('BEGIN');
   try {
     await db.execute('DELETE FROM messages WHERE session_id = ?', [id]);
-    await db.execute(
-      'DELETE FROM turn_events WHERE agent_id IN (SELECT id FROM agents WHERE session_id = ?)',
-      [id],
-    );
+    await db.execute('DELETE FROM turn_events WHERE session_id = ?', [id]);
     await db.execute('DELETE FROM file_versions WHERE session_id = ?', [id]);
     await db.execute('DELETE FROM context_slots WHERE session_id = ?', [id]);
     await db.execute('DELETE FROM context_slot_history WHERE session_id = ?', [id]);
