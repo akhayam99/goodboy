@@ -1,10 +1,6 @@
 import type { ProviderRunId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import {
-  deleteGithubPrCacheForWorktreePath,
-  listWorktreesForSession,
-  purgeSessionForDelete,
-} from '@goodboy/db';
+import { listWorktreesForSession, purgeSessionForDelete } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import {
@@ -66,14 +62,6 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         } catch (error) {
           cleanupFailures.push(error);
           continue;
-        }
-        try {
-          await deleteGithubPrCacheForWorktreePath({
-            db: tauriDatabase,
-            worktreePath: row.worktreePath,
-          });
-        } catch (error) {
-          cleanupFailures.push(error);
         }
         continue;
       }

@@ -120,6 +120,7 @@ vi.mock('@goodboy/db', () => ({
   listAllSessionWorktrees: vi.fn(async () => []),
   renameSession: vi.fn(async () => undefined),
   deleteSession: vi.fn(async () => undefined),
+  purgeSessionForDelete: vi.fn(async () => undefined),
   deleteFileVersionsForSession: deleteFileVersionsForSessionSpy,
   archiveSession: vi.fn(async () => undefined),
   unarchiveSession: vi.fn(async () => undefined),
@@ -1024,8 +1025,8 @@ describe('store contract', () => {
 
       it('bulkDeleteTask deletes sequentially in the given id order', async () => {
         const store = await getStore();
-        const { deleteSession } = await import('@goodboy/db');
-        const spy = deleteSession as unknown as ReturnType<typeof vi.fn>;
+        const { purgeSessionForDelete } = await import('@goodboy/db');
+        const spy = purgeSessionForDelete as unknown as ReturnType<typeof vi.fn>;
         store.setState({
           workspaces: [buildWorkspace()],
           currentWorkspaceId: WS_ID,
@@ -1034,14 +1035,17 @@ describe('store contract', () => {
           },
         });
         await store.getState().bulkDeleteTask([SESSION_ID_2, SESSION_ID]);
-        expect(spy.mock.calls.map((c) => c[1])).toEqual([SESSION_ID_2, SESSION_ID]);
+        expect(spy.mock.calls.map((c) => (c[0] as { id: string }).id)).toEqual([
+          SESSION_ID_2,
+          SESSION_ID,
+        ]);
       });
 
       it('bulkDeleteTask is a no-op and emits no notification for an empty selection', async () => {
         const store = await getStore();
-        const { deleteSession } = await import('@goodboy/db');
+        const { purgeSessionForDelete } = await import('@goodboy/db');
         await store.getState().bulkDeleteTask([]);
-        expect(deleteSession as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+        expect(purgeSessionForDelete as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
         expect(insertNotificationSpy).not.toHaveBeenCalled();
       });
 
