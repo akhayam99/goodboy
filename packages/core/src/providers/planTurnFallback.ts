@@ -2,7 +2,7 @@ import type { ModelCostTier, ModelDescriptor, ProviderId } from '@goodboy/types'
 import { PROVIDER_CAPABILITIES } from './capabilities';
 
 export type TurnFailureKind =
-  'authentication' | 'rate_limit' | 'model_not_available' | 'unreachable' | 'other';
+  'authentication' | 'rate_limit' | 'usage_limit' | 'model_not_available' | 'unreachable' | 'other';
 
 export type TurnFallbackPlan = {
   readonly provider: ProviderId;
@@ -150,13 +150,16 @@ export const planTurnFallback = ({
   }
   if (attempt === 0) {
     const picked = preferredPlan({ preferred, provider, model, connectedProviders });
-    if (picked != null) {
+    if (picked != null && (failure !== 'usage_limit' || picked.provider !== provider)) {
       return picked;
     }
   }
   const failed = descriptorFor({ provider, model });
   const tier = failed?.costTier ?? 'mid';
   const weight = failed?.weight ?? null;
+  if (failure === 'usage_limit') {
+    return otherProviderPlan({ provider, connectedProviders, tier, weight });
+  }
   if (failure === 'authentication') {
     return otherProviderPlan({ provider, connectedProviders, tier, weight });
   }

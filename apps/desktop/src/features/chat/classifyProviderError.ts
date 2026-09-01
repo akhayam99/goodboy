@@ -1,3 +1,5 @@
+import { parseUsageLimitResetAt } from './parseUsageLimitResetAt';
+
 type ModelUnavailableAction = 'enable_max_mode' | 'choose_supported_model';
 
 type ModelUnavailablePattern = {
@@ -13,6 +15,7 @@ type ProviderErrorClassification =
       readonly action: ModelUnavailableAction;
     }
   | { readonly kind: 'rate_limit' }
+  | { readonly kind: 'usage_limit'; readonly resetAtMs?: number }
   | { readonly kind: 'unreachable' }
   | { readonly kind: 'other' };
 
@@ -45,11 +48,12 @@ const MODEL_NOT_AVAILABLE_PATTERNS = [
   },
 ] satisfies ReadonlyArray<ModelUnavailablePattern>;
 
+const USAGE_LIMIT_PATTERNS = [/usage limit/i];
+
 const RATE_LIMIT_PATTERNS = [
   /rate.?limit/i,
   /quota exceeded/i,
   /exceeded your quota/i,
-  /usage limit/i,
   /token limit/i,
   /limit reached/i,
   /too many requests/i,
@@ -87,6 +91,14 @@ export const classifyProviderError = ({ message }: Params): ProviderErrorClassif
         action: entry.action,
       };
     }
+  }
+
+  if (USAGE_LIMIT_PATTERNS.some((pattern) => pattern.test(message))) {
+    const resetAtMs = parseUsageLimitResetAt({ message });
+    return {
+      kind: 'usage_limit',
+      ...(resetAtMs !== null && { resetAtMs }),
+    };
   }
 
   if (RATE_LIMIT_PATTERNS.some((pattern) => pattern.test(message))) {

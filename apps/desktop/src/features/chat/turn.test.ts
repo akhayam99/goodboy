@@ -182,6 +182,65 @@ describe('runTurn', () => {
     await expect(iterator.next()).rejects.toHaveProperty('message', message);
   });
 
+  it('fails the turn on a mid-stream account usage limit', async () => {
+    const runId = 'usage-limit-provider-run' as ProviderRunId;
+    const message =
+      "You've hit your usage limit. Upgrade to Pro (https://openai.com/chatgpt/pricing) or try again at 3:10 PM.";
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === 'turn_spawn') {
+        capturedListeners[0]?.({
+          runId,
+          type: 'line',
+          line: JSON.stringify({ type: 'error', message }),
+        });
+        capturedListeners[0]?.({ runId, type: 'end', exit_code: 1, stderr: '' });
+      }
+      return runId;
+    });
+
+    const iterator = runTurn({
+      runId,
+      provider: 'codex',
+      model: 'gpt-5.6',
+      workingDir: '/tmp/worktree',
+      writableRoots: [],
+      prompt: 'hello',
+    })[Symbol.asyncIterator]();
+
+    await expect(iterator.next()).rejects.toHaveProperty('message', message);
+  });
+
+  it('keeps a generic mid-stream error inside the stream', async () => {
+    const runId = 'generic-error-provider-run' as ProviderRunId;
+    const message = 'stream disconnected before completion';
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === 'turn_spawn') {
+        capturedListeners[0]?.({
+          runId,
+          type: 'line',
+          line: JSON.stringify({ type: 'error', message }),
+        });
+        capturedListeners[0]?.({ runId, type: 'end', exit_code: 0, stderr: '' });
+      }
+      return runId;
+    });
+
+    const iterator = runTurn({
+      runId,
+      provider: 'codex',
+      model: 'gpt-5.6',
+      workingDir: '/tmp/worktree',
+      writableRoots: [],
+      prompt: 'hello',
+    })[Symbol.asyncIterator]();
+
+    await expect(iterator.next()).resolves.toMatchObject({
+      done: false,
+      value: { kind: 'error', message },
+    });
+    await expect(iterator.next()).resolves.toMatchObject({ done: true });
+  });
+
   it('surfaces unparseable stdout when a provider exits', async () => {
     const runId = 'stdout-error-provider-run' as ProviderRunId;
     const message = 'provider rejected this request';

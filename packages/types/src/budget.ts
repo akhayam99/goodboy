@@ -31,6 +31,7 @@ export type RoutingReason =
   | 'fallback-budget'
   | 'fallback-threshold'
   | 'fallback-disconnected'
+  | 'fallback-cooldown'
   | 'all-exceeded'
   | 'forced-over-budget'
   | 'override';

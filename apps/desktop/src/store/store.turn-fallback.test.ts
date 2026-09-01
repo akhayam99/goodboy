@@ -1,5 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, ProjectId, IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
+import { parseUsageLimitResetAt } from '../features/chat/parseUsageLimitResetAt';
 import {
   buildStoryAgent,
   buildStorySession,
@@ -178,6 +179,67 @@ describe('sendTurn, provider failure fallback', () => {
 
     expect(storySpies.runTurn).toHaveBeenCalledOnce();
     expect(useAppStore.getState().agentTurnState[AGENT_A]?.kind).toBe('error');
+  });
+
+  const USAGE_LIMIT_MESSAGE =
+    "You've hit your usage limit. Upgrade to Pro (https://openai.com/chatgpt/pricing) or try again at 3:10 PM.";
+
+  it('cools the provider down and warns when a usage limit leaves no alternative', async () => {
+    setup();
+    useAppStore.setState({ providerCooldowns: {} });
+    const scheduled: number[] = [];
+    const timerSpy = vi.spyOn(globalThis, 'setTimeout').mockImplementation(((
+      _handler: () => void,
+      delay?: number,
+    ) => {
+      scheduled.push(delay ?? 0);
+      return 0;
+    }) as never);
+    storySpies.runTurn.mockImplementation(async function* () {
+      throw new Error(USAGE_LIMIT_MESSAGE);
+    });
+
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' }),
+    ).rejects.toThrow('usage limit');
+
+    expect(storySpies.runTurn).toHaveBeenCalledOnce();
+    expect(useAppStore.getState().providerCooldowns.anthropic).toBe(
+      parseUsageLimitResetAt({ message: USAGE_LIMIT_MESSAGE }),
+    );
+    const notification = useAppStore
+      .getState()
+      .notifications.find((entry) => entry.coalesceKey === 'provider-usage-limit:anthropic');
+    expect(notification).toMatchObject({
+      kind: 'error',
+      severity: 'warning',
+      title: 'Provider at its usage limit',
+    });
+    expect(notification?.body).toContain('Claude is at its usage limit. Retrying at');
+    expect(scheduled.some((delay) => delay > 0)).toBe(true);
+    timerSpy.mockRestore();
+  });
+
+  it('falls back to a cooldown of half an hour when no reset time is given', async () => {
+    setup();
+    useAppStore.setState({ providerCooldowns: {} });
+    storySpies.runTurn.mockImplementation(async function* () {
+      throw new Error('usage limit reached for this account');
+    });
+    const before = Date.now();
+
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' }),
+    ).rejects.toThrow('usage limit');
+
+    const cooldown = useAppStore.getState().providerCooldowns.anthropic ?? 0;
+    expect(cooldown).toBeGreaterThanOrEqual(before + 30 * 60 * 1000);
+    const notification = useAppStore
+      .getState()
+      .notifications.find((entry) => entry.coalesceKey === 'provider-usage-limit:anthropic');
+    expect(notification?.body).toBe(
+      'Claude is at its usage limit. Retry it when the limit resets.',
+    );
   });
 
   const LOCK_OUTPUT =

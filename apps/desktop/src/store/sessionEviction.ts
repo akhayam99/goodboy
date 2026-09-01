@@ -115,6 +115,7 @@ export const NON_SESSION_STATE_KEYS = [
   'providerLifecycle',
   'providerConnect',
   'providerCredentials',
+  'providerCooldowns',
   'hydrated',
   'bootPhase',
   'error',

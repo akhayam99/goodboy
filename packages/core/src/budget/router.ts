@@ -19,6 +19,9 @@ export type ResolveProviderInput = {
       period: BudgetPeriod,
     ) => Promise<BudgetCheckResult>;
   };
+  cooldownChecker?: {
+    isProviderCoolingDown: (provider: ProviderId) => boolean;
+  };
   getDefaultModel: (provider: ProviderId) => string;
   force?: boolean;
 };
@@ -34,9 +37,17 @@ const PROVIDER_ID_TO_NAME: Readonly<Record<ProviderId, ProviderName>> = {
 };
 
 export const resolveProvider = async (input: ResolveProviderInput): Promise<RoutingDecision> => {
-  const { sessionPreference, turnOverride, connectedProviders, budgetChecker, getDefaultModel } =
-    input;
+  const {
+    sessionPreference,
+    turnOverride,
+    connectedProviders,
+    budgetChecker,
+    cooldownChecker,
+    getDefaultModel,
+  } = input;
   const force = input.force === true;
+  const isCoolingDown = (provider: ProviderId): boolean =>
+    cooldownChecker?.isProviderCoolingDown(provider) === true;
 
   const useOverride = turnOverride !== undefined && sessionPreference.allowTurnOverride;
 
@@ -68,7 +79,9 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
     fallbackUsed: false,
   };
 
-  const preferredUsable = preferredConnected && preferredAllowed && !preferredResult.exceeded;
+  const preferredCoolingDown = isCoolingDown(preferredProvider);
+  const preferredUsable =
+    preferredConnected && preferredAllowed && !preferredResult.exceeded && !preferredCoolingDown;
 
   if (preferredUsable && !preferredResult.overThreshold) {
     return keepPreferred;
@@ -76,8 +89,12 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
 
   const movedForThreshold = preferredUsable && preferredResult.overThreshold;
   const budgetReason: RoutingReason = movedForThreshold ? 'fallback-threshold' : 'fallback-budget';
+  const unusableReason: RoutingReason =
+    preferredConnected && preferredAllowed && preferredCoolingDown
+      ? 'fallback-cooldown'
+      : 'fallback-disconnected';
   const fallbackReason: RoutingReason =
-    preferredConnected && preferredAllowed ? budgetReason : 'fallback-disconnected';
+    preferredConnected && preferredAllowed && !preferredCoolingDown ? budgetReason : unusableReason;
 
   const moveTo = (candidate: ProviderId): RoutingDecision => ({
     selectedProvider: candidate,
@@ -94,6 +111,9 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
       continue;
     }
     if (!isEnabled(candidate)) {
+      continue;
+    }
+    if (isCoolingDown(candidate)) {
       continue;
     }
 
@@ -120,6 +140,10 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
   }
 
   if (!preferredConnected) {
+    return keepPreferred;
+  }
+
+  if (preferredCoolingDown && !preferredResult.exceeded) {
     return keepPreferred;
   }
 

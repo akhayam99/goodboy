@@ -2,7 +2,7 @@ import type { ProviderId, RoutingReason } from '@goodboy/types';
 
 export type BudgetRoutingReason = Extract<
   RoutingReason,
-  'fallback-budget' | 'fallback-threshold' | 'fallback-disconnected'
+  'fallback-budget' | 'fallback-threshold' | 'fallback-disconnected' | 'fallback-cooldown'
 >;
 
 type Params = {
@@ -19,6 +19,8 @@ const causeFor = ({ reason }: { readonly reason: BudgetRoutingReason }): string 
       return 'is over its monthly cap';
     case 'fallback-disconnected':
       return 'is not reachable right now';
+    case 'fallback-cooldown':
+      return 'is at its usage limit right now';
     default: {
       const exhaustive: never = reason;
       throw new Error(`unknown budget routing reason: ${String(exhaustive)}`);
@@ -34,7 +36,8 @@ export const budgetRoutingReason = ({
   if (
     reason === 'fallback-budget' ||
     reason === 'fallback-threshold' ||
-    reason === 'fallback-disconnected'
+    reason === 'fallback-disconnected' ||
+    reason === 'fallback-cooldown'
   ) {
     return reason;
   }

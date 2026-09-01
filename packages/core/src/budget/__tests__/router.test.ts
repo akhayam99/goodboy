@@ -196,6 +196,51 @@ describe('resolveProvider', () => {
   });
 });
 
+describe('resolveProvider, provider cooldowns', () => {
+  const coolingDown = (cooling: ReadonlyArray<string>) => ({
+    isProviderCoolingDown: (provider: string) => cooling.includes(provider),
+  });
+
+  it('preferred cooling down → moves to a usable provider with reason fallback-cooldown', async () => {
+    const input = makeInput({ cooldownChecker: coolingDown(['anthropic']) });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('cursor');
+    expect(decision.reason).toBe('fallback-cooldown');
+    expect(decision.fallbackUsed).toBe(true);
+    expect(decision.fallbackFrom).toBe('anthropic');
+  });
+
+  it('an expired cooldown leaves the preferred provider in charge', async () => {
+    const input = makeInput({ cooldownChecker: coolingDown([]) });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('anthropic');
+    expect(decision.reason).toBe('preferred');
+    expect(decision.fallbackUsed).toBe(false);
+  });
+
+  it('a cooling down candidate is skipped for the next usable one', async () => {
+    const input = makeInput({
+      connectedProviders: ['anthropic', 'cursor', 'gemini'],
+      cooldownChecker: coolingDown(['anthropic', 'cursor']),
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('gemini');
+    expect(decision.reason).toBe('fallback-cooldown');
+  });
+
+  it('every provider cooling down → stays on the preferred one instead of blocking the turn', async () => {
+    const input = makeInput({ cooldownChecker: coolingDown(['anthropic', 'cursor']) });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('anthropic');
+    expect(decision.reason).toBe('preferred');
+    expect(decision.fallbackUsed).toBe(false);
+  });
+});
+
 describe('resolveProvider, budget threshold tier', () => {
   it('preferred past its threshold and a candidate is clear → moves with reason fallback-threshold', async () => {
     const checkMock = vi.fn(async (provider: string) =>
