@@ -13,8 +13,9 @@ import type {
   WorkflowTriggerMode,
 } from '@goodboy/types';
 import { attachWorkflowToSession as attachWorkflowToSessionInDb } from '@goodboy/db';
-import { isWorkflowComplete, runsForWorkflowRun } from '@goodboy/core';
+import { runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { isRunSettled } from '../../../features/workflows/isRunSettled';
 import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
@@ -68,11 +69,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
           get().sessionPhaseRuns[sessionId] ?? [],
           chainAfterId,
         );
-        const predecessorComplete =
-          predecessor.executionMode === 'dynamic'
-            ? predecessor.orchestrationOutcome === 'done'
-            : isWorkflowComplete(predTemplate, predAgents);
-        if (predecessorComplete) {
+        if (isRunSettled({ run: predecessor, workflow: predTemplate, agents: predAgents })) {
           triggerMode = 'immediate';
         }
       }
@@ -178,6 +175,11 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     }
 
     void get().reprocessGoalForWorkflow(sessionId);
+
+    if (triggerMode === 'after_run') {
+      void get().maybeAutoAdvanceWorkflow(sessionId);
+      return;
+    }
 
     if (triggerMode === 'immediate') {
       if (executionMode === 'dynamic' && autoRun) {

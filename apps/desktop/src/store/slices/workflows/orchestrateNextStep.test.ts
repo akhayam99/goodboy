@@ -12,6 +12,7 @@ import type {
   TelemetryRecord,
   Workflow,
   WorkflowId,
+  WorkflowRun,
   WorkflowRunId,
   WorkflowSpendLimitMode,
   WorkspaceId,
@@ -80,6 +81,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 import { OrchestratorClient, ROLE_DEFAULTS } from '@goodboy/core';
 import { orchestrateNextStep, persistOrchestrationStop } from './orchestrateNextStep';
 import { continueWorkflowRun } from './continueWorkflowRun';
+import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const SESSION_ID = 'session-1' as SessionId;
@@ -204,6 +206,7 @@ const baseState = (): State => {
     appendTurnEvent: vi.fn(),
     activateWorkflowAgent: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
+    maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
   };
 };
 
@@ -1677,5 +1680,69 @@ describe('orchestrateNextStep and the session context summarizer', () => {
     await pending;
 
     expect(runOutcomeOf(state)).toBe('done');
+  });
+});
+
+describe('orchestrateNextStep and the runs chained behind it', () => {
+  const CHAINED_RUN_ID = 'workflow-run-2' as WorkflowRunId;
+
+  const chainedState = (): State => {
+    const state = baseState();
+    const base = session();
+    const chained: WorkflowRun = {
+      id: CHAINED_RUN_ID,
+      workflowId: WORKFLOW_ID,
+      ordinal: 1,
+      currentStep: 0,
+      autoRun: true,
+      triggerMode: 'after_run',
+      chainAfterId: WORKFLOW_RUN_ID,
+      executionMode: 'static',
+    };
+    state['sessions'] = [{ ...base, workflowRuns: [...base.workflowRuns, chained] }];
+    state['budgetAlerts'] = [];
+    state['startWorkflowRun'] = vi.fn(async () => undefined);
+    return state;
+  };
+
+  it('starts the chained run once the dynamic predecessor lands done', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: { action: 'done', reason: 'Every step landed.' },
+    });
+    const state = chainedState();
+    const { set, get } = harness(state);
+    state['maybeAutoAdvanceWorkflow'] = maybeAutoAdvanceWorkflow(set, get);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    await vi.waitFor(() =>
+      expect(state['startWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, CHAINED_RUN_ID),
+    );
+  });
+
+  it('leaves the chain asleep when the orchestration ends blocked', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: { action: 'blocked', reason: 'The repository has no tests.' },
+    });
+    const state = chainedState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(state['maybeAutoAdvanceWorkflow']).not.toHaveBeenCalled();
+    expect(state['startWorkflowRun']).not.toHaveBeenCalled();
+  });
+
+  it('leaves the chain asleep when the orchestrator call fails', async () => {
+    decideSpy.mockRejectedValue(new Error('provider exploded'));
+    const state = chainedState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(state['maybeAutoAdvanceWorkflow']).not.toHaveBeenCalled();
+    expect(state['startWorkflowRun']).not.toHaveBeenCalled();
   });
 });

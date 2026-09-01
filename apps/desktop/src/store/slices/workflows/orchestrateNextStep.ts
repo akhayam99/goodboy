@@ -814,6 +814,12 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           });
         });
       }
+      const finished = get()
+        .sessions.find((candidate) => candidate.id === sessionId)
+        ?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
+      if (finished?.orchestrationOutcome === 'done') {
+        void get().maybeAutoAdvanceWorkflow(sessionId);
+      }
     }
   };
 };
