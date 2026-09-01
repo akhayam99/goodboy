@@ -31,7 +31,14 @@ export const TimelineRowMarker = ({ item }: Props) => {
   const { glyphSize } = TIMELINE_RHYTHM.grade[grade];
 
   if (entry.kind === 'run' || entry.kind === 'agent') {
-    return <TimelineMarker state={item.markerState} grade={grade} hasUnread={item.hasUnread} />;
+    return (
+      <TimelineMarker
+        state={item.markerState}
+        grade={grade}
+        hasUnread={item.hasUnread}
+        identity={item.identity}
+      />
+    );
   }
   if (entry.kind === 'issue') {
     return (

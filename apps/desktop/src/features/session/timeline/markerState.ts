@@ -1,7 +1,7 @@
 import type { Agent } from '@goodboy/types';
 
 export type TimelineMarkerState =
-  'done' | 'failed' | 'running' | 'pending' | 'skipped' | 'needsUser' | 'question';
+  'done' | 'failed' | 'running' | 'deciding' | 'pending' | 'skipped' | 'needsUser' | 'question';
 
 type Params = {
   readonly status: Agent['status'];

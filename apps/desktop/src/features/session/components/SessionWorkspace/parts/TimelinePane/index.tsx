@@ -49,6 +49,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
   const areEventsLoaded = useAppStore((s) => s.sessionEvents?.[sessionId] !== undefined);
   const loadSessionEvents = useAppStore((s) => s.loadSessionEvents);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const orchestratingWorkflowRuns = useAppStore((s) => s.orchestratingWorkflowRuns);
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const openMountDiff = useAppStore((s) => s.openMountDiff);
@@ -134,6 +135,16 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
     return unread;
   }, [agents]);
 
+  const decidingRunIds = useMemo(() => {
+    const deciding = new Set<string>();
+    for (const { run } of workflows) {
+      if (orchestratingWorkflowRuns?.[run.id] === true) {
+        deciding.add(run.id);
+      }
+    }
+    return deciding;
+  }, [orchestratingWorkflowRuns, workflows]);
+
   const blockedRunIds = useMemo(() => {
     const blocked = new Set<string>(stalledRunIds);
     for (const [runId, state] of advanceByRunId) {
@@ -150,6 +161,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
         entries: visibleEntries,
         unreadAgentIds,
         blockedRunIds,
+        decidingRunIds,
         dayLabelFor: dayLabel,
         showWorkflowSubagents: activity.filter.workflowSubagents,
         showAgentSubagents: activity.filter.agentSubagents,
@@ -162,6 +174,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
       activity.filter.questions,
       activity.filter.workflowSubagents,
       blockedRunIds,
+      decidingRunIds,
       unreadAgentIds,
       visibleEntries,
     ],

@@ -83,6 +83,7 @@ type Params = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
   readonly unreadAgentIds: ReadonlySet<string>;
   readonly blockedRunIds: ReadonlySet<string>;
+  readonly decidingRunIds: ReadonlySet<string>;
   readonly dayLabelFor: (params: { readonly at: string }) => string | null;
   readonly showWorkflowSubagents?: boolean;
   readonly showAgentSubagents?: boolean;
@@ -252,6 +253,7 @@ const isRunFinished = ({ entry }: { readonly entry: TimelineRunEntry }): boolean
 type EmitContext = {
   readonly unreadAgentIds: ReadonlySet<string>;
   readonly blockedRunIds: ReadonlySet<string>;
+  readonly decidingRunIds: ReadonlySet<string>;
   readonly groups: RailGroupInput[];
   readonly showWorkflowSubagents: boolean;
   readonly showAgentSubagents: boolean;
@@ -423,6 +425,19 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
     nested.push(row);
   }
   const steps = stepAgentsOf({ entry });
+  const hasRunningStep = steps.some((agent) => agent.status === 'running');
+  const isDeciding = !isFinished && !hasRunningStep && context.decidingRunIds.has(entry.run.id);
+  const settledState: TimelineMarkerState = resolveMarkerState({
+    status: hasRunningStep
+      ? 'running'
+      : steps.some((agent) => agent.status === 'failed')
+        ? 'failed'
+        : isFinished
+          ? 'completed'
+          : 'pending',
+    hasOpenQuestion: false,
+    needsUser,
+  });
   const origin: DraftRow = {
     kind: 'row',
     id: entry.id,
@@ -434,17 +449,7 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
     groupId: null,
     ordinal: null,
     sortOrdinal: 0,
-    markerState: resolveMarkerState({
-      status: steps.some((agent) => agent.status === 'running')
-        ? 'running'
-        : steps.some((agent) => agent.status === 'failed')
-          ? 'failed'
-          : isFinished
-            ? 'completed'
-            : 'pending',
-      hasOpenQuestion: false,
-      needsUser,
-    }),
+    markerState: isDeciding ? 'deciding' : settledState,
     hasUnread: steps.some((agent) => context.unreadAgentIds.has(agent.id)),
     isPending: false,
   };
@@ -570,6 +575,7 @@ export const buildTimelineStream = ({
   entries,
   unreadAgentIds,
   blockedRunIds,
+  decidingRunIds,
   dayLabelFor,
   showWorkflowSubagents = true,
   showAgentSubagents = true,
@@ -579,6 +585,7 @@ export const buildTimelineStream = ({
   const context: EmitContext = {
     unreadAgentIds,
     blockedRunIds,
+    decidingRunIds,
     groups: [],
     showWorkflowSubagents,
     showAgentSubagents,

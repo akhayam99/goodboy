@@ -11,6 +11,7 @@ type Params = {
   hasUnread: boolean;
   openQuestionCount: number;
   hasRunningAgent?: boolean;
+  isDecidingWorkflow?: boolean;
   isPrReview?: boolean;
   isBranchless?: boolean;
   requestLabel?: string;
@@ -29,6 +30,7 @@ export const deriveSessionStage = ({
   hasUnread,
   openQuestionCount,
   hasRunningAgent = false,
+  isDecidingWorkflow = false,
   isPrReview = false,
   isBranchless = false,
   requestLabel,
@@ -38,6 +40,9 @@ export const deriveSessionStage = ({
   if (isBranchless) {
     if (session.state.kind === 'running' || session.state.kind === 'starting' || hasRunningAgent) {
       return { stage: 'running', reason: 'agent running', attention: null };
+    }
+    if (isDecidingWorkflow) {
+      return { stage: 'running', reason: 'deciding the next step', attention: null };
     }
     if (session.state.kind === 'error') {
       return { stage: 'attention', reason: 'agent errored', attention: 'agent-error' };
@@ -65,6 +70,9 @@ export const deriveSessionStage = ({
   }
   if (hasRunningAgent) {
     return { stage: 'running', reason: 'agent running', attention: null };
+  }
+  if (isDecidingWorkflow) {
+    return { stage: 'running', reason: 'deciding the next step', attention: null };
   }
   if (isPrLive(pr) && pr.checks === 'failure') {
     return { stage: 'attention', reason: `${label}: CI failed`, attention: 'ci-failed' };

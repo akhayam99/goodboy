@@ -117,6 +117,38 @@ describe('deriveSessionStage pull request freshness', () => {
   });
 });
 
+describe('deriveSessionStage orchestrator decision', () => {
+  it('keeps a session awake while its orchestrator chooses the next step', () => {
+    const info = deriveSessionStage({
+      session,
+      pr: null,
+      ...signals,
+      hasRunningAgent: false,
+      isDecidingWorkflow: true,
+    });
+
+    expect(info).toEqual({ stage: 'running', reason: 'deciding the next step', attention: null });
+  });
+
+  it('keeps a branchless session awake for the same decision', () => {
+    const info = deriveSessionStage({
+      session,
+      pr: null,
+      ...signals,
+      isBranchless: true,
+      isDecidingWorkflow: true,
+    });
+
+    expect(info).toEqual({ stage: 'running', reason: 'deciding the next step', attention: null });
+  });
+
+  it('reads the same session as idle work once the decision has landed', () => {
+    const info = deriveSessionStage({ session, pr: null, ...signals, isDecidingWorkflow: false });
+
+    expect(info.stage).toBe('building');
+  });
+});
+
 describe('deriveSessionStage lazy session', () => {
   it('places a freshly created branchless draft session as building and ready for work', () => {
     const draftSession: Session = { ...session, state: { kind: 'draft' } };

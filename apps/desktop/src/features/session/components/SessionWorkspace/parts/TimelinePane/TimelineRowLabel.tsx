@@ -94,7 +94,7 @@ const chipOf = ({ entry, grade }: ChipParams) => {
 export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
-    return <TimelineRunLabel entry={entry} />;
+    return <TimelineRunLabel entry={entry} isDeciding={item.markerState === 'deciding'} />;
   }
   const isStep = grade === 'step';
   const emphasis =

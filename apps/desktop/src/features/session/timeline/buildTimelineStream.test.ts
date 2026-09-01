@@ -167,6 +167,7 @@ type StreamParams = {
   readonly agents: ReadonlyArray<Agent>;
   readonly workflows?: ReadonlyArray<ReturnType<typeof attachedWorkflow>>;
   readonly unreadAgentIds?: ReadonlySet<string>;
+  readonly decidingRunIds?: ReadonlySet<string>;
   readonly events?: ReadonlyArray<SessionEvent>;
   readonly plans?: ReadonlyArray<PlanWithCount>;
   readonly questions?: ReadonlyArray<OpenQuestion>;
@@ -180,6 +181,7 @@ const stream = ({
   agents,
   workflows = [],
   unreadAgentIds = new Set(),
+  decidingRunIds = new Set(),
   events = [],
   plans = [],
   questions = [],
@@ -202,6 +204,7 @@ const stream = ({
     }).entries,
     unreadAgentIds,
     blockedRunIds: new Set(),
+    decidingRunIds,
     dayLabelFor: ({ at }) => dayLabel({ at, now: NOW }),
     ...(showWorkflowSubagents != null ? { showWorkflowSubagents } : {}),
     ...(showAgentSubagents != null ? { showAgentSubagents } : {}),
@@ -1168,6 +1171,59 @@ describe('buildTimelineStream, session events', () => {
 
     expect(lane?.shape).toBe('open');
     expect(runRow?.kind === 'row' ? runRow.markerState : null).toBe('pending');
+  });
+
+  it('marks a run whose orchestrator is choosing the next step as deciding, not pending', () => {
+    const settledSteps = {
+      workflows: [
+        attachedWorkflow({
+          createdAt: localIso({ day: 18, hour: 8 }),
+          stepIds: ['one'],
+          executionMode: 'dynamic',
+        }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    };
+    const idle = stream(settledSteps);
+    const deciding = stream({ ...settledSteps, decidingRunIds: new Set([RUN_ID]) });
+    const idleRow = idle.items.find((item) => item.id === 'run:run-1');
+    const decidingRow = deciding.items.find((item) => item.id === 'run:run-1');
+
+    expect(idleRow?.kind === 'row' ? idleRow.markerState : null).toBe('pending');
+    expect(decidingRow?.kind === 'row' ? decidingRow.markerState : null).toBe('deciding');
+  });
+
+  it('keeps a run with a step in flight on running even while a decision is in flight', () => {
+    const { items } = stream({
+      workflows: [
+        attachedWorkflow({
+          createdAt: localIso({ day: 18, hour: 8 }),
+          stepIds: ['one'],
+          executionMode: 'dynamic',
+        }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          status: 'running',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+      decidingRunIds: new Set([RUN_ID]),
+    });
+    const runRow = items.find((item) => item.id === 'run:run-1');
+
+    expect(runRow?.kind === 'row' ? runRow.markerState : null).toBe('running');
   });
 
   it('closes the lane of a dynamic run once the orchestrator declares it done', () => {

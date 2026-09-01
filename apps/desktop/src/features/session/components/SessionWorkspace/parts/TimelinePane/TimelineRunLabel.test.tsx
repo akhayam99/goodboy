@@ -2,9 +2,12 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import type { WorkflowRun } from '@goodboy/types';
+import { resolveOrchestratorState } from '../../../../../workflows/components/OrchestratorPanel/orchestratorState';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import { runIdentity } from '../../../../timeline/runIdentity';
 import type { RunWorkflowKind } from '../../../../timeline/runWorkflowKind';
+import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../../../../workflows/orchestratorCopy';
 import { TimelineRunLabel } from './TimelineRunLabel';
 
 afterEach(cleanup);
@@ -132,6 +135,34 @@ describe('TimelineRunLabel', () => {
 
     expect(mutedChip).toContain('text-run-');
     expect(chipOf().className).toContain(mutedChip);
+  });
+
+  it('says what the orchestrator is doing while it chooses the next step', () => {
+    render(<TimelineRunLabel entry={entryOf({ kind: 'orchestrator' })} isDeciding />);
+    const sentence = screen.getByText(ORCHESTRATOR_DECIDING_SENTENCE);
+
+    expect(sentence.className).toContain('text-muted-foreground');
+    expect(screen.getByText('Refactor (example)')).toBeDefined();
+  });
+
+  it('words the deciding row exactly as the orchestrator panel words it', () => {
+    render(<TimelineRunLabel entry={entryOf({ kind: 'orchestrator' })} isDeciding />);
+
+    expect(
+      resolveOrchestratorState({
+        run: { autoRun: true } as unknown as WorkflowRun,
+        agents: [],
+        isOrchestrating: true,
+        hasOpenQuestions: false,
+        costUsd: 0,
+      }).sentence,
+    ).toBe(screen.getByText(ORCHESTRATOR_DECIDING_SENTENCE).textContent);
+  });
+
+  it('stays silent about the orchestrator when no decision is in flight', () => {
+    render(<TimelineRunLabel entry={entryOf({ kind: 'orchestrator' })} />);
+
+    expect(screen.queryByText(ORCHESTRATOR_DECIDING_SENTENCE)).toBeNull();
   });
 
   it('drops the title when the run carries no goal at all', () => {
