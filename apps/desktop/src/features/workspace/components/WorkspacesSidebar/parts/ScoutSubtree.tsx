@@ -2,6 +2,7 @@ import { Fragment, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { Agent, AgentId } from '@goodboy/types';
 import { EMPTY_ARRAY, agentHasUnread } from '../../../../../store';
+import { AGENT_KIND_META, classifyAgent } from '../../../../../features/session/agent-kind';
 import type { AgentAggregate } from '../../../../../features/session/components/AgentMetrics';
 import { ClusterChildRow } from './ClusterChildRow';
 
@@ -36,6 +37,9 @@ export const ScoutSubtree = ({
   const doneCount = children.filter(
     (c) => c.status === 'completed' || c.status === 'skipped',
   ).length;
+  const childKinds = new Set(children.map((child) => classifyAgent(child, null)));
+  const childKind = childKinds.size === 1 ? childKinds.values().next().value : undefined;
+  const groupLabel = childKind === undefined ? 'agents' : AGENT_KIND_META[childKind].pluralLabel;
   const unreadCount = (() => {
     let n = 0;
     const visit = (id: AgentId) => {
@@ -55,7 +59,7 @@ export const ScoutSubtree = ({
         type="button"
         onClick={() => onToggle(containerId)}
         aria-expanded={expanded}
-        aria-label={`${expanded ? 'collapse' : 'expand'} scouts`}
+        aria-label={`${expanded ? 'collapse' : 'expand'} ${groupLabel}`}
         className="flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-info/70 transition-colors hover:text-info"
       >
         {expanded ? (
@@ -63,7 +67,7 @@ export const ScoutSubtree = ({
         ) : (
           <ChevronRight size={10} aria-hidden className="shrink-0" />
         )}
-        scouts {doneCount}/{children.length}
+        {groupLabel} {doneCount}/{children.length}
         {!expanded && unreadCount > 0 ? (
           <span
             className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1 py-0.5 text-3xs font-medium text-warning"

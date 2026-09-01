@@ -91,64 +91,80 @@ export const kindWritesFiles = (kind: AgentKind): boolean => {
 
 export const AGENT_KIND_META: Record<
   AgentKind,
-  { label: string; hint: string; persona: string; expectedOutput: string | null }
+  {
+    label: string;
+    pluralLabel: string;
+    hint: string;
+    persona: string;
+    expectedOutput: string | null;
+  }
 > = {
   generic: {
     label: 'Generalist',
+    pluralLabel: 'generalists',
     hint: 'Plans, investigates, edits, and verifies without a narrow role',
     persona: 'max',
     expectedOutput: null,
   },
   scout: {
     label: 'Scout',
+    pluralLabel: 'scouts',
     hint: 'Reads and searches codebase. Never edits files',
     persona: 'scout',
     expectedOutput: 'a findings summary carried forward',
   },
   planner: {
     label: 'Plan',
+    pluralLabel: 'planners',
     hint: 'Analyzes goals, produces a plan. No code, no edits',
     persona: 'drafty',
     expectedOutput: 'a plan artifact, ready to consume',
   },
   implementer: {
     label: 'Implement',
+    pluralLabel: 'implementers',
     hint: 'Writes code based on active plan. No re-planning',
     persona: 'hammer',
     expectedOutput: 'commits on the session branch',
   },
   debugger: {
     label: 'Debug',
+    pluralLabel: 'debuggers',
     hint: 'Reproduces and fixes bugs. No refactoring, no planning',
     persona: 'sherlock',
     expectedOutput: 'a diagnosis and the fix, committed',
   },
   tester: {
     label: 'Test',
+    pluralLabel: 'testers',
     hint: 'Writes tests. No production code changes',
     persona: 'beaker',
     expectedOutput: 'a test run outcome',
   },
   reviewer: {
     label: 'Review',
+    pluralLabel: 'reviewers',
     hint: 'Reviews diffs, suggests fixes. Read-only',
     persona: 'specs',
     expectedOutput: 'review findings',
   },
   'pr-reviewer': {
     label: 'PR reviewer',
+    pluralLabel: 'PR reviewers',
     hint: 'Reviews an external pull request checked out locally. Read-only',
     persona: 'monocle',
     expectedOutput: 'a verdict per review thread',
   },
   docs: {
     label: 'Docs',
+    pluralLabel: 'docs',
     hint: 'Writes documentation. No production logic',
     persona: 'scribble',
     expectedOutput: 'documentation changes, committed',
   },
   resolver: {
     label: 'Resolve',
+    pluralLabel: 'resolvers',
     hint: 'Addresses one comment with a local commit. Spawned by the resolve UI',
     persona: 'patches',
     expectedOutput: 'one local commit answering the comment',

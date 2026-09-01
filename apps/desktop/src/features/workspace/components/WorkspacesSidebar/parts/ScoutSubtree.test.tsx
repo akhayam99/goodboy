@@ -191,4 +191,38 @@ describe('ScoutSubtree unread badge', () => {
     expect(container.querySelector('.ml-3')).not.toBeNull();
     expect(container.querySelector('.border-l')).not.toBeNull();
   });
+
+  it('labels a group of implementer children as implementers', () => {
+    const map = new Map<string, Agent[]>([
+      [
+        CONTAINER,
+        [
+          buildAgent({ id: 'i1' as AgentId, kind: 'implementer' }),
+          buildAgent({ id: 'i2' as AgentId, kind: 'implementer', status: 'running' }),
+        ],
+      ],
+    ]);
+    renderTree(map);
+
+    expect(screen.getByRole('button', { name: 'expand implementers' }).textContent).toContain(
+      'implementers 1/2',
+    );
+  });
+
+  it('labels a mixed-kind group as agents', () => {
+    const map = new Map<string, Agent[]>([
+      [
+        CONTAINER,
+        [
+          buildAgent({ id: 's1' as AgentId, kind: 'scout' }),
+          buildAgent({ id: 'i1' as AgentId, kind: 'implementer' }),
+        ],
+      ],
+    ]);
+    renderTree(map);
+
+    expect(screen.getByRole('button', { name: 'expand agents' }).textContent).toContain(
+      'agents 2/2',
+    );
+  });
 });

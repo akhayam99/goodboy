@@ -29,6 +29,8 @@ type Props = {
   readonly contextUsage: ReadonlyArray<ProviderContextUsage>;
   readonly turns: number;
   readonly turnsLoading: boolean;
+  readonly delegatedChildCount?: number;
+  readonly activeDelegatedChildCount?: number;
   readonly isSelected: boolean;
   readonly isTaskActive: boolean;
   readonly isEditing: boolean;
@@ -53,6 +55,8 @@ export const AgentRow = ({
   contextUsage,
   turns,
   turnsLoading,
+  delegatedChildCount = 0,
+  activeDelegatedChildCount = 0,
   isSelected,
   isTaskActive,
   isEditing,
@@ -199,6 +203,8 @@ export const AgentRow = ({
           contextUsage={contextUsage}
           turns={turns}
           turnsLoading={turnsLoading}
+          delegatedChildCount={delegatedChildCount}
+          activeDelegatedChildCount={activeDelegatedChildCount}
           density="lane"
         />
       }
