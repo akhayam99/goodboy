@@ -67,6 +67,9 @@ export const AdHocRow = ({
     agentKindOverride[run.id] ?? null,
   );
   const scoutChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
+  const activeDelegatedChildCount = scoutChildren.filter(
+    (child) => child.status === 'pending' || child.status === 'running',
+  ).length;
   return (
     <Fragment key={run.id}>
       <AgentRow
@@ -77,6 +80,8 @@ export const AdHocRow = ({
         contextUsage={providerUsageByAgentId.get(run.id) ?? EMPTY_ARRAY}
         turns={turnsByAgentId.get(run.id) ?? 0}
         turnsLoading={run.id === selectedAgentId && isTranscriptLoading}
+        delegatedChildCount={scoutChildren.length}
+        activeDelegatedChildCount={activeDelegatedChildCount}
         isSelected={run.id === selectedAgentId}
         isTaskActive={isTaskActive}
         isEditing={editingId === run.id}

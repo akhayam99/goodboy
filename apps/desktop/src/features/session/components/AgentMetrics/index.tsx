@@ -25,6 +25,8 @@ type Props = {
   readonly contextUsage: ReadonlyArray<ProviderContextUsage>;
   readonly turns: number;
   readonly turnsLoading: boolean;
+  readonly delegatedChildCount?: number;
+  readonly activeDelegatedChildCount?: number;
   readonly density: 'compact' | 'full' | 'lane';
   readonly plannedModel?: string | null;
   readonly plannedProvider?: ProviderId | null;
@@ -38,6 +40,8 @@ export const AgentMetrics = ({
   contextUsage,
   turns,
   turnsLoading,
+  delegatedChildCount = 0,
+  activeDelegatedChildCount = 0,
   density,
   plannedModel = null,
   plannedProvider = null,
@@ -71,14 +75,16 @@ export const AgentMetrics = ({
             !isLane && 'flex-nowrap whitespace-nowrap',
           )}
           items={[
-            <RoutingBadge
-              key="model"
-              provider={provider ?? null}
-              model={model ?? null}
-              planned={planned}
-              muted={muted}
-              missingLabel="no model yet"
-            />,
+            model != null || delegatedChildCount === 0 ? (
+              <RoutingBadge
+                key="model"
+                provider={provider ?? null}
+                model={model ?? null}
+                planned={planned}
+                muted={muted}
+                missingLabel="no model yet"
+              />
+            ) : null,
             <CostBadge
               key="cost"
               value={aggregate?.estimatedCostUsd ?? 0}
@@ -114,7 +120,14 @@ export const AgentMetrics = ({
               </span>
             ),
             isLane && run.startedAt != null ? <AgentDuration key="duration" run={run} /> : null,
-            isLane ? <AgentLastUpdate key="updated" agent={run} /> : null,
+            isLane ? (
+              <AgentLastUpdate
+                key="updated"
+                agent={run}
+                delegatedChildCount={delegatedChildCount}
+                activeDelegatedChildCount={activeDelegatedChildCount}
+              />
+            ) : null,
           ]}
         />
       </div>
