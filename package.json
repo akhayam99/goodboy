@@ -17,7 +17,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
+    "lint": "turbo run lint && pnpm run check:tauri-commands",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test --continue",
     "tauri:dev": "pnpm --filter @goodboy/desktop tauri:dev",
@@ -25,6 +25,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "knip": "knip",
+    "check:tauri-commands": "node scripts/check-tauri-commands.mjs",
     "prepare": "lefthook install"
   },
   "devDependencies": {
