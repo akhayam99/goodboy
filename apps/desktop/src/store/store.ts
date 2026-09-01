@@ -207,8 +207,6 @@ export type {
   SessionLoadingFlags,
   SessionNudge,
   SummarizerSessionStatus,
-  SystemAlert,
-  SystemAlertKind,
   PendingOrchestration,
 } from './types';
 
@@ -607,7 +605,6 @@ export type AppActions = {
   clearAgentQueue(agentId: AgentId): void;
   deleteAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
   wipeLocalDatabase(): Promise<void>;
-  dismissSystemAlert(id: string): void;
   loadWorkspaceOverrides(workspaceId: WorkspaceId): Promise<void>;
   setWorkspaceOverrides(workspaceId: WorkspaceId, overrides: OverrideSettings): Promise<void>;
   setWorkspaceProviderBinding(
@@ -964,7 +961,6 @@ export const initialState: AppState = {
   clusterStartAttempts: {},
   unknownPayloadCounts: {},
   detectedEditors: [],
-  systemAlerts: [],
   workspaceOverrides: {},
   sessionOverrides: {},
   sidebarWorkspaceSearch: '',

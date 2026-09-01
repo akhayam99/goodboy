@@ -125,7 +125,6 @@ export const NON_SESSION_STATE_KEYS = [
   'budgetRules',
   'providerSpendBreakdown',
   'budgetAlerts',
-  'systemAlerts',
   'skills',
   'projectScripts',
   'phaseTemplates',
