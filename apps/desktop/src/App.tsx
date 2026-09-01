@@ -1,26 +1,14 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { AppFooter } from './app/components/AppFooter';
-import type {
-  PlanId,
-  ProviderId,
-  ProviderLifecycleAction,
-  SessionId,
-  WorkspaceId,
-} from '@goodboy/types';
-import { CommandPalette } from './features/session/components/CommandPalette';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { BootSplash } from './app/components/BootSplash';
 import { KeepAliveWorkSurface } from './app/components/KeepAliveWorkSurface';
 import { AppTopBar } from './app/components/AppTopBar';
 import { useAppShortcuts } from './app/hooks/useAppShortcuts';
+import { useAppOverlays } from './app/hooks/useAppOverlays';
 import { NoWorkspaceScreen } from './app/components/AppEmptyState';
 import { StageBoard } from './features/workspace/components/StageBoard';
-import { DeleteSessionConfirm } from './features/session/components/DeleteSessionConfirm';
-import { ArchiveSessionConfirm } from './features/session/components/ArchiveSessionConfirm';
-import { SettingsStudio } from './features/settings/components/SettingsStudio';
-import { GuideStudio } from './features/settings/components/GuideStudio';
-import { ReportIssueStudio } from './features/settings/components/ReportIssueStudio';
-import { WorkspaceSettingsPane } from './features/workspace/components/WorkspaceSettingsPane';
 import { ToastProvider } from './app/components/Toast';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
 import { WorkflowFollowToastBridge } from './features/workflows/components/WorkflowFollowToastBridge';
@@ -29,55 +17,25 @@ import { NewSessionBridge } from './features/session/components/NewSessionBridge
 import { CollapsedRail } from './features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
-import { WorkspaceLinkStudio } from './features/workspace/components/WorkspaceLinkStudio';
-import { ConvertWorkspaceDialog } from './features/workspace/components/ConvertWorkspaceDialog';
-import { WorkspaceLauncher } from './features/workspace/components/WorkspaceLauncher';
 import { isMainWindow } from './features/workspace/window';
 import { primaryProjectRoot } from './features/workspace/primaryProjectRoot';
-import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
-import { GitHubStudio } from './features/github/components/GitHubStudio';
-import { LinearStudio } from './features/integrations/linear/LinearStudio';
-import { SentryStudio } from './features/integrations/sentry/SentryStudio';
-import { BitbucketWorkspaceStudio } from './features/integrations/bitbucket/BitbucketWorkspaceStudio';
-import { GitlabStudio } from './features/integrations/gitlab/GitlabStudio';
-import { JiraStudio } from './features/integrations/jira/JiraStudio';
-import { SlackStudio } from './features/integrations/slack/SlackStudio';
-import { ProviderStudio } from './features/providers/components/ProviderStudio';
-import { BudgetStudio } from './features/budget/components/BudgetStudio';
-import type { BudgetScope } from './features/budget/components/BudgetStudio/lib';
-import { ImpactStudio } from './features/impact/components/ImpactStudio';
-import { ChangelogStudio } from './features/changelog/components/ChangelogStudio';
 import { ReleaseToast } from './features/changelog/components/ReleaseToast';
-import { NotificationsStudio } from './features/notifications/components/NotificationsStudio';
-import { NOTIFICATIONS_STUDIO_EVENT } from './features/notifications/studioEvent';
-import { REPORT_ISSUE_STUDIO_EVENT } from './features/settings/reportIssueStudioEvent';
-import { DiffViewerDialog } from './features/permissions/components/DiffViewerDialog';
-import { ghCommitDiff } from './features/github/github';
-import { worktreeDiffCommit } from './features/worktree/worktree';
 import { OnboardingCard } from './features/onboarding/OnboardingCard';
-import { OnboardingWizard } from './features/onboarding/OnboardingWizard';
-import { CompanionStudio } from './features/companion/CompanionStudio';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { listenProjectMaterializeRequests } from './features/session/projectMaterializeBridge';
-import { markStepComplete } from './features/onboarding/onboarding-store';
-import { OPEN_COMMAND_PALETTE_EVENT } from './features/onboarding/openCommandPaletteEvent';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
 import { useZoomShortcuts } from './shared/hooks/useZoomShortcuts';
-import { useCommitLinkInterceptor } from './shared/hooks/useCommitLinkInterceptor';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
 import {
   useAppStore,
   useCurrentSession,
   useCurrentWorkspace,
-  useSessionById,
   useSessions,
   useWorkspaces,
 } from './store';
 import { useGithubPolling } from './features/github/hooks/useGithubPolling';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
 import { useGithubConnection } from './features/integrations/github/useGithubConnection';
-import { resolveSessionRepo } from './store/slices/worktrees/resolveSessionRepo';
-import { resolveOpenDiffViewerEvent } from './store/slices/session-view/openDiffViewerEvent';
 import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
 
 const KEEP_ALIVE_CAP = 5;
@@ -134,87 +92,38 @@ export const App = () => {
       (i) => i.provider === 'slack',
     ),
   );
-  const [companionOpen, setCompanionOpen] = useState(false);
-  const [appSettingsOpen, setAppSettingsOpen] = useState(false);
-  const [appSettingsFocus, setAppSettingsFocus] = useState<string | undefined>(undefined);
-  const [guideStudioOpen, setGuideStudioOpen] = useState(false);
-  const [reportIssueStudioOpen, setReportIssueStudioOpen] = useState(false);
-  const [workspaceSettingsOpen, setWorkspaceSettingsOpen] = useState(false);
-  const [workspaceSettingsFocus, setWorkspaceSettingsFocus] = useState<string | undefined>(
-    undefined,
-  );
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteSessionId, setDeleteSessionId] = useState<SessionId | null>(null);
-  const [archiveOpen, setArchiveOpen] = useState(false);
-  const [archiveSessionId, setArchiveSessionId] = useState<SessionId | null>(null);
-  const deleteTargetSession = useSessionById(deleteSessionId);
-  const archiveTargetSession = useSessionById(archiveSessionId);
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const [palettePrefix, setPalettePrefix] = useState('');
-  const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
-  const [convertWorkspaceOpen, setConvertWorkspaceOpen] = useState(false);
-  const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
-  const [linearStudioOpen, setLinearStudioOpen] = useState(false);
-  const [linearStudioFocus, setLinearStudioFocus] = useState<string | null>(null);
-  const [sentryStudioOpen, setSentryStudioOpen] = useState(false);
-  const [sentryStudioFocus, setSentryStudioFocus] = useState<string | null>(null);
-  const [gitlabStudioOpen, setGitlabStudioOpen] = useState(false);
-  const [gitlabStudioFocus, setGitlabStudioFocus] = useState<string | null>(null);
-  const [jiraStudioOpen, setJiraStudioOpen] = useState(false);
-  const [jiraStudioFocus, setJiraStudioFocus] = useState<string | null>(null);
-  const [bitbucketStudioOpen, setBitbucketStudioOpen] = useState(false);
-  const [slackStudioOpen, setSlackStudioOpen] = useState(false);
-  const [slackStudioFocus, setSlackStudioFocus] = useState<string | null>(null);
-  const [providerStudioOpen, setProviderStudioOpen] = useState(false);
-  const [providerStudioFocus, setProviderStudioFocus] = useState<ProviderId | null>(null);
-  const [providerStudioAction, setProviderStudioAction] = useState<ProviderLifecycleAction | null>(
-    null,
-  );
-  const [githubStudioOpen, setGithubStudioOpen] = useState(false);
-  const [githubStudioSession, setGithubStudioSession] = useState<SessionId | null>(null);
-  const [githubStudioPrNumber, setGithubStudioPrNumber] = useState<number | null>(null);
-  const [githubStudioThreadId, setGithubStudioThreadId] = useState<string | null>(null);
-  const [githubStudioIssueId, setGithubStudioIssueId] = useState<string | null>(null);
-  const [githubStudioTab, setGithubStudioTab] = useState<'pull-requests' | 'issues' | null>(null);
-  const [budgetStudioOpen, setBudgetStudioOpen] = useState(false);
-  const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
-  const [impactStudioOpen, setImpactStudioOpen] = useState(false);
-  const [changelogStudioOpen, setChangelogStudioOpen] = useState(false);
-  const [notificationsStudioOpen, setNotificationsStudioOpen] = useState(false);
-  const setSessionStudio = useAppStore((s) => s.setSessionStudio);
-  const clearSessionStudio = useCallback(() => {
-    const id = useAppStore.getState().currentSessionId;
-    if (id) {
-      useAppStore.getState().setSessionStudio(id, null);
-    }
-  }, []);
-  const { commitDiff, setCommitDiff } = useCommitLinkInterceptor();
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
-
-  const closeAllStudios = useCallback(() => {
-    setWorkflowStudioOpen(false);
-    setGithubStudioOpen(false);
-    setProviderStudioOpen(false);
-    setBudgetStudioOpen(false);
-    setImpactStudioOpen(false);
-    setChangelogStudioOpen(false);
-    setNotificationsStudioOpen(false);
-    setLinearStudioOpen(false);
-    setSentryStudioOpen(false);
-    setGitlabStudioOpen(false);
-    setJiraStudioOpen(false);
-    setBitbucketStudioOpen(false);
-    setSlackStudioOpen(false);
-    setAppSettingsOpen(false);
-    setGuideStudioOpen(false);
-    setReportIssueStudioOpen(false);
-    setAddWorkspaceOpen(false);
-  }, []);
-
-  const openAddWorkspace = useCallback(() => {
-    closeAllStudios();
-    setAddWorkspaceOpen(true);
-  }, [closeAllStudios]);
+  const isWorkspaceLauncherBranch = hasWorkspaces && currentWorkspace === null && isMainWindow();
+  const {
+    activeStudio,
+    armArchiveConfirm,
+    armDeleteConfirm,
+    openAddWorkspace,
+    openBitbucket,
+    openBudget,
+    openChangelog,
+    openGithub,
+    openGitlab,
+    openImpact,
+    openJira,
+    openLinear,
+    openPalette,
+    openProviders,
+    openSentry,
+    openSettings,
+    openShortcutHelp,
+    openSlack,
+    openWorkflows,
+    overlays,
+    workspaceSettingsOverlay,
+  } = useAppOverlays({
+    currentSession,
+    currentWorkspace,
+    workspaceProjectRoot,
+    isSessionSidebarCollapsed: sessionSidebar.isCollapsed,
+    isWorkspaceLauncherBranch,
+    pinSessionSidebar: sessionSidebar.pin,
+  });
 
   useEffect(() => {
     void hydrate();
@@ -229,268 +138,6 @@ export const App = () => {
   useWindowPresence();
   useZoomShortcuts();
   useUnhandledRejectionNotice();
-
-  useEffect(() => {
-    const onOpenSettings = (event: Event) => {
-      const detail = (event as CustomEvent<{ section?: string }>).detail;
-      closeAllStudios();
-      setAppSettingsFocus(detail?.section);
-      setAppSettingsOpen(true);
-    };
-    const onOpenGuide = () => {
-      closeAllStudios();
-      setGuideStudioOpen(true);
-    };
-    const onOpenReportIssue = () => {
-      closeAllStudios();
-      setReportIssueStudioOpen(true);
-    };
-    const onOpenGithubStudio = (event: Event) => {
-      const detail = (
-        event as CustomEvent<{
-          sessionId?: SessionId;
-          prNumber?: number;
-          threadId?: string;
-          issueExternalId?: string;
-          tab?: 'pull-requests' | 'issues';
-        }>
-      ).detail;
-      closeAllStudios();
-      setGithubStudioSession(detail?.sessionId ?? null);
-      setGithubStudioPrNumber(detail?.prNumber ?? null);
-      setGithubStudioThreadId(detail?.threadId ?? null);
-      setGithubStudioIssueId(detail?.issueExternalId ?? null);
-      setGithubStudioTab(detail?.tab ?? null);
-      setGithubStudioOpen(true);
-    };
-    const onOpenPlanStudio = (event: Event) => {
-      const detail = (event as CustomEvent<{ sessionId?: SessionId; planId?: PlanId }>).detail;
-      if (!detail?.sessionId) {
-        return;
-      }
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      const state = useAppStore.getState();
-      state.setFocusedPlanId(detail.sessionId, detail.planId ?? null);
-      state.setActiveLens(detail.sessionId, 'plans');
-    };
-    const onOpenDiffViewer = (event: Event) => {
-      const detail = (event as CustomEvent<{ sessionId?: SessionId; workingDir?: string }>).detail;
-      const resolved = resolveOpenDiffViewerEvent({ detail });
-      if (resolved === null) {
-        return;
-      }
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      useAppStore.getState().openDiffLens(resolved.sessionId, resolved.focus);
-    };
-    const onOpenProviderStudio = (event: Event) => {
-      const detail = (
-        event as CustomEvent<{ providerId?: ProviderId; action?: ProviderLifecycleAction }>
-      ).detail;
-      closeAllStudios();
-      setProviderStudioFocus(detail?.providerId ?? null);
-      setProviderStudioAction(detail?.action ?? null);
-      setProviderStudioOpen(true);
-    };
-    const onOpenBudgetStudio = (event: Event) => {
-      const detail = (event as CustomEvent<{ scope?: BudgetScope }>).detail;
-      closeAllStudios();
-      setBudgetStudioScope(detail?.scope);
-      setBudgetStudioOpen(true);
-    };
-    const onOpenLinearStudio = (event: Event) => {
-      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
-      closeAllStudios();
-      setLinearStudioFocus(detail?.issueExternalId ?? null);
-      setLinearStudioOpen(true);
-    };
-    const onOpenSentryStudio = (event: Event) => {
-      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
-      closeAllStudios();
-      setSentryStudioFocus(detail?.issueExternalId ?? null);
-      setSentryStudioOpen(true);
-    };
-    const onOpenGitlabStudio = (event: Event) => {
-      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
-      closeAllStudios();
-      setGitlabStudioFocus(detail?.issueExternalId ?? null);
-      setGitlabStudioOpen(true);
-    };
-    const onOpenJiraStudio = (event: Event) => {
-      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
-      closeAllStudios();
-      setJiraStudioFocus(detail?.issueExternalId ?? null);
-      setJiraStudioOpen(true);
-    };
-    const onRevealChat = () => {
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      const state = useAppStore.getState();
-      const sid = state.currentSessionId;
-      if (sid) {
-        state.setSessionStudio(sid, null);
-      }
-    };
-    const onAddWorkspace = () => openAddWorkspace();
-    const onPairDevice = () => setCompanionOpen(true);
-    const onOpenNotificationsStudio = () => {
-      closeAllStudios();
-      setNotificationsStudioOpen(true);
-    };
-    window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, onOpenNotificationsStudio);
-    window.addEventListener('goodboy:open-settings', onOpenSettings);
-    window.addEventListener('goodboy:open-guide', onOpenGuide);
-    window.addEventListener(REPORT_ISSUE_STUDIO_EVENT, onOpenReportIssue);
-    window.addEventListener('goodboy:open-github-studio', onOpenGithubStudio);
-    window.addEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
-    window.addEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
-    window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
-    window.addEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
-    window.addEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
-    window.addEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
-    window.addEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
-    window.addEventListener('goodboy:open-jira-studio', onOpenJiraStudio);
-    window.addEventListener('goodboy:reveal-chat', onRevealChat);
-    window.addEventListener('goodboy:add-workspace', onAddWorkspace);
-    window.addEventListener('goodboy:open-pair-device', onPairDevice);
-    return () => {
-      window.removeEventListener(NOTIFICATIONS_STUDIO_EVENT, onOpenNotificationsStudio);
-      window.removeEventListener('goodboy:open-settings', onOpenSettings);
-      window.removeEventListener('goodboy:open-guide', onOpenGuide);
-      window.removeEventListener(REPORT_ISSUE_STUDIO_EVENT, onOpenReportIssue);
-      window.removeEventListener('goodboy:open-github-studio', onOpenGithubStudio);
-      window.removeEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
-      window.removeEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
-      window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
-      window.removeEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
-      window.removeEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
-      window.removeEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
-      window.removeEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
-      window.removeEventListener('goodboy:open-jira-studio', onOpenJiraStudio);
-      window.removeEventListener('goodboy:reveal-chat', onRevealChat);
-      window.removeEventListener('goodboy:add-workspace', onAddWorkspace);
-      window.removeEventListener('goodboy:open-pair-device', onPairDevice);
-    };
-  }, [closeAllStudios, openAddWorkspace]);
-
-  useEffect(() => {
-    if (!archiveOpen && !deleteOpen) {
-      return;
-    }
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
-        return;
-      }
-      setArchiveOpen(false);
-      setDeleteOpen(false);
-    };
-    window.addEventListener('keydown', onEscape);
-    return () => window.removeEventListener('keydown', onEscape);
-  }, [archiveOpen, deleteOpen]);
-
-  useEffect(() => {
-    const handler = () => {
-      closeAllStudios();
-      setWorkflowStudioOpen(true);
-    };
-    window.addEventListener('goodboy:open-workflow-studio', handler);
-    return () => window.removeEventListener('goodboy:open-workflow-studio', handler);
-  }, [closeAllStudios]);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ section?: string }>).detail;
-      if (workspaceSettingsOpen && detail?.section === undefined) {
-        setWorkspaceSettingsOpen(false);
-        setWorkspaceSettingsFocus(undefined);
-        return;
-      }
-      setWorkspaceSettingsFocus(detail?.section);
-      clearSessionStudio();
-      setWorkspaceSettingsOpen(true);
-    };
-    window.addEventListener('goodboy:open-workspace-settings', handler);
-    return () => window.removeEventListener('goodboy:open-workspace-settings', handler);
-  }, [workspaceSettingsOpen, clearSessionStudio]);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (
-        event as CustomEvent<{ sessionId?: SessionId; prNumber?: number; threadId?: string }>
-      ).detail;
-      if (!detail?.sessionId) {
-        return;
-      }
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      setSessionStudio(detail.sessionId, {
-        kind: 'github',
-        prNumber: detail.prNumber,
-        threadId: detail.threadId,
-      });
-    };
-    window.addEventListener('goodboy:open-github-session', handler);
-    return () => window.removeEventListener('goodboy:open-github-session', handler);
-  }, [setSessionStudio]);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
-      if (!detail?.sessionId) {
-        return;
-      }
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      setSessionStudio(detail.sessionId, { kind: 'mr' });
-    };
-    window.addEventListener('goodboy:open-gitlab-mr', handler);
-    return () => window.removeEventListener('goodboy:open-gitlab-mr', handler);
-  }, [setSessionStudio]);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
-      if (!detail?.sessionId) {
-        return;
-      }
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      setSessionStudio(detail.sessionId, { kind: 'bitbucket' });
-    };
-    window.addEventListener('goodboy:open-bitbucket-pr', handler);
-    return () => window.removeEventListener('goodboy:open-bitbucket-pr', handler);
-  }, [setSessionStudio]);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
-      if (detail?.sessionId) {
-        setWorkspaceSettingsOpen(false);
-        setWorkspaceSettingsFocus(undefined);
-        setSessionStudio(detail.sessionId, { kind: 'workflow' });
-      }
-    };
-    window.addEventListener('goodboy:open-workflow-builder', handler);
-    return () => window.removeEventListener('goodboy:open-workflow-builder', handler);
-  }, [setSessionStudio]);
-
-  useEffect(() => {
-    const handler = () => {
-      if (!currentWorkspace) {
-        return;
-      }
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      clearSessionStudio();
-      setGithubStudioOpen(false);
-      if (hasActiveSession && sessionSidebar.isCollapsed) {
-        sessionSidebar.pin();
-      }
-    };
-    window.addEventListener('goodboy:new-session', handler);
-    return () => window.removeEventListener('goodboy:new-session', handler);
-  }, [currentWorkspace, clearSessionStudio, hasActiveSession, sessionSidebar]);
 
   useEffect(() => {
     let off: (() => void) | undefined;
@@ -529,12 +176,8 @@ export const App = () => {
   }, [currentWorkspace?.id]);
 
   useEffect(() => {
-    setWorkspaceSettingsOpen(false);
-  }, [currentWorkspace?.id]);
-
-  useEffect(() => {
     const id = currentSession?.id ?? null;
-    if (!id) {
+    if (id === null) {
       return;
     }
     setKeepAliveIds((prev) => {
@@ -546,110 +189,6 @@ export const App = () => {
       return next.length > KEEP_ALIVE_CAP ? next.slice(next.length - KEEP_ALIVE_CAP) : next;
     });
   }, [currentSession?.id]);
-
-  const activeStudio: string | null = workflowStudioOpen
-    ? 'workflow'
-    : githubStudioOpen
-      ? 'github'
-      : providerStudioOpen
-        ? 'provider'
-        : budgetStudioOpen
-          ? 'budget'
-          : impactStudioOpen
-            ? 'impact'
-            : changelogStudioOpen
-              ? 'changelog'
-              : notificationsStudioOpen
-                ? 'notifications'
-                : linearStudioOpen
-                  ? 'linear'
-                  : sentryStudioOpen
-                    ? 'sentry'
-                    : gitlabStudioOpen
-                      ? 'gitlab'
-                      : jiraStudioOpen
-                        ? 'jira'
-                        : bitbucketStudioOpen
-                          ? 'bitbucket'
-                          : slackStudioOpen
-                            ? 'slack'
-                            : appSettingsOpen
-                              ? 'settings'
-                              : guideStudioOpen
-                                ? 'guide'
-                                : null;
-
-  const openSettings = useCallback(() => {
-    closeAllStudios();
-    clearSessionStudio();
-    setAppSettingsFocus(undefined);
-    setAppSettingsOpen(true);
-  }, [closeAllStudios, clearSessionStudio]);
-  const openBudget = useCallback(() => {
-    closeAllStudios();
-    setBudgetStudioScope({ kind: 'overview' });
-    setBudgetStudioOpen(true);
-  }, [closeAllStudios]);
-  const openImpact = useCallback(() => {
-    closeAllStudios();
-    setImpactStudioOpen(true);
-  }, [closeAllStudios]);
-  const openChangelog = useCallback(() => {
-    closeAllStudios();
-    setChangelogStudioOpen(true);
-  }, [closeAllStudios]);
-  const armDeleteConfirm = useCallback(() => {
-    if (currentSession == null) {
-      return;
-    }
-    setDeleteSessionId(currentSession.id);
-    setDeleteOpen(true);
-  }, [currentSession]);
-  const armArchiveConfirm = useCallback(() => {
-    if (currentSession == null) {
-      return;
-    }
-    setArchiveSessionId(currentSession.id);
-    setArchiveOpen(true);
-  }, [currentSession]);
-
-  const openShortcutHelp = useCallback(() => {
-    setAppSettingsFocus('shortcuts');
-    setAppSettingsOpen(true);
-  }, []);
-  const openPalette = useCallback((prefix = '') => {
-    setPalettePrefix(prefix);
-    setPaletteOpen(true);
-    markStepComplete('palette');
-  }, []);
-
-  useEffect(() => {
-    const handler = () => openPalette();
-    window.addEventListener(OPEN_COMMAND_PALETTE_EVENT, handler);
-    return () => window.removeEventListener(OPEN_COMMAND_PALETTE_EVENT, handler);
-  }, [openPalette]);
-  const currentSessionId = useAppStore((s) => s.currentSessionId);
-  const currentSessionWorktree = useAppStore((state) =>
-    currentSessionId == null
-      ? null
-      : (resolveSessionRepo({ state, sessionId: currentSessionId })?.worktreePath ?? null),
-  );
-
-  const commitDiffLoader = useCallback(async () => {
-    if (!commitDiff) {
-      return '';
-    }
-    if (currentSessionWorktree != null) {
-      try {
-        return await worktreeDiffCommit(currentSessionWorktree, commitDiff.sha);
-      } catch (error) {
-        if (commitDiff.repo === '') {
-          throw error;
-        }
-      }
-    }
-    return ghCommitDiff(commitDiff.repo, commitDiff.sha);
-  }, [commitDiff, currentSessionWorktree]);
 
   useAppShortcuts({
     armArchiveConfirm,
@@ -686,18 +225,11 @@ export const App = () => {
     );
   }
 
-  const addWorkspaceSurface = addWorkspaceOpen ? (
-    <WorkspaceLinkStudio
-      onClose={() => setAddWorkspaceOpen(false)}
-      onOfferRepo={() => setConvertWorkspaceOpen(true)}
-    />
-  ) : null;
-
-  if (hasWorkspaces && !currentWorkspace && isMainWindow()) {
+  if (isWorkspaceLauncherBranch) {
     return (
       <ToastProvider>
         <NotificationToastBridge />
-        {addWorkspaceSurface ?? <WorkspaceLauncher />}
+        {overlays}
       </ToastProvider>
     );
   }
@@ -721,55 +253,19 @@ export const App = () => {
               gitlabEnabled={hasGitlab}
               bitbucketEnabled={hasBitbucket}
               slackEnabled={hasSlack}
-              onOpenWorkflows={() => {
-                closeAllStudios();
-                setWorkflowStudioOpen(true);
-              }}
-              onOpenProviders={() => {
-                closeAllStudios();
-                setProviderStudioFocus(null);
-                setProviderStudioAction(null);
-                setProviderStudioOpen(true);
-              }}
+              onOpenWorkflows={openWorkflows}
+              onOpenProviders={openProviders}
               onOpenSettings={openSettings}
               onOpenBudget={openBudget}
               onOpenImpact={openImpact}
               onOpenChangelog={openChangelog}
-              onOpenGithub={() => {
-                closeAllStudios();
-                setGithubStudioSession(currentSession?.id ?? null);
-                setGithubStudioIssueId(null);
-                setGithubStudioOpen(true);
-              }}
-              onOpenLinear={() => {
-                closeAllStudios();
-                setLinearStudioFocus(null);
-                setLinearStudioOpen(true);
-              }}
-              onOpenJira={() => {
-                closeAllStudios();
-                setJiraStudioFocus(null);
-                setJiraStudioOpen(true);
-              }}
-              onOpenSentry={() => {
-                closeAllStudios();
-                setSentryStudioFocus(null);
-                setSentryStudioOpen(true);
-              }}
-              onOpenGitlab={() => {
-                closeAllStudios();
-                setGitlabStudioFocus(null);
-                setGitlabStudioOpen(true);
-              }}
-              onOpenBitbucket={() => {
-                closeAllStudios();
-                setBitbucketStudioOpen(true);
-              }}
-              onOpenSlack={() => {
-                closeAllStudios();
-                setSlackStudioFocus(null);
-                setSlackStudioOpen(true);
-              }}
+              onOpenGithub={openGithub}
+              onOpenLinear={openLinear}
+              onOpenJira={openJira}
+              onOpenSentry={openSentry}
+              onOpenGitlab={openGitlab}
+              onOpenBitbucket={openBitbucket}
+              onOpenSlack={openSlack}
             />
           ) : undefined
         }
@@ -831,203 +327,9 @@ export const App = () => {
           </div>
         }
         rightSidebar={null}
-        overlay={
-          workspaceSettingsOpen && currentWorkspace ? (
-            <WorkspaceSettingsPane
-              workspaceId={currentWorkspace.id}
-              workspaceName={currentWorkspace.name}
-              initialSection={workspaceSettingsFocus}
-              onClose={() => {
-                setWorkspaceSettingsOpen(false);
-                setWorkspaceSettingsFocus(undefined);
-              }}
-            />
-          ) : undefined
-        }
+        overlay={workspaceSettingsOverlay}
       />
-
-      {appSettingsOpen ? (
-        <SettingsStudio
-          initialFocus={appSettingsFocus}
-          onClose={() => {
-            setAppSettingsOpen(false);
-            setAppSettingsFocus(undefined);
-          }}
-        />
-      ) : null}
-      {guideStudioOpen ? <GuideStudio onClose={() => setGuideStudioOpen(false)} /> : null}
-      {reportIssueStudioOpen ? (
-        <ReportIssueStudio onClose={() => setReportIssueStudioOpen(false)} />
-      ) : null}
-      {paletteOpen ? (
-        <CommandPalette
-          initialQuery={palettePrefix}
-          onClose={() => setPaletteOpen(false)}
-          onOpenSettings={() => {
-            openSettings();
-            setPaletteOpen(false);
-          }}
-          onNewSession={() => setPaletteOpen(false)}
-          onOpenProviders={() => {
-            closeAllStudios();
-            setProviderStudioFocus(null);
-            setProviderStudioAction(null);
-            setProviderStudioOpen(true);
-            setPaletteOpen(false);
-          }}
-          onOpenShortcutHelp={() => {
-            openShortcutHelp();
-            setPaletteOpen(false);
-          }}
-        />
-      ) : null}
-      {addWorkspaceSurface}
-      {currentWorkspace ? (
-        <ConvertWorkspaceDialog
-          open={convertWorkspaceOpen}
-          workspace={currentWorkspace}
-          onClose={() => setConvertWorkspaceOpen(false)}
-        />
-      ) : null}
-      {workflowStudioOpen && currentWorkspace ? (
-        <WorkflowStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          onClose={() => setWorkflowStudioOpen(false)}
-        />
-      ) : null}
-      {githubStudioOpen && currentWorkspace ? (
-        <GitHubStudio
-          workspaceId={currentWorkspace.id}
-          rootPath={workspaceProjectRoot ?? ''}
-          workspaceName={currentWorkspace.name}
-          initialSessionId={githubStudioSession}
-          initialPrNumber={githubStudioPrNumber}
-          initialThreadId={githubStudioThreadId}
-          initialIssueExternalId={githubStudioIssueId}
-          initialTab={githubStudioTab}
-          onClose={() => setGithubStudioOpen(false)}
-        />
-      ) : null}
-      {providerStudioOpen && currentWorkspace ? (
-        <ProviderStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          initialFocus={providerStudioFocus}
-          initialAction={providerStudioAction}
-          onClose={() => {
-            setProviderStudioOpen(false);
-            setProviderStudioAction(null);
-          }}
-        />
-      ) : null}
-      {budgetStudioOpen && currentWorkspace ? (
-        <BudgetStudio
-          workspaceName={currentWorkspace.name}
-          initialScope={budgetStudioScope}
-          onClose={() => setBudgetStudioOpen(false)}
-        />
-      ) : null}
-      {impactStudioOpen && currentWorkspace ? (
-        <ImpactStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          onClose={() => setImpactStudioOpen(false)}
-        />
-      ) : null}
-      {changelogStudioOpen && currentWorkspace ? (
-        <ChangelogStudio
-          workspaceName={currentWorkspace.name}
-          onClose={() => setChangelogStudioOpen(false)}
-        />
-      ) : null}
-      {notificationsStudioOpen && currentWorkspace ? (
-        <NotificationsStudio
-          workspaceName={currentWorkspace.name}
-          onClose={() => setNotificationsStudioOpen(false)}
-        />
-      ) : null}
-      {linearStudioOpen && currentWorkspace ? (
-        <LinearStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          initialIssueId={linearStudioFocus}
-          onClose={() => setLinearStudioOpen(false)}
-        />
-      ) : null}
-      {sentryStudioOpen && currentWorkspace ? (
-        <SentryStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          initialIssueId={sentryStudioFocus}
-          onClose={() => setSentryStudioOpen(false)}
-        />
-      ) : null}
-      {gitlabStudioOpen && currentWorkspace ? (
-        <GitlabStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          initialIssueId={gitlabStudioFocus}
-          onClose={() => setGitlabStudioOpen(false)}
-        />
-      ) : null}
-      {jiraStudioOpen && currentWorkspace ? (
-        <JiraStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          initialIssueId={jiraStudioFocus}
-          onClose={() => setJiraStudioOpen(false)}
-        />
-      ) : null}
-      {bitbucketStudioOpen && currentWorkspace ? (
-        <BitbucketWorkspaceStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          onClose={() => setBitbucketStudioOpen(false)}
-        />
-      ) : null}
-      {slackStudioOpen && currentWorkspace ? (
-        <SlackStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          initialThreadTs={slackStudioFocus}
-          onClose={() => setSlackStudioOpen(false)}
-        />
-      ) : null}
-      {commitDiff ? (
-        <DiffViewerDialog
-          open
-          onClose={() => setCommitDiff(null)}
-          title={`Commit ${commitDiff.sha.slice(0, 7)}`}
-          loader={commitDiffLoader}
-        />
-      ) : null}
-      {deleteTargetSession && deleteOpen ? (
-        <div className="fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-background shadow-lg">
-          <DeleteSessionConfirm
-            session={deleteTargetSession}
-            onClose={() => {
-              setDeleteOpen(false);
-              setDeleteSessionId(null);
-            }}
-          />
-        </div>
-      ) : null}
-      {archiveTargetSession && archiveOpen ? (
-        <div className="fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-background shadow-lg">
-          <ArchiveSessionConfirm
-            session={archiveTargetSession}
-            onClose={() => {
-              setArchiveOpen(false);
-              setArchiveSessionId(null);
-            }}
-          />
-        </div>
-      ) : null}
-
-      {companionOpen ? <CompanionStudio onClose={() => setCompanionOpen(false)} /> : null}
-
-      <OnboardingWizard />
+      {overlays}
     </ToastProvider>
   );
 };
