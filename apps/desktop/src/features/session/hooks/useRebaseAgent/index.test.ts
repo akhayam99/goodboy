@@ -125,10 +125,18 @@ describe('useRebaseAgent', () => {
       sessionId,
       expect.objectContaining({
         name: 'Rebase on main',
-        initialPrompt: expect.stringContaining('Rebase this session branch onto origin/main.'),
+        initialPrompt: expect.stringContaining(
+          '- Push the rebased branch with "$GOODBOY_BIN" query github push --force-with-lease; fall back to git push --force-with-lease only if the bridge is unavailable.',
+        ),
         provider: 'codex',
         model: 'gpt-5.4',
         effort: 'low',
+      }),
+    );
+    expect(state.spawnAgent).toHaveBeenCalledWith(
+      sessionId,
+      expect.objectContaining({
+        initialPrompt: expect.stringContaining('- Fetch origin main before rebasing.'),
       }),
     );
     expect(state.selectAgent).not.toHaveBeenCalled();
