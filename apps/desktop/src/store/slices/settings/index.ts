@@ -1,4 +1,3 @@
-import { dismissSystemAlert } from './dismissSystemAlert';
 import { exportConfig } from './exportConfig';
 import { importConfig } from './importConfig';
 import { loadSetting } from './loadSetting';
@@ -11,6 +10,5 @@ export const createSettingsSlice = (set: SetFn, _get: GetFn) => {
     saveSetting: saveSetting(set),
     exportConfig: exportConfig(),
     importConfig: importConfig(),
-    dismissSystemAlert: dismissSystemAlert(set),
   };
 };

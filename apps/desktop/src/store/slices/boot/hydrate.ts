@@ -200,7 +200,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           detail: `ms=${Date.now() - bootStartedAt},ok`,
         });
 
-        void drainAuditRetryQueue(set);
+        void drainAuditRetryQueue(get);
 
         void get()
           .reconcileOrphanWorktrees()
