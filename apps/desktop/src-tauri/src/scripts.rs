@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
@@ -42,12 +43,31 @@ struct ScriptExitPayload {
 
 type PtySlot = Arc<Mutex<Option<PtyRun>>>;
 
+struct ScriptSlot {
+    run: PtySlot,
+    metadata: LiveScriptRun,
+}
+
+#[derive(Serialize, Clone, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct LiveScriptRun {
+    run_id: String,
+    script_id: String,
+    session_id: String,
+    started_at: u64,
+}
+
 #[derive(Default)]
-pub struct ScriptRegistry(Arc<Mutex<HashMap<String, PtySlot>>>);
+pub struct ScriptRegistry(Arc<Mutex<HashMap<String, ScriptSlot>>>);
 
 impl ScriptRegistry {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    fn list_live(&self) -> Result<Vec<LiveScriptRun>, ScriptError> {
+        let map = self.0.lock().map_err(|_| ScriptError::Poisoned)?;
+        Ok(map.values().map(|slot| slot.metadata.clone()).collect())
     }
 }
 
@@ -55,7 +75,7 @@ impl ScriptRegistry {
 /// leader. Killing the leader alone leaves grandchildren holding ports.
 pub fn shutdown(registry: &ScriptRegistry) {
     let slots: Vec<PtySlot> = match registry.0.lock() {
-        Ok(mut map) => map.drain().map(|(_, slot)| slot).collect(),
+        Ok(mut map) => map.drain().map(|(_, slot)| slot.run).collect(),
         Err(_) => return,
     };
     for slot in slots {
@@ -138,6 +158,7 @@ pub async fn workspace_script_run(
     registry: State<'_, ScriptRegistry>,
     script_id: String,
     run_id: String,
+    session_id: String,
     cwd: String,
     cols: u16,
     rows: u16,
@@ -188,10 +209,27 @@ pub async fn workspace_script_run(
             child,
         })));
 
+        let started_at = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|e| ScriptError::Io(e.to_string()))?
+            .as_millis() as u64;
+        let metadata = LiveScriptRun {
+            run_id: run_id.clone(),
+            script_id: script_id.clone(),
+            session_id,
+            started_at,
+        };
+
         registry_arc
             .lock()
             .map_err(|_| ScriptError::Poisoned)?
-            .insert(run_id.clone(), Arc::clone(&slot));
+            .insert(
+                run_id.clone(),
+                ScriptSlot {
+                    run: Arc::clone(&slot),
+                    metadata,
+                },
+            );
 
         let run_id_r = run_id.clone();
         let app_r = app.clone();
@@ -219,7 +257,9 @@ pub async fn workspace_script_run(
             let exit_code = {
                 let slot = {
                     let guard = registry_r.lock().ok();
-                    guard.as_ref().and_then(|m| m.get(&run_id_r).cloned())
+                    guard
+                        .as_ref()
+                        .and_then(|m| m.get(&run_id_r).map(|slot| Arc::clone(&slot.run)))
                 };
                 if let Some(slot) = slot {
                     let mut g = slot.lock().unwrap_or_else(|e| e.into_inner());
@@ -251,6 +291,13 @@ pub async fn workspace_script_run(
     .map_err(|e| ScriptError::Io(e.to_string()))?
 }
 
+#[tauri::command]
+pub fn workspace_script_list_live(
+    registry: State<'_, ScriptRegistry>,
+) -> Result<Vec<LiveScriptRun>, ScriptError> {
+    registry.list_live()
+}
+
 // ---------------------------------------------------------------------------
 // Command — send keyboard input to a running pty
 // ---------------------------------------------------------------------------
@@ -267,7 +314,7 @@ pub fn workspace_script_write(
 
     let slot = {
         let map = registry.0.lock().map_err(|_| ScriptError::Poisoned)?;
-        map.get(&run_id).cloned()
+        map.get(&run_id).map(|slot| Arc::clone(&slot.run))
     };
 
     if let Some(slot) = slot {
@@ -293,7 +340,7 @@ pub fn workspace_script_resize(
 ) -> Result<(), ScriptError> {
     let slot = {
         let map = registry.0.lock().map_err(|_| ScriptError::Poisoned)?;
-        map.get(&run_id).cloned()
+        map.get(&run_id).map(|slot| Arc::clone(&slot.run))
     };
 
     if let Some(slot) = slot {
@@ -324,7 +371,7 @@ pub fn workspace_script_cancel(
 ) -> Result<(), ScriptError> {
     let slot = {
         let mut map = registry.0.lock().map_err(|_| ScriptError::Poisoned)?;
-        map.remove(&run_id)
+        map.remove(&run_id).map(|slot| slot.run)
     };
     if let Some(slot) = slot {
         if let Ok(mut guard) = slot.lock() {
@@ -395,5 +442,25 @@ mod tests {
                 .map(|v| v.to_string_lossy().into_owned()),
             Some("/stale".to_string())
         );
+    }
+
+    #[test]
+    fn registry_retains_and_lists_live_run_metadata() {
+        let registry = ScriptRegistry::new();
+        let metadata = LiveScriptRun {
+            run_id: "run-1".to_string(),
+            script_id: "script-1".to_string(),
+            session_id: "session-1".to_string(),
+            started_at: 1234,
+        };
+        registry.0.lock().unwrap().insert(
+            metadata.run_id.clone(),
+            ScriptSlot {
+                run: Arc::new(Mutex::new(None)),
+                metadata: metadata.clone(),
+            },
+        );
+
+        assert_eq!(registry.list_live().unwrap(), vec![metadata]);
     }
 }

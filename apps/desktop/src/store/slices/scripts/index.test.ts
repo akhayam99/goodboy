@@ -65,6 +65,16 @@ const listProjectScriptsSpy = vi.fn(async () => [] as ReadonlyArray<ProjectScrip
 const upsertProjectScriptSpy = vi.fn(async () => undefined);
 const deleteProjectScriptSpy = vi.fn(async () => undefined);
 const invokeScriptRunSpy: ReturnType<typeof vi.fn> = vi.fn(async () => undefined);
+const invokeScriptListLiveSpy = vi.fn<
+  () => Promise<
+    ReadonlyArray<{
+      runId: string;
+      scriptId: ProjectScriptId;
+      sessionId: SessionId;
+      startedAt: number;
+    }>
+  >
+>(async () => []);
 let scriptExitHandler: ((payload: { runId: string; exitCode: number }) => void) | null = null;
 const listenScriptExitSpy = vi.fn(
   async (handler: (payload: { runId: string; exitCode: number }) => void) => {
@@ -341,6 +351,7 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 
 vi.mock('../../../features/scripts/scripts', () => ({
   invokeScriptRun: invokeScriptRunSpy,
+  invokeScriptListLive: invokeScriptListLiveSpy,
   invokeScriptCancel: vi.fn(async () => undefined),
   listenScriptOutput: vi.fn(async () => () => undefined),
   listenScriptExit: listenScriptExitSpy,
@@ -476,6 +487,7 @@ describe('store contract', () => {
     invokeWorkspacesWithUnreadSpy.mockResolvedValue([]);
     listProjectScriptsSpy.mockResolvedValue([]);
     scriptExitHandler = null;
+    invokeScriptListLiveSpy.mockResolvedValue([]);
     listIntegrationBindingsForWorkspaceSpy.mockResolvedValue([]);
     listDiffCommentsSpy.mockResolvedValue([]);
     dbGetSettingSpy.mockResolvedValue(null);
@@ -695,14 +707,15 @@ describe('store contract', () => {
         .getState()
         .runScript({ sessionId: SESSION_ID, scriptId: script.id });
       await vi.waitFor(() => expect(invokeScriptRunSpy).toHaveBeenCalledOnce());
-      const runId = invokeScriptRunSpy.mock.calls[0]?.[1];
+      const invocation = invokeScriptRunSpy.mock.calls[0]?.[0];
+      const runId = invocation?.runId;
       if (runId === undefined || scriptExitHandler === null) {
         throw new Error('script listeners were not ready');
       }
       scriptExitHandler({ runId, exitCode: 0 });
       await resultPromise;
 
-      expect(invokeScriptRunSpy.mock.calls[0]?.[2]).toBe('/sessions/one/web');
+      expect(invocation?.cwd).toBe('/sessions/one/web');
     });
 
     it('runScript records an error and refuses to invoke when the project is unmounted', async () => {
@@ -729,6 +742,28 @@ describe('store contract', () => {
       expect(invokeScriptRunSpy).not.toHaveBeenCalled();
       expect(store.getState().scriptRuns[SESSION_ID]?.[script.id]?.status).toBe('error');
       expect(result.stderr).toBe('repo is not mounted in this session');
+    });
+
+    it('reattaches a live script run and completes it from the recovered exit listener', async () => {
+      const store = await getStore();
+      const scriptId = 'sc-live' as ProjectScriptId;
+      invokeScriptListLiveSpy.mockResolvedValueOnce([
+        { runId: 'run-live', scriptId, sessionId: SESSION_ID, startedAt: 1234 },
+      ]);
+
+      await store.getState().reattachScriptRuns();
+
+      expect(store.getState().scriptRuns[SESSION_ID]?.[scriptId]).toEqual({
+        status: 'pending',
+        result: null,
+        runId: 'run-live',
+        startedAt: 1234,
+      });
+      if (scriptExitHandler === null) {
+        throw new Error('script exit listener was not restored');
+      }
+      scriptExitHandler({ runId: 'run-live', exitCode: 0 });
+      expect(store.getState().scriptRuns[SESSION_ID]?.[scriptId]?.status).toBe('ok');
     });
   });
 });
