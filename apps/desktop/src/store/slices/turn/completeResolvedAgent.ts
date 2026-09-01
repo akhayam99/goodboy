@@ -123,6 +123,24 @@ export const completeResolvedAgent = async ({
       [resolvedAgentId]: nextOutcomes,
     },
   }));
+  for (const [threadId, outcome] of Object.entries(turnOutcomes)) {
+    if (outcome.kind !== 'resolved') {
+      continue;
+    }
+    const queued = get().sessionPendingResolutions[sessionId]?.find(
+      (resolution) => resolution.threadId === threadId,
+    );
+    if (queued === undefined || queued.commitSha === outcome.commitSha) {
+      continue;
+    }
+    await get().queueResolution(sessionId, {
+      threadId,
+      commitSha: outcome.commitSha,
+      prNumber: queued.prNumber,
+      reply: outcome.reply ?? queued.reply,
+      outcome: 'resolved',
+    });
+  }
   if (markerCount > 0) {
     void get().activateNextResolver(sessionId);
   }

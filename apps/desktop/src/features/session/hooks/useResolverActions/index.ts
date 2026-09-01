@@ -224,8 +224,10 @@ export const useResolverActions = ({
       return;
     }
     if (kind === 'fix' || kind === 'redo' || kind === 'rework' || kind === 'custom') {
+      const queued = pending.find((resolution) => resolution.threadId === threadId);
+      const priorCommitSha = settlement.commitSha ?? queued?.commitSha;
       await sendToAgent({
-        content: resolverThreadFollowUpPrompt({ threadId, intent: kind, notes }),
+        content: resolverThreadFollowUpPrompt({ threadId, intent: kind, notes, priorCommitSha }),
       });
       return;
     }

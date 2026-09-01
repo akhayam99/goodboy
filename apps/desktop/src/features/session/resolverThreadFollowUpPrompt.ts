@@ -4,6 +4,7 @@ type Params = {
   readonly threadId: string;
   readonly intent: ResolverFollowUpIntent;
   readonly notes: string;
+  readonly priorCommitSha?: string;
 };
 
 const reportOne = ({ threadId }: { readonly threadId: string }): ReadonlyArray<string> => [
@@ -12,18 +13,30 @@ const reportOne = ({ threadId }: { readonly threadId: string }): ReadonlyArray<s
   'Leave every other thread you own untouched.',
 ];
 
-const bodyFor = ({ threadId, intent }: Omit<Params, 'notes'>): ReadonlyArray<string> => {
+const amendInstruction = ({ priorCommitSha }: Pick<Params, 'priorCommitSha'>): string | null => {
+  if (priorCommitSha === undefined) {
+    return null;
+  }
+  return `You already resolved this thread with commit ${priorCommitSha}. If that exact commit is still HEAD and \`git branch -r --contains ${priorCommitSha}\` prints nothing, apply the new changes and run \`git commit --amend --no-edit\` to keep one commit for this thread. If HEAD moved past it or a remote contains it, make a normal new commit instead. Never rebase or force-push.`;
+};
+
+const bodyFor = ({
+  threadId,
+  intent,
+  priorCommitSha,
+}: Omit<Params, 'notes'>): ReadonlyArray<string> => {
+  const amend = amendInstruction({ priorCommitSha });
   if (intent === 'fix') {
     return [
       `Closing review thread ${threadId} without a change is not accepted.`,
-      'Implement the change that thread asks for and commit it.',
+      amend ?? 'Implement the change that thread asks for and commit it.',
       ...reportOne({ threadId }),
     ];
   }
   if (intent === 'redo') {
     return [
       `The change you committed for review thread ${threadId} is not the one to keep.`,
-      'Redo it and commit again.',
+      amend ?? 'Redo it and commit again.',
       ...reportOne({ threadId }),
     ];
   }
@@ -42,8 +55,13 @@ const bodyFor = ({ threadId, intent }: Omit<Params, 'notes'>): ReadonlyArray<str
   ];
 };
 
-export const resolverThreadFollowUpPrompt = ({ threadId, intent, notes }: Params): string => {
+export const resolverThreadFollowUpPrompt = ({
+  threadId,
+  intent,
+  notes,
+  priorCommitSha,
+}: Params): string => {
   const trimmed = notes.trim();
-  const body = bodyFor({ threadId, intent }).join(' ');
+  const body = bodyFor({ threadId, intent, priorCommitSha }).join(' ');
   return trimmed === '' ? body : `${body}\n\n${trimmed}`;
 };

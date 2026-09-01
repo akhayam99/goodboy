@@ -1018,6 +1018,8 @@ describe('ResolverDetailPane (resolver decisions)', () => {
     await vi.waitFor(() => expect(h.sendTurn).toHaveBeenCalledTimes(1));
     expect(sentContent()).toContain('PRRT_3');
     expect(sentContent()).toContain('keep the public signature');
+    expect(sentContent()).toContain('abc1234def');
+    expect(sentContent()).toContain('git commit --amend --no-edit');
     expect(h.queueResolution).not.toHaveBeenCalled();
   });
 

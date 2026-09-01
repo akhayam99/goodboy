@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, IsoDateTime, PendingResolution, SessionId } from '@goodboy/types';
 import { buildResolutionReplyBody } from '../github/buildResolutionReplyBody';
 import type { ResolverThreadOutcome } from '../../types';
 import type { GetFn, SetFn } from './types';
@@ -35,6 +35,8 @@ type Harness = {
     agentKindOverride: Record<AgentId, never>;
     resolverState: Record<AgentId, string>;
     resolverThreadOutcomes: Record<AgentId, Record<string, ResolverThreadOutcome>>;
+    sessionPendingResolutions: Record<SessionId, ReadonlyArray<PendingResolution>>;
+    queueResolution: ReturnType<typeof vi.fn>;
     refreshUnreadWorkspaces: ReturnType<typeof vi.fn>;
     activateNextResolver: ReturnType<typeof vi.fn>;
     emitNotification: ReturnType<typeof vi.fn>;
@@ -51,6 +53,8 @@ const createHarness = ({}: HarnessParams): Harness => {
     agentKindOverride: {},
     resolverState: {},
     resolverThreadOutcomes: {},
+    sessionPendingResolutions: {},
+    queueResolution: vi.fn(async () => undefined),
     refreshUnreadWorkspaces: vi.fn(async () => undefined),
     activateNextResolver: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
@@ -160,6 +164,52 @@ describe('completeResolvedAgent', () => {
       reply: 'already covered',
     });
     expect(state.resolverState[AGENT_ID]).toBe('committed');
+  });
+
+  it('requeues an amended sha for a thread that is already in the push batch', async () => {
+    const { state, set, get } = createHarness({});
+    const oldSha = 'aaaaaaaaaaaaaaaa';
+    const newSha = 'bbbbbbbbbbbbbbbb';
+    const queued = {
+      id: 'pending-1',
+      sessionId: SESSION_ID,
+      prNumber: 7,
+      threadId: 'PRRT_1',
+      commitSha: oldSha,
+      reply: 'fixed it',
+      outcome: 'resolved',
+      replyPostedAt: null,
+      createdAt: NOW,
+    } satisfies PendingResolution;
+    state.resolverThreadOutcomes = {
+      [AGENT_ID]: { PRRT_1: { kind: 'resolved', commitSha: oldSha, reply: queued.reply } },
+    };
+    state.sessionPendingResolutions = { [SESSION_ID]: [queued] };
+    state.queueResolution.mockImplementationOnce(async (_sessionId, args) => {
+      state.sessionPendingResolutions = {
+        [SESSION_ID]: [{ ...queued, commitSha: args.commitSha }],
+      };
+    });
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: `<<comment-resolved threadId="PRRT_1" commitSha="${newSha}">>`,
+      now: () => NOW,
+    });
+
+    expect(state.queueResolution).toHaveBeenCalledWith(SESSION_ID, {
+      threadId: 'PRRT_1',
+      commitSha: newSha,
+      prNumber: queued.prNumber,
+      reply: queued.reply,
+      outcome: 'resolved',
+    });
+    expect(state.resolverThreadOutcomes[AGENT_ID]?.PRRT_1).toMatchObject({ commitSha: newSha });
+    expect(state.sessionPendingResolutions[SESSION_ID]).toHaveLength(1);
+    expect(state.sessionPendingResolutions[SESSION_ID]?.[0]?.commitSha).toBe(newSha);
   });
 
   it('does not downgrade a resolved marker for the same thread', async () => {

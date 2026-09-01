@@ -1954,6 +1954,43 @@ describe('store contract', () => {
       expect(result).toEqual({ pushed: true, resolved: 1, failed: 0 });
     });
 
+    it('pushAllResolutions reports the amended sha stored on the queued row', async () => {
+      const store = await getStore();
+      const amended = {
+        id: 'pending-amended',
+        sessionId: SESSION_ID,
+        prNumber: 1,
+        threadId: 'PRRT_1',
+        commitSha: 'bbbbbbbbbbbbbbbb',
+        reply: 'adjusted fix',
+        outcome: 'resolved',
+        replyPostedAt: null,
+        createdAt: NOW,
+      } satisfies PendingResolution;
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        resolverThreadOutcomes: {},
+        sessionPendingResolutions: { [SESSION_ID]: [amended] },
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy
+        .mockResolvedValueOnce([amended])
+        .mockResolvedValueOnce([]);
+
+      const result = await store.getState().pushAllResolutions(SESSION_ID);
+
+      expect(result).toEqual({ pushed: true, resolved: 1, failed: 0 });
+      expect(addReplySpy).toHaveBeenCalledWith(
+        expect.anything(),
+        amended.threadId,
+        expect.stringContaining('bbbbbbb'),
+        expect.anything(),
+      );
+    });
+
     it('pushAllResolutions fails only the fixes when the push is rejected', async () => {
       const store = await getStore();
       const fix = {
