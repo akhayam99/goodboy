@@ -1,5 +1,5 @@
 export const RESOLVER_KICKOFF_LABELS = {
-  headline: /^(?:Resolve|Analyze) \d+ threads? on PR #\d+/,
+  headline: /^Resolve \d+ threads? on PR #\d+/,
   threadHeader: /^Thread (\d+) of (\d+)$/,
   threadId: '- thread id: ',
   author: '- author: ',

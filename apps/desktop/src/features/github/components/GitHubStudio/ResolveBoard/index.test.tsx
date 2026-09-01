@@ -105,12 +105,10 @@ describe('ResolveBoard', () => {
     });
     expect(onSpawnOne).toHaveBeenCalledTimes(1);
     expect(onSpawnOne.mock.calls[0]?.[0]?.head?.id).toBe('c1');
-    expect(onSpawnOne.mock.calls[0]?.[1]).toEqual(
-      expect.objectContaining({ mode: 'fix', hint: '' }),
-    );
+    expect(onSpawnOne.mock.calls[0]?.[1]).toEqual(expect.objectContaining({ hint: '' }));
   });
 
-  it('applies mode and hint from the card popover to that resolver', () => {
+  it('applies the hint from the card popover to that resolver', () => {
     const onSpawnOne = vi.fn<(thread: CommentThread, choice: ResolveModelChoice) => void>();
     render(
       <ResolveBoard
@@ -127,16 +125,13 @@ describe('ResolveBoard', () => {
     });
     expect(screen.getByRole('dialog', { name: 'Configure resolver' })).toBeDefined();
     act(() => {
-      fireEvent.click(screen.getByRole('tab', { name: 'Analyze' }));
-    });
-    act(() => {
       setHint('Avoid schema changes.');
     });
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Resolve comment' }));
     });
     expect(onSpawnOne.mock.calls[0]?.[1]).toEqual(
-      expect.objectContaining({ mode: 'analyze', hint: 'Avoid schema changes.' }),
+      expect.objectContaining({ hint: 'Avoid schema changes.' }),
     );
   });
 
@@ -206,9 +201,6 @@ describe('ResolveBoard', () => {
       fireEvent.click(screen.getByRole('button', { name: /Resolve all with/i }));
     });
     act(() => {
-      fireEvent.click(screen.getByRole('tab', { name: 'Analyze' }));
-    });
-    act(() => {
       setHint('Batch default.');
     });
     act(() => {
@@ -218,10 +210,8 @@ describe('ResolveBoard', () => {
       fireEvent.click(screen.getByRole('button', { name: /Spawn 2 resolvers/i }));
     });
     const choices = onSpawnBatch.mock.calls[0]?.[1];
-    expect(choices?.c1).toEqual(expect.objectContaining({ mode: 'fix', hint: 'Card override.' }));
-    expect(choices?.c2).toEqual(
-      expect.objectContaining({ mode: 'analyze', hint: 'Batch default.' }),
-    );
+    expect(choices?.c1).toEqual(expect.objectContaining({ hint: 'Card override.' }));
+    expect(choices?.c2).toEqual(expect.objectContaining({ hint: 'Batch default.' }));
   });
 
   it('apply-to-all overwrites every per-card override', () => {
@@ -336,10 +326,7 @@ describe('ResolveBoard', () => {
       fireEvent.click(screen.getByRole('button', { name: /Resolve all with/i }));
     });
     act(() => {
-      fireEvent.click(screen.getByRole('tab', { name: 'Analyze' }));
-    });
-    act(() => {
-      setHint('Read only please.');
+      setHint('Avoid schema changes.');
     });
     act(() => {
       closePopover();
@@ -352,7 +339,7 @@ describe('ResolveBoard', () => {
       onSpawnCombined.mock.calls[0]?.[0]?.map((item: CommentThread) => item.head.threadId),
     ).toEqual(['PRRT_1', 'PRRT_2']);
     expect(onSpawnCombined.mock.calls[0]?.[1]).toEqual(
-      expect.objectContaining({ mode: 'analyze', hint: 'Read only please.' }),
+      expect.objectContaining({ hint: 'Avoid schema changes.' }),
     );
   });
 });

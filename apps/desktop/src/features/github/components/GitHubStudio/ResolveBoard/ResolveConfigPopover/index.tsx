@@ -5,26 +5,13 @@ import {
   Divider,
   PopoverBody,
   PopoverFooter,
-  type SegmentedTabOption,
-  SegmentedTabs,
   Textarea,
   useDropdown,
 } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
-import type { ResolveMode } from '../../../../../chat/spawn-from-comment';
 import { PickerSection } from '../../../../../../shared/components/RoutingPicker/PickerSection';
 import { AgentRoutingSections } from '../../../../../session/components/CreateAgentPopover/AgentRoutingSections';
 import { configFor, type CardConfig } from '../config';
-
-const MODE_OPTIONS: ReadonlyArray<SegmentedTabOption<ResolveMode>> = [
-  { label: 'Fix', value: 'fix' },
-  { label: 'Analyze', value: 'analyze' },
-];
-
-const MODE_HINT: Record<ResolveMode, string> = {
-  fix: 'Edits the code and resolves the thread',
-  analyze: 'Read-only: investigates and reports a verdict',
-};
 
 type Props = {
   readonly ariaLabel: string;
@@ -68,19 +55,6 @@ export const ResolveConfigPopover = ({
       trigger={renderTrigger(open, toggle)}
     >
       <PopoverBody>
-        <PickerSection label="Mode" hint={MODE_HINT[config.mode]}>
-          <div className="px-2.5">
-            <SegmentedTabs
-              ariaLabel="Resolver mode"
-              value={config.mode}
-              options={MODE_OPTIONS}
-              onChange={(mode) => onChange({ ...config, mode })}
-              size="sm"
-              fill
-            />
-          </div>
-        </PickerSection>
-        <Divider />
         <PickerSection label="Instructions" hint="Notes the resolver reads before starting">
           <div className="px-2.5">
             <Textarea

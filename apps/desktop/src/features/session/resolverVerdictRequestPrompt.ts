@@ -12,8 +12,7 @@ export const resolverVerdictRequestPrompt = ({ threadIds }: Params): string => {
     'Report each of them now, without redoing the work: state what you decided.',
     'For every id above emit, on its own line, exactly one of',
     '<<comment-resolved threadId="the id" commitSha="the sha you committed">>,',
-    '<<comment-wontfix threadId="the id" reason="one plain-text line">> or',
-    '<<comment-analysis threadId="the id" verdict="fix" summary="one plain-text paragraph">>,',
+    '<<comment-wontfix threadId="the id" reason="one plain-text line">>,',
     'each followed by its own <<comment-reply id="the id">>the reply to post on it<</comment-reply>> block.',
     'Never reuse one reply on another thread id.',
   ].join(' ');
