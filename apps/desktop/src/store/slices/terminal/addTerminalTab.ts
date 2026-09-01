@@ -1,6 +1,17 @@
-import type { SessionId } from '@goodboy/types';
+import type { ProjectId, SessionId } from '@goodboy/types';
 import type { TerminalTab, TerminalTabId } from '../../../shared/types/terminal';
 import type { GetFn, SetFn } from './types';
+
+type ActiveProjectParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+};
+
+const activeProjectId = ({ get, sessionId }: ActiveProjectParams): ProjectId | undefined => {
+  const state = get();
+  const session = state.sessions.find((candidate) => candidate.id === sessionId);
+  return state.sessionActiveProject[sessionId] ?? session?.activeProjectId ?? undefined;
+};
 
 function nextOrdinal(tabs: readonly TerminalTab[]): number {
   let max = 0;
@@ -24,6 +35,7 @@ export const addTerminalTab = (set: SetFn, get: GetFn) => {
       sessionId,
       title: `Terminal ${n}`,
       cwd,
+      projectId: activeProjectId({ get, sessionId }),
       status: 'running',
       createdAt: Date.now(),
     };

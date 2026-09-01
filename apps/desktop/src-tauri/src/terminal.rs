@@ -32,8 +32,13 @@ struct TerminalExitPayload {
 
 type SessionSlot = Arc<Mutex<Option<TerminalSession>>>;
 
+struct TerminalEntry {
+    slot: SessionSlot,
+    cwd: String,
+}
+
 #[derive(Default)]
-pub struct TerminalRegistry(Arc<Mutex<HashMap<String, SessionSlot>>>);
+pub struct TerminalRegistry(Arc<Mutex<HashMap<String, TerminalEntry>>>);
 
 impl TerminalRegistry {
     pub fn new() -> Self {
@@ -42,20 +47,27 @@ impl TerminalRegistry {
 
     fn list_live(&self) -> Result<Vec<LiveTerminal>, TerminalError> {
         let map = self.0.lock().map_err(|_| TerminalError::Poisoned)?;
-        Ok(map.keys().cloned().map(|id| LiveTerminal { id }).collect())
+        Ok(map
+            .iter()
+            .map(|(id, entry)| LiveTerminal {
+                id: id.clone(),
+                cwd: entry.cwd.clone(),
+            })
+            .collect())
     }
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
 pub struct LiveTerminal {
     id: String,
+    cwd: String,
 }
 
 /// Drains every live terminal, killing the whole pty session behind each
 /// leader. Killing the leader alone leaves grandchildren holding ports.
 pub fn shutdown(registry: &TerminalRegistry) {
     let slots: Vec<SessionSlot> = match registry.0.lock() {
-        Ok(mut map) => map.drain().map(|(_, slot)| slot).collect(),
+        Ok(mut map) => map.drain().map(|(_, entry)| entry.slot).collect(),
         Err(_) => return,
     };
     for slot in slots {
@@ -157,8 +169,8 @@ pub async fn terminal_open(
 ) -> Result<(), TerminalError> {
     {
         let map = registry.0.lock().map_err(|_| TerminalError::Poisoned)?;
-        if let Some(slot) = map.get(&session_id) {
-            let guard = slot.lock().map_err(|_| TerminalError::Poisoned)?;
+        if let Some(entry) = map.get(&session_id) {
+            let guard = entry.slot.lock().map_err(|_| TerminalError::Poisoned)?;
             if guard.is_some() {
                 return Ok(());
             }
@@ -220,7 +232,13 @@ pub async fn terminal_open(
         registry_arc
             .lock()
             .map_err(|_| TerminalError::Poisoned)?
-            .insert(session_id_clone.clone(), Arc::clone(&slot));
+            .insert(
+                session_id_clone.clone(),
+                TerminalEntry {
+                    slot: Arc::clone(&slot),
+                    cwd: effective_cwd,
+                },
+            );
 
         let sid = session_id_clone.clone();
         let app_r = app.clone();
@@ -248,7 +266,10 @@ pub async fn terminal_open(
             let exit_code = {
                 let slot = {
                     let guard = registry_r.lock().ok();
-                    guard.as_ref().and_then(|m| m.get(&sid).cloned())
+                    guard
+                        .as_ref()
+                        .and_then(|m| m.get(&sid))
+                        .map(|entry| Arc::clone(&entry.slot))
                 };
                 if let Some(slot) = slot {
                     let mut g = slot.lock().unwrap_or_else(|e| e.into_inner());
@@ -299,7 +320,7 @@ pub fn terminal_write(
 
     let slot = {
         let map = registry.0.lock().map_err(|_| TerminalError::Poisoned)?;
-        map.get(&session_id).cloned()
+        map.get(&session_id).map(|entry| Arc::clone(&entry.slot))
     };
 
     if let Some(slot) = slot {
@@ -321,7 +342,7 @@ pub fn terminal_resize(
 ) -> Result<(), TerminalError> {
     let slot = {
         let map = registry.0.lock().map_err(|_| TerminalError::Poisoned)?;
-        map.get(&session_id).cloned()
+        map.get(&session_id).map(|entry| Arc::clone(&entry.slot))
     };
 
     if let Some(slot) = slot {
@@ -346,7 +367,7 @@ pub fn terminal_close(
 ) -> Result<(), TerminalError> {
     let slot = {
         let mut map = registry.0.lock().map_err(|_| TerminalError::Poisoned)?;
-        map.remove(&session_id)
+        map.remove(&session_id).map(|entry| entry.slot)
     };
     if let Some(slot) = slot {
         if let Ok(mut guard) = slot.lock() {
@@ -366,19 +387,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn registry_lists_open_terminal_keys() {
+    fn registry_lists_open_terminal_keys_with_their_cwd() {
         let registry = TerminalRegistry::new();
         let slot = Arc::new(Mutex::new(None));
-        registry
-            .0
-            .lock()
-            .unwrap()
-            .insert("session-1::t1".to_string(), slot);
+        registry.0.lock().unwrap().insert(
+            "session-1::t1".to_string(),
+            TerminalEntry {
+                slot,
+                cwd: "/worktrees/api".to_string(),
+            },
+        );
 
         assert_eq!(
             registry.list_live().unwrap(),
             vec![LiveTerminal {
-                id: "session-1::t1".to_string()
+                id: "session-1::t1".to_string(),
+                cwd: "/worktrees/api".to_string(),
             }]
         );
     }
@@ -477,11 +501,14 @@ mod tests {
         let registry = TerminalRegistry::new();
         registry.0.lock().unwrap().insert(
             "session-1".to_string(),
-            Arc::new(Mutex::new(Some(TerminalSession {
-                writer,
-                master: pair.master,
-                child,
-            }))),
+            TerminalEntry {
+                slot: Arc::new(Mutex::new(Some(TerminalSession {
+                    writer,
+                    master: pair.master,
+                    child,
+                }))),
+                cwd: "/".to_string(),
+            },
         );
 
         shutdown(&registry);
