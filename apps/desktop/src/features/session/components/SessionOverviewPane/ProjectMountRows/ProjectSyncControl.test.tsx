@@ -9,7 +9,7 @@ const { store } = vi.hoisted(() => ({
     setSessionActiveProject: vi.fn(async () => undefined),
     emitNotification: vi.fn(),
     updateProjectBaseBranch: vi.fn(async () => undefined),
-    projects: [] as ReadonlyArray<{ id: string; baseBranch?: string | null }>,
+    projects: [] as ReadonlyArray<{ id: string; rootPath: string; baseBranch?: string | null }>,
   },
 }));
 
@@ -21,6 +21,9 @@ vi.mock('../../../hooks/useRebaseAgent', () => ({
 }));
 vi.mock('../../../hooks/usePushBranch', () => ({
   usePushBranch: () => ({ isBusy: false, error: null, run: vi.fn() }),
+}));
+vi.mock('../../../../worktree/worktree', () => ({
+  listBranchNames: vi.fn(async () => ['main', 'develop', 'release']),
 }));
 
 import { ProjectSyncControl } from './ProjectSyncControl';
@@ -55,7 +58,7 @@ const renderControl = ({ status }: { readonly status: WorktreeStatus | null }) =
 describe('ProjectSyncControl', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    store.projects = [{ id: 'project-1', baseBranch: 'develop' }];
+    store.projects = [{ id: 'project-1', rootPath: '/repo', baseBranch: 'develop' }];
   });
   afterEach(cleanup);
 
@@ -80,8 +83,8 @@ describe('ProjectSyncControl', () => {
   it('commits a trimmed base branch on Enter', async () => {
     renderControl({ status: null });
     fireEvent.click(screen.getByRole('button', { name: 'Branch sync actions' }));
-    fireEvent.click(screen.getByRole('button', { name: /Compared with develop/ }));
-    const input = screen.getByRole('textbox', { name: 'Base branch' });
+    fireEvent.click(screen.getByRole('button', { name: 'Base branch: develop' }));
+    const input = screen.getByRole('combobox', { name: 'Base branch' });
     fireEvent.change(input, { target: { value: '  release  ' } });
     fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -96,8 +99,8 @@ describe('ProjectSyncControl', () => {
   it('clears an empty base branch to null', async () => {
     renderControl({ status: null });
     fireEvent.click(screen.getByRole('button', { name: 'Branch sync actions' }));
-    fireEvent.click(screen.getByRole('button', { name: /Compared with develop/ }));
-    const input = screen.getByRole('textbox', { name: 'Base branch' });
+    fireEvent.click(screen.getByRole('button', { name: 'Base branch: develop' }));
+    const input = screen.getByRole('combobox', { name: 'Base branch' });
     fireEvent.change(input, { target: { value: '   ' } });
     fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -112,12 +115,13 @@ describe('ProjectSyncControl', () => {
   it('reverts the base branch edit on Escape', () => {
     renderControl({ status: null });
     fireEvent.click(screen.getByRole('button', { name: 'Branch sync actions' }));
-    fireEvent.click(screen.getByRole('button', { name: /Compared with develop/ }));
-    const input = screen.getByRole('textbox', { name: 'Base branch' });
+    fireEvent.click(screen.getByRole('button', { name: 'Base branch: develop' }));
+    const input = screen.getByRole('combobox', { name: 'Base branch' });
     fireEvent.change(input, { target: { value: 'release' } });
     fireEvent.keyDown(input, { key: 'Escape' });
 
     expect(store.updateProjectBaseBranch).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: /Compared with develop/ })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Branch sync actions' }));
+    expect(screen.getByRole('button', { name: 'Base branch: develop' })).toBeDefined();
   });
 });

@@ -273,6 +273,16 @@ export const listLocalBranches = async (
   return branches;
 };
 
+type ListBranchNamesParams = {
+  readonly repoPath: string;
+};
+
+export const listBranchNames = async ({
+  repoPath,
+}: ListBranchNamesParams): Promise<ReadonlyArray<string>> => {
+  return invoke<ReadonlyArray<string>>('worktree_list_branch_names', { repoPath });
+};
+
 export type ChangeBranchArgs = {
   readonly repoPath: string;
   readonly worktreePath: string;

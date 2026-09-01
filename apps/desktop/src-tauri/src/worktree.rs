@@ -308,6 +308,48 @@ pub async fn worktree_list_local_branches(
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
+#[tauri::command]
+pub async fn worktree_list_branch_names(
+    repo_path: String,
+) -> Result<Vec<String>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || list_branch_names_blocking(repo_path))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn list_branch_names_blocking(repo_path: String) -> Result<Vec<String>, WorktreeError> {
+    let p = Path::new(&repo_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(repo_path));
+    }
+    let raw = git(
+        p,
+        &[
+            "for-each-ref",
+            "--format=%(refname:short)",
+            "refs/heads",
+            "refs/remotes",
+        ],
+    )?;
+    Ok(normalize_branch_names(&raw))
+}
+
+fn normalize_branch_names(raw: &str) -> Vec<String> {
+    let mut seen = std::collections::HashSet::new();
+    let mut names = Vec::new();
+    for line in raw.lines() {
+        let name = line.trim();
+        if name.is_empty() || name == "origin" || name.ends_with("/HEAD") {
+            continue;
+        }
+        let normalized = name.strip_prefix("origin/").unwrap_or(name);
+        if seen.insert(normalized.to_string()) {
+            names.push(normalized.to_string());
+        }
+    }
+    names
+}
+
 fn list_local_branches_blocking(repo_path: String) -> Result<Vec<BranchInfo>, WorktreeError> {
     let p = Path::new(&repo_path);
     if !p.exists() {
@@ -1793,6 +1835,16 @@ mod rewrite_tests {
             .lines()
             .map(|l| l.trim().to_string())
             .collect()
+    }
+
+    #[test]
+    fn branch_names_strip_origin_and_preserve_the_first_occurrence() {
+        let raw = "main\nfeature/search\norigin\norigin/HEAD\norigin/main\norigin/release\nupstream/HEAD\nupstream/release\n";
+
+        assert_eq!(
+            super::normalize_branch_names(raw),
+            vec!["main", "feature/search", "release", "upstream/release"]
+        );
     }
 
     fn args(root: &Path, sha: &str, message: &str) -> RewriteArgs {
