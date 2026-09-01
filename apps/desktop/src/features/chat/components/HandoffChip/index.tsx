@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { ArrowRight, LoaderCircle } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import type { AgentId, AgentStatus, PlanId, SessionId } from '@goodboy/types';
+import type { AgentId, AgentStatus, PlanId, SessionId, TurnState } from '@goodboy/types';
 import { extractHandoff } from '@goodboy/core';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { AGENT_KIND_META } from '../../../session/agent-kind';
@@ -29,7 +30,19 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
   const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
   const sessionNudge = useAppStore((s) => s.sessionNudges[sessionId] ?? null);
   const runs = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-  const turnStates = useAppStore((s) => s.agentTurnState);
+  const turnStates = useAppStore(
+    useShallow((s) => {
+      const states: Record<string, TurnState> = {};
+      for (const run of runs) {
+        const turn = s.agentTurnState[run.id];
+        if (turn === undefined) {
+          continue;
+        }
+        states[run.id] = turn;
+      }
+      return states;
+    }),
+  );
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const acceptHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
   const selectAgent = useAppStore((s) => s.selectAgent);
