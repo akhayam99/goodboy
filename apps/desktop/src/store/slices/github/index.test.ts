@@ -552,7 +552,6 @@ describe('store contract', () => {
         sessionBudgets: {},
         providerSpendBreakdown: [],
         budgetAlerts: [],
-        systemAlerts: [],
         skills: {},
         projectScripts: {},
         scriptRuns: {},

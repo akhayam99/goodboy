@@ -335,6 +335,37 @@ describe('sendTurn, terminal state guarantees', () => {
     expect(session?.state.kind).toBe('idle');
   });
 
+  it('emits a scoped warning near the context limit and still runs the turn', async () => {
+    runTurnSpy.mockImplementation(() => emptyStream());
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-haiku-4-5',
+      reason: 'preference',
+    });
+
+    const useAppStore = await importStore();
+    setupSession(useAppStore);
+
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      content: 'x'.repeat(680_000),
+    });
+
+    expect(runTurnSpy).toHaveBeenCalledOnce();
+    await vi.waitFor(() => {
+      expect(useAppStore.getState().notifications).toEqual([
+        expect.objectContaining({
+          kind: 'error',
+          severity: 'warning',
+          sessionId: SESSION_ID,
+          workspaceId: WORKSPACE_ID,
+          coalesceKey: `context-soft-cap:${SESSION_ID}`,
+        }),
+      ]);
+    });
+  });
+
   it('appends an error event when the stream ends with no assistant text', async () => {
     runTurnSpy.mockImplementation(() => emptyStream());
 

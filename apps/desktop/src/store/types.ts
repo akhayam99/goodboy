@@ -104,15 +104,6 @@ export type BootPhase =
   | 'ready'
   | 'error';
 
-export type SystemAlertKind = 'audit-retry-corrupt' | 'audit-retry-exhausted' | 'context-soft-cap';
-
-export type SystemAlert = {
-  readonly id: string;
-  readonly kind: SystemAlertKind;
-  readonly message: string;
-  readonly createdAt: string;
-};
-
 export type SessionNudge =
   | {
       readonly kind: 'plan-ready';
@@ -239,7 +230,6 @@ export type AppState = AppSliceState & {
   readonly sessionBudgets: Readonly<Record<SessionId, SessionBudget>>;
   readonly providerSpendBreakdown: ReadonlyArray<ProviderSpendEntry>;
   readonly budgetAlerts: ReadonlyArray<BudgetAlert>;
-  readonly systemAlerts: ReadonlyArray<SystemAlert>;
   readonly skills: Readonly<Record<WorkspaceId, ReadonlyArray<Skill>>>;
   readonly projectScripts: Readonly<Record<WorkspaceId, ReadonlyArray<ProjectScript>>>;
   readonly scriptRuns: Readonly<
