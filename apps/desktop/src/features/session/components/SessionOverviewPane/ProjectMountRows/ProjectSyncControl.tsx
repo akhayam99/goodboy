@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { ArrowDown, ArrowUp, GitBranch, Pencil, RefreshCw, Upload } from 'lucide-react';
-import { AnchoredPopover, Input, cn, formatError, useDropdown } from '@goodboy/ui';
+import { ArrowDown, ArrowUp, GitBranch, RefreshCw, Upload } from 'lucide-react';
+import { AnchoredPopover, cn, formatError, useDropdown } from '@goodboy/ui';
 import type { ProjectId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { distanceAhead } from '../../../../../shared/lib/gitStatus';
+import { BaseBranchSelect } from '../../../../worktree/BaseBranchSelect';
 import { useRebaseAgent } from '../../../hooks/useRebaseAgent';
 import { usePushBranch } from '../../../hooks/usePushBranch';
 
@@ -13,6 +14,10 @@ type Props = {
   readonly status: WorktreeStatus | null;
 };
 
+type CommitBaseBranchParams = {
+  readonly candidate: string | null;
+};
+
 export const ProjectSyncControl = ({ sessionId, projectId, status }: Props) => {
   const dropdown = useDropdown({ width: 'w-64', expectedHeight: 160 });
   const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
@@ -20,9 +25,10 @@ export const ProjectSyncControl = ({ sessionId, projectId, status }: Props) => {
   const configuredBaseBranch = useAppStore(
     (state) => state.projects.find((project) => project.id === projectId)?.baseBranch ?? null,
   );
+  const repoPath = useAppStore(
+    (state) => state.projects.find((project) => project.id === projectId)?.rootPath ?? '',
+  );
   const updateProjectBaseBranch = useAppStore((state) => state.updateProjectBaseBranch);
-  const [isEditingBase, setIsEditingBase] = useState(false);
-  const [baseDraft, setBaseDraft] = useState('');
   const [baseError, setBaseError] = useState<string | null>(null);
   const baseBranch = configuredBaseBranch ?? 'main';
   const notify = ({ title, message }: { readonly title: string; readonly message: string }) => {
@@ -46,28 +52,16 @@ export const ProjectSyncControl = ({ sessionId, projectId, status }: Props) => {
     await setSessionActiveProject({ sessionId, projectId });
     await action();
   };
-  const startBaseEdit = () => {
-    setBaseDraft(configuredBaseBranch ?? '');
-    setBaseError(null);
-    setIsEditingBase(true);
-  };
-  const cancelBaseEdit = () => {
-    setBaseDraft(configuredBaseBranch ?? '');
-    setBaseError(null);
-    setIsEditingBase(false);
-  };
-  const commitBaseEdit = async () => {
-    const value = baseDraft.trim();
+  const commitBaseBranch = async ({ candidate }: CommitBaseBranchParams) => {
+    const value = candidate?.trim() ?? '';
     const next = value === '' ? null : value;
     if (next === (configuredBaseBranch ?? null)) {
       setBaseError(null);
-      setIsEditingBase(false);
       return;
     }
     try {
       await updateProjectBaseBranch({ projectId, baseBranch: next });
       setBaseError(null);
-      setIsEditingBase(false);
     } catch (error) {
       setBaseError(formatError(error));
     }
@@ -101,45 +95,14 @@ export const ProjectSyncControl = ({ sessionId, projectId, status }: Props) => {
     >
       <div className="flex flex-col py-1">
         <div className="flex flex-col gap-1 border-b border-border-soft px-3 py-2 text-xs tabular-nums text-muted-foreground">
-          <div className="group flex items-center gap-3">
-            {isEditingBase ? (
-              <Input
-                autoFocus
-                aria-label="Base branch"
-                placeholder="main"
-                value={baseDraft}
-                onChange={(event) => setBaseDraft(event.target.value)}
-                onBlur={() => void commitBaseEdit()}
-                onKeyDown={(event) => {
-                  if (event.key === 'Escape') {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    cancelBaseEdit();
-                    return;
-                  }
-                  if (event.key !== 'Enter') {
-                    return;
-                  }
-                  event.preventDefault();
-                  event.currentTarget.blur();
-                }}
-                className="h-7 font-mono text-xs"
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={startBaseEdit}
-                className="flex items-center gap-1 font-medium text-foreground"
-              >
-                <span>Compared with</span>
-                <span className="rounded px-1 font-mono hover:bg-muted/60">{baseBranch}</span>
-                <Pencil
-                  size={10}
-                  aria-hidden
-                  className="opacity-0 transition-opacity group-hover:opacity-100"
-                />
-              </button>
-            )}
+          <div className="flex items-center gap-3">
+            <span className="font-medium text-foreground">Compared with</span>
+            <BaseBranchSelect
+              repoPath={repoPath}
+              value={configuredBaseBranch}
+              disabled={repoPath === ''}
+              onCommit={(candidate) => commitBaseBranch({ candidate })}
+            />
             <span className="ml-auto flex items-center gap-1">
               <ArrowDown size={11} aria-hidden />
               {distance?.behind ?? '--'}

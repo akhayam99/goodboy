@@ -12,6 +12,7 @@ import { Button, formatError } from '@goodboy/ui';
 import type { GitUnknownReason, Project, WorkspaceGitStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openInEditor } from '../../../../shared/lib/editor';
+import { BaseBranchSelect } from '../../../worktree/BaseBranchSelect';
 import {
   changedCount,
   distanceAhead,
@@ -44,6 +45,10 @@ type StatusParams = {
 
 type CapitalizeParams = {
   readonly value: string;
+};
+
+type CommitBaseBranchParams = {
+  readonly candidate: string | null;
 };
 
 const isReadFailureReason = ({ reason }: ReasonParams): boolean => {
@@ -137,7 +142,6 @@ const capitalize = ({ value }: CapitalizeParams): string =>
 export const ProjectGitDetail = ({ project, status }: Props) => {
   const [openError, setOpenError] = useState<string | null>(null);
   const [pullError, setPullError] = useState<string | null>(null);
-  const [baseBranch, setBaseBranch] = useState(project.baseBranch ?? '');
   const [baseBranchError, setBaseBranchError] = useState<string | null>(null);
   const pulling = useAppStore((state) => state.projectCheckoutPulling[project.id] === true);
   const fastForwardProjectCheckout = useAppStore((state) => state.fastForwardProjectCheckout);
@@ -171,17 +175,15 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
       setPullError(formatError(error));
     }
   };
-  const commitBaseBranch = async () => {
-    const trimmedBaseBranch = baseBranch.trim();
+  const commitBaseBranch = async ({ candidate }: CommitBaseBranchParams) => {
+    const trimmedBaseBranch = candidate?.trim() ?? '';
     const nextBaseBranch = trimmedBaseBranch === '' ? null : trimmedBaseBranch;
-    if (nextBaseBranch === project.baseBranch) {
-      setBaseBranch(project.baseBranch ?? '');
+    if (nextBaseBranch === (project.baseBranch ?? null)) {
       return;
     }
     setBaseBranchError(null);
     try {
       await updateProjectBaseBranch({ projectId: project.id, baseBranch: nextBaseBranch });
-      setBaseBranch(nextBaseBranch ?? '');
     } catch (error) {
       setBaseBranchError(formatError(error));
     }
@@ -232,24 +234,14 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
             ))}
           </div>
           <div className="flex flex-col gap-1 border-t border-border-soft pt-2">
-            <label className="flex items-center gap-2 text-2xs text-muted-foreground">
+            <span className="flex items-center gap-2 text-2xs text-muted-foreground">
               <span className="shrink-0">Base branch</span>
-              <input
-                type="text"
-                value={baseBranch}
-                placeholder="main"
-                aria-label={`${project.name} base branch`}
-                onChange={(event) => setBaseBranch(event.target.value)}
-                onBlur={() => void commitBaseBranch()}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    event.currentTarget.blur();
-                  }
-                }}
-                className="h-7 min-w-0 flex-1 rounded-md border border-border bg-background px-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              <BaseBranchSelect
+                repoPath={project.rootPath}
+                value={project.baseBranch ?? null}
+                onCommit={(candidate) => commitBaseBranch({ candidate })}
               />
-            </label>
+            </span>
             {baseBranchError != null ? (
               <span role="alert" className="text-2xs text-danger">
                 {baseBranchError}

@@ -232,6 +232,7 @@ pub fn run() {
             worktree::worktree_status,
             worktree::checkout_fast_forward,
             worktree::worktree_list_local_branches,
+            worktree::worktree_list_branch_names,
             worktree::worktree_change_branch,
             providers::get_provider_status,
             providers::refresh_provider_status,
