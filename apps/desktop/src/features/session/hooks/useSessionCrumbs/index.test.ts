@@ -10,6 +10,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
+import { LENS_ICON } from '../../lens-labels';
 
 type StoreState = Record<string, unknown>;
 
@@ -117,6 +118,13 @@ beforeEach(() => {
 });
 
 describe('useSessionCrumbs', () => {
+  it('attaches the shared concept icon to a lens crumb', () => {
+    openOn({ lens: 'agents', selectedAgentId: ADHOC_AGENT_ID });
+    const { result } = renderHook(() => useSessionCrumbs({ session }));
+
+    expect(result.current[1]?.icon).toBe(LENS_ICON.agents);
+  });
+
   it('parents a step opened from the activity feed on its run, not on overview', () => {
     expect(labelsOf(null, STEP_AGENT_ID)).toEqual([
       'Overview',

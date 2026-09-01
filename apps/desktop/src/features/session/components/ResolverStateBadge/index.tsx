@@ -56,6 +56,7 @@ export const resolverStateSentence = (status: ResolverStatus): string | null => 
 
 type ResolverStateBadgeProps = {
   readonly state: ResolverBadgeState;
+  readonly count?: number;
   readonly className?: string;
 };
 
@@ -75,13 +76,14 @@ const TONE: Record<ResolverBadgeState, Tone> = {
   resolved: 'success',
 };
 
-export const ResolverStateBadge = ({ state, className }: ResolverStateBadgeProps) => (
+export const ResolverStateBadge = ({ state, count, className }: ResolverStateBadgeProps) => (
   <Chip
     tone={TONE[state]}
     size="3xs"
     bordered={false}
     icon={<ResolverStateIcon state={state} />}
-    label={COPY[state]}
+    label={count ?? COPY[state]}
+    ariaLabel={count == null ? undefined : `${count} ${COPY[state]}`}
     className={cn('shrink-0', className)}
   />
 );

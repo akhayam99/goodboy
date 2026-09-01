@@ -2,8 +2,9 @@
 
 import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
+import type { ResolverStatus } from '../../resolver-linkage';
 
 const h = vi.hoisted(() => ({
   state: {} as Record<string, unknown>,
@@ -15,6 +16,7 @@ const h = vi.hoisted(() => ({
   stage: { stage: 'running' as const, reason: 'running' },
   currentSession: null as Session | null,
   selectAgent: vi.fn(),
+  resolverLinks: [] as ReadonlyArray<{ agent: Agent; status: ResolverStatus }>,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -29,7 +31,7 @@ vi.mock('../../hooks/useSessionCrumbs', () => ({
 }));
 
 vi.mock('../../hooks/useResolverIndex', () => ({
-  useResolverIndex: () => ({ links: [] }),
+  useResolverIndex: () => ({ links: h.resolverLinks }),
 }));
 
 vi.mock('./WorkflowAdvance', () => ({
@@ -125,6 +127,7 @@ const resetState = () => {
   Object.keys(h.state).forEach((key) => delete h.state[key]);
   Object.assign(h.state, {
     selectedAgentId: { [SESSION_ID]: scout.id },
+    activeLens: { [SESSION_ID]: 'agents' },
     sessionPhaseRuns: { [SESSION_ID]: [scout, implementer, workflowStep] },
     agentKindOverride: {},
     resolverState: {},
@@ -164,6 +167,7 @@ const openStepSurface = () => {
 beforeEach(() => {
   h.currentSession = session;
   h.stage.reason = 'running';
+  h.resolverLinks = [];
   h.crumbs = [
     { id: 'overview', label: 'Overview', onClick: vi.fn() },
     { id: 'lens-agents', label: 'Agents', onClick: vi.fn() },
@@ -209,6 +213,29 @@ describe('SessionCrumbBar', () => {
     expect(screen.getByRole('button', { name: 'Overview' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Agents' })).toBeDefined();
     expect(screen.getByRole('button', { name: /scout one/ })).toBeDefined();
+  });
+
+  it('shows the selected agent live status after its label', () => {
+    render(<SessionCrumbBar />);
+
+    const selectedCrumb = screen.getByRole('button', { name: /scout one/ });
+    expect(within(selectedCrumb).getByLabelText('completed')).toBeDefined();
+  });
+
+  it('shows the queued resolver count on the active resolve lens crumb', () => {
+    h.crumbs = [
+      { id: 'overview', label: 'Overview', onClick: vi.fn() },
+      { id: 'lens-resolve', label: 'Resolve' },
+    ];
+    h.state.activeLens = { [SESSION_ID]: 'resolve' };
+    h.state.selectedAgentId = {};
+    h.resolverLinks = [
+      { agent: scout, status: 'pending' },
+      { agent: implementer, status: 'pending' },
+    ];
+    render(<SessionCrumbBar />);
+
+    expect(screen.getByLabelText('2 queued')).toBeDefined();
   });
 
   it('turns the last crumb into a sibling switcher when peers exist in the same home', () => {

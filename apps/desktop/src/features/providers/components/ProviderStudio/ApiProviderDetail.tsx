@@ -1,12 +1,13 @@
 import { useCallback, useState } from 'react';
 import { SectionHeader, Tooltip } from '@goodboy/ui';
-import { CircleCheck, RotateCw, Terminal, TriangleAlert } from 'lucide-react';
+import { CircleCheck, RotateCw, TriangleAlert } from 'lucide-react';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly info: ProviderInfo;
@@ -72,7 +73,7 @@ export const ApiProviderDetail = ({ info }: Props) => {
             ) : info.connection === 'error' ? (
               <TriangleAlert size={18} aria-hidden />
             ) : (
-              <Terminal size={18} aria-hidden />
+              <CONCEPT_ICONS.terminal size={18} aria-hidden />
             )}
           </span>
           <div className="flex min-w-0 flex-1 flex-col">

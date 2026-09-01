@@ -1,4 +1,13 @@
-export type BreadcrumbCrumb = { id: string; label: string; onClick?: () => void };
+import type { ReactNode } from 'react';
+import type { LucideIcon } from 'lucide-react';
+
+export type BreadcrumbCrumb = {
+  id: string;
+  label: string;
+  icon?: LucideIcon;
+  accessory?: ReactNode;
+  onClick?: () => void;
+};
 
 type BreadcrumbChrome =
   | { kind: 'none' }

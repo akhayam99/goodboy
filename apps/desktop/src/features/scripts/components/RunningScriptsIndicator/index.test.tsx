@@ -33,6 +33,13 @@ import { RunningScriptsIndicator } from './index';
 afterEach(cleanup);
 
 describe('RunningScriptsIndicator', () => {
+  it('uses the shared scripts concept icon', () => {
+    render(<RunningScriptsIndicator />);
+
+    const trigger = screen.getByRole('button', { name: /running/i });
+    expect(trigger.querySelector('.lucide-list-video')).not.toBeNull();
+  });
+
   it('opens its popover on the named z-popover layer, above a full-page studio', async () => {
     render(<RunningScriptsIndicator />);
 

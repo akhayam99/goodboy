@@ -1,6 +1,8 @@
 import type { BreadcrumbCrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { LensKind, SessionStudio } from '../../../../store';
 import type { AgentHomeLens } from '../../agent-kind';
+import { LENS_ICON } from '../../lens-labels';
 
 export type SessionBreadcrumbHandlers = {
   toOverview: () => void;
@@ -51,16 +53,19 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
   const overview: BreadcrumbCrumb = {
     id: 'overview',
     label: 'Overview',
+    icon: CONCEPT_ICONS.timeline,
     onClick: handlers.toOverview,
   };
   const workflowsList: BreadcrumbCrumb = {
     id: 'workflows',
     label: 'Workflows',
+    icon: LENS_ICON.workflows,
     onClick: handlers.toWorkflowsList,
   };
   const plansList: BreadcrumbCrumb = {
     id: 'plans',
     label: 'Plans',
+    icon: LENS_ICON.plans,
     onClick: handlers.toPlansList,
   };
 
@@ -71,7 +76,12 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     if (studio.kind === 'github') {
       return sealLast([
         overview,
-        { id: 'pr', label: lensLabel('pr'), onClick: () => handlers.toLens('pr') },
+        {
+          id: 'pr',
+          label: lensLabel('pr'),
+          icon: LENS_ICON.pr,
+          onClick: () => handlers.toLens('pr'),
+        },
         {
           id: 'github',
           label: studio.prNumber != null ? `PR #${studio.prNumber}` : 'GitHub',
@@ -81,7 +91,12 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     if (studio.kind === 'bitbucket') {
       return sealLast([
         overview,
-        { id: 'pr', label: lensLabel('pr'), onClick: () => handlers.toLens('pr') },
+        {
+          id: 'pr',
+          label: lensLabel('pr'),
+          icon: LENS_ICON.pr,
+          onClick: () => handlers.toLens('pr'),
+        },
         { id: 'bitbucket', label: 'Bitbucket' },
       ]);
     }
@@ -90,6 +105,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
       {
         id: 'gitlab_issues',
         label: lensLabel('gitlab_issues'),
+        icon: LENS_ICON.gitlab_issues,
         onClick: () => handlers.toLens('gitlab_issues'),
       },
       { id: 'mr', label: 'Merge request' },
@@ -120,6 +136,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
         {
           id: `lens-${selectedChildHome}`,
           label: lensLabel(selectedChildHome),
+          icon: LENS_ICON[selectedChildHome],
           onClick: () => handlers.toLens(selectedChildHome),
         },
         ...ancestors,
@@ -153,7 +170,10 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
   }
 
   if (lens != null) {
-    return sealLast([overview, { id: `lens-${lens}`, label: lensLabel(lens) }]);
+    return sealLast([
+      overview,
+      { id: `lens-${lens}`, label: lensLabel(lens), icon: LENS_ICON[lens] },
+    ]);
   }
 
   return sealLast([overview]);

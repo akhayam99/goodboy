@@ -6,7 +6,6 @@ import {
   Code,
   MessageSquareDiff,
   RotateCcw,
-  SquareTerminal,
   Trash2,
 } from 'lucide-react';
 import { Chip, cn, Divider, formatUsd, Tooltip } from '@goodboy/ui';
@@ -262,7 +261,7 @@ export const StageBoardCard = memo(function StageBoardCard({
               disabled={worktreePath == null}
             />
             <CardAction
-              icon={SquareTerminal}
+              icon={CONCEPT_ICONS.terminal}
               label="Open terminal"
               onClick={() => nav.openTerminal(session)}
             />

@@ -1,4 +1,6 @@
+import type { ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { AnchoredPopover, ScrollFade, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import type { AgentId } from '@goodboy/types';
 import {
@@ -12,6 +14,8 @@ import type { SwitcherEntry } from './switcherEntry';
 
 type AgentSwitcherCrumbProps = {
   readonly label: string;
+  readonly icon?: LucideIcon;
+  readonly accessory?: ReactNode;
   readonly siblings: ReadonlyArray<SwitcherEntry>;
   readonly selectedAgentId: AgentId;
   readonly onSelect: (id: AgentId) => void;
@@ -20,6 +24,8 @@ type AgentSwitcherCrumbProps = {
 
 export const AgentSwitcherCrumb = ({
   label,
+  icon: Icon,
+  accessory,
   siblings,
   selectedAgentId,
   onSelect,
@@ -44,9 +50,13 @@ export const AgentSwitcherCrumb = ({
         title={`${label}. Switch agent.`}
         aria-haspopup="menu"
         aria-expanded={open}
-        className={cn(CRUMB_BUTTON_CLASS, CRUMB_LAST_CLASS, 'inline-flex items-center gap-1')}
+        className={cn(CRUMB_BUTTON_CLASS, CRUMB_LAST_CLASS)}
       >
+        {Icon == null ? null : (
+          <Icon size={13} aria-hidden className="shrink-0 text-muted-foreground/70" />
+        )}
         <span className="min-w-0 max-w-48 truncate">{label}</span>
+        {accessory}
         <ChevronDown
           size={11}
           aria-hidden
@@ -60,7 +70,11 @@ export const AgentSwitcherCrumb = ({
           onClick={onNavigate}
           className={cn(CRUMB_BUTTON_CLASS, CRUMB_LINK_CLASS)}
         >
-          {label}
+          {Icon == null ? null : (
+            <Icon size={13} aria-hidden className="shrink-0 text-muted-foreground/70" />
+          )}
+          <span className="min-w-0 truncate">{label}</span>
+          {accessory}
         </button>
         <Tooltip content="Switch agent" anchorClassName="shrink-0">
           <button
