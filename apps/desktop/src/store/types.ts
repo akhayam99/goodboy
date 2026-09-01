@@ -255,11 +255,7 @@ export type AppState = AppSliceState & {
   readonly detectedEditors: ReadonlyArray<DetectedEditor>;
   readonly workspaceOverrides: Readonly<Record<WorkspaceId, OverrideSettings>>;
   readonly sessionOverrides: Readonly<Record<SessionId, OverrideSettings>>;
-  readonly sidebarWorkspaceSearch: string;
-  readonly sidebarSessionSearch: string;
   readonly unreadWorkspaceIds: ReadonlySet<WorkspaceId>;
-  readonly sidebarStateFilter: ReadonlyArray<TurnState['kind']>;
-  readonly sidebarProviderFilter: ReadonlyArray<ProviderId>;
   readonly sessionPanelExpanded: Readonly<
     Record<SessionId, Partial<Record<PanelSection, boolean>>>
   >;
