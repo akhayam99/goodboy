@@ -261,10 +261,15 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 v.push("--allowedTools".to_string());
                 v.push(args.allowed_tools.join(","));
             }
-            if !args.disallowed_tools.is_empty() {
-                v.push("--disallowedTools".to_string());
-                v.push(args.disallowed_tools.join(","));
-            }
+            let mut disallowed_tools: Vec<String> = args
+                .disallowed_tools
+                .iter()
+                .filter(|tool| tool.as_str() != "mcp__*")
+                .cloned()
+                .collect();
+            disallowed_tools.push("mcp__*".to_string());
+            v.push("--disallowedTools".to_string());
+            v.push(disallowed_tools.join(","));
             v
         }
     }
@@ -644,6 +649,58 @@ mod tests {
         let args = make_args(None, Some("sp"), &empty);
         let cli = build_provider_cli_args("claude", &args);
         assert!(!cli.iter().any(|a| a == "--bare"));
+    }
+
+    #[test]
+    fn claude_args_always_deny_mcp_tools() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, None, &empty);
+        let cli = build_provider_cli_args("claude", &args);
+        let idx = cli
+            .iter()
+            .position(|arg| arg == "--disallowedTools")
+            .expect("--disallowedTools");
+        assert_eq!(cli[idx + 1], "mcp__*");
+    }
+
+    #[test]
+    fn claude_args_append_mcp_tools_to_existing_denies() {
+        let empty: Vec<String> = vec![];
+        let disallowed = vec!["Bash".to_string(), "WebFetch".to_string()];
+        let mut args = make_args(None, None, &empty);
+        args.disallowed_tools = &disallowed;
+        let cli = build_provider_cli_args("claude", &args);
+        let idx = cli
+            .iter()
+            .position(|arg| arg == "--disallowedTools")
+            .expect("--disallowedTools");
+        assert_eq!(cli[idx + 1], "Bash,WebFetch,mcp__*");
+    }
+
+    #[test]
+    fn claude_args_do_not_duplicate_mcp_tools_deny() {
+        let empty: Vec<String> = vec![];
+        let disallowed = vec!["mcp__*".to_string(), "Bash".to_string()];
+        let mut args = make_args(None, None, &empty);
+        args.disallowed_tools = &disallowed;
+        let cli = build_provider_cli_args("claude", &args);
+        let idx = cli
+            .iter()
+            .position(|arg| arg == "--disallowedTools")
+            .expect("--disallowedTools");
+        assert_eq!(cli[idx + 1], "Bash,mcp__*");
+    }
+
+    #[test]
+    fn cursor_and_codex_args_do_not_deny_mcp_tools() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, None, &empty);
+        for binary in ["cursor-agent", "codex"] {
+            let cli = build_provider_cli_args(binary, &args);
+            assert!(!cli
+                .windows(2)
+                .any(|pair| pair[0] == "--disallowedTools" && pair[1].contains("mcp__*")));
+        }
     }
 
     #[test]

@@ -190,6 +190,7 @@ fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
                 "json".to_string(),
                 "--no-session-persistence".to_string(),
             ];
+            crate::aux_spawn::push_claude_mcp_deny(&mut cli_args);
             crate::aux_spawn::push_effort_args("anthropic", args.effort.as_deref(), &mut cli_args);
             Ok(cli_args)
         }
@@ -285,6 +286,24 @@ mod tests {
             .expect("--setting-sources");
         assert_eq!(cli[idx + 1], "project,local");
         assert!(!cli.iter().any(|a| a == "--bare"));
+    }
+
+    #[test]
+    fn anthropic_args_deny_mcp_tools() {
+        let cli = build_cli_args(&make_args("anthropic")).expect("anthropic args");
+        assert!(cli
+            .windows(2)
+            .any(|pair| pair[0] == "--disallowedTools" && pair[1] == "mcp__*"));
+    }
+
+    #[test]
+    fn cursor_and_codex_args_do_not_deny_mcp_tools() {
+        for provider_id in ["cursor", "codex"] {
+            let cli = build_cli_args(&make_args(provider_id)).expect("provider args");
+            assert!(!cli
+                .windows(2)
+                .any(|pair| pair[0] == "--disallowedTools" && pair[1] == "mcp__*"));
+        }
     }
 
     #[test]
