@@ -27,7 +27,7 @@ export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
       {sessionId ? (
         <div className="flex flex-col items-start gap-2 empty:hidden">
           <PlanChip assistantText={text} sessionId={sessionId} />
-          <HandoffChip assistantText={text} sessionId={sessionId} />
+          <HandoffChip assistantText={text} sessionId={sessionId} sourceAgentId={agentId} />
           <ResolverThreadsCard assistantText={text} sessionId={sessionId} agentId={agentId} />
         </div>
       ) : null}
