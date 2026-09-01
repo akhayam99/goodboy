@@ -1,6 +1,6 @@
 export const PANE_RHYTHM = {
   inset: 'px-6',
-  header: 'px-6 py-4',
+  header: 'px-6 py-5',
   body: 'px-6 py-5',
   dock: 'px-6 py-4',
   stack: 'flex flex-col gap-5',

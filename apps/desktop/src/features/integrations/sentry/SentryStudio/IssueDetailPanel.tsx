@@ -116,6 +116,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
       fit="fill"
       header={
         <HeaderBand
+          title={view.title}
           meta={
             <>
               <SentryLevelBadge level={view.level} />
@@ -124,7 +125,6 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
               </span>
             </>
           }
-          title={view.title}
           actions={
             view.permalink != null && view.permalink !== '' ? (
               <ExternalRefActions url={view.permalink} label="issue" hostLabel="Sentry" />

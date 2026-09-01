@@ -58,10 +58,10 @@ export const SlackThreadDetail = ({
       dock={dock}
       header={
         <HeaderBand
+          title={title !== '' ? title : `#${channelName}`}
           meta={
             <span className="font-mono text-2xs text-muted-foreground">{`#${channelName}`}</span>
           }
-          title={title !== '' ? title : `#${channelName}`}
           actions={
             url != null && url !== '' ? (
               <ExternalRefActions url={url} label="thread" hostLabel="Slack" />

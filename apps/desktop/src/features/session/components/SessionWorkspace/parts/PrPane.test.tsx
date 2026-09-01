@@ -309,7 +309,7 @@ describe('PrPane', () => {
     expect(screen.queryByText('GitHub')).toBeNull();
   });
 
-  it('keeps naming GitLab with a merge request linked below the title', () => {
+  it('promotes the GitLab merge request title and keeps the host below it', () => {
     h.remoteKind = 'gitlab';
     h.store.sessionGitlabMr = {
       [SESSION_ID]: {
@@ -319,9 +319,11 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(screen.getByRole('heading', { name: 'GitLab', level: 2 })).toBeDefined();
+    const title = screen.getByRole('heading', { name: 'Refactor authentication', level: 2 });
+    const host = screen.getByText('GitLab');
+
+    expect(title.compareDocumentPosition(host) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByText('!7')).toBeDefined();
-    expect(screen.getByText('Refactor authentication')).toBeDefined();
   });
 
   it('names GitHub when that is the host', () => {
@@ -348,8 +350,8 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(screen.getByRole('heading', { name: 'Code host work' })).toBeDefined();
-    expect(screen.getAllByText('Refactor authentication').length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { name: 'Refactor authentication' })).toBeDefined();
+    expect(screen.getByText('Code host work')).toBeDefined();
     expect(screen.getByRole('tab', { name: 'GitHub' })).toBeDefined();
     expect(screen.getByRole('tab', { name: 'GitLab' })).toBeDefined();
   });
@@ -389,7 +391,8 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(screen.getByRole('heading', { name: 'Bitbucket' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Raise the fuel constant' })).toBeDefined();
+    expect(screen.getByText('Bitbucket')).toBeDefined();
     expect(screen.getByText('Bitbucket pull request detail')).toBeDefined();
     expect(screen.queryByRole('tab', { name: 'Bitbucket' })).toBeNull();
   });
@@ -435,7 +438,8 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(screen.getByRole('heading', { name: 'Code host work' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Refactor authentication' })).toBeDefined();
+    expect(screen.getByText('Code host work')).toBeDefined();
     expect(screen.getByRole('tab', { name: 'GitHub' })).toBeDefined();
     expect(screen.getByRole('tab', { name: 'GitLab' })).toBeDefined();
     expect(screen.getByRole('tab', { name: 'Bitbucket' })).toBeDefined();
@@ -478,8 +482,8 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(screen.getByRole('heading', { name: 'GitHub', level: 2 })).toBeDefined();
-    expect(screen.queryByRole('heading', { name: PULL_REQUEST.title })).toBeNull();
+    const expectedTitle = count === 0 ? 'GitHub' : PULL_REQUEST.title;
+    expect(screen.getByRole('heading', { name: expectedTitle, level: 2 })).toBeDefined();
   });
 
   it('scopes the pull request list to the branch it reads', () => {
@@ -587,7 +591,7 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(screen.getByRole('heading', { name: 'GitHub', level: 2 })).toBeDefined();
+    expect(screen.getByRole('heading', { name: PULL_REQUEST.title, level: 2 })).toBeDefined();
     expect(screen.getByText('Pull request on ak/refactor-auth')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Open pull request #42' })).toBeDefined();
     expect(screen.getByText('No CI')).toBeDefined();
@@ -663,6 +667,7 @@ describe('PrPane', () => {
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
     expect(screen.getAllByText(closedPr.title).length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { name: closedPr.title, level: 2 })).toBeDefined();
     expect(screen.queryByRole('heading', { name: PULL_REQUEST.title })).toBeNull();
     const selectedRow = screen
       .getByRole('button', { name: `Open pull request #${closedPr.number}` })

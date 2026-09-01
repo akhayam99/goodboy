@@ -93,6 +93,7 @@ export const SentryIssueDetail = ({
       fit={fit}
       header={
         <HeaderBand
+          title={view.title}
           meta={
             <>
               <SentryLevelBadge level={view.level} />
@@ -101,7 +102,6 @@ export const SentryIssueDetail = ({
               </span>
             </>
           }
-          title={view.title}
           actions={
             <>
               {headerActions}

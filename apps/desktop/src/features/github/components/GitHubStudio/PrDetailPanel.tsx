@@ -372,6 +372,7 @@ export const PrDetailPanel = ({
   const header = (
     <>
       <HeaderBand
+        title={activePr.title}
         meta={
           options.length > 1 ? (
             <PrSwitcher
@@ -388,7 +389,6 @@ export const PrDetailPanel = ({
             />
           )
         }
-        title={activePr.title}
         subtitle={<BranchPair headBranch={activePr.headBranch} baseBranch={activePr.baseBranch} />}
         actions={
           <>

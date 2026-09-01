@@ -89,6 +89,7 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
     <StudioDetailLayout
       header={
         <HeaderBand
+          title={pr.title}
           meta={
             <>
               <span className="font-mono text-2xs tabular-nums text-muted-foreground">
@@ -102,7 +103,6 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
               </span>
             </>
           }
-          title={pr.title}
           subtitle={<BranchPair headBranch={pr.headBranch} baseBranch={pr.baseBranch} />}
           actions={
             <ExternalRefActions url={pr.url} label={`PR #${pr.number}`} hostLabel={hostLabel} />

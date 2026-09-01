@@ -232,6 +232,7 @@ export const MrDetailPanel = ({
         header={
           <>
             <HeaderBand
+              title={mr.title}
               meta={
                 <>
                   <StateBadge tone={mergeRequestStateTone({ state: mr.state })}>
@@ -240,7 +241,6 @@ export const MrDetailPanel = ({
                   {mr.draft ? <StateBadge tone="warning">draft</StateBadge> : null}
                 </>
               }
-              title={mr.title}
               subtitle={<BranchPair headBranch={mr.sourceBranch} baseBranch={mr.targetBranch} />}
               actions={
                 <>
@@ -356,13 +356,13 @@ export const MrDetailPanel = ({
     <StudioDetailLayout
       header={
         <HeaderBand
+          title="New merge request"
           meta={
             <span className="inline-flex items-center gap-1.5 font-mono text-2xs text-muted-foreground">
               <GitBranch size={11} aria-hidden />
               {branch ?? 'no branch'}
             </span>
           }
-          title="New merge request"
           actions={refreshButton}
         />
       }

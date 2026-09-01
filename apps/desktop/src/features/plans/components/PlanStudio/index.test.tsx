@@ -277,8 +277,14 @@ describe('PlanStudio subpage', () => {
     ];
     state.focusedPlanId = { 'sess-1': 'plan-2' };
     const { container } = render(<PlanStudio sessionId={'sess-1' as never} />);
+    const title = screen.getByRole('heading', { level: 2, name: 'Second plan' });
+    const status = screen.getByText('active');
+
     expect(screen.getByText('body two')).toBeDefined();
     expect(container.querySelector('.max-w-5xl')).not.toBeNull();
+    expect(title.className).toContain('text-xl');
+    expect(title.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(title.closest('.px-6')?.className).toContain('py-5');
   });
 
   it('re-renders as the list when focusedPlanId transitions to null while mounted', () => {

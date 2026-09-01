@@ -101,6 +101,19 @@ describe('StudioDetailLayout', () => {
     expect(screen.getByText('Main slot').closest('[class*="max-w-"]')).toBeNull();
   });
 
+  it('uses the same 20px inset as pane bodies', () => {
+    render(
+      <StudioDetailLayout header={<span>Header slot</span>}>
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+
+    const headerInset = screen.getByText('Header slot').closest(`.${PANE_RHYTHM.inset}`);
+
+    expect(headerInset?.className).toContain(PANE_RHYTHM.body);
+    expect(headerInset?.className).not.toContain('py-4');
+  });
+
   it('drops the rail and the scroll region for a full-bleed body', () => {
     render(
       <StudioDetailLayout
@@ -344,19 +357,23 @@ describe('RailBlock', () => {
 });
 
 describe('HeaderBand', () => {
-  it('renders meta chips, title, subtitle, and actions', () => {
+  it('renders title and actions before the meta chips and subtitle', () => {
     render(
       <HeaderBand
-        meta={<span>GB-42</span>}
         title="Improve detail layout"
+        meta={<span>GB-42</span>}
         subtitle={<span>api/items</span>}
         actions={<a href="https://example.com">Open</a>}
       />,
     );
 
-    expect(screen.getByText('GB-42')).toBeDefined();
-    expect(screen.getByRole('heading', { name: 'Improve detail layout' })).toBeDefined();
-    expect(screen.getByText('api/items')).toBeDefined();
-    expect(screen.getByRole('link', { name: 'Open' })).toBeDefined();
+    const title = screen.getByRole('heading', { level: 2, name: 'Improve detail layout' });
+    const meta = screen.getByText('GB-42');
+    const subtitle = screen.getByText('api/items');
+    const action = screen.getByRole('link', { name: 'Open' });
+
+    expect(title.parentElement?.contains(action)).toBe(true);
+    expect(title.compareDocumentPosition(meta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(meta.compareDocumentPosition(subtitle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

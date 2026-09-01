@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cn, DiffLayoutToggle, formatError, ResizeHandle, ScrollFade, Skeleton } from '@goodboy/ui';
+import {
+  cn,
+  DiffLayoutToggle,
+  formatError,
+  HeaderBand,
+  ResizeHandle,
+  ScrollFade,
+  Skeleton,
+} from '@goodboy/ui';
 import type { PrReviewDraft, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { PublishPrReviewVerdict } from '../../../../store/slices/review-drafts/types';
@@ -121,26 +129,33 @@ export const ReviewBoardPane = ({ session }: Props) => {
   };
 
   const header = (
-    <div className="flex items-center gap-2">
-      <h2 className="min-w-0 truncate text-sm font-medium text-foreground">Review board</h2>
-      {target != null ? (
-        <span className="min-w-0 truncate font-mono text-2xs text-muted-foreground">
-          {`${target.repo} ${target.provider === 'gitlab' ? '!' : '#'}${target.prNumber}`}
-        </span>
-      ) : null}
-      <span className="text-2xs tabular-nums text-muted-foreground/60">
-        {loading ? '' : `${files.length} files`}
-      </span>
-      <span className="flex-1" />
-      <DiffLayoutToggle mode={layoutMode} onChange={setLayoutMode} />
-      <RefreshIconButton
-        label="Refresh diff"
-        isLoading={loading}
-        onClick={refresh}
-        iconSize={12}
-        className="size-6 border-transparent p-0"
-      />
-    </div>
+    <HeaderBand
+      title="Review board"
+      meta={
+        <>
+          {target != null ? (
+            <span className="min-w-0 truncate font-mono text-2xs text-muted-foreground">
+              {`${target.repo} ${target.provider === 'gitlab' ? '!' : '#'}${target.prNumber}`}
+            </span>
+          ) : null}
+          <span className="text-2xs tabular-nums text-muted-foreground/60">
+            {loading ? '' : `${files.length} files`}
+          </span>
+        </>
+      }
+      actions={
+        <>
+          <DiffLayoutToggle mode={layoutMode} onChange={setLayoutMode} />
+          <RefreshIconButton
+            label="Refresh diff"
+            isLoading={loading}
+            onClick={refresh}
+            iconSize={12}
+            className="size-6 border-transparent p-0"
+          />
+        </>
+      }
+    />
   );
 
   return (

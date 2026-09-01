@@ -196,6 +196,7 @@ export const ResolverDetailPane = ({ session, agent, isChatActive, onBack }: Pro
       fit={tab === 'transcript' ? 'bleed' : 'fill'}
       header={
         <HeaderBand
+          title={agent.name}
           meta={
             <>
               <ResolverStateBadge state={resolverBadgeState(status)} />
@@ -209,7 +210,6 @@ export const ResolverDetailPane = ({ session, agent, isChatActive, onBack }: Pro
               )}
             </>
           }
-          title={agent.name}
           subtitle={
             tallySentence !== null && (
               <span className="text-2xs tabular-nums text-muted-foreground/80">

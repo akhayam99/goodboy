@@ -45,6 +45,7 @@ export const LinearIssueDetail = ({
       fit={fit}
       header={
         <HeaderBand
+          title={issue.title}
           meta={
             <>
               <span className="font-mono text-2xs tabular-nums text-muted-foreground">
@@ -53,7 +54,6 @@ export const LinearIssueDetail = ({
               <StateBadge>{issue.state.name}</StateBadge>
             </>
           }
-          title={issue.title}
           actions={
             <>
               {headerActions}
