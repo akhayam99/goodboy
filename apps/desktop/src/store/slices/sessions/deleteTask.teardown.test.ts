@@ -5,7 +5,7 @@ const order: Array<string> = [];
 const {
   removeWorktree,
   listWorktreesForSession,
-  deleteSession,
+  purgeSessionForDelete,
   deleteGithubPrCacheForWorktreePath,
 } = vi.hoisted(() => ({
   removeWorktree: vi.fn(async () => undefined),
@@ -17,13 +17,13 @@ const {
       parallelIndex: 0,
     },
   ]),
-  deleteSession: vi.fn(async () => undefined),
+  purgeSessionForDelete: vi.fn(async () => undefined),
   deleteGithubPrCacheForWorktreePath: vi.fn(async () => 1),
 }));
 
 vi.mock('@goodboy/db', () => ({
   listWorktreesForSession,
-  deleteSession,
+  purgeSessionForDelete,
   deleteGithubPrCacheForWorktreePath,
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -74,6 +74,7 @@ describe('deleting a session', () => {
       db: {},
       worktreePath: '/repo/.goodboy/worktrees/gb-ghost',
     });
+    expect(purgeSessionForDelete).toHaveBeenCalledWith({ db: {}, id: SESSION_ID });
   });
 
   it('reports the paths it could not remove', async () => {
