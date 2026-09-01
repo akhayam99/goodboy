@@ -607,6 +607,24 @@ export const buildTimelineStream = ({
       );
       continue;
     }
+    if (entry.kind === 'plan' && entry.lane != null) {
+      rows.push({
+        kind: 'row',
+        id: entry.id,
+        at: entry.at,
+        grade: 'step',
+        entry,
+        identity: entry.lane.identity,
+        familyId: entry.lane.rootEntryId,
+        groupId: laneIdOf({ entryId: entry.lane.rootEntryId }),
+        ordinal: null,
+        sortOrdinal: 0,
+        markerState: 'done',
+        hasUnread: false,
+        isPending: false,
+      });
+      continue;
+    }
     const row: DraftRow = {
       kind: 'row',
       id: entry.id,

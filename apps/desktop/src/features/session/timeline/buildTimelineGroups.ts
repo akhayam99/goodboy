@@ -39,6 +39,10 @@ export type TimelinePlanEntry = {
   readonly id: string;
   readonly at: string;
   readonly plan: PlanWithCount;
+  readonly lane?: {
+    readonly identity: RunIdentity;
+    readonly rootEntryId: string;
+  };
 };
 
 export type TimelineIssueEntry = {
@@ -190,9 +194,25 @@ export const buildTimelineGroups = ({
     childrenByParentId.set(agent.parentAgentId, [...siblings, agent]);
   }
 
+  const liveAgentById = new Map(byOrdinal.map((agent) => [agent.id, agent]));
+  const chainRootIdByAgentId = new Map<string, Agent['id']>();
+  for (const agent of byOrdinal) {
+    const visitedAgentIds = new Set<string>();
+    let currentAgent: Agent | undefined = agent;
+    while (currentAgent != null && !visitedAgentIds.has(currentAgent.id)) {
+      visitedAgentIds.add(currentAgent.id);
+      if (currentAgent.parentAgentId == null) {
+        chainRootIdByAgentId.set(agent.id, currentAgent.id);
+        break;
+      }
+      currentAgent = liveAgentById.get(currentAgent.parentAgentId);
+    }
+  }
+
   const chainRoots = byOrdinal.filter(
     (agent) => agent.parentAgentId == null && (childrenByParentId.get(agent.id) ?? []).length > 0,
   );
+  const chainRootIds = new Set(chainRoots.map((agent) => agent.id));
   const laneOwners: ReadonlyArray<LaneOwner> = [
     ...workflows.flatMap(({ run }) =>
       run.createdAt == null ? [] : [{ id: run.id, createdAt: run.createdAt }],
@@ -325,7 +345,23 @@ export const buildTimelineGroups = ({
     });
   const standalonePlans: ReadonlyArray<TimelinePlanEntry> = plans
     .filter((plan) => !groupedPlanIds.has(plan.id))
-    .map((plan) => ({ kind: 'plan', id: `plan:${plan.id}`, at: plan.createdAt, plan }));
+    .map((plan) => {
+      const rootId = chainRootIdByAgentId.get(plan.agentId);
+      return {
+        kind: 'plan',
+        id: `plan:${plan.id}`,
+        at: plan.createdAt,
+        plan,
+        ...(rootId != null && chainRootIds.has(rootId)
+          ? {
+              lane: {
+                identity: identityFor({ runId: rootId }),
+                rootEntryId: `agent:${rootId}`,
+              },
+            }
+          : {}),
+      };
+    });
   const issues: ReadonlyArray<TimelineIssueEntry> = externalTasks.map((task) => ({
     kind: 'issue',
     id: `issue:${task.provider}:${task.externalId}`,
