@@ -189,6 +189,8 @@ fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
                 "--output-format".to_string(),
                 "json".to_string(),
                 "--no-session-persistence".to_string(),
+                "--tools".to_string(),
+                String::new(),
             ];
             crate::aux_spawn::push_claude_mcp_deny(&mut cli_args);
             crate::aux_spawn::push_effort_args("anthropic", args.effort.as_deref(), &mut cli_args);
@@ -286,6 +288,13 @@ mod tests {
             .expect("--setting-sources");
         assert_eq!(cli[idx + 1], "project,local");
         assert!(!cli.iter().any(|a| a == "--bare"));
+    }
+
+    #[test]
+    fn anthropic_args_disable_builtin_tools() {
+        let cli = build_cli_args(&make_args("anthropic")).expect("anthropic args");
+        let idx = cli.iter().position(|a| a == "--tools").expect("--tools");
+        assert_eq!(cli[idx + 1], "");
     }
 
     #[test]
