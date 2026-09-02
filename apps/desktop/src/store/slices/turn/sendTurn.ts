@@ -1323,7 +1323,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     }
 
     if (!lastError && shouldAutoAdvanceWorkflow) {
-      await get().maybeAutoAdvanceWorkflow(sessionId);
+      void get().maybeAutoAdvanceWorkflow(sessionId);
     }
 
     if (lastError) {

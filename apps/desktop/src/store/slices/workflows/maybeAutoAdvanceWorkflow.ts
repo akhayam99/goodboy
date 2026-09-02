@@ -13,6 +13,7 @@ import {
 import { persistOrchestrationStop } from './orchestrateNextStep';
 import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
 import { resumeClusterChildren, unsettledClusterChildren } from './clusterImplementation';
+import { waitForSessionSummarizer } from './summarizerGate';
 import type { GetFn, SetFn } from './types';
 
 const advanceInFlight = new Set<SessionId>();
@@ -64,6 +65,7 @@ const startChainedRuns = async ({ get, sessionId }: Params): Promise<void> => {
 
 const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   await startChainedRuns({ set, get, sessionId });
+  await waitForSessionSummarizer({ get, sessionId });
 
   const state = get();
   const session = state.sessions.find((s) => s.id === sessionId);
@@ -74,9 +76,6 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
     .filter((r) => r.autoRun && r.discardedAt == null && r.triggerMode === 'immediate')
     .sort((a, b) => a.ordinal - b.ordinal);
   if (activeRuns.length === 0) {
-    return;
-  }
-  if (state.summarizerStatus[sessionId]?.status === 'running') {
     return;
   }
   const sessionBlocked = isBudgetBlocked({ alerts: state.budgetAlerts, sessionId });

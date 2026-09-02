@@ -371,22 +371,50 @@ describe('maybeAutoAdvanceWorkflow', () => {
     });
   });
 
-  it('holds while the summarizer runs and advances once it finishes', async () => {
-    const state = baseState(['s0'], [makeAgent('s0', 'pending', 0)]);
-    state['summarizerStatus'] = { [SESSION_ID]: { status: 'running' } };
-    const { set, get } = harness(state);
-    const advance = maybeAutoAdvanceWorkflow(set, get);
+  it('waits out a running summarizer and advances in the same call', async () => {
+    vi.useFakeTimers();
+    try {
+      const state = baseState(['s0'], [makeAgent('s0', 'pending', 0)]);
+      state['summarizerStatus'] = { [SESSION_ID]: { status: 'running' } };
+      const { set, get } = harness(state);
+      const advance = maybeAutoAdvanceWorkflow(set, get);
 
-    await advance(SESSION_ID);
-    expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
+      const pending = advance(SESSION_ID);
+      await vi.advanceTimersByTimeAsync(300);
+      expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
 
-    state['summarizerStatus'] = { [SESSION_ID]: { status: 'idle' } };
-    await advance(SESSION_ID);
-    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      agentId: `${RUN_ID}-s0`,
-      focus: 'announce',
-    });
+      state['summarizerStatus'] = { [SESSION_ID]: { status: 'idle' } };
+      await vi.advanceTimersByTimeAsync(300);
+      await pending;
+      expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
+        sessionId: SESSION_ID,
+        agentId: `${RUN_ID}-s0`,
+        focus: 'announce',
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('gives up on a stuck summarizer after the gate timeout and advances anyway', async () => {
+    vi.useFakeTimers();
+    try {
+      const state = baseState(['s0'], [makeAgent('s0', 'pending', 0)]);
+      state['summarizerStatus'] = { [SESSION_ID]: { status: 'running' } };
+      const { set, get } = harness(state);
+      const advance = maybeAutoAdvanceWorkflow(set, get);
+
+      const pending = advance(SESSION_ID);
+      await vi.advanceTimersByTimeAsync(61_000);
+      await pending;
+      expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
+        sessionId: SESSION_ID,
+        agentId: `${RUN_ID}-s0`,
+        focus: 'announce',
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('orchestrates a dynamic run when no pending agent exists', async () => {
@@ -556,9 +584,6 @@ describe('maybeAutoAdvanceWorkflow', () => {
     const { set, get } = harness(state);
     const advance = maybeAutoAdvanceWorkflow(set, get);
 
-    state['summarizerStatus'] = { [SESSION_ID]: { status: 'running' } };
-    await advance(SESSION_ID);
-    state['summarizerStatus'] = {};
     state['budgetAlerts'] = [{ kind: 'provider-exceeded' }];
     await advance(SESSION_ID);
     expect(updateOrchestrationStopSpy).toHaveBeenCalledWith({}, RUN_ID, {
