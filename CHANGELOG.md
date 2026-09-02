@@ -7,6 +7,46 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.10
+
+Notifications grow up: fewer of them, grouped where they repeat, and an
+inbox that is actually pleasant to triage. Autorun also stops tripping
+over its own summarizer.
+
+### [#1618] The notifications inbox is rebuilt around groups
+
+The Notifications Studio no longer renders a flat pile of identical
+cards. Repeated failures stack into one row with a count, the newest
+entry up front and the older ones a click away, each row carrying its
+severity accent, unread state and context. A severity filter and an
+unread-only toggle sit next to the existing bulk actions, and clearing
+a filter is one click when it hides everything.
+
+### [#1616] Fewer notifications, better ones
+
+A dozen notification emitters that stated the obvious (session created,
+branch changed, title generated, summary saved, and friends) are gone;
+what remains is actionable. Unrelated errors of the same severity no
+longer collapse into one entry, and the boundary-drift warning now
+carries an Open agent button that takes you straight to the drifting
+agent's chat.
+
+### [#1615] Static autorun waits out the summarizer
+
+A static workflow whose step finished while the session summarizer was
+still running silently dropped its auto-advance; the run sat idle until
+something else poked it. Autorun now waits for the summarizer with a
+bounded gate (and proceeds anyway if it hangs), the same discipline the
+dynamic orchestrator already had, without holding your turn hostage
+while it waits.
+
+### [#1614] Spawning an implementer from the brief fans out again
+
+Spawning an implementer from a planner's brief ignored the plan's
+clusters and started a single agent, while the same plan spawned from
+the plan card fanned out correctly. The brief path now passes the plan
+through, so both entry points behave the same.
+
 ## Goodboy v0.2.9
 
 Your project's own scripts show up by themselves, the breadcrumb earns
