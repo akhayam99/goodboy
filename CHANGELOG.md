@@ -7,6 +7,54 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.9
+
+Your project's own scripts show up by themselves, the breadcrumb earns
+its place, and the app stops freezing on heavy git work.
+
+### [#1611] Manifest scripts appear on their own
+
+The Scripts surface now lists every script your project already defines:
+the root package.json, every workspace package in a monorepo (pnpm or npm
+workspaces), and composer.json, grouped per package with the package
+manager detected from the lockfile. Nothing is imported or duplicated;
+the list is scanned fresh when you open the lens, and discovered scripts
+run, stop and survive a reload exactly like the ones you write by hand.
+
+### [#1609] Deleting and fast-forwarding no longer freeze the app
+
+Deleting a session or worktree and fast-forwarding a project ran their
+git and filesystem work on the thread the interface depends on, so the
+whole window locked until they finished. That work now runs off the main
+thread; the app stays responsive throughout.
+
+### [#1610] The breadcrumb earns its place
+
+The session breadcrumb now carries section icons, the live status of the
+selected agent, and the pending count on the resolve crumb, with a
+clearly readable current step. Scripts and terminal also stop sharing
+near-identical icons everywhere they appear.
+
+### [#1607] Every detail page lines up with the overview
+
+Agent, resolver, pull request and integration detail pages used to put
+secondary chips above a smaller title at a different height than the
+overview. Every detail surface now leads with its title at the same size
+and offset as the overview, with the chips below.
+
+### [#1608] Split work is labeled for what it is
+
+An agent that fans its work out to children showed them as "scouts" no
+matter what they were, while the parent claimed it had not started. The
+group is now named after its children, and the parent says it delegated
+and how many children are still running.
+
+### Under the hood
+
+Knip gains a production pass in CI, funding a sweep of dead exports and
+test-only modules [#1606]; the sweep orphaned one unused rust command,
+removed in [#1612].
+
 ## Goodboy v0.2.8
 
 Base branches become a real picker, suggested next steps stop spawning
