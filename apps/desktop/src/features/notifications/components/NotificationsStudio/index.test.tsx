@@ -3,12 +3,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Notification } from '@goodboy/db';
+import type { IsoDateTime } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
-    notifications: [] as ReadonlyArray<Notification>,
+    notifications: Object.freeze(Array<Notification>()),
     notificationCounts: { total: 0, unread: 0 },
     notificationsLoading: false,
+    sessions: [],
+    workspaces: [],
     loadNotifications: vi.fn(async () => undefined),
     markNotificationRead: vi.fn(async () => undefined),
     markNotificationsRead: vi.fn(async () => undefined),
@@ -16,214 +19,195 @@ const { state } = vi.hoisted(() => ({
     clearNotifications: vi.fn(async () => undefined),
     retrySummarizer: vi.fn(),
     retryStepSummary: vi.fn(async () => undefined),
-    summarizerStatus: {} as Record<string, unknown>,
-    bugReportDraft: {
-      issueType: 'idea',
-      title: 'Existing draft',
-      description: 'Earlier notes',
-      images: [],
-    },
-    setBugReportDraft: vi.fn(),
+    summarizerStatus: {},
   },
 }));
 
 vi.mock('../../../../store', () => {
-  const useAppStore = <T,>(selector: (s: typeof state) => T) => selector(state);
-  (useAppStore as unknown as { getState: () => typeof state }).getState = () => state;
+  const useAppStore = <T,>(selector: (store: typeof state) => T) => selector(state);
+  Object.assign(useAppStore, { getState: () => state });
   return { useAppStore };
 });
 
 import { NotificationsStudio } from './index';
 
-const LONG_BODY = [
-  'the orchestrator could not parse the reply.',
-  'it expected a decision marker and found prose instead, so the run stopped here.',
-].join('\n');
+type DeserializeParams = {
+  readonly value: string;
+};
+
+const deserialize = <T,>({ value }: DeserializeParams): T => JSON.parse(value);
+
+const at = ({ value }: DeserializeParams): IsoDateTime =>
+  deserialize({ value: JSON.stringify(value) });
 
 const buildNotification = (overrides: Partial<Notification> = {}): Notification =>
-  ({
-    id: 'n1',
-    ts: new Date().toISOString(),
-    kind: 'error',
-    title: 'summarizer failed',
-    body: LONG_BODY,
-    severity: 'error',
-    sessionId: 'session-1',
-    workspaceId: 'ws-1',
-    read: false,
-    action: null,
-    coalesceKey: null,
-    ...overrides,
-  }) as unknown as Notification;
+  deserialize({
+    value: JSON.stringify({
+      id: 'n1',
+      ts: at({ value: '2026-09-02T10:00:00.000Z' }),
+      kind: 'error',
+      title: 'Summarizer failed',
+      body: 'Could not parse the reply.',
+      severity: 'error',
+      sessionId: null,
+      workspaceId: null,
+      read: false,
+      action: null,
+      coalesceKey: null,
+      ...overrides,
+    }),
+  });
 
-const seedNotifications = (notifications: ReadonlyArray<Notification>) => {
+const seedNotifications = ({ notifications }: { notifications: ReadonlyArray<Notification> }) => {
   state.notifications = notifications;
   state.notificationCounts = {
     total: notifications.length,
-    unread: notifications.filter((n) => !n.read).length,
+    unread: notifications.filter((notification) => notification.read === false).length,
   };
 };
+
+const renderStudio = () =>
+  render(<NotificationsStudio workspaceName="goodboy" onClose={vi.fn()} />);
 
 beforeEach(() => {
   state.notifications = [];
   state.notificationCounts = { total: 0, unread: 0 };
   state.notificationsLoading = false;
-  state.loadNotifications = vi.fn(async () => undefined);
-  state.markNotificationRead = vi.fn(async () => undefined);
-  state.markNotificationsRead = vi.fn(async () => undefined);
-  state.dismissNotification = vi.fn(async () => undefined);
-  state.clearNotifications = vi.fn(async () => undefined);
-  state.retrySummarizer = vi.fn();
-  state.summarizerStatus = {};
-  state.bugReportDraft = {
-    issueType: 'idea',
-    title: 'Existing draft',
-    description: 'Earlier notes',
-    images: [],
-  };
-  state.setBugReportDraft = vi.fn();
+  state.loadNotifications.mockClear();
+  state.markNotificationRead.mockClear();
+  state.markNotificationsRead.mockClear();
+  state.dismissNotification.mockClear();
+  state.clearNotifications.mockClear();
 });
 
 afterEach(cleanup);
 
-const renderStudio = () =>
-  render(<NotificationsStudio workspaceName="goodboy" onClose={vi.fn()} />);
-
 describe('NotificationsStudio', () => {
-  it('renders the full body of a notification without a clamp', () => {
-    seedNotifications([buildNotification()]);
-    renderStudio();
-
-    const body = screen.getByText(/expected a decision marker and found prose instead/i);
-    expect(body.textContent).toBe(LONG_BODY);
-    expect(body.className).not.toContain('line-clamp');
-    expect(body.className).toContain('whitespace-pre-wrap');
-    expect(screen.getByRole('button', { name: 'Send to developers' })).toBeDefined();
-  });
-
-  it('does not offer an informational notification to developers', () => {
-    seedNotifications([buildNotification({ severity: 'info' })]);
-    renderStudio();
-
-    expect(screen.queryByRole('button', { name: 'Send to developers' })).toBeNull();
-  });
-
-  it('merges a warning into the existing draft before opening the report studio', () => {
-    const onOpenStudio = vi.fn();
-    window.addEventListener('goodboy:open-report-issue', onOpenStudio);
-    seedNotifications([buildNotification({ severity: 'warning' })]);
-    renderStudio();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Send to developers' }));
-
-    expect(state.setBugReportDraft).toHaveBeenCalledWith({
-      issueType: 'bug',
-      title: 'Existing draft',
-      description: `Earlier notes\n\nsummarizer failed\n\n${LONG_BODY}`,
+  it('renders repeated notifications as one row with a count badge', () => {
+    seedNotifications({
+      notifications: [
+        buildNotification({ id: 'older', coalesceKey: 'retry', title: 'Older failure' }),
+        buildNotification({
+          id: 'latest',
+          coalesceKey: 'retry',
+          title: 'Latest failure',
+          ts: at({ value: '2026-09-02T11:00:00.000Z' }),
+        }),
+      ],
     });
-    expect(state.markNotificationRead).not.toHaveBeenCalled();
-    expect(onOpenStudio).toHaveBeenCalledOnce();
-    window.removeEventListener('goodboy:open-report-issue', onOpenStudio);
+    renderStudio();
+
+    expect(screen.getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.getByText('Latest failure')).toBeDefined();
+    expect(screen.getByLabelText('2 notifications')).toBeDefined();
+    expect(screen.queryByText('Older failure')).toBeNull();
   });
 
-  it('fires the mapped handler behind a notification CTA', async () => {
-    state.summarizerStatus = {
-      'session-1': { status: 'error', lastAttempt: { turnInput: 'in', turnOutput: 'out' } },
-    };
-    seedNotifications([
-      buildNotification({ action: { kind: 'retry-summarizer', sessionId: 'session-1' } as never }),
-    ]);
+  it('expands a group to reveal older members', () => {
+    seedNotifications({
+      notifications: [
+        buildNotification({ id: 'older', coalesceKey: 'retry', title: 'Older failure' }),
+        buildNotification({ id: 'latest', coalesceKey: 'retry', title: 'Latest failure' }),
+      ],
+    });
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand notifications' }));
+
+    expect(screen.getByText('Older failure')).toBeDefined();
+  });
+
+  it('filters groups by severity', () => {
+    seedNotifications({
+      notifications: [
+        buildNotification({ id: 'error', title: 'Error row' }),
+        buildNotification({ id: 'warning', title: 'Warning row', severity: 'warning' }),
+      ],
+    });
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Warnings' }));
+
+    expect(screen.getByText('Warning row')).toBeDefined();
+    expect(screen.queryByText('Error row')).toBeNull();
+  });
+
+  it('filters groups to unread only', () => {
+    seedNotifications({
+      notifications: [
+        buildNotification({ id: 'unread', title: 'Unread row' }),
+        buildNotification({ id: 'read', title: 'Read row', read: true }),
+      ],
+    });
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: /unread only/i }));
+
+    expect(screen.getByText('Unread row')).toBeDefined();
+    expect(screen.queryByText('Read row')).toBeNull();
+  });
+
+  it('marks every member in a group read', async () => {
+    seedNotifications({
+      notifications: [
+        buildNotification({ id: 'first', coalesceKey: 'retry' }),
+        buildNotification({ id: 'second', coalesceKey: 'retry' }),
+      ],
+    });
     renderStudio();
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^retry$/i }));
+      fireEvent.click(
+        screen.getByRole('button', { name: /mark "summarizer failed" group as read/i }),
+      );
     });
 
-    expect(state.retrySummarizer).toHaveBeenCalledWith('session-1');
+    expect(state.markNotificationRead).toHaveBeenCalledTimes(2);
+    expect(state.markNotificationRead).toHaveBeenCalledWith('first');
+    expect(state.markNotificationRead).toHaveBeenCalledWith('second');
   });
 
-  it('marks only the notification whose row was clicked', async () => {
-    seedNotifications([
-      buildNotification({ id: 'n1', title: 'first' }),
-      buildNotification({ id: 'n2', title: 'second' }),
-    ]);
+  it('dismisses every member in a group', async () => {
+    seedNotifications({
+      notifications: [
+        buildNotification({ id: 'first', coalesceKey: 'retry' }),
+        buildNotification({ id: 'second', coalesceKey: 'retry' }),
+      ],
+    });
     renderStudio();
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Mark "second" as read' }));
+      fireEvent.click(screen.getByRole('button', { name: /dismiss "summarizer failed" group/i }));
     });
 
-    expect(state.markNotificationRead).toHaveBeenCalledTimes(1);
-    expect(state.markNotificationRead).toHaveBeenCalledWith('n2');
-    expect(state.markNotificationsRead).not.toHaveBeenCalled();
+    expect(state.dismissNotification).toHaveBeenCalledTimes(2);
+    expect(state.dismissNotification).toHaveBeenCalledWith('first');
+    expect(state.dismissNotification).toHaveBeenCalledWith('second');
   });
 
-  it('marks every notification read from the toolbar', async () => {
-    seedNotifications([buildNotification({ id: 'n1' }), buildNotification({ id: 'n2' })]);
+  it('keeps bulk mark-read and armed delete-all actions', async () => {
+    seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /mark all read/i }));
-    });
+    fireEvent.click(screen.getByRole('button', { name: /mark all read/i }));
+    expect(state.markNotificationsRead).toHaveBeenCalledOnce();
 
-    expect(state.markNotificationsRead).toHaveBeenCalledTimes(1);
-    expect(state.markNotificationRead).not.toHaveBeenCalled();
-  });
-
-  it('requires the confirm step before deleting every notification', async () => {
-    seedNotifications([buildNotification()]);
-    renderStudio();
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /delete all/i }));
-    });
+    fireEvent.click(screen.getByRole('button', { name: /delete all/i }));
     expect(state.clearNotifications).not.toHaveBeenCalled();
-    expect(screen.getByRole('group', { name: /delete every notification/i })).toBeDefined();
-
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
     });
-
-    expect(state.clearNotifications).toHaveBeenCalledTimes(1);
+    expect(state.clearNotifications).toHaveBeenCalledOnce();
   });
 
-  it('dismisses a single notification', async () => {
-    seedNotifications([buildNotification({ id: 'n7', title: 'only one' })]);
+  it('shows a filtered empty state and clears filters', () => {
+    seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Dismiss "only one"' }));
-    });
+    fireEvent.click(screen.getByRole('tab', { name: 'Warnings' }));
+    expect(screen.getByRole('heading', { name: 'No notifications match' })).toBeDefined();
 
-    expect(state.dismissNotification).toHaveBeenCalledWith('n7');
-  });
-
-  it('separates unread from read on the card surface', () => {
-    seedNotifications([
-      buildNotification({ id: 'n1', title: 'unread one', read: false }),
-      buildNotification({ id: 'n2', title: 'read one', read: true }),
-    ]);
-    renderStudio();
-
-    const unread = screen.getByText('unread one').closest('li');
-    const read = screen.getByText('read one').closest('li');
-    expect(unread?.className).toContain('bg-elevated');
-    expect(read?.className).not.toContain('bg-elevated');
-  });
-
-  it('reports the true totals when the list cap hides older rows', () => {
-    state.notifications = [buildNotification({ id: 'n204', read: true })];
-    state.notificationCounts = { total: 205, unread: 1 };
-    renderStudio();
-
-    expect(screen.getByText('205 in total, 1 unread, showing the newest 1')).toBeDefined();
-    expect(screen.getByRole('button', { name: /mark all read/i })).toBeDefined();
-  });
-
-  it('shows the empty state when there is nothing to catch up on', () => {
-    renderStudio();
-
-    expect(screen.getByRole('heading', { name: /nothing to catch up on/i })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /delete all/i })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+    expect(screen.getByText('Summarizer failed')).toBeDefined();
   });
 });
