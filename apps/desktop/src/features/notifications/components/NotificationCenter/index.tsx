@@ -22,6 +22,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
 import { sendNotificationToDevelopers } from '../../../settings/sendNotificationToDevelopers';
+import { groupNotifications } from '../../grouping';
 
 const DROPDOWN_WIDTH = 384;
 const LIST_MAX_HEIGHT = 400;
@@ -180,21 +181,6 @@ export const NotificationCenter = () => {
       </AnchoredPopover>
     </div>
   );
-};
-
-type GroupNotificationsParams = {
-  readonly notifications: ReadonlyArray<Notification>;
-};
-
-const groupNotifications = ({ notifications }: GroupNotificationsParams) => {
-  const groups = new Map<string, Array<Notification>>();
-  for (const notification of notifications) {
-    const key = notification.coalesceKey ?? notification.id;
-    const group = groups.get(key) ?? [];
-    group.push(notification);
-    groups.set(key, group);
-  }
-  return [...groups.values()];
 };
 
 type NotificationGroupProps = {

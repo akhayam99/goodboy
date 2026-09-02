@@ -6,9 +6,15 @@ import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
+import { notificationContext } from '../NotificationToastBridge';
+import {
+  filterNotificationGroups,
+  sortNotificationGroupsNewestFirst,
+  type NotificationSeverityFilter,
+} from '../../grouping';
 import { InboxSkeleton } from './InboxSkeleton';
 import { InboxToolbar } from './InboxToolbar';
-import { NotificationCard } from './NotificationCard';
+import { NotificationGroupRow } from './NotificationGroupRow';
 
 type Props = {
   readonly workspaceName: string;
@@ -24,12 +30,18 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
   const markNotificationsRead = useAppStore((state) => state.markNotificationsRead);
   const dismissNotification = useAppStore((state) => state.dismissNotification);
   const clearNotifications = useAppStore((state) => state.clearNotifications);
+  const sessions = useAppStore((state) => state.sessions);
+  const workspaces = useAppStore((state) => state.workspaces);
   const [isArmed, setIsArmed] = useState(false);
+  const [severity, setSeverity] = useState<NotificationSeverityFilter>('all');
+  const [isUnreadOnly, setIsUnreadOnly] = useState(false);
 
   useEffect(() => {
     void loadNotifications();
   }, [loadNotifications]);
 
+  const groups = sortNotificationGroupsNewestFirst({ notifications });
+  const visibleGroups = filterNotificationGroups({ groups, severity, isUnreadOnly });
   const { total, unread } = notificationCounts;
   const shownNote =
     total > notifications.length ? `, showing the newest ${notifications.length}` : '';
@@ -56,6 +68,8 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
             notifications.length > 0 ? (
               <InboxToolbar
                 unreadCount={unread}
+                severity={severity}
+                isUnreadOnly={isUnreadOnly}
                 isArmed={isArmed}
                 onArm={() => setIsArmed(true)}
                 onDisarm={() => setIsArmed(false)}
@@ -64,6 +78,8 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
                   await clearNotifications();
                   setIsArmed(false);
                 }}
+                onSeverityChange={setSeverity}
+                onUnreadOnlyChange={setIsUnreadOnly}
               />
             ) : undefined
           }
@@ -79,26 +95,61 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
               headingLevel={2}
             />
           ) : null}
-          {notifications.length > 0 && (
-            <ul className="flex flex-col gap-3">
-              {notifications.map((notification) => {
+          {notifications.length > 0 && visibleGroups.length === 0 ? (
+            <EmptyState
+              icon={CONCEPT_ICONS.notifications}
+              tone={CONCEPT_TONE.notifications}
+              title="No notifications match"
+              description="Try another severity or include notifications you have already read."
+              action={
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSeverity('all');
+                    setIsUnreadOnly(false);
+                  }}
+                  className="rounded-md px-2 py-1 text-xs font-medium text-foreground ring-1 ring-inset ring-border hover:bg-muted"
+                >
+                  Clear filters
+                </button>
+              }
+              size="lg"
+              headingLevel={2}
+            />
+          ) : null}
+          {visibleGroups.length > 0 ? (
+            <ul className="flex flex-col divide-y divide-border-soft">
+              {visibleGroups.map((group) => {
+                const latest = group[0];
+                if (latest == null) {
+                  return null;
+                }
                 const action =
-                  notification.action != null
-                    ? mapNotificationAction(notification.action, useAppStore.getState())
+                  latest.action != null
+                    ? mapNotificationAction(latest.action, useAppStore.getState())
                     : undefined;
                 return (
-                  <NotificationCard
-                    key={notification.id}
-                    notification={notification}
+                  <NotificationGroupRow
+                    key={latest.coalesceKey ?? latest.id}
+                    notifications={group}
+                    context={notificationContext(latest, sessions, workspaces) ?? null}
                     actionLabel={action?.label ?? null}
                     onAction={() => action?.onClick()}
-                    onMarkRead={() => void markNotificationRead(notification.id)}
-                    onDismiss={() => void dismissNotification(notification.id)}
+                    onMarkRead={() => {
+                      for (const notification of group) {
+                        void markNotificationRead(notification.id);
+                      }
+                    }}
+                    onDismiss={() => {
+                      for (const notification of group) {
+                        void dismissNotification(notification.id);
+                      }
+                    }}
                   />
                 );
               })}
             </ul>
-          )}
+          ) : null}
         </StudioPanel>
       )}
     </StudioShell>
