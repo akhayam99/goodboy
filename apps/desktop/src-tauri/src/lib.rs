@@ -204,7 +204,6 @@ pub fn run() {
             db::db_select,
             db::db_wipe,
             bridge::bridge_start,
-            bridge::bridge_stop,
             bridge::bridge_status,
             bridge::bridge_command_result,
             bridge::bridge_revoke,

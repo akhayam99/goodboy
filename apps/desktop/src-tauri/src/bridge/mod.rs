@@ -211,12 +211,6 @@ pub async fn bridge_start(
     })
 }
 
-#[tauri::command]
-pub async fn bridge_stop(state: State<'_, BridgeState>) -> Result<(), BridgeError> {
-    state.stop().await;
-    Ok(())
-}
-
 /// Desktop-initiated disconnect ("forget device"): clears the enrolled-phone
 /// allow-list and tears the bridge down, dropping any live connection. The phone
 /// must scan a fresh QR to reconnect — re-pairing is a deliberate act here on the
