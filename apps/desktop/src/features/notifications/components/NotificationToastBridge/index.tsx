@@ -80,7 +80,7 @@ export const mapNotificationAction = (
           store.setActiveLens(sessionId, 'agents');
           await store.selectAgent(sessionId, agentId);
           window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-        })();
+        })().catch(() => undefined);
       },
     };
   }
