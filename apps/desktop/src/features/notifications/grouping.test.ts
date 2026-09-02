@@ -64,7 +64,7 @@ describe('notification grouping', () => {
     ]);
   });
 
-  it('matches a group when any member satisfies both active filters', () => {
+  it('matches a group when each active filter is satisfied by some member, not necessarily the same one', () => {
     const readError = buildNotification({ id: 'read-error', read: true, coalesceKey: 'mixed' });
     const unreadWarning = buildNotification({
       id: 'unread-warning',

@@ -42,10 +42,7 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
 
   const groups = sortNotificationGroupsNewestFirst({ notifications });
   const visibleGroups = filterNotificationGroups({ groups, severity, isUnreadOnly });
-  const unread = groups.filter((group) =>
-    group.some((notification) => notification.read === false),
-  ).length;
-  const { total } = notificationCounts;
+  const { total, unread } = notificationCounts;
   const shownNote =
     total > notifications.length ? `, showing the newest ${notifications.length}` : '';
   const subtitle =
