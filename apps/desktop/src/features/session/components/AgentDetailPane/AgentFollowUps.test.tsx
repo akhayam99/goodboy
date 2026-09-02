@@ -126,7 +126,10 @@ describe('AgentFollowUps suggestions', () => {
     screen.getByText('Fix these review findings').click();
     await vi.waitFor(() => expect(state.spawnAgent).toHaveBeenCalledTimes(1));
 
-    const options = state.spawnAgent.mock.calls[0]?.[1] as Record<string, unknown>;
+    const options = (state.spawnAgent.mock.calls[0] as ReadonlyArray<unknown>)[1] as Record<
+      string,
+      unknown
+    >;
     expect(options.kindOverride).toBe('implementer');
     expect(options.triggeredPlanId).toBe('plan-1');
     expect(options.initialPrompt).toBeUndefined();
@@ -148,7 +151,10 @@ describe('AgentFollowUps suggestions', () => {
     screen.getByText('Fix these review findings').click();
     await vi.waitFor(() => expect(state.spawnAgent).toHaveBeenCalledTimes(1));
 
-    const options = state.spawnAgent.mock.calls[0]?.[1] as Record<string, unknown>;
+    const options = (state.spawnAgent.mock.calls[0] as ReadonlyArray<unknown>)[1] as Record<
+      string,
+      unknown
+    >;
     expect(options.triggeredPlanId).toBeUndefined();
     expect(typeof options.initialPrompt).toBe('string');
     expect((options.initialPrompt as string).length).toBeGreaterThan(0);
