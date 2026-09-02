@@ -13,6 +13,7 @@ export const reattachScriptRuns = (set: SetFn, get: GetFn) => {
           result: null,
           runId: live.runId,
           startedAt: live.startedAt,
+          ...(live.name === undefined ? {} : { name: live.name }),
         };
         scriptRuns[live.sessionId] = {
           ...scriptRuns[live.sessionId],

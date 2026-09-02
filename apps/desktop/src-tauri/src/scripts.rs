@@ -53,6 +53,7 @@ struct ScriptSlot {
 pub struct LiveScriptRun {
     run_id: String,
     script_id: String,
+    name: String,
     session_id: String,
     started_at: u64,
 }
@@ -148,6 +149,139 @@ fn build_script_command(body: &str, cwd: &str, login_env: &[(String, String)]) -
     cmd
 }
 
+struct ScriptSpawnRequest {
+    app: AppHandle,
+    registry: Arc<Mutex<HashMap<String, ScriptSlot>>>,
+    script_id: String,
+    name: String,
+    body: String,
+    run_id: String,
+    session_id: String,
+    cwd: String,
+    cols: u16,
+    rows: u16,
+}
+
+fn spawn_script(request: ScriptSpawnRequest) -> Result<(), ScriptError> {
+    let pty_system = native_pty_system();
+    let pair = pty_system
+        .openpty(PtySize {
+            rows: request.rows,
+            cols: request.cols,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
+        .map_err(|error| ScriptError::Io(error.to_string()))?;
+
+    let cmd = build_script_command(&request.body, &request.cwd, crate::path_env::resolved_env());
+    let child = pair
+        .slave
+        .spawn_command(cmd)
+        .map_err(|error| ScriptError::Io(error.to_string()))?;
+    drop(pair.slave);
+
+    let reader = pair
+        .master
+        .try_clone_reader()
+        .map_err(|error| ScriptError::Io(error.to_string()))?;
+    let writer = pair
+        .master
+        .take_writer()
+        .map_err(|error| ScriptError::Io(error.to_string()))?;
+    let slot: PtySlot = Arc::new(Mutex::new(Some(PtyRun {
+        _writer: writer,
+        _master: pair.master,
+        child,
+    })));
+    let started_at = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|error| ScriptError::Io(error.to_string()))?
+        .as_millis() as u64;
+    let metadata = LiveScriptRun {
+        run_id: request.run_id.clone(),
+        script_id: request.script_id,
+        name: request.name,
+        session_id: request.session_id,
+        started_at,
+    };
+
+    request
+        .registry
+        .lock()
+        .map_err(|_| ScriptError::Poisoned)?
+        .insert(
+            request.run_id.clone(),
+            ScriptSlot {
+                run: Arc::clone(&slot),
+                metadata,
+            },
+        );
+
+    let run_id = request.run_id;
+    let app = request.app;
+    let registry = request.registry;
+    thread::spawn(move || {
+        let mut reader = reader;
+        let mut buf = [0u8; 4096];
+        loop {
+            match reader.read(&mut buf) {
+                Ok(0) | Err(_) => break,
+                Ok(count) => {
+                    let encoded = STANDARD.encode(&buf[..count]);
+                    let _ = app.emit(
+                        "script-output",
+                        ScriptOutputPayload {
+                            run_id: run_id.clone(),
+                            data: encoded,
+                        },
+                    );
+                }
+            }
+        }
+
+        let exit_code = {
+            let slot = {
+                let guard = registry.lock().ok();
+                guard
+                    .as_ref()
+                    .and_then(|map| map.get(&run_id).map(|entry| Arc::clone(&entry.run)))
+            };
+            if let Some(slot) = slot {
+                let mut guard = slot.lock().unwrap_or_else(|error| error.into_inner());
+                guard
+                    .as_mut()
+                    .and_then(|run| run.child.wait().ok())
+                    .map(|status| match status.success() {
+                        true => 0_i32,
+                        false => 1_i32,
+                    })
+                    .unwrap_or(-1)
+            } else {
+                -1
+            }
+        };
+
+        let _ = app.emit(
+            "script-exit",
+            ScriptExitPayload {
+                run_id: run_id.clone(),
+                exit_code,
+            },
+        );
+        if let Ok(mut map) = registry.lock() {
+            map.remove(&run_id);
+        }
+    });
+
+    Ok(())
+}
+
+async fn spawn_script_blocking(request: ScriptSpawnRequest) -> Result<(), ScriptError> {
+    tauri::async_runtime::spawn_blocking(move || spawn_script(request))
+        .await
+        .map_err(|error| ScriptError::Io(error.to_string()))?
+}
+
 /// Spawns `bash -c <body>` inside a pty, registers the run under `run_id`, and
 /// returns immediately. Output is streamed as `script-output` events (base64
 /// chunks). A `script-exit` event fires when the process exits or is killed.
@@ -163,132 +297,58 @@ pub async fn workspace_script_run(
     cols: u16,
     rows: u16,
 ) -> Result<(), ScriptError> {
-    let body = {
+    let (name, body) = {
         let conn = state.0.lock().map_err(|_| ScriptError::Poisoned)?;
         conn.query_row(
-            "SELECT body FROM project_scripts WHERE id = ?1 LIMIT 1",
+            "SELECT name, body FROM project_scripts WHERE id = ?1 LIMIT 1",
             rusqlite::params![script_id],
-            |row| row.get::<_, String>(0),
+            |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
         )
         .map_err(|_| ScriptError::NotFound(script_id.clone()))?
     };
-
-    let registry_arc = Arc::clone(&registry.0);
-
-    tauri::async_runtime::spawn_blocking(move || {
-        let pty_system = native_pty_system();
-        let pair = pty_system
-            .openpty(PtySize {
-                rows,
-                cols,
-                pixel_width: 0,
-                pixel_height: 0,
-            })
-            .map_err(|e| ScriptError::Io(e.to_string()))?;
-
-        let cmd = build_script_command(&body, &cwd, crate::path_env::resolved_env());
-
-        let child = pair
-            .slave
-            .spawn_command(cmd)
-            .map_err(|e| ScriptError::Io(e.to_string()))?;
-        drop(pair.slave);
-
-        let reader = pair
-            .master
-            .try_clone_reader()
-            .map_err(|e| ScriptError::Io(e.to_string()))?;
-        let writer = pair
-            .master
-            .take_writer()
-            .map_err(|e| ScriptError::Io(e.to_string()))?;
-
-        let slot: PtySlot = Arc::new(Mutex::new(Some(PtyRun {
-            _writer: writer,
-            _master: pair.master,
-            child,
-        })));
-
-        let started_at = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map_err(|e| ScriptError::Io(e.to_string()))?
-            .as_millis() as u64;
-        let metadata = LiveScriptRun {
-            run_id: run_id.clone(),
-            script_id: script_id.clone(),
-            session_id,
-            started_at,
-        };
-
-        registry_arc
-            .lock()
-            .map_err(|_| ScriptError::Poisoned)?
-            .insert(
-                run_id.clone(),
-                ScriptSlot {
-                    run: Arc::clone(&slot),
-                    metadata,
-                },
-            );
-
-        let run_id_r = run_id.clone();
-        let app_r = app.clone();
-        let registry_r = Arc::clone(&registry_arc);
-
-        thread::spawn(move || {
-            let mut reader = reader;
-            let mut buf = [0u8; 4096];
-            loop {
-                match reader.read(&mut buf) {
-                    Ok(0) | Err(_) => break,
-                    Ok(n) => {
-                        let encoded = STANDARD.encode(&buf[..n]);
-                        let _ = app_r.emit(
-                            "script-output",
-                            ScriptOutputPayload {
-                                run_id: run_id_r.clone(),
-                                data: encoded,
-                            },
-                        );
-                    }
-                }
-            }
-
-            let exit_code = {
-                let slot = {
-                    let guard = registry_r.lock().ok();
-                    guard
-                        .as_ref()
-                        .and_then(|m| m.get(&run_id_r).map(|slot| Arc::clone(&slot.run)))
-                };
-                if let Some(slot) = slot {
-                    let mut g = slot.lock().unwrap_or_else(|e| e.into_inner());
-                    g.as_mut()
-                        .and_then(|r| r.child.wait().ok())
-                        .map(|s| if s.success() { 0_i32 } else { 1_i32 })
-                        .unwrap_or(-1)
-                } else {
-                    -1
-                }
-            };
-
-            let _ = app_r.emit(
-                "script-exit",
-                ScriptExitPayload {
-                    run_id: run_id_r.clone(),
-                    exit_code,
-                },
-            );
-
-            if let Ok(mut map) = registry_r.lock() {
-                map.remove(&run_id_r);
-            }
-        });
-
-        Ok(())
+    spawn_script_blocking(ScriptSpawnRequest {
+        app,
+        registry: Arc::clone(&registry.0),
+        script_id,
+        name,
+        body,
+        run_id,
+        session_id,
+        cwd,
+        cols,
+        rows,
     })
     .await
-    .map_err(|e| ScriptError::Io(e.to_string()))?
+}
+
+#[tauri::command]
+pub async fn workspace_script_run_adhoc(
+    app: AppHandle,
+    registry: State<'_, ScriptRegistry>,
+    script_id: String,
+    name: String,
+    body: String,
+    run_id: Option<String>,
+    session_id: String,
+    cwd: String,
+    cols: u16,
+    rows: u16,
+) -> Result<String, ScriptError> {
+    let run_id = run_id.unwrap_or_else(|| format!("adhoc-{:032x}", rand::random::<u128>()));
+    spawn_script_blocking(ScriptSpawnRequest {
+        app,
+        registry: Arc::clone(&registry.0),
+        script_id,
+        name,
+        body,
+        run_id: run_id.clone(),
+        session_id,
+        cwd,
+        cols,
+        rows,
+    })
+    .await?;
+    Ok(run_id)
 }
 
 #[tauri::command]
@@ -390,6 +450,7 @@ mod tests {
         let metadata = LiveScriptRun {
             run_id: "run-1".to_string(),
             script_id: "script-1".to_string(),
+            name: "Script one".to_string(),
             session_id: "session-1".to_string(),
             started_at: 1234,
         };

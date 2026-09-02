@@ -309,9 +309,7 @@ pub async fn worktree_list_local_branches(
 }
 
 #[tauri::command]
-pub async fn worktree_list_branch_names(
-    repo_path: String,
-) -> Result<Vec<String>, WorktreeError> {
+pub async fn worktree_list_branch_names(repo_path: String) -> Result<Vec<String>, WorktreeError> {
     tauri::async_runtime::spawn_blocking(move || list_branch_names_blocking(repo_path))
         .await
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
@@ -1413,14 +1411,19 @@ fn resolve_branch_range(cwd: &Path) -> String {
 }
 
 fn normalized_base(base: Option<&str>) -> Option<&str> {
-    base.map(str::trim).filter(|candidate| !candidate.is_empty())
+    base.map(str::trim)
+        .filter(|candidate| !candidate.is_empty())
 }
 
 fn resolve_origin_head(cwd: &Path) -> Option<String> {
     git(cwd, &["symbolic-ref", "refs/remotes/origin/HEAD"])
         .ok()
         .map(|output| output.trim().to_string())
-        .and_then(|reference| reference.strip_prefix("refs/remotes/origin/").map(str::to_string))
+        .and_then(|reference| {
+            reference
+                .strip_prefix("refs/remotes/origin/")
+                .map(str::to_string)
+        })
         .filter(|branch| !branch.is_empty())
 }
 

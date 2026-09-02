@@ -15,6 +15,22 @@ export type ScriptRunRecord = {
   readonly result: ScriptRunResult | null;
   readonly runId: string;
   readonly startedAt: number;
+  readonly name?: string;
+};
+
+export type ScriptSource = 'package-json' | 'composer';
+
+export type DiscoveredScript = {
+  readonly name: string;
+  readonly command: string;
+};
+
+export type ScriptGroup = {
+  readonly source: ScriptSource;
+  readonly packageName: string;
+  readonly relDir: string;
+  readonly manager: string;
+  readonly scripts: ReadonlyArray<DiscoveredScript>;
 };
 
 export type ScriptOutputPayload = {
@@ -29,9 +45,37 @@ export type ScriptExitPayload = {
 
 export type LiveScriptRun = {
   readonly runId: string;
-  readonly scriptId: ProjectScriptId;
+  readonly scriptId: string;
+  readonly name: string;
   readonly sessionId: SessionId;
   readonly startedAt: number;
+};
+
+type ScanProjectScriptsParams = {
+  readonly worktreePath: string;
+};
+
+type RunAdhocScriptParams = {
+  readonly scriptId: string;
+  readonly name: string;
+  readonly body: string;
+  readonly runId?: string;
+  readonly sessionId: SessionId;
+  readonly cwd: string;
+  readonly cols?: number;
+  readonly rows?: number;
+};
+
+type DiscoveredScriptIdParams = {
+  readonly worktreePath: string;
+  readonly source: ScriptSource;
+  readonly relDir: string;
+  readonly name: string;
+};
+
+type DiscoveredScriptCwdParams = {
+  readonly worktreePath: string;
+  readonly relDir: string;
 };
 
 type InvokeScriptRunParams = {
@@ -52,6 +96,53 @@ export const invokeScriptRun = ({
   rows,
 }: InvokeScriptRunParams): Promise<void> => {
   return invoke<void>('workspace_script_run', { scriptId, runId, sessionId, cwd, cols, rows });
+};
+
+export const scanProjectScripts = ({
+  worktreePath,
+}: ScanProjectScriptsParams): Promise<ReadonlyArray<ScriptGroup>> => {
+  return invoke<ReadonlyArray<ScriptGroup>>('project_scripts_scan', { worktreePath });
+};
+
+export const runAdhocScript = ({
+  scriptId,
+  name,
+  body,
+  runId,
+  sessionId,
+  cwd,
+  cols = 220,
+  rows = 50,
+}: RunAdhocScriptParams): Promise<string> => {
+  return invoke<string>('workspace_script_run_adhoc', {
+    scriptId,
+    name,
+    body,
+    runId,
+    sessionId,
+    cwd,
+    cols,
+    rows,
+  });
+};
+
+export const discoveredScriptId = ({
+  worktreePath,
+  source,
+  relDir,
+  name,
+}: DiscoveredScriptIdParams): string => {
+  return JSON.stringify([worktreePath, source, relDir, name]);
+};
+
+export const discoveredScriptCwd = ({
+  worktreePath,
+  relDir,
+}: DiscoveredScriptCwdParams): string => {
+  if (relDir === '') {
+    return worktreePath;
+  }
+  return `${worktreePath.replace(/[\\/]+$/, '')}/${relDir}`;
 };
 
 export const invokeScriptListLive = (): Promise<ReadonlyArray<LiveScriptRun>> => {

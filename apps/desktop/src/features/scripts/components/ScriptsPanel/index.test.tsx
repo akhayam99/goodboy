@@ -16,6 +16,14 @@ type RunRecord = {
   readonly runId: string;
 };
 
+type ManifestGroup = {
+  readonly source: 'package-json' | 'composer';
+  readonly packageName: string;
+  readonly relDir: string;
+  readonly manager: string;
+  readonly scripts: ReadonlyArray<{ readonly name: string; readonly command: string }>;
+};
+
 const { state } = vi.hoisted(() => ({
   state: {
     scripts: [] as ReadonlyArray<Script>,
@@ -26,11 +34,19 @@ const { state } = vi.hoisted(() => ({
       'session-1': [{ projectId: 'project-1', worktreePath: '/tmp/api' }],
     } as Record<string, ReadonlyArray<{ projectId: string; worktreePath: string }>>,
     scriptRuns: {} as Record<string, Record<string, RunRecord>>,
+    discoveredScripts: {} as Record<string, Record<string, ReadonlyArray<ManifestGroup>>>,
+    discoveredScriptScans: {} as Record<
+      string,
+      Record<string, { status: 'loading' | 'ready' | 'error'; error: string | null }>
+    >,
     loadScripts: vi.fn(async () => undefined),
     saveScript: vi.fn(async () => undefined),
     deleteScript: vi.fn(async () => undefined),
     runScript: vi.fn(async () => undefined),
     cancelScript: vi.fn(async () => undefined),
+    loadDiscoveredScripts: vi.fn(async () => undefined),
+    refreshDiscoveredScripts: vi.fn(async () => undefined),
+    runDiscoveredScript: vi.fn(async () => undefined),
     scriptsLensScope: null as { readonly projectId: string } | null,
     setScriptsLensScope: vi.fn(),
   },
@@ -44,11 +60,16 @@ vi.mock('../../../../store', () => {
     sessionActiveProject: state.sessionActiveProject,
     sessionProjectMounts: state.sessionProjectMounts,
     scriptRuns: { 'session-1': state.scriptRuns['session-1'] ?? {} },
+    discoveredScripts: state.discoveredScripts,
+    discoveredScriptScans: state.discoveredScriptScans,
     loadScripts: state.loadScripts,
     saveScript: state.saveScript,
     deleteScript: state.deleteScript,
     runScript: state.runScript,
     cancelScript: state.cancelScript,
+    loadDiscoveredScripts: state.loadDiscoveredScripts,
+    refreshDiscoveredScripts: state.refreshDiscoveredScripts,
+    runDiscoveredScript: state.runDiscoveredScript,
     scriptsLensScope: state.scriptsLensScope,
     setScriptsLensScope: state.setScriptsLensScope,
   });
@@ -69,11 +90,16 @@ beforeEach(() => {
     'session-1': [{ projectId: 'project-1', worktreePath: '/tmp/api' }],
   };
   state.scriptRuns = {};
+  state.discoveredScripts = {};
+  state.discoveredScriptScans = {};
   state.loadScripts = vi.fn(async () => undefined);
   state.saveScript = vi.fn(async () => undefined);
   state.deleteScript = vi.fn(async () => undefined);
   state.runScript = vi.fn(async () => undefined);
   state.cancelScript = vi.fn(async () => undefined);
+  state.loadDiscoveredScripts = vi.fn(async () => undefined);
+  state.refreshDiscoveredScripts = vi.fn(async () => undefined);
+  state.runDiscoveredScript = vi.fn(async () => undefined);
   state.scriptsLensScope = null;
   state.setScriptsLensScope = vi.fn();
 });
@@ -81,6 +107,111 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('ScriptsPanel', () => {
+  it('loads, groups, sorts, and runs scripts discovered from the mounted project', () => {
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
+          {
+            source: 'composer',
+            packageName: 'acme/api',
+            relDir: '',
+            manager: 'composer',
+            scripts: [{ name: 'test-php', command: 'composer run-script test-php' }],
+          },
+          {
+            source: 'package-json',
+            packageName: '@acme/web',
+            relDir: 'apps/web',
+            manager: 'pnpm',
+            scripts: [{ name: 'dev', command: 'pnpm run dev' }],
+          },
+          {
+            source: 'package-json',
+            packageName: 'root',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [{ name: 'build', command: 'pnpm run build' }],
+          },
+        ],
+      },
+    };
+    state.discoveredScriptScans = {
+      'session-1': { '/tmp/api': { status: 'ready', error: null } },
+    };
+
+    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+
+    expect(state.loadDiscoveredScripts).toHaveBeenCalledWith({
+      sessionId: 'session-1',
+      worktreePath: '/tmp/api',
+    });
+    expect(
+      screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent),
+    ).toEqual(['root', '@acme/web', 'acme/api']);
+    fireEvent.click(screen.getByRole('button', { name: 'Run dev' }));
+    expect(state.runDiscoveredScript).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: 'session-1',
+        name: 'dev',
+        command: 'pnpm run dev',
+        cwd: '/tmp/api/apps/web',
+      }),
+    );
+  });
+
+  it('shows manifest scan loading, empty, and error states quietly', () => {
+    state.discoveredScriptScans = {
+      'session-1': { '/tmp/api': { status: 'loading', error: null } },
+    };
+    const { rerender } = render(
+      <ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />,
+    );
+    expect(screen.getByText('Scanning project manifests…')).toBeDefined();
+
+    state.discoveredScriptScans = {
+      'session-1': { '/tmp/api': { status: 'ready', error: null } },
+    };
+    rerender(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+    expect(screen.getByText('No manifest scripts found.')).toBeDefined();
+
+    state.discoveredScriptScans = {
+      'session-1': { '/tmp/api': { status: 'error', error: 'manifest scan failed' } },
+    };
+    rerender(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+    expect(screen.getByText('manifest scan failed')).toBeDefined();
+  });
+
+  it('reattaches a discovered run to its manifest row and stops it through the shared registry', () => {
+    const scriptId = JSON.stringify(['/tmp/api', 'package-json', '', 'dev']);
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
+          {
+            source: 'package-json',
+            packageName: 'api',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [{ name: 'dev', command: 'pnpm run dev' }],
+          },
+        ],
+      },
+    };
+    state.discoveredScriptScans = {
+      'session-1': { '/tmp/api': { status: 'ready', error: null } },
+    };
+    state.scriptRuns = {
+      'session-1': {
+        [scriptId]: { status: 'pending', result: null, runId: 'run-live' },
+      },
+    };
+
+    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+
+    expect(screen.getByTestId(`discovered-script-${scriptId}`).dataset.status).toBe('pending');
+    fireEvent.click(screen.getByRole('button', { name: 'Stop dev' }));
+    expect(state.cancelScript).toHaveBeenCalledWith('session-1', scriptId);
+  });
+
   it('consumes a scoped open and preselects its project tab', () => {
     state.projects = [
       { id: 'project-1', workspaceId: 'ws-1', name: 'API' },

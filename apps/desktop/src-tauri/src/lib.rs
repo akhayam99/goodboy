@@ -20,6 +20,7 @@ mod path_env;
 mod permissions;
 mod planner;
 mod profile_file;
+mod project_scripts;
 mod provider_credentials;
 mod provider_lifecycle;
 mod providers;
@@ -296,7 +297,9 @@ pub fn run() {
             skills::skill_delete,
             skills::skill_rescan,
             skills::skill_run_script,
+            project_scripts::project_scripts_scan,
             scripts::workspace_script_run,
+            scripts::workspace_script_run_adhoc,
             scripts::workspace_script_list_live,
             scripts::workspace_script_cancel,
             terminal::terminal_open,

@@ -1,9 +1,9 @@
-import type { SessionId, ProjectScriptId } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import { invokeScriptCancel, type ScriptRunRecord } from '../../../features/scripts/scripts';
 import type { GetFn, SetFn } from './types';
 
 export const cancelScript = (set: SetFn, get: GetFn) => {
-  return async (sessionId: SessionId, scriptId: ProjectScriptId) => {
+  return async (sessionId: SessionId, scriptId: string) => {
     const curr = get().scriptRuns[sessionId]?.[scriptId];
     if (!curr || curr.status !== 'pending') {
       return;
