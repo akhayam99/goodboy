@@ -2,7 +2,6 @@ import type { SessionId } from '@goodboy/types';
 import { listWorktreesForSession, updateSessionWorktreeBranch } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { announceSessionBranchChange } from './announceSessionBranchChange';
 import { getSessionRepo } from './getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
@@ -37,7 +36,6 @@ export const reconcileSessionBranch = (set: SetFn, get: GetFn) => {
         trimmed,
       );
     }
-    const previousBranch = repo.branch;
     set((state) => {
       const nextGithub = { ...state.sessionGithub };
       const nextSelectedPrNumber = { ...state.sessionSelectedPrNumber };
@@ -63,12 +61,6 @@ export const reconcileSessionBranch = (set: SetFn, get: GetFn) => {
         sessionProjectPrs: nextProjectPrs,
         sessionSelectedPrNumber: nextSelectedPrNumber,
       };
-    });
-    await announceSessionBranchChange({
-      get,
-      sessionId,
-      fromBranch: previousBranch,
-      toBranch: trimmed,
     });
   };
 };

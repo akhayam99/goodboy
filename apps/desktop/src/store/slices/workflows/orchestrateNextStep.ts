@@ -782,13 +782,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         usage: result.usage,
       });
       if (decision.action === 'done') {
-        void get().emitNotification(
-          'agent-auto-spawn',
-          'success',
-          'dynamic workflow complete',
-          decision.reason,
-          { sessionId },
-        );
         return;
       }
       void get().emitNotification('error', 'warning', 'dynamic workflow blocked', decision.reason, {

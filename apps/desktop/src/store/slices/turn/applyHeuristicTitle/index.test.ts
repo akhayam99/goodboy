@@ -153,7 +153,7 @@ describe('applyHeuristicTitle', () => {
     );
   });
 
-  it('emits info notification when AI title generation fails', async () => {
+  it('stays silent when AI title generation fails', async () => {
     invokeMock.mockRejectedValue(new Error('model offline'));
     const emitNotification = vi.fn(async () => undefined);
     const harness = createHarness();
@@ -168,14 +168,7 @@ describe('applyHeuristicTitle', () => {
       prompt: 'Implement a secure authentication flow',
     });
 
-    expect(emitNotification).toHaveBeenCalledWith(
-      'title-generation',
-      'info',
-      'agent title generation failed',
-      expect.stringContaining('model offline'),
-      expect.objectContaining({ sessionId: SESSION_ID }),
-    );
-    expect(emitNotification).toHaveBeenCalledTimes(1);
+    expect(emitNotification).not.toHaveBeenCalled();
   });
 
   it('null-heuristic prompt: AI title replaces placeholder agent name', async () => {
@@ -198,7 +191,7 @@ describe('applyHeuristicTitle', () => {
     expect(invokeMock).toHaveBeenCalledOnce();
   });
 
-  it('null-heuristic prompt + AI failure: leaves agent N and emits info notification', async () => {
+  it('null-heuristic prompt + AI failure: leaves agent N without notifying', async () => {
     invokeMock.mockRejectedValue(new Error('model offline'));
     const emitNotification = vi.fn(async () => undefined);
     const harness = createHarness({ agentName: 'agent 2', agentOrdinal: 1 });
@@ -214,13 +207,7 @@ describe('applyHeuristicTitle', () => {
     });
 
     expect(harness.read().sessionPhaseRuns[SESSION_ID]?.[0]?.name).toBe('agent 2');
-    expect(emitNotification).toHaveBeenCalledWith(
-      'title-generation',
-      'info',
-      'agent title generation failed',
-      expect.stringContaining('model offline'),
-      expect.objectContaining({ sessionId: SESSION_ID }),
-    );
+    expect(emitNotification).not.toHaveBeenCalled();
   });
 
   it('non-founding agent gets AI name but session goal is untouched', async () => {

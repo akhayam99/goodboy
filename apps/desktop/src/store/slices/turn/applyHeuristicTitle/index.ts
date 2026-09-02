@@ -1,9 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
-import { formatError } from '@goodboy/ui';
 import { getDefaultBinary, resolveTaskModel, runAuxOneShot } from '@goodboy/core';
 import { renameSession as renameSessionInDb } from '@goodboy/db';
 import type { AgentId, IsoDateTime, SessionId, TaskModelPreference } from '@goodboy/types';
-import { shortModel } from '../../../../features/session/agent-row-format';
 import { heuristicAgentTitle } from '../../../../shared/lib/agent-title-heuristic';
 import { parseGeneratedTitle } from './parseGeneratedTitle';
 import { tauriDatabase } from '../../../../shared/lib/db';
@@ -126,15 +124,7 @@ export const applyHeuristicTitle = async ({
         ...taskModel,
         ...(worktreePath != null && { workingDir: worktreePath }),
       });
-    } catch (titleErr) {
-      const modelLabel = `${taskModel.providerId}/${shortModel(taskModel.model)}`;
-      void get().emitNotification(
-        'title-generation',
-        'info',
-        'agent title generation failed',
-        `${modelLabel}: ${formatError(titleErr)}`,
-        { sessionId },
-      );
+    } catch {
       return;
     }
 

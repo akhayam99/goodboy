@@ -148,13 +148,7 @@ describe('adoptProject', () => {
       ambiguousSessionCount: 1,
       mergedWorkspace: false,
     });
-    expect(store.state.emitNotification).toHaveBeenCalledWith(
-      'project-adopted',
-      'success',
-      'Moved api into target',
-      '2 sessions came along. 1 session stayed in source because they also use its other projects',
-      { workspaceId: TARGET },
-    );
+    expect(store.state.emitNotification).not.toHaveBeenCalled();
   });
 
   it('reloads the target workspace when it is current', async () => {

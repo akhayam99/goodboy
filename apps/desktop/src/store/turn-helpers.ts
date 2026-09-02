@@ -14,7 +14,6 @@ import {
   type ExtractedHandoff,
   type SlotKey,
 } from '@goodboy/core';
-import { shortModel } from '../features/session/agent-row-format';
 import {
   insertNudgeEvent,
   insertProviderRun,
@@ -439,16 +438,6 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       },
       providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
     }));
-    const successModel = `${taskModel.providerId}/${shortModel(result.model)}`;
-    void get().emitNotification(
-      'summarizer-success',
-      'info',
-      'context summarized',
-      `via ${successModel}`,
-      {
-        sessionId,
-      },
-    );
   } catch (err) {
     const message = formatError(err);
     if (import.meta.env.DEV) {

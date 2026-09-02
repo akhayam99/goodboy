@@ -209,21 +209,12 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
     }
     return;
   }
-  const activated = await activateWorkflowAgentOrNotify({
+  await activateWorkflowAgentOrNotify({
     get,
     sessionId,
     agentId: nextPendingAgent.id,
     focus: 'announce',
   });
-  if (activated) {
-    void get().emitNotification(
-      'agent-auto-spawn',
-      'info',
-      `agent auto-spawned: ${nextPendingAgent.name}`,
-      undefined,
-      { sessionId },
-    );
-  }
 };
 
 export const maybeAutoAdvanceWorkflow = (set: SetFn, get: GetFn) => {

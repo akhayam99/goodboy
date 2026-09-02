@@ -78,12 +78,5 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
         ),
       },
     }));
-    void get().emitNotification(
-      'summarizer-success',
-      'success',
-      'step summary repaired',
-      'later workflow steps will use the repaired handoff.',
-      { sessionId },
-    );
   };
 };

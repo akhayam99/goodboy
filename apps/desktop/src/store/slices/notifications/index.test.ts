@@ -551,8 +551,34 @@ describe('store contract', () => {
       expect(ns).toHaveLength(1);
       expect(ns[0]?.title).toBe('oops');
       expect(ns[0]?.read).toBe(false);
-      expect(ns[0]?.coalesceKey).toBe('error:global:error');
+      expect(ns[0]?.coalesceKey).toBe('error:global:error:oops');
       expect(insertNotificationSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('emitNotification keys two unrelated failures in one session apart', async () => {
+      const store = await getStore();
+      await store.getState().emitNotification('error', 'error', 'summarizer failed', undefined, {
+        sessionId: SESSION_ID,
+      });
+      await store.getState().emitNotification('error', 'error', 'orchestrator failed', undefined, {
+        sessionId: SESSION_ID,
+      });
+      const keys = store.getState().notifications.map((n) => n.coalesceKey);
+      expect(keys).toEqual([
+        `error:${SESSION_ID}:error:orchestrator failed`,
+        `error:${SESSION_ID}:error:summarizer failed`,
+      ]);
+    });
+
+    it('emitNotification leaves an explicit coalesceKey untouched', async () => {
+      const store = await getStore();
+      await store
+        .getState()
+        .emitNotification('error', 'warning', 'Context near the limit', 'body', {
+          sessionId: SESSION_ID,
+          coalesceKey: `context-soft-cap:${SESSION_ID}`,
+        });
+      expect(store.getState().notifications[0]?.coalesceKey).toBe(`context-soft-cap:${SESSION_ID}`);
     });
 
     it('emitNotification persists action payload to DB', async () => {
@@ -569,7 +595,7 @@ describe('store contract', () => {
         expect.anything(),
         expect.objectContaining({
           action: { kind: 'retry-summarizer', sessionId: SESSION_ID },
-          coalesceKey: `error:${SESSION_ID}:error`,
+          coalesceKey: `error:${SESSION_ID}:error:summarizer failed`,
         }),
       );
     });

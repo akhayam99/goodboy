@@ -112,7 +112,7 @@ describe('generateWorkflowTitle', () => {
     expect(state.phaseTemplates[WORKSPACE_ID]?.[0]?.name).toBe('Ship the auth rework');
   });
 
-  it('leaves a visibly provisional name and reports generation failure', async () => {
+  it('leaves a visibly provisional name and stays silent on generation failure', async () => {
     invokeMock.mockRejectedValue(new Error('provider unavailable'));
     const { generate, state } = buildHarness();
 
@@ -122,13 +122,7 @@ describe('generateWorkflowTitle', () => {
 
     expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
     expect(state.phaseTemplates[WORKSPACE_ID]?.[0]?.name).toBe(FALLBACK_NAME);
-    expect(state.emitNotification).toHaveBeenCalledWith(
-      'title-generation',
-      'info',
-      'workflow name needs your input',
-      expect.stringContaining('Rename the untitled workflow from its details.'),
-      { sessionId: SESSION_ID, workspaceId: WORKSPACE_ID },
-    );
+    expect(state.emitNotification).not.toHaveBeenCalled();
   });
 
   it('never overwrites a title the user already renamed', async () => {

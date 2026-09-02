@@ -1304,7 +1304,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           'warning',
           `${agentRowEarly?.name ?? 'agent'} drifted from ${earlyAgentKind} role`,
           driftViolations[0]!.detail,
-          { sessionId },
+          {
+            sessionId,
+            ...(activeAgentId != null && {
+              action: { kind: 'open-agent' as const, sessionId, agentId: activeAgentId },
+            }),
+          },
         );
       }
       if (
