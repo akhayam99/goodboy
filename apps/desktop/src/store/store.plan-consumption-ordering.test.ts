@@ -437,7 +437,9 @@ describe('autorun plan consumption ordering', () => {
     expect(upsertPlanSpy).toHaveBeenCalledTimes(1);
     const persisted = planBacking.plans[0]!;
     expect(persisted.bodyMd).toBe('do the thing');
-    expect(addPlanConsumptionSpy).toHaveBeenCalledWith(persisted.id, IMPL_ID);
+    await vi.waitFor(() =>
+      expect(addPlanConsumptionSpy).toHaveBeenCalledWith(persisted.id, IMPL_ID),
+    );
     expect(planBacking.plans[0]!.status).toBe('consumed');
     expect(planBacking.consumptions[persisted.id]).toHaveLength(1);
 
@@ -484,8 +486,10 @@ describe('autorun plan consumption ordering', () => {
     expect(upsertPlanSpy).toHaveBeenCalledTimes(1);
     const persisted = planBacking.plans[0]!;
     expect(persisted.clusters).toHaveLength(2);
-    expect(addPlanConsumptionSpy).toHaveBeenCalledWith(persisted.id, IMPL_ID);
-    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() =>
+      expect(addPlanConsumptionSpy).toHaveBeenCalledWith(persisted.id, IMPL_ID),
+    );
+    await vi.waitFor(() => expect(fanOutClustersSpy).toHaveBeenCalledTimes(1));
   });
 
   it('persists the plan strictly before recording its consumption (race-fix invariant)', async () => {
