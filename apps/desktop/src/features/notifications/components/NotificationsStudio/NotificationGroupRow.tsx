@@ -1,7 +1,7 @@
 import { Check, ChevronRight, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { Notification } from '@goodboy/db';
-import { StatusDot, cn } from '@goodboy/ui';
+import { StatusDot, Tooltip, cn } from '@goodboy/ui';
 import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { NOTIFICATION_SEVERITY } from '../../severity';
 
@@ -42,19 +42,21 @@ export const NotificationGroupRow = ({
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-2">
           {older.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => setIsExpanded((value) => !value)}
-              aria-label={isExpanded ? 'Collapse notifications' : 'Expand notifications'}
-              aria-expanded={isExpanded}
-              className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              <ChevronRight
-                size={13}
-                className={cn('transition-transform', isExpanded && 'rotate-90')}
-                aria-hidden
-              />
-            </button>
+            <Tooltip content={isExpanded ? 'Collapse the group' : 'Expand the group'}>
+              <button
+                type="button"
+                onClick={() => setIsExpanded((value) => !value)}
+                aria-label={isExpanded ? 'Collapse notifications' : 'Expand notifications'}
+                aria-expanded={isExpanded}
+                className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <ChevronRight
+                  size={13}
+                  className={cn('transition-transform', isExpanded && 'rotate-90')}
+                  aria-hidden
+                />
+              </button>
+            </Tooltip>
           ) : (
             <span className="w-4 shrink-0" />
           )}
@@ -107,23 +109,27 @@ export const NotificationGroupRow = ({
               </button>
             ) : null}
             {isUnread ? (
+              <Tooltip content="Mark the group read">
+                <button
+                  type="button"
+                  onClick={onMarkRead}
+                  aria-label={`Mark "${latest.title}" group as read`}
+                  className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <Check size={12} aria-hidden />
+                </button>
+              </Tooltip>
+            ) : null}
+            <Tooltip content="Dismiss the group">
               <button
                 type="button"
-                onClick={onMarkRead}
-                aria-label={`Mark "${latest.title}" group as read`}
-                className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                onClick={onDismiss}
+                aria-label={`Dismiss "${latest.title}" group`}
+                className="rounded p-1 text-muted-foreground hover:bg-danger/10 hover:text-danger"
               >
-                <Check size={12} aria-hidden />
+                <Trash2 size={12} aria-hidden />
               </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={onDismiss}
-              aria-label={`Dismiss "${latest.title}" group`}
-              className="rounded p-1 text-muted-foreground hover:bg-danger/10 hover:text-danger"
-            >
-              <Trash2 size={12} aria-hidden />
-            </button>
+            </Tooltip>
           </span>
         </div>
       </div>
