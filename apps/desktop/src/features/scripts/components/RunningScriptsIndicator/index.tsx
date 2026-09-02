@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AnchoredPopover, cn, Divider, ScrollFade, Tooltip, useDropdown } from '@goodboy/ui';
-import { Terminal } from 'lucide-react';
 import { useAppStore } from '../../../../store';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { RunningScriptRow } from './RunningScriptRow';
 import { useRunningScripts, type RunningScript } from './useRunningScripts';
 
@@ -73,7 +73,7 @@ export const RunningScriptsIndicator = () => {
               isOpen ? 'bg-muted text-info' : 'text-info hover:bg-muted/50',
             )}
           >
-            <Terminal size={14} aria-hidden />
+            <CONCEPT_ICONS.scripts size={14} aria-hidden />
             <span className="text-2xs font-semibold tabular-nums">{count}</span>
           </button>
         </Tooltip>

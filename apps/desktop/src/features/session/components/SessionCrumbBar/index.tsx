@@ -15,6 +15,8 @@ import { agentHomeLens, classifyAgent, resolveRootAgent } from '../../agent-kind
 import { isAgentFinished } from '../../agent-lifecycle';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
 import type { ResolverStatus } from '../../resolver-linkage';
+import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';
+import { ResolverStateBadge } from '../ResolverStateBadge';
 import { PlainCrumb } from './PlainCrumb';
 import { AgentSwitcherCrumb } from './AgentSwitcherCrumb';
 import { WorkflowAdvance } from './WorkflowAdvance';
@@ -32,6 +34,7 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   const selectedAgentId = useAppStore(
     (state) => state.selectedAgentId[sessionId] ?? null,
   ) as AgentId | null;
+  const activeLens = useAppStore((state) => state.activeLens[sessionId] ?? null);
   const phaseRuns = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
@@ -50,6 +53,10 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   const selectedAgent = useMemo(
     () => phaseRuns.find((agent) => agent.id === selectedAgentId) ?? null,
     [phaseRuns, selectedAgentId],
+  );
+  const pendingResolverCount = useMemo(
+    () => resolverIndex.links.filter(({ status }) => status === 'pending').length,
+    [resolverIndex.links],
   );
 
   const rootAgent = useMemo(() => {
@@ -125,7 +132,7 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   return (
     <nav
       aria-label="Breadcrumb"
-      className="flex h-8 min-w-0 shrink-0 items-center gap-1.5 bg-background px-4"
+      className="flex h-8 min-w-0 shrink-0 items-center gap-2 overflow-hidden bg-background px-4"
     >
       <Tooltip
         content={
@@ -138,35 +145,56 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
           <StatusDot tone={STAGE_TONE[stage.stage]} size="sm" />
         </span>
       </Tooltip>
-      {crumbs.map((crumb, index) => (
-        <span key={crumb.id} className="flex min-w-0 items-center gap-1.5">
-          {index > 0 ? (
-            <ChevronRight size={12} aria-hidden className="shrink-0 text-muted-foreground/40" />
-          ) : null}
-          {index === crumbs.length - 1 && canSwitchAgent && selectedAgent != null ? (
-            <AgentSwitcherCrumb
-              label={crumb.label}
-              siblings={siblings}
-              selectedAgentId={selectedAgent.id}
-              onSelect={(id) => {
-                void selectAgent(sessionId, id);
-              }}
-            />
-          ) : crumb.id === 'selected-parent' && parentAgent != null && parentSiblings.length > 1 ? (
-            <AgentSwitcherCrumb
-              label={crumb.label}
-              siblings={parentSiblings}
-              selectedAgentId={parentAgent.id}
-              onNavigate={crumb.onClick}
-              onSelect={(id) => {
-                void selectAgent(sessionId, id);
-              }}
-            />
+      {crumbs.map((crumb, index) => {
+        const isLast = index === crumbs.length - 1;
+        const accessory =
+          isLast && crumb.id === 'selected-child' && selectedAgent != null ? (
+            <AgentStatusIcon status={selectedAgent.status} />
+          ) : activeLens === 'resolve' &&
+            crumb.id === 'lens-resolve' &&
+            pendingResolverCount > 0 ? (
+            <ResolverStateBadge state="queued" count={pendingResolverCount} />
           ) : (
-            <PlainCrumb crumb={crumb} isLast={index === crumbs.length - 1} />
-          )}
-        </span>
-      ))}
+            crumb.accessory
+          );
+        const visibleCrumb = accessory === crumb.accessory ? crumb : { ...crumb, accessory };
+
+        return (
+          <span key={crumb.id} className="flex min-w-0 items-center gap-2">
+            {index > 0 ? (
+              <ChevronRight size={12} aria-hidden className="shrink-0 text-muted-foreground/40" />
+            ) : null}
+            {index === crumbs.length - 1 && canSwitchAgent && selectedAgent != null ? (
+              <AgentSwitcherCrumb
+                label={visibleCrumb.label}
+                icon={visibleCrumb.icon}
+                accessory={visibleCrumb.accessory}
+                siblings={siblings}
+                selectedAgentId={selectedAgent.id}
+                onSelect={(id) => {
+                  void selectAgent(sessionId, id);
+                }}
+              />
+            ) : crumb.id === 'selected-parent' &&
+              parentAgent != null &&
+              parentSiblings.length > 1 ? (
+              <AgentSwitcherCrumb
+                label={visibleCrumb.label}
+                icon={visibleCrumb.icon}
+                accessory={visibleCrumb.accessory}
+                siblings={parentSiblings}
+                selectedAgentId={parentAgent.id}
+                onNavigate={crumb.onClick}
+                onSelect={(id) => {
+                  void selectAgent(sessionId, id);
+                }}
+              />
+            ) : (
+              <PlainCrumb crumb={visibleCrumb} isLast={isLast} />
+            )}
+          </span>
+        );
+      })}
       {canAdvanceRun ? (
         <WorkflowAdvance
           sessionId={sessionId}

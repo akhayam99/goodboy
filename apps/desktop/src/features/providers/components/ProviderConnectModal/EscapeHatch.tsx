@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Terminal } from 'lucide-react';
 import { Button, formatError, Tooltip } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { openCommandInExternalTerminal } from '../../external-terminal';
 import { useAppStore } from '../../../../store';
 import { CopyButton } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly command: string;
@@ -97,7 +97,7 @@ export const EscapeHatch = ({ command, providerId }: Props) => {
             disabled={launching}
             onClick={() => void onLaunch()}
           >
-            <Terminal size={11} aria-hidden />
+            <CONCEPT_ICONS.terminal size={11} aria-hidden />
             <span>Run in my terminal</span>
           </Button>
         </Tooltip>

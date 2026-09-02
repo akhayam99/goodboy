@@ -7,20 +7,29 @@ type PlainCrumbProps = {
   readonly isLast: boolean;
 };
 
-export const PlainCrumb = ({ crumb, isLast }: PlainCrumbProps) =>
-  crumb.onClick != null && !isLast ? (
+export const PlainCrumb = ({ crumb, isLast }: PlainCrumbProps) => {
+  const Icon = crumb.icon;
+  const content = (
+    <>
+      {Icon == null ? null : (
+        <Icon size={13} aria-hidden className="shrink-0 text-muted-foreground/70" />
+      )}
+      <span aria-current={isLast ? 'page' : undefined} className="min-w-0 truncate">
+        {crumb.label}
+      </span>
+      {crumb.accessory}
+    </>
+  );
+
+  return crumb.onClick != null && !isLast ? (
     <button
       type="button"
       onClick={crumb.onClick}
       className={cn(CRUMB_BUTTON_CLASS, CRUMB_LINK_CLASS)}
     >
-      {crumb.label}
+      {content}
     </button>
   ) : (
-    <span
-      aria-current={isLast ? 'page' : undefined}
-      className={cn(CRUMB_BUTTON_CLASS, CRUMB_LAST_CLASS)}
-    >
-      {crumb.label}
-    </span>
+    <span className={cn(CRUMB_BUTTON_CLASS, CRUMB_LAST_CLASS)}>{content}</span>
   );
+};

@@ -1,4 +1,6 @@
+import type { LucideIcon } from 'lucide-react';
 import type { LensKind } from '../../store';
+import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 
 export const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
@@ -23,6 +25,30 @@ export const LENS_LABEL: Record<LensKind, string> = {
   github_issue: 'GitHub issue',
   slack_threads: 'Slack',
 };
+
+export const LENS_ICON = {
+  questions: CONCEPT_ICONS.questions,
+  agents: CONCEPT_ICONS.agents,
+  workflows: CONCEPT_ICONS.workflows,
+  resolve: CONCEPT_ICONS.resolve,
+  review: CONCEPT_ICONS.review,
+  plans: CONCEPT_ICONS.plans,
+  scripts: CONCEPT_ICONS.scripts,
+  terminal: CONCEPT_ICONS.terminal,
+  context: CONCEPT_ICONS.context,
+  goal: CONCEPT_ICONS.goal,
+  decisions: CONCEPT_ICONS.decisions,
+  last_output_summary: CONCEPT_ICONS.sessionSummary,
+  pr: CONCEPT_ICONS.pr,
+  files: CONCEPT_ICONS.diff,
+  explore: CONCEPT_ICONS.explore,
+  linear: CONCEPT_ICONS.linear,
+  sentry: CONCEPT_ICONS.sentry,
+  gitlab_issues: CONCEPT_ICONS.gitlab,
+  jira_issues: CONCEPT_ICONS.jira,
+  github_issue: CONCEPT_ICONS.issues,
+  slack_threads: CONCEPT_ICONS.slack,
+} satisfies Record<LensKind, LucideIcon>;
 
 export const SIMPLE_LENSES = new Set<LensKind>([
   'workflows',

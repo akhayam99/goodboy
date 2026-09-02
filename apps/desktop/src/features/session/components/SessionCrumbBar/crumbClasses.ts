@@ -1,5 +1,5 @@
 export const CRUMB_BUTTON_CLASS =
-  'max-w-48 truncate rounded px-1 py-0.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
+  'inline-flex max-w-48 min-w-0 items-center gap-2 truncate rounded px-1 py-0.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
 
 export const CRUMB_LINK_CLASS = 'text-muted-foreground/70 hover:bg-muted/50 hover:text-foreground';
 

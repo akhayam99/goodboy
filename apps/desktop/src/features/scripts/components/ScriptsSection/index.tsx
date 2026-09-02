@@ -2,17 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn, Divider, Popover, ScrollFade, SectionHeader, Tooltip } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, ProjectScript, ProjectScriptId } from '@goodboy/types';
-import {
-  ChevronDown,
-  ChevronRight,
-  Play,
-  Plus,
-  ScrollText,
-  Square,
-  Terminal,
-  X,
-} from 'lucide-react';
+import { ChevronDown, ChevronRight, Play, Plus, Square, X } from 'lucide-react';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { ScriptRunRecord, ScriptRunResult, ScriptRunStatus } from '../../scripts';
 
 type ScriptsSectionProps = {
@@ -86,7 +78,7 @@ export const ScriptsSection = ({
       {hideHeader ? null : (
         <SectionHeader
           className="mt-6 pb-1.5"
-          icon={<Terminal size={11} aria-hidden className="text-info" />}
+          icon={<CONCEPT_ICONS.scripts size={11} aria-hidden className="text-info" />}
           label="Scripts"
           action={
             <Tooltip content={`${expanded ? 'Collapse' : 'Expand'} scripts`}>
@@ -226,7 +218,7 @@ function ScriptRow({
               : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground',
           )}
         >
-          <ScrollText size={12} aria-hidden />
+          <CONCEPT_ICONS.terminal size={12} aria-hidden />
         </button>
       ) : null}
       {isPending ? (
