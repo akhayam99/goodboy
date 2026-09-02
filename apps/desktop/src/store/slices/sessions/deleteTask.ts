@@ -89,7 +89,6 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
     if (isBranchless) {
       await purgeSessionFileVersions({ sessionId });
     }
-    const sessionGoal = session.goal;
     const sessionWorkspaceId = session.workspaceId;
     await purgeSessionForDelete({ db: tauriDatabase, id: sessionId });
     dropPendingTurnEvents({
@@ -110,12 +109,5 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         currentSessionId: state.currentSessionId === sessionId ? null : state.currentSessionId,
       };
     });
-    void get().emitNotification(
-      'session-deleted',
-      'info',
-      `session deleted: ${sessionGoal}`,
-      undefined,
-      { workspaceId: sessionWorkspaceId },
-    );
   };
 };

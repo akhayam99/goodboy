@@ -70,6 +70,20 @@ export const mapNotificationAction = (
       },
     };
   }
+  if (action.kind === 'open-agent') {
+    const { sessionId, agentId } = action;
+    return {
+      label: 'Open agent',
+      onClick: () => {
+        void (async () => {
+          await store.setCurrentSession(sessionId);
+          store.setActiveLens(sessionId, 'agents');
+          await store.selectAgent(sessionId, agentId);
+          window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+        })();
+      },
+    };
+  }
   if (action.kind === 'open-budget') {
     const scope: BudgetScope =
       action.sessionId != null

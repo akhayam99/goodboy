@@ -6,7 +6,6 @@ import {
   invalidateLocalBranchesCache,
 } from '../../../features/worktree/worktree';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { announceSessionBranchChange } from './announceSessionBranchChange';
 import { getSessionRepo } from './getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
@@ -83,12 +82,6 @@ export const changeSessionBranch = (set: SetFn, get: GetFn) => {
       sessionId,
       kind: 'branch_switched',
       payload: { from: previousBranch, to: target },
-    });
-    await announceSessionBranchChange({
-      get,
-      sessionId,
-      fromBranch: previousBranch,
-      toBranch: target,
     });
   };
 };

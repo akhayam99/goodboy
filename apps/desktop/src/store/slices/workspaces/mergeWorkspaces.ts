@@ -55,13 +55,5 @@ export const mergeWorkspaces = (set: SetFn, get: GetFn) => {
     if (state.currentWorkspaceId === targetWorkspaceId) {
       await get().setCurrentWorkspace(targetWorkspaceId);
     }
-
-    void get().emitNotification(
-      'workspace-merged',
-      'success',
-      `Grouped ${sources.length} ${sources.length === 1 ? 'workspace' : 'workspaces'} into ${target.name}`,
-      undefined,
-      { workspaceId: targetWorkspaceId },
-    );
   };
 };

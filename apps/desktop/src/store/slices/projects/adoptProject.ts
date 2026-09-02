@@ -35,7 +35,6 @@ export const adoptProject = (set: SetFn, get: GetFn) => {
     if (project.workspaceId === targetWorkspaceId) {
       return { movedSessionCount: 0, ambiguousSessionCount: 0, mergedWorkspace: false };
     }
-    const source = state.workspaces.find((workspace) => workspace.id === project.workspaceId);
     const info = await describeProjectAdoption({ db: tauriDatabase, projectId });
     if (info === null) {
       throw new Error(`project not found: ${projectId}`);
@@ -85,23 +84,6 @@ export const adoptProject = (set: SetFn, get: GetFn) => {
     if (get().currentWorkspaceId === targetWorkspaceId) {
       await get().setCurrentWorkspace(targetWorkspaceId);
     }
-    const movedLine =
-      result.movedSessionCount === 1
-        ? '1 session came along'
-        : `${result.movedSessionCount} sessions came along`;
-    const stayedLine =
-      result.ambiguousSessionCount === 0
-        ? undefined
-        : `${result.ambiguousSessionCount} ${
-            result.ambiguousSessionCount === 1 ? 'session stayed' : 'sessions stayed'
-          } in ${source?.name ?? 'the previous workspace'} because they also use its other projects`;
-    void get().emitNotification(
-      'project-adopted',
-      'success',
-      `Moved ${project.name} into ${target.name}`,
-      stayedLine === undefined ? movedLine : `${movedLine}. ${stayedLine}`,
-      { workspaceId: targetWorkspaceId },
-    );
     return { ...result, mergedWorkspace: false };
   };
 };

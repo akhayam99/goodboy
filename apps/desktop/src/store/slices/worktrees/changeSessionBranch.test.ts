@@ -66,7 +66,7 @@ beforeEach(() => {
 });
 
 describe('changeSessionBranch', () => {
-  it('surfaces the branch change as an event naming the work it leaves behind', async () => {
+  it('switches the branch without notifying anyone', async () => {
     const state = makeState();
     const set = vi.fn((updater: (current: State) => State) => {
       Object.assign(state, updater(state));
@@ -77,13 +77,8 @@ describe('changeSessionBranch', () => {
       createNew: false,
     });
 
-    expect(h.emitNotification).toHaveBeenCalledWith(
-      'branch-changed',
-      'info',
-      'Branch is now ak/incoming',
-      '1 linked issue stays on ak/outgoing and moved to the work history. Pull requests now read from ak/incoming.',
-      { sessionId: SESSION_ID, workspaceId: 'workspace-1' },
-    );
+    expect(h.changeWorktreeBranch).toHaveBeenCalled();
+    expect(h.emitNotification).not.toHaveBeenCalled();
   });
 
   it('writes the switch to the session trace with both branch names', async () => {

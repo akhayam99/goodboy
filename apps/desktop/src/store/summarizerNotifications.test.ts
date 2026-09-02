@@ -211,7 +211,7 @@ describe('summarizer notifications', () => {
     vi.clearAllMocks();
   });
 
-  it('success notification body includes provider/shortModel', async () => {
+  it('a successful summary notifies nobody', async () => {
     summarizeSpy.mockResolvedValue({
       delta: { upserts: [] },
       usage: { inputTokens: 10, outputTokens: 5, cachedInputTokens: 0, estimatedCostUsd: 0 },
@@ -273,15 +273,12 @@ describe('summarizer notifications', () => {
       'agent output',
     );
 
-    await vi.waitFor(() => expect(insertNotificationSpy).toHaveBeenCalled(), { timeout: 5000 });
+    await vi.waitFor(
+      () => expect(useAppStore.getState().summarizerStatus[SESSION_ID]?.status).toBe('idle'),
+      { timeout: 5000 },
+    );
 
-    type NotifCall = [unknown, Record<string, unknown>];
-    const calls = insertNotificationSpy.mock.calls as unknown as NotifCall[];
-    const call = calls.find((c) => c[1].kind === 'summarizer-success');
-    expect(call).not.toBeUndefined();
-    const n = call?.[1] ?? {};
-    expect(n.body).toMatch(/^via anthropic\//);
-    expect(n.body as string).toMatch(/haiku/i);
+    expect(insertNotificationSpy).not.toHaveBeenCalled();
   });
 
   it('failure notification body includes provider and error, carries retry action', async () => {

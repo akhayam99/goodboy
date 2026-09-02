@@ -153,8 +153,6 @@ const handleChildStartFailure = async ({
   const stepFailures = (stepStartAttempts.get(containerId) ?? 0) + 1;
   childStartAttempts.set(childId, failures);
   stepStartAttempts.set(containerId, stepFailures);
-  const name =
-    (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === childId)?.name ?? 'cluster';
 
   if (producedWork(get, childId) || !isTransientStartFailure(error)) {
     await failChildStart({ set, get, sessionId, childId, reason: `${message}.` });
@@ -172,13 +170,6 @@ const handleChildStartFailure = async ({
   }
 
   const delayMs = START_BACKOFF_MS[failures - 1] ?? START_BACKOFF_MS[START_BACKOFF_MS.length - 1]!;
-  void get().emitNotification(
-    'error',
-    'warning',
-    `cluster retrying: ${name}`,
-    `it could not start (${message}). retrying in ${Math.round(delayMs / 1000)}s, attempt ${failures + 1} of ${MAX_START_ATTEMPTS}.`,
-    { sessionId },
-  );
   setTimeout(() => {
     const child = (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === childId);
     if (child != null && (child.status === 'completed' || child.status === 'skipped')) {

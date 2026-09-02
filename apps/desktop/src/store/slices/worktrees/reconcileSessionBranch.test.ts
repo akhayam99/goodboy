@@ -60,7 +60,7 @@ beforeEach(() => {
 });
 
 describe('reconcileSessionBranch', () => {
-  it('announces a branch observed outside the app and resets the branch pull requests', async () => {
+  it('records a branch observed outside the app and resets the branch pull requests', async () => {
     const state = makeState();
     const set = vi.fn((updater: (current: State) => State) => {
       Object.assign(state, updater(state));
@@ -68,13 +68,7 @@ describe('reconcileSessionBranch', () => {
 
     await reconcileSessionBranch(set as never, (() => state) as never)(SESSION_ID, 'ak/incoming');
 
-    expect(h.emitNotification).toHaveBeenCalledWith(
-      'branch-changed',
-      'info',
-      'Branch is now ak/incoming',
-      'Pull requests now read from ak/incoming.',
-      { sessionId: SESSION_ID, workspaceId: 'workspace-1' },
-    );
+    expect(h.emitNotification).not.toHaveBeenCalled();
     expect(state.sessionBranches).toEqual({ [SESSION_ID]: 'ak/incoming' });
     expect(state.sessionProjectPrs).toEqual({ [SESSION_ID]: {} });
     expect(state.sessionSelectedPrNumber).toEqual({});

@@ -798,13 +798,7 @@ describe('orchestrateNextStep', () => {
       SESSION_ID,
       expect.objectContaining({ action: 'done', reason: 'All required tests pass.' }),
     );
-    expect(state['emitNotification']).toHaveBeenCalledWith(
-      'agent-auto-spawn',
-      'success',
-      'dynamic workflow complete',
-      'All required tests pass.',
-      { sessionId: SESSION_ID },
-    );
+    expect(state['emitNotification']).not.toHaveBeenCalled();
     expect(updateOutcomeSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, 'done', expect.any(String));
     const updated = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(updated.orchestrationOutcome).toBe('done');

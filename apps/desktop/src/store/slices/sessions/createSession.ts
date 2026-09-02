@@ -392,14 +392,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
       void get().sendTurn({ sessionId: session.id, content: goalText });
     }
 
-    void get().emitNotification(
-      'session-created',
-      'success',
-      `session created: ${session.goal}`,
-      undefined,
-      { sessionId: session.id, workspaceId: session.workspaceId },
-    );
-
     return { session };
   };
 };
