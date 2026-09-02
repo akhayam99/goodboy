@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { Agent, AgentId, OpenQuestion, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, OpenQuestion, PlanId, SessionId } from '@goodboy/types';
 import type { SpawnedChild } from '../../../../shared/utils/spawnedChildren';
 
 const state = vi.hoisted(() => ({
@@ -81,6 +81,7 @@ describe('AgentFollowUps suggestions', () => {
         summary="two findings"
         sessionId={sessionId}
         followUps={[]}
+        activePlanId={null}
       />,
     );
 
@@ -97,6 +98,7 @@ describe('AgentFollowUps suggestions', () => {
         summary="two findings"
         sessionId={sessionId}
         followUps={[]}
+        activePlanId={null}
       />,
     );
 
@@ -107,6 +109,49 @@ describe('AgentFollowUps suggestions', () => {
       sessionId,
       expect.objectContaining({ kindOverride: 'planner', parentAgentId: sourceId }),
     );
+  });
+
+  it('hands the active plan to an implementer instead of a seed so it can fan out', async () => {
+    render(
+      <AgentFollowUps
+        sourceAgent={source}
+        sourceKind="reviewer"
+        summary="two findings"
+        sessionId={sessionId}
+        followUps={[]}
+        activePlanId={'plan-1' as PlanId}
+      />,
+    );
+
+    screen.getByText('Fix these review findings').click();
+    await vi.waitFor(() => expect(state.spawnAgent).toHaveBeenCalledTimes(1));
+
+    const options = state.spawnAgent.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(options.kindOverride).toBe('implementer');
+    expect(options.triggeredPlanId).toBe('plan-1');
+    expect(options.initialPrompt).toBeUndefined();
+    expect(options.parentAgentId).toBe(sourceId);
+  });
+
+  it('keeps the seed on an implementer when no plan exists', async () => {
+    render(
+      <AgentFollowUps
+        sourceAgent={source}
+        sourceKind="reviewer"
+        summary="two findings"
+        sessionId={sessionId}
+        followUps={[]}
+        activePlanId={null}
+      />,
+    );
+
+    screen.getByText('Fix these review findings').click();
+    await vi.waitFor(() => expect(state.spawnAgent).toHaveBeenCalledTimes(1));
+
+    const options = state.spawnAgent.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(options.triggeredPlanId).toBeUndefined();
+    expect(typeof options.initialPrompt).toBe('string');
+    expect((options.initialPrompt as string).length).toBeGreaterThan(0);
   });
 });
 
@@ -119,6 +164,7 @@ describe('AgentFollowUps after a spawn', () => {
         summary="two findings"
         sessionId={sessionId}
         followUps={[makeChild({})]}
+        activePlanId={null}
       />,
     );
 
@@ -135,6 +181,7 @@ describe('AgentFollowUps after a spawn', () => {
         summary="two findings"
         sessionId={sessionId}
         followUps={[makeChild({ status: 'completed' })]}
+        activePlanId={null}
       />,
     );
 
@@ -159,6 +206,7 @@ describe('AgentFollowUps after a spawn', () => {
         summary="two findings"
         sessionId={sessionId}
         followUps={[makeChild({})]}
+        activePlanId={null}
       />,
     );
 
@@ -173,6 +221,7 @@ describe('AgentFollowUps after a spawn', () => {
         summary="two findings"
         sessionId={sessionId}
         followUps={[makeChild({})]}
+        activePlanId={null}
       />,
     );
 

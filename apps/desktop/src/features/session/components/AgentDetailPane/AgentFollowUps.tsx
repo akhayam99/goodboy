@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { SectionSurface, cn } from '@goodboy/ui';
-import type { Agent, SessionId } from '@goodboy/types';
+import type { Agent, PlanId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 import type { AgentKind } from '../../agent-kind';
@@ -16,6 +16,7 @@ type Props = {
   readonly summary: string;
   readonly sessionId: SessionId;
   readonly followUps: ReadonlyArray<FollowUpChild>;
+  readonly activePlanId: PlanId | null;
 };
 
 export const AgentFollowUps = ({
@@ -24,6 +25,7 @@ export const AgentFollowUps = ({
   summary,
   sessionId,
   followUps,
+  activePlanId,
 }: Props) => {
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const announceAgentStarted = useAgentStartedToast();
@@ -43,11 +45,13 @@ export const AgentFollowUps = ({
   const pending = moves.filter((move) => !spawnedKinds.has(move.kind));
 
   const onSpawn = (nextKind: AgentKind) => {
-    const seed = composeFollowUpSeed({ sourceAgent, summary });
+    const planDriven = nextKind === 'implementer' && activePlanId != null;
     void (async () => {
       const agentId = await spawnAgent(sessionId, {
         kindOverride: nextKind,
-        initialPrompt: seed,
+        ...(planDriven
+          ? { triggeredPlanId: activePlanId }
+          : { initialPrompt: composeFollowUpSeed({ sourceAgent, summary }) }),
         parentAgentId: sourceAgent.id,
         focus: 'agent',
       });
