@@ -65,6 +65,17 @@ const listProjectScriptsSpy = vi.fn(async () => [] as ReadonlyArray<ProjectScrip
 const upsertProjectScriptSpy = vi.fn(async () => undefined);
 const deleteProjectScriptSpy = vi.fn(async () => undefined);
 const invokeScriptRunSpy: ReturnType<typeof vi.fn> = vi.fn(async () => undefined);
+const scanProjectScriptsSpy = vi.fn(
+  async () =>
+    [] as ReadonlyArray<{
+      source: 'package-json' | 'composer';
+      packageName: string;
+      relDir: string;
+      manager: string;
+      scripts: ReadonlyArray<{ name: string; command: string }>;
+    }>,
+);
+const runAdhocScriptSpy: ReturnType<typeof vi.fn> = vi.fn(async () => 'run-adhoc');
 const invokeScriptListLiveSpy = vi.fn<
   () => Promise<
     ReadonlyArray<{
@@ -351,6 +362,8 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 
 vi.mock('../../../features/scripts/scripts', () => ({
   invokeScriptRun: invokeScriptRunSpy,
+  scanProjectScripts: scanProjectScriptsSpy,
+  runAdhocScript: runAdhocScriptSpy,
   invokeScriptListLive: invokeScriptListLiveSpy,
   invokeScriptCancel: vi.fn(async () => undefined),
   listenScriptOutput: vi.fn(async () => () => undefined),
@@ -533,6 +546,8 @@ describe('store contract', () => {
         skills: {},
         projectScripts: {},
         scriptRuns: {},
+        discoveredScripts: {},
+        discoveredScriptScans: {},
         phaseTemplates: {},
         sessionWorkflows: {},
         sessionPhaseRuns: {},
@@ -572,6 +587,66 @@ describe('store contract', () => {
   });
 
   describe('scripts', () => {
+    it('loads discovered scripts once and refreshes them on demand', async () => {
+      const store = await getStore();
+      const group = {
+        source: 'package-json' as const,
+        packageName: 'desktop',
+        relDir: '',
+        manager: 'pnpm',
+        scripts: [{ name: 'dev', command: 'pnpm run dev' }],
+      };
+      scanProjectScriptsSpy.mockResolvedValue([group]);
+
+      await store
+        .getState()
+        .loadDiscoveredScripts({ sessionId: SESSION_ID, worktreePath: '/sessions/one/api' });
+      await store
+        .getState()
+        .loadDiscoveredScripts({ sessionId: SESSION_ID, worktreePath: '/sessions/one/api' });
+      await store
+        .getState()
+        .refreshDiscoveredScripts({ sessionId: SESSION_ID, worktreePath: '/sessions/one/api' });
+
+      expect(scanProjectScriptsSpy).toHaveBeenCalledTimes(2);
+      expect(store.getState().discoveredScripts[SESSION_ID]?.['/sessions/one/api']).toEqual([
+        group,
+      ]);
+      expect(store.getState().discoveredScriptScans[SESSION_ID]?.['/sessions/one/api']).toEqual({
+        status: 'ready',
+        error: null,
+      });
+    });
+
+    it('runs a discovered script through the ad hoc bridge and shared listeners', async () => {
+      const store = await getStore();
+      const resultPromise = store.getState().runDiscoveredScript({
+        sessionId: SESSION_ID,
+        scriptId: 'manifest-script',
+        name: 'dev',
+        command: 'pnpm run dev',
+        cwd: '/sessions/one/api/apps/web',
+      });
+      await vi.waitFor(() => expect(runAdhocScriptSpy).toHaveBeenCalledOnce());
+      const invocation = runAdhocScriptSpy.mock.calls[0]?.[0];
+      if (invocation?.runId === undefined || scriptExitHandler === null) {
+        throw new Error('discovered script listeners were not ready');
+      }
+      scriptExitHandler({ runId: invocation.runId, exitCode: 0 });
+      await resultPromise;
+
+      expect(invocation).toEqual(
+        expect.objectContaining({
+          scriptId: 'manifest-script',
+          name: 'dev',
+          body: 'pnpm run dev',
+          sessionId: SESSION_ID,
+          cwd: '/sessions/one/api/apps/web',
+        }),
+      );
+      expect(store.getState().scriptRuns[SESSION_ID]?.['manifest-script']?.status).toBe('ok');
+    });
+
     it('loadScripts caches workspace scripts', async () => {
       const store = await getStore();
       const script: ProjectScript = {

@@ -68,6 +68,7 @@ export const runScript = (set: SetFn, get: GetFn) => {
       scriptId,
       runId,
       startedAt,
+      name: script.name,
     });
 
     try {

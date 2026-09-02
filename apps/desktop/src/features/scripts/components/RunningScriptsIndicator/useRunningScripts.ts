@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import type { SessionId, ProjectScriptId } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
 export type RunningScript = {
   readonly sessionId: SessionId;
   readonly sessionGoal: string;
-  readonly scriptId: ProjectScriptId;
+  readonly scriptId: string;
   readonly scriptName: string;
   readonly startedAt: number;
 };
@@ -23,7 +23,7 @@ export const useRunningScripts = (): ReadonlyArray<RunningScript> => {
       if (runs === undefined) {
         continue;
       }
-      const names = new Map(
+      const names = new Map<string, string>(
         (projectScripts[session.workspaceId] ?? []).map(
           (script) => [script.id, script.name] as const,
         ),
@@ -32,12 +32,11 @@ export const useRunningScripts = (): ReadonlyArray<RunningScript> => {
         if (record.status !== 'pending') {
           continue;
         }
-        const id = scriptId as ProjectScriptId;
         running.push({
           sessionId,
           sessionGoal: session.goal,
-          scriptId: id,
-          scriptName: names.get(id) ?? 'script',
+          scriptId,
+          scriptName: record.name ?? names.get(scriptId) ?? 'script',
           startedAt: record.startedAt,
         });
       }

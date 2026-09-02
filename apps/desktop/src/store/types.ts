@@ -52,7 +52,6 @@ import type {
   WorkspaceId,
   IntegrationBinding,
   ProjectScript,
-  ProjectScriptId,
 } from '@goodboy/types';
 import type { SessionWorktree } from '@goodboy/db';
 import type { AgentKind } from '../features/session/agent-kind';
@@ -67,7 +66,8 @@ import type {
   ProviderStatus,
 } from '../features/providers/providers';
 import type { ProviderCooldowns } from '../features/providers/routing';
-import type { ScriptRunRecord } from '../features/scripts/scripts';
+import type { ScriptGroup, ScriptRunRecord } from '../features/scripts/scripts';
+import type { DiscoveredScriptScan } from './slices/scripts/state';
 import type { DetectedEditor } from '../shared/lib/editor';
 import type { TerminalTab, TerminalTabId } from '../shared/types/terminal';
 import type { DraftAttachment } from './slices/agents/setAgentAttachments';
@@ -235,8 +235,12 @@ export type AppState = AppSliceState & {
   readonly budgetAlerts: ReadonlyArray<BudgetAlert>;
   readonly skills: Readonly<Record<WorkspaceId, ReadonlyArray<Skill>>>;
   readonly projectScripts: Readonly<Record<WorkspaceId, ReadonlyArray<ProjectScript>>>;
-  readonly scriptRuns: Readonly<
-    Record<SessionId, Readonly<Record<ProjectScriptId, ScriptRunRecord>>>
+  readonly scriptRuns: Readonly<Record<SessionId, Readonly<Record<string, ScriptRunRecord>>>>;
+  readonly discoveredScripts: Readonly<
+    Record<SessionId, Readonly<Record<string, ReadonlyArray<ScriptGroup>>>>
+  >;
+  readonly discoveredScriptScans: Readonly<
+    Record<SessionId, Readonly<Record<string, DiscoveredScriptScan>>>
   >;
   readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<Workflow>>>;
   readonly stepLibrary: Readonly<Record<WorkspaceId, ReadonlyArray<StepDef>>>;

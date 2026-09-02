@@ -43,6 +43,8 @@ export const SESSION_EVICTION = [
   { key: 'sessionAttachments', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionOverrides', keyedBy: 'session', evictOn: 'archive' },
   { key: 'scriptRuns', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'discoveredScripts', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'discoveredScriptScans', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionPanelExpanded', keyedBy: 'session', evictOn: 'archive' },
   { key: 'activeLens', keyedBy: 'session', evictOn: 'archive' },
   { key: 'lensHistory', keyedBy: 'session', evictOn: 'archive' },

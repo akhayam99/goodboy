@@ -134,6 +134,7 @@ import type {
 import type { SpawnFocus } from './slices/session-view/spawnFocus';
 import { createTerminalSlice } from './slices/terminal';
 import { createScriptsSlice } from './slices/scripts';
+import { initialScriptsState } from './slices/scripts/state';
 import { createPermissionsSlice } from './slices/permissions';
 import {
   createProvidersSlice,
@@ -214,6 +215,21 @@ type SaveScriptParams = {
 type RunScriptParams = {
   readonly sessionId: SessionId;
   readonly scriptId: ProjectScriptId;
+  readonly cols?: number;
+  readonly rows?: number;
+};
+
+type DiscoveredScriptsParams = {
+  readonly sessionId: SessionId;
+  readonly worktreePath: string;
+};
+
+type RunDiscoveredScriptParams = {
+  readonly sessionId: SessionId;
+  readonly scriptId: string;
+  readonly name: string;
+  readonly command: string;
+  readonly cwd: string;
   readonly cols?: number;
   readonly rows?: number;
 };
@@ -527,9 +543,12 @@ type AppActions = {
   loadScripts(workspaceId: WorkspaceId): Promise<void>;
   saveScript(input: SaveScriptParams): Promise<void>;
   deleteScript(scriptId: ProjectScriptId, workspaceId: WorkspaceId): Promise<void>;
+  loadDiscoveredScripts(input: DiscoveredScriptsParams): Promise<void>;
+  refreshDiscoveredScripts(input: DiscoveredScriptsParams): Promise<void>;
   runScript(input: RunScriptParams): Promise<ScriptRunResult>;
+  runDiscoveredScript(input: RunDiscoveredScriptParams): Promise<ScriptRunResult>;
   reattachScriptRuns(): Promise<void>;
-  cancelScript(sessionId: SessionId, scriptId: ProjectScriptId): Promise<void>;
+  cancelScript(sessionId: SessionId, scriptId: string): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
   savePhaseTemplate(template: WorkflowUpsertArgs): Promise<Workflow>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
@@ -873,6 +892,7 @@ export const initialState: AppState = {
   ...initialUpdaterState,
   ...initialChangelogState,
   ...initialBugReportDraftState,
+  ...initialScriptsState,
   ...createInitialSessionViewState({}),
   selectedProjectIds: {},
   workspaces: [],
@@ -936,8 +956,6 @@ export const initialState: AppState = {
   providerSpendBreakdown: [],
   budgetAlerts: [],
   skills: {},
-  projectScripts: {},
-  scriptRuns: {},
   phaseTemplates: {},
   stepLibrary: {},
   sessionWorkflows: {},
