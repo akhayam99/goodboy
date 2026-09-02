@@ -129,6 +129,10 @@ export const AgentBrief = ({ session, agent }: Props) => {
         summary={summary}
         sessionId={session.id}
         followUps={followUps}
+        activePlanId={
+          [...plans].reverse().find((plan) => plan.agentId === agent.id && plan.status === 'active')
+            ?.id ?? null
+        }
       />
       <AgentBriefChildren session={session} kind={kind} children={laneChildren} />
       <AgentMetaLine
