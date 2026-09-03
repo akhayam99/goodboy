@@ -43,12 +43,6 @@ type EventValueParams = {
   readonly key: string;
 };
 
-type OpenIssueStudioParams = {
-  readonly event: Event;
-  readonly setFocus: (value: string | null) => void;
-  readonly setOpen: (value: boolean) => void;
-};
-
 const eventValue = ({ event, key }: EventValueParams): unknown => {
   if (!(event instanceof CustomEvent)) {
     return undefined;
@@ -129,17 +123,6 @@ export const useAppOverlays = ({
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [convertWorkspaceOpen, setConvertWorkspaceOpen] = useState(false);
   const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
-  const [linearStudioOpen, setLinearStudioOpen] = useState(false);
-  const [linearStudioFocus, setLinearStudioFocus] = useState<string | null>(null);
-  const [sentryStudioOpen, setSentryStudioOpen] = useState(false);
-  const [sentryStudioFocus, setSentryStudioFocus] = useState<string | null>(null);
-  const [gitlabStudioOpen, setGitlabStudioOpen] = useState(false);
-  const [gitlabStudioFocus, setGitlabStudioFocus] = useState<string | null>(null);
-  const [jiraStudioOpen, setJiraStudioOpen] = useState(false);
-  const [jiraStudioFocus, setJiraStudioFocus] = useState<string | null>(null);
-  const [bitbucketStudioOpen, setBitbucketStudioOpen] = useState(false);
-  const [slackStudioOpen, setSlackStudioOpen] = useState(false);
-  const [slackStudioFocus, setSlackStudioFocus] = useState<string | null>(null);
   const [inboxStudioOpen, setInboxStudioOpen] = useState(false);
   const [inboxStudioFocus, setInboxStudioFocus] = useState<InboxStudioFocus | null>(null);
   const [providerStudioOpen, setProviderStudioOpen] = useState(false);
@@ -147,12 +130,6 @@ export const useAppOverlays = ({
   const [providerStudioAction, setProviderStudioAction] = useState<ProviderLifecycleAction | null>(
     null,
   );
-  const [githubStudioOpen, setGithubStudioOpen] = useState(false);
-  const [githubStudioSession, setGithubStudioSession] = useState<SessionId | null>(null);
-  const [githubStudioPrNumber, setGithubStudioPrNumber] = useState<number | null>(null);
-  const [githubStudioThreadId, setGithubStudioThreadId] = useState<string | null>(null);
-  const [githubStudioIssueId, setGithubStudioIssueId] = useState<string | null>(null);
-  const [githubStudioTab, setGithubStudioTab] = useState<'pull-requests' | 'issues' | null>(null);
   const [budgetStudioOpen, setBudgetStudioOpen] = useState(false);
   const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
   const [impactStudioOpen, setImpactStudioOpen] = useState(false);
@@ -177,18 +154,11 @@ export const useAppOverlays = ({
 
   const closeAllStudios = useCallback(() => {
     setWorkflowStudioOpen(false);
-    setGithubStudioOpen(false);
     setProviderStudioOpen(false);
     setBudgetStudioOpen(false);
     setImpactStudioOpen(false);
     setChangelogStudioOpen(false);
     setNotificationsStudioOpen(false);
-    setLinearStudioOpen(false);
-    setSentryStudioOpen(false);
-    setGitlabStudioOpen(false);
-    setJiraStudioOpen(false);
-    setBitbucketStudioOpen(false);
-    setSlackStudioOpen(false);
     setInboxStudioOpen(false);
     setAppSettingsOpen(false);
     setGuideStudioOpen(false);
@@ -238,44 +208,44 @@ export const useAppOverlays = ({
 
   const openGithub = useCallback(() => {
     closeAllStudios();
-    setGithubStudioSession(currentSession?.id ?? null);
-    setGithubStudioIssueId(null);
-    setGithubStudioOpen(true);
-  }, [closeAllStudios, currentSession?.id]);
+    setInboxStudioFocus({ provider: 'github', kind: null, recordKey: null });
+    setInboxStudioOpen(true);
+  }, [closeAllStudios]);
 
   const openLinear = useCallback(() => {
     closeAllStudios();
-    setLinearStudioFocus(null);
-    setLinearStudioOpen(true);
+    setInboxStudioFocus({ provider: 'linear', kind: null, recordKey: null });
+    setInboxStudioOpen(true);
   }, [closeAllStudios]);
 
   const openJira = useCallback(() => {
     closeAllStudios();
-    setJiraStudioFocus(null);
-    setJiraStudioOpen(true);
+    setInboxStudioFocus({ provider: 'jira', kind: null, recordKey: null });
+    setInboxStudioOpen(true);
   }, [closeAllStudios]);
 
   const openSentry = useCallback(() => {
     closeAllStudios();
-    setSentryStudioFocus(null);
-    setSentryStudioOpen(true);
+    setInboxStudioFocus({ provider: 'sentry', kind: null, recordKey: null });
+    setInboxStudioOpen(true);
   }, [closeAllStudios]);
 
   const openGitlab = useCallback(() => {
     closeAllStudios();
-    setGitlabStudioFocus(null);
-    setGitlabStudioOpen(true);
+    setInboxStudioFocus({ provider: 'gitlab', kind: null, recordKey: null });
+    setInboxStudioOpen(true);
   }, [closeAllStudios]);
 
   const openBitbucket = useCallback(() => {
     closeAllStudios();
-    setBitbucketStudioOpen(true);
+    setInboxStudioFocus({ provider: 'bitbucket', kind: null, recordKey: null });
+    setInboxStudioOpen(true);
   }, [closeAllStudios]);
 
   const openSlack = useCallback(() => {
     closeAllStudios();
-    setSlackStudioFocus(null);
-    setSlackStudioOpen(true);
+    setInboxStudioFocus({ provider: 'slack', kind: null, recordKey: null });
+    setInboxStudioOpen(true);
   }, [closeAllStudios]);
 
   const openInbox = useCallback(() => {
@@ -327,18 +297,14 @@ export const useAppOverlays = ({
       setReportIssueStudioOpen(true);
     };
     const onOpenGithubStudio = (event: Event) => {
-      const sessionId = eventValue({ event, key: 'sessionId' });
-      const prNumber = eventValue({ event, key: 'prNumber' });
-      const threadId = eventValue({ event, key: 'threadId' });
       const issueExternalId = eventValue({ event, key: 'issueExternalId' });
-      const tab = eventValue({ event, key: 'tab' });
       closeAllStudios();
-      setGithubStudioSession(isSessionId(sessionId) ? sessionId : null);
-      setGithubStudioPrNumber(typeof prNumber === 'number' ? prNumber : null);
-      setGithubStudioThreadId(typeof threadId === 'string' ? threadId : null);
-      setGithubStudioIssueId(typeof issueExternalId === 'string' ? issueExternalId : null);
-      setGithubStudioTab(tab === 'pull-requests' || tab === 'issues' ? tab : null);
-      setGithubStudioOpen(true);
+      setInboxStudioFocus({
+        provider: 'github',
+        kind: 'issue',
+        recordKey: typeof issueExternalId === 'string' ? `github:issue:${issueExternalId}` : null,
+      });
+      setInboxStudioOpen(true);
     };
     const onOpenPlanStudio = (event: Event) => {
       const sessionId = eventValue({ event, key: 'sessionId' });
@@ -381,11 +347,25 @@ export const useAppOverlays = ({
       setBudgetStudioScope(isBudgetScope(scope) ? scope : undefined);
       setBudgetStudioOpen(true);
     };
-    const openIssueStudio = ({ event, setFocus, setOpen }: OpenIssueStudioParams) => {
+    const openLegacyInbox = ({
+      event,
+      provider,
+      kind,
+      keyPrefix,
+    }: {
+      readonly event: Event;
+      readonly provider: InboxProvider;
+      readonly kind: InboxKind;
+      readonly keyPrefix: string;
+    }) => {
       const issueExternalId = eventValue({ event, key: 'issueExternalId' });
       closeAllStudios();
-      setFocus(typeof issueExternalId === 'string' ? issueExternalId : null);
-      setOpen(true);
+      setInboxStudioFocus({
+        provider,
+        kind,
+        recordKey: typeof issueExternalId === 'string' ? `${keyPrefix}${issueExternalId}` : null,
+      });
+      setInboxStudioOpen(true);
     };
     const onRevealChat = () => {
       setWorkspaceSettingsOpen(false);
@@ -401,13 +381,17 @@ export const useAppOverlays = ({
       setNotificationsStudioOpen(true);
     };
     const onOpenLinearStudio = (event: Event) =>
-      openIssueStudio({ event, setFocus: setLinearStudioFocus, setOpen: setLinearStudioOpen });
+      openLegacyInbox({ event, provider: 'linear', kind: 'issue', keyPrefix: 'linear:issue:' });
     const onOpenSentryStudio = (event: Event) =>
-      openIssueStudio({ event, setFocus: setSentryStudioFocus, setOpen: setSentryStudioOpen });
+      openLegacyInbox({ event, provider: 'sentry', kind: 'error', keyPrefix: 'sentry:error:' });
     const onOpenGitlabStudio = (event: Event) =>
-      openIssueStudio({ event, setFocus: setGitlabStudioFocus, setOpen: setGitlabStudioOpen });
+      openLegacyInbox({ event, provider: 'gitlab', kind: 'issue', keyPrefix: 'gitlab:issue:' });
     const onOpenJiraStudio = (event: Event) =>
-      openIssueStudio({ event, setFocus: setJiraStudioFocus, setOpen: setJiraStudioOpen });
+      openLegacyInbox({ event, provider: 'jira', kind: 'issue', keyPrefix: 'jira:issue:' });
+    const onOpenSlackStudio = (event: Event) =>
+      openLegacyInbox({ event, provider: 'slack', kind: 'thread', keyPrefix: 'slack:thread:' });
+    const onOpenBitbucketWorkspaceStudio = (event: Event) =>
+      openLegacyInbox({ event, provider: 'bitbucket', kind: 'pr', keyPrefix: 'bitbucket:pr:' });
     const onOpenInboxStudio = (event: Event) => {
       const workspaceId = eventValue({ event, key: 'workspaceId' });
       const provider = eventValue({ event, key: 'provider' });
@@ -441,6 +425,11 @@ export const useAppOverlays = ({
     window.addEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
     window.addEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
     window.addEventListener('goodboy:open-jira-studio', onOpenJiraStudio);
+    window.addEventListener('goodboy:open-slack-studio', onOpenSlackStudio);
+    window.addEventListener(
+      'goodboy:open-bitbucket-workspace-studio',
+      onOpenBitbucketWorkspaceStudio,
+    );
     window.addEventListener('goodboy:open-inbox', onOpenInboxStudio);
     window.addEventListener('goodboy:reveal-chat', onRevealChat);
     window.addEventListener('goodboy:add-workspace', onAddWorkspace);
@@ -459,6 +448,11 @@ export const useAppOverlays = ({
       window.removeEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
       window.removeEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
       window.removeEventListener('goodboy:open-jira-studio', onOpenJiraStudio);
+      window.removeEventListener('goodboy:open-slack-studio', onOpenSlackStudio);
+      window.removeEventListener(
+        'goodboy:open-bitbucket-workspace-studio',
+        onOpenBitbucketWorkspaceStudio,
+      );
       window.removeEventListener('goodboy:open-inbox', onOpenInboxStudio);
       window.removeEventListener('goodboy:reveal-chat', onRevealChat);
       window.removeEventListener('goodboy:add-workspace', onAddWorkspace);
@@ -573,7 +567,6 @@ export const useAppOverlays = ({
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
       clearSessionStudio();
-      setGithubStudioOpen(false);
       if (currentSession !== null && isSessionSidebarCollapsed) {
         pinSessionSidebar();
       }
@@ -629,7 +622,6 @@ export const useAppOverlays = ({
   const offerWorkspaceRepo = useCallback(() => setConvertWorkspaceOpen(true), []);
   const closeConvertWorkspace = useCallback(() => setConvertWorkspaceOpen(false), []);
   const closeWorkflowStudio = useCallback(() => setWorkflowStudioOpen(false), []);
-  const closeGithubStudio = useCallback(() => setGithubStudioOpen(false), []);
   const closeProviderStudio = useCallback(() => {
     setProviderStudioOpen(false);
     setProviderStudioAction(null);
@@ -638,12 +630,6 @@ export const useAppOverlays = ({
   const closeImpactStudio = useCallback(() => setImpactStudioOpen(false), []);
   const closeChangelogStudio = useCallback(() => setChangelogStudioOpen(false), []);
   const closeNotificationsStudio = useCallback(() => setNotificationsStudioOpen(false), []);
-  const closeLinearStudio = useCallback(() => setLinearStudioOpen(false), []);
-  const closeSentryStudio = useCallback(() => setSentryStudioOpen(false), []);
-  const closeGitlabStudio = useCallback(() => setGitlabStudioOpen(false), []);
-  const closeJiraStudio = useCallback(() => setJiraStudioOpen(false), []);
-  const closeBitbucketStudio = useCallback(() => setBitbucketStudioOpen(false), []);
-  const closeSlackStudio = useCallback(() => setSlackStudioOpen(false), []);
   const closeInboxStudio = useCallback(() => setInboxStudioOpen(false), []);
   const closeCommitDiff = useCallback(() => setCommitDiff(null), [setCommitDiff]);
   const closeDeleteConfirm = useCallback(() => {
@@ -671,37 +657,23 @@ export const useAppOverlays = ({
 
   const activeStudio: string | null = workflowStudioOpen
     ? 'workflow'
-    : githubStudioOpen
-      ? 'github'
-      : providerStudioOpen
-        ? 'provider'
-        : budgetStudioOpen
-          ? 'budget'
-          : impactStudioOpen
-            ? 'impact'
-            : changelogStudioOpen
-              ? 'changelog'
-              : notificationsStudioOpen
-                ? 'notifications'
-                : linearStudioOpen
-                  ? 'linear'
-                  : sentryStudioOpen
-                    ? 'sentry'
-                    : gitlabStudioOpen
-                      ? 'gitlab'
-                      : jiraStudioOpen
-                        ? 'jira'
-                        : bitbucketStudioOpen
-                          ? 'bitbucket'
-                          : slackStudioOpen
-                            ? 'slack'
-                            : inboxStudioOpen
-                              ? 'inbox'
-                              : appSettingsOpen
-                                ? 'settings'
-                                : guideStudioOpen
-                                  ? 'guide'
-                                  : null;
+    : providerStudioOpen
+      ? 'provider'
+      : budgetStudioOpen
+        ? 'budget'
+        : impactStudioOpen
+          ? 'impact'
+          : changelogStudioOpen
+            ? 'changelog'
+            : notificationsStudioOpen
+              ? 'notifications'
+              : inboxStudioOpen
+                ? 'inbox'
+                : appSettingsOpen
+                  ? 'settings'
+                  : guideStudioOpen
+                    ? 'guide'
+                    : null;
 
   const workspaceSettingsOverlay: ReactNode =
     workspaceSettingsOpen && currentWorkspace !== null
@@ -731,28 +703,11 @@ export const useAppOverlays = ({
     addWorkspaceOpen,
     convertWorkspaceOpen,
     workflowStudioOpen,
-    linearStudioOpen,
-    linearStudioFocus,
-    sentryStudioOpen,
-    sentryStudioFocus,
-    gitlabStudioOpen,
-    gitlabStudioFocus,
-    jiraStudioOpen,
-    jiraStudioFocus,
-    bitbucketStudioOpen,
-    slackStudioOpen,
-    slackStudioFocus,
     inboxStudioOpen,
     inboxStudioFocus,
     providerStudioOpen,
     providerStudioFocus,
     providerStudioAction,
-    githubStudioOpen,
-    githubStudioSession,
-    githubStudioPrNumber,
-    githubStudioThreadId,
-    githubStudioIssueId,
-    githubStudioTab,
     budgetStudioOpen,
     budgetStudioScope,
     impactStudioOpen,
@@ -772,18 +727,11 @@ export const useAppOverlays = ({
     offerWorkspaceRepo,
     closeConvertWorkspace,
     closeWorkflowStudio,
-    closeGithubStudio,
     closeProviderStudio,
     closeBudgetStudio,
     closeImpactStudio,
     closeChangelogStudio,
     closeNotificationsStudio,
-    closeLinearStudio,
-    closeSentryStudio,
-    closeGitlabStudio,
-    closeJiraStudio,
-    closeBitbucketStudio,
-    closeSlackStudio,
     closeInboxStudio,
     closeCommitDiff,
     closeDeleteConfirm,

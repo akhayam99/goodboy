@@ -114,16 +114,14 @@ vi.mock('../features/integrations/github/useGithubConnection', () => ({
   }),
 }));
 
-vi.mock('../features/integrations/slack/SlackStudio', () => ({
-  SlackStudio: ({ workspaceName }: { workspaceName: string }) => (
-    <div data-testid="slack-studio">{workspaceName}</div>
-  ),
-}));
-
-vi.mock('../features/integrations/bitbucket/BitbucketWorkspaceStudio', () => ({
-  BitbucketWorkspaceStudio: ({ workspaceName }: { workspaceName: string }) => (
-    <div data-testid="bitbucket-studio">{workspaceName}</div>
-  ),
+vi.mock('../features/inbox/components/InboxStudio', () => ({
+  InboxStudio: ({
+    workspaceName,
+    initialProvider,
+  }: {
+    workspaceName: string;
+    initialProvider: string | null;
+  }) => <div data-testid="inbox-studio">{`${workspaceName}:${initialProvider ?? 'all'}`}</div>,
 }));
 
 type PaletteProps = {
@@ -193,15 +191,6 @@ vi.mock('../features/workspace/components/WorkspaceSwitcher', () => ({
 }));
 vi.mock('../features/workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('../features/workflows/components/WorkflowStudio', () => ({ WorkflowStudio: () => null }));
-vi.mock('../features/github/components/GitHubStudio', () => ({
-  GitHubStudio: ({ workspaceName }: { workspaceName: string }) => (
-    <div data-testid="github-studio">{workspaceName}</div>
-  ),
-}));
-vi.mock('../features/integrations/linear/LinearStudio', () => ({ LinearStudio: () => null }));
-vi.mock('../features/integrations/sentry/SentryStudio', () => ({ SentryStudio: () => null }));
-vi.mock('../features/integrations/gitlab/GitlabStudio', () => ({ GitlabStudio: () => null }));
-vi.mock('../features/integrations/jira/JiraStudio', () => ({ JiraStudio: () => null }));
 vi.mock('../features/providers/components/ProviderStudio', () => ({
   ProviderStudio: () => <div data-testid="provider-studio" />,
 }));
@@ -278,10 +267,10 @@ describe('Slack studio reachability', () => {
     state.workspaceIntegrations = { 'workspace-1': [{ provider: 'slack' }] };
     render(<App />);
 
-    expect(screen.queryByTestId('slack-studio')).toBeNull();
+    expect(screen.queryByTestId('inbox-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Launch a session from a Slack thread' }));
 
-    expect(screen.getByTestId('slack-studio').textContent).toBe('Workspace');
+    expect(screen.getByTestId('inbox-studio').textContent).toBe('Workspace:slack');
   });
 
   it('still opens the studio when slack is not connected, so the connect form is reachable', () => {
@@ -289,7 +278,7 @@ describe('Slack studio reachability', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Connect Slack' }));
 
-    expect(screen.getByTestId('slack-studio')).toBeDefined();
+    expect(screen.getByTestId('inbox-studio').textContent).toBe('Workspace:slack');
   });
 });
 
@@ -315,7 +304,7 @@ describe('GitHub footer state', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Connect GitHub' }));
 
-    expect(screen.getByTestId('github-studio').textContent).toBe('Workspace');
+    expect(screen.getByTestId('inbox-studio').textContent).toBe('Workspace:github');
   });
 });
 
@@ -374,12 +363,12 @@ describe('Bitbucket studio reachability', () => {
     state.workspaceIntegrations = { 'workspace-1': [{ provider: 'bitbucket' }] };
     render(<App />);
 
-    expect(screen.queryByTestId('bitbucket-studio')).toBeNull();
+    expect(screen.queryByTestId('inbox-studio')).toBeNull();
     fireEvent.click(
       screen.getByRole('button', { name: 'Review pull requests across this workspace' }),
     );
 
-    expect(screen.getByTestId('bitbucket-studio').textContent).toBe('Workspace');
+    expect(screen.getByTestId('inbox-studio').textContent).toBe('Workspace:bitbucket');
   });
 
   it('still opens the studio when bitbucket is not connected, so the connect form is reachable', () => {
@@ -387,7 +376,7 @@ describe('Bitbucket studio reachability', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Connect Bitbucket' }));
 
-    expect(screen.getByTestId('bitbucket-studio')).toBeDefined();
+    expect(screen.getByTestId('inbox-studio').textContent).toBe('Workspace:bitbucket');
   });
 });
 

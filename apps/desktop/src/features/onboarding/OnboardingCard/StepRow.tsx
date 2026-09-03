@@ -11,19 +11,26 @@ type Props = {
 };
 
 export const StepRow = ({ id, title, why, done }: Props) => {
-  const actionByStep: Readonly<Partial<Record<OnboardingStepId, string>>> = {
-    workspace: 'goodboy:add-workspace',
-    codeHost: 'goodboy:open-github-studio',
-    tools: 'goodboy:open-linear-studio',
-    session: 'goodboy:new-session',
-    palette: OPEN_COMMAND_PALETTE_EVENT,
+  const actionByStep: Readonly<
+    Partial<
+      Record<
+        OnboardingStepId,
+        { readonly event: string; readonly detail?: { readonly provider: 'github' | 'linear' } }
+      >
+    >
+  > = {
+    workspace: { event: 'goodboy:add-workspace' },
+    codeHost: { event: 'goodboy:open-inbox', detail: { provider: 'github' } },
+    tools: { event: 'goodboy:open-inbox', detail: { provider: 'linear' } },
+    session: { event: 'goodboy:new-session' },
+    palette: { event: OPEN_COMMAND_PALETTE_EVENT },
   };
   const action = actionByStep[id];
   const activate = () => {
     if (action === undefined) {
       return;
     }
-    window.dispatchEvent(new CustomEvent(action));
+    window.dispatchEvent(new CustomEvent(action.event, { detail: action.detail }));
   };
 
   return (
