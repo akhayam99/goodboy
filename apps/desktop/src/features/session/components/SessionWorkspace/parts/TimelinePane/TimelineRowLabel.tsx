@@ -71,8 +71,9 @@ const segmentsOf = ({ entry }: EntryParams): ReadonlyArray<TimelineLabelSegment>
     return [{ kind: 'text', text: `${count} questions` }];
   }
   const allDismissed = entry.questions.every((question) => question.status === 'dismissed');
+  const allAnswered = entry.questions.every((question) => question.status === 'answered');
   const noun = count === 1 ? 'question' : 'questions';
-  const verb = allDismissed ? 'dismissed' : 'answered';
+  const verb = allDismissed ? 'dismissed' : allAnswered ? 'answered' : 'resolved';
   return [{ kind: 'text', text: `${count} ${noun} ${verb}` }];
 };
 

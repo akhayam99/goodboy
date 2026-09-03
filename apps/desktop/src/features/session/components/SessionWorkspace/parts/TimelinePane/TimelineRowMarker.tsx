@@ -82,11 +82,12 @@ export const TimelineRowMarker = ({ item }: Props) => {
       );
     }
     const allDismissed = entry.questions.every((question) => question.status === 'dismissed');
+    const allAnswered = entry.questions.every((question) => question.status === 'answered');
     return (
       <TimelineGlyphMarker tone="neutral" grade={grade}>
         <MessageSquareCheck
           size={glyphSize}
-          aria-label={allDismissed ? 'Dismissed' : 'Answered'}
+          aria-label={allDismissed ? 'Dismissed' : allAnswered ? 'Answered' : 'Resolved'}
           className={tintClasses('neutral').icon}
         />
       </TimelineGlyphMarker>

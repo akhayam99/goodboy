@@ -243,4 +243,30 @@ describe('TimelineRowLabel', () => {
 
     expect(screen.queryByText(AGENT_KIND_META.resolver.label)).toBeNull();
   });
+
+  it.each([
+    [['answered', 'answered'], '2 questions answered'],
+    [['dismissed', 'dismissed'], '2 questions dismissed'],
+    [['answered', 'dismissed'], '2 questions resolved'],
+  ] as const)('labels a consumed %s cluster as "%s"', (statuses, expected) => {
+    const entry = {
+      kind: 'question',
+      id: 'question:cluster',
+      at: '2026-08-17T09:04:00Z',
+      questions: statuses.map((status, index) => ({
+        id: `oq-${index}`,
+        sessionId: 'sess-1',
+        text: `q${index}`,
+        suggestedAnswers: [],
+        userAnswer: status === 'answered' ? 'yes' : null,
+        status,
+        createdAt: '2026-08-17T09:00:00Z',
+      })),
+      lane: null,
+    } as unknown as TimelineStreamEntry;
+
+    render(<TimelineRowLabel item={itemOf({ entry })} />);
+
+    expect(screen.queryByText(expected)).not.toBeNull();
+  });
 });
