@@ -85,10 +85,6 @@ vi.mock('../../client', () => ({
   bitbucketPullRequestDiff: h.diff,
 }));
 
-vi.mock('../../../components/LaunchSessionPanel', () => ({
-  LaunchSessionPanel: () => <div>Launch panel</div>,
-}));
-
 vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (s: typeof h.state) => T) => selector(h.state),

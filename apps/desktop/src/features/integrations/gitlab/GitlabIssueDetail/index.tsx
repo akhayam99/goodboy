@@ -1,13 +1,12 @@
-import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import { RecordDetailHeader, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useState, type ReactNode } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import type { SegmentedTabOption } from '@goodboy/ui';
-import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
+import { StudioDetailTabs } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { gitlabIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { StateBadge } from '@goodboy/ui';
-import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { issueIdentifier, type GitlabIssue } from '../client';
 import { useGitlabIssueDescription } from '../useGitlabIssueDescription';
 import { useGitlabIssueNotes } from '../useGitlabIssueNotes';
@@ -21,6 +20,7 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly projectId?: ProjectId;
   readonly headerActions?: ReactNode;
+  readonly dock?: ReactNode;
   readonly fit?: Fit;
 };
 
@@ -34,6 +34,7 @@ export const GitlabIssueDetail = ({
   workspaceId,
   projectId,
   headerActions,
+  dock,
   fit = 'fill',
 }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
@@ -44,22 +45,13 @@ export const GitlabIssueDetail = ({
     <StudioDetailLayout
       fit={fit}
       header={
-        <HeaderBand
+        <RecordDetailHeader
+          provider="gitlab"
+          identifier={issueIdentifier(issue)}
           title={issue.title}
-          meta={
-            <>
-              <span className="font-mono text-2xs tabular-nums text-muted-foreground">
-                {issueIdentifier(issue)}
-              </span>
-              <StateBadge>{issue.state}</StateBadge>
-            </>
-          }
-          actions={
-            <>
-              {headerActions}
-              <ExternalRefActions url={issue.webUrl} label="issue" hostLabel="GitLab" />
-            </>
-          }
+          badge={<StateBadge>{issue.state}</StateBadge>}
+          actions={headerActions}
+          externalRef={{ url: issue.webUrl, label: 'issue' }}
         />
       }
       tabs={
@@ -71,6 +63,7 @@ export const GitlabIssueDetail = ({
         />
       }
       properties={resolveDetailFields({ registry: gitlabIssueFields, entity: issue })}
+      dock={dock}
     >
       {section === 'overview' ? (
         <DescriptionSection text={description} onSave={save} />

@@ -1,46 +1,65 @@
-import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
-import { useMemo, type ReactNode } from 'react';
-import { HeaderBand } from '@goodboy/ui';
-import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import type { WorkspaceId } from '@goodboy/types';
+import { RecordDetailHeader, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { resolveDetailFields, slackThreadFields } from '../../../../shared/detail-fields';
-import type { SlackChannel, SlackMessage, SlackUser } from '../client';
+import { slackGetPermalink, type SlackMessage } from '../client';
 import { buildThreadProperties } from '../buildThreadProperties';
 import { slackUserNames } from '../nameMaps';
 import { slackThreadTitle } from '../threadFormulas';
 import { ThreadConversation } from '../ThreadConversation';
-import type { SlackThreadActions } from '../useSlackThreadActions';
+import { useSlackThread } from '../useSlackThread';
+import { useSlackThreadActions } from '../useSlackThreadActions';
 
 type Fit = 'fill' | 'bleed' | 'flow';
 
 type Props = {
-  readonly channelName: string;
-  readonly rootText: string;
-  readonly url: string | null;
-  readonly messages: ReadonlyArray<SlackMessage>;
-  readonly users: ReadonlyArray<SlackUser>;
-  readonly channels: ReadonlyArray<SlackChannel>;
-  readonly isLoading: boolean;
-  readonly error: string | null;
-  readonly onRetry: () => void;
-  readonly actions: SlackThreadActions;
+  readonly workspaceId: WorkspaceId;
+  readonly channelId: string;
+  readonly threadTs: string;
+  readonly fallbackChannelName: string;
+  readonly fallbackMessage: SlackMessage | null;
+  readonly fallbackUrl?: string | null;
   readonly fit?: Fit;
   readonly dock?: ReactNode;
 };
 
 export const SlackThreadDetail = ({
-  channelName,
-  rootText,
-  url,
-  messages,
-  users,
-  channels,
-  isLoading,
-  error,
-  onRetry,
-  actions,
+  workspaceId,
+  channelId,
+  threadTs,
+  fallbackChannelName,
+  fallbackMessage,
+  fallbackUrl = null,
   fit = 'fill',
   dock,
 }: Props) => {
+  const [permalink, setPermalink] = useState<string | null>(fallbackUrl);
+  const isEnabled = channelId !== '' && threadTs !== '';
+  const thread = useSlackThread({ workspaceId, channelId, threadTs, isEnabled });
+  const actions = useSlackThreadActions({ workspaceId, channelId, threadTs, isEnabled });
+
+  useEffect(() => {
+    setPermalink(fallbackUrl);
+    if (!isEnabled) {
+      return;
+    }
+    let isCurrent = true;
+    void slackGetPermalink({ workspaceId, channelId, messageTs: threadTs })
+      .then((url) => {
+        if (isCurrent) {
+          setPermalink(url);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      isCurrent = false;
+    };
+  }, [workspaceId, channelId, threadTs, fallbackUrl, isEnabled]);
+
+  const users = thread.users;
+  const channelName = thread.channelName !== channelId ? thread.channelName : fallbackChannelName;
+  const messages =
+    thread.messages.length > 0 ? thread.messages : fallbackMessage == null ? [] : [fallbackMessage];
   const userNames = useMemo(() => slackUserNames({ users }), [users]);
   const properties = useMemo(
     () =>
@@ -50,6 +69,7 @@ export const SlackThreadDetail = ({
       }),
     [channelName, messages, userNames],
   );
+  const rootText = messages[0]?.text ?? '';
   const title = slackThreadTitle({ text: rootText });
 
   return (
@@ -57,15 +77,15 @@ export const SlackThreadDetail = ({
       fit={fit}
       dock={dock}
       header={
-        <HeaderBand
+        <RecordDetailHeader
+          provider="slack"
+          identifier={`#${channelName}`}
           title={title !== '' ? title : `#${channelName}`}
-          meta={
-            <span className="font-mono text-2xs text-muted-foreground">{`#${channelName}`}</span>
+          subtitle={
+            <span className="font-mono text-2xs text-muted-foreground">#{channelName}</span>
           }
-          actions={
-            url != null && url !== '' ? (
-              <ExternalRefActions url={url} label="thread" hostLabel="Slack" />
-            ) : null
+          externalRef={
+            permalink != null && permalink !== '' ? { url: permalink, label: 'thread' } : null
           }
         />
       }
@@ -74,10 +94,10 @@ export const SlackThreadDetail = ({
       <ThreadConversation
         messages={messages}
         users={users}
-        channels={channels}
-        isLoading={isLoading}
-        error={error}
-        onRetry={onRetry}
+        channels={thread.channels}
+        isLoading={thread.isLoading}
+        error={thread.error}
+        onRetry={thread.refetch}
         actions={actions}
       />
     </StudioDetailLayout>

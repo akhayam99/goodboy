@@ -1,15 +1,17 @@
 import { EmptyState } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { GithubIssueDetailPanel } from '../../../github/components/GitHubStudio/GithubIssueDetailPanel';
-import { IssueDetailPanel as GitlabIssueDetailPanel } from '../../../integrations/gitlab/GitlabStudio/IssueDetailPanel';
+import { GithubIssueDetail } from '../../../github/GithubIssueDetail';
+import { GitlabIssueDetail } from '../../../integrations/gitlab/GitlabIssueDetail';
 import { MrDetailPanel } from '../../../integrations/gitlab/GitlabStudio/MrDetailPanel';
-import { IssueDetailPanel as LinearIssueDetailPanel } from '../../../integrations/linear/LinearStudio/IssueDetailPanel';
-import { IssueDetailPanel as JiraIssueDetailPanel } from '../../../integrations/jira/JiraStudio/IssueDetailPanel';
-import { IssueDetailPanel as SentryIssueDetailPanel } from '../../../integrations/sentry/SentryStudio/IssueDetailPanel';
-import { ThreadDetailPanel } from '../../../integrations/slack/SlackStudio/ThreadDetailPanel';
+import { LinearIssueDetail } from '../../../integrations/linear/LinearIssueDetail';
+import { JiraIssueDetail } from '../../../integrations/jira/JiraIssueDetail';
+import { SentryIssueDetail } from '../../../integrations/sentry/SentryIssueDetail';
+import { useSentryIssueDetail } from '../../../integrations/sentry/useSentryIssueDetail';
+import { SlackThreadDetail } from '../../../integrations/slack/SlackThreadDetail';
 import { PrDetailPanel } from '../../../integrations/bitbucket/BitbucketStudio/PrDetailPanel';
 import type { InboxProvider, InboxRecord } from '../../types';
+import { RecordLaunchDock } from '../RecordLaunchDock';
 
 type Props = {
   readonly record: InboxRecord | null;
@@ -30,6 +32,9 @@ export const InboxDetail = ({
   onRefresh,
   onClose,
 }: Props) => {
+  const sentryIssueId = record?.payload.provider === 'sentry' ? record.payload.issue.id : null;
+  const sentryDetail = useSentryIssueDetail({ workspaceId, issueId: sentryIssueId });
+
   if (record == null) {
     return (
       <div className="flex h-full items-center justify-center px-8">
@@ -51,23 +56,22 @@ export const InboxDetail = ({
   switch (payload.provider) {
     case 'github':
       return (
-        <GithubIssueDetailPanel
+        <GithubIssueDetail
           issue={payload.issue}
-          sessionId={payload.sessionId}
-          workspaceId={workspaceId}
-          rootPath={rootPath}
-          onClose={onClose}
+          editContext={{ workspaceId, rootPath }}
+          dock={<RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />}
         />
       );
     case 'gitlab':
       switch (payload.kind) {
         case 'issue':
           return (
-            <GitlabIssueDetailPanel
+            <GitlabIssueDetail
               issue={payload.issue}
-              sessionId={payload.sessionId}
               workspaceId={workspaceId}
-              onClose={onClose}
+              dock={
+                <RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />
+              }
             />
           );
         case 'mr':
@@ -78,6 +82,9 @@ export const InboxDetail = ({
               host={payload.host}
               onRefresh={onRefresh}
               onClose={onClose}
+              dock={
+                <RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />
+              }
             />
           );
         default: {
@@ -87,39 +94,53 @@ export const InboxDetail = ({
       }
     case 'linear':
       return (
-        <LinearIssueDetailPanel
+        <LinearIssueDetail
           issue={payload.issue}
-          sessionId={payload.sessionId}
           workspaceId={workspaceId}
-          onClose={onClose}
+          dock={<RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />}
         />
       );
     case 'jira':
       return (
-        <JiraIssueDetailPanel
+        <JiraIssueDetail
           issue={payload.issue}
-          sessionId={payload.sessionId}
           workspaceId={workspaceId}
           onIssueWritten={onRefresh}
-          onClose={onClose}
+          dock={<RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />}
         />
       );
     case 'sentry':
       return (
-        <SentryIssueDetailPanel
-          issue={payload.issue}
-          sessionId={payload.sessionId}
-          workspaceId={workspaceId}
-          onClose={onClose}
+        <SentryIssueDetail
+          identifier={payload.issue.shortId ?? payload.issue.id}
+          title={payload.issue.title}
+          culprit={payload.issue.culprit}
+          level={payload.issue.level}
+          status={payload.issue.status}
+          permalink={payload.issue.permalink}
+          count={payload.issue.count}
+          userCount={payload.issue.userCount}
+          firstSeen={payload.issue.firstSeen}
+          lastSeen={payload.issue.lastSeen}
+          detail={sentryDetail.detail?.issueId === payload.issue.id ? sentryDetail.detail : null}
+          isLoading={sentryDetail.isLoading}
+          error={sentryDetail.error}
+          summaryIsLoading={false}
+          summaryError={null}
+          onRetrySummary={() => undefined}
+          dock={<RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />}
         />
       );
     case 'slack':
       return (
-        <ThreadDetailPanel
-          row={{ channel: payload.channel, head: payload.head, sessionId: payload.sessionId }}
+        <SlackThreadDetail
           workspaceId={workspaceId}
-          sessionId={payload.sessionId}
-          onClose={onClose}
+          channelId={payload.channel.id}
+          threadTs={payload.head.threadTs ?? payload.head.ts}
+          fallbackChannelName={payload.channel.name}
+          fallbackMessage={payload.head}
+          fallbackUrl={record.url}
+          dock={<RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />}
         />
       );
     case 'bitbucket':
@@ -133,6 +154,7 @@ export const InboxDetail = ({
           error={errors.bitbucket}
           onRefresh={onRefresh}
           onClose={onClose}
+          dock={<RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />}
         />
       );
     default: {

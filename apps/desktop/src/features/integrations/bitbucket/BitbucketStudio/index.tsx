@@ -10,6 +10,7 @@ import { resolveIntegrationConnection } from '../../connection';
 import type { BitbucketPullRequest } from '../client';
 import { focusedBitbucketPr } from './focusedBitbucketPr';
 import { PrDetailPanel } from './PrDetailPanel';
+import { LaunchedNotice } from '../../components/LaunchSessionPanel/LaunchedNotice';
 import { PrInbox } from './PrInbox';
 import { useBitbucketPrs } from './useBitbucketPrs';
 
@@ -120,6 +121,9 @@ export const BitbucketStudio = ({ sessionId, workspaceName, onClose }: Props) =>
                 error={error}
                 onRefresh={pullRequests.refetch}
                 onClose={requestClose}
+                dock={
+                  <LaunchedNotice sessionId={sessionId} isLinkedToIssue onOpened={requestClose} />
+                }
               />
             }
           />

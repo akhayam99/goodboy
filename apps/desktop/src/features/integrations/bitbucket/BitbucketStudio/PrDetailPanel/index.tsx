@@ -1,24 +1,24 @@
-import { StudioDetailLayout } from '../../../../../shared/components/StudioDetail';
-import { useMemo, useState } from 'react';
-import { EmptyState, Markdown } from '@goodboy/ui';
+import {
+  RecordDetailEmptyState,
+  RecordDetailHeader,
+  StudioDetailLayout,
+} from '../../../../../shared/components/StudioDetail';
+import { useMemo, useState, type ReactNode } from 'react';
+import { Markdown } from '@goodboy/ui';
 import { FileDiff, FileText, ListChecks, MessageSquare } from 'lucide-react';
 import type { BitbucketIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
-import { StudioWidget, HeaderBand, StudioDetailTabs } from '@goodboy/ui';
+import { StudioWidget, StudioDetailTabs } from '@goodboy/ui';
 import {
   bitbucketPullRequestFields,
   resolveDetailFields,
 } from '../../../../../shared/detail-fields';
 import { StateBadge } from '@goodboy/ui';
 import { BranchPair } from '@goodboy/ui';
-import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
 import { RefreshIconButton } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { openUrl } from '../../../../../shared/lib/editor';
 import { PrChecks } from '../../../../github/components/GitHubStudio/PrChecks';
-import { LaunchSessionPanel } from '../../../components/LaunchSessionPanel';
 import { bitbucketPrIdentifier } from '../../bitbucketPrIdentifier';
 import { bitbucketPrUrl } from '../../bitbucketPrUrl';
-import { goalFromPullRequest } from '../../goal-from-pull-request';
 import { pullRequestStateTone } from '../../stateTone';
 import type { BitbucketPullRequest, BitbucketRepo } from '../../client';
 import { useAppStore } from '../../../../../store';
@@ -40,6 +40,7 @@ type Props = {
   readonly error: string | null;
   readonly onRefresh: () => void;
   readonly onClose: () => void;
+  readonly dock?: ReactNode;
 };
 
 const SECTION_OPTIONS = [
@@ -60,7 +61,7 @@ export const PrDetailPanel = ({
   isLoading,
   error,
   onRefresh,
-  onClose,
+  dock,
 }: Props) => {
   const [section, setSection] = useState<PrSection>('overview');
   const target = useMemo(
@@ -87,17 +88,11 @@ export const PrDetailPanel = ({
 
   if (pullRequest == null || repo == null) {
     return (
-      <div className="flex h-full items-center justify-center px-8">
-        <EmptyState
-          bordered
-          tone={CONCEPT_TONE.bitbucket}
-          icon={CONCEPT_ICONS.bitbucket}
-          title="No pull request selected"
-          description="Pick a pull request to see its description, checks and changes."
-          size="lg"
-          headingLevel={2}
-        />
-      </div>
+      <RecordDetailEmptyState
+        provider="bitbucket"
+        title="No pull request selected"
+        description="Pick a pull request to see its description, checks and changes."
+      />
     );
   }
 
@@ -108,11 +103,13 @@ export const PrDetailPanel = ({
     <StudioDetailLayout
       header={
         <>
-          <HeaderBand
+          <RecordDetailHeader
+            provider="bitbucket"
+            identifier={identifier}
             title={pullRequest.title}
-            meta={
+            badge={
               <StateBadge tone={pullRequestStateTone({ state: pullRequest.state })}>
-                #{pullRequest.id} · {pullRequest.state.toLowerCase()}
+                {pullRequest.state.toLowerCase()}
               </StateBadge>
             }
             subtitle={
@@ -133,9 +130,9 @@ export const PrDetailPanel = ({
                     onRefresh();
                   }}
                 />
-                <ExternalRefActions url={webUrl} label="pull request" hostLabel="Bitbucket" />
               </>
             }
+            externalRef={{ url: webUrl, label: 'pull request' }}
           />
           <PrActionBar
             key={identifier}
@@ -165,6 +162,7 @@ export const PrDetailPanel = ({
         registry: bitbucketPullRequestFields,
         entity: pullRequest,
       })}
+      dock={dock}
     >
       {section === 'overview' && (
         <>
@@ -175,20 +173,6 @@ export const PrDetailPanel = ({
               <p className="text-sm italic text-muted-foreground/60">No description.</p>
             )}
           </StudioWidget>
-          <LaunchSessionPanel
-            key={identifier}
-            workspaceId={workspaceId}
-            linkedSessionId={sessionId}
-            goalSeed={goalFromPullRequest({ pullRequest })}
-            externalTask={{
-              provider: 'bitbucket',
-              externalId: identifier,
-              identifier,
-              url: webUrl,
-              title: pullRequest.title,
-            }}
-            onClose={onClose}
-          />
         </>
       )}
       {section === 'changes' && (
