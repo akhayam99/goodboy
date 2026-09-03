@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Play, Square } from 'lucide-react';
-import { CardAction, CardActionSlot, cn } from '@goodboy/ui';
+import { CardAction, CardActionSlot, StatusDot, cn } from '@goodboy/ui';
 import type { ScriptRunRecord } from '../../scripts';
 import { ScriptRunOutput } from './ScriptRunOutput';
 import { SCRIPT_RUN_PRESENTATION } from './scriptRunPresentation';
@@ -53,6 +53,9 @@ export const DiscoveredScriptRow = ({
         </button>
 
         <div className="col-start-2 row-start-1 flex items-start gap-1">
+          {status === 'pending' ? (
+            <StatusDot tone="info" pulsing ariaLabel="Running" className="mt-2" />
+          ) : null}
           <CardActionSlot label="Script lifecycle actions">
             {status === 'pending' ? (
               <CardAction

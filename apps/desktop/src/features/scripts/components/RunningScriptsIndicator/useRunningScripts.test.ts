@@ -13,6 +13,7 @@ import type { ScriptRunRecord } from '../../scripts';
 type StoreState = {
   readonly scriptRuns: Readonly<Record<string, Readonly<Record<string, ScriptRunRecord>>>>;
   readonly sessions: ReadonlyArray<Session>;
+  readonly archivedSessions: Readonly<Record<string, ReadonlyArray<Session>>>;
   readonly projectScripts: Readonly<Record<string, ReadonlyArray<ProjectScript>>>;
 };
 
@@ -21,6 +22,7 @@ const { store } = vi.hoisted(() => ({
     state: {
       scriptRuns: {},
       sessions: [],
+      archivedSessions: {},
       projectScripts: {},
     } as StoreState,
   },
@@ -44,6 +46,7 @@ beforeEach(() => {
   store.state = {
     scriptRuns: {},
     sessions: [],
+    archivedSessions: {},
     projectScripts: {},
   };
 });
@@ -54,6 +57,38 @@ afterEach(() => {
 });
 
 describe('useRunningScripts', () => {
+  it('counts a pending run from an archived session', () => {
+    store.state = {
+      sessions: [],
+      archivedSessions: {
+        [WORKSPACE_A]: [
+          { id: SESSION_A, workspaceId: WORKSPACE_A, goal: 'archived goal' } as Session,
+        ],
+      },
+      projectScripts: {
+        [WORKSPACE_A]: [
+          { id: SHARED_SCRIPT, projectId: PROJECT_A, name: 'archived setup' } as ProjectScript,
+        ],
+      },
+      scriptRuns: {
+        [SESSION_A]: {
+          [SHARED_SCRIPT]: {
+            status: 'pending',
+            result: null,
+            runId: 'run-archived',
+            startedAt: 10,
+          },
+        },
+      },
+    };
+
+    const { result } = renderHook(() => useRunningScripts());
+
+    expect(result.current).toEqual([
+      expect.objectContaining({ sessionId: SESSION_A, scriptName: 'archived setup' }),
+    ]);
+  });
+
   it('resolves each running script name from its session workspace', () => {
     store.state = {
       sessions: [
@@ -68,6 +103,7 @@ describe('useRunningScripts', () => {
           goal: 'beta goal',
         } as Session,
       ],
+      archivedSessions: {},
       projectScripts: {
         [WORKSPACE_A]: [
           {
@@ -121,6 +157,7 @@ describe('useRunningScripts', () => {
           goal: 'alpha goal',
         } as Session,
       ],
+      archivedSessions: {},
       projectScripts: {
         [WORKSPACE_A]: [],
         [WORKSPACE_B]: [
@@ -160,6 +197,7 @@ describe('useRunningScripts', () => {
           goal: 'alpha goal',
         } as Session,
       ],
+      archivedSessions: {},
       projectScripts: {
         [WORKSPACE_A]: [
           {
