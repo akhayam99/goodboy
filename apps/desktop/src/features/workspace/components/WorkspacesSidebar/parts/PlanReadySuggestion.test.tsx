@@ -2,9 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { tintClasses } from '@goodboy/ui';
 import type { PlanWithCount, Session } from '@goodboy/types';
-import { CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -38,6 +36,20 @@ vi.mock('../../../../../shared/hooks/useAgentStartedToast', () => ({
   useAgentStartedToast: () => vi.fn(),
 }));
 
+vi.mock('../../../../suggestions', () => ({
+  useSessionSuggestions: () => [
+    {
+      id: 'plan-ready:plan-1',
+      kind: 'plan-ready',
+      priority: 20,
+      title: 'Unify the detail surfaces',
+      detail: 'Ready to implement',
+      sessionId: 'session-1',
+      payload: { planId: 'plan-1' },
+    },
+  ],
+}));
+
 import { PlanReadySuggestion } from './PlanReadySuggestion';
 
 const SESSION = {
@@ -52,10 +64,8 @@ describe('PlanReadySuggestion', () => {
   it('renders the ready plan with the shared plan concept', () => {
     render(<PlanReadySuggestion task={SESSION} />);
 
-    const suggestion = screen.getByTestId('plan-ready-suggestion');
-    const planTint = tintClasses(CONCEPT_TONE.plans);
-    expect(suggestion.className).toContain(planTint.bg);
-    expect(suggestion.className).toContain(planTint.border);
-    expect(suggestion.querySelector('.lucide-clipboard-list')).not.toBeNull();
+    const suggestion = screen.getByTestId('suggestion-plan-ready:plan-1');
+    expect(suggestion.className).toContain('rounded-md');
+    expect(suggestion.querySelector('.lucide-list-checks')).not.toBeNull();
   });
 });

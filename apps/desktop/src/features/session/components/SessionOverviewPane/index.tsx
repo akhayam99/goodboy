@@ -19,8 +19,7 @@ import { OverviewActions } from './OverviewActions';
 import { InspectorSplit } from '../SessionWorkspace/parts/InspectorSplit';
 import { SlotHistoryPanel } from '../SessionWorkspace/parts/SlotHistoryPanel';
 import { GoalOverviewRegion } from './GoalOverviewRegion';
-import { OverviewNextSteps } from './OverviewNextSteps';
-import { OverviewResolve } from './OverviewResolve';
+import { OverviewSuggestions } from './OverviewSuggestions';
 
 type Props = {
   readonly session: Session;
@@ -89,8 +88,11 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         animationClassName="animate-fade-in"
       >
         <div className="flex flex-col gap-6">
-          <OverviewNextSteps session={session} agents={sessionAgents} />
-          <OverviewResolve session={session} />
+          <OverviewSuggestions
+            session={session}
+            agents={sessionAgents}
+            onSelectQuestions={() => onSelectLens('questions')}
+          />
           <TimelinePane
             session={session}
             runs={runs}
