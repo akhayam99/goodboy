@@ -11,6 +11,11 @@ const FABLE_PRICE: ModelPrice = {
   outputPerMtok: 50,
   cachedInputPerMtok: 1,
 };
+const FABLE_51_PRICE: ModelPrice = {
+  inputPerMtok: 10,
+  outputPerMtok: 50,
+  cachedInputPerMtok: 0.25,
+};
 const OPUS_PRICE: ModelPrice = {
   inputPerMtok: 5,
   outputPerMtok: 25,
@@ -23,6 +28,7 @@ const SONNET_PRICE: ModelPrice = {
 };
 
 export const CLAUDE_PRICES: Record<string, ModelPrice> = {
+  'claude-fable-5-1': FABLE_51_PRICE,
   'claude-fable-5': FABLE_PRICE,
   'claude-opus-5': OPUS_PRICE,
   'claude-opus-4-8': OPUS_PRICE,
