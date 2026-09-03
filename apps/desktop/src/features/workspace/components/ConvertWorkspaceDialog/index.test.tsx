@@ -170,7 +170,8 @@ describe('ConvertWorkspaceDialog', () => {
   it('keeps the draft when the user leaves to connect the host', () => {
     const onClose = vi.fn();
     const dispatched: string[] = [];
-    window.addEventListener('goodboy:open-inbox', () => dispatched.push('github'));
+    const onOpenInbox = () => dispatched.push('github');
+    window.addEventListener('goodboy:open-inbox', onOpenInbox);
     state.githubStatus = { available: false };
     render(<ConvertWorkspaceDialog open workspace={workspace} onClose={onClose} />);
 
@@ -179,6 +180,7 @@ describe('ConvertWorkspaceDialog', () => {
       target: { value: 'https://github.com/acme/widgets.git' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Connect GitHub' }));
+    window.removeEventListener('goodboy:open-inbox', onOpenInbox);
 
     expect(onClose).toHaveBeenCalledOnce();
     expect(dispatched).toEqual(['github']);
