@@ -105,6 +105,7 @@ export const App = () => {
     openGithub,
     openGitlab,
     openImpact,
+    openInbox,
     openJira,
     openLinear,
     openPalette,
@@ -259,6 +260,7 @@ export const App = () => {
               onOpenBudget={openBudget}
               onOpenImpact={openImpact}
               onOpenChangelog={openChangelog}
+              onOpenInbox={openInbox}
               onOpenGithub={openGithub}
               onOpenLinear={openLinear}
               onOpenJira={openJira}

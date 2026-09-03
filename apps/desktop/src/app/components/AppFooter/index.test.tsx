@@ -63,6 +63,7 @@ const footerProps = ({ overrides = {} }: Params = {}): FooterProps => ({
   onOpenBudget: vi.fn(),
   onOpenImpact: vi.fn(),
   onOpenChangelog: vi.fn(),
+  onOpenInbox: vi.fn(),
   onOpenGithub: vi.fn(),
   onOpenLinear: vi.fn(),
   onOpenJira: vi.fn(),
@@ -130,16 +131,20 @@ const expectRoutedOnlyTo = ({ spies, provider }: ExpectRoutedParams) => {
 };
 
 describe('AppFooter', () => {
-  it('keeps workflows, providers and settings one click away on the right', () => {
+  it('keeps inbox, workflows, providers and settings one click away on the right', () => {
+    const onOpenInbox = vi.fn();
     const onOpenWorkflows = vi.fn();
     const onOpenProviders = vi.fn();
     const onOpenSettings = vi.fn();
     render(
       <AppFooter
-        {...footerProps({ overrides: { onOpenWorkflows, onOpenProviders, onOpenSettings } })}
+        {...footerProps({
+          overrides: { onOpenInbox, onOpenWorkflows, onOpenProviders, onOpenSettings },
+        })}
       />,
     );
 
+    fireEvent.click(screen.getByRole('button', { name: 'Open the inbox for this workspace' }));
     fireEvent.click(
       screen.getByRole('button', { name: 'Open the workflow library for this workspace' }),
     );
@@ -148,6 +153,7 @@ describe('AppFooter', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: SETTINGS_LABEL }));
 
+    expect(onOpenInbox).toHaveBeenCalledOnce();
     expect(onOpenWorkflows).toHaveBeenCalledOnce();
     expect(onOpenProviders).toHaveBeenCalledOnce();
     expect(onOpenSettings).toHaveBeenCalledOnce();
@@ -226,7 +232,7 @@ describe('AppFooter', () => {
     expect(screen.getByTestId('update-indicator').textContent).toContain('Update to 0.2.0');
   });
 
-  it('orders the right cluster as workflows, providers, settings, more', () => {
+  it('orders the right cluster as inbox, workflows, providers, settings, more', () => {
     storeState.updaterStatus = 'available';
     render(<AppFooter {...footerProps()} />);
 
@@ -238,6 +244,7 @@ describe('AppFooter', () => {
     const names = buttons.map((button) => button.getAttribute('aria-label') ?? button.textContent);
 
     expect(names).toEqual([
+      'Open the inbox for this workspace',
       'Open the workflow library for this workspace',
       'Connect and manage your provider accounts',
       SETTINGS_LABEL,
