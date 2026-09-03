@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
-import { ClipboardCheck } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
 import type { SessionNudge } from '../../../../../store/types';
 import { AGENT_KIND_META, type AgentKind } from '../../../../session/agent-kind';
 import { NudgeCard } from '../../NudgeCard';
 import { RightSizeCard } from '../../RightSizeCard';
+import { SuggestionRow } from '../../../../suggestions/components/SuggestionRow';
+import { useSessionSuggestions } from '../../../../suggestions';
 import type { ScopePending } from './useScopeNudge';
 import type { RightSizePending, RightSizeSuggestion } from './useRightSizeNudge';
 
@@ -47,32 +48,19 @@ export const useSuggestionCards = ({
   acceptSessionNudgeHandoff,
 }: UseSuggestionCardsArgs): { readonly key: string; readonly node: ReactNode }[] => {
   const suggestions: { readonly key: string; readonly node: ReactNode }[] = [];
+  const sessionSuggestions = useSessionSuggestions({ session });
+  const planReady =
+    sessionSuggestions.find((suggestion) => suggestion.kind === 'plan-ready') ?? null;
 
-  if (sessionNudge?.kind === 'plan-ready' && session.workflowRuns.length === 0) {
+  if (sessionNudge?.kind === 'plan-ready' && planReady != null) {
     suggestions.push({
       key: 'plan-ready',
       node: (
-        <NudgeCard
-          severity="success"
-          ariaLabel="Plan ready to implement"
-          testId="plan-ready-nudge"
-          icon={<ClipboardCheck size={12} aria-hidden />}
-          title={
-            <>
-              Plan looks ready: <strong>{sessionNudge.planTitle}</strong>. Spawn an implementer to
-              execute it?
-            </>
-          }
-          primary={{
-            label: 'Spawn implementer',
-            onClick: () => void acceptSessionNudgeHandoff(session.id),
-            testId: 'plan-ready-accept',
-          }}
-          secondary={{
-            label: 'Not now',
-            onClick: () => void dismissSessionNudge(session.id, 'dismissed'),
-            testId: 'plan-ready-dismiss',
-          }}
+        <SuggestionRow
+          suggestion={planReady}
+          size="card"
+          actionLabel="Spawn implementer"
+          onAction={() => void acceptSessionNudgeHandoff(session.id)}
           onDismiss={() => void dismissSessionNudge(session.id, 'dismissed')}
         />
       ),

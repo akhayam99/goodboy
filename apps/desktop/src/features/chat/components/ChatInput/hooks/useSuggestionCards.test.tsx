@@ -7,6 +7,21 @@ import type { RightSizePending, RightSizeSuggestion } from './useRightSizeNudge'
 
 vi.mock('../../NudgeCard', () => ({ NudgeCard: () => null }));
 vi.mock('../../RightSizeCard', () => ({ RightSizeCard: () => null }));
+vi.mock('../../../../suggestions', () => ({
+  useSessionSuggestions: ({ session }: { session: Session }) =>
+    session.workflowRuns.length === 0
+      ? [
+          {
+            id: 'plan-ready:plan-1',
+            kind: 'plan-ready',
+            priority: 20,
+            title: 'the plan',
+            sessionId: session.id,
+            payload: { planId: 'plan-1' },
+          },
+        ]
+      : [],
+}));
 
 const { useSuggestionCards } = await import('./useSuggestionCards');
 

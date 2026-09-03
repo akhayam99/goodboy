@@ -4,6 +4,8 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event';
 import type { IsoDateTime, ProviderRunId, Session } from '@goodboy/types';
 
+vi.mock('../../../suggestions', () => ({ useSessionSuggestions: () => [] }));
+
 const {
   sendTurnMock,
   resolveProviderMock,
