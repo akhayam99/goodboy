@@ -1,18 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type {
-  AgentEffort,
-  ProviderId,
-  StepDef,
-  Workflow,
-  WorkflowId,
-  WorkspaceId,
-} from '@goodboy/types';
+import type { ProviderId, StepDef, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { formatError, StudioRailLayout } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { primaryProjectRoot } from '../../../workspace/primaryProjectRoot';
-import type { WorkflowStepUpsertArgs, WorkflowUpsertArgs } from '../../workflows';
-import type { DefinitionForm, TemplateForm } from '../../form';
-import { defFromLibraryStep, emptyDefinition, emptyForm, templateToForm } from '../../form';
+import type { StepDraft, WorkflowDraft } from '../../engine';
+import {
+  addStep,
+  draftFromStepDef,
+  draftFromWorkflow,
+  upsertArgsFromDraft,
+  validateDraft,
+} from '../../engine';
+import { useWorkflowDraft } from '../../engine/useWorkflowDraft';
 import { useWorkflowDrag } from '../../hooks/useWorkflowDrag';
 import { DragGhost } from '../WorkflowStudio/DragGhost';
 import { WorkflowComposer } from '../WorkflowStudio/WorkflowComposer';
@@ -21,30 +20,13 @@ import { WorkflowsRail } from '../WorkflowStudio/WorkflowsRail';
 
 type Props = { readonly workspaceId: WorkspaceId };
 
-const toStepArgs = ({
-  definition,
-  ordinal,
-}: {
-  definition: DefinitionForm;
-  ordinal: number;
-}): WorkflowStepUpsertArgs => ({
-  ...(definition.id !== undefined && { id: definition.id }),
-  ...(definition.libraryStepId !== undefined && { libraryStepId: definition.libraryStepId }),
-  role: definition.role,
-  ordinal,
-  name: definition.name.trim(),
-  promptPrefix: definition.promptPrefix,
-  ...(definition.expectedOutput.trim().length > 0 && {
-    expectedOutput: definition.expectedOutput.trim(),
-  }),
-  ...(definition.providerOverride.length > 0 && {
-    providerOverride: definition.providerOverride as ProviderId,
-  }),
-  ...(definition.modelOverride.trim().length > 0 && {
-    modelOverride: definition.modelOverride.trim(),
-  }),
-  effort: definition.effort as AgentEffort,
-  verbosity: definition.verbosity,
+const emptyWorkflowDraft = (): WorkflowDraft => ({
+  name: '',
+  description: '',
+  goal: '',
+  steps: addStep({ steps: [] }),
+  origin: 'custom',
+  isPreset: true,
 });
 
 export const WorkflowsPanel = ({ workspaceId }: Props) => {
@@ -87,7 +69,9 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const [editing, setEditing] = useState<Workflow | null | 'new'>(() =>
     storedDraft === undefined ? null : (restoredWorkflow ?? 'new'),
   );
-  const [form, setForm] = useState<TemplateForm>(() => storedDraft?.form ?? emptyForm());
+  const { draft: form, setDraft: setForm } = useWorkflowDraft({
+    initial: storedDraft?.form ?? emptyWorkflowDraft(),
+  });
   const [agentPrompt, setAgentPrompt] = useState(storedDraft?.agentPrompt ?? '');
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -98,7 +82,9 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const formRef = useRef(form);
   const savedFormRef = useRef(
-    restoredWorkflow === null ? null : JSON.stringify(templateToForm(restoredWorkflow)),
+    restoredWorkflow === null
+      ? null
+      : JSON.stringify(draftFromWorkflow({ workflow: restoredWorkflow })),
   );
   formRef.current = form;
 
@@ -117,7 +103,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     }
     setEditing(workflow);
     editingIdRef.current = workflow.id;
-    const nextForm = templateToForm(workflow);
+    const nextForm = draftFromWorkflow({ workflow });
     setForm(nextForm);
     savedFormRef.current = JSON.stringify(nextForm);
     setAgentPrompt('');
@@ -140,24 +126,20 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
 
   const flushSave = async (): Promise<boolean> => {
     const snapshot = formRef.current;
-    if (snapshot.name.trim().length === 0) {
-      setFormError('Name is required');
+    const errors = validateDraft({ draft: snapshot });
+    if (errors.name !== undefined) {
+      setFormError(errors.name);
       return false;
     }
-    if (snapshot.steps.some((definition) => definition.name.trim().length === 0)) {
+    if (Object.keys(errors.stepNames).length > 0) {
       setFormError('All steps need a name');
       return false;
     }
-    const args: WorkflowUpsertArgs = {
-      ...(editingIdRef.current !== null && { id: editingIdRef.current }),
+    const args = upsertArgsFromDraft({
+      draft: snapshot,
       workspaceId,
-      name: snapshot.name.trim(),
-      description: snapshot.description.trim(),
-      ...(snapshot.goal.trim().length > 0 && { goal: snapshot.goal.trim() }),
-      steps: snapshot.steps.map((definition, ordinal) => toStepArgs({ definition, ordinal })),
-      isPreset: true,
-      origin: 'custom',
-    };
+      ...(editingIdRef.current !== null && { id: editingIdRef.current }),
+    });
     setSaving(true);
     setFormError(null);
     try {
@@ -207,7 +189,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const openStarter = () => {
     setEditing(null);
     editingIdRef.current = null;
-    setForm(emptyForm());
+    setForm(emptyWorkflowDraft());
     savedFormRef.current = null;
     setAgentPrompt('');
     setFormError(null);
@@ -215,7 +197,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   };
 
   const openBlank = () => {
-    const nextForm = emptyForm();
+    const nextForm = emptyWorkflowDraft();
     setEditing('new');
     editingIdRef.current = null;
     setForm(nextForm);
@@ -227,7 +209,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const openEdit = (workflow: Workflow) => {
     setEditing(workflow);
     editingIdRef.current = workflow.id;
-    const nextForm = templateToForm(workflow);
+    const nextForm = draftFromWorkflow({ workflow });
     setForm(nextForm);
     savedFormRef.current = JSON.stringify(nextForm);
     setAgentPrompt('');
@@ -236,19 +218,17 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   };
 
   const duplicate = async (workflow: Workflow) => {
-    const source = templateToForm(workflow);
-    const saved = await savePhaseTemplate({
-      workspaceId,
-      name: `${workflow.name} copy`,
-      description: source.description,
-      ...(source.goal.trim().length > 0 && { goal: source.goal.trim() }),
-      steps: source.steps.map((definition, ordinal) => {
-        const copy = { ...definition, id: undefined };
-        return toStepArgs({ definition: copy, ordinal });
+    const source = draftFromWorkflow({ workflow });
+    const saved = await savePhaseTemplate(
+      upsertArgsFromDraft({
+        workspaceId,
+        draft: {
+          ...source,
+          name: `${workflow.name} copy`,
+          steps: source.steps.map((step) => ({ ...step, sourceStepId: null })),
+        },
       }),
-      isPreset: true,
-      origin: workflow.origin ?? 'custom',
-    });
+    );
     openEdit(saved);
   };
 
@@ -266,7 +246,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
       openStarter();
       return;
     }
-    const nextForm = templateToForm(editing);
+    const nextForm = draftFromWorkflow({ workflow: editing });
     setForm(nextForm);
     savedFormRef.current = JSON.stringify(nextForm);
     clearWorkflowStudioDraft({ workspaceId });
@@ -299,7 +279,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     }
   };
 
-  const insertStep = ({ definition, atIndex }: { definition: DefinitionForm; atIndex: number }) => {
+  const insertStep = ({ definition, atIndex }: { definition: StepDraft; atIndex: number }) => {
     setForm((current) => {
       const steps = current.steps.slice();
       steps.splice(Math.max(0, Math.min(atIndex, steps.length)), 0, definition);
@@ -327,7 +307,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     onDropLibrary: (stepDefId, atIndex) => {
       const definition = stepLibrary.find((item) => item.id === stepDefId);
       if (definition !== undefined) {
-        insertStep({ definition: defFromLibraryStep(definition), atIndex });
+        insertStep({ definition: draftFromStepDef({ def: definition }), atIndex });
       }
     },
     onReorder: (from, to) => moveStepTo({ from, to }),
@@ -392,7 +372,10 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
               canGenerate={connectedProviders.length > 0}
               onChangeMeta={(patch) => setForm((current) => ({ ...current, ...patch }))}
               onAddBlank={() => {
-                insertStep({ definition: emptyDefinition(), atIndex: form.steps.length });
+                const step = addStep({ steps: [] })[0];
+                if (step !== undefined) {
+                  insertStep({ definition: step, atIndex: form.steps.length });
+                }
                 setExpandedIdx(form.steps.length);
               }}
               onToggleExpand={(idx) => setExpandedIdx((current) => (current === idx ? null : idx))}
@@ -416,7 +399,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
               onStartDrag={startLibraryDrag}
               onAddLibraryStep={(definition) => {
                 insertStep({
-                  definition: defFromLibraryStep(definition),
+                  definition: draftFromStepDef({ def: definition }),
                   atIndex: form.steps.length,
                 });
                 setExpandedIdx(form.steps.length);

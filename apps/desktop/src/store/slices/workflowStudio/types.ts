@@ -1,11 +1,11 @@
 import type { ProviderId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
-import type { TemplateForm } from '../../../features/workflows/form';
+import type { WorkflowDraft } from '../../../features/workflows/engine';
 
 export type { GetFn, SetFn } from '../../slice-types';
 
 export type WorkflowStudioDraft = {
   readonly workflowId: WorkflowId | null;
-  readonly form: TemplateForm;
+  readonly form: WorkflowDraft;
   readonly agentPrompt: string;
 };
 
@@ -27,7 +27,7 @@ export type StartWorkflowGenerationParams = {
   readonly description: string;
   readonly workingDir?: string;
   readonly workflow: Workflow | null;
-  readonly form: TemplateForm | null;
+  readonly form: WorkflowDraft | null;
 };
 
 export type WorkflowStudioState = {

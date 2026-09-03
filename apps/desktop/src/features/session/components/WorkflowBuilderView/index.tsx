@@ -49,13 +49,10 @@ import {
 } from '@goodboy/core';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import type {
-  AgentEffort,
   AgentRole,
   ProviderId,
   RoleModelPreferences,
   Session,
-  Step,
-  StepId,
   Workflow,
   WorkflowExecutionMode,
   WorkflowId,
@@ -65,11 +62,19 @@ import type {
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace, useSessionSlots } from '../../../../store';
 import { buildProfileGuard } from '../../../../store/profileGuard';
-import type {
-  EditableStep,
-  Mode,
-  WorkflowBuilderDraft,
-} from '../../../../store/slices/workflowDrafts/types';
+import type { Mode, WorkflowBuilderDraft } from '../../../../store/slices/workflowDrafts/types';
+import type { StepDraft, WorkflowDraft } from '../../../workflows/engine';
+import {
+  addStep as addDraftStep,
+  draftFromPlannerSteps,
+  draftFromWorkflow,
+  removeStep as removeDraftStep,
+  reorderSteps as reorderDraftSteps,
+  stepDraftWithModel,
+  updateStep as updateDraftStep,
+  upsertArgsFromDraft,
+} from '../../../workflows/engine';
+import { useWorkflowDraft } from '../../../workflows/engine/useWorkflowDraft';
 import { ROLE_LABEL, ROLE_TO_KIND, inferAgentKindFromName, type AgentKind } from '../../agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { WorkflowStepCard } from '../WorkflowStepCard';
@@ -102,45 +107,28 @@ type Props = {
 
 type ProviderEntry = { readonly id: ProviderId; readonly connection: string };
 
-const editableKind = (step: EditableStep): AgentKind =>
+const editableKind = (step: StepDraft): AgentKind =>
   (step.role !== 'custom' ? ROLE_TO_KIND[step.role] : undefined) ??
   inferAgentKindFromName(step.name);
 
 const sortedSteps = (template: Workflow): Workflow['steps'] =>
   [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
 
-const stepsFromTemplate = (template: Workflow): ReadonlyArray<EditableStep> =>
-  sortedSteps(template).map((s) => ({
-    key: crypto.randomUUID(),
-    sourceStepId: s.id,
-    role: (s.role ?? 'custom') as AgentRole,
-    name: s.name,
-    promptPrefix: s.promptPrefix ?? '',
-    expectedOutput: s.expectedOutput ?? '',
-    ...(s.providerOverride && { providerOverride: s.providerOverride }),
-    ...(s.modelOverride && { modelOverride: s.modelOverride }),
-    ...(s.effort && { effort: s.effort as EffortLevel }),
-  }));
+const stepsFromTemplate = (template: Workflow): ReadonlyArray<StepDraft> =>
+  draftFromWorkflow({ workflow: template }).steps;
 
 type StepsFromPlanParams = {
   readonly plan: PlannerOutput;
   readonly roleModels: RoleModelPreferences | null;
 };
 
-const stepsFromPlan = ({ plan, roleModels }: StepsFromPlanParams): ReadonlyArray<EditableStep> =>
-  plan.steps.map((s) => {
-    const role = s.role as AgentRole;
-    return {
-      key: crypto.randomUUID(),
-      role,
-      name: s.name,
-      promptPrefix: s.promptPrefix ?? '',
-      expectedOutput: s.expectedOutput ?? '',
-      effort: resolveRoleRouting({ role, prefs: roleModels }).effort as EffortLevel,
-    };
-  });
+const stepsFromPlan = ({ plan, roleModels }: StepsFromPlanParams): ReadonlyArray<StepDraft> =>
+  draftFromPlannerSteps({ steps: plan.steps }).map((step) => ({
+    ...step,
+    effort: resolveRoleRouting({ role: step.role, prefs: roleModels }).effort as EffortLevel,
+  }));
 
-const stepsMatchTemplate = (steps: ReadonlyArray<EditableStep>, template: Workflow): boolean => {
+const stepsMatchTemplate = (steps: ReadonlyArray<StepDraft>, template: Workflow): boolean => {
   const base = sortedSteps(template);
   if (base.length !== steps.length) {
     return false;
@@ -150,12 +138,12 @@ const stepsMatchTemplate = (steps: ReadonlyArray<EditableStep>, template: Workfl
     return (
       s.sourceStepId === b.id &&
       s.name === b.name &&
-      s.promptPrefix === (b.promptPrefix ?? '') &&
+      s.prompt === (b.promptPrefix ?? '') &&
       s.expectedOutput === (b.expectedOutput ?? '') &&
       s.role === ((b.role ?? 'custom') as AgentRole) &&
-      (s.providerOverride ?? undefined) === (b.providerOverride ?? undefined) &&
-      (s.modelOverride ?? undefined) === (b.modelOverride ?? undefined) &&
-      (s.effort ?? undefined) === ((b.effort as EffortLevel | undefined) ?? undefined)
+      (s.provider || undefined) === (b.providerOverride ?? undefined) &&
+      (s.model || undefined) === (b.modelOverride ?? undefined) &&
+      s.effort === ((b.effort as EffortLevel | undefined) ?? 'medium')
     );
   });
 };
@@ -167,7 +155,7 @@ const isDraftEmpty = (d: WorkflowBuilderDraft): boolean =>
   d.basePresetId === null &&
   d.processText.trim() === '' &&
   d.plan === null &&
-  d.steps.length === 0 &&
+  d.workflow.steps.length === 0 &&
   !d.saveAsPreset &&
   !d.autoRun &&
   !d.dynamicNameEdited &&
@@ -258,7 +246,24 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     initialDraft?.dynamicNameEdited ?? false,
   );
   const [plan, setPlan] = useState<PlannerOutput | null>(initialDraft?.plan ?? null);
-  const [steps, setSteps] = useState<ReadonlyArray<EditableStep>>(initialDraft?.steps ?? []);
+  const initialWorkflowDraft: WorkflowDraft = initialDraft?.workflow ?? {
+    name: '',
+    description: '',
+    goal: '',
+    steps: [],
+    origin: 'custom',
+    isPreset: false,
+  };
+  const { draft: authoringDraft, setDraft: setAuthoringDraft } = useWorkflowDraft({
+    initial: initialWorkflowDraft,
+  });
+  const steps = authoringDraft.steps;
+  const setSteps = (updater: React.SetStateAction<ReadonlyArray<StepDraft>>) => {
+    setAuthoringDraft((current) => ({
+      ...current,
+      steps: typeof updater === 'function' ? updater(current.steps) : updater,
+    }));
+  };
   const [planning, setPlanning] = useState(false);
   const [polishingKey, setPolishingKey] = useState<string | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
@@ -402,7 +407,14 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     basePresetId,
     processText,
     plan,
-    steps,
+    workflow: {
+      name: plan?.workflowName ?? '',
+      description: plan?.reasoning ?? '',
+      goal: goalText,
+      steps,
+      origin: 'custom',
+      isPreset: saveAsPreset,
+    },
     saveAsPreset,
     autoRun,
     dynamicName,
@@ -475,53 +487,33 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   const blocked = busy || planning;
 
-  const patchStep = (key: string, patch: Partial<EditableStep>) =>
-    setSteps((prev) => prev.map((s) => (s.key === key ? { ...s, ...patch } : s)));
+  const patchStep = (key: string, patch: Partial<StepDraft>) =>
+    setSteps((previous) => updateDraftStep({ steps: previous, key, patch }));
 
   const removeStep = (key: string) => {
-    setSteps((prev) => prev.filter((s) => s.key !== key));
+    setSteps((previous) => removeDraftStep({ steps: previous, key }));
     setExpandedKey((cur) => (cur === key ? null : cur));
   };
 
   const moveStep = (key: string, dir: -1 | 1) =>
-    setSteps((prev) => {
-      const i = prev.findIndex((s) => s.key === key);
+    setSteps((previous) => {
+      const i = previous.findIndex((step) => step.key === key);
       const j = i + dir;
-      if (i === -1 || j < 0 || j >= prev.length) {
-        return prev;
+      if (i === -1 || j < 0 || j >= previous.length) {
+        return previous;
       }
-      const next = [...prev];
-      const [moved] = next.splice(i, 1);
-      next.splice(j, 0, moved!);
-      return next;
+      return reorderDraftSteps({ steps: previous, from: i, to: j + (dir > 0 ? 1 : 0) });
     });
 
   const moveStepTo = (from: number, to: number) => {
     if (to === from || to === from + 1) {
       return;
     }
-    const insertAt = to > from ? to - 1 : to;
-    setSteps((prev) => {
-      const next = [...prev];
-      const [moved] = next.splice(from, 1);
-      next.splice(insertAt, 0, moved!);
-      return next;
-    });
+    setSteps((previous) => reorderDraftSteps({ steps: previous, from, to }));
   };
 
   const addStep = () => {
-    const key = crypto.randomUUID();
-    setSteps((prev) => [
-      ...prev,
-      {
-        key,
-        role: 'custom',
-        name: '',
-        promptPrefix: '',
-        expectedOutput: '',
-        effort: roleEffort('custom'),
-      },
-    ]);
+    setSteps((previous) => addDraftStep({ steps: previous }));
   };
 
   const { drag, dropIndex, startStepDrag, ghost } = useWorkflowDrag({
@@ -532,23 +524,21 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const dragging = drag !== null;
   const draggingKey = drag?.kind === 'step' ? (steps[drag.fromIndex]?.key ?? null) : null;
 
-  const recommendedProvider = (_step: EditableStep): ProviderId => providerId;
-  const resolvedProvider = (step: EditableStep): ProviderId =>
-    step.providerOverride ?? recommendedProvider(step);
-  const recommendedModel = (step: EditableStep): string =>
+  const recommendedProvider = (_step: StepDraft): ProviderId => providerId;
+  const resolvedProvider = (step: StepDraft): ProviderId =>
+    step.provider !== '' ? step.provider : recommendedProvider(step);
+  const recommendedModel = (step: StepDraft): string =>
     recommendedModelForRole({
       role: step.role ?? 'custom',
       provider: resolvedProvider(step),
       prefs: roleModels,
     });
-  const resolvedModel = (step: EditableStep): string =>
-    step.modelOverride !== undefined && step.modelOverride !== ''
-      ? step.modelOverride
-      : recommendedModel(step);
+  const resolvedModel = (step: StepDraft): string =>
+    step.model !== '' ? step.model : recommendedModel(step);
 
   const onPolishStep = async (key: string) => {
     const step = steps.find((s) => s.key === key);
-    if (!step || step.promptPrefix.trim().length === 0 || polishingKey) {
+    if (step === undefined || step.prompt.trim().length === 0 || polishingKey !== null) {
       return;
     }
     setError(null);
@@ -563,12 +553,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         {
           role: step.role,
           name: step.name,
-          instruction: step.promptPrefix,
+          instruction: step.prompt,
           ...(goalText.trim().length > 0 && { goal: goalText }),
         },
       );
-      if (polished && polished !== step.promptPrefix) {
-        patchStep(key, { promptPrefix: polished });
+      if (polished !== null && polished !== step.prompt) {
+        patchStep(key, { prompt: polished });
         return;
       }
       if (!polished) {
@@ -731,36 +721,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setError(null);
   };
 
-  const buildSteps = (workflowId: WorkflowId): ReadonlyArray<Step> =>
-    steps.map((st, ordinal) => {
-      const effort = (st.effort ?? roleEffort(st.role)) as EffortLevel;
-      const base: Step = {
-        id: `step_builder_${crypto.randomUUID()}` as StepId,
-        workflowId,
-        ordinal,
-        name: st.name.trim() || ROLE_LABEL[st.role],
-        promptPrefix: st.promptPrefix,
-        ...(st.expectedOutput.trim().length > 0 && {
-          expectedOutput: st.expectedOutput.trim(),
-        }),
-        role: st.role,
-        effort: effort as AgentEffort,
-        verbosity: 'normal',
-      };
-      let out = base;
-      if (st.providerOverride) {
-        out = { ...out, providerOverride: st.providerOverride };
-      }
-      if (st.modelOverride) {
-        out = {
-          ...out,
-          modelOverride: st.modelOverride,
-          effort: clampEffort(st.modelOverride, effort) as AgentEffort,
-        };
-      }
-      return out;
-    });
-
   const onStart = async () => {
     if (blocked) {
       return;
@@ -807,13 +767,31 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         description,
         ...(goal.length > 0 && { goal }),
         ...(process.length > 0 && { processText: process }),
-        steps: mode === 'dynamic' ? [] : buildSteps(workflowId),
+        steps: [],
         isPreset: mode === 'dynamic' ? false : saveAsPreset,
         origin: mode === 'dynamic' ? 'orchestrated' : 'custom',
         createdAt: now,
         updatedAt: now,
       };
-      const saved = await savePhaseTemplate(workflow);
+      const saved = await savePhaseTemplate(
+        mode === 'dynamic'
+          ? workflow
+          : {
+              ...upsertArgsFromDraft({
+                workspaceId: session.workspaceId,
+                id: workflowId,
+                draft: {
+                  name,
+                  description,
+                  goal,
+                  steps: steps.map((step) => ({ ...step, sourceStepId: null })),
+                  origin: 'custom',
+                  isPreset: saveAsPreset,
+                },
+              }),
+              ...(process.length > 0 && { processText: process }),
+            },
+      );
       if (mode === 'dynamic' && !dynamicNameEdited) {
         void generateWorkflowTitle(
           session.workspaceId,
@@ -1318,13 +1296,13 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 kind={editableKind(st)}
                                 role={st.role}
                                 provider={resolvedProvider(st)}
-                                providerValue={st.providerOverride ?? ''}
+                                providerValue={st.provider}
                                 recommendedProvider={recommendedProvider(st)}
                                 connectedProviders={connectedProviders}
                                 name={st.name}
-                                promptPrefix={st.promptPrefix}
+                                promptPrefix={st.prompt}
                                 expectedOutput={st.expectedOutput}
-                                model={st.modelOverride ?? ''}
+                                model={st.model}
                                 resolvedModel={resolvedModel(st)}
                                 recommendedModel={recommendedModel(st)}
                                 effort={(st.effort ?? roleEffort(st.role)) as EffortLevel}
@@ -1340,17 +1318,19 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                   startStepDrag(i, st.name.trim() || ROLE_LABEL[st.role], e)
                                 }
                                 onName={(v) => patchStep(st.key, { name: v })}
-                                onPrompt={(v) => patchStep(st.key, { promptPrefix: v })}
+                                onPrompt={(v) => patchStep(st.key, { prompt: v })}
                                 onExpectedOutput={(v) => patchStep(st.key, { expectedOutput: v })}
                                 onModel={(v) =>
-                                  patchStep(st.key, {
-                                    modelOverride: v || undefined,
-                                    effort: clampEffort(v, st.effort ?? roleEffort(st.role)),
-                                  })
+                                  patchStep(
+                                    st.key,
+                                    stepDraftWithModel({
+                                      step: st,
+                                      provider: st.provider,
+                                      model: v,
+                                    }),
+                                  )
                                 }
-                                onProvider={(v) =>
-                                  patchStep(st.key, { providerOverride: v || undefined })
-                                }
+                                onProvider={(v) => patchStep(st.key, { provider: v })}
                                 onEffort={(v) => patchStep(st.key, { effort: v })}
                                 onPolish={() => void onPolishStep(st.key)}
                                 onRemove={() => removeStep(st.key)}
