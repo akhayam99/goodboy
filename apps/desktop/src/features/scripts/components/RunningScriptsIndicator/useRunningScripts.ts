@@ -13,11 +13,20 @@ export type RunningScript = {
 export const useRunningScripts = (): ReadonlyArray<RunningScript> => {
   const scriptRuns = useAppStore((state) => state.scriptRuns);
   const sessions = useAppStore((state) => state.sessions);
+  const archivedSessions = useAppStore((state) => state.archivedSessions);
   const projectScripts = useAppStore((state) => state.projectScripts);
 
   return useMemo(() => {
     const running: RunningScript[] = [];
+    const sessionById = new Map(
+      Object.values(archivedSessions ?? {})
+        .flat()
+        .map((session) => [session.id, session] as const),
+    );
     for (const session of sessions) {
+      sessionById.set(session.id, session);
+    }
+    for (const session of sessionById.values()) {
       const sessionId = session.id as SessionId;
       const runs = scriptRuns[sessionId];
       if (runs === undefined) {
@@ -42,5 +51,5 @@ export const useRunningScripts = (): ReadonlyArray<RunningScript> => {
       }
     }
     return running.sort((a, b) => a.startedAt - b.startedAt);
-  }, [scriptRuns, projectScripts, sessions]);
+  }, [archivedSessions, scriptRuns, projectScripts, sessions]);
 };

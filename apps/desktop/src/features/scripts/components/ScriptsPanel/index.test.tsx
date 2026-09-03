@@ -148,6 +148,10 @@ describe('ScriptsPanel', () => {
     expect(
       screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent),
     ).toEqual(['root', '@acme/web', 'acme/api']);
+    expect(screen.getByRole('button', { name: /@acme\/web/ }).getAttribute('aria-expanded')).toBe(
+      'false',
+    );
+    fireEvent.click(screen.getByRole('button', { name: /@acme\/web/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Run dev' }));
     expect(state.runDiscoveredScript).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -156,6 +160,48 @@ describe('ScriptsPanel', () => {
         command: 'pnpm run dev',
         cwd: '/tmp/api/apps/web',
       }),
+    );
+  });
+
+  it('filters every section and auto-expands matching manifest groups', () => {
+    state.scripts = [
+      { id: 's1', projectId: 'project-1', name: 'deploy user', body: 'ship production' },
+      { id: 's2', projectId: 'project-1', name: 'lint user', body: 'eslint .' },
+    ];
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
+          {
+            source: 'package-json',
+            packageName: '@acme/web',
+            relDir: 'apps/web',
+            manager: 'pnpm',
+            scripts: [{ name: 'deploy manifest', command: 'ship preview' }],
+          },
+        ],
+      },
+    };
+    state.discoveredScriptScans = {
+      'session-1': { '/tmp/api': { status: 'ready', error: null } },
+    };
+
+    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search scripts' }), {
+      target: { value: 'deploy' },
+    });
+    expect(screen.getByText('deploy user')).toBeDefined();
+    expect(screen.queryByText('lint user')).toBeNull();
+    expect(screen.getByRole('button', { name: /@acme\/web/ }).getAttribute('aria-expanded')).toBe(
+      'true',
+    );
+    expect(screen.getByText('deploy manifest')).toBeDefined();
+
+    fireEvent.keyDown(screen.getByRole('searchbox', { name: 'Search scripts' }), {
+      key: 'Escape',
+    });
+    expect(screen.getByRole('button', { name: /@acme\/web/ }).getAttribute('aria-expanded')).toBe(
+      'false',
     );
   });
 
@@ -225,7 +271,7 @@ describe('ScriptsPanel', () => {
 
     render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
 
-    expect(screen.getByRole('tab', { name: 'Web' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: /Web/ }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByText('deploy web')).toBeDefined();
     expect(screen.queryByText('setup api')).toBeNull();
     expect(state.setScriptsLensScope).toHaveBeenCalledWith({ scope: null });
@@ -243,7 +289,7 @@ describe('ScriptsPanel', () => {
 
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByRole('tab', { name: 'All' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: /All/ }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByText('setup api')).toBeDefined();
     expect(screen.getByText('deploy web')).toBeDefined();
   });
@@ -261,7 +307,11 @@ describe('ScriptsPanel', () => {
 
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['All', 'API', 'Web']);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
+      'All3',
+      'API2',
+      'Web1',
+    ]);
     expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
       expect.stringContaining('Alpha'),
       expect.stringContaining('zebra'),
@@ -447,7 +497,7 @@ describe('ScriptsPanel', () => {
     expect(row.className).not.toContain('border-info/50');
     expect(row.className).not.toContain('border-success/40');
     expect(row.className).not.toContain('border-danger/40');
-    expect(row.querySelector('[role="img"]')).toBeNull();
+    expect(row.querySelector('[aria-label="Running"]')).toBeNull();
   });
 
   it.each([
@@ -473,7 +523,11 @@ describe('ScriptsPanel', () => {
     if (pulseClass !== null) {
       expect(row.className).toContain(pulseClass);
     }
-    expect(row.querySelector('[role="img"]')).toBeNull();
+    if (status === 'pending') {
+      expect(row.querySelector('[aria-label="Running"]')).not.toBeNull();
+      return;
+    }
+    expect(row.querySelector('[aria-label="Running"]')).toBeNull();
   });
 
   it('groups the All view, filters by project, and explains an unmounted project', () => {
@@ -487,7 +541,7 @@ describe('ScriptsPanel', () => {
     ];
     render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
 
-    expect(screen.getByRole('tab', { name: 'All' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /All/ })).toBeDefined();
     expect(screen.getAllByText('API').length).toBeGreaterThan(1);
     expect(screen.getAllByText('Web').length).toBeGreaterThan(1);
 
@@ -497,7 +551,7 @@ describe('ScriptsPanel', () => {
       (screen.getAllByRole('button', { name: 'Run script' })[1] as HTMLButtonElement).disabled,
     ).toBe(true);
 
-    fireEvent.click(screen.getByRole('tab', { name: 'API' }));
+    fireEvent.click(screen.getByRole('tab', { name: /API/ }));
     expect(screen.getByText('setup api')).toBeDefined();
     expect(screen.queryByText('deploy web')).toBeNull();
   });

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Check, ChevronDown, ChevronRight, Copy, Pencil, Play, Square, Trash2 } from 'lucide-react';
-import { InlineConfirm, Textarea, cn } from '@goodboy/ui';
+import { InlineConfirm, StatusDot, Textarea, cn } from '@goodboy/ui';
 import type { Project, ProjectId, ProjectScript } from '@goodboy/types';
 import { CardAction } from '@goodboy/ui';
 import { CardActionSlot } from '@goodboy/ui';
@@ -213,6 +213,9 @@ export const ScriptRow = ({
         </div>
 
         <div className="col-start-2 row-start-1 flex items-start gap-1">
+          {status === 'pending' ? (
+            <StatusDot tone="info" pulsing ariaLabel="Running" className="mt-2" />
+          ) : null}
           <CardActionSlot label="Script lifecycle actions">
             {runnable && status === 'pending' ? (
               <CardAction
