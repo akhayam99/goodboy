@@ -1,12 +1,12 @@
-import type { Agent, SessionEventKind } from '@goodboy/types';
+import type { Agent, OpenQuestion, SessionEventKind } from '@goodboy/types';
 import { isWorkflowRunComplete } from '../../workflows/isWorkflowRunComplete';
 import type {
   TimelineAgentEntry,
-  TimelineAnswerEntry,
   TimelineBranchEntry,
   TimelineEventEntry,
   TimelineIssueEntry,
   TimelinePlanEntry,
+  TimelineQuestionEntry,
   TimelineRunEntry,
   TimelineTopLevelEntry,
 } from './buildTimelineGroups';
@@ -28,7 +28,7 @@ export type TimelineStreamEntry =
   | TimelineIssueEntry
   | TimelineBranchEntry
   | TimelineEventEntry
-  | TimelineAnswerEntry;
+  | TimelineQuestionEntry;
 
 type StreamRail = {
   readonly id: string;
@@ -233,6 +233,76 @@ const mergeConsecutiveDecisionRows = ({
   return merged;
 };
 
+const questionBucketOf = ({
+  entry,
+}: {
+  readonly entry: TimelineQuestionEntry;
+}): 'open' | 'consumed' =>
+  entry.questions.every((question) => question.status === 'open') ? 'open' : 'consumed';
+
+type MergeQuestionRowsParams = {
+  readonly drafts: ReadonlyArray<DraftRow>;
+};
+
+const mergeConsecutiveQuestionRows = ({
+  drafts,
+}: MergeQuestionRowsParams): ReadonlyArray<DraftRow> => {
+  const merged: DraftRow[] = [];
+  let index = 0;
+
+  while (index < drafts.length) {
+    const newest = drafts[index];
+    if (newest === undefined) {
+      break;
+    }
+    if (newest.entry.kind !== 'question' || newest.groupId == null) {
+      merged.push(newest);
+      index += 1;
+      continue;
+    }
+
+    const newestBucket = questionBucketOf({ entry: newest.entry });
+    const newestDayKey = newest.at === null ? null : dayKeyOf({ at: newest.at });
+    let runIndex = index;
+    const collected: OpenQuestion[] = [];
+    while (runIndex < drafts.length) {
+      const draft = drafts[runIndex];
+      if (draft === undefined || draft.entry.kind !== 'question') {
+        break;
+      }
+      if (draft.groupId !== newest.groupId) {
+        break;
+      }
+      if (questionBucketOf({ entry: draft.entry }) !== newestBucket) {
+        break;
+      }
+      const draftDayKey = draft.at === null ? null : dayKeyOf({ at: draft.at });
+      if (runIndex > index && draftDayKey !== newestDayKey) {
+        break;
+      }
+      collected.push(...draft.entry.questions);
+      runIndex += 1;
+    }
+
+    if (runIndex === index + 1) {
+      merged.push(newest);
+      index = runIndex;
+      continue;
+    }
+
+    merged.push({
+      ...newest,
+      entry: {
+        ...newest.entry,
+        questions: collected,
+      },
+    });
+    index = runIndex;
+  }
+
+  return merged;
+};
+
 const stepAgentsOf = ({ entry }: { readonly entry: TimelineRunEntry }): ReadonlyArray<Agent> =>
   entry.children.flatMap((child) => (child.kind === 'agent' ? [child.agent] : []));
 
@@ -322,26 +392,6 @@ const agentRows = ({
           context,
         }),
       );
-    }
-  }
-  if (context.showQuestions) {
-    for (const answer of entry.answers) {
-      const row: DraftRow = {
-        kind: 'row',
-        id: answer.id,
-        at: answer.at,
-        grade: 'step',
-        entry: answer,
-        identity,
-        familyId,
-        groupId,
-        ordinal: null,
-        sortOrdinal: 0,
-        markerState: 'done',
-        hasUnread: false,
-        isPending: false,
-      };
-      nested.push(row);
     }
   }
   const origin: DraftRow = {
@@ -632,6 +682,27 @@ export const buildTimelineStream = ({
       });
       continue;
     }
+    if (entry.kind === 'question') {
+      if (!context.showQuestions) {
+        continue;
+      }
+      rows.push({
+        kind: 'row',
+        id: entry.id,
+        at: entry.at,
+        grade: entry.lane != null ? 'step' : 'entry',
+        entry,
+        identity: entry.lane?.identity ?? null,
+        familyId: entry.lane?.rootEntryId ?? null,
+        groupId: entry.lane != null ? laneIdOf({ entryId: entry.lane.rootEntryId }) : null,
+        ordinal: null,
+        sortOrdinal: 0,
+        markerState: questionBucketOf({ entry }) === 'open' ? 'question' : 'done',
+        hasUnread: false,
+        isPending: false,
+      });
+      continue;
+    }
     const row: DraftRow = {
       kind: 'row',
       id: entry.id,
@@ -651,7 +722,9 @@ export const buildTimelineStream = ({
   }
 
   const sorted = [...rows].sort((first, second) => compareNewestFirst({ first, second }));
-  const merged = mergeConsecutiveDecisionRows({ drafts: sorted });
+  const merged = mergeConsecutiveQuestionRows({
+    drafts: mergeConsecutiveDecisionRows({ drafts: sorted }),
+  });
   const withDays = withDayBreaks({
     drafts: withPendingClusters({ drafts: withPendingAtFamilyHead({ drafts: merged }) }),
     dayLabelFor,

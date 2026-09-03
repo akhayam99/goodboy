@@ -73,6 +73,19 @@ export type TimelineAnswerEntry = {
   readonly question: OpenQuestion;
 };
 
+export type TimelineQuestionLane = {
+  readonly identity: RunIdentity;
+  readonly rootEntryId: string;
+};
+
+export type TimelineQuestionEntry = {
+  readonly kind: 'question';
+  readonly id: string;
+  readonly at: string;
+  readonly questions: ReadonlyArray<OpenQuestion>;
+  readonly lane: TimelineQuestionLane | null;
+};
+
 type TimelineRunChild = TimelineAgentEntry | TimelinePlanEntry;
 
 export type TimelineRunEntry = {
@@ -92,7 +105,8 @@ export type TimelineTopLevelEntry =
   | TimelineIssueEntry
   | TimelineBranchEntry
   | TimelineEventEntry
-  | TimelineRunEntry;
+  | TimelineRunEntry
+  | TimelineQuestionEntry;
 
 export type TimelineModel = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
@@ -362,6 +376,56 @@ export const buildTimelineGroups = ({
           : {}),
       };
     });
+
+  const authorAgentIdByQuestionId = new Map<string, Agent['id']>();
+  for (const candidate of byOrdinal) {
+    for (const attached of attachedQuestionsFor({ questions, agent: candidate })) {
+      if (!authorAgentIdByQuestionId.has(attached.id)) {
+        authorAgentIdByQuestionId.set(attached.id, candidate.id);
+      }
+    }
+  }
+
+  const questionLaneFor = ({
+    authorAgentId,
+  }: {
+    readonly authorAgentId: Agent['id'] | undefined;
+  }): TimelineQuestionLane | null => {
+    if (authorAgentId == null) {
+      return null;
+    }
+    const rootId = chainRootIdByAgentId.get(authorAgentId) ?? authorAgentId;
+    const rootAgent = liveAgentById.get(rootId);
+    if (
+      rootAgent != null &&
+      rootAgent.workflowRunId != null &&
+      rootAgent.stepId != null &&
+      runIds.has(rootAgent.workflowRunId)
+    ) {
+      return {
+        identity: identityFor({ runId: rootAgent.workflowRunId }),
+        rootEntryId: `run:${rootAgent.workflowRunId}`,
+      };
+    }
+    if (chainRootIds.has(rootId)) {
+      return { identity: identityFor({ runId: rootId }), rootEntryId: `agent:${rootId}` };
+    }
+    return null;
+  };
+
+  const questionTimestamp = ({ question }: { readonly question: OpenQuestion }): string =>
+    question.status === 'open'
+      ? question.createdAt
+      : (question.answeredAt ?? question.dismissedAt ?? question.createdAt);
+
+  const questionEntries: ReadonlyArray<TimelineQuestionEntry> = questions.map((question) => ({
+    kind: 'question',
+    id: `question:${question.id}`,
+    at: questionTimestamp({ question }),
+    questions: [question],
+    lane: questionLaneFor({ authorAgentId: authorAgentIdByQuestionId.get(question.id) }),
+  }));
+
   const issues: ReadonlyArray<TimelineIssueEntry> = externalTasks.map((task) => ({
     kind: 'issue',
     id: `issue:${task.provider}:${task.externalId}`,
@@ -415,6 +479,7 @@ export const buildTimelineGroups = ({
     ...runEntries,
     ...standaloneAgents,
     ...standalonePlans,
+    ...questionEntries,
     ...visibleIssues,
     ...branches,
     ...eventEntries,

@@ -1,4 +1,4 @@
-import { GitBranch, MessageSquare } from 'lucide-react';
+import { GitBranch, MessageSquareCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
@@ -21,9 +21,8 @@ type Glyph = {
   readonly label: string;
 };
 
-const ARTIFACT: Record<'branch' | 'answer', Glyph> = {
+const ARTIFACT: Record<'branch', Glyph> = {
   branch: { icon: GitBranch, tone: 'neutral', label: 'Branch' },
-  answer: { icon: MessageSquare, tone: 'warning', label: 'You answered' },
 };
 
 export const TimelineRowMarker = ({ item }: Props) => {
@@ -68,6 +67,29 @@ export const TimelineRowMarker = ({ item }: Props) => {
         label="Plan"
         grade={grade}
       />
+    );
+  }
+  if (entry.kind === 'question') {
+    const isOpen = entry.questions.every((question) => question.status === 'open');
+    if (isOpen) {
+      return (
+        <TimelineEmphasisMarker
+          icon={CONCEPT_ICONS.questions}
+          tone={CONCEPT_TONE.questions}
+          label="Question"
+          grade={grade}
+        />
+      );
+    }
+    const allDismissed = entry.questions.every((question) => question.status === 'dismissed');
+    return (
+      <TimelineGlyphMarker tone="neutral" grade={grade}>
+        <MessageSquareCheck
+          size={glyphSize}
+          aria-label={allDismissed ? 'Dismissed' : 'Answered'}
+          className={tintClasses('neutral').icon}
+        />
+      </TimelineGlyphMarker>
     );
   }
   const glyph = ARTIFACT[entry.kind];

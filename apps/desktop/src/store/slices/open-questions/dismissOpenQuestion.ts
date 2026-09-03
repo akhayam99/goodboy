@@ -15,6 +15,7 @@ export const dismissOpenQuestion = (set: SetFn, get: GetFn) => {
         ),
       },
     }));
+    await get().loadSessionDismissedQuestions(sessionId);
     const slotChanged = await removeQuestionsFromSlot(tauriDatabase, sessionId, [question.text]);
     if (slotChanged) {
       await get().loadSessionSlots(sessionId);
