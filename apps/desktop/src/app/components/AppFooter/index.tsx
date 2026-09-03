@@ -24,6 +24,7 @@ type Props = {
   onOpenBudget: () => void;
   onOpenImpact: () => void;
   onOpenChangelog: () => void;
+  onOpenInbox: () => void;
   onOpenGithub: () => void;
   onOpenLinear: () => void;
   onOpenJira: () => void;
@@ -48,6 +49,7 @@ export const AppFooter = ({
   onOpenBudget,
   onOpenImpact,
   onOpenChangelog,
+  onOpenInbox,
   onOpenGithub,
   onOpenLinear,
   onOpenJira,
@@ -132,6 +134,14 @@ export const AppFooter = ({
         </div>
 
         <div className="flex items-center gap-0.5">
+          <FooterButton
+            icon={<CONCEPT_ICONS.inbox size={12} aria-hidden />}
+            label="Inbox"
+            tone={CONCEPT_TONE.inbox}
+            title="Open the inbox for this workspace"
+            onClick={onOpenInbox}
+            active={activeStudio === 'inbox'}
+          />
           <FooterButton
             icon={<CONCEPT_ICONS.workflows size={12} aria-hidden />}
             label="Workflows"

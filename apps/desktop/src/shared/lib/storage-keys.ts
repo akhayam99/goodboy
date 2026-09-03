@@ -19,6 +19,7 @@ export const STORAGE_PREFIXES = {
   sessionView: `${PREFIX}session-view:`,
   sessionFilters: `${PREFIX}session-filters:`,
   cursorMaxMode: `${PREFIX}cursor-max-mode:`,
+  inboxKindFilter: `${PREFIX}inbox-kind-filter:`,
 } as const;
 
 export const wipeLocalStorage = (): void => {

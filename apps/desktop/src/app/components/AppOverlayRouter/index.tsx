@@ -5,6 +5,7 @@ import type {
   SessionId,
   Workspace,
 } from '@goodboy/types';
+import type { InboxKind, InboxProvider } from '../../../features/inbox/types';
 import { ArchiveSessionConfirm } from '../../../features/session/components/ArchiveSessionConfirm';
 import { CommandPalette } from '../../../features/session/components/CommandPalette';
 import { DeleteSessionConfirm } from '../../../features/session/components/DeleteSessionConfirm';
@@ -22,6 +23,7 @@ import { BitbucketWorkspaceStudio } from '../../../features/integrations/bitbuck
 import { GitlabStudio } from '../../../features/integrations/gitlab/GitlabStudio';
 import { JiraStudio } from '../../../features/integrations/jira/JiraStudio';
 import { SlackStudio } from '../../../features/integrations/slack/SlackStudio';
+import { InboxStudio } from '../../../features/inbox/components/InboxStudio';
 import { ProviderStudio } from '../../../features/providers/components/ProviderStudio';
 import { BudgetStudio } from '../../../features/budget/components/BudgetStudio';
 import type { BudgetScope } from '../../../features/budget/components/BudgetStudio/lib';
@@ -62,6 +64,12 @@ type Props = {
   readonly bitbucketStudioOpen: boolean;
   readonly slackStudioOpen: boolean;
   readonly slackStudioFocus: string | null;
+  readonly inboxStudioOpen: boolean;
+  readonly inboxStudioFocus: {
+    readonly provider: InboxProvider | null;
+    readonly kind: InboxKind | null;
+    readonly recordKey: string | null;
+  } | null;
   readonly providerStudioOpen: boolean;
   readonly providerStudioFocus: ProviderId | null;
   readonly providerStudioAction: ProviderLifecycleAction | null;
@@ -102,6 +110,7 @@ type Props = {
   readonly closeJiraStudio: () => void;
   readonly closeBitbucketStudio: () => void;
   readonly closeSlackStudio: () => void;
+  readonly closeInboxStudio: () => void;
   readonly closeCommitDiff: () => void;
   readonly closeDeleteConfirm: () => void;
   readonly closeArchiveConfirm: () => void;
@@ -137,6 +146,8 @@ export const AppOverlayRouter = ({
   bitbucketStudioOpen,
   slackStudioOpen,
   slackStudioFocus,
+  inboxStudioOpen,
+  inboxStudioFocus,
   providerStudioOpen,
   providerStudioFocus,
   providerStudioAction,
@@ -177,6 +188,7 @@ export const AppOverlayRouter = ({
   closeJiraStudio,
   closeBitbucketStudio,
   closeSlackStudio,
+  closeInboxStudio,
   closeCommitDiff,
   closeDeleteConfirm,
   closeArchiveConfirm,
@@ -312,6 +324,17 @@ export const AppOverlayRouter = ({
           workspaceName={currentWorkspace.name}
           initialThreadTs={slackStudioFocus}
           onClose={closeSlackStudio}
+        />
+      ) : null}
+      {inboxStudioOpen && currentWorkspace !== null ? (
+        <InboxStudio
+          workspaceId={currentWorkspace.id}
+          rootPath={workspaceProjectRoot ?? ''}
+          workspaceName={currentWorkspace.name}
+          initialProvider={inboxStudioFocus?.provider ?? null}
+          initialKind={inboxStudioFocus?.kind ?? null}
+          initialRecordKey={inboxStudioFocus?.recordKey ?? null}
+          onClose={closeInboxStudio}
         />
       ) : null}
       {commitDiff !== null ? (
