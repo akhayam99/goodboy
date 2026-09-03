@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ProviderId } from '@goodboy/types';
 import type { CardConfig } from '../config';
 
-vi.mock('../../../../../../store', () => ({
+vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: Record<string, never>) => T) => selector({}),
 }));
 

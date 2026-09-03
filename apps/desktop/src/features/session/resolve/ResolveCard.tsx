@@ -1,18 +1,15 @@
 import type { AgentId, ProviderId } from '@goodboy/types';
 import { Button, Checkbox, Chip, ClampedProse, cn, Tooltip } from '@goodboy/ui';
 import { ArrowUpRight, ChevronDown, ExternalLink, RotateCcw } from 'lucide-react';
-import { modelEffortLevels } from '../../../../chat/utils/chat-constants';
-import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
-import type { CommentThread } from '../../../comment-threads';
-import {
-  ResolverStateBadge,
-  resolverBadgeState,
-} from '../../../../session/components/ResolverStateBadge';
-import type { ResolverLink } from '../../../../session/resolver-linkage';
+import { modelEffortLevels } from '../../chat/utils/chat-constants';
+import { RoutingBadge } from '../../../shared/components/RoutingBadge';
+import type { CommentThread } from '../../github/comment-threads';
+import { ResolverStateBadge, resolverBadgeState } from '../components/ResolverStateBadge';
+import type { ResolverLink } from '../resolver-linkage';
 import { ResolveConfigPopover } from './ResolveConfigPopover';
-import { isClaimedLink } from './isClaimedLink';
+import { isClaimedLink } from '../../github/components/GitHubStudio/ResolveBoard/isClaimedLink';
 import type { CardConfig } from './config';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly thread: CommentThread;

@@ -7,10 +7,10 @@ import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { ResolverAgentsLane } from '../../../ResolverAgentsLane';
 import { useResolverIndex } from '../../../../hooks/useResolverIndex';
 import { resolverLaneEntries } from '../../../ResolverAgentsLane/resolverLaneEntries';
-import { openPrThreads } from './openPrThreads';
-import { openDiffComments } from './openDiffComments';
+import { openPrThreads } from '../../../../resolve/openPrThreads';
+import { openDiffComments } from '../../../../resolve/openDiffComments';
 import { PrCommentRow } from './PrCommentRow';
-import { DiffCommentRow } from './DiffCommentRow';
+import { DiffCommentRow } from '../../../../resolve/DiffCommentRow';
 
 type Props = {
   readonly session: Session;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Agent, PrComment } from '@goodboy/types';
-import { buildResolverIndex } from '../../../../resolver-linkage';
+import { buildResolverIndex } from '../resolver-linkage';
 import { openPrThreads } from './openPrThreads';
 
 const buildComment = (overrides: Partial<PrComment>): PrComment =>

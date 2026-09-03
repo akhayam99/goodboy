@@ -8,8 +8,8 @@ import {
   ScrollFade,
   Skeleton,
 } from '@goodboy/ui';
-import type { PrReviewDraft, Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import type { AgentId, PrComment, PrReviewDraft, Session, SessionId } from '@goodboy/types';
+import { EMPTY_ARRAY, useAppStore, useDiffComments } from '../../../../store';
 import type { PublishPrReviewVerdict } from '../../../../store/slices/review-drafts/types';
 import { useToast } from '../../../../app/components/Toast';
 import { classifyAgent } from '../../../session/agent-kind';
@@ -25,7 +25,15 @@ import { useColumnWidth } from '../../../../shared/hooks/useColumnWidth';
 import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { PANE_RHYTHM } from '@goodboy/ui';
+import { PANE_RHYTHM, StudioDetailTabs, type SegmentedTabOption } from '@goodboy/ui';
+import { openDiffComments } from '../../../session/resolve/openDiffComments';
+import { openPrThreads } from '../../../session/resolve/openPrThreads';
+import { useResolverIndex } from '../../../session/hooks/useResolverIndex';
+import { resolverLaneEntries } from '../../../session/components/ResolverAgentsLane/resolverLaneEntries';
+import { ThreadsSection } from './ThreadsSection';
+import { ResolversSection } from './ResolversSection';
+
+type Section = 'review' | 'threads' | 'resolvers';
 
 type Props = {
   readonly session: Session;
@@ -33,6 +41,8 @@ type Props = {
 
 export const ReviewBoardPane = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
+  const [section, setSection] = useState<Section>('review');
+  const [inspectedResolverId, setInspectedResolverId] = useState<AgentId | null>(null);
   const [listWidth, setListWidth] = useColumnWidth(STORAGE_KEYS.reviewBoardListWidth, 320);
   const drafts = useAppStore(
     (s) => s.reviewDrafts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<PrReviewDraft>),
@@ -45,10 +55,34 @@ export const ReviewBoardPane = ({ session }: Props) => {
   const setAgentDraft = useAppStore((s) => s.setAgentDraft);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
+  const prComments = useAppStore(
+    (s) =>
+      s.sessionGithub[sessionId]?.detail?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>),
+  );
+  const diffComments = useDiffComments(sessionId);
+  const resolverIndex = useResolverIndex(sessionId);
   const { files, loading, error, target, refresh } = useReviewDiff({ session });
   const [layoutMode, setLayoutMode] = useDiffLayoutMode();
   const { showToast } = useToast();
   const [publishing, setPublishing] = useState(false);
+  const openThreadCount = useMemo(
+    () =>
+      openPrThreads({ comments: prComments, resolverIndex }).length +
+      openDiffComments({ comments: diffComments }).length,
+    [diffComments, prComments, resolverIndex],
+  );
+  const resolverEntries = useMemo(
+    () => resolverLaneEntries({ links: resolverIndex.links }),
+    [resolverIndex.links],
+  );
+  const sectionOptions = useMemo<ReadonlyArray<SegmentedTabOption<Section>>>(
+    () => [
+      { value: 'review', label: 'Review' },
+      { value: 'threads', label: 'Threads', badge: openThreadCount },
+      { value: 'resolvers', label: 'Resolvers', badge: resolverEntries.active.length },
+    ],
+    [openThreadCount, resolverEntries.active.length],
+  );
 
   useEffect(() => {
     void loadReviewDrafts(sessionId);
@@ -128,6 +162,12 @@ export const ReviewBoardPane = ({ session }: Props) => {
     }
   };
 
+  const openResolver = (agentId: AgentId) => {
+    setInspectedResolverId(agentId);
+    setSection('resolvers');
+    void selectAgent(sessionId, agentId);
+  };
+
   const header = (
     <HeaderBand
       title="Review board"
@@ -144,16 +184,18 @@ export const ReviewBoardPane = ({ session }: Props) => {
         </>
       }
       actions={
-        <>
-          <DiffLayoutToggle mode={layoutMode} onChange={setLayoutMode} />
-          <RefreshIconButton
-            label="Refresh diff"
-            isLoading={loading}
-            onClick={refresh}
-            iconSize={12}
-            className="size-6 border-transparent p-0"
-          />
-        </>
+        section === 'review' ? (
+          <>
+            <DiffLayoutToggle mode={layoutMode} onChange={setLayoutMode} />
+            <RefreshIconButton
+              label="Refresh diff"
+              isLoading={loading}
+              onClick={refresh}
+              iconSize={12}
+              className="size-6 border-transparent p-0"
+            />
+          </>
+        ) : undefined
       }
     />
   );
@@ -161,80 +203,100 @@ export const ReviewBoardPane = ({ session }: Props) => {
   return (
     <StudioDetailLayout
       header={header}
-      fit="bleed"
-      dock={
-        <PublishBar
-          provider={target?.provider ?? 'github'}
-          draftCount={openDrafts.length}
-          publishing={publishing}
-          onPublish={(opts) => void publish(opts)}
+      tabs={
+        <StudioDetailTabs
+          ariaLabel="Resolve hub sections"
+          options={sectionOptions}
+          value={section}
+          onChange={setSection}
         />
       }
-    >
-      <div className="flex min-h-0 flex-1">
-        <div className="flex min-w-0 flex-1 flex-col">
-          {loading ? (
-            <div
-              className={cn('flex min-h-0 flex-1 flex-col gap-4', PANE_RHYTHM.body)}
-              role="status"
-              aria-label="Loading diff"
-            >
-              {Array.from({ length: 2 }).map((_, cardIndex) => (
-                <div
-                  key={cardIndex}
-                  className="flex flex-col gap-1.5 rounded-md border border-border-soft p-3"
-                >
-                  <Skeleton className="h-3 w-40 rounded" />
-                  <Skeleton className="h-3 w-3/4 rounded" />
-                  <Skeleton className="h-3 w-1/2 rounded" />
-                </div>
-              ))}
-            </div>
-          ) : error != null ? (
-            <div className={cn('flex min-h-0 flex-1 flex-col', PANE_RHYTHM.body)}>
-              <ErrorStrip label="the diff" error={new Error(error)} onRetry={refresh} />
-            </div>
-          ) : files.length === 0 ? (
-            <div className={cn('flex min-h-0 flex-1 flex-col', PANE_RHYTHM.body)}>
-              <LensEmptyState
-                tone={CONCEPT_TONE.diff}
-                icon={CONCEPT_ICONS.diff}
-                title="No changes in this pull request"
-                description="The diff is empty, nothing to review."
-              />
-            </div>
-          ) : (
-            <ScrollFade className="min-h-0 flex-1">
-              {files.map((file) => (
-                <ReviewFileDiff
-                  key={file.path}
-                  file={file}
-                  layoutMode={layoutMode}
-                  drafts={draftsByPath.get(file.path) ?? EMPTY_ARRAY}
-                  onAddDraft={(lineTarget, body) => void addDraftFromLine(lineTarget, body)}
-                  onAskAgent={askAgent}
-                />
-              ))}
-            </ScrollFade>
-          )}
-        </div>
-        <ResizeHandle
-          value={listWidth}
-          min={260}
-          max={560}
-          onChange={setListWidth}
-          onReset={() => setListWidth(320)}
-          side="right"
-          ariaLabel="Resize review list"
-        />
-        <div className="flex shrink-0 flex-col" style={{ width: listWidth }}>
-          <DraftsPanel
-            drafts={openDrafts}
-            onEdit={(id, body) => void updateReviewDraft(id, body)}
-            onDiscard={(id) => void discardReviewDraft(id)}
+      fit="bleed"
+      dock={
+        section === 'review' ? (
+          <PublishBar
+            provider={target?.provider ?? 'github'}
+            draftCount={openDrafts.length}
+            publishing={publishing}
+            onPublish={(opts) => void publish(opts)}
           />
+        ) : undefined
+      }
+    >
+      {section === 'threads' ? (
+        <ThreadsSection session={session} onOpenResolver={openResolver} />
+      ) : section === 'resolvers' ? (
+        <ResolversSection
+          session={session}
+          inspectedResolverId={inspectedResolverId}
+          onInspectResolver={openResolver}
+        />
+      ) : (
+        <div className="flex min-h-0 flex-1">
+          <div className="flex min-w-0 flex-1 flex-col">
+            {loading ? (
+              <div
+                className={cn('flex min-h-0 flex-1 flex-col gap-4', PANE_RHYTHM.body)}
+                role="status"
+                aria-label="Loading diff"
+              >
+                {Array.from({ length: 2 }).map((_, cardIndex) => (
+                  <div
+                    key={cardIndex}
+                    className="flex flex-col gap-1.5 rounded-md border border-border-soft p-3"
+                  >
+                    <Skeleton className="h-3 w-40 rounded" />
+                    <Skeleton className="h-3 w-3/4 rounded" />
+                    <Skeleton className="h-3 w-1/2 rounded" />
+                  </div>
+                ))}
+              </div>
+            ) : error != null ? (
+              <div className={cn('flex min-h-0 flex-1 flex-col', PANE_RHYTHM.body)}>
+                <ErrorStrip label="the diff" error={new Error(error)} onRetry={refresh} />
+              </div>
+            ) : files.length === 0 ? (
+              <div className={cn('flex min-h-0 flex-1 flex-col', PANE_RHYTHM.body)}>
+                <LensEmptyState
+                  tone={CONCEPT_TONE.diff}
+                  icon={CONCEPT_ICONS.diff}
+                  title="No changes in this pull request"
+                  description="The diff is empty, nothing to review."
+                />
+              </div>
+            ) : (
+              <ScrollFade className="min-h-0 flex-1">
+                {files.map((file) => (
+                  <ReviewFileDiff
+                    key={file.path}
+                    file={file}
+                    layoutMode={layoutMode}
+                    drafts={draftsByPath.get(file.path) ?? EMPTY_ARRAY}
+                    onAddDraft={(lineTarget, body) => void addDraftFromLine(lineTarget, body)}
+                    onAskAgent={askAgent}
+                  />
+                ))}
+              </ScrollFade>
+            )}
+          </div>
+          <ResizeHandle
+            value={listWidth}
+            min={260}
+            max={560}
+            onChange={setListWidth}
+            onReset={() => setListWidth(320)}
+            side="right"
+            ariaLabel="Resize review list"
+          />
+          <div className="flex shrink-0 flex-col" style={{ width: listWidth }}>
+            <DraftsPanel
+              drafts={openDrafts}
+              onEdit={(id, body) => void updateReviewDraft(id, body)}
+              onDiscard={(id) => void discardReviewDraft(id)}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </StudioDetailLayout>
   );
 };

@@ -8,6 +8,12 @@ const h = vi.hoisted(() => {
   const state = {
     reviewDrafts: {} as Record<string, ReadonlyArray<unknown>>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionGithub: {} as Record<string, unknown>,
+    diffComments: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionPendingResolutions: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionResolvedThreads: {} as Record<string, ReadonlyArray<unknown>>,
+    resolverState: {} as Record<string, unknown>,
+    agentKindOverride: {} as Record<string, unknown>,
     agentDraft: {} as Record<string, string>,
     loadReviewDrafts: vi.fn(async () => undefined),
     addReviewDraft: vi.fn(async () => undefined),
@@ -41,6 +47,7 @@ const h = vi.hoisted(() => {
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: h.useAppStore,
+  useDiffComments: (sessionId: string) => h.state.diffComments[sessionId] ?? [],
 }));
 
 vi.mock('./useReviewDiff', () => ({
@@ -49,6 +56,14 @@ vi.mock('./useReviewDiff', () => ({
 
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
+}));
+
+vi.mock('./ThreadsSection', () => ({
+  ThreadsSection: () => <div data-testid="threads-section">Threads section</div>,
+}));
+
+vi.mock('./ResolversSection', () => ({
+  ResolversSection: () => <div data-testid="resolvers-section">Resolvers section</div>,
 }));
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
@@ -106,6 +121,12 @@ beforeEach(() => {
   h.state.sessionPhaseRuns = {
     'session-1': [{ id: 'agent-1', name: 'pr review', kind: 'pr-reviewer' }],
   };
+  h.state.sessionGithub = {};
+  h.state.diffComments = {};
+  h.state.sessionPendingResolutions = {};
+  h.state.sessionResolvedThreads = {};
+  h.state.resolverState = {};
+  h.state.agentKindOverride = {};
   h.state.agentDraft = {};
   h.diff.files = [FILE];
   h.diff.loading = false;
@@ -276,5 +297,59 @@ describe('ReviewBoardPane', () => {
     const retry = screen.getByRole('button', { name: 'Retry' });
     fireEvent.click(retry);
     expect(h.diff.refresh).toHaveBeenCalled();
+  });
+
+  it('switches between review, threads, and resolver sections', () => {
+    render(<ReviewBoardPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('tab', { name: /Threads/ }));
+    expect(screen.getByTestId('threads-section')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Publish review (1)' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('tab', { name: /Resolvers/ }));
+    expect(screen.getByTestId('resolvers-section')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Review' }));
+    expect(screen.getByRole('button', { name: 'Publish review (1)' })).toBeDefined();
+  });
+
+  it('shows open thread and active resolver counts in tab badges', () => {
+    h.state.sessionGithub = {
+      'session-1': {
+        detail: {
+          comments: [
+            {
+              id: 'comment-1',
+              source: 'review',
+              threadId: 'thread-1',
+              resolved: false,
+              outdated: false,
+              url: 'https://example.test/thread-1',
+            },
+          ],
+        },
+      },
+    };
+    h.state.diffComments = {
+      'session-1': [{ id: 'diff-1', status: 'open' }],
+    };
+    h.state.sessionPhaseRuns = {
+      'session-1': [
+        {
+          id: 'resolver-1',
+          name: 'resolver',
+          kind: 'resolver',
+          status: 'running',
+          ordinal: 1,
+          parentAgentId: null,
+          stepId: null,
+        },
+      ],
+    };
+
+    render(<ReviewBoardPane session={SESSION} />);
+
+    expect(screen.getByRole('tab', { name: /Threads.*2/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Resolvers.*1/ })).toBeDefined();
   });
 });
