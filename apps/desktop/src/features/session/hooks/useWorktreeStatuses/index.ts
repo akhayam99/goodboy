@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { WorktreeStatus } from '@goodboy/types';
 import { worktreeStatus } from '../../../worktree/worktree';
 
@@ -16,9 +16,13 @@ const EMPTY_STATUSES: ReadonlyMap<string, WorktreeStatus> = new Map();
 
 export const useWorktreeStatuses = ({ targets }: Params): ReadonlyMap<string, WorktreeStatus> => {
   const [statuses, setStatuses] = useState<ReadonlyMap<string, WorktreeStatus>>(EMPTY_STATUSES);
+  const targetsKey = targets
+    .map(({ worktreePath, baseBranch }) => `${worktreePath}\u0000${baseBranch ?? ''}`)
+    .join('\u0001');
+  const stableTargets = useMemo(() => targets, [targetsKey]);
 
   useEffect(() => {
-    if (targets.length === 0) {
+    if (stableTargets.length === 0) {
       setStatuses(EMPTY_STATUSES);
       return;
     }
@@ -28,7 +32,7 @@ export const useWorktreeStatuses = ({ targets }: Params): ReadonlyMap<string, Wo
         return;
       }
       void Promise.all(
-        targets.map(async ({ worktreePath, baseBranch }) => {
+        stableTargets.map(async ({ worktreePath, baseBranch }) => {
           try {
             const status = await worktreeStatus({ worktreePath, baseBranch });
             const entry: StatusEntry = [worktreePath, status];
@@ -50,7 +54,7 @@ export const useWorktreeStatuses = ({ targets }: Params): ReadonlyMap<string, Wo
       isStale = true;
       clearInterval(timer);
     };
-  }, [targets]);
+  }, [stableTargets]);
 
   return statuses;
 };

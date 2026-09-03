@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { SessionProjectMount } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -14,12 +15,14 @@ type Props = {
 export const OverviewRebaseAction = ({ suggestion, mount }: Props) => {
   const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
   const emitNotification = useAppStore((state) => state.emitNotification);
-  const statuses = useWorktreeStatuses({
-    targets:
+  const targets = useMemo(
+    () =>
       mount == null
         ? []
         : [{ worktreePath: mount.worktreePath, baseBranch: suggestion.payload.baseBranch }],
-  });
+    [mount, suggestion.payload.baseBranch],
+  );
+  const statuses = useWorktreeStatuses({ targets });
   const status = mount == null ? null : (statuses.get(mount.worktreePath) ?? null);
   const rebase = useRebaseAgent({
     sessionId: suggestion.sessionId,
