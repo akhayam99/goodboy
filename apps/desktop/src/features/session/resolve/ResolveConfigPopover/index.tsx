@@ -9,8 +9,8 @@ import {
   useDropdown,
 } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
-import { PickerSection } from '../../../../../../shared/components/RoutingPicker/PickerSection';
-import { AgentRoutingSections } from '../../../../../session/components/CreateAgentPopover/AgentRoutingSections';
+import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
+import { AgentRoutingSections } from '../../components/CreateAgentPopover/AgentRoutingSections';
 import { configFor, type CardConfig } from '../config';
 
 type Props = {

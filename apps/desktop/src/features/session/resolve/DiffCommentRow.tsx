@@ -1,6 +1,6 @@
 import type { DiffComment } from '@goodboy/types';
-import { markdownPreview } from '../../../../../../shared/utils/markdownPreview';
-import { diffCommentLocation } from '../../../../diff-comment-location';
+import { markdownPreview } from '../../../shared/utils/markdownPreview';
+import { diffCommentLocation } from '../diff-comment-location';
 
 type Props = {
   readonly comment: DiffComment;

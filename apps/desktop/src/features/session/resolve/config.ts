@@ -1,7 +1,7 @@
 import type { ProviderId, RoleModelPreferences } from '@goodboy/types';
 import { getDefaultTurnModel } from '@goodboy/core';
-import { clampEffort, type EffortLevel } from '../../../../chat/utils/chat-constants';
-import { kindRouting } from '../../../../session/agent-kind';
+import { clampEffort, type EffortLevel } from '../../chat/utils/chat-constants';
+import { kindRouting } from '../agent-kind';
 
 export type CardConfig = {
   readonly provider: ProviderId;

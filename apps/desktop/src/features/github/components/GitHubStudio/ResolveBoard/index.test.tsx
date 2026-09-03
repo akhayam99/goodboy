@@ -72,16 +72,16 @@ describe('ResolveBoard', () => {
         onOpenThread={vi.fn()}
       />,
     );
-    expect(screen.getByText(/Spawn 2 resolvers/i)).toBeDefined();
+    expect(screen.getByText(/Resolve 2 threads/i)).toBeDefined();
 
     const checkboxes = screen.getAllByRole('checkbox');
     act(() => {
       fireEvent.click(checkboxes[1]!);
     });
-    expect(screen.getByText(/Spawn resolver for 1 comment/i)).toBeDefined();
+    expect(screen.getByText(/Resolve 1 thread/i)).toBeDefined();
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Spawn resolver for 1 comment/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Resolve 1 thread/i }));
     });
     expect(onSpawnBatch).toHaveBeenCalledTimes(1);
     const batchArg = onSpawnBatch.mock.calls[0]?.[0] as ReadonlyArray<CommentThread>;
@@ -163,7 +163,7 @@ describe('ResolveBoard', () => {
       closePopover();
     });
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Spawn 2 resolvers/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Resolve 2 threads/i }));
     });
     const choices = onSpawnBatch.mock.calls[0]?.[1];
     expect(choices?.c1).toEqual(expect.objectContaining({ hint: 'Only here.' }));
@@ -207,7 +207,7 @@ describe('ResolveBoard', () => {
       closePopover();
     });
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Spawn 2 resolvers/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Resolve 2 threads/i }));
     });
     const choices = onSpawnBatch.mock.calls[0]?.[1];
     expect(choices?.c1).toEqual(expect.objectContaining({ hint: 'Card override.' }));
@@ -251,7 +251,7 @@ describe('ResolveBoard', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Apply to all cards' }));
     });
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Spawn 2 resolvers/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Resolve 2 threads/i }));
     });
     const choices = onSpawnBatch.mock.calls[0]?.[1];
     expect(choices?.c1).toEqual(expect.objectContaining({ hint: 'Everywhere.' }));
@@ -332,7 +332,7 @@ describe('ResolveBoard', () => {
       closePopover();
     });
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Spawn 1 combined resolver' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Combine into one' }));
     });
     expect(onSpawnCombined).toHaveBeenCalledOnce();
     expect(

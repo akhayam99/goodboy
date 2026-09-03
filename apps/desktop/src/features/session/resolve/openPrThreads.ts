@@ -1,6 +1,6 @@
 import type { PrComment } from '@goodboy/types';
-import type { ResolverIndex } from '../../../../resolver-linkage';
-import { resolverForComment } from '../../../../resolver-linkage';
+import type { ResolverIndex } from '../resolver-linkage';
+import { resolverForComment } from '../resolver-linkage';
 
 type Params = {
   readonly comments: ReadonlyArray<PrComment>;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampEffort } from '../../../../chat/utils/chat-constants';
+import { clampEffort } from '../../chat/utils/chat-constants';
 import { aggregateConfig, configFor, defaultConfig, sameConfig } from './config';
 
 const DEFAULT_CONFIG = defaultConfig({ roleModels: null });
