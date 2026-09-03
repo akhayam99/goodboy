@@ -185,14 +185,14 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
       );
     }
     return [
-      { value: 'all', label: 'All', badge: list.length },
+      { value: 'all', label: 'All', badge: String(list.length) },
       ...projects
         .filter((project) => (scriptCountByProject.get(project.id) ?? 0) > 0)
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((project) => ({
           value: project.id,
           label: project.name,
-          badge: scriptCountByProject.get(project.id) ?? 0,
+          badge: String(scriptCountByProject.get(project.id) ?? 0),
         })),
     ];
   }, [list, projects]);
@@ -661,10 +661,13 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                     key={group.key}
                     label={group.label}
                     count={group.scripts.length}
-                    open={userGroupOpen[group.key] ?? true}
-                    onOpenChange={(open) =>
-                      setUserGroupOpen((current) => ({ ...current, [group.key]: open }))
-                    }
+                    open={normalizedQuery !== '' || (userGroupOpen[group.key] ?? true)}
+                    onOpenChange={(open) => {
+                      if (normalizedQuery !== '') {
+                        return;
+                      }
+                      setUserGroupOpen((current) => ({ ...current, [group.key]: open }));
+                    }}
                   >
                     {listView}
                   </UserScriptGroupView>
@@ -731,9 +734,12 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                     normalizedQuery !== '' ||
                     (manifestGroupOpen[groupKey] ?? entry.group.relDir === '')
                   }
-                  onOpenChange={(open) =>
-                    setManifestGroupOpen((current) => ({ ...current, [groupKey]: open }))
-                  }
+                  onOpenChange={(open) => {
+                    if (normalizedQuery !== '') {
+                      return;
+                    }
+                    setManifestGroupOpen((current) => ({ ...current, [groupKey]: open }));
+                  }}
                   onRun={onRunDiscovered}
                   onCancel={onCancelDiscovered}
                 />

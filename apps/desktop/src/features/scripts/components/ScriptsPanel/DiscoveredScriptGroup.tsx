@@ -48,7 +48,13 @@ export const DiscoveredScriptGroup = ({
         className="border border-border-soft"
         trigger={
           <span className="flex min-w-0 items-center gap-2">
-            <h3 className="truncate text-sm font-medium text-foreground">{group.packageName}</h3>
+            <span
+              role="heading"
+              aria-level={3}
+              className="truncate text-sm font-medium text-foreground"
+            >
+              {group.packageName}
+            </span>
             {group.relDir !== '' ? (
               <span className="truncate font-mono text-3xs text-muted-foreground">
                 {group.relDir}
