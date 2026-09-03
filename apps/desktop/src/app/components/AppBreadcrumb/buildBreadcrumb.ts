@@ -13,7 +13,6 @@ type BreadcrumbChrome =
   | { kind: 'none' }
   | { kind: 'workspace-launcher' }
   | { kind: 'workspace-create' }
-  | { kind: 'resolve'; name?: string }
   | { kind: 'pull-request'; view: 'comments' };
 
 export type BreadcrumbHandlers = {
@@ -55,17 +54,6 @@ export const buildBreadcrumb = (input: BreadcrumbInput): BreadcrumbCrumb[] => {
 
   if (chrome.kind === 'workspace-create') {
     return trail([overview, workspaceRootClickable, { id: 'create', label: 'Create' }]);
-  }
-
-  if (chrome.kind === 'resolve') {
-    if (chrome.name) {
-      return trail([
-        overview,
-        { id: 'resolve', label: 'Resolve', onClick: handlers.toOverview },
-        { id: 'resolve-name', label: chrome.name },
-      ]);
-    }
-    return trail([overview, { id: 'resolve', label: 'Resolve' }]);
   }
 
   if (chrome.kind === 'pull-request') {

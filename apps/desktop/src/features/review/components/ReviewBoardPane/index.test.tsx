@@ -15,6 +15,8 @@ const h = vi.hoisted(() => {
     resolverState: {} as Record<string, unknown>,
     agentKindOverride: {} as Record<string, unknown>,
     agentDraft: {} as Record<string, string>,
+    reviewLensIntent: null as { sessionId: string; agentId: string } | null,
+    setReviewLensIntent: vi.fn(),
     loadReviewDrafts: vi.fn(async () => undefined),
     addReviewDraft: vi.fn(async () => undefined),
     updateReviewDraft: vi.fn(async () => undefined),
@@ -128,6 +130,8 @@ beforeEach(() => {
   h.state.resolverState = {};
   h.state.agentKindOverride = {};
   h.state.agentDraft = {};
+  h.state.reviewLensIntent = null;
+  h.state.setReviewLensIntent.mockClear();
   h.diff.files = [FILE];
   h.diff.loading = false;
   h.diff.error = null;
@@ -311,6 +315,24 @@ describe('ReviewBoardPane', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Review' }));
     expect(screen.getByRole('button', { name: 'Publish review (1)' })).toBeDefined();
+  });
+
+  it('opens the resolvers section and clears the intent when a resolver inspect is requested', () => {
+    h.state.reviewLensIntent = { sessionId: 'session-1', agentId: 'resolver-9' };
+
+    render(<ReviewBoardPane session={SESSION} />);
+
+    expect(screen.getByTestId('resolvers-section')).toBeDefined();
+    expect(h.state.setReviewLensIntent).toHaveBeenCalledWith({ intent: null });
+  });
+
+  it('ignores a resolver inspect intent aimed at another session', () => {
+    h.state.reviewLensIntent = { sessionId: 'session-2', agentId: 'resolver-9' };
+
+    render(<ReviewBoardPane session={SESSION} />);
+
+    expect(screen.queryByTestId('resolvers-section')).toBeNull();
+    expect(h.state.setReviewLensIntent).not.toHaveBeenCalled();
   });
 
   it('shows open thread and active resolver counts in tab badges', () => {

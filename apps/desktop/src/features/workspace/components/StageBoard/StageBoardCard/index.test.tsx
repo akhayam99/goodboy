@@ -349,7 +349,7 @@ describe('StageBoardCard actions visibility', () => {
 });
 
 describe('StageBoardCard review drafts', () => {
-  it('shows a draft comments chip for review sessions with pending drafts', () => {
+  it('shows a draft comments chip for review sessions with pending drafts', async () => {
     state.sessionPhaseRuns = {
       [SESSION_ID]: [{ id: 'agent-1', name: 'pr review', kind: 'pr-reviewer' }],
     };
@@ -368,6 +368,7 @@ describe('StageBoardCard review drafts', () => {
     fireEvent.click(chip);
 
     expect(state.setCurrentSession).toHaveBeenCalledWith(SESSION_ID);
+    await vi.waitFor(() => expect(state.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review'));
     expect(nav.selectCard).not.toHaveBeenCalled();
   });
 

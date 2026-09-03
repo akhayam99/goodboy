@@ -91,68 +91,6 @@ describe('buildBreadcrumb', () => {
     });
   });
 
-  describe('chrome: resolve (no name)', () => {
-    it('produces Overview > Resolve', () => {
-      const h = makeHandlers();
-      const crumbs = buildBreadcrumb({
-        workspace: ws,
-        session: null,
-        chrome: { kind: 'resolve' },
-        handlers: h,
-      });
-      expect(labels(crumbs)).toEqual(['Overview', 'Resolve']);
-      expect(ids(crumbs)).toEqual(['overview', 'resolve']);
-    });
-
-    it('last crumb has no onClick', () => {
-      const h = makeHandlers();
-      const crumbs = buildBreadcrumb({
-        workspace: ws,
-        session: null,
-        chrome: { kind: 'resolve' },
-        handlers: h,
-      });
-      expect(lastClickable(crumbs)).toBeUndefined();
-    });
-  });
-
-  describe('chrome: resolve (with name)', () => {
-    it('produces Overview > Resolve > {name}', () => {
-      const h = makeHandlers();
-      const crumbs = buildBreadcrumb({
-        workspace: ws,
-        session: null,
-        chrome: { kind: 'resolve', name: 'PR #42' },
-        handlers: h,
-      });
-      expect(labels(crumbs)).toEqual(['Overview', 'Resolve', 'PR #42']);
-      expect(ids(crumbs)).toEqual(['overview', 'resolve', 'resolve-name']);
-    });
-
-    it('Resolve crumb fires toOverview when name present', () => {
-      const h = makeHandlers();
-      const crumbs = buildBreadcrumb({
-        workspace: ws,
-        session: null,
-        chrome: { kind: 'resolve', name: 'PR #42' },
-        handlers: h,
-      });
-      crumbs[1]!.onClick!();
-      expect(h.toOverview).toHaveBeenCalledOnce();
-    });
-
-    it('last crumb has no onClick', () => {
-      const h = makeHandlers();
-      const crumbs = buildBreadcrumb({
-        workspace: ws,
-        session: null,
-        chrome: { kind: 'resolve', name: 'PR #42' },
-        handlers: h,
-      });
-      expect(lastClickable(crumbs)).toBeUndefined();
-    });
-  });
-
   describe('chrome: pull-request', () => {
     it('produces Overview > PullRequest > Comments', () => {
       const h = makeHandlers();

@@ -7,7 +7,7 @@ import type { CommentThread } from '../../github/comment-threads';
 import { ResolverStateBadge, resolverBadgeState } from '../components/ResolverStateBadge';
 import type { ResolverLink } from '../resolver-linkage';
 import { ResolveConfigPopover } from './ResolveConfigPopover';
-import { isClaimedLink } from '../../github/components/GitHubStudio/ResolveBoard/isClaimedLink';
+import { isClaimedLink } from './isClaimedLink';
 import type { CardConfig } from './config';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 

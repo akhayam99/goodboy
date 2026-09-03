@@ -352,7 +352,7 @@ describe('App lens shortcuts on darwin', () => {
 
     press({ code: 'KeyR', key: 'r', metaKey: true, altKey: true });
 
-    expect(setActiveLens).toHaveBeenCalledWith('session-1', 'resolve');
+    expect(setActiveLens).toHaveBeenCalledWith('session-1', 'review');
     expect(reload).not.toHaveBeenCalled();
   });
 });

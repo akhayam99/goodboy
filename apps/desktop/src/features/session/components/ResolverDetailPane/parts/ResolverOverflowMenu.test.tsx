@@ -45,16 +45,7 @@ const renderMenu = ({
     plan: { primary: null, secondary: null, overflow, note: null },
     run,
   } as unknown as ResolverActionsController;
-  render(
-    <ResolverOverflowMenu
-      agent={AGENT}
-      actions={actions}
-      commits={[]}
-      headSha={null}
-      onAmend={vi.fn(async () => undefined)}
-      onSquash={vi.fn(async () => undefined)}
-    />,
-  );
+  render(<ResolverOverflowMenu agent={AGENT} actions={actions} />);
   return { run };
 };
 
@@ -63,7 +54,7 @@ const trigger = () => screen.getByRole('button', { name: /more resolver actions/
 afterEach(cleanup);
 
 describe('ResolverOverflowMenu', () => {
-  it('renders nothing without overflow actions or commits', () => {
+  it('renders nothing without overflow actions', () => {
     renderMenu({ overflow: [] });
     expect(screen.queryByRole('button', { name: /more resolver actions/i })).toBeNull();
   });
@@ -73,6 +64,7 @@ describe('ResolverOverflowMenu', () => {
     fireEvent.click(trigger());
     expect(screen.getByRole('menu', { name: /more resolver actions/i })).toBeDefined();
     expect(screen.getAllByRole('menuitem')).toHaveLength(2);
+    expect(screen.queryByText('Rewrite the branch')).toBeNull();
   });
 
   it('arms an action into its confirm and runs it', async () => {

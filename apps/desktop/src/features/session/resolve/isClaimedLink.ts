@@ -1,4 +1,4 @@
-import type { ResolverLink } from '../../../../session/resolver-linkage';
+import type { ResolverLink } from '../resolver-linkage';
 
 type Params = {
   readonly link: ResolverLink | undefined;

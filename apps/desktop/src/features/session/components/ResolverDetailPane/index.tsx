@@ -72,8 +72,6 @@ export const ResolverDetailPane = ({ session, agent, isChatActive, onBack }: Pro
     useAppStore((s) => s.sessionPendingResolutions[sessionId]) ?? EMPTY_PENDING;
   const outcomes = useAppStore((s) => s.resolverThreadOutcomes[agentId]) ?? EMPTY_OUTCOMES;
   const metrics = useAgentMetrics({ sessionId });
-  const amendSessionCommit = useAppStore((s) => s.amendSessionCommit);
-  const squashSessionCommits = useAppStore((s) => s.squashSessionCommits);
 
   useEffect(() => {
     setTab('brief');
@@ -226,20 +224,7 @@ export const ResolverDetailPane = ({ session, agent, isChatActive, onBack }: Pro
                 deleteDescription="Removes the agent and its transcript from the session."
                 onDeleted={onBack}
               />
-              <ResolverOverflowMenu
-                agent={agent}
-                actions={actions}
-                commits={localCommits}
-                headSha={changes.headSha}
-                onAmend={async (sha, message) => {
-                  await amendSessionCommit(sessionId, { sha, message });
-                  changes.reload();
-                }}
-                onSquash={async (sha, message) => {
-                  await squashSessionCommits(sessionId, { sha, message });
-                  changes.reload();
-                }}
-              />
+              <ResolverOverflowMenu agent={agent} actions={actions} />
             </div>
           }
         />

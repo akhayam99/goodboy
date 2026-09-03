@@ -75,11 +75,11 @@ describe('buildSessionBreadcrumb', () => {
       base({ lens: null, selectedChildHome: 'agents', selectedChildLabel: 'scout one' }, h),
     );
     const resolver = buildSessionBreadcrumb(
-      base({ lens: null, selectedChildHome: 'resolve', selectedChildLabel: 'resolve one' }, h),
+      base({ lens: null, selectedChildHome: 'review', selectedChildLabel: 'review one' }, h),
     );
 
     expect(labels(adHoc)).toEqual(['Overview', 'agents', 'scout one']);
-    expect(labels(resolver)).toEqual(['Overview', 'resolve', 'resolve one']);
+    expect(labels(resolver)).toEqual(['Overview', 'review', 'review one']);
   });
 
   it('parents a step on its run no matter which lens the jump came from', () => {
@@ -98,7 +98,7 @@ describe('buildSessionBreadcrumb', () => {
     const fromAnotherLens = buildSessionBreadcrumb(
       base(
         {
-          lens: 'resolve',
+          lens: 'review',
           selectedChildHome: 'workflows',
           selectedChildWorkflowName: 'refactor',
           selectedChildLabel: 'Implement',

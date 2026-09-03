@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
@@ -20,7 +20,6 @@ import { Pane } from './parts/Pane';
 import { SessionStudioLayer } from './parts/SessionStudioLayer';
 import { QuestionsPane } from './parts/QuestionsPane';
 import { ContextPane } from './parts/ContextPane';
-import { ResolvePane } from './parts/ResolvePane';
 import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
 import { PaneShell } from '../../../../shared/components/PaneShell';
@@ -53,8 +52,6 @@ type SessionWorkspaceProps = {
 export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) => {
   const sessionId = session.id as SessionId;
   useSessionBranchSync({ session, isActive });
-  const [inspectedResolverId, setInspectedResolverId] = useState<AgentId | null>(null);
-  const hasInitializedResolverInspector = useRef(false);
   const storedActiveLens = useAppStore((s) => s.activeLens[sessionId]);
   const isBranchless = useIsBranchlessSession({ session });
   const activeLens =
@@ -96,6 +93,25 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       setActiveLens(sessionId, readPersistedLens(sessionId));
     }
   }, [activeLens, sessionId, setActiveLens]);
+
+  useEffect(() => {
+    const onOpenResolverInspector = (event: Event) => {
+      if (!(event instanceof CustomEvent)) {
+        return;
+      }
+      const detail = event.detail as { sessionId?: unknown; agentId?: unknown };
+      if (detail.sessionId !== sessionId || typeof detail.agentId !== 'string') {
+        return;
+      }
+      useAppStore.getState().setReviewLensIntent({
+        intent: { sessionId, agentId: detail.agentId as AgentId },
+      });
+      setActiveLens(sessionId, 'review');
+    };
+    window.addEventListener('goodboy:open-resolver-inspector', onOpenResolverInspector);
+    return () =>
+      window.removeEventListener('goodboy:open-resolver-inspector', onOpenResolverInspector);
+  }, [sessionId, setActiveLens]);
 
   const lens: LensKind | null = activeLens ?? null;
   const surface = resolveLensSurface({ lens });
@@ -140,72 +156,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     }),
     [standaloneAgents],
   );
-  const resolverCounts = useMemo(
-    () => ({
-      queued: resolverIndex.links.filter(({ status }) => status === 'pending').length,
-      resolved: resolverIndex.links.filter(({ status }) => status === 'resolved').length,
-    }),
-    [resolverIndex],
-  );
   const agentsMeta =
     agentCounts.running === 0 && agentCounts.done === 0 && agentCounts.failed === 0
       ? undefined
       : `${agentCounts.running} running, ${agentCounts.done} done${
           agentCounts.failed > 0 ? `, ${agentCounts.failed} failed` : ''
         }`;
-  const resolveMeta =
-    resolverCounts.queued === 0 && resolverCounts.resolved === 0
-      ? undefined
-      : `${resolverCounts.queued} queued, ${resolverCounts.resolved} resolved`;
-  useEffect(() => {
-    if (resolverIndex.links.length === 0) {
-      if (inspectedResolverId !== null) {
-        setInspectedResolverId(null);
-      }
-      return;
-    }
-    const isInspectedResolverPresent =
-      inspectedResolverId !== null &&
-      resolverIndex.links.some(({ agent }) => agent.id === inspectedResolverId);
-    if (isInspectedResolverPresent) {
-      hasInitializedResolverInspector.current = true;
-      return;
-    }
-    if (inspectedResolverId === null && hasInitializedResolverInspector.current) {
-      return;
-    }
-    const running = resolverIndex.links.find(({ status }) => status === 'running');
-    const awaiting = resolverIndex.links.find(({ status }) => status === 'awaiting');
-    const unresolved = resolverIndex.links.find(
-      ({ status }) => !['resolved', 'wontfix', 'stopped', 'done'].includes(status),
-    );
-    hasInitializedResolverInspector.current = true;
-    setInspectedResolverId((running ?? awaiting ?? unresolved)?.agent.id ?? null);
-  }, [inspectedResolverId, resolverIndex]);
-
-  useEffect(() => {
-    if (showAgentOverlay && overlayHome === 'resolve' && selectedAgentId !== null) {
-      hasInitializedResolverInspector.current = true;
-      setInspectedResolverId(selectedAgentId);
-    }
-  }, [overlayHome, selectedAgentId, showAgentOverlay]);
-
-  useEffect(() => {
-    const onOpenResolverInspector = (event: Event) => {
-      if (!(event instanceof CustomEvent)) {
-        return;
-      }
-      const detail = event.detail as { sessionId?: unknown; agentId?: unknown };
-      if (detail.sessionId !== sessionId || typeof detail.agentId !== 'string') {
-        return;
-      }
-      hasInitializedResolverInspector.current = true;
-      setInspectedResolverId(detail.agentId as AgentId);
-    };
-    window.addEventListener('goodboy:open-resolver-inspector', onOpenResolverInspector);
-    return () =>
-      window.removeEventListener('goodboy:open-resolver-inspector', onOpenResolverInspector);
-  }, [sessionId]);
   useEffect(() => {
     if (!showAgentOverlay) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -240,14 +196,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
           {lens === 'questions' ? <QuestionsPane session={session} /> : null}
           {lens === 'plans' ? <PlanStudio sessionId={sessionId} /> : null}
           {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
-          {lens === 'resolve' ? (
-            <ResolvePane
-              session={session}
-              meta={resolveMeta}
-              inspectedResolverId={inspectedResolverId}
-              onInspectResolver={setInspectedResolverId}
-            />
-          ) : null}
           {lens === 'scripts' ? (
             <PaneShell
               title="Scripts"

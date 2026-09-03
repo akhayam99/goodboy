@@ -78,8 +78,8 @@ export const ReviewBoardPane = ({ session }: Props) => {
   const sectionOptions = useMemo<ReadonlyArray<SegmentedTabOption<Section>>>(
     () => [
       { value: 'review', label: 'Review' },
-      { value: 'threads', label: 'Threads', badge: openThreadCount },
-      { value: 'resolvers', label: 'Resolvers', badge: resolverEntries.active.length },
+      { value: 'threads', label: 'Threads', badge: String(openThreadCount) },
+      { value: 'resolvers', label: 'Resolvers', badge: String(resolverEntries.active.length) },
     ],
     [openThreadCount, resolverEntries.active.length],
   );
@@ -87,6 +87,17 @@ export const ReviewBoardPane = ({ session }: Props) => {
   useEffect(() => {
     void loadReviewDrafts(sessionId);
   }, [loadReviewDrafts, sessionId]);
+
+  const reviewLensIntent = useAppStore((s) => s.reviewLensIntent);
+  const setReviewLensIntent = useAppStore((s) => s.setReviewLensIntent);
+  useEffect(() => {
+    if (reviewLensIntent == null || reviewLensIntent.sessionId !== sessionId) {
+      return;
+    }
+    setSection('resolvers');
+    setInspectedResolverId(reviewLensIntent.agentId);
+    setReviewLensIntent({ intent: null });
+  }, [reviewLensIntent, sessionId, setReviewLensIntent]);
 
   const openDrafts = useMemo(() => drafts.filter((draft) => draft.status === 'draft'), [drafts]);
   const draftsByPath = useMemo(() => {

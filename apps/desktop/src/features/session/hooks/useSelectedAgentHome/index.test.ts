@@ -109,6 +109,6 @@ describe('useSelectedAgentHome', () => {
 
     const { result } = renderHook(() => useSelectedAgentHome(SESSION_ID));
 
-    expect(result.current).toBe('resolve');
+    expect(result.current).toBe('review');
   });
 });

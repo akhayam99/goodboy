@@ -16,7 +16,7 @@ import type {
 
 export type AgentKind = AgentKindLabel;
 
-export type AgentHomeLens = 'agents' | 'resolve' | 'workflows';
+export type AgentHomeLens = 'agents' | 'review' | 'workflows';
 
 type Params = {
   readonly agents: ReadonlyArray<Agent>;
@@ -48,7 +48,7 @@ export const agentHomeLens = (agent: Agent, kind: AgentKind): AgentHomeLens => {
     return 'workflows';
   }
   if (kind === 'resolver') {
-    return 'resolve';
+    return 'review';
   }
   return 'agents';
 };

@@ -204,6 +204,9 @@ vi.mock('../CreateAgentPopover', () => ({
 vi.mock('../SessionOverviewPane', () => ({
   SessionOverviewPane: () => <div role="region" aria-label="Session overview" />,
 }));
+vi.mock('../../../review/components/ReviewBoardPane', () => ({
+  ReviewBoardPane: () => <div data-testid="review-board" />,
+}));
 vi.mock('../SessionCrumbBar', () => ({
   SessionCrumbBar: () => <div data-testid="session-crumb-bar" />,
 }));
@@ -329,7 +332,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByRole('separator', { name: 'Resize agent inspector' })).toBeNull();
   });
 
-  it('keeps a standalone resolver on the resolve trail, with no run level', () => {
+  it('keeps a standalone resolver on the review trail, with no run level', () => {
     const standaloneResolver = {
       ...selectedAgent,
       id: 'resolver-1',
@@ -338,10 +341,10 @@ describe('SessionWorkspace agent overlay', () => {
       stepId: undefined,
       workflowRunId: undefined,
     } as Agent;
-    store.activeLens = { [SESSION_ID]: 'resolve' };
+    store.activeLens = { [SESSION_ID]: 'review' };
     store.selectedAgentId = { [SESSION_ID]: standaloneResolver.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneResolver] };
-    hooks.agentHome = 'resolve';
+    hooks.agentHome = 'review';
 
     render(<SessionWorkspace session={session} isActive />);
 
@@ -351,7 +354,7 @@ describe('SessionWorkspace agent overlay', () => {
     const { result } = renderHook(() => useSessionCrumbs({ session }));
     expect(result.current.map((crumb) => crumb.label)).toEqual([
       'Overview',
-      'Resolve',
+      'Review board',
       'Standalone resolver',
     ]);
   });
@@ -412,10 +415,10 @@ describe('SessionWorkspace agent overlay', () => {
       workflowRunId: undefined,
       sourceThreadId: 'thread-1',
     } as Agent;
-    store.activeLens = { [SESSION_ID]: 'resolve' };
+    store.activeLens = { [SESSION_ID]: 'review' };
     store.selectedAgentId = { [SESSION_ID]: standaloneResolver.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneResolver] };
-    hooks.agentHome = 'resolve';
+    hooks.agentHome = 'review';
 
     render(<SessionWorkspace session={session} isActive />);
 
@@ -440,79 +443,13 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByRole('separator', { name: 'Resize inspector panel' })).toBeNull();
   });
 
-  it('opens the resolve dashboard on the selected resolver and returns to the lane', () => {
-    const waiting = {
-      ...selectedAgent,
-      id: 'resolver-waiting',
-      name: 'Waiting resolver',
-      kind: 'resolver',
-      status: 'completed',
-      stepId: undefined,
-      workflowRunId: undefined,
-    } as Agent;
-    store.activeLens = { [SESSION_ID]: 'resolve' };
+  it('mounts the review board for the review lens', () => {
+    store.activeLens = { [SESSION_ID]: 'review' };
     store.selectedAgentId = {};
-    store.sessionPhaseRuns = { [SESSION_ID]: [waiting] };
-    store.resolverState = { [waiting.id]: 'awaiting' };
-    hooks.agentHome = 'resolve';
-    const view = render(<SessionWorkspace session={session} isActive />);
-
-    expect(screen.getByTestId('resolver-lane').textContent).toBe(waiting.id);
-
-    store.selectedAgentId = { [SESSION_ID]: waiting.id };
-    view.rerender(<SessionWorkspace session={session} isActive />);
-    expect(screen.getByTestId('agent-detail-pane').textContent).toBe(waiting.id);
-
-    store.selectedAgentId = {};
-    view.rerender(<SessionWorkspace session={session} isActive />);
-    expect(screen.getByTestId('resolver-lane').textContent).toBe(waiting.id);
-  });
-
-  it('opens the running resolver by default before an awaiting resolver', () => {
-    const awaiting = {
-      ...selectedAgent,
-      id: 'resolver-awaiting',
-      kind: 'resolver',
-      status: 'completed',
-      stepId: undefined,
-      workflowRunId: undefined,
-    } as Agent;
-    const running = {
-      ...awaiting,
-      id: 'resolver-running',
-      ordinal: 1,
-      status: 'running',
-    } as Agent;
-    store.activeLens = { [SESSION_ID]: 'resolve' };
-    store.selectedAgentId = {};
-    store.sessionPhaseRuns = { [SESSION_ID]: [awaiting, running] };
-    store.resolverState = { [awaiting.id]: 'awaiting' };
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('resolver-lane').textContent).toBe(running.id);
-  });
-
-  it('clears the highlighted resolver after the last resolver is deleted', () => {
-    const resolver = {
-      ...selectedAgent,
-      id: 'resolver-last',
-      kind: 'resolver',
-      stepId: undefined,
-      workflowRunId: undefined,
-      sourceThreadId: 'thread-last',
-    } as Agent;
-    store.activeLens = { [SESSION_ID]: 'resolve' };
-    store.selectedAgentId = {};
-    store.sessionPhaseRuns = { [SESSION_ID]: [resolver] };
-    const view = render(<SessionWorkspace session={session} isActive />);
-
-    expect(screen.getByTestId('resolver-lane').textContent).toBe(resolver.id);
-
-    store.sessionPhaseRuns = { [SESSION_ID]: [] };
-    view.rerender(<SessionWorkspace session={session} isActive />);
-
-    expect(screen.getByTestId('resolver-lane').textContent).toBe('');
+    expect(screen.getByTestId('review-board')).toBeDefined();
   });
 });
 
@@ -564,46 +501,6 @@ describe('SessionWorkspace pane metadata', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('pane-meta-agents').textContent).toBe('1 running, 1 done, 1 failed');
-  });
-
-  it('summarizes queued and resolved resolver statuses', () => {
-    store.activeLens = { [SESSION_ID]: 'resolve' };
-    store.selectedAgentId = {};
-    store.sessionPhaseRuns = {
-      [SESSION_ID]: [
-        {
-          ...selectedAgent,
-          id: 'resolver-queued',
-          name: 'Queued resolver',
-          kind: 'resolver',
-          status: 'pending',
-          stepId: undefined,
-          workflowRunId: undefined,
-          sourceThreadId: 'thread-queued',
-        } as Agent,
-        {
-          ...selectedAgent,
-          id: 'resolver-resolved',
-          name: 'Resolved resolver',
-          kind: 'resolver',
-          status: 'completed',
-          stepId: undefined,
-          workflowRunId: undefined,
-          sourceThreadId: 'thread-resolved',
-        } as Agent,
-      ],
-    };
-    store.sessionGithub = {
-      [SESSION_ID]: {
-        detail: {
-          comments: [{ threadId: 'thread-resolved', resolved: true }],
-        },
-      },
-    };
-
-    render(<SessionWorkspace session={session} isActive />);
-
-    expect(screen.getByTestId('pane-meta-resolve').textContent).toBe('1 queued, 1 resolved');
   });
 
   it('hides metadata when all displayed counts are zero', () => {
@@ -739,13 +636,13 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     ]);
   });
 
-  it('keeps resolve as the back target while the trail still names the run', () => {
+  it('keeps review as the back target while the trail still names the run', () => {
     const workflowAgent = {
       ...selectedAgent,
       stepId: 'step-1',
       workflowRunId: 'run-1',
     } as Agent;
-    store.activeLens = { [SESSION_ID]: 'resolve' };
+    store.activeLens = { [SESSION_ID]: 'review' };
     store.selectedAgentId = { [SESSION_ID]: workflowAgent.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [workflowAgent] };
     store.phaseTemplates = {
@@ -769,7 +666,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     expect(screen.queryByText('Part of')).toBeNull();
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'resolve');
+    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
 
     const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
     expect(result.current.map((crumb) => crumb.label)).toEqual([

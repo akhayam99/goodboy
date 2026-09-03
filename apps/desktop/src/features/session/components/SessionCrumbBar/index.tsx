@@ -150,9 +150,7 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
         const accessory =
           isLast && crumb.id === 'selected-child' && selectedAgent != null ? (
             <AgentStatusIcon status={selectedAgent.status} />
-          ) : activeLens === 'resolve' &&
-            crumb.id === 'lens-resolve' &&
-            pendingResolverCount > 0 ? (
+          ) : activeLens === 'review' && crumb.id === 'lens-review' && pendingResolverCount > 0 ? (
             <ResolverStateBadge state="queued" count={pendingResolverCount} />
           ) : (
             crumb.accessory

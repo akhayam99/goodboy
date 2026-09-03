@@ -1,1 +1,1 @@
-export type PrSection = 'overview' | 'comments' | 'resolve' | 'ci';
+export type PrSection = 'overview' | 'comments' | 'ci';

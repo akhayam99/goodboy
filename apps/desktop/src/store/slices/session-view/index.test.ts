@@ -597,6 +597,14 @@ describe('store contract', () => {
       expect(readPersistedLens(SESSION_ID)).toBeNull();
     });
 
+    it('migrates a legacy resolve lens to the review board', async () => {
+      globalThis.localStorage.setItem(
+        `${STORAGE_PREFIXES.workSurfaceView}${SESSION_ID}`,
+        'resolve',
+      );
+      expect(readPersistedLens(SESSION_ID)).toBe('review');
+    });
+
     it('restores the shared Context surface', async () => {
       globalThis.localStorage.setItem(
         `${STORAGE_PREFIXES.workSurfaceView}${SESSION_ID}`,
@@ -784,11 +792,11 @@ describe('store contract', () => {
 
     it('openDiffLens carries a working-tree focus and leaves a step to go back to', async () => {
       const store = await getStore();
-      store.getState().setActiveLens(SESSION_ID, 'resolve');
+      store.getState().setActiveLens(SESSION_ID, 'review');
       store.getState().openDiffLens(SESSION_ID, { kind: 'working', path: null });
       expect(store.getState().diffFocus[SESSION_ID]).toEqual({ kind: 'working', path: null });
       store.getState().lensGo(SESSION_ID, -1);
-      expect(store.getState().activeLens[SESSION_ID]).toBe('resolve');
+      expect(store.getState().activeLens[SESSION_ID]).toBe('review');
     });
 
     it.each([
@@ -856,7 +864,7 @@ describe('store contract', () => {
 
     it('the open-diff-viewer event resolution cannot land on a stale commit after going back', async () => {
       const store = await getStore();
-      store.getState().setActiveLens(SESSION_ID, 'resolve');
+      store.getState().setActiveLens(SESSION_ID, 'review');
       store.getState().openDiffLens(SESSION_ID, { kind: 'commit', sha: 'abc1234', path: null });
       store.getState().lensGo(SESSION_ID, -1);
       expect(store.getState().diffFocus[SESSION_ID]).toEqual({

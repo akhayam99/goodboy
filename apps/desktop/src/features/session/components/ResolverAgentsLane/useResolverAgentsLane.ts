@@ -58,6 +58,7 @@ export const useResolverAgentsLane = ({ session }: Params) => {
   const outcomesByAgentId = useAppStore((state) => state.resolverThreadOutcomes);
   const selectAgent = useAppStore((state) => state.selectAgent);
   const openDiffLens = useAppStore((state) => state.openDiffLens);
+  const setActiveLens = useAppStore((state) => state.setActiveLens);
   const activateNextResolver = useAppStore((state) => state.activateNextResolver);
   const laneAgentIds = useMemo(
     () => resolverIndex.links.map(({ agent }) => agent.id),
@@ -289,8 +290,8 @@ export const useResolverAgentsLane = ({ session }: Params) => {
   }, [activateNextResolver, sessionId]);
 
   const onOpenResolveBoard = useCallback(() => {
-    window.dispatchEvent(new CustomEvent('goodboy:open-github-session', { detail: { sessionId } }));
-  }, [sessionId]);
+    setActiveLens(sessionId, 'review');
+  }, [sessionId, setActiveLens]);
 
   return {
     activeEntries: entries.active,

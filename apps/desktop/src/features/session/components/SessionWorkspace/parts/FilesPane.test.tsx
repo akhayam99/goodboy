@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { DIFF_CAPPED_COLUMN_CLASS } from '../../../../permissions/components/DiffViewerDialog/lib';
-import type { ProjectId, SessionId, SessionProjectMount } from '@goodboy/types';
+import type { BranchCommit, ProjectId, SessionId, SessionProjectMount } from '@goodboy/types';
 import {
   openDiffLens,
   setActiveLens,
@@ -21,6 +21,14 @@ const state: State = {};
 let diffStats: ReadonlyMap<string, MountDiffStat> = new Map();
 
 let reportDiffEmpty: ((isEmpty: boolean) => void) | undefined;
+
+const { listBranchCommits, amendSessionCommit, squashSessionCommits } = vi.hoisted(() => ({
+  listBranchCommits: vi.fn(async () => [] as ReadonlyArray<BranchCommit>),
+  amendSessionCommit: vi.fn(async () => undefined),
+  squashSessionCommits: vi.fn(async () => undefined),
+}));
+
+vi.mock('../../../../worktree/worktree', () => ({ listBranchCommits }));
 
 const mountOf = ({
   name,
@@ -56,18 +64,23 @@ vi.mock('../../../../permissions/components/DiffViewerDialog', () => ({
     diffFocus,
     worktreePath,
     onContentEmptyChange,
+    headerActions,
   }: {
     diffFocus: { readonly kind: string } | null;
     worktreePath?: string;
     onContentEmptyChange?: (isEmpty: boolean) => void;
+    headerActions?: React.ReactNode;
   }) => {
     reportDiffEmpty = onContentEmptyChange;
     return (
-      <div
-        data-testid="diff-viewer"
-        data-focus-kind={diffFocus?.kind ?? 'none'}
-        data-worktree={worktreePath ?? 'none'}
-      />
+      <>
+        {headerActions}
+        <div
+          data-testid="diff-viewer"
+          data-focus-kind={diffFocus?.kind ?? 'none'}
+          data-worktree={worktreePath ?? 'none'}
+        />
+      </>
     );
   },
 }));
@@ -91,6 +104,8 @@ const reset = ({ mounts = [] }: { readonly mounts?: ReadonlyArray<SessionProject
     delete state[key];
   }
   openMountDiff.mockClear();
+  amendSessionCommit.mockClear();
+  squashSessionCommits.mockClear();
   diffStats = new Map();
   reportDiffEmpty = undefined;
   Object.assign(state, {
@@ -106,6 +121,8 @@ const reset = ({ mounts = [] }: { readonly mounts?: ReadonlyArray<SessionProject
     setDiffFocus: setDiffFocus(set),
     setActiveLens: setActiveLens(set),
     openMountDiff,
+    amendSessionCommit,
+    squashSessionCommits,
   });
 };
 
@@ -134,9 +151,41 @@ const renderBranchlessPane = () =>
 afterEach(cleanup);
 
 describe('FilesPane', () => {
+  it('hosts branch surgery and amends the unpushed head commit', async () => {
+    listBranchCommits.mockResolvedValueOnce([
+      {
+        sha: 'abcdef123456',
+        shortSha: 'abcdef1',
+        subject: 'Old subject',
+        author: 'Builder',
+        parentSha: 'parent123',
+        timestamp: 1,
+        pushed: false,
+      },
+    ]);
+    reset();
+
+    renderPane({ worktreePath: '/tmp/wt' });
+
+    const rewrite = await screen.findByRole('button', { name: 'Rewrite branch' });
+    fireEvent.click(rewrite);
+    fireEvent.click(screen.getByRole('button', { name: 'Reword' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'new message for this commit' }), {
+      target: { value: 'New subject' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save message' }));
+
+    await vi.waitFor(() =>
+      expect(amendSessionCommit).toHaveBeenCalledWith(SESSION_ID, {
+        sha: 'abcdef123456',
+        message: 'New subject',
+      }),
+    );
+  });
+
   it('carries the working tree focus into the diff', () => {
     reset();
-    setActiveLens(set)(SESSION_ID, 'resolve');
+    setActiveLens(set)(SESSION_ID, 'review');
     openDiffLens(get)(SESSION_ID, { kind: 'working', path: null });
 
     renderPane({ worktreePath: '/tmp/wt' });

@@ -39,6 +39,7 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
   return {
     ...createInitialSessionViewState({}),
     setScriptsLensScope: ({ scope }) => set({ scriptsLensScope: scope }),
+    setReviewLensIntent: ({ intent }) => set({ reviewLensIntent: intent }),
     getSessionViewPrefs: getSessionViewPrefs(set, get),
     setSessionSort: setSessionSort(set, get),
     setSessionGroup: setSessionGroup(set, get),

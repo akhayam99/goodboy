@@ -786,52 +786,6 @@ describe('ResolverDetailPane (resolver)', () => {
 
     await vi.waitFor(() => expect(h.deleteAgent).toHaveBeenCalledWith(SESSION_ID, RUNNING_ID));
   });
-
-  it('rewords the newest local commit from the overflow', async () => {
-    h.listBranchCommits.mockResolvedValue([LOCAL_COMMIT]);
-    renderPane(RUNNING_ID);
-    openOverflow();
-
-    const reword = await screen.findByRole('button', { name: 'Reword' });
-    fireEvent.click(reword);
-    fireEvent.change(screen.getByLabelText('new message for this commit'), {
-      target: { value: 'fix(auth): guard the session' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Save message' }));
-
-    expect(h.amendSessionCommit).toHaveBeenCalledWith(SESSION_ID, {
-      sha: 'abc1234def',
-      message: 'fix(auth): guard the session',
-    });
-  });
-
-  it('blocks reword when another commit is the branch HEAD', async () => {
-    h.listBranchCommits.mockResolvedValue([OTHER_AGENT_HEAD, LOCAL_COMMIT]);
-    renderPane(RUNNING_ID);
-    openOverflow();
-
-    const reword = await screen.findByRole('button', { name: 'Reword' });
-
-    expect(reword.hasAttribute('disabled')).toBe(true);
-    expect(screen.getByRole('button', { name: 'Squash through HEAD' })).toBeDefined();
-  });
-
-  it('squashes from an older local commit and leaves a pushed one alone', async () => {
-    h.listBranchCommits.mockResolvedValue([LOCAL_COMMIT, OLDER_LOCAL_COMMIT, PUSHED_COMMIT]);
-    renderPane(RUNNING_ID);
-    openOverflow();
-
-    const squash = await screen.findByRole('button', { name: 'Squash through HEAD' });
-    fireEvent.click(squash);
-    fireEvent.click(screen.getByRole('button', { name: 'Squash into one' }));
-
-    expect(h.squashSessionCommits).toHaveBeenCalledWith(SESSION_ID, {
-      sha: 'older12345',
-      message: 'wip',
-    });
-    expect(screen.getByText('already pushed')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Squash through HEAD' })).toHaveLength(1);
-  });
 });
 
 describe('ResolverDetailPane (resolver decisions)', () => {

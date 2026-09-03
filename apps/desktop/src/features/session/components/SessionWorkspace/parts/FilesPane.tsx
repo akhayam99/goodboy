@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import type { SessionId, SessionProjectMount } from '@goodboy/types';
+import { useCallback, useEffect, useState } from 'react';
+import type { BranchCommit, SessionId, SessionProjectMount } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
@@ -8,8 +8,11 @@ import { DIFF_VIEWER_PANE_COPY } from '../../../../permissions/components/DiffVi
 import { DiffMountSwitcher } from './DiffMountSwitcher';
 import { FileVersionsPane } from './FileVersionsPane';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
+import { listBranchCommits } from '../../../../worktree/worktree';
+import { BranchSurgeryMenu } from './BranchSurgeryMenu';
 
 const EMPTY_MOUNTS: ReadonlyArray<SessionProjectMount> = [];
+const EMPTY_COMMITS: ReadonlyArray<BranchCommit> = [];
 
 type Props = {
   readonly sessionId: SessionId;
@@ -29,6 +32,33 @@ export const FilesPane = ({
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
   const mounts = useAppStore((s) => s.sessionProjectMounts?.[sessionId] ?? EMPTY_MOUNTS);
   const [isDiffEmpty, setIsDiffEmpty] = useState(true);
+  const [commits, setCommits] = useState<ReadonlyArray<BranchCommit>>(EMPTY_COMMITS);
+  const [branchRevision, setBranchRevision] = useState(0);
+  const amendSessionCommit = useAppStore((s) => s.amendSessionCommit);
+  const squashSessionCommits = useAppStore((s) => s.squashSessionCommits);
+  const reloadChanges = useCallback(() => setBranchRevision((revision) => revision + 1), []);
+
+  useEffect(() => {
+    if (worktreePath === null) {
+      setCommits(EMPTY_COMMITS);
+      return;
+    }
+    let isCancelled = false;
+    listBranchCommits(worktreePath)
+      .then((nextCommits) => {
+        if (!isCancelled) {
+          setCommits(nextCommits);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setCommits(EMPTY_COMMITS);
+        }
+      });
+    return () => {
+      isCancelled = true;
+    };
+  }, [branchRevision, worktreePath]);
 
   if (isBranchless) {
     if (sessionDir == null) {
@@ -82,6 +112,21 @@ export const FilesPane = ({
           diffFocus={diffFocus}
           onClose={onClose}
           onContentEmptyChange={setIsDiffEmpty}
+          branchRevision={branchRevision}
+          headerActions={
+            <BranchSurgeryMenu
+              commits={commits}
+              headSha={commits[0]?.sha ?? null}
+              onAmend={async (sha, message) => {
+                await amendSessionCommit(sessionId, { sha, message });
+                reloadChanges();
+              }}
+              onSquash={async (sha, message) => {
+                await squashSessionCommits(sessionId, { sha, message });
+                reloadChanges();
+              }}
+            />
+          }
         />
       </div>
     </div>
