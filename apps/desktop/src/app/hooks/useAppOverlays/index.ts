@@ -419,10 +419,12 @@ export const useAppOverlays = ({
         kind: isInboxKind(kind) ? kind : null,
         recordKey: typeof recordKey === 'string' ? recordKey : null,
       });
-      setInboxStudioOpen(true);
+      const openStudio = () => setInboxStudioOpen(true);
       if (isWorkspaceId(workspaceId) && workspaceId !== useAppStore.getState().currentWorkspaceId) {
-        void useAppStore.getState().setCurrentWorkspace(workspaceId);
+        void useAppStore.getState().setCurrentWorkspace(workspaceId).then(openStudio, openStudio);
+        return;
       }
+      openStudio();
     };
     const onAddWorkspace = () => openAddWorkspace();
     const onPairDevice = () => setCompanionOpen(true);
