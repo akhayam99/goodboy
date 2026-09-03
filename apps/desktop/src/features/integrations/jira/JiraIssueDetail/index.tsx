@@ -1,13 +1,12 @@
-import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import { RecordDetailHeader, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useState, type ReactNode } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import type { SegmentedTabOption } from '@goodboy/ui';
-import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
+import { StudioDetailTabs } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { jiraIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { StateBadge } from '@goodboy/ui';
-import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import type { JiraIssue } from '../client';
 import { statusCategoryTone } from '../statusCategoryTone';
 import { useJiraIssueActions } from '../useJiraIssueActions';
@@ -53,17 +52,14 @@ export const JiraIssueDetail = ({
       fit={fit}
       dock={dock}
       header={
-        <HeaderBand
+        <RecordDetailHeader
+          provider="jira"
+          identifier={live.key}
           title={live.summary}
-          meta={
-            <>
-              <span className="font-mono text-2xs tabular-nums text-muted-foreground">
-                {live.key}
-              </span>
-              <StateBadge tone={statusCategoryTone({ statusCategory: live.statusCategory })}>
-                {live.status}
-              </StateBadge>
-            </>
+          badge={
+            <StateBadge tone={statusCategoryTone({ statusCategory: live.statusCategory })}>
+              {live.status}
+            </StateBadge>
           }
           actions={
             <>
@@ -83,9 +79,9 @@ export const JiraIssueDetail = ({
                 />
               )}
               {headerActions}
-              <ExternalRefActions url={live.url} label="issue" hostLabel="Jira" />
             </>
           }
+          externalRef={{ url: live.url, label: 'issue' }}
         />
       }
       tabs={

@@ -5,8 +5,6 @@ import { LensEmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { SlackThreadDetail } from '../../../../../integrations/slack/SlackThreadDetail';
 import { parseSlackThreadExternalId } from '../../../../../integrations/slack/threadFormulas';
-import { useSlackThread } from '../../../../../integrations/slack/useSlackThread';
-import { useSlackThreadActions } from '../../../../../integrations/slack/useSlackThreadActions';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -15,18 +13,6 @@ type Props = {
 
 export const SlackTaskDetail = ({ workspaceId, task }: Props) => {
   const parsed = parseSlackThreadExternalId({ externalId: task.externalId });
-  const thread = useSlackThread({
-    workspaceId,
-    channelId: parsed?.channelId ?? '',
-    threadTs: parsed?.threadTs ?? '',
-    isEnabled: parsed != null,
-  });
-  const actions = useSlackThreadActions({
-    workspaceId,
-    channelId: parsed?.channelId ?? '',
-    threadTs: parsed?.threadTs ?? '',
-    isEnabled: parsed != null,
-  });
 
   if (parsed == null) {
     return (
@@ -51,20 +37,14 @@ export const SlackTaskDetail = ({ workspaceId, task }: Props) => {
     );
   }
 
-  const rootText = thread.messages[0]?.text ?? task.title;
-
   return (
     <SlackThreadDetail
-      channelName={thread.channelName}
-      rootText={rootText}
-      url={task.url}
-      messages={thread.messages}
-      users={thread.users}
-      channels={thread.channels}
-      isLoading={thread.isLoading}
-      error={thread.error}
-      onRetry={thread.refetch}
-      actions={actions}
+      workspaceId={workspaceId}
+      channelId={parsed.channelId}
+      threadTs={parsed.threadTs}
+      fallbackChannelName={task.identifier.replace(/^#/, '')}
+      fallbackMessage={null}
+      fallbackUrl={task.url}
       fit="fill"
     />
   );

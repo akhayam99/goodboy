@@ -1,12 +1,11 @@
-import { StudioDetailLayout } from '../../../shared/components/StudioDetail';
+import { RecordDetailHeader, StudioDetailLayout } from '../../../shared/components/StudioDetail';
 import { useMemo, useState, type ReactNode } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { GithubIssue } from '@goodboy/types';
 import type { SegmentedTabOption } from '@goodboy/ui';
-import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
+import { StudioDetailTabs } from '@goodboy/ui';
 import { githubIssueFields, resolveDetailFields } from '../../../shared/detail-fields';
 import { StateBadge } from '@goodboy/ui';
-import { ExternalRefActions } from '../../../shared/components/ExternalRefActions';
 import { DescriptionSection } from '../../../shared/components/DescriptionSection';
 import { GithubIssueComments } from '../GithubIssueComments';
 import { useGithubIssueComments } from '../useGithubIssueComments';
@@ -63,22 +62,13 @@ export const GithubIssueDetail = ({
     <StudioDetailLayout
       fit={fit}
       header={
-        <HeaderBand
+        <RecordDetailHeader
+          provider="github"
+          identifier={`#${issue.number}`}
           title={issue.title}
-          meta={
-            <>
-              <span className="font-mono text-2xs tabular-nums text-muted-foreground">
-                #{issue.number}
-              </span>
-              <StateBadge>{issue.state.toLowerCase()}</StateBadge>
-            </>
-          }
-          actions={
-            <>
-              {headerActions}
-              <ExternalRefActions url={issue.url} label="issue" hostLabel="GitHub" />
-            </>
-          }
+          badge={<StateBadge>{issue.state.toLowerCase()}</StateBadge>}
+          actions={headerActions}
+          externalRef={{ url: issue.url, label: 'issue' }}
         />
       }
       tabs={

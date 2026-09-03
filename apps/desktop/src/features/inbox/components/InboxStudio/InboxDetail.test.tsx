@@ -1,54 +1,99 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { ReactNode } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import type { InboxRecord } from '../../types';
 
-vi.mock('../../../github/components/GitHubStudio/GithubIssueDetailPanel', () => ({
-  GithubIssueDetailPanel: ({ issue }: { issue: { title: string } }) => (
-    <div data-testid="panel">github-issue:{issue.title}</div>
+vi.mock('../../../github/GithubIssueDetail', () => ({
+  GithubIssueDetail: ({ issue, dock }: { issue: { title: string }; dock: ReactNode }) => (
+    <div data-testid="panel">
+      github-issue:{issue.title}
+      {dock}
+    </div>
   ),
 }));
 
-vi.mock('../../../integrations/gitlab/GitlabStudio/IssueDetailPanel', () => ({
-  IssueDetailPanel: ({ issue }: { issue: { title: string } }) => (
-    <div data-testid="panel">gitlab-issue:{issue.title}</div>
+vi.mock('../../../integrations/gitlab/GitlabIssueDetail', () => ({
+  GitlabIssueDetail: ({ issue, dock }: { issue: { title: string }; dock: ReactNode }) => (
+    <div data-testid="panel">
+      gitlab-issue:{issue.title}
+      {dock}
+    </div>
   ),
 }));
 
 vi.mock('../../../integrations/gitlab/GitlabStudio/MrDetailPanel', () => ({
-  MrDetailPanel: ({ mr }: { mr: { title: string } | null }) => (
-    <div data-testid="panel">gitlab-mr:{mr?.title}</div>
+  MrDetailPanel: ({ mr, dock }: { mr: { title: string } | null; dock: ReactNode }) => (
+    <div data-testid="panel">
+      gitlab-mr:{mr?.title}
+      {dock}
+    </div>
   ),
 }));
 
-vi.mock('../../../integrations/linear/LinearStudio/IssueDetailPanel', () => ({
-  IssueDetailPanel: ({ issue }: { issue: { title: string } }) => (
-    <div data-testid="panel">linear-issue:{issue.title}</div>
+vi.mock('../../../integrations/linear/LinearIssueDetail', () => ({
+  LinearIssueDetail: ({ issue, dock }: { issue: { title: string }; dock: ReactNode }) => (
+    <div data-testid="panel">
+      linear-issue:{issue.title}
+      {dock}
+    </div>
   ),
 }));
 
-vi.mock('../../../integrations/jira/JiraStudio/IssueDetailPanel', () => ({
-  IssueDetailPanel: ({ issue }: { issue: { summary: string } }) => (
-    <div data-testid="panel">jira-issue:{issue.summary}</div>
+vi.mock('../../../integrations/jira/JiraIssueDetail', () => ({
+  JiraIssueDetail: ({ issue, dock }: { issue: { summary: string }; dock: ReactNode }) => (
+    <div data-testid="panel">
+      jira-issue:{issue.summary}
+      {dock}
+    </div>
   ),
 }));
 
-vi.mock('../../../integrations/sentry/SentryStudio/IssueDetailPanel', () => ({
-  IssueDetailPanel: ({ issue }: { issue: { title: string } }) => (
-    <div data-testid="panel">sentry-error:{issue.title}</div>
+vi.mock('../../../integrations/sentry/SentryIssueDetail', () => ({
+  SentryIssueDetail: ({ title, dock }: { title: string; dock: ReactNode }) => (
+    <div data-testid="panel">
+      sentry-error:{title}
+      {dock}
+    </div>
   ),
 }));
 
-vi.mock('../../../integrations/slack/SlackStudio/ThreadDetailPanel', () => ({
-  ThreadDetailPanel: ({ row }: { row: { head: { text: string } } | null }) => (
-    <div data-testid="panel">slack-thread:{row?.head.text}</div>
+vi.mock('../../../integrations/slack/SlackThreadDetail', () => ({
+  SlackThreadDetail: ({
+    fallbackMessage,
+    dock,
+  }: {
+    fallbackMessage: { text: string };
+    dock: ReactNode;
+  }) => (
+    <div data-testid="panel">
+      slack-thread:{fallbackMessage.text}
+      {dock}
+    </div>
   ),
 }));
 
 vi.mock('../../../integrations/bitbucket/BitbucketStudio/PrDetailPanel', () => ({
-  PrDetailPanel: ({ pullRequest }: { pullRequest: { title: string } | null }) => (
-    <div data-testid="panel">bitbucket-pr:{pullRequest?.title}</div>
+  PrDetailPanel: ({
+    pullRequest,
+    dock,
+  }: {
+    pullRequest: { title: string } | null;
+    dock: ReactNode;
+  }) => (
+    <div data-testid="panel">
+      bitbucket-pr:{pullRequest?.title}
+      {dock}
+    </div>
   ),
+}));
+
+vi.mock('../../../integrations/sentry/useSentryIssueDetail', () => ({
+  useSentryIssueDetail: () => ({ detail: null, isLoading: false, error: null }),
+}));
+
+vi.mock('../RecordLaunchDock', () => ({
+  RecordLaunchDock: () => <div data-testid="dock">launch</div>,
 }));
 
 const { InboxDetail } = await import('./InboxDetail');
@@ -115,7 +160,8 @@ describe('InboxDetail', () => {
       },
     });
 
-    expect(screen.getByTestId('panel').textContent).toBe('github-issue:github item');
+    expect(screen.getByTestId('panel').textContent).toContain('github-issue:github item');
+    expect(screen.getByTestId('dock')).toBeDefined();
   });
 
   it('renders the gitlab issue panel', () => {
@@ -149,7 +195,7 @@ describe('InboxDetail', () => {
       },
     });
 
-    expect(screen.getByTestId('panel').textContent).toBe('gitlab-issue:gitlab item');
+    expect(screen.getByTestId('panel').textContent).toContain('gitlab-issue:gitlab item');
   });
 
   it('renders the gitlab mr panel', () => {
@@ -185,7 +231,8 @@ describe('InboxDetail', () => {
       },
     });
 
-    expect(screen.getByTestId('panel').textContent).toBe('gitlab-mr:gitlab mr');
+    expect(screen.getByTestId('panel').textContent).toContain('gitlab-mr:gitlab mr');
+    expect(screen.getByTestId('dock')).toBeDefined();
   });
 
   it('renders the linear issue panel', () => {
@@ -216,7 +263,7 @@ describe('InboxDetail', () => {
       },
     });
 
-    expect(screen.getByTestId('panel').textContent).toBe('linear-issue:linear item');
+    expect(screen.getByTestId('panel').textContent).toContain('linear-issue:linear item');
   });
 
   it('renders the jira issue panel', () => {
@@ -253,7 +300,7 @@ describe('InboxDetail', () => {
       },
     });
 
-    expect(screen.getByTestId('panel').textContent).toBe('jira-issue:jira item');
+    expect(screen.getByTestId('panel').textContent).toContain('jira-issue:jira item');
   });
 
   it('renders the sentry issue panel', () => {
@@ -288,7 +335,7 @@ describe('InboxDetail', () => {
       },
     });
 
-    expect(screen.getByTestId('panel').textContent).toBe('sentry-error:sentry item');
+    expect(screen.getByTestId('panel').textContent).toContain('sentry-error:sentry item');
   });
 
   it('renders the slack thread panel', () => {
@@ -323,7 +370,7 @@ describe('InboxDetail', () => {
       },
     });
 
-    expect(screen.getByTestId('panel').textContent).toBe('slack-thread:slack item');
+    expect(screen.getByTestId('panel').textContent).toContain('slack-thread:slack item');
   });
 
   it('renders the bitbucket pr panel', () => {
@@ -364,6 +411,6 @@ describe('InboxDetail', () => {
       },
     });
 
-    expect(screen.getByTestId('panel').textContent).toBe('bitbucket-pr:bitbucket item');
+    expect(screen.getByTestId('panel').textContent).toContain('bitbucket-pr:bitbucket item');
   });
 });

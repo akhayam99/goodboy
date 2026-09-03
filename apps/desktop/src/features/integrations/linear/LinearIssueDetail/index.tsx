@@ -1,12 +1,11 @@
-import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import { RecordDetailHeader, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useState, type ReactNode } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
-import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
+import { StudioDetailTabs } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { linearIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { StateBadge } from '@goodboy/ui';
-import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import type { LinearIssue } from '../client';
 import { LinearIssueComments } from '../LinearIssueComments';
 import { useLinearIssueComments } from '../useLinearIssueComments';
@@ -44,22 +43,13 @@ export const LinearIssueDetail = ({
     <StudioDetailLayout
       fit={fit}
       header={
-        <HeaderBand
+        <RecordDetailHeader
+          provider="linear"
+          identifier={issue.identifier}
           title={issue.title}
-          meta={
-            <>
-              <span className="font-mono text-2xs tabular-nums text-muted-foreground">
-                {issue.identifier}
-              </span>
-              <StateBadge>{issue.state.name}</StateBadge>
-            </>
-          }
-          actions={
-            <>
-              {headerActions}
-              <ExternalRefActions url={issue.url} label="issue" hostLabel="Linear" />
-            </>
-          }
+          badge={<StateBadge>{issue.state.name}</StateBadge>}
+          actions={headerActions}
+          externalRef={{ url: issue.url, label: 'issue' }}
         />
       }
       tabs={

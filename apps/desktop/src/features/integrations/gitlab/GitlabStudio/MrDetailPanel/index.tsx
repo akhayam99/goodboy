@@ -1,15 +1,17 @@
-import { StudioDetailLayout } from '../../../../../shared/components/StudioDetail';
-import { useEffect, useState } from 'react';
-import { Button, EmptyState, formatError, Markdown } from '@goodboy/ui';
+import {
+  RecordDetailEmptyState,
+  RecordDetailHeader,
+  StudioDetailLayout,
+} from '../../../../../shared/components/StudioDetail';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Button, formatError, Markdown } from '@goodboy/ui';
 import { AlertTriangle, FileText, GitBranch, GitMerge, MessageSquare } from 'lucide-react';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { StudioWidget, HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { gitlabMergeRequestFields, resolveDetailFields } from '../../../../../shared/detail-fields';
 import { StateBadge } from '@goodboy/ui';
 import { BranchPair } from '@goodboy/ui';
-import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
 import { RefreshIconButton } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../app/components/Toast';
 import {
@@ -46,6 +48,7 @@ type Props = {
   readonly host?: string | null;
   readonly onRefresh?: () => void;
   readonly onClose: () => void;
+  readonly dock?: ReactNode;
 };
 
 const SECTION_OPTIONS = [
@@ -60,6 +63,7 @@ export const MrDetailPanel = ({
   host,
   onRefresh,
   onClose,
+  dock,
 }: Props) => {
   const session = useAppStore((s) =>
     sessionId == null ? null : (s.sessions.find((x) => x.id === sessionId) ?? null),
@@ -124,33 +128,21 @@ export const MrDetailPanel = ({
 
   if (sessionId != null && session == null) {
     return (
-      <div className="flex h-full items-center justify-center px-8">
-        <EmptyState
-          bordered
-          tone={CONCEPT_TONE.gitlab}
-          icon={CONCEPT_ICONS.gitlab}
-          title="No session selected"
-          description="Pick a session to manage its merge request."
-          size="lg"
-          headingLevel={2}
-        />
-      </div>
+      <RecordDetailEmptyState
+        provider="gitlab"
+        title="No session selected"
+        description="Pick a session to manage its merge request."
+      />
     );
   }
 
   if (sessionId == null && mr == null) {
     return (
-      <div className="flex h-full items-center justify-center px-8">
-        <EmptyState
-          bordered
-          tone={CONCEPT_TONE.gitlab}
-          icon={CONCEPT_ICONS.gitlab}
-          title="No merge request selected"
-          description="Pick a merge request to see its details."
-          size="lg"
-          headingLevel={2}
-        />
-      </div>
+      <RecordDetailEmptyState
+        provider="gitlab"
+        title="No merge request selected"
+        description="Pick a merge request to see its details."
+      />
     );
   }
 
@@ -231,12 +223,14 @@ export const MrDetailPanel = ({
       <StudioDetailLayout
         header={
           <>
-            <HeaderBand
+            <RecordDetailHeader
+              provider="gitlab"
+              identifier={`!${mr.iid}`}
               title={mr.title}
-              meta={
+              badge={
                 <>
                   <StateBadge tone={mergeRequestStateTone({ state: mr.state })}>
-                    !{mr.iid} · {mr.state}
+                    {mr.state}
                   </StateBadge>
                   {mr.draft ? <StateBadge tone="warning">draft</StateBadge> : null}
                 </>
@@ -245,7 +239,6 @@ export const MrDetailPanel = ({
               actions={
                 <>
                   {refreshButton}
-                  <ExternalRefActions url={mr.webUrl} label="MR" hostLabel="GitLab" />
                   {mr.state === 'opened' ? (
                     <Button
                       onClick={() => void onMerge()}
@@ -269,6 +262,7 @@ export const MrDetailPanel = ({
                   ) : null}
                 </>
               }
+              externalRef={{ url: mr.webUrl, label: 'MR' }}
             />
             <MrActionBar
               mr={mr}
@@ -320,6 +314,7 @@ export const MrDetailPanel = ({
           />
         }
         properties={resolveDetailFields({ registry: gitlabMergeRequestFields, entity: mr })}
+        dock={dock}
       >
         {mr.hasConflicts ? (
           <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-2xs leading-relaxed text-foreground">
