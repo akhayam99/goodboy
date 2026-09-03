@@ -1,7 +1,7 @@
 import type { LensKind } from '../../../../store';
 import type { AgentHomeLens } from '../../agent-kind';
 
-const AGENT_LIST_LENSES: ReadonlyArray<AgentHomeLens> = ['agents', 'resolve', 'workflows'];
+const AGENT_LIST_LENSES: ReadonlyArray<AgentHomeLens> = ['agents', 'review', 'workflows'];
 
 type Params = {
   readonly lens: LensKind | null;

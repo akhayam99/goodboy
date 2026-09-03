@@ -38,9 +38,9 @@ describe('resolveAttentionLens', () => {
         hasNonResolverStandalone: true,
         hasWorkflow: false,
         hasResolver: true,
-        unreadLens: 'resolve',
+        unreadLens: 'review',
       }),
-    ).toBe('resolve');
+    ).toBe('review');
   });
 
   const lensFor = (
@@ -49,7 +49,7 @@ describe('resolveAttentionLens', () => {
     hasResolver: boolean,
   ) => {
     if (hasNonResolverStandalone) return 'agents';
-    if (hasResolver) return 'resolve';
+    if (hasResolver) return 'review';
     if (hasWorkflow) return 'workflows';
     return null;
   };

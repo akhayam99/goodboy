@@ -227,21 +227,6 @@ vi.mock('./PrConversation', () => ({
   PrConversation: () => <div>Conversation body</div>,
 }));
 
-vi.mock('./ResolveBoard', () => ({
-  ResolveBoard: ({
-    onSpawnOne,
-  }: {
-    readonly onSpawnOne: (thread: unknown, choice: unknown) => void;
-  }) => (
-    <div>
-      Resolve body
-      <button type="button" onClick={() => onSpawnOne(h.thread, {})}>
-        Spawn one resolver
-      </button>
-    </div>
-  ),
-}));
-
 vi.mock('./PrChecks', () => ({
   PrChecks: () => <div>Checks body</div>,
 }));
@@ -292,7 +277,7 @@ describe('PrDetailPanel', () => {
       within(tablist)
         .getAllByRole('tab')
         .map((tab) => tab.textContent),
-    ).toEqual(['Overview', 'Conversation', 'Resolve', 'Checks']);
+    ).toEqual(['Overview', 'Conversation', 'Checks']);
     expect(
       within(tablist).getByRole('tab', { name: 'Overview' }).getAttribute('aria-selected'),
     ).toBe('true');
@@ -346,54 +331,6 @@ describe('PrDetailPanel', () => {
     );
 
     expect(h.store.selectSessionPr).toHaveBeenCalledWith(h.sessionId, h.secondPr.number);
-  });
-
-  it('spawns a resolver without leaving the pull request panel', async () => {
-    const onClose = vi.fn();
-    render(<PrDetailPanel sessionId={h.sessionId} onClose={onClose} />);
-
-    const tablist = screen.getByRole('tablist', { name: 'Pull request sections' });
-    fireEvent.click(within(tablist).getByRole('tab', { name: 'Resolve' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Spawn one resolver' }));
-
-    await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
-    expect(h.store.spawnAgent).toHaveBeenCalledWith(
-      h.sessionId,
-      expect.objectContaining({ focus: 'none' }),
-    );
-    expect(h.store.setActiveLens).not.toHaveBeenCalled();
-    expect(h.store.selectAgent).not.toHaveBeenCalled();
-    expect(onClose).not.toHaveBeenCalled();
-    await waitFor(() => expect(screen.getByText('Resolver created')).toBeDefined());
-  });
-
-  it('reports an in-flight resolver creation in place', () => {
-    h.store.sessionCreations = { [h.sessionId]: [{ kind: 'agent' }] };
-    render(<PrDetailPanel sessionId={h.sessionId} onClose={vi.fn()} />);
-
-    const tablist = screen.getByRole('tablist', { name: 'Pull request sections' });
-    fireEvent.click(within(tablist).getByRole('tab', { name: 'Resolve' }));
-
-    expect(screen.getByText('Creating resolver')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'View resolver' }).hasAttribute('disabled')).toBe(
-      true,
-    );
-  });
-
-  it('goes to the new resolver only when the explicit view action is used', async () => {
-    const onClose = vi.fn();
-    render(<PrDetailPanel sessionId={h.sessionId} onClose={onClose} />);
-
-    const tablist = screen.getByRole('tablist', { name: 'Pull request sections' });
-    fireEvent.click(within(tablist).getByRole('tab', { name: 'Resolve' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Spawn one resolver' }));
-    await waitFor(() => expect(screen.getByText('Resolver created')).toBeDefined());
-
-    fireEvent.click(screen.getByRole('button', { name: 'View resolver' }));
-
-    await waitFor(() => expect(h.store.selectAgent).toHaveBeenCalledWith(h.sessionId, 'agent-1'));
-    expect(h.store.setActiveLens).toHaveBeenCalledWith(h.sessionId, 'resolve');
-    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it('publishes the verdict against the pull request selected in the panel', async () => {

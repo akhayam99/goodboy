@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef, useLayoutEffect } from 'react';
+import type { ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AlertTriangle, GitBranch, RefreshCw, X } from 'lucide-react';
 import {
@@ -76,6 +77,8 @@ type Props = {
   showToolbarClose?: boolean;
   presentation?: 'dialog' | 'pane';
   onContentEmptyChange?: (isEmpty: boolean) => void;
+  headerActions?: ReactNode;
+  branchRevision?: number;
 };
 
 const DEFAULT_VIEW: DiffView = { kind: 'branch' };
@@ -252,6 +255,8 @@ export const DiffViewerContent = ({
   showToolbarClose = true,
   presentation = 'dialog',
   onContentEmptyChange,
+  headerActions,
+  branchRevision = 0,
 }: Props) => {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
   const [focusPath, setFocusPath] = useState<string | null>(null);
@@ -422,7 +427,7 @@ export const DiffViewerContent = ({
     return () => {
       cancelled = true;
     };
-  }, [worktreePath, refreshTick]);
+  }, [worktreePath, refreshTick, branchRevision]);
 
   useEffect(() => {
     didInitialScroll.current = false;
@@ -666,7 +671,7 @@ export const DiffViewerContent = ({
     if (!sessionId) {
       return;
     }
-    setActiveLens(sessionId, 'resolve');
+    setActiveLens(sessionId, 'review');
     await selectAgent(sessionId, agentId);
     onClose();
   };
@@ -803,6 +808,7 @@ export const DiffViewerContent = ({
           </div>
           {!isEmpty ? (
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
+              {headerActions}
               <DiffToolbar
                 title={title}
                 prNumber={prNumber}
@@ -832,6 +838,7 @@ export const DiffViewerContent = ({
             </div>
           ) : (
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
+              {headerActions}
               {isGitAware &&
                 (isDefaultView ? (
                   <Tooltip content="Refresh git state">

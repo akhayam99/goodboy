@@ -156,8 +156,8 @@ describe('useSessionCrumbs', () => {
     expect(labelsOf(null, ADHOC_AGENT_ID)).toEqual(['Overview', 'Agents', 'scout one']);
   });
 
-  it('gives a resolver opened from the feed the resolve home as parent', () => {
-    expect(labelsOf(null, RESOLVER_AGENT_ID)).toEqual(['Overview', 'Resolve', 'resolve one']);
+  it('gives a resolver opened from the feed the review home as parent', () => {
+    expect(labelsOf(null, RESOLVER_AGENT_ID)).toEqual(['Overview', 'Review board', 'resolve one']);
   });
 
   it('parents a cluster child on its father, under the run', () => {

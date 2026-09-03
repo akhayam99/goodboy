@@ -69,7 +69,7 @@ export const useTimelineOpen = ({
           label: isResolver ? 'Open resolve' : 'Open chat',
           open: () => {
             if (isResolver) {
-              store.setActiveLens(sessionId, 'resolve');
+              store.setActiveLens(sessionId, 'review');
             }
             void store.selectAgent(sessionId, entry.agent.id);
           },

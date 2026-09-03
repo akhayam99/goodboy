@@ -1,6 +1,7 @@
 import { Dialog } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { DiffFocus } from '../../../../store';
+import type { ReactNode } from 'react';
 import { DiffViewerContent } from './DiffViewerContent';
 
 type DiffViewerContentProps = {
@@ -18,6 +19,8 @@ type DiffViewerContentProps = {
   diffFocus?: DiffFocus | null;
   showToolbarClose?: boolean;
   onContentEmptyChange?: (isEmpty: boolean) => void;
+  headerActions?: ReactNode;
+  branchRevision?: number;
 };
 
 type DiffViewerDialogProps = DiffViewerContentProps & {

@@ -10,7 +10,7 @@ import type { ResolverLink } from '../resolver-linkage';
 import { useAppStore } from '../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { aggregateConfig, defaultConfig, type CardConfig } from './config';
-import { isClaimedLink } from '../../github/components/GitHubStudio/ResolveBoard/isClaimedLink';
+import { isClaimedLink } from './isClaimedLink';
 import { ResolveCard } from './ResolveCard';
 import { ResolveConfigPopover } from './ResolveConfigPopover';
 

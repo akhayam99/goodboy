@@ -1,20 +1,15 @@
 import { useEffect, useState } from 'react';
 import { MoreHorizontal } from 'lucide-react';
-import { AnchoredPopover, cn, Divider, Tooltip, useDropdown } from '@goodboy/ui';
-import type { Agent, BranchCommit } from '@goodboy/types';
+import { AnchoredPopover, cn, Tooltip, useDropdown } from '@goodboy/ui';
+import type { Agent } from '@goodboy/types';
 import { RESOLVER_ACTION_ICON } from '../../../resolverActionIcon';
 import type { ResolverAction, ResolverActionKind } from '../../../resolverActions';
 import type { ResolverActionsController } from '../../../hooks/useResolverActions';
 import { ResolverConfirm } from '../../ResolverConfirm';
-import { BranchSurgery } from './BranchSurgery';
 
 type Props = {
   readonly agent: Agent;
   readonly actions: ResolverActionsController;
-  readonly commits: ReadonlyArray<BranchCommit>;
-  readonly headSha: string | null;
-  readonly onAmend: (sha: string, message: string) => Promise<void>;
-  readonly onSquash: (sha: string, message: string) => Promise<void>;
 };
 
 type Armed = ResolverActionKind;
@@ -22,14 +17,7 @@ type Armed = ResolverActionKind;
 const ITEM_CLASS =
   'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition-colors';
 
-export const ResolverOverflowMenu = ({
-  agent,
-  actions,
-  commits,
-  headSha,
-  onAmend,
-  onSquash,
-}: Props) => {
+export const ResolverOverflowMenu = ({ agent, actions }: Props) => {
   const [armed, setArmed] = useState<Armed | null>(null);
   const dropdown = useDropdown({ align: 'end', width: 'w-72', expectedHeight: 320 });
   const { open: isOpen, close, toggle } = dropdown;
@@ -48,7 +36,7 @@ export const ResolverOverflowMenu = ({
   const armedAction: ResolverAction | null =
     actions.plan.overflow.find((action) => action.kind === armed) ?? null;
 
-  if (actions.plan.overflow.length === 0 && commits.length === 0) {
+  if (actions.plan.overflow.length === 0) {
     return null;
   }
 
@@ -110,17 +98,6 @@ export const ResolverOverflowMenu = ({
               </button>
             );
           })}
-          {commits.length > 0 && (
-            <>
-              <Divider />
-              <BranchSurgery
-                commits={commits}
-                headSha={headSha}
-                onAmend={onAmend}
-                onSquash={onSquash}
-              />
-            </>
-          )}
         </>
       )}
     </AnchoredPopover>

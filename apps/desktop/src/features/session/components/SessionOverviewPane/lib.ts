@@ -1,6 +1,6 @@
 import type { OpenQuestion, SessionStageInfo } from '@goodboy/types';
 
-export type AttentionLens = 'agents' | 'workflows' | 'questions' | 'pr' | 'resolve';
+export type AttentionLens = 'agents' | 'workflows' | 'questions' | 'pr' | 'review';
 
 export const resolveAttentionLens = (
   stage: SessionStageInfo,
@@ -8,7 +8,7 @@ export const resolveAttentionLens = (
     readonly hasNonResolverStandalone: boolean;
     readonly hasWorkflow: boolean;
     readonly hasResolver: boolean;
-    readonly unreadLens: 'agents' | 'resolve' | 'workflows' | null;
+    readonly unreadLens: 'agents' | 'review' | 'workflows' | null;
   },
 ): AttentionLens | null => {
   if (stage.stage !== 'attention') {
@@ -27,7 +27,7 @@ export const resolveAttentionLens = (
     return 'agents';
   }
   if (ctx.hasResolver) {
-    return 'resolve';
+    return 'review';
   }
   if (ctx.hasWorkflow) {
     return 'workflows';

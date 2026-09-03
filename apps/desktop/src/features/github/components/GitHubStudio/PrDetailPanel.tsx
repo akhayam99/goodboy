@@ -1,15 +1,9 @@
 import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import { EmptyState, formatError } from '@goodboy/ui';
-import {
-  buildCombinedCommentAgentArgs,
-  buildCommentAgentArgs,
-  type ResolveModelChoice,
-} from '../../../chat/spawn-from-comment';
 import { useResolverIndex } from '../../../session/hooks/useResolverIndex';
 import { resolverForComment, type ResolverLink } from '../../../session/resolver-linkage';
-import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { openUrl } from '../../../../shared/lib/editor';
 import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { githubPullRequestFields, resolveDetailFields } from '../../../../shared/detail-fields';
@@ -20,18 +14,16 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { RefreshIconButton } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
 import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
-import { groupThreads, type CommentThread } from '../../comment-threads';
+import type { CommentThread } from '../../comment-threads';
 import { PullRequestChip } from '../PullRequestChip';
 import { CreatePrPanel } from './CreatePrPanel';
 import { PrActionBar, type ActionBusy } from './PrActionBar';
 import type { PrVerdictSubmission } from './PrVerdictAction';
 import { PrChecks } from './PrChecks';
 import { PrConversation } from './PrConversation';
-import { ResolveBoard } from './ResolveBoard';
 import { PrOverview } from './PrOverview';
 import { PrReviewers } from './PrReviewers';
 import { PrSwitcher } from './PrSwitcher';
-import { ResolverSpawnStatus } from './ResolverSpawnStatus';
 import { SectionBody } from './SectionBody';
 import type { PrSection } from './prSection';
 import { prSectionOptions } from './prSectionOptions';
@@ -39,7 +31,6 @@ import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRep
 import { githubReviewTarget } from '../../../../store/slices/review-drafts/githubReviewTarget';
 import type { PublishPrReviewVerdict } from '../../../../store/slices/review-drafts/types';
 import { useToast } from '../../../../app/components/Toast';
-import { useResolverSpawner } from '../../../session/hooks/useResolverSpawner';
 
 const VERDICT_TOAST = {
   comment: 'Comment posted on the pull request',
@@ -74,7 +65,6 @@ export const PrDetailPanel = ({
   );
   const repo = useSessionRepo({ sessionId: (sessionId ?? '') as SessionId });
   const projectRoot = repo?.repoRoot ?? null;
-  const roleModels = useSessionRoleModels({ sessionId });
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);
   const markPrReady = useAppStore((s) => s.markPrReady);
@@ -84,13 +74,6 @@ export const PrDetailPanel = ({
   const reopenPr = useAppStore((s) => s.reopenPr);
   const requestReview = useAppStore((s) => s.requestReview);
   const publishPrReview = useAppStore((s) => s.publishPrReview);
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
-  const activateNextResolver = useAppStore((s) => s.activateNextResolver);
-  const { spawnedResolverIds, resetSpawnedResolverIds, spawnResolver } = useResolverSpawner({
-    sessionId: (sessionId ?? '') as SessionId,
-  });
 
   const resolverIndex = useResolverIndex((sessionId ?? '') as SessionId);
   const resolverFor = useCallback(
@@ -133,7 +116,6 @@ export const PrDetailPanel = ({
   useEffect(() => {
     setCreateOpen(false);
     setSection('overview');
-    resetSpawnedResolverIds();
   }, [sessionId]);
 
   useEffect(() => {
@@ -198,96 +180,6 @@ export const PrDetailPanel = ({
   };
 
   const onMutated = refreshActive;
-
-  const openResolver = (agentId: AgentId) => {
-    void (async () => {
-      await setCurrentSession(sessionId);
-      setActiveLens(sessionId, 'resolve');
-      await selectAgent(sessionId, agentId);
-      onClose();
-    })();
-  };
-
-  const openResolveLane = () => {
-    void (async () => {
-      await setCurrentSession(sessionId);
-      setActiveLens(sessionId, 'resolve');
-      onClose();
-    })();
-  };
-
-  const onViewSpawned = () => {
-    const only = spawnedResolverIds.length === 1 ? spawnedResolverIds[0] : undefined;
-    if (only !== undefined) {
-      openResolver(only);
-      return;
-    }
-    openResolveLane();
-  };
-
-  const onSpawnOne = (thread: CommentThread, choice: ResolveModelChoice) => {
-    if (activePr == null) {
-      return;
-    }
-    const existing = resolverFor(thread);
-    if (existing != null && existing.status !== 'failed') {
-      openResolver(existing.agent.id as AgentId);
-      return;
-    }
-    void spawnResolver({
-      args: buildCommentAgentArgs(thread.head, activePr, choice, thread.replies),
-      choice,
-      deferKickoff: false,
-    });
-  };
-
-  const onSpawnBatch = (
-    batch: ReadonlyArray<CommentThread>,
-    choiceById: Readonly<Record<string, ResolveModelChoice>>,
-  ) => {
-    if (activePr == null || batch.length === 0) {
-      return;
-    }
-    const fresh = batch.filter((t) => {
-      const existing = resolverFor(t);
-      return existing == null || existing.status === 'failed';
-    });
-    if (fresh.length === 0) {
-      return;
-    }
-    void (async () => {
-      for (const t of fresh) {
-        const choice = choiceById[t.head.id] ?? {};
-        await spawnResolver({
-          args: buildCommentAgentArgs(t.head, activePr, choice, t.replies),
-          choice,
-          deferKickoff: true,
-        });
-      }
-      await activateNextResolver(sessionId);
-    })();
-  };
-
-  const onSpawnCombined = (batch: ReadonlyArray<CommentThread>, choice: ResolveModelChoice) => {
-    if (activePr == null || batch.length < 2 || batch.length > 8) {
-      return;
-    }
-    const fresh = batch.filter((thread) => {
-      const existing = resolverFor(thread);
-      return existing == null || existing.status === 'failed';
-    });
-    if (fresh.length < 2) {
-      return;
-    }
-    void (async () => {
-      await spawnResolver({
-        args: buildCombinedCommentAgentArgs(fresh, activePr, choice),
-        choice,
-        deferKickoff: true,
-      });
-      await activateNextResolver(sessionId);
-    })();
-  };
 
   const run = async (kind: Exclude<ActionBusy, null>, fn: () => Promise<void>) => {
     if (busy != null) {
@@ -474,30 +366,7 @@ export const PrDetailPanel = ({
           detail={detail}
           onRetry={refreshActive}
         >
-          {section === 'resolve' ? (
-            <div className="flex flex-col gap-3">
-              <ResolverSpawnStatus
-                sessionId={sessionId}
-                spawnedIds={spawnedResolverIds}
-                onView={onViewSpawned}
-              />
-              <ResolveBoard
-                threads={groupThreads(detail?.comments ?? []).filter(
-                  (thread) => thread.head.source === 'review' && thread.head.resolved === false,
-                )}
-                resolverFor={resolverFor}
-                onSpawnOne={onSpawnOne}
-                onSpawnBatch={onSpawnBatch}
-                onSpawnCombined={onSpawnCombined}
-                onOpenResolver={openResolver}
-                roleModels={roleModels}
-                onOpenThread={(threadId) => {
-                  setJumpThreadId(threadId);
-                  setSection('comments');
-                }}
-              />
-            </div>
-          ) : section === 'comments' ? (
+          {section === 'comments' ? (
             <PrConversation
               comments={detail?.comments ?? []}
               pr={activePr}

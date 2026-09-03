@@ -21,7 +21,6 @@ export type LensKind =
   | 'questions'
   | 'agents'
   | 'workflows'
-  | 'resolve'
   | 'review'
   | 'plans'
   | 'scripts'
@@ -44,7 +43,6 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'questions',
   'agents',
   'workflows',
-  'resolve',
   'review',
   'plans',
   'scripts',

@@ -3,7 +3,6 @@ import type { SegmentedTabOption } from '@goodboy/ui';
 import { FileText, ListChecks, MessageSquare } from 'lucide-react';
 import { computeTabStatus } from '../../utils/compute-tab-status';
 import type { PrSection } from './prSection';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Params = {
   readonly pr: PullRequestState;
@@ -22,10 +21,6 @@ export const prSectionOptions = ({
   detail,
 }: Params): ReadonlyArray<SegmentedTabOption<PrSection>> => {
   const tabStatus = computeTabStatus(pr, detail);
-  const openResolveCount = (detail?.comments ?? []).filter(
-    (comment) => comment.source === 'review' && comment.resolved === false,
-  ).length;
-
   return [
     { value: 'overview', label: 'Overview', icon: FileText },
     {
@@ -33,12 +28,6 @@ export const prSectionOptions = ({
       label: 'Conversation',
       icon: MessageSquare,
       badge: countBadge({ count: tabStatus.comments?.count }),
-    },
-    {
-      value: 'resolve',
-      label: 'Resolve',
-      icon: CONCEPT_ICONS.resolve,
-      badge: countBadge({ count: openResolveCount }),
     },
     {
       value: 'ci',

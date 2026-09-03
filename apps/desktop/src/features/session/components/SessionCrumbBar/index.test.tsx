@@ -132,7 +132,7 @@ const resetState = () => {
     agentKindOverride: {},
     resolverState: {},
     sessionPendingResolutions: {},
-    sessionResolvedThreads: {},
+    sessionReviewdThreads: {},
     sessionGithub: {},
     phaseTemplates: { 'workspace-1': [{ id: 'workflow-1', name: 'refactor', steps: [] }] },
     sessionWorkflows: { [SESSION_ID]: [] },
@@ -222,12 +222,12 @@ describe('SessionCrumbBar', () => {
     expect(within(selectedCrumb).getByLabelText('completed')).toBeDefined();
   });
 
-  it('shows the queued resolver count on the active resolve lens crumb', () => {
+  it('shows the queued resolver count on the active review lens crumb', () => {
     h.crumbs = [
       { id: 'overview', label: 'Overview', onClick: vi.fn() },
-      { id: 'lens-resolve', label: 'Resolve' },
+      { id: 'lens-review', label: 'Review' },
     ];
-    h.state.activeLens = { [SESSION_ID]: 'resolve' };
+    h.state.activeLens = { [SESSION_ID]: 'review' };
     h.state.selectedAgentId = {};
     h.resolverLinks = [
       { agent: scout, status: 'pending' },

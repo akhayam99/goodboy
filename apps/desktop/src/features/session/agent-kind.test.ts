@@ -132,11 +132,11 @@ describe('agentHomeLens', () => {
   });
 
   it('routes a resolver without a step binding to resolve', () => {
-    expect(agentHomeLens(agentOf({ workflowRunId: WF }), 'resolver')).toBe('resolve');
+    expect(agentHomeLens(agentOf({ workflowRunId: WF }), 'resolver')).toBe('review');
   });
 
   it('routes a resolver with no workflowRunId to resolve', () => {
-    expect(agentHomeLens(agentOf({}), 'resolver')).toBe('resolve');
+    expect(agentHomeLens(agentOf({}), 'resolver')).toBe('review');
   });
 
   it('routes a hand-spawned agent (no workflowRunId, non-resolver) to agents', () => {
@@ -146,7 +146,7 @@ describe('agentHomeLens', () => {
 
   it('does not route to workflows on stepId alone when workflowRunId is absent', () => {
     expect(agentHomeLens(agentOf({ stepId: STEP }), 'generic')).toBe('agents');
-    expect(agentHomeLens(agentOf({ stepId: STEP }), 'resolver')).toBe('resolve');
+    expect(agentHomeLens(agentOf({ stepId: STEP }), 'resolver')).toBe('review');
   });
 });
 
