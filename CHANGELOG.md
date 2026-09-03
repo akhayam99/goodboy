@@ -7,6 +7,36 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.13
+
+The inbox becomes the only door to your integrations, with one detail
+shell behind it, and Claude Fable 5.1 joins the catalog.
+
+### [#1630] Integration studios retire behind the inbox
+
+Tracker chips, the board's merge request click, the footer glyphs and
+the onboarding links all open the Inbox now, preselected on the right
+provider, kind or record. The old per-provider studio events keep
+working and land in the same place. The workspace studio shells for
+GitHub issues, GitLab, Linear, Sentry, Jira, Slack and Bitbucket are
+gone; session-scoped surfaces (a session's PR panel, the review hub)
+are untouched.
+
+### [#1635] One detail shell for every record
+
+The eight provider detail panels share a single header (provider
+glyph, identifier, title, state, external link, provider actions) and
+a single launch dock, so starting a session from an issue, a merge
+request, a thread or an error looks and behaves the same everywhere.
+GitLab merge requests gain the launch affordance; Sentry's two detail
+implementations become one.
+
+### [#1631] Claude Fable 5.1
+
+Fable 5.1 is in the Anthropic catalog with its own pricing and sits
+above Fable 5 for the thinking roles; code roles keep their Opus
+defaults. It needs Claude Code 2.1.251 or newer on your machine.
+
 ## Goodboy v0.2.12
 
 A fix for session overviews freezing the app, and one inbox reading
