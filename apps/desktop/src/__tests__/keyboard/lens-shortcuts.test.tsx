@@ -94,13 +94,6 @@ vi.mock('../../features/workspace/window', () => ({ isMainWindow: () => true }))
 vi.mock('../../features/workflows/components/WorkflowStudio', () => ({
   WorkflowStudio: () => null,
 }));
-vi.mock('../../features/github/components/GitHubStudio', () => ({ GitHubStudio: () => null }));
-vi.mock('../../features/integrations/linear/LinearStudio', () => ({ LinearStudio: () => null }));
-vi.mock('../../features/integrations/sentry/SentryStudio', () => ({ SentryStudio: () => null }));
-vi.mock('../../features/integrations/gitlab/GitlabStudio', () => ({ GitlabStudio: () => null }));
-vi.mock('../../features/integrations/bitbucket/BitbucketWorkspaceStudio', () => ({
-  BitbucketWorkspaceStudio: () => null,
-}));
 vi.mock('../../features/providers/components/ProviderStudio', () => ({
   ProviderStudio: () => null,
 }));

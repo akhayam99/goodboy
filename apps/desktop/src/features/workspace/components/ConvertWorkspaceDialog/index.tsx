@@ -41,11 +41,6 @@ const VISIBILITY_OPTIONS = [
   { value: 'private', label: 'Private' },
 ] as const;
 
-const HOST_STUDIO_EVENT: Record<Host, string> = {
-  github: 'goodboy:open-github-studio',
-  gitlab: 'goodboy:open-gitlab-studio',
-};
-
 const HOST_URL_PLACEHOLDER: Record<Host, string> = {
   github: 'https://github.com/owner/repo.git',
   gitlab: 'https://gitlab.com/owner/repo.git',
@@ -168,7 +163,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
   const onConnect = useCallback(() => {
     keepDraftRef.current = true;
     onClose();
-    window.dispatchEvent(new CustomEvent(HOST_STUDIO_EVENT[host]));
+    window.dispatchEvent(new CustomEvent('goodboy:open-inbox', { detail: { provider: host } }));
   }, [host, onClose]);
 
   const onConvert = useCallback(async () => {

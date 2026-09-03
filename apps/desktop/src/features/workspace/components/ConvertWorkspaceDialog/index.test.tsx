@@ -170,7 +170,7 @@ describe('ConvertWorkspaceDialog', () => {
   it('keeps the draft when the user leaves to connect the host', () => {
     const onClose = vi.fn();
     const dispatched: string[] = [];
-    window.addEventListener('goodboy:open-github-studio', () => dispatched.push('github'));
+    window.addEventListener('goodboy:open-inbox', () => dispatched.push('github'));
     state.githubStatus = { available: false };
     render(<ConvertWorkspaceDialog open workspace={workspace} onClose={onClose} />);
 

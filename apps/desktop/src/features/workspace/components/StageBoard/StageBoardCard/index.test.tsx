@@ -105,6 +105,7 @@ const mergeRequest = ({
   draft = false,
 }: MergeRequestParams): GitlabMergeRequest =>
   ({
+    id: 1,
     iid: 12,
     state: mergeRequestState,
     draft,
@@ -250,12 +251,16 @@ describe('StageBoardCard linked request', () => {
       [SESSION_ID]: { mr: mergeRequest({ state: 'opened' }) },
     };
     const dispatched: Event[] = [];
-    window.addEventListener('goodboy:open-gitlab-studio', (e) => dispatched.push(e));
+    const onOpenInbox = (event: Event) => dispatched.push(event);
+    window.addEventListener('goodboy:open-inbox', onOpenInbox);
     render(<StageBoardCard session={session} nav={nav} />);
     const btn = screen.getByLabelText('Merge request !12 · open, open in GitLab');
     fireEvent.click(btn);
     expect(dispatched).toHaveLength(1);
-    window.removeEventListener('goodboy:open-gitlab-studio', (e) => dispatched.push(e));
+    expect(dispatched[0]).toMatchObject({
+      detail: { provider: 'gitlab', kind: 'mr', recordKey: 'gitlab:mr:1' },
+    });
+    window.removeEventListener('goodboy:open-inbox', onOpenInbox);
   });
 
   it('marks the pull request slot as still being checked before GitHub answers', () => {

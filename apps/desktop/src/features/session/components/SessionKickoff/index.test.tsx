@@ -116,15 +116,18 @@ describe('SessionKickoff', () => {
     expect(spies.fetchIssueCandidates).not.toHaveBeenCalled();
   });
 
-  it('opens the Linear studio from the no-tracker state', () => {
-    const onOpenLinearStudio = vi.fn();
-    window.addEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
+  it('opens the inbox filtered to Linear from the no-tracker state', () => {
+    const onOpenInbox = vi.fn();
+    window.addEventListener('goodboy:open-inbox', onOpenInbox);
     render(<SessionKickoff session={session} onOpenWorkflowBuilder={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Open the Linear studio' }));
 
-    expect(onOpenLinearStudio).toHaveBeenCalledTimes(1);
-    window.removeEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
+    expect(onOpenInbox).toHaveBeenCalledTimes(1);
+    expect(onOpenInbox.mock.calls[0]?.[0]).toMatchObject({
+      detail: { provider: 'linear', kind: 'issue' },
+    });
+    window.removeEventListener('goodboy:open-inbox', onOpenInbox);
   });
 
   it('shows only connected tracker studios when no open issues remain', async () => {

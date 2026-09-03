@@ -105,10 +105,18 @@ export const StageBoardCard = memo(function StageBoardCard({
   const handlePrClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isGitlab) {
-      window.dispatchEvent(new CustomEvent('goodboy:open-gitlab-studio'));
-    } else {
-      nav.openGithub(session);
+      window.dispatchEvent(
+        new CustomEvent('goodboy:open-inbox', {
+          detail: {
+            provider: 'gitlab',
+            kind: 'mr',
+            recordKey: `gitlab:mr:${String(mergeRequest?.id ?? '')}`,
+          },
+        }),
+      );
+      return;
     }
+    nav.openGithub(session);
   };
 
   return (

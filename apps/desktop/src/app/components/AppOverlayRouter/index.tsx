@@ -16,13 +16,6 @@ import { WorkspaceLinkStudio } from '../../../features/workspace/components/Work
 import { ConvertWorkspaceDialog } from '../../../features/workspace/components/ConvertWorkspaceDialog';
 import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
 import { WorkflowStudio } from '../../../features/workflows/components/WorkflowStudio';
-import { GitHubStudio } from '../../../features/github/components/GitHubStudio';
-import { LinearStudio } from '../../../features/integrations/linear/LinearStudio';
-import { SentryStudio } from '../../../features/integrations/sentry/SentryStudio';
-import { BitbucketWorkspaceStudio } from '../../../features/integrations/bitbucket/BitbucketWorkspaceStudio';
-import { GitlabStudio } from '../../../features/integrations/gitlab/GitlabStudio';
-import { JiraStudio } from '../../../features/integrations/jira/JiraStudio';
-import { SlackStudio } from '../../../features/integrations/slack/SlackStudio';
 import { InboxStudio } from '../../../features/inbox/components/InboxStudio';
 import { ProviderStudio } from '../../../features/providers/components/ProviderStudio';
 import { BudgetStudio } from '../../../features/budget/components/BudgetStudio';
@@ -53,17 +46,6 @@ type Props = {
   readonly addWorkspaceOpen: boolean;
   readonly convertWorkspaceOpen: boolean;
   readonly workflowStudioOpen: boolean;
-  readonly linearStudioOpen: boolean;
-  readonly linearStudioFocus: string | null;
-  readonly sentryStudioOpen: boolean;
-  readonly sentryStudioFocus: string | null;
-  readonly gitlabStudioOpen: boolean;
-  readonly gitlabStudioFocus: string | null;
-  readonly jiraStudioOpen: boolean;
-  readonly jiraStudioFocus: string | null;
-  readonly bitbucketStudioOpen: boolean;
-  readonly slackStudioOpen: boolean;
-  readonly slackStudioFocus: string | null;
   readonly inboxStudioOpen: boolean;
   readonly inboxStudioFocus: {
     readonly provider: InboxProvider | null;
@@ -73,12 +55,6 @@ type Props = {
   readonly providerStudioOpen: boolean;
   readonly providerStudioFocus: ProviderId | null;
   readonly providerStudioAction: ProviderLifecycleAction | null;
-  readonly githubStudioOpen: boolean;
-  readonly githubStudioSession: SessionId | null;
-  readonly githubStudioPrNumber: number | null;
-  readonly githubStudioThreadId: string | null;
-  readonly githubStudioIssueId: string | null;
-  readonly githubStudioTab: 'pull-requests' | 'issues' | null;
   readonly budgetStudioOpen: boolean;
   readonly budgetStudioScope: BudgetScope | undefined;
   readonly impactStudioOpen: boolean;
@@ -98,18 +74,11 @@ type Props = {
   readonly offerWorkspaceRepo: () => void;
   readonly closeConvertWorkspace: () => void;
   readonly closeWorkflowStudio: () => void;
-  readonly closeGithubStudio: () => void;
   readonly closeProviderStudio: () => void;
   readonly closeBudgetStudio: () => void;
   readonly closeImpactStudio: () => void;
   readonly closeChangelogStudio: () => void;
   readonly closeNotificationsStudio: () => void;
-  readonly closeLinearStudio: () => void;
-  readonly closeSentryStudio: () => void;
-  readonly closeGitlabStudio: () => void;
-  readonly closeJiraStudio: () => void;
-  readonly closeBitbucketStudio: () => void;
-  readonly closeSlackStudio: () => void;
   readonly closeInboxStudio: () => void;
   readonly closeCommitDiff: () => void;
   readonly closeDeleteConfirm: () => void;
@@ -135,28 +104,11 @@ export const AppOverlayRouter = ({
   addWorkspaceOpen,
   convertWorkspaceOpen,
   workflowStudioOpen,
-  linearStudioOpen,
-  linearStudioFocus,
-  sentryStudioOpen,
-  sentryStudioFocus,
-  gitlabStudioOpen,
-  gitlabStudioFocus,
-  jiraStudioOpen,
-  jiraStudioFocus,
-  bitbucketStudioOpen,
-  slackStudioOpen,
-  slackStudioFocus,
   inboxStudioOpen,
   inboxStudioFocus,
   providerStudioOpen,
   providerStudioFocus,
   providerStudioAction,
-  githubStudioOpen,
-  githubStudioSession,
-  githubStudioPrNumber,
-  githubStudioThreadId,
-  githubStudioIssueId,
-  githubStudioTab,
   budgetStudioOpen,
   budgetStudioScope,
   impactStudioOpen,
@@ -176,18 +128,11 @@ export const AppOverlayRouter = ({
   offerWorkspaceRepo,
   closeConvertWorkspace,
   closeWorkflowStudio,
-  closeGithubStudio,
   closeProviderStudio,
   closeBudgetStudio,
   closeImpactStudio,
   closeChangelogStudio,
   closeNotificationsStudio,
-  closeLinearStudio,
-  closeSentryStudio,
-  closeGitlabStudio,
-  closeJiraStudio,
-  closeBitbucketStudio,
-  closeSlackStudio,
   closeInboxStudio,
   closeCommitDiff,
   closeDeleteConfirm,
@@ -234,19 +179,6 @@ export const AppOverlayRouter = ({
           onClose={closeWorkflowStudio}
         />
       ) : null}
-      {githubStudioOpen && currentWorkspace !== null ? (
-        <GitHubStudio
-          workspaceId={currentWorkspace.id}
-          rootPath={workspaceProjectRoot ?? ''}
-          workspaceName={currentWorkspace.name}
-          initialSessionId={githubStudioSession}
-          initialPrNumber={githubStudioPrNumber}
-          initialThreadId={githubStudioThreadId}
-          initialIssueExternalId={githubStudioIssueId}
-          initialTab={githubStudioTab}
-          onClose={closeGithubStudio}
-        />
-      ) : null}
       {providerStudioOpen && currentWorkspace !== null ? (
         <ProviderStudio
           workspaceId={currentWorkspace.id}
@@ -277,53 +209,6 @@ export const AppOverlayRouter = ({
         <NotificationsStudio
           workspaceName={currentWorkspace.name}
           onClose={closeNotificationsStudio}
-        />
-      ) : null}
-      {linearStudioOpen && currentWorkspace !== null ? (
-        <LinearStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          initialIssueId={linearStudioFocus}
-          onClose={closeLinearStudio}
-        />
-      ) : null}
-      {sentryStudioOpen && currentWorkspace !== null ? (
-        <SentryStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          initialIssueId={sentryStudioFocus}
-          onClose={closeSentryStudio}
-        />
-      ) : null}
-      {gitlabStudioOpen && currentWorkspace !== null ? (
-        <GitlabStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          initialIssueId={gitlabStudioFocus}
-          onClose={closeGitlabStudio}
-        />
-      ) : null}
-      {jiraStudioOpen && currentWorkspace !== null ? (
-        <JiraStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          initialIssueId={jiraStudioFocus}
-          onClose={closeJiraStudio}
-        />
-      ) : null}
-      {bitbucketStudioOpen && currentWorkspace !== null ? (
-        <BitbucketWorkspaceStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          onClose={closeBitbucketStudio}
-        />
-      ) : null}
-      {slackStudioOpen && currentWorkspace !== null ? (
-        <SlackStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          initialThreadTs={slackStudioFocus}
-          onClose={closeSlackStudio}
         />
       ) : null}
       {inboxStudioOpen && currentWorkspace !== null ? (
