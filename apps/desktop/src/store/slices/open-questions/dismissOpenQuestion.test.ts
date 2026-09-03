@@ -30,6 +30,7 @@ import { restoreDismissedOpenQuestion } from './restoreDismissedOpenQuestion';
 type TestState = {
   sessionOpenQuestions: Record<string, ReadonlyArray<OpenQuestion>>;
   loadSessionSlots: (sessionId: SessionId) => Promise<void>;
+  loadSessionDismissedQuestions: (sessionId: SessionId) => Promise<void>;
   maybeAutoAdvanceWorkflow: (sessionId: SessionId) => Promise<void>;
 };
 
@@ -53,6 +54,7 @@ describe('dismissed open question restoration', () => {
     const store = createStore<TestState>(() => ({
       sessionOpenQuestions: { [sessionId]: [question] },
       loadSessionSlots: vi.fn(async () => undefined),
+      loadSessionDismissedQuestions: vi.fn(async () => undefined),
       maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
     }));
     const dismiss = dismissOpenQuestion(store.setState as never, store.getState as never);
@@ -61,10 +63,12 @@ describe('dismissed open question restoration', () => {
     await dismiss(sessionId, question);
     expect(store.getState().sessionOpenQuestions[sessionId]).toEqual([]);
     expect(markOpenQuestionDismissed).toHaveBeenCalledWith(expect.anything(), question.id);
+    expect(store.getState().loadSessionDismissedQuestions).toHaveBeenCalledWith(sessionId);
 
     await restore(sessionId, question);
     expect(store.getState().sessionOpenQuestions[sessionId]).toEqual([question]);
     expect(restoreOpenQuestion).toHaveBeenCalledWith(expect.anything(), question.id);
+    expect(store.getState().loadSessionDismissedQuestions).toHaveBeenCalledTimes(2);
     expect(store.getState().maybeAutoAdvanceWorkflow).toHaveBeenCalledWith(sessionId);
   });
 });

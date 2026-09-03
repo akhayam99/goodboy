@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Session } from '@goodboy/types';
+import type { OpenQuestion, Session } from '@goodboy/types';
 
 type Worktree = {
   readonly id: string;
@@ -14,9 +14,14 @@ type Worktree = {
   readonly createdAt: number;
 };
 
-const { storeState, diffStats, unread } = vi.hoisted(() => ({
+const { storeState, diffStats, unread, questions } = vi.hoisted(() => ({
   unread: { current: false },
   diffStats: { current: new Map<string, { additions: number; deletions: number }>() },
+  questions: {
+    open: [] as ReadonlyArray<unknown>,
+    answered: [] as ReadonlyArray<unknown>,
+    dismissed: [] as ReadonlyArray<unknown>,
+  },
   storeState: {
     sessionPhaseRuns: {},
     sessionPlans: {},
@@ -25,6 +30,8 @@ const { storeState, diffStats, unread } = vi.hoisted(() => ({
     sessionEvents: {},
     agentKindOverride: {},
     loadSessionEvents: vi.fn(async () => undefined),
+    loadSessionAnsweredQuestions: vi.fn(async () => undefined),
+    loadSessionDismissedQuestions: vi.fn(async () => undefined),
     markAllAgentsSeen: vi.fn(),
     setActiveLens: vi.fn(),
     openMountDiff: vi.fn(),
@@ -39,7 +46,9 @@ vi.mock('../../../../../../store', () => {
     agentHasUnread: () => unread.current,
     useAppStore,
     useMountDiffStats: () => diffStats.current,
-    useSessionOpenQuestions: () => [],
+    useSessionOpenQuestions: () => questions.open,
+    useSessionAnsweredQuestions: () => questions.answered,
+    useSessionDismissedQuestions: () => questions.dismissed,
   };
 });
 vi.mock('../../../../../workflows/useAttachedWorkflowRuns', () => ({
@@ -85,8 +94,14 @@ beforeEach(() => {
   storeState.sessionEvents = {};
   storeState.openMountDiff.mockReset();
   storeState.markAllAgentsSeen.mockReset();
+  storeState.setActiveLens.mockReset();
+  storeState.loadSessionAnsweredQuestions.mockClear();
+  storeState.loadSessionDismissedQuestions.mockClear();
   unread.current = false;
   diffStats.current = new Map();
+  questions.open = [];
+  questions.answered = [];
+  questions.dismissed = [];
   localStorage.clear();
 });
 
@@ -247,5 +262,55 @@ describe('TimelinePane unread affordance', () => {
     render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
 
     expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
+  });
+});
+
+describe('TimelinePane questions', () => {
+  const OPEN_QUESTION = {
+    id: 'question-open',
+    sessionId: 'session-1',
+    text: 'Which database should we use?',
+    suggestedAnswers: [],
+    userAnswer: null,
+    status: 'open',
+    createdAt: '2026-08-20T09:00:00.000Z',
+  } as unknown as OpenQuestion;
+
+  const ANSWERED_QUESTION = {
+    id: 'question-answered',
+    sessionId: 'session-1',
+    text: 'Which cloud provider?',
+    suggestedAnswers: [],
+    userAnswer: 'aws',
+    status: 'answered',
+    createdAt: '2026-08-19T09:00:00.000Z',
+    answeredAt: '2026-08-19T10:00:00.000Z',
+  } as unknown as OpenQuestion;
+
+  it('loads the answered and dismissed caches on mount, alongside the open one', () => {
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    expect(storeState.loadSessionAnsweredQuestions).toHaveBeenCalledWith('session-1');
+    expect(storeState.loadSessionDismissedQuestions).toHaveBeenCalledWith('session-1');
+  });
+
+  it('feeds the builder the open and answered caches combined, as separate rows', () => {
+    questions.open = [OPEN_QUESTION];
+    questions.answered = [ANSWERED_QUESTION];
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    expect(screen.getByText(/Question: Which database should we use\?/)).toBeDefined();
+    expect(screen.getByText('1 question answered')).toBeDefined();
+  });
+
+  it('keeps the Answer action target on the open question artifact row', () => {
+    questions.open = [OPEN_QUESTION];
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
+
+    expect(storeState.setActiveLens).toHaveBeenCalledWith('session-1', 'questions');
   });
 });

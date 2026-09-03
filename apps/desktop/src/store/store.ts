@@ -828,6 +828,7 @@ type AppActions = {
   clearNotifications(): Promise<void>;
   loadSessionOpenQuestions(sessionId: SessionId): Promise<void>;
   loadSessionAnsweredQuestions(sessionId: SessionId): Promise<void>;
+  loadSessionDismissedQuestions(sessionId: SessionId): Promise<void>;
   requestOpenQuestionScroll(target: { agentId: AgentId; questionId: OpenQuestionId }): void;
   clearOpenQuestionScroll(): void;
   answerOpenQuestions(
@@ -1013,6 +1014,7 @@ export const initialState: AppState = {
   planConsumptions: {},
   sessionOpenQuestions: {},
   sessionAnsweredQuestions: {},
+  sessionDismissedQuestions: {},
   openQuestionScrollTarget: null,
   sessionLoading: {},
   boardReady: true,

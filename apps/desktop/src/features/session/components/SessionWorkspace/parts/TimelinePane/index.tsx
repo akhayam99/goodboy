@@ -8,6 +8,8 @@ import {
   agentHasUnread,
   useAppStore,
   useMountDiffStats,
+  useSessionAnsweredQuestions,
+  useSessionDismissedQuestions,
   useSessionOpenQuestions,
   type MountDiffStat,
 } from '../../../../../../store';
@@ -53,7 +55,11 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const openMountDiff = useAppStore((s) => s.openMountDiff);
-  const questions = useSessionOpenQuestions(sessionId);
+  const openQuestions = useSessionOpenQuestions(sessionId);
+  const answeredQuestions = useSessionAnsweredQuestions(sessionId);
+  const dismissedQuestions = useSessionDismissedQuestions(sessionId);
+  const loadSessionAnsweredQuestions = useAppStore((s) => s.loadSessionAnsweredQuestions);
+  const loadSessionDismissedQuestions = useAppStore((s) => s.loadSessionDismissedQuestions);
   const workflows = useAttachedWorkflowRuns({ session });
   const openTargetFor = useTimelineOpen({ sessionId });
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
@@ -67,6 +73,11 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
   }, [loadSessionEvents, sessionId]);
 
   useEffect(() => {
+    void loadSessionAnsweredQuestions(sessionId);
+    void loadSessionDismissedQuestions(sessionId);
+  }, [loadSessionAnsweredQuestions, loadSessionDismissedQuestions, sessionId]);
+
+  useEffect(() => {
     if (copied) {
       showToast('success', 'path copied');
     }
@@ -77,6 +88,11 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
       showToast('error', 'copy failed');
     }
   }, [failed, showToast]);
+
+  const questions = useMemo(
+    () => [...openQuestions, ...answeredQuestions, ...dismissedQuestions],
+    [answeredQuestions, dismissedQuestions, openQuestions],
+  );
 
   const model = useMemo(
     () =>
@@ -235,6 +251,12 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
       };
     }
     if (entry.kind === 'agent' && entry.openQuestions.length > 0) {
+      return { label: 'Answer', onAct: () => setActiveLens(sessionId, 'questions') };
+    }
+    if (
+      entry.kind === 'question' &&
+      entry.questions.every((question) => question.status === 'open')
+    ) {
       return { label: 'Answer', onAct: () => setActiveLens(sessionId, 'questions') };
     }
     if (entry.kind !== 'run') {

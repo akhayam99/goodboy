@@ -61,7 +61,20 @@ const segmentsOf = ({ entry }: EntryParams): ReadonlyArray<TimelineLabelSegment>
   if (entry.kind === 'event') {
     return sessionEventLabel({ event: entry.event });
   }
-  return [{ kind: 'text', text: entry.question.text }];
+  const isOpen = entry.questions.every((question) => question.status === 'open');
+  const count = entry.questions.length;
+  if (isOpen) {
+    const first = entry.questions[0];
+    if (count === 1 && first != null) {
+      return [{ kind: 'text', text: `Question: ${first.text}` }];
+    }
+    return [{ kind: 'text', text: `${count} questions` }];
+  }
+  const allDismissed = entry.questions.every((question) => question.status === 'dismissed');
+  const allAnswered = entry.questions.every((question) => question.status === 'answered');
+  const noun = count === 1 ? 'question' : 'questions';
+  const verb = allDismissed ? 'dismissed' : allAnswered ? 'answered' : 'resolved';
+  return [{ kind: 'text', text: `${count} ${noun} ${verb}` }];
 };
 
 type ChipParams = EntryParams & {
@@ -108,9 +121,6 @@ export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
         <span className="w-4 shrink-0 text-right text-3xs tabular-nums text-muted-foreground/60">
           {item.ordinal}
         </span>
-      ) : null}
-      {entry.kind === 'answer' ? (
-        <span className="shrink-0 text-2xs text-muted-foreground">You answered</span>
       ) : null}
       <span
         title={segmentsToText({ segments })}

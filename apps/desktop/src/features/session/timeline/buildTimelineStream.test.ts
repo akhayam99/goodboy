@@ -1635,7 +1635,7 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
   it('keeps an answered question in the stream by default', () => {
     const { items } = stream({ agents: ASKER_AGENTS, questions: [answeredQuestion] });
 
-    expect(items.map(labelOf)).toContain('step:answer:agent:asker:question-1');
+    expect(items.map(labelOf)).toContain('entry:question:question-1');
   });
 
   it('drops answered questions from the stream when questions are hidden', () => {
@@ -1645,7 +1645,7 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
       showQuestions: false,
     });
 
-    expect(items.map(labelOf)).not.toContain('step:answer:agent:asker:question-1');
+    expect(items.map(labelOf)).not.toContain('entry:question:question-1');
     expect(items.map(labelOf)).toContain('entry:agent:asker');
   });
 
@@ -1698,5 +1698,251 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
     const pendingChild = items.find((item) => item.id === 'agent:sub-3');
 
     expect(pendingChild?.kind === 'row' ? pendingChild.at : 'missing').toBeNull();
+  });
+});
+
+describe('buildTimelineStream, question artifact rows', () => {
+  type QuestionFixtureParams = {
+    readonly id: string;
+    readonly createdByAgentId?: string;
+    readonly createdAt: string;
+  };
+
+  const openQuestionFor = ({
+    id,
+    createdByAgentId,
+    createdAt,
+  }: QuestionFixtureParams): OpenQuestion => ({
+    id: typedString<OpenQuestionId>({ value: id }),
+    sessionId: SESSION_ID,
+    ...(createdByAgentId != null
+      ? { createdByAgentId: typedString<AgentId>({ value: createdByAgentId }) }
+      : {}),
+    text: id,
+    suggestedAnswers: [],
+    userAnswer: null,
+    status: 'open',
+    createdAt: typedString<IsoDateTime>({ value: createdAt }),
+  });
+
+  const answeredQuestionFor = ({
+    id,
+    createdByAgentId,
+    createdAt,
+    answeredAt,
+  }: QuestionFixtureParams & { readonly answeredAt: string }): OpenQuestion => ({
+    ...openQuestionFor({ id, createdByAgentId, createdAt }),
+    status: 'answered',
+    userAnswer: 'yes',
+    answeredAt: typedString<IsoDateTime>({ value: answeredAt }),
+  });
+
+  const CHAIN_AGENTS: ReadonlyArray<Agent> = [
+    agent({ id: 'planner', ordinal: 0, startedAt: localIso({ day: 18, hour: 9 }) }),
+    agent({
+      id: 'implementer',
+      ordinal: 1,
+      parentAgentId: 'planner',
+      startedAt: localIso({ day: 18, hour: 10 }),
+    }),
+  ];
+
+  it('lands a chain-root-authored question in the root lane, same as a plan artifact', () => {
+    const { items } = stream({
+      agents: CHAIN_AGENTS,
+      questions: [
+        openQuestionFor({
+          id: 'root-question',
+          createdByAgentId: 'planner',
+          createdAt: localIso({ day: 18, hour: 11 }),
+        }),
+      ],
+    });
+    const root = items.find((item) => item.kind === 'row' && item.id === 'agent:planner');
+    const questionRow = items.find(
+      (item) => item.kind === 'row' && item.id === 'question:root-question',
+    );
+
+    expect(questionRow?.groupId).toBe('lane:agent:planner');
+    expect(questionRow?.kind === 'row' ? questionRow.identity : null).toEqual(
+      root?.kind === 'row' ? root.identity : null,
+    );
+  });
+
+  it('bubbles a question authored by a descendant up to the chain root lane', () => {
+    const { items } = stream({
+      agents: CHAIN_AGENTS,
+      questions: [
+        openQuestionFor({
+          id: 'child-question',
+          createdByAgentId: 'implementer',
+          createdAt: localIso({ day: 18, hour: 11 }),
+        }),
+      ],
+    });
+    const questionRow = items.find(
+      (item) => item.kind === 'row' && item.id === 'question:child-question',
+    );
+
+    expect(questionRow?.groupId).toBe('lane:agent:planner');
+  });
+
+  it('lands a run-step-authored question in the run lane', () => {
+    const { items } = stream({
+      workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
+      agents: [
+        agent({
+          id: 'implement',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+      questions: [
+        answeredQuestionFor({
+          id: 'run-question',
+          createdByAgentId: 'implement',
+          createdAt: localIso({ day: 18, hour: 9, minute: 30 }),
+          answeredAt: localIso({ day: 18, hour: 9, minute: 45 }),
+        }),
+      ],
+    });
+    const run = items.find((item) => item.kind === 'row' && item.id === 'run:run-1');
+    const questionRow = items.find(
+      (item) => item.kind === 'row' && item.id === 'question:run-question',
+    );
+
+    expect(questionRow?.groupId).toBe('lane:run:run-1');
+    expect(questionRow?.kind === 'row' ? questionRow.identity : null).toEqual(
+      run?.kind === 'row' ? run.identity : null,
+    );
+  });
+
+  it('keeps a question with no resolvable author on the spine', () => {
+    const { items } = stream({
+      agents: [agent({ id: 'unrelated', ordinal: 0, startedAt: localIso({ day: 18, hour: 9 }) })],
+      questions: [
+        openQuestionFor({ id: 'orphan-question', createdAt: localIso({ day: 18, hour: 11 }) }),
+      ],
+    });
+    const questionRow = items.find(
+      (item) => item.kind === 'row' && item.id === 'question:orphan-question',
+    );
+
+    expect(questionRow?.groupId).toBeNull();
+    expect(questionRow?.kind === 'row' ? questionRow.identity : 'missing').toBeNull();
+  });
+
+  it('coalesces consecutive open questions from the same lane into one row', () => {
+    const { items } = stream({
+      agents: CHAIN_AGENTS,
+      questions: [
+        openQuestionFor({
+          id: 'first-question',
+          createdByAgentId: 'planner',
+          createdAt: localIso({ day: 18, hour: 11 }),
+        }),
+        openQuestionFor({
+          id: 'second-question',
+          createdByAgentId: 'planner',
+          createdAt: localIso({ day: 18, hour: 11, minute: 30 }),
+        }),
+      ],
+    });
+    const questionRows = items.filter(
+      (item) => item.kind === 'row' && item.entry.kind === 'question',
+    );
+    const [row] = questionRows;
+
+    expect(questionRows).toHaveLength(1);
+    expect(
+      row?.kind === 'row' && row.entry.kind === 'question' ? row.entry.questions.length : 0,
+    ).toBe(2);
+  });
+
+  it('keeps an open cluster and a consumed cluster from the same lane on separate rows', () => {
+    const { items } = stream({
+      agents: CHAIN_AGENTS,
+      questions: [
+        openQuestionFor({
+          id: 'open-question',
+          createdByAgentId: 'planner',
+          createdAt: localIso({ day: 18, hour: 11 }),
+        }),
+        answeredQuestionFor({
+          id: 'answered-question',
+          createdByAgentId: 'planner',
+          createdAt: localIso({ day: 18, hour: 11, minute: 15 }),
+          answeredAt: localIso({ day: 18, hour: 11, minute: 20 }),
+        }),
+      ],
+    });
+    const questionRows = items.filter(
+      (item) => item.kind === 'row' && item.entry.kind === 'question',
+    );
+
+    expect(questionRows).toHaveLength(2);
+  });
+
+  it('breaks the coalesced run when another row lands between two questions', () => {
+    const { items } = stream({
+      agents: [
+        agent({ id: 'planner', ordinal: 0, startedAt: localIso({ day: 18, hour: 9 }) }),
+        agent({
+          id: 'implementer',
+          ordinal: 1,
+          parentAgentId: 'planner',
+          startedAt: localIso({ day: 18, hour: 12 }),
+        }),
+      ],
+      questions: [
+        openQuestionFor({
+          id: 'first-question',
+          createdByAgentId: 'planner',
+          createdAt: localIso({ day: 18, hour: 11 }),
+        }),
+        openQuestionFor({
+          id: 'second-question',
+          createdByAgentId: 'planner',
+          createdAt: localIso({ day: 18, hour: 13 }),
+        }),
+      ],
+    });
+    const questionRows = items.filter(
+      (item) => item.kind === 'row' && item.entry.kind === 'question',
+    );
+
+    expect(questionRows).toHaveLength(2);
+  });
+
+  it('breaks the coalesced run across a day boundary', () => {
+    const { items } = stream({
+      agents: [
+        agent({ id: 'planner', ordinal: 0, startedAt: localIso({ day: 17, hour: 9 }) }),
+        agent({
+          id: 'implementer',
+          ordinal: 1,
+          parentAgentId: 'planner',
+          startedAt: localIso({ day: 17, hour: 10 }),
+        }),
+      ],
+      questions: [
+        openQuestionFor({
+          id: 'yesterday-question',
+          createdByAgentId: 'planner',
+          createdAt: localIso({ day: 17, hour: 23 }),
+        }),
+        openQuestionFor({
+          id: 'today-question',
+          createdByAgentId: 'planner',
+          createdAt: localIso({ day: 18, hour: 1 }),
+        }),
+      ],
+    });
+    const questionRows = items.filter(
+      (item) => item.kind === 'row' && item.entry.kind === 'question',
+    );
+
+    expect(questionRows).toHaveLength(2);
   });
 });

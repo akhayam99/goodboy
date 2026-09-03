@@ -8,6 +8,7 @@ export {
   useSessionLastTurnFinishedAt,
   useMountDiffStats,
   useSessionAnsweredQuestions,
+  useSessionDismissedQuestions,
   useSessionById,
   useSessionCost,
   useSessionLoading,

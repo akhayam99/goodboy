@@ -609,6 +609,15 @@ export const useSessionAnsweredQuestions = (
       : EMPTY_OPEN_QUESTIONS,
   );
 
+export const useSessionDismissedQuestions = (
+  sessionId: SessionId | null,
+): ReadonlyArray<OpenQuestion> =>
+  useAppStore((s) =>
+    sessionId
+      ? (s.sessionDismissedQuestions[sessionId] ?? EMPTY_OPEN_QUESTIONS)
+      : EMPTY_OPEN_QUESTIONS,
+  );
+
 const IDLE_STATUS: SummarizerSessionStatus = {
   status: 'idle',
   lastUpdate: null,
