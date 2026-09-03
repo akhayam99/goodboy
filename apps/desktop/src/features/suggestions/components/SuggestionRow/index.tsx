@@ -40,7 +40,7 @@ export const SuggestionRow = ({
   const Icon = ICONS[suggestion.kind];
   return (
     <div
-      data-testid={`suggestion-${suggestion.kind}`}
+      data-testid={`suggestion-${suggestion.id}`}
       className={cn(
         'flex w-full items-center gap-3 border border-border-soft bg-surface-raised',
         size === 'row' && 'rounded-lg px-3 py-1.5',

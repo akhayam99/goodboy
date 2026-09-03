@@ -113,4 +113,37 @@ describe('deriveSessionSuggestions', () => {
       suggestions.find((suggestion) => suggestion.kind === 'resolve-threads')?.payload,
     ).toEqual({ eligibleThreadCount: 1 });
   });
+
+  it('orders equal-priority suggestions by id', () => {
+    const suggestions = deriveSessionSuggestions({
+      sessionId,
+      workflowRuns: [],
+      plans: [],
+      consumedPlanIds: new Set<PlanId>(),
+      openQuestionCount: 0,
+      hasPullRequest: false,
+      threads: [],
+      projects: [
+        {
+          projectId: 'project-z' as ProjectId,
+          projectName: 'Zulu',
+          worktreePath: '/tmp/zulu',
+          baseBranch: 'main',
+          mainDistance: 1,
+        },
+        {
+          projectId: 'project-a' as ProjectId,
+          projectName: 'Alpha',
+          worktreePath: '/tmp/alpha',
+          baseBranch: 'main',
+          mainDistance: 1,
+        },
+      ],
+    });
+
+    expect(suggestions.map((suggestion) => suggestion.id)).toEqual([
+      'rebase-project:project-a',
+      'rebase-project:project-z',
+    ]);
+  });
 });

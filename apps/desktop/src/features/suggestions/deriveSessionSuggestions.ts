@@ -131,5 +131,7 @@ export const deriveSessionSuggestions = ({
       },
     });
   }
-  return suggestions.sort((first, second) => first.priority - second.priority);
+  return suggestions.sort(
+    (first, second) => first.priority - second.priority || first.id.localeCompare(second.id),
+  );
 };

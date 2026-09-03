@@ -16,7 +16,7 @@ export const PlanReadySuggestion = ({ task }: Props) => {
   const [spawning, setSpawning] = useState(false);
 
   const suggestion = suggestions.find((candidate) => candidate.kind === 'plan-ready') ?? null;
-  if (suggestion == null) {
+  if (suggestion == null || suggestion.kind !== 'plan-ready') {
     return null;
   }
 

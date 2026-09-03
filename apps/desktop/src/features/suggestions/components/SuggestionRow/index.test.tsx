@@ -20,6 +20,7 @@ describe('SuggestionRow', () => {
       <SuggestionRow suggestion={suggestion} size={size} actionLabel="Run" onAction={vi.fn()} />,
     );
     expect(screen.getByText('Ship it')).not.toBeNull();
+    expect(screen.getByTestId('suggestion-plan-ready:plan-1')).not.toBeNull();
   });
 
   it('fires its action and optional dismiss', () => {

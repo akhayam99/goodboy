@@ -64,7 +64,7 @@ describe('PlanReadySuggestion', () => {
   it('renders the ready plan with the shared plan concept', () => {
     render(<PlanReadySuggestion task={SESSION} />);
 
-    const suggestion = screen.getByTestId('suggestion-plan-ready');
+    const suggestion = screen.getByTestId('suggestion-plan-ready:plan-1');
     expect(suggestion.className).toContain('rounded-md');
     expect(suggestion.querySelector('.lucide-list-checks')).not.toBeNull();
   });

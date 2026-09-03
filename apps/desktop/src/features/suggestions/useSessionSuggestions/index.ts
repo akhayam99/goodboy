@@ -67,9 +67,13 @@ export const useSessionSuggestions = ({ session, agents }: Params) => {
   return useMemo(() => {
     const pendingThreadIds = new Set(pendingResolutions.map((resolution) => resolution.threadId));
     const consumedPlanIds = new Set<PlanId>();
-    for (const plan of plans) {
+    for (let planIndex = 0; planIndex < plans.length; planIndex += 1) {
+      const plan = plans[planIndex];
+      if (plan == null) {
+        continue;
+      }
       const consumptionAgents = new Set(
-        (planConsumptions[plans.indexOf(plan)] ?? []).map((consumption) => consumption.agentId),
+        (planConsumptions[planIndex] ?? []).map((consumption) => consumption.agentId),
       );
       if (
         effectiveAgents.some(
