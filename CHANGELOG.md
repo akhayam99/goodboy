@@ -7,6 +7,28 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.12
+
+A fix for session overviews freezing the app, and one inbox reading
+work from every connected provider.
+
+### [#1632] Opening a session no longer freezes the app
+
+On v0.2.11, opening a session whose overview suggested a rebase could
+lock the whole app; the overview now stays responsive.
+
+### [#1629] One inbox for every integration
+
+The new Inbox, reachable from the footer, reads work items from every
+connected provider in one surface: GitHub, GitLab, Linear, Jira,
+Sentry, Slack and Bitbucket. The rail carries search, provider chips
+and a kind filter with counts (issues, PRs and MRs, threads, errors)
+over newest-first rows; the detail side keeps each provider's panel,
+so launching a session from a record works exactly as in the studios.
+
+The per-provider studios are untouched; they stop being destinations
+in a later phase.
+
 ## Goodboy v0.2.11
 
 Scripts you can actually read, one home for resolve work, questions that
