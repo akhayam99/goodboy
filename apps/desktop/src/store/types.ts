@@ -316,6 +316,10 @@ export type AppState = AppSliceState & {
   readonly sessionLoading: Readonly<Record<SessionId, SessionLoadingFlags>>;
   readonly boardReady: boolean;
   readonly scriptsLensScope: { readonly projectId: ProjectId } | null;
+  readonly reviewLensIntent: {
+    readonly sessionId: SessionId;
+    readonly agentId: AgentId;
+  } | null;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;

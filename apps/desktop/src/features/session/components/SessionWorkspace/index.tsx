@@ -94,6 +94,25 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     }
   }, [activeLens, sessionId, setActiveLens]);
 
+  useEffect(() => {
+    const onOpenResolverInspector = (event: Event) => {
+      if (!(event instanceof CustomEvent)) {
+        return;
+      }
+      const detail = event.detail as { sessionId?: unknown; agentId?: unknown };
+      if (detail.sessionId !== sessionId || typeof detail.agentId !== 'string') {
+        return;
+      }
+      useAppStore.getState().setReviewLensIntent({
+        intent: { sessionId, agentId: detail.agentId as AgentId },
+      });
+      setActiveLens(sessionId, 'review');
+    };
+    window.addEventListener('goodboy:open-resolver-inspector', onOpenResolverInspector);
+    return () =>
+      window.removeEventListener('goodboy:open-resolver-inspector', onOpenResolverInspector);
+  }, [sessionId, setActiveLens]);
+
   const lens: LensKind | null = activeLens ?? null;
   const surface = resolveLensSurface({ lens });
   const isOverviewLoaded = areAgentsLoaded && arePlansLoaded;

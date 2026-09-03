@@ -66,7 +66,7 @@ export const useTimelineOpen = ({
       if (entry.kind === 'agent') {
         const isResolver = entry.agentKind === 'resolver';
         return {
-          label: isResolver ? 'Open resolve' : 'Open chat',
+          label: isResolver ? 'Open review' : 'Open chat',
           open: () => {
             if (isResolver) {
               store.setActiveLens(sessionId, 'review');

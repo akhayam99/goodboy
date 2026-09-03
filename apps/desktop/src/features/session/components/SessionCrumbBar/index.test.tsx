@@ -132,7 +132,7 @@ const resetState = () => {
     agentKindOverride: {},
     resolverState: {},
     sessionPendingResolutions: {},
-    sessionReviewdThreads: {},
+    sessionResolvedThreads: {},
     sessionGithub: {},
     phaseTemplates: { 'workspace-1': [{ id: 'workflow-1', name: 'refactor', steps: [] }] },
     sessionWorkflows: { [SESSION_ID]: [] },

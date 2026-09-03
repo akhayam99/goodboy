@@ -150,6 +150,7 @@ export const NON_SESSION_STATE_KEYS = [
   'openQuestionScrollTarget',
   'boardReady',
   'scriptsLensScope',
+  'reviewLensIntent',
   'sessionViewPrefs',
   'updaterStatus',
   'updateVersion',
