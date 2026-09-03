@@ -7,6 +7,56 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.11
+
+Scripts you can actually read, one home for resolve work, questions that
+stay on the timeline after you answer them, and a single engine deciding
+what to suggest next. Plus a cost fix that matters.
+
+### [#1623] The Scripts page grows a hierarchy
+
+The wall of wrapping project chips becomes one scrollable row of tabs
+with counts. User scripts group per project under collapsible headers,
+manifest packages collapse by default with the root package open, each
+header naming its package manager and script count, and a search box
+filters both sections while auto-expanding whatever matches. Running
+scripts pulse, and the topbar counter now also counts scripts still
+running in archived sessions.
+
+### [#1625] [#1627] Resolve moves into the review board
+
+The review lens is now the one home for resolve work: Review, Threads
+and Resolvers tabs cover drafts and diff, thread triage with single,
+batch and combined resolver spawns, resolver lanes and the batch push
+of queued resolutions. The GitHub Studio Resolve tab, the resolve lens
+and their duplicated triage lists are gone; old links land on the
+review lens, the board's draft-comments chip finally opens it, and
+amend/squash live in the diff lens where commits are.
+
+### [#1624] Questions stay on the timeline
+
+Open questions used to vanish from the session timeline the moment you
+answered them. They now render as artifacts in the asking agent's lane,
+colored like the rest of its chain, coalescing consecutive rows the way
+context changes already do, and staying visible after consumption with
+their answered or dismissed state.
+
+### [#1626] One suggester to rule the next step
+
+Overview next steps, the composer's plan-ready card and the sidebar
+nudge now come from a single suggestion engine with one ranking:
+questions to answer first, then a workflow step ready to start, a plan
+ready to run, review threads worth resolving, and branches behind main
+worth rebasing. Same look everywhere, same predicates, no more two
+opinions about whether a plan is ready.
+
+### [#1620] The summarizer is locked out of tools
+
+The session summarizer's spawn never disabled built-in tools, so a
+strong model pinned to the summarizer role could wander off exploring
+the repository at your expense instead of summarizing the turn. The
+spawn is now locked down, matching the planner.
+
 ## Goodboy v0.2.10
 
 Notifications grow up: fewer of them, grouped where they repeat, and an
