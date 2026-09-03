@@ -15,6 +15,10 @@ describe('getModelPrice', () => {
     expect(getModelPrice('claude-sonnet-4-6')).toEqual({ inputPerMtok: 3, outputPerMtok: 15 });
   });
 
+  it('returns dedicated claude sonnet-5 pricing', () => {
+    expect(getModelPrice('claude-sonnet-5')).toEqual({ inputPerMtok: 2, outputPerMtok: 10 });
+  });
+
   it('returns claude haiku pricing', () => {
     expect(getModelPrice('claude-haiku-4-5')).toEqual({ inputPerMtok: 1, outputPerMtok: 5 });
   });

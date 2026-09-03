@@ -34,6 +34,20 @@ describe('computeCostUsd', () => {
     expect(computeCostUsd({ usage, model: 'claude-sonnet-4-6' })).toBeCloseTo(3 + 15);
   });
 
+  it('sonnet-5 has its own price, cheaper than sonnet-4-6', () => {
+    expect(computeCostUsd({ usage, model: 'claude-sonnet-5' })).toBeCloseTo(2 + 10);
+  });
+
+  it('sonnet-5 cached tokens are billed at 10% of input', () => {
+    const partial: ProviderUsage = {
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedInputTokens: 1_000_000,
+      estimatedCostUsd: 0,
+    };
+    expect(computeCostUsd({ usage: partial, model: 'claude-sonnet-5' })).toBeCloseTo(0.2);
+  });
+
   it('sonnet-4-5 is priced as sonnet', () => {
     expect(computeCostUsd({ usage, model: 'claude-sonnet-4-5' })).toBeCloseTo(3 + 15);
   });
