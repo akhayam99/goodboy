@@ -109,6 +109,13 @@ const rail = () => screen.getByRole('navigation', { name: 'Script projects' });
 
 const manifestSection = () => screen.getByRole('region', { name: 'Manifest scripts' });
 
+const manifestRail = () => screen.getByRole('navigation', { name: 'Manifest packages' });
+
+const headings = () =>
+  Array.from(manifestSection().querySelectorAll('span[role="heading"]')).map(
+    (heading) => heading.textContent,
+  );
+
 const searchBox = () => screen.getByRole('searchbox', { name: 'Search scripts' });
 
 beforeEach(() => {
@@ -287,7 +294,7 @@ describe('ScriptsPanel', () => {
     expect(within(rail()).queryByRole('img', { name: 'Running script in API' })).toBeNull();
   });
 
-  it('keeps the root package open and workspace packages collapsed', () => {
+  it('lists manifests in a rail, root first, and shows the selected one', () => {
     state.discoveredScripts = {
       'session-1': {
         '/tmp/api': [
@@ -318,20 +325,78 @@ describe('ScriptsPanel', () => {
 
     renderPanel();
 
-    const packages = Array.from(manifestSection().querySelectorAll('span[role="heading"]'));
-    expect(packages.map((heading) => heading.textContent)).toEqual([
-      'root',
-      '@acme/web',
-      'acme/api',
+    const packages = within(manifestRail()).getAllByRole('button');
+    expect(packages.map((row) => row.textContent)).toEqual([
+      expect.stringContaining('root'),
+      expect.stringContaining('@acme/web'),
+      expect.stringContaining('acme/api'),
     ]);
+    expect(packages[0]?.getAttribute('aria-current')).toBe('true');
+    expect(headings()).toEqual(['root']);
+
+    fireEvent.click(within(manifestRail()).getByRole('button', { name: /@acme\/web/ }));
+
+    expect(headings()).toEqual(['@acme/web']);
     expect(
-      within(manifestSection()).getByRole('button', { name: /root/ }).getAttribute('aria-expanded'),
-    ).toBe('true');
-    expect(
-      within(manifestSection())
+      within(manifestRail())
         .getByRole('button', { name: /@acme\/web/ })
-        .getAttribute('aria-expanded'),
-    ).toBe('false');
+        .getAttribute('aria-current'),
+    ).toBe('true');
+  });
+
+  it('remembers the manifest picked for each project', () => {
+    withTwoProjects();
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
+          {
+            source: 'package-json',
+            packageName: 'root',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [{ name: 'build', command: 'pnpm run build' }],
+          },
+          {
+            source: 'package-json',
+            packageName: '@acme/web',
+            relDir: 'apps/web',
+            manager: 'pnpm',
+            scripts: [{ name: 'dev', command: 'pnpm run dev' }],
+          },
+        ],
+      },
+    };
+
+    renderPanel();
+
+    fireEvent.click(within(manifestRail()).getByRole('button', { name: /@acme\/web/ }));
+    expect(headings()).toEqual(['@acme/web']);
+
+    fireEvent.click(within(rail()).getByRole('button', { name: /Web/ }));
+    fireEvent.click(within(rail()).getByRole('button', { name: /API/ }));
+
+    expect(headings()).toEqual(['@acme/web']);
+  });
+
+  it('hides the manifest rail when a project has a single manifest', () => {
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
+          {
+            source: 'package-json',
+            packageName: 'api',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [{ name: 'dev', command: 'pnpm run dev' }],
+          },
+        ],
+      },
+    };
+
+    renderPanel();
+
+    expect(screen.queryByRole('navigation', { name: 'Manifest packages' })).toBeNull();
+    expect(headings()).toEqual(['api']);
   });
 
   it('summarises a package with a category strip and groups its scripts by category', () => {
@@ -399,7 +464,6 @@ describe('ScriptsPanel', () => {
       sessionId: 'session-1',
       worktreePath: '/tmp/api',
     });
-    fireEvent.click(within(manifestSection()).getByRole('button', { name: /@acme\/web/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Run dev' }));
 
     expect(state.runDiscoveredScript).toHaveBeenCalledWith(
@@ -511,6 +575,13 @@ describe('ScriptsPanel', () => {
         '/tmp/api': [
           {
             source: 'package-json',
+            packageName: 'root',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [{ name: 'build', command: 'pnpm run build' }],
+          },
+          {
+            source: 'package-json',
             packageName: '@acme/web',
             relDir: 'apps/web',
             manager: 'pnpm',
@@ -522,24 +593,24 @@ describe('ScriptsPanel', () => {
 
     renderPanel();
 
+    expect(headings()).toEqual(['root']);
     fireEvent.change(searchBox(), { target: { value: 'deploy' } });
 
     expect(screen.getByText('deploy user')).toBeDefined();
     expect(screen.queryByText('lint user')).toBeNull();
-    expect(
-      within(manifestSection())
-        .getByRole('button', { name: /@acme\/web/ })
-        .getAttribute('aria-expanded'),
-    ).toBe('true');
+    expect(headings()).toEqual(['@acme/web']);
     expect(screen.getByText('deploy manifest')).toBeDefined();
+    expect(within(manifestRail()).getByText('1 match')).toBeDefined();
+    expect(within(manifestRail()).getByText('0 matches')).toBeDefined();
+    expect(
+      within(manifestRail())
+        .getByRole('button', { name: /@acme\/web/ })
+        .getAttribute('aria-current'),
+    ).toBe('true');
     expect(within(rail()).getByText('1 match')).toBeDefined();
 
     fireEvent.keyDown(searchBox(), { key: 'Escape' });
-    expect(
-      within(manifestSection())
-        .getByRole('button', { name: /@acme\/web/ })
-        .getAttribute('aria-expanded'),
-    ).toBe('false');
+    expect(headings()).toEqual(['root']);
     expect(screen.getByText('lint user')).toBeDefined();
   });
 
