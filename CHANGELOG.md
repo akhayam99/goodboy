@@ -24,6 +24,15 @@ a project is materialized only to write to it. A mount the goal does
 not name is no longer created on the spot: it becomes a suggestion you
 approve or dismiss, and at most two mounts happen per turn.
 
+### [#1646] One icon language
+
+Projects, mounts, worktrees, run states and the common actions
+(archive, delete, rename, restore, open outside) now share one glyph
+each across the app, glyph sizes come from three tokens instead of
+scattered numbers, session stages and suggestions read the same icon
+map everywhere, and the footer integration strip is muted for
+providers that are not connected.
+
 ### [#1644] Session switch off the main thread
 
 Opening a session froze the window for three to four seconds. Git and
