@@ -118,7 +118,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, status }: Props) => {
         <button
           type="button"
           disabled={!rebase.canRebase || rebase.isRunning}
-          onClick={() => void targetProject({ action: rebase.run })}
+          onClick={() => void targetProject({ action: () => rebase.run({ projectId }) })}
           className={cn(
             'flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/40',
             (!rebase.canRebase || rebase.isRunning) && 'opacity-40',

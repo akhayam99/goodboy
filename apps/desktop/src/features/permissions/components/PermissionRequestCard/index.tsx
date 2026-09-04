@@ -7,6 +7,7 @@ import { PermissionScopePicker } from '../PermissionScopePicker';
 import { formatCardTime } from '../../../chat/utils/format-card-time';
 import { TranscriptShell } from '../../../chat/components/TranscriptShell';
 import { formatRequestInput } from './formatRequestInput';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const warningTint = tintClasses('warning');
 const resolvedTint = tintClasses('success');
@@ -33,7 +34,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
       className="flex flex-col gap-2 text-xs"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <ShieldAlert size={14} aria-hidden className={warningTint.icon} />
+        <ShieldAlert size={ICON_SIZE.control} aria-hidden className={warningTint.icon} />
         <span className="rounded-md bg-background px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
           approval needed
         </span>

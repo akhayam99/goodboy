@@ -24,6 +24,7 @@ type Props = {
   readonly onClose: () => void;
   readonly onClearFilters: () => void;
   readonly onOpenIntegrations: () => void;
+  readonly launchFocusRequest: number;
 };
 
 export const InboxDetail = ({
@@ -38,6 +39,7 @@ export const InboxDetail = ({
   onClose,
   onClearFilters,
   onOpenIntegrations,
+  launchFocusRequest,
 }: Props) => {
   const sentryIssueId = record?.payload.provider === 'sentry' ? record.payload.issue.id : null;
   const sentryDetail = useSentryIssueDetail({ workspaceId, issueId: sentryIssueId });
@@ -61,7 +63,14 @@ export const InboxDetail = ({
         <GithubIssueDetail
           issue={payload.issue}
           editContext={{ workspaceId, rootPath }}
-          dock={<RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />}
+          dock={
+            <RecordLaunchDock
+              record={record}
+              workspaceId={workspaceId}
+              onClose={onClose}
+              focusRequest={launchFocusRequest}
+            />
+          }
         />
       );
     case 'gitlab':
@@ -72,7 +81,12 @@ export const InboxDetail = ({
               issue={payload.issue}
               workspaceId={workspaceId}
               dock={
-                <RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />
+                <RecordLaunchDock
+                  record={record}
+                  workspaceId={workspaceId}
+                  onClose={onClose}
+                  focusRequest={launchFocusRequest}
+                />
               }
             />
           );
@@ -85,7 +99,12 @@ export const InboxDetail = ({
               onRefresh={onRefresh}
               onClose={onClose}
               dock={
-                <RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />
+                <RecordLaunchDock
+                  record={record}
+                  workspaceId={workspaceId}
+                  onClose={onClose}
+                  focusRequest={launchFocusRequest}
+                />
               }
             />
           );
@@ -99,7 +118,14 @@ export const InboxDetail = ({
         <LinearIssueDetail
           issue={payload.issue}
           workspaceId={workspaceId}
-          dock={<RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />}
+          dock={
+            <RecordLaunchDock
+              record={record}
+              workspaceId={workspaceId}
+              onClose={onClose}
+              focusRequest={launchFocusRequest}
+            />
+          }
         />
       );
     case 'jira':
@@ -108,7 +134,14 @@ export const InboxDetail = ({
           issue={payload.issue}
           workspaceId={workspaceId}
           onIssueWritten={onRefresh}
-          dock={<RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />}
+          dock={
+            <RecordLaunchDock
+              record={record}
+              workspaceId={workspaceId}
+              onClose={onClose}
+              focusRequest={launchFocusRequest}
+            />
+          }
         />
       );
     case 'sentry':
@@ -130,7 +163,14 @@ export const InboxDetail = ({
           summaryIsLoading={false}
           summaryError={null}
           onRetrySummary={() => undefined}
-          dock={<RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />}
+          dock={
+            <RecordLaunchDock
+              record={record}
+              workspaceId={workspaceId}
+              onClose={onClose}
+              focusRequest={launchFocusRequest}
+            />
+          }
         />
       );
     case 'slack':
@@ -142,7 +182,14 @@ export const InboxDetail = ({
           fallbackChannelName={payload.channel.name}
           fallbackMessage={payload.head}
           fallbackUrl={record.url}
-          dock={<RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />}
+          dock={
+            <RecordLaunchDock
+              record={record}
+              workspaceId={workspaceId}
+              onClose={onClose}
+              focusRequest={launchFocusRequest}
+            />
+          }
         />
       );
     case 'bitbucket':
@@ -156,7 +203,14 @@ export const InboxDetail = ({
           error={errors.bitbucket}
           onRefresh={onRefresh}
           onClose={onClose}
-          dock={<RecordLaunchDock record={record} workspaceId={workspaceId} onClose={onClose} />}
+          dock={
+            <RecordLaunchDock
+              record={record}
+              workspaceId={workspaceId}
+              onClose={onClose}
+              focusRequest={launchFocusRequest}
+            />
+          }
         />
       );
     default: {

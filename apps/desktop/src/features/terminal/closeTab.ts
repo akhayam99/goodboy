@@ -1,4 +1,4 @@
-import { clearTerminalCache } from '../../shared/components/GenericTerminalPanel';
+import { clearTerminalCache } from '../../shared/components/GenericTerminalPanel/outputCache';
 import type { TerminalTabId } from '../../shared/types/terminal';
 import { invokeTerminalClose } from './terminal';
 

@@ -40,7 +40,7 @@ const materializeLine = ({ isBridgeServing }: MaterializeLineParams): string => 
   if (!isBridgeServing) {
     return `${marker} After emitting the marker, end your turn. The mount is ready on the next one.`;
   }
-  return `${marker} For an immediate mount, run \`"$GOODBOY_BIN" query project materialize <name> --reason "<why you need it>"\`; it prints the mount path and branch.`;
+  return `${marker} For an immediate mount, run \`"$GOODBOY_BIN" query project materialize <name> --reason "<why you need it>"\`; it prints the mount path and branch, or tells you the mount was deferred to the owner.`;
 };
 
 const WRITE_BOUNDARY_LINE =

@@ -14,7 +14,7 @@ import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { StudioWidget } from '@goodboy/ui';
 import { sortTurns, type SortKey, type WorkspaceTurn } from './lib';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SortChip } from './SortChip';
 
 type Props = {
@@ -141,7 +141,7 @@ export const TurnsTable = ({
                           onClick={() => onOpenSession(sessionId)}
                           className="inline-flex size-5 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] group-hover:opacity-100"
                         >
-                          <ArrowUpRight size={12} aria-hidden />
+                          <ArrowUpRight size={ICON_SIZE.row} aria-hidden />
                         </button>
                       </Tooltip>
                     </td>

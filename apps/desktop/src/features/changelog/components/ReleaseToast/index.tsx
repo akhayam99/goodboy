@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { useInstalledVersion } from '../../hooks/useInstalledVersion';
 import { useUnseenRelease } from '../../hooks/useUnseenRelease';
@@ -26,7 +26,11 @@ export const ReleaseToast = ({ onOpenChangelog }: Props) => {
       data-testid="release-toast"
       className="fixed bottom-12 right-3 z-toast flex max-w-96 items-start gap-3 rounded-lg border border-accent/25 bg-elevated px-3 py-3 shadow-lg"
     >
-      <CONCEPT_ICONS.changelog size={16} aria-hidden className="mt-px shrink-0 text-accent" />
+      <CONCEPT_ICONS.changelog
+        size={ICON_SIZE.control}
+        aria-hidden
+        className="mt-px shrink-0 text-accent"
+      />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold leading-snug text-foreground">
           {installedVersion != null ? `Updated to ${installedVersion}` : 'Update installed'}
@@ -52,7 +56,7 @@ export const ReleaseToast = ({ onOpenChangelog }: Props) => {
           onClick={() => setDismissed(true)}
           className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 hover:bg-muted hover:text-foreground"
         >
-          <X size={13} aria-hidden />
+          <X size={ICON_SIZE.row} aria-hidden />
         </button>
       </Tooltip>
     </div>

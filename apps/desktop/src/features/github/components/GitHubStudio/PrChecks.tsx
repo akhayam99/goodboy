@@ -11,7 +11,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { formatDuration } from '../../utils/format-duration';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { checksRollup } from './checksRollup';
 
 type Props = {
@@ -33,7 +33,7 @@ export const PrChecks = ({ checks, fallbackUrl, hostLabel, onOpenUrl }: Props) =
         action={
           <Button variant="ghost" size="sm" onClick={() => onOpenUrl(fallbackUrl)}>
             View checks on {hostLabel}
-            <ExternalLink size={12} aria-hidden />
+            <ExternalLink size={ICON_SIZE.row} aria-hidden />
           </Button>
         }
       />

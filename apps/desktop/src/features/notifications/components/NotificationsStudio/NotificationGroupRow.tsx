@@ -4,6 +4,7 @@ import type { Notification } from '@goodboy/db';
 import { StatusDot, Tooltip, cn } from '@goodboy/ui';
 import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { NOTIFICATION_SEVERITY } from '../../severity';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly notifications: ReadonlyArray<Notification>;
@@ -51,7 +52,7 @@ export const NotificationGroupRow = ({
                 className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <ChevronRight
-                  size={13}
+                  size={ICON_SIZE.row}
                   className={cn('transition-transform', isExpanded && 'rotate-90')}
                   aria-hidden
                 />
@@ -116,7 +117,7 @@ export const NotificationGroupRow = ({
                   aria-label={`Mark "${latest.title}" group as read`}
                   className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
-                  <Check size={12} aria-hidden />
+                  <Check size={ICON_SIZE.row} aria-hidden />
                 </button>
               </Tooltip>
             ) : null}
@@ -127,7 +128,7 @@ export const NotificationGroupRow = ({
                 aria-label={`Dismiss "${latest.title}" group`}
                 className="rounded p-1 text-muted-foreground hover:bg-danger/10 hover:text-danger"
               >
-                <Trash2 size={12} aria-hidden />
+                <Trash2 size={ICON_SIZE.row} aria-hidden />
               </button>
             </Tooltip>
           </span>

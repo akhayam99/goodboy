@@ -10,7 +10,7 @@ import { ProviderConnect } from '../ProviderConnect';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 import { ApiProviderDetail } from './ApiProviderDetail';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 
 type Props = {
@@ -89,7 +89,7 @@ function Detail({
           onClick={() => void onRefresh()}
           className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
         >
-          <RotateCw size={14} aria-hidden />
+          <RotateCw size={ICON_SIZE.control} aria-hidden />
         </button>
       </Tooltip>
     </div>

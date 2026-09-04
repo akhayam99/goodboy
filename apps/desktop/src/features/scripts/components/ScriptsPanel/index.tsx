@@ -27,6 +27,7 @@ import { readScriptsProject, writeScriptsProject } from '../../projectSelectionS
 import { discoveredScriptId, type ScriptGroup as ManifestScriptGroup } from '../../scripts';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
 import { DiscoveredScriptGroup } from './DiscoveredScriptGroup';
+import { ManifestRail, type ManifestRailEntry } from './ManifestRail';
 import { ManifestSearchInput } from './ManifestSearchInput';
 import { NewScriptCard } from './NewScriptCard';
 import { ProjectRail, type ProjectRailEntry } from './ProjectRail';
@@ -109,6 +110,10 @@ type SelectProjectParams = {
   readonly projectId: ProjectId;
 };
 
+type SelectManifestParams = {
+  readonly key: string;
+};
+
 type SearchTarget = {
   readonly name: string;
   readonly command: string;
@@ -155,6 +160,9 @@ const initialProject = ({
   }
   return projects[0]?.id ?? null;
 };
+
+const manifestKey = ({ group }: { readonly group: ManifestScriptGroup }): string =>
+  `${group.source}:${group.relDir}`;
 
 const shortenPath = ({ path }: ShortenPathParams): string => {
   const parts = path.split(/[\\/]/).filter((part) => part !== '');
@@ -239,7 +247,9 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
   const [copiedId, setCopiedId] = useState<ProjectScriptId | null>(null);
   const [completedAt, setCompletedAt] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState('');
-  const [manifestGroupOpen, setManifestGroupOpen] = useState<Record<string, boolean>>({});
+  const [manifestKeyByProject, setManifestKeyByProject] = useState<
+    Readonly<Partial<Record<ProjectId, string>>>
+  >({});
 
   const selectedProject =
     selectedProjectId == null ? null : (projectById.get(selectedProjectId) ?? null);
@@ -264,36 +274,31 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
       }),
     [list, matchesSearch, selectedProjectId],
   );
-  const selectedDiscoveredGroups = useMemo<ReadonlyArray<DiscoveredGroupEntry>>(() => {
+  const manifestGroups = useMemo<ReadonlyArray<ManifestScriptGroup>>(() => {
     if (selectedMount === null) {
       return [];
     }
-    const groups = [...(discoveredScripts?.[selectedMount.worktreePath] ?? [])].sort(
-      (left, right) => {
-        if (left.source !== right.source) {
-          return left.source === 'composer' ? 1 : -1;
-        }
-        const leftRoot = left.relDir === '';
-        const rightRoot = right.relDir === '';
-        if (leftRoot !== rightRoot) {
-          return leftRoot ? -1 : 1;
-        }
-        return left.relDir.localeCompare(right.relDir);
-      },
-    );
-    return groups.flatMap((group) => {
-      const matchingScripts = group.scripts.filter((script) => matchesSearch(script));
-      if (matchingScripts.length === 0) {
-        return [];
+    return [...(discoveredScripts?.[selectedMount.worktreePath] ?? [])].sort((left, right) => {
+      if (left.source !== right.source) {
+        return left.source === 'composer' ? 1 : -1;
       }
-      return [
-        {
-          group: { ...group, scripts: matchingScripts },
-          worktreePath: selectedMount.worktreePath,
-        },
-      ];
+      const leftRoot = left.relDir === '';
+      const rightRoot = right.relDir === '';
+      if (leftRoot !== rightRoot) {
+        return leftRoot ? -1 : 1;
+      }
+      return left.relDir.localeCompare(right.relDir);
     });
-  }, [discoveredScripts, matchesSearch, selectedMount]);
+  }, [discoveredScripts, selectedMount]);
+  const filteredManifestGroups = useMemo<ReadonlyArray<DiscoveredGroupEntry>>(() => {
+    if (selectedMount === null) {
+      return [];
+    }
+    return manifestGroups.map((group) => ({
+      group: { ...group, scripts: group.scripts.filter((script) => matchesSearch(script)) },
+      worktreePath: selectedMount.worktreePath,
+    }));
+  }, [manifestGroups, matchesSearch, selectedMount]);
   const userScriptsByProjectId = useMemo(() => {
     const index = new Map<ProjectId, Array<ProjectScript>>();
     for (const script of list) {
@@ -371,10 +376,52 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
       userScriptsByProjectId,
     ],
   );
-  const selectedManifestCount = selectedDiscoveredGroups.reduce(
+  const manifestEntries = useMemo<ReadonlyArray<ManifestRailEntry>>(() => {
+    if (selectedMount === null) {
+      return [];
+    }
+    return manifestGroups.map((group, index) => ({
+      key: manifestKey({ group }),
+      source: group.source,
+      packageName: group.packageName,
+      relDir: group.relDir,
+      manager: group.manager,
+      scriptCount: group.scripts.length,
+      matchCount: filteredManifestGroups[index]?.group.scripts.length ?? 0,
+      isRunning:
+        pendingScriptIds.size > 0 &&
+        group.scripts.some((script) =>
+          pendingScriptIds.has(
+            discoveredScriptId({
+              worktreePath: selectedMount.worktreePath,
+              source: group.source,
+              relDir: group.relDir,
+              name: script.name,
+            }),
+          ),
+        ),
+    }));
+  }, [filteredManifestGroups, manifestGroups, pendingScriptIds, selectedMount]);
+  const storedManifestKey =
+    selectedProjectId === null ? null : (manifestKeyByProject[selectedProjectId] ?? null);
+  const selectedManifestKey =
+    storedManifestKey !== null && manifestEntries.some((entry) => entry.key === storedManifestKey)
+      ? storedManifestKey
+      : (manifestEntries[0]?.key ?? null);
+  const visibleManifestGroups =
+    normalizedQuery === ''
+      ? filteredManifestGroups.filter((entry) => manifestKey(entry) === selectedManifestKey)
+      : filteredManifestGroups.filter((entry) => entry.group.scripts.length > 0);
+  const firstVisibleManifest = visibleManifestGroups[0] ?? null;
+  const railManifestKey =
+    normalizedQuery === '' || firstVisibleManifest === null
+      ? selectedManifestKey
+      : manifestKey(firstVisibleManifest);
+  const selectedManifestCount = filteredManifestGroups.reduce(
     (total, entry) => total + entry.group.scripts.length,
     0,
   );
+  const hasManifestRail = manifestEntries.length > 1;
   const selectedScan =
     selectedMount === null ? undefined : discoveredScriptScans?.[selectedMount.worktreePath];
   const isDiscoveryLoading =
@@ -650,6 +697,16 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
     setError(null);
   }, []);
 
+  const onSelectManifest = useCallback(
+    ({ key }: SelectManifestParams) => {
+      if (selectedProjectId === null) {
+        return;
+      }
+      setManifestKeyByProject((current) => ({ ...current, [selectedProjectId]: key }));
+    },
+    [selectedProjectId],
+  );
+
   const newScriptAction =
     workspaceProjects.length === 0 ? null : (
       <Button variant="ghost" size="sm" onClick={onOpenNew}>
@@ -849,7 +906,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                 {!isDiscoveryLoading &&
                 discoveryError === null &&
                 selectedMount !== null &&
-                selectedDiscoveredGroups.length === 0 &&
+                manifestGroups.length === 0 &&
                 normalizedQuery === '' ? (
                   <p className="text-xs text-muted-foreground">No manifest scripts found.</p>
                 ) : null}
@@ -865,30 +922,34 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                     </button>
                   </div>
                 ) : null}
-                {selectedDiscoveredGroups.map((entry) => {
-                  const groupKey = `${entry.worktreePath}:${entry.group.source}:${entry.group.relDir}`;
-                  const isRoot = entry.group.relDir === '';
-                  return (
-                    <DiscoveredScriptGroup
-                      key={groupKey}
-                      group={entry.group}
-                      worktreePath={entry.worktreePath}
-                      runs={runs}
-                      completedAt={completedAt}
-                      open={
-                        isRoot || normalizedQuery !== '' || (manifestGroupOpen[groupKey] ?? false)
-                      }
-                      onOpenChange={(open) => {
-                        if (isRoot || normalizedQuery !== '') {
-                          return;
-                        }
-                        setManifestGroupOpen((current) => ({ ...current, [groupKey]: open }));
-                      }}
-                      onRun={onRunDiscovered}
-                      onCancel={onCancelDiscovered}
-                    />
-                  );
-                })}
+                {visibleManifestGroups.length > 0 ? (
+                  <div className="flex min-w-0 items-start gap-4">
+                    {hasManifestRail && railManifestKey !== null ? (
+                      <ManifestRail
+                        entries={manifestEntries}
+                        selectedKey={railManifestKey}
+                        hasSearch={normalizedQuery !== ''}
+                        onSelect={(key) => onSelectManifest({ key })}
+                      />
+                    ) : null}
+                    <div className="flex min-w-0 flex-1 flex-col gap-5">
+                      {visibleManifestGroups.map((entry) => (
+                        <DiscoveredScriptGroup
+                          key={manifestKey(entry)}
+                          group={entry.group}
+                          worktreePath={entry.worktreePath}
+                          runs={runs}
+                          completedAt={completedAt}
+                          emptyLabel={
+                            normalizedQuery === '' ? 'No scripts in this manifest.' : null
+                          }
+                          onRun={onRunDiscovered}
+                          onCancel={onCancelDiscovered}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </section>
             ) : null}
           </div>

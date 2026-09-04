@@ -12,7 +12,7 @@ import { DEFAULT_AGENT_SPAWN_CONFIG } from '../../../session/components/AgentSpa
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { type ExploreEntry } from '../../explore';
 import { buildExploreSpawnPrompt } from '../../buildExploreSpawnPrompt';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -113,7 +113,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
           aria-label={`Ask an agent to work on ${entry.name}`}
           className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
         >
-          <CONCEPT_ICONS.agents size={14} aria-hidden />
+          <CONCEPT_ICONS.agents size={ICON_SIZE.control} aria-hidden />
         </button>
       }
     >

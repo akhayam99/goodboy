@@ -75,6 +75,8 @@ type RenderParams = {
   readonly selectedProviders?: ReadonlySet<InboxProvider>;
   readonly selectedKey?: string | null;
   readonly onSelect?: (record: InboxRecord) => void;
+  readonly onActivate?: (record: InboxRecord) => void;
+  readonly onClearFilters?: () => void;
   readonly onToggleProvider?: (provider: InboxProvider) => void;
 };
 
@@ -82,6 +84,8 @@ const renderRail = ({
   selectedProviders = new Set<InboxProvider>(),
   selectedKey = null,
   onSelect = vi.fn(),
+  onActivate = vi.fn(),
+  onClearFilters = vi.fn(),
   onToggleProvider = vi.fn(),
 }: RenderParams = {}) =>
   render(
@@ -96,6 +100,8 @@ const renderRail = ({
       onKindFilterChange={vi.fn()}
       selectedKey={selectedKey}
       onSelect={onSelect}
+      onActivate={onActivate}
+      onClearFilters={onClearFilters}
       isLoading={false}
       errors={[]}
       onRefresh={vi.fn()}
@@ -173,6 +179,39 @@ describe('InboxRail', () => {
 
     fireEvent.keyDown(list, { key: 'Home' });
     expect(onSelect).toHaveBeenLastCalledWith(todayRecord);
+  });
+
+  it('activates the selected record on Enter', () => {
+    const onActivate = vi.fn();
+    const onSelect = vi.fn();
+    renderRail({ selectedKey: 'b', onActivate, onSelect });
+
+    fireEvent.keyDown(screen.getByRole('listbox', { name: 'Inbox items' }), { key: 'Enter' });
+
+    expect(onActivate).toHaveBeenCalledTimes(1);
+    expect(onActivate.mock.calls[0]?.[0]?.key).toBe('b');
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('ignores Enter when nothing is selected', () => {
+    const onActivate = vi.fn();
+    renderRail({ selectedKey: null, onActivate });
+
+    fireEvent.keyDown(screen.getByRole('listbox', { name: 'Inbox items' }), { key: 'Enter' });
+
+    expect(onActivate).not.toHaveBeenCalled();
+  });
+
+  it('offers to clear filters from the rail only once a filter is active', () => {
+    const onClearFilters = vi.fn();
+    const view = renderRail({ onClearFilters });
+    expect(screen.queryByRole('button', { name: 'Clear filters' })).toBeNull();
+    view.unmount();
+
+    renderRail({ selectedProviders: new Set<InboxProvider>(['github']), onClearFilters });
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+
+    expect(onClearFilters).toHaveBeenCalledTimes(1);
   });
 
   it('keeps the list focusable and hints at keyboard navigation', () => {

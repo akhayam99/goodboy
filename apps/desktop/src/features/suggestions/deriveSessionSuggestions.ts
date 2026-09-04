@@ -16,12 +16,30 @@ export type SuggestionPlan = {
   readonly creatorHasOpenQuestions: boolean;
 };
 
+export type SuggestionRebaseRequest = {
+  readonly behind: number | null;
+  readonly baseBranch: string | null;
+  readonly agentStatus: string | null;
+};
+
 export type SuggestionProject = {
   readonly projectId: ProjectId;
   readonly projectName: string;
   readonly worktreePath: string;
   readonly baseBranch: string;
   readonly mainDistance: number | null;
+  readonly rebaseRequest?: SuggestionRebaseRequest | null;
+};
+
+const isRebaseConsumed = ({ project }: { readonly project: SuggestionProject }): boolean => {
+  const request = project.rebaseRequest ?? null;
+  if (request == null || request.agentStatus === 'failed') {
+    return false;
+  }
+  if (request.baseBranch != null && request.baseBranch !== project.baseBranch) {
+    return false;
+  }
+  return request.behind === project.mainDistance;
 };
 
 type Params = {
@@ -120,6 +138,9 @@ export const deriveSessionSuggestions = ({
   }
   for (const project of projects) {
     if (project.mainDistance == null || project.mainDistance <= 0) {
+      continue;
+    }
+    if (isRebaseConsumed({ project })) {
       continue;
     }
     suggestions.push({

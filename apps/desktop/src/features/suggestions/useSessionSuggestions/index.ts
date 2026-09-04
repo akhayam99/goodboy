@@ -1,6 +1,13 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, PlanId, Session, SessionEvent, SessionProjectMount } from '@goodboy/types';
+import type {
+  Agent,
+  PlanId,
+  ProjectId,
+  Session,
+  SessionEvent,
+  SessionProjectMount,
+} from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions, useSessionPlans } from '../../../store';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { workflowHasOpenQuestions } from '../../context/openQuestionsGate';
@@ -9,7 +16,10 @@ import { useAttachedWorkflowRuns } from '../../workflows/useAttachedWorkflowRuns
 import { useWorkflowAdvanceStates } from '../../workflows/useWorkflowAdvanceStates';
 import { useResolverIndex } from '../../session/hooks/useResolverIndex';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
-import { deriveSessionSuggestions } from '../deriveSessionSuggestions';
+import {
+  deriveSessionSuggestions,
+  type SuggestionRebaseRequest,
+} from '../deriveSessionSuggestions';
 import { eligibleReviewThreadCount } from '../eligibleThreads';
 import { toMountEvents } from '../mountProposals';
 
@@ -21,6 +31,31 @@ type Params = {
 
 const NO_TARGETS: ReadonlyArray<{ readonly worktreePath: string; readonly baseBranch?: string }> =
   [];
+
+const latestRebaseRequests = ({
+  events,
+  agents,
+}: {
+  readonly events: ReadonlyArray<SessionEvent>;
+  readonly agents: ReadonlyArray<Agent>;
+}): ReadonlyMap<ProjectId, SuggestionRebaseRequest> => {
+  const requests = new Map<ProjectId, SuggestionRebaseRequest>();
+  const agentsById = new Map(agents.map((agent) => [agent.id as string, agent]));
+  for (const event of events) {
+    const projectId = event.payload?.projectId;
+    if (event.kind !== 'rebase_requested' || projectId == null) {
+      continue;
+    }
+    const agentId = event.payload?.agentId ?? null;
+    const agent = agentId == null ? null : (agentsById.get(agentId) ?? null);
+    requests.set(projectId as ProjectId, {
+      behind: event.payload?.behind ?? null,
+      baseBranch: event.payload?.branch ?? null,
+      agentStatus: agent?.status ?? null,
+    });
+  }
+  return requests;
+};
 
 export const useSessionSuggestions = ({ session, agents, withRebase = true }: Params) => {
   const sessionId = session.id;
@@ -91,6 +126,7 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
         consumedPlanIds.add(plan.id);
       }
     }
+    const rebaseRequests = latestRebaseRequests({ events, agents: effectiveAgents });
     return deriveSessionSuggestions({
       sessionId,
       workflowRuns: active.map(({ run, workflow }) => {
@@ -143,6 +179,7 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
               baseBranch: project?.baseBranch ?? 'main',
               mainDistance:
                 status == null ? null : distanceBehind({ distance: status.mainDistance }),
+              rebaseRequest: rebaseRequests.get(mount.projectId) ?? null,
             };
           })
         : [],

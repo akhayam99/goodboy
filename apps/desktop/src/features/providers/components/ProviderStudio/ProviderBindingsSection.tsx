@@ -3,6 +3,7 @@ import { SectionHeader, Select } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
 import { CLI_CREDENTIAL, isApiProvider, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly providerId: ProviderId;
@@ -48,7 +49,7 @@ export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
                 className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
                 aria-hidden
               >
-                <FolderGit2 size={14} />
+                <FolderGit2 size={ICON_SIZE.control} />
               </span>
               <div className="flex min-w-0 flex-col">
                 <span className="truncate text-sm font-medium text-foreground">{ws.name}</span>

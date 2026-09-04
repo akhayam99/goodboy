@@ -108,8 +108,15 @@ export const InboxStudio = ({
     [records, selectedKey],
   );
 
+  const [launchFocusRequest, setLaunchFocusRequest] = useState(0);
+
   const onSelect = (record: InboxRecord): void => {
     setSelectedKey(record.key);
+  };
+
+  const onActivate = (record: InboxRecord): void => {
+    setSelectedKey(record.key);
+    setLaunchFocusRequest((current) => current + 1);
   };
 
   const onToggleProvider = (provider: InboxProvider): void => {
@@ -173,6 +180,8 @@ export const InboxStudio = ({
               onKindFilterChange={setKindFilter}
               selectedKey={selectedKey}
               onSelect={onSelect}
+              onActivate={onActivate}
+              onClearFilters={onClearFilters}
               isLoading={isLoading}
               errors={INBOX_PROVIDERS.flatMap((provider) => {
                 const message = errors[provider];
@@ -194,6 +203,7 @@ export const InboxStudio = ({
               onClose={requestClose}
               onClearFilters={onClearFilters}
               onOpenIntegrations={onOpenIntegrations}
+              launchFocusRequest={launchFocusRequest}
             />
           }
         />

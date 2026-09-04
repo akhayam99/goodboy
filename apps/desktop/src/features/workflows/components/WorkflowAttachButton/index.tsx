@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { Button } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -23,7 +24,7 @@ export const WorkflowAttachButton = ({ sessionId, placement }: Props) => {
         onClick={onClick}
         className="flex w-full items-center gap-2 rounded-md border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
       >
-        <Plus size={13} aria-hidden className="shrink-0" />
+        <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
         <span className="min-w-0 truncate">{LABEL}</span>
       </button>
     );
@@ -31,7 +32,7 @@ export const WorkflowAttachButton = ({ sessionId, placement }: Props) => {
 
   return (
     <Button variant="secondary" size="sm" onClick={onClick}>
-      <Plus size={13} aria-hidden className="shrink-0" />
+      <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       {LABEL}
     </Button>
   );

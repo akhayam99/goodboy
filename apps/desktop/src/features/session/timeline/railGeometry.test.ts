@@ -3,8 +3,11 @@ import {
   RAIL_LANE_OFFSET,
   RAIL_SPINE_X,
   futureRailRow,
+  layoutBranchRail,
   layoutTimelineRail,
   railColumnX,
+  type BranchRailLayout,
+  type BranchRailRowInput,
   type RailGroupInput,
   type RailGroupShape,
   type RailJoin,
@@ -703,5 +706,119 @@ describe('futureRailRow', () => {
     expect(rail.joins).toEqual([]);
     expect(railColumnX({ column: rail.markerColumn })).toBe(RAIL_SPINE_X);
     expect(rail.markerY).toBe(16);
+  });
+});
+
+type BranchRowParams = {
+  readonly id: string;
+  readonly depth?: number;
+  readonly isStarted?: boolean;
+};
+
+const branchRow = ({ id, depth = 0, isStarted = true }: BranchRowParams): BranchRailRowInput => ({
+  id,
+  depth,
+  isStarted,
+  height: 36,
+  markerY: 18,
+});
+
+const branchRailRow = (layout: BranchRailLayout, id: string) => {
+  const found = layout.rows.find((candidate) => candidate.id === id);
+  if (found === undefined) {
+    throw new Error(`no branch rail row for ${id}`);
+  }
+  return found;
+};
+
+describe('layoutBranchRail', () => {
+  it('opens the spine at the first marker and closes it at the last one', () => {
+    const layout = layoutBranchRail({
+      rows: [branchRow({ id: 'one' }), branchRow({ id: 'two' })],
+    });
+
+    expect(branchRailRow(layout, 'one').segments).toEqual([
+      { column: 0, identityIndex: null, isMuted: false, dash: 'solid', fromY: 18, toY: 36 },
+    ]);
+    expect(branchRailRow(layout, 'two').segments).toEqual([
+      { column: 0, identityIndex: null, isMuted: false, dash: 'solid', fromY: 0, toY: 18 },
+    ]);
+    expect(layout.width).toBe(RAIL_SPINE_X + 8);
+  });
+
+  it('dashes the run into a step that has not started', () => {
+    const layout = layoutBranchRail({
+      rows: [branchRow({ id: 'one' }), branchRow({ id: 'two', isStarted: false })],
+    });
+
+    expect(branchRailRow(layout, 'one').segments.map((segment) => segment.dash)).toEqual([
+      'dashed',
+    ]);
+    expect(branchRailRow(layout, 'two').segments.map((segment) => segment.dash)).toEqual([
+      'dashed',
+    ]);
+  });
+
+  it('branches a cluster onto the next column straight out of the parent marker', () => {
+    const layout = layoutBranchRail({
+      rows: [
+        branchRow({ id: 'parent' }),
+        branchRow({ id: 'child-1', depth: 1 }),
+        branchRow({ id: 'child-2', depth: 1, isStarted: false }),
+      ],
+    });
+    const [join] = branchRailRow(layout, 'parent').joins;
+
+    expect(join).toEqual({
+      kind: 'merge',
+      spineColumn: 0,
+      laneColumn: 1,
+      identityIndex: null,
+      isMuted: false,
+      dash: 'solid',
+      anchorY: 18,
+      path: 'M 24 36 C 24 27.16, 16.84 18, 8 18',
+    });
+    expect(branchRailRow(layout, 'child-1').markerColumn).toBe(1);
+    expect(branchRailRow(layout, 'child-2').markerColumn).toBe(1);
+    expect(layout.width).toBe(RAIL_SPINE_X + RAIL_LANE_OFFSET + 8);
+  });
+
+  it('ends a lane on the marker of its last member and keeps the parent spine alive above it', () => {
+    const layout = layoutBranchRail({
+      rows: [
+        branchRow({ id: 'parent' }),
+        branchRow({ id: 'child-1', depth: 1 }),
+        branchRow({ id: 'child-2', depth: 1 }),
+        branchRow({ id: 'next-step', isStarted: false }),
+      ],
+    });
+
+    expect(branchRailRow(layout, 'child-1').segments).toEqual([
+      { column: 1, identityIndex: null, isMuted: false, dash: 'solid', fromY: 0, toY: 18 },
+      { column: 1, identityIndex: null, isMuted: false, dash: 'solid', fromY: 18, toY: 36 },
+      { column: 0, identityIndex: null, isMuted: false, dash: 'dashed', fromY: 0, toY: 36 },
+    ]);
+    expect(branchRailRow(layout, 'child-2').segments).toEqual([
+      { column: 1, identityIndex: null, isMuted: false, dash: 'solid', fromY: 0, toY: 18 },
+      { column: 0, identityIndex: null, isMuted: false, dash: 'dashed', fromY: 0, toY: 36 },
+    ]);
+    expect(branchRailRow(layout, 'next-step').joins).toEqual([]);
+  });
+
+  it('gives every depth its own column and lets a grandchild carry the lane above it', () => {
+    const layout = layoutBranchRail({
+      rows: [
+        branchRow({ id: 'parent' }),
+        branchRow({ id: 'child-1', depth: 1 }),
+        branchRow({ id: 'grandchild', depth: 2 }),
+        branchRow({ id: 'child-2', depth: 1 }),
+      ],
+    });
+    const columns = branchRailRow(layout, 'grandchild').segments.map((segment) => segment.column);
+
+    expect(columns).toEqual([2, 1]);
+    expect(branchRailRow(layout, 'grandchild').markerColumn).toBe(2);
+    expect(layout.width).toBe(RAIL_SPINE_X + 2 * RAIL_LANE_OFFSET + 8);
   });
 });

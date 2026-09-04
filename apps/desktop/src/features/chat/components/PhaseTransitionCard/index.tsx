@@ -8,6 +8,7 @@ import { formatDuration } from '../../utils/format-duration';
 import { stripWorkflowHandoffHeading } from './stripWorkflowHandoffHeading';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const warningTint = tintClasses('warning');
 
@@ -46,7 +47,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
         <TranscriptRowHeader
           grouped
           tone="neutral"
-          icon={<Milestone size={12} aria-hidden />}
+          icon={<Milestone size={ICON_SIZE.row} aria-hidden />}
           eyebrow="step"
           open={open}
           onToggle={() => setOpen((value) => !value)}
@@ -64,7 +65,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
               <span className="truncate">
                 {item.fromStep.ordinal + 1}. {item.fromStep.name}
               </span>
-              <ArrowRight size={12} aria-hidden className="shrink-0 opacity-60" />
+              <ArrowRight size={ICON_SIZE.row} aria-hidden className="shrink-0 opacity-60" />
               <span className="truncate">
                 {item.toStep.ordinal + 1}. {item.toStep.name}
               </span>

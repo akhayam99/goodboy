@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { cn } from '@goodboy/ui';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import type { ThinkingContext } from '../../utils/thinking-context';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly context: ThinkingContext;
@@ -45,7 +46,7 @@ export const ThinkingIndicator = ({ context }: Props) => {
       aria-label="Agent working"
       className="relative flex w-fit items-center gap-1.5 rounded-md px-2 py-1 text-2xs animate-border-pulse"
     >
-      <DogMascot size={12} className="text-muted-foreground/70" />
+      <DogMascot size={ICON_SIZE.row} className="text-muted-foreground/70" />
       <span aria-hidden className="text-muted-foreground/80">
         {phrase}
       </span>

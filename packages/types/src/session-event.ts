@@ -22,6 +22,7 @@ export const SESSION_EVENT_KINDS = [
   'project_materialization_dismissed',
   'project_detached',
   'external_task_created',
+  'rebase_requested',
 ] as const;
 
 export type SessionEventKind = (typeof SESSION_EVENT_KINDS)[number];
@@ -46,6 +47,7 @@ export type SessionEventPayload = Readonly<{
   kept?: boolean;
   externalId?: string;
   agentId?: string;
+  behind?: number;
 }>;
 
 export type SessionEvent = Readonly<{

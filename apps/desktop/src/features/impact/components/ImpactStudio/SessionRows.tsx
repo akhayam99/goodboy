@@ -2,7 +2,7 @@ import type { ImpactSession } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
 import { FilledEmptyState } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessions: ReadonlyArray<ImpactSession>;
@@ -34,7 +34,11 @@ export const SessionRows = ({ sessions, valueLabel, formatValue, onOpenSession }
           <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
             {formatValue(session.value)} {valueLabel}
           </span>
-          <ArrowUpRight size={12} aria-hidden className="shrink-0 text-muted-foreground" />
+          <ArrowUpRight
+            size={ICON_SIZE.row}
+            aria-hidden
+            className="shrink-0 text-muted-foreground"
+          />
         </button>
       ))}
     </div>

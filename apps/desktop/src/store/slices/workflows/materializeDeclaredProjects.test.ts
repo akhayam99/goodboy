@@ -47,17 +47,22 @@ const session: Session = {
 type HarnessOptions = {
   readonly projects: ReadonlyArray<Project>;
   readonly mounts?: ReadonlyArray<{ projectId: ProjectId }>;
+  readonly goal?: string;
 };
 
-const harness = ({ projects, mounts = [] }: HarnessOptions) => {
+const harness = ({ projects, mounts = [], goal = 'ship' }: HarnessOptions) => {
   const materializeProject = vi.fn(async () => ({}));
+  const recordSessionEvent = vi.fn(async () => undefined);
   const get = (() => ({
-    sessions: [session],
+    sessions: [{ ...session, goal }],
     projects,
     sessionProjectMounts: { [SESSION_ID]: mounts },
+    sessionSlots: {},
+    sessionExternalTasks: {},
     materializeProject,
+    recordSessionEvent,
   })) as unknown as GetFn;
-  return { get, materializeProject };
+  return { get, materializeProject, recordSessionEvent };
 };
 
 describe('materializeDeclaredProjects', () => {
@@ -116,10 +121,37 @@ describe('materializeDeclaredProjects', () => {
     expect(materializeProject).not.toHaveBeenCalled();
   });
 
-  it('skips projects that are already mounted', async () => {
-    const { get, materializeProject } = harness({
+  it('proposes instead of mounting once a mount exists and the goal does not name the project', async () => {
+    const { get, materializeProject, recordSessionEvent } = harness({
       projects: [project('p-api', 'api'), project('p-web', 'web')],
       mounts: [{ projectId: 'p-api' as ProjectId }],
+    });
+
+    await materializeDeclaredProjects({
+      get,
+      sessionId: SESSION_ID,
+      stepName: 'Implement',
+      declarationText: 'api and web both change',
+    });
+
+    expect(materializeProject).not.toHaveBeenCalled();
+    expect(recordSessionEvent).toHaveBeenCalledTimes(1);
+    expect(recordSessionEvent).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      kind: 'project_materialization_proposed',
+      payload: {
+        projectId: 'p-web',
+        projectName: 'web',
+        reason: 'step "Implement": api and web both change',
+      },
+    });
+  });
+
+  it('mounts a declared project next to an existing mount when the goal names it', async () => {
+    const { get, materializeProject, recordSessionEvent } = harness({
+      projects: [project('p-api', 'api'), project('p-web', 'web')],
+      mounts: [{ projectId: 'p-api' as ProjectId }],
+      goal: 'wire the web form to the api',
     });
 
     await materializeDeclaredProjects({
@@ -132,6 +164,28 @@ describe('materializeDeclaredProjects', () => {
     expect(materializeProject).toHaveBeenCalledTimes(1);
     expect(materializeProject).toHaveBeenCalledWith(
       expect.objectContaining({ projectId: 'p-web' }),
+    );
+    expect(recordSessionEvent).not.toHaveBeenCalled();
+  });
+
+  it('caps immediate mounts at two and proposes the rest', async () => {
+    const { get, materializeProject, recordSessionEvent } = harness({
+      projects: [project('p-api', 'api'), project('p-web', 'web'), project('p-docs', 'docs')],
+    });
+
+    await materializeDeclaredProjects({
+      get,
+      sessionId: SESSION_ID,
+      stepName: 'Implement',
+      declarationText: 'touch api, web and docs',
+    });
+
+    expect(materializeProject).toHaveBeenCalledTimes(2);
+    expect(recordSessionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'project_materialization_proposed',
+        payload: expect.objectContaining({ projectId: 'p-docs' }),
+      }),
     );
   });
 

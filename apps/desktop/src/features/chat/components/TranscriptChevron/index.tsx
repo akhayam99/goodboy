@@ -1,5 +1,6 @@
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly open: boolean;
@@ -7,7 +8,7 @@ type Props = {
 
 export const TranscriptChevron = ({ open }: Props) => (
   <ChevronRight
-    size={12}
+    size={ICON_SIZE.row}
     aria-hidden
     data-testid="transcript-chevron"
     className={cn(

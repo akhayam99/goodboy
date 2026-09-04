@@ -8,7 +8,9 @@ import type {
   Workflow,
 } from '@goodboy/types';
 import type { AgentKind } from '../../../session/agent-kind';
-import { WorkflowStepGraphBranch } from './WorkflowStepGraphBranch';
+import { layoutBranchRail } from '../../../session/timeline/railGeometry';
+import { STEP_ROW_HEIGHT, STEP_ROW_MARKER_Y, buildStepGraphRows } from './stepGraphRows';
+import { WorkflowStepGraphRow } from './WorkflowStepGraphRow';
 
 type Props = {
   readonly workflow: Workflow;
@@ -38,32 +40,45 @@ export const WorkflowStepGraph = ({
   onSelect,
 }: Props) => {
   const stepById = new Map<string, Step>(workflow.steps.map((step) => [step.id, step]));
-  const sortedRuns = [...runs].sort((first, second) => first.ordinal - second.ordinal);
+  const rows = buildStepGraphRows({ runs, childrenByParentId, stepById });
+  const rail = layoutBranchRail({
+    rows: rows.map((row) => ({
+      id: row.run.id,
+      depth: row.depth,
+      height: STEP_ROW_HEIGHT,
+      markerY: STEP_ROW_MARKER_Y,
+      isStarted: row.run.status !== 'pending',
+    })),
+  });
 
   return (
     <div
-      className="flex min-w-0 flex-col gap-2"
+      className="flex min-w-0 flex-col"
       aria-label="Workflow steps"
       data-testid="workflow-step-graph"
     >
-      {sortedRuns.map((run, index) => (
-        <WorkflowStepGraphBranch
-          key={run.id}
-          run={run}
-          marker={`${index + 1}`}
-          depth={0}
-          step={run.stepId == null ? null : (stepById.get(run.stepId) ?? null)}
-          childrenByParentId={childrenByParentId}
-          agentKindOverride={agentKindOverride}
-          agentModelOverride={agentModelOverride}
-          agentProviderOverride={agentProviderOverride}
-          roleModels={roleModels}
-          sessionProvider={sessionProvider}
-          sessionEffort={sessionEffort}
-          selectedAgentId={selectedAgentId}
-          onSelect={onSelect}
-        />
-      ))}
+      {rows.map((row, index) => {
+        const railRow = rail.rows[index];
+        if (railRow === undefined) {
+          return null;
+        }
+        return (
+          <WorkflowStepGraphRow
+            key={row.run.id}
+            row={row}
+            rail={railRow}
+            railWidth={rail.width}
+            agentKindOverride={agentKindOverride}
+            agentModelOverride={agentModelOverride}
+            agentProviderOverride={agentProviderOverride}
+            roleModels={roleModels}
+            sessionProvider={sessionProvider}
+            sessionEffort={sessionEffort}
+            selectedAgentId={selectedAgentId}
+            onSelect={onSelect}
+          />
+        );
+      })}
     </div>
   );
 };

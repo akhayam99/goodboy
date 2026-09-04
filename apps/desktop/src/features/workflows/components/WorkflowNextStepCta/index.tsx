@@ -17,7 +17,7 @@ import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import type { WorkflowBlockReason } from '../../advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../../blockCopy';
 import { useStartAnywayConfirm } from '../../useStartAnywayConfirm';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const planTint = tintClasses(CONCEPT_TONE.plans);
 
@@ -132,7 +132,7 @@ export const WorkflowNextStepCta = ({
           title="Ask the agent to verify the work, finish anything missing, and emit the completion marker"
           className="h-auto border-warning/50 bg-warning/10 px-2 py-1 text-2xs font-semibold"
         >
-          <RotateCcw size={12} aria-hidden className="shrink-0" />
+          <RotateCcw size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           {isRecovering ? 'Checking step' : 'Check completion'}
         </Button>
         <Button
@@ -145,14 +145,14 @@ export const WorkflowNextStepCta = ({
           title="Discard this step output and continue without it"
           className="h-auto border-warning/50 bg-warning/10 px-2 py-1 text-2xs font-semibold"
         >
-          <AlertTriangle size={12} aria-hidden className="shrink-0" />
+          <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           Skip blocked step
         </Button>
         {pendingForce ? (
           <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
             <InlineConfirm
               role="alert"
-              icon={<AlertTriangle size={12} />}
+              icon={<AlertTriangle size={ICON_SIZE.row} />}
               title="Skip the blocked step and start the next agent?"
               description={`${chain.failedStep.name} will be marked skipped. Its output will not be carried forward.`}
               confirmLabel="Skip and continue"
@@ -196,13 +196,13 @@ export const WorkflowNextStepCta = ({
       >
         {blockReason != null ? (
           <AlertTriangle
-            size={12}
+            size={ICON_SIZE.row}
             aria-hidden
             className="shrink-0"
             data-testid="workflow-next-step-blocked"
           />
         ) : (
-          <Play size={12} aria-hidden className="shrink-0" />
+          <Play size={ICON_SIZE.row} aria-hidden className="shrink-0" />
         )}
         <span className="truncate">Run next step: {next.name}</span>
         <RoutingBadge
@@ -220,7 +220,7 @@ export const WorkflowNextStepCta = ({
         <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
           <InlineConfirm
             role="alert"
-            icon={<AlertTriangle size={12} />}
+            icon={<AlertTriangle size={ICON_SIZE.row} />}
             title={advance.title}
             description={advance.description}
             confirmLabel={advance.confirmLabel}

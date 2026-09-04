@@ -32,10 +32,7 @@ export const WorkflowStepGraphNode = ({
   isSelected,
   onSelect,
 }: Props) => (
-  <div className="flex min-w-0 items-center gap-1.5">
-    <span className="w-6 shrink-0 text-right font-mono text-2xs tabular-nums text-muted-foreground/50">
-      {marker}
-    </span>
+  <div className="flex min-w-0 flex-1 items-center gap-1.5">
     <button
       type="button"
       onClick={onSelect}
@@ -45,6 +42,7 @@ export const WorkflowStepGraphNode = ({
         isSelected ? 'border-primary/50 bg-primary/[0.06]' : 'border-border-soft',
       )}
     >
+      <span className="sr-only">{marker}</span>
       <AgentKindChip kind={kind} />
       <span className="min-w-0 flex-1 truncate text-2xs font-medium text-foreground">
         {run.name}

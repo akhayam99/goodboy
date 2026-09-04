@@ -2,6 +2,11 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { formatError } from '@goodboy/ui';
 import type { ProjectId, SessionId } from '@goodboy/types';
+import {
+  deferredMaterializeMessage,
+  materializationGate,
+  proposeMaterialization,
+} from '../../store/materializationGate';
 import { useAppStore } from '../../store/store';
 import { isMainWindow } from '../workspace/window';
 
@@ -15,13 +20,41 @@ type MaterializeRequest = {
   readonly reason: string;
 };
 
+type MaterializeOutcome = {
+  readonly ok: boolean;
+  readonly error?: string;
+  readonly mountPath?: string;
+  readonly branch?: string;
+};
+
 const inTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
-const executeMaterializeRequest = async (
+export const executeMaterializeRequest = async (
   request: MaterializeRequest,
-): Promise<{ ok: boolean; error?: string; mountPath?: string; branch?: string }> => {
+): Promise<MaterializeOutcome> => {
+  const get = useAppStore.getState;
+  const project = get().projects.find((candidate) => candidate.id === request.projectId) ?? null;
+  if (project === null) {
+    return { ok: false, error: `unknown project: ${request.projectName}` };
+  }
+  const gate = materializationGate({
+    get,
+    sessionId: request.sessionId,
+    project,
+    immediateCount: 0,
+  });
+  if (gate === 'deferred') {
+    await proposeMaterialization({
+      get,
+      sessionId: request.sessionId,
+      project,
+      reason: request.reason,
+      agentId: null,
+    });
+    return { ok: false, error: deferredMaterializeMessage({ projectName: project.name }) };
+  }
   try {
-    const mount = await useAppStore.getState().materializeProject({
+    const mount = await get().materializeProject({
       sessionId: request.sessionId,
       projectId: request.projectId,
       reason: request.reason,

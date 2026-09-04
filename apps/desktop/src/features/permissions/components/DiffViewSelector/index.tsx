@@ -4,6 +4,7 @@ import { AnchoredPopover, Chip, cn, Divider, ScrollFade, useDropdown } from '@go
 import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly view: DiffView;
@@ -330,7 +331,7 @@ export const DiffViewSelector = ({
       }
     >
       <div className="flex items-center gap-1.5 px-2.5 py-2">
-        <Search size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
+        <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/60" />
         <input
           ref={searchRef}
           value={query}

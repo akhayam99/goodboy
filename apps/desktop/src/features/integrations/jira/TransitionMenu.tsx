@@ -11,6 +11,7 @@ import {
 } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useJiraTransitions } from './useJiraTransitions';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly issueKey: string;
@@ -90,7 +91,7 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition }: Props) =
           className={cn(isBlocked && 'opacity-50')}
           onClick={toggle}
         >
-          <ArrowRightLeft size={12} aria-hidden />
+          <ArrowRightLeft size={ICON_SIZE.row} aria-hidden />
           Move
         </Button>
       }

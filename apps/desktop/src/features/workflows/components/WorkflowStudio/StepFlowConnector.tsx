@@ -1,5 +1,6 @@
 import { cn } from '@goodboy/ui';
 import { ArrowDown, Plus } from 'lucide-react';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly index: number;
@@ -37,7 +38,7 @@ export const StepFlowConnector = ({ index, interior, dragging, active }: Props) 
           </span>
         )
       ) : interior ? (
-        <ArrowDown size={16} className="text-muted-foreground/40" aria-hidden />
+        <ArrowDown size={ICON_SIZE.control} className="text-muted-foreground/40" aria-hidden />
       ) : null}
     </div>
   );

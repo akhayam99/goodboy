@@ -3,6 +3,7 @@ import { ArrowUpRight, Upload } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 export const PendingResolutionsStrip = ({ sessionId }: { sessionId: SessionId }) => {
   const pending = useAppStore((s) => s.sessionPendingResolutions[sessionId] ?? EMPTY_ARRAY);
@@ -39,12 +40,12 @@ export const PendingResolutionsStrip = ({ sessionId }: { sessionId: SessionId })
       )}
     >
       <span className="inline-flex min-w-0 items-center gap-1.5">
-        <Upload size={12} aria-hidden />
+        <Upload size={ICON_SIZE.row} aria-hidden />
         <span className="truncate font-medium">
           Push &amp; resolve {count} comment{count === 1 ? '' : 's'}
         </span>
       </span>
-      <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-70" />
+      <ArrowUpRight size={ICON_SIZE.row} aria-hidden className="shrink-0 opacity-70" />
     </button>
   );
 };

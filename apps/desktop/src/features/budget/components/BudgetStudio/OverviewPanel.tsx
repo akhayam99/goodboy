@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { EmptyState, StatCard, formatTokens, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import type { BudgetAlert, SessionId } from '@goodboy/types';
 import type { ProviderSpendEntry } from '../../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
@@ -122,7 +122,7 @@ export const OverviewPanel = ({
                         label={providerLabel(entry.provider)}
                         valueLabel={formatUsd(entry.spentUsd)}
                         pct={totalSpend > 0 ? entry.spentUsd / totalSpend : 0}
-                        icon={<ProviderIcon provider={entry.provider} size={14} />}
+                        icon={<ProviderIcon provider={entry.provider} size={ICON_SIZE.control} />}
                         onClick={() => onSelect({ kind: 'provider', provider: entry.provider })}
                       />
                     );

@@ -15,7 +15,7 @@ import {
 import type { Skill, SkillFrontmatter, WorkspaceId } from '@goodboy/types';
 import { CardAction } from '@goodboy/ui';
 import { CardActionSlot } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 
@@ -195,7 +195,7 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
     <div className="flex flex-col gap-3">
       <SectionHeader
         label="Skills"
-        icon={<CONCEPT_ICONS.skills size={13} aria-hidden />}
+        icon={<CONCEPT_ICONS.skills size={ICON_SIZE.row} aria-hidden />}
         hint="Reusable prompt fragments agents can opt into."
         action={
           <div className="flex items-center gap-2">
@@ -290,7 +290,7 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
       {isDeleteArmed ? (
         <InlineConfirm
           role="danger"
-          icon={<Trash2 size={12} aria-hidden />}
+          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
           title={`Delete "${skill.name}"?`}
           description="Permanently removes this skill from the workspace."
           confirmLabel={`Delete ${skill.name}`}
@@ -397,7 +397,7 @@ const SkillEditor = ({
         <div className="min-w-0 flex-1">
           {error !== null ? (
             <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
-              <AlertTriangle size={12} aria-hidden />
+              <AlertTriangle size={ICON_SIZE.row} aria-hidden />
               {error}
             </span>
           ) : null}

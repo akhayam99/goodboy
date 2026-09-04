@@ -5,6 +5,7 @@ import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers';
 import { ProviderInlineConnect } from '../../../providers/components/ProviderInlineConnect';
 import { TranscriptShell } from '../TranscriptShell';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const warningTint = tintClasses('warning');
 
@@ -22,7 +23,7 @@ export const AuthRequiredCallout = ({ providerId, identity, onRefresh }: Props) 
     <TranscriptShell tone="warning" variant="boxed" emphasis className="flex flex-col gap-2">
       <div className="flex items-start gap-2">
         <TriangleAlert
-          size={14}
+          size={ICON_SIZE.control}
           aria-hidden
           className={cn('shrink-0 translate-y-0.5', warningTint.icon)}
         />

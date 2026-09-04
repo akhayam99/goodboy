@@ -8,6 +8,7 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { BranchCombobox } from '../BranchCombobox';
 import { getCachedLocalBranches, listLocalBranches, type LocalBranchInfo } from '../worktree';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -171,7 +172,7 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
 
       {needsConfirmation ? (
         <div className="flex items-start gap-2 rounded-md bg-warning/10 p-3 text-xs">
-          <AlertTriangle size={13} aria-hidden className="shrink-0 text-warning" />
+          <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0 text-warning" />
           <div className="flex flex-col gap-1">
             <ul className="list-disc pl-4 text-muted-foreground">
               {isOwnedByOtherSession ? <li>Already attached to another session</li> : null}

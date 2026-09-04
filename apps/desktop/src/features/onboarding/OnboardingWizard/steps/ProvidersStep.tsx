@@ -7,6 +7,7 @@ import { PROVIDER_LABEL_LOWER, type ProviderInfo } from '../../../providers/prov
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
 import { StatusPill } from '../../../providers/components/ProviderLifecycleTile/StatusPill';
 import { ProviderConnectModal } from '../../../providers/components/ProviderConnectModal';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export const PROVIDER_ORDER = [
   'anthropic',
@@ -70,7 +71,7 @@ function ProviderRow({
         className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/30"
         style={{ color: brandColor(info.id) }}
       >
-        <Icon size={18} aria-hidden />
+        <Icon size={ICON_SIZE.hero} aria-hidden />
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-sm font-medium capitalize text-foreground">
@@ -80,7 +81,7 @@ function ProviderRow({
       </div>
       {connected ? (
         <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
-          <Check size={14} aria-hidden /> Connected
+          <Check size={ICON_SIZE.control} aria-hidden /> Connected
         </span>
       ) : isApi ? (
         <span className="text-xs text-muted-foreground">Set up later</span>

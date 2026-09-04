@@ -3,6 +3,7 @@ import { cn } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
 import { PROVIDER_BRAND, brandColor } from '../provider-brand';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type ProviderChipProps = {
   readonly id: ProviderId;
@@ -37,7 +38,7 @@ export const ProviderChip = ({
         disabled && 'cursor-not-allowed opacity-60',
       )}
     >
-      <Icon size={13} aria-hidden style={{ color: brandColor(id) }} />
+      <Icon size={ICON_SIZE.row} aria-hidden style={{ color: brandColor(id) }} />
       {PROVIDER_LABEL[id]}
       {trailing}
     </button>

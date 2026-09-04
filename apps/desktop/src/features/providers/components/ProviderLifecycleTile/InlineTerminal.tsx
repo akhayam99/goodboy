@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import {
-  GenericTerminalPanel,
+  LazyGenericTerminalPanel,
   type TerminalDriver,
-} from '../../../../shared/components/GenericTerminalPanel';
+} from '../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalPanel';
 import {
   invokeProviderLifecycleResize,
   invokeProviderLifecycleWrite,
@@ -65,7 +65,12 @@ export const InlineTerminal = ({ runId, isActive, heightClass = 'h-44' }: Props)
     <div
       className={`${heightClass} overflow-hidden rounded-md border border-border-soft bg-background`}
     >
-      <GenericTerminalPanel terminalId={runId} driver={driver} isActive={isActive} exitMessage="" />
+      <LazyGenericTerminalPanel
+        terminalId={runId}
+        driver={driver}
+        isActive={isActive}
+        exitMessage=""
+      />
     </div>
   );
 };

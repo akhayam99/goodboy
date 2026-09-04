@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MessageSquarePlus } from 'lucide-react';
 import { Textarea } from '@goodboy/ui';
 import { formatCombo } from '../../../../../shared/keyboard/registry';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 const SUBMIT_HINT = formatCombo('cmd+Enter');
 
@@ -16,7 +17,11 @@ export const InlineComposer = ({ onSubmit, onCancel, label }: Props) => {
   const trimmed = body.trim();
   return (
     <div className="flex gap-2 rounded-md border border-border-soft bg-background px-2 py-1.5">
-      <MessageSquarePlus size={13} aria-hidden className="mt-0.5 shrink-0 text-muted-foreground" />
+      <MessageSquarePlus
+        size={ICON_SIZE.row}
+        aria-hidden
+        className="mt-0.5 shrink-0 text-muted-foreground"
+      />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         {label ? <span className="text-3xs font-medium text-muted-foreground">{label}</span> : null}
         <Textarea

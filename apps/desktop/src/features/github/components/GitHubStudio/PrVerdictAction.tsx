@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AnchoredPopover, Button, Select, Textarea, useDropdown } from '@goodboy/ui';
 import { CheckCircle2 } from 'lucide-react';
 import type { PublishPrReviewVerdict } from '../../../../store/slices/review-drafts/types';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type PrVerdictSubmission = {
   readonly verdict: PublishPrReviewVerdict;
@@ -51,7 +52,7 @@ export const PrVerdictAction = ({ canReview, isBusy, isSubmitting, onSubmit }: P
           }
           className="text-foreground"
         >
-          <CheckCircle2 size={13} aria-hidden />
+          <CheckCircle2 size={ICON_SIZE.row} aria-hidden />
           Review
         </Button>
       }

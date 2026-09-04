@@ -8,7 +8,7 @@ import {
   Skeleton,
 } from '@goodboy/ui';
 import { GitPullRequest, Search } from 'lucide-react';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '@goodboy/ui';
 import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
 import { InboxStatusIcons } from '../../components/InboxStatusIcons';
@@ -48,7 +48,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
     <div className="flex h-full flex-col">
       <div className="shrink-0 p-3 pb-2">
         <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-background px-2.5 focus-within:border-primary">
-          <Search size={13} aria-hidden className="shrink-0 text-muted-foreground/60" />
+          <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/60" />
           <input
             type="text"
             value={query}
@@ -127,7 +127,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
                         >
                           <span className="flex items-center gap-2">
                             <GitPullRequest
-                              size={12}
+                              size={ICON_SIZE.row}
                               aria-hidden
                               className="shrink-0 text-provider-bitbucket"
                             />

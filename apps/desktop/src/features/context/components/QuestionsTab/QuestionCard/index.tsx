@@ -3,7 +3,7 @@ import { Check, MessageCircleQuestion, X } from 'lucide-react';
 import { cn, Markdown, tintClasses, Tooltip } from '@goodboy/ui';
 import type { OpenQuestion, OpenQuestionId, OpenQuestionSelectMode } from '@goodboy/types';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
-import { CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_TONE, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { TranscriptShell } from '../../../../chat/components/TranscriptShell';
 import { SuggestionRow } from '../SuggestionRow';
 import { CustomAnswerField } from '../CustomAnswerField';
@@ -79,7 +79,7 @@ export const QuestionCard = ({
       <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
         <div className="flex min-w-0 items-start gap-2">
           <MessageCircleQuestion
-            size={14}
+            size={ICON_SIZE.control}
             aria-hidden
             className={cn('shrink-0 translate-y-0.5', warningTint.icon)}
           />
@@ -100,7 +100,11 @@ export const QuestionCard = ({
             )}
             aria-label="Dismiss question"
           >
-            {animate ? <Check size={12} className={warningTint.icon} /> : <X size={12} />}
+            {animate ? (
+              <Check size={ICON_SIZE.row} className={warningTint.icon} />
+            ) : (
+              <X size={ICON_SIZE.row} />
+            )}
           </button>
         </Tooltip>
         <div className="flex items-center gap-2 text-2xs text-muted-foreground">

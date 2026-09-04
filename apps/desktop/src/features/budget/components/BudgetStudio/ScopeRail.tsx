@@ -3,6 +3,7 @@ import { LayoutDashboard } from 'lucide-react';
 import type { ProviderSpendEntry } from '../../../../store';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { providerLabel, spendTone, type BudgetScope, type SessionSpend } from './lib';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly scope: BudgetScope;
@@ -22,7 +23,7 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
             ariaCurrent={scope.kind === 'overview'}
             className="items-center gap-2.5 px-2.5 py-2"
           >
-            <LayoutDashboard size={15} aria-hidden className="shrink-0" />
+            <LayoutDashboard size={ICON_SIZE.control} aria-hidden className="shrink-0" />
             <span className="flex-1 text-sm font-medium">Overview</span>
           </SelectableRow>
         </li>
@@ -46,7 +47,7 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
                     className="flex-col gap-1.5 px-2.5 py-2"
                   >
                     <div className="flex items-center gap-2.5">
-                      <ProviderIcon provider={entry.provider} size={15} />
+                      <ProviderIcon provider={entry.provider} size={ICON_SIZE.control} />
                       <span className="flex-1 truncate text-sm font-medium capitalize text-foreground">
                         {providerLabel(entry.provider)}
                       </span>

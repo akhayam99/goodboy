@@ -818,13 +818,13 @@ exports[`snapshot, error states > TranscriptCard: turn error item 1`] = `
     class="lucide lucide-circle-alert mt-0.5 shrink-0 text-danger"
     data-testid="transcript-error-icon"
     fill="none"
-    height="12"
+    height="13"
     stroke="currentColor"
     stroke-linecap="round"
     stroke-linejoin="round"
     stroke-width="2"
     viewBox="0 0 24 24"
-    width="12"
+    width="13"
     xmlns="http://www.w3.org/2000/svg"
   >
     <circle

@@ -135,7 +135,7 @@ export const useSuggestionActions = ({
         sessionId,
         projectId: suggestion.payload.projectId,
       });
-      await rebase.run();
+      await rebase.run({ projectId: suggestion.payload.projectId });
     })().catch((error: unknown) => {
       reportError('Rebase failed')(formatError(error));
     });

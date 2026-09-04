@@ -7,6 +7,7 @@ import { formatCardTime } from '../../utils/format-card-time';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { Section } from './Section';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'workflow_kickoff' }>;
@@ -29,7 +30,7 @@ export const WorkflowKickoffCard = ({ item }: Props) => {
         <TranscriptRowHeader
           grouped
           tone="neutral"
-          icon={<Rocket size={12} aria-hidden />}
+          icon={<Rocket size={ICON_SIZE.row} aria-hidden />}
           eyebrow="workflow start"
           preview={hasGoal ? goal : undefined}
           meta={formatCardTime(item.at)}

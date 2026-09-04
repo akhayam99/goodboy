@@ -1,6 +1,7 @@
 import { Zap, ZapOff } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import { CardAction } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly isOn: boolean;
@@ -36,7 +37,11 @@ export const WorkflowAutorunToggle = ({ isOn, variant = 'detail', onToggle }: Pr
               : 'border-border-soft text-muted-foreground hover:border-border hover:text-foreground',
           )}
         >
-          {isOn ? <Zap size={12} aria-hidden /> : <ZapOff size={12} aria-hidden />}
+          {isOn ? (
+            <Zap size={ICON_SIZE.row} aria-hidden />
+          ) : (
+            <ZapOff size={ICON_SIZE.row} aria-hidden />
+          )}
           {label}
         </button>
       )}

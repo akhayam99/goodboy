@@ -5,7 +5,7 @@ import { useCurrentWorkspace } from '../../../../store';
 import type { ProjectId } from '@goodboy/types';
 import { ghRepoCollaborators } from '../../github';
 import { Avatar } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly projectRoot: string | null;
@@ -57,7 +57,7 @@ export const ReviewerPicker = ({ projectRoot, projectId, exclude, onAdd }: Props
       }
     >
       <div className="flex items-center gap-1.5 px-1.5 py-1">
-        <Search size={12} aria-hidden className="shrink-0 text-muted-foreground" />
+        <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
         <input
           autoFocus
           value={query}

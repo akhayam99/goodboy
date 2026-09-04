@@ -3,6 +3,7 @@ import { cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { RefreshIconButton } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -47,11 +48,11 @@ export const BitbucketPrStrip = ({ sessionId, onOpenStudio }: Props) => {
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5">
-              <GitPullRequest size={12} aria-hidden />
+              <GitPullRequest size={ICON_SIZE.row} aria-hidden />
               <span>No pull request yet</span>
             </span>
           )}
-          <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-70" />
+          <ArrowUpRight size={ICON_SIZE.row} aria-hidden className="shrink-0 opacity-70" />
         </button>
         <RefreshIconButton
           label="Refresh pull request status"
