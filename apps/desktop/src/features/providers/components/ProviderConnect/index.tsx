@@ -12,6 +12,7 @@ import { ManualNote } from './ManualNote';
 import { TrustNote } from './TrustNote';
 import { connectView, type ProviderConnectChrome } from './connectView';
 import { useConnectDetails } from './useConnectDetails';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly providerId: ProviderId;
@@ -93,10 +94,14 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
         )}
       >
         {view.isSuccess ? (
-          <CheckCircle2 size={18} aria-hidden className="mt-0.5 shrink-0 text-success" />
+          <CheckCircle2
+            size={ICON_SIZE.hero}
+            aria-hidden
+            className="mt-0.5 shrink-0 text-success"
+          />
         ) : (
           <Mark
-            size={18}
+            size={ICON_SIZE.hero}
             strokeWidth={2}
             aria-hidden
             className="mt-0.5 shrink-0"

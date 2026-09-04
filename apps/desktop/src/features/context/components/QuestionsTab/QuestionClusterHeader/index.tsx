@@ -3,6 +3,7 @@ import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -38,7 +39,7 @@ export const QuestionClusterHeader = ({
 
   const inner = (
     <>
-      <Bot size={12} aria-hidden className="shrink-0 text-muted-foreground" />
+      <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
       <span className="truncate text-foreground/80">{label}</span>
       {ownerAgent != null && (
         <RoutingBadge

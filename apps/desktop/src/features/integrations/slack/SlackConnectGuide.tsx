@@ -3,6 +3,7 @@ import { Button, CopyButton, SegmentedTabs, type SegmentedTabOption } from '@goo
 import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react';
 import { openUrl } from '../../../shared/lib/editor';
 import { SLACK_APPS_URL, SLACK_NEW_APP_URL, SLACK_USER_SCOPES } from './slackAppManifest';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly manifestUrl: string | null;
@@ -142,7 +143,7 @@ export const SlackConnectGuide = ({ manifestUrl }: Props) => {
             value={SLACK_USER_SCOPES.join('\n')}
             label="Slack scopes"
             presentation="icon"
-            size={12}
+            size={ICON_SIZE.row}
           />
         </div>
       ) : null}

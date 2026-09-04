@@ -43,7 +43,7 @@ import { useRebaseAgent } from '../../../../features/session/hooks/useRebaseAgen
 import { clampEffort } from '../../../../features/chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { STORAGE_KEYS, STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
 import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
 import {
@@ -848,7 +848,7 @@ export const DiffViewerContent = ({
                       aria-label="Refresh git state"
                       className={cn(TOOLBAR_ICON_BTN, 'disabled:opacity-50')}
                     >
-                      <RefreshCw size={12} aria-hidden />
+                      <RefreshCw size={ICON_SIZE.row} aria-hidden />
                     </button>
                   </Tooltip>
                 ) : (
@@ -888,7 +888,7 @@ export const DiffViewerContent = ({
                         aria-label="Close"
                         className={TOOLBAR_ICON_BTN}
                       >
-                        <X size={13} />
+                        <X size={ICON_SIZE.row} />
                       </button>
                     </Tooltip>
                   ) : null}
@@ -905,7 +905,7 @@ export const DiffViewerContent = ({
                       aria-label="Close"
                       className={TOOLBAR_ICON_BTN}
                     >
-                      <X size={13} />
+                      <X size={ICON_SIZE.row} />
                     </button>
                   </Tooltip>
                 </div>

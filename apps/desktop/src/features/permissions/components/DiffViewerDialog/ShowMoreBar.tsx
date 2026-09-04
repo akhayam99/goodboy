@@ -1,6 +1,7 @@
 import { ChevronsDown } from 'lucide-react';
 import { Divider } from '@goodboy/ui';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   step: number;
@@ -19,7 +20,7 @@ export const ShowMoreBar = ({ step, rendered, total, onShowMore }: Props) => {
           onClick={onShowMore}
           className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-3 py-1 text-xs font-medium text-foreground hover:bg-muted"
         >
-          <ChevronsDown size={12} aria-hidden />
+          <ChevronsDown size={ICON_SIZE.row} aria-hidden />
           Show {formatInteger(step)} more lines
         </button>
         <span className="text-3xs text-muted-foreground/60">

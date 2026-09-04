@@ -19,7 +19,7 @@ import type { AgentSpawnConfigValue } from '../../../../session/components/Agent
 import { taskModelAgentSpawnConfig } from '../../../../session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
 import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../app/components/Toast';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 
 type CreateMode = 'manual' | 'agent';
@@ -237,7 +237,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
                 className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-danger"
                 title={error}
               >
-                <AlertTriangle size={12} aria-hidden className="shrink-0" />
+                <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
                 {error}
               </span>
             ) : null}
@@ -253,7 +253,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
               ) : (
                 <>
                   Create MR
-                  <ArrowRight size={13} aria-hidden />
+                  <ArrowRight size={ICON_SIZE.row} aria-hidden />
                 </>
               )}
             </Button>
@@ -267,7 +267,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
                 'Drafting…'
               ) : (
                 <>
-                  <CONCEPT_ICONS.agents size={13} aria-hidden />
+                  <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />
                   Draft with agent
                 </>
               )}

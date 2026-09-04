@@ -41,13 +41,10 @@ badges and status dots, where the glyph is a mark inside a shape rather than a
 row of its own.
 
 `apps/desktop/src/__tests__/regressions/icon-size-uses-a-token.test.ts` fails on
-any 12 to 18 px literal under `features/` and `app/`. Its allowlist holds the
-single genuine exception (an HTML `input size` attribute in characters) plus the
-feature areas that have not been through the token pass yet: `attachments`,
-`budget`, `changelog`, `chat`, `companion`, `context`, `explore`, `github`,
-`impact`, `integrations`, `notifications`, `onboarding`, `permissions`, `plans`,
-`providers`, `review`, `skills`, `terminal`, `workflows`, `worktree`. Migrating
-one of those means deleting its allowlist line in the same change.
+any 12 to 18 px literal under `features/` and `app/`. Every feature area has
+been through the token pass; the allowlist holds the single genuine exception
+(an HTML `input size` attribute in characters). A new exception needs a reason
+in the allowlist entry, never a directory-wide waiver.
 
 ## Navigation lenses
 

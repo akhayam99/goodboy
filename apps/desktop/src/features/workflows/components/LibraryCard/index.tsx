@@ -4,6 +4,7 @@ import { Check, GripVertical, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { StepDef } from '@goodboy/types';
 import { agentKindPalette, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly def: StepDef;
@@ -32,7 +33,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
       )}
     >
       <GripVertical
-        size={13}
+        size={ICON_SIZE.row}
         className="shrink-0 text-muted-foreground/25 motion-safe:transition-colors group-hover:text-muted-foreground/60"
         aria-hidden
       />
@@ -67,7 +68,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
             aria-label={`Add ${def.name} to workflow`}
             className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
           >
-            <Plus size={12} aria-hidden />
+            <Plus size={ICON_SIZE.row} aria-hidden />
           </button>
         </Tooltip>
         {confirming ? (
@@ -86,7 +87,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
                 aria-label={`Confirm delete ${def.name}`}
                 className="rounded-md p-0.5 text-danger motion-safe:transition-colors hover:bg-danger/10"
               >
-                <Check size={12} aria-hidden />
+                <Check size={ICON_SIZE.row} aria-hidden />
               </button>
             </Tooltip>
             <Tooltip content="cancel">
@@ -96,7 +97,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
                 aria-label="Cancel delete"
                 className="rounded-md p-0.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
               >
-                <X size={12} aria-hidden />
+                <X size={ICON_SIZE.row} aria-hidden />
               </button>
             </Tooltip>
           </div>
@@ -110,7 +111,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
                 aria-label={`Edit ${def.name}`}
                 className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
               >
-                <Pencil size={12} aria-hidden />
+                <Pencil size={ICON_SIZE.row} aria-hidden />
               </button>
             </Tooltip>
             {!isGlobal && (
@@ -122,7 +123,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
                   aria-label={`Delete ${def.name}`}
                   className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10 hover:text-danger"
                 >
-                  <Trash2 size={12} aria-hidden />
+                  <Trash2 size={ICON_SIZE.row} aria-hidden />
                 </button>
               </Tooltip>
             )}

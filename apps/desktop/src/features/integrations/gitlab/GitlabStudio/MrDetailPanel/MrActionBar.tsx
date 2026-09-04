@@ -1,6 +1,7 @@
 import { Button } from '@goodboy/ui';
 import { GitPullRequestDraft, RotateCcw, Send, ThumbsDown, ThumbsUp, XCircle } from 'lucide-react';
 import type { GitlabMergeRequest, GitlabMrApprovalState } from '../../client';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 export type MrActionBusy = 'draft' | 'close' | 'reopen' | null;
 
@@ -84,12 +85,12 @@ export const MrActionBar = ({
         >
           {hasApproved ? (
             <>
-              <ThumbsDown size={13} aria-hidden />
+              <ThumbsDown size={ICON_SIZE.row} aria-hidden />
               Revoke approval
             </>
           ) : (
             <>
-              <ThumbsUp size={13} aria-hidden />
+              <ThumbsUp size={ICON_SIZE.row} aria-hidden />
               Approve
             </>
           )}
@@ -107,12 +108,12 @@ export const MrActionBar = ({
         >
           {mr.draft ? (
             <>
-              <Send size={13} aria-hidden />
+              <Send size={ICON_SIZE.row} aria-hidden />
               Mark ready
             </>
           ) : (
             <>
-              <GitPullRequestDraft size={13} aria-hidden />
+              <GitPullRequestDraft size={ICON_SIZE.row} aria-hidden />
               Convert to draft
             </>
           )}
@@ -128,7 +129,7 @@ export const MrActionBar = ({
           disabled={isDisabled}
           isBusy={busy === 'close'}
         >
-          <XCircle size={13} aria-hidden />
+          <XCircle size={ICON_SIZE.row} aria-hidden />
           Close
         </Button>
       )}
@@ -142,7 +143,7 @@ export const MrActionBar = ({
           disabled={isDisabled}
           isBusy={busy === 'reopen'}
         >
-          <RotateCcw size={13} aria-hidden />
+          <RotateCcw size={ICON_SIZE.row} aria-hidden />
           Reopen
         </Button>
       )}

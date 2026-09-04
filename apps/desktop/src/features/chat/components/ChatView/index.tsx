@@ -47,6 +47,7 @@ import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { readAttachment } from '../../turn';
 import { dataUrlToBase64 } from '../ChatInput/lib';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
@@ -448,7 +449,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
                 el?.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
               }}
             >
-              <ArrowDown size={14} aria-hidden />
+              <ArrowDown size={ICON_SIZE.control} aria-hidden />
             </button>
           </Tooltip>
         )}

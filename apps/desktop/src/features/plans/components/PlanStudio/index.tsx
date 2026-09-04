@@ -21,7 +21,7 @@ import { PANE_RHYTHM } from '@goodboy/ui';
 import { PlanStatusChip } from './PlanStatusChip';
 import { PlanProvenance } from './PlanProvenance';
 import { PlanRailCard } from './PlanRailCard';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 import { FinishedRegister } from '../../../../shared/components/FinishedRegister';
@@ -151,7 +151,7 @@ export const PlanStudio = ({ sessionId }: Props) => {
                   {deleteArmed ? (
                     <InlineConfirm
                       role="danger"
-                      icon={<Trash2 size={12} aria-hidden />}
+                      icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
                       title={`Delete "${selected.title}"?`}
                       description="Moves this plan to discarded plans, where it can still be restored."
                       confirmLabel={`Delete ${selected.title}`}
@@ -166,7 +166,7 @@ export const PlanStudio = ({ sessionId }: Props) => {
                   ) : replayArmed ? (
                     <InlineConfirm
                       role="alert"
-                      icon={<RotateCw size={12} aria-hidden />}
+                      icon={<RotateCw size={ICON_SIZE.row} aria-hidden />}
                       title="Replay this plan?"
                       description="It already ran once. Replaying spawns a new agent to execute it again."
                       confirmLabel="Replay"
@@ -192,7 +192,7 @@ export const PlanStudio = ({ sessionId }: Props) => {
                             title="Plan already ran, click to replay and confirm"
                             className={cn(spawning && 'cursor-not-allowed animate-border-pulse')}
                           >
-                            <RotateCw size={12} aria-hidden />
+                            <RotateCw size={ICON_SIZE.row} aria-hidden />
                             Replay
                           </Button>
                         ) : (
@@ -209,9 +209,9 @@ export const PlanStudio = ({ sessionId }: Props) => {
                             }
                           >
                             {selected.status === 'active' ? (
-                              <Play size={12} aria-hidden className="fill-current" />
+                              <Play size={ICON_SIZE.row} aria-hidden className="fill-current" />
                             ) : (
-                              <RotateCw size={12} aria-hidden />
+                              <RotateCw size={ICON_SIZE.row} aria-hidden />
                             )}
                             {selected.status === 'active' ? 'Start' : 'Replay'}
                           </Button>
@@ -223,7 +223,7 @@ export const PlanStudio = ({ sessionId }: Props) => {
                             className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"
                             aria-label="Consumed plans cannot be deleted"
                           >
-                            <Trash2 size={13} aria-hidden />
+                            <Trash2 size={ICON_SIZE.row} aria-hidden />
                           </span>
                         </Tooltip>
                       ) : selected.status === 'discarded' ? (
@@ -234,7 +234,7 @@ export const PlanStudio = ({ sessionId }: Props) => {
                             aria-label="Restore plan"
                             className="inline-flex items-center justify-center rounded-md border border-info/20 p-1.5 text-info transition hover:border-info/40 hover:bg-info/10"
                           >
-                            <ArchiveRestore size={13} aria-hidden />
+                            <ArchiveRestore size={ICON_SIZE.row} aria-hidden />
                           </button>
                         </Tooltip>
                       ) : (
@@ -245,7 +245,7 @@ export const PlanStudio = ({ sessionId }: Props) => {
                             aria-label="Delete plan"
                             className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
                           >
-                            <Trash2 size={13} aria-hidden />
+                            <Trash2 size={ICON_SIZE.row} aria-hidden />
                           </button>
                         </Tooltip>
                       )}

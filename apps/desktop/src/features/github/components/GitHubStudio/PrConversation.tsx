@@ -4,7 +4,7 @@ import { Button, EmptyState, cn } from '@goodboy/ui';
 import { ExternalLink } from 'lucide-react';
 import { type CommentThread, groupThreads, threadPriority } from '../../comment-threads';
 import type { ResolverLink } from '../../../session/resolver-linkage';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ConversationThread } from './ConversationThread';
 
 type Props = {
@@ -60,7 +60,7 @@ export const PrConversation = ({
         action={
           <Button variant="ghost" size="sm" onClick={() => onOpenUrl(pr.url)}>
             View conversation on GitHub
-            <ExternalLink size={12} aria-hidden />
+            <ExternalLink size={ICON_SIZE.row} aria-hidden />
           </Button>
         }
       />

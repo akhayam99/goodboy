@@ -11,7 +11,7 @@ import { StackedBar } from './StackedBar';
 import { TrendStatCard } from './TrendStatCard';
 import { StudioWidget } from '@goodboy/ui';
 import { EmptyState, StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly pullRequests: QueryResult<PullRequestOutcomes>;
@@ -83,7 +83,11 @@ export const ShippedPanel = ({
                 onClick={() => onOpenSession(entry.sessionId)}
                 className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted/60"
               >
-                <CONCEPT_ICONS.pr size={13} aria-hidden className="shrink-0 text-success" />
+                <CONCEPT_ICONS.pr
+                  size={ICON_SIZE.row}
+                  aria-hidden
+                  className="shrink-0 text-success"
+                />
                 <span className="min-w-0 flex-1 truncate">
                   #{entry.number} {entry.title}
                 </span>
@@ -96,7 +100,7 @@ export const ShippedPanel = ({
                   </span>
                 )}
                 <span className="shrink-0 capitalize text-muted-foreground">{entry.state}</span>
-                <ArrowUpRight size={12} aria-hidden />
+                <ArrowUpRight size={ICON_SIZE.row} aria-hidden />
               </button>
             ))}
             {prs !== null && prs.entries.length === 0 ? (

@@ -1,6 +1,7 @@
 import { MessagesSquare } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -12,7 +13,7 @@ export const LaunchedNotice = ({ sessionId, isLinkedToIssue, onOpened }: Props) 
   return (
     <div className="flex items-center gap-3">
       <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-success/15">
-        <MessagesSquare size={14} className="text-success" aria-hidden />
+        <MessagesSquare size={ICON_SIZE.control} className="text-success" aria-hidden />
       </span>
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="text-xs font-medium text-foreground">Session already launched</span>

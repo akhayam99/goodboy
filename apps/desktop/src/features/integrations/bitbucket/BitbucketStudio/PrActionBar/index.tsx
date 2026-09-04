@@ -12,6 +12,7 @@ import type { BitbucketPullRequest, BitbucketPullRequestState } from '../../clie
 import { bitbucketPrVote } from './bitbucketPrVote';
 import { prActionBlockReason } from './prActionBlockReason';
 import { voteSummary } from './voteSummary';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 export type BitbucketPrActionBusy =
   'approve' | 'unapprove' | 'request-changes' | 'withdraw-changes' | 'merge' | 'decline' | null;
@@ -101,12 +102,12 @@ export const PrActionBar = ({
           >
             {hasApproved ? (
               <>
-                <ThumbsDown size={13} aria-hidden />
+                <ThumbsDown size={ICON_SIZE.row} aria-hidden />
                 Revoke approval
               </>
             ) : (
               <>
-                <ThumbsUp size={13} aria-hidden />
+                <ThumbsUp size={ICON_SIZE.row} aria-hidden />
                 Approve
               </>
             )}
@@ -135,12 +136,12 @@ export const PrActionBar = ({
           >
             {hasRequestedChanges ? (
               <>
-                <RotateCcw size={13} aria-hidden />
+                <RotateCcw size={ICON_SIZE.row} aria-hidden />
                 Withdraw request
               </>
             ) : (
               <>
-                <MessageSquareWarning size={13} aria-hidden />
+                <MessageSquareWarning size={ICON_SIZE.row} aria-hidden />
                 Request changes
               </>
             )}
@@ -151,7 +152,7 @@ export const PrActionBar = ({
           {confirming === 'merge' ? (
             <InlineConfirm
               role="danger"
-              icon={<GitMerge size={13} aria-hidden />}
+              icon={<GitMerge size={ICON_SIZE.row} aria-hidden />}
               title="Merge this pull request?"
               description="Bitbucket merges it with the strategy the repository is set to. It cannot be undone from here."
               confirmLabel={busy === 'merge' ? 'Merging' : 'Confirm merge'}
@@ -179,7 +180,7 @@ export const PrActionBar = ({
               }}
               className={writeReason != null ? 'opacity-50' : undefined}
             >
-              <GitMerge size={13} aria-hidden />
+              <GitMerge size={ICON_SIZE.row} aria-hidden />
               Merge
             </Button>
           )}
@@ -187,7 +188,7 @@ export const PrActionBar = ({
           {confirming === 'decline' ? (
             <InlineConfirm
               role="danger"
-              icon={<XCircle size={13} aria-hidden />}
+              icon={<XCircle size={ICON_SIZE.row} aria-hidden />}
               title="Decline this pull request?"
               description="Bitbucket closes it without merging. Reopening it is done on Bitbucket."
               confirmLabel={busy === 'decline' ? 'Declining' : 'Confirm decline'}
@@ -215,7 +216,7 @@ export const PrActionBar = ({
               }}
               className={writeReason != null ? 'opacity-50' : undefined}
             >
-              <XCircle size={13} aria-hidden />
+              <XCircle size={ICON_SIZE.row} aria-hidden />
               Decline
             </Button>
           )}

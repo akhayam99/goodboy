@@ -4,7 +4,7 @@ import { extractPlanFromMarker } from '@goodboy/core';
 import { useSessionPlans } from '../../../../store';
 import { TranscriptShell } from '../TranscriptShell';
 import { tintClasses } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const accent = tintClasses(CONCEPT_TONE.plans);
 
@@ -41,7 +41,7 @@ export const PlanChip = ({ assistantText, sessionId }: Props) => {
       variant="pill"
       className={`inline-flex w-fit items-center gap-1.5 text-xs font-medium transition-opacity hover:opacity-80 ${accent.text}`}
     >
-      <CONCEPT_ICONS.plans size={12} aria-hidden />
+      <CONCEPT_ICONS.plans size={ICON_SIZE.row} aria-hidden />
       <span>{plan.title}</span>
     </TranscriptShell>
   );

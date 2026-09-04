@@ -10,6 +10,7 @@ import { useProjectAdoption } from '../../../../shared/hooks/useProjectAdoption'
 import { DetectedRepoList } from '../../../../shared/components/DetectedRepoList';
 import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
 import type { ProjectAttachConflict } from '../../../../store/slices/projects/addProject';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspace: Workspace;
@@ -154,9 +155,9 @@ export const ProjectsStep = ({ workspace, initialConflicts }: Props) => {
               >
                 <span className="shrink-0 text-muted-foreground">
                   {project.kind === 'repo' ? (
-                    <FolderGit2 size={16} aria-hidden />
+                    <FolderGit2 size={ICON_SIZE.control} aria-hidden />
                   ) : (
-                    <Folder size={16} aria-hidden />
+                    <Folder size={ICON_SIZE.control} aria-hidden />
                   )}
                 </span>
                 <span className="min-w-0 flex-1">
@@ -184,7 +185,7 @@ export const ProjectsStep = ({ workspace, initialConflicts }: Props) => {
                     onClick={() => void removeProject({ projectId: project.id })}
                     className="rounded-md p-1 text-muted-foreground/70 hover:bg-foreground/5 hover:text-foreground"
                   >
-                    <X size={14} aria-hidden />
+                    <X size={ICON_SIZE.control} aria-hidden />
                   </button>
                 </Tooltip>
               </li>
@@ -214,10 +215,10 @@ export const ProjectsStep = ({ workspace, initialConflicts }: Props) => {
             onClick={() => void link({ rootPath: path.trim() })}
             disabled={busy || path.trim().length === 0}
           >
-            <Plus size={14} aria-hidden /> Add
+            <Plus size={ICON_SIZE.control} aria-hidden /> Add
           </Button>
           <Button variant="secondary" onClick={() => void onNewProject()} disabled={busy}>
-            <FolderPlus size={14} aria-hidden /> New project
+            <FolderPlus size={ICON_SIZE.control} aria-hidden /> New project
           </Button>
         </div>
 

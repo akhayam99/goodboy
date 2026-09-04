@@ -6,6 +6,7 @@ import { formatCardTime } from '../../utils/format-card-time';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { TranscriptShell } from '../TranscriptShell';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const infoTint = tintClasses('info');
 
@@ -29,7 +30,7 @@ export const OrchestratorDecisionCard = ({ item }: Props) => {
         <TranscriptRowHeader
           grouped
           tone="neutral"
-          icon={<Route size={12} aria-hidden />}
+          icon={<Route size={ICON_SIZE.row} aria-hidden />}
           eyebrow="orchestrator"
           badge={
             hasNote ? (

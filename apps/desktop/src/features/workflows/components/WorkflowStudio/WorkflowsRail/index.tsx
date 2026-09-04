@@ -1,7 +1,11 @@
 import { EmptyState, ScrollFade, SectionHeader, Tooltip, cn } from '@goodboy/ui';
 import { Check, Plus, RotateCcw, X } from 'lucide-react';
 import type { Workflow, WorkflowId } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import {
+  CONCEPT_ICONS,
+  CONCEPT_TONE,
+  ICON_SIZE,
+} from '../../../../../shared/components/conceptIcons';
 import { PresetCard } from '../../PresetCard';
 
 type Props = {
@@ -82,7 +86,7 @@ export const WorkflowsRail = ({
                 aria-label="Confirm restore defaults"
                 className="rounded-md p-0.5 text-warning transition-colors hover:bg-warning/10 disabled:opacity-50"
               >
-                <Check size={13} aria-hidden />
+                <Check size={ICON_SIZE.row} aria-hidden />
               </button>
             </Tooltip>
             <Tooltip content="cancel">
@@ -93,7 +97,7 @@ export const WorkflowsRail = ({
                 aria-label="Cancel restore defaults"
                 className="rounded-md p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
               >
-                <X size={13} aria-hidden />
+                <X size={ICON_SIZE.row} aria-hidden />
               </button>
             </Tooltip>
           </div>

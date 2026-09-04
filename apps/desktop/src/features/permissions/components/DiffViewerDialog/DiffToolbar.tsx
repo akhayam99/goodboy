@@ -3,6 +3,7 @@ import { Chip, cn, Divider, Tooltip } from '@goodboy/ui';
 import type { WorktreeStatus } from '@goodboy/types';
 import { distanceAhead, distanceBehind } from '../../../../shared/lib/gitStatus';
 import { TOOLBAR_ICON_BTN } from './lib';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   title?: string;
@@ -103,7 +104,7 @@ export const DiffToolbar = ({
                 aria-label="Refresh git state"
                 className={cn(TOOLBAR_ICON_BTN, 'disabled:opacity-50')}
               >
-                <RefreshCw size={12} aria-hidden />
+                <RefreshCw size={ICON_SIZE.row} aria-hidden />
               </button>
             </Tooltip>
           ) : null}
@@ -115,7 +116,7 @@ export const DiffToolbar = ({
                 aria-label="Close"
                 className={TOOLBAR_ICON_BTN}
               >
-                <X size={13} />
+                <X size={ICON_SIZE.row} />
               </button>
             </Tooltip>
           ) : null}

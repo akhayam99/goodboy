@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { cn, tintClasses, Tooltip } from '@goodboy/ui';
 import { TranscriptShell } from '../TranscriptShell';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type NudgeSeverity = 'info' | 'warning' | 'success';
 
@@ -69,7 +70,7 @@ export const NudgeCard = ({
               className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
               data-testid={testId ? `${testId}-dismiss` : undefined}
             >
-              <X size={12} aria-hidden />
+              <X size={ICON_SIZE.row} aria-hidden />
             </button>
           </Tooltip>
         ) : null}

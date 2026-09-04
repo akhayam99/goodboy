@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowLeft, Copy, RotateCcw, Trash2 } from 'lucide-react';
 import { Button, GhostActionButton, InlineConfirm } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly isNew: boolean;
@@ -57,7 +57,7 @@ export const WorkflowHeaderActions = ({
           onClick={onGenerate}
           disabled={saving || generating || !canGenerate}
         >
-          <CONCEPT_ICONS.enhance size={13} aria-hidden />
+          <CONCEPT_ICONS.enhance size={ICON_SIZE.row} aria-hidden />
           {generating ? 'Working on your workflow' : 'Rewrite with agent'}
         </Button>
       </div>
@@ -65,7 +65,7 @@ export const WorkflowHeaderActions = ({
       {confirmation === 'reset' ? (
         <InlineConfirm
           role="alert"
-          icon={<RotateCcw size={12} aria-hidden />}
+          icon={<RotateCcw size={ICON_SIZE.row} aria-hidden />}
           title="Discard local changes?"
           description="Restores the last saved version of this workflow."
           confirmLabel="Reset"
@@ -79,7 +79,7 @@ export const WorkflowHeaderActions = ({
       {confirmation === 'delete' ? (
         <InlineConfirm
           role="danger"
-          icon={<Trash2 size={12} aria-hidden />}
+          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
           title={isNew ? 'Discard this draft?' : 'Delete this workflow?'}
           description={
             isNew

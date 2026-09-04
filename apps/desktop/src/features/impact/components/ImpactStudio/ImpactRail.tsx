@@ -1,6 +1,7 @@
 import { SelectableRow } from '@goodboy/ui';
 import { Gauge, GitPullRequest, LayoutDashboard, Timer, type LucideIcon } from 'lucide-react';
 import type { ImpactScopeId } from '../../lib';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly scope: ImpactScopeId;
@@ -31,7 +32,7 @@ export const ImpactRail = ({ scope, onSelect }: Props) => (
           onClick={() => onSelect(item.id)}
           className="items-center gap-2.5 px-2.5 py-2 text-sm"
         >
-          <Icon size={15} aria-hidden />
+          <Icon size={ICON_SIZE.control} aria-hidden />
           {item.label}
         </SelectableRow>
       );

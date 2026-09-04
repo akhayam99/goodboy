@@ -12,6 +12,7 @@ import {
 import { useAppStore } from '../../../../store';
 import { getAgentVisual } from '../../../../shared/components/AgentAvatar';
 import { formatCombo } from '../../../../shared/keyboard/registry';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const HINT_KBD = 'h-4 min-w-4 border-border-soft px-1 text-2xs leading-none';
 
@@ -188,7 +189,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
       </ul>
       {showWorkflowCta ? (
         <Button variant="secondary" size="sm" onClick={openWorkflowBuilder}>
-          <SECTION_ICONS.workflows size={13} aria-hidden />
+          <SECTION_ICONS.workflows size={ICON_SIZE.row} aria-hidden />
           Set up a workflow
         </Button>
       ) : null}

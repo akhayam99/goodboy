@@ -1,5 +1,5 @@
 import { Button, ScrollFade, Textarea, cn } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly prompt: string;
@@ -110,7 +110,7 @@ export const WorkflowStarter = ({
           onClick={onCreate}
           disabled={isWorking || providerReason !== null || prompt.trim().length === 0}
         >
-          <CONCEPT_ICONS.enhance size={14} aria-hidden />
+          <CONCEPT_ICONS.enhance size={ICON_SIZE.control} aria-hidden />
           Create with agent
         </Button>
       </div>

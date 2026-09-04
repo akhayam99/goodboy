@@ -18,7 +18,7 @@ import {
 } from '../../../permissions/components/DiffViewerDialog/highlight';
 import { LineComposer } from './LineComposer';
 import { ReviewPairCells } from './ReviewPairCells';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { buildDiffPairRows, type DiffPairRow } from '../../../../shared/utils/diffPairRows';
 import { buildDiffRows, type DiffRow } from '../../../../shared/utils/diffRows';
 import { visibleDiffRows } from '../../../../shared/utils/visibleDiffRows';
@@ -128,7 +128,7 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
               className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <ChevronRight
-                size={13}
+                size={ICON_SIZE.row}
                 aria-hidden
                 className={cn(
                   'duration-150 motion-safe:transition-transform',

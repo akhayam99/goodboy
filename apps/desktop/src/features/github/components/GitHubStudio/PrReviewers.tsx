@@ -7,7 +7,7 @@ import { latestTerminalReviewsByAuthor } from '../../utils/latest-terminal-revie
 import { Avatar } from '@goodboy/ui';
 import { ReviewStateIcon } from '../ReviewStateIcon';
 import { ReviewerPicker } from './ReviewerPicker';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly detail: PrDetail | null;
@@ -51,7 +51,7 @@ export const PrReviewers = ({ detail, projectRoot, projectId, onAddReviewers }: 
         <ul className="flex basis-full flex-col gap-1">
           {reviewed.map((review) => (
             <li key={review.author} className="flex items-center gap-1.5 text-xs text-foreground">
-              <ReviewStateIcon state={review.state} size={12} />
+              <ReviewStateIcon state={review.state} size={ICON_SIZE.row} />
               <Avatar url={review.authorAvatarUrl} alt={review.author} size="xs" />
               <span className="min-w-0 flex-1 truncate">{review.author}</span>
             </li>
@@ -61,7 +61,7 @@ export const PrReviewers = ({ detail, projectRoot, projectId, onAddReviewers }: 
               key={`${request.kind}-${request.login}`}
               className="flex items-center gap-1.5 text-xs text-muted-foreground"
             >
-              <CircleDashed size={12} aria-hidden className="shrink-0 text-info" />
+              <CircleDashed size={ICON_SIZE.row} aria-hidden className="shrink-0 text-info" />
               <Avatar url={request.avatarUrl} alt={request.login} size="xs" />
               <span className="min-w-0 flex-1 truncate">{request.login}</span>
               <span className="shrink-0 text-3xs uppercase tracking-wide opacity-60">awaiting</span>

@@ -4,6 +4,7 @@ import {
   integrationLabel,
   type IntegrationGlyphProvider,
 } from '../IntegrationGlyph';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly provider: IntegrationGlyphProvider;
@@ -24,7 +25,7 @@ export const IntegrationConnectPanel = ({
   return (
     <section className="m-auto flex w-full min-w-0 max-w-md flex-col gap-3 rounded-lg border border-border-soft bg-background p-5 shadow-sm">
       <div className="flex items-center gap-2.5">
-        <IntegrationGlyph provider={provider} size={18} />
+        <IntegrationGlyph provider={provider} size={ICON_SIZE.hero} />
         <Heading className="text-sm font-semibold text-foreground">
           Connect {integrationLabel({ provider })}
         </Heading>

@@ -7,7 +7,7 @@ import {
   isReviewThreadId,
 } from '@goodboy/core';
 import type { AgentId, PrComment, PendingResolution, SessionId } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { resolverTallySentence } from '../../../session/resolverTallySentence';
 import { resolverThreadTally } from '../../../session/resolverThreadTally';
@@ -155,7 +155,7 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
         <TranscriptRowHeader
           grouped
           tone="neutral"
-          icon={<Icon size={12} aria-hidden />}
+          icon={<Icon size={ICON_SIZE.row} aria-hidden />}
           eyebrow="resolver findings"
           preview={tallySentence({ verdicts })}
           meta={`${verdicts.length}`}

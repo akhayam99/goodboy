@@ -12,7 +12,7 @@ import { KeyRound, Plus, Trash2 } from 'lucide-react';
 import { PROVIDER_API_KEY_ENV, type CredentialId, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly providerId: ProviderId;
@@ -89,7 +89,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
               onClick={() => setAdding(true)}
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
-              <Plus size={12} aria-hidden /> Add key
+              <Plus size={ICON_SIZE.row} aria-hidden /> Add key
             </button>
           ) : null
         }
@@ -113,7 +113,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
               <li key={c.id}>
                 <InlineConfirm
                   role="danger"
-                  icon={<Trash2 size={12} aria-hidden />}
+                  icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
                   title={`Remove "${c.label}"?`}
                   description="Deletes this API key from Goodboy. A key a workspace still uses is kept."
                   confirmLabel={`Remove ${c.label}`}
@@ -131,7 +131,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
                   className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
                   aria-hidden
                 >
-                  <KeyRound size={14} />
+                  <KeyRound size={ICON_SIZE.control} />
                 </span>
                 <div className="flex min-w-0 flex-col">
                   <span className="truncate text-sm font-medium text-foreground">{c.label}</span>
@@ -145,7 +145,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
                     onClick={() => setArmedId(c.id)}
                     className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-danger/10 hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] group-hover:opacity-100"
                   >
-                    <Trash2 size={13} aria-hidden />
+                    <Trash2 size={ICON_SIZE.row} aria-hidden />
                   </button>
                 </Tooltip>
               </li>

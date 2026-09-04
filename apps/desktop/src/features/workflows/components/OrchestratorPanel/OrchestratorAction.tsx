@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { Tooltip, cn, tintClasses, type Tone } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly icon: LucideIcon;
@@ -40,7 +41,7 @@ export const OrchestratorAction = ({
           : 'text-muted-foreground hover:bg-foreground/10 hover:text-foreground',
       )}
     >
-      <Icon size={12} aria-hidden className="shrink-0" />
+      <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       {label}
     </button>
   );

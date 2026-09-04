@@ -3,6 +3,7 @@ import type { PullRequestState } from '@goodboy/types';
 import { Button, cn, Divider, InlineConfirm } from '@goodboy/ui';
 import { GitMerge, GitPullRequestDraft, Plus, RotateCcw, Send, XCircle } from 'lucide-react';
 import { PrVerdictAction, type PrVerdictSubmission } from './PrVerdictAction';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type ActionBusy = 'ready' | 'undraft' | 'merge' | 'close' | 'reopen' | 'review' | null;
 
@@ -46,7 +47,7 @@ export const PrActionBar = ({
     <div className="flex flex-wrap items-center gap-1.5">
       {!isTerminal && isQueued && (
         <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-          <GitMerge size={13} aria-hidden />
+          <GitMerge size={ICON_SIZE.row} aria-hidden />
           {pr.mergeQueue != null ? 'In merge queue' : 'Auto-merge on'}
           {pr.mergeQueue?.position != null && <span>#{pr.mergeQueue.position}</span>}
         </span>
@@ -57,7 +58,7 @@ export const PrActionBar = ({
         (isMergeConfirmOpen ? (
           <InlineConfirm
             role="danger"
-            icon={<GitMerge size={13} aria-hidden />}
+            icon={<GitMerge size={ICON_SIZE.row} aria-hidden />}
             title="Squash merge this pull request?"
             description="This action cannot be undone."
             confirmLabel={spin('merge') ? 'Merging' : 'Confirm merge'}
@@ -83,7 +84,7 @@ export const PrActionBar = ({
                 : 'border-border-soft text-muted-foreground',
             )}
           >
-            <GitMerge size={13} aria-hidden />
+            <GitMerge size={ICON_SIZE.row} aria-hidden />
             Merge
           </button>
         ))}
@@ -108,7 +109,7 @@ export const PrActionBar = ({
           disabled={busy !== null}
           isBusy={spin('ready')}
         >
-          <Send size={13} aria-hidden />
+          <Send size={ICON_SIZE.row} aria-hidden />
           Mark ready
         </Button>
       ) : !isTerminal ? (
@@ -120,7 +121,7 @@ export const PrActionBar = ({
           disabled={busy !== null}
           isBusy={spin('undraft')}
         >
-          <GitPullRequestDraft size={13} aria-hidden />
+          <GitPullRequestDraft size={ICON_SIZE.row} aria-hidden />
           Convert to draft
         </Button>
       ) : null}
@@ -134,7 +135,7 @@ export const PrActionBar = ({
           disabled={busy !== null}
           isBusy={spin('close')}
         >
-          <XCircle size={13} aria-hidden />
+          <XCircle size={ICON_SIZE.row} aria-hidden />
           Close
         </Button>
       )}
@@ -149,11 +150,11 @@ export const PrActionBar = ({
             disabled={busy !== null}
             isBusy={spin('reopen')}
           >
-            <RotateCcw size={13} aria-hidden />
+            <RotateCcw size={ICON_SIZE.row} aria-hidden />
             Reopen
           </Button>
           <Button variant="primary" emphasis="outline" size="sm" onClick={onCreateNew}>
-            <Plus size={13} aria-hidden />
+            <Plus size={ICON_SIZE.row} aria-hidden />
             Create new PR
           </Button>
         </>

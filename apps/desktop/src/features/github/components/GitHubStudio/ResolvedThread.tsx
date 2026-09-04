@@ -10,6 +10,7 @@ import { ThreadBody } from './ThreadBody';
 import { ThreadPathChip } from './ThreadPathChip';
 import { ThreadReplies } from './ThreadReplies';
 import { threadPreview } from './threadPreview';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly thread: CommentThread;
@@ -30,7 +31,7 @@ export const ResolvedThread = ({ thread, onOpenUrl }: Props) => {
           grouped
           open={open}
           onToggle={() => setOpen((v) => !v)}
-          icon={<CheckCheck size={12} aria-hidden />}
+          icon={<CheckCheck size={ICON_SIZE.row} aria-hidden />}
           eyebrow="resolved"
           badge={
             <span className="flex shrink-0 items-center gap-1.5">

@@ -5,6 +5,7 @@ import type {
   TerminalTabId,
   TerminalTabStatus,
 } from '../../../../shared/types/terminal';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly tabs: readonly TerminalTab[];
@@ -70,7 +71,7 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
           onClick={onSpawn}
           className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
         >
-          <Plus size={13} aria-hidden />
+          <Plus size={ICON_SIZE.row} aria-hidden />
         </button>
       </Tooltip>
     </div>

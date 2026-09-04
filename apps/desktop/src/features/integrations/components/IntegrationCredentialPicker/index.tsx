@@ -9,6 +9,7 @@ import { formatError } from '@goodboy/ui';
 import { KeyRound } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { CredentialRow } from './CredentialRow';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly provider: WorkspaceIntegrationProvider;
@@ -73,7 +74,7 @@ export const IntegrationCredentialPicker = ({
         aria-pressed={selectedCredentialId === null}
         className="flex items-center gap-2 rounded-md border border-dashed border-border-soft px-3 py-2 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
       >
-        <KeyRound size={12} aria-hidden />
+        <KeyRound size={ICON_SIZE.row} aria-hidden />
         Use a new personal API key
       </button>
       {error !== null ? <p className="text-2xs leading-relaxed text-danger">{error}</p> : null}

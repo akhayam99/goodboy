@@ -2,6 +2,7 @@ import type { PullRequestState } from '@goodboy/types';
 import { AnchoredPopover, cn, ScrollFade, useDropdown } from '@goodboy/ui';
 import { Check, ChevronDown } from 'lucide-react';
 import { PullRequestChip } from '../PullRequestChip';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly prs: ReadonlyArray<PullRequestState>;
@@ -36,7 +37,7 @@ export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
           <PullRequestChip state={current.state} variant="icon" iconSize={12} />
           <span className="tabular-nums">#{current.number}</span>
           <span className="text-2xs text-muted-foreground">of {prs.length}</span>
-          <ChevronDown size={12} aria-hidden className="text-muted-foreground" />
+          <ChevronDown size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />
         </button>
       }
     >
@@ -61,7 +62,7 @@ export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
                 <span className="shrink-0 tabular-nums text-muted-foreground">#{p.number}</span>
                 <span className="min-w-0 flex-1 truncate text-foreground">{p.title}</span>
                 {p.number === selected && (
-                  <Check size={12} aria-hidden className="shrink-0 text-primary" />
+                  <Check size={ICON_SIZE.row} aria-hidden className="shrink-0 text-primary" />
                 )}
               </button>
             </li>

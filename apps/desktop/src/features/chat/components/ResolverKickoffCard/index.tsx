@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Markdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { codeFenceMarkers } from '../../utils/codeFenceMarkers';
 import { formatCardTime } from '../../utils/format-card-time';
@@ -24,7 +24,7 @@ export const ResolverKickoffCard = ({ item, sessionId = null }: Props) => {
     <div className="flex min-w-0 flex-col gap-2" data-testid="resolver-kickoff">
       <TranscriptRowHeader
         tone={TONE}
-        icon={<Icon size={12} aria-hidden />}
+        icon={<Icon size={ICON_SIZE.row} aria-hidden />}
         eyebrow="resolve start"
         preview={item.headline}
         meta={formatCardTime(item.at)}

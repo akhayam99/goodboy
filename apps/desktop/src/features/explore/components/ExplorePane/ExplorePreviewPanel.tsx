@@ -12,7 +12,7 @@ import { ExternalLink } from 'lucide-react';
 import { ImageLightbox } from '../../../chat/components/ImageLightbox';
 import { type ExploreContent, type ExploreEntry } from '../../explore';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { InspectorHeader } from '../../../session/components/SessionWorkspace/parts/InspectorSplit/InspectorHeader';
 
@@ -225,7 +225,7 @@ export const ExplorePreviewPanel = ({
           </div>
           <div className="flex items-center gap-2">
             <Button size="sm" variant="secondary" onClick={onOpenOutside}>
-              <ExternalLink size={13} aria-hidden />
+              <ExternalLink size={ICON_SIZE.row} aria-hidden />
               Open outside
             </Button>
             <CopyButton value={absolutePath} label={`path for ${entry.name}`} />

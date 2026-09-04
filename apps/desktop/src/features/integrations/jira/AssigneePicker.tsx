@@ -13,6 +13,7 @@ import {
 import type { WorkspaceId } from '@goodboy/types';
 import type { JiraUser } from './client';
 import { useJiraAssignableUsers } from './useJiraAssignableUsers';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly issueKey: string;
@@ -84,7 +85,7 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
           busyLabel="Assigning"
           onClick={toggle}
         >
-          <UserRound size={12} aria-hidden />
+          <UserRound size={ICON_SIZE.row} aria-hidden />
           {assignee?.displayName ?? 'Unassigned'}
         </Button>
       }
@@ -125,7 +126,7 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
             <span className="min-w-0 truncate">{user.displayName}</span>
             {busyId === user.accountId && <StatusDot tone="neutral" pulsing />}
             {busyId !== user.accountId && user.accountId === assignee?.accountId && (
-              <Check size={12} aria-hidden />
+              <Check size={ICON_SIZE.row} aria-hidden />
             )}
           </button>
         ))}

@@ -8,6 +8,7 @@ import { useElapsedMs } from '../../hooks/useElapsedMs';
 import { TranscriptCard } from '../TranscriptCards';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly items: ReadonlyArray<TranscriptItem>;
@@ -91,7 +92,7 @@ export const OperationsCluster = ({
           tone="neutral"
           icon={
             <Layers
-              size={12}
+              size={ICON_SIZE.row}
               aria-hidden
               data-testid="operations-state-icon"
               className={cn('shrink-0', stateIcon)}
