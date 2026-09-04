@@ -88,6 +88,28 @@ describe('GithubTaskDetail', () => {
     expect(screen.getByText('feature')).toBeDefined();
   });
 
+  it('renders the session eyebrow above the loaded issue title', () => {
+    useGithubIssueMock.mockReturnValue({
+      issue: ISSUE,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    render(
+      <GithubTaskDetail
+        workspaceId={WORKSPACE_ID}
+        rootPath="/repo"
+        task={TASK}
+        eyebrow={<span>Ship the lens eyebrow</span>}
+      />,
+    );
+
+    const eyebrow = screen.getByText('Ship the lens eyebrow');
+    const title = screen.getByRole('heading', { level: 2, name: 'Add issue dashboard' });
+    expect(eyebrow.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('falls back to the linked task number when no issue number is given', () => {
     useGithubIssueMock.mockReturnValue({
       issue: null,

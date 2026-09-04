@@ -1,5 +1,6 @@
 import { StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
 import { Skeleton } from '@goodboy/ui';
+import type { ReactNode } from 'react';
 import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { ErrorStrip } from '@goodboy/ui';
 import { HeaderBand } from '@goodboy/ui';
@@ -11,9 +12,10 @@ type Props = {
   readonly rootPath: string | null;
   readonly task?: SessionExternalTask;
   readonly issueNumber?: number;
+  readonly eyebrow?: ReactNode;
 };
 
-export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber }: Props) => {
+export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber, eyebrow }: Props) => {
   const resolvedIssueNumber = issueNumber ?? Number(task?.externalId);
   const { issue, isLoading, error, refetch } = useGithubIssue({
     workspaceId,
@@ -26,6 +28,7 @@ export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber }: P
       <GithubIssueDetail
         issue={issue}
         fit="fill"
+        eyebrow={eyebrow}
         {...(rootPath != null && { editContext: { workspaceId, rootPath } })}
       />
     );
@@ -34,6 +37,7 @@ export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber }: P
   return (
     <StudioDetailLayout
       fit="fill"
+      eyebrow={eyebrow}
       header={
         <HeaderBand
           title={task?.title ?? `#${resolvedIssueNumber}`}

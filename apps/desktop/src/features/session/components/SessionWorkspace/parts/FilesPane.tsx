@@ -121,6 +121,7 @@ export const FilesPane = ({
           workingDir={sessionDir ?? undefined}
           worktreePath={worktreePath}
           diffFocus={diffFocus}
+          eyebrow={eyebrow}
           onClose={onClose}
           onContentEmptyChange={setIsDiffEmpty}
           branchRevision={branchRevision}

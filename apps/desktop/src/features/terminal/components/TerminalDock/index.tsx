@@ -160,6 +160,9 @@ export const TerminalDock = ({ sessionId, isActive, cwd, eyebrow }: Props) => {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" onKeyDown={handleKeyDown}>
+      {eyebrow != null ? (
+        <div className="flex min-w-0 flex-col gap-1 px-3 pt-2">{eyebrow}</div>
+      ) : null}
       <TerminalTabStrip
         tabs={tabs}
         activeId={activeId}

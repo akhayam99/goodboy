@@ -285,6 +285,14 @@ describe('ReviewBoardPane', () => {
     expect(title.compareDocumentPosition(record) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it('renders the session eyebrow above its section title', () => {
+    render(<ReviewBoardPane session={SESSION} eyebrow={<span>Ship the lens eyebrow</span>} />);
+
+    const eyebrow = screen.getByText('Ship the lens eyebrow');
+    const title = screen.getByRole('heading', { level: 2, name: 'Review board' });
+    expect(eyebrow.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('states its section title with no reviewed record', () => {
     h.diff.target = null;
     render(<ReviewBoardPane session={SESSION} />);

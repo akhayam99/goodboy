@@ -222,8 +222,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               eyebrow={sessionEyebrow}
             />
           ) : null}
-          {lens === 'pr' ? <PrPane session={session} onSelectLens={onSelectLens} /> : null}
-          {lens === 'review' ? <ReviewBoardPane session={session} /> : null}
+          {lens === 'pr' ? (
+            <PrPane session={session} onSelectLens={onSelectLens} eyebrow={sessionEyebrow} />
+          ) : null}
+          {lens === 'review' ? (
+            <ReviewBoardPane session={session} eyebrow={sessionEyebrow} />
+          ) : null}
           {lens === 'linear' ? (
             <IntegrationPane
               sessionId={sessionId}
@@ -271,6 +275,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 rootPath={projectWorktreePath}
                 {...(githubTask != null && { task: githubTask })}
                 issueNumber={githubIssueNumber}
+                eyebrow={sessionEyebrow}
               />
             ) : (
               <PaneShell
@@ -323,6 +328,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             isChatActive={isActive && selectedAgentId != null}
             selectedAgentId={selectedAgentId}
             onBack={() => setActiveLens(sessionId, overlayHome)}
+            eyebrow={sessionEyebrow}
           />
         ) : null}
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   cn,
   DiffLayoutToggle,
@@ -37,9 +37,10 @@ type Section = 'review' | 'threads' | 'resolvers';
 
 type Props = {
   readonly session: Session;
+  readonly eyebrow?: ReactNode;
 };
 
-export const ReviewBoardPane = ({ session }: Props) => {
+export const ReviewBoardPane = ({ session, eyebrow }: Props) => {
   const sessionId = session.id as SessionId;
   const [section, setSection] = useState<Section>('review');
   const [inspectedResolverId, setInspectedResolverId] = useState<AgentId | null>(null);
@@ -214,6 +215,7 @@ export const ReviewBoardPane = ({ session }: Props) => {
   return (
     <StudioDetailLayout
       header={header}
+      eyebrow={eyebrow}
       tabs={
         <StudioDetailTabs
           ariaLabel="Resolve hub sections"
