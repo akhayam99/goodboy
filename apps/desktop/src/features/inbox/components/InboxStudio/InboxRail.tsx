@@ -220,16 +220,18 @@ export const InboxRail = ({
             })}
           </div>
         ) : null}
-        <div className="flex items-center gap-1.5 text-3xs text-muted-foreground/60">
-          <KbdPill className="h-4 min-w-4 text-3xs">↑↓</KbdPill>
-          <span>navigate</span>
-          <KbdPill className="h-4 min-w-4 text-3xs">↵</KbdPill>
-          <span>launch</span>
+        <div className="flex items-center justify-between gap-2 text-3xs text-muted-foreground/60">
+          <span className="flex items-center gap-1.5">
+            <KbdPill className="h-4 min-w-4 text-3xs">↑↓</KbdPill>
+            <span>navigate</span>
+            <KbdPill className="h-4 min-w-4 text-3xs">↵</KbdPill>
+            <span>launch</span>
+          </span>
           {hasFiltersActive ? (
             <button
               type="button"
               onClick={onClearFilters}
-              className="ml-auto text-2xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
+              className="text-2xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
             >
               Clear filters
             </button>

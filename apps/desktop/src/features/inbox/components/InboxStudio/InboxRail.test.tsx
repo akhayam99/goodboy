@@ -202,11 +202,13 @@ describe('InboxRail', () => {
     expect(onActivate).not.toHaveBeenCalled();
   });
 
-  it('offers to clear filters from the rail once a provider is selected', () => {
+  it('offers to clear filters from the rail only once a filter is active', () => {
     const onClearFilters = vi.fn();
+    const view = renderRail({ onClearFilters });
     expect(screen.queryByRole('button', { name: 'Clear filters' })).toBeNull();
-    renderRail({ selectedProviders: new Set<InboxProvider>(['github']), onClearFilters });
+    view.unmount();
 
+    renderRail({ selectedProviders: new Set<InboxProvider>(['github']), onClearFilters });
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
 
     expect(onClearFilters).toHaveBeenCalledTimes(1);
