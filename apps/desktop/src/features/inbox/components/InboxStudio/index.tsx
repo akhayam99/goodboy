@@ -7,7 +7,13 @@ import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useInboxRecords } from '../../useInboxRecords';
 import { INBOX_PROVIDERS, type InboxKind, type InboxProvider, type InboxRecord } from '../../types';
 import { filterInboxRecords, type InboxKindFilter } from '../../kindFilter';
-import { readInboxKindFilter, writeInboxKindFilter } from '../../kindFilterStorage';
+import {
+  readInboxKindFilter,
+  readInboxProviders,
+  writeInboxKindFilter,
+  writeInboxProviders,
+} from '../../kindFilterStorage';
+import { groupRecordsByAge } from '../../ageSections';
 import { InboxDetail } from './InboxDetail';
 import { InboxRail } from './InboxRail';
 
@@ -21,7 +27,11 @@ type Props = {
   readonly onClose: () => void;
 };
 
-const kindToFilter = (kind: InboxKind): InboxKindFilter => {
+type KindToFilterParams = {
+  readonly kind: InboxKind;
+};
+
+const kindToFilter = ({ kind }: KindToFilterParams): InboxKindFilter => {
   switch (kind) {
     case 'issue':
       return 'issue';
@@ -52,28 +62,46 @@ export const InboxStudio = ({
   const [query, setQuery] = useState('');
   const [kindFilter, setKindFilter] = useState<InboxKindFilter>(() => {
     if (initialKind != null) {
-      return kindToFilter(initialKind);
+      return kindToFilter({ kind: initialKind });
     }
     return readInboxKindFilter({ workspaceId }) ?? 'all';
   });
-  const [selectedProviders, setSelectedProviders] = useState<ReadonlySet<InboxProvider>>(() =>
-    initialProvider != null ? new Set([initialProvider]) : new Set(),
-  );
+  const [selectedProviders, setSelectedProviders] = useState<ReadonlySet<InboxProvider>>(() => {
+    if (initialProvider != null) {
+      return new Set([initialProvider]);
+    }
+    return new Set(readInboxProviders({ workspaceId }));
+  });
   const [selectedKey, setSelectedKey] = useState<string | null>(initialRecordKey);
 
   useEffect(() => {
     writeInboxKindFilter({ workspaceId, kindFilter });
   }, [workspaceId, kindFilter]);
 
-  const availableProviders = useMemo(() => {
-    const present = new Set(records.map((record) => record.provider));
-    return INBOX_PROVIDERS.filter((provider) => present.has(provider));
-  }, [records]);
+  useEffect(() => {
+    writeInboxProviders({ workspaceId, providers: selectedProviders });
+  }, [workspaceId, selectedProviders]);
 
   const filteredRecords = useMemo(
     () => filterInboxRecords({ records, query, kindFilter, providers: selectedProviders }),
     [records, query, kindFilter, selectedProviders],
   );
+
+  const visibleRecords = useMemo(
+    () => groupRecordsByAge({ records: filteredRecords }).flatMap((section) => section.records),
+    [filteredRecords],
+  );
+
+  useEffect(() => {
+    if (selectedKey != null) {
+      return;
+    }
+    const firstVisibleRecord = visibleRecords[0];
+    if (firstVisibleRecord == null) {
+      return;
+    }
+    setSelectedKey(firstVisibleRecord.key);
+  }, [visibleRecords, selectedKey]);
 
   const selectedRecord = useMemo(
     () => records.find((record) => record.key === selectedKey) ?? null,
@@ -102,6 +130,9 @@ export const InboxStudio = ({
     setSelectedProviders(new Set());
   };
 
+  const hasFiltersActive =
+    query.trim() !== '' || kindFilter !== 'all' || selectedProviders.size > 0;
+
   const onOpenIntegrations = (): void => {
     window.dispatchEvent(
       new CustomEvent('goodboy:open-settings', { detail: { scope: 'providers' } }),
@@ -129,13 +160,11 @@ export const InboxStudio = ({
       {(requestClose) => (
         <StudioRailLayout
           railLabel="Inbox"
-          railWidth="standard"
+          railWidth="xwide"
           rail={
             <InboxRail
               records={filteredRecords}
-              totalCount={records.length}
               allRecords={records}
-              availableProviders={availableProviders}
               selectedProviders={selectedProviders}
               onToggleProvider={onToggleProvider}
               query={query}
@@ -150,19 +179,21 @@ export const InboxStudio = ({
                 return message == null ? [] : [{ provider, message }];
               })}
               onRefresh={refetch}
-              onOpenIntegrations={onOpenIntegrations}
-              onClearFilters={onClearFilters}
             />
           }
           detail={
             <InboxDetail
               record={selectedRecord}
+              records={records}
+              hasFiltersActive={hasFiltersActive}
               workspaceId={workspaceId}
               rootPath={rootPath}
               isLoading={isLoading}
               errors={errors}
               onRefresh={refetch}
               onClose={requestClose}
+              onClearFilters={onClearFilters}
+              onOpenIntegrations={onOpenIntegrations}
             />
           }
         />

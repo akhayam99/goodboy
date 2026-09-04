@@ -302,10 +302,9 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     const saved = mockSavePhaseTemplate.mock.calls[0]![0];
     expect(saved.isPreset).toBe(false);
     expect(saved.name).toBe('Test Workflow');
-    expect(saved.steps.map((s) => s.role)).toEqual(['scout', 'engineer']);
+    expect(saved.steps.map((s) => s.role)).toEqual(['scout', 'custom']);
     expect(saved.steps.map((s) => s.ordinal)).toEqual([0, 1]);
     expect(saved.steps.every((s) => s.modelOverride === undefined)).toBe(true);
-    expect(saved.steps.every((s) => s.workflowId === saved.id)).toBe(true);
     await waitFor(() =>
       expect(mockAttach).toHaveBeenCalledWith('sess-1', saved.id, {
         autoRun: false,
@@ -1118,7 +1117,7 @@ describe('WorkflowBuilderView (step management in custom mode)', () => {
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
     const steps = mockSavePhaseTemplate.mock.calls[0]![0].steps;
-    expect(steps[0]!.role).toBe('engineer');
+    expect(steps[0]!.role).toBe('custom');
     expect(steps[1]!.role).toBe('scout');
   });
 

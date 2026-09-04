@@ -246,7 +246,16 @@ pub(crate) fn spawn_open(path: &Path, reveal: bool) -> std::io::Result<()> {
 }
 
 #[tauri::command]
-pub fn explore_list(
+pub async fn explore_list(
+    session_dir: String,
+    rel_path: String,
+) -> Result<Vec<ExploreEntry>, ExploreError> {
+    tauri::async_runtime::spawn_blocking(move || explore_list_blocking(session_dir, rel_path))
+        .await
+        .map_err(|error| ExploreError::Io(std::io::Error::other(error.to_string())))?
+}
+
+fn explore_list_blocking(
     session_dir: String,
     rel_path: String,
 ) -> Result<Vec<ExploreEntry>, ExploreError> {
@@ -293,7 +302,19 @@ pub fn explore_read(session_dir: String, rel_path: String) -> Result<ExploreCont
 }
 
 #[tauri::command]
-pub fn explore_open(
+pub async fn explore_open(
+    session_dir: String,
+    rel_path: String,
+    reveal: bool,
+) -> Result<(), ExploreError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        explore_open_blocking(session_dir, rel_path, reveal)
+    })
+    .await
+    .map_err(|error| ExploreError::Io(std::io::Error::other(error.to_string())))?
+}
+
+fn explore_open_blocking(
     session_dir: String,
     rel_path: String,
     reveal: bool,
@@ -310,7 +331,9 @@ pub fn explore_open(
 mod tests {
     use std::fs;
 
-    use super::{explore_list, explore_read, ExploreContent, ExploreError, TEXT_MAX_BYTES};
+    use super::{
+        explore_list_blocking, explore_read, ExploreContent, ExploreError, TEXT_MAX_BYTES,
+    };
 
     fn test_root(name: &str) -> std::path::PathBuf {
         std::env::temp_dir().join(format!(
@@ -331,7 +354,8 @@ mod tests {
         fs::write(root.join("alpha.txt"), "alpha").unwrap();
         fs::write(root.join(".goodboy"), "marker").unwrap();
 
-        let entries = explore_list(root.to_string_lossy().into_owned(), String::new()).unwrap();
+        let entries =
+            explore_list_blocking(root.to_string_lossy().into_owned(), String::new()).unwrap();
 
         assert_eq!(
             entries
@@ -350,8 +374,8 @@ mod tests {
         let root = test_root("invalid-paths");
         fs::create_dir_all(&root).unwrap();
 
-        let parent = explore_list(root.to_string_lossy().into_owned(), "..".to_string());
-        let absolute = explore_list(
+        let parent = explore_list_blocking(root.to_string_lossy().into_owned(), "..".to_string());
+        let absolute = explore_list_blocking(
             root.to_string_lossy().into_owned(),
             root.to_string_lossy().into_owned(),
         );
@@ -407,7 +431,8 @@ mod tests {
         fs::write(root.join("file.txt"), "text").unwrap();
 
         let read = explore_read(root.to_string_lossy().into_owned(), String::new());
-        let list = explore_list(root.to_string_lossy().into_owned(), "file.txt".to_string());
+        let list =
+            explore_list_blocking(root.to_string_lossy().into_owned(), "file.txt".to_string());
 
         assert!(matches!(read, Err(ExploreError::NotFile)));
         assert!(matches!(list, Err(ExploreError::NotDirectory)));

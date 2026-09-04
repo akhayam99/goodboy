@@ -1,5 +1,5 @@
 import { Folder, FolderGit2 } from 'lucide-react';
-import { Tooltip } from '@goodboy/ui';
+import { Skeleton, Tooltip } from '@goodboy/ui';
 import type {
   Project,
   PullRequestState,
@@ -26,6 +26,7 @@ type Props = {
   readonly diffStat: MountDiffStat | null;
   readonly pullRequest: PullRequestState | null;
   readonly worktreeStatus: WorktreeStatus | null;
+  readonly isStatusPending?: boolean;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
@@ -47,6 +48,7 @@ export const ProjectMountRow = ({
   diffStat,
   pullRequest,
   worktreeStatus,
+  isStatusPending: isStatusPendingProp = false,
   onSelectLens,
 }: Props) => {
   const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
@@ -55,6 +57,7 @@ export const ProjectMountRow = ({
   const GlyphIcon = project?.kind === 'repo' ? FolderGit2 : Folder;
   const projectName = project?.name ?? mount.mountName;
   const changes = diffStat != null && (diffStat.additions > 0 || diffStat.deletions > 0);
+  const isStatusPending = isStatusPendingProp && worktreeStatus == null && project?.kind === 'repo';
   const remoteKind = useRemoteHostKind({ sessionId });
   const activity = useProjectActivity({
     sessionId,
@@ -78,18 +81,30 @@ export const ProjectMountRow = ({
         <GlyphIcon size={14} aria-hidden className="shrink-0 text-muted-foreground" />
         <span className="truncate text-sm font-medium text-foreground">{projectName}</span>
       </div>
-      <ProjectBranchChip
-        sessionId={sessionId}
-        projectId={mount.projectId}
-        branch={mount.branch}
-        canSwitch={project?.kind === 'repo'}
-      />
-      {project?.kind === 'repo' ? (
-        <ProjectSyncControl
+      {isStatusPending && mount.branch === '' ? (
+        <span data-testid="project-branch-skeleton" className="shrink-0">
+          <Skeleton className="h-6 w-28 rounded-md" />
+        </span>
+      ) : (
+        <ProjectBranchChip
           sessionId={sessionId}
           projectId={mount.projectId}
-          status={worktreeStatus}
+          branch={mount.branch}
+          canSwitch={project?.kind === 'repo'}
         />
+      )}
+      {project?.kind === 'repo' ? (
+        isStatusPending ? (
+          <span data-testid="project-distance-skeleton" className="shrink-0">
+            <Skeleton className="size-7 rounded-md" />
+          </span>
+        ) : (
+          <ProjectSyncControl
+            sessionId={sessionId}
+            projectId={mount.projectId}
+            status={worktreeStatus}
+          />
+        )
       ) : null}
       {changes ? (
         <Tooltip content={`View changes in ${projectName}`}>

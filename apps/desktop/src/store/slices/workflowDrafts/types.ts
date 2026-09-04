@@ -1,22 +1,11 @@
-import type { AgentRole, ProviderId, StepId, WorkflowId } from '@goodboy/types';
+import type { ProviderId, WorkflowId } from '@goodboy/types';
 import type { PlannerOutput } from '@goodboy/core';
 import type { EffortLevel } from '../../../features/chat/utils/chat-constants';
+import type { WorkflowDraft } from '../../../features/workflows/engine';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
 export type Mode = 'preset' | 'custom' | 'dynamic';
-
-export type EditableStep = {
-  readonly key: string;
-  readonly sourceStepId?: StepId;
-  readonly role: AgentRole;
-  readonly name: string;
-  readonly promptPrefix: string;
-  readonly expectedOutput: string;
-  readonly providerOverride?: ProviderId;
-  readonly modelOverride?: string;
-  readonly effort?: EffortLevel;
-};
 
 type OrchestratorModelDraft = {
   readonly providerOverride: ProviderId | '';
@@ -32,7 +21,7 @@ export type WorkflowBuilderDraft = {
   readonly basePresetId: WorkflowId | null;
   readonly processText: string;
   readonly plan: PlannerOutput | null;
-  readonly steps: ReadonlyArray<EditableStep>;
+  readonly workflow: WorkflowDraft;
   readonly saveAsPreset: boolean;
   readonly autoRun: boolean;
   readonly dynamicName: string;
