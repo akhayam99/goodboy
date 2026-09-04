@@ -15,7 +15,7 @@ vi.mock('../../../../store', () => ({
 
 const { SessionEyebrow } = await import('.');
 
-const sessionWith = ({ goal }: { readonly goal: string }): Session =>
+const sessionWith = ({ goal }: { readonly goal: string | undefined }): Session =>
   ({ id: SESSION_ID, goal }) as unknown as Session;
 
 beforeEach(() => {
@@ -38,11 +38,32 @@ describe('SessionEyebrow', () => {
     expect(screen.getByRole('button', { name: 'Untitled session' })).toBeDefined();
   });
 
+  it('falls back to the untitled label without throwing when the goal is undefined', () => {
+    expect(() =>
+      render(<SessionEyebrow session={sessionWith({ goal: undefined })} />),
+    ).not.toThrow();
+
+    expect(screen.getByRole('button', { name: 'Untitled session' })).toBeDefined();
+  });
+
   it('navigates back to the session overview on click', () => {
     render(<SessionEyebrow session={sessionWith({ goal: 'Ship the lens eyebrow' })} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Ship the lens eyebrow' }));
 
     expect(setActiveLens).toHaveBeenCalledWith(SESSION_ID, null);
+  });
+
+  it('renders inline markdown in the goal and strips it from the title', () => {
+    const { container } = render(
+      <SessionEyebrow session={sessionWith({ goal: 'fix `auth` bug' })} />,
+    );
+
+    const code = container.querySelector('code');
+    expect(code?.textContent).toBe('auth');
+
+    const button = container.querySelector('button');
+    expect(button?.getAttribute('title')).toBe('fix auth bug');
+    expect(button?.getAttribute('title')).not.toContain('`');
   });
 });

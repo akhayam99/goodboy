@@ -1,6 +1,8 @@
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
+import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 
 type Props = {
   readonly session: Session;
@@ -9,7 +11,9 @@ type Props = {
 export const SessionEyebrow = ({ session }: Props) => {
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const sessionId = session.id as SessionId;
-  const title = session.goal === '' ? 'Untitled session' : session.goal;
+  const goal = session.goal;
+  const label = goal == null || goal.trim() === '' ? 'Untitled session' : goal;
+  const title = stripInlineMarkdown({ text: label });
   const Icon = CONCEPT_ICONS.sessions;
 
   return (
@@ -20,7 +24,9 @@ export const SessionEyebrow = ({ session }: Props) => {
       className="inline-flex min-w-0 max-w-full items-center gap-1.5 self-start text-2xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
     >
       <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/70" />
-      <span className="min-w-0 truncate">{title}</span>
+      <span className="min-w-0 truncate">
+        <InlineMarkdown text={label} />
+      </span>
     </button>
   );
 };
