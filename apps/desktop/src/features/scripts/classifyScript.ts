@@ -43,8 +43,8 @@ type ClassifyScriptParams = {
   readonly command: string;
 };
 
-type CategoryCountsParams = {
-  readonly scripts: ReadonlyArray<ClassifyScriptParams>;
+type GroupScriptsParams<T extends ClassifyScriptParams> = {
+  readonly scripts: ReadonlyArray<T>;
 };
 
 type CategoryRule = {
@@ -111,26 +111,18 @@ const categoryForValue = ({ value }: { readonly value: string }): ScriptCategory
 export const classifyScript = ({ name, command }: ClassifyScriptParams): ScriptCategory =>
   categoryForValue({ value: name }) ?? categoryForValue({ value: command }) ?? 'other';
 
-export const categoryCounts = ({
+export const groupScriptsByCategory = <T extends ClassifyScriptParams>({
   scripts,
-}: CategoryCountsParams): Readonly<Record<ScriptCategory, number>> => {
-  const counts = {
-    dev: 0,
-    build: 0,
-    test: 0,
-    lint: 0,
-    typecheck: 0,
-    format: 0,
-    db: 0,
-    generate: 0,
-    install: 0,
-    deploy: 0,
-    clean: 0,
-    docs: 0,
-    other: 0,
-  } satisfies Record<ScriptCategory, number>;
+}: GroupScriptsParams<T>): ReadonlyMap<ScriptCategory, ReadonlyArray<T>> => {
+  const groups = new Map<ScriptCategory, Array<T>>();
   for (const script of scripts) {
-    counts[classifyScript(script)] += 1;
+    const category = classifyScript(script);
+    const bucket = groups.get(category);
+    if (bucket === undefined) {
+      groups.set(category, [script]);
+    } else {
+      bucket.push(script);
+    }
   }
-  return counts;
+  return groups;
 };

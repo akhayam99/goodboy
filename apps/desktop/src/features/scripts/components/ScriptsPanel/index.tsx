@@ -105,6 +105,10 @@ type CancelDiscoveredParams = {
   readonly scriptId: string;
 };
 
+type SelectProjectParams = {
+  readonly projectId: ProjectId;
+};
+
 type SearchTarget = {
   readonly name: string;
   readonly command: string;
@@ -290,51 +294,82 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
       ];
     });
   }, [discoveredScripts, matchesSearch, selectedMount]);
+  const userScriptsByProjectId = useMemo(() => {
+    const index = new Map<ProjectId, Array<ProjectScript>>();
+    for (const script of list) {
+      const bucket = index.get(script.projectId);
+      if (bucket === undefined) {
+        index.set(script.projectId, [script]);
+      } else {
+        bucket.push(script);
+      }
+    }
+    return index;
+  }, [list]);
+  const pendingScriptIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const [scriptId, record] of Object.entries(runs ?? {})) {
+      if (record.status === 'pending') {
+        ids.add(scriptId);
+      }
+    }
+    return ids;
+  }, [runs]);
   const railEntries = useMemo<ReadonlyArray<ProjectRailEntry>>(
     () =>
       projects.map((project) => {
-        const projectScripts = list.filter((script) => script.projectId === project.id);
+        const projectScripts = userScriptsByProjectId.get(project.id) ?? [];
         const mount = mountByProjectId.get(project.id) ?? null;
         const manifestGroups = mount == null ? [] : (discoveredScripts?.[mount.worktreePath] ?? []);
-        const manifestCount = manifestGroups.reduce(
-          (total, group) => total + group.scripts.length,
-          0,
-        );
-        const matchCount =
-          projectScripts.filter((script) =>
+        let manifestCount = 0;
+        let matchCount = 0;
+        let isRunning = projectScripts.some((script) => pendingScriptIds.has(script.id));
+        if (normalizedQuery !== '') {
+          matchCount += projectScripts.filter((script) =>
             matchesSearch({ name: script.name, command: script.body }),
-          ).length +
-          manifestGroups.reduce(
-            (total, group) =>
-              total + group.scripts.filter((script) => matchesSearch(script)).length,
-            0,
-          );
-        const hasRunningUserScript = projectScripts.some(
-          (script) => runs?.[script.id]?.status === 'pending',
-        );
-        const hasRunningManifestScript =
-          mount !== null &&
-          manifestGroups.some((group) =>
-            group.scripts.some((script) => {
-              const scriptId = discoveredScriptId({
-                worktreePath: mount.worktreePath,
-                source: group.source,
-                relDir: group.relDir,
-                name: script.name,
-              });
-              return runs?.[scriptId]?.status === 'pending';
-            }),
-          );
+          ).length;
+        }
+        for (const group of manifestGroups) {
+          manifestCount += group.scripts.length;
+          for (const script of group.scripts) {
+            if (normalizedQuery !== '' && matchesSearch(script)) {
+              matchCount += 1;
+            }
+            if (
+              !isRunning &&
+              mount !== null &&
+              pendingScriptIds.size > 0 &&
+              pendingScriptIds.has(
+                discoveredScriptId({
+                  worktreePath: mount.worktreePath,
+                  source: group.source,
+                  relDir: group.relDir,
+                  name: script.name,
+                }),
+              )
+            ) {
+              isRunning = true;
+            }
+          }
+        }
         return {
           id: project.id,
           name: project.name,
           userCount: projectScripts.length,
           manifestCount,
           matchCount,
-          isRunning: hasRunningUserScript || hasRunningManifestScript,
+          isRunning,
         };
       }),
-    [discoveredScripts, list, matchesSearch, mountByProjectId, projects, runs],
+    [
+      discoveredScripts,
+      matchesSearch,
+      mountByProjectId,
+      normalizedQuery,
+      pendingScriptIds,
+      projects,
+      userScriptsByProjectId,
+    ],
   );
   const selectedManifestCount = selectedDiscoveredGroups.reduce(
     (total, entry) => total + entry.group.scripts.length,
@@ -609,7 +644,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
     void refreshDiscoveredScripts({ sessionId, worktreePath: selectedMount.worktreePath });
   }, [refreshDiscoveredScripts, selectedMount, sessionId]);
 
-  const onSelectProject = useCallback(({ projectId }: { readonly projectId: ProjectId }) => {
+  const onSelectProject = useCallback(({ projectId }: SelectProjectParams) => {
     setSelectedProjectId(projectId);
     setExpandedId(null);
     setError(null);

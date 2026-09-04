@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { categoryCounts, classifyScript, SCRIPT_CATEGORIES } from './classifyScript';
+import { classifyScript, groupScriptsByCategory, SCRIPT_CATEGORIES } from './classifyScript';
 
 describe('classifyScript', () => {
   it.each([
@@ -54,8 +54,8 @@ describe('classifyScript', () => {
     ]);
   });
 
-  it('counts every category with zeroes for missing categories', () => {
-    const counts = categoryCounts({
+  it('groups scripts by category in one pass and omits empty categories', () => {
+    const groups = groupScriptsByCategory({
       scripts: [
         { name: 'dev', command: 'vite' },
         { name: 'test:unit', command: 'vitest' },
@@ -63,8 +63,8 @@ describe('classifyScript', () => {
       ],
     });
 
-    expect(counts.dev).toBe(1);
-    expect(counts.test).toBe(2);
-    expect(counts.other).toBe(0);
+    expect(groups.get('dev')?.map((script) => script.name)).toEqual(['dev']);
+    expect(groups.get('test')?.map((script) => script.name)).toEqual(['test:unit', 'test:e2e']);
+    expect(groups.has('other')).toBe(false);
   });
 });

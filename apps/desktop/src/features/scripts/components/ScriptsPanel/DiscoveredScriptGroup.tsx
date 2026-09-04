@@ -1,7 +1,11 @@
 import { Chip, Collapsible, Eyebrow, Tooltip, cn, tintClasses } from '@goodboy/ui';
-import type { ScriptGroup, ScriptRunRecord } from '../../scripts';
+import type { DiscoveredScript, ScriptGroup, ScriptRunRecord } from '../../scripts';
 import { discoveredScriptCwd, discoveredScriptId } from '../../scripts';
-import { categoryCounts, classifyScript, SCRIPT_CATEGORIES } from '../../classifyScript';
+import {
+  groupScriptsByCategory,
+  SCRIPT_CATEGORIES,
+  type ScriptCategory,
+} from '../../classifyScript';
 import { DiscoveredScriptRow } from './DiscoveredScriptRow';
 
 type RunParams = {
@@ -40,8 +44,12 @@ export const DiscoveredScriptGroup = ({
   const scripts = [...group.scripts].sort((left, right) =>
     left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }),
   );
-  const counts = categoryCounts({ scripts });
-  const presentCategories = SCRIPT_CATEGORIES.filter((category) => counts[category.id] > 0);
+  const scriptsByCategory = groupScriptsByCategory({ scripts });
+  const presentCategories = SCRIPT_CATEGORIES.filter((category) =>
+    scriptsByCategory.has(category.id),
+  );
+  const scriptsFor = (category: ScriptCategory): ReadonlyArray<DiscoveredScript> =>
+    scriptsByCategory.get(category) ?? [];
 
   return (
     <section aria-label={`${group.packageName} scripts`}>
@@ -72,7 +80,10 @@ export const DiscoveredScriptGroup = ({
                 const Icon = category.icon;
                 const tint = tintClasses(category.tone);
                 return (
-                  <Tooltip key={category.id} content={`${category.label}: ${counts[category.id]}`}>
+                  <Tooltip
+                    key={category.id}
+                    content={`${category.label}: ${scriptsFor(category.id).length}`}
+                  >
                     <span
                       className={cn(
                         'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-3xs tabular-nums ring-1',
@@ -83,7 +94,7 @@ export const DiscoveredScriptGroup = ({
                       data-testid={`category-strip-${category.id}`}
                     >
                       <Icon size={10} aria-hidden />
-                      {counts[category.id]}
+                      {scriptsFor(category.id).length}
                     </span>
                   </Tooltip>
                 );
@@ -96,9 +107,7 @@ export const DiscoveredScriptGroup = ({
           {presentCategories.map((category) => {
             const Icon = category.icon;
             const tint = tintClasses(category.tone);
-            const categoryScripts = scripts.filter(
-              (script) => classifyScript(script) === category.id,
-            );
+            const categoryScripts = scriptsFor(category.id);
             return (
               <section key={category.id} aria-label={`${category.label} scripts`}>
                 <div className="flex flex-col gap-1.5">

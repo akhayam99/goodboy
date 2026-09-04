@@ -28,13 +28,13 @@ const apiProject = {
   id: 'project-1',
   workspaceId: 'ws-1',
   name: 'API',
-  rootPath: '/Users/dev/code/acme/api',
+  rootPath: '/srv/workspaces/code/acme/api',
 };
 const webProject = {
   id: 'project-2',
   workspaceId: 'ws-1',
   name: 'Web',
-  rootPath: '/Users/dev/code/acme/web',
+  rootPath: '/srv/workspaces/code/acme/web',
 };
 
 const { state } = vi.hoisted(() => ({
