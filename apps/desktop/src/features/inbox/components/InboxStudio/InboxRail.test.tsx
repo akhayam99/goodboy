@@ -112,14 +112,30 @@ describe('InboxRail', () => {
     const chips = within(group).getAllByRole('button');
 
     expect(chips.map((chip) => chip.textContent)).toEqual(['GitHub2', 'Linear1']);
+    expect(chips.map((chip) => chip.getAttribute('aria-label'))).toEqual([
+      'GitHub, 2 items',
+      'Linear, 1 item',
+    ]);
     expect(chips.every((chip) => chip.getAttribute('aria-pressed') === 'false')).toBe(true);
+  });
+
+  it('points aria-activedescendant at the selected option', () => {
+    renderRail({ selectedKey: 'b' });
+
+    const list = screen.getByRole('listbox', { name: 'Inbox items' });
+    const selected = within(list)
+      .getAllByRole('option')
+      .find((option) => option.getAttribute('aria-selected') === 'true');
+
+    expect(selected?.id).toBe('inbox-option-b');
+    expect(list.getAttribute('aria-activedescendant')).toBe('inbox-option-b');
   });
 
   it('renders a selected provider that has no records and can toggle it off', () => {
     const onToggleProvider = vi.fn();
     renderRail({ selectedProviders: new Set<InboxProvider>(['jira']), onToggleProvider });
 
-    const jiraChip = screen.getByRole('button', { name: 'Jira' });
+    const jiraChip = screen.getByRole('button', { name: /^Jira, / });
 
     expect(jiraChip.getAttribute('aria-pressed')).toBe('true');
     expect(jiraChip.textContent).toContain('0');

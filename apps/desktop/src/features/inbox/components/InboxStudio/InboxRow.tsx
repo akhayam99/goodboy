@@ -36,6 +36,13 @@ type Props = {
   readonly onSelect: (record: InboxRecord) => void;
 };
 
+type OptionIdParams = {
+  readonly key: string;
+};
+
+export const inboxOptionId = ({ key }: OptionIdParams): string =>
+  `inbox-option-${key.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+
 export const InboxRow = ({ record, selected, onSelect }: Props) => {
   const relativeTime = formatRelativeAge({ fromIso: record.updatedAt });
   const stateTone = STATE_TONE[record.state];
@@ -48,6 +55,7 @@ export const InboxRow = ({ record, selected, onSelect }: Props) => {
       onClick={() => onSelect(record)}
       title={record.title}
       ariaCurrent={selected}
+      id={inboxOptionId({ key: record.key })}
       role="option"
       ariaSelected={selected}
       tabIndex={-1}

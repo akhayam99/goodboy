@@ -7,6 +7,7 @@ export type SelectableRowProps = {
   readonly onClick?: () => void;
   readonly ariaCurrent?: AriaAttributes['aria-current'];
   readonly title?: string;
+  readonly id?: string;
   readonly role?: 'option';
   readonly ariaSelected?: boolean;
   readonly tabIndex?: number;
@@ -22,6 +23,7 @@ export const SelectableRow = ({
   onClick,
   ariaCurrent,
   title,
+  id,
   role,
   ariaSelected,
   tabIndex,
@@ -30,6 +32,7 @@ export const SelectableRow = ({
   return (
     <button
       type="button"
+      id={id}
       data-selected={selected}
       aria-current={ariaCurrent}
       role={role}

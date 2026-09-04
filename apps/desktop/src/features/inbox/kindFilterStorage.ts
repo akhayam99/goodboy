@@ -39,21 +39,21 @@ const readStoredFilters = ({ workspaceId }: Params): StoredFilters | null => {
       return null;
     }
     const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed !== 'object' || parsed == null) {
+    if (typeof parsed !== 'object' || parsed == null || Array.isArray(parsed)) {
       return null;
     }
-    if (!('kindFilter' in parsed) || !isInboxKindFilter(parsed.kindFilter)) {
+    const source = parsed as Readonly<Record<string, unknown>>;
+    const kindFilter = source['kindFilter'];
+    const providers = source['providers'];
+    if (!isInboxKindFilter(kindFilter) || !Array.isArray(providers)) {
       return null;
     }
-    if (!('providers' in parsed) || !Array.isArray(parsed.providers)) {
-      return null;
-    }
-    const stored: ReadonlyArray<unknown> = parsed.providers;
+    const stored: ReadonlyArray<unknown> = providers;
     if (!stored.every((provider) => isInboxProvider(provider))) {
       return null;
     }
     return {
-      kindFilter: parsed.kindFilter,
+      kindFilter,
       providers: INBOX_PROVIDERS.filter((provider) => stored.includes(provider)),
     };
   } catch {

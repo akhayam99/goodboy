@@ -25,7 +25,7 @@ import {
   type InboxKindFilter,
 } from '../../kindFilter';
 import { INBOX_PROVIDERS, type InboxProvider, type InboxRecord } from '../../types';
-import { InboxRow } from './InboxRow';
+import { InboxRow, inboxOptionId } from './InboxRow';
 
 const KIND_LABEL: Record<InboxKindFilter, string> = {
   all: 'All',
@@ -197,7 +197,7 @@ export const InboxRail = ({
                   icon={<IntegrationGlyph provider={provider} size="xs" useBrandColor />}
                   label={label}
                   trailing={<span className="font-mono tabular-nums">{count}</span>}
-                  ariaLabel={label}
+                  ariaLabel={`${label}, ${count} ${count === 1 ? 'item' : 'items'}`}
                   ariaPressed={isActive}
                   onClick={() => onToggleProvider(provider)}
                 />
@@ -249,6 +249,11 @@ export const InboxRail = ({
               tabIndex={0}
               role="listbox"
               aria-label="Inbox items"
+              aria-activedescendant={
+                selectedKey == null || !orderedRecords.some((record) => record.key === selectedKey)
+                  ? undefined
+                  : inboxOptionId({ key: selectedKey })
+              }
               className="flex flex-col gap-0.5 rounded-md focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
               onKeyDown={(event) =>
                 handleListKeyDown({ event, orderedRecords, selectedKey, onSelect })

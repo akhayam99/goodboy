@@ -262,7 +262,7 @@ describe('InboxStudio', () => {
   it('filters rows by provider chip', () => {
     renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: 'GitHub' }));
+    fireEvent.click(screen.getByRole('button', { name: /^GitHub, / }));
 
     expect(screen.getByText('Fix the flaky test')).toBeDefined();
     expect(screen.queryByText('Ship the inbox')).toBeNull();
@@ -308,7 +308,7 @@ describe('InboxStudio', () => {
   it('renders a deep-linked provider that has no records and recovers with clear filters', () => {
     renderStudio({ initialProvider: 'jira' });
 
-    const jiraChip = screen.getByRole('button', { name: 'Jira' });
+    const jiraChip = screen.getByRole('button', { name: /^Jira, / });
     expect(jiraChip.getAttribute('aria-pressed')).toBe('true');
     expect(jiraChip.textContent).toContain('0');
     expect(screen.getByText('No matching items')).toBeDefined();
@@ -317,13 +317,13 @@ describe('InboxStudio', () => {
     fireEvent.click(screen.getByTestId('detail-clear-filters'));
 
     expect(screen.getByText('Fix the flaky test')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Jira' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Jira, / })).toBeNull();
   });
 
   it('toggles off a selected provider that has no records', () => {
     renderStudio({ initialProvider: 'jira' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Jira' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Jira, / }));
 
     expect(screen.getByText('Fix the flaky test')).toBeDefined();
   });
@@ -331,12 +331,12 @@ describe('InboxStudio', () => {
   it('persists the provider selection per workspace', () => {
     const first = renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: 'GitHub' }));
+    fireEvent.click(screen.getByRole('button', { name: /^GitHub, / }));
     first.unmount();
 
     renderStudio();
 
-    expect(screen.getByRole('button', { name: 'GitHub' }).getAttribute('aria-pressed')).toBe(
+    expect(screen.getByRole('button', { name: /^GitHub, / }).getAttribute('aria-pressed')).toBe(
       'true',
     );
     expect(screen.queryByText('Ship the inbox')).toBeNull();
