@@ -3,6 +3,7 @@ import { SectionHeader } from '@goodboy/ui';
 import { WORKSPACE_FEATURES } from '../../../../../shared/lib/features';
 import { Block } from './Block';
 import { InlineCode } from './InlineCode';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = Record<never, never>;
 
@@ -10,7 +11,7 @@ export const ToolsSection = ({}: Props) => (
   <div className="flex flex-col gap-7">
     <SectionHeader
       size="page"
-      icon={<Wrench size={14} aria-hidden className="text-warning" />}
+      icon={<Wrench size={ICON_SIZE.control} aria-hidden className="text-warning" />}
       label="Tools"
       hint="Actions the agent takes beyond writing a reply: reading files, running shell commands, editing code, fetching docs."
     />

@@ -11,6 +11,7 @@ import { DetectedRepoList } from '../../../../shared/components/DetectedRepoList
 import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
 import { useToast } from '../../../../app/components/Toast';
 import { ProjectBaseBranchInput } from './ProjectBaseBranchInput';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -161,9 +162,9 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
               >
                 <span className="shrink-0 text-muted-foreground">
                   {project.kind === 'repo' ? (
-                    <FolderGit2 size={16} aria-hidden />
+                    <FolderGit2 size={ICON_SIZE.row} aria-hidden />
                   ) : (
-                    <Folder size={16} aria-hidden />
+                    <Folder size={ICON_SIZE.row} aria-hidden />
                   )}
                 </span>
                 <span className="min-w-0 flex-1">
@@ -192,7 +193,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
                     onClick={() => void onUnlink(project.id, project.name)}
                     className="rounded-md p-1 text-muted-foreground/70 hover:bg-foreground/5 hover:text-foreground"
                   >
-                    <X size={14} aria-hidden />
+                    <X size={ICON_SIZE.control} aria-hidden />
                   </button>
                 </Tooltip>
               </li>
@@ -229,10 +230,10 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
             onClick={() => void link(path.trim())}
             disabled={busy || path.trim().length === 0}
           >
-            <Plus size={13} aria-hidden /> Add
+            <Plus size={ICON_SIZE.row} aria-hidden /> Add
           </Button>
           <Button variant="secondary" size="sm" onClick={() => void onNewProject()} disabled={busy}>
-            <FolderPlus size={13} aria-hidden /> New project
+            <FolderPlus size={ICON_SIZE.row} aria-hidden /> New project
           </Button>
         </div>
         {detected !== null ? (

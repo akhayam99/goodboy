@@ -10,7 +10,7 @@ import {
   TERMINAL_DIM,
   Tooltip,
 } from '@goodboy/ui';
-import { ChevronDown, ChevronRight, ChevronUp, Pencil, Undo2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronUp, Undo2 } from 'lucide-react';
 import type {
   Agent,
   AgentId,
@@ -40,7 +40,7 @@ import { CostBadge } from '../../../../providers/components/CostBadge';
 import { CardAction } from '@goodboy/ui';
 import { CardActionSlot } from '@goodboy/ui';
 import { GhostActionButton } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import type { StartStepAgentParams } from './useAgentsSection';
 import { workflowKindName } from '../lib';
@@ -213,7 +213,7 @@ export const WorkflowRow = ({
         {isDetail ? (
           <div className="col-start-1 row-start-1 flex min-w-0 items-start gap-3">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent/10">
-              <CONCEPT_ICONS.workflows size={16} aria-hidden className="text-accent" />
+              <CONCEPT_ICONS.workflows size={ICON_SIZE.hero} aria-hidden className="text-accent" />
             </span>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -245,7 +245,7 @@ export const WorkflowRow = ({
                           'group-hover/name:opacity-100 motion-reduce:opacity-60',
                         )}
                       >
-                        <Pencil size={13} aria-hidden />
+                        <CONCEPT_ICONS.rename size={ICON_SIZE.row} aria-hidden />
                       </button>
                     </Tooltip>
                   </div>
@@ -286,7 +286,11 @@ export const WorkflowRow = ({
             className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5 rounded-md py-1 pl-1 pr-1.5 text-left transition-colors hover:bg-muted/50"
           >
             {forceExpanded ? (
-              <CONCEPT_ICONS.workflows size={13} aria-hidden className="shrink-0 text-accent" />
+              <CONCEPT_ICONS.workflows
+                size={ICON_SIZE.row}
+                aria-hidden
+                className="shrink-0 text-accent"
+              />
             ) : null}
             <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
               {name}

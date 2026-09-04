@@ -481,13 +481,13 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
         aria-hidden="true"
         class="lucide lucide-trash2 lucide-trash-2"
         fill="none"
-        height="12"
+        height="13"
         stroke="currentColor"
         stroke-linecap="round"
         stroke-linejoin="round"
         stroke-width="2"
         viewBox="0 0 24 24"
-        width="12"
+        width="13"
         xmlns="http://www.w3.org/2000/svg"
       >
         <path
@@ -643,13 +643,13 @@ exports[`snapshot, error states > SessionOverviewLoading: retryable failure afte
           aria-hidden="true"
           class="lucide lucide-rotate-ccw"
           fill="none"
-          height="16"
+          height="14"
           stroke="currentColor"
           stroke-linecap="round"
           stroke-linejoin="round"
           stroke-width="2"
           viewBox="0 0 24 24"
-          width="16"
+          width="14"
           xmlns="http://www.w3.org/2000/svg"
         >
           <path

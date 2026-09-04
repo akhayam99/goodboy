@@ -1,6 +1,7 @@
 import { ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
 import type { ResolverThreadSettlement } from '../../../resolverThreadSettlements';
 import { ResolverOutcomeChip } from './ResolverOutcomeChip';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly settlement: ResolverThreadSettlement;
@@ -35,7 +36,7 @@ export const ResolverThreadCardHeader = ({
           aria-label={`Thread ${position} details`}
           className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left transition-colors hover:bg-foreground/5"
         >
-          <Chevron size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
+          <Chevron size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/60" />
           <ResolverOutcomeChip kind={settlement.kind} isClosed={settlement.isClosed} />
           <span className={LABEL_CLASS}>thread {position}</span>
           {summary !== null && summary !== '' && (

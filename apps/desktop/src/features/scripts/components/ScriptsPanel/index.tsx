@@ -21,7 +21,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { Plus } from 'lucide-react';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { readScriptsProject, writeScriptsProject } from '../../projectSelectionStorage';
 import { discoveredScriptId, type ScriptGroup as ManifestScriptGroup } from '../../scripts';
@@ -653,7 +653,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
   const newScriptAction =
     workspaceProjects.length === 0 ? null : (
       <Button variant="ghost" size="sm" onClick={onOpenNew}>
-        <Plus size={13} aria-hidden />
+        <Plus size={ICON_SIZE.row} aria-hidden />
         New script
       </Button>
     );
@@ -663,7 +663,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
   ) : (
     <SectionHeader
       label="Scripts"
-      icon={<CONCEPT_ICONS.scripts size={13} aria-hidden />}
+      icon={<CONCEPT_ICONS.scripts size={ICON_SIZE.row} aria-hidden />}
       hint={SCRIPTS_HINT}
     />
   );

@@ -1,8 +1,8 @@
-import { Pencil } from 'lucide-react';
 import { Tooltip, cn } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useInlineRename } from '../../../../shared/hooks/useInlineRename';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly agent: Agent;
@@ -52,7 +52,7 @@ export const AgentTitle = ({ agent, sessionId }: Props) => {
             'group-hover/title:opacity-100 motion-reduce:opacity-60',
           )}
         >
-          <Pencil size={12} aria-hidden />
+          <CONCEPT_ICONS.rename size={ICON_SIZE.row} aria-hidden />
         </button>
       </Tooltip>
     </span>

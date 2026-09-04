@@ -8,7 +8,7 @@ import {
   Tooltip,
   useDropdown,
 } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { emptyBugReportDraft } from '../../../../store/slices/bugReportDraft/state';
 import { ISSUE_TYPE_OPTIONS, type IssueTypeValue } from '../../reportIssueTypes';
@@ -64,7 +64,7 @@ export const ReportIssuePopover = () => {
                 : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
             )}
           >
-            <ReportIssueIcon size={14} aria-hidden />
+            <ReportIssueIcon size={ICON_SIZE.control} aria-hidden />
             {hasDraft && (
               <span
                 data-testid="report-issue-draft-dot"

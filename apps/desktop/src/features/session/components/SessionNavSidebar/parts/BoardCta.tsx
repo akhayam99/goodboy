@@ -2,6 +2,7 @@ import { Kanban } from 'lucide-react';
 import { KbdPill, cn, tintClasses } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly onNavigate: () => void;
@@ -28,7 +29,7 @@ export const BoardCta = ({ onNavigate }: Props) => {
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
       )}
     >
-      <Kanban size={14} aria-hidden />
+      <Kanban size={ICON_SIZE.control} aria-hidden />
       Board
       <KbdPill
         aria-hidden

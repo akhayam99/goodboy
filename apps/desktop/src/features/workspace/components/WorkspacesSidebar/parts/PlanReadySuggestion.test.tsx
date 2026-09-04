@@ -66,6 +66,6 @@ describe('PlanReadySuggestion', () => {
 
     const suggestion = screen.getByTestId('suggestion-plan-ready:plan-1');
     expect(suggestion.className).toContain('rounded-md');
-    expect(suggestion.querySelector('.lucide-list-checks')).not.toBeNull();
+    expect(suggestion.querySelector('.lucide-clipboard-list')).not.toBeNull();
   });
 });

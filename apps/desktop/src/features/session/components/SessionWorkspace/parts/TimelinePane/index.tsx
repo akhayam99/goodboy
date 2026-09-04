@@ -38,6 +38,7 @@ import { TimelinePendingCluster } from './TimelinePendingCluster';
 import { TimelineSkeleton } from './TimelineSkeleton';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
 import type { WorkspaceRuns } from '../../../../../orchestration/hooks/useWorkspaceRuns';
+import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
@@ -373,7 +374,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
                         onClick={() => void markAllAgentsSeen(sessionId)}
                         className="inline-flex h-6 items-center gap-1 rounded-full bg-primary/10 px-2.5 text-2xs font-medium text-primary motion-safe:transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
                       >
-                        <CheckCheck size={12} aria-hidden />
+                        <CheckCheck size={ICON_SIZE.row} aria-hidden />
                         Mark all seen
                       </button>
                     ) : undefined

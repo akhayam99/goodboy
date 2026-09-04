@@ -3,6 +3,7 @@ import { SectionHeader } from '@goodboy/ui';
 import { Block } from './Block';
 import { Callout } from './Callout';
 import { DefinitionList } from './DefinitionList';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = Record<never, never>;
 
@@ -10,7 +11,7 @@ export const TurnsSection = ({}: Props) => (
   <div className="flex flex-col gap-7">
     <SectionHeader
       size="page"
-      icon={<MessagesSquare size={14} aria-hidden className="text-info" />}
+      icon={<MessagesSquare size={ICON_SIZE.control} aria-hidden className="text-info" />}
       label="Turns"
       hint="One user message plus the assistant's full response, which may include many tool calls and edits."
     />
@@ -34,7 +35,7 @@ export const TurnsSection = ({}: Props) => (
       />
     </Block>
 
-    <Callout tone="info" icon={<Lightbulb size={13} />}>
+    <Callout tone="info" icon={<Lightbulb size={ICON_SIZE.row} />}>
       Providers bill per token across the whole conversation, not per turn. But from a builder
       angle, "I've sent 14 turns and we still don't have a working build" is a useful drift signal:
       time to start a new session.

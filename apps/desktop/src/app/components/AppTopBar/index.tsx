@@ -8,6 +8,7 @@ import { WorkspaceIdentityRow } from '../../../features/workspace/components/Wor
 import { BrandBadge } from './BrandBadge';
 import { WorkspaceRollupStrip } from './WorkspaceRollupStrip';
 import { useThemeStore } from '../../../shared/lib/theme';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   onOpenBudget: () => void;
@@ -53,7 +54,11 @@ export const AppTopBar = ({ onOpenBudget, showWorkspaceIdentity = false }: Props
               aria-label={themeActionLabel}
               className="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
-              {theme === 'dark' ? <Moon size={14} aria-hidden /> : <Sun size={14} aria-hidden />}
+              {theme === 'dark' ? (
+                <Moon size={ICON_SIZE.control} aria-hidden />
+              ) : (
+                <Sun size={ICON_SIZE.control} aria-hidden />
+              )}
             </button>
           </Tooltip>
           <OnboardingChip />

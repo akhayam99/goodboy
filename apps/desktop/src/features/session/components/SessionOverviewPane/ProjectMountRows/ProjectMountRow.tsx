@@ -1,4 +1,3 @@
-import { Folder, FolderGit2 } from 'lucide-react';
 import { Skeleton, Tooltip } from '@goodboy/ui';
 import type {
   Project,
@@ -9,7 +8,11 @@ import type {
 } from '@goodboy/types';
 import type { LensKind, MountDiffStat } from '../../../../../store';
 import { useAppStore } from '../../../../../store';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import {
+  CONCEPT_ICONS,
+  ICON_SIZE,
+  projectGlyph,
+} from '../../../../../shared/components/conceptIcons';
 import { PullRequestChip } from '../../../../github/components/PullRequestChip';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { DiffStat } from '../../DiffStat';
@@ -54,7 +57,7 @@ export const ProjectMountRow = ({
   const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
   const setScriptsLensScope = useAppStore((state) => state.setScriptsLensScope);
   const openMountDiff = useAppStore((state) => state.openMountDiff);
-  const GlyphIcon = project?.kind === 'repo' ? FolderGit2 : Folder;
+  const GlyphIcon = projectGlyph({ kind: project?.kind });
   const projectName = project?.name ?? mount.mountName;
   const changes = diffStat != null && (diffStat.additions > 0 || diffStat.deletions > 0);
   const isStatusPending = isStatusPendingProp && worktreeStatus == null && project?.kind === 'repo';
@@ -78,7 +81,11 @@ export const ProjectMountRow = ({
       className="flex min-h-10 w-full items-center gap-3 border-b border-border-soft px-3 py-1.5 last:border-b-0"
     >
       <div className="flex min-w-36 flex-1 items-center gap-2">
-        <GlyphIcon size={14} aria-hidden className="shrink-0 text-muted-foreground" />
+        <GlyphIcon
+          size={ICON_SIZE.control}
+          aria-hidden
+          className="shrink-0 text-muted-foreground"
+        />
         <span className="truncate text-sm font-medium text-foreground">{projectName}</span>
       </div>
       {isStatusPending && mount.branch === '' ? (
@@ -112,8 +119,13 @@ export const ProjectMountRow = ({
             type="button"
             aria-label={`View the changes of ${projectName}`}
             onClick={() => openMountDiff(sessionId, mount.worktreePath)}
-            className="rounded-md px-1.5 py-1 text-xs tabular-nums hover:bg-muted/40"
+            className="flex items-center gap-1.5 rounded-md px-1.5 py-1 text-xs tabular-nums hover:bg-muted/40"
           >
+            <CONCEPT_ICONS.diff
+              size={ICON_SIZE.row}
+              aria-hidden
+              className="shrink-0 text-muted-foreground"
+            />
             <DiffStat
               additions={diffStat.additions}
               deletions={diffStat.deletions}
@@ -181,7 +193,7 @@ export const ProjectMountRow = ({
           onClick={() => void openLens({ lens: 'terminal' })}
           className={ICON_BUTTON}
         >
-          <CONCEPT_ICONS.terminal size={13} aria-hidden />
+          <CONCEPT_ICONS.terminal size={ICON_SIZE.row} aria-hidden />
           {activity.liveTerminals > 0 ? (
             <span data-testid="terminal-activity-dot" aria-hidden className={ACTIVITY_DOT} />
           ) : null}
@@ -196,7 +208,7 @@ export const ProjectMountRow = ({
           onClick={() => void openLens({ lens: 'scripts' })}
           className={ICON_BUTTON}
         >
-          <CONCEPT_ICONS.scripts size={13} aria-hidden />
+          <CONCEPT_ICONS.scripts size={ICON_SIZE.row} aria-hidden />
           {activity.runningScripts > 0 ? (
             <span data-testid="scripts-activity-dot" aria-hidden className={ACTIVITY_DOT} />
           ) : null}

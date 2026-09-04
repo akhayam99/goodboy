@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { KbdPill, SectionHeader } from '@goodboy/ui';
 import { SHORTCUTS, shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { ShortcutId, ShortcutPlane } from '../../../../shared/keyboard/registry';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly initiallyExpanded: boolean;
@@ -47,9 +48,9 @@ export const ShortcutsSection = ({ initiallyExpanded }: Props) => {
               {SHORTCUT_IDS.length} shortcuts
             </span>
             {isExpanded ? (
-              <ChevronDown size={13} aria-hidden />
+              <ChevronDown size={ICON_SIZE.row} aria-hidden />
             ) : (
-              <ChevronRight size={13} aria-hidden />
+              <ChevronRight size={ICON_SIZE.row} aria-hidden />
             )}
           </button>
         }

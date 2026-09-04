@@ -5,7 +5,7 @@ import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { WorkspaceRow } from '../WorkspaceRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly onClose: () => void;
@@ -106,7 +106,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
         }}
         className={actionClass}
       >
-        <Plus size={13} aria-hidden />
+        <Plus size={ICON_SIZE.row} aria-hidden />
         New workspace
       </button>
       <button
@@ -121,7 +121,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
         }}
         className={actionClass}
       >
-        <FolderGit2 size={13} aria-hidden />
+        <FolderGit2 size={ICON_SIZE.row} aria-hidden />
         Manage projects
       </button>
     </>

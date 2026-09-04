@@ -1,6 +1,7 @@
 import { ArrowRight, Plus } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import { DogMascot } from '../../../../shared/components/DogMascot';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type CreateAgentTriggerVariant = 'tile' | 'compact';
 
@@ -27,7 +28,7 @@ export const CreateAgentTrigger = ({ variant, isOpen, className, description, on
         aria-expanded={isOpen}
         className={cn(COMPACT_CLASS, className)}
       >
-        <Plus size={13} aria-hidden className="shrink-0" />
+        <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
         <span className="truncate">Create agent</span>
       </button>
     );
@@ -42,7 +43,7 @@ export const CreateAgentTrigger = ({ variant, isOpen, className, description, on
         aria-expanded={isOpen}
         className={cn(TILE_CLASS, className)}
       >
-        <DogMascot size={15} className="shrink-0 text-success" />
+        <DogMascot size={ICON_SIZE.control} className="shrink-0 text-success" />
         <span className="min-w-0 truncate text-sm font-medium text-foreground">Create agent</span>
       </button>
     );
@@ -56,13 +57,13 @@ export const CreateAgentTrigger = ({ variant, isOpen, className, description, on
       aria-expanded={isOpen}
       className={cn(TILE_CLASS, className)}
     >
-      <DogMascot size={16} className="shrink-0 text-success" />
+      <DogMascot size={ICON_SIZE.hero} className="shrink-0 text-success" />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
         <span className="text-sm font-medium text-foreground">Create agent</span>
         <span className="truncate text-2xs text-muted-foreground">{description}</span>
       </span>
       <ArrowRight
-        size={15}
+        size={ICON_SIZE.control}
         aria-hidden
         className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
       />

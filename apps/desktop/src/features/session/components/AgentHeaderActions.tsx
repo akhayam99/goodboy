@@ -4,6 +4,7 @@ import { InlineConfirm } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { GhostActionButton } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly agent: Agent;
@@ -68,7 +69,7 @@ export const AgentHeaderActions = ({
       {isConfirmingDelete && (
         <InlineConfirm
           role="danger"
-          icon={<Trash2 size={12} aria-hidden />}
+          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
           title={deleteTitle}
           description={deleteDescription}
           confirmLabel="Delete"

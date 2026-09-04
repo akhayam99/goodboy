@@ -6,6 +6,7 @@ import {
 } from '../../../integrations/components/IntegrationGlyph';
 import { kindFilterCounts } from '../../kindFilter';
 import { INBOX_PROVIDERS, type InboxRecord } from '../../types';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly records: ReadonlyArray<InboxRecord>;
@@ -46,28 +47,28 @@ export const InboxEmptySummary = ({
             <StatCard
               label="Issues"
               value={String(counts.issue)}
-              icon={<CircleDot size={16} aria-hidden />}
+              icon={<CircleDot size={ICON_SIZE.hero} aria-hidden />}
               tone="info"
               valueSize="lg"
             />
             <StatCard
               label="PRs & MRs"
               value={String(counts['pr-mr'])}
-              icon={<GitPullRequest size={16} aria-hidden />}
+              icon={<GitPullRequest size={ICON_SIZE.hero} aria-hidden />}
               tone="merged"
               valueSize="lg"
             />
             <StatCard
               label="Threads"
               value={String(counts.thread)}
-              icon={<MessagesSquare size={16} aria-hidden />}
+              icon={<MessagesSquare size={ICON_SIZE.hero} aria-hidden />}
               tone="accent"
               valueSize="lg"
             />
             <StatCard
               label="Errors"
               value={String(counts.error)}
-              icon={<Bug size={16} aria-hidden />}
+              icon={<Bug size={ICON_SIZE.hero} aria-hidden />}
               tone="danger"
               valueSize="lg"
             />

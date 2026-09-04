@@ -4,7 +4,7 @@ import { cn, Divider, Popover, ScrollFade, SectionHeader, Tooltip } from '@goodb
 import type { SessionId, WorkspaceId, ProjectScript, ProjectScriptId } from '@goodboy/types';
 import { ChevronDown, ChevronRight, Play, Plus, Square, X } from 'lucide-react';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { ScriptRunRecord, ScriptRunResult, ScriptRunStatus } from '../../scripts';
 
 type ScriptsSectionProps = {
@@ -90,9 +90,9 @@ export const ScriptsSection = ({
                 className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
               >
                 {expanded ? (
-                  <ChevronDown size={12} aria-hidden />
+                  <ChevronDown size={ICON_SIZE.row} aria-hidden />
                 ) : (
-                  <ChevronRight size={12} aria-hidden />
+                  <ChevronRight size={ICON_SIZE.row} aria-hidden />
                 )}
               </button>
             </Tooltip>
@@ -132,7 +132,7 @@ export const ScriptsSection = ({
             onClick={openScripts}
             className="mt-1.5 flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
           >
-            <Plus size={13} aria-hidden className="shrink-0" />
+            <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             <span className="min-w-0 truncate">Create script</span>
           </button>
         </>
@@ -218,7 +218,7 @@ function ScriptRow({
               : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground',
           )}
         >
-          <CONCEPT_ICONS.terminal size={12} aria-hidden />
+          <CONCEPT_ICONS.terminal size={ICON_SIZE.row} aria-hidden />
         </button>
       ) : null}
       {isPending ? (
@@ -241,7 +241,7 @@ function ScriptRow({
             aria-label="Run script"
             className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-primary group-hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Play size={12} aria-hidden />
+            <Play size={ICON_SIZE.row} aria-hidden />
           </button>
         </Tooltip>
       )}
@@ -326,7 +326,7 @@ function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyout
             aria-label="Close log"
             className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
-            <X size={12} aria-hidden />
+            <X size={ICON_SIZE.row} aria-hidden />
           </button>
         </Tooltip>
       </div>

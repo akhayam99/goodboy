@@ -1,4 +1,4 @@
-import { AlertTriangle, Ban, Check, CircleStop, Link2, Pause } from 'lucide-react';
+import { AlertTriangle, CircleStop, Link2, Pause } from 'lucide-react';
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
 import { StatusDot, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
@@ -48,7 +48,7 @@ export const WorkflowRunStatus = ({
   if (isDiscarded) {
     return (
       <span className={cn(baseClass, 'bg-muted text-muted-foreground')}>
-        <Ban size={10} aria-hidden />
+        <CONCEPT_ICONS.runCancelled size={10} aria-hidden />
         Discarded
       </span>
     );
@@ -56,7 +56,7 @@ export const WorkflowRunStatus = ({
   if (isCompleted) {
     return (
       <span className={cn(baseClass, 'bg-success/10 text-success')}>
-        <Check size={10} aria-hidden />
+        <CONCEPT_ICONS.runDone size={10} aria-hidden />
         Completed
       </span>
     );

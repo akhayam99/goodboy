@@ -1,6 +1,7 @@
 import { PANE_RHYTHM, SelectableRow } from '@goodboy/ui';
 import { Boxes, CircleDollarSign, Settings, Wrench } from 'lucide-react';
 import type { SettingsScope } from './types';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly scope: SettingsScope;
@@ -28,7 +29,7 @@ export const SettingsRail = ({ scope, workspaceName, onSelect }: Props) => (
           onClick={() => onSelect(item.scope)}
           className={`items-center gap-2.5 ${PANE_RHYTHM.navRail.row}`}
         >
-          <Icon size={16} aria-hidden className="shrink-0" />
+          <Icon size={ICON_SIZE.control} aria-hidden className="shrink-0" />
           <span className="flex min-w-0 flex-col">
             <span className="text-sm font-medium">{item.label}</span>
             {subtitle === null ? null : (

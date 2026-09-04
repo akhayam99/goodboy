@@ -13,6 +13,7 @@ import { useToast } from '../../../../app/components/Toast';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
 import { useAppStore } from '../../../../store';
 import { formatBytes } from './formatBytes';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type ConfirmTarget = 'transcripts' | 'worktrees';
 
@@ -108,7 +109,7 @@ export const StorageSection = () => {
           ) : confirmTarget === 'transcripts' ? (
             <InlineConfirm
               role="danger"
-              icon={<Trash2 size={12} aria-hidden />}
+              icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
               title={PRUNE_LABEL}
               description={PRUNE_CONFIRM}
               confirmLabel="Prune"
@@ -148,7 +149,7 @@ export const StorageSection = () => {
           ) : confirmTarget === 'worktrees' ? (
             <InlineConfirm
               role="danger"
-              icon={<Trash2 size={12} aria-hidden />}
+              icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
               title={REMOVE_LABEL}
               description={REMOVE_CONFIRM}
               confirmLabel="Remove"

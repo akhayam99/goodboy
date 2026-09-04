@@ -4,6 +4,7 @@ import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { useStartAnywayConfirm } from '../../../../workflows/useStartAnywayConfirm';
 import { CardAction } from '@goodboy/ui';
 import { GhostActionButton } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly variant: 'sidebar' | 'detail';
@@ -43,7 +44,7 @@ export const WorkflowRunStartButton = ({ variant, blockReason, onStart }: Props)
         <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
           <InlineConfirm
             role="alert"
-            icon={<AlertTriangle size={12} />}
+            icon={<AlertTriangle size={ICON_SIZE.row} />}
             title={start.title}
             description={start.description}
             confirmLabel={start.confirmLabel}

@@ -1,6 +1,7 @@
 import { cn } from '@goodboy/ui';
 import type { BreadcrumbCrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
 import { CRUMB_BUTTON_CLASS, CRUMB_LAST_CLASS, CRUMB_LINK_CLASS } from './crumbClasses';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type PlainCrumbProps = {
   readonly crumb: BreadcrumbCrumb;
@@ -12,7 +13,7 @@ export const PlainCrumb = ({ crumb, isLast }: PlainCrumbProps) => {
   const content = (
     <>
       {Icon == null ? null : (
-        <Icon size={13} aria-hidden className="shrink-0 text-muted-foreground/70" />
+        <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/70" />
       )}
       <span aria-current={isLast ? 'page' : undefined} className="min-w-0 truncate">
         {crumb.label}

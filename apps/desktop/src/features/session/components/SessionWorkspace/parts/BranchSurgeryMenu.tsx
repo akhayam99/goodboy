@@ -1,7 +1,7 @@
-import { MoreHorizontal } from 'lucide-react';
 import type { BranchCommit } from '@goodboy/types';
 import { AnchoredPopover, cn, Tooltip, useDropdown } from '@goodboy/ui';
 import { BranchSurgery } from './BranchSurgery';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly commits: ReadonlyArray<BranchCommit>;
@@ -37,7 +37,7 @@ export const BranchSurgeryMenu = ({ commits, headSha, onAmend, onSquash }: Props
               isOpen && 'bg-foreground/10 text-foreground',
             )}
           >
-            <MoreHorizontal size={14} aria-hidden />
+            <CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />
           </button>
         </Tooltip>
       }

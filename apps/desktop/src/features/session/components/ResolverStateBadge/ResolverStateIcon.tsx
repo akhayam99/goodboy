@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { StatusDot } from '@goodboy/ui';
-import { AlertTriangle, CheckCheck, Clock } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import type { ResolverBadgeState } from '.';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly state: ResolverBadgeState;
@@ -26,10 +27,12 @@ export const ResolverStateIcon = ({ state }: Props) => {
       icon = <span className="size-1.5 rounded-full bg-danger" aria-hidden />;
       break;
     case 'queued':
-      icon = <Clock size={10} className="text-muted-foreground/60" aria-hidden />;
+      icon = (
+        <CONCEPT_ICONS.runPending size={10} className="text-muted-foreground/60" aria-hidden />
+      );
       break;
     case 'resolved':
-      icon = <CheckCheck size={10} className="text-success" aria-hidden />;
+      icon = <CONCEPT_ICONS.runDone size={10} className="text-success" aria-hidden />;
       break;
     case 'needsYou':
       icon = <AlertTriangle size={10} className="text-warning" aria-hidden />;

@@ -12,7 +12,7 @@ import {
   Skeleton,
   type SegmentedTabOption,
 } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import {
   IntegrationGlyph,
   integrationLabel,
@@ -160,7 +160,7 @@ export const InboxRail = ({
         )}
       >
         <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-background px-2.5 focus-within:border-primary">
-          <Search size={13} aria-hidden className="shrink-0 text-muted-foreground/60" />
+          <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/60" />
           <input
             type="text"
             value={query}

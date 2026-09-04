@@ -5,6 +5,7 @@ import type { ProjectId } from '@goodboy/types';
 import type { ProjectGitStatusEntry } from '../../hooks/useProjectGitStatuses';
 import { ProjectGitDetail } from './ProjectGitDetail';
 import { projectGitPresentationOf } from './projectGitPresentationOf';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly entries: ReadonlyArray<ProjectGitStatusEntry>;
@@ -64,7 +65,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
               : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
           )}
         >
-          <GitBranch size={12} aria-hidden className="shrink-0" />
+          <GitBranch size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span>{entries.length} repos</span>
           {hasWarning ? (
             <span
@@ -118,7 +119,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
             onClick={() => setSelectedProjectId(null)}
             className="flex h-9 items-center gap-1.5 border-b border-border-soft px-3 text-xs font-medium transition-colors hover:bg-muted/50"
           >
-            <ChevronLeft size={13} aria-hidden />
+            <ChevronLeft size={ICON_SIZE.row} aria-hidden />
             <span className="truncate">{selectedEntry.project.name}</span>
           </button>
           <ProjectGitDetail project={selectedEntry.project} status={selectedEntry.status} />

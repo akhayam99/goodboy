@@ -14,6 +14,7 @@ import { DetectedRepoList } from '../../../../shared/components/DetectedRepoList
 import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
 import type { ProjectAttachConflict } from '../../../../store/slices/projects/addProject';
 import { lastPathSegment } from './lastPathSegment';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type WorkspaceLinkMode = 'project' | 'workspace';
 
@@ -297,7 +298,7 @@ export const WorkspaceLinkForm = ({
     <>
       {error != null ? (
         <span role="alert" className="flex min-w-0 flex-1 items-center gap-1 text-xs text-danger">
-          <AlertTriangle size={12} aria-hidden className="shrink-0" />
+          <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           {error}
         </span>
       ) : (
@@ -323,7 +324,7 @@ export const WorkspaceLinkForm = ({
       {created === null ? (
         <section className="flex flex-col gap-4">
           <SectionHeader
-            icon={<FolderGit2 size={12} aria-hidden />}
+            icon={<FolderGit2 size={ICON_SIZE.row} aria-hidden />}
             label="Workspace details"
             hint="A workspace groups the projects, sessions, and connections of one product or team."
           />
@@ -348,7 +349,7 @@ export const WorkspaceLinkForm = ({
                 )}
               >
                 <span className="mt-0.5 shrink-0 text-primary">
-                  <option.icon size={16} aria-hidden />
+                  <option.icon size={ICON_SIZE.hero} aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium text-foreground">{option.label}</span>
@@ -369,11 +370,11 @@ export const WorkspaceLinkForm = ({
                   disabled={busy}
                   onClick={onPickProjectFolder}
                 >
-                  <FolderGit2 size={14} aria-hidden />
+                  <FolderGit2 size={ICON_SIZE.control} aria-hidden />
                   Choose a folder
                 </Button>
                 <Button type="button" variant="secondary" disabled={busy} onClick={onNewProject}>
-                  <FolderPlus size={14} aria-hidden />
+                  <FolderPlus size={ICON_SIZE.control} aria-hidden />
                   New project
                 </Button>
               </div>
@@ -423,7 +424,7 @@ export const WorkspaceLinkForm = ({
       ) : (
         <section className="flex flex-col gap-4">
           <SectionHeader
-            icon={<FolderGit2 size={12} aria-hidden />}
+            icon={<FolderGit2 size={ICON_SIZE.row} aria-hidden />}
             label="Projects"
             hint={`Add the repositories ${created.name} works on.`}
           />
@@ -437,9 +438,9 @@ export const WorkspaceLinkForm = ({
                 >
                   <span className="shrink-0 text-muted-foreground">
                     {project.kind === 'repo' ? (
-                      <FolderGit2 size={16} aria-hidden />
+                      <FolderGit2 size={ICON_SIZE.row} aria-hidden />
                     ) : (
-                      <Folder size={16} aria-hidden />
+                      <Folder size={ICON_SIZE.row} aria-hidden />
                     )}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -467,7 +468,7 @@ export const WorkspaceLinkForm = ({
                       onClick={() => void removeProject({ projectId: project.id })}
                       className="rounded-md p-1 text-muted-foreground/70 hover:bg-foreground/5 hover:text-foreground"
                     >
-                      <X size={14} aria-hidden />
+                      <X size={ICON_SIZE.control} aria-hidden />
                     </button>
                   </Tooltip>
                 </li>
@@ -498,10 +499,10 @@ export const WorkspaceLinkForm = ({
               onClick={() => linkProject({ rootPath: projectPath.trim() })}
               disabled={busy || projectPath.trim().length === 0}
             >
-              <Plus size={14} aria-hidden /> Add
+              <Plus size={ICON_SIZE.control} aria-hidden /> Add
             </Button>
             <Button type="button" variant="secondary" onClick={onNewLinkedProject} disabled={busy}>
-              <FolderPlus size={14} aria-hidden /> New project
+              <FolderPlus size={ICON_SIZE.control} aria-hidden /> New project
             </Button>
           </div>
 

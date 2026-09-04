@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { ScriptRunRecord } from '../../scripts';
 import { formatClockTime } from '../../../../shared/utils/formatClockTime';
 import { SCRIPT_RUN_PRESENTATION } from './scriptRunPresentation';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly run: ScriptRunRecord;
@@ -22,7 +23,11 @@ export const ScriptRunOutput = ({ run, completedAt }: Props) => {
         aria-expanded={open}
         className="flex items-center gap-1.5 text-xs font-medium text-foreground"
       >
-        {open ? <ChevronDown size={12} aria-hidden /> : <ChevronRight size={12} aria-hidden />}
+        {open ? (
+          <ChevronDown size={ICON_SIZE.row} aria-hidden />
+        ) : (
+          <ChevronRight size={ICON_SIZE.row} aria-hidden />
+        )}
         <span>Last run</span>
         <span
           className={cn(

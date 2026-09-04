@@ -5,6 +5,7 @@ import { AnchoredPopover, Button, formatError, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { appendClosingReferences } from '../../../../github/appendClosingReferences';
 import type { ClosingIssueReference } from '../../../../github/closingIssueReferences';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -49,7 +50,7 @@ export const LinkIssueToPrPopover = ({ sessionId, prNumber, body, candidates }: 
       anchorClassName="min-w-0"
       trigger={
         <Button variant="ghost" size="sm" onClick={toggle}>
-          <Plus size={13} aria-hidden />
+          <Plus size={ICON_SIZE.row} aria-hidden />
           Link issue
         </Button>
       }

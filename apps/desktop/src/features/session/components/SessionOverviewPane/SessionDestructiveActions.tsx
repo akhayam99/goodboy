@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Archive, ArchiveRestore, Trash2 } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
 import { cn, formatError, Tooltip } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { DeleteSessionConfirm } from '../DeleteSessionConfirm';
 
 type Props = {
@@ -74,7 +74,11 @@ export const SessionDestructiveActions = ({ session }: Props) => {
           onClick={archived ? doUnarchive : doArchive}
           className={ICON_BUTTON}
         >
-          {archived ? <ArchiveRestore size={13} aria-hidden /> : <Archive size={13} aria-hidden />}
+          {archived ? (
+            <CONCEPT_ICONS.restore size={ICON_SIZE.row} aria-hidden />
+          ) : (
+            <CONCEPT_ICONS.archive size={ICON_SIZE.row} aria-hidden />
+          )}
         </button>
       </Tooltip>
       <span className="relative flex shrink-0 items-center">
@@ -86,7 +90,7 @@ export const SessionDestructiveActions = ({ session }: Props) => {
             onClick={() => setIsDeleteArmed((armed) => !armed)}
             className={cn(ICON_BUTTON, 'text-danger/70 hover:bg-danger/10 hover:text-danger')}
           >
-            <Trash2 size={13} aria-hidden />
+            <CONCEPT_ICONS.delete size={ICON_SIZE.row} aria-hidden />
           </button>
         </Tooltip>
         {isDeleteArmed ? (

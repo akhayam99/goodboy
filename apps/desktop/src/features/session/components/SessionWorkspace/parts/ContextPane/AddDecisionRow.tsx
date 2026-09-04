@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { BlockEditor } from './BlockEditor';
+import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly isLocked: boolean;
@@ -39,7 +40,7 @@ export const AddDecisionRow = ({ isLocked, onAdd }: Props) => {
       onClick={() => setIsWriting(true)}
       className="flex w-full items-center gap-2 rounded-lg border border-dashed border-border-soft px-3 py-2 text-left text-xs leading-5 text-muted-foreground motion-safe:transition-colors hover:bg-muted/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:pointer-events-none disabled:opacity-40"
     >
-      <Plus size={13} aria-hidden className="shrink-0" />
+      <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       Add decision
     </button>
   );

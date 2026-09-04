@@ -10,7 +10,8 @@ type InlineConfirmProps = {
   readonly children: ReactNode;
 };
 
-vi.mock('@goodboy/ui', () => ({
+vi.mock('@goodboy/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/ui')>()),
   InlineConfirm: ({ role, title, children }: InlineConfirmProps) => (
     <div data-confirm-role={role}>
       {title}

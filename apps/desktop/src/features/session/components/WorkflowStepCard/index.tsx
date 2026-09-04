@@ -10,7 +10,7 @@ import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { RoleSelect } from '../RoleSelect';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly ordinal: number;
@@ -137,7 +137,7 @@ export const WorkflowStepCard = ({
         aria-label="Reorder step (drag or arrow keys)"
         className="flex shrink-0 cursor-grab touch-none items-center self-stretch rounded-l-lg px-1 text-muted-foreground/30 transition-colors hover:bg-muted/40 hover:text-muted-foreground active:cursor-grabbing disabled:cursor-not-allowed"
       >
-        <GripVertical size={14} aria-hidden />
+        <GripVertical size={ICON_SIZE.control} aria-hidden />
       </button>
     </Tooltip>
   );
@@ -169,7 +169,7 @@ export const WorkflowStepCard = ({
         aria-label="Remove step"
         className="inline-flex items-center justify-center rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted/60 hover:text-danger focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30 group-hover:opacity-100"
       >
-        <Trash2 size={13} aria-hidden />
+        <Trash2 size={ICON_SIZE.row} aria-hidden />
       </button>
     </Tooltip>
   );
@@ -255,7 +255,7 @@ export const WorkflowStepCard = ({
                     polishing && 'animate-border-pulse',
                   )}
                 >
-                  <CONCEPT_ICONS.enhance size={12} aria-hidden />
+                  <CONCEPT_ICONS.enhance size={ICON_SIZE.row} aria-hidden />
                 </button>
               ) : null}
             </div>

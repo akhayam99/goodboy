@@ -1,5 +1,6 @@
 import { ChevronRight } from 'lucide-react';
 import type { BreadcrumbCrumb } from './buildBreadcrumb';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly crumbs: BreadcrumbCrumb[];
@@ -23,7 +24,11 @@ export const AppBreadcrumb = ({ crumbs }: Props) => {
                 aria-current="page"
               >
                 {Icon == null ? null : (
-                  <Icon size={12} aria-hidden className="shrink-0 text-muted-foreground/70" />
+                  <Icon
+                    size={ICON_SIZE.row}
+                    aria-hidden
+                    className="shrink-0 text-muted-foreground/70"
+                  />
                 )}
                 <span className="min-w-0 truncate">{crumb.label}</span>
                 {crumb.accessory}
@@ -36,7 +41,11 @@ export const AppBreadcrumb = ({ crumbs }: Props) => {
                 title={crumb.label}
               >
                 {Icon == null ? null : (
-                  <Icon size={12} aria-hidden className="shrink-0 text-muted-foreground/70" />
+                  <Icon
+                    size={ICON_SIZE.row}
+                    aria-hidden
+                    className="shrink-0 text-muted-foreground/70"
+                  />
                 )}
                 <span className="min-w-0 truncate">{crumb.label}</span>
                 {crumb.accessory}

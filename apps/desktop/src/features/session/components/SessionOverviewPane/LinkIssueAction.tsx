@@ -7,6 +7,7 @@ import { useGithubConnection } from '../../../integrations/github/useGithubConne
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import { LinkIssueForm } from '../SessionWorkspace/parts/IntegrationPane/LinkIssueForm';
 import { VITAL_CHIP } from './vitalChip';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Tracker = {
   readonly provider: Exclude<SessionExternalTaskProvider, 'sentry' | 'bitbucket' | 'slack'>;
@@ -87,7 +88,7 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
               onClick={onToggle}
               className={TRIGGER_BUTTON}
             >
-              <Link2 size={13} aria-hidden />
+              <Link2 size={ICON_SIZE.row} aria-hidden />
             </button>
           </Tooltip>
         )
@@ -106,7 +107,7 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
               onClick={() => setPickedTracker(null)}
               className="flex items-center gap-1 self-start text-xs text-muted-foreground motion-safe:transition-colors hover:text-foreground"
             >
-              <ChevronLeft size={12} aria-hidden />
+              <ChevronLeft size={ICON_SIZE.row} aria-hidden />
               All trackers
             </button>
           ) : null}
