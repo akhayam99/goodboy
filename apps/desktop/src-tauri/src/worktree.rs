@@ -1364,34 +1364,144 @@ fn worktree_status_blocking(
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
-    let branch = current_branch_name(p);
-    let head = git(p, &["rev-parse", "HEAD"])
+    let snapshot = git(p, &["status", "--porcelain=v2", "--branch"])
         .ok()
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty());
+        .map(|raw| parse_status_v2(&raw));
+    let branch = snapshot.as_ref().and_then(|s| s.branch.clone());
+    let head = snapshot.as_ref().and_then(|s| s.head.clone());
+    let upstream = snapshot.as_ref().and_then(|s| s.upstream.clone());
     let head_subject = git(p, &["log", "-1", "--format=%s"])
         .ok()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
-    let upstream = resolve_upstream(p);
-    let upstream_distance = distance_from_upstream(p, branch.as_ref(), upstream.as_ref());
-    let configured_base = normalized_base(base_branch.as_deref());
-    let main_distance = match resolve_base(p, configured_base) {
-        Some((main_ref, _)) => distance_between(p, &main_ref, "HEAD"),
-        None => GitDistance::Unknown {
-            reason: GitUnknownReason::MainRefUnresolved,
-        },
+    let upstream_distance = if branch.is_none() {
+        GitDistance::Unknown {
+            reason: GitUnknownReason::DetachedHead,
+        }
+    } else if upstream.is_none() {
+        GitDistance::Unknown {
+            reason: GitUnknownReason::NoUpstream,
+        }
+    } else {
+        match snapshot.as_ref().and_then(|s| s.upstream_ab) {
+            Some((ahead, behind)) => GitDistance::Known { ahead, behind },
+            None => GitDistance::Unknown {
+                reason: GitUnknownReason::RevListFailed,
+            },
+        }
     };
+    let working_tree = snapshot
+        .map(|s| s.working_tree)
+        .unwrap_or(GitWorkingTree::Unknown {
+            reason: GitUnknownReason::StatusReadFailed,
+        });
+    let configured_base = normalized_base(base_branch.as_deref());
     Ok(WorktreeStatus {
         branch,
         head,
         head_subject,
         upstream_distance,
-        main_distance,
-        working_tree: read_working_tree(p),
+        main_distance: base_distance(p, configured_base),
+        working_tree,
         upstream,
         in_progress: in_progress_operation(p),
     })
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct StatusSnapshot {
+    branch: Option<String>,
+    head: Option<String>,
+    upstream: Option<String>,
+    upstream_ab: Option<(u32, u32)>,
+    working_tree: GitWorkingTree,
+}
+
+fn parse_ab(value: &str) -> Option<(u32, u32)> {
+    let mut ahead = None;
+    let mut behind = None;
+    for part in value.split_whitespace() {
+        if let Some(count) = part.strip_prefix('+') {
+            ahead = count.parse::<u32>().ok();
+        } else if let Some(count) = part.strip_prefix('-') {
+            behind = count.parse::<u32>().ok();
+        }
+    }
+    Some((ahead?, behind?))
+}
+
+fn parse_status_v2(raw: &str) -> StatusSnapshot {
+    let mut branch = None;
+    let mut head = None;
+    let mut upstream = None;
+    let mut upstream_ab = None;
+    let mut staged = 0u32;
+    let mut unstaged = 0u32;
+    let mut untracked = 0u32;
+    let mut unmerged = 0u32;
+    let mut changed = 0u32;
+    for line in raw.lines() {
+        if let Some(header) = line.strip_prefix("# ") {
+            let (key, value) = header.split_once(' ').unwrap_or((header, ""));
+            match key {
+                "branch.oid" if value != "(initial)" => head = Some(value.to_string()),
+                "branch.head" if value != "(detached)" => branch = Some(value.to_string()),
+                "branch.upstream" => upstream = Some(value.to_string()),
+                "branch.ab" => upstream_ab = parse_ab(value),
+                _ => {}
+            }
+            continue;
+        }
+        let mut fields = line.split(' ');
+        let Some(kind) = fields.next() else {
+            continue;
+        };
+        match kind {
+            "1" | "2" => {
+                changed += 1;
+                let xy = fields.next().unwrap_or("..").as_bytes();
+                if xy.first().is_some_and(|x| *x != b'.') {
+                    staged += 1;
+                }
+                if xy.get(1).is_some_and(|y| *y != b'.') {
+                    unstaged += 1;
+                }
+            }
+            "u" => {
+                changed += 1;
+                unmerged += 1;
+            }
+            "?" => {
+                changed += 1;
+                untracked += 1;
+            }
+            _ => {}
+        }
+    }
+    StatusSnapshot {
+        branch,
+        head,
+        upstream,
+        upstream_ab,
+        working_tree: GitWorkingTree::Known {
+            staged,
+            unstaged,
+            untracked,
+            unmerged,
+            changed,
+        },
+    }
+}
+
+fn base_distance(cwd: &Path, configured_base: Option<&str>) -> GitDistance {
+    for base_ref in base_candidates(cwd, configured_base) {
+        if let Some((ahead, behind)) = rev_list_left_right(cwd, &base_ref, "HEAD") {
+            return GitDistance::Known { ahead, behind };
+        }
+    }
+    GitDistance::Unknown {
+        reason: GitUnknownReason::MainRefUnresolved,
+    }
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
@@ -1687,10 +1797,30 @@ pub(crate) fn read_working_tree(cwd: &Path) -> GitWorkingTree {
     }
 }
 
-pub(crate) fn in_progress_operation(cwd: &Path) -> Option<GitOperation> {
-    let git_dir = git(cwd, &["rev-parse", "--absolute-git-dir"])
+fn git_dir_of(cwd: &Path) -> Option<PathBuf> {
+    let dot_git = cwd.join(".git");
+    if dot_git.is_dir() {
+        return Some(dot_git);
+    }
+    if dot_git.is_file() {
+        let pointer = std::fs::read_to_string(&dot_git).ok()?;
+        let target = pointer.trim().strip_prefix("gitdir:")?.trim();
+        let resolved = if Path::new(target).is_absolute() {
+            PathBuf::from(target)
+        } else {
+            cwd.join(target)
+        };
+        if resolved.is_dir() {
+            return Some(resolved);
+        }
+    }
+    git(cwd, &["rev-parse", "--absolute-git-dir"])
         .ok()
-        .map(|found| PathBuf::from(found.trim()))?;
+        .map(|found| PathBuf::from(found.trim()))
+}
+
+pub(crate) fn in_progress_operation(cwd: &Path) -> Option<GitOperation> {
+    let git_dir = git_dir_of(cwd)?;
     if git_dir.join("MERGE_HEAD").is_file() {
         return Some(GitOperation::Merge);
     }
@@ -2020,6 +2150,114 @@ mod rewrite_tests {
                 behind: 1
             }
         );
+    }
+
+    #[test]
+    fn porcelain_v2_headers_and_entries_become_one_snapshot() {
+        let raw = "# branch.oid 0123abcd\n# branch.head feature\n# branch.upstream origin/feature\n# branch.ab +2 -1\n1 M. N... 100644 100644 100644 aaaa bbbb staged.txt\n1 .M N... 100644 100644 100644 aaaa bbbb unstaged.txt\n1 MM N... 100644 100644 100644 aaaa bbbb both.txt\n2 R. N... 100644 100644 100644 aaaa bbbb R100 renamed.txt\told.txt\nu UU N... 100644 100644 100644 100644 aaaa bbbb cccc conflict.txt\n? new.txt\n! ignored.txt\n";
+
+        assert_eq!(
+            super::parse_status_v2(raw),
+            super::StatusSnapshot {
+                branch: Some("feature".to_string()),
+                head: Some("0123abcd".to_string()),
+                upstream: Some("origin/feature".to_string()),
+                upstream_ab: Some((2, 1)),
+                working_tree: GitWorkingTree::Known {
+                    staged: 3,
+                    unstaged: 2,
+                    untracked: 1,
+                    unmerged: 1,
+                    changed: 6
+                },
+            }
+        );
+    }
+
+    #[test]
+    fn porcelain_v2_detached_and_initial_heads_read_as_absent() {
+        let raw = "# branch.oid (initial)\n# branch.head (detached)\n";
+        let snapshot = super::parse_status_v2(raw);
+
+        assert_eq!(snapshot.branch, None);
+        assert_eq!(snapshot.head, None);
+        assert_eq!(snapshot.upstream, None);
+        assert_eq!(snapshot.upstream_ab, None);
+    }
+
+    #[test]
+    fn status_reads_a_configured_base_with_three_git_spawns() {
+        let root = init_repo("status-spawn-budget");
+        commit(&root, "base.txt", "base", "base");
+        push_to_new_remote(&root);
+        git_ok(&root, &["checkout", "-b", "feature"]);
+        commit(&root, "feature.txt", "feature", "feature");
+        git_ok(&root, &["push", "-u", "origin", "feature"]);
+        std::fs::write(root.join("dirty.txt"), "dirty").unwrap();
+
+        super::git_argv_log::reset();
+        let status =
+            worktree_status_blocking(root.to_string_lossy().into_owned(), Some("main".into()))
+                .unwrap();
+        let spawned = super::git_argv_log::recorded();
+
+        assert_eq!(spawned.len(), 3, "git argv: {spawned:?}");
+        assert_eq!(status.branch.as_deref(), Some("feature"));
+        assert!(status.head.is_some());
+        assert_eq!(status.head_subject.as_deref(), Some("feature"));
+        assert_eq!(status.upstream.as_deref(), Some("origin/feature"));
+        assert_eq!(
+            status.upstream_distance,
+            GitDistance::Known {
+                ahead: 0,
+                behind: 0
+            }
+        );
+        assert_eq!(
+            status.main_distance,
+            GitDistance::Known {
+                ahead: 1,
+                behind: 0
+            }
+        );
+        assert_eq!(
+            status.working_tree,
+            GitWorkingTree::Known {
+                staged: 0,
+                unstaged: 0,
+                untracked: 2,
+                unmerged: 0,
+                changed: 2
+            },
+            "dirty.txt plus the bare remote.git the harness leaves inside the repo"
+        );
+        assert_eq!(status.in_progress, None);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn status_reports_a_detached_head_and_a_missing_upstream() {
+        let root = init_repo("status-detached");
+        commit(&root, "base.txt", "base", "base");
+        let status = worktree_status_blocking(root.to_string_lossy().into_owned(), None).unwrap();
+        assert_eq!(
+            status.upstream_distance,
+            GitDistance::Unknown {
+                reason: GitUnknownReason::NoUpstream
+            }
+        );
+
+        git_ok(&root, &["checkout", "--detach"]);
+        let detached = worktree_status_blocking(root.to_string_lossy().into_owned(), None).unwrap();
+
+        assert_eq!(detached.branch, None);
+        assert_eq!(
+            detached.upstream_distance,
+            GitDistance::Unknown {
+                reason: GitUnknownReason::DetachedHead
+            }
+        );
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
