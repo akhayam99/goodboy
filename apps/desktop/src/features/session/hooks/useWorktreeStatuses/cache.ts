@@ -38,7 +38,7 @@ export const worktreeStatusKey = ({
 }: {
   readonly worktreePath: string;
   readonly baseBranch?: string;
-}): string => `${worktreePath} ${baseBranch ?? ''}`;
+}): string => JSON.stringify([worktreePath, baseBranch ?? null]);
 
 const entryFor = ({
   key,
@@ -157,6 +157,9 @@ export const subscribe = ({ key, listener }: SubscribeParams): (() => void) => {
 
 export const readWorktreeStatus = (key: string): WorktreeStatus | null =>
   entries.get(key)?.value ?? null;
+
+export const isWorktreeStatusSettled = (key: string): boolean =>
+  (entries.get(key)?.fetchedAt ?? 0) > 0;
 
 export const ensure = async ({
   key,

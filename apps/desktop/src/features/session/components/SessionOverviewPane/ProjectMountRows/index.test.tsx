@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
-const { store, useWorktreeStatuses } = vi.hoisted(() => ({
+const { store, useWorktreeStatuses, useWorktreeStatusPending } = vi.hoisted(() => ({
   store: {
     projects: [] as ReadonlyArray<{ id: string; workspaceId: string; name: string }>,
     sessionProjectMounts: {} as Record<
@@ -14,6 +14,7 @@ const { store, useWorktreeStatuses } = vi.hoisted(() => ({
     sessionProjectPrs: {},
   },
   useWorktreeStatuses: vi.fn(() => new Map()),
+  useWorktreeStatusPending: vi.fn(() => new Set()),
 }));
 
 vi.mock('../../../../../store', () => ({
@@ -26,7 +27,10 @@ vi.mock('./ProjectMountRow', () => ({
     <div data-testid="project-mount-row">{mount.mountName}</div>
   ),
 }));
-vi.mock('../../../hooks/useWorktreeStatuses', () => ({ useWorktreeStatuses }));
+vi.mock('../../../hooks/useWorktreeStatuses', () => ({
+  useWorktreeStatuses,
+  useWorktreeStatusPending,
+}));
 vi.mock('./MountProjectAction', () => ({
   MountProjectAction: () => <button>Mount project</button>,
 }));

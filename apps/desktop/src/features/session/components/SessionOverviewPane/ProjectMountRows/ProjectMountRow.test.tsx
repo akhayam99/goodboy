@@ -114,12 +114,14 @@ const renderRow = ({
   diffStat = null,
   pullRequest = null,
   worktreeStatus = null,
+  isStatusPending = false,
   rowMount = mount,
   rowProject = project,
 }: {
   readonly diffStat?: { additions: number; deletions: number } | null;
   readonly pullRequest?: PullRequestState | null;
   readonly worktreeStatus?: WorktreeStatus | null;
+  readonly isStatusPending?: boolean;
   readonly rowMount?: SessionProjectMount;
   readonly rowProject?: Project | null;
 }) =>
@@ -131,6 +133,7 @@ const renderRow = ({
       diffStat={diffStat}
       pullRequest={pullRequest ?? null}
       worktreeStatus={worktreeStatus}
+      isStatusPending={isStatusPending}
       onSelectLens={vi.fn()}
     />,
   );
@@ -315,7 +318,7 @@ describe('ProjectMountRow loading placeholders', () => {
   } as unknown as WorktreeStatus;
 
   it('holds a distance placeholder while the git status is still pending', () => {
-    renderRow({});
+    renderRow({ isStatusPending: true });
 
     expect(screen.getByTestId('project-distance-skeleton')).not.toBeNull();
     expect(screen.queryByTestId('sync-control')).toBeNull();
@@ -328,15 +331,23 @@ describe('ProjectMountRow loading placeholders', () => {
     expect(screen.getByTestId('sync-control')).not.toBeNull();
   });
 
+  it('drops the placeholder when the status fetch settled without a value', () => {
+    renderRow({ worktreeStatus: null, isStatusPending: false });
+
+    expect(screen.queryByTestId('project-distance-skeleton')).toBeNull();
+    expect(screen.queryByTestId('project-branch-skeleton')).toBeNull();
+    expect(screen.getByTestId('sync-control')).not.toBeNull();
+  });
+
   it('holds a branch placeholder instead of an empty branch cell', () => {
-    renderRow({ rowMount: { ...mount, branch: '' } as SessionProjectMount });
+    renderRow({ isStatusPending: true, rowMount: { ...mount, branch: '' } as SessionProjectMount });
 
     expect(screen.getByTestId('project-branch-skeleton')).not.toBeNull();
     expect(screen.queryByTestId('branch-chip')).toBeNull();
   });
 
   it('leaves a folder mount without any git placeholder', () => {
-    renderRow({ rowProject: { ...project, kind: 'folder' } as Project });
+    renderRow({ isStatusPending: true, rowProject: { ...project, kind: 'folder' } as Project });
 
     expect(screen.queryByTestId('project-distance-skeleton')).toBeNull();
     expect(screen.queryByTestId('project-branch-skeleton')).toBeNull();

@@ -30,8 +30,20 @@ afterEach(() => {
 
 describe('worktree status cache', () => {
   it('keys an entry by worktree path and base branch', () => {
-    expect(worktreeStatusKey({ worktreePath: PATH, baseBranch: 'main' })).toBe(`${PATH} main`);
-    expect(worktreeStatusKey({ worktreePath: PATH })).toBe(`${PATH} `);
+    expect(worktreeStatusKey({ worktreePath: PATH, baseBranch: 'main' })).toBe(
+      JSON.stringify([PATH, 'main']),
+    );
+    expect(worktreeStatusKey({ worktreePath: PATH })).toBe(JSON.stringify([PATH, null]));
+  });
+
+  it('never collides on paths or branches that contain separators', () => {
+    const spaced = worktreeStatusKey({ worktreePath: '/wt/a b', baseBranch: 'c' });
+    const plain = worktreeStatusKey({ worktreePath: '/wt/a', baseBranch: 'b c' });
+    const piped = worktreeStatusKey({ worktreePath: '/wt/a|b', baseBranch: 'c' });
+    const emptyBranch = worktreeStatusKey({ worktreePath: PATH, baseBranch: '' });
+
+    expect(new Set([spaced, plain, piped]).size).toBe(3);
+    expect(emptyBranch).not.toBe(worktreeStatusKey({ worktreePath: PATH }));
   });
 
   it('runs one fetch for concurrent callers on the same key', async () => {

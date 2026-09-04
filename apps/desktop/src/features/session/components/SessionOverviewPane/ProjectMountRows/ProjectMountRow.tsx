@@ -26,6 +26,7 @@ type Props = {
   readonly diffStat: MountDiffStat | null;
   readonly pullRequest: PullRequestState | null;
   readonly worktreeStatus: WorktreeStatus | null;
+  readonly isStatusPending?: boolean;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
@@ -47,6 +48,7 @@ export const ProjectMountRow = ({
   diffStat,
   pullRequest,
   worktreeStatus,
+  isStatusPending: isStatusPendingProp = false,
   onSelectLens,
 }: Props) => {
   const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
@@ -55,7 +57,7 @@ export const ProjectMountRow = ({
   const GlyphIcon = project?.kind === 'repo' ? FolderGit2 : Folder;
   const projectName = project?.name ?? mount.mountName;
   const changes = diffStat != null && (diffStat.additions > 0 || diffStat.deletions > 0);
-  const isStatusPending = worktreeStatus == null && project?.kind === 'repo';
+  const isStatusPending = isStatusPendingProp && worktreeStatus == null && project?.kind === 'repo';
   const remoteKind = useRemoteHostKind({ sessionId });
   const activity = useProjectActivity({
     sessionId,
