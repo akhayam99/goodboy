@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { ImpactOverview, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { EmptyState, formatUsd, formatUsdPrecise } from '@goodboy/ui';
@@ -16,6 +17,7 @@ type Props = {
   readonly pullRequests: QueryResult<PullRequestOutcomes>;
   readonly reviews: QueryResult<ReviewOutcomes>;
   readonly isLoading: boolean;
+  readonly spendSection: ReactNode;
   readonly onRetryOverview: () => void;
   readonly onRetryShipped: () => void;
   readonly onOpenSession: (sessionId: SessionId) => void;
@@ -26,6 +28,7 @@ export const OverviewPanel = ({
   pullRequests,
   reviews,
   isLoading,
+  spendSection,
   onRetryOverview,
   onRetryShipped,
   onOpenSession,
@@ -155,6 +158,7 @@ export const OverviewPanel = ({
           </div>
         </>
       ) : null}
+      {spendSection}
     </StudioPanel>
   );
 };

@@ -46,12 +46,21 @@ const { state, workspace } = vi.hoisted(() => {
 });
 
 type ShellProps = {
+  readonly topBar?: ReactNode;
   readonly footer?: ReactNode;
 };
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/ui')>();
-  return { ...actual, AppShell: ({ footer }: ShellProps) => <div>{footer}</div> };
+  return {
+    ...actual,
+    AppShell: ({ topBar, footer }: ShellProps) => (
+      <div>
+        {topBar}
+        {footer}
+      </div>
+    ),
+  };
 });
 
 type FooterProps = {
@@ -62,7 +71,6 @@ type FooterProps = {
   readonly onOpenGithub: () => void;
   readonly githubEnabled: boolean;
   readonly onOpenSettings: () => void;
-  readonly onOpenBudget: () => void;
   readonly onOpenImpact: () => void;
   readonly onOpenChangelog: () => void;
 };
@@ -76,7 +84,6 @@ vi.mock('../app/components/AppFooter', () => ({
     onOpenGithub,
     githubEnabled,
     onOpenSettings,
-    onOpenBudget,
     onOpenImpact,
     onOpenChangelog,
   }: FooterProps) => (
@@ -92,9 +99,6 @@ vi.mock('../app/components/AppFooter', () => ({
       </button>
       <button type="button" onClick={onOpenSettings}>
         Open settings
-      </button>
-      <button type="button" onClick={onOpenBudget}>
-        Open budget
       </button>
       <button type="button" onClick={onOpenImpact}>
         Open impact
@@ -145,7 +149,13 @@ vi.mock('../app/components/BootSplash', () => ({
   },
 }));
 vi.mock('../app/components/KeepAliveWorkSurface', () => ({ KeepAliveWorkSurface: () => null }));
-vi.mock('../app/components/AppTopBar', () => ({ AppTopBar: () => null }));
+vi.mock('../app/components/AppTopBar', () => ({
+  AppTopBar: ({ onOpenSpend }: { onOpenSpend: () => void }) => (
+    <button type="button" onClick={onOpenSpend}>
+      Open spend
+    </button>
+  ),
+}));
 vi.mock('../app/components/AppEmptyState', () => ({ NoWorkspaceScreen: () => null }));
 vi.mock('../features/workspace/components/StageBoard', () => ({ StageBoard: () => null }));
 vi.mock('../features/session/components/DeleteSessionConfirm', () => ({
@@ -191,8 +201,20 @@ vi.mock('../features/workspace/components/WorkspaceSwitcher', () => ({
 vi.mock('../features/workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('../features/workflows/components/WorkflowStudio', () => ({ WorkflowStudio: () => null }));
 vi.mock('../features/impact/components/ImpactStudio', () => ({
-  ImpactStudio: ({ workspaceName }: { workspaceName: string }) => (
-    <div data-testid="impact-studio">{workspaceName}</div>
+  ImpactStudio: ({
+    workspaceName,
+    initialScope,
+  }: {
+    workspaceName: string;
+    initialScope?: { kind: string; sessionId?: string };
+  }) => (
+    <div
+      data-testid="impact-studio"
+      data-scope={initialScope?.kind ?? 'none'}
+      data-session={initialScope?.sessionId ?? ''}
+    >
+      {workspaceName}
+    </div>
   ),
 }));
 vi.mock('../features/changelog/components/ChangelogStudio', () => ({
@@ -383,22 +405,26 @@ describe('Footer to settings and more-popover reachability', () => {
     expect(screen.getByTestId('settings-studio')).toBeDefined();
   });
 
-  it('opens budget from the footer more popover', () => {
-    render(<App />);
-
-    expect(screen.queryByTestId('settings-studio')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open budget' }));
-
-    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('budget');
-  });
-
-  it('opens impact from the footer more popover', async () => {
+  it('opens impact from the footer more popover, with no scope forced', async () => {
     render(<App />);
 
     expect(screen.queryByTestId('impact-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open impact' }));
 
-    expect((await screen.findByTestId('impact-studio')).textContent).toBe('Workspace');
+    const studio = await screen.findByTestId('impact-studio');
+    expect(studio.textContent).toBe('Workspace');
+    expect(studio.getAttribute('data-scope')).toBe('none');
+  });
+
+  it('lands the top bar spend chip on the impact studio overview', async () => {
+    render(<App />);
+
+    expect(screen.queryByTestId('impact-studio')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open spend' }));
+
+    expect((await screen.findByTestId('impact-studio')).getAttribute('data-scope')).toBe(
+      'overview',
+    );
   });
 
   it('opens changelog from the footer more popover', async () => {
@@ -415,12 +441,44 @@ describe('Legacy settings event forwarding', () => {
   it.each([
     ['goodboy:open-workspace-settings', 'workspace'],
     ['goodboy:open-provider-studio', 'providers'],
-    ['goodboy:open-budget-studio', 'budget'],
   ])('forwards %s to the %s settings scope', (eventName, scope) => {
     render(<App />);
 
     act(() => window.dispatchEvent(new CustomEvent(eventName)));
 
     expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe(scope);
+  });
+});
+
+describe('Spend reachability through the impact studio', () => {
+  it('opens the impact studio at a session scope from the impact studio event', () => {
+    render(<App />);
+
+    act(() =>
+      window.dispatchEvent(
+        new CustomEvent('goodboy:open-impact-studio', {
+          detail: { scope: { kind: 'session', sessionId: 'session-1' } },
+        }),
+      ),
+    );
+
+    const studio = screen.getByTestId('impact-studio');
+    expect(studio.getAttribute('data-scope')).toBe('session');
+    expect(studio.getAttribute('data-session')).toBe('session-1');
+  });
+
+  it('keeps the legacy budget studio event working as an alias', () => {
+    render(<App />);
+
+    act(() =>
+      window.dispatchEvent(
+        new CustomEvent('goodboy:open-budget-studio', {
+          detail: { budgetScope: { kind: 'provider', provider: 'anthropic' } },
+        }),
+      ),
+    );
+
+    expect(screen.getByTestId('impact-studio').getAttribute('data-scope')).toBe('provider');
+    expect(screen.queryByTestId('settings-studio')).toBeNull();
   });
 });

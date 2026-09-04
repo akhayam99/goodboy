@@ -10,7 +10,8 @@ import {
   type WorkspaceId,
 } from '@goodboy/types';
 import { AppOverlayRouter } from '../../components/AppOverlayRouter';
-import type { BudgetScope } from '../../../features/budget/components/BudgetStudio/lib';
+import type { ImpactScope } from '../../../features/impact/lib';
+import { IMPACT_STUDIO_EVENT } from '../../../features/impact/openImpactStudio';
 import type {
   SettingsFocus,
   SettingsScope,
@@ -86,12 +87,12 @@ type InboxStudioFocus = {
   readonly recordKey: string | null;
 };
 
-const isBudgetScope = (value: unknown): value is BudgetScope => {
+const isImpactScope = (value: unknown): value is ImpactScope => {
   if (typeof value !== 'object' || value === null) {
     return false;
   }
   const kind: unknown = Reflect.get(value, 'kind');
-  if (kind === 'overview') {
+  if (kind === 'overview' || kind === 'shipped' || kind === 'flow' || kind === 'efficiency') {
     return true;
   }
   if (kind === 'provider') {
@@ -130,6 +131,7 @@ export const useAppOverlays = ({
   const [inboxStudioOpen, setInboxStudioOpen] = useState(false);
   const [inboxStudioFocus, setInboxStudioFocus] = useState<InboxStudioFocus | null>(null);
   const [impactStudioOpen, setImpactStudioOpen] = useState(false);
+  const [impactStudioFocus, setImpactStudioFocus] = useState<ImpactScope | null>(null);
   const [changelogStudioOpen, setChangelogStudioOpen] = useState(false);
   const [notificationsStudioOpen, setNotificationsStudioOpen] = useState(false);
   const setSessionStudio = useAppStore((state) => state.setSessionStudio);
@@ -173,14 +175,15 @@ export const useAppOverlays = ({
     setSettingsOpen(true);
   }, [clearSessionStudio, closeAllStudios]);
 
-  const openBudget = useCallback(() => {
+  const openSpend = useCallback(() => {
     closeAllStudios();
-    setSettingsFocus({ scope: 'budget', budgetScope: { kind: 'overview' } });
-    setSettingsOpen(true);
+    setImpactStudioFocus({ kind: 'overview' });
+    setImpactStudioOpen(true);
   }, [closeAllStudios]);
 
   const openImpact = useCallback(() => {
     closeAllStudios();
+    setImpactStudioFocus(null);
     setImpactStudioOpen(true);
   }, [closeAllStudios]);
 
@@ -282,13 +285,8 @@ export const useAppOverlays = ({
       const provider =
         eventValue({ event, key: 'provider' }) ?? eventValue({ event, key: 'providerId' });
       const action = eventValue({ event, key: 'action' });
-      const budgetScope =
-        eventValue({ event, key: 'budgetScope' }) ?? eventValue({ event, key: 'scope' });
       const scope: SettingsScope =
-        requestedScope === 'app' ||
-        requestedScope === 'workspace' ||
-        requestedScope === 'providers' ||
-        requestedScope === 'budget'
+        requestedScope === 'app' || requestedScope === 'workspace' || requestedScope === 'providers'
           ? requestedScope
           : fallbackScope;
       closeAllStudios();
@@ -297,7 +295,6 @@ export const useAppOverlays = ({
         section: typeof section === 'string' ? section : undefined,
         provider: isProviderId(provider) ? provider : undefined,
         action: isProviderLifecycleAction(action) ? action : undefined,
-        budgetScope: isBudgetScope(budgetScope) ? budgetScope : undefined,
       });
       setSettingsOpen(true);
     };
@@ -348,8 +345,12 @@ export const useAppOverlays = ({
     const onOpenProviderStudio = (event: Event) => {
       openSettingsEvent({ event, fallbackScope: 'providers' });
     };
-    const onOpenBudgetStudio = (event: Event) => {
-      openSettingsEvent({ event, fallbackScope: 'budget' });
+    const onOpenImpactStudio = (event: Event) => {
+      const scope =
+        eventValue({ event, key: 'scope' }) ?? eventValue({ event, key: 'budgetScope' });
+      closeAllStudios();
+      setImpactStudioFocus(isImpactScope(scope) ? scope : null);
+      setImpactStudioOpen(true);
     };
     const onOpenWorkspaceSettings = (event: Event) => {
       openSettingsEvent({ event, fallbackScope: 'workspace' });
@@ -426,7 +427,8 @@ export const useAppOverlays = ({
     window.addEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
     window.addEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
     window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
-    window.addEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
+    window.addEventListener(IMPACT_STUDIO_EVENT, onOpenImpactStudio);
+    window.addEventListener('goodboy:open-budget-studio', onOpenImpactStudio);
     window.addEventListener('goodboy:open-workspace-settings', onOpenWorkspaceSettings);
     window.addEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
     window.addEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
@@ -450,7 +452,8 @@ export const useAppOverlays = ({
       window.removeEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
       window.removeEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
       window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
-      window.removeEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
+      window.removeEventListener(IMPACT_STUDIO_EVENT, onOpenImpactStudio);
+      window.removeEventListener('goodboy:open-budget-studio', onOpenImpactStudio);
       window.removeEventListener('goodboy:open-workspace-settings', onOpenWorkspaceSettings);
       window.removeEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
       window.removeEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
@@ -667,6 +670,7 @@ export const useAppOverlays = ({
     inboxStudioOpen,
     inboxStudioFocus,
     impactStudioOpen,
+    impactStudioFocus,
     changelogStudioOpen,
     notificationsStudioOpen,
     commitDiff,
@@ -699,7 +703,6 @@ export const useAppOverlays = ({
     armDeleteConfirm,
     openAddWorkspace,
     openBitbucket,
-    openBudget,
     openChangelog,
     openGithub,
     openGitlab,
@@ -713,6 +716,7 @@ export const useAppOverlays = ({
     openSettings,
     openShortcutHelp,
     openSlack,
+    openSpend,
     openWorkflows,
     overlays,
   };

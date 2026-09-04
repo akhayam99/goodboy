@@ -22,7 +22,7 @@ import type {
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
 import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
-import { openBudgetStudio } from '../../../budget/openBudgetStudio';
+import { openImpactStudio } from '../../../impact/openImpactStudio';
 import { isBudgetBlocked } from '../../../../store/slices/workflows/budgetBlock';
 import { WorkflowAutorunToggle } from '../WorkflowAutorunToggle';
 import { WorkflowOrchestratorTldr } from '../WorkflowOrchestratorTldr';
@@ -155,7 +155,7 @@ export const OrchestratorPanel = ({
             tone="warning"
             testId="orchestrator-review-budget"
             title="The session budget cap is what stopped this run"
-            onClick={() => openBudgetStudio({ scope: { kind: 'session', sessionId } })}
+            onClick={() => openImpactStudio({ scope: { kind: 'session', sessionId } })}
           />
         ) : (
           <RunSpendLimitPopover sessionId={sessionId} run={run} variant="primary" />

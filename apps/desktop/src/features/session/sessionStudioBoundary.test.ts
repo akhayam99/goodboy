@@ -25,7 +25,7 @@ const SESSION_SURFACE_FILES = [
   join(SOURCE_ROOT, 'integrations/components/ExternalTaskChip/index.tsx'),
 ];
 
-const TOP_LEVEL_STUDIOS = ['github', 'gitlab', 'linear', 'sentry', 'provider', 'budget', 'impact'];
+const TOP_LEVEL_STUDIOS = ['github', 'gitlab', 'linear', 'sentry', 'provider', 'impact'];
 
 const TOP_LEVEL_STUDIO_EVENT = new RegExp(
   `goodboy:open-(?:${TOP_LEVEL_STUDIOS.join('|')}|\\$\\{[^}]+\\})-studio`,

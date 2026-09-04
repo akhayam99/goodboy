@@ -8,8 +8,27 @@ import type { ImpactMetrics } from '../../hooks/useImpactMetrics';
 const mocks = vi.hoisted(() => ({
   metrics: null as unknown as ImpactMetrics,
   retry: vi.fn(),
-  setCurrentSession: vi.fn(),
   useImpactMetrics: vi.fn(),
+  sessions: [] as ReadonlyArray<{ id: string; goal: string }>,
+  state: {
+    setCurrentSession: vi.fn(),
+    currentSessionId: null,
+    currentWorkspaceId: 'workspace-1',
+    sessionTelemetry: {},
+    providerSpendBreakdown: [],
+    budgetAlerts: [],
+    budgetRules: [],
+    sessionBudgets: {},
+    dismissBudgetAlert: vi.fn(),
+    saveBudgetRule: vi.fn(),
+    deleteBudgetRule: vi.fn(),
+    setSessionBudget: vi.fn(),
+    refreshProviderSpendBreakdown: vi.fn(),
+    loadBudgetRules: vi.fn(async () => undefined),
+    loadBudgetAlerts: vi.fn(async () => undefined),
+    loadSessionTelemetry: vi.fn(async () => undefined),
+    loadSessionBudget: vi.fn(async () => undefined),
+  },
 }));
 
 vi.mock('../../hooks/useImpactMetrics', () => ({
@@ -17,9 +36,9 @@ vi.mock('../../hooks/useImpactMetrics', () => ({
 }));
 
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(
-    selector: (state: { setCurrentSession: typeof mocks.setCurrentSession }) => T,
-  ) => selector({ setCurrentSession: mocks.setCurrentSession }),
+  EMPTY_ARRAY: [],
+  useAppStore: <T,>(selector: (state: typeof mocks.state) => T) => selector(mocks.state),
+  useSessions: () => mocks.sessions,
 }));
 
 import { ImpactStudio } from './index';
@@ -114,7 +133,7 @@ const buildMetrics = (): ImpactMetrics => ({
 
 beforeEach(() => {
   mocks.retry.mockClear();
-  mocks.setCurrentSession.mockClear();
+  mocks.state.setCurrentSession.mockClear();
   mocks.useImpactMetrics.mockImplementation(() => mocks.metrics);
   mocks.metrics = buildMetrics();
 });
@@ -141,7 +160,7 @@ describe('ImpactStudio', () => {
     const drillDowns = screen.getAllByRole('button', { name: /ship impact studio/i });
     expect(drillDowns).toHaveLength(2);
     fireEvent.click(drillDowns[0]!);
-    expect(mocks.setCurrentSession).toHaveBeenCalledWith('session-1');
+    expect(mocks.state.setCurrentSession).toHaveBeenCalledWith('session-1');
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -220,9 +239,7 @@ describe('ImpactStudio', () => {
     expect(screen.getByText('p90 4.0h')).toBeDefined();
   });
 
-  it('switches to Efficiency and dispatches the Budget Studio link', () => {
-    const onBudget = vi.fn();
-    window.addEventListener('goodboy:open-settings', onBudget);
+  it('switches to Efficiency and stops pointing at a separate budget studio', () => {
     render(
       <ImpactStudio
         workspaceId={'workspace-1' as never}
@@ -234,9 +251,21 @@ describe('ImpactStudio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Efficiency' }));
     expect(screen.getByText('cache reuse by provider')).toBeDefined();
     expect(screen.getByText('context growth per turn')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /spend and caps live in budget/i }));
-    expect(onBudget).toHaveBeenCalled();
-    window.removeEventListener('goodboy:open-settings', onBudget);
+    expect(screen.queryByText(/spend and caps live in budget/i)).toBeNull();
+  });
+
+  it('carries spend into the overview and keeps the rail free of empty spend groups', () => {
+    render(
+      <ImpactStudio
+        workspaceId={'workspace-1' as never}
+        workspaceName="Goodboy"
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Spend')).toBeDefined();
+    expect(screen.queryByText('spend by provider')).toBeNull();
+    expect(screen.queryByText('spend by session')).toBeNull();
   });
 
   it('updates the query window from the header toggle', () => {

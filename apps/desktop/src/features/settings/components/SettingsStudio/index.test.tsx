@@ -32,10 +32,6 @@ vi.mock('../../../providers/components/ProviderStudio', () => ({
   ProviderSettingsScope: () => <div>Provider settings content</div>,
 }));
 
-vi.mock('../../../budget/components/BudgetStudio', () => ({
-  BudgetSettingsScope: () => <div>Budget settings content</div>,
-}));
-
 vi.mock('./WorkspaceScopePanel', () => ({
   WorkspaceScopePanel: () => <div>Workspace settings content</div>,
 }));

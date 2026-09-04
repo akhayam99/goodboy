@@ -11,9 +11,9 @@ import {
   useDropdown,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { openBudgetStudio as openBudgetStudioEvent } from '../../../budget/openBudgetStudio';
-import { SessionBudgetContent } from '../../../budget/components/BudgetStudio/SessionBudgetContent';
-import type { WorkspaceTurn } from '../../../budget/components/BudgetStudio/lib';
+import { openImpactStudio } from '../../../impact/openImpactStudio';
+import { SessionBudgetContent } from '../../../budget/components/spend/SessionBudgetContent';
+import type { WorkspaceTurn } from '../../../budget/components/spend/lib';
 import { EMPTY_ARRAY, useAppStore, useSessionCost } from '../../../../store';
 import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 import { manageDialogFocus } from './manageDialogFocus';
@@ -117,8 +117,8 @@ export const SessionCostChip = ({ sessionId }: Props) => {
     });
   }, [open, popupRef]);
 
-  const openBudgetStudio = () => {
-    openBudgetStudioEvent({ scope: { kind: 'session', sessionId } });
+  const openSpendScope = () => {
+    openImpactStudio({ scope: { kind: 'session', sessionId } });
     toggle();
   };
 
@@ -169,8 +169,8 @@ export const SessionCostChip = ({ sessionId }: Props) => {
       </ScrollFade>
       <Divider />
       <div className="p-3">
-        <Button variant="ghost" size="sm" onClick={openBudgetStudio}>
-          Open full budget details
+        <Button variant="ghost" size="sm" onClick={openSpendScope}>
+          Open full spend details
         </Button>
       </div>
     </AnchoredPopover>

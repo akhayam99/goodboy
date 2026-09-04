@@ -21,7 +21,6 @@ type Props = {
   onOpenWorkflows: () => void;
   onOpenProviders: () => void;
   onOpenSettings: () => void;
-  onOpenBudget: () => void;
   onOpenImpact: () => void;
   onOpenChangelog: () => void;
   onOpenInbox: () => void;
@@ -46,7 +45,6 @@ export const AppFooter = ({
   onOpenWorkflows,
   onOpenProviders,
   onOpenSettings,
-  onOpenBudget,
   onOpenImpact,
   onOpenChangelog,
   onOpenInbox,
@@ -170,7 +168,6 @@ export const AppFooter = ({
           <MoreStudiosPopover
             activeStudio={activeStudio}
             openers={{
-              budget: onOpenBudget,
               impact: onOpenImpact,
               changelog: onOpenChangelog,
             }}
