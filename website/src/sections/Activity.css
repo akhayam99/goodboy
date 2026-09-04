@@ -1,0 +1,363 @@
+.ac-head {
+  padding: 14px 16px;
+}
+
+.ac-goal {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.ac-head .ovmeta {
+  padding: 10px 0 0;
+}
+
+.ac-issue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ac-feed {
+  border-top: 1px solid var(--gray1);
+  padding: 16px;
+}
+
+.ac-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray6);
+  margin-bottom: 10px;
+}
+
+.ac-frame {
+  margin-top: 48px;
+  background: #fff;
+  border: 1px solid var(--gray3);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.ac-stream {
+  --ac-gut: 64px;
+  --ac-run: oklch(0.5 0.17 320);
+  position: relative;
+}
+
+.ac-stream:before {
+  content: '';
+  position: absolute;
+  left: calc(var(--ac-gut) + 8px);
+  top: 12px;
+  bottom: 18px;
+  width: 1px;
+  background: var(--gray3);
+}
+
+.ac-slot {
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-top: 0;
+  transition:
+    grid-template-rows 0.46s cubic-bezier(0.2, 0.7, 0.3, 1),
+    margin-top 0.46s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.ac-slot.ac-on {
+  grid-template-rows: 1fr;
+  margin-top: var(--gap);
+}
+
+.ac-clip {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ac-row {
+  display: grid;
+  grid-template-columns: var(--ac-gut) 32px minmax(0, 1fr);
+  align-items: center;
+  min-height: var(--bh);
+  opacity: 0;
+  transform: translateY(-5px);
+  transition:
+    opacity 0.34s ease 0.1s,
+    transform 0.44s cubic-bezier(0.2, 0.7, 0.3, 1) 0.06s;
+}
+
+.ac-slot.ac-on .ac-row {
+  opacity: 1;
+  transform: none;
+}
+
+.ac-gut {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--gray5);
+}
+
+.ac-nowlabel {
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray6);
+}
+
+.ac-rc {
+  position: relative;
+  align-self: stretch;
+}
+
+.ac-nowdot {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gray3);
+}
+
+.ac-lane {
+  position: absolute;
+  left: 22px;
+  width: 2px;
+}
+
+.ac-up {
+  top: calc(-1 * var(--gap));
+  bottom: 50%;
+}
+
+.ac-up.ac-cut {
+  bottom: calc(50% + 16px);
+}
+
+.ac-down {
+  top: 50%;
+  bottom: 0;
+}
+
+.ac-solid {
+  background: var(--ac-run);
+}
+
+.ac-dash {
+  background-image: linear-gradient(to bottom, var(--ac-run) 0 3px, transparent 3px 6px);
+  background-size: 2px 6px;
+}
+
+.ac-join {
+  position: absolute;
+  left: 8px;
+  top: calc(50% - 16px);
+  width: 16px;
+  height: 16px;
+  border-right: 2px solid var(--ac-run);
+  border-bottom: 2px solid var(--ac-run);
+  border-bottom-right-radius: 16px;
+}
+
+.ac-mk {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.ac-mk.ac-onlane {
+  left: 23px;
+}
+
+.ac-mk.ac-entry {
+  width: 18px;
+  height: 18px;
+}
+
+.ac-mk.ac-step {
+  width: 14px;
+  height: 14px;
+}
+
+.ac-mk svg {
+  width: 12px;
+  height: 12px;
+}
+
+.ac-mk.ac-step svg {
+  width: 10px;
+  height: 10px;
+}
+
+.ac-t-ok {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ok) 20%, transparent);
+  background: color-mix(in oklab, var(--ok) 8%, #fff);
+  color: var(--ok);
+}
+
+.ac-t-info {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--info) 20%, transparent);
+  color: var(--info);
+}
+
+.ac-t-warn {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--warn) 20%, transparent);
+  color: var(--warn);
+}
+
+.ac-t-accent {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 25%, transparent);
+  background: color-mix(in oklab, var(--accent) 7%, #fff);
+  color: var(--accent);
+}
+
+.ac-t-dot {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--info) 20%, transparent);
+}
+
+.ac-t-plan {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, oklch(0.71 0.14 277) 20%, transparent);
+  color: oklch(0.71 0.14 277);
+}
+
+.ac-live {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--info);
+}
+
+.ac-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  align-self: stretch;
+  border-radius: 6px;
+  padding: 0 6px 0 8px;
+}
+
+.ac-body.ac-wash {
+  background: color-mix(in oklab, var(--warn) 6%, transparent);
+}
+
+.ac-body .mockbtn {
+  margin-top: 0;
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+
+.ac-label {
+  min-width: 0;
+  width: fit-content;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--gray7);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ac-step .ac-label {
+  font-size: 12px;
+}
+
+.ac-label.ac-ok {
+  color: var(--ok-text);
+}
+
+.ac-val {
+  display: inline-block;
+  max-width: 100%;
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--gray1);
+  border-radius: 6px;
+  padding: 0 4px;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ac-sec {
+  font-size: 11px;
+  color: var(--gray6);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ac-hint {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--gray5);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ac-runchip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-shrink: 0;
+  min-width: 88px;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  color: var(--ac-run);
+  background: color-mix(in oklab, var(--ac-run) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ac-run) 35%, transparent);
+}
+
+.ac-runchip svg {
+  width: 10px;
+  height: 10px;
+}
+
+.ac-k-resolver {
+  background: oklch(0.94 0.05 130);
+  color: oklch(0.5 0.16 130);
+}
+
+.kb.ac-k-tester {
+  background: oklch(0.94 0.05 65);
+  color: oklch(0.48 0.13 55);
+}
+
+@media (max-width: 768px) {
+  .ac-stream {
+    --ac-gut: 56px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ac-body {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+
+  .ac-label {
+    flex-basis: 100%;
+  }
+
+  .ac-hint {
+    display: none;
+  }
+}

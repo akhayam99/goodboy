@@ -2,7 +2,7 @@ import { Logo } from '../components/Logo';
 import { SITE } from '../site';
 
 export const Footer = () => (
-  <footer>
+  <footer id="footer" aria-label="Footer">
     <div className="wrap">
       <Logo size={22} />
       <span style={{ fontSize: 13, color: 'var(--gray6)' }}>MIT © Amin Khayam</span>

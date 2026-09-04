@@ -22,14 +22,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Primary -->
-    <title>Goodboy: stop re-explaining yourself to AI agents</title>
+    <title>Goodboy: stop re-explaining yourself to coding agents</title>
     <meta
       name="description"
-      content="Goodboy is a free, open source desktop app that runs a team of AI agents on your work. Describe a task once and Goodboy decides which agent goes next, on the plans you already pay for. Local, no account."
+      content="Free, open source desktop app that runs a team of coding agents on your work. Describe a task once and Goodboy decides which agent goes next. Local, no account."
     />
     <meta
       name="keywords"
-      content="coding agents, agent orchestrator, shared context, dynamic workflows, review inbox, resolver agents, multi-provider, budget caps, model picker, local-first, open source, Tauri desktop app"
+      content="coding agents, agent orchestrator, shared context, stage board, session timeline, notification inbox, resolver agents, multi-provider, budget caps, worktrees, local-first, open source, Tauri desktop app"
     />
     <meta name="author" content="Amin Khayam" />
     <link rel="canonical" href="https://goodboy-ai.dev/" />
@@ -40,7 +40,7 @@
     <meta property="og:url" content="https://goodboy-ai.dev/" />
     <meta
       property="og:title"
-      content="Goodboy: stop re-explaining yourself to AI agents"
+      content="Goodboy: stop re-explaining yourself to coding agents"
     />
     <meta
       property="og:description"
@@ -51,17 +51,17 @@
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="Goodboy: stop re-explaining yourself to AI agents"
+      content="Goodboy: stop re-explaining yourself to coding agents"
     />
     <meta property="og:locale" content="en_US" />
 
     <!-- Twitter / X card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@akhayam99" />
-    <meta name="twitter:creator" content="@akhayam99" />
+    <meta name="twitter:site" content="@GoodboyWorks" />
+    <meta name="twitter:creator" content="@GoodboyWorks" />
     <meta
       name="twitter:title"
-      content="Goodboy: stop re-explaining yourself to AI agents"
+      content="Goodboy: stop re-explaining yourself to coding agents"
     />
     <meta
       name="twitter:description"
@@ -70,7 +70,7 @@
     <meta name="twitter:image" content="https://goodboy-ai.dev/og-image.png" />
     <meta
       name="twitter:image:alt"
-      content="Goodboy: stop re-explaining yourself to AI agents"
+      content="Goodboy: stop re-explaining yourself to coding agents"
     />
 
     <!-- Theme / PWA hints -->
@@ -83,8 +83,8 @@
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         "name": "Goodboy",
-        "alternateName": "Goodboy shared context for coding agents",
-        "description": "Goodboy is a local-first desktop app for running coding agents that keeps the thread. It carries shared context into every agent, lets an orchestrator pick each step, model, and effort at runtime, reviews pull requests and merge requests in one inbox, and tracks spend against the caps you set.",
+        "alternateName": "Goodboy, a board for coding agents",
+        "description": "Goodboy is a free, open source desktop app that runs a team of coding agents on your work. The goal, decisions and summary of a task stay with the task, every agent starts briefed, and the orchestrator picks the next agent, model and effort across seven providers.",
         "url": "https://goodboy-ai.dev/",
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": ["macOS", "Linux"],
@@ -102,30 +102,30 @@
         "license": "https://opensource.org/licenses/MIT",
         "codeRepository": "https://github.com/akhayam99/goodboy",
         "keywords": [
-          "shared context",
           "coding agents",
-          "agent workflows",
-          "multi-provider",
-          "budget routing",
+          "agent orchestrator",
+          "shared context",
           "stage board",
-          "local-first",
-          "open source"
+          "session timeline",
+          "notification inbox",
+          "multi-provider",
+          "worktrees",
+          "budget caps",
+          "open source",
+          "local-first"
         ],
         "featureList": [
-          "One briefing carried into every agent on the task",
-          "An orchestrator that picks the next agent, model, and thinking effort",
+          "A briefing per task: goal, decisions and summary, read by every agent that touches it",
+          "An orchestrator that picks the next agent, model and thinking effort",
           "Seven providers in one session: Claude, Codex, Cursor, Gemini, OpenCode, OpenRouter, Moonshot",
-          "A board where every task shows its own stage",
-          "Agents working in their own git worktree",
-          "Review inbox for GitHub pull requests and GitLab merge requests",
-          "Resolver agents that answer a review comment with a commit",
-          "Integrations for GitHub, GitLab, Bitbucket, Linear, Jira, Sentry, and Slack",
-          "Budget caps with a live cost meter",
-          "Model picker with families, versions, and effort",
-          "Per-workspace markdown skills",
-          "GPU terminal on xterm 6",
-          "Simple, multi project, and plain folder workspaces",
-          "Everything stored in one local SQLite file"
+          "A stage board where every task shows building, running, needs you, in review or done",
+          "A session timeline of what ran, what was decided and what needs you, and a notification inbox that carries the task on every row",
+          "Agents as roles: scout, planner, implementer, reviewer, PR reviewer, resolver",
+          "Cost per step, a budget per session that warns before the cap, and rerouting when a provider hits its limit",
+          "Permissions, worktrees, terminals, skills, workflows and budgets set once and inherited by every provider you connect",
+          "Integrations for GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack, reachable by any agent through one bridge",
+          "Draft pull requests from agents, merges by you, review fixes pushed in one batch",
+          "Everything stored in one local SQLite file, no account, no backend"
         ]
       }
     </script>
@@ -138,42 +138,34 @@
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "Do I need to be a developer to use this?",
+            "name": "Do I need to be a developer?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "The deep parts, worktrees, branches, diffs, pull requests, expect a git repository. Point Goodboy at one and you get the full flow. Point it at a plain folder instead and agents still run on it, just without worktrees, branches, or PRs."
+              "text": "Goodboy is at its best on a code project, where you get a branch, a diff and a pull request out of every task. Point it at a plain folder and agents still work on it."
             }
           },
           {
             "@type": "Question",
-            "name": "Is it really free? What is the catch?",
+            "name": "Is it really free, and what is the catch?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "MIT license, no paywall, no account, every feature included from the first launch. Nothing in the app is phoned home: what it tracks about your work stays in the file on your own computer. This website runs its own analytics; the app does not. The only thing you pay for is the subscription you already have."
+              "text": "Free and open source, every feature included from the first launch. No account, no paid tier waiting for you further down."
             }
           },
           {
             "@type": "Question",
-            "name": "Will this cost me anything on top of what I already pay?",
+            "name": "Will it cost me anything on top of what I already pay?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "No new bill. Goodboy runs on the Claude, Cursor, Codex, or other subscription you already have. The numbers you see in the app are what that work would have cost by the token, not a separate charge."
+              "text": "No new bill. It works through the subscriptions you already have."
             }
           },
           {
             "@type": "Question",
-            "name": "Do I need API keys?",
+            "name": "Do I need to connect every provider?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "For most providers, no. Claude, Cursor, Codex, Gemini and OpenCode reuse the login you already have with each CLI or app. OpenRouter and Moonshot are API-only, so those two need a key, kept in your OS keychain and never written to disk."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to connect every provider to start?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. One connected CLI is enough to get going. Connect more later if you want to spread work across models or compare them on the same task."
+              "text": "One is enough to start. Connect a second when you want to spread the work around, or to keep going after you hit a limit."
             }
           },
           {
@@ -181,7 +173,7 @@
             "name": "Where does my data go?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Conversations, plans, decisions and PR state sit in a local SQLite file on your machine. The app itself has no backend and no account. Prompts and responses go straight from you to whichever provider you picked, the same path as running their CLI yourself."
+              "text": "Everything the app knows about your work stays on your computer. Your prompts go straight from you to the provider you picked."
             }
           },
           {
@@ -189,7 +181,7 @@
             "name": "What if I do not like what the agents did?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "You read the diff before anything ships. Agents open a draft pull request; they never merge it themselves. If you want out of a session entirely, deleting it removes its branch and worktree too, so your main branch never sees it."
+              "text": "You read the diff before anything lands. Agents open the pull request, merging waits for you."
             }
           },
           {
@@ -197,12 +189,13 @@
             "name": "Which platforms does it run on?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "macOS and Linux. On a Mac it is one build for both Intel and Apple Silicon, or Homebrew if you prefer, and it keeps itself up to date. On Linux take the AppImage, the .deb or the .rpm, x86_64 on Ubuntu 24.04 or Debian 13 and newer, and pick up the next version from the release page yourself: updating in place is macOS only so far. Windows means building from source for now."
+              "text": "macOS and Linux today. One build for Mac, packages for Linux."
             }
           }
         ]
       }
     </script>
+
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->

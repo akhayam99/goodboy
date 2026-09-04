@@ -1,0 +1,10 @@
+@media (max-width: 480px) {
+  .hr-cta {
+    gap: 10px;
+  }
+
+  .hr-cta .btn {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}

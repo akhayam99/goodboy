@@ -4,18 +4,18 @@ import { useRevealAll } from './components/Reveal';
 import { Nav } from './sections/Nav';
 import { Hero } from './sections/Hero';
 import { Providers } from './sections/Providers';
-import { How } from './sections/How';
+import { Orchestrator } from './sections/Orchestrator';
 import { Briefing } from './sections/Briefing';
-import { Board } from './sections/Board';
-import { Context } from './sections/Context';
-import { Integrations } from './sections/Integrations';
+import { Roles } from './sections/Roles';
+import { Workspace } from './sections/Workspace';
+import { Extras } from './sections/Extras';
+import { Activity } from './sections/Activity';
+import { Artifacts } from './sections/Artifacts';
 import { Routing } from './sections/Routing';
-import { BuiltFor } from './sections/BuiltFor';
-import { AlsoInApp } from './sections/AlsoInApp';
+import { Integrations } from './sections/Integrations';
 import { Privacy } from './sections/Privacy';
 import { Faq } from './sections/Faq';
 import { Install } from './sections/Install';
-import { Closer } from './sections/Closer';
 import { Footer } from './sections/Footer';
 
 export const App = () => {
@@ -27,18 +27,18 @@ export const App = () => {
       <main id="main">
         <Hero />
         <Providers />
-        <How />
+        <Orchestrator />
+        <Activity />
         <Briefing />
-        <Board />
-        <Context />
-        <Integrations />
+        <Artifacts />
+        <Roles />
+        <Workspace />
         <Routing />
-        <BuiltFor />
-        <AlsoInApp />
+        <Integrations />
+        <Extras />
         <Privacy />
         <Faq />
         <Install />
-        <Closer />
       </main>
       <Footer />
       <Analytics />

@@ -5,16 +5,18 @@ export const Nav = () => (
   <header id="top">
     <div className="wrap">
       <Logo />
-      <span className="vtag">{SITE.version}</span>
       <nav aria-label="Primary">
         <a className="hidesm" href="#how">
           How it works
         </a>
-        <a className="hidesm" href="#integrations">
-          Integrations
+        <a className="hidesm" href="#roles">
+          Roles
         </a>
         <a className="hidesm" href="#routing">
           Routing
+        </a>
+        <a className="hidesm" href="#integrations">
+          Integrations
         </a>
         <a className="hidesm" href="#privacy">
           Privacy

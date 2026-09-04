@@ -3,7 +3,7 @@ export const SITE = {
   repo: 'https://github.com/akhayam99/goodboy',
   releases: 'https://github.com/akhayam99/goodboy/releases',
   latest: 'https://github.com/akhayam99/goodboy/releases/latest',
-  linux: 'https://github.com/akhayam99/goodboy/releases/latest',
+  linux: 'https://github.com/akhayam99/goodboy/releases',
   issues: 'https://github.com/akhayam99/goodboy/issues',
   concepts: 'https://github.com/akhayam99/goodboy/blob/main/docs/concepts.md',
   privacy: 'https://github.com/akhayam99/goodboy#zero-data-ownership',
