@@ -2,6 +2,7 @@ import { CheckCheck, Mail, Trash2 } from 'lucide-react';
 import { CountToggle, InlineConfirm, SegmentedTabs } from '@goodboy/ui';
 import type { SegmentedTabOption } from '@goodboy/ui';
 import type { NotificationSeverityFilter } from '../../grouping';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const SEVERITY_OPTIONS: ReadonlyArray<SegmentedTabOption<NotificationSeverityFilter>> = [
   { value: 'all', label: 'All' },
@@ -40,7 +41,7 @@ export const InboxToolbar = ({
       <InlineConfirm
         className="w-80"
         role="danger"
-        icon={<Trash2 size={12} aria-hidden />}
+        icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
         title="Delete every notification?"
         description="This clears the whole history for good. Nothing here can be recovered."
         confirmLabel="Delete all"
@@ -73,7 +74,7 @@ export const InboxToolbar = ({
           onClick={onMarkAllRead}
           className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
         >
-          <CheckCheck size={12} aria-hidden />
+          <CheckCheck size={ICON_SIZE.row} aria-hidden />
           Mark all read
         </button>
       )}
@@ -82,7 +83,7 @@ export const InboxToolbar = ({
         onClick={onArm}
         className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-danger/10 hover:text-danger"
       >
-        <Trash2 size={12} aria-hidden />
+        <Trash2 size={ICON_SIZE.row} aria-hidden />
         Delete all
       </button>
     </div>

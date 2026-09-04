@@ -4,6 +4,7 @@ import { Button, cn, formatError, Input, Tooltip } from '@goodboy/ui';
 import { GithubIcon } from '@goodboy/ui';
 import type { SaveState } from '../../../../shared/types/saveState';
 import { useAppStore } from '../../../../store';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const TOKEN_CREATE_URL = 'https://github.com/settings/tokens/new?scopes=repo&description=Goodboy';
 const TOKEN_LIST_URL = 'https://github.com/settings/tokens';
@@ -90,7 +91,7 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
       <div className="flex items-center gap-2">
         {!hideSectionHeader && (
           <>
-            <GithubIcon size={16} aria-hidden className="text-muted-foreground" />
+            <GithubIcon size={ICON_SIZE.control} aria-hidden className="text-muted-foreground" />
             <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
               GitHub
             </h2>
@@ -105,7 +106,7 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
             aria-label="Refresh GitHub status"
             className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
           >
-            <RefreshCw size={13} aria-hidden />
+            <RefreshCw size={ICON_SIZE.row} aria-hidden />
           </button>
         </Tooltip>
       </div>
@@ -141,7 +142,7 @@ function NotInstalled() {
   return (
     <div className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs text-warning">
       <div className="flex items-start gap-2">
-        <AlertCircle size={14} aria-hidden className="mt-0.5" />
+        <AlertCircle size={ICON_SIZE.control} aria-hidden className="mt-0.5" />
         <div className="flex flex-col gap-1">
           <span className="font-medium">gh CLI not detected</span>
           <span className="text-warning/80">
@@ -237,7 +238,7 @@ function Connected({
     <div className="flex flex-col gap-3">
       <div className="rounded-md border border-success/40 bg-success/10 px-3 py-2.5 text-xs text-success">
         <div className="flex items-start gap-2">
-          <Check size={14} aria-hidden className="mt-0.5" />
+          <Check size={ICON_SIZE.control} aria-hidden className="mt-0.5" />
           <div className="flex flex-col gap-0.5">
             <span className="font-medium">connected as {status.user ?? '(unknown user)'}</span>
             <span className="text-success/80">

@@ -18,7 +18,7 @@ import type { ModelEffort, ProviderId, TaskModelPreference } from '@goodboy/type
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
 import { sendNotificationToDevelopers } from '../../../settings/sendNotificationToDevelopers';
@@ -99,7 +99,7 @@ export const NotificationCenter = () => {
               )}
               aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ''}`}
             >
-              <Bell size={14} aria-hidden />
+              <Bell size={ICON_SIZE.control} aria-hidden />
               {unread > 0 && (
                 <span
                   className={cn(
@@ -259,14 +259,14 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
               aria-expanded={expanded}
             >
               <ChevronRight
-                size={12}
+                size={ICON_SIZE.row}
                 className={cn('transition-transform', expanded && 'rotate-90')}
               />
             </button>
           </Tooltip>
         ) : null}
         <ConceptIcon
-          size={14}
+          size={ICON_SIZE.control}
           className={tintClasses(CONCEPT_TONE.notifications).icon}
           aria-hidden
         />

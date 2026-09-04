@@ -12,7 +12,7 @@ import { BranchPair } from '@goodboy/ui';
 import { StudioWidget, HeaderBand } from '@goodboy/ui';
 import { githubPullRequestFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { Avatar } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly pr: ReviewablePr | null;
@@ -124,7 +124,7 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
                 infoTint.bg,
               )}
             >
-              <MessagesSquare size={15} className={infoTint.icon} aria-hidden />
+              <MessagesSquare size={ICON_SIZE.control} className={infoTint.icon} aria-hidden />
             </span>
             <div className="flex min-w-0 flex-1 flex-col">
               <span className="text-sm font-medium text-foreground">
@@ -151,7 +151,7 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
               <span className="flex-1" />
               <Button onClick={() => void reviewLocally()} disabled={busy}>
                 {busy ? 'Starting review session…' : 'Review locally'}
-                {!busy ? <ArrowRight size={13} aria-hidden /> : null}
+                {!busy ? <ArrowRight size={ICON_SIZE.row} aria-hidden /> : null}
               </Button>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { type ProviderConnectionState, type ProviderId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { SlidersHorizontal } from 'lucide-react';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly providers: ReadonlyArray<ProviderInfo>;
@@ -38,7 +39,11 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
           ariaCurrent={focusedId === 'defaults'}
           className="items-center gap-2.5 px-2.5 py-2"
         >
-          <SlidersHorizontal size={16} aria-hidden className="shrink-0 text-primary" />
+          <SlidersHorizontal
+            size={ICON_SIZE.control}
+            aria-hidden
+            className="shrink-0 text-primary"
+          />
           <span className="text-sm font-medium text-foreground">Defaults</span>
         </SelectableRow>
       </section>
@@ -62,7 +67,7 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
                 className="items-center gap-2.5 px-2.5 py-2"
               >
                 <Icon
-                  size={16}
+                  size={ICON_SIZE.control}
                   aria-hidden
                   className="shrink-0"
                   style={{ color: brandColor(id) }}

@@ -4,6 +4,7 @@ import { Button, cn, Divider, formatError, ScrollFade, Skeleton } from '@goodboy
 import { StudioShell } from '../../shared/components/StudioShell';
 import { bridgeRevoke, bridgeStart, bridgeStatus, type BridgeStatus, type QrInfo } from './bridge';
 import { clearMobileSharedSessions } from './mobileConfinement';
+import { ICON_SIZE } from '../../shared/components/conceptIcons';
 
 type Props = {
   readonly onClose: () => void;
@@ -106,7 +107,11 @@ export const CompanionStudio = ({ onClose }: Props) => {
             </div>
 
             <div className="flex max-w-[20rem] items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-left">
-              <FlaskConical size={13} aria-hidden className="mt-0.5 shrink-0 text-warning" />
+              <FlaskConical
+                size={ICON_SIZE.row}
+                aria-hidden
+                className="mt-0.5 shrink-0 text-warning"
+              />
               <p className="text-2xs leading-relaxed text-warning">
                 This feature is currently in testing. Contact the developer to get access before
                 trying it out.
@@ -129,7 +134,7 @@ export const CompanionStudio = ({ onClose }: Props) => {
               <div className="flex size-[300px] flex-col items-center justify-center gap-3">
                 <p className="text-center text-xs text-danger">{error}</p>
                 <Button variant="secondary" size="sm" onClick={() => void mint()}>
-                  <RefreshCw size={13} aria-hidden /> Retry
+                  <RefreshCw size={ICON_SIZE.row} aria-hidden /> Retry
                 </Button>
               </div>
             ) : info ? (
@@ -163,7 +168,7 @@ export const CompanionStudio = ({ onClose }: Props) => {
 
                 <div className="flex flex-col items-center gap-2.5">
                   <Button variant="secondary" size="sm" onClick={() => void mint()}>
-                    <RefreshCw size={13} aria-hidden /> New code
+                    <RefreshCw size={ICON_SIZE.row} aria-hidden /> New code
                   </Button>
                   <p className="max-w-[18rem] text-center text-2xs text-muted-foreground">
                     A new code is minted automatically when this one expires. Only one device can be
@@ -187,7 +192,7 @@ export const CompanionStudio = ({ onClose }: Props) => {
                         onClick={() => void revoke()}
                         className="bg-danger/10 px-3 font-semibold"
                       >
-                        <Unplug size={13} aria-hidden />
+                        <Unplug size={ICON_SIZE.row} aria-hidden />
                         {revoking ? 'Disconnecting…' : 'Disconnect phone'}
                       </Button>
                     </div>

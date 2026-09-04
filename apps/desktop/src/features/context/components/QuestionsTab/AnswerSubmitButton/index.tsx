@@ -1,5 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly answerCount: number;
@@ -39,7 +40,7 @@ export const AnswerSubmitButton = ({ answerCount, totalCount, onClick }: Props) 
       >
         <span>Send</span>
         <ArrowRight
-          size={12}
+          size={ICON_SIZE.row}
           aria-hidden
           className="motion-safe:transition-transform group-hover:translate-x-0.5"
         />

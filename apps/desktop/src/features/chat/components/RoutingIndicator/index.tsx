@@ -13,6 +13,7 @@ import { SESSION_FEATURES } from '../../../../shared/lib/features';
 import { PROVIDER_LABEL } from '../../utils/chat-constants';
 import { tintClasses } from '@goodboy/ui';
 import { TranscriptShell } from '../TranscriptShell';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const warningAccent = tintClasses('warning');
 
@@ -61,7 +62,7 @@ export const RoutingIndicator = ({
         variant="boxed"
         className={`flex items-center gap-2 text-xs ${warningAccent.text}`}
       >
-        <AlertTriangle size={13} aria-hidden className="shrink-0" />
+        <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
         <span className="flex-1">All provider budgets exceeded</span>
         {onSendAnyway !== undefined ? (
           <button
@@ -100,7 +101,7 @@ export const RoutingIndicator = ({
       variant="boxed"
       className={`flex w-fit items-center gap-1.5 text-xs ${warningAccent.text}`}
     >
-      <AlertTriangle size={13} aria-hidden className="shrink-0" />
+      <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       <span className="flex items-center gap-1.5">
         Fallback to
         <RoutingBadge provider={decision.selectedProvider} model={decision.selectedModel} />

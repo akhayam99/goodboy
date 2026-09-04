@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronRight, ExternalLink, MessageSquarePlus } from 'lucide-react';
 import { Chip, cn, type DiffLayoutMode, Divider, EmptyState, Tooltip } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { CopyButton } from '@goodboy/ui';
 import type {
   AgentId,
@@ -268,7 +268,7 @@ export const FileDiffCard = ({
               className={TOOLBAR_ICON_BTN}
             >
               <ChevronRight
-                size={13}
+                size={ICON_SIZE.row}
                 aria-hidden
                 className={cn(
                   'motion-safe:transition-transform duration-150',
@@ -324,7 +324,7 @@ export const FileDiffCard = ({
                 presentation="icon"
                 value={file.path}
                 label="copy file path"
-                size={12}
+                size={ICON_SIZE.row}
                 className={TOOLBAR_ICON_BTN}
               />
             </Tooltip>
@@ -336,7 +336,7 @@ export const FileDiffCard = ({
                   aria-label="Open file in editor"
                   className={TOOLBAR_ICON_BTN}
                 >
-                  <ExternalLink size={12} aria-hidden />
+                  <ExternalLink size={ICON_SIZE.row} aria-hidden />
                 </button>
               </Tooltip>
             ) : null}
@@ -351,7 +351,7 @@ export const FileDiffCard = ({
                   aria-label="Add file note"
                   className={TOOLBAR_ICON_BTN}
                 >
-                  <MessageSquarePlus size={12} aria-hidden />
+                  <MessageSquarePlus size={ICON_SIZE.row} aria-hidden />
                 </button>
               </Tooltip>
             ) : null}

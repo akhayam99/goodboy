@@ -2,6 +2,7 @@ import { ArrowUpRight, FileEdit } from 'lucide-react';
 import { displayPath } from '../../../../shared/utils/display-path';
 import { TranscriptShell } from '../TranscriptShell';
 import { tintClasses } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const infoAccent = tintClasses('info');
 
@@ -22,7 +23,7 @@ export const FileEditBlock = ({ path, editType, workingDir, onOpenDiff }: Props)
   const rel = displayPath(path, workingDir);
   const inner = (
     <>
-      <FileEdit size={12} aria-hidden className="shrink-0 text-muted-foreground" />
+      <FileEdit size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
       <span className={`text-2xs uppercase tracking-wide ${infoAccent.text}`}>
         {EDIT_LABEL[editType]}
       </span>
@@ -31,7 +32,7 @@ export const FileEditBlock = ({ path, editType, workingDir, onOpenDiff }: Props)
       </code>
       {onOpenDiff ? (
         <ArrowUpRight
-          size={12}
+          size={ICON_SIZE.row}
           aria-hidden
           className={`ml-auto shrink-0 opacity-0 transition-opacity group-hover:opacity-100 ${infoAccent.icon}`}
         />

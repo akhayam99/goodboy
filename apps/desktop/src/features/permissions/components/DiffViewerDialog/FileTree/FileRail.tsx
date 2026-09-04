@@ -5,6 +5,7 @@ import type { FileDiff } from '@goodboy/types';
 import { TOOLBAR_ICON_BTN, type ReviewState } from '../lib';
 import { buildTree } from './tree';
 import { TreeNodeView } from './TreeNodeView';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   files: ReadonlyArray<FileDiff>;
@@ -46,7 +47,11 @@ export const FileRail = ({
               aria-label={collapsed ? 'Show file list' : 'Hide file list'}
               aria-expanded={!collapsed}
             >
-              {collapsed ? <PanelLeftOpen size={13} /> : <PanelLeftClose size={13} />}
+              {collapsed ? (
+                <PanelLeftOpen size={ICON_SIZE.row} />
+              ) : (
+                <PanelLeftClose size={ICON_SIZE.row} />
+              )}
             </button>
           </Tooltip>
         </div>

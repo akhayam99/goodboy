@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { formatError, IconButton, InlineConfirm } from '@goodboy/ui';
 import { Unplug } from 'lucide-react';
 import { useToast } from '../../../../app/components/Toast';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly label: string;
@@ -31,7 +32,7 @@ export const IntegrationDisconnect = ({ label, description, onDisconnect }: Prop
         <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
           <InlineConfirm
             role="danger"
-            icon={<Unplug size={12} aria-hidden />}
+            icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
             title={`Disconnect ${label}?`}
             description={description}
             confirmLabel={`Disconnect ${label}`}

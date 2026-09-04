@@ -33,6 +33,7 @@ import {
 import { QueuedMessages } from './parts/QueuedMessages';
 import { SuggestionStack } from './parts/SuggestionStack';
 import { TurnErrorCallout } from '../TurnErrorCallout';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
@@ -443,7 +444,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 isDragging ? 'scale-100' : 'scale-95'
               }`}
             >
-              <Paperclip size={14} aria-hidden />
+              <Paperclip size={ICON_SIZE.control} aria-hidden />
               drop to attach
             </div>
           </div>
@@ -495,7 +496,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   aria-label="Cancel turn"
                   className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg bg-danger/10 text-danger transition-colors hover:bg-danger/20"
                 >
-                  <Square size={14} aria-hidden fill="currentColor" />
+                  <Square size={ICON_SIZE.control} aria-hidden fill="currentColor" />
                 </button>
               </Tooltip>
             ) : (
@@ -512,7 +513,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   aria-label={isRunning ? 'Queue message' : 'Send message'}
                   className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
                 >
-                  <Send size={14} aria-hidden className="-translate-x-px" />
+                  <Send size={ICON_SIZE.control} aria-hidden className="-translate-x-px" />
                 </button>
               </Tooltip>
             )}
@@ -529,7 +530,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   aria-label="Attach files"
                   className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  <Paperclip size={15} aria-hidden />
+                  <Paperclip size={ICON_SIZE.control} aria-hidden />
                 </button>
               </Tooltip>
               <input

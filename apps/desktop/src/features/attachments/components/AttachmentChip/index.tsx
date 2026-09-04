@@ -4,6 +4,7 @@ import { IconButton, Skeleton } from '@goodboy/ui';
 import { attachmentKindFor, fileIconFor } from '../../../chat/attachment-kinds';
 import { ImageLightbox } from '../../../chat/components/ImageLightbox';
 import { dataUrlToBase64, type PendingAttachment } from '../../../chat/components/ChatInput/lib';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type AttachmentThumbnail =
   | { readonly status: 'ready'; readonly src: string }
@@ -111,7 +112,7 @@ export const AttachmentChip = ({
           <Skeleton className="h-full w-full rounded-none" />
         ) : thumbnail.status === 'failed' ? (
           <div className="flex h-full w-full items-center justify-center bg-foreground/5 text-muted-foreground">
-            <ImageOff size={14} aria-hidden />
+            <ImageOff size={ICON_SIZE.control} aria-hidden />
           </div>
         ) : !canPreview ? (
           <img src={thumbnail.src} alt={fileName} className="h-full w-full object-cover" />
@@ -135,7 +136,7 @@ export const AttachmentChip = ({
   const Icon = fileIconFor(mimeType);
   const body = (
     <>
-      <Icon size={18} aria-hidden className="shrink-0 text-muted-foreground" />
+      <Icon size={ICON_SIZE.hero} aria-hidden className="shrink-0 text-muted-foreground" />
       <span className="truncate text-xs text-foreground/80">{fileName}</span>
     </>
   );

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { PrDetail } from '@goodboy/types';
 import { ClampedProse, PANE_RHYTHM, Skeleton, Tooltip } from '@goodboy/ui';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly detail: PrDetail | null;
@@ -16,7 +17,7 @@ export const SectionBody = ({ detail, detailLoading, detailError, onRetry, child
     <div className={PANE_RHYTHM.stack}>
       {detailError != null ? (
         <div className="flex items-center gap-1.5 text-xs text-danger">
-          <AlertCircle size={13} aria-hidden />
+          <AlertCircle size={ICON_SIZE.row} aria-hidden />
           <div className="min-w-0 flex-1">
             <ClampedProse text={detailError} lines={2} className="text-xs text-danger" />
           </div>
@@ -27,7 +28,7 @@ export const SectionBody = ({ detail, detailLoading, detailError, onRetry, child
               aria-label="Retry"
               className="rounded-md p-0.5 hover:bg-muted"
             >
-              <RefreshCw size={12} aria-hidden />
+              <RefreshCw size={ICON_SIZE.row} aria-hidden />
             </button>
           </Tooltip>
         </div>

@@ -6,6 +6,7 @@ import type { DetectedChildRepos } from '../../../../shared/hooks/useChildRepoDe
 import { DetectedRepoList, type KnownRepo } from '../../../../shared/components/DetectedRepoList';
 import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
 import type { ProjectAttachConflict } from '../../../../store/slices/projects/addProject';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type WorkspaceShape = 'workspace' | 'single';
 
@@ -132,7 +133,7 @@ export const ShapeStep = ({
               )}
             >
               <span className="mt-0.5 shrink-0 text-primary">
-                <option.icon size={16} aria-hidden />
+                <option.icon size={ICON_SIZE.control} aria-hidden />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium text-foreground">{option.label}</span>
@@ -168,11 +169,11 @@ export const ShapeStep = ({
             <span className="text-xs font-medium text-foreground">Your project folder</span>
             <div className="flex items-center gap-2">
               <Button variant="primary" disabled={busy} onClick={() => void pickFolder(false)}>
-                <FolderGit2 size={14} aria-hidden />
+                <FolderGit2 size={ICON_SIZE.control} aria-hidden />
                 Choose a repository
               </Button>
               <Button variant="secondary" disabled={busy} onClick={() => void pickFolder(true)}>
-                <FolderPlus size={14} aria-hidden />
+                <FolderPlus size={ICON_SIZE.control} aria-hidden />
                 New project
               </Button>
             </div>

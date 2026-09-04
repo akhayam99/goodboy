@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnchoredPopover, cn, ScrollFade, Tooltip, useDropdown } from '@goodboy/ui';
 import { ChevronDown } from 'lucide-react';
 import type { LocalBranchInfo } from './worktree';
+import { ICON_SIZE } from '../../shared/components/conceptIcons';
 
 type Props = {
   readonly branches: ReadonlyArray<LocalBranchInfo>;
@@ -179,7 +180,7 @@ export const BranchCombobox = ({
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <ChevronDown
-                size={13}
+                size={ICON_SIZE.row}
                 aria-hidden
                 className={cn('motion-safe:transition-transform', open && 'rotate-180')}
               />

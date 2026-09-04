@@ -5,6 +5,7 @@ import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodb
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { LaunchedNotice } from './LaunchedNotice';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type ExternalTask = {
   readonly provider: SessionExternalTaskProvider;
@@ -100,7 +101,7 @@ export const LaunchSessionPanel = ({
           role="alert"
           className="flex items-start gap-1.5 px-2 text-2xs leading-relaxed text-danger"
         >
-          <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0" />
+          <AlertTriangle size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0" />
           {error}
         </span>
       ) : null}
@@ -113,7 +114,7 @@ export const LaunchSessionPanel = ({
           className={cn('shrink-0', isBusy && 'animate-border-pulse')}
         >
           {isBusy ? 'Launching…' : 'Launch session'}
-          {!isBusy ? <ArrowRight size={13} aria-hidden /> : null}
+          {!isBusy ? <ArrowRight size={ICON_SIZE.row} aria-hidden /> : null}
         </Button>
       </footer>
     </section>

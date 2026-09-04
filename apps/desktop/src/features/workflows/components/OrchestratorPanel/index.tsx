@@ -11,7 +11,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { Eyebrow, InlineConfirm, Markdown, StatusDot, cn, tintClasses } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type {
   Agent,
   BudgetAlert,
@@ -237,7 +237,7 @@ export const OrchestratorPanel = ({
           )}
         >
           <CONCEPT_ICONS.orchestrator
-            size={15}
+            size={ICON_SIZE.control}
             aria-hidden
             className={state.tone === 'neutral' ? 'text-muted-foreground' : tint.icon}
           />
@@ -296,7 +296,7 @@ export const OrchestratorPanel = ({
                 <div className="absolute left-0 top-full z-popover w-72 rounded-lg bg-background shadow-lg">
                   <InlineConfirm
                     role="alert"
-                    icon={<CircleStop size={12} aria-hidden />}
+                    icon={<CircleStop size={ICON_SIZE.row} aria-hidden />}
                     title="Stop now?"
                     description="The step in flight is cancelled and marked skipped. Everything it already wrote is kept."
                     confirmLabel="Stop now"

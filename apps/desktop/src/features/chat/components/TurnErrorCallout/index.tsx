@@ -1,5 +1,6 @@
 import { CircleAlert } from 'lucide-react';
 import { ClampedProse, cn, tintClasses } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 const dangerTint = tintClasses('danger');
 
 type RetryAction = {
@@ -28,7 +29,7 @@ export const TurnErrorCallout = ({ message, role, className, iconTestId, retryAc
       )}
     >
       <CircleAlert
-        size={12}
+        size={ICON_SIZE.row}
         aria-hidden
         {...(iconTestId != null ? { 'data-testid': iconTestId } : {})}
         className={cn('mt-0.5 shrink-0', dangerTint.icon)}

@@ -17,6 +17,7 @@ import { RoleSelect } from '../../../session/components/RoleSelect';
 import { InlineField } from '../../../session/components/InlineField';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { useAppStore } from '../../../../store';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly def: StepDef | null;
@@ -131,7 +132,7 @@ export const LibraryStepForm = ({
             aria-label="Close step editor"
             className="shrink-0 rounded-md p-1 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
           >
-            <X size={13} aria-hidden />
+            <X size={ICON_SIZE.row} aria-hidden />
           </button>
         </Tooltip>
       </div>

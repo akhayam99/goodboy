@@ -10,7 +10,7 @@ import {
   type ExploreEntry,
 } from '../../explore';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { InspectorSplit } from '../../../session/components/SessionWorkspace/parts/InspectorSplit';
@@ -281,12 +281,12 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                 >
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center">
                     {isExpanded ? (
-                      <ChevronDown size={14} aria-hidden />
+                      <ChevronDown size={ICON_SIZE.control} aria-hidden />
                     ) : (
-                      <ChevronRight size={14} aria-hidden />
+                      <ChevronRight size={ICON_SIZE.control} aria-hidden />
                     )}
                   </span>
-                  <Folder size={14} aria-hidden className="shrink-0" />
+                  <Folder size={ICON_SIZE.control} aria-hidden className="shrink-0" />
                   <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                     {entry.name}
                   </span>
@@ -299,7 +299,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                   className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md text-left underline-offset-2 hover:underline"
                 >
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground">
-                    <File size={14} aria-hidden />
+                    <File size={ICON_SIZE.control} aria-hidden />
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                     {entry.name}
@@ -315,7 +315,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                     aria-label={`Open ${entry.name} outside the app`}
                     className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
                   >
-                    <ExternalLink size={14} aria-hidden />
+                    <ExternalLink size={ICON_SIZE.control} aria-hidden />
                   </button>
                 </Tooltip>
                 <Tooltip content={`Reveal ${entry.name} in file manager`}>
@@ -325,7 +325,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                     aria-label={`Reveal ${entry.name} in file manager`}
                     className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
                   >
-                    <FolderSearch size={14} aria-hidden />
+                    <FolderSearch size={ICON_SIZE.control} aria-hidden />
                   </button>
                 </Tooltip>
               </div>

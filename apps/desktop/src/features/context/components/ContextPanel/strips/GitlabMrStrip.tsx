@@ -4,6 +4,7 @@ import type { SessionId } from '@goodboy/types';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { RefreshIconButton } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -54,11 +55,11 @@ export const GitlabMrStrip = ({ sessionId, onOpenStudio }: Props) => {
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5">
-              <GitMerge size={12} aria-hidden />
+              <GitMerge size={ICON_SIZE.row} aria-hidden />
               <span>No MR yet</span>
             </span>
           )}
-          <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-70" />
+          <ArrowUpRight size={ICON_SIZE.row} aria-hidden className="shrink-0 opacity-70" />
         </button>
         <RefreshIconButton
           label="Refresh MR status"

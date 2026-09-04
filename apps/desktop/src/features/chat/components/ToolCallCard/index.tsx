@@ -7,6 +7,7 @@ import { useElapsedMs } from '../../hooks/useElapsedMs';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { StructuredData } from './StructuredData';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'tool_call' }>;
@@ -49,7 +50,7 @@ export const ToolCallCard = ({ item }: Props) => {
           tone="neutral"
           icon={
             <Wrench
-              size={12}
+              size={ICON_SIZE.row}
               aria-hidden
               data-testid="tool-state-icon"
               className={cn('shrink-0', stateIcon)}

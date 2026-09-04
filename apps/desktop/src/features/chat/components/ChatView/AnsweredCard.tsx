@@ -3,7 +3,7 @@ import { Bot, CheckCircle2 } from 'lucide-react';
 import { Markdown } from '@goodboy/ui';
 import type { OpenQuestion } from '@goodboy/types';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 
@@ -29,7 +29,11 @@ export const AnsweredCard = ({ question }: Props) => {
           grouped
           tone={tone}
           icon={
-            resolvedByAgent ? <Bot size={12} aria-hidden /> : <CheckCircle2 size={12} aria-hidden />
+            resolvedByAgent ? (
+              <Bot size={ICON_SIZE.row} aria-hidden />
+            ) : (
+              <CheckCircle2 size={ICON_SIZE.row} aria-hidden />
+            )
           }
           eyebrow="answered"
           preview={question.text}

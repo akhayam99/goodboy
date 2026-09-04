@@ -3,6 +3,7 @@ import { Trash2 } from 'lucide-react';
 import { Button, Divider, InlineConfirm, Input, formatUsd } from '@goodboy/ui';
 import { parseCap } from '../../../../shared/lib/parse-cap';
 import { StudioWidget } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Threshold = {
   readonly pct: number;
@@ -118,7 +119,7 @@ export const CapEditor = ({
       <StudioWidget label={label} hint={hint}>
         <InlineConfirm
           role="alert"
-          icon={<Trash2 size={12} aria-hidden />}
+          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
           title={`Remove the ${formatUsd(currentCapUsd)} cap?`}
           confirmLabel="Remove"
           isBusy={busy}

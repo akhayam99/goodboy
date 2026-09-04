@@ -8,6 +8,7 @@ import {
   integrationLabel,
   type IntegrationGlyphProvider,
 } from '../IntegrationGlyph';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly provider: IntegrationGlyphProvider;
@@ -50,7 +51,7 @@ export const IntegrationConnectedRow = ({
   return (
     <div className="flex w-full min-w-0 flex-col gap-2">
       <div className="flex min-w-0 items-center gap-2.5 rounded-lg border border-border-soft bg-subtle/40 px-3 py-2.5">
-        <IntegrationGlyph provider={provider} size={16} />
+        <IntegrationGlyph provider={provider} size={ICON_SIZE.control} />
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-xs font-medium text-foreground">{primary}</span>
           {secondary != null ? (
@@ -70,7 +71,7 @@ export const IntegrationConnectedRow = ({
       {isArmed ? (
         <InlineConfirm
           role="danger"
-          icon={<Unplug size={12} aria-hidden />}
+          icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
           title={`Disconnect ${label}?`}
           description={disconnectDescription}
           confirmLabel={`Disconnect ${label}`}
@@ -82,7 +83,7 @@ export const IntegrationConnectedRow = ({
       ) : null}
       {secret === 'missing' ? (
         <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-warning">
-          <TriangleAlert size={12} aria-hidden className="mt-0.5 shrink-0" />
+          <TriangleAlert size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0" />
           <span>
             The key is missing from this Mac's keychain, so every request with it fails. Disconnect
             and connect again to paste a new one.

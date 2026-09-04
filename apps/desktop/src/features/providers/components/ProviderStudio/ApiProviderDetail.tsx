@@ -7,7 +7,7 @@ import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly info: ProviderInfo;
@@ -40,7 +40,7 @@ export const ApiProviderDetail = ({ info }: Props) => {
           onClick={() => void onRefresh()}
           className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
         >
-          <RotateCw size={14} aria-hidden />
+          <RotateCw size={ICON_SIZE.control} aria-hidden />
         </button>
       </Tooltip>
     </div>
@@ -69,11 +69,11 @@ export const ApiProviderDetail = ({ info }: Props) => {
             }
           >
             {isRuntimeReady ? (
-              <CircleCheck size={18} aria-hidden />
+              <CircleCheck size={ICON_SIZE.hero} aria-hidden />
             ) : info.connection === 'error' ? (
-              <TriangleAlert size={18} aria-hidden />
+              <TriangleAlert size={ICON_SIZE.hero} aria-hidden />
             ) : (
-              <CONCEPT_ICONS.terminal size={18} aria-hidden />
+              <CONCEPT_ICONS.terminal size={ICON_SIZE.hero} aria-hidden />
             )}
           </span>
           <div className="flex min-w-0 flex-1 flex-col">

@@ -3,6 +3,7 @@ import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PROVIDER_BRAND } from '../provider-brand';
 import { ProviderConnect } from '../ProviderConnect';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly providerId: ProviderId;
@@ -24,7 +25,7 @@ export const ProviderConnectDialog = ({ providerId, open, onClose }: Props) => {
       title={
         <span className="inline-flex items-center gap-2">
           <Icon
-            size={16}
+            size={ICON_SIZE.control}
             strokeWidth={2}
             aria-hidden
             className="shrink-0"

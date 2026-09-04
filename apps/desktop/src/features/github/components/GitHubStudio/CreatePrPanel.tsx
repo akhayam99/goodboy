@@ -26,7 +26,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { openUrl } from '../../../../shared/lib/editor';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 
 type CreateMode = 'manual' | 'agent';
@@ -343,7 +343,7 @@ export const CreatePrPanel = ({
                 className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-danger"
                 title={error}
               >
-                <AlertTriangle size={12} aria-hidden className="shrink-0" />
+                <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
                 {error}
               </span>
             )}
@@ -364,7 +364,7 @@ export const CreatePrPanel = ({
               ) : (
                 <>
                   Create PR
-                  <ArrowRight size={13} aria-hidden />
+                  <ArrowRight size={ICON_SIZE.row} aria-hidden />
                 </>
               )}
             </Button>
@@ -378,7 +378,7 @@ export const CreatePrPanel = ({
                 'Drafting…'
               ) : (
                 <>
-                  <CONCEPT_ICONS.agents size={13} aria-hidden />
+                  <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />
                   Draft with agent
                 </>
               )}
