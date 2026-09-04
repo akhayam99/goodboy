@@ -54,6 +54,15 @@ describe('parseInlineMarkdown', () => {
     ]);
   });
 
+  it('treats a word-internal underscore as literal but a boundary-flanked one as emphasis', () => {
+    expect(parseInlineMarkdown({ text: 'foo_bar_baz' })).toEqual([
+      { kind: 'text', value: 'foo_bar_baz' },
+    ]);
+    expect(parseInlineMarkdown({ text: '_bar_' })).toEqual([
+      { kind: 'em', children: [{ kind: 'text', value: 'bar' }] },
+    ]);
+  });
+
   it('returns nothing for an empty string', () => {
     expect(parseInlineMarkdown({ text: '' })).toEqual([]);
   });

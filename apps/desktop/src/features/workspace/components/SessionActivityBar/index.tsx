@@ -371,6 +371,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
 
   const sessionCost = useSessionCost(session.id as SessionId);
   const age = formatRelativeAge({ fromIso: session.updatedAt });
+  const plainGoal = useMemo(() => stripInlineMarkdown({ text: session.goal }), [session.goal]);
 
   return (
     <button
@@ -392,7 +393,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
         event.preventDefault();
         onModifierClick(session.id as SessionId, event);
       }}
-      title={`${stripInlineMarkdown({ text: session.goal })} · ${reason}${prMeta ? ` · PR ${prMeta.label}` : ''}${externalTasks.length > 0 ? ` · ${externalTasks.map((task) => task.identifier).join(', ')}` : ''}`}
+      title={`${plainGoal} · ${reason}${prMeta ? ` · PR ${prMeta.label}` : ''}${externalTasks.length > 0 ? ` · ${externalTasks.map((task) => task.identifier).join(', ')}` : ''}`}
       className={cn(
         'flex w-full cursor-pointer items-center gap-2 px-2.5 py-2.5 text-left',
         sessionCardShell({ stage, selected, active: isActive, dimmed }),

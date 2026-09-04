@@ -8,14 +8,17 @@ type Params = {
   readonly text: string;
 };
 
-const EM_BOUNDARY_RE = /[\s(\[{,.!?:;'"]/;
+const EM_BOUNDARY_PUNCTUATION = new Set(['(', '[', '{', ',', '.', '!', '?', ':', ';', "'", '"']);
+
+const isEmBoundaryChar = (char: string): boolean =>
+  /\s/.test(char) || EM_BOUNDARY_PUNCTUATION.has(char);
 
 const isEmphasisStart = ({ text, index }: { readonly text: string; readonly index: number }) => {
   const previous = text[index - 1];
   if (previous === undefined) {
     return true;
   }
-  return EM_BOUNDARY_RE.test(previous);
+  return isEmBoundaryChar(previous);
 };
 
 export const parseInlineMarkdown = ({ text }: Params): ReadonlyArray<InlineToken> => {
