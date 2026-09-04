@@ -24,6 +24,7 @@ const h = vi.hoisted(() => {
     publishPrReview: vi.fn(async () => ({ published: 1, stale: [], failed: [], mismatched: [] })),
     setAgentDraft: vi.fn(),
     selectAgent: vi.fn(async () => undefined),
+    setActiveLens: vi.fn(),
   };
   const useAppStore = Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
     getState: () => state,
@@ -148,6 +149,7 @@ beforeEach(() => {
     mismatched: [],
   });
   h.state.setAgentDraft.mockClear();
+  h.state.setActiveLens.mockClear();
   h.showToast.mockClear();
   h.diff.refresh.mockClear();
   localStorage.clear();
@@ -301,6 +303,53 @@ describe('ReviewBoardPane', () => {
     const retry = screen.getByRole('button', { name: 'Retry' });
     fireEvent.click(retry);
     expect(h.diff.refresh).toHaveBeenCalled();
+  });
+
+  it('points at the pull request lens when the session has no pull request linked', () => {
+    h.diff.target = null;
+    h.diff.files = [];
+    h.diff.loading = false;
+    render(<ReviewBoardPane session={SESSION} />);
+
+    expect(screen.getByText('No pull request to review')).toBeDefined();
+    expect(
+      screen.getByText(
+        "The review board reviews the diff of this session's pull request, and none is linked yet. The GitHub lens opens or creates one.",
+      ),
+    ).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open GitHub' }));
+    expect(h.state.setActiveLens).toHaveBeenCalledWith('session-1', 'pr');
+
+    expect(screen.queryByRole('tab', { name: 'Unified' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Split' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Refresh diff' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Publish review/ })).toBeNull();
+    expect(screen.queryByText('0 files')).toBeNull();
+    expect(screen.queryByText(/Could not load/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
+  it('keeps the threads and resolvers sections reachable without a pull request', () => {
+    h.diff.target = null;
+    h.diff.files = [];
+    render(<ReviewBoardPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('tab', { name: /Threads/ }));
+    expect(screen.getByTestId('threads-section')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('tab', { name: /Resolvers/ }));
+    expect(screen.getByTestId('resolvers-section')).toBeDefined();
+  });
+
+  it('waits on the skeleton while the pull request link is still loading', () => {
+    h.diff.target = null;
+    h.diff.files = [];
+    h.diff.loading = true;
+    render(<ReviewBoardPane session={SESSION} />);
+
+    expect(screen.getByRole('status', { name: 'Loading diff' })).toBeDefined();
+    expect(screen.queryByText('No pull request to review')).toBeNull();
   });
 
   it('switches between review, threads, and resolver sections', () => {

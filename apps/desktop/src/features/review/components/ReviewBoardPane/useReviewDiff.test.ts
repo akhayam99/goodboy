@@ -97,7 +97,7 @@ const mergeRequest: GitlabMergeRequest = {
   updatedAt: NOW,
 };
 
-const state: MockStore = {
+const BASE_STATE: MockStore = {
   sessionExternalTasks: { [SESSION_ID]: [githubTask, gitlabTask] },
   sessions: [],
   projects: [],
@@ -113,10 +113,13 @@ const state: MockStore = {
   },
 };
 
+let state: MockStore = BASE_STATE;
+
 import { useReviewDiff } from './useReviewDiff';
 
 afterEach(() => {
   cleanup();
+  state = BASE_STATE;
   h.ghPrDiff.mockClear();
   h.gitlabMrDiff.mockClear();
 });
@@ -142,5 +145,29 @@ describe('useReviewDiff', () => {
 
     expect(h.gitlabMrDiff).toHaveBeenCalledWith(WORKSPACE_ID, 'https://gitlab.com', 'acme/web', 10);
     expect(h.ghPrDiff).not.toHaveBeenCalled();
+  });
+
+  it('reports no target and no error once the links loaded without a pull request', async () => {
+    state = { ...BASE_STATE, sessionExternalTasks: { [SESSION_ID]: [] } };
+
+    const { result } = renderHook(() => useReviewDiff({ session }));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.target).toBeNull();
+    expect(result.current.error).toBeNull();
+    expect(result.current.files).toEqual([]);
+    expect(h.ghPrDiff).not.toHaveBeenCalled();
+    expect(h.gitlabMrDiff).not.toHaveBeenCalled();
+  });
+
+  it('stays loading while the session links are not loaded yet', () => {
+    state = { ...BASE_STATE, sessionExternalTasks: {} };
+
+    const { result } = renderHook(() => useReviewDiff({ session }));
+
+    expect(result.current.loading).toBe(true);
+    expect(result.current.target).toBeNull();
+    expect(result.current.error).toBeNull();
   });
 });
