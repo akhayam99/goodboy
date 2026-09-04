@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import type { FooterIntegrationEntry } from './categories';
 import { IntegrationAddRow } from './IntegrationAddRow';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly members: ReadonlyArray<FooterIntegrationEntry>;
@@ -52,7 +53,7 @@ export const IntegrationAddPopover = ({ members, enabled, openers, isEmpty, acti
                 : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
             )}
           >
-            <Plus size={12} aria-hidden />
+            <Plus size={ICON_SIZE.row} aria-hidden />
             <span>Link integration</span>
           </button>
         </Tooltip>

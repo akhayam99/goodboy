@@ -33,7 +33,11 @@ import {
 } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import {
+  CONCEPT_ICONS,
+  CONCEPT_TONE,
+  ICON_SIZE,
+} from '../../../../../shared/components/conceptIcons';
 import { FinishedRegister } from '../../../../../shared/components/FinishedRegister';
 
 type AnswerPair = { id: OpenQuestionId; text: string; answer: string };
@@ -192,12 +196,12 @@ const AnsweredClusterHeader = ({
           onClick={() => void selectAgent(sessionId, agentId)}
           className="flex min-w-0 items-center gap-1.5 text-2xs font-medium hover:opacity-70 motion-safe:transition-opacity"
         >
-          <Bot size={12} aria-hidden className="shrink-0 text-muted-foreground" />
+          <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
           <span className="truncate text-foreground/80">{agentName}</span>
         </button>
       ) : (
         <div className="flex min-w-0 items-center gap-1.5 text-2xs font-medium">
-          <Bot size={12} aria-hidden className="shrink-0 text-muted-foreground" />
+          <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
           <span className="truncate text-foreground/80">unknown agent</span>
         </div>
       )}

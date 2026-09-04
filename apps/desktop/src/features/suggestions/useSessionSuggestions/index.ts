@@ -31,7 +31,7 @@ type Params = {
   readonly withRebase?: boolean;
 };
 
-const MOUNT_EVENT_KIND: Readonly<Record<string, SuggestionMountEventKind>> = {
+const MOUNT_EVENT_KIND: Readonly<Partial<Record<string, SuggestionMountEventKind>>> = {
   project_materialization_proposed: 'proposed',
   project_materialized: 'mounted',
   project_materialization_dismissed: 'dismissed',

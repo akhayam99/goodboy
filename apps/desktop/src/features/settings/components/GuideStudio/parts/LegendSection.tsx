@@ -2,6 +2,7 @@ import { Palette } from 'lucide-react';
 import { SectionHeader } from '@goodboy/ui';
 import { LegendaGrid } from './LegendaGrid';
 import { LegendBlock } from './LegendBlock';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = Record<never, never>;
 
@@ -9,7 +10,7 @@ export const LegendSection = ({}: Props) => (
   <div className="flex flex-col gap-7">
     <SectionHeader
       size="page"
-      icon={<Palette size={14} aria-hidden className="text-primary" />}
+      icon={<Palette size={ICON_SIZE.control} aria-hidden className="text-primary" />}
       label="Legend"
       hint="Color meanings used throughout the interface."
     />

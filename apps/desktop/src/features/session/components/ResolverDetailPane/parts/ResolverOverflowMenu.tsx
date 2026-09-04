@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { MoreHorizontal } from 'lucide-react';
 import { AnchoredPopover, cn, Tooltip, useDropdown } from '@goodboy/ui';
 import type { Agent } from '@goodboy/types';
 import { RESOLVER_ACTION_ICON } from '../../../resolverActionIcon';
 import type { ResolverAction, ResolverActionKind } from '../../../resolverActions';
 import type { ResolverActionsController } from '../../../hooks/useResolverActions';
 import { ResolverConfirm } from '../../ResolverConfirm';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly agent: Agent;
@@ -59,7 +59,7 @@ export const ResolverOverflowMenu = ({ agent, actions }: Props) => {
               isOpen && 'bg-foreground/10 text-foreground',
             )}
           >
-            <MoreHorizontal size={14} aria-hidden />
+            <CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />
           </button>
         </Tooltip>
       }

@@ -15,6 +15,7 @@ import { slackGetThread, slackListChannels } from '../../../../../integrations/s
 import { hydrateSlackThreadTask } from '../../../../../integrations/slack/hydrateSlackThreadTask';
 import { parseSlackThreadExternalId } from '../../../../../integrations/slack/threadFormulas';
 import { resolvePastedIssueCandidate } from './resolvePastedIssueCandidate';
+import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -123,7 +124,7 @@ export const LinkIssueForm = ({
         <>
           <Divider />
           <footer role="alert" className="flex items-center gap-1 text-xs text-danger">
-            <AlertTriangle size={12} aria-hidden className="shrink-0" />
+            <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             {error}
           </footer>
         </>

@@ -13,6 +13,7 @@ import { Check, GitBranch } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { tauriGhRunner } from '../../../github/github';
 import { lastPathSegment } from '../WorkspaceLinkForm/lastPathSegment';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly open: boolean;
@@ -276,7 +277,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
       {isConverted ? (
         <div className="flex flex-col gap-3">
           <span className="flex items-center gap-1.5 text-xs text-success">
-            <Check size={12} aria-hidden />
+            <Check size={ICON_SIZE.row} aria-hidden />
             {project?.name ?? workspace.name} is backed by git
           </span>
           <p className="text-xs leading-relaxed text-muted-foreground">

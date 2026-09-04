@@ -13,7 +13,11 @@ import {
   useSummarizerStatus,
 } from '../../../../../../store';
 import { PaneShell } from '../../../../../../shared/components/PaneShell';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
+import {
+  CONCEPT_ICONS,
+  CONCEPT_TONE,
+  ICON_SIZE,
+} from '../../../../../../shared/components/conceptIcons';
 import type { ContextLens } from '../../../../lens-surface';
 import { InspectorSplit } from '../InspectorSplit';
 import { SlotHistoryPanel } from '../SlotHistoryPanel';
@@ -184,7 +188,7 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
                             ? 'copy shareable summary'
                             : `copy ${title.toLowerCase()}`
                         }
-                        size={13}
+                        size={ICON_SIZE.row}
                       />
                     ) : null}
                   </div>

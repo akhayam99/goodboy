@@ -2,7 +2,11 @@ import type { Agent } from '@goodboy/types';
 import { cn, tintClasses } from '@goodboy/ui';
 import { useAppStore, useSessionPlans } from '../../../../../store';
 import { kindConsumesPlan, type AgentKind } from '../../../../session/agent-kind';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import {
+  CONCEPT_ICONS,
+  CONCEPT_TONE,
+  ICON_SIZE,
+} from '../../../../../shared/components/conceptIcons';
 
 const planTint = tintClasses(CONCEPT_TONE.plans);
 
@@ -70,7 +74,11 @@ export const WorkflowStepPlanBadge = ({ run, kind }: Props) => {
         planTint.hoverText,
       )}
     >
-      <CONCEPT_ICONS.plans size={12} aria-hidden className={cn('shrink-0', planTint.icon)} />
+      <CONCEPT_ICONS.plans
+        size={ICON_SIZE.row}
+        aria-hidden
+        className={cn('shrink-0', planTint.icon)}
+      />
       <span className="shrink-0 font-medium">{label}</span>
       <span className="max-w-[24ch] truncate">{plan.title}</span>
     </button>

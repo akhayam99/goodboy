@@ -2,6 +2,7 @@ import { InlineConfirm } from '@goodboy/ui';
 import { RESOLVER_ACTION_ICON } from '../../resolverActionIcon';
 import { RESOLVER_ACTION_BUSY_LABEL } from '../../resolverActionBusyLabel';
 import type { ResolverAction } from '../../resolverActions';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly action: ResolverAction;
@@ -26,7 +27,7 @@ export const ResolverConfirm = ({
   return (
     <InlineConfirm
       role={action.confirm.role}
-      icon={<Icon size={12} aria-hidden />}
+      icon={<Icon size={ICON_SIZE.row} aria-hidden />}
       title={action.confirm.title}
       description={action.confirm.description}
       confirmLabel={isBusy ? RESOLVER_ACTION_BUSY_LABEL[action.kind] : action.confirm.confirmLabel}

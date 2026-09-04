@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { DogMascot } from '../../../../shared/components/DogMascot';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { GuideContent } from './parts/GuideContent';
 
 type Props = {
@@ -28,19 +28,19 @@ type NavItem = {
 };
 
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
-  { id: 'overview', label: 'Overview', icon: <BookOpen size={13} aria-hidden /> },
-  { id: 'board', label: 'Stage board', icon: <LayoutDashboard size={13} aria-hidden /> },
-  { id: 'session', label: 'Sessions', icon: <GitBranch size={13} aria-hidden /> },
-  { id: 'turn', label: 'Turns', icon: <MessagesSquare size={13} aria-hidden /> },
-  { id: 'tools', label: 'Tools', icon: <Wrench size={13} aria-hidden /> },
+  { id: 'overview', label: 'Overview', icon: <BookOpen size={ICON_SIZE.row} aria-hidden /> },
+  { id: 'board', label: 'Stage board', icon: <LayoutDashboard size={ICON_SIZE.row} aria-hidden /> },
+  { id: 'session', label: 'Sessions', icon: <GitBranch size={ICON_SIZE.row} aria-hidden /> },
+  { id: 'turn', label: 'Turns', icon: <MessagesSquare size={ICON_SIZE.row} aria-hidden /> },
+  { id: 'tools', label: 'Tools', icon: <Wrench size={ICON_SIZE.row} aria-hidden /> },
   {
     id: 'tokens',
     label: 'Tokens & cost',
-    icon: <CONCEPT_ICONS.budget size={13} aria-hidden />,
+    icon: <CONCEPT_ICONS.budget size={ICON_SIZE.row} aria-hidden />,
   },
-  { id: 'agents', label: 'Agents', icon: <DogMascot size={13} /> },
-  { id: 'tips', label: 'Tips', icon: <Lightbulb size={13} aria-hidden /> },
-  { id: 'legenda', label: 'Legend', icon: <Palette size={13} aria-hidden /> },
+  { id: 'agents', label: 'Agents', icon: <DogMascot size={ICON_SIZE.row} /> },
+  { id: 'tips', label: 'Tips', icon: <Lightbulb size={ICON_SIZE.row} aria-hidden /> },
+  { id: 'legenda', label: 'Legend', icon: <Palette size={ICON_SIZE.row} aria-hidden /> },
 ];
 
 export const GuideStudio = ({ onClose }: Props) => {

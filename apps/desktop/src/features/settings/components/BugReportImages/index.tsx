@@ -2,6 +2,7 @@ import { ImagePlus } from 'lucide-react';
 import { cn, FileDropZone } from '@goodboy/ui';
 import { AttachmentChip } from '../../../attachments/components/AttachmentChip';
 import type { BugReportImagesControl } from '../../hooks/useBugReportImages';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly control: BugReportImagesControl;
@@ -26,7 +27,7 @@ export const BugReportImages = ({ control }: Props) => {
         ref={dropTargetRef}
         data-drop-composer
         data-testid="bug-report-images"
-        actionIcon={<ImagePlus size={13} aria-hidden />}
+        actionIcon={<ImagePlus size={ICON_SIZE.row} aria-hidden />}
         actionLabel="Add files or drag"
         isDisabled={atLimit}
         isDragging={isDragging}

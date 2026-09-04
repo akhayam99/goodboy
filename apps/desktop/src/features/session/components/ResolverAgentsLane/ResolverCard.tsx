@@ -29,6 +29,7 @@ import { resolverCardTone } from './resolverCardTone';
 import { resolverDiffActionLabel, type ResolverDiffTarget } from './resolverDiffActionLabel';
 import type { ResolverAction } from '../../resolverActions';
 import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly agent: Agent;
@@ -194,7 +195,7 @@ export const ResolverCard = ({
         armed?.kind === 'delete' ? (
           <InlineConfirm
             role="danger"
-            icon={<Trash2 size={12} aria-hidden />}
+            icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
             title="Delete this resolver?"
             description="Removes this resolver and its transcript from the session."
             confirmLabel="Delete"

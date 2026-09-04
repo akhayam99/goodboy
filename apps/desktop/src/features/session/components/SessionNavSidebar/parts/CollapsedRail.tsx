@@ -4,6 +4,7 @@ import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import { WorkspaceRailBadge } from './WorkspaceRailBadge';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly onExpand: () => void;
@@ -34,7 +35,7 @@ export const CollapsedRail = ({ onExpand }: Props) => {
           aria-label={`Show session sidebar (${shortcutGlyphs('column.toggle')})`}
           className={railButton(false)}
         >
-          <PanelLeft size={15} aria-hidden />
+          <PanelLeft size={ICON_SIZE.control} aria-hidden />
         </button>
       </Tooltip>
       <WorkspaceRailBadge />
@@ -45,7 +46,7 @@ export const CollapsedRail = ({ onExpand }: Props) => {
           aria-label={`Back to board (${shortcutGlyphs('session.board')})`}
           className={railButton(false)}
         >
-          <Kanban size={15} aria-hidden />
+          <Kanban size={ICON_SIZE.control} aria-hidden />
         </button>
       </Tooltip>
       <Tooltip content={`New session (${shortcutGlyphs('session.new')})`} side="right">
@@ -55,7 +56,7 @@ export const CollapsedRail = ({ onExpand }: Props) => {
           aria-label={`New session (${shortcutGlyphs('session.new')})`}
           className={railButton(false)}
         >
-          <Plus size={15} aria-hidden />
+          <Plus size={ICON_SIZE.control} aria-hidden />
         </button>
       </Tooltip>
     </div>

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { cn, Divider, Tooltip } from '@goodboy/ui';
 import { X } from 'lucide-react';
 import { PANE_RHYTHM } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly title: string;
@@ -28,7 +29,7 @@ export const InspectorHeader = ({ title, closeLabel = 'close panel', actions, on
               aria-label={closeLabel}
               className="rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
             >
-              <X size={14} aria-hidden />
+              <X size={ICON_SIZE.control} aria-hidden />
             </button>
           </Tooltip>
         )}

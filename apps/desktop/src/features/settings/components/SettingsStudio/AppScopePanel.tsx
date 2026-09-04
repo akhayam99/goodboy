@@ -22,7 +22,7 @@ import { reopenWizard } from '../../../onboarding/onboarding-store';
 import { useToast } from '../../../../app/components/Toast';
 import { useAppStore } from '../../../../store';
 import { useThemeStore } from '../../../../shared/lib/theme';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { REPORT_ISSUE_STUDIO_EVENT } from '../../reportIssueStudioEvent';
 import { ShortcutsSection } from './ShortcutsSection';
 import { StorageSection } from './StorageSection';
@@ -229,7 +229,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                     reopenWizard();
                   }}
                 >
-                  <RotateCcw size={14} aria-hidden /> Run setup again
+                  <RotateCcw size={ICON_SIZE.control} aria-hidden /> Run setup again
                 </Button>
               </FieldRow>
 
@@ -242,7 +242,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                     window.dispatchEvent(new CustomEvent('goodboy:open-guide'));
                   }}
                 >
-                  <CONCEPT_ICONS.guide size={14} aria-hidden /> Open guide
+                  <CONCEPT_ICONS.guide size={ICON_SIZE.control} aria-hidden /> Open guide
                 </Button>
               </FieldRow>
 
@@ -255,7 +255,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                     window.dispatchEvent(new CustomEvent('goodboy:open-pair-device'));
                   }}
                 >
-                  <Smartphone size={14} aria-hidden /> Pair your iPhone
+                  <Smartphone size={ICON_SIZE.control} aria-hidden /> Pair your iPhone
                 </Button>
               </FieldRow>
 
@@ -268,7 +268,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                     window.dispatchEvent(new CustomEvent(REPORT_ISSUE_STUDIO_EVENT));
                   }}
                 >
-                  <CONCEPT_ICONS.reportIssue size={14} aria-hidden /> Report an issue
+                  <CONCEPT_ICONS.reportIssue size={ICON_SIZE.control} aria-hidden /> Report an issue
                 </Button>
               </FieldRow>
             </div>

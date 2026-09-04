@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Folder, FolderGit2 } from 'lucide-react';
 import { ScrollFade, cn, formatError } from '@goodboy/ui';
 import type { Project, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import { ICON_SIZE, projectGlyph } from '../../../../../shared/components/conceptIcons';
 
 const MANUAL_REASON = 'added manually by the user';
 const SEARCH_THRESHOLD = 8;
@@ -63,7 +63,7 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
         <ScrollFade className="max-h-56" viewportClassName="py-0.5" fadeFrom="subtle">
           <ul>
             {filtered.map((project) => {
-              const GlyphIcon = project.kind === 'repo' ? FolderGit2 : Folder;
+              const GlyphIcon = projectGlyph({ kind: project.kind });
               return (
                 <li key={project.id}>
                   <button
@@ -76,7 +76,11 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
                       isBusy && 'pointer-events-none opacity-50',
                     )}
                   >
-                    <GlyphIcon size={13} aria-hidden className="shrink-0 text-muted-foreground" />
+                    <GlyphIcon
+                      size={ICON_SIZE.row}
+                      aria-hidden
+                      className="shrink-0 text-muted-foreground"
+                    />
                     <span className="truncate">{project.name}</span>
                   </button>
                 </li>

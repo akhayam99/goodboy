@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Archive } from 'lucide-react';
 import { formatError, InlineConfirm, ScrollFade } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessions: ReadonlyArray<Session>;
@@ -40,7 +40,7 @@ export const BulkArchiveSessionsConfirm = ({
   return (
     <InlineConfirm
       role="alert"
-      icon={<Archive size={12} aria-hidden />}
+      icon={<CONCEPT_ICONS.archive size={ICON_SIZE.row} aria-hidden />}
       title={`Archive ${count} sessions?`}
       description="Moves these sessions out of the active board. Worktrees and transcripts are kept, restore them any time."
       confirmLabel={`Archive (${count})`}

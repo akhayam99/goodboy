@@ -1,12 +1,4 @@
-import {
-  FolderGit2,
-  FolderMinus,
-  FolderPlus,
-  GitBranch,
-  Link2,
-  Link2Off,
-  Trash2,
-} from 'lucide-react';
+import { FolderMinus, GitBranch, Link2, Link2Off } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { SessionEvent, SessionEventKind, SessionEventPayload } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
@@ -59,7 +51,11 @@ export type SessionEventGlyph = {
 };
 
 const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
-  worktree_created: { icon: FolderPlus, tone: 'neutral', label: 'Session folder' },
+  worktree_created: {
+    icon: CONCEPT_ICONS.worktree,
+    tone: CONCEPT_TONE.worktree,
+    label: 'Session folder',
+  },
   branch_created: { icon: GitBranch, tone: 'info', label: 'Branch' },
   branch_switched: { icon: GitBranch, tone: 'info', label: 'Branch' },
   issue_linked: { icon: Link2, tone: 'neutral', label: 'Issue' },
@@ -72,11 +68,19 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   workflow_started: { icon: CONCEPT_ICONS.workflows, tone: 'accent', label: 'Workflow' },
   workflow_discarded: { icon: CONCEPT_ICONS.workflows, tone: 'neutral', label: 'Workflow' },
   workflow_restored: { icon: CONCEPT_ICONS.workflows, tone: 'accent', label: 'Workflow' },
-  workflow_deleted: { icon: Trash2, tone: 'neutral', label: 'Workflow' },
-  decisions_changed: { icon: CONCEPT_ICONS.context, tone: CONCEPT_TONE.context, label: 'Context' },
-  project_materialized: { icon: FolderGit2, tone: 'info', label: 'Project' },
-  project_materialization_refused: { icon: FolderGit2, tone: 'warning', label: 'Project' },
-  project_materialization_proposed: { icon: FolderGit2, tone: 'info', label: 'Project' },
+  workflow_deleted: { icon: CONCEPT_ICONS.delete, tone: 'neutral', label: 'Workflow' },
+  decisions_changed: {
+    icon: CONCEPT_ICONS.decisions,
+    tone: CONCEPT_TONE.decisions,
+    label: 'Decisions',
+  },
+  project_materialized: { icon: CONCEPT_ICONS.mount, tone: CONCEPT_TONE.mount, label: 'Project' },
+  project_materialization_refused: { icon: CONCEPT_ICONS.mount, tone: 'warning', label: 'Project' },
+  project_materialization_proposed: {
+    icon: CONCEPT_ICONS.mount,
+    tone: CONCEPT_TONE.mount,
+    label: 'Project',
+  },
   project_materialization_dismissed: { icon: FolderMinus, tone: 'neutral', label: 'Project' },
   project_detached: { icon: FolderMinus, tone: 'neutral', label: 'Project' },
   external_task_created: { icon: Link2, tone: 'neutral', label: 'Issue' },

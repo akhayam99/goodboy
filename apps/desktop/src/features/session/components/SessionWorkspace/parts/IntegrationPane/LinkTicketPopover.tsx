@@ -2,6 +2,7 @@ import { Plus } from 'lucide-react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { AnchoredPopover, Button, useDropdown } from '@goodboy/ui';
 import { LinkIssueForm } from './LinkIssueForm';
+import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -39,7 +40,7 @@ export const LinkTicketPopover = ({
       anchorClassName="min-w-0"
       trigger={
         <Button variant="secondary" size="sm" onClick={toggle}>
-          <Plus size={13} aria-hidden />
+          <Plus size={ICON_SIZE.row} aria-hidden />
           {`Link ${noun}`}
         </Button>
       }

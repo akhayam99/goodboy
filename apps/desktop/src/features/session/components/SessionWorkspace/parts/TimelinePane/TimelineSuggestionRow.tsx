@@ -1,14 +1,7 @@
-import {
-  CircleHelp,
-  FolderGit2,
-  GitPullRequest,
-  GitPullRequestArrow,
-  Waypoints,
-  X,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button, Tooltip, cn, tintClasses } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { SUGGESTION_ICONS } from '../../../../../suggestions/suggestionIcons';
 import type { SessionSuggestion } from '../../../../../suggestions';
 import type { SuggestionActions } from '../../../../../suggestions/useSuggestionActions';
 import { futureRailRow, railColumnX } from '../../../../timeline/railGeometry';
@@ -18,15 +11,6 @@ import { TimelineRail } from './TimelineRail';
 
 const ROW_HEIGHT = 32;
 
-const ICONS: Record<SessionSuggestion['kind'], LucideIcon> = {
-  'workflow-next-step': Waypoints,
-  'plan-ready': CONCEPT_ICONS.suggestion,
-  'resolve-threads': GitPullRequest,
-  'rebase-project': GitPullRequestArrow,
-  'answer-questions': CircleHelp,
-  'mount-project': FolderGit2,
-};
-
 type Props = {
   readonly suggestion: SessionSuggestion;
   readonly railWidth: number;
@@ -34,7 +18,7 @@ type Props = {
 };
 
 export const TimelineSuggestionRow = ({ suggestion, railWidth, actions }: Props) => {
-  const Icon = ICONS[suggestion.kind];
+  const Icon = SUGGESTION_ICONS[suggestion.kind];
   const { markerSize, glyphSize } = TIMELINE_RHYTHM.grade.entry;
   const rail = futureRailRow({ id: suggestion.id, height: ROW_HEIGHT });
   return (
@@ -87,7 +71,7 @@ export const TimelineSuggestionRow = ({ suggestion, railWidth, actions }: Props)
                 aria-label="Dismiss this suggestion"
                 className="rounded-md p-1 text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
               >
-                <X size={12} aria-hidden />
+                <X size={ICON_SIZE.row} aria-hidden />
               </button>
             </Tooltip>
           )}

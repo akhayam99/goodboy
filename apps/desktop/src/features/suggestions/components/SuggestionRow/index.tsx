@@ -1,14 +1,8 @@
 import type { ReactNode } from 'react';
-import {
-  CircleHelp,
-  FolderGit2,
-  GitPullRequestArrow,
-  ListChecks,
-  MessageSquareReply,
-  Play,
-  X,
-} from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button, cn, PANE_RHYTHM, Tooltip } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { SUGGESTION_ICONS } from '../../suggestionIcons';
 import type { SessionSuggestion } from '../../types';
 
 type Props = {
@@ -21,15 +15,6 @@ type Props = {
   readonly isDisabled?: boolean;
 };
 
-const ICONS = {
-  'workflow-next-step': Play,
-  'plan-ready': ListChecks,
-  'resolve-threads': MessageSquareReply,
-  'rebase-project': GitPullRequestArrow,
-  'answer-questions': CircleHelp,
-  'mount-project': FolderGit2,
-} satisfies Record<SessionSuggestion['kind'], typeof Play>;
-
 export const SuggestionRow = ({
   suggestion,
   size,
@@ -39,7 +24,7 @@ export const SuggestionRow = ({
   onDismiss,
   isDisabled = false,
 }: Props) => {
-  const Icon = ICONS[suggestion.kind];
+  const Icon = SUGGESTION_ICONS[suggestion.kind];
   return (
     <div
       data-testid={`suggestion-${suggestion.id}`}
@@ -51,7 +36,7 @@ export const SuggestionRow = ({
       )}
     >
       <Icon
-        size={size === 'compact' ? 12 : 14}
+        size={size === 'compact' ? ICON_SIZE.row : ICON_SIZE.control}
         className="shrink-0 text-muted-foreground"
         aria-hidden
       />
@@ -80,7 +65,7 @@ export const SuggestionRow = ({
             aria-label="Dismiss suggestion"
             className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            <X size={12} aria-hidden />
+            <X size={ICON_SIZE.row} aria-hidden />
           </button>
         </Tooltip>
       ) : null}

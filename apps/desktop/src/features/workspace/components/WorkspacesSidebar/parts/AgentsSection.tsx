@@ -2,7 +2,7 @@ import { SectionHeader, cn } from '@goodboy/ui';
 import type { Session, WorkflowRunId } from '@goodboy/types';
 import { ScriptsSection } from '../../../../scripts/components/ScriptsSection';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { StandaloneAgentsLane } from '../../../../../features/session/components/StandaloneAgentsLane';
 import { WorkflowAttachButton } from '../../../../workflows/components/WorkflowAttachButton';
 import { SectionToggle } from './SectionToggle';
@@ -125,7 +125,7 @@ export const AgentsSection = ({
         <>
           <SectionHeader
             className={SUBSEQUENT_HEADER_CLASS}
-            icon={<DogMascot size={14} className="shrink-0 text-success" />}
+            icon={<DogMascot size={ICON_SIZE.control} className="shrink-0 text-success" />}
             label="Agents"
             action={
               <SectionToggle

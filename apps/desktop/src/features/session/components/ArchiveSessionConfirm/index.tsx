@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Archive } from 'lucide-react';
 import { formatError, InlineConfirm } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
@@ -31,7 +31,7 @@ export const ArchiveSessionConfirm = ({ session, onClose, className }: Props) =>
   return (
     <InlineConfirm
       role="alert"
-      icon={<Archive size={12} aria-hidden />}
+      icon={<CONCEPT_ICONS.archive size={ICON_SIZE.row} aria-hidden />}
       title="Archive session?"
       description="Moves it to the Archived tab and frees memory. The worktree, branch, and history stay on disk. Reversible anytime with Unarchive."
       confirmLabel="Archive"

@@ -34,7 +34,7 @@ import {
 import { ExternalTaskChip } from '../../../../features/integrations/components/ExternalTaskChip';
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { sessionCardShell } from '../../../session/components/sessionCardShell';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
@@ -230,7 +230,7 @@ export const SessionActivityBar = ({
               title={`Create new session (${shortcutGlyphs('session.new')})`}
               className="group relative mb-1 w-full justify-center gap-1.5 px-2 text-xs"
             >
-              <Plus size={13} aria-hidden />
+              <Plus size={ICON_SIZE.row} aria-hidden />
               New
               <KbdPill
                 aria-hidden
@@ -434,7 +434,11 @@ const SessionActivityItem = memo(function SessionActivityItem({
           )}
         </span>
       </span>
-      <ChevronRight size={14} aria-hidden className="shrink-0 text-muted-foreground/50" />
+      <ChevronRight
+        size={ICON_SIZE.control}
+        aria-hidden
+        className="shrink-0 text-muted-foreground/50"
+      />
     </button>
   );
 });

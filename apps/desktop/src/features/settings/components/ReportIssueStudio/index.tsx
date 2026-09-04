@@ -16,7 +16,7 @@ import {
   Textarea,
 } from '@goodboy/ui';
 import { useToast } from '../../../../app/components/Toast';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { openUrl } from '../../../../shared/lib/editor';
 import { useAppStore } from '../../../../store';
@@ -369,7 +369,7 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                       role="alert"
                       className="inline-flex items-center gap-1 text-xs text-danger"
                     >
-                      <AlertTriangle size={12} aria-hidden />
+                      <AlertTriangle size={ICON_SIZE.row} aria-hidden />
                       {errorMessage}
                     </span>
                   ) : version != null ? (

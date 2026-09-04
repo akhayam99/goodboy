@@ -1,7 +1,7 @@
 import { FolderGit2, GitBranch, MessagesSquare } from 'lucide-react';
 import { SectionHeader } from '@goodboy/ui';
 import { SESSION_FEATURES } from '../../../../../shared/lib/features';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { Block } from './Block';
 import { DefinitionList } from './DefinitionList';
 import { Tile } from './Tile';
@@ -12,7 +12,7 @@ export const SessionsSection = ({}: Props) => (
   <div className="flex flex-col gap-7">
     <SectionHeader
       size="page"
-      icon={<GitBranch size={14} aria-hidden className="text-success" />}
+      icon={<GitBranch size={ICON_SIZE.control} aria-hidden className="text-success" />}
       label="Sessions"
       hint="One focused unit of work. Materializes a worktree for each project, with a branch, transcripts, and a goal. It is a card on the board until you open it."
     />

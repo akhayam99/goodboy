@@ -1,7 +1,7 @@
 import { SectionSurface, cn, tintClasses } from '@goodboy/ui';
 import type { PlanWithCount, SessionId } from '@goodboy/types';
 import { pluralize } from '../../../../shared/utils/pluralize';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const planTint = tintClasses(CONCEPT_TONE.plans);
 
@@ -36,7 +36,7 @@ export const AgentBriefPlans = ({ plans, sessionId }: Props) => {
             }
           >
             <span className="flex min-w-0 items-center gap-2">
-              <CONCEPT_ICONS.plans size={13} aria-hidden className={planTint.icon} />
+              <CONCEPT_ICONS.plans size={ICON_SIZE.row} aria-hidden className={planTint.icon} />
               <span className="min-w-0 truncate text-foreground">{plan.title}</span>
             </span>
             <span className="shrink-0 text-3xs tabular-nums text-muted-foreground">

@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react';
 import { SectionHeader, tintClasses } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
+import {
+  CONCEPT_ICONS,
+  CONCEPT_TONE,
+  ICON_SIZE,
+} from '../../../../../../shared/components/conceptIcons';
 
 type Concept = 'decisions' | 'sessionSummary' | 'explore';
 
@@ -30,7 +34,7 @@ export const ContextSection = ({
         headingLevel={2}
         label={title}
         hint={description}
-        icon={<Icon size={13} aria-hidden className={tint.icon} />}
+        icon={<Icon size={ICON_SIZE.row} aria-hidden className={tint.icon} />}
         action={actions}
       />
       {children}

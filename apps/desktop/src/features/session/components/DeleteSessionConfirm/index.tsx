@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Archive, Trash2 } from 'lucide-react';
 import { formatError, InlineConfirm } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
@@ -54,7 +54,7 @@ export const DeleteSessionConfirm = ({ session, onClose, className }: Props) => 
   return (
     <InlineConfirm
       role="danger"
-      icon={<Trash2 size={12} aria-hidden />}
+      icon={<CONCEPT_ICONS.delete size={ICON_SIZE.row} aria-hidden />}
       title="Delete session?"
       description={description}
       confirmLabel="Delete"
@@ -65,7 +65,7 @@ export const DeleteSessionConfirm = ({ session, onClose, className }: Props) => 
       {...(session.archivedAt == null && {
         altAction: {
           label: 'Archive instead',
-          icon: <Archive size={11} aria-hidden />,
+          icon: <CONCEPT_ICONS.archive size={11} aria-hidden />,
           onClick: () => void onArchiveInstead(),
         },
       })}

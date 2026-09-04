@@ -7,6 +7,7 @@ import {
 } from '../../../integrations/components/IntegrationGlyph';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import type { InboxKind, InboxRecord, InboxState } from '../../types';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const STATE_TONE: Record<InboxState, StateTone> = {
   open: 'info',
@@ -62,7 +63,11 @@ export const InboxRow = ({ record, selected, onSelect }: Props) => {
       className="flex-col items-stretch gap-1 px-3 py-2"
     >
       <span className="flex items-center gap-2">
-        <KindIcon size={14} aria-hidden className={cn('shrink-0', tintClasses(stateTone).icon)} />
+        <KindIcon
+          size={ICON_SIZE.control}
+          aria-hidden
+          className={cn('shrink-0', tintClasses(stateTone).icon)}
+        />
         <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground">
           {record.identifier}
         </span>

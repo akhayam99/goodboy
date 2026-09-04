@@ -2,6 +2,7 @@ import { RotateCcw, TriangleAlert } from 'lucide-react';
 import { Button, EmptyState } from '@goodboy/ui';
 import { useSettleElapsed } from '../../../hooks/useSettleElapsed';
 import { SessionOverviewSkeleton } from './SessionOverviewSkeleton';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 const OVERVIEW_SETTLE_MS = 10_000;
 
@@ -26,7 +27,7 @@ export const SessionOverviewLoading = ({ isFreshLayout, onRetry }: Props) => {
         description="Its agents and plans have not arrived. Nothing here is missing on purpose."
         action={
           <Button size="md" onClick={onRetry}>
-            <RotateCcw size={16} aria-hidden />
+            <RotateCcw size={ICON_SIZE.control} aria-hidden />
             Retry
           </Button>
         }

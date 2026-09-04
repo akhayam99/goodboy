@@ -1,6 +1,10 @@
 import { CornerDownRight, Eye, EyeOff, ListFilter } from 'lucide-react';
 import { AnchoredPopover, Divider, cn, tintClasses, useDropdown } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
+import {
+  CONCEPT_ICONS,
+  CONCEPT_TONE,
+  ICON_SIZE,
+} from '../../../../../../shared/components/conceptIcons';
 import {
   ACTIVITY_CATEGORIES,
   ACTIVITY_CATEGORY_LABEL,
@@ -49,13 +53,13 @@ type EyeMarkProps = {
 const EyeMark = ({ isActive }: EyeMarkProps) =>
   isActive ? (
     <Eye
-      size={12}
+      size={ICON_SIZE.row}
       aria-hidden
       className="shrink-0 text-muted-foreground motion-safe:transition-colors group-hover:text-foreground"
     />
   ) : (
     <EyeOff
-      size={12}
+      size={ICON_SIZE.row}
       aria-hidden
       className="shrink-0 text-muted-foreground/40 motion-safe:transition-colors group-hover:text-muted-foreground"
     />
@@ -82,7 +86,7 @@ const CategoryRow = ({ category, isActive, onToggle }: CategoryRowProps) => {
       )}
     >
       <Icon
-        size={12}
+        size={ICON_SIZE.row}
         aria-hidden
         className={cn(
           'shrink-0',
@@ -177,7 +181,7 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
               : 'text-muted-foreground/70 hover:bg-muted/60 hover:text-foreground',
           )}
         >
-          <ListFilter size={13} aria-hidden className="shrink-0" />
+          <ListFilter size={ICON_SIZE.control} aria-hidden className="shrink-0" />
           {hiddenCount > 0 ? hiddenCount : null}
         </button>
       }

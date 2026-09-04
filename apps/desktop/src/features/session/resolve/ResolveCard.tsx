@@ -1,6 +1,6 @@
 import type { AgentId, ProviderId } from '@goodboy/types';
 import { Button, Checkbox, Chip, ClampedProse, cn, Tooltip } from '@goodboy/ui';
-import { ArrowUpRight, ChevronDown, ExternalLink, RotateCcw } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, RotateCcw } from 'lucide-react';
 import { modelEffortLevels } from '../../chat/utils/chat-constants';
 import { RoutingBadge } from '../../../shared/components/RoutingBadge';
 import type { CommentThread } from '../../github/comment-threads';
@@ -9,7 +9,7 @@ import type { ResolverLink } from '../resolver-linkage';
 import { ResolveConfigPopover } from './ResolveConfigPopover';
 import { isClaimedLink } from './isClaimedLink';
 import type { CardConfig } from './config';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly thread: CommentThread;
@@ -78,7 +78,7 @@ export const ResolveCard = ({
                     aria-label="Open the full thread"
                     className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
                   >
-                    <ExternalLink size={12} aria-hidden />
+                    <CONCEPT_ICONS.openExternal size={ICON_SIZE.row} aria-hidden />
                   </button>
                 </Tooltip>
               ) : null}

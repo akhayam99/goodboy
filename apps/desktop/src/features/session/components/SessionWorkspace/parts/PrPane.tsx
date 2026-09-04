@@ -35,7 +35,11 @@ import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { StateBadge } from '@goodboy/ui';
 import { resolveDetailFields, sessionPullRequestFields } from '../../../../../shared/detail-fields';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import {
+  CONCEPT_ICONS,
+  CONCEPT_TONE,
+  ICON_SIZE,
+} from '../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
 import { LinkedWorkRow } from '../../../../../shared/components/LinkedWorkRow';
 import type { RemoteHostKind } from '../../../../../shared/lib/remoteHost';
@@ -455,7 +459,7 @@ const GithubPrCard = ({
     const openAction = (
       <Button size="sm" onClick={onOpenStudio}>
         Draft a pull request
-        <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
+        <ArrowRight size={ICON_SIZE.row} aria-hidden className="shrink-0 opacity-70" />
       </Button>
     );
     if (!hasLinkedWork) {
@@ -519,7 +523,7 @@ const GithubPrCard = ({
               />
               <Button size="sm" variant="ghost" onClick={onOpenStudio}>
                 Review this pull request
-                <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
+                <ArrowRight size={ICON_SIZE.row} aria-hidden className="shrink-0 opacity-70" />
               </Button>
             </>
           }

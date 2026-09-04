@@ -8,7 +8,7 @@ import type { ResolveModelChoice } from '../../chat/spawn-from-comment';
 import type { CommentThread } from '../../github/comment-threads';
 import type { ResolverLink } from '../resolver-linkage';
 import { useAppStore } from '../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { aggregateConfig, defaultConfig, type CardConfig } from './config';
 import { isClaimedLink } from './isClaimedLink';
 import { ResolveCard } from './ResolveCard';
@@ -127,7 +127,7 @@ export const ResolveThreadsBoard = ({
                   title="Apply one resolver configuration to every comment"
                   className="bg-subtle px-2"
                 >
-                  <Sliders size={12} aria-hidden className="text-muted-foreground" />
+                  <Sliders size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />
                   <span className="text-muted-foreground">Resolve all with</span>
                   {aggregate === 'mixed' ? (
                     <span className="font-medium text-foreground">Customized</span>
@@ -150,7 +150,7 @@ export const ResolveThreadsBoard = ({
               title={selected.length > 8 ? 'Too many threads for one resolver (max 8)' : undefined}
               className="font-semibold"
             >
-              <CONCEPT_ICONS.resolve size={12} aria-hidden />
+              <CONCEPT_ICONS.resolve size={ICON_SIZE.row} aria-hidden />
               Combine into one
             </Button>
           ) : null}
@@ -160,7 +160,7 @@ export const ResolveThreadsBoard = ({
             disabled={selected.length === 0}
             className="inline-flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1 text-xs font-semibold text-accent-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <CONCEPT_ICONS.resolve size={12} aria-hidden />
+            <CONCEPT_ICONS.resolve size={ICON_SIZE.row} aria-hidden />
             {`Resolve ${selected.length} ${selected.length === 1 ? 'thread' : 'threads'}`}
           </button>
         </div>

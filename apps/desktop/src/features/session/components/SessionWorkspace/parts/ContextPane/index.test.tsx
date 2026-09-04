@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { tintClasses } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
+import { CONCEPT_TONE, ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 
 type StoreSlot = { key: string; value: string; enabled: boolean };
 
@@ -290,7 +290,7 @@ describe('Session summary blocks', () => {
       const region = within(summary).getByRole('region', { name: title });
       const icon = region.querySelector('h3 svg');
       expect(icon).not.toBeNull();
-      expect(icon?.getAttribute('width')).toBe('12');
+      expect(icon?.getAttribute('width')).toBe(String(ICON_SIZE.row));
     }
   });
 

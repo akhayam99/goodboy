@@ -22,6 +22,7 @@ import { AgentSwitcherCrumb } from './AgentSwitcherCrumb';
 import { WorkflowAdvance } from './WorkflowAdvance';
 import { switcherPeers } from './switcherPeers';
 import type { SwitcherEntry } from './switcherEntry';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type SessionCrumbsProps = {
   readonly session: Session;
@@ -160,7 +161,11 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
         return (
           <span key={crumb.id} className="flex min-w-0 items-center gap-2">
             {index > 0 ? (
-              <ChevronRight size={12} aria-hidden className="shrink-0 text-muted-foreground/40" />
+              <ChevronRight
+                size={ICON_SIZE.row}
+                aria-hidden
+                className="shrink-0 text-muted-foreground/40"
+              />
             ) : null}
             {index === crumbs.length - 1 && canSwitchAgent && selectedAgent != null ? (
               <AgentSwitcherCrumb

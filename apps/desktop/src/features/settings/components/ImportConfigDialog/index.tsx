@@ -2,6 +2,7 @@ import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button, Dialog } from '@goodboy/ui';
 import type { ConfigBundleImportResult } from '@goodboy/types';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   open: boolean;
@@ -40,7 +41,11 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
     >
       {error ? (
         <div className="flex items-start gap-2 rounded-md bg-danger/5 p-3">
-          <AlertCircle size={14} aria-hidden className="mt-0.5 shrink-0 text-danger" />
+          <AlertCircle
+            size={ICON_SIZE.control}
+            aria-hidden
+            className="mt-0.5 shrink-0 text-danger"
+          />
           <p className="text-xs text-danger">{error}</p>
         </div>
       ) : result?.ok ? (
@@ -48,7 +53,7 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
           {statRows.map((row) => (
             <div key={row.label} className="flex items-center justify-between px-3 py-2 text-xs">
               <dt className="flex items-center gap-2 text-muted-foreground">
-                <CheckCircle2 size={13} aria-hidden className="shrink-0 text-success" />
+                <CheckCircle2 size={ICON_SIZE.row} aria-hidden className="shrink-0 text-success" />
                 <span>{row.label}:</span>
               </dt>
               <dd className="font-mono tabular-nums text-foreground">{row.value}</dd>
@@ -59,7 +64,11 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
         <ul className="divide-y divide-border-soft/50 overflow-hidden rounded-md border border-danger/20">
           {result.errors.map((e) => (
             <li key={e.field} className="flex items-start gap-2 px-3 py-2 text-xs">
-              <AlertCircle size={13} aria-hidden className="mt-0.5 shrink-0 text-danger" />
+              <AlertCircle
+                size={ICON_SIZE.row}
+                aria-hidden
+                className="mt-0.5 shrink-0 text-danger"
+              />
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="font-mono text-foreground">{e.field}</span>
                 <span className="text-muted-foreground">{e.message}</span>

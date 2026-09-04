@@ -268,11 +268,11 @@ describe('sessionEventGlyph', () => {
     }
   });
 
-  it('marks a context change with the context concept, tinted', () => {
+  it('marks a decision change with the decisions concept the filter also uses', () => {
     const glyph = sessionEventGlyph({ kind: 'decisions_changed' });
-    expect(glyph.icon).toBe(CONCEPT_ICONS.context);
-    expect(glyph.tone).toBe(CONCEPT_TONE.context);
-    expect(glyph.label).toBe('Context');
+    expect(glyph.icon).toBe(CONCEPT_ICONS.decisions);
+    expect(glyph.tone).toBe(CONCEPT_TONE.decisions);
+    expect(glyph.label).toBe('Decisions');
   });
 
   it('uses the shared pull request glyphs and tones', () => {

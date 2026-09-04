@@ -7,6 +7,7 @@ import { distanceAhead } from '../../../../../shared/lib/gitStatus';
 import { BaseBranchSelect } from '../../../../worktree/BaseBranchSelect';
 import { useRebaseAgent } from '../../../hooks/useRebaseAgent';
 import { usePushBranch } from '../../../hooks/usePushBranch';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -81,7 +82,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, status }: Props) => {
           onClick={dropdown.toggle}
           className="relative inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         >
-          <RefreshCw size={13} aria-hidden />
+          <RefreshCw size={ICON_SIZE.row} aria-hidden />
           {distance != null && distance.behind > 0 ? (
             <span
               data-testid="project-behind-badge"
@@ -123,7 +124,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, status }: Props) => {
             (!rebase.canRebase || rebase.isRunning) && 'opacity-40',
           )}
         >
-          <GitBranch size={12} aria-hidden />
+          <GitBranch size={ICON_SIZE.row} aria-hidden />
           {rebase.isRunning ? `Rebasing on ${baseBranch}` : `Rebase on ${baseBranch}`}
         </button>
         <button
@@ -135,7 +136,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, status }: Props) => {
             (!canPush || push.isBusy) && 'opacity-40',
           )}
         >
-          <Upload size={12} aria-hidden />
+          <Upload size={ICON_SIZE.row} aria-hidden />
           {push.isBusy ? 'Pushing branch' : 'Push branch'}
         </button>
       </div>
