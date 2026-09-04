@@ -45,4 +45,17 @@ describe('SessionEyebrow', () => {
 
     expect(setActiveLens).toHaveBeenCalledWith(SESSION_ID, null);
   });
+
+  it('renders inline markdown in the goal and strips it from the title', () => {
+    const { container } = render(
+      <SessionEyebrow session={sessionWith({ goal: 'fix `auth` bug' })} />,
+    );
+
+    const code = container.querySelector('code');
+    expect(code?.textContent).toBe('auth');
+
+    const button = container.querySelector('button');
+    expect(button?.getAttribute('title')).toBe('fix auth bug');
+    expect(button?.getAttribute('title')).not.toContain('`');
+  });
 });
