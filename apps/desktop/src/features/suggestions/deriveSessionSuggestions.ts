@@ -1,4 +1,12 @@
-import type { PlanId, ProjectId, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
+import type {
+  AgentId,
+  PlanId,
+  ProjectId,
+  SessionEventId,
+  SessionId,
+  StepId,
+  WorkflowRunId,
+} from '@goodboy/types';
 import type { SessionSuggestion } from './types';
 
 export type SuggestionWorkflowRun = {
@@ -30,6 +38,17 @@ export type SuggestionProject = {
   readonly mainDistance: number | null;
 };
 
+export type SuggestionMountEventKind = 'proposed' | 'mounted' | 'dismissed';
+
+export type SuggestionMountEvent = {
+  readonly eventId: SessionEventId;
+  readonly kind: SuggestionMountEventKind;
+  readonly projectId: ProjectId;
+  readonly projectName: string;
+  readonly reason: string;
+  readonly agentId: AgentId | null;
+};
+
 type Params = {
   readonly sessionId: SessionId;
   readonly workflowRuns: ReadonlyArray<SuggestionWorkflowRun>;
@@ -39,6 +58,23 @@ type Params = {
   readonly hasPullRequest: boolean;
   readonly threads: ReadonlyArray<SuggestionThread>;
   readonly projects: ReadonlyArray<SuggestionProject>;
+  readonly mountEvents: ReadonlyArray<SuggestionMountEvent>;
+};
+
+const pendingMountEvents = ({
+  mountEvents,
+}: {
+  readonly mountEvents: ReadonlyArray<SuggestionMountEvent>;
+}): ReadonlyArray<SuggestionMountEvent> => {
+  const pending = new Map<ProjectId, SuggestionMountEvent>();
+  for (const event of mountEvents) {
+    if (event.kind === 'proposed') {
+      pending.set(event.projectId, event);
+      continue;
+    }
+    pending.delete(event.projectId);
+  }
+  return [...pending.values()];
 };
 
 export const deriveSessionSuggestions = ({
@@ -50,8 +86,26 @@ export const deriveSessionSuggestions = ({
   hasPullRequest,
   threads,
   projects,
+  mountEvents,
 }: Params): ReadonlyArray<SessionSuggestion> => {
   const suggestions: SessionSuggestion[] = [];
+  for (const event of pendingMountEvents({ mountEvents })) {
+    suggestions.push({
+      id: `mount-project:${event.projectId}`,
+      kind: 'mount-project',
+      priority: 5,
+      title: `Mount ${event.projectName}`,
+      detail: event.reason,
+      sessionId,
+      payload: {
+        projectId: event.projectId,
+        projectName: event.projectName,
+        reason: event.reason,
+        agentId: event.agentId,
+        eventId: event.eventId,
+      },
+    });
+  }
   if (openQuestionCount > 0) {
     suggestions.push({
       id: `answer-questions:${sessionId}`,

@@ -71,6 +71,18 @@ describe('ActivityFilterButton', () => {
     expect(onToggle).toHaveBeenCalledWith({ toggle: 'plans', enabled: false });
   });
 
+  it('offers a suggestions row and counts it on the badge once hidden', () => {
+    const onToggle = vi.fn();
+    open({ filter: { ...DEFAULT_ACTIVITY_FILTER, suggestions: false }, onToggle });
+
+    const row = screen.getByRole('menuitemcheckbox', { name: 'Suggestions' });
+    expect(row.getAttribute('aria-checked')).toBe('false');
+    expect(row.nextElementSibling).toBeNull();
+    expect(screen.getByRole('button', { name: 'Filter the activity feed' }).textContent).toBe('1');
+    fireEvent.click(row);
+    expect(onToggle).toHaveBeenCalledWith({ toggle: 'suggestions', enabled: true });
+  });
+
   it('nests a subagent sub-row directly under Workflows and under Agents', () => {
     open();
     const workflowsRow = screen.getByRole('menuitemcheckbox', { name: 'Workflows' });

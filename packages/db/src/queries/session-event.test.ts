@@ -75,6 +75,25 @@ describe('session_events queries', () => {
     expect((await listSessionEvents({ db, sessionId }))[0]?.payload).toBeNull();
   });
 
+  it('keeps the proposing agent on a materialization proposal', async () => {
+    const db = await seed();
+    const event = makeEvent({
+      overrides: {
+        kind: 'project_materialization_proposed',
+        payload: {
+          projectId: 'project-api',
+          projectName: 'api',
+          reason: 'edit the contract',
+          agentId: 'agent-7',
+        },
+      },
+    });
+
+    await insertSessionEvent({ db, event });
+
+    expect((await listSessionEvents({ db, sessionId }))[0]?.payload?.agentId).toBe('agent-7');
+  });
+
   it('drops payload fields of the wrong shape', async () => {
     const db = await seed();
     await db.execute(

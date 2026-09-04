@@ -28,6 +28,8 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   decisions_changed: { lens: 'decisions', label: 'Open decisions' },
   project_materialized: { lens: 'files', label: 'Open files' },
   project_materialization_refused: { lens: null, label: 'Open overview' },
+  project_materialization_proposed: { lens: null, label: 'Open overview' },
+  project_materialization_dismissed: null,
   project_detached: null,
   external_task_created: { lens: null, label: 'Open overview' },
 };

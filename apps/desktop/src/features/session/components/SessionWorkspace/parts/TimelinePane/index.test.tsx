@@ -14,30 +14,49 @@ type Worktree = {
   readonly createdAt: number;
 };
 
-const { storeState, diffStats, unread, questions, agentsLoaded } = vi.hoisted(() => ({
-  unread: { current: false },
-  agentsLoaded: { current: true },
-  diffStats: { current: new Map<string, { additions: number; deletions: number }>() },
-  questions: {
-    open: [] as ReadonlyArray<unknown>,
-    answered: [] as ReadonlyArray<unknown>,
-    dismissed: [] as ReadonlyArray<unknown>,
-  },
-  storeState: {
-    sessionPhaseRuns: {},
-    sessionPlans: {},
-    sessionExternalTasks: {},
-    sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionEvents: {},
-    agentKindOverride: {},
-    loadSessionEvents: vi.fn(async () => undefined),
-    loadSessionAnsweredQuestions: vi.fn(async () => undefined),
-    loadSessionDismissedQuestions: vi.fn(async () => undefined),
-    markAllAgentsSeen: vi.fn(),
-    setActiveLens: vi.fn(),
-    openMountDiff: vi.fn(),
-  },
-}));
+type FakeSuggestion = {
+  readonly id: string;
+  readonly kind: string;
+  readonly title: string;
+  readonly detail?: string;
+};
+
+const { storeState, diffStats, unread, questions, suggestionState, agentsLoaded } = vi.hoisted(
+  () => ({
+    unread: { current: false },
+    agentsLoaded: { current: true },
+    suggestionState: {
+      list: [] as ReadonlyArray<{
+        readonly id: string;
+        readonly kind: string;
+        readonly title: string;
+        readonly detail?: string;
+      }>,
+      onAct: vi.fn(),
+      onDismiss: vi.fn(),
+    },
+    diffStats: { current: new Map<string, { additions: number; deletions: number }>() },
+    questions: {
+      open: [] as ReadonlyArray<unknown>,
+      answered: [] as ReadonlyArray<unknown>,
+      dismissed: [] as ReadonlyArray<unknown>,
+    },
+    storeState: {
+      sessionPhaseRuns: {},
+      sessionPlans: {},
+      sessionExternalTasks: {},
+      sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionEvents: {},
+      agentKindOverride: {},
+      loadSessionEvents: vi.fn(async () => undefined),
+      loadSessionAnsweredQuestions: vi.fn(async () => undefined),
+      loadSessionDismissedQuestions: vi.fn(async () => undefined),
+      markAllAgentsSeen: vi.fn(),
+      setActiveLens: vi.fn(),
+      openMountDiff: vi.fn(),
+    },
+  }),
+);
 
 vi.mock('../../../../../../store', () => {
   const useAppStore = <T,>(selector: (state: typeof storeState) => T) => selector(storeState);
@@ -67,6 +86,22 @@ vi.mock('../../../../../../app/components/Toast', () => ({
 }));
 vi.mock('./ActivityFilterButton', () => ({
   ActivityFilterButton: () => <button type="button">Filter</button>,
+}));
+vi.mock('../../../../../suggestions', () => ({
+  useSessionSuggestions: () => suggestionState.list,
+}));
+vi.mock('../../../../../suggestions/useSuggestionActions', () => ({
+  useSuggestionActions:
+    () =>
+    ({ suggestion }: { readonly suggestion: FakeSuggestion }) => ({
+      primary: {
+        label: `Act on ${suggestion.id}`,
+        isDisabled: false,
+        onAct: () => suggestionState.onAct(suggestion.id),
+      },
+      onDismiss:
+        suggestion.kind === 'mount-project' ? () => suggestionState.onDismiss(suggestion.id) : null,
+    }),
 }));
 
 import { TimelinePane } from './index';
@@ -104,6 +139,9 @@ beforeEach(() => {
   questions.open = [];
   questions.answered = [];
   questions.dismissed = [];
+  suggestionState.list = [];
+  suggestionState.onAct.mockReset();
+  suggestionState.onDismiss.mockReset();
   agentsLoaded.current = true;
   localStorage.clear();
 });
@@ -286,6 +324,85 @@ describe('TimelinePane unread affordance', () => {
     render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
 
     expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
+  });
+});
+
+describe('TimelinePane suggestions', () => {
+  const ANSWER: FakeSuggestion = {
+    id: 'answer-questions:session-1',
+    kind: 'answer-questions',
+    title: 'Answer open questions',
+    detail: '2 questions blocking progress',
+  };
+  const MOUNT: FakeSuggestion = {
+    id: 'mount-project:project-web',
+    kind: 'mount-project',
+    title: 'Mount web',
+    detail: 'needs the router',
+  };
+  const PLAN: FakeSuggestion = {
+    id: 'plan-ready:plan-1',
+    kind: 'plan-ready',
+    title: 'Plan',
+  };
+
+  const renderWithActivity = () => {
+    storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
+    return render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+  };
+
+  it('seats every suggestion row above the NOW rule', () => {
+    suggestionState.list = [ANSWER, MOUNT];
+
+    renderWithActivity();
+
+    const row = screen.getByTestId(`timeline-suggestion-${ANSWER.id}`);
+    const now = screen.getByTestId('timeline-now-dot');
+    expect(screen.getByText('Answer open questions')).not.toBeNull();
+    expect(screen.getByText('needs the router')).not.toBeNull();
+    expect(row.compareDocumentPosition(now) & Node.DOCUMENT_POSITION_FOLLOWING).toBeGreaterThan(0);
+  });
+
+  it('leaves the plan-ready suggestion to the composer', () => {
+    suggestionState.list = [ANSWER, PLAN];
+
+    renderWithActivity();
+
+    expect(screen.queryByTestId(`timeline-suggestion-${PLAN.id}`)).toBeNull();
+    expect(screen.queryByTestId(`timeline-suggestion-${ANSWER.id}`)).not.toBeNull();
+  });
+
+  it('hides every suggestion row once the category is filtered out', () => {
+    suggestionState.list = [ANSWER, MOUNT];
+    localStorage.setItem('goodboy:activity-filter', JSON.stringify({ suggestions: false }));
+
+    renderWithActivity();
+
+    expect(screen.queryByTestId(`timeline-suggestion-${ANSWER.id}`)).toBeNull();
+    expect(screen.queryByTestId(`timeline-suggestion-${MOUNT.id}`)).toBeNull();
+    expect(screen.getByTestId('timeline-now-dot')).not.toBeNull();
+  });
+
+  it('wires the primary action and the dismiss the proposal carries', () => {
+    suggestionState.list = [MOUNT];
+
+    renderWithActivity();
+
+    fireEvent.click(screen.getByRole('button', { name: `Act on ${MOUNT.id}` }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss this suggestion' }));
+
+    expect(suggestionState.onAct).toHaveBeenCalledWith(MOUNT.id);
+    expect(suggestionState.onDismiss).toHaveBeenCalledWith(MOUNT.id);
+  });
+
+  it('draws the rail above NOW as a future segment', () => {
+    suggestionState.list = [ANSWER];
+
+    const { container } = renderWithActivity();
+
+    const row = screen.getByTestId(`timeline-suggestion-${ANSWER.id}`);
+    expect(row.querySelectorAll('line[stroke-dasharray="2 4"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('line[stroke-dasharray="2 4"]').length).toBe(1);
   });
 });
 

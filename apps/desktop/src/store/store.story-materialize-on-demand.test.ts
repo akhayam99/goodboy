@@ -102,6 +102,13 @@ const seedSession = (projects: ReadonlyArray<typeof appProject>) => {
   } as never);
 };
 
+const seedSessionNamingWeb = () => {
+  seedSession([appProject, webProject]);
+  useAppStore.setState({
+    sessions: [{ ...session, goal: 'ship the thing on web' }],
+  } as never);
+};
+
 const seedMountedWeb = () => {
   seedSession([appProject, webProject]);
   useAppStore.setState({
@@ -255,7 +262,7 @@ describe('story: a fresh session reads before any project is mounted', () => {
 
 describe('story: an agent asks for write access with the materialize marker', () => {
   it('mounts exactly the requested project, records why, and keeps the turn in its own worktree', async () => {
-    seedSession([appProject, webProject]);
+    seedSessionNamingWeb();
     storySpies.createWorktree.mockResolvedValueOnce({
       worktreePath: WEB_MOUNT_PATH,
       branchName: WEB_BRANCH,
@@ -286,7 +293,7 @@ describe('story: an agent asks for write access with the materialize marker', ()
   });
 
   it('mounts the requested project when the provider fails after emitting the marker', async () => {
-    seedSession([appProject, webProject]);
+    seedSessionNamingWeb();
     storySpies.createWorktree.mockResolvedValueOnce({
       worktreePath: WEB_MOUNT_PATH,
       branchName: WEB_BRANCH,
@@ -305,6 +312,29 @@ describe('story: an agent asks for write access with the materialize marker', ()
     expect(storySpies.createWorktree).toHaveBeenCalledWith(
       expect.objectContaining({ repoPath: '/tmp/web' }),
     );
+  });
+
+  it('defers a mount the session never named and hands the owner the proposal', async () => {
+    seedSession([appProject, webProject]);
+    storySpies.runTurn.mockImplementation(
+      assistantTurnStream('<<materialize: web | reading the router>>'),
+    );
+
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
+
+    expect(storySpies.createWorktree).not.toHaveBeenCalled();
+    expect(useAppStore.getState().sessionProjectMounts[SESSION_ID]).toEqual([appMount]);
+    expect(recordedEvent('project_materialization_proposed')?.payload).toMatchObject({
+      projectName: 'web',
+      reason: 'reading the router',
+      agentId: AGENT_ID,
+    });
+    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
+    expect(
+      transcript.some(
+        (event) => event.kind === 'error' && event.message.includes('materialize deferred'),
+      ),
+    ).toBe(true);
   });
 
   it('refuses an unknown project name and notes it inline for the user', async () => {

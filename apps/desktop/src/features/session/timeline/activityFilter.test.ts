@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionEvent, SessionEventKind } from '@goodboy/types';
 import {
+  ACTIVITY_CATEGORIES,
+  ACTIVITY_CATEGORY_LABEL,
   DEFAULT_ACTIVITY_FILTER,
   activityCategoryOf,
   filterTimelineEntries,
   parseActivityFilter,
+  readActivityFilter,
+  writeActivityFilter,
   type ActivityFilter,
 } from './activityFilter';
 import type { TimelineTopLevelEntry } from './buildTimelineGroups';
@@ -165,6 +169,42 @@ describe('filterTimelineEntries', () => {
         filter: { ...DEFAULT_ACTIVITY_FILTER, workflowSubagents: false, agentSubagents: false },
       }),
     ).toHaveLength(2);
+  });
+});
+
+describe('the suggestions category', () => {
+  it('sits in the category list, labelled and on by default', () => {
+    expect(ACTIVITY_CATEGORIES).toContain('suggestions');
+    expect(ACTIVITY_CATEGORY_LABEL.suggestions).toBe('Suggestions');
+    expect(DEFAULT_ACTIVITY_FILTER.suggestions).toBe(true);
+  });
+
+  it('defaults to on for a payload stored before it existed', () => {
+    expect(parseActivityFilter({ raw: '{"worktree":false}' }).suggestions).toBe(true);
+  });
+
+  it('round trips a hidden choice through storage', () => {
+    localStorage.clear();
+    writeActivityFilter({ filter: { ...DEFAULT_ACTIVITY_FILTER, suggestions: false } });
+
+    const stored = readActivityFilter();
+
+    expect(stored.suggestions).toBe(false);
+    expect(stored.worktree).toBe(true);
+    localStorage.clear();
+  });
+
+  it('keeps the mount proposal events with the worktree category', () => {
+    expect(
+      activityCategoryOf({
+        entry: eventEntry({ id: 'p', kind: 'project_materialization_proposed' }),
+      }),
+    ).toBe('worktree');
+    expect(
+      activityCategoryOf({
+        entry: eventEntry({ id: 'q', kind: 'project_materialization_dismissed' }),
+      }),
+    ).toBe('worktree');
   });
 });
 
