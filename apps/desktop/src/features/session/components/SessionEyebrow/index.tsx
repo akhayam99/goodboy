@@ -11,8 +11,9 @@ type Props = {
 export const SessionEyebrow = ({ session }: Props) => {
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const sessionId = session.id as SessionId;
-  const goal = session.goal === '' ? 'Untitled session' : session.goal;
-  const title = stripInlineMarkdown({ text: goal });
+  const goal = session.goal;
+  const label = goal == null || goal.trim() === '' ? 'Untitled session' : goal;
+  const title = stripInlineMarkdown({ text: label });
   const Icon = CONCEPT_ICONS.sessions;
 
   return (
@@ -24,7 +25,7 @@ export const SessionEyebrow = ({ session }: Props) => {
     >
       <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/70" />
       <span className="min-w-0 truncate">
-        <InlineMarkdown text={goal} />
+        <InlineMarkdown text={label} />
       </span>
     </button>
   );

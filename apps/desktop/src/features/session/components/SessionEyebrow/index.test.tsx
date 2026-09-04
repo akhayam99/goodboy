@@ -15,7 +15,7 @@ vi.mock('../../../../store', () => ({
 
 const { SessionEyebrow } = await import('.');
 
-const sessionWith = ({ goal }: { readonly goal: string }): Session =>
+const sessionWith = ({ goal }: { readonly goal: string | undefined }): Session =>
   ({ id: SESSION_ID, goal }) as unknown as Session;
 
 beforeEach(() => {
@@ -34,6 +34,14 @@ describe('SessionEyebrow', () => {
 
   it('falls back to the untitled label when the session has no goal', () => {
     render(<SessionEyebrow session={sessionWith({ goal: '' })} />);
+
+    expect(screen.getByRole('button', { name: 'Untitled session' })).toBeDefined();
+  });
+
+  it('falls back to the untitled label without throwing when the goal is undefined', () => {
+    expect(() =>
+      render(<SessionEyebrow session={sessionWith({ goal: undefined })} />),
+    ).not.toThrow();
 
     expect(screen.getByRole('button', { name: 'Untitled session' })).toBeDefined();
   });
