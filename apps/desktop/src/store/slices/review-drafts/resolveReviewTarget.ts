@@ -14,51 +14,67 @@ type ReviewableTask = SessionExternalTask & { readonly provider: ReviewablePrPro
 const isReviewableTask = (task: SessionExternalTask): task is ReviewableTask =>
   task.provider === 'github' || task.provider === 'gitlab';
 
-type RepoFromTaskParams = {
-  readonly task: ReviewableTask;
+const GITLAB_MR_PATH = '/-/merge_requests/';
+
+type PathParams = {
+  readonly pathname: string;
 };
 
-const repoFromTask = ({ task }: RepoFromTaskParams): string | null => {
+const gitlabRepoFromPath = ({ pathname }: PathParams): string | null => {
+  const [projectPart, mrPart] = pathname.split(GITLAB_MR_PATH);
+  if (mrPart === undefined) {
+    return null;
+  }
+  const trimmed = (projectPart ?? '').replace(/^\/+|\/+$/g, '');
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const githubRepoFromPath = ({ pathname }: PathParams): string | null => {
+  const segments = pathname.split('/').filter((segment) => segment.length > 0);
+  const [owner, name, kind] = segments;
+  if (owner === undefined || name === undefined || kind !== 'pull') {
+    return null;
+  }
+  return `${owner}/${name}`;
+};
+
+type UrlParams = {
+  readonly provider: ReviewablePrProvider;
+  readonly url: string;
+  readonly prNumber: number;
+};
+
+const pathnameOf = ({ url }: { readonly url: string }): string | null => {
   try {
-    const pathname = new URL(task.url).pathname;
-    if (task.provider === 'github') {
-      const segments = pathname.split('/').filter((segment) => segment.length > 0);
-      if (segments.length < 2) {
-        return null;
-      }
-      return `${segments[0]}/${segments[1]}`;
-    }
-    const projectPart = pathname.split('/-/')[0] ?? '';
-    const trimmed = projectPart.replace(/^\/+|\/+$/g, '');
-    return trimmed.length > 0 ? trimmed : null;
+    return new URL(url).pathname;
   } catch {
     return null;
   }
+};
+
+const targetFromUrl = ({ provider, url, prNumber }: UrlParams): ReviewTarget | null => {
+  if (!Number.isInteger(prNumber) || prNumber <= 0) {
+    return null;
+  }
+  const pathname = pathnameOf({ url });
+  if (pathname == null) {
+    return null;
+  }
+  const repo =
+    provider === 'gitlab' ? gitlabRepoFromPath({ pathname }) : githubRepoFromPath({ pathname });
+  return repo == null ? null : { provider, repo, prNumber };
 };
 
 type TargetFromTaskParams = {
   readonly task: ReviewableTask;
 };
 
-const targetFromTask = ({ task }: TargetFromTaskParams): ReviewTarget | null => {
-  const prNumber = Number.parseInt(task.externalId, 10);
-  if (!Number.isInteger(prNumber) || prNumber <= 0) {
-    return null;
-  }
-  const repo = repoFromTask({ task });
-  if (repo == null) {
-    return null;
-  }
-  return { provider: task.provider, repo, prNumber };
-};
-
-type PrKeyParams = {
-  readonly provider: ReviewablePrProvider;
-  readonly prNumber: number;
-};
-
-export const reviewPrKey = ({ provider, prNumber }: PrKeyParams): string =>
-  `${provider}#${prNumber}`;
+const targetFromTask = ({ task }: TargetFromTaskParams): ReviewTarget | null =>
+  targetFromUrl({
+    provider: task.provider,
+    url: task.url,
+    prNumber: Number.parseInt(task.externalId, 10),
+  });
 
 const byProviderThenNumber = (left: ReviewTarget, right: ReviewTarget): number => {
   const rank = PROVIDER_PRIORITY.indexOf(left.provider) - PROVIDER_PRIORITY.indexOf(right.provider);
@@ -68,29 +84,10 @@ const byProviderThenNumber = (left: ReviewTarget, right: ReviewTarget): number =
   return left.prNumber - right.prNumber;
 };
 
-type FromTasksParams = {
-  readonly tasks: ReadonlyArray<SessionExternalTask>;
-  readonly discoveredPrKeys: ReadonlySet<string>;
-};
-
-const reviewTargetFromTasks = ({
-  tasks,
-  discoveredPrKeys,
-}: FromTasksParams): ReviewTarget | null => {
-  const candidates = tasks
-    .filter(isReviewableTask)
-    .flatMap((task) => {
-      const target = targetFromTask({ task });
-      return target == null ? [] : [target];
-    })
-    .sort(byProviderThenNumber);
-  const discovered = candidates.find((candidate) => discoveredPrKeys.has(reviewPrKey(candidate)));
-  return discovered ?? candidates[0] ?? null;
-};
-
 export type ReviewTargetState = Pick<
   AppState,
   | 'sessionExternalTasks'
+  | 'sessionGithub'
   | 'sessionGitlabMr'
   | 'sessions'
   | 'projects'
@@ -104,20 +101,31 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
-const discoveredPrKeysForSession = ({ state, sessionId }: Params): ReadonlySet<string> => {
-  const keys = new Set<string>();
-  for (const pr of selectActiveProjectPrs({ state, sessionId })) {
-    keys.add(reviewPrKey({ provider: 'github', prNumber: pr.number }));
-  }
+const ownReviewTargets = ({ state, sessionId }: Params): ReadonlyArray<ReviewTarget> => {
+  const pullRequest =
+    state.sessionGithub[sessionId]?.pr ?? selectActiveProjectPrs({ state, sessionId })[0] ?? null;
   const mergeRequest = state.sessionGitlabMr[sessionId]?.mr ?? null;
-  if (mergeRequest != null) {
-    keys.add(reviewPrKey({ provider: 'gitlab', prNumber: mergeRequest.iid }));
-  }
-  return keys;
+  const candidates = [
+    pullRequest == null
+      ? null
+      : targetFromUrl({ provider: 'github', url: pullRequest.url, prNumber: pullRequest.number }),
+    mergeRequest == null
+      ? null
+      : targetFromUrl({ provider: 'gitlab', url: mergeRequest.webUrl, prNumber: mergeRequest.iid }),
+  ];
+  return candidates
+    .filter((candidate): candidate is ReviewTarget => candidate != null)
+    .sort(byProviderThenNumber);
 };
 
+const linkedReviewTargets = ({ state, sessionId }: Params): ReadonlyArray<ReviewTarget> =>
+  (state.sessionExternalTasks[sessionId] ?? [])
+    .filter(isReviewableTask)
+    .flatMap((task) => {
+      const target = targetFromTask({ task });
+      return target == null ? [] : [target];
+    })
+    .sort(byProviderThenNumber);
+
 export const resolveReviewTarget = ({ state, sessionId }: Params): ReviewTarget | null =>
-  reviewTargetFromTasks({
-    tasks: state.sessionExternalTasks[sessionId] ?? [],
-    discoveredPrKeys: discoveredPrKeysForSession({ state, sessionId }),
-  });
+  ownReviewTargets({ state, sessionId })[0] ?? linkedReviewTargets({ state, sessionId })[0] ?? null;

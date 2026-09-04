@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, HelpCircle, MessageSquare, Play, SkipForward, type LucideIcon } from 'lucide-react';
-import type { Tone } from '@goodboy/ui';
+import { Check, MessageSquare, SkipForward, type LucideIcon } from 'lucide-react';
+import { formatError, type Tone } from '@goodboy/ui';
 import type {
   Agent,
   OpenQuestion,
+  PendingResolution,
   Session,
+  SessionEvent,
   SessionId,
   SessionStageInfo,
   Workflow,
@@ -17,6 +19,10 @@ import {
   type WorkflowAdvanceView,
 } from '../../../../../workflows/workflowAdvanceView';
 import { workflowRunHasOpenQuestions } from '../../../../../context/openQuestionsGate';
+import { useResolverIndex } from '../../../../../session/hooks/useResolverIndex';
+import { eligibleReviewThreadCount } from '../../../../../suggestions/eligibleThreads';
+import { pendingMountProposals } from '../../../../../suggestions/mountProposals';
+import { SUGGESTION_ICONS } from '../../../../../suggestions/suggestionIcons';
 import type { BoardNavigation } from '../../useBoardNavigation';
 
 export type DynamicAction = {
@@ -36,6 +42,9 @@ type RunAdvance = {
 const EMPTY_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
 const EMPTY_WORKFLOWS: ReadonlyArray<Workflow> = [];
 const EMPTY_RUNS: ReadonlyArray<Agent> = [];
+const EMPTY_EVENTS: ReadonlyArray<SessionEvent> = [];
+const EMPTY_RESOLUTIONS: ReadonlyArray<PendingResolution> = [];
+const MAX_MOUNT_ACTIONS = 2;
 
 export const useDynamicActions = (
   session: Session,
@@ -48,8 +57,22 @@ export const useDynamicActions = (
   const runs = useAppStore((s) => s.sessionPhaseRuns[id] ?? EMPTY_RUNS);
   const isSummarizerRunning = useAppStore((s) => s.summarizerStatus[id]?.status === 'running');
   const skipStuckStepAndAdvance = useAppStore((s) => s.skipStuckStepAndAdvance);
+  const events = useAppStore((s) => s.sessionEvents?.[id] ?? EMPTY_EVENTS);
+  const github = useAppStore((s) => s.sessionGithub[id] ?? null);
+  const pendingResolutions = useAppStore(
+    (s) => s.sessionPendingResolutions[id] ?? EMPTY_RESOLUTIONS,
+  );
+  const materializeProject = useAppStore((s) => s.materializeProject);
+  const emitNotification = useAppStore((s) => s.emitNotification);
+  const resolverIndex = useResolverIndex(id);
   const hasUnread = useSessionHasUnread(id);
   const [isConfirmingSkip, setIsConfirmingSkip] = useState(false);
+
+  const mountProposals = useMemo(() => pendingMountProposals({ events }), [events]);
+  const eligibleThreads = useMemo(
+    () => eligibleReviewThreadCount({ github, pendingResolutions, resolverIndex }),
+    [github, pendingResolutions, resolverIndex],
+  );
 
   const advances = useMemo(() => {
     const out: Array<RunAdvance> = [];
@@ -124,22 +147,50 @@ export const useDynamicActions = (
         onClick: () => setIsConfirmingSkip(true),
       });
     }
-    if (nextStepReady) {
-      actions.push({
-        key: 'run',
-        icon: Play,
-        tone: 'primary',
-        label: 'run next step',
-        onClick: () => nav.openWorkflows(session),
-      });
-    }
     if (openCount > 0) {
       actions.push({
         key: 'questions',
-        icon: HelpCircle,
+        icon: SUGGESTION_ICONS['answer-questions'],
         tone: 'warning',
         label: openCount === 1 ? '1 open question' : `${openCount} open questions`,
         onClick: () => nav.openQuestions(session),
+      });
+    }
+    for (const proposal of mountProposals.slice(0, MAX_MOUNT_ACTIONS)) {
+      actions.push({
+        key: `mount:${proposal.projectId}`,
+        icon: SUGGESTION_ICONS['mount-project'],
+        tone: 'warning',
+        label: `Mount ${proposal.projectName}`,
+        onClick: () => {
+          void materializeProject({
+            sessionId: id,
+            projectId: proposal.projectId,
+            reason: proposal.reason,
+          }).catch((error: unknown) => {
+            void emitNotification('error', 'error', 'Mount failed', formatError(error), {
+              sessionId: id,
+            });
+          });
+        },
+      });
+    }
+    if (github?.pr != null && eligibleThreads > 0) {
+      actions.push({
+        key: 'resolve',
+        icon: SUGGESTION_ICONS['resolve-threads'],
+        tone: 'primary',
+        label: `Resolve ${eligibleThreads} ${eligibleThreads === 1 ? 'comment' : 'comments'}`,
+        onClick: () => nav.openGithub(session),
+      });
+    }
+    if (nextStepReady) {
+      actions.push({
+        key: 'run',
+        icon: SUGGESTION_ICONS['workflow-next-step'],
+        tone: 'primary',
+        label: 'Continue',
+        onClick: () => nav.openWorkflows(session),
       });
     }
     if (hasUnread) {
@@ -163,6 +214,11 @@ export const useDynamicActions = (
     blockedStepName,
     isConfirmingSkip,
     skipStuckStepAndAdvance,
+    mountProposals,
+    materializeProject,
+    emitNotification,
+    github,
+    eligibleThreads,
     id,
   ]);
 };
