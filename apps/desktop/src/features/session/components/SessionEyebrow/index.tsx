@@ -19,7 +19,6 @@ export const SessionEyebrow = ({ session }: Props) => {
     <button
       type="button"
       title={title}
-      aria-label={title}
       onClick={() => setActiveLens(sessionId, null)}
       className="inline-flex min-w-0 max-w-full items-center gap-1.5 self-start text-2xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
     >
