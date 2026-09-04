@@ -380,6 +380,10 @@ describe('ReviewBoardPane', () => {
 
     expect(screen.getByRole('status', { name: 'Loading diff' })).toBeDefined();
     expect(screen.queryByText('No pull request to review')).toBeNull();
+    expect(screen.queryByText(/files$/)).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Unified' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Split' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Refresh diff' })).toBeNull();
   });
 
   it('switches between review, threads, and resolver sections', () => {

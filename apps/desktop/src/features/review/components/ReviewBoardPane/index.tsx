@@ -64,6 +64,7 @@ export const ReviewBoardPane = ({ session }: Props) => {
   const diffComments = useDiffComments(sessionId);
   const resolverIndex = useResolverIndex(sessionId);
   const { files, loading, error, target, refresh } = useReviewDiff({ session });
+  const hasTarget = target != null;
   const hasNoTarget = target == null && !loading;
   const [layoutMode, setLayoutMode] = useDiffLayoutMode();
   const { showToast } = useToast();
@@ -192,15 +193,15 @@ export const ReviewBoardPane = ({ session }: Props) => {
               {`${target.repo} ${target.provider === 'gitlab' ? '!' : '#'}${target.prNumber}`}
             </span>
           ) : null}
-          {hasNoTarget ? null : (
+          {hasTarget ? (
             <span className="text-2xs tabular-nums text-muted-foreground/60">
               {loading ? '' : `${files.length} files`}
             </span>
-          )}
+          ) : null}
         </>
       }
       actions={
-        section === 'review' && !hasNoTarget ? (
+        section === 'review' && hasTarget ? (
           <>
             <DiffLayoutToggle mode={layoutMode} onChange={setLayoutMode} />
             <RefreshIconButton
