@@ -114,22 +114,27 @@ const renderDetail = (record: InboxRecord | null) =>
   render(
     <InboxDetail
       record={record}
+      records={record == null ? [] : [record]}
+      hasFiltersActive={false}
       workspaceId={workspaceId}
       rootPath="/repo"
       isLoading={false}
       errors={baseErrors}
       onRefresh={vi.fn()}
       onClose={vi.fn()}
+      onClearFilters={vi.fn()}
+      onOpenIntegrations={vi.fn()}
     />,
   );
 
 afterEach(() => cleanup());
 
 describe('InboxDetail', () => {
-  it('shows an empty state prompting selection when nothing is selected', () => {
+  it('summarises the inbox when nothing is selected', () => {
     renderDetail(null);
 
-    expect(screen.getByText('Nothing selected')).toBeDefined();
+    expect(screen.getByText('Inbox is empty')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open integrations' })).toBeDefined();
     expect(screen.queryByTestId('panel')).toBeNull();
   });
 
