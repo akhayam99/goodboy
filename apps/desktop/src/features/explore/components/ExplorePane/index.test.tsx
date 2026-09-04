@@ -282,7 +282,7 @@ describe('ExplorePane', () => {
       | { readonly model: string; readonly initialPrompt: string; readonly focus: string }
       | undefined;
     expect(spawnArgs?.focus).toBe('none');
-    expect(spawnArgs?.model).toBe('claude-opus-4-6');
+    expect(spawnArgs?.model).toBe('claude-opus-5');
     expect(spawnArgs?.initialPrompt).toContain('Analyze this spreadsheet and summarize trends.');
     expect(spawnArgs?.initialPrompt).toContain('- budget.xlsx');
     expect(

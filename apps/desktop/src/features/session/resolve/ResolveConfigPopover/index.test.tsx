@@ -80,7 +80,7 @@ describe('ResolveConfigPopover', () => {
     open();
     fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ provider: 'anthropic', model: 'claude-opus-4-6' }),
+      expect.objectContaining({ provider: 'anthropic', model: 'claude-opus-5' }),
     );
   });
 });
