@@ -222,9 +222,11 @@ pub async fn skill_upsert(
     state: State<'_, Db>,
     input: SkillUpsertInput,
 ) -> Result<SkillRow, SkillError> {
-    let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
+    let roots = {
+        let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
+        workspace_roots(&conn, &input.workspace_id)?
+    };
 
-    let roots = workspace_roots(&conn, &input.workspace_id)?;
     let skills_dirs = roots
         .iter()
         .map(|root| root.join(".kay").join("skills"))
@@ -233,7 +235,6 @@ pub async fn skill_upsert(
         .first()
         .ok_or_else(|| SkillError::WorkspaceNotFound(input.workspace_id.clone()))?;
 
-    // Derive file path if not provided.
     let raw_path = match &input.file_path {
         Some(fp) => PathBuf::from(fp),
         None => default_skills_dir.join(format!("{}.md", &input.name)),
@@ -246,14 +247,14 @@ pub async fn skill_upsert(
     std::fs::create_dir_all(skills_dir).map_err(|e| SkillError::Io(e.to_string()))?;
     let canonical = guard_path(&raw_path, skills_dir)?;
 
-    // Write pre-serialized markdown to disk.
     std::fs::write(&canonical, &input.markdown).map_err(|e| SkillError::Io(e.to_string()))?;
 
     let file_path_str = canonical.to_string_lossy().to_string();
     let now_ms = crate::util::now_ms();
     let now = crate::util::ms_to_iso(now_ms);
 
-    // Upsert by (workspace_id, name); generate id if new.
+    let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
+
     let existing_id: Option<String> = {
         let mut stmt =
             conn.prepare("SELECT id FROM skills WHERE workspace_id = ?1 AND name = ?2 LIMIT 1")?;
@@ -317,55 +318,58 @@ pub async fn skill_upsert(
 
 #[tauri::command]
 pub async fn skill_delete(state: State<'_, Db>, skill_id: String) -> Result<(), SkillError> {
-    let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
-
-    // Look up the row first to get file_path + workspace root for path guard.
-    let row: Option<(String, String)> = {
-        let mut stmt = conn.prepare(
-            "SELECT s.file_path, s.workspace_id
-             FROM skills s
-             WHERE s.id = ?1
-             LIMIT 1",
-        )?;
-        let mut rows = stmt.query_map(rusqlite::params![skill_id], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-        })?;
-        match rows.next() {
-            Some(r) => Some(r.map_err(SkillError::Db)?),
-            None => None,
+    let (file_path, roots) = {
+        let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
+        let row: Option<(String, String)> = {
+            let mut stmt = conn.prepare(
+                "SELECT s.file_path, s.workspace_id
+                 FROM skills s
+                 WHERE s.id = ?1
+                 LIMIT 1",
+            )?;
+            let mut rows = stmt.query_map(rusqlite::params![skill_id], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })?;
+            match rows.next() {
+                Some(r) => Some(r.map_err(SkillError::Db)?),
+                None => None,
+            }
+        };
+        match row {
+            Some((file_path, workspace_id)) => {
+                let roots = workspace_roots(&conn, &workspace_id)?;
+                (file_path, roots)
+            }
+            None => return Err(SkillError::NotFound(skill_id)),
         }
     };
 
-    if let Some((file_path, workspace_id)) = row {
-        let roots = workspace_roots(&conn, &workspace_id)?;
-        let path = PathBuf::from(&file_path);
-        let allowed_dirs = roots.iter().flat_map(|root| {
-            [
-                root.join(".kay").join("skills"),
-                root.join(".claude").join("skills"),
-            ]
-        });
-        let mut guarded_path = None;
-        for directory in allowed_dirs {
-            if !directory.exists() {
-                continue;
-            }
-            if let Ok(canonical) = guard_path(&path, &directory) {
-                guarded_path = Some(canonical);
-                break;
-            }
+    let path = PathBuf::from(&file_path);
+    let allowed_dirs = roots.iter().flat_map(|root| {
+        [
+            root.join(".kay").join("skills"),
+            root.join(".claude").join("skills"),
+        ]
+    });
+    let mut guarded_path = None;
+    for directory in allowed_dirs {
+        if !directory.exists() {
+            continue;
         }
-        if let Some(canonical) = guarded_path {
-            if canonical.exists() {
-                std::fs::remove_file(canonical).map_err(|e| SkillError::Io(e.to_string()))?;
-            }
-        } else if path.exists() {
-            return Err(SkillError::PathTraversal(file_path));
+        if let Ok(canonical) = guard_path(&path, &directory) {
+            guarded_path = Some(canonical);
+            break;
         }
-    } else {
-        return Err(SkillError::NotFound(skill_id));
+    }
+    if let Some(canonical) = guarded_path {
+        if canonical.exists() {
+            std::fs::remove_file(canonical).map_err(|e| SkillError::Io(e.to_string()))?;
+        }
+    } else if path.exists() {
+        return Err(SkillError::PathTraversal(file_path));
     }
 
+    let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
     conn.execute(
         "DELETE FROM skills WHERE id = ?1",
         rusqlite::params![skill_id],
@@ -378,12 +382,11 @@ pub async fn skill_rescan(
     state: State<'_, Db>,
     workspace_id: String,
 ) -> Result<Vec<SkillRow>, SkillError> {
-    let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
-    let roots = workspace_roots(&conn, &workspace_id)?;
+    let roots = {
+        let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
+        workspace_roots(&conn, &workspace_id)?
+    };
 
-    // Discover skill files from both layouts:
-    //   - <root>/.kay/skills/*.md            (Goodboy native)
-    //   - <root>/.claude/skills/<name>/SKILL.md  (claude-code convention)
     let mut md_files: Vec<PathBuf> = Vec::new();
 
     for root in roots {
@@ -418,8 +421,8 @@ pub async fn skill_rescan(
 
     let now_ms = crate::util::now_ms();
 
-    // Existing skills in DB for this workspace.
     let existing: Vec<(String, String)> = {
+        let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
         let mut stmt = conn.prepare("SELECT id, file_path FROM skills WHERE workspace_id = ?1")?;
         let rows = stmt.query_map(rusqlite::params![workspace_id], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
@@ -434,6 +437,7 @@ pub async fn skill_rescan(
         .collect();
 
     let mut scanned_paths = std::collections::HashSet::new();
+    let mut parsed_entries: Vec<(String, String, String, String, String, String)> = Vec::new();
 
     for file_path in &md_files {
         let canonical = match file_path.canonicalize() {
@@ -446,7 +450,6 @@ pub async fn skill_rescan(
         let content =
             std::fs::read_to_string(&canonical).map_err(|e| SkillError::Io(e.to_string()))?;
 
-        // Extract name/description from frontmatter naively (no TS parser available).
         let (name, description, body, frontmatter_json) = parse_skill_markdown_rust(&content)?;
 
         let id = existing_by_path
@@ -454,6 +457,12 @@ pub async fn skill_rescan(
             .cloned()
             .unwrap_or_else(crate::util::uuid_v4);
 
+        parsed_entries.push((id, fp_str, name, description, body, frontmatter_json));
+    }
+
+    let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
+
+    for (id, fp_str, name, description, body, frontmatter_json) in &parsed_entries {
         let created_at_ms: i64 = {
             let mut stmt = conn.prepare("SELECT created_at FROM skills WHERE id = ?1 LIMIT 1")?;
             let mut rows = stmt.query_map(rusqlite::params![id], |row| row.get(0))?;
@@ -489,14 +498,12 @@ pub async fn skill_rescan(
         )?;
     }
 
-    // Delete DB rows whose files are no longer on disk.
     for (id, fp) in &existing {
         if !scanned_paths.contains(fp) {
             conn.execute("DELETE FROM skills WHERE id = ?1", rusqlite::params![id])?;
         }
     }
 
-    // Return updated list.
     let mut stmt = conn.prepare(
         "SELECT id, workspace_id, name, description, file_path, body, frontmatter_json,
                 created_at, updated_at
