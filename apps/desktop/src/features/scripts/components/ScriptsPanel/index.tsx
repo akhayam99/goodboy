@@ -402,7 +402,8 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
         ),
     }));
   }, [filteredManifestGroups, manifestGroups, pendingScriptIds, selectedMount]);
-  const storedManifestKey = manifestKeyByProject[selectedProjectId ?? ('' as ProjectId)] ?? null;
+  const storedManifestKey =
+    selectedProjectId === null ? null : (manifestKeyByProject[selectedProjectId] ?? null);
   const selectedManifestKey =
     storedManifestKey !== null && manifestEntries.some((entry) => entry.key === storedManifestKey)
       ? storedManifestKey
@@ -411,6 +412,11 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
     normalizedQuery === ''
       ? filteredManifestGroups.filter((entry) => manifestKey(entry) === selectedManifestKey)
       : filteredManifestGroups.filter((entry) => entry.group.scripts.length > 0);
+  const firstVisibleManifest = visibleManifestGroups[0] ?? null;
+  const railManifestKey =
+    normalizedQuery === '' || firstVisibleManifest === null
+      ? selectedManifestKey
+      : manifestKey(firstVisibleManifest);
   const selectedManifestCount = filteredManifestGroups.reduce(
     (total, entry) => total + entry.group.scripts.length,
     0,
@@ -918,10 +924,10 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                 ) : null}
                 {visibleManifestGroups.length > 0 ? (
                   <div className="flex min-w-0 items-start gap-4">
-                    {hasManifestRail && selectedManifestKey !== null ? (
+                    {hasManifestRail && railManifestKey !== null ? (
                       <ManifestRail
                         entries={manifestEntries}
-                        selectedKey={selectedManifestKey}
+                        selectedKey={railManifestKey}
                         hasSearch={normalizedQuery !== ''}
                         onSelect={(key) => onSelectManifest({ key })}
                       />

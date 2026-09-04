@@ -601,6 +601,12 @@ describe('ScriptsPanel', () => {
     expect(headings()).toEqual(['@acme/web']);
     expect(screen.getByText('deploy manifest')).toBeDefined();
     expect(within(manifestRail()).getByText('1 match')).toBeDefined();
+    expect(within(manifestRail()).getByText('0 matches')).toBeDefined();
+    expect(
+      within(manifestRail())
+        .getByRole('button', { name: /@acme\/web/ })
+        .getAttribute('aria-current'),
+    ).toBe('true');
     expect(within(rail()).getByText('1 match')).toBeDefined();
 
     fireEvent.keyDown(searchBox(), { key: 'Escape' });

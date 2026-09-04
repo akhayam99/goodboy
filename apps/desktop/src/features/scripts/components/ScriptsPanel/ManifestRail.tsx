@@ -24,11 +24,11 @@ type Bucket = {
   readonly entries: ReadonlyArray<ManifestRailEntry>;
 };
 
-const ROOT_LABEL = 'root';
+const ROOT_KEY = '';
 
-const bucketLabel = ({ relDir }: { readonly relDir: string }): string => {
+const bucketKey = ({ relDir }: { readonly relDir: string }): string => {
   const [head] = relDir.split(/[\\/]/).filter((part) => part !== '');
-  return head ?? ROOT_LABEL;
+  return head ?? ROOT_KEY;
 };
 
 const bucketEntries = ({
@@ -38,20 +38,20 @@ const bucketEntries = ({
 }): ReadonlyArray<Bucket> => {
   const buckets = new Map<string, Array<ManifestRailEntry>>();
   for (const entry of entries) {
-    const label = bucketLabel({ relDir: entry.relDir });
-    const bucket = buckets.get(label);
+    const key = bucketKey({ relDir: entry.relDir });
+    const bucket = buckets.get(key);
     if (bucket === undefined) {
-      buckets.set(label, [entry]);
+      buckets.set(key, [entry]);
     } else {
       bucket.push(entry);
     }
   }
-  const labeled = [...buckets.keys()].filter((label) => label !== ROOT_LABEL);
+  const labeled = [...buckets.keys()].filter((key) => key !== ROOT_KEY);
   if (labeled.length < 2) {
     return [{ label: null, entries }];
   }
-  return [...buckets.entries()].map(([label, bucket]) => ({
-    label: label === ROOT_LABEL ? null : label,
+  return [...buckets.entries()].map(([key, bucket]) => ({
+    label: key === ROOT_KEY ? null : key,
     entries: bucket,
   }));
 };
@@ -62,11 +62,14 @@ export const ManifestRail = ({ entries, selectedKey, hasSearch, onSelect }: Prop
     className="sticky top-0 flex w-48 shrink-0 flex-col gap-2 self-start"
   >
     {bucketEntries({ entries }).map((bucket) => (
-      <div key={bucket.label ?? ROOT_LABEL} className="flex flex-col gap-1">
+      <div
+        key={bucket.label == null ? ROOT_KEY : `dir:${bucket.label}`}
+        className="flex flex-col gap-1"
+      >
         {bucket.label == null ? null : <Eyebrow label={bucket.label} />}
         {bucket.entries.map((entry) => {
           const selected = entry.key === selectedKey;
-          const showMatches = hasSearch && !selected;
+          const showMatches = hasSearch;
           return (
             <SelectableRow
               key={entry.key}
