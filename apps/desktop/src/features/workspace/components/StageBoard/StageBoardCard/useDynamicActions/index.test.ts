@@ -10,10 +10,16 @@ const { state } = vi.hoisted(() => ({
     sessionOpenQuestions: {} as Record<string, ReadonlyArray<{ status: string }>>,
     sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionGithub: {} as Record<string, unknown>,
+    sessionPendingResolutions: {} as Record<string, ReadonlyArray<unknown>>,
     summarizerStatus: {} as Record<string, { status: string }>,
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
+    materializeProject: vi.fn(async () => undefined),
+    emitNotification: vi.fn(async () => undefined),
     hasUnread: false,
     runHasOpenQuestions: false,
+    resolverStatusByThreadId: {} as Record<string, string>,
   },
 }));
 
@@ -26,6 +32,21 @@ vi.mock('../../../../../context/openQuestionsGate', () => ({
   workflowRunHasOpenQuestions: () => state.runHasOpenQuestions,
 }));
 
+vi.mock('../../../../../session/hooks/useResolverIndex', () => ({
+  useResolverIndex: () => ({
+    links: [],
+    byThreadId: new Map(
+      Object.entries(state.resolverStatusByThreadId).map(([threadId, status]) => [
+        threadId,
+        { agent: {}, status },
+      ]),
+    ),
+    byCommentUrl: new Map(),
+    byDiffAgentId: new Map(),
+  }),
+}));
+
+import { SUGGESTION_ICONS } from '../../../../../suggestions/suggestionIcons';
 import { useDynamicActions } from './index';
 
 const nav = {
@@ -58,14 +79,50 @@ const agent = (stepId: string, status: string, ordinal: number) => ({
 
 const staticRun = { id: 'run-1', workflowId: 'wf-1', autoRun: false };
 
+const mountEvent = ({
+  id,
+  kind,
+  projectId = 'project-web',
+  projectName = 'web',
+}: {
+  readonly id: string;
+  readonly kind: string;
+  readonly projectId?: string;
+  readonly projectName?: string;
+}) => ({
+  id,
+  sessionId: 'sess-1',
+  kind,
+  payload: { projectId, projectName, reason: 'needs the router' },
+  createdAt: '2026-01-01T00:00:00Z',
+});
+
+const reviewComment = ({ id, threadId }: { readonly id: string; readonly threadId: string }) => ({
+  id,
+  author: 'reviewer',
+  authorAvatarUrl: null,
+  body: 'rename it',
+  createdAt: `2026-01-0${id}T00:00:00Z`,
+  url: `https://example.test/${id}`,
+  source: 'review',
+  resolved: false,
+  threadId,
+});
+
 beforeEach(() => {
   state.sessionOpenQuestions = {};
   state.sessionWorkflows = {};
   state.sessionPhaseRuns = {};
+  state.sessionEvents = {};
+  state.sessionGithub = {};
+  state.sessionPendingResolutions = {};
   state.summarizerStatus = {};
   state.hasUnread = false;
   state.runHasOpenQuestions = false;
+  state.resolverStatusByThreadId = {};
   state.skipStuckStepAndAdvance.mockClear();
+  state.materializeProject.mockClear();
+  state.emitNotification.mockClear();
   (nav.openWorkflows as ReturnType<typeof vi.fn>).mockClear();
   (nav.openQuestions as ReturnType<typeof vi.fn>).mockClear();
   (nav.openGithub as ReturnType<typeof vi.fn>).mockClear();
@@ -99,6 +156,106 @@ describe('useDynamicActions', () => {
     expect(result.current.some((a) => a.key === 'unread')).toBe(true);
   });
 
+  it('speaks the suggester vocabulary on the questions action', () => {
+    state.sessionOpenQuestions = { 'sess-1': [{ status: 'open' }] };
+    const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'attention'));
+    expect(result.current.find((a) => a.key === 'questions')?.icon).toBe(
+      SUGGESTION_ICONS['answer-questions'],
+    );
+  });
+
+  it('mounts a proposed project from the card', () => {
+    state.sessionEvents = {
+      'sess-1': [mountEvent({ id: 'event-1', kind: 'project_materialization_proposed' })],
+    };
+    const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'building'));
+
+    const action = result.current.find((a) => a.key === 'mount:project-web');
+    expect(action?.label).toBe('Mount web');
+    expect(action?.icon).toBe(SUGGESTION_ICONS['mount-project']);
+    expect(action?.tone).toBe('warning');
+
+    action?.onClick();
+    expect(state.materializeProject).toHaveBeenCalledWith({
+      sessionId: 'sess-1',
+      projectId: 'project-web',
+      reason: 'needs the router',
+    });
+  });
+
+  it('drops a mount action once the proposal is dismissed', () => {
+    state.sessionEvents = {
+      'sess-1': [
+        mountEvent({ id: 'event-1', kind: 'project_materialization_proposed' }),
+        mountEvent({ id: 'event-2', kind: 'project_materialization_dismissed' }),
+      ],
+    };
+    const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'building'));
+    expect(result.current.some((a) => a.key.startsWith('mount:'))).toBe(false);
+  });
+
+  it('caps the card at two mount actions', () => {
+    state.sessionEvents = {
+      'sess-1': [
+        mountEvent({ id: 'e-1', kind: 'project_materialization_proposed', projectId: 'p-1' }),
+        mountEvent({ id: 'e-2', kind: 'project_materialization_proposed', projectId: 'p-2' }),
+        mountEvent({ id: 'e-3', kind: 'project_materialization_proposed', projectId: 'p-3' }),
+      ],
+    };
+    const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'building'));
+    expect(result.current.filter((a) => a.key.startsWith('mount:'))).toHaveLength(2);
+  });
+
+  it('sends the resolve action to the github lens with the eligible count', () => {
+    state.sessionGithub = {
+      'sess-1': {
+        pr: { number: 12 },
+        detail: {
+          comments: [
+            reviewComment({ id: '1', threadId: 't1' }),
+            reviewComment({ id: '2', threadId: 't2' }),
+          ],
+        },
+      },
+    };
+    const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'attention'));
+
+    const action = result.current.find((a) => a.key === 'resolve');
+    expect(action?.label).toBe('Resolve 2 comments');
+    expect(action?.icon).toBe(SUGGESTION_ICONS['resolve-threads']);
+
+    action?.onClick();
+    expect(nav.openGithub).toHaveBeenCalledWith(sessionWith());
+  });
+
+  it('leaves a thread a running resolver already owns out of the count', () => {
+    state.sessionGithub = {
+      'sess-1': {
+        pr: { number: 12 },
+        detail: {
+          comments: [
+            reviewComment({ id: '1', threadId: 't1' }),
+            reviewComment({ id: '2', threadId: 't2' }),
+          ],
+        },
+      },
+    };
+    state.resolverStatusByThreadId = { t2: 'running' };
+    const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'attention'));
+    expect(result.current.find((a) => a.key === 'resolve')?.label).toBe('Resolve 1 comment');
+  });
+
+  it('withholds the resolve action without a pull request', () => {
+    state.sessionGithub = {
+      'sess-1': {
+        pr: null,
+        detail: { comments: [reviewComment({ id: '1', threadId: 't1' })] },
+      },
+    };
+    const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'attention'));
+    expect(result.current.some((a) => a.key === 'resolve')).toBe(false);
+  });
+
   it('surfaces a run action when a workflow run has a ready next step', () => {
     state.sessionWorkflows = { 'sess-1': [twoStepWorkflow] };
     state.sessionPhaseRuns = {
@@ -107,7 +264,9 @@ describe('useDynamicActions', () => {
     const { result } = renderHook(() =>
       useDynamicActions(sessionWith([staticRun]), nav, 'building'),
     );
-    expect(result.current.some((a) => a.key === 'run')).toBe(true);
+    const action = result.current.find((a) => a.key === 'run');
+    expect(action?.label).toBe('Continue');
+    expect(action?.icon).toBe(SUGGESTION_ICONS['workflow-next-step']);
   });
 
   it('suppresses the run action while an agent is running', () => {

@@ -1,12 +1,5 @@
-import type {
-  AgentId,
-  PlanId,
-  ProjectId,
-  SessionEventId,
-  SessionId,
-  StepId,
-  WorkflowRunId,
-} from '@goodboy/types';
+import type { PlanId, ProjectId, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
+import { pendingMountEvents, type SuggestionMountEvent } from './mountProposals';
 import type { SessionSuggestion } from './types';
 
 export type SuggestionWorkflowRun = {
@@ -21,13 +14,6 @@ export type SuggestionPlan = {
   readonly title: string;
   readonly status: string;
   readonly creatorHasOpenQuestions: boolean;
-};
-
-export type SuggestionThread = {
-  readonly source: string;
-  readonly resolved: boolean;
-  readonly isPendingResolution: boolean;
-  readonly resolverStatus: string | null;
 };
 
 export type SuggestionRebaseRequest = {
@@ -56,17 +42,6 @@ const isRebaseConsumed = ({ project }: { readonly project: SuggestionProject }):
   return request.behind === project.mainDistance;
 };
 
-export type SuggestionMountEventKind = 'proposed' | 'mounted' | 'dismissed';
-
-export type SuggestionMountEvent = {
-  readonly eventId: SessionEventId;
-  readonly kind: SuggestionMountEventKind;
-  readonly projectId: ProjectId;
-  readonly projectName: string;
-  readonly reason: string;
-  readonly agentId: AgentId | null;
-};
-
 type Params = {
   readonly sessionId: SessionId;
   readonly workflowRuns: ReadonlyArray<SuggestionWorkflowRun>;
@@ -74,25 +49,9 @@ type Params = {
   readonly consumedPlanIds: ReadonlySet<PlanId>;
   readonly openQuestionCount: number;
   readonly hasPullRequest: boolean;
-  readonly threads: ReadonlyArray<SuggestionThread>;
+  readonly eligibleThreadCount: number;
   readonly projects: ReadonlyArray<SuggestionProject>;
   readonly mountEvents: ReadonlyArray<SuggestionMountEvent>;
-};
-
-const pendingMountEvents = ({
-  mountEvents,
-}: {
-  readonly mountEvents: ReadonlyArray<SuggestionMountEvent>;
-}): ReadonlyArray<SuggestionMountEvent> => {
-  const pending = new Map<ProjectId, SuggestionMountEvent>();
-  for (const event of mountEvents) {
-    if (event.kind === 'proposed') {
-      pending.set(event.projectId, event);
-      continue;
-    }
-    pending.delete(event.projectId);
-  }
-  return [...pending.values()];
 };
 
 export const deriveSessionSuggestions = ({
@@ -102,7 +61,7 @@ export const deriveSessionSuggestions = ({
   consumedPlanIds,
   openQuestionCount,
   hasPullRequest,
-  threads,
+  eligibleThreadCount,
   projects,
   mountEvents,
 }: Params): ReadonlyArray<SessionSuggestion> => {
@@ -166,13 +125,6 @@ export const deriveSessionSuggestions = ({
       payload: { planId: activePlan.id },
     });
   }
-  const eligibleThreadCount = threads.filter(
-    (thread) =>
-      thread.source === 'review' &&
-      !thread.resolved &&
-      !thread.isPendingResolution &&
-      (thread.resolverStatus == null || thread.resolverStatus === 'failed'),
-  ).length;
   if (hasPullRequest && eligibleThreadCount > 0) {
     suggestions.push({
       id: `resolve-threads:${sessionId}`,
