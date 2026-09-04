@@ -1,64 +1,23 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type {
-  Agent,
-  AgentId,
-  PlanId,
-  ProjectId,
-  Session,
-  SessionEvent,
-  SessionProjectMount,
-} from '@goodboy/types';
+import type { Agent, PlanId, Session, SessionEvent, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions, useSessionPlans } from '../../../store';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { workflowHasOpenQuestions } from '../../context/openQuestionsGate';
-import { groupThreads } from '../../github/comment-threads';
 import { splitWorkflowRuns } from '../../workflows/activeWorkflowRuns';
 import { useAttachedWorkflowRuns } from '../../workflows/useAttachedWorkflowRuns';
 import { useWorkflowAdvanceStates } from '../../workflows/useWorkflowAdvanceStates';
 import { useResolverIndex } from '../../session/hooks/useResolverIndex';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
-import { resolverForComment } from '../../session/resolver-linkage';
-import {
-  deriveSessionSuggestions,
-  type SuggestionMountEvent,
-  type SuggestionMountEventKind,
-} from '../deriveSessionSuggestions';
+import { deriveSessionSuggestions } from '../deriveSessionSuggestions';
+import { eligibleReviewThreadCount } from '../eligibleThreads';
+import { toMountEvents } from '../mountProposals';
 
 type Params = {
   readonly session: Session;
   readonly agents?: ReadonlyArray<Agent>;
   readonly withRebase?: boolean;
 };
-
-const MOUNT_EVENT_KIND: Readonly<Partial<Record<string, SuggestionMountEventKind>>> = {
-  project_materialization_proposed: 'proposed',
-  project_materialized: 'mounted',
-  project_materialization_dismissed: 'dismissed',
-};
-
-const toMountEvents = ({
-  events,
-}: {
-  readonly events: ReadonlyArray<SessionEvent>;
-}): ReadonlyArray<SuggestionMountEvent> =>
-  events.flatMap((event) => {
-    const kind = MOUNT_EVENT_KIND[event.kind];
-    const projectId = event.payload?.projectId;
-    if (kind === undefined || projectId == null) {
-      return [];
-    }
-    return [
-      {
-        eventId: event.id,
-        kind,
-        projectId: projectId as ProjectId,
-        projectName: event.payload?.projectName ?? projectId,
-        reason: event.payload?.reason ?? 'an agent asked for write access',
-        agentId: (event.payload?.agentId as AgentId | undefined) ?? null,
-      },
-    ];
-  });
 
 const NO_TARGETS: ReadonlyArray<{ readonly worktreePath: string; readonly baseBranch?: string }> =
   [];
@@ -115,7 +74,6 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
   const worktreeStatuses = useWorktreeStatuses({ targets });
 
   return useMemo(() => {
-    const pendingThreadIds = new Set(pendingResolutions.map((resolution) => resolution.threadId));
     const consumedPlanIds = new Set<PlanId>();
     for (let planIndex = 0; planIndex < plans.length; planIndex += 1) {
       const plan = plans[planIndex];
@@ -168,18 +126,10 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
       consumedPlanIds,
       openQuestionCount: openQuestions.filter((question) => question.status === 'open').length,
       hasPullRequest: github?.pr != null,
-      threads: groupThreads(github?.detail?.comments ?? []).map((thread) => {
-        const resolver = resolverForComment(resolverIndex, {
-          threadId: thread.head.threadId,
-          url: thread.head.url,
-        });
-        return {
-          source: thread.head.source,
-          resolved: thread.head.resolved === true,
-          isPendingResolution:
-            thread.head.threadId != null && pendingThreadIds.has(thread.head.threadId),
-          resolverStatus: resolver?.status ?? null,
-        };
+      eligibleThreadCount: eligibleReviewThreadCount({
+        github,
+        pendingResolutions,
+        resolverIndex,
       }),
       mountEvents: toMountEvents({ events }),
       projects: withRebase

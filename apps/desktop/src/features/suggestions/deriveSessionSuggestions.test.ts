@@ -8,11 +8,8 @@ import type {
   StepId,
   WorkflowRunId,
 } from '@goodboy/types';
-import {
-  deriveSessionSuggestions,
-  type SuggestionMountEvent,
-  type SuggestionMountEventKind,
-} from './deriveSessionSuggestions';
+import { deriveSessionSuggestions } from './deriveSessionSuggestions';
+import type { SuggestionMountEvent, SuggestionMountEventKind } from './mountProposals';
 
 const sessionId = 'session-1' as SessionId;
 const planId = 'plan-1' as PlanId;
@@ -41,7 +38,7 @@ const derive = ({
   creatorHasOpenQuestions = false,
   consumedPlanIds = new Set<PlanId>(),
   hasPullRequest = false,
-  threads = [],
+  eligibleThreadCount = 0,
   mainDistance = null,
   mountEvents = [],
 }: {
@@ -50,12 +47,7 @@ const derive = ({
   creatorHasOpenQuestions?: boolean;
   consumedPlanIds?: ReadonlySet<PlanId>;
   hasPullRequest?: boolean;
-  threads?: ReadonlyArray<{
-    readonly source: string;
-    readonly resolved: boolean;
-    readonly isPendingResolution: boolean;
-    readonly resolverStatus: string | null;
-  }>;
+  eligibleThreadCount?: number;
   mainDistance?: number | null;
   mountEvents?: ReadonlyArray<SuggestionMountEvent>;
 }) =>
@@ -73,7 +65,7 @@ const derive = ({
     consumedPlanIds,
     openQuestionCount,
     hasPullRequest,
-    threads,
+    eligibleThreadCount,
     mountEvents,
     projects: [
       {
@@ -91,14 +83,7 @@ describe('deriveSessionSuggestions', () => {
     const suggestions = derive({
       openQuestionCount: 2,
       hasPullRequest: true,
-      threads: [
-        {
-          source: 'review',
-          resolved: false,
-          isPendingResolution: false,
-          resolverStatus: null,
-        },
-      ],
+      eligibleThreadCount: 1,
       mainDistance: 3,
       mountEvents: [mountEvent({ id: 'event-1', kind: 'proposed' })],
     });
@@ -130,23 +115,16 @@ describe('deriveSessionSuggestions', () => {
     expect(derive({}).some((suggestion) => suggestion.kind === 'plan-ready')).toBe(true);
   });
 
-  it('excludes pending resolution and includes failed resolvers', () => {
-    const suggestions = derive({
-      hasPullRequest: true,
-      threads: [
-        { source: 'review', resolved: false, isPendingResolution: true, resolverStatus: null },
-        {
-          source: 'review',
-          resolved: false,
-          isPendingResolution: false,
-          resolverStatus: 'running',
-        },
-        { source: 'review', resolved: false, isPendingResolution: false, resolverStatus: 'failed' },
-      ],
-    });
+  it('carries the eligible thread count and needs a pull request', () => {
+    const suggestions = derive({ hasPullRequest: true, eligibleThreadCount: 1 });
     expect(
       suggestions.find((suggestion) => suggestion.kind === 'resolve-threads')?.payload,
     ).toEqual({ eligibleThreadCount: 1 });
+    expect(
+      derive({ hasPullRequest: false, eligibleThreadCount: 1 }).some(
+        (suggestion) => suggestion.kind === 'resolve-threads',
+      ),
+    ).toBe(false);
   });
 
   it('carries the proposal payload the timeline row acts on', () => {
@@ -210,7 +188,7 @@ describe('deriveSessionSuggestions', () => {
       consumedPlanIds: new Set<PlanId>(),
       openQuestionCount: 0,
       hasPullRequest: false,
-      threads: [],
+      eligibleThreadCount: 0,
       mountEvents: [],
       projects: [
         {
