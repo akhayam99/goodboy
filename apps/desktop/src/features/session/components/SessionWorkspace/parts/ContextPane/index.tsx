@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { CopyButton, Divider, GhostActionButton } from '@goodboy/ui';
 import { Code, History } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
@@ -46,6 +46,7 @@ const REGION_CONCEPT = {
 type Props = {
   readonly session: Session;
   readonly initialRegion?: ContextLens;
+  readonly eyebrow?: ReactNode;
 };
 
 type ValueParams = {
@@ -56,7 +57,7 @@ type ValueParams = {
 const valueFor = ({ slots, slotKey }: ValueParams): string =>
   slots.find((slot) => slot.key === slotKey)?.value ?? '';
 
-export const ContextPane = ({ session, initialRegion }: Props) => {
+export const ContextPane = ({ session, initialRegion, eyebrow }: Props) => {
   const sessionId = session.id as SessionId;
   const slots = useSessionSlots(sessionId);
   const loading = useSessionLoading(sessionId);
@@ -137,7 +138,12 @@ export const ContextPane = ({ session, initialRegion }: Props) => {
         )
       }
     >
-      <PaneShell title="Context" icon={CONCEPT_ICONS.context} tone={CONCEPT_TONE.context}>
+      <PaneShell
+        title="Context"
+        icon={CONCEPT_ICONS.context}
+        tone={CONCEPT_TONE.context}
+        eyebrow={eyebrow}
+      >
         {REGION_ORDER.map((slotKey, index) => {
           const value = valueFor({ slots, slotKey });
           const title = REGION_TITLE[slotKey];

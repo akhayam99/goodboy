@@ -36,6 +36,7 @@ const KNOWN_UNSUPPORTED_PREVIEW_EXTENSIONS = new Set([
 type Props = {
   readonly sessionId: SessionId;
   readonly sessionDir: string | null;
+  readonly eyebrow?: ReactNode;
 };
 
 type RenderEntriesParams = {
@@ -112,7 +113,7 @@ const isKnownUnsupportedPreviewExtension = ({
   return KNOWN_UNSUPPORTED_PREVIEW_EXTENSIONS.has(extensionOf({ fileName }));
 };
 
-export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
+export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
   const [entriesByPath, setEntriesByPath] = useState<
     Readonly<Record<string, ReadonlyArray<ExploreEntry>>>
   >({});
@@ -412,7 +413,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
         ) : null
       }
     >
-      <PaneShell title="Explore" description="Browse the files for this session.">
+      <PaneShell title="Explore" description="Browse the files for this session." eyebrow={eyebrow}>
         <div className="flex flex-col gap-3">
           {rootLoading ? (
             <>

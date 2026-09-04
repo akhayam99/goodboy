@@ -8,6 +8,7 @@ type Fit = 'fill' | 'bleed' | 'flow';
 
 type Props = {
   readonly header: ReactNode;
+  readonly eyebrow?: ReactNode;
   readonly rail?: ReactNode;
   readonly dock?: ReactNode;
   readonly properties?: ResolvedDetailFields;
@@ -18,6 +19,7 @@ type Props = {
 
 export const StudioDetailLayout = ({
   header,
+  eyebrow,
   rail,
   dock,
   properties,
@@ -39,7 +41,14 @@ export const StudioDetailLayout = ({
       >
         <div className={cn('flex flex-col', !isFlow && PANE_RHYTHM.body)}>
           <div className={cn('flex flex-col gap-3', PANE_RHYTHM.column, headerMeasure)}>
-            {header}
+            {eyebrow != null ? (
+              <div className="flex min-w-0 flex-col gap-1">
+                {eyebrow}
+                {header}
+              </div>
+            ) : (
+              header
+            )}
             {hasMeta ? (
               <div data-testid="detail-meta" className="flex min-w-0 flex-col gap-3">
                 {hasProperties ? <DetailProperties entries={properties} /> : null}

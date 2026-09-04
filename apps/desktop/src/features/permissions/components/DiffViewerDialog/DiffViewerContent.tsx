@@ -78,6 +78,7 @@ type Props = {
   presentation?: 'dialog' | 'pane';
   onContentEmptyChange?: (isEmpty: boolean) => void;
   headerActions?: ReactNode;
+  eyebrow?: ReactNode;
   branchRevision?: number;
 };
 
@@ -256,6 +257,7 @@ export const DiffViewerContent = ({
   presentation = 'dialog',
   onContentEmptyChange,
   headerActions,
+  eyebrow,
   branchRevision = 0,
 }: Props) => {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
@@ -762,6 +764,7 @@ export const DiffViewerContent = ({
           )}
         >
           <div className="flex min-w-0 flex-col gap-1">
+            {eyebrow}
             <div className="flex flex-wrap items-baseline gap-2">
               <h1 className="text-xl font-semibold leading-snug text-foreground">
                 {DIFF_VIEWER_PANE_COPY.title}

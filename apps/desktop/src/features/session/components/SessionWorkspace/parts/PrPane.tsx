@@ -66,6 +66,7 @@ const PROVIDER_TAB_OPTIONS: ReadonlyArray<{
 type Props = {
   readonly session: Session;
   readonly onSelectLens: (lens: LensKind) => void;
+  readonly eyebrow?: ReactNode;
 };
 
 type HostTitleParams = {
@@ -134,7 +135,7 @@ const resolveSessionStudioOpenEvent = ({
   }
 };
 
-export const PrPane = ({ session, onSelectLens }: Props) => {
+export const PrPane = ({ session, onSelectLens, eyebrow }: Props) => {
   const sessionId = session.id as SessionId;
   const remoteKind = useRemoteHostKind({ sessionId });
   const sessionBranch = useSessionRepo({ sessionId })?.branch ?? null;
@@ -209,6 +210,7 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
     return (
       <StudioDetailLayout
         fit="fill"
+        eyebrow={eyebrow}
         header={
           <HeaderBand
             title={bitbucketPr?.title ?? hostTitle({ remoteKind, providerCount, activeProvider })}
@@ -241,6 +243,7 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
     return (
       <StudioDetailLayout
         fit="fill"
+        eyebrow={eyebrow}
         header={
           <HeaderBand
             title={mergeRequest?.title ?? hostTitle({ remoteKind, providerCount, activeProvider })}
@@ -278,6 +281,7 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
       onOpenStudio={openStudio}
       providerCount={providerCount}
       activeProvider={activeProvider}
+      eyebrow={eyebrow}
       {...(providerTabs != null && { tabs: providerTabs })}
     />
   );
@@ -292,6 +296,7 @@ const GithubPrCard = ({
   providerCount,
   activeProvider,
   tabs,
+  eyebrow,
 }: {
   session: Session;
   isPrReview: boolean;
@@ -301,6 +306,7 @@ const GithubPrCard = ({
   providerCount: number;
   activeProvider: PullRequestProvider;
   tabs?: ReactNode;
+  eyebrow?: ReactNode;
 }) => {
   const sessionId = session.id as SessionId;
   const [unlinkingIssueNumber, setUnlinkingIssueNumber] = useState<number | null>(null);
@@ -413,6 +419,7 @@ const GithubPrCard = ({
   const shell = ({ children }: { readonly children: ReactNode }) => (
     <StudioDetailLayout
       fit="fill"
+      eyebrow={eyebrow}
       header={
         <HeaderBand
           title={hostTitle({ remoteKind, providerCount, activeProvider })}
@@ -500,6 +507,7 @@ const GithubPrCard = ({
   return (
     <StudioDetailLayout
       fit="fill"
+      eyebrow={eyebrow}
       header={
         <HeaderBand
           title={pr.title}

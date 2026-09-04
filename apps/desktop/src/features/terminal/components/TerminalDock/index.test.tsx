@@ -72,6 +72,23 @@ afterEach(() => {
   platform.current = 'darwin';
 });
 
+describe('TerminalDock eyebrow', () => {
+  it('renders the session eyebrow above the tab strip', () => {
+    render(
+      <TerminalDock
+        sessionId={SESSION_ID}
+        isActive
+        cwd="/repo"
+        eyebrow={<span>Ship the lens eyebrow</span>}
+      />,
+    );
+
+    const eyebrow = screen.getByText('Ship the lens eyebrow');
+    const strip = screen.getByRole('tab');
+    expect(eyebrow.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
+
 describe('TerminalDock new tab shortcut', () => {
   it('spawns a tab on the command combo on darwin', () => {
     platform.current = 'darwin';

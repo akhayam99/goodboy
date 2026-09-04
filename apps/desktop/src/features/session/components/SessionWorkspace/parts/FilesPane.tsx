@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import type { BranchCommit, SessionId, SessionProjectMount } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
@@ -20,6 +20,7 @@ type Props = {
   readonly worktreePath: string | null;
   readonly isBranchless: boolean;
   readonly onClose: () => void;
+  readonly eyebrow?: ReactNode;
 };
 
 export const FilesPane = ({
@@ -28,6 +29,7 @@ export const FilesPane = ({
   worktreePath,
   isBranchless,
   onClose,
+  eyebrow,
 }: Props) => {
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
   const mounts = useAppStore((s) => s.sessionProjectMounts?.[sessionId] ?? EMPTY_MOUNTS);
@@ -66,6 +68,7 @@ export const FilesPane = ({
         <PaneShell
           title="File versions"
           description="View and restore saved file copies for this session."
+          eyebrow={eyebrow}
         >
           <LensEmptyState
             tone={CONCEPT_TONE.diff}
@@ -76,13 +79,21 @@ export const FilesPane = ({
         </PaneShell>
       );
     }
-    return <FileVersionsPane sessionId={sessionId} sessionDir={sessionDir} onClose={onClose} />;
+    return (
+      <FileVersionsPane
+        sessionId={sessionId}
+        sessionDir={sessionDir}
+        onClose={onClose}
+        eyebrow={eyebrow}
+      />
+    );
   }
   if (worktreePath == null) {
     return (
       <PaneShell
         title={DIFF_VIEWER_PANE_COPY.title}
         description={DIFF_VIEWER_PANE_COPY.description}
+        eyebrow={eyebrow}
       >
         <LensEmptyState
           tone={CONCEPT_TONE.diff}
@@ -110,6 +121,7 @@ export const FilesPane = ({
           workingDir={sessionDir ?? undefined}
           worktreePath={worktreePath}
           diffFocus={diffFocus}
+          eyebrow={eyebrow}
           onClose={onClose}
           onContentEmptyChange={setIsDiffEmpty}
           branchRevision={branchRevision}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Agent, PendingResolution, PrComment, Session, SessionId } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
 import { EMPTY_ARRAY, useAppStore, useDiffComments } from '../../../../store';
@@ -41,6 +41,7 @@ type Props = {
   readonly agent: Agent;
   readonly isChatActive: boolean;
   readonly onBack: () => void;
+  readonly eyebrow?: ReactNode;
 };
 
 type Tab = 'brief' | 'transcript';
@@ -53,7 +54,7 @@ const TABS = [
 const EMPTY_PENDING: ReadonlyArray<PendingResolution> = [];
 const EMPTY_OUTCOMES: Readonly<Record<string, ResolverThreadOutcome>> = {};
 
-export const ResolverDetailPane = ({ session, agent, isChatActive, onBack }: Props) => {
+export const ResolverDetailPane = ({ session, agent, isChatActive, onBack, eyebrow }: Props) => {
   const sessionId = session.id as SessionId;
   const agentId = agent.id;
   const [tab, setTab] = useState<Tab>('brief');
@@ -192,6 +193,7 @@ export const ResolverDetailPane = ({ session, agent, isChatActive, onBack }: Pro
   return (
     <StudioDetailLayout
       fit={tab === 'transcript' ? 'bleed' : 'fill'}
+      eyebrow={eyebrow}
       header={
         <HeaderBand
           title={agent.name}

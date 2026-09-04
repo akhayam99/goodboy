@@ -89,6 +89,30 @@ describe('PaneShell', () => {
     expect(screen.getByText('Body copy')).toBeDefined();
   });
 
+  it('renders the eyebrow above the title', () => {
+    render(
+      <PaneShell title="Workflows" eyebrow={<span>Ship the lens eyebrow</span>}>
+        <p>Body copy</p>
+      </PaneShell>,
+    );
+
+    const eyebrow = screen.getByText('Ship the lens eyebrow');
+    const title = screen.getByRole('heading', { name: 'Workflows' });
+    expect(eyebrow.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('renders the eyebrow above a custom header', () => {
+    render(
+      <PaneShell header={<h1>Custom header</h1>} eyebrow={<span>Ship the lens eyebrow</span>}>
+        <p>Body copy</p>
+      </PaneShell>,
+    );
+
+    const eyebrow = screen.getByText('Ship the lens eyebrow');
+    const header = screen.getByRole('heading', { name: 'Custom header' });
+    expect(eyebrow.compareDocumentPosition(header) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('mounts with the studio-in animation by default', () => {
     render(
       <PaneShell title="Linear">
@@ -132,6 +156,18 @@ describe('FocusedPane', () => {
     expect(screen.getByText('2')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Close' })).toBeDefined();
     expect(screen.getByText('Body copy')).toBeDefined();
+  });
+
+  it('renders the eyebrow above the lens label', () => {
+    render(
+      <FocusedPane lens="Workflows" eyebrow={<span>Ship the lens eyebrow</span>}>
+        <p>Body copy</p>
+      </FocusedPane>,
+    );
+
+    const eyebrow = screen.getByText('Ship the lens eyebrow');
+    const lens = screen.getByRole('heading', { name: 'Workflows' });
+    expect(eyebrow.compareDocumentPosition(lens) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('insets its header on the shared rhythm', () => {
