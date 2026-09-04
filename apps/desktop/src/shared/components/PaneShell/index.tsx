@@ -7,6 +7,7 @@ import { PANE_RHYTHM } from '@goodboy/ui';
 type BaseProps = {
   readonly measure?: keyof typeof PANE_RHYTHM.measure;
   readonly animationClassName?: string;
+  readonly eyebrow?: ReactNode;
   readonly children: ReactNode;
 };
 
@@ -36,6 +37,7 @@ export const PaneShell = (props: Props) => {
   const {
     measure = 'pane',
     animationClassName = 'motion-safe:animate-studio-in',
+    eyebrow,
     children,
   } = props;
 
@@ -49,40 +51,43 @@ export const PaneShell = (props: Props) => {
           PANE_RHYTHM.measure[measure],
         )}
       >
-        {props.header !== undefined ? (
-          props.header
-        ) : (
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-col gap-1">
-              <div className="flex items-baseline gap-2">
-                {props.icon != null ? (
-                  <props.icon
-                    size={16}
-                    aria-hidden
-                    className={cn(
-                      'shrink-0 translate-y-0.5',
-                      tintClasses(props.tone ?? 'neutral').icon,
-                    )}
-                  />
-                ) : null}
-                <h1 className="text-xl font-semibold leading-snug text-foreground">
-                  {props.title}
-                </h1>
-                {props.meta ? (
-                  <span className="text-xs tabular-nums text-muted-foreground">{props.meta}</span>
+        <div className="flex min-w-0 flex-col gap-1">
+          {eyebrow}
+          {props.header !== undefined ? (
+            props.header
+          ) : (
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-col gap-1">
+                <div className="flex items-baseline gap-2">
+                  {props.icon != null ? (
+                    <props.icon
+                      size={16}
+                      aria-hidden
+                      className={cn(
+                        'shrink-0 translate-y-0.5',
+                        tintClasses(props.tone ?? 'neutral').icon,
+                      )}
+                    />
+                  ) : null}
+                  <h1 className="text-xl font-semibold leading-snug text-foreground">
+                    {props.title}
+                  </h1>
+                  {props.meta ? (
+                    <span className="text-xs tabular-nums text-muted-foreground">{props.meta}</span>
+                  ) : null}
+                </div>
+                {props.description ? (
+                  <p className="text-sm text-muted-foreground">{props.description}</p>
                 ) : null}
               </div>
-              {props.description ? (
-                <p className="text-sm text-muted-foreground">{props.description}</p>
+              {props.actions ? (
+                <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
+                  {props.actions}
+                </div>
               ) : null}
             </div>
-            {props.actions ? (
-              <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
-                {props.actions}
-              </div>
-            ) : null}
-          </div>
-        )}
+          )}
+        </div>
         {children}
       </div>
     </ScrollFade>

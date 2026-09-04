@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { ArchiveRestore, Eye, Pencil, Play, RotateCw, Trash2 } from 'lucide-react';
 import {
   Button,
@@ -28,9 +28,10 @@ import { FinishedRegister } from '../../../../shared/components/FinishedRegister
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly eyebrow?: ReactNode;
 };
 
-export const PlanStudio = ({ sessionId }: Props) => {
+export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
   const plans = useSessionPlans(sessionId);
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -129,7 +130,7 @@ export const PlanStudio = ({ sessionId }: Props) => {
 
   if (selected != null) {
     return (
-      <FocusedPane lens="Plans" count={plans.length}>
+      <FocusedPane lens="Plans" count={plans.length} eyebrow={eyebrow}>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className={cn('flex shrink-0 flex-col gap-2', PANE_RHYTHM.body)}>
             <HeaderBand
@@ -311,6 +312,7 @@ export const PlanStudio = ({ sessionId }: Props) => {
       title="Plans"
       description="Plans agents drafted for this session. Run one to spawn an executor."
       meta={plans.length > 0 ? plans.length : undefined}
+      eyebrow={eyebrow}
     >
       {plans.length === 0 ? (
         <LensEmptyState

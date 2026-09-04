@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import { Bot } from 'lucide-react';
 import { Skeleton } from '@goodboy/ui';
 import { LensEmptyState } from '@goodboy/ui';
@@ -44,6 +44,7 @@ type AnswerPair = { id: OpenQuestionId; text: string; answer: string };
 
 type QuestionsPaneProps = {
   readonly session: Session;
+  readonly eyebrow?: ReactNode;
 };
 
 type ClusterSectionProps = {
@@ -241,7 +242,7 @@ const AnsweredHistory = ({ clusters, sessionId }: AnsweredHistoryProps) => {
   );
 };
 
-export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
+export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
   const sessionId = session.id as SessionId;
   const open = selectOpenQuestions(useSessionOpenQuestions(sessionId));
   const answered = useSessionAnsweredQuestions(sessionId);
@@ -329,7 +330,11 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
 
   if (!openLoaded || !answeredLoaded) {
     return (
-      <PaneShell title="Questions" description="Decisions agents need from you to keep going.">
+      <PaneShell
+        title="Questions"
+        description="Decisions agents need from you to keep going."
+        eyebrow={eyebrow}
+      >
         <div className="flex flex-col gap-2" role="status" aria-label="Loading questions">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex flex-col gap-1.5 rounded-md border border-border-soft p-3">
@@ -345,7 +350,11 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
 
   if (open.length === 0 && answeredClusters.length === 0 && pendingUndoQuestion === null) {
     return (
-      <PaneShell title="Questions" description="Decisions agents need from you to keep going.">
+      <PaneShell
+        title="Questions"
+        description="Decisions agents need from you to keep going."
+        eyebrow={eyebrow}
+      >
         <LensEmptyState
           tone={CONCEPT_TONE.questions}
           icon={CONCEPT_ICONS.questions}
@@ -358,7 +367,11 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
 
   if (open.length === 0 && pendingUndoQuestion === null) {
     return (
-      <PaneShell title="Questions" description="Decisions agents need from you to keep going.">
+      <PaneShell
+        title="Questions"
+        description="Decisions agents need from you to keep going."
+        eyebrow={eyebrow}
+      >
         <LensEmptyState
           tone={CONCEPT_TONE.questions}
           icon={CONCEPT_ICONS.questions}
@@ -377,6 +390,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   return (
     <PaneShell
       title="Questions"
+      eyebrow={eyebrow}
       description={
         open.length > 0
           ? `${open.length} open ${open.length === 1 ? 'question' : 'questions'} waiting on you.`

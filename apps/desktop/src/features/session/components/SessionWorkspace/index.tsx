@@ -14,6 +14,7 @@ import {
 import type { LensKind } from '../../../../store';
 import { SessionOverviewPane } from '../SessionOverviewPane';
 import { SessionCrumbBar } from '../SessionCrumbBar';
+import { SessionEyebrow } from '../SessionEyebrow';
 import { AgentOverlay } from './parts/AgentOverlay';
 import { AgentsPane } from './parts/AgentsPane';
 import { Pane } from './parts/Pane';
@@ -127,6 +128,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const onSelectOverview = () => {
     setActiveLens(sessionId, null);
   };
+  const sessionEyebrow = <SessionEyebrow session={session} />;
   const showStudio = studio != null;
   const showAgentOverlay = selectedAgentId != null && !showStudio;
   const showLens = selectedAgentId == null && !showStudio;
@@ -193,13 +195,18 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               />
             )
           ) : null}
-          {lens === 'questions' ? <QuestionsPane session={session} /> : null}
-          {lens === 'plans' ? <PlanStudio sessionId={sessionId} /> : null}
-          {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
+          {lens === 'questions' ? (
+            <QuestionsPane session={session} eyebrow={sessionEyebrow} />
+          ) : null}
+          {lens === 'plans' ? <PlanStudio sessionId={sessionId} eyebrow={sessionEyebrow} /> : null}
+          {lens === 'workflows' ? (
+            <WorkflowsPane session={session} eyebrow={sessionEyebrow} />
+          ) : null}
           {lens === 'scripts' ? (
             <PaneShell
               title="Scripts"
               description="Shell commands you run by hand from this session, no agent involved."
+              eyebrow={sessionEyebrow}
             >
               <ScriptsPanel
                 workspaceId={session.workspaceId}
@@ -209,7 +216,11 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             </PaneShell>
           ) : null}
           {surface === 'context' ? (
-            <ContextPane session={session} initialRegion={contextRegionFor({ lens })} />
+            <ContextPane
+              session={session}
+              initialRegion={contextRegionFor({ lens })}
+              eyebrow={sessionEyebrow}
+            />
           ) : null}
           {lens === 'pr' ? <PrPane session={session} onSelectLens={onSelectLens} /> : null}
           {lens === 'review' ? <ReviewBoardPane session={session} /> : null}
@@ -218,6 +229,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               sessionId={sessionId}
               workspaceId={session.workspaceId}
               provider="linear"
+              eyebrow={sessionEyebrow}
             />
           ) : null}
           {lens === 'sentry' ? (
@@ -225,6 +237,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               sessionId={sessionId}
               workspaceId={session.workspaceId}
               provider="sentry"
+              eyebrow={sessionEyebrow}
             />
           ) : null}
           {lens === 'gitlab_issues' ? (
@@ -232,6 +245,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               sessionId={sessionId}
               workspaceId={session.workspaceId}
               provider="gitlab"
+              eyebrow={sessionEyebrow}
             />
           ) : null}
           {lens === 'jira_issues' ? (
@@ -239,6 +253,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               sessionId={sessionId}
               workspaceId={session.workspaceId}
               provider="jira"
+              eyebrow={sessionEyebrow}
             />
           ) : null}
           {lens === 'slack_threads' ? (
@@ -246,6 +261,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               sessionId={sessionId}
               workspaceId={session.workspaceId}
               provider="slack"
+              eyebrow={sessionEyebrow}
             />
           ) : null}
           {lens === 'github_issue' ? (
@@ -260,6 +276,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               <PaneShell
                 title="GitHub issue"
                 description="The GitHub issue linked to this session."
+                eyebrow={sessionEyebrow}
               >
                 <LensEmptyState
                   icon={CONCEPT_ICONS.github}
@@ -288,13 +305,14 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               worktreePath={diffWorktreePath}
               isBranchless={isBranchless}
               onClose={onSelectOverview}
+              eyebrow={sessionEyebrow}
             />
           ) : null}
           {lens === 'explore' ? (
-            <ExplorePane sessionId={sessionId} sessionDir={workingDir} />
+            <ExplorePane sessionId={sessionId} sessionDir={workingDir} eyebrow={sessionEyebrow} />
           ) : null}
           <Pane visible={lens === 'agents'}>
-            <AgentsPane session={session} meta={agentsMeta} />
+            <AgentsPane session={session} meta={agentsMeta} eyebrow={sessionEyebrow} />
           </Pane>
         </div>
 
@@ -319,6 +337,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               sessionId={sessionId}
               isActive={isActive && lens === 'terminal' && showLens}
               cwd={workingDir}
+              eyebrow={sessionEyebrow}
             />
           </div>
         ) : null}

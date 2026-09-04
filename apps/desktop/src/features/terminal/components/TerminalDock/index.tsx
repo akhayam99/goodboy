@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from 'react';
 import { Button, Divider } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -45,9 +51,10 @@ type Props = {
   readonly sessionId: SessionId;
   readonly isActive: boolean;
   readonly cwd: string | null;
+  readonly eyebrow?: ReactNode;
 };
 
-export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
+export const TerminalDock = ({ sessionId, isActive, cwd, eyebrow }: Props) => {
   const tabs = useAppStore((s) => s.terminalTabs[sessionId] ?? EMPTY_TABS);
   const activeId = useAppStore((s) => s.activeTerminalTab[sessionId] ?? null);
   const addTerminalTab = useAppStore((s) => s.addTerminalTab);
@@ -131,7 +138,11 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
 
   if (tabs.length === 0) {
     return (
-      <PaneShell title="Terminal" description="Run commands in this session's worktree.">
+      <PaneShell
+        title="Terminal"
+        description="Run commands in this session's worktree."
+        eyebrow={eyebrow}
+      >
         <LensEmptyState
           tone={CONCEPT_TONE.terminal}
           icon={CONCEPT_ICONS.terminal}
