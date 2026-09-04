@@ -14,6 +14,7 @@ import { isOpenQuestionAnswerText } from '@goodboy/core';
 import { decodeAuthRequiredMessage } from '../turn';
 import { isWorkflowKickoff, parseWorkflowKickoff } from './parse-workflow-kickoff';
 import { parseResolverKickoff, type ResolverKickoffThread } from './parse-resolver-kickoff';
+import { reduceTranscriptTrace } from './transcript-items-trace';
 
 export type TranscriptItem =
   | {
@@ -110,14 +111,67 @@ export type TranscriptItem =
       at: IsoDateTime;
     };
 
+type ReduceSnapshot = {
+  readonly firstEvent: TurnEvent;
+  readonly lastEvent: TurnEvent;
+  readonly length: number;
+  readonly items: ReadonlyArray<TranscriptItem>;
+  readonly callIndex: ReadonlyMap<string, number>;
+  readonly permToolNames: ReadonlyMap<string, string>;
+  readonly textBuffer: string;
+  readonly textKey: string | null;
+};
+
+const SNAPSHOT_LIMIT = 8;
+
+const snapshots: ReduceSnapshot[] = [];
+
+type SnapshotLookupParams = {
+  readonly events: ReadonlyArray<TurnEvent>;
+};
+
+const findSnapshot = ({ events }: SnapshotLookupParams): ReduceSnapshot | null => {
+  for (const snapshot of snapshots) {
+    if (snapshot.length > events.length) {
+      continue;
+    }
+    if (snapshot.firstEvent !== events[0]) {
+      continue;
+    }
+    if (snapshot.lastEvent !== events[snapshot.length - 1]) {
+      continue;
+    }
+    return snapshot;
+  }
+  return null;
+};
+
+type SnapshotStoreParams = {
+  readonly snapshot: ReduceSnapshot;
+};
+
+const storeSnapshot = ({ snapshot }: SnapshotStoreParams): void => {
+  const previous = snapshots.findIndex((entry) => entry.firstEvent === snapshot.firstEvent);
+  if (previous >= 0) {
+    snapshots.splice(previous, 1);
+  }
+  snapshots.unshift(snapshot);
+  if (snapshots.length > SNAPSHOT_LIMIT) {
+    snapshots.length = SNAPSHOT_LIMIT;
+  }
+};
+
 export const reduceTranscript = (
   events: ReadonlyArray<TurnEvent>,
 ): ReadonlyArray<TranscriptItem> => {
-  const items: TranscriptItem[] = [];
-  const callIndex = new Map<string, number>();
-  const permToolNames = new Map<string, string>();
-  let textBuffer = '';
-  let textKey: string | null = null;
+  const resumed = events.length > 0 ? findSnapshot({ events }) : null;
+  const items: TranscriptItem[] = resumed !== null ? resumed.items.slice() : [];
+  const callIndex =
+    resumed !== null ? new Map<string, number>(resumed.callIndex) : new Map<string, number>();
+  const permToolNames =
+    resumed !== null ? new Map<string, string>(resumed.permToolNames) : new Map<string, string>();
+  let textBuffer = resumed !== null ? resumed.textBuffer : '';
+  let textKey: string | null = resumed !== null ? resumed.textKey : null;
 
   const flushText = () => {
     if (textBuffer.length > 0 && textKey) {
@@ -127,8 +181,9 @@ export const reduceTranscript = (
     textKey = null;
   };
 
-  for (let i = 0; i < events.length; i += 1) {
+  for (let i = resumed !== null ? resumed.length : 0; i < events.length; i += 1) {
     const event = events[i]!;
+    reduceTranscriptTrace.processed += 1;
     if (event.kind === 'assistant_text') {
       if (textKey === null) {
         textKey = `text-${i}`;
@@ -311,6 +366,23 @@ export const reduceTranscript = (
     }
   }
 
-  flushText();
+  if (events.length > 0) {
+    storeSnapshot({
+      snapshot: {
+        firstEvent: events[0]!,
+        lastEvent: events[events.length - 1]!,
+        length: events.length,
+        items,
+        callIndex,
+        permToolNames,
+        textBuffer,
+        textKey,
+      },
+    });
+  }
+
+  if (textBuffer.length > 0 && textKey !== null) {
+    return [...items, { kind: 'assistant_text', key: textKey, text: textBuffer }];
+  }
   return items;
 };
