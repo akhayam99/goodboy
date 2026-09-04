@@ -157,7 +157,10 @@ impl From<DbError> for SkillError {
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn skill_list(state: State<'_, Db>, workspace_id: String) -> Result<Vec<SkillRow>, SkillError> {
+pub async fn skill_list(
+    state: State<'_, Db>,
+    workspace_id: String,
+) -> Result<Vec<SkillRow>, SkillError> {
     let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT id, workspace_id, name, description, file_path, body, frontmatter_json,
@@ -183,7 +186,10 @@ pub fn skill_list(state: State<'_, Db>, workspace_id: String) -> Result<Vec<Skil
 }
 
 #[tauri::command]
-pub fn skill_get(state: State<'_, Db>, skill_id: String) -> Result<Option<SkillRow>, SkillError> {
+pub async fn skill_get(
+    state: State<'_, Db>,
+    skill_id: String,
+) -> Result<Option<SkillRow>, SkillError> {
     let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT id, workspace_id, name, description, file_path, body, frontmatter_json,
@@ -212,7 +218,10 @@ pub fn skill_get(state: State<'_, Db>, skill_id: String) -> Result<Option<SkillR
 }
 
 #[tauri::command]
-pub fn skill_upsert(state: State<'_, Db>, input: SkillUpsertInput) -> Result<SkillRow, SkillError> {
+pub async fn skill_upsert(
+    state: State<'_, Db>,
+    input: SkillUpsertInput,
+) -> Result<SkillRow, SkillError> {
     let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
 
     let roots = workspace_roots(&conn, &input.workspace_id)?;
@@ -307,7 +316,7 @@ pub fn skill_upsert(state: State<'_, Db>, input: SkillUpsertInput) -> Result<Ski
 }
 
 #[tauri::command]
-pub fn skill_delete(state: State<'_, Db>, skill_id: String) -> Result<(), SkillError> {
+pub async fn skill_delete(state: State<'_, Db>, skill_id: String) -> Result<(), SkillError> {
     let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
 
     // Look up the row first to get file_path + workspace root for path guard.
@@ -365,7 +374,7 @@ pub fn skill_delete(state: State<'_, Db>, skill_id: String) -> Result<(), SkillE
 }
 
 #[tauri::command]
-pub fn skill_rescan(
+pub async fn skill_rescan(
     state: State<'_, Db>,
     workspace_id: String,
 ) -> Result<Vec<SkillRow>, SkillError> {
@@ -528,7 +537,17 @@ pub struct SkillRunScriptInput {
 }
 
 #[tauri::command]
-pub fn skill_run_script(input: SkillRunScriptInput) -> Result<SkillRunScriptResult, SkillError> {
+pub async fn skill_run_script(
+    input: SkillRunScriptInput,
+) -> Result<SkillRunScriptResult, SkillError> {
+    tauri::async_runtime::spawn_blocking(move || skill_run_script_blocking(input))
+        .await
+        .map_err(|e| SkillError::Io(e.to_string()))?
+}
+
+fn skill_run_script_blocking(
+    input: SkillRunScriptInput,
+) -> Result<SkillRunScriptResult, SkillError> {
     let allowed_prefix = PathBuf::from(&input.project_root)
         .join(".kay")
         .join("skills");

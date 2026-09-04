@@ -811,7 +811,10 @@ fn normalized_kind(kind: &str) -> String {
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn export_config_to_file(state: State<'_, Db>, path: String) -> Result<(), ConfigExportError> {
+pub async fn export_config_to_file(
+    state: State<'_, Db>,
+    path: String,
+) -> Result<(), ConfigExportError> {
     let bundle = export_config(state)?;
     let json = serde_json::to_string_pretty(&bundle)?;
     std::fs::write(&path, json).map_err(|e| ConfigExportError::Validation(e.to_string()))?;
@@ -819,7 +822,7 @@ pub fn export_config_to_file(state: State<'_, Db>, path: String) -> Result<(), C
 }
 
 #[tauri::command]
-pub fn import_config_from_file(
+pub async fn import_config_from_file(
     state: State<'_, Db>,
     path: String,
 ) -> Result<ImportResult, ConfigExportError> {

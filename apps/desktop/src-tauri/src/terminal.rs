@@ -302,7 +302,7 @@ pub async fn terminal_open(
 }
 
 #[tauri::command]
-pub fn terminal_list_live(
+pub async fn terminal_list_live(
     registry: State<'_, TerminalRegistry>,
 ) -> Result<Vec<LiveTerminal>, TerminalError> {
     registry.list_live()
@@ -361,7 +361,7 @@ pub fn terminal_resize(
 }
 
 #[tauri::command]
-pub fn terminal_close(
+pub async fn terminal_close(
     registry: State<'_, TerminalRegistry>,
     session_id: String,
 ) -> Result<(), TerminalError> {

@@ -49,7 +49,7 @@ fn string_array_from_text(raw: Option<String>) -> Option<Vec<String>> {
 }
 
 #[tauri::command]
-pub fn get_workspace_overrides(
+pub async fn get_workspace_overrides(
     state: State<'_, Db>,
     workspace_id: String,
 ) -> Result<Option<SettingsOverrides>, DbError> {
@@ -81,7 +81,7 @@ pub fn get_workspace_overrides(
 }
 
 #[tauri::command]
-pub fn set_workspace_overrides(
+pub async fn set_workspace_overrides(
     state: State<'_, Db>,
     workspace_id: String,
     overrides: SettingsOverrides,
@@ -123,7 +123,7 @@ pub fn set_workspace_overrides(
 }
 
 #[tauri::command]
-pub fn get_session_overrides(
+pub async fn get_session_overrides(
     state: State<'_, Db>,
     session_id: String,
 ) -> Result<Option<SettingsOverrides>, DbError> {
@@ -154,7 +154,7 @@ pub fn get_session_overrides(
 }
 
 #[tauri::command]
-pub fn set_session_overrides(
+pub async fn set_session_overrides(
     state: State<'_, Db>,
     session_id: String,
     overrides: SettingsOverrides,
