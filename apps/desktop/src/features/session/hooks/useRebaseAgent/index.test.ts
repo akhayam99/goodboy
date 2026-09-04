@@ -25,8 +25,11 @@ const { showToast, state } = vi.hoisted(() => ({
         },
       },
     },
-    sessionProjectMounts: {} as Record<string, ReadonlyArray<{ projectId: string }>>,
-    projects: [] as ReadonlyArray<{ id: string; baseBranch?: string | null }>,
+    sessionProjectMounts: {} as Record<
+      string,
+      ReadonlyArray<{ projectId: string; worktreePath?: string; mountName?: string }>
+    >,
+    projects: [] as ReadonlyArray<{ id: string; baseBranch?: string | null; name?: string }>,
     sessionPhaseRuns: {} as Record<
       string,
       ReadonlyArray<{ id: string; name: string; status: string }>
@@ -36,6 +39,7 @@ const { showToast, state } = vi.hoisted(() => ({
     setActiveLens: vi.fn(),
     beginSessionCreation: vi.fn(() => 'creation-1'),
     endSessionCreation: vi.fn(),
+    recordSessionEvent: vi.fn(async () => undefined),
   },
 }));
 
@@ -78,6 +82,10 @@ beforeEach(() => {
   state.beginSessionCreation.mockReset();
   state.beginSessionCreation.mockReturnValue('creation-1');
   state.endSessionCreation.mockReset();
+  state.recordSessionEvent.mockReset();
+  state.recordSessionEvent.mockResolvedValue(undefined);
+  state.sessionProjectMounts = {};
+  state.projects = [];
   showToast.mockClear();
 });
 
@@ -192,6 +200,52 @@ describe('useRebaseAgent', () => {
 
     expect(state.selectAgent).toHaveBeenCalledWith(sessionId, 'agent-1');
     expect(state.setActiveLens).toHaveBeenCalledWith(sessionId, 'agents');
+  });
+
+  it('records the request for the targeted project so the suggestion is consumed', async () => {
+    state.projects = [
+      { id: 'project-web', baseBranch: 'develop', name: 'web' },
+      { id: 'project-api', baseBranch: null, name: 'api' },
+    ];
+    state.sessionProjectMounts = {
+      [sessionId]: [
+        { projectId: 'project-api', worktreePath: '/wt/api', mountName: 'api' },
+        { projectId: 'project-web', worktreePath: '/wt/web', mountName: 'web' },
+      ],
+    };
+    state.spawnAgent.mockResolvedValueOnce('agent-web');
+    const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(126) }));
+
+    await act(() => result.current.run({ projectId: 'project-web' as never }));
+
+    expect(state.spawnAgent).toHaveBeenCalledWith(
+      sessionId,
+      expect.objectContaining({
+        name: 'Rebase on develop',
+        initialPrompt: expect.stringContaining('- Fetch origin develop before rebasing.'),
+      }),
+    );
+    expect(state.recordSessionEvent).toHaveBeenCalledWith({
+      sessionId,
+      kind: 'rebase_requested',
+      payload: {
+        projectId: 'project-web',
+        projectName: 'web',
+        worktreePath: '/wt/web',
+        behind: 126,
+        branch: 'develop',
+        agentId: 'agent-web',
+      },
+    });
+  });
+
+  it('records nothing when the spawn fails', async () => {
+    state.spawnAgent.mockRejectedValueOnce(new Error('agent launch failed'));
+    const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
+
+    await act(() => result.current.run());
+
+    expect(state.recordSessionEvent).not.toHaveBeenCalled();
   });
 
   it('reports spawn failures', async () => {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import type { AgentId, SessionId, WorktreeStatus } from '@goodboy/types';
+import type { AgentId, ProjectId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import type { SessionCreationId } from '../../../../store/slices/session-view';
@@ -13,17 +13,39 @@ type Params = {
   readonly onError?: (message: string) => void;
 };
 
+type RunParams = {
+  readonly projectId?: ProjectId;
+};
+
 type Result = {
   readonly canRebase: boolean;
   readonly isRunning: boolean;
   readonly error: string | null;
-  readonly run: () => Promise<void>;
+  readonly run: (params?: RunParams) => Promise<void>;
 };
 
 type Pending = {
   readonly agentId: AgentId;
   readonly creationId: SessionCreationId;
 };
+
+type RebaseTarget = {
+  readonly projectId: ProjectId | null;
+  readonly projectName: string | null;
+  readonly baseBranch: string;
+  readonly worktreePath: string | null;
+};
+
+const rebasePromptFor = ({ baseBranch }: { readonly baseBranch: string }): string =>
+  [
+    `Rebase this session branch onto origin/${baseBranch}.`,
+    `- Fetch origin ${baseBranch} before rebasing.`,
+    `- Rebase the session branch onto origin/${baseBranch} and resolve conflicts by favoring the branch's intent.`,
+    "- Run the repository's typecheck to confirm nothing broke.",
+    '- Push the rebased branch with "$GOODBOY_BIN" query github push --force-with-lease; fall back to git push --force-with-lease only if the bridge is unavailable.',
+    '- Never merge and never touch other branches.',
+    '- If a conflict cannot be resolved confidently, stop and report the conflicting files.',
+  ].join('\n');
 
 export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result => {
   const [isStarting, setIsStarting] = useState(false);
@@ -39,25 +61,24 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
   const workspaceOverrides = useAppStore((state) =>
     session == null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null),
   );
-  const baseBranch = useAppStore((state) => {
-    if (sessionId == null) {
-      return 'main';
-    }
-    const activeProjectId =
-      session?.activeProjectId ?? state.sessionProjectMounts[sessionId]?.[0]?.projectId;
-    return state.projects.find((project) => project.id === activeProjectId)?.baseBranch ?? 'main';
-  });
+  const mounts = useAppStore((state) =>
+    sessionId == null ? null : (state.sessionProjectMounts[sessionId] ?? null),
+  );
+  const projects = useAppStore((state) => state.projects);
+  const activeProjectId = session?.activeProjectId ?? mounts?.[0]?.projectId ?? null;
+  const targetFor = ({ projectId }: { readonly projectId: ProjectId | null }): RebaseTarget => {
+    const project = projects.find((candidate) => candidate.id === projectId) ?? null;
+    const mount = mounts?.find((candidate) => candidate.projectId === projectId) ?? null;
+    return {
+      projectId,
+      projectName: project?.name ?? mount?.mountName ?? null,
+      baseBranch: project?.baseBranch ?? 'main',
+      worktreePath: mount?.worktreePath ?? null,
+    };
+  };
+  const baseBranch = targetFor({ projectId: activeProjectId }).baseBranch;
   const rebaseAgentName = `Rebase on ${baseBranch}`;
   const rebaseProgressLabel = `Rebasing on ${baseBranch}`;
-  const rebasePrompt = [
-    `Rebase this session branch onto origin/${baseBranch}.`,
-    `- Fetch origin ${baseBranch} before rebasing.`,
-    `- Rebase the session branch onto origin/${baseBranch} and resolve conflicts by favoring the branch's intent.`,
-    "- Run the repository's typecheck to confirm nothing broke.",
-    '- Push the rebased branch with "$GOODBOY_BIN" query github push --force-with-lease; fall back to git push --force-with-lease only if the bridge is unavailable.',
-    '- Never merge and never touch other branches.',
-    '- If a conflict cannot be resolved confidently, stop and report the conflicting files.',
-  ].join('\n');
   const phaseRuns = useAppStore((state) =>
     sessionId == null ? null : (state.sessionPhaseRuns[sessionId] ?? null),
   );
@@ -66,6 +87,7 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
   const setActiveLens = useAppStore((state) => state.setActiveLens);
   const beginSessionCreation = useAppStore((state) => state.beginSessionCreation);
   const endSessionCreation = useAppStore((state) => state.endSessionCreation);
+  const recordSessionEvent = useAppStore((state) => state.recordSessionEvent);
   const { showToast } = useToast();
   const config = useMemo(
     () =>
@@ -145,29 +167,42 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
     showToast,
   ]);
 
-  const run = async (): Promise<void> => {
+  const run = async (params?: RunParams): Promise<void> => {
     if (!canRebase || isRunning || sessionId == null || config.provider === '') {
       return;
     }
+    const target = targetFor({ projectId: params?.projectId ?? activeProjectId });
     setError(null);
     setIsStarting(true);
     const creationId = beginSessionCreation(sessionId, {
       kind: 'branch',
-      label: rebaseProgressLabel,
+      label: `Rebasing on ${target.baseBranch}`,
     });
     try {
       const agentId = await spawnAgent(sessionId, {
-        name: rebaseAgentName,
-        initialPrompt: rebasePrompt,
+        name: `Rebase on ${target.baseBranch}`,
+        initialPrompt: rebasePromptFor({ baseBranch: target.baseBranch }),
         model: config.model,
         provider: config.provider,
         effort: config.effort,
         focus: 'none',
       });
       setPending({ agentId, creationId });
+      void recordSessionEvent({
+        sessionId,
+        kind: 'rebase_requested',
+        payload: {
+          ...(target.projectId == null ? {} : { projectId: target.projectId }),
+          ...(target.projectName == null ? {} : { projectName: target.projectName }),
+          ...(target.worktreePath == null ? {} : { worktreePath: target.worktreePath }),
+          ...(behindMain == null ? {} : { behind: behindMain }),
+          branch: target.baseBranch,
+          agentId,
+        },
+      });
       showToast(
         'info',
-        `An agent is rebasing this branch on ${baseBranch}. You can keep working.`,
+        `An agent is rebasing this branch on ${target.baseBranch}. You can keep working.`,
         {
           title: 'Rebase started',
           action: {
