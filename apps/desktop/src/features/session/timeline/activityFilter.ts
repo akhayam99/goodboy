@@ -2,6 +2,7 @@ import type { SessionEventKind } from '@goodboy/types';
 import type { TimelineTopLevelEntry } from './buildTimelineGroups';
 
 export const ACTIVITY_CATEGORIES = [
+  'suggestions',
   'worktree',
   'issues',
   'pullRequests',
@@ -31,6 +32,7 @@ export const ACTIVITY_SUBAGENT_PARENT: Record<ActivitySubagentToggle, ActivityCa
 export type ActivityFilter = Readonly<Record<ActivityToggle, boolean>>;
 
 export const ACTIVITY_CATEGORY_LABEL: Record<ActivityCategory, string> = {
+  suggestions: 'Suggestions',
   worktree: 'Worktree and branch',
   issues: 'Issues',
   pullRequests: 'Pull requests',
@@ -43,6 +45,7 @@ export const ACTIVITY_CATEGORY_LABEL: Record<ActivityCategory, string> = {
 };
 
 export const DEFAULT_ACTIVITY_FILTER: ActivityFilter = {
+  suggestions: true,
   worktree: true,
   issues: true,
   pullRequests: true,
@@ -76,6 +79,8 @@ const CATEGORY_BY_EVENT_KIND: Record<SessionEventKind, ActivityCategory> = {
   decisions_changed: 'decisions',
   project_materialized: 'worktree',
   project_materialization_refused: 'worktree',
+  project_materialization_proposed: 'worktree',
+  project_materialization_dismissed: 'worktree',
   project_detached: 'worktree',
   external_task_created: 'issues',
 };

@@ -135,6 +135,7 @@ import { m134SessionActiveProjects } from './m134-session-active-projects';
 import { m135SupersedeDiscardedWorkflowPlans } from './m135-supersede-discarded-workflow-plans';
 import { m136ProjectBaseBranch } from './m136-project-base-branch';
 import { m137NotificationCoalesceKey } from './m137-notification-coalesce-key';
+import { m138SessionEventMaterializationProposals } from './m138-session-event-materialization-proposals';
 
 export type Migration = {
   readonly version: number;
@@ -279,4 +280,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 135, sql: m135SupersedeDiscardedWorkflowPlans },
   { version: 136, sql: m136ProjectBaseBranch },
   { version: 137, sql: m137NotificationCoalesceKey },
+  { version: 138, sql: m138SessionEventMaterializationProposals },
 ];

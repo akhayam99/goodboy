@@ -27,7 +27,10 @@ import { dayLabel } from '../../../../timeline/dayLabel';
 import { layoutTimelineRail } from '../../../../timeline/railGeometry';
 import { useActivityFilter } from '../../../../hooks/useActivityFilter';
 import { useTimelineOpen } from '../../../../hooks/useTimelineOpen';
+import { useSessionSuggestions } from '../../../../../suggestions';
+import { useSuggestionActions } from '../../../../../suggestions/useSuggestionActions';
 import { ActivityFilterButton } from './ActivityFilterButton';
+import { TimelineSuggestionRow } from './TimelineSuggestionRow';
 import { TimelineDayRule } from './TimelineDayRule';
 import { TimelineNowRule } from './TimelineNowRule';
 import { TimelinePendingCluster } from './TimelinePendingCluster';
@@ -64,6 +67,12 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
   const openTargetFor = useTimelineOpen({ sessionId });
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const activity = useActivityFilter();
+  const suggestions = useSessionSuggestions({ session, agents });
+  const suggestionActions = useSuggestionActions({
+    session,
+    agents,
+    onSelectQuestions: () => setActiveLens(sessionId, 'questions'),
+  });
   const diffStats = useMountDiffStats(sessionId);
   const { showToast } = useToast();
   const { copied, failed, copy } = useCopyLink();
@@ -296,6 +305,9 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
   };
 
   const hasUnreadAgents = unreadAgentIds.size > 0;
+  const visibleSuggestions = activity.filter.suggestions
+    ? suggestions.filter((suggestion) => suggestion.kind !== 'plan-ready')
+    : [];
 
   if (model.entries.length === 0 && kickoff != null && areEventsLoaded) {
     return <>{kickoff}</>;
@@ -328,6 +340,14 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
         </p>
       ) : (
         <div className="flex flex-col">
+          {visibleSuggestions.map((suggestion) => (
+            <TimelineSuggestionRow
+              key={suggestion.id}
+              suggestion={suggestion}
+              railWidth={rail.width}
+              actions={suggestionActions({ suggestion })}
+            />
+          ))}
           {stream.items.map((item, index) => {
             const railRow = rail.rows[index];
             if (railRow === undefined) {

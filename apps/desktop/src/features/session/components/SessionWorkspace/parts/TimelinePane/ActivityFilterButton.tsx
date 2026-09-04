@@ -13,6 +13,7 @@ import {
 } from '../../../../timeline/activityFilter';
 
 const ACTIVITY_CATEGORY_CONCEPT = {
+  suggestions: 'suggestion',
   worktree: 'branch',
   issues: 'issues',
   pullRequests: 'pr',

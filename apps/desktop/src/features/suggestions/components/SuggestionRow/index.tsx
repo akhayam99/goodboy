@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import {
   CircleHelp,
+  FolderGit2,
   GitPullRequestArrow,
   ListChecks,
   MessageSquareReply,
@@ -26,6 +27,7 @@ const ICONS = {
   'resolve-threads': MessageSquareReply,
   'rebase-project': GitPullRequestArrow,
   'answer-questions': CircleHelp,
+  'mount-project': FolderGit2,
 } satisfies Record<SessionSuggestion['kind'], typeof Play>;
 
 export const SuggestionRow = ({

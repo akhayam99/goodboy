@@ -1,6 +1,14 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, PlanId, Session, SessionProjectMount } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  PlanId,
+  ProjectId,
+  Session,
+  SessionEvent,
+  SessionProjectMount,
+} from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions, useSessionPlans } from '../../../store';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { workflowHasOpenQuestions } from '../../context/openQuestionsGate';
@@ -11,12 +19,45 @@ import { useWorkflowAdvanceStates } from '../../workflows/useWorkflowAdvanceStat
 import { useResolverIndex } from '../../session/hooks/useResolverIndex';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { resolverForComment } from '../../session/resolver-linkage';
-import { deriveSessionSuggestions } from '../deriveSessionSuggestions';
+import {
+  deriveSessionSuggestions,
+  type SuggestionMountEvent,
+  type SuggestionMountEventKind,
+} from '../deriveSessionSuggestions';
 
 type Params = {
   readonly session: Session;
   readonly agents?: ReadonlyArray<Agent>;
 };
+
+const MOUNT_EVENT_KIND: Readonly<Record<string, SuggestionMountEventKind>> = {
+  project_materialization_proposed: 'proposed',
+  project_materialized: 'mounted',
+  project_materialization_dismissed: 'dismissed',
+};
+
+const toMountEvents = ({
+  events,
+}: {
+  readonly events: ReadonlyArray<SessionEvent>;
+}): ReadonlyArray<SuggestionMountEvent> =>
+  events.flatMap((event) => {
+    const kind = MOUNT_EVENT_KIND[event.kind];
+    const projectId = event.payload?.projectId;
+    if (kind === undefined || projectId == null) {
+      return [];
+    }
+    return [
+      {
+        eventId: event.id,
+        kind,
+        projectId: projectId as ProjectId,
+        projectName: event.payload?.projectName ?? projectId,
+        reason: event.payload?.reason ?? 'an agent asked for write access',
+        agentId: (event.payload?.agentId as AgentId | undefined) ?? null,
+      },
+    ];
+  });
 
 export const useSessionSuggestions = ({ session, agents }: Params) => {
   const sessionId = session.id;
@@ -51,6 +92,9 @@ export const useSessionSuggestions = ({ session, agents }: Params) => {
     useShallow((state) =>
       state.projects.filter((project) => mounts.some((mount) => mount.projectId === project.id)),
     ),
+  );
+  const events = useAppStore(
+    (state) => state.sessionEvents?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<SessionEvent>),
   );
   const resolverIndex = useResolverIndex(sessionId);
   const targets = useMemo(
@@ -131,6 +175,7 @@ export const useSessionSuggestions = ({ session, agents }: Params) => {
           resolverStatus: resolver?.status ?? null,
         };
       }),
+      mountEvents: toMountEvents({ events }),
       projects: mounts.map((mount) => {
         const project = projects.find((candidate) => candidate.id === mount.projectId) ?? null;
         const status = worktreeStatuses.get(mount.worktreePath) ?? null;
@@ -149,6 +194,7 @@ export const useSessionSuggestions = ({ session, agents }: Params) => {
     agentsByRunId,
     attachedRuns,
     effectiveAgents,
+    events,
     github,
     mounts,
     openQuestions,

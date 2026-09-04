@@ -46,6 +46,8 @@ const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
   decisions_changed: 'muted',
   project_materialized: 'plain',
   project_materialization_refused: 'muted',
+  project_materialization_proposed: 'plain',
+  project_materialization_dismissed: 'muted',
   project_detached: 'muted',
   external_task_created: 'plain',
 };
@@ -74,6 +76,8 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   decisions_changed: { icon: CONCEPT_ICONS.context, tone: CONCEPT_TONE.context, label: 'Context' },
   project_materialized: { icon: FolderGit2, tone: 'info', label: 'Project' },
   project_materialization_refused: { icon: FolderGit2, tone: 'warning', label: 'Project' },
+  project_materialization_proposed: { icon: FolderGit2, tone: 'info', label: 'Project' },
+  project_materialization_dismissed: { icon: FolderMinus, tone: 'neutral', label: 'Project' },
   project_detached: { icon: FolderMinus, tone: 'neutral', label: 'Project' },
   external_task_created: { icon: Link2, tone: 'neutral', label: 'Issue' },
 };
@@ -211,6 +215,21 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
         { kind: 'text', text: `: ${reason}` },
       ];
     }
+    case 'project_materialization_proposed':
+      return payload?.projectName == null
+        ? [{ kind: 'text', text: 'Asked to mount a project' }]
+        : [
+            { kind: 'text', text: 'Asked to mount ' },
+            { kind: 'value', text: payload.projectName, variant: 'project' },
+          ];
+    case 'project_materialization_dismissed':
+      return payload?.projectName == null
+        ? [{ kind: 'text', text: 'Mount declined' }]
+        : [
+            { kind: 'text', text: 'Mount of ' },
+            { kind: 'value', text: payload.projectName, variant: 'project' },
+            { kind: 'text', text: ' declined' },
+          ];
     case 'project_detached':
       return payload?.projectName == null
         ? [{ kind: 'text', text: 'Detached a project' }]

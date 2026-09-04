@@ -563,6 +563,35 @@ type CaptureMaterializeParams = {
   readonly assistantText: string;
 };
 
+const IMMEDIATE_MATERIALIZE_CAP = 2;
+
+type GoalNamesProjectParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly sessionTitle: string;
+  readonly projectName: string;
+};
+
+const goalNamesProject = ({
+  get,
+  sessionId,
+  sessionTitle,
+  projectName,
+}: GoalNamesProjectParams): boolean => {
+  const needle = projectName.toLowerCase();
+  if (needle === '') {
+    return false;
+  }
+  const goalSlot = (get().sessionSlots[sessionId] ?? []).find((slot) => slot.key === 'goal');
+  const tasks = get().sessionExternalTasks[sessionId] ?? [];
+  const haystacks = [
+    sessionTitle,
+    goalSlot?.value ?? '',
+    ...tasks.flatMap((task) => [task.title, task.identifier]),
+  ];
+  return haystacks.some((text) => text.toLowerCase().includes(needle));
+};
+
 export const captureMaterializeRequestsFromTurn = async ({
   get,
   sessionId,
@@ -587,6 +616,7 @@ export const captureMaterializeRequestsFromTurn = async ({
       at: new Date().toISOString() as IsoDateTime,
     });
   };
+  let immediateCount = 0;
   for (const request of requests) {
     const project = projects.find(
       (candidate) => candidate.name.toLowerCase() === request.projectName.toLowerCase(),
@@ -605,6 +635,35 @@ export const captureMaterializeRequestsFromTurn = async ({
         `materialize refused: no project named "${request.projectName}" in this workspace.${known.length > 0 ? ` Known projects: ${known}.` : ''}`,
       );
       continue;
+    }
+    const mounts = get().sessionProjectMounts[sessionId] ?? [];
+    const isMounted = mounts.some((mount) => mount.projectId === project.id);
+    const isNamedByGoal = goalNamesProject({
+      get,
+      sessionId,
+      sessionTitle: session.goal,
+      projectName: project.name,
+    });
+    const isAllowedNow =
+      (mounts.length === 0 || isNamedByGoal) && immediateCount < IMMEDIATE_MATERIALIZE_CAP;
+    if (!isMounted && !isAllowedNow) {
+      await get().recordSessionEvent({
+        sessionId,
+        kind: 'project_materialization_proposed',
+        payload: {
+          projectId: project.id,
+          projectName: project.name,
+          reason: request.reason,
+          agentId,
+        },
+      });
+      note(
+        `materialize deferred: mounting ${project.name} needs the owner's approval (reason recorded). Continue with the mounted projects or end your turn.`,
+      );
+      continue;
+    }
+    if (!isMounted) {
+      immediateCount += 1;
     }
     try {
       await get().materializeProject({

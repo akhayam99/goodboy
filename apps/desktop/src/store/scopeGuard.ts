@@ -18,7 +18,7 @@ const projectLine = ({ project, mounts }: ProjectLineParams): string => {
   const mount = mounts.find((candidate) => candidate.projectId === project.id);
   const identity = `- ${project.name} (${project.kind}) root: ${project.rootPath}`;
   if (mount === undefined) {
-    return `${identity} | NOT materialized: read-only until you materialize it`;
+    return `${identity} | NOT materialized: read it freely, mount it only to write`;
   }
   const branch = mount.branch === '' ? 'no branch' : `branch ${mount.branch}`;
   return `${identity} | materialized at ${mount.worktreePath} (${branch})`;
@@ -28,9 +28,15 @@ type MaterializeLineParams = {
   readonly isBridgeServing: boolean;
 };
 
+const MOUNT_RULE_LINES: ReadonlyArray<string> = [
+  'Reading any project root listed above is free and needs no mount. NEVER materialize a project to read it, to run its tests, or because it looks related to the goal.',
+  'Materialize ONLY a project whose files you must edit to finish this goal. Most goals need exactly one project, and when the goal names a project that project is the one.',
+  'A mount the goal does not name waits for the owner to approve it, so ask for one only when you are about to write.',
+];
+
 const materializeLine = ({ isBridgeServing }: MaterializeLineParams): string => {
   const marker =
-    'Based on the goal, identify and materialize every relevant project before writing. To materialize a project marked NOT materialized, emit on its own line: <<materialize: <project name> | <why you need it>>> and the mount is ready from your next turn.';
+    'To materialize the project you must write to, emit on its own line: <<materialize: <project name> | <why you need it>>> and the mount is ready from your next turn.';
   if (!isBridgeServing) {
     return `${marker} After emitting the marker, end your turn. The mount is ready on the next one.`;
   }
@@ -137,7 +143,7 @@ export const buildScopeGuard = ({
           ...projects.map((project) => projectLine({ project, mounts })),
           'You may READ the project root paths listed above.',
           WRITE_BOUNDARY_LINE,
-          ...(canWrite ? [materializeLine({ isBridgeServing })] : []),
+          ...(canWrite ? [...MOUNT_RULE_LINES, materializeLine({ isBridgeServing })] : []),
         ]
       : [...mountedLines, ...strictBoundaryLines({ tag })];
   return [

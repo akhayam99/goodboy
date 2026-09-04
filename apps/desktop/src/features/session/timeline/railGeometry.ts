@@ -4,7 +4,7 @@ const RAIL_EDGE_PAD = 8;
 const RAIL_CURVE_K = 0.5523;
 const RAIL_CURVE_HANDLE = 8.84;
 
-type RailDash = 'solid' | 'dashed';
+type RailDash = 'solid' | 'dashed' | 'future';
 
 export type RailGroupShape = 'open' | 'merged';
 
@@ -85,6 +85,29 @@ type Interval = {
 
 export const railColumnX = ({ column }: { readonly column: number }): number =>
   RAIL_SPINE_X + column * RAIL_LANE_OFFSET;
+
+type FutureRowParams = {
+  readonly id: string;
+  readonly height: number;
+};
+
+export const futureRailRow = ({ id, height }: FutureRowParams): RailRow => ({
+  id,
+  height,
+  segments: [
+    {
+      column: 0,
+      identityIndex: null,
+      isMuted: false,
+      dash: 'future',
+      fromY: 0,
+      toY: height,
+    },
+  ],
+  joins: [],
+  markerColumn: 0,
+  markerY: height / 2,
+});
 
 const anchorOf = ({ row }: { readonly row: RailRowInput }): number =>
   row.markerY ?? (row.topY + row.height) / 2;

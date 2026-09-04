@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   RAIL_LANE_OFFSET,
   RAIL_SPINE_X,
+  futureRailRow,
   layoutTimelineRail,
   railColumnX,
   type RailGroupInput,
@@ -689,5 +690,18 @@ describe('junction integrity', () => {
         }
       }
     }
+  });
+});
+
+describe('futureRailRow', () => {
+  it('draws one future spine segment on the same column as the stream rows', () => {
+    const rail = futureRailRow({ id: 'suggestion-1', height: 32 });
+
+    expect(rail.segments).toEqual([
+      { column: 0, identityIndex: null, isMuted: false, dash: 'future', fromY: 0, toY: 32 },
+    ]);
+    expect(rail.joins).toEqual([]);
+    expect(railColumnX({ column: rail.markerColumn })).toBe(RAIL_SPINE_X);
+    expect(rail.markerY).toBe(16);
   });
 });

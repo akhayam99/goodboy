@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import {
-  EMPTY_ARRAY,
   useAppStore,
   useSessionLoading,
   useSessionSlots,
@@ -19,7 +18,6 @@ import { OverviewActions } from './OverviewActions';
 import { InspectorSplit } from '../SessionWorkspace/parts/InspectorSplit';
 import { SlotHistoryPanel } from '../SessionWorkspace/parts/SlotHistoryPanel';
 import { GoalOverviewRegion } from './GoalOverviewRegion';
-import { OverviewSuggestions } from './OverviewSuggestions';
 
 type Props = {
   readonly session: Session;
@@ -39,7 +37,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const goalSlot = slots.find((slot) => slot.key === 'goal');
   const sessionList = useMemo(() => [session], [session]);
   const runs = useWorkspaceRuns(session.workspaceId, sessionList);
-  const sessionAgents = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
 
   const openWorkflowBuilder = () => {
     window.dispatchEvent(
@@ -88,11 +85,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         animationClassName="animate-fade-in"
       >
         <div className="flex flex-col gap-6">
-          <OverviewSuggestions
-            session={session}
-            agents={sessionAgents}
-            onSelectQuestions={() => onSelectLens('questions')}
-          />
           <TimelinePane
             session={session}
             runs={runs}

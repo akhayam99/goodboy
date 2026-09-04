@@ -1,9 +1,39 @@
 import { describe, expect, it } from 'vitest';
-import type { PlanId, ProjectId, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
-import { deriveSessionSuggestions } from './deriveSessionSuggestions';
+import type {
+  AgentId,
+  PlanId,
+  ProjectId,
+  SessionEventId,
+  SessionId,
+  StepId,
+  WorkflowRunId,
+} from '@goodboy/types';
+import {
+  deriveSessionSuggestions,
+  type SuggestionMountEvent,
+  type SuggestionMountEventKind,
+} from './deriveSessionSuggestions';
 
 const sessionId = 'session-1' as SessionId;
 const planId = 'plan-1' as PlanId;
+const webId = 'project-web' as ProjectId;
+
+const mountEvent = ({
+  id,
+  kind,
+  projectId = webId,
+}: {
+  readonly id: string;
+  readonly kind: SuggestionMountEventKind;
+  readonly projectId?: ProjectId;
+}): SuggestionMountEvent => ({
+  eventId: id as SessionEventId,
+  kind,
+  projectId,
+  projectName: 'web',
+  reason: 'needs the router',
+  agentId: 'agent-1' as AgentId,
+});
 
 const derive = ({
   openQuestionCount = 0,
@@ -13,6 +43,7 @@ const derive = ({
   hasPullRequest = false,
   threads = [],
   mainDistance = null,
+  mountEvents = [],
 }: {
   openQuestionCount?: number;
   isRunning?: boolean;
@@ -26,6 +57,7 @@ const derive = ({
     readonly resolverStatus: string | null;
   }>;
   mainDistance?: number | null;
+  mountEvents?: ReadonlyArray<SuggestionMountEvent>;
 }) =>
   deriveSessionSuggestions({
     sessionId,
@@ -42,6 +74,7 @@ const derive = ({
     openQuestionCount,
     hasPullRequest,
     threads,
+    mountEvents,
     projects: [
       {
         projectId: 'project-1' as ProjectId,
@@ -67,9 +100,11 @@ describe('deriveSessionSuggestions', () => {
         },
       ],
       mainDistance: 3,
+      mountEvents: [mountEvent({ id: 'event-1', kind: 'proposed' })],
     });
     expect(suggestions.map((suggestion) => suggestion.kind)).toEqual([
       'answer-questions',
+      'mount-project',
       'workflow-next-step',
       'plan-ready',
       'resolve-threads',
@@ -114,6 +149,59 @@ describe('deriveSessionSuggestions', () => {
     ).toEqual({ eligibleThreadCount: 1 });
   });
 
+  it('carries the proposal payload the timeline row acts on', () => {
+    const suggestion = derive({
+      mountEvents: [mountEvent({ id: 'event-1', kind: 'proposed' })],
+    }).find((candidate) => candidate.kind === 'mount-project');
+
+    expect(suggestion?.title).toBe('Mount web');
+    expect(suggestion?.detail).toBe('needs the router');
+    expect(suggestion?.payload).toEqual({
+      projectId: webId,
+      projectName: 'web',
+      reason: 'needs the router',
+      agentId: 'agent-1',
+      eventId: 'event-1',
+    });
+  });
+
+  it('clears a proposal once the project is mounted or the proposal is dismissed', () => {
+    const mounted = derive({
+      mountEvents: [
+        mountEvent({ id: 'event-1', kind: 'proposed' }),
+        mountEvent({ id: 'event-2', kind: 'mounted' }),
+      ],
+    });
+    const dismissed = derive({
+      mountEvents: [
+        mountEvent({ id: 'event-1', kind: 'proposed' }),
+        mountEvent({ id: 'event-2', kind: 'dismissed' }),
+      ],
+    });
+    const reproposed = derive({
+      mountEvents: [
+        mountEvent({ id: 'event-1', kind: 'proposed' }),
+        mountEvent({ id: 'event-2', kind: 'dismissed' }),
+        mountEvent({ id: 'event-3', kind: 'proposed' }),
+      ],
+    });
+
+    expect(mounted.some((suggestion) => suggestion.kind === 'mount-project')).toBe(false);
+    expect(dismissed.some((suggestion) => suggestion.kind === 'mount-project')).toBe(false);
+    expect(reproposed.some((suggestion) => suggestion.kind === 'mount-project')).toBe(true);
+  });
+
+  it('keeps a proposal a settled event for another project never touched', () => {
+    const suggestions = derive({
+      mountEvents: [
+        mountEvent({ id: 'event-1', kind: 'proposed' }),
+        mountEvent({ id: 'event-2', kind: 'mounted', projectId: 'project-docs' as ProjectId }),
+      ],
+    });
+
+    expect(suggestions.filter((suggestion) => suggestion.kind === 'mount-project')).toHaveLength(1);
+  });
+
   it('orders equal-priority suggestions by id', () => {
     const suggestions = deriveSessionSuggestions({
       sessionId,
@@ -123,6 +211,7 @@ describe('deriveSessionSuggestions', () => {
       openQuestionCount: 0,
       hasPullRequest: false,
       threads: [],
+      mountEvents: [],
       projects: [
         {
           projectId: 'project-z' as ProjectId,

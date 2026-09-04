@@ -71,8 +71,20 @@ describe('buildScopeGuard', () => {
     expect(guard).toContain(
       '- app (repo) root: /tmp/app | materialized at /tmp/app/.goodboy/worktrees/goal',
     );
-    expect(guard).toContain('- web (repo) root: /tmp/web | NOT materialized');
+    expect(guard).toContain(
+      '- web (repo) root: /tmp/web | NOT materialized: read it freely, mount it only to write',
+    );
     expect(guard).toContain('You may READ the project root paths listed above.');
+    expect(guard).toContain(
+      'Reading any project root listed above is free and needs no mount. NEVER materialize a project to read it, to run its tests, or because it looks related to the goal.',
+    );
+    expect(guard).toContain(
+      'Materialize ONLY a project whose files you must edit to finish this goal. Most goals need exactly one project, and when the goal names a project that project is the one.',
+    );
+    expect(guard).toContain(
+      'A mount the goal does not name waits for the owner to approve it, so ask for one only when you are about to write.',
+    );
+    expect(guard).not.toContain('materialize every relevant project');
     expect(guard).toContain('<<materialize: <project name> | <why you need it>>>');
     expect(guard).toContain(
       'After emitting the marker, end your turn. The mount is ready on the next one.',
@@ -107,6 +119,7 @@ describe('buildScopeGuard', () => {
     expect(guard).toContain('NOT materialized');
     expect(guard).not.toContain('<<materialize:');
     expect(guard).not.toContain('GOODBOY_BIN');
+    expect(guard).not.toContain('Reading any project root listed above is free');
   });
 
   it('keeps the mount inventory but drops the teaching once every project is mounted', () => {
@@ -157,7 +170,7 @@ describe('buildScopeGuard', () => {
     expect(guard).toContain('- app (repo) root: /tmp/app | NOT materialized');
     expect(guard).toContain('- web (repo) root: /tmp/web | NOT materialized');
     expect(guard).toContain(
-      'Based on the goal, identify and materialize every relevant project before writing.',
+      'Materialize ONLY a project whose files you must edit to finish this goal.',
     );
     expect(guard).toContain('You may READ the project root paths listed above.');
     expect(guard).toContain(

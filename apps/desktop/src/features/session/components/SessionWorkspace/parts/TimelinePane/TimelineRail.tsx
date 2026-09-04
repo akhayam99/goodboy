@@ -10,6 +10,17 @@ type Props = {
 const LANE_WIDTH = 2;
 const SPINE_WIDTH = 1;
 const DASH_PATTERN = '3 3';
+const FUTURE_PATTERN = '2 4';
+
+const dashArrayOf = ({ dash }: { readonly dash: RailSegment['dash'] }): string | undefined => {
+  if (dash === 'dashed') {
+    return DASH_PATTERN;
+  }
+  if (dash === 'future') {
+    return FUTURE_PATTERN;
+  }
+  return undefined;
+};
 
 const strokeOf = ({ identityIndex }: { readonly identityIndex: number | null }): string =>
   identityIndex == null ? 'var(--color-border)' : runIdentityStroke({ index: identityIndex });
@@ -38,7 +49,7 @@ export const TimelineRail = ({ rail, width }: Props) => (
         y2={segment.toY}
         stroke={strokeOf({ identityIndex: segment.identityIndex })}
         strokeWidth={segment.identityIndex == null ? SPINE_WIDTH : LANE_WIDTH}
-        strokeDasharray={segment.dash === 'dashed' ? DASH_PATTERN : undefined}
+        strokeDasharray={dashArrayOf({ dash: segment.dash })}
         strokeLinecap="butt"
         shapeRendering="crispEdges"
       />
@@ -51,7 +62,7 @@ export const TimelineRail = ({ rail, width }: Props) => (
         fill="none"
         stroke={strokeOf({ identityIndex: join.identityIndex })}
         strokeWidth={join.identityIndex == null ? SPINE_WIDTH : LANE_WIDTH}
-        strokeDasharray={join.dash === 'dashed' ? DASH_PATTERN : undefined}
+        strokeDasharray={dashArrayOf({ dash: join.dash })}
         strokeLinecap="butt"
         strokeLinejoin="round"
       />
