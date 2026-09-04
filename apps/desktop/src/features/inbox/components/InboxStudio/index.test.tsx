@@ -390,6 +390,16 @@ describe('InboxStudio', () => {
     expect(screen.getByTestId('detail').textContent).toBe('GBY-2');
   });
 
+  it('reselects the first scoped record when the seeded selection falls outside the session scope', () => {
+    h.records = [linkedSentryError, sentryError, linearIssue, githubIssue];
+
+    renderStudio({ initialSessionId: LINKED_SESSION_ID, initialRecordKey: sentryError.key });
+
+    expect(screen.getByText('Session: Fix the crash')).toBeDefined();
+    expect(screen.getByTestId('detail').textContent).toBe('GBY-2');
+    expect(screen.getByText('RangeError boom')).toBeDefined();
+  });
+
   it('drops the session scope when the chip is dismissed', () => {
     h.records = [linkedSentryError, sentryError, linearIssue, githubIssue];
 

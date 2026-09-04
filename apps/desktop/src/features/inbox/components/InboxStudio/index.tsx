@@ -123,15 +123,13 @@ export const InboxStudio = ({
   );
 
   useEffect(() => {
-    if (selectedKey != null) {
+    const isSelectedInScope = scopedRecords.some((record) => record.key === selectedKey);
+    if (selectedKey != null && isSelectedInScope) {
       return;
     }
     const firstVisibleRecord = visibleRecords[0];
-    if (firstVisibleRecord == null) {
-      return;
-    }
-    setSelectedKey(firstVisibleRecord.key);
-  }, [visibleRecords, selectedKey]);
+    setSelectedKey(firstVisibleRecord == null ? null : firstVisibleRecord.key);
+  }, [scopedRecords, visibleRecords, selectedKey]);
 
   const selectedRecord = useMemo(
     () => scopedRecords.find((record) => record.key === selectedKey) ?? null,
