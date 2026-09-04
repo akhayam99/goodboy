@@ -155,7 +155,7 @@ describe('WorkflowStepGraph', () => {
     expect(railSvgOf(implement.id).querySelectorAll('path')).toHaveLength(0);
   });
 
-  it('runs the rail solid through the work already started and dashes what is still to come', () => {
+  it('runs the rail solid once every step has started', () => {
     renderGraph(new Map());
 
     const started = [...railSvgOf(scout.id).querySelectorAll('line')].map((line) =>

@@ -32,7 +32,7 @@ export const WorkflowStepGraphNode = ({
   isSelected,
   onSelect,
 }: Props) => (
-  <div className="flex min-w-0 flex-1 items-center gap-1.5 pl-1">
+  <div className="flex min-w-0 flex-1 items-center gap-1.5">
     <button
       type="button"
       onClick={onSelect}

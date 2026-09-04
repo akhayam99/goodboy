@@ -49,7 +49,7 @@ export const WorkflowStepGraphRow = ({
   const executed = useExecutedAgentRouting({ agent: run });
 
   return (
-    <div className="flex min-w-0" style={{ height: STEP_ROW_HEIGHT }}>
+    <div className="flex min-w-0 gap-1" style={{ height: STEP_ROW_HEIGHT }}>
       <span
         className="relative shrink-0"
         style={{ width: railWidth }}
