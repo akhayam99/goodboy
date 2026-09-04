@@ -1,3 +1,4 @@
+import './Providers.css';
 import { BrandMark, type BrandId } from '../components/BrandIcons';
 import { delay } from '../components/Reveal';
 import { SITE } from '../site';
@@ -14,22 +15,18 @@ const CHIPS: readonly Chip[] = [
   { brand: 'cursor', name: 'Cursor', plan: 'Cursor Pro' },
   { brand: 'gemini', name: 'Gemini', plan: 'Antigravity, from Google' },
   { brand: 'opencode', name: 'OpenCode', plan: 'free models, no key needed' },
-  { brand: 'openrouter', name: 'OpenRouter', plan: 'one key, many models' },
-  { brand: 'moonshot', name: 'Moonshot', plan: 'Kimi, on your own key' },
+  { brand: 'openrouter', name: 'OpenRouter', plan: 'many models, one place' },
+  { brand: 'moonshot', name: 'Moonshot', plan: 'Kimi, from Moonshot' },
 ];
 
 export const Providers = () => (
   <section id="providers" aria-label="Providers">
     <p className="beltEyebrow rv">Runs on the plans you already pay for</p>
-    <p className="vh">
-      Claude on Claude Max or Pro, Codex on ChatGPT Plus or Pro, Cursor on Cursor Pro, Gemini
-      through Antigravity, OpenCode with free models and no key, OpenRouter and Moonshot on a key
-      you keep in your system keychain.
-    </p>
+    <p className="vh">Claude, Codex, Cursor, Gemini, OpenCode, OpenRouter and Moonshot.</p>
     <div className="belt rv" style={delay(80)} aria-hidden="true">
       <div className="beltTrack">
-        {[...CHIPS, ...CHIPS].map((chip, i) => (
-          <div className="bchip" key={`${chip.brand}-${i}`}>
+        {CHIPS.map((chip) => (
+          <div className="bchip" key={chip.brand}>
             <BrandMark brand={chip.brand} size={20} />
             <span>
               <span className="bname">{chip.name}</span>
@@ -38,11 +35,22 @@ export const Providers = () => (
             </span>
           </div>
         ))}
+        <div className="pv-loop">
+          {CHIPS.map((chip) => (
+            <div className="bchip" key={chip.brand}>
+              <BrandMark brand={chip.brand} size={20} />
+              <span>
+                <span className="bname">{chip.name}</span>
+                <br />
+                <span className="bplan">{chip.plan}</span>
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
     <p className="beltMore rv" style={delay(140)}>
-      Seven providers, one session. Goodboy runs each one&rsquo;s official command-line tool, the
-      same one you would type into a terminal, so your logins stay where they already are.{' '}
+      Seven providers, one session. Your logins stay where they already are.{' '}
       <a href={SITE.providersDoc}>Set up a provider →</a>
     </p>
   </section>

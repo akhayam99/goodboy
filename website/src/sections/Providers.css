@@ -1,0 +1,9 @@
+.pv-loop {
+  display: contents;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pv-loop {
+    display: none;
+  }
+}
