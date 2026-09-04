@@ -68,11 +68,18 @@ fn migration_snapshot_prefix(path: &std::path::Path) -> String {
 }
 
 #[tauri::command]
-pub fn db_list_migration_snapshots(state: State<'_, Db>) -> Result<Vec<String>, DbError> {
-    let Some(parent) = state.1.parent() else {
+pub async fn db_list_migration_snapshots(state: State<'_, Db>) -> Result<Vec<String>, DbError> {
+    let db_path = state.1.clone();
+    tauri::async_runtime::spawn_blocking(move || db_list_migration_snapshots_blocking(db_path))
+        .await
+        .map_err(|e| DbError::MigrationSnapshotFilesystem(e.to_string()))?
+}
+
+fn db_list_migration_snapshots_blocking(db_path: PathBuf) -> Result<Vec<String>, DbError> {
+    let Some(parent) = db_path.parent() else {
         return Ok(Vec::new());
     };
-    let prefix = migration_snapshot_prefix(&state.1);
+    let prefix = migration_snapshot_prefix(&db_path);
     let mut snapshots = Vec::new();
     let entries = std::fs::read_dir(parent)
         .map_err(|error| DbError::MigrationSnapshotFilesystem(error.to_string()))?;
@@ -89,15 +96,27 @@ pub fn db_list_migration_snapshots(state: State<'_, Db>) -> Result<Vec<String>, 
 }
 
 #[tauri::command]
-pub fn db_remove_migration_snapshot(state: State<'_, Db>, path: String) -> Result<(), DbError> {
+pub async fn db_remove_migration_snapshot(
+    state: State<'_, Db>,
+    path: String,
+) -> Result<(), DbError> {
+    let db_path = state.1.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        db_remove_migration_snapshot_blocking(db_path, path)
+    })
+    .await
+    .map_err(|e| DbError::MigrationSnapshotFilesystem(e.to_string()))?
+}
+
+fn db_remove_migration_snapshot_blocking(db_path: PathBuf, path: String) -> Result<(), DbError> {
     let snapshot_path = PathBuf::from(path);
     let name = snapshot_path
         .file_name()
         .unwrap_or_default()
         .to_string_lossy();
-    let is_same_parent = snapshot_path.parent() == state.1.parent();
+    let is_same_parent = snapshot_path.parent() == db_path.parent();
     let is_snapshot =
-        name.starts_with(&migration_snapshot_prefix(&state.1)) && name.ends_with(".bak");
+        name.starts_with(&migration_snapshot_prefix(&db_path)) && name.ends_with(".bak");
     if !is_same_parent || !is_snapshot {
         return Err(DbError::InvalidSnapshotPath);
     }

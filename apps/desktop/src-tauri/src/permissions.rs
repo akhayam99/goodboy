@@ -145,7 +145,7 @@ impl From<DbError> for PermissionError {
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn permission_rule_list(
+pub async fn permission_rule_list(
     state: State<'_, Db>,
     scope: String,
     workspace_id: Option<String>,
@@ -205,7 +205,7 @@ pub fn permission_rule_list(
 }
 
 #[tauri::command]
-pub fn permission_rule_upsert(
+pub async fn permission_rule_upsert(
     state: State<'_, Db>,
     input: PermissionRuleUpsertInput,
 ) -> Result<PermissionRuleRow, PermissionError> {
@@ -306,7 +306,7 @@ pub fn permission_rule_upsert(
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn permission_audit_insert(
+pub async fn permission_audit_insert(
     state: State<'_, Db>,
     input: PermissionAuditInsertInput,
 ) -> Result<PermissionAuditRow, PermissionError> {
@@ -374,7 +374,7 @@ pub struct AuditRetryEnqueueInput {
 }
 
 #[tauri::command]
-pub fn permission_audit_retry_enqueue(
+pub async fn permission_audit_retry_enqueue(
     state: State<'_, Db>,
     input: AuditRetryEnqueueInput,
 ) -> Result<(), PermissionError> {
@@ -394,7 +394,7 @@ pub fn permission_audit_retry_enqueue(
 }
 
 #[tauri::command]
-pub fn permission_audit_retry_drain(
+pub async fn permission_audit_retry_drain(
     state: State<'_, Db>,
     limit: i64,
 ) -> Result<Vec<AuditRetryRow>, PermissionError> {
@@ -420,7 +420,7 @@ pub fn permission_audit_retry_drain(
 }
 
 #[tauri::command]
-pub fn permission_audit_retry_update(
+pub async fn permission_audit_retry_update(
     state: State<'_, Db>,
     id: String,
     attempts: i64,
@@ -440,7 +440,7 @@ pub fn permission_audit_retry_update(
 }
 
 #[tauri::command]
-pub fn permission_audit_retry_delete(
+pub async fn permission_audit_retry_delete(
     state: State<'_, Db>,
     id: String,
 ) -> Result<(), PermissionError> {

@@ -48,7 +48,7 @@ fn which_binary(binary: &str) -> Option<()> {
     }
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn detect_editors() -> Vec<DetectedEditor> {
     DETECTED_EDITORS.get_or_init(detect_editors_inner).clone()
 }
@@ -63,6 +63,8 @@ pub enum EditorError {
         #[source]
         source: std::io::Error,
     },
+    #[error("io error: {0}")]
+    Io(#[from] std::io::Error),
 }
 
 impl serde::Serialize for EditorError {
@@ -72,7 +74,13 @@ impl serde::Serialize for EditorError {
 }
 
 #[tauri::command]
-pub fn open_in_editor(path: String, editor: Option<String>) -> Result<(), EditorError> {
+pub async fn open_in_editor(path: String, editor: Option<String>) -> Result<(), EditorError> {
+    tauri::async_runtime::spawn_blocking(move || open_in_editor_blocking(path, editor))
+        .await
+        .map_err(|e| EditorError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn open_in_editor_blocking(path: String, editor: Option<String>) -> Result<(), EditorError> {
     let binary = editor.unwrap_or_else(|| DEFAULT_EDITOR.to_string());
 
     // Resolve to absolute canonical path so editors load it as a workspace folder
@@ -103,7 +111,19 @@ pub fn open_in_editor(path: String, editor: Option<String>) -> Result<(), Editor
 /// avoiding the "new standalone window per file" behavior of `open_in_editor`,
 /// which forces `--new-window`.
 #[tauri::command]
-pub fn open_file_in_workspace(
+pub async fn open_file_in_workspace(
+    workspace_path: String,
+    file_path: String,
+    editor: Option<String>,
+) -> Result<(), EditorError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        open_file_in_workspace_blocking(workspace_path, file_path, editor)
+    })
+    .await
+    .map_err(|e| EditorError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn open_file_in_workspace_blocking(
     workspace_path: String,
     file_path: String,
     editor: Option<String>,
@@ -144,7 +164,13 @@ fn is_openable_url(url: &str) -> bool {
 }
 
 #[tauri::command]
-pub fn open_url(url: String) -> Result<(), String> {
+pub async fn open_url(url: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || open_url_blocking(url))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+fn open_url_blocking(url: String) -> Result<(), String> {
     if !is_openable_url(&url) {
         return Err("refused to open a url that is not a plain http(s) address".to_string());
     }

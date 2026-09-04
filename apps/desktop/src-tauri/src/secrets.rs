@@ -19,6 +19,8 @@ const SERVICE: &str = "com.goodboy.desktop";
 pub enum SecretError {
     #[error("keyring backend error: {0}")]
     Backend(#[from] keyring::Error),
+    #[error("io error: {0}")]
+    Io(#[from] std::io::Error),
 }
 
 impl serde::Serialize for SecretError {
@@ -53,13 +55,17 @@ pub fn clear(key: &str) -> Result<(), SecretError> {
 }
 
 #[tauri::command]
-pub fn secret_set(key: String, value: String) -> Result<(), SecretError> {
-    set(&key, &value)
+pub async fn secret_set(key: String, value: String) -> Result<(), SecretError> {
+    tauri::async_runtime::spawn_blocking(move || set(&key, &value))
+        .await
+        .map_err(|e| SecretError::Io(std::io::Error::other(e.to_string())))?
 }
 
 #[tauri::command]
-pub fn secret_delete(key: String) -> Result<(), SecretError> {
-    clear(&key)
+pub async fn secret_delete(key: String) -> Result<(), SecretError> {
+    tauri::async_runtime::spawn_blocking(move || clear(&key))
+        .await
+        .map_err(|e| SecretError::Io(std::io::Error::other(e.to_string())))?
 }
 
 #[cfg(test)]

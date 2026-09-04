@@ -352,7 +352,7 @@ pub async fn workspace_script_run_adhoc(
 }
 
 #[tauri::command]
-pub fn workspace_script_list_live(
+pub async fn workspace_script_list_live(
     registry: State<'_, ScriptRegistry>,
 ) -> Result<Vec<LiveScriptRun>, ScriptError> {
     registry.list_live()
@@ -365,7 +365,7 @@ pub fn workspace_script_list_live(
 /// Removes the run from the registry and kills the pty child. Dropping the
 /// master sends SIGHUP to the entire process group, cleaning up descendants.
 #[tauri::command]
-pub fn workspace_script_cancel(
+pub async fn workspace_script_cancel(
     registry: State<'_, ScriptRegistry>,
     run_id: String,
 ) -> Result<(), ScriptError> {

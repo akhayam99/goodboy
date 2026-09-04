@@ -387,7 +387,7 @@ fn spawn_one(
 }
 
 #[tauri::command]
-pub fn turn_spawn(
+pub async fn turn_spawn(
     app: AppHandle,
     state: State<'_, TurnRegistry>,
     args: SpawnArgs,
@@ -430,13 +430,13 @@ pub fn turn_spawn(
 }
 
 #[tauri::command]
-pub fn turn_list_live(state: State<'_, TurnRegistry>) -> Result<Vec<String>, TurnError> {
+pub async fn turn_list_live(state: State<'_, TurnRegistry>) -> Result<Vec<String>, TurnError> {
     let map = state.0.lock().map_err(|_| TurnError::Poisoned)?;
     Ok(map.keys().cloned().collect())
 }
 
 #[tauri::command]
-pub fn turn_cancel(state: State<'_, TurnRegistry>, run_id: String) -> Result<(), TurnError> {
+pub async fn turn_cancel(state: State<'_, TurnRegistry>, run_id: String) -> Result<(), TurnError> {
     let map = state.0.lock().map_err(|_| TurnError::Poisoned)?;
     let slot = map
         .get(&run_id)

@@ -199,44 +199,68 @@ pub struct PurgeSessionArgs {
 }
 
 #[tauri::command]
-pub fn file_versions_begin_snapshot(
+pub async fn file_versions_begin_snapshot(
     args: BeginSnapshotArgs,
 ) -> Result<BeginSnapshotResult, FileVersionsError> {
-    let root = file_versions_root()?;
-    begin_snapshot_with_root(&root, args)
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = file_versions_root()?;
+        begin_snapshot_with_root(&root, args)
+    })
+    .await
+    .map_err(|e| FileVersionsError::Io(std::io::Error::other(e.to_string())))?
 }
 
 #[tauri::command]
-pub fn file_versions_finalize_snapshot(
+pub async fn file_versions_finalize_snapshot(
     args: FinalizeSnapshotArgs,
 ) -> Result<FinalizeSnapshotResult, FileVersionsError> {
-    let root = file_versions_root()?;
-    finalize_snapshot_with_root(&root, args)
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = file_versions_root()?;
+        finalize_snapshot_with_root(&root, args)
+    })
+    .await
+    .map_err(|e| FileVersionsError::Io(std::io::Error::other(e.to_string())))?
 }
 
 #[tauri::command]
-pub fn file_versions_list_staged_snapshots() -> Result<ListStagedSnapshotsResult, FileVersionsError>
-{
-    let root = file_versions_root()?;
-    list_staged_snapshots_with_root(&root)
+pub async fn file_versions_list_staged_snapshots(
+) -> Result<ListStagedSnapshotsResult, FileVersionsError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = file_versions_root()?;
+        list_staged_snapshots_with_root(&root)
+    })
+    .await
+    .map_err(|e| FileVersionsError::Io(std::io::Error::other(e.to_string())))?
 }
 
 #[tauri::command]
-pub fn file_versions_restore(args: RestoreVersionArgs) -> Result<(), FileVersionsError> {
-    let root = file_versions_root()?;
-    restore_version_with_root(&root, args)
+pub async fn file_versions_restore(args: RestoreVersionArgs) -> Result<(), FileVersionsError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = file_versions_root()?;
+        restore_version_with_root(&root, args)
+    })
+    .await
+    .map_err(|e| FileVersionsError::Io(std::io::Error::other(e.to_string())))?
 }
 
 #[tauri::command]
-pub fn file_versions_delete(args: DeleteVersionArgs) -> Result<(), FileVersionsError> {
-    let root = file_versions_root()?;
-    delete_version_with_root(&root, args)
+pub async fn file_versions_delete(args: DeleteVersionArgs) -> Result<(), FileVersionsError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = file_versions_root()?;
+        delete_version_with_root(&root, args)
+    })
+    .await
+    .map_err(|e| FileVersionsError::Io(std::io::Error::other(e.to_string())))?
 }
 
 #[tauri::command]
-pub fn file_versions_purge_session(args: PurgeSessionArgs) -> Result<(), FileVersionsError> {
-    let root = file_versions_root()?;
-    purge_session_with_root(&root, args)
+pub async fn file_versions_purge_session(args: PurgeSessionArgs) -> Result<(), FileVersionsError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = file_versions_root()?;
+        purge_session_with_root(&root, args)
+    })
+    .await
+    .map_err(|e| FileVersionsError::Io(std::io::Error::other(e.to_string())))?
 }
 
 fn begin_snapshot_with_root(

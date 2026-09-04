@@ -446,7 +446,7 @@ pub fn provider_lifecycle_resize(
 /// group. Exit handler still runs and refreshes detection, so UI reflects the
 /// real (possibly half-installed) state.
 #[tauri::command]
-pub fn provider_lifecycle_cancel(
+pub async fn provider_lifecycle_cancel(
     registry: State<'_, ProviderLifecycleRegistry>,
     run_id: String,
 ) -> Result<(), LifecycleError> {
