@@ -36,15 +36,25 @@ describe('StudioRailLayout', () => {
     const aside = screen.getByRole('complementary', { name: 'Project navigation' });
     const wrapper = aside.parentElement;
 
-    expect(wrapper).not.toBeNull();
-    expect(wrapper?.classList.contains('flex')).toBe(true);
-    expect(Array.from(wrapper?.children ?? []).map((child) => child.tagName)).toEqual([
+    if (wrapper == null) {
+      throw new Error('wrapper not found');
+    }
+
+    expect(wrapper.classList.contains('flex')).toBe(true);
+    expect(Array.from(wrapper.children).map((child) => child.tagName)).toEqual([
       'ASIDE',
       'DIV',
       'DIV',
     ]);
-    expect(wrapper?.children[0]).toBe(aside);
-    expect(wrapper?.children[1]).toBe(screen.getByRole('separator'));
-    expect(wrapper?.children[2].textContent).toBe('Detail content');
+
+    const [asideChild, separatorChild, detailChild] = wrapper.children;
+
+    if (asideChild == null || separatorChild == null || detailChild == null) {
+      throw new Error('wrapper children not found');
+    }
+
+    expect(asideChild).toBe(aside);
+    expect(separatorChild).toBe(screen.getByRole('separator'));
+    expect(detailChild.textContent).toBe('Detail content');
   });
 });
