@@ -10,6 +10,7 @@ import { RotateCcw } from 'lucide-react';
 import { useThemeStore } from '../../lib/theme';
 import { openUrl } from '../../lib/editor';
 import { resolveTerminalTheme } from './terminal-theme';
+import { MAX_CACHE_CHUNKS, outputCache } from './outputCache';
 import { Tooltip } from '@goodboy/ui';
 
 export type TerminalDriver = {
@@ -17,14 +18,6 @@ export type TerminalDriver = {
   resize(cols: number, rows: number): void;
   onOutput(handler: (bytes: Uint8Array) => void): Promise<() => void>;
   onExit(handler: (exitCode: number) => void): Promise<() => void>;
-};
-
-const MAX_CACHE_CHUNKS = 500;
-
-const outputCache = new Map<string, Uint8Array[]>();
-
-export const clearTerminalCache = (terminalId: string): void => {
-  outputCache.delete(terminalId);
 };
 
 type Props = {

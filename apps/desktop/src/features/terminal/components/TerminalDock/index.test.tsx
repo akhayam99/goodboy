@@ -28,8 +28,8 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
-vi.mock('../../../../shared/components/GenericTerminalPanel', () => ({
-  GenericTerminalPanel: () => null,
+vi.mock('../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalPanel', () => ({
+  LazyGenericTerminalPanel: () => null,
 }));
 
 vi.mock('../../terminal', () => ({

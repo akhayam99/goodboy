@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { invokeTerminalClose } from '../../../features/terminal/terminal';
-import { clearTerminalCache } from '../../../shared/components/GenericTerminalPanel';
+import { clearTerminalCache } from '../../../shared/components/GenericTerminalPanel/outputCache';
 import type { TerminalTabId } from '../../../shared/types/terminal';
 import type { GetFn, SetFn } from './types';
 
