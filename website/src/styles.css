@@ -659,6 +659,8 @@ h2 {
     flex-wrap: wrap;
     justify-content: center;
     row-gap: 14px;
+    animation: none;
+    transform: none;
   }
 }
 
