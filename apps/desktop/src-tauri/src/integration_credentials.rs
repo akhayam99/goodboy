@@ -27,6 +27,8 @@ pub enum IntegrationCredentialError {
     Store(String),
     #[error("secret store error: {0}")]
     Secret(#[from] secrets::SecretError),
+    #[error("io error: {0}")]
+    Io(#[from] std::io::Error),
 }
 
 crate::util::impl_error_serialize!(IntegrationCredentialError);
@@ -40,6 +42,7 @@ impl IntegrationCredentialError {
             IntegrationCredentialError::MissingSecret { .. } => "missing_secret",
             IntegrationCredentialError::Store(_) => "store",
             IntegrationCredentialError::Secret(_) => "secret",
+            IntegrationCredentialError::Io(_) => "io",
         }
     }
 }
@@ -643,7 +646,17 @@ where
 /// Whether the keychain still holds the secret a credential claims to own.
 /// A binding whose credential answers false is connected on paper only.
 #[tauri::command]
-pub fn integration_credential_has_secret(
+pub async fn integration_credential_has_secret(
+    credential_id: String,
+) -> Result<bool, IntegrationCredentialError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        integration_credential_has_secret_blocking(credential_id)
+    })
+    .await
+    .map_err(|e| IntegrationCredentialError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn integration_credential_has_secret_blocking(
     credential_id: String,
 ) -> Result<bool, IntegrationCredentialError> {
     if credential_id.is_empty() {
@@ -655,7 +668,17 @@ pub fn integration_credential_has_secret(
 /// Removes the secret itself. The row is deleted first on the database side,
 /// where a foreign key refuses while any binding still references it.
 #[tauri::command]
-pub fn integration_credential_forget(
+pub async fn integration_credential_forget(
+    credential_id: String,
+) -> Result<(), IntegrationCredentialError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        integration_credential_forget_blocking(credential_id)
+    })
+    .await
+    .map_err(|e| IntegrationCredentialError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn integration_credential_forget_blocking(
     credential_id: String,
 ) -> Result<(), IntegrationCredentialError> {
     if credential_id.is_empty() {

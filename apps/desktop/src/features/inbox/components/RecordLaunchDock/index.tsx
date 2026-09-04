@@ -17,6 +17,7 @@ import { bitbucketPrIdentifier } from '../../../integrations/bitbucket/bitbucket
 import { bitbucketPrUrl } from '../../../integrations/bitbucket/bitbucketPrUrl';
 import { issueIdentifier } from '../../../integrations/gitlab/client';
 import type { InboxRecord } from '../../types';
+import { UnlinkSessionAction } from './UnlinkSessionAction';
 
 type Props = {
   readonly record: InboxRecord;
@@ -121,23 +122,34 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose, focusRequest }:
           focusRequest={focusRequest}
         />
       );
-    case 'sentry':
+    case 'sentry': {
+      const linkedSessionId = payload.sessionId;
       return (
-        <LaunchSessionPanel
-          workspaceId={workspaceId}
-          linkedSessionId={payload.sessionId}
-          goalSeed={goalFromSentry(payload.issue)}
-          externalTask={{
-            provider: 'sentry',
-            externalId: payload.issue.id,
-            identifier: payload.issue.shortId ?? payload.issue.id,
-            url: payload.issue.permalink ?? '',
-            title: payload.issue.title,
-          }}
-          onClose={onClose}
-          focusRequest={focusRequest}
-        />
+        <div className="flex flex-col gap-1.5">
+          <LaunchSessionPanel
+            workspaceId={workspaceId}
+            linkedSessionId={linkedSessionId}
+            goalSeed={goalFromSentry(payload.issue)}
+            externalTask={{
+              provider: 'sentry',
+              externalId: payload.issue.id,
+              identifier: payload.issue.shortId ?? payload.issue.id,
+              url: payload.issue.permalink ?? '',
+              title: payload.issue.title,
+            }}
+            onClose={onClose}
+            focusRequest={focusRequest}
+          />
+          {linkedSessionId != null ? (
+            <UnlinkSessionAction
+              sessionId={linkedSessionId}
+              provider="sentry"
+              externalId={payload.issue.id}
+            />
+          ) : null}
+        </div>
       );
+    }
     case 'slack': {
       const threadTs = payload.head.threadTs ?? payload.head.ts;
       return (

@@ -1,5 +1,5 @@
 import { Fragment, type KeyboardEvent } from 'react';
-import { Bug, CircleDot, GitPullRequest, MessagesSquare, Search } from 'lucide-react';
+import { Bug, CircleDot, GitPullRequest, MessagesSquare, Search, X } from 'lucide-react';
 import {
   Chip,
   cn,
@@ -55,6 +55,8 @@ type Props = {
   readonly allRecords: ReadonlyArray<InboxRecord>;
   readonly selectedProviders: ReadonlySet<InboxProvider>;
   readonly onToggleProvider: (provider: InboxProvider) => void;
+  readonly sessionFilterLabel: string | null;
+  readonly onClearSessionFilter: () => void;
   readonly query: string;
   readonly onQueryChange: (value: string) => void;
   readonly kindFilter: InboxKindFilter;
@@ -128,6 +130,8 @@ export const InboxRail = ({
   allRecords,
   selectedProviders,
   onToggleProvider,
+  sessionFilterLabel,
+  onClearSessionFilter,
   query,
   onQueryChange,
   kindFilter,
@@ -163,7 +167,10 @@ export const InboxRail = ({
   const orderedRecords = sections.flatMap((section) => section.records);
   const totalCount = allRecords.length;
   const hasFiltersActive =
-    query.trim() !== '' || kindFilter !== 'all' || selectedProviders.size > 0;
+    query.trim() !== '' ||
+    kindFilter !== 'all' ||
+    selectedProviders.size > 0 ||
+    sessionFilterLabel != null;
   const isShowingSkeleton = isLoading && totalCount === 0;
 
   return (
@@ -194,30 +201,51 @@ export const InboxRail = ({
           size="sm"
           fill
         />
-        {providers.length > 0 ? (
-          <div role="group" aria-label="Filter by provider" className="flex flex-wrap gap-1.5">
-            {providers.map((provider) => {
-              const label = integrationLabel({ provider });
-              const isActive = selectedProviders.has(provider);
-              const count = providerCountRecords.filter(
-                (record) => record.provider === provider,
-              ).length;
-              return (
-                <Chip
-                  key={provider}
-                  as="button"
-                  size="sm"
-                  tone={isActive ? 'primary' : 'neutral'}
-                  emphasis={isActive ? 'strong' : 'subtle'}
-                  icon={<IntegrationGlyph provider={provider} size="xs" useBrandColor />}
-                  label={label}
-                  trailing={<span className="font-mono tabular-nums">{count}</span>}
-                  ariaLabel={`${label}, ${count} ${count === 1 ? 'item' : 'items'}`}
-                  ariaPressed={isActive}
-                  onClick={() => onToggleProvider(provider)}
-                />
-              );
-            })}
+        {sessionFilterLabel != null || providers.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {sessionFilterLabel != null ? (
+              <Chip
+                as="button"
+                size="sm"
+                tone="primary"
+                emphasis="strong"
+                icon={
+                  <CONCEPT_ICONS.sessions size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+                }
+                label={
+                  <span className="max-w-48 truncate">{`Session: ${sessionFilterLabel}`}</span>
+                }
+                trailing={<X size={ICON_SIZE.row} aria-hidden className="shrink-0" />}
+                ariaLabel={`Clear the session filter: ${sessionFilterLabel}`}
+                onClick={onClearSessionFilter}
+              />
+            ) : null}
+            {providers.length > 0 ? (
+              <div role="group" aria-label="Filter by provider" className="flex flex-wrap gap-1.5">
+                {providers.map((provider) => {
+                  const label = integrationLabel({ provider });
+                  const isActive = selectedProviders.has(provider);
+                  const count = providerCountRecords.filter(
+                    (record) => record.provider === provider,
+                  ).length;
+                  return (
+                    <Chip
+                      key={provider}
+                      as="button"
+                      size="sm"
+                      tone={isActive ? 'primary' : 'neutral'}
+                      emphasis={isActive ? 'strong' : 'subtle'}
+                      icon={<IntegrationGlyph provider={provider} size="xs" useBrandColor />}
+                      label={label}
+                      trailing={<span className="font-mono tabular-nums">{count}</span>}
+                      ariaLabel={`${label}, ${count} ${count === 1 ? 'item' : 'items'}`}
+                      ariaPressed={isActive}
+                      onClick={() => onToggleProvider(provider)}
+                    />
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
         ) : null}
         <div className="flex items-center justify-between gap-2 text-3xs text-muted-foreground/60">

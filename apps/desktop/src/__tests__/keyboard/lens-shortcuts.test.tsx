@@ -272,7 +272,6 @@ describe('App lens shortcuts on darwin', () => {
     expect(setActiveLens.mock.calls).toEqual([
       ['session-1', 'review'],
       ['session-1', 'linear'],
-      ['session-1', 'sentry'],
       ['session-1', 'gitlab_issues'],
       ['session-1', 'slack_threads'],
     ]);

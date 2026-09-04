@@ -119,7 +119,20 @@ fn is_allowed_mime(mime: &str) -> bool {
 /// returns the worktree-relative path. The stored name is `<id>-<file_name>`,
 /// both sanitized — `id` keeps names unique without a uuid crate.
 #[tauri::command]
-pub fn attachment_write(
+pub async fn attachment_write(
+    worktree_dir: String,
+    attachment_id: String,
+    file_name: String,
+    data_base64: String,
+) -> Result<String, AttachmentError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        attachment_write_blocking(worktree_dir, attachment_id, file_name, data_base64)
+    })
+    .await
+    .map_err(|e| AttachmentError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn attachment_write_blocking(
     worktree_dir: String,
     attachment_id: String,
     file_name: String,
@@ -160,7 +173,17 @@ pub struct DroppedAttachment {
 /// Accepts the same whitelist as the composer picker, mirroring its `accept`
 /// filter — the second guard exists because OS drag-drop bypasses the picker.
 #[tauri::command]
-pub fn attachment_read_dropped(abs_path: String) -> Result<DroppedAttachment, AttachmentError> {
+pub async fn attachment_read_dropped(
+    abs_path: String,
+) -> Result<DroppedAttachment, AttachmentError> {
+    tauri::async_runtime::spawn_blocking(move || attachment_read_dropped_blocking(abs_path))
+        .await
+        .map_err(|e| AttachmentError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn attachment_read_dropped_blocking(
+    abs_path: String,
+) -> Result<DroppedAttachment, AttachmentError> {
     let path = Path::new(&abs_path);
     let meta = fs::metadata(path)?;
     if !meta.is_file() {
@@ -197,7 +220,19 @@ pub fn attachment_read_dropped(abs_path: String) -> Result<DroppedAttachment, At
 /// the webview. `rel_path` must be the worktree-relative path produced by
 /// `attachment_write`; anything pointing outside the attachment dir is rejected.
 #[tauri::command]
-pub fn attachment_read(worktree_dir: String, rel_path: String) -> Result<String, AttachmentError> {
+pub async fn attachment_read(
+    worktree_dir: String,
+    rel_path: String,
+) -> Result<String, AttachmentError> {
+    tauri::async_runtime::spawn_blocking(move || attachment_read_blocking(worktree_dir, rel_path))
+        .await
+        .map_err(|e| AttachmentError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn attachment_read_blocking(
+    worktree_dir: String,
+    rel_path: String,
+) -> Result<String, AttachmentError> {
     if rel_path.contains("..") || !rel_path.starts_with(ATTACH_SUBDIR) {
         return Err(AttachmentError::InvalidPath);
     }
@@ -216,7 +251,19 @@ pub fn attachment_read(worktree_dir: String, rel_path: String) -> Result<String,
 }
 
 #[tauri::command]
-pub fn attachment_delete(worktree_dir: String, rel_path: String) -> Result<(), AttachmentError> {
+pub async fn attachment_delete(
+    worktree_dir: String,
+    rel_path: String,
+) -> Result<(), AttachmentError> {
+    tauri::async_runtime::spawn_blocking(move || attachment_delete_blocking(worktree_dir, rel_path))
+        .await
+        .map_err(|e| AttachmentError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn attachment_delete_blocking(
+    worktree_dir: String,
+    rel_path: String,
+) -> Result<(), AttachmentError> {
     if rel_path.contains("..") || !rel_path.starts_with(ATTACH_SUBDIR) {
         return Err(AttachmentError::InvalidPath);
     }
@@ -356,7 +403,15 @@ fn write_bug_report_images(
 }
 
 #[tauri::command]
-pub fn bug_report_stage_images(
+pub async fn bug_report_stage_images(
+    images: Vec<BugReportImageInput>,
+) -> Result<StagedBugReport, AttachmentError> {
+    tauri::async_runtime::spawn_blocking(move || bug_report_stage_images_blocking(images))
+        .await
+        .map_err(|e| AttachmentError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn bug_report_stage_images_blocking(
     images: Vec<BugReportImageInput>,
 ) -> Result<StagedBugReport, AttachmentError> {
     let dir = std::env::temp_dir().join(bug_report_dir_name());
@@ -384,14 +439,26 @@ fn resolve_bug_report_dir(dir: &str) -> Result<std::path::PathBuf, AttachmentErr
 }
 
 #[tauri::command]
-pub fn bug_report_reveal_images(dir: String) -> Result<(), AttachmentError> {
+pub async fn bug_report_reveal_images(dir: String) -> Result<(), AttachmentError> {
+    tauri::async_runtime::spawn_blocking(move || bug_report_reveal_images_blocking(dir))
+        .await
+        .map_err(|e| AttachmentError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn bug_report_reveal_images_blocking(dir: String) -> Result<(), AttachmentError> {
     let canonical_dir = resolve_bug_report_dir(&dir)?;
     crate::explore::spawn_open(&canonical_dir, false)?;
     Ok(())
 }
 
 #[tauri::command]
-pub fn bug_report_discard_images(dir: String) -> Result<(), AttachmentError> {
+pub async fn bug_report_discard_images(dir: String) -> Result<(), AttachmentError> {
+    tauri::async_runtime::spawn_blocking(move || bug_report_discard_images_blocking(dir))
+        .await
+        .map_err(|e| AttachmentError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn bug_report_discard_images_blocking(dir: String) -> Result<(), AttachmentError> {
     let canonical_dir = resolve_bug_report_dir(&dir)?;
     match fs::remove_dir_all(&canonical_dir) {
         Ok(()) => Ok(()),
@@ -443,7 +510,7 @@ mod tests {
         fs::create_dir_all(&dir).unwrap();
         fs::write(dir.join(".goodboy"), b"{\"sessionId\":\"s\"}").unwrap();
         let png_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
-        let rel = attachment_write(
+        let rel = attachment_write_blocking(
             dir.to_string_lossy().to_string(),
             "att-1".to_string(),
             "shot.png".to_string(),
@@ -467,7 +534,7 @@ mod tests {
 
         // 1x1 transparent PNG.
         let png_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
-        let rel = attachment_write(
+        let rel = attachment_write_blocking(
             dir.to_string_lossy().to_string(),
             "att-1".to_string(),
             "shot.png".to_string(),
@@ -476,7 +543,7 @@ mod tests {
         .unwrap();
         assert_eq!(rel, ".goodboy/attachments/att-1-shot.png");
 
-        let data_url = attachment_read(dir.to_string_lossy().to_string(), rel).unwrap();
+        let data_url = attachment_read_blocking(dir.to_string_lossy().to_string(), rel).unwrap();
         assert!(data_url.starts_with("data:image/png;base64,"));
 
         let _ = fs::remove_dir_all(&dir);
@@ -489,7 +556,7 @@ mod tests {
         fs::create_dir_all(&dir).unwrap();
 
         let png_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
-        let rel = attachment_write(
+        let rel = attachment_write_blocking(
             dir.to_string_lossy().to_string(),
             "att-del".to_string(),
             "shot.png".to_string(),
@@ -499,14 +566,14 @@ mod tests {
         let full = Path::new(&dir).join(&rel);
         assert!(full.exists());
 
-        attachment_delete(dir.to_string_lossy().to_string(), rel.clone()).unwrap();
+        attachment_delete_blocking(dir.to_string_lossy().to_string(), rel.clone()).unwrap();
         assert!(!full.exists());
 
-        attachment_delete(dir.to_string_lossy().to_string(), rel).unwrap();
+        attachment_delete_blocking(dir.to_string_lossy().to_string(), rel).unwrap();
 
-        let err = attachment_delete("/tmp".to_string(), "../../etc/passwd".to_string());
+        let err = attachment_delete_blocking("/tmp".to_string(), "../../etc/passwd".to_string());
         assert!(matches!(err, Err(AttachmentError::InvalidPath)));
-        let err = attachment_delete("/tmp".to_string(), "etc/passwd".to_string());
+        let err = attachment_delete_blocking("/tmp".to_string(), "etc/passwd".to_string());
         assert!(matches!(err, Err(AttachmentError::InvalidPath)));
 
         let _ = fs::remove_dir_all(&dir);
@@ -533,9 +600,9 @@ mod tests {
 
     #[test]
     fn read_rejects_traversal() {
-        let err = attachment_read("/tmp".to_string(), "../../etc/passwd".to_string());
+        let err = attachment_read_blocking("/tmp".to_string(), "../../etc/passwd".to_string());
         assert!(matches!(err, Err(AttachmentError::InvalidPath)));
-        let err = attachment_read("/tmp".to_string(), "etc/passwd".to_string());
+        let err = attachment_read_blocking("/tmp".to_string(), "etc/passwd".to_string());
         assert!(matches!(err, Err(AttachmentError::InvalidPath)));
     }
 
@@ -546,7 +613,7 @@ mod tests {
         fs::create_dir_all(&dir).unwrap();
         let blob = dir.join("payload.bin");
         fs::write(&blob, b"\x00\x01\x02").unwrap();
-        let err = attachment_read_dropped(blob.to_string_lossy().to_string());
+        let err = attachment_read_dropped_blocking(blob.to_string_lossy().to_string());
         assert!(matches!(err, Err(AttachmentError::UnsupportedMime(_))));
         let _ = fs::remove_dir_all(&dir);
     }
@@ -558,13 +625,13 @@ mod tests {
         fs::create_dir_all(&dir).unwrap();
         let csv = dir.join("data.csv");
         fs::write(&csv, b"a,b\n1,2\n").unwrap();
-        let out = attachment_read_dropped(csv.to_string_lossy().to_string()).unwrap();
+        let out = attachment_read_dropped_blocking(csv.to_string_lossy().to_string()).unwrap();
         assert_eq!(out.file_name, "data.csv");
         assert_eq!(out.mime_type, "text/csv");
 
         let pdf = dir.join("doc.pdf");
         fs::write(&pdf, b"%PDF-1.4\n").unwrap();
-        let out = attachment_read_dropped(pdf.to_string_lossy().to_string()).unwrap();
+        let out = attachment_read_dropped_blocking(pdf.to_string_lossy().to_string()).unwrap();
         assert_eq!(out.mime_type, "application/pdf");
         let _ = fs::remove_dir_all(&dir);
     }
@@ -634,13 +701,13 @@ mod tests {
         fs::create_dir_all(&dir).unwrap();
         fs::write(dir.join("01-shot.png"), b"bytes").unwrap();
 
-        bug_report_discard_images(dir.to_string_lossy().to_string()).unwrap();
+        bug_report_discard_images_blocking(dir.to_string_lossy().to_string()).unwrap();
         assert!(!dir.exists());
 
         let other = std::env::temp_dir().join(format!("goodboy-keep-{}", std::process::id()));
         let _ = fs::remove_dir_all(&other);
         fs::create_dir_all(&other).unwrap();
-        let err = bug_report_discard_images(other.to_string_lossy().to_string());
+        let err = bug_report_discard_images_blocking(other.to_string_lossy().to_string());
         assert!(matches!(err, Err(AttachmentError::InvalidPath)));
         assert!(other.exists());
 
@@ -653,7 +720,7 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
 
-        let result = bug_report_reveal_images(dir.to_string_lossy().to_string());
+        let result = bug_report_reveal_images_blocking(dir.to_string_lossy().to_string());
 
         assert!(matches!(result, Err(AttachmentError::InvalidPath)));
         let _ = fs::remove_dir_all(&dir);
@@ -668,7 +735,7 @@ mod tests {
         // 1x1 transparent PNG.
         let png_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
         fs::write(&png, STANDARD.decode(png_b64).unwrap()).unwrap();
-        let out = attachment_read_dropped(png.to_string_lossy().to_string()).unwrap();
+        let out = attachment_read_dropped_blocking(png.to_string_lossy().to_string()).unwrap();
         assert_eq!(out.file_name, "shot.png");
         assert_eq!(out.mime_type, "image/png");
         assert_eq!(out.data_base64, png_b64);

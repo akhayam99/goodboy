@@ -801,7 +801,6 @@ describe('store contract', () => {
 
     it.each([
       ['linear', 'linear'],
-      ['sentry', 'sentry'],
       ['gitlab', 'gitlab_issues'],
       ['jira', 'jira_issues'],
     ] as const)(
@@ -823,7 +822,7 @@ describe('store contract', () => {
       },
     );
 
-    it.each(['linear', 'sentry', 'gitlab_issues', 'jira_issues'] as const)(
+    it.each(['linear', 'gitlab_issues', 'jira_issues'] as const)(
       'opening the %s lens on its own focuses no issue',
       async (lens) => {
         const store = await getStore();
@@ -834,7 +833,6 @@ describe('store contract', () => {
 
     it.each([
       ['linear', 'linear'],
-      ['sentry', 'sentry'],
       ['gitlab', 'gitlab_issues'],
       ['jira', 'jira_issues'],
     ] as const)(
@@ -848,6 +846,34 @@ describe('store contract', () => {
         expect(store.getState().focusedExternalTask[SESSION_ID]).toBeNull();
       },
     );
+
+    it('openExternalTaskLens sends a sentry issue to the inbox scoped to its session', async () => {
+      const store = await getStore();
+      store.setState({ sessions: [buildSession()] } as never);
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      const detail = vi.fn();
+      const listener = (event: Event) => {
+        detail(event instanceof CustomEvent ? event.detail : null);
+      };
+      window.addEventListener('goodboy:open-inbox', listener);
+
+      store
+        .getState()
+        .openExternalTaskLens(
+          SESSION_ID,
+          buildExternalTask({ provider: 'sentry', externalId: '12345' }),
+        );
+
+      window.removeEventListener('goodboy:open-inbox', listener);
+      expect(detail).toHaveBeenCalledWith({
+        workspaceId: WS_ID,
+        provider: 'sentry',
+        recordKey: 'sentry:error:12345',
+        sessionId: SESSION_ID,
+      });
+      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
+      expect(store.getState().focusedExternalTask[SESSION_ID]).toBeNull();
+    });
 
     it('openExternalTaskLens sends a github task to the issue lens by its number', async () => {
       const store = await getStore();

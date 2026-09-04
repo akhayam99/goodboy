@@ -44,7 +44,7 @@ pub struct BudgetAlert {
 }
 
 #[tauri::command]
-pub fn budget_rule_upsert(state: State<'_, Db>, rule: BudgetRule) -> Result<(), DbError> {
+pub async fn budget_rule_upsert(state: State<'_, Db>, rule: BudgetRule) -> Result<(), DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     conn.execute(
         "INSERT INTO budget_rules (id, provider, period, cap_usd, alert_threshold_pct, extra_tokens_budget, created_at)
@@ -69,7 +69,7 @@ pub fn budget_rule_upsert(state: State<'_, Db>, rule: BudgetRule) -> Result<(), 
 }
 
 #[tauri::command]
-pub fn budget_rule_list(state: State<'_, Db>) -> Result<Vec<BudgetRule>, DbError> {
+pub async fn budget_rule_list(state: State<'_, Db>) -> Result<Vec<BudgetRule>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT id, provider, period, cap_usd, alert_threshold_pct, extra_tokens_budget, created_at FROM budget_rules",
@@ -89,7 +89,7 @@ pub fn budget_rule_list(state: State<'_, Db>) -> Result<Vec<BudgetRule>, DbError
 }
 
 #[tauri::command]
-pub fn budget_rule_delete(state: State<'_, Db>, id: String) -> Result<(), DbError> {
+pub async fn budget_rule_delete(state: State<'_, Db>, id: String) -> Result<(), DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     conn.execute(
         "DELETE FROM budget_rules WHERE id = ?1",
@@ -99,7 +99,7 @@ pub fn budget_rule_delete(state: State<'_, Db>, id: String) -> Result<(), DbErro
 }
 
 #[tauri::command]
-pub fn session_budget_set(
+pub async fn session_budget_set(
     state: State<'_, Db>,
     session_id: String,
     soft_cap_usd: f64,
@@ -115,7 +115,7 @@ pub fn session_budget_set(
 }
 
 #[tauri::command]
-pub fn session_budget_get(
+pub async fn session_budget_get(
     state: State<'_, Db>,
     session_id: String,
 ) -> Result<Option<SessionBudget>, DbError> {
@@ -135,7 +135,7 @@ pub fn session_budget_get(
 }
 
 #[tauri::command]
-pub fn budget_alerts_list(state: State<'_, Db>) -> Result<Vec<BudgetAlert>, DbError> {
+pub async fn budget_alerts_list(state: State<'_, Db>) -> Result<Vec<BudgetAlert>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT id, kind, provider, session_id, current_usd, cap_usd, created_at, dismissed_at
@@ -158,7 +158,7 @@ pub fn budget_alerts_list(state: State<'_, Db>) -> Result<Vec<BudgetAlert>, DbEr
 }
 
 #[tauri::command]
-pub fn budget_alert_dismiss(state: State<'_, Db>, id: String) -> Result<(), DbError> {
+pub async fn budget_alert_dismiss(state: State<'_, Db>, id: String) -> Result<(), DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     conn.execute(
         "UPDATE budget_alerts SET dismissed_at = ?2 WHERE id = ?1",
@@ -210,7 +210,7 @@ pub struct EmitAlertsInput {
 }
 
 #[tauri::command]
-pub fn budget_emit_alerts(
+pub async fn budget_emit_alerts(
     state: State<'_, Db>,
     input: EmitAlertsInput,
 ) -> Result<Vec<BudgetAlert>, DbError> {
@@ -407,7 +407,7 @@ fn provider_budget_status(
 }
 
 #[tauri::command]
-pub fn check_provider_budget(
+pub async fn check_provider_budget(
     state: State<'_, Db>,
     provider: String,
     period: String,

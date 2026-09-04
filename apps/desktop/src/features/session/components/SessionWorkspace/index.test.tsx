@@ -858,7 +858,6 @@ describe('SessionWorkspace github issue lens', () => {
 describe('SessionWorkspace integration lenses', () => {
   it.each([
     ['linear', 'linear'],
-    ['sentry', 'sentry'],
     ['gitlab_issues', 'gitlab'],
     ['jira_issues', 'jira'],
     ['slack_threads', 'slack'],

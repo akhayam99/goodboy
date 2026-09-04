@@ -1,16 +1,31 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { WorkspaceId } from '@goodboy/types';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { InboxRecord } from '../../types';
 
 const h = vi.hoisted(() => ({
   createSession: vi.fn(async () => ({ session: { goal: 'Fix launch' } })),
   showToast: vi.fn(),
+  unlinkSessionExternalTask: vi.fn(async () => undefined),
+  setCurrentSession: vi.fn(async () => undefined),
+  setActiveLens: vi.fn(),
 }));
 
+type StoreState = {
+  readonly createSession: typeof h.createSession;
+  readonly unlinkSessionExternalTask: typeof h.unlinkSessionExternalTask;
+  readonly setCurrentSession: typeof h.setCurrentSession;
+  readonly setActiveLens: typeof h.setActiveLens;
+};
+
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: { createSession: typeof h.createSession }) => T) =>
-    selector({ createSession: h.createSession }),
+  useAppStore: <T,>(selector: (state: StoreState) => T) =>
+    selector({
+      createSession: h.createSession,
+      unlinkSessionExternalTask: h.unlinkSessionExternalTask,
+      setCurrentSession: h.setCurrentSession,
+      setActiveLens: h.setActiveLens,
+    }),
 }));
 
 vi.mock('../../../../app/components/Toast', () => ({
@@ -84,9 +99,43 @@ const BITBUCKET_WITHOUT_REPO = {
   },
 } satisfies InboxRecord;
 
+const SENTRY_SESSION_ID = 'session-7' as SessionId;
+
+const LINKED_SENTRY_RECORD = {
+  key: 'sentry:error:12345',
+  provider: 'sentry',
+  kind: 'error',
+  identifier: 'GBY-5',
+  title: 'Request failed',
+  state: 'alert',
+  updatedAt: '2026-08-01T10:00:00Z',
+  url: '',
+  meta: 'Sentry',
+  payload: {
+    provider: 'sentry',
+    kind: 'error',
+    issue: {
+      id: '12345',
+      shortId: 'GBY-5',
+      title: 'Request failed',
+      culprit: null,
+      level: null,
+      status: 'unresolved',
+      count: null,
+      userCount: null,
+      firstSeen: null,
+      lastSeen: null,
+      permalink: null,
+      metadata: null,
+    },
+    sessionId: SENTRY_SESSION_ID,
+  },
+} satisfies InboxRecord;
+
 afterEach(() => {
   cleanup();
   h.createSession.mockClear();
+  h.unlinkSessionExternalTask.mockClear();
 });
 
 describe('RecordLaunchDock', () => {
@@ -114,6 +163,27 @@ describe('RecordLaunchDock', () => {
           },
         ],
       }),
+    );
+  });
+
+  it('keeps the linked notice and unlinks a sentry issue from its session', async () => {
+    render(
+      <RecordLaunchDock
+        record={LINKED_SENTRY_RECORD}
+        workspaceId={WORKSPACE_ID}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Session already launched')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Unlink from session' }));
+
+    await waitFor(() =>
+      expect(h.unlinkSessionExternalTask).toHaveBeenCalledWith(
+        SENTRY_SESSION_ID,
+        'sentry',
+        '12345',
+      ),
     );
   });
 

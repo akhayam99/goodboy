@@ -90,6 +90,7 @@ type Props = {
     readonly provider: InboxProvider | null;
     readonly kind: InboxKind | null;
     readonly recordKey: string | null;
+    readonly sessionId: SessionId | null;
   } | null;
   readonly impactStudioOpen: boolean;
   readonly impactStudioFocus: ImpactScope | null;
@@ -235,6 +236,7 @@ export const AppOverlayRouter = ({
           initialProvider={inboxStudioFocus?.provider ?? null}
           initialKind={inboxStudioFocus?.kind ?? null}
           initialRecordKey={inboxStudioFocus?.recordKey ?? null}
+          initialSessionId={inboxStudioFocus?.sessionId ?? null}
           onClose={closeInboxStudio}
         />
       ) : null}

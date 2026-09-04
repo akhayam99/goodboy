@@ -191,7 +191,13 @@ fn resolve_directory_name(args: &CreateArgs) -> Result<String, SessionDirError> 
 }
 
 #[tauri::command]
-pub fn session_dir_create(args: CreateArgs) -> Result<CreatedSessionDir, SessionDirError> {
+pub async fn session_dir_create(args: CreateArgs) -> Result<CreatedSessionDir, SessionDirError> {
+    tauri::async_runtime::spawn_blocking(move || session_dir_create_blocking(args))
+        .await
+        .map_err(|e| SessionDirError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn session_dir_create_blocking(args: CreateArgs) -> Result<CreatedSessionDir, SessionDirError> {
     let base = expand_home(&args.base_path)?;
     let slug = resolve_directory_name(&args)?;
     let target = absolute_path(base)?.join("sessions").join(&slug);
@@ -256,7 +262,13 @@ fn session_dir_remove_blocking(args: RemoveArgs) -> Result<(), SessionDirError> 
 }
 
 #[tauri::command]
-pub fn session_dir_exists(path: String) -> Result<bool, SessionDirError> {
+pub async fn session_dir_exists(path: String) -> Result<bool, SessionDirError> {
+    tauri::async_runtime::spawn_blocking(move || session_dir_exists_blocking(path))
+        .await
+        .map_err(|e| SessionDirError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn session_dir_exists_blocking(path: String) -> Result<bool, SessionDirError> {
     Ok(absolute_path(expand_home(&path)?)?.is_dir())
 }
 
@@ -264,7 +276,7 @@ pub fn session_dir_exists(path: String) -> Result<bool, SessionDirError> {
 mod tests {
     use std::path::Path;
 
-    use super::{session_dir_create, CreateArgs, SessionDirError, SessionMarker};
+    use super::{session_dir_create_blocking, CreateArgs, SessionDirError, SessionMarker};
 
     fn test_root(name: &str) -> std::path::PathBuf {
         std::env::temp_dir().join(format!(
@@ -287,7 +299,7 @@ mod tests {
             session_id: "session-1".to_string(),
             workspace_id: "workspace-1".to_string(),
         };
-        let created = session_dir_create(args()).unwrap();
+        let created = session_dir_create_blocking(args()).unwrap();
         assert_eq!(created.branch_name, "");
         assert_eq!(created.slug, "study-plan");
         assert!(!created.reused);
@@ -303,7 +315,7 @@ mod tests {
         assert_eq!(marker.workspace_id, "workspace-1");
         assert!(!marker.created_at.is_empty());
         let first_created_at = marker.created_at.clone();
-        let reused = session_dir_create(args()).unwrap();
+        let reused = session_dir_create_blocking(args()).unwrap();
         assert!(reused.reused);
         let marker_after_reuse = std::fs::read(
             Path::new(&created.worktree_path)
@@ -328,7 +340,7 @@ mod tests {
             br#"{"sessionId":"session-1","workspaceId":"workspace-1","createdAt":"2026-01-01T00:00:00Z"}"#,
         )
         .unwrap();
-        let created = session_dir_create(CreateArgs {
+        let created = session_dir_create_blocking(CreateArgs {
             base_path: root.to_string_lossy().into_owned(),
             slug: "Study Plan".to_string(),
             directory_name: None,
@@ -343,7 +355,7 @@ mod tests {
     #[test]
     fn removes_a_nested_session_directory_and_refuses_anything_else() {
         let root = test_root("simple-session-remove");
-        let created = session_dir_create(CreateArgs {
+        let created = session_dir_create_blocking(CreateArgs {
             base_path: root.to_string_lossy().into_owned(),
             slug: "Study Plan".to_string(),
             directory_name: None,
@@ -382,7 +394,7 @@ mod tests {
         let sessions = root.join("sessions");
         std::fs::create_dir_all(sessions.join("study-plan")).unwrap();
 
-        let result = session_dir_create(CreateArgs {
+        let result = session_dir_create_blocking(CreateArgs {
             base_path: root.to_string_lossy().into_owned(),
             slug: "Study Plan".to_string(),
             directory_name: None,
@@ -400,7 +412,7 @@ mod tests {
     #[test]
     fn rejects_reusing_a_directory_owned_by_another_session() {
         let root = test_root("simple-session-session-conflict");
-        let created = session_dir_create(CreateArgs {
+        let created = session_dir_create_blocking(CreateArgs {
             base_path: root.to_string_lossy().into_owned(),
             slug: "Study Plan".to_string(),
             directory_name: None,
@@ -409,7 +421,7 @@ mod tests {
         })
         .unwrap();
 
-        let result = session_dir_create(CreateArgs {
+        let result = session_dir_create_blocking(CreateArgs {
             base_path: root.to_string_lossy().into_owned(),
             slug: "Study Plan".to_string(),
             directory_name: None,
@@ -428,7 +440,7 @@ mod tests {
     #[test]
     fn creates_a_directory_from_an_explicit_name() {
         let root = test_root("simple-session-explicit-name");
-        let created = session_dir_create(CreateArgs {
+        let created = session_dir_create_blocking(CreateArgs {
             base_path: root.to_string_lossy().into_owned(),
             slug: "ignored".to_string(),
             directory_name: Some("MatchAnalysis_20260514".to_string()),
@@ -460,7 +472,7 @@ mod tests {
         ];
 
         for name in invalid_names {
-            let result = session_dir_create(CreateArgs {
+            let result = session_dir_create_blocking(CreateArgs {
                 base_path: root.to_string_lossy().into_owned(),
                 slug: "ignored".to_string(),
                 directory_name: Some(name.to_string()),
@@ -470,7 +482,7 @@ mod tests {
             assert!(matches!(result, Err(SessionDirError::InvalidDirectoryName)));
         }
 
-        let control_result = session_dir_create(CreateArgs {
+        let control_result = session_dir_create_blocking(CreateArgs {
             base_path: root.to_string_lossy().into_owned(),
             slug: "ignored".to_string(),
             directory_name: Some("name\u{0007}part".to_string()),

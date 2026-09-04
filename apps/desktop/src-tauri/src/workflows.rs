@@ -465,7 +465,7 @@ fn resolve_live_name(
 }
 
 #[tauri::command]
-pub fn workflow_upsert(
+pub async fn workflow_upsert(
     state: State<'_, Db>,
     input: PhaseTemplateUpsertInput,
 ) -> Result<WorkflowRow, PhaseError> {
@@ -636,7 +636,7 @@ pub fn workflow_upsert(
 }
 
 #[tauri::command]
-pub fn workflow_delete(state: State<'_, Db>, id: String) -> Result<(), PhaseError> {
+pub async fn workflow_delete(state: State<'_, Db>, id: String) -> Result<(), PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
 
     let exists: bool = {
@@ -795,7 +795,7 @@ pub async fn step_def_list(
 }
 
 #[tauri::command]
-pub fn step_def_upsert(
+pub async fn step_def_upsert(
     state: State<'_, Db>,
     input: StepDefUpsertInput,
 ) -> Result<StepDefRow, PhaseError> {
@@ -863,7 +863,7 @@ pub fn step_def_upsert(
 /// `steps` rows (the instance carries its own copy), so existing presets are
 /// unaffected; the def just stops appearing in the library picker.
 #[tauri::command]
-pub fn step_def_delete(state: State<'_, Db>, id: String) -> Result<(), PhaseError> {
+pub async fn step_def_delete(state: State<'_, Db>, id: String) -> Result<(), PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let affected = conn.execute(
         "UPDATE step_library SET deleted_at = ?2 WHERE id = ?1",
@@ -943,7 +943,7 @@ const AGENT_INSERT_SQL: &str = "INSERT INTO agents
  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22)";
 
 #[tauri::command]
-pub fn agent_insert(
+pub async fn agent_insert(
     state: State<'_, Db>,
     input: PhaseRunInsertInput,
 ) -> Result<SessionRow, PhaseError> {
@@ -1015,7 +1015,7 @@ pub fn agent_insert(
 }
 
 #[tauri::command]
-pub fn agent_update_status(
+pub async fn agent_update_status(
     state: State<'_, Db>,
     input: PhaseRunUpdateInput,
 ) -> Result<SessionRow, PhaseError> {
@@ -1068,7 +1068,7 @@ pub fn agent_update_status(
 // chip survives an app restart. agentKindOverride in the store mirrors
 // this column; both are kept in sync via this command.
 #[tauri::command]
-pub fn agent_set_kind(
+pub async fn agent_set_kind(
     state: State<'_, Db>,
     id: String,
     kind: Option<String>,
@@ -1086,7 +1086,7 @@ pub fn agent_set_kind(
 
 // Persists the agent-level verbosity override. NULL = inherit from workspace.
 #[tauri::command]
-pub fn agent_set_verbosity(
+pub async fn agent_set_verbosity(
     state: State<'_, Db>,
     id: String,
     verbosity: Option<String>,
@@ -1103,7 +1103,7 @@ pub fn agent_set_verbosity(
 }
 
 #[tauri::command]
-pub fn agent_set_provider_session_id(
+pub async fn agent_set_provider_session_id(
     state: State<'_, Db>,
     id: String,
     provider_session_id: String,
@@ -1123,7 +1123,11 @@ pub fn agent_set_provider_session_id(
 // Stamps `last_viewed_at` when the user selects/views an agent in the sidebar.
 // Compared against `last_finished_at` to derive the unread indicator.
 #[tauri::command]
-pub fn agent_mark_viewed(state: State<'_, Db>, id: String, at: String) -> Result<(), PhaseError> {
+pub async fn agent_mark_viewed(
+    state: State<'_, Db>,
+    id: String,
+    at: String,
+) -> Result<(), PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let affected = conn.execute(
         "UPDATE agents SET last_viewed_at = ?2 WHERE id = ?1",
@@ -1139,7 +1143,7 @@ pub fn agent_mark_viewed(state: State<'_, Db>, id: String, at: String) -> Result
 }
 
 #[tauri::command]
-pub fn agent_set_done(
+pub async fn agent_set_done(
     state: State<'_, Db>,
     id: String,
     done: bool,

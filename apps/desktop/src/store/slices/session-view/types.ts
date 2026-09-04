@@ -33,7 +33,6 @@ export type LensKind =
   | 'files'
   | 'explore'
   | 'linear'
-  | 'sentry'
   | 'gitlab_issues'
   | 'jira_issues'
   | 'github_issue'
@@ -55,7 +54,6 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'files',
   'explore',
   'linear',
-  'sentry',
   'gitlab_issues',
   'jira_issues',
   'github_issue',

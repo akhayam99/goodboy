@@ -11,7 +11,6 @@ import { HeaderBand } from '@goodboy/ui';
 import { ExternalTaskChip } from '../../../../../integrations/components/ExternalTaskChip';
 import { useSessionRepo } from '../../../../../../store/slices/worktrees/useSessionRepo';
 import { LinearTaskDetail } from './LinearTaskDetail';
-import { SentryTaskDetail } from './SentryTaskDetail';
 import { GithubTaskDetail } from './GithubTaskDetail';
 import { GitlabTaskDetail } from './GitlabTaskDetail';
 import { JiraTaskDetail } from './JiraTaskDetail';
@@ -38,10 +37,6 @@ export const FocusedTaskBody = ({
 
   if (isConnected && provider === 'linear') {
     return <LinearTaskDetail workspaceId={workspaceId} projectId={projectId} task={task} />;
-  }
-
-  if (isConnected && provider === 'sentry') {
-    return <SentryTaskDetail workspaceId={workspaceId} projectId={projectId} task={task} />;
   }
 
   if (isConnected && provider === 'github') {
