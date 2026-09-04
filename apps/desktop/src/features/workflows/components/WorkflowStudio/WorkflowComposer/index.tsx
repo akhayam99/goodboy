@@ -4,8 +4,8 @@ import { Library, Plus, X } from 'lucide-react';
 import { recommendedModelForRole } from '@goodboy/core';
 import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
 import type { StepDefUpsertArgs } from '../../../workflows';
-import type { DefinitionForm, TemplateForm } from '../../../form';
-import { clampEffort } from '../../../../chat/utils/chat-constants';
+import type { StepDraft, WorkflowDraft } from '../../../engine';
+import { stepDraftWithModel } from '../../../engine';
 import { ROLE_TO_KIND } from '../../../../session/agent-kind';
 import { WorkflowStepCard } from '../../../../session/components/WorkflowStepCard';
 import { StepFlowConnector } from '../StepFlowConnector';
@@ -14,7 +14,7 @@ import { useAppStore } from '../../../../../store';
 import { WorkflowHeaderActions } from './WorkflowHeaderActions';
 
 type Props = {
-  readonly form: TemplateForm;
+  readonly form: WorkflowDraft;
   readonly workspaceId: WorkspaceId;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly library: ReadonlyArray<StepDef>;
@@ -27,11 +27,11 @@ type Props = {
   readonly generating: boolean;
   readonly canGenerate: boolean;
   readonly onChangeMeta: (
-    patch: Partial<Pick<TemplateForm, 'name' | 'description' | 'goal'>>,
+    patch: Partial<Pick<WorkflowDraft, 'name' | 'description' | 'goal'>>,
   ) => void;
   readonly onAddBlank: () => void;
   readonly onToggleExpand: (idx: number) => void;
-  readonly onUpdateStep: (idx: number, patch: Partial<DefinitionForm>) => void;
+  readonly onUpdateStep: (idx: number, patch: Partial<StepDraft>) => void;
   readonly onRemoveStep: (idx: number) => void;
   readonly onMoveStep: (idx: number, dir: -1 | 1) => void;
   readonly draggingStepIdx: number | null;
@@ -85,20 +85,18 @@ export const WorkflowComposer = ({
   const defaultProvider: ProviderId =
     connectedProviders.length > 0 ? (connectedProviders[0] as ProviderId) : 'anthropic';
 
-  const recommendedProvider = (_def: DefinitionForm): ProviderId => defaultProvider;
+  const recommendedProvider = (_def: StepDraft): ProviderId => defaultProvider;
 
-  const resolvedProvider = (def: DefinitionForm): ProviderId =>
-    def.providerOverride !== undefined && def.providerOverride !== ''
-      ? (def.providerOverride as ProviderId)
+  const resolvedProvider = (def: StepDraft): ProviderId =>
+    def.provider !== undefined && def.provider !== ''
+      ? (def.provider as ProviderId)
       : recommendedProvider(def);
 
-  const recommendedModel = (def: DefinitionForm): string =>
+  const recommendedModel = (def: StepDraft): string =>
     recommendedModelForRole({ role: def.role, provider: resolvedProvider(def), prefs: roleModels });
 
-  const resolvedModel = (def: DefinitionForm): string =>
-    def.modelOverride !== undefined && def.modelOverride !== ''
-      ? def.modelOverride
-      : recommendedModel(def);
+  const resolvedModel = (def: StepDraft): string =>
+    def.model !== undefined && def.model !== '' ? def.model : recommendedModel(def);
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1">
@@ -194,7 +192,7 @@ export const WorkflowComposer = ({
           >
             <ul className="flex flex-col list-none p-0">
               {form.steps.map((def, idx) => (
-                <Fragment key={def.uid}>
+                <Fragment key={def.key}>
                   <StepFlowConnector
                     index={idx}
                     interior={idx > 0}
@@ -206,13 +204,13 @@ export const WorkflowComposer = ({
                     kind={ROLE_TO_KIND[def.role] ?? 'generic'}
                     role={def.role}
                     provider={resolvedProvider(def)}
-                    providerValue={def.providerOverride as ProviderId | ''}
+                    providerValue={def.provider}
                     recommendedProvider={recommendedProvider(def)}
                     connectedProviders={connectedProviders}
                     name={def.name}
-                    promptPrefix={def.promptPrefix}
+                    promptPrefix={def.prompt}
                     expectedOutput={def.expectedOutput}
-                    model={def.modelOverride}
+                    model={def.model}
                     resolvedModel={resolvedModel(def)}
                     recommendedModel={recommendedModel(def)}
                     effort={def.effort}
@@ -225,14 +223,19 @@ export const WorkflowComposer = ({
                     onCollapse={() => onToggleExpand(idx)}
                     onStartDrag={(e) => onStartStepDrag(idx, def.name || 'untitled step', e)}
                     onName={(v) => onUpdateStep(idx, { name: v })}
-                    onPrompt={(v) => onUpdateStep(idx, { promptPrefix: v })}
+                    onPrompt={(v) => onUpdateStep(idx, { prompt: v })}
                     onExpectedOutput={(v) => onUpdateStep(idx, { expectedOutput: v })}
-                    onProvider={(v) => onUpdateStep(idx, { providerOverride: v })}
+                    onProvider={(v) => onUpdateStep(idx, { provider: v })}
                     onModel={(v) =>
-                      onUpdateStep(idx, {
-                        modelOverride: v,
-                        effort: clampEffort(v, def.effort),
-                      })
+                      onUpdateStep(
+                        idx,
+                        stepDraftWithModel({
+                          step: def,
+                          provider: def.provider,
+                          model: v,
+                          recommendedModel: recommendedModel(def),
+                        }),
+                      )
                     }
                     onEffort={(v) => onUpdateStep(idx, { effort: v })}
                     onRole={(v) => onUpdateStep(idx, { role: v })}

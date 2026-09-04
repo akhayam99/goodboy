@@ -11,7 +11,8 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { StepDefUpsertArgs } from '../../workflows';
-import { clampEffort, type EffortLevel } from '../../../chat/utils/chat-constants';
+import { type EffortLevel } from '../../../chat/utils/chat-constants';
+import { stepDraftWithModel } from '../../engine';
 import { RoleSelect } from '../../../session/components/RoleSelect';
 import { InlineField } from '../../../session/components/InlineField';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
@@ -178,7 +179,24 @@ export const LibraryStepForm = ({
                 commit({ providerOverride: p });
               }}
               onModel={(m) => {
-                const clamped = clampEffort(m === '' ? recommendedMod : m, effort);
+                const clamped = stepDraftWithModel({
+                  step: {
+                    key: def?.id ?? 'new-library-step',
+                    sourceStepId: null,
+                    libraryStepId: def?.id ?? null,
+                    role,
+                    name,
+                    prompt: promptPrefix,
+                    expectedOutput: '',
+                    provider: pendingProvider.current,
+                    model: modelOverride,
+                    effort,
+                    verbosity,
+                  },
+                  provider: pendingProvider.current,
+                  model: m,
+                  recommendedModel: recommendedMod,
+                }).effort;
                 setModelOverride(m);
                 const over: Partial<FormState> = {
                   modelOverride: m,

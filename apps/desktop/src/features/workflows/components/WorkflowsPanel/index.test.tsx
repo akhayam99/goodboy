@@ -69,7 +69,17 @@ const makeWorkflow = (overrides: Record<string, unknown> = {}) => ({
   workspaceId: 'ws-1',
   name: 'My workflow',
   description: '',
-  steps: [],
+  steps: [
+    {
+      id: 'step-1',
+      role: 'planner',
+      ordinal: 0,
+      name: 'Plan',
+      promptPrefix: 'Write the plan',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    },
+  ],
   isPreset: true,
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
@@ -182,17 +192,21 @@ describe('WorkflowsPanel', () => {
           goal: '',
           steps: [
             {
-              uid: 'draft-step',
+              key: 'draft-step',
+              sourceStepId: null,
+              libraryStepId: null,
               role: 'custom',
               name: '',
-              promptPrefix: '',
+              prompt: '',
               expectedOutput: '',
-              providerOverride: '',
-              modelOverride: '',
+              provider: '',
+              model: '',
               effort: 'medium',
               verbosity: 'normal',
             },
           ],
+          origin: 'custom',
+          isPreset: true,
         },
       },
     };
@@ -239,18 +253,21 @@ describe('WorkflowsPanel', () => {
           goal: '',
           steps: [
             {
-              uid: 'draft-step',
-              id: 'step-1',
+              key: 'draft-step',
+              sourceStepId: 'step-1',
+              libraryStepId: null,
               role: 'planner',
               name: 'Plan',
-              promptPrefix: 'Write the plan',
+              prompt: 'Write the plan',
               expectedOutput: '',
-              providerOverride: '',
-              modelOverride: '',
+              provider: '',
+              model: '',
               effort: 'medium',
               verbosity: 'normal',
             },
           ],
+          origin: 'custom',
+          isPreset: true,
         },
       },
     };
@@ -307,5 +324,29 @@ describe('WorkflowsPanel', () => {
 
     const alert = await screen.findByRole('alert', {}, { timeout: 2_000 });
     expect(alert.textContent).toContain('disk is read-only');
+  });
+
+  it('refuses to save a named workflow without steps', async () => {
+    const original = makeWorkflow({ name: 'Plan and build' });
+    state.phaseTemplates = { 'ws-1': [original] };
+    state.workflowStudioDrafts = {
+      'ws-1': {
+        workflowId: 'wf-1',
+        agentPrompt: '',
+        form: {
+          name: 'Plan and build, emptied',
+          description: '',
+          goal: '',
+          steps: [],
+          origin: 'custom',
+          isPreset: true,
+        },
+      },
+    };
+    renderPanel();
+
+    const alert = await screen.findByRole('alert', {}, { timeout: 2_000 });
+    expect(alert.textContent).toContain('Add at least one step');
+    expect(state.savePhaseTemplate).not.toHaveBeenCalled();
   });
 });
