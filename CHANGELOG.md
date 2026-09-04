@@ -9,9 +9,20 @@ if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
 ## Goodboy v0.2.14
 
-Session switches stop freezing the app, the inbox and the scripts pane
-are rebuilt around how you triage and run things, and settings live on
-one surface.
+Session switches stop freezing the app, suggestions move into the
+activity timeline, agents stop mounting projects they only read, the
+inbox and the scripts pane are rebuilt around how you triage and run
+things, and settings live on one surface.
+
+### [#1645] Suggestions above NOW, mounts only to write
+
+Suggestions now sit in the activity timeline above the NOW mark as
+compact rows with their action, on a dashed rail so they read as not
+done yet; the activity filter can hide them. The overview block is
+gone. Agents are told that reading a project needs no mount and that
+a project is materialized only to write to it. A mount the goal does
+not name is no longer created on the spot: it becomes a suggestion you
+approve or dismiss, and at most two mounts happen per turn.
 
 ### [#1644] Session switch off the main thread
 
