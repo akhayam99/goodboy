@@ -41,7 +41,9 @@ export const OverviewPanel = ({
       ? (data.orchestratedSessions / data.sessionCount) * 100
       : 0;
   const previousShare =
-    data?.previousSessionCount != null && data.previousSessionCount > 0
+    data?.previousSessionCount !== null &&
+    data?.previousSessionCount !== undefined &&
+    data.previousSessionCount > 0
       ? ((data.previousOrchestratedSessions ?? 0) / data.previousSessionCount) * 100
       : null;
   return (
@@ -87,7 +89,10 @@ export const OverviewPanel = ({
               value={`${pullRequestData?.open ?? 0} / ${pullRequestData?.merged ?? 0}`}
               current={(pullRequestData?.open ?? 0) + (pullRequestData?.merged ?? 0)}
               previous={
-                pullRequestData?.previousOpen == null || pullRequestData.previousMerged == null
+                pullRequestData?.previousOpen === null ||
+                pullRequestData?.previousOpen === undefined ||
+                pullRequestData.previousMerged === null ||
+                pullRequestData.previousMerged === undefined
                   ? null
                   : pullRequestData.previousOpen + pullRequestData.previousMerged
               }

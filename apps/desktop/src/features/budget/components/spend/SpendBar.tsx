@@ -20,13 +20,13 @@ export const SpendBar = ({ label, valueLabel, pct, metaLabel, icon, onClick }: P
           {icon}
           {label}
         </span>
-        {metaLabel != null ? (
+        {metaLabel !== undefined ? (
           <span className="ml-auto shrink-0 text-2xs text-muted-foreground/70">{metaLabel}</span>
         ) : null}
         <span
           className={cn(
             'shrink-0 font-mono text-xs tabular-nums text-muted-foreground',
-            metaLabel == null && 'ml-auto',
+            metaLabel === undefined && 'ml-auto',
           )}
         >
           {valueLabel}

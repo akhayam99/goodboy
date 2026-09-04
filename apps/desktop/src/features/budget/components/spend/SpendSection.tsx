@@ -45,7 +45,7 @@ export const SpendSection = ({
   onRetryTelemetry,
 }: Props) => {
   const totalSpend = providers.reduce((sum, entry) => sum + entry.spentUsd, 0);
-  const hasAlerts = alerts.some((alert) => alert.dismissedAt == null);
+  const hasAlerts = alerts.some((alert) => alert.dismissedAt === undefined);
 
   return (
     <section className="flex flex-col gap-4">

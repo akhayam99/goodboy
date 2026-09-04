@@ -39,7 +39,7 @@ export const SessionBudgetContent = ({
   const turnCount = records.filter((record) => record.kind === 'turn').length;
   const isStudio = density === 'studio';
   const formatSpend = formatUsd;
-  const showsTurns = isStudio && onOpenSession != null;
+  const showsTurns = isStudio && onOpenSession !== undefined;
 
   return (
     <div className={cn('flex flex-col', isStudio ? 'gap-6' : 'gap-4')}>
