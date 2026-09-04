@@ -108,17 +108,19 @@ type StepDraftWithModelParams = {
   readonly step: StepDraft;
   readonly provider: ProviderId | '';
   readonly model: string;
+  readonly recommendedModel: string;
 };
 
 export const stepDraftWithModel = ({
   step,
   provider,
   model,
+  recommendedModel,
 }: StepDraftWithModelParams): StepDraft => ({
   ...step,
   provider,
   model,
-  effort: clampEffort(model, step.effort),
+  effort: clampEffort(model !== '' ? model : recommendedModel, step.effort),
 });
 
 type ValidateDraftParams = { readonly draft: WorkflowDraft };

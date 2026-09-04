@@ -1327,6 +1327,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                       step: st,
                                       provider: st.provider,
                                       model: v,
+                                      recommendedModel: recommendedModel(st),
                                     }),
                                   )
                                 }

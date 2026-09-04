@@ -131,6 +131,10 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
       setFormError(errors.name);
       return false;
     }
+    if (errors.steps !== undefined) {
+      setFormError(errors.steps);
+      return false;
+    }
     if (Object.keys(errors.stepNames).length > 0) {
       setFormError('All steps need a name');
       return false;

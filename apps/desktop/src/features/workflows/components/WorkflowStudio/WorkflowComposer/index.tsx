@@ -229,7 +229,12 @@ export const WorkflowComposer = ({
                     onModel={(v) =>
                       onUpdateStep(
                         idx,
-                        stepDraftWithModel({ step: def, provider: def.provider, model: v }),
+                        stepDraftWithModel({
+                          step: def,
+                          provider: def.provider,
+                          model: v,
+                          recommendedModel: recommendedModel(def),
+                        }),
                       )
                     }
                     onEffort={(v) => onUpdateStep(idx, { effort: v })}

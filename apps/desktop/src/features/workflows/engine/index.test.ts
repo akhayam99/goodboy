@@ -107,9 +107,26 @@ describe('workflow authoring engine', () => {
       step: { ...step, effort: 'max' },
       provider: workflow.steps[1]?.providerOverride ?? '',
       model: 'claude-sonnet-4-6',
+      recommendedModel: 'claude-opus-4-8',
     });
     expect(changed.provider).toBe('anthropic');
     expect(changed.model).toBe('claude-sonnet-4-6');
+    expect(changed.effort).toBe('high');
+  });
+
+  it('clamps effort against the recommended model when the model resets to auto', () => {
+    const step = addStep({ steps: [] })[0];
+    expect(step).toBeDefined();
+    if (step === undefined) {
+      return;
+    }
+    const changed = stepDraftWithModel({
+      step: { ...step, effort: 'max' },
+      provider: '',
+      model: '',
+      recommendedModel: 'claude-sonnet-4-6',
+    });
+    expect(changed.model).toBe('');
     expect(changed.effort).toBe('high');
   });
 

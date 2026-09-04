@@ -194,7 +194,8 @@ export const LibraryStepForm = ({
                     verbosity,
                   },
                   provider: pendingProvider.current,
-                  model: m === '' ? recommendedMod : m,
+                  model: m,
+                  recommendedModel: recommendedMod,
                 }).effort;
                 setModelOverride(m);
                 const over: Partial<FormState> = {
