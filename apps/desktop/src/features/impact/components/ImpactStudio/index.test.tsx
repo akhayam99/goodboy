@@ -222,7 +222,7 @@ describe('ImpactStudio', () => {
 
   it('switches to Efficiency and dispatches the Budget Studio link', () => {
     const onBudget = vi.fn();
-    window.addEventListener('goodboy:open-budget-studio', onBudget);
+    window.addEventListener('goodboy:open-settings', onBudget);
     render(
       <ImpactStudio
         workspaceId={'workspace-1' as never}
@@ -236,7 +236,7 @@ describe('ImpactStudio', () => {
     expect(screen.getByText('context growth per turn')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /spend and caps live in budget/i }));
     expect(onBudget).toHaveBeenCalled();
-    window.removeEventListener('goodboy:open-budget-studio', onBudget);
+    window.removeEventListener('goodboy:open-settings', onBudget);
   });
 
   it('updates the query window from the header toggle', () => {

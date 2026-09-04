@@ -531,9 +531,9 @@ describe('RoutingPicker', () => {
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const addProvider = screen.getByRole('button', { name: 'Add provider' });
     const onOpenProviderStudio = vi.fn();
-    window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
+    window.addEventListener('goodboy:open-settings', onOpenProviderStudio);
     fireEvent.click(addProvider);
-    window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
+    window.removeEventListener('goodboy:open-settings', onOpenProviderStudio);
     expect(onOpenProviderStudio).toHaveBeenCalledOnce();
     expect(screen.queryByRole('dialog', { name: 'routing' })).toBeNull();
   });
@@ -562,13 +562,13 @@ describe('RoutingPicker', () => {
         events.push(event);
       }
     };
-    window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
+    window.addEventListener('goodboy:open-settings', onOpenProviderStudio);
     render(<RoutingPicker {...baseProps} connectedProviders={[]} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     expect(screen.getByText('No providers connected')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Open providers' }));
     expect(events).toHaveLength(1);
-    window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
+    window.removeEventListener('goodboy:open-settings', onOpenProviderStudio);
   });
 
   it('focuses the selected model chip when the popover opens', () => {

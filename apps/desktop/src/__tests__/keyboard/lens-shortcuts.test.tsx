@@ -70,9 +70,6 @@ vi.mock('../../features/settings/components/SettingsStudio', () => ({
   SettingsStudio: () => null,
 }));
 vi.mock('../../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
-vi.mock('../../features/workspace/components/WorkspaceSettingsPane', () => ({
-  WorkspaceSettingsPane: () => null,
-}));
 vi.mock('../../app/components/Toast', () => ({ ToastProvider: () => null }));
 vi.mock('../../features/notifications/components/NotificationToastBridge', () => ({
   NotificationToastBridge: () => null,
@@ -94,10 +91,6 @@ vi.mock('../../features/workspace/window', () => ({ isMainWindow: () => true }))
 vi.mock('../../features/workflows/components/WorkflowStudio', () => ({
   WorkflowStudio: () => null,
 }));
-vi.mock('../../features/providers/components/ProviderStudio', () => ({
-  ProviderStudio: () => null,
-}));
-vi.mock('../../features/budget/components/BudgetStudio', () => ({ BudgetStudio: () => null }));
 vi.mock('../../features/permissions/components/DiffViewerDialog', () => ({
   DiffViewerDialog: () => null,
 }));

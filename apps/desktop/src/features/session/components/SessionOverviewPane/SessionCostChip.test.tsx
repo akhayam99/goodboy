@@ -178,7 +178,7 @@ describe('SessionCostChip', () => {
 
   it('expands the session budget inline without dispatching the budget studio event', () => {
     const handler = vi.fn();
-    window.addEventListener('goodboy:open-budget-studio', handler);
+    window.addEventListener('goodboy:open-settings', handler);
     render(<SessionCostChip sessionId={SID} />);
     fireEvent.click(screen.getByRole('button'));
     expect(screen.getByRole('dialog', { name: 'Session budget details' })).toBeDefined();
@@ -186,12 +186,12 @@ describe('SessionCostChip', () => {
     expect(store.loadSessionTelemetry).toHaveBeenCalledWith(SID);
     expect(store.loadSessionBudget).toHaveBeenCalledWith(SID);
     expect(handler).not.toHaveBeenCalled();
-    window.removeEventListener('goodboy:open-budget-studio', handler);
+    window.removeEventListener('goodboy:open-settings', handler);
   });
 
   it('opens budget studio at the same session scope from the popover', () => {
     const handler = vi.fn();
-    window.addEventListener('goodboy:open-budget-studio', handler);
+    window.addEventListener('goodboy:open-settings', handler);
     render(<SessionCostChip sessionId={SID} />);
 
     fireEvent.click(screen.getByRole('button'));
@@ -199,11 +199,11 @@ describe('SessionCostChip', () => {
 
     expect(handler).toHaveBeenCalledTimes(1);
     const event = handler.mock.calls[0]?.[0] as CustomEvent<{
-      scope?: { kind?: string; sessionId?: SessionId };
+      budgetScope?: { kind?: string; sessionId?: SessionId };
     }>;
-    expect(event.detail.scope).toEqual({ kind: 'session', sessionId: SID });
+    expect(event.detail.budgetScope).toEqual({ kind: 'session', sessionId: SID });
     expect(screen.queryByRole('dialog', { name: 'Session budget details' })).toBeNull();
-    window.removeEventListener('goodboy:open-budget-studio', handler);
+    window.removeEventListener('goodboy:open-settings', handler);
   });
 
   it('moves focus into the dialog and restores it after Escape', () => {

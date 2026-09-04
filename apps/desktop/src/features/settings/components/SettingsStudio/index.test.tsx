@@ -23,7 +23,21 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../../store', () => ({
+  EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
+  useSessions: () => [],
+}));
+
+vi.mock('../../../providers/components/ProviderStudio', () => ({
+  ProviderSettingsScope: () => <div>Provider settings content</div>,
+}));
+
+vi.mock('../../../budget/components/BudgetStudio', () => ({
+  BudgetSettingsScope: () => <div>Budget settings content</div>,
+}));
+
+vi.mock('./WorkspaceScopePanel', () => ({
+  WorkspaceScopePanel: () => <div>Workspace settings content</div>,
 }));
 
 vi.mock('../../../../app/components/Toast', () => ({
@@ -60,19 +74,25 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SettingsStudio', () => {
-  it('renders all settings sections without a navigation rail', () => {
-    render(<SettingsStudio onClose={vi.fn()} />);
+  it('renders all settings scopes in a navigation rail', () => {
+    render(
+      <SettingsStudio currentWorkspace={null} initialFocus={{ scope: 'app' }} onClose={vi.fn()} />,
+    );
 
     expect(
       ['Editor', 'Shortcuts', 'GitHub', 'Config backup', 'Help', 'Danger zone'].map(
         (label) => screen.getByText(label).textContent,
       ),
     ).toEqual(['Editor', 'Shortcuts', 'GitHub', 'Config backup', 'Help', 'Danger zone']);
-    expect(screen.queryByRole('navigation', { name: /settings sections/i })).toBeNull();
+    expect(screen.getByRole('navigation', { name: /settings scopes/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'App' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Providers & models' })).toBeDefined();
   });
 
   it('collapses shortcuts by default', () => {
-    render(<SettingsStudio onClose={vi.fn()} />);
+    render(
+      <SettingsStudio currentWorkspace={null} initialFocus={{ scope: 'app' }} onClose={vi.fn()} />,
+    );
 
     const toggle = screen.getByRole('button', { name: /expand keyboard shortcuts/i });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
@@ -84,7 +104,13 @@ describe('SettingsStudio', () => {
   });
 
   it('expands and scrolls to shortcuts when focused', () => {
-    render(<SettingsStudio initialFocus="shortcuts" onClose={vi.fn()} />);
+    render(
+      <SettingsStudio
+        currentWorkspace={null}
+        initialFocus={{ scope: 'app', section: 'shortcuts' }}
+        onClose={vi.fn()}
+      />,
+    );
 
     expect(
       screen
@@ -96,7 +122,9 @@ describe('SettingsStudio', () => {
   });
 
   it('explains the scope of the GitHub token in one line', () => {
-    render(<SettingsStudio onClose={vi.fn()} />);
+    render(
+      <SettingsStudio currentWorkspace={null} initialFocus={{ scope: 'app' }} onClose={vi.fn()} />,
+    );
 
     expect(screen.getByText('Global fallback token used by every workspace.')).toBeDefined();
     expect(
@@ -107,7 +135,9 @@ describe('SettingsStudio', () => {
   it('opens the report issue studio through the shared studio event', () => {
     const listener = vi.fn();
     window.addEventListener(REPORT_ISSUE_STUDIO_EVENT, listener);
-    render(<SettingsStudio onClose={vi.fn()} />);
+    render(
+      <SettingsStudio currentWorkspace={null} initialFocus={{ scope: 'app' }} onClose={vi.fn()} />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /report an issue/i }));
 
@@ -118,7 +148,13 @@ describe('SettingsStudio', () => {
   it.each(['editor', 'integrations', 'advanced', 'initialization'])(
     'resolves the %s deep link',
     (section) => {
-      render(<SettingsStudio initialFocus={section} onClose={vi.fn()} />);
+      render(
+        <SettingsStudio
+          currentWorkspace={null}
+          initialFocus={{ scope: 'app', section }}
+          onClose={vi.fn()}
+        />,
+      );
 
       expect(scrollIntoViewMock.mock.contexts.at(-1)).toBe(document.getElementById(section));
     },

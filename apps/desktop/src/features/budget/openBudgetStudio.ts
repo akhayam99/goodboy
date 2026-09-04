@@ -5,5 +5,7 @@ type Params = {
 };
 
 export const openBudgetStudio = ({ scope }: Params) => {
-  window.dispatchEvent(new CustomEvent('goodboy:open-budget-studio', { detail: { scope } }));
+  window.dispatchEvent(
+    new CustomEvent('goodboy:open-settings', { detail: { scope: 'budget', budgetScope: scope } }),
+  );
 };

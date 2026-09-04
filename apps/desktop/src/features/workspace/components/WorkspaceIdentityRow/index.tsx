@@ -70,7 +70,11 @@ export const WorkspaceIdentityRow = () => {
       <Tooltip content="Preferences" side="bottom">
         <button
           type="button"
-          onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-workspace-settings'))}
+          onClick={() =>
+            window.dispatchEvent(
+              new CustomEvent('goodboy:open-settings', { detail: { scope: 'workspace' } }),
+            )
+          }
           aria-label="Preferences"
           className="flex shrink-0 items-center justify-center rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-muted/50 hover:text-foreground"
         >

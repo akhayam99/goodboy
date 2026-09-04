@@ -163,8 +163,8 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                 type="button"
                 onClick={() =>
                   window.dispatchEvent(
-                    new CustomEvent('goodboy:open-workspace-settings', {
-                      detail: { section: 'projects' },
+                    new CustomEvent('goodboy:open-settings', {
+                      detail: { scope: 'workspace', section: 'projects' },
                     }),
                   )
                 }

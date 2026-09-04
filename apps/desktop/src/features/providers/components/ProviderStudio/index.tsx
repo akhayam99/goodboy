@@ -3,9 +3,7 @@ import { ScrollFade } from '@goodboy/ui';
 import type { ProviderId, ProviderLifecycleAction, WorkspaceId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioRailLayout } from '@goodboy/ui';
-import { StudioShell } from '../../../../shared/components/StudioShell';
 import { isConnectRunning } from '../ProviderConnect/isConnectRunning';
 import { ProvidersRail } from './ProvidersRail';
 import { ProviderDetailPanel } from './ProviderDetailPanel';
@@ -13,24 +11,21 @@ import { DefaultsPanel } from './DefaultsPanel';
 import { PROVIDER_ORDER } from './providerOrder';
 
 type Props = {
-  readonly workspaceName: string;
   readonly workspaceId: WorkspaceId;
   readonly initialFocus?: ProviderId | null;
   readonly initialAction?: ProviderLifecycleAction | null;
-  readonly onClose: () => void;
 };
 
-export const ProviderStudio = ({
-  workspaceName,
-  workspaceId,
-  initialFocus,
-  initialAction,
-  onClose,
-}: Props) => {
+export const ProviderSettingsScope = ({ workspaceId, initialFocus, initialAction }: Props) => {
   const providers = useAppStore((s) => s.providers);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
   const [focused, setFocused] = useState<ProviderId | 'defaults'>(initialFocus ?? 'defaults');
   const [autoConnect, setAutoConnect] = useState(initialFocus != null && initialAction != null);
+
+  useEffect(() => {
+    setFocused(initialFocus ?? 'defaults');
+    setAutoConnect(initialFocus != null && initialAction != null);
+  }, [initialAction, initialFocus]);
 
   const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
     (p): p is ProviderInfo => p !== undefined,
@@ -55,43 +50,32 @@ export const ProviderStudio = ({
   };
 
   return (
-    <StudioShell
-      icon={CONCEPT_ICONS.providers}
-      tone={CONCEPT_TONE.providers}
-      title="Provider studio"
-      workspaceName={workspaceName}
-      closeLabel="close provider studio"
-      onClose={onClose}
-    >
-      {() => (
-        <StudioRailLayout
-          railLabel="Providers"
-          railWidth="standard"
-          rail={
-            <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
-              <ProvidersRail
-                providers={ordered}
-                focusedId={focused}
-                onSelect={onSelect}
-                onSelectDefaults={() => {
-                  setAutoConnect(false);
-                  setFocused('defaults');
-                }}
-              />
-            </ScrollFade>
-          }
-          detail={
-            focused === 'defaults' ? (
-              <DefaultsPanel workspaceId={workspaceId} />
-            ) : (
-              <ProviderDetailPanel
-                info={selected}
-                autoConnect={autoConnect && selected?.id === initialFocus}
-              />
-            )
-          }
-        />
-      )}
-    </StudioShell>
+    <StudioRailLayout
+      railLabel="Providers"
+      railWidth="standard"
+      rail={
+        <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
+          <ProvidersRail
+            providers={ordered}
+            focusedId={focused}
+            onSelect={onSelect}
+            onSelectDefaults={() => {
+              setAutoConnect(false);
+              setFocused('defaults');
+            }}
+          />
+        </ScrollFade>
+      }
+      detail={
+        focused === 'defaults' ? (
+          <DefaultsPanel workspaceId={workspaceId} />
+        ) : (
+          <ProviderDetailPanel
+            info={selected}
+            autoConnect={autoConnect && selected?.id === initialFocus}
+          />
+        )
+      }
+    />
   );
 };

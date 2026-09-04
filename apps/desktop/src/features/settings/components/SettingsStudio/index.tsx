@@ -1,26 +1,73 @@
+import { useEffect, useState } from 'react';
+import { ScrollFade, StudioRailLayout } from '@goodboy/ui';
+import type { Workspace } from '@goodboy/types';
+import { BudgetSettingsScope } from '../../../budget/components/BudgetStudio';
+import { ProviderSettingsScope } from '../../../providers/components/ProviderStudio';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { AppScopePanel } from './AppScopePanel';
+import { SettingsRail } from './SettingsRail';
+import type { SettingsFocus, SettingsScope } from './types';
+import { WorkspaceScopePanel } from './WorkspaceScopePanel';
 
 type Props = {
-  readonly initialFocus?: string;
+  readonly currentWorkspace: Workspace | null;
+  readonly initialFocus: SettingsFocus;
   readonly onClose: () => void;
 };
 
-export const SettingsStudio = ({ initialFocus, onClose }: Props) => {
+export const SettingsStudio = ({ currentWorkspace, initialFocus, onClose }: Props) => {
+  const [scope, setScope] = useState<SettingsScope>(initialFocus.scope);
+
+  useEffect(() => setScope(initialFocus.scope), [initialFocus]);
+
+  const availableScope = currentWorkspace === null && scope !== 'app' ? 'app' : scope;
+
   return (
     <StudioShell
       icon={CONCEPT_ICONS.settings}
       tone={CONCEPT_TONE.settings}
       title="Settings"
-      workspaceName="App settings"
+      workspaceName={currentWorkspace?.name ?? 'App settings'}
       closeLabel="close settings"
       onClose={onClose}
     >
       {(requestClose) => (
-        <div className="min-h-0 flex-1">
-          <AppScopePanel initialSection={initialFocus} requestClose={requestClose} />
-        </div>
+        <StudioRailLayout
+          railLabel="Settings scopes"
+          railWidth="narrow"
+          rail={
+            <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
+              <SettingsRail
+                scope={availableScope}
+                workspaceName={currentWorkspace?.name ?? null}
+                onSelect={setScope}
+              />
+            </ScrollFade>
+          }
+          detail={
+            availableScope === 'app' ? (
+              <AppScopePanel initialSection={initialFocus.section} requestClose={requestClose} />
+            ) : availableScope === 'workspace' && currentWorkspace !== null ? (
+              <WorkspaceScopePanel
+                workspaceId={currentWorkspace.id}
+                initialSection={initialFocus.section}
+                requestClose={requestClose}
+              />
+            ) : availableScope === 'providers' && currentWorkspace !== null ? (
+              <ProviderSettingsScope
+                workspaceId={currentWorkspace.id}
+                initialFocus={initialFocus.provider}
+                initialAction={initialFocus.action}
+              />
+            ) : availableScope === 'budget' ? (
+              <BudgetSettingsScope
+                initialScope={initialFocus.budgetScope}
+                requestClose={requestClose}
+              />
+            ) : null
+          }
+        />
       )}
     </StudioShell>
   );

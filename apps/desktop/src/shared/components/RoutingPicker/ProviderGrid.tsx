@@ -76,7 +76,9 @@ export const ProviderGrid = ({
         aria-label="Add provider"
         onClick={() => {
           onNavigateProviders();
-          window.dispatchEvent(new CustomEvent('goodboy:open-provider-studio'));
+          window.dispatchEvent(
+            new CustomEvent('goodboy:open-settings', { detail: { scope: 'providers' } }),
+          );
         }}
         className="inline-flex min-w-0 items-center justify-center gap-1 rounded-md text-3xs font-medium text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground"
       >

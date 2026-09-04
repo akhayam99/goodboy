@@ -103,7 +103,9 @@ export const InboxStudio = ({
   };
 
   const onOpenIntegrations = (): void => {
-    window.dispatchEvent(new CustomEvent('goodboy:open-provider-studio'));
+    window.dispatchEvent(
+      new CustomEvent('goodboy:open-settings', { detail: { scope: 'providers' } }),
+    );
   };
 
   return (

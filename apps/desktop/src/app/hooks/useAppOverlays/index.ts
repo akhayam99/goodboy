@@ -10,8 +10,11 @@ import {
   type WorkspaceId,
 } from '@goodboy/types';
 import { AppOverlayRouter } from '../../components/AppOverlayRouter';
-import { WorkspaceSettingsPane } from '../../../features/workspace/components/WorkspaceSettingsPane';
 import type { BudgetScope } from '../../../features/budget/components/BudgetStudio/lib';
+import type {
+  SettingsFocus,
+  SettingsScope,
+} from '../../../features/settings/components/SettingsStudio/types';
 import {
   INBOX_KINDS,
   INBOX_PROVIDERS,
@@ -41,6 +44,11 @@ type Params = {
 type EventValueParams = {
   readonly event: Event;
   readonly key: string;
+};
+
+type OpenSettingsEventParams = {
+  readonly event: Event;
+  readonly fallbackScope: SettingsScope;
 };
 
 const eventValue = ({ event, key }: EventValueParams): unknown => {
@@ -104,14 +112,10 @@ export const useAppOverlays = ({
   pinSessionSidebar,
 }: Params) => {
   const [companionOpen, setCompanionOpen] = useState(false);
-  const [appSettingsOpen, setAppSettingsOpen] = useState(false);
-  const [appSettingsFocus, setAppSettingsFocus] = useState<string | undefined>(undefined);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsFocus, setSettingsFocus] = useState<SettingsFocus>({ scope: 'app' });
   const [guideStudioOpen, setGuideStudioOpen] = useState(false);
   const [reportIssueStudioOpen, setReportIssueStudioOpen] = useState(false);
-  const [workspaceSettingsOpen, setWorkspaceSettingsOpen] = useState(false);
-  const [workspaceSettingsFocus, setWorkspaceSettingsFocus] = useState<string | undefined>(
-    undefined,
-  );
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteSessionId, setDeleteSessionId] = useState<SessionId | null>(null);
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -125,13 +129,6 @@ export const useAppOverlays = ({
   const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
   const [inboxStudioOpen, setInboxStudioOpen] = useState(false);
   const [inboxStudioFocus, setInboxStudioFocus] = useState<InboxStudioFocus | null>(null);
-  const [providerStudioOpen, setProviderStudioOpen] = useState(false);
-  const [providerStudioFocus, setProviderStudioFocus] = useState<ProviderId | null>(null);
-  const [providerStudioAction, setProviderStudioAction] = useState<ProviderLifecycleAction | null>(
-    null,
-  );
-  const [budgetStudioOpen, setBudgetStudioOpen] = useState(false);
-  const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
   const [impactStudioOpen, setImpactStudioOpen] = useState(false);
   const [changelogStudioOpen, setChangelogStudioOpen] = useState(false);
   const [notificationsStudioOpen, setNotificationsStudioOpen] = useState(false);
@@ -154,13 +151,11 @@ export const useAppOverlays = ({
 
   const closeAllStudios = useCallback(() => {
     setWorkflowStudioOpen(false);
-    setProviderStudioOpen(false);
-    setBudgetStudioOpen(false);
     setImpactStudioOpen(false);
     setChangelogStudioOpen(false);
     setNotificationsStudioOpen(false);
     setInboxStudioOpen(false);
-    setAppSettingsOpen(false);
+    setSettingsOpen(false);
     setGuideStudioOpen(false);
     setReportIssueStudioOpen(false);
     setAddWorkspaceOpen(false);
@@ -174,14 +169,14 @@ export const useAppOverlays = ({
   const openSettings = useCallback(() => {
     closeAllStudios();
     clearSessionStudio();
-    setAppSettingsFocus(undefined);
-    setAppSettingsOpen(true);
+    setSettingsFocus({ scope: 'app' });
+    setSettingsOpen(true);
   }, [clearSessionStudio, closeAllStudios]);
 
   const openBudget = useCallback(() => {
     closeAllStudios();
-    setBudgetStudioScope({ kind: 'overview' });
-    setBudgetStudioOpen(true);
+    setSettingsFocus({ scope: 'budget', budgetScope: { kind: 'overview' } });
+    setSettingsOpen(true);
   }, [closeAllStudios]);
 
   const openImpact = useCallback(() => {
@@ -201,9 +196,8 @@ export const useAppOverlays = ({
 
   const openProviders = useCallback(() => {
     closeAllStudios();
-    setProviderStudioFocus(null);
-    setProviderStudioAction(null);
-    setProviderStudioOpen(true);
+    setSettingsFocus({ scope: 'providers' });
+    setSettingsOpen(true);
   }, [closeAllStudios]);
 
   const openGithub = useCallback(() => {
@@ -271,8 +265,8 @@ export const useAppOverlays = ({
   }, [currentSession]);
 
   const openShortcutHelp = useCallback(() => {
-    setAppSettingsFocus('shortcuts');
-    setAppSettingsOpen(true);
+    setSettingsFocus({ scope: 'app', section: 'shortcuts' });
+    setSettingsOpen(true);
   }, []);
 
   const openPalette = useCallback((prefix = '') => {
@@ -282,12 +276,32 @@ export const useAppOverlays = ({
   }, []);
 
   useEffect(() => {
-    const onOpenSettings = (event: Event) => {
+    const openSettingsEvent = ({ event, fallbackScope }: OpenSettingsEventParams) => {
+      const requestedScope = eventValue({ event, key: 'scope' });
       const section = eventValue({ event, key: 'section' });
+      const provider =
+        eventValue({ event, key: 'provider' }) ?? eventValue({ event, key: 'providerId' });
+      const action = eventValue({ event, key: 'action' });
+      const budgetScope =
+        eventValue({ event, key: 'budgetScope' }) ?? eventValue({ event, key: 'scope' });
+      const scope: SettingsScope =
+        requestedScope === 'app' ||
+        requestedScope === 'workspace' ||
+        requestedScope === 'providers' ||
+        requestedScope === 'budget'
+          ? requestedScope
+          : fallbackScope;
       closeAllStudios();
-      setAppSettingsFocus(typeof section === 'string' ? section : undefined);
-      setAppSettingsOpen(true);
+      setSettingsFocus({
+        scope,
+        section: typeof section === 'string' ? section : undefined,
+        provider: isProviderId(provider) ? provider : undefined,
+        action: isProviderLifecycleAction(action) ? action : undefined,
+        budgetScope: isBudgetScope(budgetScope) ? budgetScope : undefined,
+      });
+      setSettingsOpen(true);
     };
+    const onOpenSettings = (event: Event) => openSettingsEvent({ event, fallbackScope: 'app' });
     const onOpenGuide = () => {
       closeAllStudios();
       setGuideStudioOpen(true);
@@ -312,8 +326,7 @@ export const useAppOverlays = ({
         return;
       }
       const planId = eventValue({ event, key: 'planId' });
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
+      setSettingsOpen(false);
       const state = useAppStore.getState();
       state.setFocusedPlanId(sessionId, isPlanId(planId) ? planId : null);
       state.setActiveLens(sessionId, 'plans');
@@ -329,23 +342,17 @@ export const useAppOverlays = ({
       if (resolved === null) {
         return;
       }
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
+      setSettingsOpen(false);
       useAppStore.getState().openDiffLens(resolved.sessionId, resolved.focus);
     };
     const onOpenProviderStudio = (event: Event) => {
-      const providerId = eventValue({ event, key: 'providerId' });
-      const action = eventValue({ event, key: 'action' });
-      closeAllStudios();
-      setProviderStudioFocus(isProviderId(providerId) ? providerId : null);
-      setProviderStudioAction(isProviderLifecycleAction(action) ? action : null);
-      setProviderStudioOpen(true);
+      openSettingsEvent({ event, fallbackScope: 'providers' });
     };
     const onOpenBudgetStudio = (event: Event) => {
-      const scope = eventValue({ event, key: 'scope' });
-      closeAllStudios();
-      setBudgetStudioScope(isBudgetScope(scope) ? scope : undefined);
-      setBudgetStudioOpen(true);
+      openSettingsEvent({ event, fallbackScope: 'budget' });
+    };
+    const onOpenWorkspaceSettings = (event: Event) => {
+      openSettingsEvent({ event, fallbackScope: 'workspace' });
     };
     const openLegacyInbox = ({
       event,
@@ -368,8 +375,7 @@ export const useAppOverlays = ({
       setInboxStudioOpen(true);
     };
     const onRevealChat = () => {
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
+      setSettingsOpen(false);
       const state = useAppStore.getState();
       const sessionId = state.currentSessionId;
       if (sessionId !== null) {
@@ -421,6 +427,7 @@ export const useAppOverlays = ({
     window.addEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
     window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
     window.addEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
+    window.addEventListener('goodboy:open-workspace-settings', onOpenWorkspaceSettings);
     window.addEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
     window.addEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
     window.addEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
@@ -444,6 +451,7 @@ export const useAppOverlays = ({
       window.removeEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
       window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
       window.removeEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
+      window.removeEventListener('goodboy:open-workspace-settings', onOpenWorkspaceSettings);
       window.removeEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
       window.removeEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
       window.removeEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
@@ -483,30 +491,13 @@ export const useAppOverlays = ({
 
   useEffect(() => {
     const handler = (event: Event) => {
-      const section = eventValue({ event, key: 'section' });
-      if (workspaceSettingsOpen && section === undefined) {
-        setWorkspaceSettingsOpen(false);
-        setWorkspaceSettingsFocus(undefined);
-        return;
-      }
-      setWorkspaceSettingsFocus(typeof section === 'string' ? section : undefined);
-      clearSessionStudio();
-      setWorkspaceSettingsOpen(true);
-    };
-    window.addEventListener('goodboy:open-workspace-settings', handler);
-    return () => window.removeEventListener('goodboy:open-workspace-settings', handler);
-  }, [clearSessionStudio, workspaceSettingsOpen]);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
       const sessionId = eventValue({ event, key: 'sessionId' });
       if (!isSessionId(sessionId) || sessionId === '') {
         return;
       }
       const prNumber = eventValue({ event, key: 'prNumber' });
       const threadId = eventValue({ event, key: 'threadId' });
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
+      setSettingsOpen(false);
       setSessionStudio(sessionId, {
         kind: 'github',
         prNumber: typeof prNumber === 'number' ? prNumber : undefined,
@@ -523,8 +514,7 @@ export const useAppOverlays = ({
       if (!isSessionId(sessionId) || sessionId === '') {
         return;
       }
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
+      setSettingsOpen(false);
       setSessionStudio(sessionId, { kind: 'mr' });
     };
     window.addEventListener('goodboy:open-gitlab-mr', handler);
@@ -537,8 +527,7 @@ export const useAppOverlays = ({
       if (!isSessionId(sessionId) || sessionId === '') {
         return;
       }
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
+      setSettingsOpen(false);
       setSessionStudio(sessionId, { kind: 'bitbucket' });
     };
     window.addEventListener('goodboy:open-bitbucket-pr', handler);
@@ -551,8 +540,7 @@ export const useAppOverlays = ({
       if (!isSessionId(sessionId) || sessionId === '') {
         return;
       }
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
+      setSettingsOpen(false);
       setSessionStudio(sessionId, { kind: 'workflow' });
     };
     window.addEventListener('goodboy:open-workflow-builder', handler);
@@ -564,8 +552,7 @@ export const useAppOverlays = ({
       if (currentWorkspace === null) {
         return;
       }
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
+      setSettingsOpen(false);
       clearSessionStudio();
       if (currentSession !== null && isSessionSidebarCollapsed) {
         pinSessionSidebar();
@@ -582,7 +569,7 @@ export const useAppOverlays = ({
   ]);
 
   useEffect(() => {
-    setWorkspaceSettingsOpen(false);
+    setSettingsOpen(false);
   }, [currentWorkspace?.id]);
 
   useEffect(() => {
@@ -607,14 +594,7 @@ export const useAppOverlays = ({
     return ghCommitDiff(commitDiff.repo, commitDiff.sha);
   }, [commitDiff, currentSessionWorktree]);
 
-  const closeAppSettings = useCallback(() => {
-    setAppSettingsOpen(false);
-    setAppSettingsFocus(undefined);
-  }, []);
-  const closeWorkspaceSettings = useCallback(() => {
-    setWorkspaceSettingsOpen(false);
-    setWorkspaceSettingsFocus(undefined);
-  }, []);
+  const closeSettings = useCallback(() => setSettingsOpen(false), []);
   const closeGuideStudio = useCallback(() => setGuideStudioOpen(false), []);
   const closeReportIssueStudio = useCallback(() => setReportIssueStudioOpen(false), []);
   const closePalette = useCallback(() => setPaletteOpen(false), []);
@@ -622,11 +602,6 @@ export const useAppOverlays = ({
   const offerWorkspaceRepo = useCallback(() => setConvertWorkspaceOpen(true), []);
   const closeConvertWorkspace = useCallback(() => setConvertWorkspaceOpen(false), []);
   const closeWorkflowStudio = useCallback(() => setWorkflowStudioOpen(false), []);
-  const closeProviderStudio = useCallback(() => {
-    setProviderStudioOpen(false);
-    setProviderStudioAction(null);
-  }, []);
-  const closeBudgetStudio = useCallback(() => setBudgetStudioOpen(false), []);
   const closeImpactStudio = useCallback(() => setImpactStudioOpen(false), []);
   const closeChangelogStudio = useCallback(() => setChangelogStudioOpen(false), []);
   const closeNotificationsStudio = useCallback(() => setNotificationsStudioOpen(false), []);
@@ -657,41 +632,27 @@ export const useAppOverlays = ({
 
   const activeStudio: string | null = workflowStudioOpen
     ? 'workflow'
-    : providerStudioOpen
-      ? 'provider'
-      : budgetStudioOpen
-        ? 'budget'
-        : impactStudioOpen
-          ? 'impact'
-          : changelogStudioOpen
-            ? 'changelog'
-            : notificationsStudioOpen
-              ? 'notifications'
-              : inboxStudioOpen
-                ? 'inbox'
-                : appSettingsOpen
-                  ? 'settings'
-                  : guideStudioOpen
-                    ? 'guide'
-                    : null;
-
-  const workspaceSettingsOverlay: ReactNode =
-    workspaceSettingsOpen && currentWorkspace !== null
-      ? createElement(WorkspaceSettingsPane, {
-          workspaceId: currentWorkspace.id,
-          workspaceName: currentWorkspace.name,
-          initialSection: workspaceSettingsFocus,
-          onClose: closeWorkspaceSettings,
-        })
-      : undefined;
+    : impactStudioOpen
+      ? 'impact'
+      : changelogStudioOpen
+        ? 'changelog'
+        : notificationsStudioOpen
+          ? 'notifications'
+          : inboxStudioOpen
+            ? 'inbox'
+            : settingsOpen
+              ? 'settings'
+              : guideStudioOpen
+                ? 'guide'
+                : null;
 
   const overlays: ReactNode = createElement(AppOverlayRouter, {
     currentWorkspace,
     workspaceProjectRoot,
     isWorkspaceLauncherBranch,
     companionOpen,
-    appSettingsOpen,
-    appSettingsFocus,
+    settingsOpen,
+    settingsFocus,
     guideStudioOpen,
     reportIssueStudioOpen,
     deleteOpen,
@@ -705,17 +666,12 @@ export const useAppOverlays = ({
     workflowStudioOpen,
     inboxStudioOpen,
     inboxStudioFocus,
-    providerStudioOpen,
-    providerStudioFocus,
-    providerStudioAction,
-    budgetStudioOpen,
-    budgetStudioScope,
     impactStudioOpen,
     changelogStudioOpen,
     notificationsStudioOpen,
     commitDiff,
     commitDiffLoader,
-    closeAppSettings,
+    closeSettings,
     closeGuideStudio,
     closeReportIssueStudio,
     closePalette,
@@ -727,8 +683,6 @@ export const useAppOverlays = ({
     offerWorkspaceRepo,
     closeConvertWorkspace,
     closeWorkflowStudio,
-    closeProviderStudio,
-    closeBudgetStudio,
     closeImpactStudio,
     closeChangelogStudio,
     closeNotificationsStudio,
@@ -761,6 +715,5 @@ export const useAppOverlays = ({
     openSlack,
     openWorkflows,
     overlays,
-    workspaceSettingsOverlay,
   };
 };
