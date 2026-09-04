@@ -7,6 +7,7 @@ const SCANNED_ROOTS = ['features', 'app'];
 const SKIP_SEGMENTS = new Set(['node_modules', 'dist']);
 
 const TOKENIZED_SIZE = /size=\{(1[2-8])\}/;
+const TOKENIZED_RANGE = '12 to 18';
 
 type Exception = {
   readonly path: string;
@@ -63,7 +64,7 @@ const isAllowed = (relativePath: string): boolean =>
   );
 
 describe('icon sizing', () => {
-  it('sizes every glyph in features and app from ICON_SIZE, never a literal', () => {
+  it('sizes glyphs in the token range (12 to 18) from ICON_SIZE, never a literal', () => {
     const offenders: string[] = [];
     for (const root of SCANNED_ROOTS) {
       for (const file of listSourceFiles(join(DESKTOP_SRC, root))) {
@@ -82,7 +83,7 @@ describe('icon sizing', () => {
     }
     expect(
       offenders,
-      `Icon sizes come from ICON_SIZE (row, control, hero) in shared/components/conceptIcons.ts. Replace the literal in:\n${offenders.join('\n')}`,
+      `Icon sizes ${TOKENIZED_RANGE} come from ICON_SIZE (row, control, hero) in shared/components/conceptIcons.ts; smaller marks inside chips and dots stay literal. Replace the literal in:\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
 
