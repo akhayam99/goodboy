@@ -10,6 +10,8 @@ import {
   type AgentKind,
 } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
+import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
+import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { tintClasses } from '@goodboy/ui';
 
 const workflowAccent = tintClasses('primary');
@@ -133,8 +135,11 @@ export const ChatBreadcrumb = ({ session }: Props) => {
 
           <Separator />
 
-          <span className="min-w-0 truncate font-medium text-foreground/90" title={sessionLabel}>
-            {sessionLabel}
+          <span
+            className="min-w-0 truncate font-medium text-foreground/90"
+            title={stripInlineMarkdown({ text: sessionLabel })}
+          >
+            <InlineMarkdown text={sessionLabel} />
           </span>
 
           {workflowProgress ? (

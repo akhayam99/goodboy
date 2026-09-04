@@ -12,6 +12,7 @@ import { ContextChip } from './ContextChip';
 import { LinkedWorkChips } from './LinkedWorkChips';
 import { MountProjectAction } from './ProjectMountRows/MountProjectAction';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 import { ProjectMountRows } from './ProjectMountRows';
 import { SessionCostChip } from './SessionCostChip';
 
@@ -105,7 +106,7 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
               }}
               className="min-w-0 flex-1 cursor-text truncate rounded-md text-xl font-semibold leading-snug text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
             >
-              {goalText}
+              <InlineMarkdown text={goalText} />
             </h1>
           </Tooltip>
         )}

@@ -3,6 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
 import { FilledEmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 
 type Props = {
   readonly sessions: ReadonlyArray<ImpactSession>;
@@ -30,7 +31,7 @@ export const SessionRows = ({ sessions, valueLabel, formatValue, onOpenSession }
           onClick={() => onOpenSession(session.sessionId)}
           className="flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted/60"
         >
-          <span className="min-w-0 flex-1 truncate text-foreground">{session.goal}</span>
+          <InlineMarkdown text={session.goal} className="min-w-0 flex-1 truncate text-foreground" />
           <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
             {formatValue(session.value)} {valueLabel}
           </span>

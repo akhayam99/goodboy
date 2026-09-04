@@ -6,6 +6,7 @@ import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { LaunchedNotice } from './LaunchedNotice';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 
 type ExternalTask = {
   readonly provider: SessionExternalTaskProvider;
@@ -65,7 +66,7 @@ export const LaunchSessionPanel = ({
         goal,
         externalTasks: [externalTask],
       });
-      showToast('success', `Session created: ${session.goal}`);
+      showToast('success', `Session created: ${stripInlineMarkdown({ text: session.goal })}`);
       onClose();
     } catch (launchError) {
       setError(formatError(launchError));
