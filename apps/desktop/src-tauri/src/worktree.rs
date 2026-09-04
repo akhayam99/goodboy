@@ -1374,21 +1374,22 @@ fn worktree_status_blocking(
         .ok()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
-    let upstream_distance = if branch.is_none() {
-        GitDistance::Unknown {
+    let upstream_distance = match snapshot.as_ref() {
+        None => GitDistance::Unknown {
+            reason: GitUnknownReason::StatusReadFailed,
+        },
+        Some(_) if branch.is_none() => GitDistance::Unknown {
             reason: GitUnknownReason::DetachedHead,
-        }
-    } else if upstream.is_none() {
-        GitDistance::Unknown {
+        },
+        Some(_) if upstream.is_none() => GitDistance::Unknown {
             reason: GitUnknownReason::NoUpstream,
-        }
-    } else {
-        match snapshot.as_ref().and_then(|s| s.upstream_ab) {
+        },
+        Some(found) => match found.upstream_ab {
             Some((ahead, behind)) => GitDistance::Known { ahead, behind },
             None => GitDistance::Unknown {
                 reason: GitUnknownReason::RevListFailed,
             },
-        }
+        },
     };
     let working_tree = snapshot
         .map(|s| s.working_tree)
@@ -1802,17 +1803,16 @@ fn git_dir_of(cwd: &Path) -> Option<PathBuf> {
     if dot_git.is_dir() {
         return Some(dot_git);
     }
-    if dot_git.is_file() {
-        let pointer = std::fs::read_to_string(&dot_git).ok()?;
-        let target = pointer.trim().strip_prefix("gitdir:")?.trim();
-        let resolved = if Path::new(target).is_absolute() {
-            PathBuf::from(target)
-        } else {
-            cwd.join(target)
-        };
-        if resolved.is_dir() {
-            return Some(resolved);
-        }
+    let pointed = std::fs::read_to_string(&dot_git)
+        .ok()
+        .and_then(|pointer| Some(pointer.trim().strip_prefix("gitdir:")?.trim().to_string()))
+        .map(|target| match Path::new(&target).is_absolute() {
+            true => PathBuf::from(target),
+            false => cwd.join(target),
+        })
+        .filter(|resolved| resolved.is_dir());
+    if let Some(resolved) = pointed {
+        return Some(resolved);
     }
     git(cwd, &["rev-parse", "--absolute-git-dir"])
         .ok()
@@ -2233,6 +2233,51 @@ mod rewrite_tests {
         );
         assert_eq!(status.in_progress, None);
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_failed_status_read_reports_status_read_failed_for_the_upstream_distance() {
+        let root = temp_root("status-read-failure");
+
+        let status = worktree_status_blocking(root.to_string_lossy().into_owned(), None).unwrap();
+
+        assert_eq!(
+            status.upstream_distance,
+            GitDistance::Unknown {
+                reason: GitUnknownReason::StatusReadFailed
+            }
+        );
+        assert_eq!(
+            status.working_tree,
+            GitWorkingTree::Unknown {
+                reason: GitUnknownReason::StatusReadFailed
+            }
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_malformed_dot_git_file_falls_back_to_rev_parse() {
+        let broken = temp_root("git-dir-malformed");
+        std::fs::write(broken.join(".git"), "garbage").unwrap();
+
+        assert_eq!(super::git_dir_of(&broken), None);
+        std::fs::remove_dir_all(&broken).unwrap();
+
+        let root = init_repo("git-dir-resolution");
+        commit(&root, "base.txt", "base", "base");
+
+        assert_eq!(super::git_dir_of(&root), Some(root.join(".git")));
+
+        let linked = root.join("wt");
+        git_ok(
+            &root,
+            &["worktree", "add", linked.to_str().unwrap(), "-b", "wt"],
+        );
+        let linked_dir = super::git_dir_of(&linked).unwrap();
+
+        assert!(linked_dir.join("HEAD").is_file());
+        std::fs::remove_dir_all(&root).unwrap();
     }
 
     #[test]
