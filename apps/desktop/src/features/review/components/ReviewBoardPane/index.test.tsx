@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { FileDiff, IsoDateTime, PrReviewDraft, Session } from '@goodboy/types';
+import type { FileDiff, IsoDateTime, PrReviewDraft, Session, SessionId } from '@goodboy/types';
 
 const h = vi.hoisted(() => {
   const state = {
@@ -78,8 +78,28 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
 });
 
 import { ReviewBoardPane } from './index';
+import {
+  resolveReviewTarget,
+  type ReviewTargetState,
+} from '../../../../store/slices/review-drafts/resolveReviewTarget';
 
 const SESSION = { id: 'session-1', workspaceId: 'workspace-1' } as unknown as Session;
+const SESSION_ID = SESSION.id as SessionId;
+
+const OWN_PR_STATE = {
+  sessionExternalTasks: { [SESSION_ID]: [] },
+  sessions: [],
+  projects: [],
+  sessionProjectMounts: {},
+  sessionActiveProject: {},
+  sessionProjectPrs: {},
+  sessionGithub: {
+    [SESSION_ID]: {
+      pr: { number: 1631, url: 'https://github.com/acme/web/pull/1631' },
+    },
+  },
+  sessionGitlabMr: {},
+} as unknown as ReviewTargetState;
 
 const FILE: FileDiff = {
   path: 'src/auth.ts',
@@ -303,6 +323,16 @@ describe('ReviewBoardPane', () => {
     const retry = screen.getByRole('button', { name: 'Retry' });
     fireEvent.click(retry);
     expect(h.diff.refresh).toHaveBeenCalled();
+  });
+
+  it('reviews the diff of the pull request this session opened', () => {
+    h.diff.target = resolveReviewTarget({ state: OWN_PR_STATE, sessionId: SESSION_ID });
+    render(<ReviewBoardPane session={SESSION} />);
+
+    expect(screen.queryByText('No pull request to review')).toBeNull();
+    expect(screen.getByText('acme/web #1631')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Draft a comment on line 3' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Publish review (1)' })).toBeDefined();
   });
 
   it('points at the pull request lens when the session has no pull request linked', () => {
