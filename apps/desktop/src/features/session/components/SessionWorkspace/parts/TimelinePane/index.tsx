@@ -10,6 +10,7 @@ import {
   useMountDiffStats,
   useSessionAnsweredQuestions,
   useSessionDismissedQuestions,
+  useIsSessionCollectionLoaded,
   useSessionOpenQuestions,
   type MountDiffStat,
 } from '../../../../../../store';
@@ -31,6 +32,7 @@ import { ActivityFilterButton } from './ActivityFilterButton';
 import { TimelineDayRule } from './TimelineDayRule';
 import { TimelineNowRule } from './TimelineNowRule';
 import { TimelinePendingCluster } from './TimelinePendingCluster';
+import { TimelineSkeleton } from './TimelineSkeleton';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
 import type { WorkspaceRuns } from '../../../../../orchestration/hooks/useWorkspaceRuns';
 
@@ -49,6 +51,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
   const worktrees = useAppStore((s) => s.sessionWorktreeRecords?.[sessionId] ?? EMPTY_ARRAY);
   const events = useAppStore((s) => s.sessionEvents?.[sessionId] ?? EMPTY_ARRAY);
   const areEventsLoaded = useAppStore((s) => s.sessionEvents?.[sessionId] !== undefined);
+  const areAgentsLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'agents' });
   const loadSessionEvents = useAppStore((s) => s.loadSessionEvents);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const orchestratingWorkflowRuns = useAppStore((s) => s.orchestratingWorkflowRuns);
@@ -296,8 +299,9 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
   };
 
   const hasUnreadAgents = unreadAgentIds.size > 0;
+  const isLoading = (!areEventsLoaded || !areAgentsLoaded) && model.entries.length === 0;
 
-  if (model.entries.length === 0 && kickoff != null && areEventsLoaded) {
+  if (model.entries.length === 0 && kickoff != null && areEventsLoaded && areAgentsLoaded) {
     return <>{kickoff}</>;
   }
 
@@ -318,7 +322,9 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
           </div>
         }
       />
-      {model.entries.length === 0 ? (
+      {isLoading ? (
+        <TimelineSkeleton />
+      ) : model.entries.length === 0 ? (
         <p className="px-0.5 py-2 text-xs text-muted-foreground">
           Nothing yet. Agents, workflows, and session facts land here as they happen.
         </p>

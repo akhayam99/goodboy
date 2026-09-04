@@ -132,7 +132,13 @@ pub fn sanitize_slug(input: &str) -> String {
 }
 
 #[tauri::command]
-pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeError> {
+pub async fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_create_blocking(args))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, WorktreeError> {
     let repo_path = PathBuf::from(&args.repo_path);
     if !repo_path.exists() {
         return Err(WorktreeError::RepoNotFound(args.repo_path.clone()));
@@ -409,7 +415,13 @@ fn worktree_has_uncommitted(path: &str) -> bool {
 }
 
 #[tauri::command]
-pub fn worktree_change_branch(args: ChangeBranchArgs) -> Result<(), WorktreeError> {
+pub async fn worktree_change_branch(args: ChangeBranchArgs) -> Result<(), WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_change_branch_blocking(args))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_change_branch_blocking(args: ChangeBranchArgs) -> Result<(), WorktreeError> {
     let wt = Path::new(&args.worktree_path);
     if !wt.exists() {
         return Err(WorktreeError::RepoNotFound(args.worktree_path.clone()));
@@ -697,13 +709,25 @@ fn worktree_orphan_remove_blocking(repo_path: String, path: String) -> Result<()
 }
 
 #[tauri::command]
-pub fn worktree_list(repo_path: String) -> Result<Vec<WorktreeInfo>, WorktreeError> {
+pub async fn worktree_list(repo_path: String) -> Result<Vec<WorktreeInfo>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_list_blocking(repo_path))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_list_blocking(repo_path: String) -> Result<Vec<WorktreeInfo>, WorktreeError> {
     let stdout = git(Path::new(&repo_path), &["worktree", "list", "--porcelain"])?;
     Ok(parse_porcelain(&stdout))
 }
 
 #[tauri::command]
-pub fn worktree_remote_url(repo_path: String) -> Option<String> {
+pub async fn worktree_remote_url(repo_path: String) -> Option<String> {
+    tauri::async_runtime::spawn_blocking(move || worktree_remote_url_blocking(repo_path))
+        .await
+        .unwrap_or(None)
+}
+
+fn worktree_remote_url_blocking(repo_path: String) -> Option<String> {
     git(Path::new(&repo_path), &["remote", "get-url", "origin"])
         .ok()
         .map(|s| s.trim().to_string())
@@ -711,7 +735,16 @@ pub fn worktree_remote_url(repo_path: String) -> Option<String> {
 }
 
 #[tauri::command]
-pub fn worktree_diff(
+pub async fn worktree_diff(
+    worktree_path: String,
+    base_branch: Option<String>,
+) -> Result<String, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_diff_blocking(worktree_path, base_branch))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_diff_blocking(
     worktree_path: String,
     base_branch: Option<String>,
 ) -> Result<String, WorktreeError> {
@@ -735,7 +768,19 @@ pub fn worktree_diff(
 /// outside the worktree root is refused. Untracked files fall back to the same
 /// synthetic new-file diff `worktree_diff` emits.
 #[tauri::command]
-pub fn worktree_diff_file(
+pub async fn worktree_diff_file(
+    worktree_path: String,
+    base_branch: Option<String>,
+    path: String,
+) -> Result<String, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        worktree_diff_file_blocking(worktree_path, base_branch, path)
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_diff_file_blocking(
     worktree_path: String,
     base_branch: Option<String>,
     path: String,
@@ -834,7 +879,18 @@ pub struct ChangedFilesSummary {
 /// count because we diff against the merge-base, not `HEAD`. Untracked files
 /// contribute their line count to additions.
 #[tauri::command]
-pub fn worktree_changed_files(
+pub async fn worktree_changed_files(
+    worktree_path: String,
+    base_branch: Option<String>,
+) -> Result<ChangedFilesSummary, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        worktree_changed_files_blocking(worktree_path, base_branch)
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_changed_files_blocking(
     worktree_path: String,
     base_branch: Option<String>,
 ) -> Result<ChangedFilesSummary, WorktreeError> {
@@ -983,7 +1039,13 @@ const COMMIT_LIMIT: usize = 100;
 const COMMIT_FORMAT: &str = "%H%x1f%h%x1f%s%x1f%an%x1f%at%x1f%P";
 
 #[tauri::command]
-pub fn worktree_commits(worktree_path: String) -> Result<Vec<BranchCommit>, WorktreeError> {
+pub async fn worktree_commits(worktree_path: String) -> Result<Vec<BranchCommit>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_commits_blocking(worktree_path))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_commits_blocking(worktree_path: String) -> Result<Vec<BranchCommit>, WorktreeError> {
     let p = Path::new(&worktree_path);
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
@@ -1050,7 +1112,13 @@ pub struct RewrittenHead {
 }
 
 #[tauri::command]
-pub fn worktree_amend_commit(args: RewriteArgs) -> Result<RewrittenHead, WorktreeError> {
+pub async fn worktree_amend_commit(args: RewriteArgs) -> Result<RewrittenHead, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_amend_commit_blocking(args))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_amend_commit_blocking(args: RewriteArgs) -> Result<RewrittenHead, WorktreeError> {
     let p = Path::new(&args.worktree_path);
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(args.worktree_path.clone()));
@@ -1073,7 +1141,13 @@ pub fn worktree_amend_commit(args: RewriteArgs) -> Result<RewrittenHead, Worktre
 }
 
 #[tauri::command]
-pub fn worktree_squash_commits(args: RewriteArgs) -> Result<RewrittenHead, WorktreeError> {
+pub async fn worktree_squash_commits(args: RewriteArgs) -> Result<RewrittenHead, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_squash_commits_blocking(args))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_squash_commits_blocking(args: RewriteArgs) -> Result<RewrittenHead, WorktreeError> {
     let p = Path::new(&args.worktree_path);
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(args.worktree_path.clone()));
@@ -1211,7 +1285,19 @@ fn short_of(sha: &str) -> String {
 }
 
 #[tauri::command]
-pub fn worktree_diff_commit(worktree_path: String, sha: String) -> Result<String, WorktreeError> {
+pub async fn worktree_diff_commit(
+    worktree_path: String,
+    sha: String,
+) -> Result<String, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_diff_commit_blocking(worktree_path, sha))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_diff_commit_blocking(
+    worktree_path: String,
+    sha: String,
+) -> Result<String, WorktreeError> {
     let p = Path::new(&worktree_path);
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
@@ -1226,7 +1312,18 @@ pub fn worktree_diff_commit(worktree_path: String, sha: String) -> Result<String
 }
 
 #[tauri::command]
-pub fn worktree_diff_working(
+pub async fn worktree_diff_working(
+    worktree_path: String,
+    scope: String,
+) -> Result<String, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        worktree_diff_working_blocking(worktree_path, scope)
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_diff_working_blocking(
     worktree_path: String,
     scope: String,
 ) -> Result<String, WorktreeError> {
@@ -1248,7 +1345,18 @@ pub fn worktree_diff_working(
 }
 
 #[tauri::command]
-pub fn worktree_status(
+pub async fn worktree_status(
+    worktree_path: String,
+    base_branch: Option<String>,
+) -> Result<WorktreeStatus, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        worktree_status_blocking(worktree_path, base_branch)
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_status_blocking(
     worktree_path: String,
     base_branch: Option<String>,
 ) -> Result<WorktreeStatus, WorktreeError> {
@@ -1816,8 +1924,9 @@ fn parse_porcelain(stdout: &str) -> Vec<WorktreeInfo> {
 #[cfg(test)]
 mod rewrite_tests {
     use super::{
-        worktree_amend_commit, worktree_create, worktree_remove_blocking, worktree_squash_commits,
-        worktree_status, CreateArgs, GitDistance, GitUnknownReason, GitWorkingTree, RewriteArgs,
+        worktree_amend_commit_blocking, worktree_create_blocking, worktree_remove_blocking,
+        worktree_squash_commits_blocking, worktree_status_blocking, CreateArgs, GitDistance,
+        GitUnknownReason, GitWorkingTree, RewriteArgs,
     };
     use std::path::{Path, PathBuf};
 
@@ -1902,7 +2011,7 @@ mod rewrite_tests {
         git_ok(&root, &["push", "origin", "main"]);
         git_ok(&root, &["checkout", "feature"]);
 
-        let status = worktree_status(root.to_string_lossy().into_owned(), None).unwrap();
+        let status = worktree_status_blocking(root.to_string_lossy().into_owned(), None).unwrap();
 
         assert_eq!(
             status.main_distance,
@@ -1940,7 +2049,7 @@ mod rewrite_tests {
         git_ok(&root, &["config", "commit.gpgsign", "false"]);
         commit(&root, "base.txt", "base", "base");
 
-        let status = worktree_status(root.to_string_lossy().into_owned(), None).unwrap();
+        let status = worktree_status_blocking(root.to_string_lossy().into_owned(), None).unwrap();
 
         assert_eq!(super::resolve_base(&root, None), None);
         assert_eq!(
@@ -2010,7 +2119,7 @@ mod rewrite_tests {
         assert_eq!(main_ref, "master");
         assert_eq!(merge_base, base);
         assert_eq!(
-            worktree_status(root.to_string_lossy().into_owned(), None)
+            worktree_status_blocking(root.to_string_lossy().into_owned(), None)
                 .unwrap()
                 .main_distance,
             GitDistance::Known {
@@ -2175,7 +2284,7 @@ mod rewrite_tests {
     fn refuses_to_create_a_worktree_before_the_repository_exists() {
         let root = temp_root("create-without-git");
 
-        let plain = worktree_create(CreateArgs {
+        let plain = worktree_create_blocking(CreateArgs {
             repo_path: root.to_string_lossy().into_owned(),
             branch_prefix: "ak".to_string(),
             slug: "first".to_string(),
@@ -2196,7 +2305,7 @@ mod rewrite_tests {
     fn refuses_to_create_a_worktree_before_the_first_commit() {
         let root = init_repo("create-without-commit");
 
-        let unborn = worktree_create(CreateArgs {
+        let unborn = worktree_create_blocking(CreateArgs {
             repo_path: root.to_string_lossy().into_owned(),
             branch_prefix: "ak".to_string(),
             slug: "first".to_string(),
@@ -2219,7 +2328,8 @@ mod rewrite_tests {
         commit(&root, "a.txt", "a", "first");
         let head = commit(&root, "b.txt", "b", "second");
 
-        let result = worktree_amend_commit(args(&root, &head, "second, reworded")).unwrap();
+        let result =
+            worktree_amend_commit_blocking(args(&root, &head, "second, reworded")).unwrap();
 
         assert_eq!(result.sha, git_ok(&root, &["rev-parse", "HEAD"]));
         assert_eq!(result.replaced, vec![head]);
@@ -2233,7 +2343,7 @@ mod rewrite_tests {
         push_to_new_remote(&root);
         let head = git_ok(&root, &["rev-parse", "HEAD"]);
 
-        let err = worktree_amend_commit(args(&root, &head, "reworded")).unwrap_err();
+        let err = worktree_amend_commit_blocking(args(&root, &head, "reworded")).unwrap_err();
 
         assert!(err.to_string().contains("already pushed"), "{err}");
         assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
@@ -2245,7 +2355,7 @@ mod rewrite_tests {
         let first = commit(&root, "a.txt", "a", "first");
         let head = commit(&root, "b.txt", "b", "second");
 
-        let err = worktree_amend_commit(args(&root, &first, "reworded")).unwrap_err();
+        let err = worktree_amend_commit_blocking(args(&root, &first, "reworded")).unwrap_err();
 
         assert!(err.to_string().contains("newest local commit"), "{err}");
         assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
@@ -2258,7 +2368,8 @@ mod rewrite_tests {
         let second = commit(&root, "b.txt", "b", "second");
         let third = commit(&root, "c.txt", "c", "third");
 
-        let result = worktree_squash_commits(args(&root, &second, "second and third")).unwrap();
+        let result =
+            worktree_squash_commits_blocking(args(&root, &second, "second and third")).unwrap();
 
         assert_eq!(result.sha, git_ok(&root, &["rev-parse", "HEAD"]));
         assert_eq!(result.replaced, vec![third, second]);
@@ -2278,7 +2389,8 @@ mod rewrite_tests {
         commit(&root, "c.txt", "c", "third");
         let head = git_ok(&root, &["rev-parse", "HEAD"]);
 
-        let err = worktree_squash_commits(args(&root, &second, "second and third")).unwrap_err();
+        let err =
+            worktree_squash_commits_blocking(args(&root, &second, "second and third")).unwrap_err();
 
         assert!(err.to_string().contains("already pushed"), "{err}");
         assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
@@ -2294,7 +2406,8 @@ mod rewrite_tests {
         git_ok(&root, &["add", "d.txt"]);
         let head = git_ok(&root, &["rev-parse", "HEAD"]);
 
-        let err = worktree_squash_commits(args(&root, &second, "second and third")).unwrap_err();
+        let err =
+            worktree_squash_commits_blocking(args(&root, &second, "second and third")).unwrap_err();
 
         assert!(err.to_string().contains("staged change"), "{err}");
         assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
@@ -2307,7 +2420,7 @@ mod rewrite_tests {
         commit(&root, "b.txt", "b", "second");
         let head = git_ok(&root, &["rev-parse", "HEAD"]);
 
-        let err = worktree_squash_commits(args(&root, &first, "everything")).unwrap_err();
+        let err = worktree_squash_commits_blocking(args(&root, &first, "everything")).unwrap_err();
 
         assert!(err.to_string().contains("first commit"), "{err}");
         assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
@@ -2329,7 +2442,8 @@ mod rewrite_tests {
             std::fs::set_permissions(&hook, std::fs::Permissions::from_mode(0o755)).unwrap();
         }
 
-        let err = worktree_squash_commits(args(&root, &second, "second and third")).unwrap_err();
+        let err =
+            worktree_squash_commits_blocking(args(&root, &second, "second and third")).unwrap_err();
 
         assert!(err.to_string().contains("git commit"), "{err}");
         assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
@@ -2340,7 +2454,7 @@ mod rewrite_tests {
 
     fn create_session_mount(root: &Path, slug: &str) -> super::CreatedWorktree {
         let parent = root.join(".goodboy").join("worktrees");
-        worktree_create(CreateArgs {
+        worktree_create_blocking(CreateArgs {
             repo_path: root.to_string_lossy().into_owned(),
             branch_prefix: "goodboy".to_string(),
             slug: slug.to_string(),

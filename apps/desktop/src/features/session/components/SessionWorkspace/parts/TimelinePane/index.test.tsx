@@ -14,8 +14,9 @@ type Worktree = {
   readonly createdAt: number;
 };
 
-const { storeState, diffStats, unread, questions } = vi.hoisted(() => ({
+const { storeState, diffStats, unread, questions, agentsLoaded } = vi.hoisted(() => ({
   unread: { current: false },
+  agentsLoaded: { current: true },
   diffStats: { current: new Map<string, { additions: number; deletions: number }>() },
   questions: {
     open: [] as ReadonlyArray<unknown>,
@@ -49,6 +50,7 @@ vi.mock('../../../../../../store', () => {
     useSessionOpenQuestions: () => questions.open,
     useSessionAnsweredQuestions: () => questions.answered,
     useSessionDismissedQuestions: () => questions.dismissed,
+    useIsSessionCollectionLoaded: () => agentsLoaded.current,
   };
 });
 vi.mock('../../../../../workflows/useAttachedWorkflowRuns', () => ({
@@ -102,6 +104,7 @@ beforeEach(() => {
   questions.open = [];
   questions.answered = [];
   questions.dismissed = [];
+  agentsLoaded.current = true;
   localStorage.clear();
 });
 
@@ -159,6 +162,8 @@ describe('TimelinePane under a full filter', () => {
 
 describe('TimelinePane on an empty session', () => {
   it('keeps the header actions mounted above a quiet empty line', () => {
+    storeState.sessionEvents = { 'session-1': [] };
+
     render(
       <TimelinePane
         session={SESSION}
@@ -192,7 +197,7 @@ describe('TimelinePane kickoff', () => {
     expect(screen.queryByRole('button', { name: 'Filter' })).toBeNull();
   });
 
-  it('holds the quiet line until the session events resolve', () => {
+  it('holds a timeline skeleton until the session events resolve', () => {
     render(
       <TimelinePane
         session={SESSION}
@@ -203,7 +208,26 @@ describe('TimelinePane kickoff', () => {
     );
 
     expect(screen.queryByTestId('kickoff')).toBeNull();
+    expect(screen.queryByText(/Nothing yet/)).toBeNull();
+    expect(screen.getByRole('status', { name: 'Loading the timeline' })).not.toBeNull();
+  });
+
+  it('drops the skeleton once the events land', () => {
+    storeState.sessionEvents = { 'session-1': [] };
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    expect(screen.queryByRole('status', { name: 'Loading the timeline' })).toBeNull();
     expect(screen.getByText(/Nothing yet/)).toBeDefined();
+  });
+
+  it('holds a timeline skeleton until the agents collection loads', () => {
+    storeState.sessionEvents = { 'session-1': [] };
+    agentsLoaded.current = false;
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    expect(screen.getByRole('status', { name: 'Loading the timeline' })).not.toBeNull();
   });
 
   it('steps aside as soon as the timeline holds any activity', () => {

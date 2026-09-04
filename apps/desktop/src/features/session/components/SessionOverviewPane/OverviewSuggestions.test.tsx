@@ -68,6 +68,7 @@ const { mocks, store } = vi.hoisted(() => {
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: StoreState) => T) => selector(store),
+  useIsSessionCollectionLoaded: () => true,
 }));
 
 vi.mock('../../../suggestions', () => ({

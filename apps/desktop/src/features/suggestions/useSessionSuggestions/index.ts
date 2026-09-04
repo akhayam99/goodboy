@@ -16,9 +16,13 @@ import { deriveSessionSuggestions } from '../deriveSessionSuggestions';
 type Params = {
   readonly session: Session;
   readonly agents?: ReadonlyArray<Agent>;
+  readonly withRebase?: boolean;
 };
 
-export const useSessionSuggestions = ({ session, agents }: Params) => {
+const NO_TARGETS: ReadonlyArray<{ readonly worktreePath: string; readonly baseBranch?: string }> =
+  [];
+
+export const useSessionSuggestions = ({ session, agents, withRebase = true }: Params) => {
   const sessionId = session.id;
   const storedAgents = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -55,12 +59,14 @@ export const useSessionSuggestions = ({ session, agents }: Params) => {
   const resolverIndex = useResolverIndex(sessionId);
   const targets = useMemo(
     () =>
-      mounts.map((mount) => ({
-        worktreePath: mount.worktreePath,
-        baseBranch:
-          projects.find((project) => project.id === mount.projectId)?.baseBranch ?? undefined,
-      })),
-    [mounts, projects],
+      withRebase
+        ? mounts.map((mount) => ({
+            worktreePath: mount.worktreePath,
+            baseBranch:
+              projects.find((project) => project.id === mount.projectId)?.baseBranch ?? undefined,
+          }))
+        : NO_TARGETS,
+    [mounts, projects, withRebase],
   );
   const worktreeStatuses = useWorktreeStatuses({ targets });
 
@@ -131,17 +137,20 @@ export const useSessionSuggestions = ({ session, agents }: Params) => {
           resolverStatus: resolver?.status ?? null,
         };
       }),
-      projects: mounts.map((mount) => {
-        const project = projects.find((candidate) => candidate.id === mount.projectId) ?? null;
-        const status = worktreeStatuses.get(mount.worktreePath) ?? null;
-        return {
-          projectId: mount.projectId,
-          projectName: project?.name ?? mount.mountName,
-          worktreePath: mount.worktreePath,
-          baseBranch: project?.baseBranch ?? 'main',
-          mainDistance: status == null ? null : distanceBehind({ distance: status.mainDistance }),
-        };
-      }),
+      projects: withRebase
+        ? mounts.map((mount) => {
+            const project = projects.find((candidate) => candidate.id === mount.projectId) ?? null;
+            const status = worktreeStatuses.get(mount.worktreePath) ?? null;
+            return {
+              projectId: mount.projectId,
+              projectName: project?.name ?? mount.mountName,
+              worktreePath: mount.worktreePath,
+              baseBranch: project?.baseBranch ?? 'main',
+              mainDistance:
+                status == null ? null : distanceBehind({ distance: status.mainDistance }),
+            };
+          })
+        : [],
     });
   }, [
     active,
@@ -158,6 +167,7 @@ export const useSessionSuggestions = ({ session, agents }: Params) => {
     projects,
     resolverIndex,
     sessionId,
+    withRebase,
     worktreeStatuses,
   ]);
 };

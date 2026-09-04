@@ -4,7 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { OverflowMenuItem } from '@goodboy/ui';
-import type { Project, PullRequestState, SessionId, SessionProjectMount } from '@goodboy/types';
+import type {
+  Project,
+  PullRequestState,
+  SessionId,
+  SessionProjectMount,
+  WorktreeStatus,
+} from '@goodboy/types';
 
 const { store, remoteKind } = vi.hoisted(() => ({
   remoteKind: { current: 'github' as string | null },
@@ -107,18 +113,24 @@ const mount = {
 const renderRow = ({
   diffStat = null,
   pullRequest = null,
+  worktreeStatus = null,
+  rowMount = mount,
+  rowProject = project,
 }: {
   readonly diffStat?: { additions: number; deletions: number } | null;
   readonly pullRequest?: PullRequestState | null;
+  readonly worktreeStatus?: WorktreeStatus | null;
+  readonly rowMount?: SessionProjectMount;
+  readonly rowProject?: Project | null;
 }) =>
   render(
     <ProjectMountRow
       sessionId={sessionId}
-      project={project}
-      mount={mount}
+      project={rowProject}
+      mount={rowMount}
       diffStat={diffStat}
       pullRequest={pullRequest ?? null}
-      worktreeStatus={null}
+      worktreeStatus={worktreeStatus}
       onSelectLens={vi.fn()}
     />,
   );
@@ -292,5 +304,41 @@ describe('ProjectMountRow activity dots', () => {
     expect(
       tooltipTextOf({ element: screen.getByRole('button', { name: 'Open scripts for API' }) }),
     ).toBe('Open scripts for API');
+  });
+});
+
+describe('ProjectMountRow loading placeholders', () => {
+  const status = {
+    branch: 'feat/api',
+    mainDistance: { kind: 'known', ahead: 0, behind: 0 },
+    upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+  } as unknown as WorktreeStatus;
+
+  it('holds a distance placeholder while the git status is still pending', () => {
+    renderRow({});
+
+    expect(screen.getByTestId('project-distance-skeleton')).not.toBeNull();
+    expect(screen.queryByTestId('sync-control')).toBeNull();
+  });
+
+  it('swaps the placeholder for the sync control once the status lands', () => {
+    renderRow({ worktreeStatus: status });
+
+    expect(screen.queryByTestId('project-distance-skeleton')).toBeNull();
+    expect(screen.getByTestId('sync-control')).not.toBeNull();
+  });
+
+  it('holds a branch placeholder instead of an empty branch cell', () => {
+    renderRow({ rowMount: { ...mount, branch: '' } as SessionProjectMount });
+
+    expect(screen.getByTestId('project-branch-skeleton')).not.toBeNull();
+    expect(screen.queryByTestId('branch-chip')).toBeNull();
+  });
+
+  it('leaves a folder mount without any git placeholder', () => {
+    renderRow({ rowProject: { ...project, kind: 'folder' } as Project });
+
+    expect(screen.queryByTestId('project-distance-skeleton')).toBeNull();
+    expect(screen.queryByTestId('project-branch-skeleton')).toBeNull();
   });
 });

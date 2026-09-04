@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Session, SessionProjectMount } from '@goodboy/types';
 import type { LensKind } from '../../../../../store';
@@ -65,4 +66,3 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
     </section>
   );
 };
-import { useMemo } from 'react';
