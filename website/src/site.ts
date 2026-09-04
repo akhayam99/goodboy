@@ -1,5 +1,5 @@
 export const SITE = {
-  version: 'v0.2.14',
+  version: 'v0.2.15',
   repo: 'https://github.com/akhayam99/goodboy',
   releases: 'https://github.com/akhayam99/goodboy/releases',
   latest: 'https://github.com/akhayam99/goodboy/releases/latest',
