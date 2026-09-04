@@ -58,6 +58,11 @@ import { buildProviderSpendBreakdown } from './slices/budget';
 import type { SessionNudge } from './types';
 import type { SetFn, GetFn } from './slice-types';
 import { decisionsDelta } from './slices/session-events';
+import {
+  deferredMaterializeMessage,
+  materializationGate,
+  proposeMaterialization,
+} from './materializationGate';
 
 type AttachmentsBlockParams = {
   readonly scope: string;
@@ -563,35 +568,6 @@ type CaptureMaterializeParams = {
   readonly assistantText: string;
 };
 
-const IMMEDIATE_MATERIALIZE_CAP = 2;
-
-type GoalNamesProjectParams = {
-  readonly get: GetFn;
-  readonly sessionId: SessionId;
-  readonly sessionTitle: string;
-  readonly projectName: string;
-};
-
-const goalNamesProject = ({
-  get,
-  sessionId,
-  sessionTitle,
-  projectName,
-}: GoalNamesProjectParams): boolean => {
-  const needle = projectName.toLowerCase();
-  if (needle === '') {
-    return false;
-  }
-  const goalSlot = (get().sessionSlots[sessionId] ?? []).find((slot) => slot.key === 'goal');
-  const tasks = get().sessionExternalTasks[sessionId] ?? [];
-  const haystacks = [
-    sessionTitle,
-    goalSlot?.value ?? '',
-    ...tasks.flatMap((task) => [task.title, task.identifier]),
-  ];
-  return haystacks.some((text) => text.toLowerCase().includes(needle));
-};
-
 export const captureMaterializeRequestsFromTurn = async ({
   get,
   sessionId,
@@ -636,33 +612,13 @@ export const captureMaterializeRequestsFromTurn = async ({
       );
       continue;
     }
-    const mounts = get().sessionProjectMounts[sessionId] ?? [];
-    const isMounted = mounts.some((mount) => mount.projectId === project.id);
-    const isNamedByGoal = goalNamesProject({
-      get,
-      sessionId,
-      sessionTitle: session.goal,
-      projectName: project.name,
-    });
-    const isAllowedNow =
-      (mounts.length === 0 || isNamedByGoal) && immediateCount < IMMEDIATE_MATERIALIZE_CAP;
-    if (!isMounted && !isAllowedNow) {
-      await get().recordSessionEvent({
-        sessionId,
-        kind: 'project_materialization_proposed',
-        payload: {
-          projectId: project.id,
-          projectName: project.name,
-          reason: request.reason,
-          agentId,
-        },
-      });
-      note(
-        `materialize deferred: mounting ${project.name} needs the owner's approval (reason recorded). Continue with the mounted projects or end your turn.`,
-      );
+    const gate = materializationGate({ get, sessionId, project, immediateCount });
+    if (gate === 'deferred') {
+      await proposeMaterialization({ get, sessionId, project, reason: request.reason, agentId });
+      note(deferredMaterializeMessage({ projectName: project.name }));
       continue;
     }
-    if (!isMounted) {
+    if (gate === 'allowed') {
       immediateCount += 1;
     }
     try {
