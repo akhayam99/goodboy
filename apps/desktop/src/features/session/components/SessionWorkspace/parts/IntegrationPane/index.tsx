@@ -34,7 +34,7 @@ import { useSessionProjectScope } from '../../../../hooks/useSessionProjectScope
 type Props = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
-  readonly provider: Exclude<SessionExternalTaskProvider, 'github'>;
+  readonly provider: Exclude<SessionExternalTaskProvider, 'github' | 'sentry'>;
   readonly eyebrow?: ReactNode;
 };
 

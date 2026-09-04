@@ -130,7 +130,7 @@ parked beside it.
 - The last crumb is the current location and is never clickable. A list view
   never pre-populates a crumb for an item the user has not opened yet.
 - **An integration trail hangs off its own tool**, named as the sidebar names
-  it (GitHub, GitLab, Jira, Linear, Sentry, Slack), at the same depth as any
+  it (GitHub, GitLab, Jira, Linear, Slack), at the same depth as any
   other lens: a studio belongs under its tool, never under another tool's lens.
 - **Opening a child extends the trail and preserves every ancestor**:
   `Overview > {HomeLens} > {Agent}`. Selecting a sibling changes only the last

@@ -84,6 +84,7 @@ type InboxStudioFocus = {
   readonly provider: InboxProvider | null;
   readonly kind: InboxKind | null;
   readonly recordKey: string | null;
+  readonly sessionId: SessionId | null;
 };
 
 const isBudgetScope = (value: unknown): value is BudgetScope => {
@@ -202,43 +203,43 @@ export const useAppOverlays = ({
 
   const openGithub = useCallback(() => {
     closeAllStudios();
-    setInboxStudioFocus({ provider: 'github', kind: null, recordKey: null });
+    setInboxStudioFocus({ provider: 'github', kind: null, recordKey: null, sessionId: null });
     setInboxStudioOpen(true);
   }, [closeAllStudios]);
 
   const openLinear = useCallback(() => {
     closeAllStudios();
-    setInboxStudioFocus({ provider: 'linear', kind: null, recordKey: null });
+    setInboxStudioFocus({ provider: 'linear', kind: null, recordKey: null, sessionId: null });
     setInboxStudioOpen(true);
   }, [closeAllStudios]);
 
   const openJira = useCallback(() => {
     closeAllStudios();
-    setInboxStudioFocus({ provider: 'jira', kind: null, recordKey: null });
+    setInboxStudioFocus({ provider: 'jira', kind: null, recordKey: null, sessionId: null });
     setInboxStudioOpen(true);
   }, [closeAllStudios]);
 
   const openSentry = useCallback(() => {
     closeAllStudios();
-    setInboxStudioFocus({ provider: 'sentry', kind: null, recordKey: null });
+    setInboxStudioFocus({ provider: 'sentry', kind: null, recordKey: null, sessionId: null });
     setInboxStudioOpen(true);
   }, [closeAllStudios]);
 
   const openGitlab = useCallback(() => {
     closeAllStudios();
-    setInboxStudioFocus({ provider: 'gitlab', kind: null, recordKey: null });
+    setInboxStudioFocus({ provider: 'gitlab', kind: null, recordKey: null, sessionId: null });
     setInboxStudioOpen(true);
   }, [closeAllStudios]);
 
   const openBitbucket = useCallback(() => {
     closeAllStudios();
-    setInboxStudioFocus({ provider: 'bitbucket', kind: null, recordKey: null });
+    setInboxStudioFocus({ provider: 'bitbucket', kind: null, recordKey: null, sessionId: null });
     setInboxStudioOpen(true);
   }, [closeAllStudios]);
 
   const openSlack = useCallback(() => {
     closeAllStudios();
-    setInboxStudioFocus({ provider: 'slack', kind: null, recordKey: null });
+    setInboxStudioFocus({ provider: 'slack', kind: null, recordKey: null, sessionId: null });
     setInboxStudioOpen(true);
   }, [closeAllStudios]);
 
@@ -317,6 +318,7 @@ export const useAppOverlays = ({
         provider: 'github',
         kind: 'issue',
         recordKey: typeof issueExternalId === 'string' ? `github:issue:${issueExternalId}` : null,
+        sessionId: null,
       });
       setInboxStudioOpen(true);
     };
@@ -371,6 +373,7 @@ export const useAppOverlays = ({
         provider,
         kind,
         recordKey: typeof issueExternalId === 'string' ? `${keyPrefix}${issueExternalId}` : null,
+        sessionId: null,
       });
       setInboxStudioOpen(true);
     };
@@ -386,16 +389,6 @@ export const useAppOverlays = ({
       closeAllStudios();
       setNotificationsStudioOpen(true);
     };
-    const onOpenLinearStudio = (event: Event) =>
-      openLegacyInbox({ event, provider: 'linear', kind: 'issue', keyPrefix: 'linear:issue:' });
-    const onOpenSentryStudio = (event: Event) =>
-      openLegacyInbox({ event, provider: 'sentry', kind: 'error', keyPrefix: 'sentry:error:' });
-    const onOpenGitlabStudio = (event: Event) =>
-      openLegacyInbox({ event, provider: 'gitlab', kind: 'issue', keyPrefix: 'gitlab:issue:' });
-    const onOpenJiraStudio = (event: Event) =>
-      openLegacyInbox({ event, provider: 'jira', kind: 'issue', keyPrefix: 'jira:issue:' });
-    const onOpenSlackStudio = (event: Event) =>
-      openLegacyInbox({ event, provider: 'slack', kind: 'thread', keyPrefix: 'slack:thread:' });
     const onOpenBitbucketWorkspaceStudio = (event: Event) =>
       openLegacyInbox({ event, provider: 'bitbucket', kind: 'pr', keyPrefix: 'bitbucket:pr:' });
     const onOpenInboxStudio = (event: Event) => {
@@ -403,11 +396,13 @@ export const useAppOverlays = ({
       const provider = eventValue({ event, key: 'provider' });
       const kind = eventValue({ event, key: 'kind' });
       const recordKey = eventValue({ event, key: 'recordKey' });
+      const sessionId = eventValue({ event, key: 'sessionId' });
       closeAllStudios();
       setInboxStudioFocus({
         provider: isInboxProvider(provider) ? provider : null,
         kind: isInboxKind(kind) ? kind : null,
         recordKey: typeof recordKey === 'string' ? recordKey : null,
+        sessionId: isSessionId(sessionId) && sessionId !== '' ? sessionId : null,
       });
       const openStudio = () => setInboxStudioOpen(true);
       if (isWorkspaceId(workspaceId) && workspaceId !== useAppStore.getState().currentWorkspaceId) {
@@ -428,11 +423,6 @@ export const useAppOverlays = ({
     window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
     window.addEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
     window.addEventListener('goodboy:open-workspace-settings', onOpenWorkspaceSettings);
-    window.addEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
-    window.addEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
-    window.addEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
-    window.addEventListener('goodboy:open-jira-studio', onOpenJiraStudio);
-    window.addEventListener('goodboy:open-slack-studio', onOpenSlackStudio);
     window.addEventListener(
       'goodboy:open-bitbucket-workspace-studio',
       onOpenBitbucketWorkspaceStudio,
@@ -452,11 +442,6 @@ export const useAppOverlays = ({
       window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
       window.removeEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
       window.removeEventListener('goodboy:open-workspace-settings', onOpenWorkspaceSettings);
-      window.removeEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
-      window.removeEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
-      window.removeEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
-      window.removeEventListener('goodboy:open-jira-studio', onOpenJiraStudio);
-      window.removeEventListener('goodboy:open-slack-studio', onOpenSlackStudio);
       window.removeEventListener(
         'goodboy:open-bitbucket-workspace-studio',
         onOpenBitbucketWorkspaceStudio,

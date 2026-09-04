@@ -20,10 +20,6 @@ vi.mock('./LinearTaskDetail', () => ({
   LinearTaskDetail: () => <div>Linear detail</div>,
 }));
 
-vi.mock('./SentryTaskDetail', () => ({
-  SentryTaskDetail: () => <div>Sentry detail</div>,
-}));
-
 vi.mock('./GithubTaskDetail', () => ({
   GithubTaskDetail: () => <div>Github detail</div>,
 }));

@@ -236,14 +236,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               eyebrow={sessionEyebrow}
             />
           ) : null}
-          {lens === 'sentry' ? (
-            <IntegrationPane
-              sessionId={sessionId}
-              workspaceId={session.workspaceId}
-              provider="sentry"
-              eyebrow={sessionEyebrow}
-            />
-          ) : null}
           {lens === 'gitlab_issues' ? (
             <IntegrationPane
               sessionId={sessionId}
