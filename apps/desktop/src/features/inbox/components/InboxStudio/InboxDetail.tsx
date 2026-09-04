@@ -1,6 +1,4 @@
-import { EmptyState } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { GithubIssueDetail } from '../../../github/GithubIssueDetail';
 import { GitlabIssueDetail } from '../../../integrations/gitlab/GitlabIssueDetail';
 import { MrDetailPanel } from '../../../integrations/gitlab/GitlabStudio/MrDetailPanel';
@@ -12,42 +10,46 @@ import { SlackThreadDetail } from '../../../integrations/slack/SlackThreadDetail
 import { PrDetailPanel } from '../../../integrations/bitbucket/BitbucketStudio/PrDetailPanel';
 import type { InboxProvider, InboxRecord } from '../../types';
 import { RecordLaunchDock } from '../RecordLaunchDock';
+import { InboxEmptySummary } from './InboxEmptySummary';
 
 type Props = {
   readonly record: InboxRecord | null;
+  readonly records: ReadonlyArray<InboxRecord>;
+  readonly hasFiltersActive: boolean;
   readonly workspaceId: WorkspaceId;
   readonly rootPath: string;
   readonly isLoading: boolean;
   readonly errors: Readonly<Record<InboxProvider, string | null>>;
   readonly onRefresh: () => void;
   readonly onClose: () => void;
+  readonly onClearFilters: () => void;
+  readonly onOpenIntegrations: () => void;
 };
 
 export const InboxDetail = ({
   record,
+  records,
+  hasFiltersActive,
   workspaceId,
   rootPath,
   isLoading,
   errors,
   onRefresh,
   onClose,
+  onClearFilters,
+  onOpenIntegrations,
 }: Props) => {
   const sentryIssueId = record?.payload.provider === 'sentry' ? record.payload.issue.id : null;
   const sentryDetail = useSentryIssueDetail({ workspaceId, issueId: sentryIssueId });
 
   if (record == null) {
     return (
-      <div className="flex h-full items-center justify-center px-8">
-        <EmptyState
-          bordered
-          tone={CONCEPT_TONE.inbox}
-          icon={CONCEPT_ICONS.inbox}
-          title="Nothing selected"
-          description="Pick an item from the inbox to see its details and launch a session."
-          size="lg"
-          headingLevel={2}
-        />
-      </div>
+      <InboxEmptySummary
+        records={records}
+        hasFiltersActive={hasFiltersActive}
+        onClearFilters={onClearFilters}
+        onOpenIntegrations={onOpenIntegrations}
+      />
     );
   }
 

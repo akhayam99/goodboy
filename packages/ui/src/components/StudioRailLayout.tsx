@@ -6,6 +6,7 @@ const RAIL_WIDTH_CLASSES = {
   narrow: 'w-64',
   standard: 'w-72',
   wide: 'w-80',
+  xwide: 'w-[26rem]',
 } satisfies Record<string, string>;
 
 type Props = {

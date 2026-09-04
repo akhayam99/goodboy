@@ -7,6 +7,9 @@ export type SelectableRowProps = {
   readonly onClick?: () => void;
   readonly ariaCurrent?: AriaAttributes['aria-current'];
   readonly title?: string;
+  readonly role?: 'option';
+  readonly ariaSelected?: boolean;
+  readonly tabIndex?: number;
   readonly className?: string;
 };
 
@@ -19,6 +22,9 @@ export const SelectableRow = ({
   onClick,
   ariaCurrent,
   title,
+  role,
+  ariaSelected,
+  tabIndex,
   className,
 }: SelectableRowProps) => {
   return (
@@ -26,6 +32,9 @@ export const SelectableRow = ({
       type="button"
       data-selected={selected}
       aria-current={ariaCurrent}
+      role={role}
+      aria-selected={ariaSelected}
+      tabIndex={tabIndex}
       title={title}
       onClick={onClick}
       className={cn(ROW_CLASSES, className)}
