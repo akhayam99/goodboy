@@ -1,23 +1,10 @@
-import type { ProviderName, SessionId, TelemetryRecord } from '@goodboy/types';
+import type { SessionId, TelemetryRecord } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
-import type { SegmentedTabOption, Tone } from '@goodboy/ui';
+import type { Tone } from '@goodboy/ui';
 import { costCoverage, type CostCoverage } from '@goodboy/core';
 import { PROVIDER_LABEL_LOWER } from '../../../providers/providers';
 
-export type BudgetScope =
-  | { readonly kind: 'overview' }
-  | { readonly kind: 'provider'; readonly provider: ProviderName }
-  | { readonly kind: 'session'; readonly sessionId: SessionId };
-
 export type SortKey = 'recent' | 'expensive';
-export type BudgetWindowId = 'last30' | 'all';
-
-export const BUDGET_WINDOW_DAYS = 30;
-
-export const BUDGET_WINDOW_OPTIONS: ReadonlyArray<SegmentedTabOption<BudgetWindowId>> = [
-  { value: 'last30', label: 'Last 30 days' },
-  { value: 'all', label: 'All time' },
-];
 
 export type WorkspaceTurn = {
   readonly record: TelemetryRecord;

@@ -8,10 +8,10 @@ import {
 import { NeedsYouPopover } from './NeedsYouPopover';
 
 type Props = {
-  readonly onOpenBudget: () => void;
+  readonly onOpenSpend: () => void;
 };
 
-export const WorkspaceRollupStrip = ({ onOpenBudget }: Props) => {
+export const WorkspaceRollupStrip = ({ onOpenSpend }: Props) => {
   const workspace = useCurrentWorkspace();
   const sessions = useSessions();
   const workspaceId = workspace?.id ?? null;
@@ -30,8 +30,8 @@ export const WorkspaceRollupStrip = ({ onOpenBudget }: Props) => {
       ) : null}
       <button
         type="button"
-        onClick={onOpenBudget}
-        title="Today's spend across providers, open budget"
+        onClick={onOpenSpend}
+        title="Today's spend across providers, open the impact studio"
         className="flex items-center gap-3 rounded px-1.5 py-1 transition-colors hover:bg-muted/50"
       >
         {rollup.runningCount > 0 ? (

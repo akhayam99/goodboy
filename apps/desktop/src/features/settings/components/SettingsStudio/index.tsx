@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollFade, StudioRailLayout } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
-import { BudgetSettingsScope } from '../../../budget/components/BudgetStudio';
 import { ProviderSettingsScope } from '../../../providers/components/ProviderStudio';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -59,11 +58,6 @@ export const SettingsStudio = ({ currentWorkspace, initialFocus, onClose }: Prop
                 workspaceId={currentWorkspace.id}
                 initialFocus={initialFocus.provider}
                 initialAction={initialFocus.action}
-              />
-            ) : availableScope === 'budget' ? (
-              <BudgetSettingsScope
-                initialScope={initialFocus.budgetScope}
-                requestClose={requestClose}
               />
             ) : null
           }

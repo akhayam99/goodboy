@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import type { Session, SessionId, Workspace } from '@goodboy/types';
 import type { InboxKind, InboxProvider } from '../../../features/inbox/types';
+import type { ImpactScope } from '../../../features/impact/lib';
 import { ArchiveSessionConfirm } from '../../../features/session/components/ArchiveSessionConfirm';
 import { CommandPalette } from '../../../features/session/components/CommandPalette';
 import { DeleteSessionConfirm } from '../../../features/session/components/DeleteSessionConfirm';
@@ -92,6 +93,7 @@ type Props = {
     readonly sessionId: SessionId | null;
   } | null;
   readonly impactStudioOpen: boolean;
+  readonly impactStudioFocus: ImpactScope | null;
   readonly changelogStudioOpen: boolean;
   readonly notificationsStudioOpen: boolean;
   readonly commitDiff: CommitDiffTarget | null;
@@ -139,6 +141,7 @@ export const AppOverlayRouter = ({
   inboxStudioOpen,
   inboxStudioFocus,
   impactStudioOpen,
+  impactStudioFocus,
   changelogStudioOpen,
   notificationsStudioOpen,
   commitDiff,
@@ -212,6 +215,7 @@ export const AppOverlayRouter = ({
         <ImpactStudio
           workspaceId={currentWorkspace.id}
           workspaceName={currentWorkspace.name}
+          initialScope={impactStudioFocus ?? undefined}
           onClose={closeImpactStudio}
         />
       ) : null}

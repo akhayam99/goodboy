@@ -169,7 +169,8 @@ Cost is never more than a glance away: the cost badge belongs anywhere a unit
 of work is shown. Numbers are always `tabular-nums`. Money shows intent: a live
 estimate before sending, a running total after. The workspace rollup lives in
 the always-visible top bar, so health reads without entering a session; a
-second route to the budget studio is fine, a second home for the number is not,
+second route to spend, which lives in the impact studio, is fine, a second home
+for the number is not,
 and hiding it behind a popover breaks the rule above. A budget cap is edited on
 the surface that displays it. Budget alerts follow the exception-bearing rule
 in Status & signals.

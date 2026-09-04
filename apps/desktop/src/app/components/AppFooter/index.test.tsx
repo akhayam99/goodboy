@@ -40,7 +40,7 @@ import { AppFooter } from './index';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 
 const SETTINGS_LABEL = `Open settings (${shortcutGlyphs('settings.open')})`;
-const REST_MORE_LABEL = 'More studios: budget, impact and changelog';
+const REST_MORE_LABEL = 'More studios: impact and changelog';
 
 const footerRow = () => screen.getByTestId('beta-badge-trigger').closest('.grid');
 
@@ -60,7 +60,6 @@ const footerProps = ({ overrides = {} }: Params = {}): FooterProps => ({
   onOpenWorkflows: vi.fn(),
   onOpenProviders: vi.fn(),
   onOpenSettings: vi.fn(),
-  onOpenBudget: vi.fn(),
   onOpenImpact: vi.fn(),
   onOpenChangelog: vi.fn(),
   onOpenInbox: vi.fn(),
@@ -157,10 +156,9 @@ describe('AppFooter', () => {
     expect(onOpenWorkflows).toHaveBeenCalledOnce();
     expect(onOpenProviders).toHaveBeenCalledOnce();
     expect(onOpenSettings).toHaveBeenCalledOnce();
-    expect(screen.queryByRole('button', { name: 'Open budget studio' })).toBeNull();
     expect(
       screen.queryByRole('button', {
-        name: 'See how orchestration changed the way this workspace works',
+        name: 'See how orchestration changed the way this workspace works, and what it spends',
       }),
     ).toBeNull();
     expect(
@@ -168,23 +166,21 @@ describe('AppFooter', () => {
     ).toBeNull();
   });
 
-  it('routes budget, impact and changelog through the more menu', () => {
-    const onOpenBudget = vi.fn();
+  it('routes impact and changelog through the more menu', () => {
     const onOpenImpact = vi.fn();
     const onOpenChangelog = vi.fn();
     const { rerender } = render(
-      <AppFooter
-        {...footerProps({ overrides: { onOpenBudget, onOpenImpact, onOpenChangelog } })}
-      />,
+      <AppFooter {...footerProps({ overrides: { onOpenImpact, onOpenChangelog } })} />,
     );
 
-    fireEvent.click(within(openMore()).getByRole('button', { name: 'Open budget studio' }));
-    expect(onOpenBudget).toHaveBeenCalledOnce();
-    expect(screen.queryByRole('dialog', { name: 'More studios' })).toBeNull();
+    const menu = openMore();
+    expect(within(menu).getAllByRole('button')).toHaveLength(2);
+    expect(within(menu).queryByRole('button', { name: /budget/i })).toBeNull();
+    fireEvent.keyDown(window, { key: 'Escape' });
 
     fireEvent.click(
       within(openMore()).getByRole('button', {
-        name: 'See how orchestration changed the way this workspace works',
+        name: 'See how orchestration changed the way this workspace works, and what it spends',
       }),
     );
     expect(onOpenImpact).toHaveBeenCalledOnce();

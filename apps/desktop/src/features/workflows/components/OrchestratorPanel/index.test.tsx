@@ -575,15 +575,15 @@ describe('OrchestratorPanel strip', () => {
     expect(screen.getByTestId('orchestrator-panel').textContent).not.toContain('Spend limit');
   });
 
-  it('sends a session budget pause to the session budget, not to the run limit', () => {
+  it('sends a session budget pause to the session spend scope, not to the run limit', () => {
     storeState['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
     renderPanel({
       runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
     });
     const opened = vi.fn();
-    window.addEventListener('goodboy:open-settings', opened);
+    window.addEventListener('goodboy:open-impact-studio', opened);
     fireEvent.click(screen.getByTestId('orchestrator-review-budget'));
-    window.removeEventListener('goodboy:open-settings', opened);
+    window.removeEventListener('goodboy:open-impact-studio', opened);
 
     expect(opened).toHaveBeenCalledTimes(1);
     expect(screen.queryByTestId('run-spend-limit-trigger')).toBeNull();

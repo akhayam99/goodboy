@@ -176,9 +176,9 @@ describe('SessionCostChip', () => {
     expect(title).toContain('of a $0.0050 cap');
   });
 
-  it('expands the session budget inline without dispatching the budget studio event', () => {
+  it('expands the session budget inline without dispatching the impact studio event', () => {
     const handler = vi.fn();
-    window.addEventListener('goodboy:open-settings', handler);
+    window.addEventListener('goodboy:open-impact-studio', handler);
     render(<SessionCostChip sessionId={SID} />);
     fireEvent.click(screen.getByRole('button'));
     expect(screen.getByRole('dialog', { name: 'Session budget details' })).toBeDefined();
@@ -186,24 +186,24 @@ describe('SessionCostChip', () => {
     expect(store.loadSessionTelemetry).toHaveBeenCalledWith(SID);
     expect(store.loadSessionBudget).toHaveBeenCalledWith(SID);
     expect(handler).not.toHaveBeenCalled();
-    window.removeEventListener('goodboy:open-settings', handler);
+    window.removeEventListener('goodboy:open-impact-studio', handler);
   });
 
-  it('opens budget studio at the same session scope from the popover', () => {
+  it('opens the impact studio at the same session scope from the popover', () => {
     const handler = vi.fn();
-    window.addEventListener('goodboy:open-settings', handler);
+    window.addEventListener('goodboy:open-impact-studio', handler);
     render(<SessionCostChip sessionId={SID} />);
 
     fireEvent.click(screen.getByRole('button'));
-    fireEvent.click(screen.getByRole('button', { name: /open full budget details/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open full spend details/i }));
 
     expect(handler).toHaveBeenCalledTimes(1);
     const event = handler.mock.calls[0]?.[0] as CustomEvent<{
-      budgetScope?: { kind?: string; sessionId?: SessionId };
+      scope?: { kind?: string; sessionId?: SessionId };
     }>;
-    expect(event.detail.budgetScope).toEqual({ kind: 'session', sessionId: SID });
+    expect(event.detail.scope).toEqual({ kind: 'session', sessionId: SID });
     expect(screen.queryByRole('dialog', { name: 'Session budget details' })).toBeNull();
-    window.removeEventListener('goodboy:open-settings', handler);
+    window.removeEventListener('goodboy:open-impact-studio', handler);
   });
 
   it('moves focus into the dialog and restores it after Escape', () => {

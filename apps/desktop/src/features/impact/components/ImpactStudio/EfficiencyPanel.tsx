@@ -5,7 +5,6 @@ import type {
   TurnBucket,
 } from '@goodboy/db';
 import { EmptyState, StatCard, formatTokens } from '@goodboy/ui';
-import { ArrowUpRight, Wallet } from 'lucide-react';
 import { ErrorStrip } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
@@ -13,7 +12,7 @@ import { turnStats } from '../../utils/turnStats';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { TurnHistogram } from './TurnHistogram';
 import { StudioWidget } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { Sparkline } from '@goodboy/ui';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
 
@@ -121,24 +120,6 @@ export const EfficiencyPanel = ({
           </div>
         </StudioWidget>
       </div>
-      <button
-        type="button"
-        onClick={() =>
-          window.dispatchEvent(
-            new CustomEvent('goodboy:open-settings', { detail: { scope: 'budget' } }),
-          )
-        }
-        className="flex items-center gap-3 rounded-lg border border-border-soft bg-muted/10 px-4 py-3 text-left transition-colors hover:bg-muted/30"
-      >
-        <Wallet size={ICON_SIZE.control} aria-hidden className="text-muted-foreground" />
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-medium">Spend and caps live in Budget</span>
-          <span className="block text-2xs text-muted-foreground">
-            Open Budget Studio for cost, provider mix, caps, and alerts.
-          </span>
-        </span>
-        <ArrowUpRight size={ICON_SIZE.control} aria-hidden className="text-muted-foreground" />
-      </button>
     </StudioPanel>
   );
 };

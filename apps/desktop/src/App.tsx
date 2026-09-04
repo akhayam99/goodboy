@@ -100,7 +100,6 @@ export const App = () => {
     armDeleteConfirm,
     openAddWorkspace,
     openBitbucket,
-    openBudget,
     openChangelog,
     openGithub,
     openGitlab,
@@ -114,6 +113,7 @@ export const App = () => {
     openSettings,
     openShortcutHelp,
     openSlack,
+    openSpend,
     openWorkflows,
     overlays,
   } = useAppOverlays({
@@ -241,7 +241,7 @@ export const App = () => {
       <NewSessionBridge />
       <ReleaseToast onOpenChangelog={openChangelog} />
       <AppShell
-        topBar={<AppTopBar onOpenBudget={openBudget} showWorkspaceIdentity={!hasActiveSession} />}
+        topBar={<AppTopBar onOpenSpend={openSpend} showWorkspaceIdentity={!hasActiveSession} />}
         footer={
           currentWorkspace ? (
             <AppFooter
@@ -256,7 +256,6 @@ export const App = () => {
               onOpenWorkflows={openWorkflows}
               onOpenProviders={openProviders}
               onOpenSettings={openSettings}
-              onOpenBudget={openBudget}
               onOpenImpact={openImpact}
               onOpenChangelog={openChangelog}
               onOpenInbox={openInbox}

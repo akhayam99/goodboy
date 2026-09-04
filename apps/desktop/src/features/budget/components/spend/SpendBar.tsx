@@ -5,21 +5,30 @@ type Props = {
   readonly label: string;
   readonly valueLabel: string;
   readonly pct: number;
+  readonly metaLabel?: string;
   readonly icon?: React.ReactNode;
   readonly onClick?: () => void;
 };
 
-export const SpendBar = ({ label, valueLabel, pct, icon, onClick }: Props) => {
+export const SpendBar = ({ label, valueLabel, pct, metaLabel, icon, onClick }: Props) => {
   const width = `${Math.min(Math.max(pct, 0), 1) * 100}%`;
   const tone = spendTone({ pct });
   const body = (
     <>
-      <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 truncate text-sm capitalize text-foreground">
+      <div className="flex items-center gap-2">
+        <span className="flex min-w-0 items-center gap-1.5 truncate text-sm capitalize text-foreground">
           {icon}
           {label}
         </span>
-        <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+        {metaLabel !== undefined ? (
+          <span className="ml-auto shrink-0 text-2xs text-muted-foreground/70">{metaLabel}</span>
+        ) : null}
+        <span
+          className={cn(
+            'shrink-0 font-mono text-xs tabular-nums text-muted-foreground',
+            metaLabel === undefined && 'ml-auto',
+          )}
+        >
           {valueLabel}
         </span>
       </div>

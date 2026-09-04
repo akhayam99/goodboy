@@ -103,21 +103,21 @@ const ATTENTION_SESSION = {
 } as unknown as Session;
 
 type BarOverrides = {
-  readonly onOpenBudget?: () => void;
+  readonly onOpenSpend?: () => void;
   readonly showWorkspaceIdentity?: boolean;
 };
 
 const renderBar = (overrides: BarOverrides = {}) =>
   render(
     <AppTopBar
-      onOpenBudget={overrides.onOpenBudget ?? vi.fn()}
+      onOpenSpend={overrides.onOpenSpend ?? vi.fn()}
       showWorkspaceIdentity={overrides.showWorkspaceIdentity ?? false}
     />,
   );
 
 describe('AppTopBar', () => {
   it('mounts the onboarding reopen chip, which the card tooltip points at', () => {
-    renderBar({ onOpenBudget: vi.fn() });
+    renderBar({ onOpenSpend: vi.fn() });
 
     expect(screen.getByTestId('onboarding-chip')).toBeDefined();
   });
@@ -136,7 +136,7 @@ describe('AppTopBar', () => {
   });
 
   it('keeps set-once preferences out of the bar, except theme', () => {
-    renderBar({ onOpenBudget: vi.fn() });
+    renderBar({ onOpenSpend: vi.fn() });
 
     expect(screen.queryByRole('button', { name: /switch to (light|dark) mode/i })).not.toBeNull();
     expect(screen.queryByRole('button', { name: /pair your iphone/i })).toBeNull();
@@ -144,7 +144,7 @@ describe('AppTopBar', () => {
   });
 
   it('leaves settings and the update control to the footer', () => {
-    renderBar({ onOpenBudget: vi.fn() });
+    renderBar({ onOpenSpend: vi.fn() });
 
     expect(screen.queryByRole('button', { name: /^open settings/i })).toBeNull();
     expect(screen.queryByTestId('update-indicator')).toBeNull();
@@ -153,7 +153,7 @@ describe('AppTopBar', () => {
 
   it('flips the real theme state from the top bar', () => {
     useThemeStore.setState({ theme: 'dark' });
-    renderBar({ onOpenBudget: vi.fn() });
+    renderBar({ onOpenSpend: vi.fn() });
 
     const toggle = screen.getByRole('button', { name: 'Switch to light mode' });
     fireEvent.click(toggle);
@@ -195,18 +195,18 @@ describe('AppTopBar', () => {
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
   });
 
-  it('opens budget only from the spend target and omits the beta chip', () => {
+  it('opens the impact studio only from the spend target and omits the beta chip', () => {
     hooks.sessions = [ATTENTION_SESSION];
     hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
     hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 2.5 };
-    const onOpenBudget = vi.fn();
-    renderBar({ onOpenBudget });
+    const onOpenSpend = vi.fn();
+    renderBar({ onOpenSpend });
 
-    fireEvent.click(screen.getByTitle("Today's spend across providers, open budget"));
-    expect(onOpenBudget).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByTitle("Today's spend across providers, open the impact studio"));
+    expect(onOpenSpend).toHaveBeenCalledOnce();
 
     fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));
-    expect(onOpenBudget).toHaveBeenCalledOnce();
+    expect(onOpenSpend).toHaveBeenCalledOnce();
     expect(screen.queryByText('Beta')).toBeNull();
   });
 
@@ -215,7 +215,7 @@ describe('AppTopBar', () => {
     hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
     hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 0 };
     hooks.reasons = { [ATTENTION_SESSION_ID]: 'PR #42: CI failed' };
-    renderBar({ onOpenBudget: vi.fn() });
+    renderBar({ onOpenSpend: vi.fn() });
 
     fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));
 
@@ -251,7 +251,7 @@ describe('AppTopBar', () => {
     hooks.sessions = [ATTENTION_SESSION];
     hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
     hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 0 };
-    renderBar({ onOpenBudget: vi.fn() });
+    renderBar({ onOpenSpend: vi.fn() });
 
     fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));
     expect(screen.getByRole('dialog', { name: 'Sessions needing attention' })).toBeDefined();

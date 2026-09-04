@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { ImpactOverview, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { EmptyState, formatUsd, formatUsdPrecise } from '@goodboy/ui';
@@ -16,6 +17,7 @@ type Props = {
   readonly pullRequests: QueryResult<PullRequestOutcomes>;
   readonly reviews: QueryResult<ReviewOutcomes>;
   readonly isLoading: boolean;
+  readonly spendSection: ReactNode;
   readonly onRetryOverview: () => void;
   readonly onRetryShipped: () => void;
   readonly onOpenSession: (sessionId: SessionId) => void;
@@ -26,6 +28,7 @@ export const OverviewPanel = ({
   pullRequests,
   reviews,
   isLoading,
+  spendSection,
   onRetryOverview,
   onRetryShipped,
   onOpenSession,
@@ -38,7 +41,9 @@ export const OverviewPanel = ({
       ? (data.orchestratedSessions / data.sessionCount) * 100
       : 0;
   const previousShare =
-    data?.previousSessionCount != null && data.previousSessionCount > 0
+    data?.previousSessionCount !== null &&
+    data?.previousSessionCount !== undefined &&
+    data.previousSessionCount > 0
       ? ((data.previousOrchestratedSessions ?? 0) / data.previousSessionCount) * 100
       : null;
   return (
@@ -84,7 +89,10 @@ export const OverviewPanel = ({
               value={`${pullRequestData?.open ?? 0} / ${pullRequestData?.merged ?? 0}`}
               current={(pullRequestData?.open ?? 0) + (pullRequestData?.merged ?? 0)}
               previous={
-                pullRequestData?.previousOpen == null || pullRequestData.previousMerged == null
+                pullRequestData?.previousOpen === null ||
+                pullRequestData?.previousOpen === undefined ||
+                pullRequestData.previousMerged === null ||
+                pullRequestData.previousMerged === undefined
                   ? null
                   : pullRequestData.previousOpen + pullRequestData.previousMerged
               }
@@ -155,6 +163,7 @@ export const OverviewPanel = ({
           </div>
         </>
       ) : null}
+      {spendSection}
     </StudioPanel>
   );
 };

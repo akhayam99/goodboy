@@ -4,7 +4,8 @@ import type { Session, Workspace } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast, type ToastAction } from '../../../../app/components/Toast';
 import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
-import type { BudgetScope } from '../../../budget/components/BudgetStudio/lib';
+import type { ImpactScope } from '../../../impact/lib';
+import { openImpactStudio } from '../../../impact/openImpactStudio';
 
 export const pickFreshFailures = (
   notifications: ReadonlyArray<Notification>,
@@ -86,18 +87,14 @@ export const mapNotificationAction = (
     };
   }
   if (action.kind === 'open-budget') {
-    const scope: BudgetScope =
+    const scope: ImpactScope =
       action.sessionId != null
         ? { kind: 'session', sessionId: action.sessionId }
         : { kind: 'overview' };
     return {
-      label: 'Open budget',
+      label: 'Open spend',
       onClick: () => {
-        window.dispatchEvent(
-          new CustomEvent('goodboy:open-settings', {
-            detail: { scope: 'budget', budgetScope: scope },
-          }),
-        );
+        openImpactStudio({ scope });
       },
     };
   }

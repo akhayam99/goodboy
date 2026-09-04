@@ -1,4 +1,4 @@
-export type MoreStudioId = 'budget' | 'impact' | 'changelog';
+export type MoreStudioId = 'impact' | 'changelog';
 
 export type MoreStudioEntry = {
   readonly id: MoreStudioId;
@@ -7,11 +7,10 @@ export type MoreStudioEntry = {
 };
 
 export const MORE_STUDIOS: ReadonlyArray<MoreStudioEntry> = [
-  { id: 'budget', label: 'Budget', title: 'Open budget studio' },
   {
     id: 'impact',
     label: 'Impact',
-    title: 'See how orchestration changed the way this workspace works',
+    title: 'See how orchestration changed the way this workspace works, and what it spends',
   },
   { id: 'changelog', label: 'Changelog', title: 'See what changed, release by release' },
 ];

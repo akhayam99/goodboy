@@ -11,11 +11,11 @@ import { useThemeStore } from '../../../shared/lib/theme';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
-  onOpenBudget: () => void;
+  onOpenSpend: () => void;
   showWorkspaceIdentity?: boolean;
 };
 
-export const AppTopBar = ({ onOpenBudget, showWorkspaceIdentity = false }: Props) => {
+export const AppTopBar = ({ onOpenSpend, showWorkspaceIdentity = false }: Props) => {
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
   const themeActionLabel = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
@@ -39,7 +39,7 @@ export const AppTopBar = ({ onOpenBudget, showWorkspaceIdentity = false }: Props
 
         <div className="min-w-0 flex-1" />
 
-        <WorkspaceRollupStrip onOpenBudget={onOpenBudget} />
+        <WorkspaceRollupStrip onOpenSpend={onOpenSpend} />
 
         <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
 

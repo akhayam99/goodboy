@@ -2,9 +2,11 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { ImpactMetrics } from '../../hooks/useImpactMetrics';
 
-const { state } = vi.hoisted(() => ({
+const { state, mocks } = vi.hoisted(() => ({
+  mocks: { useImpactMetrics: vi.fn() },
   state: {
     currentSessionId: 'session-1',
     sessions: [{ id: 'session-1', goal: 'build the feature' }] as ReadonlyArray<{
@@ -12,7 +14,6 @@ const { state } = vi.hoisted(() => ({
       goal: string;
     }>,
     sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
-    workspaceSummary: { inputTokens: 100, outputTokens: 200, estimatedCostUsd: 5, recordCount: 4 },
     providerSpendBreakdown: [
       { provider: 'anthropic', spentUsd: 3, capUsd: 10, pct: 0.3 },
     ] as ReadonlyArray<{
@@ -38,13 +39,36 @@ const { state } = vi.hoisted(() => ({
   },
 }));
 
+vi.mock('../../hooks/useImpactMetrics', () => ({
+  useImpactMetrics: mocks.useImpactMetrics,
+}));
+
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useSessions: () => state.sessions,
 }));
 
-import { BudgetSettingsScope } from './index';
+import { ImpactStudio } from './index';
+import type { ImpactScope } from '../../lib';
+
+const EMPTY_RESULT = { data: null, error: null };
+
+const emptyMetrics = (): ImpactMetrics =>
+  ({
+    overview: EMPTY_RESULT,
+    pullRequests: EMPTY_RESULT,
+    reviews: EMPTY_RESULT,
+    externalTasks: EMPTY_RESULT,
+    agentDurations: EMPTY_RESULT,
+    flowHealth: EMPTY_RESULT,
+    cacheEfficiency: EMPTY_RESULT,
+    contextGrowth: EMPTY_RESULT,
+    turns: EMPTY_RESULT,
+    nudges: EMPTY_RESULT,
+    loading: { overview: false, shipped: false, flow: false, efficiency: false },
+    retry: vi.fn(),
+  }) satisfies ImpactMetrics;
 
 type TelemetryRecordParams = {
   readonly id: string;
@@ -73,12 +97,30 @@ const telemetryRecord = ({
   recordedAt,
 });
 
+type RenderParams = {
+  readonly initialScope?: ImpactScope;
+  readonly onClose?: () => void;
+};
+
+const renderStudio = ({ initialScope, onClose = vi.fn() }: RenderParams = {}) =>
+  render(
+    <ImpactStudio
+      workspaceId={'workspace-1' as WorkspaceId}
+      workspaceName="Goodboy"
+      initialScope={initialScope}
+      onClose={onClose}
+    />,
+  );
+
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.useImpactMetrics.mockImplementation(() => emptyMetrics());
   state.loadBudgetRules.mockResolvedValue(undefined);
   state.loadBudgetAlerts.mockResolvedValue(undefined);
   state.loadSessionTelemetry.mockResolvedValue(undefined);
   state.loadSessionBudget.mockResolvedValue(undefined);
+  state.budgetRules = [];
+  state.sessionBudgets = {};
   state.sessionTelemetry = {
     'session-1': [
       {
@@ -96,29 +138,37 @@ beforeEach(() => {
     ],
   };
 });
+
 afterEach(cleanup);
 
-describe('BudgetSettingsScope', () => {
-  it('renders the overview scope by default', () => {
-    render(<BudgetSettingsScope requestClose={vi.fn()} />);
-    expect(screen.getByRole('tablist', { name: 'Budget window' })).toBeDefined();
-    expect(screen.getByText(/spend by provider/i)).toBeDefined();
+describe('Impact studio spend scopes', () => {
+  it('groups providers and sessions in the one rail, under a single window control', () => {
+    renderStudio();
+
+    expect(screen.getByRole('tablist', { name: 'Impact window' })).toBeDefined();
+    expect(screen.getByText('spend by provider')).toBeDefined();
+    expect(screen.getByText('spend by session')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Overview' })).toBeDefined();
   });
 
-  it('switches to a provider scope and shows its spend breakdown', () => {
-    render(<BudgetSettingsScope requestClose={vi.fn()} />);
-    const [claudeButton] = screen.getAllByRole('button', { name: /claude/i });
-    fireEvent.click(claudeButton!);
+  it('switches to a provider scope from the rail and shows its spend breakdown', () => {
+    renderStudio();
+
+    const [claudeRow] = screen.getAllByRole('button', { name: /claude/i });
+    fireEvent.click(claudeRow!);
     expect(screen.getByText(/total spend/i)).toBeDefined();
   });
 
-  it('renders a session scope with all sessions listed', () => {
-    render(
-      <BudgetSettingsScope
-        initialScope={{ kind: 'session', sessionId: 'session-1' as SessionId }}
-        requestClose={vi.fn()}
-      />,
-    );
+  it('opens the provider panel when the studio is asked for a provider scope', () => {
+    renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
+
+    expect(screen.getByText(/total spend/i)).toBeDefined();
+    expect(screen.getByLabelText(/monthly cap/i)).toBeDefined();
+  });
+
+  it('opens the session panel when the studio is asked for a session scope', () => {
+    renderStudio({ initialScope: { kind: 'session', sessionId: 'session-1' as SessionId } });
+
     expect(screen.getAllByText(/build the feature/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/session cost/i)).toBeDefined();
     expect(screen.getByText(/cost per turn/i)).toBeDefined();
@@ -126,13 +176,8 @@ describe('BudgetSettingsScope', () => {
   });
 
   it('authors a new provider cap via saveBudgetRule', () => {
-    state.budgetRules = [];
-    render(
-      <BudgetSettingsScope
-        initialScope={{ kind: 'provider', provider: 'anthropic' }}
-        requestClose={vi.fn()}
-      />,
-    );
+    renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
+
     fireEvent.change(screen.getByLabelText(/monthly cap/i), { target: { value: '50' } });
     fireEvent.click(screen.getByRole('button', { name: /set cap/i }));
     expect(state.saveBudgetRule).toHaveBeenCalledWith({
@@ -157,12 +202,8 @@ describe('BudgetSettingsScope', () => {
         createdAt: '2026-06-01T00:00:00.000Z',
       },
     ];
-    render(
-      <BudgetSettingsScope
-        initialScope={{ kind: 'provider', provider: 'anthropic' }}
-        requestClose={vi.fn()}
-      />,
-    );
+    renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
+
     fireEvent.change(screen.getByLabelText(/monthly cap/i), { target: { value: '25' } });
     fireEvent.click(screen.getByRole('button', { name: /update cap/i }));
     await Promise.resolve();
@@ -188,12 +229,8 @@ describe('BudgetSettingsScope', () => {
         createdAt: '2026-06-01T00:00:00.000Z',
       },
     ];
-    render(
-      <BudgetSettingsScope
-        initialScope={{ kind: 'provider', provider: 'anthropic' }}
-        requestClose={vi.fn()}
-      />,
-    );
+    renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
+
     fireEvent.change(screen.getByLabelText('alert threshold percent'), {
       target: { value: '60' },
     });
@@ -221,33 +258,24 @@ describe('BudgetSettingsScope', () => {
         createdAt: '2026-06-01T00:00:00.000Z',
       },
     ];
-    render(
-      <BudgetSettingsScope
-        initialScope={{ kind: 'provider', provider: 'anthropic' }}
-        requestClose={vi.fn()}
-      />,
-    );
+    renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
+
     fireEvent.click(screen.getByRole('button', { name: /remove/i }));
     fireEvent.click(screen.getByRole('button', { name: /remove/i }));
     expect(state.deleteBudgetRule).toHaveBeenCalledWith('rule-1');
   });
 
   it('sets a session soft cap via setSessionBudget', () => {
-    state.sessionBudgets = {};
-    render(
-      <BudgetSettingsScope
-        initialScope={{ kind: 'session', sessionId: 'session-1' as SessionId }}
-        requestClose={vi.fn()}
-      />,
-    );
+    renderStudio({ initialScope: { kind: 'session', sessionId: 'session-1' as SessionId } });
+
     fireEvent.change(screen.getByLabelText(/session soft cap/i), { target: { value: '12.5' } });
     fireEvent.click(screen.getByRole('button', { name: /set cap/i }));
     expect(state.setSessionBudget).toHaveBeenCalledWith('session-1', 12.5);
   });
 
-  it('renders a failed panel load and retries it', async () => {
+  it('renders a failed spend load and retries it', async () => {
     state.loadBudgetAlerts.mockRejectedValueOnce(new Error('alerts unavailable'));
-    render(<BudgetSettingsScope requestClose={vi.fn()} />);
+    renderStudio();
 
     expect((await screen.findByRole('alert')).textContent).toContain('alerts unavailable');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
@@ -256,7 +284,7 @@ describe('BudgetSettingsScope', () => {
 
   it('opens the session from a turn row', () => {
     const onClose = vi.fn();
-    render(<BudgetSettingsScope requestClose={onClose} />);
+    renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' }, onClose });
 
     fireEvent.click(screen.getByRole('button', { name: 'Open session build the feature' }));
     expect(state.setCurrentSession).toHaveBeenCalledWith('session-1');
@@ -264,12 +292,7 @@ describe('BudgetSettingsScope', () => {
   });
 
   it('leaves every model row unmarked and stays silent when the whole provider is priced', () => {
-    render(
-      <BudgetSettingsScope
-        initialScope={{ kind: 'provider', provider: 'anthropic' }}
-        requestClose={vi.fn()}
-      />,
-    );
+    renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
 
     expect(screen.queryByText(/cannot include them/i)).toBeNull();
     expect(screen.queryByText('unpriced')).toBeNull();
@@ -285,13 +308,7 @@ describe('BudgetSettingsScope', () => {
         telemetryRecord({ id: 'c3', model: 'mystery-codex', costUsd: 0, recordedAt: now }),
       ],
     };
-
-    render(
-      <BudgetSettingsScope
-        initialScope={{ kind: 'provider', provider: 'codex' }}
-        requestClose={vi.fn()}
-      />,
-    );
+    renderStudio({ initialScope: { kind: 'provider', provider: 'codex' } });
 
     expect(
       screen.getByText('No price for 1 of 3 turns, so a cap cannot include them'),
@@ -313,49 +330,11 @@ describe('BudgetSettingsScope', () => {
         }),
       ],
     };
-
-    render(
-      <BudgetSettingsScope
-        initialScope={{ kind: 'provider', provider: 'cursor' }}
-        requestClose={vi.fn()}
-      />,
-    );
+    renderStudio({ initialScope: { kind: 'provider', provider: 'cursor' } });
 
     expect(screen.getAllByText('approx')).toHaveLength(1);
     expect(screen.queryByText('unpriced')).toBeNull();
     expect(screen.queryByText(/cannot include them/i)).toBeNull();
-  });
-
-  it('stays silent for a provider whose turns all carry a cost the cap already counts', () => {
-    const now = new Date().toISOString();
-    state.sessionTelemetry = {
-      'session-1': [
-        telemetryRecord({
-          id: 'o1',
-          provider: 'openrouter',
-          model: 'anthropic/claude-sonnet-4.5',
-          costUsd: 0.4,
-          recordedAt: now,
-        }),
-        telemetryRecord({
-          id: 'o2',
-          provider: 'openrouter',
-          model: 'anthropic/claude-sonnet-4.5',
-          costUsd: 0.6,
-          recordedAt: now,
-        }),
-      ],
-    };
-
-    render(
-      <BudgetSettingsScope
-        initialScope={{ kind: 'provider', provider: 'openrouter' }}
-        requestClose={vi.fn()}
-      />,
-    );
-
-    expect(screen.queryByText(/cannot include them/i)).toBeNull();
-    expect(screen.queryByText('unpriced')).toBeNull();
   });
 
   it('counts only the zero-cost turns when a provider reports cost inconsistently', () => {
@@ -385,23 +364,17 @@ describe('BudgetSettingsScope', () => {
         }),
       ],
     };
-
-    render(
-      <BudgetSettingsScope
-        initialScope={{ kind: 'provider', provider: 'opencode' }}
-        requestClose={vi.fn()}
-      />,
-    );
+    renderStudio({ initialScope: { kind: 'provider', provider: 'opencode' } });
 
     expect(
       screen.getByText('No price for 2 of 3 turns, so a cap cannot include them'),
     ).toBeDefined();
   });
 
-  it('filters telemetry with the header window control', () => {
+  it('filters spend telemetry with the studio window control', () => {
     state.sessionTelemetry = {
       'session-1': [
-        ...state.sessionTelemetry['session-1']!,
+        ...(state.sessionTelemetry['session-1'] ?? []),
         {
           id: 't-old',
           runId: 'r-old',
@@ -416,8 +389,7 @@ describe('BudgetSettingsScope', () => {
         },
       ],
     };
-
-    render(<BudgetSettingsScope requestClose={vi.fn()} />);
+    renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
 
     expect(screen.queryByText('Legacy Budget Model')).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: 'All time' }));
