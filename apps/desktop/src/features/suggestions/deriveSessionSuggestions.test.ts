@@ -202,6 +202,60 @@ describe('deriveSessionSuggestions', () => {
     expect(suggestions.filter((suggestion) => suggestion.kind === 'mount-project')).toHaveLength(1);
   });
 
+  it('hides the rebase once a request covers the same distance and its agent did not fail', () => {
+    const project = {
+      projectId: webId,
+      projectName: 'web',
+      worktreePath: '/tmp/web',
+      baseBranch: 'main',
+      mainDistance: 126,
+    };
+    const rebaseIds = ({
+      rebaseRequest,
+      mainDistance = 126,
+    }: {
+      readonly rebaseRequest: {
+        readonly behind: number | null;
+        readonly baseBranch?: string | null;
+        readonly agentStatus: string | null;
+      };
+      readonly mainDistance?: number;
+    }) =>
+      deriveSessionSuggestions({
+        sessionId,
+        workflowRuns: [],
+        plans: [],
+        consumedPlanIds: new Set<PlanId>(),
+        openQuestionCount: 0,
+        hasPullRequest: false,
+        threads: [],
+        mountEvents: [],
+        projects: [
+          {
+            ...project,
+            mainDistance,
+            rebaseRequest: { baseBranch: 'main', ...rebaseRequest },
+          },
+        ],
+      }).map((suggestion) => suggestion.id);
+
+    expect(rebaseIds({ rebaseRequest: { behind: 126, agentStatus: 'running' } })).toEqual([]);
+    expect(rebaseIds({ rebaseRequest: { behind: 126, agentStatus: 'completed' } })).toEqual([]);
+    expect(rebaseIds({ rebaseRequest: { behind: 126, agentStatus: null } })).toEqual([]);
+    expect(
+      rebaseIds({ rebaseRequest: { behind: 126, baseBranch: null, agentStatus: 'running' } }),
+    ).toEqual([]);
+    expect(rebaseIds({ rebaseRequest: { behind: 126, agentStatus: 'failed' } })).toEqual([
+      'rebase-project:project-web',
+    ]);
+    expect(
+      rebaseIds({ rebaseRequest: { behind: 126, agentStatus: 'completed' }, mainDistance: 129 }),
+    ).toEqual(['rebase-project:project-web']);
+    expect(
+      rebaseIds({ rebaseRequest: { behind: 126, baseBranch: 'develop', agentStatus: 'running' } }),
+    ).toEqual(['rebase-project:project-web']);
+  });
+
   it('orders equal-priority suggestions by id', () => {
     const suggestions = deriveSessionSuggestions({
       sessionId,

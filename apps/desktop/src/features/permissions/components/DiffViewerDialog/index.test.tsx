@@ -42,6 +42,7 @@ const { showToast, state, fixtures } = vi.hoisted(() => ({
     endSessionCreation: vi.fn(),
     spawnAgent: vi.fn(async () => 'a1'),
     sendTurn: vi.fn(async () => undefined),
+    recordSessionEvent: vi.fn(async () => undefined),
   },
   fixtures: {
     files: [] as ReadonlyArray<unknown>,
@@ -128,6 +129,7 @@ beforeEach(() => {
   state.selectAgent.mockClear();
   state.setActiveLens.mockClear();
   state.spawnAgent.mockClear();
+  state.recordSessionEvent.mockClear();
   showToast.mockClear();
   fixtures.files = [];
   fixtures.comments = [];
@@ -345,6 +347,9 @@ describe('DiffViewerPane', () => {
     expect(showToast.mock.calls[0]?.[2]?.title).toBe('Rebase started');
     expect(state.selectAgent).not.toHaveBeenCalled();
     expect(await screen.findByRole('button', { name: 'Rebase' })).toBeDefined();
+    expect(state.recordSessionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'rebase_requested' }),
+    );
   });
 
   it('spawns a rebase agent with the resolved task model when behind main', async () => {

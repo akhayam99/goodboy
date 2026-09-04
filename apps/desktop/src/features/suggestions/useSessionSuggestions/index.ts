@@ -23,6 +23,7 @@ import {
   deriveSessionSuggestions,
   type SuggestionMountEvent,
   type SuggestionMountEventKind,
+  type SuggestionRebaseRequest,
 } from '../deriveSessionSuggestions';
 
 type Params = {
@@ -62,6 +63,31 @@ const toMountEvents = ({
 
 const NO_TARGETS: ReadonlyArray<{ readonly worktreePath: string; readonly baseBranch?: string }> =
   [];
+
+const latestRebaseRequests = ({
+  events,
+  agents,
+}: {
+  readonly events: ReadonlyArray<SessionEvent>;
+  readonly agents: ReadonlyArray<Agent>;
+}): ReadonlyMap<ProjectId, SuggestionRebaseRequest> => {
+  const requests = new Map<ProjectId, SuggestionRebaseRequest>();
+  const agentsById = new Map(agents.map((agent) => [agent.id as string, agent]));
+  for (const event of events) {
+    const projectId = event.payload?.projectId;
+    if (event.kind !== 'rebase_requested' || projectId == null) {
+      continue;
+    }
+    const agentId = event.payload?.agentId ?? null;
+    const agent = agentId == null ? null : (agentsById.get(agentId) ?? null);
+    requests.set(projectId as ProjectId, {
+      behind: event.payload?.behind ?? null,
+      baseBranch: event.payload?.branch ?? null,
+      agentStatus: agent?.status ?? null,
+    });
+  }
+  return requests;
+};
 
 export const useSessionSuggestions = ({ session, agents, withRebase = true }: Params) => {
   const sessionId = session.id;
@@ -133,6 +159,7 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
         consumedPlanIds.add(plan.id);
       }
     }
+    const rebaseRequests = latestRebaseRequests({ events, agents: effectiveAgents });
     return deriveSessionSuggestions({
       sessionId,
       workflowRuns: active.map(({ run, workflow }) => {
@@ -193,6 +220,7 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
               baseBranch: project?.baseBranch ?? 'main',
               mainDistance:
                 status == null ? null : distanceBehind({ distance: status.mainDistance }),
+              rebaseRequest: rebaseRequests.get(mount.projectId) ?? null,
             };
           })
         : [],

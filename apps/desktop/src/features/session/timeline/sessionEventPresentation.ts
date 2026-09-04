@@ -42,6 +42,7 @@ const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
   project_materialization_dismissed: 'muted',
   project_detached: 'muted',
   external_task_created: 'plain',
+  rebase_requested: 'muted',
 };
 
 export type SessionEventGlyph = {
@@ -84,6 +85,7 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   project_materialization_dismissed: { icon: FolderMinus, tone: 'neutral', label: 'Project' },
   project_detached: { icon: FolderMinus, tone: 'neutral', label: 'Project' },
   external_task_created: { icon: Link2, tone: 'neutral', label: 'Issue' },
+  rebase_requested: { icon: GitBranch, tone: 'info', label: 'Branch' },
 };
 
 type TimelineValueVariant = 'project' | 'branch' | 'path' | 'pull-request' | 'issue' | 'workflow';
@@ -243,6 +245,27 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
           ];
     case 'external_task_created':
       return [{ kind: 'text', text: 'Created ' }, ...issueSegments({ payload })];
+    case 'rebase_requested': {
+      const base = payload?.branch ?? null;
+      const behind = payload?.behind == null ? '' : ` (${payload.behind} behind)`;
+      const onBase: ReadonlyArray<TimelineLabelSegment> =
+        base == null
+          ? []
+          : [
+              { kind: 'text', text: ' on ' },
+              { kind: 'value', text: base, variant: 'branch' },
+              { kind: 'text', text: behind },
+            ];
+      if (payload?.projectName == null) {
+        return [{ kind: 'text', text: 'Rebase started' }, ...onBase];
+      }
+      return [
+        { kind: 'text', text: 'Rebase of ' },
+        { kind: 'value', text: payload.projectName, variant: 'project' },
+        { kind: 'text', text: ' started' },
+        ...onBase,
+      ];
+    }
     default: {
       const exhaustive: never = event.kind;
       return exhaustive;

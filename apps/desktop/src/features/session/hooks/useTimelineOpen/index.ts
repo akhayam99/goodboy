@@ -32,6 +32,7 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   project_materialization_dismissed: null,
   project_detached: null,
   external_task_created: { lens: null, label: 'Open overview' },
+  rebase_requested: { lens: 'agents', label: 'Open agents' },
 };
 
 const eventOpenTarget = ({ kind }: { readonly kind: SessionEventKind }): EventTarget | null =>

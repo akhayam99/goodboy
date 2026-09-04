@@ -83,6 +83,7 @@ const CATEGORY_BY_EVENT_KIND: Record<SessionEventKind, ActivityCategory> = {
   project_materialization_dismissed: 'worktree',
   project_detached: 'worktree',
   external_task_created: 'issues',
+  rebase_requested: 'worktree',
 };
 
 type EntryParams = {
