@@ -7,6 +7,94 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.15
+
+Every lens and detail page now names the session you're in, its title
+renders the way you typed it, the activity timeline gains workflow
+steps and a rebase suggestion that remembers what happened, mounts
+stay write-only on every path, and four separate changes make the app
+boot and stream faster.
+
+### [#1648] The rebase suggestion remembers it ran
+
+Clicking Rebase on the activity suggestion used to leave the row
+sitting above NOW, only relabeled "Rebasing", as if nothing had
+happened. The suggestion now drops out the moment the agent starts,
+and comes back only if the base branch moves further ahead or the
+rebase fails.
+
+### [#1659] A session eyebrow above every page
+
+Every lens and detail page now shows a small line naming the session
+above its own title, so you don't lose track of which session you're
+in while deep inside Questions, Plans, Workflows, Scripts, or a linked
+GitHub, Linear, Sentry, GitLab, Jira or Slack panel. Click it to
+return to the overview.
+
+### [#1660] Session titles render inline markdown
+
+A goal written with backticks, bold or italic used to show the raw
+markup everywhere the title appeared. Session titles now render
+inline code, bold and italic on the overview header, board cards,
+sidebar rows and breadcrumbs, so formatting shows up the way you
+typed it.
+
+### [#1658] Workflow steps join the activity timeline rail
+
+Workflow steps now draw on the same rail as the activity timeline,
+with one marker per step status and dashed segments running into
+steps that haven't started yet, instead of the separate numbered tree
+the workflow page used before. Steps read the same visual language as
+the rest of the app.
+
+### [#1649] A side rail for manifests in scripts
+
+Projects with several package manifests used to pile every workspace
+package into a stack of collapsibles. Scripts now show a side rail
+listing every manifest with its script count, so you can jump between
+the root and any workspace package directly instead of scrolling
+through folds.
+
+### [#1651] Inbox: Enter opens, Clear filters stays visible
+
+Enter on the selected inbox row now opens it in the launch dock, and
+Cmd/Ctrl+Enter there still starts the session. Clear filters now sits
+in the rail itself whenever a search, kind or provider filter is
+active, not only inside the empty detail view.
+
+### [#1657] Board cards get mount and resolve actions
+
+Board cards now offer the same actions as the activity suggestions,
+with the same icons: mounting a pending project, up to two at a time,
+and resolving open review comments, alongside the existing run and
+question actions.
+
+### [#1650] Every mount path stays write-only
+
+Two more paths could mount a project on sight: a bridge command, and
+workflow step declarations that mounted every project named in the
+step text. Both now go through the same write-only check as
+everything else, so a project either one would have mounted becomes a
+proposal you approve instead, capped at two mounts per request.
+
+### [#1653, #1654, #1655, #1656] Faster
+
+Four changes cut time off boot and runtime. Reading a project's git
+status now takes three git processes instead of up to ten. Settings,
+the guide, workflows, the inbox, the diff viewer and six more studios
+now load only when you first open them, and the terminal loads only
+once one mounts. Together, that's roughly 900 kB off the window's
+boot bundle. A long streaming transcript now updates incrementally
+from its last snapshot instead of rebuilding from scratch on every
+tick.
+
+### [#1652] Icon sizes unified across every feature
+
+The icon size token pass from the last release now covers the rest of
+the app: about 230 remaining icon sizes across just over 100 files
+read from the same three size tokens as everywhere else, so nothing
+is left sized as a one-off number.
+
 ## Goodboy v0.2.14
 
 Session switches stop freezing the app, suggestions move into the
