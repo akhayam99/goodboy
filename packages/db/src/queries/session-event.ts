@@ -74,6 +74,7 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
   const projectId = stringAt({ source, key: 'projectId' });
   const projectName = stringAt({ source, key: 'projectName' });
   const reason = stringAt({ source, key: 'reason' });
+  const agentId = stringAt({ source, key: 'agentId' });
   const kept = booleanAt({ source, key: 'kept' });
   const externalId = stringAt({ source, key: 'externalId' });
   const number = numberAt({ source, key: 'number' });
@@ -93,6 +94,7 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
     ...(projectId != null ? { projectId } : {}),
     ...(projectName != null ? { projectName } : {}),
     ...(reason != null ? { reason } : {}),
+    ...(agentId != null ? { agentId } : {}),
     ...(kept != null ? { kept } : {}),
     ...(externalId != null ? { externalId } : {}),
     ...(number != null ? { number } : {}),
