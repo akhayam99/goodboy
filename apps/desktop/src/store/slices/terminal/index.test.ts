@@ -349,7 +349,7 @@ vi.mock('../../../features/terminal/terminal', () => ({
   invokeTerminalResize: vi.fn(async () => undefined),
 }));
 
-vi.mock('../../../shared/components/GenericTerminalPanel', () => ({
+vi.mock('../../../shared/components/GenericTerminalPanel/outputCache', () => ({
   clearTerminalCache: vi.fn(() => undefined),
 }));
 

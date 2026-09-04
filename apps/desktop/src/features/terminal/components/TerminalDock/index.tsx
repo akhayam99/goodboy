@@ -6,9 +6,9 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { LensEmptyState } from '@goodboy/ui';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import {
-  GenericTerminalPanel,
+  LazyGenericTerminalPanel,
   type TerminalDriver,
-} from '../../../../shared/components/GenericTerminalPanel';
+} from '../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalPanel';
 import { currentPlatform } from '../../../../shared/platform';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
 import {
@@ -159,7 +159,7 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
       <Divider />
       <div className="relative min-h-0 flex-1">
         {activeTab ? (
-          <GenericTerminalPanel
+          <LazyGenericTerminalPanel
             key={activeTab.id}
             terminalId={activeTab.id}
             driver={driver}
