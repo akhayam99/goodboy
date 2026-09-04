@@ -45,8 +45,9 @@ export const materializationGate = ({
     return 'mounted';
   }
   const isNamedByGoal = goalNamesProject({ get, sessionId, projectName: project.name });
+  const mountsBeforeRequest = mounts.length - immediateCount;
   const isAllowedNow =
-    (mounts.length === 0 || isNamedByGoal) && immediateCount < IMMEDIATE_MATERIALIZE_CAP;
+    (mountsBeforeRequest <= 0 || isNamedByGoal) && immediateCount < IMMEDIATE_MATERIALIZE_CAP;
   return isAllowedNow ? 'allowed' : 'deferred';
 };
 
