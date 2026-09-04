@@ -20,7 +20,7 @@ type Props = {
   readonly onSelectQuestions: () => void;
 };
 
-const OVERVIEW_KINDS: ReadonlySet<SessionSuggestion['kind']> = new Set([
+const OVERVIEW_KINDS: ReadonlySet<SessionSuggestion['kind']> = new Set<SessionSuggestion['kind']>([
   'workflow-next-step',
   'resolve-threads',
   'rebase-project',
