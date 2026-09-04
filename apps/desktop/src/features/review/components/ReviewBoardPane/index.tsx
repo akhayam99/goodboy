@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
+  Button,
   cn,
   DiffLayoutToggle,
   formatError,
@@ -53,6 +54,7 @@ export const ReviewBoardPane = ({ session, eyebrow }: Props) => {
   const updateReviewDraft = useAppStore((s) => s.updateReviewDraft);
   const discardReviewDraft = useAppStore((s) => s.discardReviewDraft);
   const publishPrReview = useAppStore((s) => s.publishPrReview);
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const setAgentDraft = useAppStore((s) => s.setAgentDraft);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
@@ -63,6 +65,8 @@ export const ReviewBoardPane = ({ session, eyebrow }: Props) => {
   const diffComments = useDiffComments(sessionId);
   const resolverIndex = useResolverIndex(sessionId);
   const { files, loading, error, target, refresh } = useReviewDiff({ session });
+  const hasTarget = target != null;
+  const hasNoTarget = target == null && !loading;
   const [layoutMode, setLayoutMode] = useDiffLayoutMode();
   const { showToast } = useToast();
   const [publishing, setPublishing] = useState(false);
@@ -190,13 +194,15 @@ export const ReviewBoardPane = ({ session, eyebrow }: Props) => {
               {`${target.repo} ${target.provider === 'gitlab' ? '!' : '#'}${target.prNumber}`}
             </span>
           ) : null}
-          <span className="text-2xs tabular-nums text-muted-foreground/60">
-            {loading ? '' : `${files.length} files`}
-          </span>
+          {hasTarget ? (
+            <span className="text-2xs tabular-nums text-muted-foreground/60">
+              {loading ? '' : `${files.length} files`}
+            </span>
+          ) : null}
         </>
       }
       actions={
-        section === 'review' ? (
+        section === 'review' && hasTarget ? (
           <>
             <DiffLayoutToggle mode={layoutMode} onChange={setLayoutMode} />
             <RefreshIconButton
@@ -226,7 +232,7 @@ export const ReviewBoardPane = ({ session, eyebrow }: Props) => {
       }
       fit="bleed"
       dock={
-        section === 'review' ? (
+        section === 'review' && !hasNoTarget ? (
           <PublishBar
             provider={target?.provider ?? 'github'}
             draftCount={openDrafts.length}
@@ -244,6 +250,20 @@ export const ReviewBoardPane = ({ session, eyebrow }: Props) => {
           inspectedResolverId={inspectedResolverId}
           onInspectResolver={openResolver}
         />
+      ) : hasNoTarget ? (
+        <div className={cn('flex min-h-0 flex-1 flex-col', PANE_RHYTHM.body)}>
+          <LensEmptyState
+            tone={CONCEPT_TONE.pr}
+            icon={CONCEPT_ICONS.pr}
+            title="No pull request to review"
+            description="The review board reviews the diff of this session's pull request, and none is linked yet. The GitHub lens opens or creates one."
+            action={
+              <Button size="sm" variant="secondary" onClick={() => setActiveLens(sessionId, 'pr')}>
+                Open GitHub
+              </Button>
+            }
+          />
+        </div>
       ) : (
         <div className="flex min-h-0 flex-1">
           <div className="flex min-w-0 flex-1 flex-col">
