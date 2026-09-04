@@ -14,6 +14,7 @@ import { isOpenQuestionAnswerText } from '@goodboy/core';
 import { decodeAuthRequiredMessage } from '../turn';
 import { isWorkflowKickoff, parseWorkflowKickoff } from './parse-workflow-kickoff';
 import { parseResolverKickoff, type ResolverKickoffThread } from './parse-resolver-kickoff';
+import { reduceTranscriptTrace } from './transcript-items-trace';
 
 export type TranscriptItem =
   | {
@@ -110,14 +111,36 @@ export type TranscriptItem =
       at: IsoDateTime;
     };
 
+type ReduceSnapshot = {
+  readonly lastEvent: TurnEvent;
+  readonly length: number;
+  readonly items: ReadonlyArray<TranscriptItem>;
+  readonly callIndex: ReadonlyMap<string, number>;
+  readonly permToolNames: ReadonlyMap<string, string>;
+  readonly textBuffer: string;
+  readonly textKey: string | null;
+};
+
+const snapshots = new WeakMap<TurnEvent, ReduceSnapshot>();
+
 export const reduceTranscript = (
   events: ReadonlyArray<TurnEvent>,
 ): ReadonlyArray<TranscriptItem> => {
-  const items: TranscriptItem[] = [];
-  const callIndex = new Map<string, number>();
-  const permToolNames = new Map<string, string>();
-  let textBuffer = '';
-  let textKey: string | null = null;
+  const firstEvent = events.length > 0 ? events[0]! : null;
+  const cached = firstEvent !== null ? snapshots.get(firstEvent) : undefined;
+  const resumed =
+    cached !== undefined &&
+    cached.length <= events.length &&
+    events[cached.length - 1] === cached.lastEvent
+      ? cached
+      : null;
+  const items: TranscriptItem[] = resumed !== null ? resumed.items.slice() : [];
+  const callIndex =
+    resumed !== null ? new Map<string, number>(resumed.callIndex) : new Map<string, number>();
+  const permToolNames =
+    resumed !== null ? new Map<string, string>(resumed.permToolNames) : new Map<string, string>();
+  let textBuffer = resumed !== null ? resumed.textBuffer : '';
+  let textKey: string | null = resumed !== null ? resumed.textKey : null;
 
   const flushText = () => {
     if (textBuffer.length > 0 && textKey) {
@@ -127,8 +150,11 @@ export const reduceTranscript = (
     textKey = null;
   };
 
-  for (let i = 0; i < events.length; i += 1) {
+  for (let i = resumed !== null ? resumed.length : 0; i < events.length; i += 1) {
     const event = events[i]!;
+    if (import.meta.env.DEV) {
+      reduceTranscriptTrace.processed += 1;
+    }
     if (event.kind === 'assistant_text') {
       if (textKey === null) {
         textKey = `text-${i}`;
@@ -311,6 +337,20 @@ export const reduceTranscript = (
     }
   }
 
-  flushText();
+  if (firstEvent !== null) {
+    snapshots.set(firstEvent, {
+      lastEvent: events[events.length - 1]!,
+      length: events.length,
+      items,
+      callIndex,
+      permToolNames,
+      textBuffer,
+      textKey,
+    });
+  }
+
+  if (textBuffer.length > 0 && textKey !== null) {
+    return [...items, { kind: 'assistant_text', key: textKey, text: textBuffer }];
+  }
   return items;
 };
