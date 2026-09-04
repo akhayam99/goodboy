@@ -15,6 +15,7 @@ import { openBudgetStudio as openBudgetStudioEvent } from '../../../budget/openB
 import { SessionBudgetContent } from '../../../budget/components/BudgetStudio/SessionBudgetContent';
 import type { WorkspaceTurn } from '../../../budget/components/BudgetStudio/lib';
 import { EMPTY_ARRAY, useAppStore, useSessionCost } from '../../../../store';
+import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 import { manageDialogFocus } from './manageDialogFocus';
 import { VITAL_CHIP_FOCUS, VITAL_CHIP_FRAME, VITAL_CHIP_HOVER } from './vitalChip';
 
@@ -152,9 +153,10 @@ export const SessionCostChip = ({ sessionId }: Props) => {
     >
       <div className="flex flex-col gap-0.5 px-4 py-3">
         <span className="text-sm font-semibold text-foreground">Session budget</span>
-        <span className="truncate text-2xs text-muted-foreground">
-          {session?.goal ?? 'Untitled session'}
-        </span>
+        <InlineMarkdown
+          text={session?.goal ?? 'Untitled session'}
+          className="truncate text-2xs text-muted-foreground"
+        />
       </div>
       <Divider />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="p-4">

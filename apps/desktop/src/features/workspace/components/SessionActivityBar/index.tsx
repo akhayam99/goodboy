@@ -35,6 +35,8 @@ import { ExternalTaskChip } from '../../../../features/integrations/components/E
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
+import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { sessionCardShell } from '../../../session/components/sessionCardShell';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
@@ -390,7 +392,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
         event.preventDefault();
         onModifierClick(session.id as SessionId, event);
       }}
-      title={`${session.goal} · ${reason}${prMeta ? ` · PR ${prMeta.label}` : ''}${externalTasks.length > 0 ? ` · ${externalTasks.map((task) => task.identifier).join(', ')}` : ''}`}
+      title={`${stripInlineMarkdown({ text: session.goal })} · ${reason}${prMeta ? ` · PR ${prMeta.label}` : ''}${externalTasks.length > 0 ? ` · ${externalTasks.map((task) => task.identifier).join(', ')}` : ''}`}
       className={cn(
         'flex w-full cursor-pointer items-center gap-2 px-2.5 py-2.5 text-left',
         sessionCardShell({ stage, selected, active: isActive, dimmed }),
@@ -405,9 +407,10 @@ const SessionActivityItem = memo(function SessionActivityItem({
               pulsing={stage === 'running'}
             />
           </span>
-          <span className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug">
-            {session.goal}
-          </span>
+          <InlineMarkdown
+            text={session.goal}
+            className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug"
+          />
           <ProjectChip projectNames={projectNames} />
           {externalTasks.map((task) => (
             <ExternalTaskChip

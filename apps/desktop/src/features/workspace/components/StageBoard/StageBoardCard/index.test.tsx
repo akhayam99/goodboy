@@ -164,6 +164,17 @@ describe('StageBoardCard layout', () => {
     expect(screen.getByText('no PR yet').className).toContain('truncate');
   });
 
+  it('renders a backticked goal as inline code and keeps the tooltip plain', () => {
+    const marked = { ...session, goal: 'run `/explore` first' } as unknown as Session;
+    render(<StageBoardCard session={marked} nav={nav} />);
+    const title = screen.getByText(/run/);
+    expect(title.querySelector('code')?.textContent).toBe('/explore');
+    expect(title.textContent).not.toContain('`');
+    expect(title.closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe(
+      'run /explore first · no PR yet',
+    );
+  });
+
   it('points at the session with a trailing chevron', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     expect(document.querySelector('.lucide-chevron-right')).not.toBeNull();

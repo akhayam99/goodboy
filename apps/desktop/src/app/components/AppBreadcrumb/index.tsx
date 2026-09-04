@@ -1,6 +1,8 @@
 import { ChevronRight } from 'lucide-react';
 import type { BreadcrumbCrumb } from './buildBreadcrumb';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { InlineMarkdown } from '../../../shared/components/InlineMarkdown';
+import { stripInlineMarkdown } from '../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 
 type Props = {
   readonly crumbs: BreadcrumbCrumb[];
@@ -12,6 +14,7 @@ export const AppBreadcrumb = ({ crumbs }: Props) => {
       {crumbs.map((crumb, index) => {
         const isLast = index === crumbs.length - 1;
         const Icon = crumb.icon;
+        const plainLabel = stripInlineMarkdown({ text: crumb.label });
         return (
           <span key={crumb.id} className="flex min-w-0 items-center gap-2">
             {index > 0 && (
@@ -20,7 +23,7 @@ export const AppBreadcrumb = ({ crumbs }: Props) => {
             {isLast ? (
               <span
                 className="inline-flex min-w-0 items-center gap-2 text-2xs font-medium text-foreground"
-                title={crumb.label}
+                title={plainLabel}
                 aria-current="page"
               >
                 {Icon == null ? null : (
@@ -30,7 +33,7 @@ export const AppBreadcrumb = ({ crumbs }: Props) => {
                     className="shrink-0 text-muted-foreground/70"
                   />
                 )}
-                <span className="min-w-0 truncate">{crumb.label}</span>
+                <InlineMarkdown text={crumb.label} className="min-w-0 truncate" />
                 {crumb.accessory}
               </span>
             ) : (
@@ -38,7 +41,7 @@ export const AppBreadcrumb = ({ crumbs }: Props) => {
                 type="button"
                 onClick={crumb.onClick}
                 className="inline-flex min-w-0 items-center gap-2 text-2xs text-muted-foreground transition-colors hover:text-foreground"
-                title={crumb.label}
+                title={plainLabel}
               >
                 {Icon == null ? null : (
                   <Icon
@@ -47,7 +50,7 @@ export const AppBreadcrumb = ({ crumbs }: Props) => {
                     className="shrink-0 text-muted-foreground/70"
                   />
                 )}
-                <span className="min-w-0 truncate">{crumb.label}</span>
+                <InlineMarkdown text={crumb.label} className="min-w-0 truncate" />
                 {crumb.accessory}
               </button>
             )}

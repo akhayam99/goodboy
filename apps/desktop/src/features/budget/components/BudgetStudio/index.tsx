@@ -9,6 +9,7 @@ import { OverviewPanel } from './OverviewPanel';
 import { ProviderPanel } from './ProviderPanel';
 import { ScopeRail } from './ScopeRail';
 import { SessionPanel } from './SessionPanel';
+import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import {
   BUDGET_WINDOW_DAYS,
   BUDGET_WINDOW_OPTIONS,
@@ -257,7 +258,7 @@ export const BudgetSettingsScope = ({ initialScope, requestClose }: Props) => {
             ) : selectedSession != null ? (
               <SessionPanel
                 sessionId={selectedSession.id}
-                goal={selectedSession.goal}
+                goal={stripInlineMarkdown({ text: selectedSession.goal })}
                 isCurrent={selectedSession.id === currentSessionId}
                 turns={turns.filter((t) => t.sessionId === selectedSession.id)}
                 softCapUsd={sessionBudgets[selectedSession.id]?.softCapUsd ?? null}

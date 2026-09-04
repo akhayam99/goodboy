@@ -3,6 +3,7 @@ import type { Notification, NotificationAction } from '@goodboy/db';
 import type { Session, Workspace } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast, type ToastAction } from '../../../../app/components/Toast';
+import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import type { BudgetScope } from '../../../budget/components/BudgetStudio/lib';
 
 export const pickFreshFailures = (
@@ -39,7 +40,7 @@ export const notificationContext = (
   }
   const session = n.sessionId ? sessions.find((s) => s.id === n.sessionId) : undefined;
   if (session) {
-    parts.push(session.goal.trim() || 'untitled session');
+    parts.push(stripInlineMarkdown({ text: session.goal }).trim() || 'untitled session');
   }
   return parts.length > 0 ? parts.join(' · ') : undefined;
 };

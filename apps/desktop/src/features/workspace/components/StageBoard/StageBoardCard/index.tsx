@@ -27,6 +27,8 @@ import {
   CONCEPT_TONE,
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
+import { InlineMarkdown } from '../../../../../shared/components/InlineMarkdown';
+import { stripInlineMarkdown } from '../../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { STAGE_TONE } from '../../../../session/session-stage';
 import { sessionCardShell } from '../../../../session/components/sessionCardShell';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
@@ -102,6 +104,7 @@ export const StageBoardCard = memo(function StageBoardCard({
     ? (reviewDrafts ?? []).filter((draft) => draft.status === 'draft').length
     : 0;
 
+  const plainGoal = stripInlineMarkdown({ text: session.goal });
   const age = formatRelativeAge({ fromIso: session.updatedAt });
   const linkedRequest = getLinkedRequest({ pullRequest, mergeRequest });
   const isGitlab = mergeRequest != null && pullRequest == null;
@@ -165,10 +168,11 @@ export const StageBoardCard = memo(function StageBoardCard({
             prFetchState={prFetchState}
             onOpen={handlePrClick}
           />
-          <Tooltip content={`${session.goal}${reason ? ` · ${reason}` : ''}`} side="top">
-            <span className="line-clamp-2 min-h-10 min-w-0 flex-1 text-sm font-medium leading-snug">
-              {session.goal}
-            </span>
+          <Tooltip content={`${plainGoal}${reason ? ` · ${reason}` : ''}`} side="top">
+            <InlineMarkdown
+              text={session.goal}
+              className="line-clamp-2 min-h-10 min-w-0 flex-1 text-sm font-medium leading-snug"
+            />
           </Tooltip>
         </span>
 
