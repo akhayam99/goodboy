@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 
 type Script = {
   readonly id: string;
@@ -24,15 +24,34 @@ type ManifestGroup = {
   readonly scripts: ReadonlyArray<{ readonly name: string; readonly command: string }>;
 };
 
+const apiProject = {
+  id: 'project-1',
+  workspaceId: 'ws-1',
+  name: 'API',
+  rootPath: '/Users/dev/code/acme/api',
+};
+const webProject = {
+  id: 'project-2',
+  workspaceId: 'ws-1',
+  name: 'Web',
+  rootPath: '/Users/dev/code/acme/web',
+};
+
 const { state } = vi.hoisted(() => ({
   state: {
     scripts: [] as ReadonlyArray<Script>,
-    projects: [{ id: 'project-1', workspaceId: 'ws-1', name: 'API' }],
+    projects: [] as ReadonlyArray<{
+      id: string;
+      workspaceId: string;
+      name: string;
+      rootPath: string;
+    }>,
     sessions: [{ id: 'session-1', activeProjectId: 'project-1' }],
     sessionActiveProject: { 'session-1': 'project-1' } as Record<string, string>,
-    sessionProjectMounts: {
-      'session-1': [{ projectId: 'project-1', worktreePath: '/tmp/api' }],
-    } as Record<string, ReadonlyArray<{ projectId: string; worktreePath: string }>>,
+    sessionProjectMounts: {} as Record<
+      string,
+      ReadonlyArray<{ projectId: string; worktreePath: string }>
+    >,
     scriptRuns: {} as Record<string, Record<string, RunRecord>>,
     discoveredScripts: {} as Record<string, Record<string, ReadonlyArray<ManifestGroup>>>,
     discoveredScriptScans: {} as Record<
@@ -81,9 +100,21 @@ vi.mock('../../../../store', () => {
 
 import { ScriptsPanel } from './index';
 
+const renderPanel = () =>
+  render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+
+const renderSettingsPanel = () => render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+
+const rail = () => screen.getByRole('navigation', { name: 'Script projects' });
+
+const manifestSection = () => screen.getByRole('region', { name: 'Manifest scripts' });
+
+const searchBox = () => screen.getByRole('searchbox', { name: 'Search scripts' });
+
 beforeEach(() => {
+  localStorage.clear();
   state.scripts = [];
-  state.projects = [{ id: 'project-1', workspaceId: 'ws-1', name: 'API' }];
+  state.projects = [apiProject];
   state.sessions = [{ id: 'session-1', activeProjectId: 'project-1' }];
   state.sessionActiveProject = { 'session-1': 'project-1' };
   state.sessionProjectMounts = {
@@ -91,7 +122,9 @@ beforeEach(() => {
   };
   state.scriptRuns = {};
   state.discoveredScripts = {};
-  state.discoveredScriptScans = {};
+  state.discoveredScriptScans = {
+    'session-1': { '/tmp/api': { status: 'ready', error: null } },
+  };
   state.loadScripts = vi.fn(async () => undefined);
   state.saveScript = vi.fn(async () => undefined);
   state.deleteScript = vi.fn(async () => undefined);
@@ -106,18 +139,158 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
+const withTwoProjects = () => {
+  state.projects = [webProject, apiProject];
+  state.sessionProjectMounts = {
+    'session-1': [
+      { projectId: 'project-1', worktreePath: '/tmp/api' },
+      { projectId: 'project-2', worktreePath: '/tmp/web' },
+    ],
+  };
+  state.discoveredScriptScans = {
+    'session-1': {
+      '/tmp/api': { status: 'ready', error: null },
+      '/tmp/web': { status: 'ready', error: null },
+    },
+  };
+};
+
 describe('ScriptsPanel', () => {
-  it('loads, groups, sorts, and runs scripts discovered from the mounted project', () => {
+  it('loads scripts and renders the empty hint when no project has scripts', () => {
+    renderSettingsPanel();
+
+    expect(state.loadScripts).toHaveBeenCalledWith('ws-1');
+    expect(screen.getByText(/no scripts yet/i)).toBeDefined();
+    expect(screen.getAllByRole('button', { name: /new script/i }).length).toBe(1);
+  });
+
+  it('lists one rail row per project with its counts', () => {
+    withTwoProjects();
+    state.scripts = [
+      { id: 's1', projectId: 'project-1', name: 'setup api', body: 'echo api' },
+      { id: 's2', projectId: 'project-1', name: 'sync api', body: 'echo sync' },
+    ];
     state.discoveredScripts = {
       'session-1': {
         '/tmp/api': [
           {
-            source: 'composer',
-            packageName: 'acme/api',
+            source: 'package-json',
+            packageName: 'api',
             relDir: '',
-            manager: 'composer',
-            scripts: [{ name: 'test-php', command: 'composer run-script test-php' }],
+            manager: 'pnpm',
+            scripts: [
+              { name: 'dev', command: 'pnpm dev' },
+              { name: 'build', command: 'pnpm build' },
+            ],
           },
+        ],
+        '/tmp/web': [
+          {
+            source: 'package-json',
+            packageName: 'web',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [{ name: 'dev', command: 'pnpm dev' }],
+          },
+        ],
+      },
+    };
+
+    renderPanel();
+
+    const rows = within(rail()).getAllByRole('button');
+    expect(rows.map((row) => row.textContent)).toEqual([
+      'API2 yours · 2 manifest',
+      'Web1 manifest',
+    ]);
+    expect(rows[0]?.getAttribute('aria-current')).toBe('true');
+  });
+
+  it('hides the rail when a single project qualifies', () => {
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
+
+    renderPanel();
+
+    expect(screen.queryByRole('navigation', { name: 'Script projects' })).toBeNull();
+    expect(screen.getByRole('heading', { level: 2, name: 'API' })).toBeDefined();
+  });
+
+  it('shortens a long project root path in the header', () => {
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
+
+    renderPanel();
+
+    expect(screen.getByText('…/code/acme/api')).toBeDefined();
+  });
+
+  it('switches the content when another project is picked in the rail', () => {
+    withTwoProjects();
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup api', body: 'echo api' }];
+
+    renderPanel();
+    expect(screen.getByText('setup api')).toBeDefined();
+
+    fireEvent.click(within(rail()).getByRole('button', { name: /Web/ }));
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Web' })).toBeDefined();
+    expect(screen.queryByText('setup api')).toBeNull();
+    expect(screen.getByText('No scripts for Web yet')).toBeDefined();
+  });
+
+  it('preselects the scoped project and then clears the scope', () => {
+    withTwoProjects();
+    state.scriptsLensScope = { projectId: 'project-2' };
+    state.scripts = [
+      { id: 's1', projectId: 'project-1', name: 'setup api', body: 'echo api' },
+      { id: 's2', projectId: 'project-2', name: 'deploy web', body: 'echo web' },
+    ];
+
+    renderPanel();
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Web' })).toBeDefined();
+    expect(screen.getByText('deploy web')).toBeDefined();
+    expect(screen.queryByText('setup api')).toBeNull();
+    expect(state.setScriptsLensScope).toHaveBeenCalledWith({ scope: null });
+  });
+
+  it('falls back to the session active project when nothing is scoped or stored', () => {
+    withTwoProjects();
+    state.sessionActiveProject = { 'session-1': 'project-2' };
+
+    renderPanel();
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Web' })).toBeDefined();
+  });
+
+  it('remembers the last picked project of the workspace', () => {
+    withTwoProjects();
+
+    const first = renderPanel();
+    fireEvent.click(within(rail()).getByRole('button', { name: /Web/ }));
+    first.unmount();
+
+    renderPanel();
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Web' })).toBeDefined();
+  });
+
+  it('shows a running dot on the rail row of a project with a pending run', () => {
+    withTwoProjects();
+    state.scripts = [{ id: 's1', projectId: 'project-2', name: 'deploy web', body: 'echo web' }];
+    state.scriptRuns = {
+      'session-1': { s1: { status: 'pending', result: null, runId: 'run-1' } },
+    };
+
+    renderPanel();
+
+    expect(within(rail()).getByRole('img', { name: 'Running script in Web' })).toBeDefined();
+    expect(within(rail()).queryByRole('img', { name: 'Running script in API' })).toBeNull();
+  });
+
+  it('keeps the root package open and workspace packages collapsed', () => {
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
           {
             source: 'package-json',
             packageName: '@acme/web',
@@ -132,27 +305,103 @@ describe('ScriptsPanel', () => {
             manager: 'pnpm',
             scripts: [{ name: 'build', command: 'pnpm run build' }],
           },
+          {
+            source: 'composer',
+            packageName: 'acme/api',
+            relDir: '',
+            manager: 'composer',
+            scripts: [{ name: 'test-php', command: 'composer run-script test-php' }],
+          },
         ],
       },
     };
-    state.discoveredScriptScans = {
-      'session-1': { '/tmp/api': { status: 'ready', error: null } },
+
+    renderPanel();
+
+    const packages = Array.from(manifestSection().querySelectorAll('span[role="heading"]'));
+    expect(packages.map((heading) => heading.textContent)).toEqual([
+      'root',
+      '@acme/web',
+      'acme/api',
+    ]);
+    expect(
+      within(manifestSection()).getByRole('button', { name: /root/ }).getAttribute('aria-expanded'),
+    ).toBe('true');
+    expect(
+      within(manifestSection())
+        .getByRole('button', { name: /@acme\/web/ })
+        .getAttribute('aria-expanded'),
+    ).toBe('false');
+  });
+
+  it('summarises a package with a category strip and groups its scripts by category', () => {
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
+          {
+            source: 'package-json',
+            packageName: 'root',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [
+              { name: 'lint', command: 'eslint .' },
+              { name: 'sync-assets', command: 'rsync -a assets/' },
+              { name: 'dev', command: 'vite' },
+              { name: 'test:unit', command: 'vitest run' },
+              { name: 'test:types', command: 'tsc --noEmit' },
+              { name: 'build', command: 'vite build' },
+            ],
+          },
+        ],
+      },
     };
 
-    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+    renderPanel();
+
+    const pkg = within(screen.getByRole('region', { name: 'root scripts' }));
+    expect(pkg.getByTestId('category-strip-test').textContent).toBe('1');
+    expect(pkg.getByTestId('category-strip-typecheck').textContent).toBe('1');
+    expect(pkg.queryByTestId('category-strip-deploy')).toBeNull();
+    expect(pkg.getAllByRole('region').map((section) => section.getAttribute('aria-label'))).toEqual(
+      [
+        'Dev scripts',
+        'Build scripts',
+        'Test scripts',
+        'Lint scripts',
+        'Typecheck scripts',
+        'Other scripts',
+      ],
+    );
+    expect(within(pkg.getByRole('region', { name: 'Test scripts' })).getByText('test:unit'));
+    expect(
+      within(pkg.getByRole('region', { name: 'Typecheck scripts' })).getByText('test:types'),
+    ).toBeDefined();
+  });
+
+  it('runs a manifest script from its package directory', () => {
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
+          {
+            source: 'package-json',
+            packageName: '@acme/web',
+            relDir: 'apps/web',
+            manager: 'pnpm',
+            scripts: [{ name: 'dev', command: 'pnpm run dev' }],
+          },
+        ],
+      },
+    };
+
+    renderPanel();
 
     expect(state.loadDiscoveredScripts).toHaveBeenCalledWith({
       sessionId: 'session-1',
       worktreePath: '/tmp/api',
     });
-    expect(
-      screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent),
-    ).toEqual(['root', '@acme/web', 'acme/api']);
-    expect(screen.getByRole('button', { name: /@acme\/web/ }).getAttribute('aria-expanded')).toBe(
-      'false',
-    );
-    fireEvent.click(screen.getByRole('button', { name: /@acme\/web/ }));
+    fireEvent.click(within(manifestSection()).getByRole('button', { name: /@acme\/web/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Run dev' }));
+
     expect(state.runDiscoveredScript).toHaveBeenCalledWith(
       expect.objectContaining({
         sessionId: 'session-1',
@@ -163,46 +412,32 @@ describe('ScriptsPanel', () => {
     );
   });
 
-  it('filters every section and auto-expands matching manifest groups', () => {
-    state.scripts = [
-      { id: 's1', projectId: 'project-1', name: 'deploy user', body: 'ship production' },
-      { id: 's2', projectId: 'project-1', name: 'lint user', body: 'eslint .' },
-    ];
+  it('reattaches a discovered run to its manifest row and stops it through the shared registry', () => {
+    const scriptId = JSON.stringify(['/tmp/api', 'package-json', '', 'dev']);
     state.discoveredScripts = {
       'session-1': {
         '/tmp/api': [
           {
             source: 'package-json',
-            packageName: '@acme/web',
-            relDir: 'apps/web',
+            packageName: 'api',
+            relDir: '',
             manager: 'pnpm',
-            scripts: [{ name: 'deploy manifest', command: 'ship preview' }],
+            scripts: [{ name: 'dev', command: 'pnpm run dev' }],
           },
         ],
       },
     };
-    state.discoveredScriptScans = {
-      'session-1': { '/tmp/api': { status: 'ready', error: null } },
+    state.scriptRuns = {
+      'session-1': {
+        [scriptId]: { status: 'pending', result: null, runId: 'run-live' },
+      },
     };
 
-    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+    renderPanel();
 
-    fireEvent.change(screen.getByRole('searchbox', { name: 'Search scripts' }), {
-      target: { value: 'deploy' },
-    });
-    expect(screen.getByText('deploy user')).toBeDefined();
-    expect(screen.queryByText('lint user')).toBeNull();
-    expect(screen.getByRole('button', { name: /@acme\/web/ }).getAttribute('aria-expanded')).toBe(
-      'true',
-    );
-    expect(screen.getByText('deploy manifest')).toBeDefined();
-
-    fireEvent.keyDown(screen.getByRole('searchbox', { name: 'Search scripts' }), {
-      key: 'Escape',
-    });
-    expect(screen.getByRole('button', { name: /@acme\/web/ }).getAttribute('aria-expanded')).toBe(
-      'false',
-    );
+    expect(screen.getByTestId(`discovered-script-${scriptId}`).dataset.status).toBe('pending');
+    fireEvent.click(screen.getByRole('button', { name: 'Stop dev' }));
+    expect(state.cancelScript).toHaveBeenCalledWith('session-1', scriptId);
   });
 
   it('shows manifest scan loading, empty, and error states quietly', () => {
@@ -227,106 +462,107 @@ describe('ScriptsPanel', () => {
     expect(screen.getByText('manifest scan failed')).toBeDefined();
   });
 
-  it('reattaches a discovered run to its manifest row and stops it through the shared registry', () => {
-    const scriptId = JSON.stringify(['/tmp/api', 'package-json', '', 'dev']);
+  it('refreshes only the mount of the selected project', () => {
+    withTwoProjects();
+
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh API manifest scripts' }));
+    expect(state.refreshDiscoveredScripts).toHaveBeenCalledWith({
+      sessionId: 'session-1',
+      worktreePath: '/tmp/api',
+    });
+
+    fireEvent.click(within(rail()).getByRole('button', { name: /Web/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh Web manifest scripts' }));
+    expect(state.refreshDiscoveredScripts).toHaveBeenLastCalledWith({
+      sessionId: 'session-1',
+      worktreePath: '/tmp/web',
+    });
+  });
+
+  it('explains a project that is not mounted in this session', () => {
+    withTwoProjects();
+    state.sessionProjectMounts = {
+      'session-1': [{ projectId: 'project-1', worktreePath: '/tmp/api' }],
+    };
+    state.scripts = [{ id: 's2', projectId: 'project-2', name: 'deploy web', body: 'echo web' }];
+
+    renderPanel();
+    fireEvent.click(within(rail()).getByRole('button', { name: /Web/ }));
+
+    expect(screen.getByText('This project is not mounted in this session.')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand deploy web' }));
+    expect(screen.getByText('Web is not mounted in this session')).toBeDefined();
+    expect((screen.getByRole('button', { name: 'Run script' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+  });
+
+  it('filters both sections, expands matching packages, and counts matches elsewhere', () => {
+    withTwoProjects();
+    state.scripts = [
+      { id: 's1', projectId: 'project-1', name: 'deploy user', body: 'ship production' },
+      { id: 's2', projectId: 'project-1', name: 'lint user', body: 'eslint .' },
+      { id: 's3', projectId: 'project-2', name: 'deploy web', body: 'ship web' },
+    ];
     state.discoveredScripts = {
       'session-1': {
         '/tmp/api': [
           {
             source: 'package-json',
-            packageName: 'api',
-            relDir: '',
+            packageName: '@acme/web',
+            relDir: 'apps/web',
             manager: 'pnpm',
-            scripts: [{ name: 'dev', command: 'pnpm run dev' }],
+            scripts: [{ name: 'deploy manifest', command: 'ship preview' }],
           },
         ],
       },
     };
-    state.discoveredScriptScans = {
-      'session-1': { '/tmp/api': { status: 'ready', error: null } },
-    };
-    state.scriptRuns = {
-      'session-1': {
-        [scriptId]: { status: 'pending', result: null, runId: 'run-live' },
-      },
-    };
 
-    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+    renderPanel();
 
-    expect(screen.getByTestId(`discovered-script-${scriptId}`).dataset.status).toBe('pending');
-    fireEvent.click(screen.getByRole('button', { name: 'Stop dev' }));
-    expect(state.cancelScript).toHaveBeenCalledWith('session-1', scriptId);
-  });
+    fireEvent.change(searchBox(), { target: { value: 'deploy' } });
 
-  it('consumes a scoped open and preselects its project tab', () => {
-    state.projects = [
-      { id: 'project-1', workspaceId: 'ws-1', name: 'API' },
-      { id: 'project-2', workspaceId: 'ws-1', name: 'Web' },
-    ];
-    state.scriptsLensScope = { projectId: 'project-2' };
-    state.scripts = [
-      { id: 's1', projectId: 'project-1', name: 'setup api', body: 'echo api' },
-      { id: 's2', projectId: 'project-2', name: 'deploy web', body: 'echo web' },
-    ];
-
-    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
-
-    expect(screen.getByRole('tab', { name: /Web/ }).getAttribute('aria-selected')).toBe('true');
-    expect(screen.getByText('deploy web')).toBeDefined();
-    expect(screen.queryByText('setup api')).toBeNull();
-    expect(state.setScriptsLensScope).toHaveBeenCalledWith({ scope: null });
-  });
-
-  it('uses All for a generic open', () => {
-    state.projects = [
-      { id: 'project-1', workspaceId: 'ws-1', name: 'API' },
-      { id: 'project-2', workspaceId: 'ws-1', name: 'Web' },
-    ];
-    state.scripts = [
-      { id: 's1', projectId: 'project-1', name: 'setup api', body: 'echo api' },
-      { id: 's2', projectId: 'project-2', name: 'deploy web', body: 'echo web' },
-    ];
-
-    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
-
-    expect(screen.getByRole('tab', { name: /All/ }).getAttribute('aria-selected')).toBe('true');
-    expect(screen.getByText('setup api')).toBeDefined();
-    expect(screen.getByText('deploy web')).toBeDefined();
-  });
-
-  it('orders project tabs, groups, and scripts alphabetically', () => {
-    state.projects = [
-      { id: 'project-2', workspaceId: 'ws-1', name: 'Web' },
-      { id: 'project-1', workspaceId: 'ws-1', name: 'API' },
-    ];
-    state.scripts = [
-      { id: 's2', projectId: 'project-1', name: 'zebra', body: 'echo z' },
-      { id: 's3', projectId: 'project-2', name: 'deploy', body: 'echo deploy' },
-      { id: 's1', projectId: 'project-1', name: 'Alpha', body: 'echo a' },
-    ];
-
-    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
-
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
-      'All3',
-      'API2',
-      'Web1',
-    ]);
-    expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
-      expect.stringContaining('Alpha'),
-      expect.stringContaining('zebra'),
-      expect.stringContaining('deploy'),
-    ]);
-  });
-
-  it('loads scripts and renders the empty hint when none exist', () => {
-    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
-
-    expect(state.loadScripts).toHaveBeenCalledWith('ws-1');
-    expect(screen.getByText(/no scripts yet/i)).toBeDefined();
+    expect(screen.getByText('deploy user')).toBeDefined();
+    expect(screen.queryByText('lint user')).toBeNull();
     expect(
-      screen.getAllByText(/scripts are shared across every session of the workspace/i).length,
-    ).toBeGreaterThan(0);
+      within(manifestSection())
+        .getByRole('button', { name: /@acme\/web/ })
+        .getAttribute('aria-expanded'),
+    ).toBe('true');
+    expect(screen.getByText('deploy manifest')).toBeDefined();
+    expect(within(rail()).getByText('1 match')).toBeDefined();
+
+    fireEvent.keyDown(searchBox(), { key: 'Escape' });
+    expect(
+      within(manifestSection())
+        .getByRole('button', { name: /@acme\/web/ })
+        .getAttribute('aria-expanded'),
+    ).toBe('false');
+    expect(screen.getByText('lint user')).toBeDefined();
+  });
+
+  it('offers to clear a search that matches nothing', () => {
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
+
+    renderPanel();
+    fireEvent.change(searchBox(), { target: { value: 'nothing here' } });
+
+    expect(screen.getByText('No scripts match')).toBeDefined();
+    expect(screen.getByText('No matching scripts here')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(screen.getByText('setup')).toBeDefined();
+  });
+
+  it('hides the manifest section outside a session', () => {
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
+
+    renderSettingsPanel();
+
+    expect(screen.queryByRole('region', { name: 'Manifest scripts' })).toBeNull();
+    expect(screen.queryByRole('searchbox', { name: 'Search scripts' })).toBeNull();
+    expect(screen.getByRole('region', { name: 'Your scripts' })).toBeDefined();
   });
 
   it('creates a new script in an inline card', async () => {
@@ -335,7 +571,7 @@ describe('ScriptsPanel', () => {
         { id: 's1', projectId: 'project-1', name: 'copy env', body: 'cp ../main/.env .env' },
       ];
     });
-    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+    renderSettingsPanel();
 
     fireEvent.click(screen.getByRole('button', { name: /new script/i }));
     fireEvent.change(screen.getByPlaceholderText(/script name/i), {
@@ -358,35 +594,58 @@ describe('ScriptsPanel', () => {
     expect(screen.queryByPlaceholderText(/script name/i)).toBeNull();
     expect(screen.getByTestId('script-card-s1')).toBeDefined();
     expect(screen.getByText('cp ../main/.env .env')).toBeDefined();
-    expect(screen.queryByRole('button', { name: /close script panel/i })).toBeNull();
-    expect(screen.queryByRole('tablist')).toBeNull();
-    expect(screen.queryByRole('combobox', { name: /project/i })).toBeNull();
-    expect(screen.queryByText('API')).toBeNull();
+  });
+
+  it('defaults a new script to the selected project and allows reassignment while editing', async () => {
+    withTwoProjects();
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
+    renderPanel();
+
+    fireEvent.click(within(rail()).getByRole('button', { name: /Web/ }));
+    fireEvent.click(screen.getByRole('button', { name: /new script/i }));
+    expect(
+      (screen.getByRole('combobox', { name: 'New script project' }) as HTMLSelectElement).value,
+    ).toBe('project-2');
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    fireEvent.click(within(rail()).getByRole('button', { name: /API/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit script' }));
+    await act(async () => {
+      fireEvent.change(screen.getByRole('combobox', { name: 'Edit script project' }), {
+        target: { value: 'project-2' },
+      });
+    });
+
+    expect(state.saveScript).toHaveBeenCalledWith({
+      workspaceId: 'ws-1',
+      projectId: 'project-2',
+      id: 's1',
+      name: 'setup',
+      body: 'echo hi',
+    });
   });
 
   it('expands an existing script in place with its full command', () => {
     state.scripts = [
       { id: 's1', projectId: 'project-1', name: 'setup', body: '#!/bin/bash\necho hi' },
     ];
-    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+    renderSettingsPanel();
 
     expect(screen.getByText('+1 line')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
 
     expect(screen.getByTestId('script-card-s1').className).toContain('bg-muted/20');
-    expect(screen.getByTestId('script-card-s1').className).not.toContain('bg-card/40');
     expect(
       screen.getByText(
         (_, element) =>
           element?.tagName === 'PRE' && element.textContent === '#!/bin/bash\necho hi',
       ),
     ).toBeDefined();
-    expect(screen.queryByRole('button', { name: /close script panel/i })).toBeNull();
   });
 
   it('edits an existing command inline and commits on blur', async () => {
     state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
-    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+    renderSettingsPanel();
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit script' }));
     const textarea = screen.getByRole('textbox', { name: 'Edit setup command' });
@@ -406,7 +665,7 @@ describe('ScriptsPanel', () => {
 
   it('edits an existing script name inline and commits with Cmd+Enter', async () => {
     state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
-    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+    renderSettingsPanel();
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
     fireEvent.click(screen.getByRole('button', { name: 'setup' }));
@@ -427,7 +686,7 @@ describe('ScriptsPanel', () => {
 
   it('keeps the discard guard for an unfinished new script', () => {
     state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
-    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+    renderSettingsPanel();
 
     fireEvent.click(screen.getByRole('button', { name: /new script/i }));
     fireEvent.change(screen.getByPlaceholderText(/script name/i), {
@@ -443,7 +702,7 @@ describe('ScriptsPanel', () => {
 
   it('deletes a script through its lifecycle action after confirmation', async () => {
     state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
-    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+    renderSettingsPanel();
 
     const lifecycleSlot = screen.getByRole('group', { name: 'Script lifecycle actions' });
     const deleteAction = screen.getByRole('button', { name: 'Delete script' });
@@ -458,9 +717,9 @@ describe('ScriptsPanel', () => {
     expect(state.deleteScript).toHaveBeenCalledWith('s1', 'ws-1');
   });
 
-  it('runs a script without expanding it', () => {
+  it('runs a user script without expanding it', () => {
     state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
-    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+    renderPanel();
 
     fireEvent.click(screen.getByRole('button', { name: 'Run script' }));
     expect(state.runScript).toHaveBeenCalledWith({ sessionId: 'session-1', scriptId: 's1' });
@@ -478,7 +737,7 @@ describe('ScriptsPanel', () => {
         },
       },
     };
-    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+    renderPanel();
 
     expect(screen.queryByText('completed output')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
@@ -488,15 +747,13 @@ describe('ScriptsPanel', () => {
 
   it('renders an idle script row with no status border accent', () => {
     state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
-    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+    renderPanel();
 
     const row = screen.getByTestId('script-card-s1');
     expect(row.className).toContain('border-transparent');
     expect(row.className).toContain('bg-card/40');
     expect(row.className).not.toContain('bg-muted/20');
     expect(row.className).not.toContain('border-info/50');
-    expect(row.className).not.toContain('border-success/40');
-    expect(row.className).not.toContain('border-danger/40');
     expect(row.querySelector('[aria-label="Running"]')).toBeNull();
   });
 
@@ -516,7 +773,7 @@ describe('ScriptsPanel', () => {
         },
       },
     };
-    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+    renderPanel();
 
     const row = screen.getByTestId('script-card-s1');
     expect(row.className).toContain(borderClass);
@@ -530,60 +787,17 @@ describe('ScriptsPanel', () => {
     expect(row.querySelector('[aria-label="Running"]')).toBeNull();
   });
 
-  it('groups the All view, filters by project, and explains an unmounted project', () => {
-    state.projects = [
-      { id: 'project-1', workspaceId: 'ws-1', name: 'API' },
-      { id: 'project-2', workspaceId: 'ws-1', name: 'Web' },
-    ];
+  it('sorts user scripts alphabetically inside the selected project', () => {
     state.scripts = [
-      { id: 's1', projectId: 'project-1', name: 'setup api', body: 'echo api' },
-      { id: 's2', projectId: 'project-2', name: 'deploy web', body: 'echo web' },
+      { id: 's2', projectId: 'project-1', name: 'zebra', body: 'echo z' },
+      { id: 's1', projectId: 'project-1', name: 'Alpha', body: 'echo a' },
     ];
-    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
+    renderSettingsPanel();
 
-    expect(screen.getByRole('tab', { name: /All/ })).toBeDefined();
-    expect(screen.getAllByText('API').length).toBeGreaterThan(1);
-    expect(screen.getAllByText('Web').length).toBeGreaterThan(1);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Expand deploy web' }));
-    expect(screen.getByText('Web is not mounted in this session')).toBeDefined();
     expect(
-      (screen.getAllByRole('button', { name: 'Run script' })[1] as HTMLButtonElement).disabled,
-    ).toBe(true);
-
-    fireEvent.click(screen.getByRole('tab', { name: /API/ }));
-    expect(screen.getByText('setup api')).toBeDefined();
-    expect(screen.queryByText('deploy web')).toBeNull();
-  });
-
-  it('defaults a new script to the active project and allows reassignment while editing', async () => {
-    state.projects = [
-      { id: 'project-1', workspaceId: 'ws-1', name: 'API' },
-      { id: 'project-2', workspaceId: 'ws-1', name: 'Web' },
-    ];
-    state.sessionActiveProject = { 'session-1': 'project-2' };
-    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
-    render(<ScriptsPanel workspaceId={'ws-1' as never} sessionId={'session-1' as never} />);
-
-    fireEvent.click(screen.getByRole('button', { name: /new script/i }));
-    expect(
-      (screen.getByRole('combobox', { name: 'New script project' }) as HTMLSelectElement).value,
-    ).toBe('project-2');
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-
-    fireEvent.click(screen.getByRole('button', { name: 'Edit script' }));
-    await act(async () => {
-      fireEvent.change(screen.getByRole('combobox', { name: 'Edit script project' }), {
-        target: { value: 'project-2' },
-      });
-    });
-
-    expect(state.saveScript).toHaveBeenCalledWith({
-      workspaceId: 'ws-1',
-      projectId: 'project-2',
-      id: 's1',
-      name: 'setup',
-      body: 'echo hi',
-    });
+      within(screen.getByRole('region', { name: 'Your scripts' }))
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual([expect.stringContaining('Alpha'), expect.stringContaining('zebra')]);
   });
 });

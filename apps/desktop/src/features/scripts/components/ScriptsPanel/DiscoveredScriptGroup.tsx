@@ -1,6 +1,7 @@
-import { Collapsible } from '@goodboy/ui';
+import { Chip, Collapsible, Eyebrow, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { ScriptGroup, ScriptRunRecord } from '../../scripts';
 import { discoveredScriptCwd, discoveredScriptId } from '../../scripts';
+import { categoryCounts, classifyScript, SCRIPT_CATEGORIES } from '../../classifyScript';
 import { DiscoveredScriptRow } from './DiscoveredScriptRow';
 
 type RunParams = {
@@ -39,6 +40,8 @@ export const DiscoveredScriptGroup = ({
   const scripts = [...group.scripts].sort((left, right) =>
     left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }),
   );
+  const counts = categoryCounts({ scripts });
+  const presentCategories = SCRIPT_CATEGORIES.filter((category) => counts[category.id] > 0);
 
   return (
     <section aria-label={`${group.packageName} scripts`}>
@@ -47,60 +50,106 @@ export const DiscoveredScriptGroup = ({
         onOpenChange={onOpenChange}
         className="border border-border-soft"
         trigger={
-          <span className="flex min-w-0 items-center gap-2">
-            <span
-              role="heading"
-              aria-level={3}
-              className="truncate text-sm font-medium text-foreground"
-            >
-              {group.packageName}
-            </span>
-            {group.relDir !== '' ? (
-              <span className="truncate font-mono text-3xs text-muted-foreground">
-                {group.relDir}
+          <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <span className="flex min-w-0 items-center gap-2">
+              <span
+                role="heading"
+                aria-level={3}
+                className="truncate text-sm font-medium text-foreground"
+              >
+                {group.packageName}
               </span>
-            ) : null}
-            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-3xs font-semibold uppercase text-muted-foreground">
-              {group.manager}
+              {group.relDir !== '' ? (
+                <span className="truncate font-mono text-3xs text-muted-foreground">
+                  {group.relDir}
+                </span>
+              ) : null}
+              <Chip tone="neutral" label={group.manager} size="3xs" shape="badge" uppercase />
+              <Chip tone="neutral" label={String(scripts.length)} size="3xs" />
             </span>
-            <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-3xs tabular-nums text-muted-foreground">
-              {scripts.length}
+            <span className="flex flex-wrap items-center gap-1" aria-label="Script categories">
+              {presentCategories.map((category) => {
+                const Icon = category.icon;
+                const tint = tintClasses(category.tone);
+                return (
+                  <Tooltip key={category.id} content={`${category.label}: ${counts[category.id]}`}>
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-3xs tabular-nums ring-1',
+                        tint.bgSoft,
+                        tint.ring,
+                        tint.text,
+                      )}
+                      data-testid={`category-strip-${category.id}`}
+                    >
+                      <Icon size={10} aria-hidden />
+                      {counts[category.id]}
+                    </span>
+                  </Tooltip>
+                );
+              })}
             </span>
           </span>
         }
       >
-        <ul className="flex flex-col gap-1.5 pt-1.5">
-          {scripts.map((script) => {
-            const scriptId = discoveredScriptId({
-              worktreePath,
-              source: group.source,
-              relDir: group.relDir,
-              name: script.name,
-            });
-            const run = runs?.[scriptId] ?? null;
+        <div className="flex flex-col gap-3 pt-2">
+          {presentCategories.map((category) => {
+            const Icon = category.icon;
+            const tint = tintClasses(category.tone);
+            const categoryScripts = scripts.filter(
+              (script) => classifyScript(script) === category.id,
+            );
             return (
-              <li key={scriptId}>
-                <DiscoveredScriptRow
-                  scriptId={scriptId}
-                  name={script.name}
-                  command={script.command}
-                  cwd={cwd}
-                  run={run}
-                  completedAt={run == null ? undefined : completedAt[run.runId]}
-                  onRun={() =>
-                    onRun({
-                      scriptId,
-                      name: script.name,
-                      command: script.command,
-                      cwd,
-                    })
-                  }
-                  onCancel={() => onCancel({ scriptId })}
-                />
-              </li>
+              <section key={category.id} aria-label={`${category.label} scripts`}>
+                <div className="flex flex-col gap-1.5">
+                  <Eyebrow
+                    label={
+                      <span className="flex items-center gap-1.5">
+                        <span>{category.label}</span>
+                        <span className="tabular-nums text-muted-foreground/60">
+                          {categoryScripts.length}
+                        </span>
+                      </span>
+                    }
+                    icon={<Icon size={11} aria-hidden className={tint.icon} />}
+                  />
+                  <ul className="flex flex-col gap-1.5">
+                    {categoryScripts.map((script) => {
+                      const scriptId = discoveredScriptId({
+                        worktreePath,
+                        source: group.source,
+                        relDir: group.relDir,
+                        name: script.name,
+                      });
+                      const run = runs?.[scriptId] ?? null;
+                      return (
+                        <li key={scriptId}>
+                          <DiscoveredScriptRow
+                            scriptId={scriptId}
+                            name={script.name}
+                            command={script.command}
+                            cwd={cwd}
+                            run={run}
+                            completedAt={run == null ? undefined : completedAt[run.runId]}
+                            onRun={() =>
+                              onRun({
+                                scriptId,
+                                name: script.name,
+                                command: script.command,
+                                cwd,
+                              })
+                            }
+                            onCancel={() => onCancel({ scriptId })}
+                          />
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </section>
             );
           })}
-        </ul>
+        </div>
       </Collapsible>
     </section>
   );
