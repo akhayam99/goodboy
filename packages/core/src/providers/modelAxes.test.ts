@@ -94,6 +94,27 @@ describe('modelAxes', () => {
     expect(axes.variant).toBeNull();
   });
 
+  it('represents each model group by its newest version', () => {
+    const model = ANTHROPIC_CATALOG.find((candidate) => candidate.key === 'sonnet-4.6');
+    if (model == null) {
+      throw new Error('missing anthropic sonnet-4.6');
+    }
+    const options = modelAxes({ model, selection: { key: model.key } }).model.options;
+    const newestByGroup = new Map<string, string>();
+    for (const candidate of ANTHROPIC_CATALOG) {
+      const group = candidate.presentation.group ?? candidate.presentation.version;
+      const current = ANTHROPIC_CATALOG.find((entry) => entry.key === newestByGroup.get(group));
+      if (current == null || candidate.presentation.order > current.presentation.order) {
+        newestByGroup.set(group, candidate.key);
+      }
+    }
+    expect(options.length).toBe(newestByGroup.size);
+    for (const option of options) {
+      expect(option.modelKey).toBe(newestByGroup.get(option.id));
+    }
+    expect(options.find((option) => option.id === 'Opus')?.modelKey).not.toBe('opus-4.6');
+  });
+
   it('omits the version axis when the catalog declares no model group', () => {
     const model = CURSOR_CATALOG.find((candidate) => candidate.key === 'auto');
     if (model == null) {
