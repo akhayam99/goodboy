@@ -94,6 +94,17 @@ describe('modelAxes', () => {
     expect(axes.variant).toBeNull();
   });
 
+  it('represents each model group by its newest version', () => {
+    const model = ANTHROPIC_CATALOG.find((candidate) => candidate.key === 'sonnet-4.6');
+    if (model == null) {
+      throw new Error('missing anthropic sonnet-4.6');
+    }
+    const options = modelAxes({ model, selection: { key: model.key } }).model.options;
+    expect(options.find((option) => option.id === 'Opus')?.modelKey).toBe('opus-5');
+    expect(options.find((option) => option.id === 'Fable')?.modelKey).toBe('fable-5.1');
+    expect(options.find((option) => option.id === 'Sonnet')?.modelKey).toBe('sonnet-5');
+  });
+
   it('omits the version axis when the catalog declares no model group', () => {
     const model = CURSOR_CATALOG.find((candidate) => candidate.key === 'auto');
     if (model == null) {

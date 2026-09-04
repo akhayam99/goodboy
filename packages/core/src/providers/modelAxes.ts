@@ -69,9 +69,7 @@ const selectionAxes = ({ model }: SelectionAxesParams) => {
   const groupModels = new Map<string, CatalogModel>();
   for (const candidate of catalog) {
     const group = candidate.presentation.group ?? candidate.presentation.version;
-    if (groupModels.has(group) === false) {
-      groupModels.set(group, candidate);
-    }
+    groupModels.set(group, candidate);
   }
   const activeGroup = model.presentation.group ?? model.presentation.version;
   return {
