@@ -123,7 +123,11 @@ export const EfficiencyPanel = ({
       </div>
       <button
         type="button"
-        onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-budget-studio'))}
+        onClick={() =>
+          window.dispatchEvent(
+            new CustomEvent('goodboy:open-settings', { detail: { scope: 'budget' } }),
+          )
+        }
         className="flex items-center gap-3 rounded-lg border border-border-soft bg-muted/10 px-4 py-3 text-left transition-colors hover:bg-muted/30"
       >
         <Wallet size={16} aria-hidden className="text-muted-foreground" />

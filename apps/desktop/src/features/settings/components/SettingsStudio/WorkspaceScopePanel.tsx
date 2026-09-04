@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { VerbosityLevel, WorkspaceId } from '@goodboy/types';
 import {
   Button,
@@ -6,6 +6,7 @@ import {
   Divider,
   FieldRow,
   formatError,
+  PANE_RHYTHM,
   ScrollFade,
   SectionHeader,
   Switch,
@@ -21,6 +22,7 @@ import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore } from '../../../../store';
 import { primaryProjectRoot } from '../../../../features/workspace/primaryProjectRoot';
 import { useToast } from '../../../../app/components/Toast';
+import { useSectionAnchors } from '../../hooks/useSectionAnchors';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -45,7 +47,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
 
-  const anchorsRef = useRef<Record<string, HTMLElement | null>>({});
+  const { anchor } = useSectionAnchors({ section: initialSection });
 
   const verbosity = wsOverrides?.defaultVerbosity ?? 'normal';
   const parallelAgents = wsOverrides?.parallelAgents ?? false;
@@ -59,13 +61,6 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
   useEffect(() => {
     setDisplayName(workspace?.name ?? '');
   }, [workspace?.name]);
-
-  useEffect(() => {
-    if (!initialSection) {
-      return;
-    }
-    anchorsRef.current[initialSection]?.scrollIntoView({ block: 'start' });
-  }, [initialSection]);
 
   const persistOverrides = async (
     partial: Partial<{
@@ -166,17 +161,17 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
   const folderName = projectRoot?.split('/').filter(Boolean).at(-1) ?? 'the workspace folder';
 
-  const anchor = (id: string) => (el: HTMLElement | null) => {
-    anchorsRef.current[id] = el;
-  };
-
   return (
-    <ScrollFade className="h-full w-full" viewportClassName="px-5 py-5">
-      <div className="mx-auto flex w-full max-w-2xl flex-col">
+    <ScrollFade className="h-full w-full" viewportClassName={PANE_RHYTHM.body}>
+      <div className={`flex flex-col ${PANE_RHYTHM.column} ${PANE_RHYTHM.measure.reading}`}>
         <div className="flex flex-col gap-6">
           {workspace == null ? null : (
             <>
-              <section id="identity" ref={anchor('identity')} className="flex flex-col gap-4">
+              <section
+                id="identity"
+                ref={anchor({ id: 'identity' })}
+                className="flex flex-col gap-4"
+              >
                 <SectionHeader
                   label="Workspace"
                   hint="How this workspace is labelled across the app."
@@ -211,13 +206,13 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
               <Divider />
 
-              <div ref={anchor('projects')}>
+              <div ref={anchor({ id: 'projects' })}>
                 <WorkspaceProjectsSection workspaceId={workspaceId} />
               </div>
 
               <Divider />
 
-              <div ref={anchor('profile')}>
+              <div ref={anchor({ id: 'profile' })}>
                 <WorkspaceProfileSection workspaceId={workspaceId} />
               </div>
 
@@ -225,7 +220,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
             </>
           )}
 
-          <section id="general" ref={anchor('general')} className="flex flex-col gap-4">
+          <section id="general" ref={anchor({ id: 'general' })} className="flex flex-col gap-4">
             <SectionHeader
               label="Session defaults"
               hint="Applied to every new agent you spawn in this workspace."
@@ -294,19 +289,19 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
           {WORKSPACE_FEATURES.skills ? (
             <>
               <Divider />
-              <div ref={anchor('skills')}>
+              <div ref={anchor({ id: 'skills' })}>
                 <SkillsPanel workspaceId={workspaceId} />
               </div>
             </>
           ) : null}
 
-          <div ref={anchor('orphans')}>
+          <div ref={anchor({ id: 'orphans' })}>
             <OrphanWorktreesSection workspaceId={workspaceId} />
           </div>
 
           <Divider />
 
-          <section id="danger" ref={anchor('danger')} className="flex flex-col gap-4">
+          <section id="danger" ref={anchor({ id: 'danger' })} className="flex flex-col gap-4">
             <SectionHeader label="Danger zone" hint="Destructive workspace controls." />
             <FieldRow
               label="Disconnect workspace"

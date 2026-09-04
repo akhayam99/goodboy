@@ -7,7 +7,9 @@ type Props = {
 export const NoConnectedProviders = ({ onNavigate }: Props) => {
   const openProviderStudio = () => {
     onNavigate?.();
-    window.dispatchEvent(new CustomEvent('goodboy:open-provider-studio'));
+    window.dispatchEvent(
+      new CustomEvent('goodboy:open-settings', { detail: { scope: 'providers' } }),
+    );
   };
 
   return (

@@ -116,7 +116,6 @@ export const App = () => {
     openSlack,
     openWorkflows,
     overlays,
-    workspaceSettingsOverlay,
   } = useAppOverlays({
     currentSession,
     currentWorkspace,
@@ -329,7 +328,7 @@ export const App = () => {
           </div>
         }
         rightSidebar={null}
-        overlay={workspaceSettingsOverlay}
+        overlay={null}
       />
       {overlays}
     </ToastProvider>

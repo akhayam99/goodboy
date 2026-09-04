@@ -78,12 +78,12 @@ describe('WorkspaceIdentityRow', () => {
   it('opens preferences from a control on the row, not from the switcher popover', () => {
     render(<WorkspaceIdentityRow />);
     const spy = vi.fn();
-    window.addEventListener('goodboy:open-workspace-settings', spy);
+    window.addEventListener('goodboy:open-settings', spy);
 
     fireEvent.click(screen.getByLabelText('Preferences'));
 
     expect(spy).toHaveBeenCalledOnce();
-    window.removeEventListener('goodboy:open-workspace-settings', spy);
+    window.removeEventListener('goodboy:open-settings', spy);
   });
 
   it('renders nothing without a workspace', () => {

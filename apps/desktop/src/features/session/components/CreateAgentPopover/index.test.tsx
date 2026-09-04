@@ -272,9 +272,9 @@ describe('CreateAgentPopover', () => {
     openPopover();
     const openProviders = screen.getByRole('button', { name: 'Open providers' });
     const onOpenProviderStudio = vi.fn();
-    window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
+    window.addEventListener('goodboy:open-settings', onOpenProviderStudio);
     fireEvent.click(openProviders);
-    window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
+    window.removeEventListener('goodboy:open-settings', onOpenProviderStudio);
     expect(onOpenProviderStudio).toHaveBeenCalledOnce();
     expect(screen.queryByRole('dialog', { name: 'Create agent' })).toBeNull();
   });

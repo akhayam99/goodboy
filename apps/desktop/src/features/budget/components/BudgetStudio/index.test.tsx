@@ -44,7 +44,7 @@ vi.mock('../../../../store', () => ({
   useSessions: () => state.sessions,
 }));
 
-import { BudgetStudio } from './index';
+import { BudgetSettingsScope } from './index';
 
 type TelemetryRecordParams = {
   readonly id: string;
@@ -98,15 +98,15 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-describe('BudgetStudio', () => {
+describe('BudgetSettingsScope', () => {
   it('renders the overview scope by default', () => {
-    render(<BudgetStudio workspaceName="goodboy" onClose={vi.fn()} />);
-    expect(screen.getByText('Budget studio')).toBeDefined();
+    render(<BudgetSettingsScope requestClose={vi.fn()} />);
+    expect(screen.getByRole('tablist', { name: 'Budget window' })).toBeDefined();
     expect(screen.getByText(/spend by provider/i)).toBeDefined();
   });
 
   it('switches to a provider scope and shows its spend breakdown', () => {
-    render(<BudgetStudio workspaceName="goodboy" onClose={vi.fn()} />);
+    render(<BudgetSettingsScope requestClose={vi.fn()} />);
     const [claudeButton] = screen.getAllByRole('button', { name: /claude/i });
     fireEvent.click(claudeButton!);
     expect(screen.getByText(/total spend/i)).toBeDefined();
@@ -114,10 +114,9 @@ describe('BudgetStudio', () => {
 
   it('renders a session scope with all sessions listed', () => {
     render(
-      <BudgetStudio
-        workspaceName="goodboy"
+      <BudgetSettingsScope
         initialScope={{ kind: 'session', sessionId: 'session-1' as SessionId }}
-        onClose={vi.fn()}
+        requestClose={vi.fn()}
       />,
     );
     expect(screen.getAllByText(/build the feature/i).length).toBeGreaterThan(0);
@@ -129,10 +128,9 @@ describe('BudgetStudio', () => {
   it('authors a new provider cap via saveBudgetRule', () => {
     state.budgetRules = [];
     render(
-      <BudgetStudio
-        workspaceName="goodboy"
+      <BudgetSettingsScope
         initialScope={{ kind: 'provider', provider: 'anthropic' }}
-        onClose={vi.fn()}
+        requestClose={vi.fn()}
       />,
     );
     fireEvent.change(screen.getByLabelText(/monthly cap/i), { target: { value: '50' } });
@@ -160,10 +158,9 @@ describe('BudgetStudio', () => {
       },
     ];
     render(
-      <BudgetStudio
-        workspaceName="goodboy"
+      <BudgetSettingsScope
         initialScope={{ kind: 'provider', provider: 'anthropic' }}
-        onClose={vi.fn()}
+        requestClose={vi.fn()}
       />,
     );
     fireEvent.change(screen.getByLabelText(/monthly cap/i), { target: { value: '25' } });
@@ -192,10 +189,9 @@ describe('BudgetStudio', () => {
       },
     ];
     render(
-      <BudgetStudio
-        workspaceName="goodboy"
+      <BudgetSettingsScope
         initialScope={{ kind: 'provider', provider: 'anthropic' }}
-        onClose={vi.fn()}
+        requestClose={vi.fn()}
       />,
     );
     fireEvent.change(screen.getByLabelText('alert threshold percent'), {
@@ -226,10 +222,9 @@ describe('BudgetStudio', () => {
       },
     ];
     render(
-      <BudgetStudio
-        workspaceName="goodboy"
+      <BudgetSettingsScope
         initialScope={{ kind: 'provider', provider: 'anthropic' }}
-        onClose={vi.fn()}
+        requestClose={vi.fn()}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /remove/i }));
@@ -240,10 +235,9 @@ describe('BudgetStudio', () => {
   it('sets a session soft cap via setSessionBudget', () => {
     state.sessionBudgets = {};
     render(
-      <BudgetStudio
-        workspaceName="goodboy"
+      <BudgetSettingsScope
         initialScope={{ kind: 'session', sessionId: 'session-1' as SessionId }}
-        onClose={vi.fn()}
+        requestClose={vi.fn()}
       />,
     );
     fireEvent.change(screen.getByLabelText(/session soft cap/i), { target: { value: '12.5' } });
@@ -253,7 +247,7 @@ describe('BudgetStudio', () => {
 
   it('renders a failed panel load and retries it', async () => {
     state.loadBudgetAlerts.mockRejectedValueOnce(new Error('alerts unavailable'));
-    render(<BudgetStudio workspaceName="goodboy" onClose={vi.fn()} />);
+    render(<BudgetSettingsScope requestClose={vi.fn()} />);
 
     expect((await screen.findByRole('alert')).textContent).toContain('alerts unavailable');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
@@ -262,7 +256,7 @@ describe('BudgetStudio', () => {
 
   it('opens the session from a turn row', () => {
     const onClose = vi.fn();
-    render(<BudgetStudio workspaceName="goodboy" onClose={onClose} />);
+    render(<BudgetSettingsScope requestClose={onClose} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Open session build the feature' }));
     expect(state.setCurrentSession).toHaveBeenCalledWith('session-1');
@@ -271,10 +265,9 @@ describe('BudgetStudio', () => {
 
   it('leaves every model row unmarked and stays silent when the whole provider is priced', () => {
     render(
-      <BudgetStudio
-        workspaceName="goodboy"
+      <BudgetSettingsScope
         initialScope={{ kind: 'provider', provider: 'anthropic' }}
-        onClose={vi.fn()}
+        requestClose={vi.fn()}
       />,
     );
 
@@ -294,10 +287,9 @@ describe('BudgetStudio', () => {
     };
 
     render(
-      <BudgetStudio
-        workspaceName="goodboy"
+      <BudgetSettingsScope
         initialScope={{ kind: 'provider', provider: 'codex' }}
-        onClose={vi.fn()}
+        requestClose={vi.fn()}
       />,
     );
 
@@ -323,10 +315,9 @@ describe('BudgetStudio', () => {
     };
 
     render(
-      <BudgetStudio
-        workspaceName="goodboy"
+      <BudgetSettingsScope
         initialScope={{ kind: 'provider', provider: 'cursor' }}
-        onClose={vi.fn()}
+        requestClose={vi.fn()}
       />,
     );
 
@@ -357,10 +348,9 @@ describe('BudgetStudio', () => {
     };
 
     render(
-      <BudgetStudio
-        workspaceName="goodboy"
+      <BudgetSettingsScope
         initialScope={{ kind: 'provider', provider: 'openrouter' }}
-        onClose={vi.fn()}
+        requestClose={vi.fn()}
       />,
     );
 
@@ -397,10 +387,9 @@ describe('BudgetStudio', () => {
     };
 
     render(
-      <BudgetStudio
-        workspaceName="goodboy"
+      <BudgetSettingsScope
         initialScope={{ kind: 'provider', provider: 'opencode' }}
-        onClose={vi.fn()}
+        requestClose={vi.fn()}
       />,
     );
 
@@ -428,7 +417,7 @@ describe('BudgetStudio', () => {
       ],
     };
 
-    render(<BudgetStudio workspaceName="goodboy" onClose={vi.fn()} />);
+    render(<BudgetSettingsScope requestClose={vi.fn()} />);
 
     expect(screen.queryByText('Legacy Budget Model')).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: 'All time' }));

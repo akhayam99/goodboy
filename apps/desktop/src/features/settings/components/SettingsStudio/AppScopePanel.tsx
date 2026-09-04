@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RotateCcw, Smartphone } from 'lucide-react';
 import {
   Button,
@@ -6,6 +6,7 @@ import {
   Divider,
   FieldRow,
   formatError,
+  PANE_RHYTHM,
   ScrollFade,
   SectionHeader,
   Select,
@@ -25,6 +26,7 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { REPORT_ISSUE_STUDIO_EVENT } from '../../reportIssueStudioEvent';
 import { ShortcutsSection } from './ShortcutsSection';
 import { StorageSection } from './StorageSection';
+import { useSectionAnchors } from '../../hooks/useSectionAnchors';
 
 type Props = {
   readonly initialSection?: string;
@@ -56,20 +58,13 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
   const [importError, setImportError] = useState<string | null>(null);
   const [wipeState, setWipeState] = useState<'idle' | 'confirm' | 'wiping' | 'done'>('idle');
 
-  const anchorsRef = useRef<Record<string, HTMLElement | null>>({});
+  const { anchor } = useSectionAnchors({ section: initialSection });
 
   useEffect(() => {
     void loadSetting(SETTING_EDITOR_BINARY).then((v) =>
       setEditorBinary(v ?? DEFAULT_EDITOR_BINARY),
     );
   }, [loadSetting]);
-
-  useEffect(() => {
-    if (initialSection == null || initialSection === '') {
-      return;
-    }
-    anchorsRef.current[initialSection]?.scrollIntoView({ block: 'start' });
-  }, [initialSection]);
 
   const onExport = async () => {
     setExportState('busy');
@@ -123,15 +118,15 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
     ? detectedEditors
     : [...detectedEditors, { binary: editorBinary, label: editorBinary }];
 
-  const anchor = (id: string) => (el: HTMLElement | null) => {
-    anchorsRef.current[id] = el;
-  };
-
   return (
-    <ScrollFade className="h-full w-full" viewportClassName="px-5 py-5">
-      <div className="mx-auto flex w-full max-w-2xl flex-col">
+    <ScrollFade className="h-full w-full" viewportClassName={PANE_RHYTHM.body}>
+      <div className={`flex flex-col ${PANE_RHYTHM.column} ${PANE_RHYTHM.measure.reading}`}>
         <div className="flex flex-col gap-6">
-          <section id="appearance" ref={anchor('appearance')} className="flex flex-col gap-4">
+          <section
+            id="appearance"
+            ref={anchor({ id: 'appearance' })}
+            className="flex flex-col gap-4"
+          >
             <SectionHeader label="Appearance" hint="How the app looks on this computer." />
             <div className="flex flex-col">
               <FieldRow label="Theme" help="Applies to every window.">
@@ -150,7 +145,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
 
           <Divider />
 
-          <section id="editor" ref={anchor('editor')} className="flex flex-col gap-4">
+          <section id="editor" ref={anchor({ id: 'editor' })} className="flex flex-col gap-4">
             <SectionHeader label="Editor" hint="How session worktrees open." />
             <div className="flex flex-col">
               <FieldRow label="Default editor" help="Opens session worktrees.">
@@ -172,20 +167,24 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
 
           <Divider />
 
-          <section id="shortcuts" ref={anchor('shortcuts')}>
+          <section id="shortcuts" ref={anchor({ id: 'shortcuts' })}>
             <ShortcutsSection initiallyExpanded={initialSection === 'shortcuts'} />
           </section>
 
           <Divider />
 
-          <section id="integrations" ref={anchor('integrations')} className="flex flex-col gap-4">
+          <section
+            id="integrations"
+            ref={anchor({ id: 'integrations' })}
+            className="flex flex-col gap-4"
+          >
             <SectionHeader label="GitHub" hint="Global fallback token used by every workspace." />
             <GithubPanel hideSectionHeader />
           </section>
 
           <Divider />
 
-          <section id="advanced" ref={anchor('advanced')} className="flex flex-col gap-4">
+          <section id="advanced" ref={anchor({ id: 'advanced' })} className="flex flex-col gap-4">
             <SectionHeader
               label="Config backup"
               hint="Export or import workspaces, skills, workflows, rules, and settings as JSON."
@@ -214,7 +213,11 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
 
           <Divider />
 
-          <section id="report-issue" ref={anchor('report-issue')} className="flex flex-col gap-4">
+          <section
+            id="report-issue"
+            ref={anchor({ id: 'report-issue' })}
+            className="flex flex-col gap-4"
+          >
             <SectionHeader label="Help" hint="Guides, your phone, and feedback." />
             <div className="flex flex-col">
               <FieldRow label="Setup guide" help="Replay the first-run walkthrough.">
@@ -273,7 +276,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
 
           <Divider />
 
-          <section id="storage" ref={anchor('storage')}>
+          <section id="storage" ref={anchor({ id: 'storage' })}>
             <StorageSection />
           </section>
 
@@ -281,7 +284,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
 
           <section
             id="initialization"
-            ref={anchor('initialization')}
+            ref={anchor({ id: 'initialization' })}
             className="flex flex-col gap-4"
           >
             <SectionHeader label="Danger zone" hint="Destructive local data controls." />

@@ -92,7 +92,11 @@ export const mapNotificationAction = (
     return {
       label: 'Open budget',
       onClick: () => {
-        window.dispatchEvent(new CustomEvent('goodboy:open-budget-studio', { detail: { scope } }));
+        window.dispatchEvent(
+          new CustomEvent('goodboy:open-settings', {
+            detail: { scope: 'budget', budgetScope: scope },
+          }),
+        );
       },
     };
   }
@@ -112,7 +116,9 @@ export const mapNotificationAction = (
       onClick: () => {
         void store.setCurrentWorkspace(workspaceId).then(() => {
           window.dispatchEvent(
-            new CustomEvent('goodboy:open-workspace-settings', { detail: { section: 'orphans' } }),
+            new CustomEvent('goodboy:open-settings', {
+              detail: { scope: 'workspace', section: 'orphans' },
+            }),
           );
         });
       },

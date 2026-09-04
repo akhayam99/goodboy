@@ -155,14 +155,13 @@ vi.mock('../features/session/components/ArchiveSessionConfirm', () => ({
   ArchiveSessionConfirm: () => null,
 }));
 vi.mock('../features/settings/components/SettingsStudio', () => ({
-  SettingsStudio: () => <div data-testid="settings-studio" />,
+  SettingsStudio: ({ initialFocus }: { initialFocus: { scope: string } }) => (
+    <div data-testid="settings-studio" data-scope={initialFocus.scope} />
+  ),
 }));
 vi.mock('../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
 vi.mock('../features/settings/components/ReportIssueStudio', () => ({
   ReportIssueStudio: () => <div data-testid="report-issue-studio" />,
-}));
-vi.mock('../features/workspace/components/WorkspaceSettingsPane', () => ({
-  WorkspaceSettingsPane: () => null,
 }));
 vi.mock('../app/components/Toast', () => ({
   ToastProvider: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -191,14 +190,6 @@ vi.mock('../features/workspace/components/WorkspaceSwitcher', () => ({
 }));
 vi.mock('../features/workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('../features/workflows/components/WorkflowStudio', () => ({ WorkflowStudio: () => null }));
-vi.mock('../features/providers/components/ProviderStudio', () => ({
-  ProviderStudio: () => <div data-testid="provider-studio" />,
-}));
-vi.mock('../features/budget/components/BudgetStudio', () => ({
-  BudgetStudio: ({ workspaceName }: { workspaceName: string }) => (
-    <div data-testid="budget-studio">{workspaceName}</div>
-  ),
-}));
 vi.mock('../features/impact/components/ImpactStudio', () => ({
   ImpactStudio: ({ workspaceName }: { workspaceName: string }) => (
     <div data-testid="impact-studio">{workspaceName}</div>
@@ -325,10 +316,10 @@ describe('Provider studio reachability from the command palette', () => {
     render(<App />);
     openPalette();
 
-    expect(screen.queryByTestId('provider-studio')).toBeNull();
+    expect(screen.queryByTestId('settings-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Connect a provider' }));
 
-    expect(screen.getByTestId('provider-studio')).toBeDefined();
+    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('providers');
   });
 });
 
@@ -393,10 +384,10 @@ describe('Footer to settings and more-popover reachability', () => {
   it('opens budget from the footer more popover', () => {
     render(<App />);
 
-    expect(screen.queryByTestId('budget-studio')).toBeNull();
+    expect(screen.queryByTestId('settings-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open budget' }));
 
-    expect(screen.getByTestId('budget-studio').textContent).toBe('Workspace');
+    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('budget');
   });
 
   it('opens impact from the footer more popover', () => {
@@ -415,5 +406,19 @@ describe('Footer to settings and more-popover reachability', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open changelog' }));
 
     expect(screen.getByTestId('changelog-studio').textContent).toBe('Workspace');
+  });
+});
+
+describe('Legacy settings event forwarding', () => {
+  it.each([
+    ['goodboy:open-workspace-settings', 'workspace'],
+    ['goodboy:open-provider-studio', 'providers'],
+    ['goodboy:open-budget-studio', 'budget'],
+  ])('forwards %s to the %s settings scope', (eventName, scope) => {
+    render(<App />);
+
+    act(() => window.dispatchEvent(new CustomEvent(eventName)));
+
+    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe(scope);
   });
 });

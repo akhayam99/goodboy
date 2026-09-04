@@ -3,9 +3,7 @@ import { ScrollFade, SegmentedTabs } from '@goodboy/ui';
 import type { BudgetRule, ProviderName, SessionId, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
 import type { ProviderSpendEntry } from '../../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioRailLayout } from '@goodboy/ui';
-import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useBudgetData } from '../../hooks/useBudgetData';
 import { OverviewPanel } from './OverviewPanel';
 import { ProviderPanel } from './ProviderPanel';
@@ -21,16 +19,15 @@ import {
 } from './lib';
 
 type Props = {
-  readonly workspaceName: string;
   readonly initialScope?: BudgetScope;
-  readonly onClose: () => void;
+  readonly requestClose: () => void;
 };
 
 const EMPTY_TELEMETRY = EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>;
 const EMPTY_SPEND = EMPTY_ARRAY as ReadonlyArray<ProviderSpendEntry>;
 const DAY_MS = 86_400_000;
 
-export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) => {
+export const BudgetSettingsScope = ({ initialScope, requestClose }: Props) => {
   const sessions = useSessions();
   const currentSessionId = useAppStore((s) => s.currentSessionId);
   const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
@@ -54,9 +51,9 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
   const openSession = useCallback(
     (sessionId: SessionId) => {
       void setCurrentSession(sessionId);
-      onClose();
+      requestClose();
     },
-    [onClose, setCurrentSession],
+    [requestClose, setCurrentSession],
   );
 
   const refreshBreakdown = useCallback(async () => {
@@ -195,13 +192,8 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
   }, [scope, selectedSession]);
 
   return (
-    <StudioShell
-      icon={CONCEPT_ICONS.budget}
-      tone={CONCEPT_TONE.budget}
-      title="Budget studio"
-      workspaceName={workspaceName}
-      closeLabel="close budget studio"
-      headerAccessory={
+    <div className="flex h-full min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 justify-end p-3">
         <SegmentedTabs
           ariaLabel="Budget window"
           options={BUDGET_WINDOW_OPTIONS}
@@ -209,10 +201,8 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
           onChange={setWindowId}
           size="sm"
         />
-      }
-      onClose={onClose}
-    >
-      {(requestClose) => (
+      </div>
+      <div className="flex min-h-0 flex-1">
         <StudioRailLayout
           railLabel="Budget scopes"
           railWidth="standard"
@@ -283,7 +273,7 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
             ) : null
           }
         />
-      )}
-    </StudioShell>
+      </div>
+    </div>
   );
 };

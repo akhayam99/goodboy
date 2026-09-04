@@ -267,7 +267,7 @@ describe('InboxStudio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open integrations' }));
 
     expect(dispatchSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'goodboy:open-provider-studio' }),
+      expect.objectContaining({ type: 'goodboy:open-settings' }),
     );
     dispatchSpy.mockRestore();
   });

@@ -581,9 +581,9 @@ describe('OrchestratorPanel strip', () => {
       runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
     });
     const opened = vi.fn();
-    window.addEventListener('goodboy:open-budget-studio', opened);
+    window.addEventListener('goodboy:open-settings', opened);
     fireEvent.click(screen.getByTestId('orchestrator-review-budget'));
-    window.removeEventListener('goodboy:open-budget-studio', opened);
+    window.removeEventListener('goodboy:open-settings', opened);
 
     expect(opened).toHaveBeenCalledTimes(1);
     expect(screen.queryByTestId('run-spend-limit-trigger')).toBeNull();
