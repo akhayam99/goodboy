@@ -11,6 +11,7 @@ import {
 } from './crumbClasses';
 import { SiblingRow } from './SiblingRow';
 import type { SwitcherEntry } from './switcherEntry';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type AgentSwitcherCrumbProps = {
   readonly label: string;
@@ -53,7 +54,7 @@ export const AgentSwitcherCrumb = ({
         className={cn(CRUMB_BUTTON_CLASS, CRUMB_LAST_CLASS)}
       >
         {Icon == null ? null : (
-          <Icon size={13} aria-hidden className="shrink-0 text-muted-foreground/70" />
+          <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/70" />
         )}
         <span className="min-w-0 max-w-48 truncate">{label}</span>
         {accessory}
@@ -71,7 +72,7 @@ export const AgentSwitcherCrumb = ({
           className={cn(CRUMB_BUTTON_CLASS, CRUMB_LINK_CLASS)}
         >
           {Icon == null ? null : (
-            <Icon size={13} aria-hidden className="shrink-0 text-muted-foreground/70" />
+            <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/70" />
           )}
           <span className="min-w-0 truncate">{label}</span>
           {accessory}

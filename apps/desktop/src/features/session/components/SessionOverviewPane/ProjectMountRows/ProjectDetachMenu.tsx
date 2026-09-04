@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { MoreHorizontal } from 'lucide-react';
 import { AnchoredPopover, Button, Tooltip, formatError, useDropdown } from '@goodboy/ui';
 import type { ProjectId, SessionId, WorktreeStatus, WorkspaceId } from '@goodboy/types';
 import { useToast } from '../../../../../app/components/Toast';
 import { useAppStore } from '../../../../../store';
 import { isWorkingTreeClean } from '../../../../../shared/lib/gitStatus';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -78,7 +78,7 @@ export const ProjectDetachMenu = ({
             aria-expanded={dropdown.open}
             className={triggerClassName}
           >
-            <MoreHorizontal size={14} aria-hidden />
+            <CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />
           </button>
         </Tooltip>
       }

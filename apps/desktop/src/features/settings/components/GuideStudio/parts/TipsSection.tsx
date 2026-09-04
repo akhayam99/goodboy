@@ -1,5 +1,6 @@
 import { Lightbulb } from 'lucide-react';
 import { SectionHeader } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = Record<never, never>;
 
@@ -34,7 +35,7 @@ export const TipsSection = ({}: Props) => {
     <div className="flex flex-col gap-7">
       <SectionHeader
         size="page"
-        icon={<Lightbulb size={14} aria-hidden className="text-warning" />}
+        icon={<Lightbulb size={ICON_SIZE.control} aria-hidden className="text-warning" />}
         label="Tips"
         hint="Patterns that compound across sessions."
       />

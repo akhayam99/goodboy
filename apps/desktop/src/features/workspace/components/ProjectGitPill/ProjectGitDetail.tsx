@@ -23,6 +23,7 @@ import {
   unmergedCount,
 } from '../../../../shared/lib/gitStatus';
 import { InitGuide } from './InitGuide';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly project: Project;
@@ -195,7 +196,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
         <div className="p-3 text-xs text-muted-foreground">Reading git status</div>
       ) : status.state === 'missing' ? (
         <div className="flex items-start gap-2 p-3 text-xs leading-relaxed text-danger">
-          <AlertTriangle size={13} aria-hidden className="shrink-0" />
+          <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span>
             Goodboy cannot reach <span className="font-mono text-2xs">{project.rootPath}</span>.
             Reconnect the workspace once the folder is back.
@@ -248,7 +249,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
               </span>
             ) : null}
             <Button size="sm" variant="ghost" disabled={!canPull} onClick={() => void onPull()}>
-              <ArrowDown size={13} aria-hidden />
+              <ArrowDown size={ICON_SIZE.row} aria-hidden />
               {pulling ? 'Pulling' : pullLabel}
             </Button>
             {blockedReason != null ? (
@@ -264,7 +265,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
               )
             ) : null}
             <Button size="sm" variant="ghost" onClick={() => void onOpen()}>
-              <FolderOpen size={13} aria-hidden />
+              <FolderOpen size={ICON_SIZE.row} aria-hidden />
               Open in editor
             </Button>
           </div>

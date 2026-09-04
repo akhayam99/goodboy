@@ -4,7 +4,7 @@ import { SESSION_FEATURES } from '../../../../../shared/lib/features';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
 import { Callout } from './Callout';
 import { ConceptCard } from './ConceptCard';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Section =
   'overview' | 'board' | 'session' | 'turn' | 'tools' | 'tokens' | 'agents' | 'tips' | 'legenda';
@@ -17,7 +17,7 @@ export const OverviewSection = ({ onJump }: Props) => (
   <div className="flex flex-col gap-7">
     <SectionHeader
       size="page"
-      icon={<BookOpen size={14} aria-hidden className="text-primary" />}
+      icon={<BookOpen size={ICON_SIZE.control} aria-hidden className="text-primary" />}
       label="What is Goodboy?"
       hint={
         SESSION_FEATURES.budget
@@ -26,7 +26,7 @@ export const OverviewSection = ({ onJump }: Props) => (
       }
     />
 
-    <Callout tone="info" icon={<CONCEPT_ICONS.providers size={13} />}>
+    <Callout tone="info" icon={<CONCEPT_ICONS.providers size={ICON_SIZE.row} />}>
       Goodboy does <strong className="text-foreground">not</strong> talk to providers directly. It
       spawns each provider's own CLI as a subprocess and streams its events. Your login, usage, and
       quotas stay inside that CLI. Goodboy adds the workspace, board, and orchestration layer on
@@ -37,28 +37,28 @@ export const OverviewSection = ({ onJump }: Props) => (
       <Eyebrow label="Mental model" />
       <div className="mt-3 grid grid-cols-2 gap-3">
         <ConceptCard
-          icon={<LayoutDashboard size={14} aria-hidden />}
+          icon={<LayoutDashboard size={ICON_SIZE.control} aria-hidden />}
           tone="primary"
           label="Stage board"
           body="The home view. Every session in the workspace, grouped by stage: attention, running, review, building, done."
           onClick={() => onJump('board')}
         />
         <ConceptCard
-          icon={<GitBranch size={14} aria-hidden />}
+          icon={<GitBranch size={ICON_SIZE.control} aria-hidden />}
           tone="success"
           label="Session"
           body="One goal, on its own git worktree and branch. Open it to land in chat, then navigate to diff, terminal, IDE, or a studio."
           onClick={() => onJump('session')}
         />
         <ConceptCard
-          icon={<DogMascot size={14} />}
+          icon={<DogMascot size={ICON_SIZE.control} />}
           tone="warning"
           label="Agent"
           body="One CLI invocation inside a session. Spawn several; subagents render as a tree under their parent."
           onClick={() => onJump('agents')}
         />
         <ConceptCard
-          icon={<MessageSquare size={14} aria-hidden />}
+          icon={<MessageSquare size={ICON_SIZE.control} aria-hidden />}
           tone="info"
           label="Turn"
           body="A single user to assistant exchange. Tool calls inside it count as the same turn. Spend is glanceable in the top bar."

@@ -4,7 +4,11 @@ import { Divider, formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { FileVersion, FileVersionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
+import {
+  CONCEPT_ICONS,
+  CONCEPT_TONE,
+  ICON_SIZE,
+} from '../../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
 import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { fileVersionGroups } from './fileVersionGroups';
@@ -100,7 +104,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
                 disabled={deletingAll}
                 className="inline-flex items-center gap-1 rounded-md border border-danger/40 px-2 py-1 text-xs font-medium text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <Trash2 size={12} aria-hidden />
+                <Trash2 size={ICON_SIZE.row} aria-hidden />
                 {deletingAll ? 'Deleting' : 'Confirm delete all'}
               </button>
               <button
@@ -119,7 +123,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
               disabled={versions.length === 0 || loading}
               className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Trash2 size={12} aria-hidden />
+              <Trash2 size={ICON_SIZE.row} aria-hidden />
               Delete all
             </button>
           )}

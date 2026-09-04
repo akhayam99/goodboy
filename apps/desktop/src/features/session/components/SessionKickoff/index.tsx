@@ -5,7 +5,7 @@ import type { IsoDateTime, Session } from '@goodboy/types';
 import type { LucideIcon } from 'lucide-react';
 import { useAppStore, useSessionSlots } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 import {
@@ -28,13 +28,13 @@ type TileProps = {
 
 const KickoffTile = ({ icon: Icon, iconClassName, title, description, onClick }: TileProps) => (
   <button type="button" onClick={onClick} className={TILE_CLASS}>
-    <Icon size={16} aria-hidden className={cn('shrink-0', iconClassName)} />
+    <Icon size={ICON_SIZE.hero} aria-hidden className={cn('shrink-0', iconClassName)} />
     <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
       <span className="text-sm font-medium text-foreground">{title}</span>
       <span className="truncate text-2xs text-muted-foreground">{description}</span>
     </span>
     <ArrowRight
-      size={15}
+      size={ICON_SIZE.control}
       aria-hidden
       className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
     />

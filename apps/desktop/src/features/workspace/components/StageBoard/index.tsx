@@ -23,6 +23,7 @@ import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
 import { ProjectFilter } from '../ProjectFilter';
 import { ProjectGitPills } from '../ProjectGitPill';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Confirm = { readonly kind: 'archive' | 'delete'; readonly session: Session };
 
@@ -179,7 +180,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                 disabled={!hasUsableProject}
                 title={hasUsableProject ? undefined : blockedReason}
               >
-                <Plus size={14} aria-hidden />
+                <Plus size={ICON_SIZE.control} aria-hidden />
                 New session
               </Button>
             </span>
@@ -211,7 +212,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                 size="md"
                 onClick={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}
               >
-                <Plus size={16} aria-hidden />
+                <Plus size={ICON_SIZE.control} aria-hidden />
                 New session
               </Button>
             }

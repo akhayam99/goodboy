@@ -20,6 +20,7 @@ import {
 } from '../../../../../features/session/components/AgentMetrics';
 import { useHoverMarkViewed } from '../../../../../features/session/hooks/useHoverMarkViewed';
 import type { ProviderContextUsage } from './ContextWindowBar';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly run: Agent;
@@ -212,7 +213,7 @@ export const AgentRow = ({
         isConfirmingDelete ? (
           <InlineConfirm
             role="danger"
-            icon={<Trash2 size={12} aria-hidden />}
+            icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
             title="Delete agent?"
             description="Removes this agent and its transcript from the session."
             confirmLabel="Delete"

@@ -16,6 +16,7 @@ import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../../../../workflows/blockCopy';
 import { useHoverMarkViewed } from '../../../../../features/session/hooks/useHoverMarkViewed';
 import { useInlineRename } from '../../../../../shared/hooks/useInlineRename';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly run: Agent;
@@ -128,7 +129,7 @@ export const WorkflowStepRow = ({
       );
     }
     if (isActionable && isBlocked) {
-      return <AlertTriangle size={12} className="text-warning" aria-hidden />;
+      return <AlertTriangle size={ICON_SIZE.row} className="text-warning" aria-hidden />;
     }
     if (isRunning) {
       return <StatusDot tone="info" size="md" pulsing />;
@@ -255,7 +256,7 @@ export const WorkflowStepRow = ({
       </div>
       {pendingConfirm && blockReason !== null ? (
         <div className="flex items-center gap-2 rounded-md bg-warning/5 px-2.5 py-1.5 text-xs">
-          <AlertTriangle size={12} aria-hidden className="shrink-0 text-warning" />
+          <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0 text-warning" />
           <span className="min-w-0 flex-1 truncate text-foreground">
             {WORKFLOW_BLOCK_COPY[blockReason]}
           </span>

@@ -8,6 +8,7 @@ import type { ScriptRunRecord } from '../../scripts';
 import { ScriptRunOutput } from './ScriptRunOutput';
 import { SCRIPT_RUN_PRESENTATION } from './scriptRunPresentation';
 import { ProjectSelect } from './ProjectSelect';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly script: ProjectScript;
@@ -336,7 +337,7 @@ export const ScriptRow = ({
       {isDeleteArmed ? (
         <InlineConfirm
           role="danger"
-          icon={<Trash2 size={12} aria-hidden />}
+          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
           title={`Delete "${script.name}"?`}
           description="Permanently removes this script from the workspace."
           confirmLabel={`Delete ${script.name}`}

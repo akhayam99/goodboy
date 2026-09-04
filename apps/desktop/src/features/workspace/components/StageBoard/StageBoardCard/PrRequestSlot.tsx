@@ -3,6 +3,7 @@ import { cn, Skeleton, Tooltip } from '@goodboy/ui';
 import type { SessionPrFetchState } from '@goodboy/types';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import type { LinkedRequest } from './getLinkedRequest';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 const CHECKING_LABEL = 'Checking GitHub for a pull request';
 const UNREACHABLE_LABEL = 'Could not reach GitHub, will retry';
@@ -59,7 +60,7 @@ export const PrRequestSlot = ({ linkedRequest, isGitlab, prFetchState, onOpen }:
     return (
       <Tooltip content={UNREACHABLE_LABEL} side="top">
         <span aria-label={UNREACHABLE_LABEL} className={cn(SLOT_CLASS, 'text-muted-foreground/50')}>
-          <CloudOff size={14} aria-hidden />
+          <CloudOff size={ICON_SIZE.control} aria-hidden />
         </span>
       </Tooltip>
     );

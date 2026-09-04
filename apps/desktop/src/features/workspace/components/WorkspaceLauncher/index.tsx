@@ -11,7 +11,7 @@ import {
 } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 import { UpdateIndicator } from '../../../updater/components/UpdateIndicator';
@@ -89,7 +89,7 @@ export const WorkspaceLauncher = () => {
 
         <div className="relative">
           <Search
-            size={15}
+            size={ICON_SIZE.control}
             aria-hidden
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60"
           />
@@ -122,7 +122,7 @@ export const WorkspaceLauncher = () => {
                   <li key={w.id}>
                     <InlineConfirm
                       role="danger"
-                      icon={<Unplug size={12} aria-hidden />}
+                      icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
                       title={`Disconnect ${w.name}?`}
                       description="Hides it from this list. Nothing on disk is deleted, re-add the same path to bring it back with all its sessions."
                       confirmLabel="Disconnect"
@@ -146,7 +146,7 @@ export const WorkspaceLauncher = () => {
                         onClick={() => setDisconnectTarget(w)}
                         className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-border-soft bg-background p-1.5 text-muted-foreground opacity-0 transition-opacity hover:text-danger focus-visible:opacity-100 group-hover/launcher:opacity-100"
                       >
-                        <Unplug size={13} aria-hidden />
+                        <Unplug size={ICON_SIZE.row} aria-hidden />
                       </button>
                     </Tooltip>
                   </li>
@@ -157,7 +157,7 @@ export const WorkspaceLauncher = () => {
         </div>
 
         <Button variant="secondary" onClick={addWorkspace} className="w-fit">
-          <Plus size={14} aria-hidden />
+          <Plus size={ICON_SIZE.control} aria-hidden />
           New workspace
         </Button>
 

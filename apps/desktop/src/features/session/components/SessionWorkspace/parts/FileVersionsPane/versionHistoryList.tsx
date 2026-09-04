@@ -1,7 +1,11 @@
 import { RotateCcw, Trash2 } from 'lucide-react';
 import { Button, EmptyState, Tooltip } from '@goodboy/ui';
 import type { FileVersion, FileVersionId } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
+import {
+  CONCEPT_ICONS,
+  CONCEPT_TONE,
+  ICON_SIZE,
+} from '../../../../../../shared/components/conceptIcons';
 import { AuthorshipChip } from '../AuthorshipChip';
 import {
   formatAbsoluteDateTime,
@@ -61,7 +65,7 @@ export const VersionHistoryList = ({
                 disabled={isRestoring || deletingVersionId != null}
                 aria-label="Restore this version"
               >
-                <RotateCcw size={12} aria-hidden />
+                <RotateCcw size={ICON_SIZE.row} aria-hidden />
                 {isRestoring ? 'Restoring' : 'Restore'}
               </Button>
               <Tooltip content="Delete this version">
@@ -72,7 +76,7 @@ export const VersionHistoryList = ({
                   aria-label="Delete this version"
                   className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <Trash2 size={12} aria-hidden />
+                  <Trash2 size={ICON_SIZE.row} aria-hidden />
                 </button>
               </Tooltip>
             </div>

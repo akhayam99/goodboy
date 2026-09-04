@@ -3,6 +3,7 @@ import { Trash2 } from 'lucide-react';
 import { formatError, InlineConfirm, ScrollFade } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessions: ReadonlyArray<Session>;
@@ -35,7 +36,7 @@ export const BulkDeleteSessionsConfirm = ({ sessions, onClose, onConfirmed, clas
   return (
     <InlineConfirm
       role="danger"
-      icon={<Trash2 size={12} aria-hidden />}
+      icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
       title={`Delete ${count} session${count === 1 ? '' : 's'}?`}
       description="Permanently removes the worktrees and transcripts for these sessions from this device. Branches are preserved for manual merge."
       confirmLabel={`Delete (${count})`}

@@ -1,3 +1,5 @@
+import { Eye, Hammer } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { Tone } from '@goodboy/ui';
 import type { SessionAttentionReason, SessionStage } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
@@ -48,6 +50,14 @@ export const SESSION_STAGE_META: Record<SessionStage, SessionStageEntry> = {
     dotClassName: 'bg-merged',
     textClassName: 'text-merged',
   },
+};
+
+export const SESSION_STAGE_ICON: Record<SessionStage, LucideIcon> = {
+  attention: CONCEPT_ICONS.questions,
+  running: CONCEPT_ICONS.sessions,
+  review: Eye,
+  building: Hammer,
+  done: CONCEPT_ICONS.runDone,
 };
 
 export const STAGE_TONE: Record<SessionStage, Tone> = {

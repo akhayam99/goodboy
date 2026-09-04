@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AlertCircle, AlertTriangle, Bell, CheckCircle2, Info, X } from 'lucide-react';
 import { cn, Tooltip } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 export type ToastKind = 'info' | 'warning' | 'error' | 'success';
 
@@ -201,7 +202,7 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
     >
       <div className={cn('w-1 shrink-0', strip)} />
       <div className="flex min-w-0 flex-1 items-start gap-3 px-3 py-3">
-        <Icon size={16} className={cn('mt-px shrink-0', icon)} aria-hidden />
+        <Icon size={ICON_SIZE.control} className={cn('mt-px shrink-0', icon)} aria-hidden />
         <div className="min-w-0 flex-1">
           {hasTitle ? (
             <p className="text-sm font-semibold leading-snug text-foreground">{toast.title}</p>
@@ -239,7 +240,7 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
             onClick={() => onDismiss(toast.id)}
             aria-label="Dismiss notification"
           >
-            <X size={13} aria-hidden />
+            <X size={ICON_SIZE.row} aria-hidden />
           </button>
         </Tooltip>
       </div>

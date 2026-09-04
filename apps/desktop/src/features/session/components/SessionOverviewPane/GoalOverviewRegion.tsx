@@ -5,6 +5,7 @@ import { CopyButton, Eyebrow, Textarea, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -96,7 +97,7 @@ export const GoalOverviewRegion = ({
               presentation="icon"
               value={value}
               label="copy goal"
-              size={13}
+              size={ICON_SIZE.row}
               className="gap-1 rounded-md px-1.5 py-1 text-2xs text-muted-foreground/60 motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground"
             >
               Copy the goal
@@ -112,7 +113,7 @@ export const GoalOverviewRegion = ({
                 aria-label={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of Goal`}
                 className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-2xs text-muted-foreground/60 motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
               >
-                <History size={13} aria-hidden />
+                <History size={ICON_SIZE.row} aria-hidden />
                 History
               </button>
             </Tooltip>

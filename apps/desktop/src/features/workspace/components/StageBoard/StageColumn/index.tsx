@@ -6,7 +6,7 @@ import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stag
 import type { MultiSelect } from '../../../../../shared/hooks/useMultiSelect';
 import { StageBoardCard } from '../StageBoardCard';
 import type { BoardNavigation } from '../useBoardNavigation';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 
 const ZERO_STATE: Record<SessionStage | 'archived', string> = {
@@ -104,7 +104,7 @@ export const StageColumn = ({
           className="flex shrink-0 items-center gap-1 text-left"
         >
           <ChevronDown
-            size={12}
+            size={ICON_SIZE.row}
             aria-hidden
             className={cn(
               'shrink-0 text-muted-foreground/50 transition-transform',
@@ -123,7 +123,7 @@ export const StageColumn = ({
             {empty ? (
               <p className="flex items-center gap-2 px-1 py-2 text-xs text-muted-foreground/70">
                 <CONCEPT_ICONS.sessions
-                  size={13}
+                  size={ICON_SIZE.row}
                   aria-hidden
                   className="shrink-0 text-muted-foreground/40"
                 />

@@ -3,6 +3,7 @@ import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
 import type { Project, WorkspaceGitStatus } from '@goodboy/types';
 import { ProjectGitDetail } from './ProjectGitDetail';
 import { projectGitPresentationOf } from './projectGitPresentationOf';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly project: Project;
@@ -40,7 +41,7 @@ export const ProjectGitPill = ({ project, status, shouldShowProjectName }: Props
               : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
           )}
         >
-          <GitBranch size={12} aria-hidden className="shrink-0" />
+          <GitBranch size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span className="max-w-36 truncate">{label}</span>
           {isWarning ? (
             <span data-testid="project-git-warning" className="flex items-center text-warning">

@@ -3,7 +3,7 @@ import { useAppStore } from '../../../store';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
 import { BetaPill } from '../../../shared/components/BetaPill';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { FOOTER_INTEGRATIONS } from './categories';
 import { FooterButton } from './FooterButton';
@@ -135,7 +135,7 @@ export const AppFooter = ({
 
         <div className="flex items-center gap-0.5">
           <FooterButton
-            icon={<CONCEPT_ICONS.inbox size={12} aria-hidden />}
+            icon={<CONCEPT_ICONS.inbox size={ICON_SIZE.control} aria-hidden />}
             label="Inbox"
             tone={CONCEPT_TONE.inbox}
             title="Open the inbox for this workspace"
@@ -143,7 +143,7 @@ export const AppFooter = ({
             active={activeStudio === 'inbox'}
           />
           <FooterButton
-            icon={<CONCEPT_ICONS.workflows size={12} aria-hidden />}
+            icon={<CONCEPT_ICONS.workflows size={ICON_SIZE.control} aria-hidden />}
             label="Workflows"
             tone={CONCEPT_TONE.workflows}
             title="Open the workflow library for this workspace"
@@ -151,7 +151,7 @@ export const AppFooter = ({
             active={activeStudio === 'workflow'}
           />
           <FooterButton
-            icon={<CONCEPT_ICONS.providers size={12} aria-hidden />}
+            icon={<CONCEPT_ICONS.providers size={ICON_SIZE.control} aria-hidden />}
             label="Providers"
             tone={CONCEPT_TONE.providers}
             title="Connect and manage your provider accounts"
@@ -160,7 +160,7 @@ export const AppFooter = ({
             active={activeStudio === 'provider'}
           />
           <FooterButton
-            icon={<CONCEPT_ICONS.settings size={12} aria-hidden />}
+            icon={<CONCEPT_ICONS.settings size={ICON_SIZE.control} aria-hidden />}
             label="Settings"
             tone={CONCEPT_TONE.settings}
             title={SETTINGS_LABEL}

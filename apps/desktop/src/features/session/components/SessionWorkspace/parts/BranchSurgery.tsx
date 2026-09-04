@@ -3,6 +3,7 @@ import { Check, GitCommit, GitMerge, Pencil, X } from 'lucide-react';
 import { InlineConfirm, Input, cn } from '@goodboy/ui';
 import type { BranchCommit } from '@goodboy/types';
 import { GhostActionButton } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Mode = 'amend' | 'squash';
 
@@ -103,7 +104,7 @@ export const BranchSurgery = ({ commits, headSha, onAmend, onSquash }: Props) =>
                 {draft.mode === 'squash' ? (
                   <InlineConfirm
                     role="danger"
-                    icon={<GitCommit size={12} aria-hidden />}
+                    icon={<GitCommit size={ICON_SIZE.row} aria-hidden />}
                     title="Squash every commit through HEAD?"
                     description="This rewrites history by folding every commit from the selected one through branch HEAD into one, including later commits not listed here."
                     confirmLabel="Squash into one"

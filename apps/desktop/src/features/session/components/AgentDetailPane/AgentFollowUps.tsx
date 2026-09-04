@@ -9,6 +9,7 @@ import { AgentKindChip } from '../AgentKindChip';
 import { agentFollowUpMoves, composeFollowUpSeed } from './followUpMoves';
 import type { FollowUpChild } from './followUpChildren';
 import { AgentFollowUpChild } from './AgentFollowUpChild';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sourceAgent: Agent;
@@ -90,7 +91,7 @@ export const AgentFollowUps = ({
             <AgentKindChip kind={move.kind} title={move.label} />
             <span className="min-w-0 flex-1 text-foreground">{move.hint}</span>
             <ArrowRight
-              size={12}
+              size={ICON_SIZE.row}
               aria-hidden
               className="shrink-0 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5"
             />

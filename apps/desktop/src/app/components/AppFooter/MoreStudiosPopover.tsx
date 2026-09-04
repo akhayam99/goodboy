@@ -1,6 +1,5 @@
 import { AnchoredPopover, cn, tintClasses, Tooltip, useDropdown } from '@goodboy/ui';
-import { MoreHorizontal } from 'lucide-react';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { MORE_STUDIOS, type MoreStudioId } from './moreStudios';
 
 type Props = {
@@ -48,7 +47,7 @@ export const MoreStudiosPopover = ({ activeStudio, openers }: Props) => {
                 : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
             )}
           >
-            <MoreHorizontal size={12} aria-hidden />
+            <CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />
             <span>More</span>
           </button>
         </Tooltip>
@@ -70,7 +69,7 @@ export const MoreStudiosPopover = ({ activeStudio, openers }: Props) => {
                 )}
               >
                 <Icon
-                  size={12}
+                  size={ICON_SIZE.row}
                   aria-hidden
                   className={
                     isActive ? tintClasses(CONCEPT_TONE[entry.id]).icon : 'text-muted-foreground'

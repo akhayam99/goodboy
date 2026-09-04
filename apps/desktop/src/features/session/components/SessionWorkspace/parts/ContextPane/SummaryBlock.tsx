@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pencil, Plus, type LucideIcon } from 'lucide-react';
 import { CardAction, CardActionSlot, Eyebrow, Markdown } from '@goodboy/ui';
 import { BlockEditor } from './BlockEditor';
+import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 
 const REVEAL_GROUP =
   'group-hover/summary-block:opacity-100 group-focus-within/summary-block:opacity-100';
@@ -36,7 +37,10 @@ export const SummaryBlock = ({ title, body, icon: Icon, isLocked, onCommit }: Pr
     <section aria-label={title} className="group/summary-block flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
         <h3>
-          <Eyebrow label={title} icon={Icon != null ? <Icon size={12} aria-hidden /> : undefined} />
+          <Eyebrow
+            label={title}
+            icon={Icon != null ? <Icon size={ICON_SIZE.row} aria-hidden /> : undefined}
+          />
         </h3>
         {isEditing ? null : (
           <CardActionSlot label={`${title} actions`}>

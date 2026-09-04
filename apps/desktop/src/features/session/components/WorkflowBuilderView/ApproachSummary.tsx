@@ -1,5 +1,5 @@
 import { ListChecks, PenLine } from 'lucide-react';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { Mode } from '../../../../store/slices/workflowDrafts/types';
 
 type Props = {
@@ -10,7 +10,7 @@ export const ApproachSummary = ({ mode }: Props) => {
   if (mode === 'preset') {
     return (
       <div className="flex items-start gap-2 rounded-lg border border-border-soft bg-subtle/40 p-3">
-        <ListChecks size={13} className="shrink-0 text-muted-foreground" aria-hidden />
+        <ListChecks size={ICON_SIZE.row} className="shrink-0 text-muted-foreground" aria-hidden />
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-foreground">Start from a preset</span>
           <p className="text-2xs leading-relaxed text-muted-foreground">
@@ -23,7 +23,7 @@ export const ApproachSummary = ({ mode }: Props) => {
   if (mode === 'custom') {
     return (
       <div className="flex items-start gap-2 rounded-lg border border-border-soft bg-subtle/40 p-3">
-        <PenLine size={13} className="shrink-0 text-muted-foreground" aria-hidden />
+        <PenLine size={ICON_SIZE.row} className="shrink-0 text-muted-foreground" aria-hidden />
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-foreground">Design fixed steps</span>
           <p className="text-2xs leading-relaxed text-muted-foreground">
@@ -35,7 +35,11 @@ export const ApproachSummary = ({ mode }: Props) => {
   }
   return (
     <div className="flex items-start gap-2 rounded-lg border border-border-soft bg-subtle/40 p-3">
-      <CONCEPT_ICONS.orchestrator size={13} className="shrink-0 text-accent" aria-hidden />
+      <CONCEPT_ICONS.orchestrator
+        size={ICON_SIZE.row}
+        className="shrink-0 text-accent"
+        aria-hidden
+      />
       <div className="flex flex-col gap-1">
         <span className="text-xs font-medium text-foreground">Steps are decided at runtime</span>
         <p className="text-2xs leading-relaxed text-muted-foreground">

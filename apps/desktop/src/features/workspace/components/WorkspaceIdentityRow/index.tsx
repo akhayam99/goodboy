@@ -5,6 +5,7 @@ import { workspaceAccent } from '../../color';
 import { linkedProjectsLabel } from '../../linkedProjectsLabel';
 import { WorkspaceSwitcher } from '../WorkspaceSwitcher';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const initialOf = (name: string): string => name.trim().charAt(0).toUpperCase() || '?';
 
@@ -58,7 +59,7 @@ export const WorkspaceIdentityRow = () => {
               <StatusDot tone="warning" size="sm" title="Activity in another workspace" />
             ) : null}
             <ChevronsUpDown
-              size={12}
+              size={ICON_SIZE.row}
               aria-hidden
               className="shrink-0 text-muted-foreground/40 transition-colors group-hover:text-muted-foreground"
             />
@@ -78,7 +79,7 @@ export const WorkspaceIdentityRow = () => {
           aria-label="Preferences"
           className="flex shrink-0 items-center justify-center rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-muted/50 hover:text-foreground"
         >
-          <SlidersHorizontal size={12} aria-hidden />
+          <SlidersHorizontal size={ICON_SIZE.row} aria-hidden />
         </button>
       </Tooltip>
     </div>

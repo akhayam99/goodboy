@@ -22,7 +22,11 @@ import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import { CardAction, CardActionSlot } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import {
+  CONCEPT_ICONS,
+  CONCEPT_TONE,
+  ICON_SIZE,
+} from '../../../../../shared/components/conceptIcons';
 import { STAGE_TONE } from '../../../../session/session-stage';
 import { sessionCardShell } from '../../../../session/components/sessionCardShell';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
@@ -179,7 +183,7 @@ export const StageBoardCard = memo(function StageBoardCard({
                 aria-label={agentCountLabel}
                 className="inline-flex shrink-0 items-center gap-1 text-2xs text-muted-foreground"
               >
-                <Bot size={14} aria-hidden />
+                <Bot size={ICON_SIZE.control} aria-hidden />
                 <span className="tabular-nums">{agentCount}</span>
               </span>
             </Tooltip>
@@ -239,7 +243,7 @@ export const StageBoardCard = memo(function StageBoardCard({
             <span className="shrink-0 text-2xs tabular-nums text-muted-foreground/50">{age}</span>
           )}
           <ChevronRight
-            size={13}
+            size={ICON_SIZE.row}
             aria-hidden
             className="ml-auto shrink-0 text-muted-foreground/40 group-hover/session-card:text-muted-foreground/70"
           />

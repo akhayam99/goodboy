@@ -1,6 +1,10 @@
 import { Plus } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import {
+  CONCEPT_ICONS,
+  CONCEPT_TONE,
+  ICON_SIZE,
+} from '../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
 
 type Props = {
@@ -26,7 +30,7 @@ export const WorkflowStartButton = ({ sessionId }: Props) => {
           onClick={onClick}
           className="inline-flex items-center gap-1.5 rounded-lg bg-foreground/[0.04] px-3 py-1.5 text-xs font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-foreground/[0.08]"
         >
-          <Plus size={13} aria-hidden className="shrink-0" />
+          <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           Start a workflow
         </button>
       }

@@ -1,10 +1,11 @@
 import { useEffect, useMemo } from 'react';
 import { formatError, OverflowMenu, type OverflowMenuItem } from '@goodboy/ui';
-import { Copy, FolderOpen } from 'lucide-react';
+import { Copy } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openInEditor } from '../../../../shared/lib/editor';
 import { useToast } from '../../../../app/components/Toast';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { Density } from '../../density';
 
 const REFERENCE_EDITORS = new Set(['code', 'cursor']);
@@ -78,7 +79,7 @@ export const EditorMenu = ({
               kind: 'item',
               key: 'no-editor',
               label: 'No editor detected',
-              icon: FolderOpen,
+              icon: CONCEPT_ICONS.folderOpen,
               onClick: () => undefined,
               disabled: true,
             },
@@ -89,7 +90,7 @@ export const EditorMenu = ({
               kind: 'item',
               key: `editor-${ed.binary}`,
               label: ed.label,
-              icon: FolderOpen,
+              icon: CONCEPT_ICONS.folderOpen,
               onClick: () => void launchEditor(ed.binary),
               disabled: worktreePath == null,
             })),
@@ -125,7 +126,7 @@ export const EditorMenu = ({
       triggerClassName={triggerClassName ?? densityTriggerClassName}
       trigger={
         <>
-          <FolderOpen size={13} aria-hidden />
+          <CONCEPT_ICONS.folderOpen size={ICON_SIZE.row} aria-hidden />
           <span className="density-trigger-label" data-density={density}>
             Open
           </span>

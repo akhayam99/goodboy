@@ -33,7 +33,7 @@ import {
   Tooltip,
   type SegmentedTabOption,
 } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import {
   PROVIDER_CAPABILITIES,
@@ -1044,7 +1044,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             onClick={() => setMode('custom')}
                             className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs text-primary transition-colors hover:border-primary hover:bg-primary/10"
                           >
-                            <PenLine size={12} aria-hidden /> Describe your own
+                            <PenLine size={ICON_SIZE.row} aria-hidden /> Describe your own
                           </button>
                         }
                       />
@@ -1105,7 +1105,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                   ) : null}
                                 </span>
                                 {selected ? (
-                                  <Check size={13} className="shrink-0 text-primary" aria-hidden />
+                                  <Check
+                                    size={ICON_SIZE.row}
+                                    className="shrink-0 text-primary"
+                                    aria-hidden
+                                  />
                                 ) : null}
                               </button>
                               {confirmDeleteId === t.id ? (
@@ -1120,7 +1124,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                       aria-label={`Confirm delete ${t.name}`}
                                       className="rounded-md p-1 text-danger transition-colors hover:bg-danger/10"
                                     >
-                                      <Check size={12} aria-hidden />
+                                      <Check size={ICON_SIZE.row} aria-hidden />
                                     </button>
                                   </Tooltip>
                                   <Tooltip content="Cancel delete">
@@ -1130,7 +1134,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                       aria-label="Cancel delete"
                                       className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
                                     >
-                                      <X size={12} aria-hidden />
+                                      <X size={ICON_SIZE.row} aria-hidden />
                                     </button>
                                   </Tooltip>
                                 </span>
@@ -1503,7 +1507,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     aria-label="Discard workflow draft"
                     className="gap-1.5 text-muted-foreground"
                   >
-                    <RotateCcw size={14} aria-hidden />
+                    <RotateCcw size={ICON_SIZE.control} aria-hidden />
                     Discard changes
                   </Button>
                 ) : null}
@@ -1512,7 +1516,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     role="alert"
                     className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-danger"
                   >
-                    <AlertTriangle size={12} className="shrink-0" aria-hidden />
+                    <AlertTriangle size={ICON_SIZE.row} className="shrink-0" aria-hidden />
                     {error}
                   </span>
                 ) : startHint ? (

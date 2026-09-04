@@ -13,7 +13,11 @@ import { selectActiveProjectPrs } from '../../../../../../store/slices/github/ac
 import { ConnectIntegrationEmptyState } from '../../../../../integrations/ConnectIntegrationEmptyState';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
+import {
+  CONCEPT_ICONS,
+  CONCEPT_TONE,
+  ICON_SIZE,
+} from '../../../../../../shared/components/conceptIcons';
 import { GhostActionButton } from '@goodboy/ui';
 import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { FocusedPane } from '../../../../../../shared/components/PaneShell/FocusedPane';
@@ -184,7 +188,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
             <InlineConfirm
               role="danger"
               className="max-w-sm"
-              icon={<Unlink size={12} aria-hidden />}
+              icon={<Unlink size={ICON_SIZE.row} aria-hidden />}
               title={`Unlink ${focusedTask.identifier}?`}
               description={`Removes the ${meta.label} ${meta.noun} from this session without changing the ${meta.noun}.`}
               confirmLabel={`Unlink ${focusedTask.identifier}`}

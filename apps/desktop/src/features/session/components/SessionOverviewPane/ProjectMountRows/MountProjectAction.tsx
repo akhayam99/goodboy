@@ -5,6 +5,7 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../../store';
 import { MountProjectList } from './MountProjectList';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -49,7 +50,7 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
                 : 'inline-flex h-7 items-center gap-1.5 rounded-md border border-border-soft px-2.5 text-xs text-muted-foreground hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]'
             }
           >
-            <FolderPlus size={13} aria-hidden />
+            <FolderPlus size={ICON_SIZE.row} aria-hidden />
             {presentation === 'button' ? <span>{label}</span> : null}
           </button>
         </Tooltip>

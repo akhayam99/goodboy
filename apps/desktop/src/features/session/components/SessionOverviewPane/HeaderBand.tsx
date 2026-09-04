@@ -11,7 +11,7 @@ import { LinkIssueAction } from './LinkIssueAction';
 import { ContextChip } from './ContextChip';
 import { LinkedWorkChips } from './LinkedWorkChips';
 import { MountProjectAction } from './ProjectMountRows/MountProjectAction';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ProjectMountRows } from './ProjectMountRows';
 import { SessionCostChip } from './SessionCostChip';
 
@@ -117,7 +117,7 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
               onClick={openScripts}
               className={ICON_BUTTON}
             >
-              <CONCEPT_ICONS.scripts size={13} aria-hidden />
+              <CONCEPT_ICONS.scripts size={ICON_SIZE.row} aria-hidden />
             </button>
           </Tooltip>
           {hasRepoMount ? null : <EditorMenu sessionId={sessionId} density="compact" />}

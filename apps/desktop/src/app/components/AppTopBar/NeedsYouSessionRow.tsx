@@ -2,7 +2,7 @@ import { cn, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useSessionStageInfo } from '../../../store';
 import { ATTENTION_REASON_META } from '../../../features/session/session-stage';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
@@ -27,7 +27,7 @@ export const NeedsYouSessionRow = ({ session, onSelect }: Props) => {
         className="flex w-full items-start gap-2 px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
       >
         <Icon
-          size={14}
+          size={ICON_SIZE.control}
           aria-hidden
           className={cn('mt-px shrink-0', tintClasses(meta?.tone ?? 'neutral').icon)}
         />

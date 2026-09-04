@@ -23,6 +23,7 @@ import { useAppStore } from '../../../../store';
 import { primaryProjectRoot } from '../../../../features/workspace/primaryProjectRoot';
 import { useToast } from '../../../../app/components/Toast';
 import { useSectionAnchors } from '../../hooks/useSectionAnchors';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -228,7 +229,11 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
             <div className="flex flex-col">
               <FieldRow label="Branch prefix" help="Prefixes every new session branch.">
                 <div className="flex items-center gap-1.5">
-                  <GitBranch size={13} aria-hidden className="shrink-0 text-muted-foreground" />
+                  <GitBranch
+                    size={ICON_SIZE.row}
+                    aria-hidden
+                    className="shrink-0 text-muted-foreground"
+                  />
                   <input
                     type="text"
                     value={branchPrefix}
@@ -315,7 +320,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   disabled={disconnecting}
                   className="text-danger hover:bg-danger/10 hover:text-danger"
                 >
-                  <Unplug size={13} aria-hidden />
+                  <Unplug size={ICON_SIZE.row} aria-hidden />
                   Disconnect
                 </Button>
               ) : (
@@ -339,7 +344,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                       'Disconnecting…'
                     ) : (
                       <>
-                        <Check size={12} aria-hidden />
+                        <Check size={ICON_SIZE.row} aria-hidden />
                         Confirm
                       </>
                     )}
