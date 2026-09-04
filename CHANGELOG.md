@@ -34,6 +34,12 @@ longer be saved.
 The session overview no longer shows a "Suggestions" heading when the
 only suggestions belong to other surfaces.
 
+### [#1641] Model picker lands on the newest version
+
+Switching the model group in the picker (Opus, Sonnet, Fable) selects
+the newest version of that group instead of the oldest, so Opus means
+Opus 5 unless you pick an older one.
+
 ## Goodboy v0.2.13
 
 The inbox becomes the only door to your integrations, with one detail
