@@ -129,6 +129,129 @@ const joinPathOf = ({ join, height }: JoinPathParams): string => {
   return `M ${laneX} ${height} C ${laneX} ${height - RAIL_CURVE_HANDLE}, ${spineX + RAIL_CURVE_HANDLE} ${join.anchorY}, ${spineX} ${join.anchorY}`;
 };
 
+export type BranchRailRowInput = {
+  readonly id: string;
+  readonly depth: number;
+  readonly height: number;
+  readonly markerY: number;
+  readonly isStarted: boolean;
+};
+
+export type BranchRailLayout = {
+  readonly width: number;
+  readonly rows: ReadonlyArray<RailRow>;
+};
+
+type BranchParams = {
+  readonly rows: ReadonlyArray<BranchRailRowInput>;
+};
+
+type ColumnScanParams = {
+  readonly rows: ReadonlyArray<BranchRailRowInput>;
+  readonly from: number;
+  readonly column: number;
+};
+
+const dashOf = ({ isStarted }: { readonly isStarted: boolean }): RailDash =>
+  isStarted ? 'solid' : 'dashed';
+
+const nextOnColumn = ({ rows, from, column }: ColumnScanParams): BranchRailRowInput | null => {
+  for (let index = from + 1; index < rows.length; index += 1) {
+    const candidate = rows[index];
+    if (candidate === undefined || candidate.depth < column) {
+      return null;
+    }
+    if (candidate.depth === column) {
+      return candidate;
+    }
+  }
+  return null;
+};
+
+const hasPreviousOnColumn = ({ rows, from, column }: ColumnScanParams): boolean => {
+  for (let index = from - 1; index >= 0; index -= 1) {
+    const candidate = rows[index];
+    if (candidate === undefined || candidate.depth < column) {
+      return false;
+    }
+    if (candidate.depth === column) {
+      return true;
+    }
+  }
+  return false;
+};
+
+export const layoutBranchRail = ({ rows }: BranchParams): BranchRailLayout => {
+  const deepest = rows.reduce((widest, row) => (row.depth > widest ? row.depth : widest), 0);
+  return {
+    width: RAIL_SPINE_X + deepest * RAIL_LANE_OFFSET + RAIL_EDGE_PAD,
+    rows: rows.map((row, index) => {
+      const column = row.depth;
+      const lane = { identityIndex: null, isMuted: false };
+      const segments: RailSegment[] = [];
+      const next = nextOnColumn({ rows, from: index, column });
+
+      if (column > 0 || hasPreviousOnColumn({ rows, from: index, column })) {
+        segments.push({
+          ...lane,
+          column,
+          dash: dashOf({ isStarted: row.isStarted }),
+          fromY: 0,
+          toY: row.markerY,
+        });
+      }
+      if (next !== null) {
+        segments.push({
+          ...lane,
+          column,
+          dash: dashOf({ isStarted: next.isStarted }),
+          fromY: row.markerY,
+          toY: row.height,
+        });
+      }
+      for (let ancestor = 0; ancestor < column; ancestor += 1) {
+        const continued = nextOnColumn({ rows, from: index, column: ancestor });
+        if (continued === null) {
+          continue;
+        }
+        segments.push({
+          ...lane,
+          column: ancestor,
+          dash: dashOf({ isStarted: continued.isStarted }),
+          fromY: 0,
+          toY: row.height,
+        });
+      }
+
+      const child = rows[index + 1];
+      const branch =
+        child === undefined || child.depth !== column + 1
+          ? null
+          : ({
+              kind: 'merge',
+              spineColumn: column,
+              laneColumn: column + 1,
+              identityIndex: null,
+              isMuted: false,
+              dash: dashOf({ isStarted: child.isStarted }),
+              anchorY: row.markerY,
+            } satisfies PlannedJoin);
+
+      return {
+        id: row.id,
+        height: row.height,
+        segments,
+        joins:
+          branch === null
+            ? []
+            : [{ ...branch, path: joinPathOf({ join: branch, height: row.height }) }],
+        markerColumn: column,
+        markerY: row.markerY,
+      };
+    }),
+  };
+};
+
 const overlaps = ({ first, second }: { readonly first: Interval; readonly second: Interval }) =>
   first.from <= second.to && second.from <= first.to;
 

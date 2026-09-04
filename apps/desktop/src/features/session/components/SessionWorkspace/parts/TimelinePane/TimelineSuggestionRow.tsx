@@ -6,7 +6,8 @@ import type { SessionSuggestion } from '../../../../../suggestions';
 import type { SuggestionActions } from '../../../../../suggestions/useSuggestionActions';
 import { futureRailRow, railColumnX } from '../../../../timeline/railGeometry';
 import { TIMELINE_RHYTHM } from '../../../../timeline/timelineRhythm';
-import { TIMELINE_GUTTER, TIMELINE_SURFACE_FILL } from './timelineLayout';
+import { TIMELINE_GUTTER } from './timelineLayout';
+import { TimelineDashedMarker } from './TimelineDashedMarker';
 import { TimelineRail } from './TimelineRail';
 
 const ROW_HEIGHT = 32;
@@ -19,7 +20,7 @@ type Props = {
 
 export const TimelineSuggestionRow = ({ suggestion, railWidth, actions }: Props) => {
   const Icon = SUGGESTION_ICONS[suggestion.kind];
-  const { markerSize, glyphSize } = TIMELINE_RHYTHM.grade.entry;
+  const { glyphSize } = TIMELINE_RHYTHM.grade.entry;
   const rail = futureRailRow({ id: suggestion.id, height: ROW_HEIGHT });
   return (
     <div
@@ -34,16 +35,9 @@ export const TimelineSuggestionRow = ({ suggestion, railWidth, actions }: Props)
           className="absolute -translate-x-1/2 -translate-y-1/2"
           style={{ left: railColumnX({ column: 0 }), top: ROW_HEIGHT / 2 }}
         >
-          <span
-            className={cn(
-              'inline-flex items-center justify-center rounded-full border border-dashed',
-              TIMELINE_SURFACE_FILL,
-              tintClasses('info').border,
-            )}
-            style={{ width: markerSize, height: markerSize }}
-          >
+          <TimelineDashedMarker tone="info" grade="entry">
             <Icon size={glyphSize} aria-hidden className={tintClasses('info').icon} />
-          </span>
+          </TimelineDashedMarker>
         </span>
       </span>
       <div className="flex min-w-0 flex-1 items-center gap-2 pl-2 pr-1.5">

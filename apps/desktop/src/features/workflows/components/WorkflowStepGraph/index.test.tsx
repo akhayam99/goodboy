@@ -102,6 +102,20 @@ const renderGraph = (
   return onSelect;
 };
 
+const railSvgOf = (id: string): Element => {
+  const svg = screen.getByTestId(`workflow-step-rail-${id}`).firstElementChild;
+  if (svg === null) {
+    throw new Error(`no rail drawn for ${id}`);
+  }
+  return svg;
+};
+
+const railColumnOf = (id: string): string | null =>
+  screen
+    .getByTestId(`workflow-step-rail-${id}`)
+    .querySelector('[data-rail-column]')
+    ?.getAttribute('data-rail-column') ?? null;
+
 afterEach(cleanup);
 
 beforeEach(() => {
@@ -117,6 +131,62 @@ describe('WorkflowStepGraph', () => {
     expect(screen.getByText('Scout area 1')).toBeDefined();
     expect(screen.getByText('1.1')).toBeDefined();
     expect(screen.getByText('1.2')).toBeDefined();
+  });
+
+  it('keeps the numbering for screen readers once the rail replaces it', () => {
+    renderGraph(new Map([[scout.id, [subScout(1, 'completed')]]]));
+
+    for (const marker of ['1', '2', '1.1']) {
+      const label = screen.getByText(marker);
+      expect(label.className).toContain('sr-only');
+      expect(label.closest('button')).not.toBeNull();
+    }
+    expect(screen.getByRole('button', { name: /^1 /u })).toBeDefined();
+  });
+
+  it('gives every depth its own rail column and branches the cluster off its parent', () => {
+    renderGraph(new Map([[scout.id, [subScout(1, 'completed'), subScout(2, 'running')]]]));
+
+    expect(railColumnOf(scout.id)).toBe('0');
+    expect(railColumnOf('child-1')).toBe('1');
+    expect(railColumnOf('child-2')).toBe('1');
+    expect(railColumnOf(implement.id)).toBe('0');
+    expect(railSvgOf(scout.id).querySelectorAll('path')).toHaveLength(1);
+    expect(railSvgOf(implement.id).querySelectorAll('path')).toHaveLength(0);
+  });
+
+  it('runs the rail solid through the work already started and dashes what is still to come', () => {
+    renderGraph(new Map());
+
+    const started = [...railSvgOf(scout.id).querySelectorAll('line')].map((line) =>
+      line.getAttribute('stroke-dasharray'),
+    );
+    const ahead = [...railSvgOf(implement.id).querySelectorAll('line')].map((line) =>
+      line.getAttribute('stroke-dasharray'),
+    );
+
+    expect(started).toEqual([null]);
+    expect(ahead).toEqual([null]);
+  });
+
+  it('dashes the rail into a step nobody has started yet', () => {
+    renderGraph(new Map([[implement.id, [subScout(1, 'pending')]]]));
+
+    const dashes = [...railSvgOf('child-1').querySelectorAll('line')].map((line) =>
+      line.getAttribute('stroke-dasharray'),
+    );
+
+    expect(dashes).toContain('3 3');
+  });
+
+  it('marks the rail done, running, and not started the way the activity timeline does', () => {
+    renderGraph(new Map([[implement.id, [subScout(1, 'pending')]]]));
+
+    expect(screen.getByLabelText('Done')).toBeDefined();
+    expect(screen.getByLabelText('Running')).toBeDefined();
+    expect(document.querySelectorAll('[class*="animate-soft-pulse"]').length).toBeGreaterThan(0);
+    const pending = screen.getByLabelText('Not started');
+    expect(pending.parentElement?.className).toContain('border-dashed');
   });
 
   it('counts the children without offering a way to fold them away', () => {
