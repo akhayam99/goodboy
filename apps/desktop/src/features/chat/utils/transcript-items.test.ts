@@ -348,4 +348,15 @@ describe('reduceTranscript incremental resume', () => {
     reduceTranscript(events);
     expect(reduceTranscriptTrace.processed).toBe(1);
   });
+
+  it('performs a full pass when the first event is a different object after structuredClone', () => {
+    const events = generatedEvents({ count: 50, seed: 'f' });
+    reduceTranscript(events);
+
+    const cloned = events.map((event) => structuredClone(event));
+    resetReduceTranscriptTrace();
+    const items = reduceTranscript(cloned);
+    expect(reduceTranscriptTrace.processed).toBe(cloned.length);
+    expect(items).toEqual(freshPass({ events: cloned }));
+  });
 });

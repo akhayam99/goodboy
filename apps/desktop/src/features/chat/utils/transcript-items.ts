@@ -112,7 +112,6 @@ export type TranscriptItem =
     };
 
 type ReduceSnapshot = {
-  readonly firstEvent: TurnEvent;
   readonly lastEvent: TurnEvent;
   readonly length: number;
   readonly items: ReadonlyArray<TranscriptItem>;
@@ -122,49 +121,19 @@ type ReduceSnapshot = {
   readonly textKey: string | null;
 };
 
-const SNAPSHOT_LIMIT = 8;
-
-const snapshots: ReduceSnapshot[] = [];
-
-type SnapshotLookupParams = {
-  readonly events: ReadonlyArray<TurnEvent>;
-};
-
-const findSnapshot = ({ events }: SnapshotLookupParams): ReduceSnapshot | null => {
-  for (const snapshot of snapshots) {
-    if (snapshot.length > events.length) {
-      continue;
-    }
-    if (snapshot.firstEvent !== events[0]) {
-      continue;
-    }
-    if (snapshot.lastEvent !== events[snapshot.length - 1]) {
-      continue;
-    }
-    return snapshot;
-  }
-  return null;
-};
-
-type SnapshotStoreParams = {
-  readonly snapshot: ReduceSnapshot;
-};
-
-const storeSnapshot = ({ snapshot }: SnapshotStoreParams): void => {
-  const previous = snapshots.findIndex((entry) => entry.firstEvent === snapshot.firstEvent);
-  if (previous >= 0) {
-    snapshots.splice(previous, 1);
-  }
-  snapshots.unshift(snapshot);
-  if (snapshots.length > SNAPSHOT_LIMIT) {
-    snapshots.length = SNAPSHOT_LIMIT;
-  }
-};
+const snapshots = new WeakMap<TurnEvent, ReduceSnapshot>();
 
 export const reduceTranscript = (
   events: ReadonlyArray<TurnEvent>,
 ): ReadonlyArray<TranscriptItem> => {
-  const resumed = events.length > 0 ? findSnapshot({ events }) : null;
+  const firstEvent = events.length > 0 ? events[0]! : null;
+  const cached = firstEvent !== null ? snapshots.get(firstEvent) : undefined;
+  const resumed =
+    cached !== undefined &&
+    cached.length <= events.length &&
+    events[cached.length - 1] === cached.lastEvent
+      ? cached
+      : null;
   const items: TranscriptItem[] = resumed !== null ? resumed.items.slice() : [];
   const callIndex =
     resumed !== null ? new Map<string, number>(resumed.callIndex) : new Map<string, number>();
@@ -183,7 +152,9 @@ export const reduceTranscript = (
 
   for (let i = resumed !== null ? resumed.length : 0; i < events.length; i += 1) {
     const event = events[i]!;
-    reduceTranscriptTrace.processed += 1;
+    if (import.meta.env.DEV) {
+      reduceTranscriptTrace.processed += 1;
+    }
     if (event.kind === 'assistant_text') {
       if (textKey === null) {
         textKey = `text-${i}`;
@@ -366,18 +337,15 @@ export const reduceTranscript = (
     }
   }
 
-  if (events.length > 0) {
-    storeSnapshot({
-      snapshot: {
-        firstEvent: events[0]!,
-        lastEvent: events[events.length - 1]!,
-        length: events.length,
-        items,
-        callIndex,
-        permToolNames,
-        textBuffer,
-        textKey,
-      },
+  if (firstEvent !== null) {
+    snapshots.set(firstEvent, {
+      lastEvent: events[events.length - 1]!,
+      length: events.length,
+      items,
+      callIndex,
+      permToolNames,
+      textBuffer,
+      textKey,
     });
   }
 
