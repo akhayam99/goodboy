@@ -122,6 +122,7 @@ const renderDetail = (record: InboxRecord | null) =>
       errors={baseErrors}
       onRefresh={vi.fn()}
       onClose={vi.fn()}
+      launchFocusRequest={0}
       onClearFilters={vi.fn()}
       onOpenIntegrations={vi.fn()}
     />,

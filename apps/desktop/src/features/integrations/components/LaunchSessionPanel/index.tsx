@@ -21,6 +21,7 @@ type Props = {
   readonly goalSeed: string;
   readonly externalTask: ExternalTask;
   readonly onClose: () => void;
+  readonly focusRequest?: number;
 };
 
 export const LaunchSessionPanel = ({
@@ -29,6 +30,7 @@ export const LaunchSessionPanel = ({
   goalSeed,
   externalTask,
   onClose,
+  focusRequest = 0,
 }: Props) => {
   const createSession = useAppStore((state) => state.createSession);
   const { showToast } = useToast();
@@ -36,6 +38,15 @@ export const LaunchSessionPanel = ({
   const [isBusy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const goalSeedRef = useRef(goalSeed);
+  const sectionRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (focusRequest === 0) {
+      return;
+    }
+    const goalField = sectionRef.current?.querySelector('textarea') ?? null;
+    goalField?.focus();
+  }, [focusRequest]);
 
   useEffect(() => {
     const previousSeed = goalSeedRef.current;
@@ -80,6 +91,7 @@ export const LaunchSessionPanel = ({
 
   return (
     <section
+      ref={sectionRef}
       aria-label="Launch session"
       className="flex flex-col gap-1 rounded-md bg-subtle/80 p-2 ring-1 ring-border-soft motion-safe:transition-shadow focus-within:ring-2 focus-within:ring-primary/40"
     >
