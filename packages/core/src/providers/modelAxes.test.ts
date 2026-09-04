@@ -100,9 +100,19 @@ describe('modelAxes', () => {
       throw new Error('missing anthropic sonnet-4.6');
     }
     const options = modelAxes({ model, selection: { key: model.key } }).model.options;
-    expect(options.find((option) => option.id === 'Opus')?.modelKey).toBe('opus-5');
-    expect(options.find((option) => option.id === 'Fable')?.modelKey).toBe('fable-5.1');
-    expect(options.find((option) => option.id === 'Sonnet')?.modelKey).toBe('sonnet-5');
+    const newestByGroup = new Map<string, string>();
+    for (const candidate of ANTHROPIC_CATALOG) {
+      const group = candidate.presentation.group ?? candidate.presentation.version;
+      const current = ANTHROPIC_CATALOG.find((entry) => entry.key === newestByGroup.get(group));
+      if (current == null || candidate.presentation.order > current.presentation.order) {
+        newestByGroup.set(group, candidate.key);
+      }
+    }
+    expect(options.length).toBe(newestByGroup.size);
+    for (const option of options) {
+      expect(option.modelKey).toBe(newestByGroup.get(option.id));
+    }
+    expect(options.find((option) => option.id === 'Opus')?.modelKey).not.toBe('opus-4.6');
   });
 
   it('omits the version axis when the catalog declares no model group', () => {
