@@ -105,7 +105,21 @@ struct GitignoreSnapshot {
 }
 
 #[tauri::command]
-pub fn validate_git_repo(path: String) -> GitRepoCheck {
+pub async fn validate_git_repo(path: String) -> GitRepoCheck {
+    let fallback_path = path.clone();
+    tauri::async_runtime::spawn_blocking(move || validate_git_repo_blocking(path))
+        .await
+        .unwrap_or_else(|error| GitRepoCheck {
+            is_repo: false,
+            root_path: None,
+            resolved_path: None,
+            error: Some(format!(
+                "git repository check failed for {fallback_path}: {error}"
+            )),
+        })
+}
+
+fn validate_git_repo_blocking(path: String) -> GitRepoCheck {
     let candidate = Path::new(&path);
     if !candidate.is_dir() {
         return GitRepoCheck {
@@ -154,7 +168,7 @@ pub fn validate_git_repo(path: String) -> GitRepoCheck {
 }
 
 pub(crate) fn is_inside_repo(path: &Path) -> bool {
-    validate_git_repo(path.to_string_lossy().into_owned())
+    validate_git_repo_blocking(path.to_string_lossy().into_owned())
         .root_path
         .is_some_and(|found| !found.is_empty())
 }
@@ -166,7 +180,13 @@ pub struct ChildRepo {
 }
 
 #[tauri::command]
-pub fn scan_child_repos(path: String) -> Vec<ChildRepo> {
+pub async fn scan_child_repos(path: String) -> Vec<ChildRepo> {
+    tauri::async_runtime::spawn_blocking(move || scan_child_repos_blocking(path))
+        .await
+        .unwrap_or_default()
+}
+
+fn scan_child_repos_blocking(path: String) -> Vec<ChildRepo> {
     let parent = Path::new(path.trim());
     let Ok(entries) = std::fs::read_dir(parent) else {
         return Vec::new();
@@ -196,7 +216,13 @@ pub fn scan_child_repos(path: String) -> Vec<ChildRepo> {
 }
 
 #[tauri::command]
-pub fn project_git_status(project_path: String) -> WorkspaceGitStatus {
+pub async fn project_git_status(project_path: String) -> WorkspaceGitStatus {
+    tauri::async_runtime::spawn_blocking(move || project_git_status_blocking(project_path))
+        .await
+        .unwrap_or_else(|_| blank_status("missing"))
+}
+
+fn project_git_status_blocking(project_path: String) -> WorkspaceGitStatus {
     let root = Path::new(project_path.trim());
     if !root.is_dir() {
         return blank_status("missing");
@@ -253,7 +279,7 @@ fn blank_status(state: &'static str) -> WorkspaceGitStatus {
 }
 
 fn is_repo_root(root: &Path) -> bool {
-    let check = validate_git_repo(root.to_string_lossy().into_owned());
+    let check = validate_git_repo_blocking(root.to_string_lossy().into_owned());
     let Some(toplevel) = check.root_path.filter(|found| !found.is_empty()) else {
         return false;
     };
@@ -300,7 +326,13 @@ fn is_supported_authority(authority: &str) -> bool {
 }
 
 #[tauri::command]
-pub fn repo_init_with_remote(args: RepoInitArgs) -> Result<InitializedRepo, RepoInitError> {
+pub async fn repo_init_with_remote(args: RepoInitArgs) -> Result<InitializedRepo, RepoInitError> {
+    tauri::async_runtime::spawn_blocking(move || repo_init_with_remote_blocking(args))
+        .await
+        .map_err(|error| RepoInitError::Io(std::io::Error::other(error.to_string())))?
+}
+
+fn repo_init_with_remote_blocking(args: RepoInitArgs) -> Result<InitializedRepo, RepoInitError> {
     let remote_url = args.remote_url.trim().to_string();
     if !is_supported_remote_url(&remote_url) {
         return Err(RepoInitError::InvalidRemote(args.remote_url.clone()));
@@ -309,7 +341,13 @@ pub fn repo_init_with_remote(args: RepoInitArgs) -> Result<InitializedRepo, Repo
 }
 
 #[tauri::command]
-pub fn repo_init(path: String) -> Result<InitializedRepo, RepoInitError> {
+pub async fn repo_init(path: String) -> Result<InitializedRepo, RepoInitError> {
+    tauri::async_runtime::spawn_blocking(move || repo_init_blocking(path))
+        .await
+        .map_err(|error| RepoInitError::Io(std::io::Error::other(error.to_string())))?
+}
+
+fn repo_init_blocking(path: String) -> Result<InitializedRepo, RepoInitError> {
     init_repo_at(&path, None)
 }
 
@@ -328,7 +366,7 @@ fn init_repo_at(path: &str, remote_url: Option<&str>) -> Result<InitializedRepo,
 }
 
 fn repo_state(root: &Path) -> Result<RepoState, RepoInitError> {
-    let check = validate_git_repo(root.to_string_lossy().into_owned());
+    let check = validate_git_repo_blocking(root.to_string_lossy().into_owned());
     let Some(toplevel) = check.root_path.filter(|found| !found.is_empty()) else {
         if root.join(".git").exists() {
             return Err(RepoInitError::AlreadyRepo(
@@ -567,8 +605,8 @@ fn run_git(cwd: &Path, args: &[&str]) -> Result<String, RepoInitError> {
 #[cfg(test)]
 mod tests {
     use super::{
-        is_supported_remote_url, project_git_status, repo_init_with_remote, RepoInitArgs,
-        RepoInitError,
+        is_supported_remote_url, project_git_status_blocking, repo_init_with_remote_blocking,
+        RepoInitArgs, RepoInitError,
     };
     use crate::worktree::{GitDistance, GitWorkingTree};
 
@@ -608,7 +646,7 @@ mod tests {
         root: &std::path::Path,
         remote_url: &str,
     ) -> Result<super::InitializedRepo, RepoInitError> {
-        repo_init_with_remote(RepoInitArgs {
+        repo_init_with_remote_blocking(RepoInitArgs {
             path: root.to_string_lossy().into_owned(),
             remote_url: remote_url.to_string(),
         })
@@ -655,7 +693,7 @@ mod tests {
         let root = test_root("repo-init-plain");
         std::fs::write(root.join("notes.md"), "hello").unwrap();
 
-        let created = super::repo_init(root.to_string_lossy().into_owned()).unwrap();
+        let created = super::repo_init_blocking(root.to_string_lossy().into_owned()).unwrap();
 
         assert_eq!(created.branch, "main");
         assert_eq!(created.remote_url, "");
@@ -671,7 +709,7 @@ mod tests {
         let root = test_root("repo-init-plain-adopt");
         convert(&root, "https://github.com/acme/widgets.git").unwrap();
 
-        let adopted = super::repo_init(root.to_string_lossy().into_owned()).unwrap();
+        let adopted = super::repo_init_blocking(root.to_string_lossy().into_owned()).unwrap();
 
         assert_eq!(adopted.remote_url, "https://github.com/acme/widgets.git");
         assert_eq!(git_output(&root, &["rev-list", "--count", "HEAD"]), "1");
@@ -689,7 +727,7 @@ mod tests {
         let nested = root.join("notes");
         std::fs::create_dir_all(&nested).unwrap();
 
-        let err = super::repo_init(nested.to_string_lossy().into_owned()).unwrap_err();
+        let err = super::repo_init_blocking(nested.to_string_lossy().into_owned()).unwrap_err();
 
         assert!(matches!(err, RepoInitError::NestedRepo(_)));
         assert!(!nested.join(".git").exists());
@@ -816,7 +854,7 @@ mod tests {
     }
 
     fn status_of(root: &std::path::Path) -> super::WorkspaceGitStatus {
-        project_git_status(root.to_string_lossy().into_owned())
+        project_git_status_blocking(root.to_string_lossy().into_owned())
     }
 
     #[test]
@@ -825,7 +863,7 @@ mod tests {
         std::fs::write(root.join("notes.md"), "hello").unwrap();
 
         let absent = status_of(&root);
-        let missing = project_git_status(root.join("gone").to_string_lossy().into_owned());
+        let missing = project_git_status_blocking(root.join("gone").to_string_lossy().into_owned());
 
         assert_eq!(absent.state, "absent");
         assert_eq!(absent.branch, None);
@@ -949,7 +987,7 @@ mod tests {
         git_run(&hidden, &["init"]);
         std::fs::write(root.join("notes.md"), "hello").unwrap();
 
-        let found = super::scan_child_repos(root.to_string_lossy().into_owned());
+        let found = super::scan_child_repos_blocking(root.to_string_lossy().into_owned());
 
         let names: Vec<&str> = found.iter().map(|repo| repo.name.as_str()).collect();
         assert_eq!(names, vec!["alpha", "beta"]);
@@ -963,8 +1001,9 @@ mod tests {
         let root = test_root("scan-empty");
         std::fs::create_dir_all(root.join("plain")).unwrap();
 
-        let empty = super::scan_child_repos(root.to_string_lossy().into_owned());
-        let missing = super::scan_child_repos(root.join("gone").to_string_lossy().into_owned());
+        let empty = super::scan_child_repos_blocking(root.to_string_lossy().into_owned());
+        let missing =
+            super::scan_child_repos_blocking(root.join("gone").to_string_lossy().into_owned());
 
         assert!(empty.is_empty());
         assert!(missing.is_empty());
@@ -980,7 +1019,7 @@ mod tests {
         std::os::unix::fs::symlink(&target, root.join("linked")).unwrap();
         std::os::unix::fs::symlink(root.join("gone"), root.join("broken")).unwrap();
 
-        let found = super::scan_child_repos(root.to_string_lossy().into_owned());
+        let found = super::scan_child_repos_blocking(root.to_string_lossy().into_owned());
 
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].name, "linked");

@@ -29,6 +29,7 @@ vi.mock('../useIsBranchlessSession', () => ({
   useIsBranchlessSession: () => false,
 }));
 
+import { resetWorktreeStatusCache } from '../useWorktreeStatuses/cache';
 import { useSessionBranchSync } from './index';
 
 const session = {
@@ -38,6 +39,7 @@ const session = {
 
 afterEach(() => {
   cleanup();
+  resetWorktreeStatusCache();
   vi.clearAllMocks();
   h.lastTurnFinishedAt = null;
   h.worktreePath = '/sessions/one/api';

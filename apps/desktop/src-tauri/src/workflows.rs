@@ -364,7 +364,7 @@ fn row_to_template(
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn workflow_list(
+pub async fn workflow_list(
     state: State<'_, Db>,
     workspace_id: String,
 ) -> Result<Vec<WorkflowRow>, PhaseError> {
@@ -687,7 +687,7 @@ pub fn workflow_delete(state: State<'_, Db>, id: String) -> Result<(), PhaseErro
 /// started a workflow must keep seeing it even after it's deleted everywhere
 /// else, so this is loaded in addition to `workflow_list`.
 #[tauri::command]
-pub fn workflows_for_session(
+pub async fn workflows_for_session(
     state: State<'_, Db>,
     session_id: String,
 ) -> Result<Vec<WorkflowRow>, PhaseError> {
@@ -777,7 +777,7 @@ const STEP_DEF_COLS: &str = "id, workspace_id, role, name, prompt_prefix, provid
      model_default, effort_default, verbosity_default, created_at, updated_at";
 
 #[tauri::command]
-pub fn step_def_list(
+pub async fn step_def_list(
     state: State<'_, Db>,
     workspace_id: String,
 ) -> Result<Vec<StepDefRow>, PhaseError> {
@@ -920,7 +920,7 @@ fn session_row_from_row(row: &rusqlite::Row<'_>) -> Result<SessionRow, rusqlite:
 }
 
 #[tauri::command]
-pub fn agent_list_for_session(
+pub async fn agent_list_for_session(
     state: State<'_, Db>,
     session_id: String,
 ) -> Result<Vec<SessionRow>, PhaseError> {
@@ -1165,7 +1165,7 @@ pub fn agent_set_done(
 // workspace dot even for workspaces the user isn't currently on (their tasks
 // are not loaded in memory there).
 #[tauri::command]
-pub fn workspaces_with_unread(state: State<'_, Db>) -> Result<Vec<String>, PhaseError> {
+pub async fn workspaces_with_unread(state: State<'_, Db>) -> Result<Vec<String>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT DISTINCT t.workspace_id

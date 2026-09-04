@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Eyebrow, formatError } from '@goodboy/ui';
 import type { Agent, Session, SessionProjectMount } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../../../store';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { buildCommentAgentArgs, type ResolveModelChoice } from '../../../chat/spawn-from-comment';
 import { groupThreads } from '../../../github/comment-threads';
@@ -29,6 +29,7 @@ const OVERVIEW_KINDS: ReadonlySet<SessionSuggestion['kind']> = new Set<SessionSu
 
 export const OverviewSuggestions = ({ session, agents, onSelectQuestions }: Props) => {
   const sessionId = session.id;
+  const areAgentsLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'agents' });
   const suggestions = useSessionSuggestions({ session, agents });
   const github = useAppStore((state) => state.sessionGithub[sessionId] ?? null);
   const pendingResolutions = useAppStore(
@@ -90,7 +91,7 @@ export const OverviewSuggestions = ({ session, agents, onSelectQuestions }: Prop
   };
 
   const visible = suggestions.filter((suggestion) => OVERVIEW_KINDS.has(suggestion.kind));
-  if (visible.length === 0) {
+  if (!areAgentsLoaded || visible.length === 0) {
     return null;
   }
   return (
