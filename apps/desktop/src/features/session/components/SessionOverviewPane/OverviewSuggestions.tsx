@@ -6,7 +6,7 @@ import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleMod
 import { buildCommentAgentArgs, type ResolveModelChoice } from '../../../chat/spawn-from-comment';
 import { groupThreads } from '../../../github/comment-threads';
 import { SuggestionRow } from '../../../suggestions/components/SuggestionRow';
-import { useSessionSuggestions } from '../../../suggestions';
+import { useSessionSuggestions, type SessionSuggestion } from '../../../suggestions';
 import { kindRouting } from '../../agent-kind';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
 import { useResolverSpawner } from '../../hooks/useResolverSpawner';
@@ -19,6 +19,13 @@ type Props = {
   readonly agents: ReadonlyArray<Agent>;
   readonly onSelectQuestions: () => void;
 };
+
+const OVERVIEW_KINDS: ReadonlySet<SessionSuggestion['kind']> = new Set([
+  'workflow-next-step',
+  'resolve-threads',
+  'rebase-project',
+  'answer-questions',
+]);
 
 export const OverviewSuggestions = ({ session, agents, onSelectQuestions }: Props) => {
   const sessionId = session.id;
@@ -82,14 +89,15 @@ export const OverviewSuggestions = ({ session, agents, onSelectQuestions }: Prop
     });
   };
 
-  if (suggestions.length === 0) {
+  const visible = suggestions.filter((suggestion) => OVERVIEW_KINDS.has(suggestion.kind));
+  if (visible.length === 0) {
     return null;
   }
   return (
     <section aria-label="Suggestions" className="flex flex-col gap-2">
       <Eyebrow label="Suggestions" className="px-0.5" />
       <div className="flex flex-col gap-1.5">
-        {suggestions.map((suggestion) => {
+        {visible.map((suggestion) => {
           if (suggestion.kind === 'workflow-next-step') {
             const engineRun = suggestion.payload.runId;
             const runAgents = agents.filter((agent) => agent.workflowRunId === engineRun);

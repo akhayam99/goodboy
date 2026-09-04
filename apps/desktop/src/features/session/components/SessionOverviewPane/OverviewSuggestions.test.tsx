@@ -7,6 +7,7 @@ import type {
   Agent,
   AgentEffort,
   PendingResolution,
+  PlanId,
   PrComment,
   PrDetail,
   ProjectId,
@@ -380,6 +381,25 @@ describe('OverviewSuggestions', () => {
   });
 
   it('renders nothing when the engine has no suggestions', () => {
+    const { container } = render(
+      <OverviewSuggestions session={SESSION} agents={[]} onSelectQuestions={vi.fn()} />,
+    );
+
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('renders nothing when the only suggestions belong to other surfaces', () => {
+    mocks.suggestions.mockReturnValue([
+      {
+        id: 'plan-ready:plan-1',
+        kind: 'plan-ready',
+        priority: 20,
+        title: 'Run the plan',
+        sessionId: SESSION.id,
+        payload: { planId: 'plan-1' as PlanId },
+      } satisfies SessionSuggestion,
+    ]);
+
     const { container } = render(
       <OverviewSuggestions session={SESSION} agents={[]} onSelectQuestions={vi.fn()} />,
     );
