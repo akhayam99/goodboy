@@ -32,17 +32,10 @@ describe('ProviderSettingsScope', () => {
 
     const aside = screen.getByRole('complementary', { name: 'Providers' });
     const heading = screen.getByRole('heading', { name: 'Defaults' });
+    const wrapper = aside.parentElement;
 
-    const hasFlexClass = (element: Element) =>
-      element.className.toString().split(/\s+/).includes('flex');
-
-    let ancestor = heading.parentElement;
-    while (ancestor !== null && !hasFlexClass(ancestor)) {
-      ancestor = ancestor.parentElement;
-    }
-
-    expect(ancestor).not.toBeNull();
-    expect(ancestor?.contains(aside)).toBe(true);
-    expect(Array.from(ancestor?.children ?? []).includes(aside)).toBe(true);
+    expect(wrapper).not.toBeNull();
+    expect(wrapper?.classList.contains('flex')).toBe(true);
+    expect(Array.from(wrapper?.children ?? []).some((child) => child.contains(heading))).toBe(true);
   });
 });

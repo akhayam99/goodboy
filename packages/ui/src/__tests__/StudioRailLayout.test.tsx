@@ -37,7 +37,7 @@ describe('StudioRailLayout', () => {
     const wrapper = aside.parentElement;
 
     expect(wrapper).not.toBeNull();
-    expect(wrapper?.className).toContain('flex');
+    expect(wrapper?.classList.contains('flex')).toBe(true);
     expect(Array.from(wrapper?.children ?? []).map((child) => child.tagName)).toEqual([
       'ASIDE',
       'DIV',
