@@ -7,6 +7,33 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.14
+
+Settings live on one surface and every workflow editor runs on the same
+draft engine.
+
+### [#1638] Settings on one surface
+
+App, workspace, providers and models, and budget settings share one
+Settings studio with a scope rail. The footer buttons, the command
+palette, Cmd/Ctrl+, and every deep link (a provider, a section, a
+budget scope) land on the right scope of that surface, and the old
+per-surface events keep working. Deep links scroll to their section
+even when it mounts late.
+
+### [#1637] One workflow draft engine
+
+The Workflow Studio, the in-session builder and the step library form
+edit the same draft model with one validation and one effort clamp.
+Resetting a step's model to auto now clamps the effort against the
+model that will actually run, and a workflow without steps can no
+longer be saved.
+
+### [#1639] Suggestions block hidden when empty
+
+The session overview no longer shows a "Suggestions" heading when the
+only suggestions belong to other surfaces.
+
 ## Goodboy v0.2.13
 
 The inbox becomes the only door to your integrations, with one detail
