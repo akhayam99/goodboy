@@ -48,7 +48,7 @@ export const useSuggestionCards = ({
   acceptSessionNudgeHandoff,
 }: UseSuggestionCardsArgs): { readonly key: string; readonly node: ReactNode }[] => {
   const suggestions: { readonly key: string; readonly node: ReactNode }[] = [];
-  const sessionSuggestions = useSessionSuggestions({ session });
+  const sessionSuggestions = useSessionSuggestions({ session, withRebase: false });
   const planReady =
     sessionSuggestions.find((suggestion) => suggestion.kind === 'plan-ready') ?? null;
 

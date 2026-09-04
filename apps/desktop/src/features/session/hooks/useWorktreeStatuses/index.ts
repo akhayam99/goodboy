@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { WorktreeStatus } from '@goodboy/types';
-import { worktreeStatus } from '../../../worktree/worktree';
+import {
+  ensure,
+  isWorktreeStatusSettled,
+  readWorktreeStatus,
+  subscribe,
+  worktreeStatusKey,
+} from './cache';
 
 type Params = {
   readonly targets: ReadonlyArray<{
@@ -9,52 +15,84 @@ type Params = {
   }>;
 };
 
-type StatusEntry = readonly [string, WorktreeStatus];
+type Snapshot = {
+  readonly statuses: ReadonlyMap<string, WorktreeStatus>;
+  readonly pending: ReadonlySet<string>;
+};
 
-const REFRESH_MS = 30_000;
+const MAX_AGE_MS = 10_000;
 const EMPTY_STATUSES: ReadonlyMap<string, WorktreeStatus> = new Map();
+const EMPTY_PENDING: ReadonlySet<string> = new Set();
+const EMPTY_SNAPSHOT: Snapshot = { statuses: EMPTY_STATUSES, pending: EMPTY_PENDING };
 
-export const useWorktreeStatuses = ({ targets }: Params): ReadonlyMap<string, WorktreeStatus> => {
-  const [statuses, setStatuses] = useState<ReadonlyMap<string, WorktreeStatus>>(EMPTY_STATUSES);
-  const targetsKey = targets
-    .map(({ worktreePath, baseBranch }) => `${worktreePath}\u0000${baseBranch ?? ''}`)
-    .join('\u0001');
+const sameStatuses = (
+  current: ReadonlyMap<string, WorktreeStatus>,
+  next: ReadonlyMap<string, WorktreeStatus>,
+): boolean =>
+  current.size === next.size &&
+  Array.from(next.entries()).every(([path, value]) => current.get(path) === value);
+
+const samePending = (current: ReadonlySet<string>, next: ReadonlySet<string>): boolean =>
+  current.size === next.size && Array.from(next).every((path) => current.has(path));
+
+const useWorktreeStatusSnapshot = ({ targets }: Params): Snapshot => {
+  const [snapshot, setSnapshot] = useState<Snapshot>(EMPTY_SNAPSHOT);
+  const targetsKey = JSON.stringify(
+    targets.map(({ worktreePath, baseBranch }) => [worktreePath, baseBranch ?? null]),
+  );
   const stableTargets = useMemo(() => targets, [targetsKey]);
 
   useEffect(() => {
     if (stableTargets.length === 0) {
-      setStatuses(EMPTY_STATUSES);
+      setSnapshot(EMPTY_SNAPSHOT);
       return;
     }
     let isStale = false;
-    const refresh = () => {
-      if (typeof document !== 'undefined' && document.hidden) {
+    const keyed = stableTargets.map((target) => ({
+      worktreePath: target.worktreePath,
+      baseBranch: target.baseBranch,
+      key: worktreeStatusKey(target),
+    }));
+    const publish = () => {
+      if (isStale) {
         return;
       }
-      void Promise.all(
-        stableTargets.map(async ({ worktreePath, baseBranch }) => {
-          try {
-            const status = await worktreeStatus({ worktreePath, baseBranch });
-            const entry: StatusEntry = [worktreePath, status];
-            return entry;
-          } catch {
-            return null;
-          }
-        }),
-      ).then((entries) => {
-        if (!isStale) {
-          setStatuses(new Map(entries.filter((entry): entry is StatusEntry => entry !== null)));
+      const statuses = new Map<string, WorktreeStatus>();
+      const pending = new Set<string>();
+      keyed.forEach(({ key, worktreePath }) => {
+        const value = readWorktreeStatus(key);
+        if (value) {
+          statuses.set(worktreePath, value);
+        }
+        if (!isWorktreeStatusSettled(key)) {
+          pending.add(worktreePath);
         }
       });
+      setSnapshot((current) =>
+        sameStatuses(current.statuses, statuses) && samePending(current.pending, pending)
+          ? current
+          : { statuses, pending },
+      );
     };
-    setStatuses(new Map());
-    refresh();
-    const timer = setInterval(refresh, REFRESH_MS);
+    setSnapshot(EMPTY_SNAPSHOT);
+    const unsubscribes = keyed.map(({ key, worktreePath, baseBranch }) => {
+      const pending = ensure({ key, worktreePath, baseBranch, maxAgeMs: MAX_AGE_MS });
+      const unsubscribe = subscribe({ key, listener: publish });
+      void pending.then(publish);
+      return unsubscribe;
+    });
+    publish();
     return () => {
       isStale = true;
-      clearInterval(timer);
+      unsubscribes.forEach((unsubscribe) => unsubscribe());
     };
   }, [stableTargets]);
 
-  return statuses;
+  return snapshot;
 };
+
+export const useWorktreeStatuses = ({ targets }: Params): ReadonlyMap<string, WorktreeStatus> =>
+  useWorktreeStatusSnapshot({ targets }).statuses;
+
+export const useWorktreeStatusPending = ({ targets }: Params): ReadonlySet<string> =>
+  useWorktreeStatusSnapshot({ targets }).pending;

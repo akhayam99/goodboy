@@ -21,39 +21,42 @@ type FakeSuggestion = {
   readonly detail?: string;
 };
 
-const { storeState, diffStats, unread, questions, suggestionState } = vi.hoisted(() => ({
-  unread: { current: false },
-  suggestionState: {
-    list: [] as ReadonlyArray<{
-      readonly id: string;
-      readonly kind: string;
-      readonly title: string;
-      readonly detail?: string;
-    }>,
-    onAct: vi.fn(),
-    onDismiss: vi.fn(),
-  },
-  diffStats: { current: new Map<string, { additions: number; deletions: number }>() },
-  questions: {
-    open: [] as ReadonlyArray<unknown>,
-    answered: [] as ReadonlyArray<unknown>,
-    dismissed: [] as ReadonlyArray<unknown>,
-  },
-  storeState: {
-    sessionPhaseRuns: {},
-    sessionPlans: {},
-    sessionExternalTasks: {},
-    sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionEvents: {},
-    agentKindOverride: {},
-    loadSessionEvents: vi.fn(async () => undefined),
-    loadSessionAnsweredQuestions: vi.fn(async () => undefined),
-    loadSessionDismissedQuestions: vi.fn(async () => undefined),
-    markAllAgentsSeen: vi.fn(),
-    setActiveLens: vi.fn(),
-    openMountDiff: vi.fn(),
-  },
-}));
+const { storeState, diffStats, unread, questions, suggestionState, agentsLoaded } = vi.hoisted(
+  () => ({
+    unread: { current: false },
+    agentsLoaded: { current: true },
+    suggestionState: {
+      list: [] as ReadonlyArray<{
+        readonly id: string;
+        readonly kind: string;
+        readonly title: string;
+        readonly detail?: string;
+      }>,
+      onAct: vi.fn(),
+      onDismiss: vi.fn(),
+    },
+    diffStats: { current: new Map<string, { additions: number; deletions: number }>() },
+    questions: {
+      open: [] as ReadonlyArray<unknown>,
+      answered: [] as ReadonlyArray<unknown>,
+      dismissed: [] as ReadonlyArray<unknown>,
+    },
+    storeState: {
+      sessionPhaseRuns: {},
+      sessionPlans: {},
+      sessionExternalTasks: {},
+      sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionEvents: {},
+      agentKindOverride: {},
+      loadSessionEvents: vi.fn(async () => undefined),
+      loadSessionAnsweredQuestions: vi.fn(async () => undefined),
+      loadSessionDismissedQuestions: vi.fn(async () => undefined),
+      markAllAgentsSeen: vi.fn(),
+      setActiveLens: vi.fn(),
+      openMountDiff: vi.fn(),
+    },
+  }),
+);
 
 vi.mock('../../../../../../store', () => {
   const useAppStore = <T,>(selector: (state: typeof storeState) => T) => selector(storeState);
@@ -66,6 +69,7 @@ vi.mock('../../../../../../store', () => {
     useSessionOpenQuestions: () => questions.open,
     useSessionAnsweredQuestions: () => questions.answered,
     useSessionDismissedQuestions: () => questions.dismissed,
+    useIsSessionCollectionLoaded: () => agentsLoaded.current,
   };
 });
 vi.mock('../../../../../workflows/useAttachedWorkflowRuns', () => ({
@@ -138,6 +142,7 @@ beforeEach(() => {
   suggestionState.list = [];
   suggestionState.onAct.mockReset();
   suggestionState.onDismiss.mockReset();
+  agentsLoaded.current = true;
   localStorage.clear();
 });
 
@@ -195,6 +200,8 @@ describe('TimelinePane under a full filter', () => {
 
 describe('TimelinePane on an empty session', () => {
   it('keeps the header actions mounted above a quiet empty line', () => {
+    storeState.sessionEvents = { 'session-1': [] };
+
     render(
       <TimelinePane
         session={SESSION}
@@ -228,7 +235,7 @@ describe('TimelinePane kickoff', () => {
     expect(screen.queryByRole('button', { name: 'Filter' })).toBeNull();
   });
 
-  it('holds the quiet line until the session events resolve', () => {
+  it('holds a timeline skeleton until the session events resolve', () => {
     render(
       <TimelinePane
         session={SESSION}
@@ -239,7 +246,26 @@ describe('TimelinePane kickoff', () => {
     );
 
     expect(screen.queryByTestId('kickoff')).toBeNull();
+    expect(screen.queryByText(/Nothing yet/)).toBeNull();
+    expect(screen.getByRole('status', { name: 'Loading the timeline' })).not.toBeNull();
+  });
+
+  it('drops the skeleton once the events land', () => {
+    storeState.sessionEvents = { 'session-1': [] };
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    expect(screen.queryByRole('status', { name: 'Loading the timeline' })).toBeNull();
     expect(screen.getByText(/Nothing yet/)).toBeDefined();
+  });
+
+  it('holds a timeline skeleton until the agents collection loads', () => {
+    storeState.sessionEvents = { 'session-1': [] };
+    agentsLoaded.current = false;
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    expect(screen.getByRole('status', { name: 'Loading the timeline' })).not.toBeNull();
   });
 
   it('steps aside as soon as the timeline holds any activity', () => {

@@ -1,10 +1,11 @@
+import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Session, SessionProjectMount } from '@goodboy/types';
 import type { LensKind } from '../../../../../store';
 import { EMPTY_ARRAY, useAppStore, useMountDiffStats } from '../../../../../store';
 import { MountProjectAction } from './MountProjectAction';
 import { ProjectMountRow } from './ProjectMountRow';
-import { useWorktreeStatuses } from '../../../hooks/useWorktreeStatuses';
+import { useWorktreeStatusPending, useWorktreeStatuses } from '../../../hooks/useWorktreeStatuses';
 
 type Props = {
   readonly session: Session;
@@ -33,6 +34,7 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
     [mounts, projects],
   );
   const worktreeStatuses = useWorktreeStatuses({ targets: worktreeTargets });
+  const pendingWorktrees = useWorktreeStatusPending({ targets: worktreeTargets });
 
   return (
     <section
@@ -58,6 +60,7 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
             diffStat={diffStats.get(mount.worktreePath) ?? null}
             pullRequest={projectPrs?.[mount.projectId]?.[0] ?? null}
             worktreeStatus={worktreeStatuses.get(mount.worktreePath) ?? null}
+            isStatusPending={pendingWorktrees.has(mount.worktreePath)}
             onSelectLens={onSelectLens}
           />
         ))
@@ -65,4 +68,3 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
     </section>
   );
 };
-import { useMemo } from 'react';

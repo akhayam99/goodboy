@@ -10,7 +10,7 @@ type Props = {
 };
 
 export const PlanReadySuggestion = ({ task }: Props) => {
-  const suggestions = useSessionSuggestions({ session: task });
+  const suggestions = useSessionSuggestions({ session: task, withRebase: false });
   const runPlan = useAppStore((s) => s.runPlan);
   const announceAgentStarted = useAgentStartedToast();
   const [spawning, setSpawning] = useState(false);
