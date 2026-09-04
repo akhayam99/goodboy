@@ -19,6 +19,7 @@ export type ChipProps = {
   readonly as?: 'span' | 'button';
   readonly title?: string;
   readonly ariaLabel?: string;
+  readonly ariaPressed?: boolean;
   readonly testId?: string;
   readonly onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
   readonly disabled?: boolean;
@@ -67,6 +68,7 @@ export const Chip = ({
   as = 'span',
   title,
   ariaLabel,
+  ariaPressed,
   testId,
   onClick,
   disabled = false,
@@ -102,6 +104,7 @@ export const Chip = ({
         type="button"
         title={title}
         aria-label={ariaLabel}
+        aria-pressed={ariaPressed}
         data-testid={testId}
         aria-expanded={expanded}
         aria-haspopup={hasPopup}

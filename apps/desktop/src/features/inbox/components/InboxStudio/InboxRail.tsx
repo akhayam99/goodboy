@@ -1,24 +1,31 @@
+import { Fragment, type KeyboardEvent } from 'react';
 import { Bug, CircleDot, GitPullRequest, MessagesSquare, Search } from 'lucide-react';
 import {
-  Button,
+  Chip,
   cn,
-  EmptyState,
   ErrorStrip,
+  Eyebrow,
+  KbdPill,
+  PANE_RHYTHM,
   ScrollFade,
   SegmentedTabs,
   Skeleton,
-  Tooltip,
-  PANE_RHYTHM,
   type SegmentedTabOption,
 } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import {
   IntegrationGlyph,
   integrationLabel,
 } from '../../../integrations/components/IntegrationGlyph';
-import { INBOX_KIND_FILTERS, kindFilterCounts, type InboxKindFilter } from '../../kindFilter';
-import type { InboxProvider, InboxRecord } from '../../types';
-import { InboxRow } from './InboxRow';
+import { groupRecordsByAge } from '../../ageSections';
+import {
+  filterInboxRecords,
+  INBOX_KIND_FILTERS,
+  kindFilterCounts,
+  type InboxKindFilter,
+} from '../../kindFilter';
+import { INBOX_PROVIDERS, type InboxProvider, type InboxRecord } from '../../types';
+import { InboxRow, inboxOptionId } from './InboxRow';
 
 const KIND_LABEL: Record<InboxKindFilter, string> = {
   all: 'All',
@@ -36,6 +43,8 @@ const KIND_ICON: Record<InboxKindFilter, SegmentedTabOption<InboxKindFilter>['ic
   error: Bug,
 };
 
+const NO_PROVIDER_FILTER: ReadonlySet<InboxProvider> = new Set();
+
 type ErrorEntry = {
   readonly provider: InboxProvider;
   readonly message: string;
@@ -43,11 +52,9 @@ type ErrorEntry = {
 
 type Props = {
   readonly records: ReadonlyArray<InboxRecord>;
-  readonly totalCount: number;
-  readonly availableProviders: ReadonlyArray<InboxProvider>;
+  readonly allRecords: ReadonlyArray<InboxRecord>;
   readonly selectedProviders: ReadonlySet<InboxProvider>;
   readonly onToggleProvider: (provider: InboxProvider) => void;
-  readonly allRecords: ReadonlyArray<InboxRecord>;
   readonly query: string;
   readonly onQueryChange: (value: string) => void;
   readonly kindFilter: InboxKindFilter;
@@ -57,17 +64,57 @@ type Props = {
   readonly isLoading: boolean;
   readonly errors: ReadonlyArray<ErrorEntry>;
   readonly onRefresh: () => void;
-  readonly onOpenIntegrations: () => void;
-  readonly onClearFilters: () => void;
+};
+
+type ListKeyDownParams = {
+  readonly event: KeyboardEvent<HTMLUListElement>;
+  readonly orderedRecords: ReadonlyArray<InboxRecord>;
+  readonly selectedKey: string | null;
+  readonly onSelect: (record: InboxRecord) => void;
+};
+
+const handleListKeyDown = ({
+  event,
+  orderedRecords,
+  selectedKey,
+  onSelect,
+}: ListKeyDownParams): void => {
+  if (orderedRecords.length === 0) {
+    return;
+  }
+  const selectedIndex = orderedRecords.findIndex((record) => record.key === selectedKey);
+  const lastIndex = orderedRecords.length - 1;
+  const nextIndex = ((): number | null => {
+    if (event.key === 'ArrowDown') {
+      return selectedIndex < 0 ? 0 : Math.min(selectedIndex + 1, lastIndex);
+    }
+    if (event.key === 'ArrowUp') {
+      return selectedIndex < 0 ? lastIndex : Math.max(selectedIndex - 1, 0);
+    }
+    if (event.key === 'Home') {
+      return 0;
+    }
+    if (event.key === 'End') {
+      return lastIndex;
+    }
+    return null;
+  })();
+  if (nextIndex == null) {
+    return;
+  }
+  event.preventDefault();
+  const nextRecord = orderedRecords[nextIndex];
+  if (nextRecord == null) {
+    return;
+  }
+  onSelect(nextRecord);
 };
 
 export const InboxRail = ({
   records,
-  totalCount,
-  availableProviders,
+  allRecords,
   selectedProviders,
   onToggleProvider,
-  allRecords,
   query,
   onQueryChange,
   kindFilter,
@@ -77,8 +124,6 @@ export const InboxRail = ({
   isLoading,
   errors,
   onRefresh,
-  onOpenIntegrations,
-  onClearFilters,
 }: Props) => {
   const counts = kindFilterCounts({ records: allRecords });
   const kindOptions: ReadonlyArray<SegmentedTabOption<InboxKindFilter>> = INBOX_KIND_FILTERS.map(
@@ -89,20 +134,38 @@ export const InboxRail = ({
       badge: String(counts[filter]),
     }),
   );
+  const providerCountRecords = filterInboxRecords({
+    records: allRecords,
+    query,
+    kindFilter,
+    providers: NO_PROVIDER_FILTER,
+  });
+  const providers = INBOX_PROVIDERS.filter(
+    (provider) =>
+      selectedProviders.has(provider) || allRecords.some((record) => record.provider === provider),
+  );
+  const sections = groupRecordsByAge({ records });
+  const orderedRecords = sections.flatMap((section) => section.records);
+  const totalCount = allRecords.length;
   const hasFiltersActive =
     query.trim() !== '' || kindFilter !== 'all' || selectedProviders.size > 0;
   const isShowingSkeleton = isLoading && totalCount === 0;
 
   return (
-    <div className="flex h-full flex-col">
-      <div className={cn('shrink-0 flex flex-col gap-2.5', PANE_RHYTHM.rail.header)}>
+    <div className="flex h-full flex-col overflow-hidden">
+      <div
+        className={cn(
+          'sticky top-0 z-10 flex shrink-0 flex-col gap-2 border-b border-border-soft bg-background',
+          PANE_RHYTHM.rail.header,
+        )}
+      >
         <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-background px-2.5 focus-within:border-primary">
           <Search size={13} aria-hidden className="shrink-0 text-muted-foreground/60" />
           <input
             type="text"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="Search the inbox…"
+            placeholder="Search the inbox"
             aria-label="Search the inbox"
             autoComplete="off"
             className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
@@ -114,43 +177,48 @@ export const InboxRail = ({
           value={kindFilter}
           onChange={onKindFilterChange}
           size="sm"
+          fill
         />
-        {availableProviders.length > 0 ? (
-          <div role="group" aria-label="Filter by provider" className="flex flex-wrap gap-1">
-            {availableProviders.map((provider) => {
+        {providers.length > 0 ? (
+          <div role="group" aria-label="Filter by provider" className="flex flex-wrap gap-1.5">
+            {providers.map((provider) => {
               const label = integrationLabel({ provider });
               const isActive = selectedProviders.has(provider);
+              const count = providerCountRecords.filter(
+                (record) => record.provider === provider,
+              ).length;
               return (
-                <Tooltip key={provider} content={label}>
-                  <button
-                    type="button"
-                    onClick={() => onToggleProvider(provider)}
-                    aria-label={label}
-                    aria-pressed={isActive}
-                    className={cn(
-                      'flex items-center justify-center rounded-md border p-1.5 motion-safe:transition-colors',
-                      isActive
-                        ? 'border-primary/40 bg-primary/10'
-                        : 'border-border-soft hover:border-border hover:bg-muted/50',
-                    )}
-                  >
-                    <IntegrationGlyph provider={provider} size="xs" useBrandColor />
-                  </button>
-                </Tooltip>
+                <Chip
+                  key={provider}
+                  as="button"
+                  size="sm"
+                  tone={isActive ? 'primary' : 'neutral'}
+                  emphasis={isActive ? 'strong' : 'subtle'}
+                  icon={<IntegrationGlyph provider={provider} size="xs" useBrandColor />}
+                  label={label}
+                  trailing={<span className="font-mono tabular-nums">{count}</span>}
+                  ariaLabel={`${label}, ${count} ${count === 1 ? 'item' : 'items'}`}
+                  ariaPressed={isActive}
+                  onClick={() => onToggleProvider(provider)}
+                />
               );
             })}
           </div>
         ) : null}
+        <div className="flex items-center gap-1.5 text-3xs text-muted-foreground/60">
+          <KbdPill className="h-4 min-w-4 text-3xs">↑↓</KbdPill>
+          <span>navigate</span>
+        </div>
       </div>
 
       {isShowingSkeleton ? (
         <div
-          className="flex min-h-0 flex-1 flex-col gap-1.5 px-3 pb-3"
+          className={cn('flex min-h-0 flex-1 flex-col gap-1.5', PANE_RHYTHM.rail.body)}
           role="status"
           aria-label="Loading the inbox"
         >
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="flex flex-col gap-1 px-2.5 py-2">
+            <div key={index} className="flex flex-col gap-1 px-3 py-2">
               <div className="flex items-center gap-2">
                 <Skeleton className="size-3.5 shrink-0 rounded-full" />
                 <Skeleton className="h-3 flex-1 rounded" />
@@ -162,41 +230,11 @@ export const InboxRail = ({
             </div>
           ))}
         </div>
-      ) : totalCount === 0 ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center px-3">
-          <EmptyState
-            icon={CONCEPT_ICONS.inbox}
-            tone={CONCEPT_TONE.inbox}
-            title="Nothing in your inbox yet"
-            description="Connect a provider to see issues, pull requests, merge requests, threads and errors here."
-            size="inline"
-            action={
-              <Button variant="ghost" size="sm" onClick={onOpenIntegrations}>
-                Open integrations
-              </Button>
-            }
-          />
-        </div>
-      ) : records.length === 0 ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center px-3">
-          <EmptyState
-            icon={Search}
-            tone="neutral"
-            title="No matching items"
-            description="Your filters are hiding everything in the inbox."
-            size="inline"
-            action={
-              <Button variant="ghost" size="sm" onClick={onClearFilters}>
-                Clear filters
-              </Button>
-            }
-          />
-        </div>
       ) : (
         <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
-          <div className={cn('flex flex-col gap-0.5', PANE_RHYTHM.rail.body)}>
+          <div className={cn('flex flex-col gap-2', PANE_RHYTHM.rail.body)}>
             {errors.length > 0 ? (
-              <div className="flex flex-col gap-1.5 pb-1.5">
+              <div className="flex flex-col gap-1.5">
                 {errors.map((entry) => (
                   <ErrorStrip
                     key={entry.provider}
@@ -207,19 +245,44 @@ export const InboxRail = ({
                 ))}
               </div>
             ) : null}
-            <ul className="flex flex-col gap-0.5">
-              {records.map((record) => (
-                <li key={record.key}>
-                  <InboxRow
-                    record={record}
-                    selected={record.key === selectedKey}
-                    onSelect={onSelect}
-                  />
-                </li>
+            <ul
+              tabIndex={0}
+              role="listbox"
+              aria-label="Inbox items"
+              aria-activedescendant={
+                selectedKey == null || !orderedRecords.some((record) => record.key === selectedKey)
+                  ? undefined
+                  : inboxOptionId({ key: selectedKey })
+              }
+              className="flex flex-col gap-0.5 rounded-md focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+              onKeyDown={(event) =>
+                handleListKeyDown({ event, orderedRecords, selectedKey, onSelect })
+              }
+            >
+              {sections.map((section) => (
+                <Fragment key={section.key}>
+                  <li role="presentation" className="px-1 pb-0.5 pt-2.5 first:pt-0.5">
+                    <Eyebrow label={section.label} muted />
+                  </li>
+                  {section.records.map((record) => (
+                    <li key={record.key} role="presentation">
+                      <InboxRow
+                        record={record}
+                        selected={record.key === selectedKey}
+                        onSelect={onSelect}
+                      />
+                    </li>
+                  ))}
+                </Fragment>
               ))}
             </ul>
-            {hasFiltersActive ? (
-              <p className="px-1 pt-1 text-2xs text-muted-foreground/60">
+            {records.length === 0 ? (
+              <p className="px-1 py-1 text-xs text-muted-foreground">
+                {totalCount === 0 ? 'No inbox items' : 'No matching items'}
+              </p>
+            ) : null}
+            {hasFiltersActive && records.length > 0 ? (
+              <p className="px-1 text-2xs text-muted-foreground/60">
                 {records.length} of {totalCount} shown
               </p>
             ) : null}

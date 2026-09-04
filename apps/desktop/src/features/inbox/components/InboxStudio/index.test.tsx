@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 import type { InboxRecord } from '../../types';
@@ -44,8 +44,30 @@ vi.mock('../../useInboxRecords', () => ({
 }));
 
 vi.mock('./InboxDetail', () => ({
-  InboxDetail: ({ record }: { record: InboxRecord | null }) => (
-    <div data-testid="detail">{record?.identifier ?? 'none'}</div>
+  InboxDetail: ({
+    record,
+    hasFiltersActive,
+    onClearFilters,
+    onOpenIntegrations,
+  }: {
+    record: InboxRecord | null;
+    hasFiltersActive: boolean;
+    onClearFilters: () => void;
+    onOpenIntegrations: () => void;
+  }) => (
+    <div data-testid="detail">
+      {record?.identifier ?? 'none'}
+      {record == null && hasFiltersActive ? (
+        <button type="button" data-testid="detail-clear-filters" onClick={onClearFilters}>
+          clear
+        </button>
+      ) : null}
+      {record == null && !hasFiltersActive ? (
+        <button type="button" data-testid="detail-open-integrations" onClick={onOpenIntegrations}>
+          integrations
+        </button>
+      ) : null}
+    </div>
   ),
 }));
 
@@ -204,10 +226,10 @@ afterEach(() => {
 });
 
 describe('InboxStudio', () => {
-  it('renders every row sorted newest first', () => {
+  it('renders every row with alerts first, then newest first', () => {
     renderStudio();
 
-    const identifiers = screen
+    const identifiers = within(screen.getByRole('listbox', { name: 'Inbox items' }))
       .getAllByText(/^(#1|ENG-1|#eng|GBY-1)$/)
       .map((node) => node.textContent);
 
@@ -240,20 +262,31 @@ describe('InboxStudio', () => {
   it('filters rows by provider chip', () => {
     renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: 'GitHub' }));
+    fireEvent.click(screen.getByRole('button', { name: /^GitHub, / }));
 
     expect(screen.getByText('Fix the flaky test')).toBeDefined();
     expect(screen.queryByText('Ship the inbox')).toBeNull();
   });
 
-  it('renders the matching detail once a row is selected', () => {
+  it('auto selects the first visible record and follows a click', () => {
     renderStudio();
 
-    expect(screen.getByTestId('detail').textContent).toBe('none');
+    expect(screen.getByTestId('detail').textContent).toBe('GBY-1');
 
     fireEvent.click(screen.getByText('Ship the inbox'));
 
     expect(screen.getByTestId('detail').textContent).toBe('ENG-1');
+  });
+
+  it('keeps the selected record in the detail when the filters hide it', () => {
+    renderStudio();
+
+    fireEvent.change(screen.getByLabelText('Search the inbox'), {
+      target: { value: 'nothing matches this' },
+    });
+
+    expect(screen.getByText('No matching items')).toBeDefined();
+    expect(screen.getByTestId('detail').textContent).toBe('GBY-1');
   });
 
   it('shows a nothing-connected empty state when the inbox has no records', () => {
@@ -262,9 +295,9 @@ describe('InboxStudio', () => {
 
     renderStudio();
 
-    expect(screen.getByText('Nothing in your inbox yet')).toBeDefined();
+    expect(screen.getByText('No inbox items')).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open integrations' }));
+    fireEvent.click(screen.getByTestId('detail-open-integrations'));
 
     expect(dispatchSpy).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'goodboy:open-settings' }),
@@ -272,18 +305,41 @@ describe('InboxStudio', () => {
     dispatchSpy.mockRestore();
   });
 
-  it('shows a filters-hide-everything empty state and clears filters', () => {
-    renderStudio();
+  it('renders a deep-linked provider that has no records and recovers with clear filters', () => {
+    renderStudio({ initialProvider: 'jira' });
 
-    fireEvent.change(screen.getByLabelText('Search the inbox'), {
-      target: { value: 'nothing matches this' },
-    });
-
+    const jiraChip = screen.getByRole('button', { name: /^Jira, / });
+    expect(jiraChip.getAttribute('aria-pressed')).toBe('true');
+    expect(jiraChip.textContent).toContain('0');
     expect(screen.getByText('No matching items')).toBeDefined();
+    expect(screen.getByTestId('detail').textContent).toContain('none');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+    fireEvent.click(screen.getByTestId('detail-clear-filters'));
 
     expect(screen.getByText('Fix the flaky test')).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Jira, / })).toBeNull();
+  });
+
+  it('toggles off a selected provider that has no records', () => {
+    renderStudio({ initialProvider: 'jira' });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Jira, / }));
+
+    expect(screen.getByText('Fix the flaky test')).toBeDefined();
+  });
+
+  it('persists the provider selection per workspace', () => {
+    const first = renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: /^GitHub, / }));
+    first.unmount();
+
+    renderStudio();
+
+    expect(screen.getByRole('button', { name: /^GitHub, / }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.queryByText('Ship the inbox')).toBeNull();
   });
 
   it('preselects the kind filter, provider and record from the open event props', () => {
