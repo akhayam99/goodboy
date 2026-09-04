@@ -7,6 +7,66 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.14
+
+Session switches stop freezing the app, the inbox and the scripts pane
+are rebuilt around how you triage and run things, and settings live on
+one surface.
+
+### [#1644] Session switch off the main thread
+
+Opening a session froze the window for three to four seconds. Git and
+database commands now run off the main thread, the overview reads one
+shared git status per mount instead of five, and the timeline and the
+mount rows show skeletons while the first data lands.
+
+### [#1642] Inbox as a triage list
+
+A wider list with search, kind tabs and labeled provider chips that
+always show their counts, records grouped by age (today, yesterday,
+this week, older) with the urgent ones first, two-line rows, the first
+record selected on open, arrow-key navigation, and a compact summary
+instead of an empty placeholder. A provider deep link with no records
+no longer hides the whole inbox behind an invisible filter.
+
+### [#1643] Scripts pane, project first
+
+Pick a project in a rail and see only its scripts: your own first, then
+the manifest scripts of that mount with the root package open and the
+workspace packages collapsed. Every package shows what it holds through
+category badges, and inside a package the scripts are grouped by what
+they do (dev, build, test, lint, typecheck, format, database, generate,
+install, deploy, clean, docs) with an icon and a color each. Search
+counts matches on the other projects too.
+
+### [#1638] Settings on one surface
+
+App, workspace, providers and models, and budget settings share one
+Settings studio with a scope rail. The footer buttons, the command
+palette, Cmd/Ctrl+, and every deep link (a provider, a section, a
+budget scope) land on the right scope of that surface, and the old
+per-surface events keep working. Deep links scroll to their section
+even when it mounts late.
+
+### [#1637] One workflow draft engine
+
+The Workflow Studio, the in-session builder and the step library form
+edit the same draft model with one validation and one effort clamp.
+Resetting a step's model to auto now clamps the effort against the
+model that will actually run, and a workflow without steps can no
+longer be saved.
+
+### [#1639] Suggestions block hidden when empty
+
+The session overview no longer shows a "Suggestions" heading when the
+only suggestions belong to other surfaces.
+
+### [#1641] Model picker lands on the newest version
+
+Switching the model group in the picker (Opus, Sonnet, Fable) selects
+the newest version of that group instead of the oldest, so Opus means
+Opus 5 unless you pick an older one.
+
 ## Goodboy v0.2.13
 
 The inbox becomes the only door to your integrations, with one detail
