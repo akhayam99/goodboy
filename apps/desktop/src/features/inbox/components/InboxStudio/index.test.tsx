@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { WorkspaceId } from '@goodboy/types';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { InboxRecord } from '../../types';
+
+const LINKED_SESSION_ID = 'session-7' as SessionId;
 
 const h = vi.hoisted(() => ({
   records: [] as InboxRecord[],
@@ -32,6 +34,11 @@ vi.mock('../../../../shared/components/StudioShell', () => ({
       {children(vi.fn())}
     </div>
   ),
+}));
+
+vi.mock('../../../../store', () => ({
+  useSessionById: (id: SessionId | null) =>
+    id === LINKED_SESSION_ID ? { id, goal: '**Fix** the crash' } : null,
 }));
 
 vi.mock('../../useInboxRecords', () => ({
@@ -191,6 +198,35 @@ const sentryError = record({
   },
 });
 
+const linkedSentryError = record({
+  key: 'sentry:error:2',
+  provider: 'sentry',
+  kind: 'error',
+  identifier: 'GBY-2',
+  title: 'RangeError boom',
+  state: 'alert',
+  updatedAt: '2026-08-05T10:00:00Z',
+  payload: {
+    provider: 'sentry',
+    kind: 'error',
+    issue: {
+      id: '2',
+      shortId: 'GBY-2',
+      title: 'RangeError boom',
+      culprit: null,
+      level: null,
+      status: 'unresolved',
+      count: null,
+      userCount: null,
+      firstSeen: null,
+      lastSeen: null,
+      permalink: null,
+      metadata: null,
+    },
+    sessionId: LINKED_SESSION_ID,
+  },
+});
+
 const workspaceId = 'workspace-1' as WorkspaceId;
 
 const renderStudio = (overrides: Partial<Parameters<typeof InboxStudio>[0]> = {}) =>
@@ -340,6 +376,32 @@ describe('InboxStudio', () => {
       'true',
     );
     expect(screen.queryByText('Ship the inbox')).toBeNull();
+  });
+
+  it('scopes the rows to the session it was opened for and names it in a chip', () => {
+    h.records = [linkedSentryError, sentryError, linearIssue, githubIssue];
+
+    renderStudio({ initialSessionId: LINKED_SESSION_ID, initialRecordKey: linkedSentryError.key });
+
+    expect(screen.getByText('Session: Fix the crash')).toBeDefined();
+    expect(screen.getByText('RangeError boom')).toBeDefined();
+    expect(screen.queryByText('TypeError boom')).toBeNull();
+    expect(screen.queryByText('Fix the flaky test')).toBeNull();
+    expect(screen.getByTestId('detail').textContent).toBe('GBY-2');
+  });
+
+  it('drops the session scope when the chip is dismissed', () => {
+    h.records = [linkedSentryError, sentryError, linearIssue, githubIssue];
+
+    renderStudio({ initialSessionId: LINKED_SESSION_ID });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Clear the session filter: Fix the crash' }),
+    );
+
+    expect(screen.queryByText('Session: Fix the crash')).toBeNull();
+    expect(screen.getByText('TypeError boom')).toBeDefined();
+    expect(screen.getByText('Fix the flaky test')).toBeDefined();
   });
 
   it('preselects the kind filter, provider and record from the open event props', () => {

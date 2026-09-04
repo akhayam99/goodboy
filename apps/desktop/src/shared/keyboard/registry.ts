@@ -60,7 +60,6 @@ export const SHORTCUTS = {
   'lens.terminal': { combo: 'cmd+alt+KeyT', label: 'Terminal', plane: 'lens' },
   'lens.pr': { combo: 'cmd+alt+Digit1', label: 'Code host', plane: 'lens' },
   'lens.linear': { combo: 'cmd+alt+Digit2', label: 'Linear', plane: 'lens' },
-  'lens.sentry': { combo: 'cmd+alt+Digit3', label: 'Sentry', plane: 'lens' },
   'lens.gitlab_issues': { combo: 'cmd+alt+Digit4', label: 'GitLab issues', plane: 'lens' },
   'lens.jira_issues': { combo: 'cmd+alt+Digit5', label: 'Jira issues', plane: 'lens' },
   'lens.slack_threads': { combo: 'cmd+alt+Digit6', label: 'Slack threads', plane: 'lens' },

@@ -7,6 +7,7 @@ import type {
   SetFn,
   WorkSurfacePosition,
 } from './types';
+import { sentryRecordKey } from '../../../features/inbox/adapters/sentry';
 import { PROVIDER_LENS } from '../../../features/integrations/providerLens';
 import { amendTopPosition } from './amendTopPosition';
 import { workSurfaceFocus } from './workSurfaceFocus';
@@ -157,6 +158,20 @@ export const setFocusedGithubIssueNumber = (set: SetFn) => {
 
 export const openExternalTaskLens = (set: SetFn, get: GetFn) => {
   return (sessionId: SessionId, task: SessionExternalTask): void => {
+    if (task.provider === 'sentry') {
+      const workspaceId = get().sessions.find((session) => session.id === sessionId)?.workspaceId;
+      window.dispatchEvent(
+        new CustomEvent('goodboy:open-inbox', {
+          detail: {
+            workspaceId,
+            provider: 'sentry',
+            recordKey: sentryRecordKey({ issueId: task.externalId }),
+            sessionId,
+          },
+        }),
+      );
+      return;
+    }
     get().setActiveLens(sessionId, PROVIDER_LENS[task.provider]);
     if (task.provider === 'github') {
       get().setFocusedGithubIssueNumber(sessionId, Number(task.externalId));

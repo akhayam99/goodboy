@@ -115,17 +115,6 @@ vi.mock('./LinearTaskDetail', () => ({
   ),
 }));
 
-vi.mock('./SentryTaskDetail', () => ({
-  SentryTaskDetail: ({ task }: TaskDetailProps) => (
-    <div data-testid="task-detail">
-      <a href="https://sentry.io/issues/12345" aria-label="Open in Sentry">
-        Sentry detail {task.externalId}
-      </a>
-      <button type="button" aria-label="Copy issue link" />
-    </div>
-  ),
-}));
-
 vi.mock('./GitlabTaskDetail', () => ({
   GitlabTaskDetail: ({ task }: TaskDetailProps) => (
     <div data-testid="task-detail">
@@ -214,16 +203,6 @@ const GITLAB_TASK: SessionExternalTask = {
   url: 'https://gitlab.com/acme/web/-/issues/3',
   createdAt: CREATED_AT,
 };
-const SENTRY_TASK: SessionExternalTask = {
-  sessionId: SESSION_ID,
-  provider: 'sentry',
-  externalId: '12345',
-  identifier: 'GOODBOY-5',
-  title: 'Request failed',
-  url: 'https://sentry.io/organizations/goodboy/issues/12345/',
-  createdAt: CREATED_AT,
-};
-
 beforeEach(() => {
   h.store.sessionExternalTasks = { [SESSION_ID]: [TASK] };
   h.store.focusedExternalTask = {};
@@ -294,10 +273,7 @@ describe('parseIntegrationTaskUrl', () => {
 });
 
 describe('IntegrationPane', () => {
-  it.each([
-    ['linear', TASK, 'Linear'],
-    ['sentry', SENTRY_TASK, 'Sentry'],
-  ] as const)(
+  it.each([['linear', TASK, 'Linear']] as const)(
     'shows one open and copy affordance for a linked %s task with detail',
     (provider, task, host) => {
       h.store.sessionExternalTasks = { [SESSION_ID]: [task] };
@@ -314,7 +290,6 @@ describe('IntegrationPane', () => {
 
   it.each([
     ['linear', TASK, 'Linear detail GB-42'],
-    ['sentry', SENTRY_TASK, 'Sentry detail 12345'],
     ['gitlab', GITLAB_TASK, 'GitLab detail acme/web#3'],
   ] as const)(
     'opens the %s issue the session focused from another surface',
@@ -335,7 +310,6 @@ describe('IntegrationPane', () => {
 
   it.each([
     ['linear', TASK, 'Linear detail GB-42'],
-    ['sentry', SENTRY_TASK, 'Sentry detail 12345'],
     ['gitlab', GITLAB_TASK, 'GitLab detail acme/web#3'],
   ] as const)(
     'lists the %s issues when the lens opens with nothing focused',
@@ -455,20 +429,16 @@ describe('IntegrationPane', () => {
 
   it('keeps the connected empty state to a single link affordance', () => {
     h.store.sessionExternalTasks = {};
-    const listener = vi.fn();
-    window.addEventListener('goodboy:open-sentry-studio', listener);
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="sentry" />);
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="gitlab" />);
 
-    expect(screen.getByText('No Sentry issues linked')).toBeDefined();
+    expect(screen.getByText('No GitLab issues linked')).toBeDefined();
     expect(screen.queryByRole('combobox', { name: 'Link an issue' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Open Sentry studio' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open GitLab studio' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Link issue' }));
 
-    expect(screen.getByRole('dialog', { name: 'Link Sentry issue' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Link GitLab issue' })).toBeDefined();
     expect(screen.getByRole('combobox', { name: 'Link an issue' })).toBeDefined();
-    expect(listener).not.toHaveBeenCalled();
-    window.removeEventListener('goodboy:open-sentry-studio', listener);
   });
 
   it('shows the provider connection form inline when disconnected', async () => {
@@ -496,10 +466,7 @@ describe('IntegrationPane', () => {
     window.removeEventListener('goodboy:open-linear-studio', listener);
   });
 
-  it.each([
-    ['linear', TASK, 'Linear detail GB-42'],
-    ['sentry', SENTRY_TASK, 'Sentry detail 12345'],
-  ] as const)(
+  it.each([['linear', TASK, 'Linear detail GB-42']] as const)(
     'keeps linked %s rows without rendering live detail while disconnected',
     (provider, task, detailText) => {
       h.store.sessionExternalTasks = { [SESSION_ID]: [task] };

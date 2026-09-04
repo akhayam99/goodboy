@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { IconButton, StudioRailLayout } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
-import type { WorkspaceId } from '@goodboy/types';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
+import { useSessionById } from '../../../../store';
+import { recordSessionId } from '../../recordSessionId';
 import { useInboxRecords } from '../../useInboxRecords';
 import { INBOX_PROVIDERS, type InboxKind, type InboxProvider, type InboxRecord } from '../../types';
 import { filterInboxRecords, type InboxKindFilter } from '../../kindFilter';
@@ -24,6 +27,7 @@ type Props = {
   readonly initialProvider?: InboxProvider | null;
   readonly initialKind?: InboxKind | null;
   readonly initialRecordKey?: string | null;
+  readonly initialSessionId?: SessionId | null;
   readonly onClose: () => void;
 };
 
@@ -56,6 +60,7 @@ export const InboxStudio = ({
   initialProvider = null,
   initialKind = null,
   initialRecordKey = null,
+  initialSessionId = null,
   onClose,
 }: Props) => {
   const { records, isLoading, errors, refetch } = useInboxRecords({ workspaceId, rootPath });
@@ -73,6 +78,8 @@ export const InboxStudio = ({
     return new Set(readInboxProviders({ workspaceId }));
   });
   const [selectedKey, setSelectedKey] = useState<string | null>(initialRecordKey);
+  const [sessionFilter, setSessionFilter] = useState<SessionId | null>(initialSessionId);
+  const filteredSession = useSessionById(sessionFilter);
 
   useEffect(() => {
     writeInboxKindFilter({ workspaceId, kindFilter });
@@ -82,9 +89,32 @@ export const InboxStudio = ({
     writeInboxProviders({ workspaceId, providers: selectedProviders });
   }, [workspaceId, selectedProviders]);
 
+  const scopedRecords = useMemo(
+    () =>
+      sessionFilter == null
+        ? records
+        : records.filter((record) => recordSessionId({ record }) === sessionFilter),
+    [records, sessionFilter],
+  );
+
+  const sessionFilterLabel = ((): string | null => {
+    if (sessionFilter == null) {
+      return null;
+    }
+    const goal =
+      filteredSession == null ? '' : stripInlineMarkdown({ text: filteredSession.goal }).trim();
+    return goal === '' ? 'Linked session' : goal;
+  })();
+
   const filteredRecords = useMemo(
-    () => filterInboxRecords({ records, query, kindFilter, providers: selectedProviders }),
-    [records, query, kindFilter, selectedProviders],
+    () =>
+      filterInboxRecords({
+        records: scopedRecords,
+        query,
+        kindFilter,
+        providers: selectedProviders,
+      }),
+    [scopedRecords, query, kindFilter, selectedProviders],
   );
 
   const visibleRecords = useMemo(
@@ -104,8 +134,8 @@ export const InboxStudio = ({
   }, [visibleRecords, selectedKey]);
 
   const selectedRecord = useMemo(
-    () => records.find((record) => record.key === selectedKey) ?? null,
-    [records, selectedKey],
+    () => scopedRecords.find((record) => record.key === selectedKey) ?? null,
+    [scopedRecords, selectedKey],
   );
 
   const [launchFocusRequest, setLaunchFocusRequest] = useState(0);
@@ -135,10 +165,18 @@ export const InboxStudio = ({
     setQuery('');
     setKindFilter('all');
     setSelectedProviders(new Set());
+    setSessionFilter(null);
+  };
+
+  const onClearSessionFilter = (): void => {
+    setSessionFilter(null);
   };
 
   const hasFiltersActive =
-    query.trim() !== '' || kindFilter !== 'all' || selectedProviders.size > 0;
+    query.trim() !== '' ||
+    kindFilter !== 'all' ||
+    selectedProviders.size > 0 ||
+    sessionFilter != null;
 
   const onOpenIntegrations = (): void => {
     window.dispatchEvent(
@@ -171,9 +209,11 @@ export const InboxStudio = ({
           rail={
             <InboxRail
               records={filteredRecords}
-              allRecords={records}
+              allRecords={scopedRecords}
               selectedProviders={selectedProviders}
               onToggleProvider={onToggleProvider}
+              sessionFilterLabel={sessionFilterLabel}
+              onClearSessionFilter={onClearSessionFilter}
               query={query}
               onQueryChange={setQuery}
               kindFilter={kindFilter}
@@ -193,7 +233,7 @@ export const InboxStudio = ({
           detail={
             <InboxDetail
               record={selectedRecord}
-              records={records}
+              records={scopedRecords}
               hasFiltersActive={hasFiltersActive}
               workspaceId={workspaceId}
               rootPath={rootPath}

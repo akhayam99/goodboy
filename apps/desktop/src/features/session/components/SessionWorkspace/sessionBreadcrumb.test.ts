@@ -336,7 +336,6 @@ describe('buildSessionBreadcrumb', () => {
       'gitlab_issues',
       'jira_issues',
       'linear',
-      'sentry',
       'slack_threads',
     ];
 

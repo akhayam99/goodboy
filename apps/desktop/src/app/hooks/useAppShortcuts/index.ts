@@ -182,7 +182,6 @@ export const useAppShortcuts = ({
   useShortcut('lens.terminal', () => goToLens({ kind: 'terminal' }));
   useShortcut('lens.pr', () => goToLens({ kind: 'pr' }));
   useShortcut('lens.linear', () => goToLens({ kind: 'linear' }));
-  useShortcut('lens.sentry', () => goToLens({ kind: 'sentry' }));
   useShortcut('lens.gitlab_issues', () => goToLens({ kind: 'gitlab_issues' }));
   useShortcut('lens.jira_issues', () => goToLens({ kind: 'jira_issues' }));
   useShortcut('lens.slack_threads', () => goToLens({ kind: 'slack_threads' }));

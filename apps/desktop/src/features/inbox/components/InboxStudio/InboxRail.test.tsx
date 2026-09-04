@@ -78,6 +78,8 @@ type RenderParams = {
   readonly onActivate?: (record: InboxRecord) => void;
   readonly onClearFilters?: () => void;
   readonly onToggleProvider?: (provider: InboxProvider) => void;
+  readonly sessionFilterLabel?: string | null;
+  readonly onClearSessionFilter?: () => void;
 };
 
 const renderRail = ({
@@ -87,6 +89,8 @@ const renderRail = ({
   onActivate = vi.fn(),
   onClearFilters = vi.fn(),
   onToggleProvider = vi.fn(),
+  sessionFilterLabel = null,
+  onClearSessionFilter = vi.fn(),
 }: RenderParams = {}) =>
   render(
     <InboxRail
@@ -94,6 +98,8 @@ const renderRail = ({
       allRecords={records}
       selectedProviders={selectedProviders}
       onToggleProvider={onToggleProvider}
+      sessionFilterLabel={sessionFilterLabel}
+      onClearSessionFilter={onClearSessionFilter}
       query=""
       onQueryChange={vi.fn()}
       kindFilter="all"
@@ -212,6 +218,20 @@ describe('InboxRail', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
 
     expect(onClearFilters).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the session chip only while a session scopes the rail, and clears it on click', () => {
+    const onClearSessionFilter = vi.fn();
+    const view = renderRail({ onClearSessionFilter });
+    expect(screen.queryByText('Session: ship the fix')).toBeNull();
+    view.unmount();
+
+    renderRail({ sessionFilterLabel: 'ship the fix', onClearSessionFilter });
+    expect(screen.getByText('Session: ship the fix')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear the session filter: ship the fix' }));
+
+    expect(onClearSessionFilter).toHaveBeenCalledTimes(1);
   });
 
   it('keeps the list focusable and hints at keyboard navigation', () => {
