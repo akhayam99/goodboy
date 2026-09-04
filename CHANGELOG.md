@@ -9,8 +9,35 @@ if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
 ## Goodboy v0.2.14
 
-Settings live on one surface and every workflow editor runs on the same
-draft engine.
+Session switches stop freezing the app, the inbox and the scripts pane
+are rebuilt around how you triage and run things, and settings live on
+one surface.
+
+### [#1644] Session switch off the main thread
+
+Opening a session froze the window for three to four seconds. Git and
+database commands now run off the main thread, the overview reads one
+shared git status per mount instead of five, and the timeline and the
+mount rows show skeletons while the first data lands.
+
+### [#1642] Inbox as a triage list
+
+A wider list with search, kind tabs and labeled provider chips that
+always show their counts, records grouped by age (today, yesterday,
+this week, older) with the urgent ones first, two-line rows, the first
+record selected on open, arrow-key navigation, and a compact summary
+instead of an empty placeholder. A provider deep link with no records
+no longer hides the whole inbox behind an invisible filter.
+
+### [#1643] Scripts pane, project first
+
+Pick a project in a rail and see only its scripts: your own first, then
+the manifest scripts of that mount with the root package open and the
+workspace packages collapsed. Every package shows what it holds through
+category badges, and inside a package the scripts are grouped by what
+they do (dev, build, test, lint, typecheck, format, database, generate,
+install, deploy, clean, docs) with an icon and a color each. Search
+counts matches on the other projects too.
 
 ### [#1638] Settings on one surface
 
