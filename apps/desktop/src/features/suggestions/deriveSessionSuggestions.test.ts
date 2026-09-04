@@ -216,6 +216,7 @@ describe('deriveSessionSuggestions', () => {
     }: {
       readonly rebaseRequest: {
         readonly behind: number | null;
+        readonly baseBranch?: string | null;
         readonly agentStatus: string | null;
       };
       readonly mainDistance?: number;
@@ -229,17 +230,29 @@ describe('deriveSessionSuggestions', () => {
         hasPullRequest: false,
         threads: [],
         mountEvents: [],
-        projects: [{ ...project, mainDistance, rebaseRequest }],
+        projects: [
+          {
+            ...project,
+            mainDistance,
+            rebaseRequest: { baseBranch: 'main', ...rebaseRequest },
+          },
+        ],
       }).map((suggestion) => suggestion.id);
 
     expect(rebaseIds({ rebaseRequest: { behind: 126, agentStatus: 'running' } })).toEqual([]);
     expect(rebaseIds({ rebaseRequest: { behind: 126, agentStatus: 'completed' } })).toEqual([]);
     expect(rebaseIds({ rebaseRequest: { behind: 126, agentStatus: null } })).toEqual([]);
+    expect(
+      rebaseIds({ rebaseRequest: { behind: 126, baseBranch: null, agentStatus: 'running' } }),
+    ).toEqual([]);
     expect(rebaseIds({ rebaseRequest: { behind: 126, agentStatus: 'failed' } })).toEqual([
       'rebase-project:project-web',
     ]);
     expect(
       rebaseIds({ rebaseRequest: { behind: 126, agentStatus: 'completed' }, mainDistance: 129 }),
+    ).toEqual(['rebase-project:project-web']);
+    expect(
+      rebaseIds({ rebaseRequest: { behind: 126, baseBranch: 'develop', agentStatus: 'running' } }),
     ).toEqual(['rebase-project:project-web']);
   });
 

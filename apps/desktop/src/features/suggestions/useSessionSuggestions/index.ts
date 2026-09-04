@@ -72,16 +72,17 @@ const latestRebaseRequests = ({
   readonly agents: ReadonlyArray<Agent>;
 }): ReadonlyMap<ProjectId, SuggestionRebaseRequest> => {
   const requests = new Map<ProjectId, SuggestionRebaseRequest>();
+  const agentsById = new Map(agents.map((agent) => [agent.id as string, agent]));
   for (const event of events) {
     const projectId = event.payload?.projectId;
     if (event.kind !== 'rebase_requested' || projectId == null) {
       continue;
     }
     const agentId = event.payload?.agentId ?? null;
-    const agent =
-      agentId == null ? null : (agents.find((candidate) => candidate.id === agentId) ?? null);
+    const agent = agentId == null ? null : (agentsById.get(agentId) ?? null);
     requests.set(projectId as ProjectId, {
       behind: event.payload?.behind ?? null,
+      baseBranch: event.payload?.branch ?? null,
       agentStatus: agent?.status ?? null,
     });
   }

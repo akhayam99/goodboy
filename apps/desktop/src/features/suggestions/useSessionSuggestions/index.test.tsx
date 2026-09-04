@@ -67,11 +67,19 @@ afterEach(() => {
   store.sessionPhaseRuns = {};
 });
 
-const rebaseRequested = ({ behind, agentId }: { behind: number; agentId: string }) => ({
+const rebaseRequested = ({
+  behind,
+  agentId,
+  branch = 'main',
+}: {
+  behind: number;
+  agentId: string;
+  branch?: string;
+}) => ({
   id: `ev-${agentId}`,
   sessionId: 'session-1',
   kind: 'rebase_requested',
-  payload: { projectId: 'api', projectName: 'API', branch: 'main', behind, agentId },
+  payload: { projectId: 'api', projectName: 'API', branch, behind, agentId },
   createdAt: '2026-09-04T09:11:00.000Z',
 });
 
@@ -90,6 +98,18 @@ describe('useSessionSuggestions rebase consumption', () => {
   it('offers the rebase again when the agent failed', async () => {
     store.sessionEvents = { 'session-1': [rebaseRequested({ behind: 4, agentId: 'agent-1' })] };
     store.sessionPhaseRuns = { 'session-1': [{ id: 'agent-1', status: 'failed' }] };
+    const view = renderHook(() => useSessionSuggestions({ session }));
+
+    await waitFor(() =>
+      expect(view.result.current.some((s) => s.kind === 'rebase-project')).toBe(true),
+    );
+  });
+
+  it('offers the rebase again when the project now compares against another base', async () => {
+    store.sessionEvents = {
+      'session-1': [rebaseRequested({ behind: 4, agentId: 'agent-1', branch: 'develop' })],
+    };
+    store.sessionPhaseRuns = { 'session-1': [{ id: 'agent-1', status: 'running' }] };
     const view = renderHook(() => useSessionSuggestions({ session }));
 
     await waitFor(() =>

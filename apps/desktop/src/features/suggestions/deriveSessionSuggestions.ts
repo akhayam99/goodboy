@@ -32,6 +32,7 @@ export type SuggestionThread = {
 
 export type SuggestionRebaseRequest = {
   readonly behind: number | null;
+  readonly baseBranch: string | null;
   readonly agentStatus: string | null;
 };
 
@@ -47,6 +48,9 @@ export type SuggestionProject = {
 const isRebaseConsumed = ({ project }: { readonly project: SuggestionProject }): boolean => {
   const request = project.rebaseRequest ?? null;
   if (request == null || request.agentStatus === 'failed') {
+    return false;
+  }
+  if (request.baseBranch != null && request.baseBranch !== project.baseBranch) {
     return false;
   }
   return request.behind === project.mainDistance;

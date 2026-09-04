@@ -36,6 +36,8 @@ type RebaseTarget = {
   readonly worktreePath: string | null;
 };
 
+const REBASE_AGENT_PREFIX = 'Rebase on ';
+
 const rebasePromptFor = ({ baseBranch }: { readonly baseBranch: string }): string =>
   [
     `Rebase this session branch onto origin/${baseBranch}.`,
@@ -77,8 +79,6 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
     };
   };
   const baseBranch = targetFor({ projectId: activeProjectId }).baseBranch;
-  const rebaseAgentName = `Rebase on ${baseBranch}`;
-  const rebaseProgressLabel = `Rebasing on ${baseBranch}`;
   const phaseRuns = useAppStore((state) =>
     sessionId == null ? null : (state.sessionPhaseRuns[sessionId] ?? null),
   );
@@ -101,7 +101,7 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
   const isAgentRunning =
     phaseRuns?.some(
       (agent) =>
-        agent.name === rebaseAgentName &&
+        agent.name.startsWith(REBASE_AGENT_PREFIX) &&
         (agent.status === 'pending' || agent.status === 'running'),
     ) === true;
   const isRunning = isStarting || isAgentRunning;
@@ -180,7 +180,7 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
     });
     try {
       const agentId = await spawnAgent(sessionId, {
-        name: `Rebase on ${target.baseBranch}`,
+        name: `${REBASE_AGENT_PREFIX}${target.baseBranch}`,
         initialPrompt: rebasePromptFor({ baseBranch: target.baseBranch }),
         model: config.model,
         provider: config.provider,
