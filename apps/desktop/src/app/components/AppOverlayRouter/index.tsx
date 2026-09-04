@@ -1,24 +1,70 @@
+import { Suspense, lazy } from 'react';
 import type { Session, SessionId, Workspace } from '@goodboy/types';
 import type { InboxKind, InboxProvider } from '../../../features/inbox/types';
 import { ArchiveSessionConfirm } from '../../../features/session/components/ArchiveSessionConfirm';
 import { CommandPalette } from '../../../features/session/components/CommandPalette';
 import { DeleteSessionConfirm } from '../../../features/session/components/DeleteSessionConfirm';
-import { SettingsStudio } from '../../../features/settings/components/SettingsStudio';
-import { GuideStudio } from '../../../features/settings/components/GuideStudio';
-import { ReportIssueStudio } from '../../../features/settings/components/ReportIssueStudio';
-import { WorkspaceLinkStudio } from '../../../features/workspace/components/WorkspaceLinkStudio';
 import { ConvertWorkspaceDialog } from '../../../features/workspace/components/ConvertWorkspaceDialog';
 import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
-import { WorkflowStudio } from '../../../features/workflows/components/WorkflowStudio';
-import { InboxStudio } from '../../../features/inbox/components/InboxStudio';
 import type { SettingsFocus } from '../../../features/settings/components/SettingsStudio/types';
-import { ImpactStudio } from '../../../features/impact/components/ImpactStudio';
-import { ChangelogStudio } from '../../../features/changelog/components/ChangelogStudio';
-import { NotificationsStudio } from '../../../features/notifications/components/NotificationsStudio';
-import { DiffViewerDialog } from '../../../features/permissions/components/DiffViewerDialog';
 import { OnboardingWizard } from '../../../features/onboarding/OnboardingWizard';
-import { CompanionStudio } from '../../../features/companion/CompanionStudio';
 import type { CommitDiffTarget } from '../../../shared/hooks/useCommitLinkInterceptor';
+
+const SettingsStudio = lazy(() =>
+  import('../../../features/settings/components/SettingsStudio').then((module) => ({
+    default: module.SettingsStudio,
+  })),
+);
+const GuideStudio = lazy(() =>
+  import('../../../features/settings/components/GuideStudio').then((module) => ({
+    default: module.GuideStudio,
+  })),
+);
+const ReportIssueStudio = lazy(() =>
+  import('../../../features/settings/components/ReportIssueStudio').then((module) => ({
+    default: module.ReportIssueStudio,
+  })),
+);
+const WorkspaceLinkStudio = lazy(() =>
+  import('../../../features/workspace/components/WorkspaceLinkStudio').then((module) => ({
+    default: module.WorkspaceLinkStudio,
+  })),
+);
+const WorkflowStudio = lazy(() =>
+  import('../../../features/workflows/components/WorkflowStudio').then((module) => ({
+    default: module.WorkflowStudio,
+  })),
+);
+const InboxStudio = lazy(() =>
+  import('../../../features/inbox/components/InboxStudio').then((module) => ({
+    default: module.InboxStudio,
+  })),
+);
+const ImpactStudio = lazy(() =>
+  import('../../../features/impact/components/ImpactStudio').then((module) => ({
+    default: module.ImpactStudio,
+  })),
+);
+const ChangelogStudio = lazy(() =>
+  import('../../../features/changelog/components/ChangelogStudio').then((module) => ({
+    default: module.ChangelogStudio,
+  })),
+);
+const NotificationsStudio = lazy(() =>
+  import('../../../features/notifications/components/NotificationsStudio').then((module) => ({
+    default: module.NotificationsStudio,
+  })),
+);
+const DiffViewerDialog = lazy(() =>
+  import('../../../features/permissions/components/DiffViewerDialog').then((module) => ({
+    default: module.DiffViewerDialog,
+  })),
+);
+const CompanionStudio = lazy(() =>
+  import('../../../features/companion/CompanionStudio').then((module) => ({
+    default: module.CompanionStudio,
+  })),
+);
 
 type Props = {
   readonly currentWorkspace: Workspace | null;
@@ -122,11 +168,11 @@ export const AppOverlayRouter = ({
   ) : null;
 
   if (isWorkspaceLauncherBranch) {
-    return addWorkspaceSurface ?? <WorkspaceLauncher />;
+    return <Suspense fallback={null}>{addWorkspaceSurface ?? <WorkspaceLauncher />}</Suspense>;
   }
 
   return (
-    <>
+    <Suspense fallback={null}>
       {settingsOpen ? (
         <SettingsStudio
           currentWorkspace={currentWorkspace}
@@ -208,6 +254,6 @@ export const AppOverlayRouter = ({
       ) : null}
       {companionOpen ? <CompanionStudio onClose={closeCompanion} /> : null}
       <OnboardingWizard />
-    </>
+    </Suspense>
   );
 };

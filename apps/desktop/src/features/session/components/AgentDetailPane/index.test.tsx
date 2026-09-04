@@ -115,6 +115,22 @@ describe('AgentDetailPane', () => {
     expect(screen.getByRole('tab', { name: 'Brief' })).toBeDefined();
   });
 
+  it('renders the session eyebrow above the agent title', () => {
+    render(
+      <AgentDetailPane
+        session={session}
+        agent={agent}
+        isChatActive
+        onBack={() => undefined}
+        eyebrow={<span>Ship the lens eyebrow</span>}
+      />,
+    );
+
+    const eyebrow = screen.getByText('Ship the lens eyebrow');
+    const title = screen.getByRole('heading', { level: 2 });
+    expect(eyebrow.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('shows the planned model in the header while the agent has not run', () => {
     Object.assign(state, { agentModelOverride: { [agentId]: 'claude-haiku-4-5' } });
 

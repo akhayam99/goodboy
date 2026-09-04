@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { PANE_RHYTHM, Skeleton, SkeletonText, cn } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { AgentDetailPane } from '../../AgentDetailPane';
@@ -9,6 +10,7 @@ type Props = {
   readonly isChatActive: boolean;
   readonly selectedAgentId: AgentId | null;
   readonly onBack: () => void;
+  readonly eyebrow?: ReactNode;
 };
 
 export const AgentOverlay = ({
@@ -17,6 +19,7 @@ export const AgentOverlay = ({
   isChatActive,
   selectedAgentId,
   onBack,
+  eyebrow,
 }: Props) => {
   const selectedAgent = useAppStore(
     (state) =>
@@ -30,6 +33,7 @@ export const AgentOverlay = ({
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {selectedAgent === null ? (
           <div className={cn('flex flex-col gap-4', PANE_RHYTHM.body)}>
+            {eyebrow}
             <Skeleton className="h-6 w-48" />
             <SkeletonText lines={3} />
           </div>
@@ -39,6 +43,7 @@ export const AgentOverlay = ({
             agent={selectedAgent}
             isChatActive={isChatActive}
             onBack={onBack}
+            eyebrow={eyebrow}
           />
         )}
       </div>

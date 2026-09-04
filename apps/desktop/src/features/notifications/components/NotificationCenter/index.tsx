@@ -19,6 +19,7 @@ import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
 import { sendNotificationToDevelopers } from '../../../settings/sendNotificationToDevelopers';
@@ -211,8 +212,10 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
   const canSendToDevelopers = n.severity === 'warning' || n.severity === 'error';
 
   const isUnread = notifications.some((notification) => !notification.read);
-  const source =
-    useAppStore((s) => s.sessions.find((session) => session.id === n.sessionId)?.goal) ?? 'Goodboy';
+  const sessionGoal = useAppStore(
+    (s) => s.sessions.find((session) => session.id === n.sessionId)?.goal,
+  );
+  const source = sessionGoal == null ? 'Goodboy' : stripInlineMarkdown({ text: sessionGoal });
   const border =
     n.severity === 'error'
       ? 'border-l-danger/40'

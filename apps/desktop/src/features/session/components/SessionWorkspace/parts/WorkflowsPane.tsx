@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { BookmarkPlus } from 'lucide-react';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
@@ -20,9 +21,10 @@ const VISIBLE_FINISHED_COUNT = 30;
 
 type Props = {
   readonly session: Session;
+  readonly eyebrow?: ReactNode;
 };
 
-export const WorkflowsPane = ({ session }: Props) => {
+export const WorkflowsPane = ({ session, eyebrow }: Props) => {
   const sessionId = session.id as SessionId;
   const attachedRuns = useAttachedWorkflowRuns({ session });
   const makeWorkflowPreset = useAppStore((s) => s.makeWorkflowPreset);
@@ -82,6 +84,7 @@ export const WorkflowsPane = ({ session }: Props) => {
       <FocusedPane
         lens="Workflows"
         count={attachedRuns.length}
+        eyebrow={eyebrow}
         actions={
           <>
             {focusedRun.workflow != null && focusedRun.workflow.isPreset === false ? (
@@ -110,6 +113,7 @@ export const WorkflowsPane = ({ session }: Props) => {
       title="Workflows"
       description="Sequences of agents this session runs toward its goal."
       meta={hasRuns ? attachedRuns.length : undefined}
+      eyebrow={eyebrow}
       actions={
         shouldShowHeaderAttach ? (
           <WorkflowAttachButton sessionId={sessionId} placement="header" />

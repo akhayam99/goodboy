@@ -27,6 +27,7 @@ type Result = {
 export const useReviewDiff = ({ session }: Params): Result => {
   const sessionId = session.id as SessionId;
   const target = useAppStore(useShallow((state) => resolveReviewTarget({ state, sessionId })));
+  const isTargetLoaded = useAppStore((s) => s.sessionExternalTasks[sessionId] !== undefined);
   const workspace = useAppStore(
     (s) => s.workspaces.find((candidate) => candidate.id === session.workspaceId) ?? null,
   );
@@ -43,10 +44,16 @@ export const useReviewDiff = ({ session }: Params): Result => {
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    if (target == null || workspace == null || repo == null) {
+    if (target == null) {
+      setFiles([]);
+      setLoading(!isTargetLoaded);
+      setError(null);
+      return;
+    }
+    if (workspace == null || repo == null) {
       setFiles([]);
       setLoading(false);
-      setError('No linked pull request or merge request for this session.');
+      setError('No repository is mounted for this session.');
       return;
     }
     const fetchDiff =
@@ -82,7 +89,7 @@ export const useReviewDiff = ({ session }: Params): Result => {
     return () => {
       cancelled = true;
     };
-  }, [gitlabHost, repo, target, tick, workspace]);
+  }, [gitlabHost, isTargetLoaded, repo, target, tick, workspace]);
 
   const refresh = useCallback(() => setTick((value) => value + 1), []);
 

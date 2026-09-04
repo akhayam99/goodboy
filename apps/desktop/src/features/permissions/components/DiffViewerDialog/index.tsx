@@ -20,6 +20,7 @@ type DiffViewerContentProps = {
   showToolbarClose?: boolean;
   onContentEmptyChange?: (isEmpty: boolean) => void;
   headerActions?: ReactNode;
+  eyebrow?: ReactNode;
   branchRevision?: number;
 };
 

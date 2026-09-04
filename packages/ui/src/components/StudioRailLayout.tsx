@@ -18,7 +18,7 @@ type Props = {
 
 export const StudioRailLayout = ({ rail, detail, railLabel, railWidth }: Props) => {
   return (
-    <>
+    <div className="flex h-full min-h-0 flex-1">
       <aside
         aria-label={railLabel}
         className={cn('flex min-h-0 shrink-0 flex-col', RAIL_WIDTH_CLASSES[railWidth])}
@@ -27,6 +27,6 @@ export const StudioRailLayout = ({ rail, detail, railLabel, railWidth }: Props) 
       </aside>
       <Divider orientation="vertical" />
       <div className="min-h-0 flex-1">{detail}</div>
-    </>
+    </div>
   );
 };

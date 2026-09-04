@@ -237,6 +237,16 @@ describe('DiffViewerPane', () => {
     expect(container.firstElementChild?.className).toContain('motion-safe:animate-studio-in');
   });
 
+  it('renders the session eyebrow above the pane title', () => {
+    render(<DiffViewerPane onClose={vi.fn()} eyebrow={<span>Ship the lens eyebrow</span>} />);
+
+    const eyebrow = screen.getByText('Ship the lens eyebrow');
+    const heading = screen.getByRole('heading', { name: /^diff$/i });
+    expect(
+      eyebrow.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it('lets the pane content span the full lens width', () => {
     const { container } = render(<DiffViewerPane onClose={vi.fn()} />);
     const shell = container.firstElementChild as HTMLElement;

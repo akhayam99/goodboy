@@ -62,6 +62,21 @@ describe('StudioDetailLayout', () => {
     expect(screen.getByText('Rail slot')).toBeDefined();
   });
 
+  it('renders the eyebrow above the header band', () => {
+    render(
+      <StudioDetailLayout
+        header={<h2>Header slot</h2>}
+        eyebrow={<span>Ship the lens eyebrow</span>}
+      >
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+
+    const eyebrow = screen.getByText('Ship the lens eyebrow');
+    const header = screen.getByRole('heading', { name: 'Header slot' });
+    expect(eyebrow.compareDocumentPosition(header) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('renders the optional tab bar between the header and the body', () => {
     render(
       <StudioDetailLayout

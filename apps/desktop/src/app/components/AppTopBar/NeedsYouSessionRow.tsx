@@ -3,6 +3,8 @@ import type { Session, SessionId } from '@goodboy/types';
 import { useSessionStageInfo } from '../../../store';
 import { ATTENTION_REASON_META } from '../../../features/session/session-stage';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { InlineMarkdown } from '../../../shared/components/InlineMarkdown';
+import { stripInlineMarkdown } from '../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 
 type Props = {
   readonly session: Session;
@@ -23,7 +25,7 @@ export const NeedsYouSessionRow = ({ session, onSelect }: Props) => {
       <button
         type="button"
         onClick={() => onSelect({ sessionId: session.id as SessionId })}
-        title={`${session.goal} · ${reason}`}
+        title={`${stripInlineMarkdown({ text: session.goal })} · ${reason}`}
         className="flex w-full items-start gap-2 px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
       >
         <Icon
@@ -32,7 +34,10 @@ export const NeedsYouSessionRow = ({ session, onSelect }: Props) => {
           className={cn('mt-px shrink-0', tintClasses(meta?.tone ?? 'neutral').icon)}
         />
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="truncate text-xs font-medium text-foreground">{session.goal}</span>
+          <InlineMarkdown
+            text={session.goal}
+            className="truncate text-xs font-medium text-foreground"
+          />
           <span className="truncate text-2xs text-muted-foreground">{reason}</span>
         </span>
       </button>

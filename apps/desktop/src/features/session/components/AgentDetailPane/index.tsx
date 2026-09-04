@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
@@ -19,6 +19,7 @@ type Props = {
   readonly agent: Agent;
   readonly isChatActive: boolean;
   readonly onBack: () => void;
+  readonly eyebrow?: ReactNode;
 };
 
 type Tab = 'brief' | 'transcript';
@@ -28,7 +29,7 @@ const TABS = [
   { value: 'transcript', label: 'Transcript' },
 ] satisfies ReadonlyArray<{ readonly value: Tab; readonly label: string }>;
 
-export const AgentDetailPane = ({ session, agent, isChatActive, onBack }: Props) => {
+export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow }: Props) => {
   const [tab, setTab] = useState<Tab>('brief');
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const providerOverride = useAppStore(
@@ -66,6 +67,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack }: Props)
         agent={agent}
         isChatActive={isChatActive}
         onBack={onBack}
+        eyebrow={eyebrow}
       />
     );
   }
@@ -79,6 +81,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack }: Props)
   return (
     <StudioDetailLayout
       fit={tab === 'transcript' ? 'bleed' : 'fill'}
+      eyebrow={eyebrow}
       header={
         <HeaderBand
           title={<AgentTitle agent={agent} sessionId={session.id} />}

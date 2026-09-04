@@ -5,14 +5,13 @@ import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { useSessionRoleModels } from '../../../shared/hooks/useSessionRoleModels';
 import { buildCommentAgentArgs, type ResolveModelChoice } from '../../chat/spawn-from-comment';
-import { groupThreads } from '../../github/comment-threads';
 import { kindRouting } from '../../session/agent-kind';
 import { useRebaseAgent } from '../../session/hooks/useRebaseAgent';
 import { useResolverIndex } from '../../session/hooks/useResolverIndex';
 import { useResolverSpawner } from '../../session/hooks/useResolverSpawner';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
-import { resolverForComment } from '../../session/resolver-linkage';
 import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent';
+import { eligibleReviewThreads } from '../eligibleThreads';
 import type { SessionSuggestion } from '../types';
 
 type Params = {
@@ -93,22 +92,10 @@ export const useSuggestionActions = ({
     onError: reportError('Rebase failed'),
   });
 
-  const unresolvedThreads = useMemo(() => {
-    const pendingThreadIds = new Set(pendingResolutions.map((resolution) => resolution.threadId));
-    return groupThreads(github?.detail?.comments ?? []).filter((thread) => {
-      if (thread.head.source !== 'review' || thread.head.resolved !== false) {
-        return false;
-      }
-      if (thread.head.threadId != null && pendingThreadIds.has(thread.head.threadId)) {
-        return false;
-      }
-      const resolver = resolverForComment(resolverIndex, {
-        threadId: thread.head.threadId,
-        url: thread.head.url,
-      });
-      return resolver == null || resolver.status === 'failed';
-    });
-  }, [github, pendingResolutions, resolverIndex]);
+  const unresolvedThreads = useMemo(
+    () => eligibleReviewThreads({ github, pendingResolutions, resolverIndex }),
+    [github, pendingResolutions, resolverIndex],
+  );
 
   const pullRequest = github?.pr ?? null;
   const startResolving = () => {

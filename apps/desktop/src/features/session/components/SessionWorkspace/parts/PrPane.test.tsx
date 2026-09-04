@@ -300,6 +300,20 @@ describe('PrPane', () => {
     expect(screen.queryByText('Open a pull or merge request')).toBeNull();
   });
 
+  it('renders the session eyebrow above the host title', () => {
+    render(
+      <PrPane
+        session={session}
+        onSelectLens={h.onSelectLens}
+        eyebrow={<span>Ship the lens eyebrow</span>}
+      />,
+    );
+
+    const eyebrow = screen.getByText('Ship the lens eyebrow');
+    const title = screen.getByRole('heading', { level: 2 });
+    expect(eyebrow.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('names the host it is actually pointed at', () => {
     h.remoteKind = 'gitlab';
 

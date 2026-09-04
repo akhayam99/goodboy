@@ -254,14 +254,14 @@ afterEach(() => {
 });
 
 describe('Slack studio reachability', () => {
-  it('opens the workspace slack studio from the app footer', () => {
+  it('opens the workspace slack studio from the app footer', async () => {
     state.workspaceIntegrations = { 'workspace-1': [{ provider: 'slack' }] };
     render(<App />);
 
     expect(screen.queryByTestId('inbox-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Launch a session from a Slack thread' }));
 
-    expect(screen.getByTestId('inbox-studio').textContent).toBe('Workspace:slack');
+    expect((await screen.findByTestId('inbox-studio')).textContent).toBe('Workspace:slack');
   });
 
   it('still opens the studio when slack is not connected, so the connect form is reachable', () => {
@@ -312,19 +312,21 @@ describe('Provider studio reachability from the command palette', () => {
     expect(screen.getByRole('button', { name: 'Connect a provider' })).toBeDefined();
   });
 
-  it('opens the provider studio when the palette entry is chosen', () => {
+  it('opens the provider studio when the palette entry is chosen', async () => {
     render(<App />);
     openPalette();
 
     expect(screen.queryByTestId('settings-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Connect a provider' }));
 
-    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('providers');
+    expect((await screen.findByTestId('settings-studio')).getAttribute('data-scope')).toBe(
+      'providers',
+    );
   });
 });
 
 describe('Report issue studio reachability', () => {
-  it('mounts the studio when the shared open event fires', () => {
+  it('mounts the studio when the shared open event fires', async () => {
     render(<App />);
 
     expect(screen.queryByTestId('report-issue-studio')).toBeNull();
@@ -332,7 +334,7 @@ describe('Report issue studio reachability', () => {
       window.dispatchEvent(new CustomEvent(REPORT_ISSUE_STUDIO_EVENT));
     });
 
-    expect(screen.getByTestId('report-issue-studio')).toBeDefined();
+    expect(await screen.findByTestId('report-issue-studio')).toBeDefined();
   });
 
   it('closes the settings studio when the report studio takes over', () => {
@@ -390,22 +392,22 @@ describe('Footer to settings and more-popover reachability', () => {
     expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('budget');
   });
 
-  it('opens impact from the footer more popover', () => {
+  it('opens impact from the footer more popover', async () => {
     render(<App />);
 
     expect(screen.queryByTestId('impact-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open impact' }));
 
-    expect(screen.getByTestId('impact-studio').textContent).toBe('Workspace');
+    expect((await screen.findByTestId('impact-studio')).textContent).toBe('Workspace');
   });
 
-  it('opens changelog from the footer more popover', () => {
+  it('opens changelog from the footer more popover', async () => {
     render(<App />);
 
     expect(screen.queryByTestId('changelog-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open changelog' }));
 
-    expect(screen.getByTestId('changelog-studio').textContent).toBe('Workspace');
+    expect((await screen.findByTestId('changelog-studio')).textContent).toBe('Workspace');
   });
 });
 

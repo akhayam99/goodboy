@@ -121,6 +121,15 @@ describe('HeaderBand', () => {
     expect(screen.getByRole('button', { name: 'Mount a project' })).toBeDefined();
   });
 
+  it('renders a backticked title as inline code without the backticks', () => {
+    const marked = { ...session, goal: 'run `/explore` first' } as Session;
+    render(<HeaderBand session={marked} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+
+    const title = screen.getByRole('button', { name: /run/ });
+    expect(title.querySelector('code')?.textContent).toBe('/explore');
+    expect(title.textContent).not.toContain('`');
+  });
+
   it('renders the session cost at the right edge of the context row', () => {
     render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
 

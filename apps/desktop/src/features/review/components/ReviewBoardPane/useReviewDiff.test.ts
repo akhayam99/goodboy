@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import type {
   IsoDateTime,
+  PullRequestState,
   Session,
   SessionExternalTask,
   SessionId,
@@ -97,13 +98,44 @@ const mergeRequest: GitlabMergeRequest = {
   updatedAt: NOW,
 };
 
-const state: MockStore = {
+const pullRequest: PullRequestState = {
+  number: 1631,
+  title: 'PR',
+  url: 'https://github.com/acme/web/pull/1631',
+  state: 'open',
+  mergeable: true,
+  checks: 'success',
+  baseBranch: 'main',
+  headBranch: 'ak/feature',
+  isDraft: false,
+  reviewDecision: null,
+  body: '',
+  updatedAt: NOW,
+};
+
+const githubState = (pr: PullRequestState | null): MockStore['sessionGithub'] => ({
+  [SESSION_ID]: {
+    pr,
+    linkedIssues: [],
+    fetchedAt: NOW,
+    failedAt: null,
+    loading: false,
+    error: null,
+    detail: null,
+    detailFetchedAt: null,
+    detailLoading: false,
+    detailError: null,
+  },
+});
+
+const BASE_STATE: MockStore = {
   sessionExternalTasks: { [SESSION_ID]: [githubTask, gitlabTask] },
   sessions: [],
   projects: [],
   sessionProjectMounts: {},
   sessionActiveProject: {},
   sessionProjectPrs: { [SESSION_ID]: {} },
+  sessionGithub: githubState(null),
   sessionGitlabMr: {
     [SESSION_ID]: { mr: mergeRequest, fetchedAt: NOW, loading: false, error: null },
   },
@@ -113,10 +145,13 @@ const state: MockStore = {
   },
 };
 
+let state: MockStore = BASE_STATE;
+
 import { useReviewDiff } from './useReviewDiff';
 
 afterEach(() => {
   cleanup();
+  state = BASE_STATE;
   h.ghPrDiff.mockClear();
   h.gitlabMrDiff.mockClear();
 });
@@ -135,12 +170,65 @@ describe('useReviewDiff', () => {
     expect(result.current.target).toEqual(resolveReviewTarget({ state, sessionId: SESSION_ID }));
   });
 
-  it('fetches the diff of the discovered merge request, not the priority-first candidate', async () => {
+  it('fetches the diff of the merge request this session opened, not a linked candidate', async () => {
     renderHook(() => useReviewDiff({ session }));
 
     await waitFor(() => expect(h.gitlabMrDiff).toHaveBeenCalledOnce());
 
     expect(h.gitlabMrDiff).toHaveBeenCalledWith(WORKSPACE_ID, 'https://gitlab.com', 'acme/web', 10);
     expect(h.ghPrDiff).not.toHaveBeenCalled();
+  });
+
+  it('fetches the diff of the pull request this session opened with nothing linked', async () => {
+    state = {
+      ...BASE_STATE,
+      sessionExternalTasks: { [SESSION_ID]: [] },
+      sessionGithub: githubState(pullRequest),
+      sessionGitlabMr: { [SESSION_ID]: { mr: null, fetchedAt: NOW, loading: false, error: null } },
+    };
+
+    const { result } = renderHook(() => useReviewDiff({ session }));
+
+    await waitFor(() => expect(h.ghPrDiff).toHaveBeenCalledOnce());
+
+    expect(result.current.target).toEqual({
+      provider: 'github',
+      repo: 'acme/web',
+      prNumber: 1631,
+    });
+    expect(h.ghPrDiff).toHaveBeenCalledWith('acme/web', 1631, '/repo', WORKSPACE_ID, undefined);
+    expect(h.gitlabMrDiff).not.toHaveBeenCalled();
+  });
+
+  it('reports no target and no error once the links loaded without a pull request', async () => {
+    state = {
+      ...BASE_STATE,
+      sessionExternalTasks: { [SESSION_ID]: [] },
+      sessionGitlabMr: { [SESSION_ID]: { mr: null, fetchedAt: NOW, loading: false, error: null } },
+    };
+
+    const { result } = renderHook(() => useReviewDiff({ session }));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.target).toBeNull();
+    expect(result.current.error).toBeNull();
+    expect(result.current.files).toEqual([]);
+    expect(h.ghPrDiff).not.toHaveBeenCalled();
+    expect(h.gitlabMrDiff).not.toHaveBeenCalled();
+  });
+
+  it('stays loading while the session links are not loaded yet', () => {
+    state = {
+      ...BASE_STATE,
+      sessionExternalTasks: {},
+      sessionGitlabMr: { [SESSION_ID]: { mr: null, fetchedAt: NOW, loading: false, error: null } },
+    };
+
+    const { result } = renderHook(() => useReviewDiff({ session }));
+
+    expect(result.current.loading).toBe(true);
+    expect(result.current.target).toBeNull();
+    expect(result.current.error).toBeNull();
   });
 });

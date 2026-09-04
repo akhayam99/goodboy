@@ -4,6 +4,8 @@ import type { ProviderSpendEntry } from '../../../../store';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { providerLabel, spendTone, type BudgetScope, type SessionSpend } from './lib';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
+import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 
 type Props = {
   readonly scope: BudgetScope;
@@ -83,7 +85,7 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
                     selected={active}
                     onClick={() => onSelect({ kind: 'session', sessionId: s.sessionId })}
                     ariaCurrent={active}
-                    title={s.goal}
+                    title={stripInlineMarkdown({ text: s.goal })}
                     className="items-center gap-2 px-2.5 py-2"
                   >
                     {s.isCurrent ? (
@@ -94,7 +96,7 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
                     ) : (
                       <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-border-soft" />
                     )}
-                    <span className="min-w-0 flex-1 truncate text-sm">{s.goal}</span>
+                    <InlineMarkdown text={s.goal} className="min-w-0 flex-1 truncate text-sm" />
                     <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground">
                       {formatUsd(s.spentUsd)}
                     </span>

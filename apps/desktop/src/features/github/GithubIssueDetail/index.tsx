@@ -23,6 +23,7 @@ type Props = {
   readonly dock?: ReactNode;
   readonly fit?: Fit;
   readonly editContext?: GithubIssueEditContext | null;
+  readonly eyebrow?: ReactNode;
 };
 
 export const GithubIssueDetail = ({
@@ -31,6 +32,7 @@ export const GithubIssueDetail = ({
   dock,
   fit = 'fill',
   editContext,
+  eyebrow,
 }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
   const { description, save } = useGithubIssueDescription({ issue, editContext });
@@ -61,6 +63,7 @@ export const GithubIssueDetail = ({
   return (
     <StudioDetailLayout
       fit={fit}
+      eyebrow={eyebrow}
       header={
         <RecordDetailHeader
           provider="github"

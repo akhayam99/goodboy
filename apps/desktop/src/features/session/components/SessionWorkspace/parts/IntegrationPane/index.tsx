@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ArrowLeft, Check, Unlink } from 'lucide-react';
 import type {
   SessionExternalTask,
@@ -35,6 +35,7 @@ type Props = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
   readonly provider: Exclude<SessionExternalTaskProvider, 'github'>;
+  readonly eyebrow?: ReactNode;
 };
 
 type ProviderMeta = Readonly<{
@@ -101,7 +102,7 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
   },
 };
 
-export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => {
+export const IntegrationPane = ({ sessionId, workspaceId, provider, eyebrow }: Props) => {
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
   const [isUnlinking, setIsUnlinking] = useState(false);
   const [isUnlinkArmed, setIsUnlinkArmed] = useState(false);
@@ -183,6 +184,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       <FocusedPane
         lens={meta.label}
         count={tasks.length}
+        eyebrow={eyebrow}
         actions={
           isUnlinkArmed ? (
             <InlineConfirm
@@ -241,6 +243,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       title={meta.label}
       description={`External ${meta.label} ${meta.nounPlural} linked to this session.`}
       meta={hasTasks ? tasks.length : undefined}
+      eyebrow={eyebrow}
       actions={connection.isConnected && hasTasks ? linkAction : undefined}
     >
       {!connection.isConnected ? (

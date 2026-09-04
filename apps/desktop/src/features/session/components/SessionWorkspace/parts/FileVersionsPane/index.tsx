@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Divider, formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
@@ -19,11 +19,12 @@ type Props = {
   sessionId: SessionId;
   sessionDir: string;
   onClose: () => void;
+  eyebrow?: ReactNode;
 };
 
 const EMPTY_VERSIONS: ReadonlyArray<FileVersion> = [];
 
-export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
+export const FileVersionsPane = ({ sessionId, sessionDir, onClose, eyebrow }: Props) => {
   const versions = useAppStore(
     useShallow((state) => state.sessionFileVersions[sessionId] ?? EMPTY_VERSIONS),
   );
@@ -94,6 +95,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
       title="File versions"
       description="Before an agent changes a file in this session, Goodboy stores the previous copy here so you can bring it back."
       measure={loading || groups.length > 0 ? 'full' : 'pane'}
+      eyebrow={eyebrow}
       actions={
         <>
           {deleteAllArmed ? (
