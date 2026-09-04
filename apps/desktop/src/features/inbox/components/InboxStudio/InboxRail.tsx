@@ -61,6 +61,8 @@ type Props = {
   readonly onKindFilterChange: (value: InboxKindFilter) => void;
   readonly selectedKey: string | null;
   readonly onSelect: (record: InboxRecord) => void;
+  readonly onActivate: (record: InboxRecord) => void;
+  readonly onClearFilters: () => void;
   readonly isLoading: boolean;
   readonly errors: ReadonlyArray<ErrorEntry>;
   readonly onRefresh: () => void;
@@ -71,6 +73,7 @@ type ListKeyDownParams = {
   readonly orderedRecords: ReadonlyArray<InboxRecord>;
   readonly selectedKey: string | null;
   readonly onSelect: (record: InboxRecord) => void;
+  readonly onActivate: (record: InboxRecord) => void;
 };
 
 const handleListKeyDown = ({
@@ -78,11 +81,21 @@ const handleListKeyDown = ({
   orderedRecords,
   selectedKey,
   onSelect,
+  onActivate,
 }: ListKeyDownParams): void => {
   if (orderedRecords.length === 0) {
     return;
   }
   const selectedIndex = orderedRecords.findIndex((record) => record.key === selectedKey);
+  if (event.key === 'Enter') {
+    const selectedRecord = selectedIndex < 0 ? null : (orderedRecords[selectedIndex] ?? null);
+    if (selectedRecord == null) {
+      return;
+    }
+    event.preventDefault();
+    onActivate(selectedRecord);
+    return;
+  }
   const lastIndex = orderedRecords.length - 1;
   const nextIndex = ((): number | null => {
     if (event.key === 'ArrowDown') {
@@ -121,6 +134,8 @@ export const InboxRail = ({
   onKindFilterChange,
   selectedKey,
   onSelect,
+  onActivate,
+  onClearFilters,
   isLoading,
   errors,
   onRefresh,
@@ -208,6 +223,17 @@ export const InboxRail = ({
         <div className="flex items-center gap-1.5 text-3xs text-muted-foreground/60">
           <KbdPill className="h-4 min-w-4 text-3xs">↑↓</KbdPill>
           <span>navigate</span>
+          <KbdPill className="h-4 min-w-4 text-3xs">↵</KbdPill>
+          <span>launch</span>
+          {hasFiltersActive ? (
+            <button
+              type="button"
+              onClick={onClearFilters}
+              className="ml-auto text-2xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
+            >
+              Clear filters
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -256,7 +282,7 @@ export const InboxRail = ({
               }
               className="flex flex-col gap-0.5 rounded-md focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
               onKeyDown={(event) =>
-                handleListKeyDown({ event, orderedRecords, selectedKey, onSelect })
+                handleListKeyDown({ event, orderedRecords, selectedKey, onSelect, onActivate })
               }
             >
               {sections.map((section) => (

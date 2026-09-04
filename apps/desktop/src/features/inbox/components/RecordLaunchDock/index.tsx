@@ -22,9 +22,10 @@ type Props = {
   readonly record: InboxRecord;
   readonly workspaceId: WorkspaceId;
   readonly onClose: () => void;
+  readonly focusRequest?: number;
 };
 
-export const RecordLaunchDock = ({ record, workspaceId, onClose }: Props) => {
+export const RecordLaunchDock = ({ record, workspaceId, onClose, focusRequest }: Props) => {
   const payload = record.payload;
 
   switch (payload.provider) {
@@ -42,6 +43,7 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose }: Props) => {
             title: payload.issue.title,
           }}
           onClose={onClose}
+          focusRequest={focusRequest}
         />
       );
     case 'gitlab':
@@ -60,6 +62,7 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose }: Props) => {
                 title: payload.issue.title,
               }}
               onClose={onClose}
+              focusRequest={focusRequest}
             />
           );
         case 'mr':
@@ -76,6 +79,7 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose }: Props) => {
                 title: payload.mr.title,
               }}
               onClose={onClose}
+              focusRequest={focusRequest}
             />
           );
         default: {
@@ -97,6 +101,7 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose }: Props) => {
             title: payload.issue.title,
           }}
           onClose={onClose}
+          focusRequest={focusRequest}
         />
       );
     case 'jira':
@@ -113,6 +118,7 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose }: Props) => {
             title: payload.issue.summary,
           }}
           onClose={onClose}
+          focusRequest={focusRequest}
         />
       );
     case 'sentry':
@@ -129,6 +135,7 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose }: Props) => {
             title: payload.issue.title,
           }}
           onClose={onClose}
+          focusRequest={focusRequest}
         />
       );
     case 'slack': {
@@ -149,6 +156,7 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose }: Props) => {
             title: slackThreadTitle({ text: payload.head.text }),
           }}
           onClose={onClose}
+          focusRequest={focusRequest}
         />
       );
     }
@@ -173,6 +181,7 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose }: Props) => {
             title: payload.pullRequest.title,
           }}
           onClose={onClose}
+          focusRequest={focusRequest}
         />
       );
     }
