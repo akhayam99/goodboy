@@ -7,6 +7,45 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.16
+
+The website's landing page rewrites around what Goodboy does for you,
+most tauri commands move off the desktop app's main thread, the
+sentry lens retires into the inbox, and budget merges into impact
+studio.
+
+### [#1665] Website: the landing page rewrites around what the app does
+
+The public website, not the app itself, rewrites its landing page
+around what Goodboy does for you rather than how it's built, answers
+a review right on the scrolling provider belt, and updates the
+structured data to match.
+
+### [#1666] 72 tauri commands move off the main thread
+
+Of 86 tauri commands that used to run synchronously on the desktop
+app's main thread, 72 now run off it; only terminal and provider
+write and resize, and db_path, stay sync on purpose. Skill upsert,
+delete and rescan no longer hold the database lock while they touch
+disk, so a slow scan can't stall everything else waiting on it.
+
+### [#1667] The sentry lens retires into the inbox
+
+The sentry lens is gone. Sentry issues now open in the inbox with the
+record focused, the way every other integration already works. The
+inbox gains a session scope chip and an unlink action on sentry
+records, five orphaned goodboy:open-*-studio listeners are deleted,
+and cmd+alt+3 is unbound.
+
+### [#1668] Budget merges into impact studio
+
+Budget is no longer its own surface: it merges into impact studio as
+one rail alongside the four impact sections, plus spend by provider
+and by session, behind a single window picker. A spend section sits
+under overview, and budget leaves settings and the more popover.
+goodboy:open-budget-studio stays as an alias so old links keep
+working.
+
 ## Goodboy v0.2.15
 
 Every lens and detail page now names the session you're in, its title
