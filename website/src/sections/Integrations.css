@@ -50,15 +50,11 @@
   display: flex;
   flex-direction: column;
   opacity: 0;
-  transform: translateX(-10px);
-  transition:
-    opacity 0.42s cubic-bezier(0.2, 0.7, 0.3, 1),
-    transform 0.42s cubic-bezier(0.2, 0.7, 0.3, 1);
+  transition: opacity 0.58s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 .ig-st.on {
   opacity: 1;
-  transform: none;
 }
 
 .ig-step {
@@ -134,16 +130,11 @@
   width: 28px;
   height: 12px;
   opacity: 0;
-  transform: scaleX(0.15);
-  transform-origin: left center;
-  transition:
-    opacity 0.3s ease,
-    transform 0.4s cubic-bezier(0.2, 0.7, 0.3, 1);
+  transition: opacity 0.58s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 .ig-arr.on svg {
   opacity: 1;
-  transform: none;
 }
 
 .ig-res {
@@ -190,7 +181,7 @@
   font-weight: 500;
   color: var(--gray6);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.58s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 .ig-ro.on {
@@ -215,7 +206,7 @@
   height: 6px;
   border-radius: 50%;
   background: var(--accent-bright);
-  animation: ig-pulse 1.1s ease-in-out infinite;
+  animation: ig-pulse 0.7s ease-in-out infinite;
 }
 
 @keyframes ig-pulse {
@@ -362,7 +353,7 @@
   align-items: center;
   gap: 8px;
   opacity: 0;
-  transition: opacity 0.42s ease;
+  transition: opacity 0.58s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 .ig-return.on {
@@ -401,7 +392,7 @@
   line-height: 1.5;
   color: var(--gray7);
   opacity: 0;
-  transition: opacity 0.42s ease;
+  transition: opacity 0.58s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 .ig-note.on {
@@ -443,11 +434,6 @@
   }
 
   .ig-arr svg {
-    transform: rotate(90deg) scaleX(0.15);
-    transform-origin: center;
-  }
-
-  .ig-arr.on svg {
     transform: rotate(90deg);
   }
 

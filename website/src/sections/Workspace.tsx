@@ -21,7 +21,7 @@ const PROJECTS: readonly Project[] = [
 
 const LAST_STEP = 6;
 
-const STEP_AT: readonly number[] = [400, 1400, 2100, 3000, 4300, 5700];
+const STEP_AT: readonly number[] = [380, 1330, 1800, 2220, 2840, 3740];
 
 const CheckGlyph = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" aria-hidden="true">
@@ -55,14 +55,14 @@ export const Workspace = () => {
           <h2 className="rv" id="h2-workspace">
             Eight repos, one goal
           </h2>
-          <p className="sub rv" style={delay(80)}>
+          <p className="sub rv" style={delay(40)}>
             Put every repo you work on in one workspace. Describe the goal and{' '}
             <b>Goodboy figures out which projects it touches</b>, opens a branch in each, and comes
             back with a pull request per repo.
           </p>
         </div>
 
-        <div className="ws-frame rv" style={delay(160)} ref={ref} aria-hidden="true">
+        <div className="ws-frame rv" style={delay(80)} ref={ref} aria-hidden="true">
           <div className="ws-body">
             <div className="ws-head">
               <span className="ws-hl">
@@ -88,7 +88,7 @@ export const Workspace = () => {
                   return (
                     <div className="ws-tile" key={project.name}>
                       <span className={cx('ws-chip', lit && 'ws-lit')}>{project.name}</span>
-                      <div className="ws-stack" style={delay(i * 240)}>
+                      <div className="ws-stack" style={delay(i * 160)}>
                         <span className={cx('ws-row', 'ws-branch', step >= 5 && 'ws-in')}>
                           <span className="ws-rk">branch</span>
                           <span className="ws-rv">gb/lin-241-bulk-archive</span>
@@ -113,10 +113,10 @@ export const Workspace = () => {
           </div>
         </div>
 
-        <p className="caption rv" style={delay(200)}>
+        <p className="caption rv" style={delay(110)}>
           The other six stay exactly as they were.
         </p>
-        <a className="more rv" style={delay(220)} href={SITE.concepts}>
+        <a className="more rv" style={delay(130)} href={SITE.concepts}>
           How workspaces work <span className="arr">→</span>
         </a>
       </div>

@@ -1,12 +1,12 @@
 import './Briefing.css';
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BrandMark } from '../components/BrandIcons';
 import { delay, prefersReducedMotion, useInViewOnce } from '../components/Reveal';
 import { SITE } from '../site';
 
 type Slot = { readonly title: string; readonly text: string };
 
-type Wire = { readonly d: string; readonly len: number };
+type Wire = { readonly d: string };
 
 const SLOTS: readonly Slot[] = [
   { title: 'Goal', text: 'Ship LIN-241, bulk archive for notifications.' },
@@ -14,7 +14,7 @@ const SLOTS: readonly Slot[] = [
   { title: 'Summary', text: 'Archive endpoint done, list view wired, empty-state copy still ahead.' },
 ];
 
-const BEATS: readonly number[] = [700, 1300, 1520, 1740, 2300, 2600];
+const BEATS: readonly number[] = [560, 1200, 1800, 2400, 3120, 3840];
 
 const AT_SWITCH = 1;
 const AT_FIRST_CARD = 2;
@@ -25,8 +25,6 @@ const AT_LAST = BEATS.length;
 const WIDE_AT = 760;
 const MIN_RUN = 40;
 
-const lenStyle = (len: number) => ({ '--len': `${len.toFixed(1)}px` }) as CSSProperties;
-
 const round = (value: number) => value.toFixed(1);
 
 const wireOf = (x0: number, y0: number, x1: number, y1: number, at: number): Wire => {
@@ -35,7 +33,7 @@ const wireOf = (x0: number, y0: number, x1: number, y1: number, at: number): Wir
   const dir = dy < 0 ? -1 : 1;
   const r = Math.min(9, Math.abs(dy) / 2, (xm - x0) / 2, (x1 - xm) / 2);
   if (r < 1) {
-    return { d: `M${round(x0)} ${round(y0)}L${round(x1)} ${round(y1)}`, len: Math.hypot(x1 - x0, dy) };
+    return { d: `M${round(x0)} ${round(y0)}L${round(x1)} ${round(y1)}` };
   }
   const d = [
     `M${round(x0)} ${round(y0)}`,
@@ -45,8 +43,7 @@ const wireOf = (x0: number, y0: number, x1: number, y1: number, at: number): Wir
     `Q${round(xm)} ${round(y1)} ${round(xm + r)} ${round(y1)}`,
     `L${round(x1)} ${round(y1)}`,
   ].join('');
-  const len = xm - r - x0 + (Math.abs(dy) - 2 * r) + (x1 - xm - r) + 3 * r;
-  return { d, len };
+  return { d };
 };
 
 export const Briefing = () => {
@@ -54,7 +51,6 @@ export const Briefing = () => {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const headRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [reduced] = useState(prefersReducedMotion);
   const [stage, setStage] = useState(() => (prefersReducedMotion() ? AT_LAST : 0));
   const [wires, setWires] = useState<readonly Wire[]>([]);
 
@@ -68,7 +64,7 @@ export const Briefing = () => {
     return () => timers.forEach(window.clearTimeout);
   }, [inView]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const grid = gridRef.current;
     if (grid == null) {
       return;
@@ -118,13 +114,13 @@ export const Briefing = () => {
           <h2 className="rv" id="h2-brief">
             The briefing belongs to the task, not the chat
           </h2>
-          <p className="sub rv" style={delay(80)}>
+          <p className="sub rv" style={delay(40)}>
             Write the goal once and <b>every agent that touches the task starts informed</b>. Swap
             models mid-task or step away for a day, and nothing needs re&#8209;explaining.
           </p>
         </div>
 
-        <div className="appframe br-frame rv" style={delay(160)} ref={ref} aria-hidden="true">
+        <div className="appframe br-frame rv" style={delay(80)} ref={ref} aria-hidden="true">
           <div className="tbar">
             <span className="tl r" />
             <span className="tl y" />
@@ -135,11 +131,8 @@ export const Briefing = () => {
           <div className="br-grid" ref={gridRef}>
             <svg className="br-wires" aria-hidden="true" focusable="false">
               {wires.map((w, i) => (
-                <g className={stage >= AT_FIRST_CARD + i ? 'br-lit' : undefined} key={w.d}>
-                  <path className="br-track" d={w.d} style={lenStyle(w.len)} />
-                  {!reduced && stage >= AT_FIRST_CARD + i ? (
-                    <path className="br-trav" d={w.d} style={lenStyle(w.len)} />
-                  ) : null}
+                <g className={stage >= AT_FIRST_CARD + i ? 'br-lit' : undefined} key={SLOTS[i].title}>
+                  <path className="br-track" d={w.d} />
                 </g>
               ))}
             </svg>
@@ -180,7 +173,9 @@ export const Briefing = () => {
                     </span>
                   </span>
                   <span className="br-tagslot">
-                    {stage >= AT_TAG ? <span className="br-tag">briefed from the task</span> : null}
+                    <span className={`br-tag${stage >= AT_TAG ? ' br-show' : ''}`}>
+                      briefed from the task
+                    </span>
                   </span>
                 </div>
 
@@ -208,27 +203,25 @@ export const Briefing = () => {
                     <span className="hairline" />
                   </div>
 
-                  {stage >= AT_REPLY ? (
-                    <div className="br-agent br-new">
-                      <span className="br-av">
-                        <BrandMark brand="codex" size={13} />
-                      </span>
-                      <p className="br-msg">
-                        Flag honoured in the empty state, 12 tests green. Summary updated for whoever
-                        comes next.
-                      </p>
-                    </div>
-                  ) : null}
+                  <div className={`br-agent br-reply${stage >= AT_REPLY ? ' br-show' : ''}`}>
+                    <span className="br-av">
+                      <BrandMark brand="codex" size={13} />
+                    </span>
+                    <p className="br-msg">
+                      Flag honoured in the empty state, 12 tests green. Summary updated for whoever
+                      comes next.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <p className="caption rv" style={delay(200)}>
+        <p className="caption rv" style={delay(110)}>
           A chat tool loses the thread when you switch, and Goodboy keeps it with the task.
         </p>
-        <a className="more rv" style={delay(220)} href={`${SITE.concepts}#shared-context`}>
+        <a className="more rv" style={delay(130)} href={`${SITE.concepts}#shared-context`}>
           How shared context works <span className="arr">→</span>
         </a>
       </div>

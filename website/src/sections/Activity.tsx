@@ -25,7 +25,7 @@ type Ev = {
 };
 
 const BEATS = [
-  400, 1300, 2200, 3100, 4000, 4900, 5900, 6900, 7900, 8900, 9900, 11600, 12600, 13600, 14600,
+  240, 590, 890, 1180, 1540, 1920, 2210, 2520, 2860, 3170, 3510, 4490, 4840, 5150, 5490,
 ];
 
 const AT_WORKFLOW = 2;
@@ -213,27 +213,25 @@ const Rail = ({
 
 const FeedRow = ({ ev, stage }: { readonly ev: Ev; readonly stage: number }) => (
   <div className={`ac-slot${stage >= ev.at ? ' ac-on' : ''}`} style={rowStyle(ev.gap, ev.bh)}>
-    <div className="ac-clip">
-      <div className="ac-row">
-        <div className="ac-gut">
-          <span>{ev.time}</span>
-        </div>
-        <div className="ac-rc">
-          <Rail
-            up={laneUp(ev.run, ev.at, stage)}
-            down={laneDown(ev.run)}
-            join={ev.run === 'anchor'}
-          />
-          <span
-            className={`ac-mk ac-${ev.grade} ac-t-${ev.tone}${ev.run === 'step' ? ' ac-onlane' : ''}`}
-          >
-            {ev.glyph}
-          </span>
-        </div>
-        <div className={`ac-body ac-${ev.grade}${ev.wash === true ? ' ac-wash' : ''}`}>
-          {ev.body}
-          {ev.action}
-        </div>
+    <div className="ac-row">
+      <div className="ac-gut">
+        <span>{ev.time}</span>
+      </div>
+      <div className="ac-rc">
+        <Rail
+          up={laneUp(ev.run, ev.at, stage)}
+          down={laneDown(ev.run)}
+          join={ev.run === 'anchor'}
+        />
+        <span
+          className={`ac-mk ac-${ev.grade} ac-t-${ev.tone}${ev.run === 'step' ? ' ac-onlane' : ''}`}
+        >
+          {ev.glyph}
+        </span>
+      </div>
+      <div className={`ac-body ac-${ev.grade}${ev.wash === true ? ' ac-wash' : ''}`}>
+        {ev.body}
+        {ev.action}
       </div>
     </div>
   </div>
@@ -532,17 +530,17 @@ export const Activity = () => {
             <p className="ac-eyebrow">Activity</p>
             <div className="ac-stream">
               <div className="ac-slot ac-on" style={rowStyle(0, 26)}>
-                <div className="ac-clip">
-                  <div className="ac-row">
-                    <div className="ac-gut">
-                      <span className="ac-nowlabel">Now</span>
-                    </div>
-                    <div className="ac-rc">
-                      {stage >= AT_WORKFLOW && <span className="ac-lane ac-down ac-dash" />}
-                      <span className="ac-nowdot" />
-                    </div>
-                    <div className="ac-body" />
+                <div className="ac-row">
+                  <div className="ac-gut">
+                    <span className="ac-nowlabel">Now</span>
                   </div>
+                  <div className="ac-rc">
+                    <span
+                      className={`ac-lane ac-down ac-dash${stage >= AT_WORKFLOW ? '' : ' ac-pend'}`}
+                    />
+                    <span className="ac-nowdot" />
+                  </div>
+                  <div className="ac-body" />
                 </div>
               </div>
 

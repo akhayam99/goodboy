@@ -57,22 +57,7 @@
 }
 
 .ac-slot {
-  display: grid;
-  grid-template-rows: 0fr;
-  margin-top: 0;
-  transition:
-    grid-template-rows 0.46s cubic-bezier(0.2, 0.7, 0.3, 1),
-    margin-top 0.46s cubic-bezier(0.2, 0.7, 0.3, 1);
-}
-
-.ac-slot.ac-on {
-  grid-template-rows: 1fr;
   margin-top: var(--gap);
-}
-
-.ac-clip {
-  min-height: 0;
-  overflow: hidden;
 }
 
 .ac-row {
@@ -80,16 +65,18 @@
   grid-template-columns: var(--ac-gut) 32px minmax(0, 1fr);
   align-items: center;
   min-height: var(--bh);
-  opacity: 0;
-  transform: translateY(-5px);
-  transition:
-    opacity 0.34s ease 0.1s,
-    transform 0.44s cubic-bezier(0.2, 0.7, 0.3, 1) 0.06s;
 }
 
-.ac-slot.ac-on .ac-row {
-  opacity: 1;
-  transform: none;
+.ac-row,
+.ac-row * {
+  transition:
+    color 0.58s cubic-bezier(0.2, 0.7, 0.3, 1),
+    background-color 0.58s cubic-bezier(0.2, 0.7, 0.3, 1),
+    border-color 0.58s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.ac-slot:not(.ac-on) {
+  --ac-run: var(--gray3);
 }
 
 .ac-gut {
@@ -100,6 +87,10 @@
   font-size: 10px;
   font-variant-numeric: tabular-nums;
   color: var(--gray5);
+}
+
+.ac-slot:not(.ac-on) .ac-gut {
+  color: color-mix(in oklab, var(--gray5) 62%, #fff);
 }
 
 .ac-nowlabel {
@@ -150,8 +141,13 @@
 }
 
 .ac-dash {
-  background-image: linear-gradient(to bottom, var(--ac-run) 0 3px, transparent 3px 6px);
-  background-size: 2px 6px;
+  background: var(--ac-run);
+  mask-image: linear-gradient(to bottom, #000 0 3px, transparent 3px 6px);
+  mask-size: 2px 6px;
+}
+
+.ac-lane.ac-pend {
+  --ac-run: var(--gray3);
 }
 
 .ac-join {
@@ -232,11 +228,21 @@
   color: oklch(0.71 0.14 277);
 }
 
+.ac-slot:not(.ac-on) .ac-mk {
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--gray3);
+  color: var(--gray5);
+}
+
 .ac-live {
   width: 4px;
   height: 4px;
   border-radius: 50%;
   background: var(--info);
+}
+
+.ac-slot:not(.ac-on) .ac-live {
+  background: var(--gray5);
 }
 
 .ac-body {
@@ -249,7 +255,7 @@
   padding: 0 6px 0 8px;
 }
 
-.ac-body.ac-wash {
+.ac-slot.ac-on .ac-body.ac-wash {
   background: color-mix(in oklab, var(--warn) 6%, transparent);
 }
 
@@ -257,6 +263,11 @@
   margin-top: 0;
   margin-left: 12px;
   flex-shrink: 0;
+}
+
+.ac-slot:not(.ac-on) .ac-body .mockbtn {
+  background: var(--gray1);
+  color: var(--gray5);
 }
 
 .ac-label {
@@ -275,6 +286,10 @@
 
 .ac-label.ac-ok {
   color: var(--ok-text);
+}
+
+.ac-slot:not(.ac-on) .ac-label {
+  color: var(--gray5);
 }
 
 .ac-val {
@@ -304,6 +319,15 @@
   color: var(--gray5);
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.ac-slot:not(.ac-on) .ac-val {
+  background: var(--gray0);
+}
+
+.ac-slot:not(.ac-on) .ac-sec,
+.ac-slot:not(.ac-on) .ac-hint {
+  color: color-mix(in oklab, var(--gray5) 62%, #fff);
 }
 
 .ac-runchip {
@@ -337,6 +361,20 @@
 .kb.ac-k-tester {
   background: oklch(0.94 0.05 65);
   color: oklch(0.48 0.13 55);
+}
+
+.ac-slot:not(.ac-on) .kb,
+.ac-slot:not(.ac-on) .ac-runchip {
+  background: var(--gray1);
+  box-shadow: none;
+  color: var(--gray5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ac-row,
+  .ac-row * {
+    transition: none;
+  }
 }
 
 @media (max-width: 768px) {

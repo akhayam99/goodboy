@@ -57,7 +57,7 @@ const UploadGlyph = () => (
   </svg>
 );
 
-const STAGE_MS = [180, 820, 1460, 2060, 2660, 3400, 4120, 4780] as const;
+const STAGE_MS = [180, 840, 1500, 2000, 2470, 3160, 3820, 4360] as const;
 const MAX_STAGE = 8;
 
 const IntegrationsFlow = () => {
@@ -216,19 +216,19 @@ export const Integrations = () => (
         <h2 className="rv" id="h2-integrations">
           The cards write themselves
         </h2>
-        <p className="sub rv" style={delay(80)}>
+        <p className="sub rv" style={delay(40)}>
           Most tasks start somewhere else, in an issue or a crash report. <b>One click</b> makes it
           a card with the goal already written for you, and whatever those tools send back lands in
           one inbox.
         </p>
       </div>
 
-      <ul className="ig-strip rv" style={delay(60)} aria-label="Connected tools">
+      <ul className="ig-strip rv" style={delay(30)} aria-label="Connected tools">
         {CARDS.map((card, index) => (
           <li
             key={card.brand}
             className="ig-chip"
-            style={{ ...delay(60 + index * 40), '--brand': BRAND_COLOR[card.brand] } as CSSProperties}
+            style={{ ...delay(30 + index * 20), '--brand': BRAND_COLOR[card.brand] } as CSSProperties}
           >
             <BrandMark brand={card.brand} size={16} />
             <span>{card.name}</span>
@@ -236,21 +236,21 @@ export const Integrations = () => (
         ))}
       </ul>
 
-      <h3 className="rv" id="h3-resolve" style={delay(160)}>
+      <h3 className="rv" id="h3-resolve" style={delay(80)}>
         From a review comment to a commit
       </h3>
 
-      <div className="ig-resolve rv" style={delay(200)}>
+      <div className="ig-resolve rv" style={delay(100)}>
         <IntegrationsFlow />
       </div>
 
-      <p className="caption rv" style={delay(240)}>
+      <p className="caption rv" style={delay(120)}>
         You stay in the app and the thread stays answered.
       </p>
 
       <a
         className="more rv"
-        style={delay(280)}
+        style={delay(140)}
         href={`${SITE.concepts}#integration-surface`}
       >
         See where each integration stands <span className="arr">→</span>

@@ -37,16 +37,15 @@
   border: 1px solid var(--gray3);
   border-radius: 12px;
   padding: 12px 14px;
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent-bright) 12%, transparent);
   transition:
-    background 0.4s ease,
-    border-color 0.4s ease,
-    box-shadow 0.4s ease;
+    background 0.58s cubic-bezier(0.2, 0.7, 0.3, 1),
+    border-color 0.58s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 .br-card[data-lit] {
   background: color-mix(in oklch, var(--accent-soft) 46%, #fff);
   border-color: color-mix(in oklch, var(--accent-bright) 60%, var(--gray3));
-  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent-bright) 12%, transparent);
 }
 
 .br-cardtitle {
@@ -56,7 +55,7 @@
   text-transform: uppercase;
   color: var(--gray6);
   margin-bottom: 5px;
-  transition: color 0.4s ease;
+  transition: color 0.58s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 .br-card[data-lit] .br-cardtitle {
@@ -83,42 +82,12 @@
   fill: none;
   stroke: color-mix(in oklch, var(--accent-bright) 55%, var(--gray3));
   stroke-width: 1;
-  stroke-dasharray: var(--len);
-  stroke-dashoffset: var(--len);
   opacity: 0;
+  transition: opacity 0.58s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 .br-lit .br-track {
   opacity: 1;
-  stroke-dashoffset: 0;
-  animation: br-draw 420ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
-}
-
-@keyframes br-draw {
-  from {
-    stroke-dashoffset: var(--len);
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-.br-trav {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 3.5;
-  stroke-linecap: round;
-  stroke-dasharray: 0.5px var(--len);
-  animation: br-travel 560ms cubic-bezier(0.4, 0, 0.4, 1) 140ms both;
-}
-
-@keyframes br-travel {
-  from {
-    stroke-dashoffset: 0;
-  }
-  to {
-    stroke-dashoffset: calc(var(--len) * -1);
-  }
 }
 
 .br-pane {
@@ -164,7 +133,7 @@
   gap: 8px;
   white-space: nowrap;
   opacity: 0;
-  transition: opacity 320ms ease;
+  transition: opacity 0.58s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 .br-popt.br-on {
@@ -188,18 +157,12 @@
   color: var(--accent-deep);
   background: color-mix(in oklch, var(--accent-bright) 14%, #fff);
   box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--accent-bright) 42%, transparent);
-  animation: br-tag-in 380ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  opacity: 0;
+  transition: opacity 0.58s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
-@keyframes br-tag-in {
-  from {
-    opacity: 0;
-    transform: translateX(6px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.br-tag.br-show {
+  opacity: 1;
 }
 
 .br-msgs {
@@ -249,19 +212,13 @@
   color: var(--accent-deep);
 }
 
-.br-new {
-  animation: br-slide 420ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+.br-reply {
+  opacity: 0;
+  transition: opacity 0.58s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
-@keyframes br-slide {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.br-reply.br-show {
+  opacity: 1;
 }
 
 .br-event {
@@ -269,15 +226,11 @@
   gap: 8px;
   margin: 2px 0;
   opacity: 0;
-  transform: translateY(6px);
-  transition:
-    opacity 0.4s ease,
-    transform 0.4s ease;
+  transition: opacity 0.58s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 .br-event.br-show {
   opacity: 1;
-  transform: none;
 }
 
 .br-eventtext {
@@ -326,5 +279,10 @@
 
   .br-msg {
     max-width: 100%;
+  }
+
+  .br-phead {
+    flex-wrap: wrap;
+    row-gap: 6px;
   }
 }
