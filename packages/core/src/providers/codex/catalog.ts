@@ -26,6 +26,23 @@ export const CODEX_CATALOG = [
     defaultEffort: 'low',
   },
   {
+    key: 'gpt-6',
+    label: 'Astra',
+    tier: 'turn',
+    contextWindow: 1_000_000,
+    presentation: {
+      family: 'gpt',
+      group: 'GPT',
+      version: '6',
+      order: 23,
+      costTier: 'expensive',
+    },
+    provider: 'codex',
+    variants: [{ id: 'astra', label: 'Astra', cliId: 'gpt-6-astra' }],
+    efforts: FULL_EFFORTS,
+    defaultEffort: 'low',
+  },
+  {
     key: 'gpt-5.5',
     label: 'GPT-5.5',
     tier: 'turn',

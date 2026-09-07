@@ -97,7 +97,7 @@ component instead of a gap in the mock.
   `run.providerOverride` on the `Agent` object when the
   `agentModelOverride`/`agentProviderOverride` prop maps are empty. Use real
   ids from `packages/core/src/providers/*/catalog.ts` (e.g. cursor's
-  `composer-2.5-fast`, codex's `gpt-5.6-sol`), not invented strings; the
+  `composer-2.5-fast`, codex's `gpt-6-astra` or `gpt-5.6-sol`), not invented strings; the
   catalog is what `RoutingBadge` and the model picker resolve labels from.
 - **Fan-out / sub-agents** render via `WorkflowStepGraph`'s
   `childrenByParentId: ReadonlyMap<string, ReadonlyArray<Agent>>` prop, keyed

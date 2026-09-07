@@ -317,6 +317,28 @@ describe('RoutingPicker', () => {
     expect(onModel).toHaveBeenCalledWith('gpt-5.6-luna');
   });
 
+  it('selects Astra from Sol and emits its cli id and requested effort', () => {
+    const onModel = vi.fn();
+    const onChange = vi.fn();
+    render(
+      <RoutingPicker
+        {...baseProps}
+        provider="codex"
+        model="gpt-5.6-sol"
+        onModel={onModel}
+        effort={{ editable: true, value: 'low', onChange }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    fireEvent.click(screen.getByRole('button', { name: '6' }));
+    expect(onModel).toHaveBeenCalledWith('gpt-6-astra');
+    expect(screen.getByRole('contentinfo').textContent).toBe(
+      '-m gpt-6-astra -c model_reasoning_effort="low"',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Max' }));
+    expect(onChange).toHaveBeenCalledWith('max');
+  });
+
   it('shows the Codex variant row only for a family with sibling checkpoints', () => {
     const view = render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-sol" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));

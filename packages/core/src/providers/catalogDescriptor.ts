@@ -17,6 +17,7 @@ const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   'sonnet-4.6': 15,
   'sonnet-4.5': 14,
   'haiku-4.5': 5,
+  'gpt-6': 29,
   'gpt-5.6': 28,
   'gpt-5.5': 25,
   'gpt-5.4': 22,

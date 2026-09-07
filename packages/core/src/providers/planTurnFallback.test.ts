@@ -22,7 +22,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'opus-5',
     attempt: 0,
     connectedProviders: CONNECTED,
-    expected: { provider: 'codex', model: 'gpt-5.6' },
+    expected: { provider: 'codex', model: 'gpt-6' },
   },
   {
     name: 'authentication gives up when no other provider is connected',
@@ -58,7 +58,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'opus-5',
     attempt: 1,
     connectedProviders: CONNECTED,
-    expected: { provider: 'codex', model: 'gpt-5.6' },
+    expected: { provider: 'codex', model: 'gpt-6' },
   },
   {
     name: 'an account usage limit crosses to another provider on the first attempt',
@@ -67,7 +67,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'opus-5',
     attempt: 0,
     connectedProviders: CONNECTED,
-    expected: { provider: 'codex', model: 'gpt-5.6' },
+    expected: { provider: 'codex', model: 'gpt-6' },
   },
   {
     name: 'an account usage limit gives up when no other provider is connected',
@@ -94,7 +94,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'opus-5',
     attempt: 1,
     connectedProviders: CONNECTED,
-    expected: { provider: 'codex', model: 'gpt-5.6' },
+    expected: { provider: 'codex', model: 'gpt-6' },
   },
   {
     name: 'model not available swaps to the nearest sibling on the same provider',
@@ -104,6 +104,15 @@ const ROWS: ReadonlyArray<Row> = [
     attempt: 0,
     connectedProviders: CONNECTED,
     expected: { provider: 'anthropic', model: 'fable-5' },
+  },
+  {
+    name: 'model not available falls back from Astra to Sol on the same provider',
+    failure: 'model_not_available',
+    provider: 'codex',
+    model: 'gpt-6',
+    attempt: 0,
+    connectedProviders: CONNECTED,
+    expected: { provider: 'codex', model: 'gpt-5.6' },
   },
   {
     name: 'model not available crosses providers on the second attempt',
@@ -192,7 +201,7 @@ describe('planTurnFallback', () => {
         connectedProviders: CONNECTED,
         preferred: { provider: 'codex', model: 'gpt-5.4-mini' },
       }),
-    ).toEqual({ provider: 'codex', model: 'gpt-5.6' });
+    ).toEqual({ provider: 'codex', model: 'gpt-6' });
   });
 
   it('degrades to the heuristic when the role fallback provider is not connected', () => {
@@ -244,7 +253,7 @@ describe('planTurnFallback', () => {
         connectedProviders: CONNECTED,
         preferred: { provider: 'anthropic', model: 'haiku-4.5' },
       }),
-    ).toEqual({ provider: 'codex', model: 'gpt-5.6' });
+    ).toEqual({ provider: 'codex', model: 'gpt-6' });
   });
 
   it('keeps a role fallback on another provider for an account usage limit', () => {

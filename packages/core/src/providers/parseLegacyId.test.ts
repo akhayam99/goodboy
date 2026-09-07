@@ -3,6 +3,23 @@ import { parseLegacyId } from './parseLegacyId';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
 
 describe('parseLegacyId', () => {
+  it('maps the bare Astra family id with its requested effort', () => {
+    expect(parseLegacyId({ provider: 'codex', id: 'gpt-6', effort: 'max' })).toEqual({
+      key: 'gpt-6',
+      variant: 'astra',
+      effort: 'max',
+    });
+  });
+
+  it('recognizes stored Astra cli ids without falling back to Sol', () => {
+    expect(
+      resolveStoredModelSelection({ provider: 'codex', id: 'gpt-6-astra', effort: 'max' }),
+    ).toEqual({
+      selection: { key: 'gpt-6', variant: 'astra', effort: 'max' },
+      report: null,
+    });
+  });
+
   it('maps shipped legacy ids to structured selections', () => {
     expect(parseLegacyId({ provider: 'anthropic', id: 'claude-sonnet-4-6' })).toEqual({
       key: 'sonnet-4.6',
