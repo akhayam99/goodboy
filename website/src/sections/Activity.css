@@ -142,7 +142,9 @@
 
 .ac-dash {
   background: var(--ac-run);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 3px, transparent 3px 6px);
   mask-image: linear-gradient(to bottom, #000 0 3px, transparent 3px 6px);
+  -webkit-mask-size: 2px 6px;
   mask-size: 2px 6px;
 }
 
