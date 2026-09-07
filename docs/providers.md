@@ -133,7 +133,7 @@ is `providers/claude/catalog.ts`.
 
 What the catalogs do not tell you:
 
-- Cursor's accepted slugs are recorded in `providers/cursor/agent-model-ids.ts`; the curated subset
+- Cursor's accepted slugs are recorded in `packages/core/src/providers/cursor/agent-model-ids.ts`; the curated subset
   is pinned against that list by
   `packages/core/src/providers/cursor/agent-model-ids.test.ts`. Cursor bakes
   effort into the slug, so it never receives an effort flag and its reachable
