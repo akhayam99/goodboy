@@ -165,8 +165,21 @@ describe('model catalogs', () => {
   it('keeps a bare Codex family id unrepresentable', () => {
     const emitted = codexCatalogIds({});
     expect(emitted).not.toContain('gpt-5.6');
+    expect(emitted).not.toContain('gpt-6');
     expect(emitted).toEqual(CODEX_AGENT_MODEL_IDS);
   });
+
+  it.each(['low', 'medium', 'high', 'xhigh', 'max'] satisfies ReadonlyArray<EffortLevel>)(
+    'emits the Astra cli id with %s effort',
+    (effort) => {
+      expect(
+        resolveModelArgs({
+          provider: 'codex',
+          selection: { key: 'gpt-6', variant: 'astra', effort },
+        }),
+      ).toEqual({ args: ['-m', 'gpt-6-astra', '-c', `model_reasoning_effort="${effort}"`] });
+    },
+  );
 
   it('throws when a provider cannot recognize a model key', () => {
     expect(() =>

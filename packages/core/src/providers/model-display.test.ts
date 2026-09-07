@@ -2,6 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { getModelDescriptor, getModelProvider } from './model-display';
 
 describe('provider model display', () => {
+  it('resolves Astra presentation from its cli id', () => {
+    expect(getModelProvider('gpt-6-astra')).toBe('codex');
+    expect(getModelDescriptor('gpt-6-astra')).toMatchObject({
+      id: 'gpt-6',
+      label: 'Astra',
+      family: 'gpt',
+      variantLabel: '6',
+      contextWindow: 1_000_000,
+      costTier: 'expensive',
+    });
+  });
+
   it('resolves OpenCode models', () => {
     expect(getModelProvider('opencode/big-pickle')).toBe('opencode');
     expect(getModelDescriptor('opencode/big-pickle')?.id).toBe('big-pickle');

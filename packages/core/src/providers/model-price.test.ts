@@ -33,6 +33,7 @@ describe('getModelPrice', () => {
   });
 
   it('returns codex pricing for catalog cli ids', () => {
+    expect(getModelPrice('gpt-6-astra')).toEqual({ inputPerMtok: 10, outputPerMtok: 50 });
     expect(getModelPrice('gpt-5.5')).toEqual({ inputPerMtok: 5, outputPerMtok: 30 });
     expect(getModelPrice('gpt-5.4-mini')).toEqual({ inputPerMtok: 0.75, outputPerMtok: 4.5 });
   });
@@ -65,6 +66,7 @@ describe('getModelPrice', () => {
   });
 
   it.each([
+    ['gpt-6', 'gpt-6-astra'],
     ['gpt-5.6', 'gpt-5.6-sol'],
     ['opus-5', 'claude-opus-5'],
     ['sonnet-4.6', 'claude-sonnet-4-6'],

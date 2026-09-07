@@ -7,6 +7,11 @@ export type CodexModelPriceOverride = {
 };
 
 export const CODEX_PRICES: Readonly<Record<string, CodexModelPriceOverride>> = {
+  'gpt-6-astra': {
+    inputPerMtok: 10,
+    outputPerMtok: 50,
+    cachedInputPerMtok: 1,
+  },
   'gpt-5.6-sol': {
     inputPerMtok: 5,
     outputPerMtok: 30,

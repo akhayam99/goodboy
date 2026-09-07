@@ -11,6 +11,33 @@ const usage: ProviderUsage = {
 };
 
 describe('computeCodexCostUsd', () => {
+  it('prices Astra input and output at the standard rates', () => {
+    expect(CODEX_PRICES['gpt-6-astra']).toEqual({
+      inputPerMtok: 10,
+      outputPerMtok: 50,
+      cachedInputPerMtok: 1,
+    });
+    expect(computeCodexCostUsd({ usage, model: 'gpt-6-astra' })).toBeCloseTo(60);
+  });
+
+  it('bills Astra cache reads separately from uncached input', () => {
+    expect(
+      computeCodexCostUsd({
+        usage: { ...usage, inputTokens: 2_000_000, cachedInputTokens: 1_000_000, outputTokens: 0 },
+        model: 'gpt-6-astra',
+      }),
+    ).toBeCloseTo(11);
+  });
+
+  it('bills Astra cache writes at 12.50 per million tokens', () => {
+    expect(
+      computeCodexCostUsd({
+        usage: { ...usage, inputTokens: 0, outputTokens: 0, cacheCreationInputTokens: 1_000_000 },
+        model: 'gpt-6-astra',
+      }),
+    ).toBeCloseTo(12.5);
+  });
+
   it('prices every catalog cli id', () => {
     const modelIds = CODEX_CATALOG.flatMap((model) =>
       model.variants.map((variant) => variant.cliId),

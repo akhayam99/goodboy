@@ -55,6 +55,7 @@ const LEGACY_SELECTIONS: Readonly<Record<string, ModelSelection>> = {
     key: 'gpt-5.3-codex',
     toggles: { thinking: false, fast: false },
   },
+  'codex:gpt-6': { key: 'gpt-6', variant: 'astra' },
   'codex:gpt-5.6': { key: 'gpt-5.6', variant: 'sol' },
   'codex:gpt-5.5': { key: 'gpt-5.5', variant: 'default' },
   'codex:gpt-5.4': { key: 'gpt-5.4', variant: 'default' },

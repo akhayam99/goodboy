@@ -34,6 +34,14 @@ describe('getActivePricingTable', () => {
 });
 
 describe('getCodexPriceOverride', () => {
+  it('returns the standard Astra rates', () => {
+    expect(getCodexPriceOverride(null, 'gpt-6-astra')).toEqual({
+      inputPerMtok: 10,
+      outputPerMtok: 50,
+      cachedInputPerMtok: 1,
+    });
+  });
+
   it('returns null for unknown model', () => {
     expect(getCodexPriceOverride(null, 'unknown-model-xyz')).toBeNull();
   });

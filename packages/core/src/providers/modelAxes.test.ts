@@ -9,6 +9,24 @@ import { OPENROUTER_CATALOG } from './openrouter/catalog';
 import { selectionRequiresMaxMode } from './selectionRequiresMaxMode';
 
 describe('modelAxes', () => {
+  it('offers Astra as the newest GPT version with the full Codex effort ladder', () => {
+    const model = CODEX_CATALOG.find((candidate) => candidate.key === 'gpt-6');
+    if (model == null) {
+      throw new Error('missing codex Astra');
+    }
+    const axes = modelAxes({ model, selection: { key: model.key, variant: 'astra' } });
+    expect(axes.model.options).toContainEqual({ id: 'GPT', label: 'GPT', modelKey: 'gpt-6' });
+    expect(axes.version?.options).toContainEqual({ id: 'gpt-6', label: '6', modelKey: 'gpt-6' });
+    expect(axes.effort?.levels).toEqual([
+      { level: 'low', available: true },
+      { level: 'medium', available: true },
+      { level: 'high', available: true },
+      { level: 'xhigh', available: true },
+      { level: 'max', available: true },
+    ]);
+    expect(axes.variant).toBeNull();
+  });
+
   it('changes cursor effort availability with the thinking toggle', () => {
     const model = CURSOR_CATALOG.find((candidate) => candidate.key === 'opus-5');
     if (model == null) {

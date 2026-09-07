@@ -27,6 +27,7 @@ describe('costCoverage', () => {
   });
 
   it('reports codex as measured for a priced model and unpriced otherwise', () => {
+    expect(costCoverage({ provider: 'codex', model: 'gpt-6-astra' })).toBe('measured');
     expect(costCoverage({ provider: 'codex', model: 'gpt-5.6-sol' })).toBe('measured');
     expect(costCoverage({ provider: 'codex', model: 'unknown-codex-model' })).toBe('unpriced');
   });
