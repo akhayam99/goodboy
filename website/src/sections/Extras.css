@@ -17,45 +17,53 @@
   margin-bottom: 10px;
 }
 
-.ex-rail {
+.ex-list {
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
 
-.ex-rail > :last-child {
-  margin-bottom: 0;
-}
-
-.ex-step {
+.ex-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 11px;
+  min-height: 52px;
   background: #fff;
   border: 1px solid var(--gray3);
   border-radius: 12px;
   padding: 9px 12px;
-  min-height: 46px;
+  opacity: 0.34;
+  transition: opacity 0.55s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
-.ex-step.ex-new {
-  animation: ex-rowin 320ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+.ex-row.ex-lit {
+  opacity: 1;
 }
 
-@keyframes ex-rowin {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.ex-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--gray5);
 }
 
-.ex-name {
+.ex-ico svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ex-rt {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   flex: 1;
   min-width: 0;
+}
+
+.ex-title {
   font-size: 13.5px;
   color: var(--gray7);
   overflow: hidden;
@@ -63,147 +71,42 @@
   white-space: nowrap;
 }
 
-.ex-st {
-  flex-shrink: 0;
-  font-size: 11px;
-  font-weight: 700;
-  border-radius: 999px;
-  padding: 2px 9px;
-}
-
-.ex-st-done {
-  background: oklch(0.94 0.04 148);
-  color: var(--ok-text);
-}
-
-.ex-st-queued {
-  background: var(--gray1);
-  color: var(--gray6);
-}
-
-.ex-prov {
-  flex-shrink: 0;
-  font-size: 11px;
-  color: var(--gray6);
-  white-space: nowrap;
-}
-
-.ex-sug {
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  transition:
-    max-height 0.3s cubic-bezier(0.2, 0.7, 0.3, 1),
-    opacity 0.3s ease;
-}
-
-.ex-sug.ex-open {
-  max-height: 220px;
-  opacity: 1;
-}
-
-.ex-sugcard {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 8px;
-  border-radius: 10px;
-  border-left: 2px solid var(--accent);
-  background: color-mix(in oklch, var(--accent-soft) 62%, #fff);
-  padding: 10px 12px;
-  opacity: 0;
-  transform: translateY(6px);
-  transition:
-    opacity 0.32s ease,
-    transform 0.32s cubic-bezier(0.2, 0.7, 0.3, 1);
-}
-
-.ex-sug.ex-open .ex-sugcard {
-  opacity: 1;
-  transform: none;
-}
-
-.ex-sugglyph {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  color: var(--accent);
-}
-
-.ex-sugglyph svg {
-  width: 15px;
-  height: 15px;
-}
-
-.ex-sugtext {
-  flex: 1 1 220px;
-  min-width: 0;
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--accent-deep);
-}
-
-.ex-sugbtns {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
-.ex-accept {
-  margin-top: 0;
-  transition:
-    transform 0.12s ease,
-    background 0.12s ease;
-}
-
-.ex-accept.ex-press {
-  transform: translateY(1px);
-  background: var(--accent);
-  color: #fff;
-}
-
-.ex-quiet {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--gray6);
-  white-space: nowrap;
-}
-
-.ex-trace {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
-  padding-left: 2px;
+.ex-detail {
   font-size: 11.5px;
-  color: var(--gray5);
-  animation: ex-fade 380ms ease 180ms both;
+  color: var(--gray6);
 }
 
-.ex-traceglyph {
-  display: inline-flex;
+.ex-row .mockbtn {
+  margin-top: 0;
   flex-shrink: 0;
-  color: var(--gray5);
 }
 
-.ex-traceglyph svg {
-  width: 11px;
-  height: 11px;
+.ex-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 5px 11px;
+  color: var(--accent-deep);
+  background: color-mix(in oklch, var(--accent-soft) 58%, #fff);
+  border: 1px solid color-mix(in oklch, var(--accent) 22%, #fff);
 }
 
-@keyframes ex-fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+.ex-cta svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.ex-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-deep);
+  opacity: 0.7;
+  white-space: nowrap;
 }
 
 .ex-composer {
@@ -218,11 +121,95 @@
   font-size: 14px;
   line-height: 1.5;
   color: var(--ink);
+  opacity: 0.34;
+  transition: opacity 0.55s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
-.ex-composer .ex-sugcard,
-.ex-composer .ex-trace {
+.ex-typed.ex-lit {
+  opacity: 1;
+}
+
+.ex-card {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
   margin: 0 12px 12px;
+  border-radius: 10px;
+  border-left: 2px solid var(--accent);
+  background: color-mix(in oklch, var(--accent-soft) 62%, #fff);
+  padding: 10px 12px;
+  opacity: 0.26;
+  transition: opacity 0.55s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.ex-card.ex-lit {
+  opacity: 1;
+}
+
+.ex-cardglyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  color: var(--accent);
+}
+
+.ex-cardglyph svg {
+  width: 15px;
+  height: 15px;
+}
+
+.ex-cardtext {
+  flex: 1 1 240px;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--accent-deep);
+}
+
+.ex-cardtext b {
+  font-weight: 700;
+}
+
+.ex-cardsub {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  opacity: 0.72;
+}
+
+.ex-cardbtns {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.ex-cardbtns .mockbtn {
+  margin-top: 0;
+}
+
+.ex-accept {
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.ex-accept.ex-press {
+  background: var(--accent);
+  color: #fff;
+}
+
+.ex-quiet {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray6);
+  white-space: nowrap;
 }
 
 .ex-cfoot {
@@ -247,28 +234,23 @@
   padding: 4px 11px;
 }
 
-.ex-chip span {
+.ex-chipslot {
+  display: grid;
+  min-width: 0;
+}
+
+.ex-chipslot > span {
+  grid-area: 1 / 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.55s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
-.ex-chip.ex-swapped {
-  animation: ex-flash 600ms ease both;
-}
-
-@keyframes ex-flash {
-  0% {
-    background: var(--accent-soft);
-    border-color: var(--accent-bright);
-    box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent-bright) 18%, transparent);
-  }
-  100% {
-    background: #fff;
-    border-color: var(--gray3);
-    box-shadow: 0 0 0 0 transparent;
-  }
+.ex-chipslot > span.ex-on {
+  opacity: 1;
 }
 
 .ex-send {
@@ -289,40 +271,39 @@
   height: 15px;
 }
 
+@media (max-width: 700px) {
+  .ex-row {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .ex-rt {
+    flex: 1 1 calc(100% - 27px);
+  }
+
+  .ex-cta {
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 560px) {
   .ex-sec {
     padding: 14px 12px;
   }
 
-  .ex-step {
-    flex-wrap: wrap;
-    row-gap: 8px;
-  }
-
-  .ex-step .kb {
-    order: 1;
-  }
-
-  .ex-st {
-    order: 2;
-  }
-
-  .ex-prov {
-    order: 3;
-  }
-
-  .ex-name {
-    order: 4;
-    flex: 1 1 100%;
+  .ex-title {
     white-space: normal;
   }
 
-  .ex-sugbtns {
+  .ex-cardbtns {
     margin-left: 0;
     flex-basis: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
-  .ex-sug.ex-open {
-    max-height: 300px;
+  .ex-cardbtns .mockbtn {
+    white-space: nowrap;
   }
 }

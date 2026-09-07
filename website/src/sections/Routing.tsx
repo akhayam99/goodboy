@@ -12,7 +12,7 @@ type Turn = Priced & {
   readonly key: string;
   readonly ask: string;
   readonly model: string;
-  readonly effort: string;
+  readonly effort?: string;
   readonly carries: string;
   readonly blocks: number;
   readonly run: number;
@@ -91,7 +91,6 @@ const TURNS: readonly Turn[] = [
     key: 'label',
     ask: 'rename one label',
     model: 'Claude Haiku 4.5',
-    effort: 'Low',
     carries: 'carries turns 1 to 5',
     blocks: 5,
     delta: 2.1,
@@ -106,12 +105,12 @@ const STEPS: readonly Step[] = [
     role: 'scout',
     tone: 'scout',
     ask: 'read the code',
-    brand: 'anthropic',
-    model: 'Claude Haiku 4.5',
-    effort: 'Low',
+    brand: 'gemini',
+    model: 'Gemini 3.1 Pro',
+    effort: 'High',
     brief: 'brief 2k',
-    delta: 0.02,
-    run: 0.02,
+    delta: 0.05,
+    run: 0.05,
   },
   {
     key: 'planner',
@@ -119,11 +118,11 @@ const STEPS: readonly Step[] = [
     tone: 'planner',
     ask: 'plan it',
     brand: 'anthropic',
-    model: 'Claude Opus',
+    model: 'Claude Opus 5',
     effort: 'High',
     brief: 'brief 6k',
-    delta: 0.48,
-    run: 0.5,
+    delta: 0.43,
+    run: 0.48,
   },
   {
     key: 'implementer',
@@ -133,31 +132,32 @@ const STEPS: readonly Step[] = [
     brand: 'codex',
     model: 'GPT-5.6 Sol',
     brief: 'brief 9k',
-    delta: 0.91,
-    run: 1.41,
+    delta: 0.77,
+    run: 1.25,
   },
   {
     key: 'tester',
     role: 'tester',
     tone: 'ro-tester',
     ask: 'fix the tests',
-    brand: 'codex',
-    model: 'GPT-5.6 Terra',
+    brand: 'cursor',
+    model: 'Cursor Opus 5',
+    effort: 'High',
     brief: 'brief 5k',
-    delta: 0.1,
-    run: 1.51,
+    delta: 0.25,
+    run: 1.5,
   },
   {
     key: 'reviewer',
     role: 'reviewer',
     tone: 'reviewer',
     ask: 'review the diff',
-    brand: 'cursor',
-    model: 'Cursor Composer',
-    effort: 'Medium',
+    brand: 'codex',
+    model: 'GPT-5.5',
+    effort: 'High',
     brief: 'brief 7k',
-    delta: 0.14,
-    run: 1.65,
+    delta: 0.28,
+    run: 1.78,
   },
   {
     key: 'resolver',
@@ -165,26 +165,25 @@ const STEPS: readonly Step[] = [
     tone: 'ro-resolver',
     ask: 'rename one label',
     brand: 'anthropic',
-    model: 'Claude Sonnet',
-    effort: 'Low',
+    model: 'Claude Haiku 4.5',
     brief: 'brief 3k',
-    delta: 0.05,
-    run: 1.7,
+    delta: 0.01,
+    run: 1.79,
   },
 ];
 
 const BUDGET_CAP = 3;
 
-const BASE = 600;
-const STEP_MS = 1400;
-const FILL = 1100;
+const BASE = 300;
+const STEP_MS = 660;
+const FILL = 680;
 const MAX = 6.6;
 const FALLBACK_AT = BASE + STEP_MS + FILL;
 const END = BASE + 5 * STEP_MS + FILL;
 
 const rowDelay = (index: number) => BASE + index * STEP_MS;
 
-const blockDelay = (index: number, slot: number) => rowDelay(index) + 140 + slot * 90;
+const blockDelay = (index: number, slot: number) => rowDelay(index) + 110 + slot * 65;
 
 const barWidth = (run: number) => `${Math.max((run / MAX) * 100, 2)}%`;
 
@@ -287,6 +286,9 @@ const RoStep = ({ step, index, rerouted }: StepProps) => (
         Claude hit its limit, GPT-5.6 Sol finished the step
       </span>
     )}
+    {step.key === 'resolver' && (
+      <span className="ro-note ro-calm">Same model as the turn on the left, one short brief</span>
+    )}
   </div>
 );
 
@@ -341,17 +343,18 @@ export const Routing = () => {
           <h2 className="rv" id="h2-routing">
             The same task, two very different bills
           </h2>
-          <p className="sub rv" style={delay(80)}>
+          <p className="sub rv" style={delay(40)}>
             One chat carries every earlier turn into the next, so the last small change costs the
-            most, whatever model does it. A fresh agent per step reads a short brief instead, on the
-            model the step deserves.
+            most, whatever model does it. A fresh agent per step reads a short brief instead. Both
+            columns run the same six tasks on models of comparable weight, so what changes is how
+            much context each agent has to read.
           </p>
         </div>
 
         <div
           className="contrast ro-fig rv"
           data-stage={stage}
-          style={delay(160)}
+          style={delay(80)}
           ref={ref}
           aria-hidden="true"
         >
@@ -388,18 +391,18 @@ export const Routing = () => {
               total
               <span className="ro-cap-label mono">cap {money(BUDGET_CAP)}</span>
               <span className="tot mono" ref={fitRef}>
-                $1.70
+                $1.79
               </span>
             </div>
           </div>
         </div>
-        <p className="caption rv" style={delay(200)}>
+        <p className="caption rv" style={delay(110)}>
           <span className="ro-ill">Illustrative figures.</span> Set a budget and Goodboy taps you on
           the shoulder before you cross it, not after.
         </p>
         <a
           className="more rv"
-          style={delay(220)}
+          style={delay(130)}
           href={`${SITE.concepts}#provider-routing--balance`}
         >
           See how routing works <span className="arr">→</span>

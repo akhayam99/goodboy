@@ -1,5 +1,5 @@
 import './Artifacts.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { delay, prefersReducedMotion, useInViewOnce } from '../components/Reveal';
 import { SITE } from '../site';
 
@@ -18,7 +18,18 @@ type Step = {
   readonly edited?: boolean;
 };
 
-const BEATS = [1180, 1570, 6260, 7260];
+const PLAN_MS = 730;
+const DECISION_MS = 975;
+const QUESTION_MS = 3895;
+const ANSWER_MS = 4695;
+
+const BEATS = [PLAN_MS, DECISION_MS, QUESTION_MS, ANSWER_MS];
+
+const CUE: Readonly<Record<Tone, number>> = {
+  plan: PLAN_MS,
+  decision: DECISION_MS,
+  question: QUESTION_MS,
+};
 
 const AT_PLAN = 1;
 const AT_DECISION = 2;
@@ -88,6 +99,8 @@ const playState = (reduced: boolean, seen: boolean) => {
   return seen ? 'run' : 'idle';
 };
 
+const cueStyle = (tone: Tone) => ({ '--ar-cue': `${CUE[tone]}ms` }) as CSSProperties;
+
 export const Artifacts = () => {
   const { ref, inView } = useInViewOnce<HTMLDivElement>();
   const [stage, setStage] = useState(() => (prefersReducedMotion() ? AT_LAST : 0));
@@ -113,75 +126,97 @@ export const Artifacts = () => {
             The plan does not scroll away
           </h2>
           <p className="sub rv" style={delay(80)}>
-            A chat buries the plan under the next hundred lines. Here the plan, the open question and
-            the decision are <b>objects that stay where you left them</b>, and you can edit, answer
-            or reread them any time.
+            A chat buries the plan under the next hundred lines. Here the plan, the open question
+            and the decision are <b>objects that stay where you left them</b>, and you can edit,
+            answer or reread them any time.
           </p>
         </div>
 
-        <div className="appframe rv" style={delay(160)} ref={ref} aria-hidden="true">
-          <div className="tbar">
-            <span className="tl r" />
-            <span className="tl y" />
-            <span className="tl g" />
-            <span className="tname">goodboy, acme / Ship LIN-241</span>
-          </div>
+        <div className="ar-fig rv" style={delay(160)} ref={ref} aria-hidden="true">
+          <div className="ar-side">
+            <p className="ar-eyebrow">In a chat</p>
 
-          <div className="ar-panes">
-            <div className="ar-pane">
-              <p className="ar-eyebrow">Chat</p>
-              <div className="ar-chat" data-play={play}>
-                <div className="ar-track">
-                  {LINES.map((line, i) => (
-                    <p
-                      className={`ar-line${line.tone === undefined ? '' : ` ar-${line.tone}`}`}
-                      key={`${line.text}-${i}`}
-                    >
-                      {line.text}
-                    </p>
-                  ))}
-                </div>
+            <div className="ar-term">
+              <div className="ar-termbar">
+                <span className="ar-tapp mono">zsh</span>
+                <span className="ar-tpath mono">~/acme/api</span>
+                <span className="ar-tbranch mono">gb/lin-241-bulk-archive</span>
               </div>
-            </div>
 
-            <div className="ar-pane ar-kept">
-              <p className="ar-eyebrow">Kept</p>
-              <div className="ar-cards">
-                <div className={`ar-card ar-accent${stage >= AT_PLAN ? ' ar-in' : ''}`}>
-                  <p className="ar-ckind">Plan</p>
-                  <p className="ar-ctitle">Ship LIN-241, bulk archive for notifications</p>
-                  <div className="ar-steps">
-                    {STEPS.map((step) => (
-                      <div className="ar-step" key={step.title}>
-                        <span className={`kb ${step.tone}`}>{step.role}</span>
-                        <span className="ar-stitle">{step.title}</span>
-                        {step.edited === true && <span className="ar-edit">edited by you</span>}
-                        <span className={`ar-dot ar-d-${step.dot}`} />
-                      </div>
+              <div className="ar-termbody">
+                <p className="ar-prompt mono">
+                  <span className="ar-caret">&gt;</span>
+                  Ship LIN-241, bulk archive for notifications
+                </p>
+
+                <div className="ar-chat" data-play={play}>
+                  <div className="ar-track">
+                    {LINES.map((line, i) => (
+                      <p
+                        className={
+                          line.tone === undefined ? 'ar-line' : `ar-line ar-cue ar-${line.tone}`
+                        }
+                        key={`${line.text}-${i}`}
+                        style={line.tone === undefined ? undefined : cueStyle(line.tone)}
+                      >
+                        <span className="ar-ltext">{line.text}</span>
+                      </p>
                     ))}
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
 
-                <div className={`ar-card ar-info${stage >= AT_DECISION ? ' ar-in' : ''}`}>
-                  <p className="ar-ckind">Decision</p>
-                  <p className="ar-ctitle">Soft delete only. Batches of 500.</p>
-                  <span className="ar-cctx">Recorded by the planner at 11:21</span>
-                </div>
+          <div className="ar-side">
+            <p className="ar-eyebrow">In Goodboy</p>
 
-                <div className={`ar-card ar-warn${stage >= AT_QUESTION ? ' ar-in' : ''}`}>
-                  <p className="ar-ckind">Open question</p>
-                  <p className="ar-ctitle">Archive read notifications too, or only unread?</p>
-                  <span className="ar-crow">
-                    <span className="ar-cctx">Asked by the implementer at 12:11</span>
-                    <span className="ar-swap">
-                      <span className={`ar-sw${answered ? '' : ' ar-on'}`}>
-                        <span className="mockbtn">Answer</span>
-                      </span>
-                      <span className={`ar-sw${answered ? ' ar-on' : ''}`}>
-                        <span className="ar-ans">✓ Only unread</span>
+            <div className="appframe ar-app">
+              <div className="tbar">
+                <span className="tl r" />
+                <span className="tl y" />
+                <span className="tl g" />
+                <span className="tname">goodboy, acme / Ship LIN-241</span>
+              </div>
+
+              <div className="ar-kept">
+                <div className="ar-cards">
+                  <div className={`ar-card ar-accent${stage >= AT_PLAN ? ' ar-in' : ''}`}>
+                    <p className="ar-ckind">Plan</p>
+                    <p className="ar-ctitle">Ship LIN-241, bulk archive for notifications</p>
+                    <div className="ar-steps">
+                      {STEPS.map((step) => (
+                        <div className="ar-step" key={step.title}>
+                          <span className={`kb ${step.tone}`}>{step.role}</span>
+                          <span className="ar-stitle">{step.title}</span>
+                          {step.edited === true && <span className="ar-edit">edited by you</span>}
+                          <span className={`ar-dot ar-d-${step.dot}`} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className={`ar-card ar-info${stage >= AT_DECISION ? ' ar-in' : ''}`}>
+                    <p className="ar-ckind">Decision</p>
+                    <p className="ar-ctitle">Soft delete only. Batches of 500.</p>
+                    <span className="ar-cctx">Recorded by the planner at 11:21</span>
+                  </div>
+
+                  <div className={`ar-card ar-warn${stage >= AT_QUESTION ? ' ar-in' : ''}`}>
+                    <p className="ar-ckind">Open question</p>
+                    <p className="ar-ctitle">Archive read notifications too, or only unread?</p>
+                    <span className="ar-crow">
+                      <span className="ar-cctx">Asked by the implementer at 12:11</span>
+                      <span className="ar-swap">
+                        <span className={`ar-sw${answered ? '' : ' ar-on'}`}>
+                          <span className="mockbtn">Answer</span>
+                        </span>
+                        <span className={`ar-sw${answered ? ' ar-on' : ''}`}>
+                          <span className="ar-ans">✓ Only unread</span>
+                        </span>
                       </span>
                     </span>
-                  </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -189,7 +224,7 @@ export const Artifacts = () => {
         </div>
 
         <p className="caption rv" style={delay(200)}>
-          The chat keeps moving. These three do not.
+          Same agent, same run. On the left those three lines scroll past, on the right they stay.
         </p>
         <a className="more rv" style={delay(220)} href={`${SITE.concepts}#plans`}>
           How plans work <span className="arr">→</span>

@@ -93,14 +93,14 @@ export const Hero = () => (
   <section id="hero" aria-labelledby="h2-hero">
     <div className="wrap heroGrid hr-grid">
       <div className="heroCopy">
-        <h1 className="rv" id="h2-hero">
+        <h1 className="rvi-lead" id="h2-hero">
           Stop <span className="hl">re&#8209;explaining yourself.</span>
         </h1>
-        <p className="sub rv" style={delay(80)}>
+        <p className="sub rvi-lead" style={delay(80)}>
           Goodboy is a free desktop app that runs a team of coding agents on your work. You describe
           it once, and Goodboy decides which agent goes next.
         </p>
-        <div className="ctaRow hr-cta rv" style={delay(160)}>
+        <div className="ctaRow hr-cta rvi" style={delay(160)}>
           <a className="btn" href="#install">
             Install
           </a>
@@ -108,19 +108,19 @@ export const Hero = () => (
             Star on GitHub
           </a>
         </div>
-        <p className="reassure rv" style={delay(240)}>
+        <p className="reassure rvi" style={delay(240)}>
           <b>Free and open source (MIT), every feature included.</b> It lives on your computer, no
           account.
         </p>
-        <p className="reassure rv" style={delay(300)}>
+        <p className="reassure rvi" style={delay(300)}>
           <b>No new bill.</b> It runs on the Claude, ChatGPT or Cursor plan you already pay for.
         </p>
-        <p className="reassure rv" style={delay(360)}>
+        <p className="reassure rvi" style={delay(360)}>
           <b>Switch model mid-task and nothing resets.</b> The goal, the decisions and the summary
           belong to the task, so the next agent already has them.
         </p>
       </div>
-      <div className="wall rv" style={delay(200)} aria-hidden="true">
+      <div className="wall rvi" style={delay(200)} aria-hidden="true">
         <div className="wallCol">
           {[...WALL, ...WALL].map((card, i) => (
             <SessionCard key={`${card.goal}-${i}`} {...card} />

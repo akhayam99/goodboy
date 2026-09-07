@@ -1,10 +1,13 @@
 import './Roles.css';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { BrandMark, type BrandId } from '../components/BrandIcons';
 import { delay, prefersReducedMotion, useInViewOnce } from '../components/Reveal';
 import { SITE } from '../site';
 
-type EffortValue = 'Low' | 'Medium' | 'High' | 'Luna' | 'Terra' | 'Sol';
+type Dial = {
+  readonly options: readonly string[];
+  readonly pick: string;
+};
 
 type Step = {
   readonly n: number;
@@ -13,15 +16,20 @@ type Step = {
   readonly brand: BrandId;
   readonly provider: string;
   readonly model: string;
-  readonly effort: EffortValue;
-  readonly options: readonly EffortValue[];
+  readonly dial: Dial | null;
   readonly task: string;
   readonly why: string;
 };
 
-const EFFORTS: readonly EffortValue[] = ['Low', 'Medium', 'High'];
+const OPUS_EFFORTS: readonly string[] = ['Low', 'Medium', 'High', 'Very high', 'Max'];
 
-const VARIANTS: readonly EffortValue[] = ['Luna', 'Terra', 'Sol'];
+const SONNET_EFFORTS: readonly string[] = ['Low', 'Medium', 'High'];
+
+const CODEX_VARIANTS: readonly string[] = ['Luna', 'Terra', 'Sol'];
+
+const COMPOSER_MODES: readonly string[] = ['Standard', 'Fast'];
+
+const NO_DIAL = 'no tuning';
 
 const LEGEND: readonly (readonly [string, string])[] = [
   ['scout', 'scout'],
@@ -41,8 +49,7 @@ const STEPS: readonly Step[] = [
     brand: 'anthropic',
     provider: 'Claude',
     model: 'Haiku 4.5',
-    effort: 'Low',
-    options: EFFORTS,
+    dial: null,
     task: 'Read how notifications are stored',
     why: 'reads a lot, decides nothing',
   },
@@ -53,8 +60,7 @@ const STEPS: readonly Step[] = [
     brand: 'anthropic',
     provider: 'Claude',
     model: 'Opus',
-    effort: 'High',
-    options: EFFORTS,
+    dial: { options: OPUS_EFFORTS, pick: 'High' },
     task: 'Draft the archive steps',
     why: 'the one that has to think',
   },
@@ -64,9 +70,8 @@ const STEPS: readonly Step[] = [
     tone: 'implementer',
     brand: 'codex',
     provider: 'Codex',
-    model: 'GPT-5.6 Sol',
-    effort: 'Sol',
-    options: VARIANTS,
+    model: 'GPT-5.6',
+    dial: { options: CODEX_VARIANTS, pick: 'Sol' },
     task: 'Archive endpoint, batches of 500',
     why: 'writes most of the code',
   },
@@ -76,11 +81,10 @@ const STEPS: readonly Step[] = [
     tone: 'rl-tester',
     brand: 'codex',
     provider: 'Codex',
-    model: 'GPT-5.6 Terra',
-    effort: 'Terra',
-    options: VARIANTS,
+    model: 'GPT-5.6',
+    dial: { options: CODEX_VARIANTS, pick: 'Terra' },
     task: 'Run the suite, fix the reds',
-    why: 'runs the suite, fixes the reds',
+    why: 'the tests do the judging',
   },
   {
     n: 5,
@@ -89,8 +93,7 @@ const STEPS: readonly Step[] = [
     brand: 'cursor',
     provider: 'Cursor',
     model: 'Composer',
-    effort: 'Medium',
-    options: EFFORTS,
+    dial: { options: COMPOSER_MODES, pick: 'Standard' },
     task: 'Read the diff before the PR',
     why: 'reads the diff, not the repo',
   },
@@ -101,18 +104,15 @@ const STEPS: readonly Step[] = [
     brand: 'anthropic',
     provider: 'Claude',
     model: 'Sonnet',
-    effort: 'Low',
-    options: EFFORTS,
+    dial: { options: SONNET_EFFORTS, pick: 'Low' },
     task: 'Answer review comments',
     why: 'small edits, one at a time',
   },
 ];
 
-const FIRST_BEAT = 500;
+const FIRST_BEAT = 480;
 
-const BEAT_GAP = 420;
-
-const segStyle = (i: number) => ({ '--i': `${i}` }) as CSSProperties;
+const BEAT_GAP = 700;
 
 const Caret = () => (
   <svg
@@ -130,28 +130,28 @@ const Caret = () => (
   </svg>
 );
 
-const Effortometer = ({
-  effort,
-  options,
-  set,
-}: {
-  readonly effort: EffortValue;
-  readonly options: readonly EffortValue[];
-  readonly set: boolean;
-}) => (
-  <span
-    className="rl-seg"
-    data-set={set ? 'y' : undefined}
-    style={segStyle(set ? options.indexOf(effort) : 0)}
-  >
-    <span className="rl-thumb" />
-    {options.map((value) => (
-      <span className="rl-sv" key={value} data-on={set && value === effort ? 'y' : undefined}>
-        {value}
+const DialControl = ({ dial, set }: { readonly dial: Dial | null; readonly set: boolean }) => {
+  if (dial == null) {
+    return (
+      <span className="rl-dialslot">
+        <span className="rl-nodial" data-in={set ? 'y' : undefined}>
+          {NO_DIAL}
+        </span>
       </span>
-    ))}
-  </span>
-);
+    );
+  }
+  return (
+    <span className="rl-dialslot">
+      <span className="rl-seg">
+        {dial.options.map((value) => (
+          <span className="rl-sv" key={value} data-on={set && value === dial.pick ? 'y' : undefined}>
+            {value}
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+};
 
 export const Roles = () => {
   const { ref, inView } = useInViewOnce<HTMLDivElement>();
@@ -177,14 +177,15 @@ export const Roles = () => {
           <h2 className="rv" id="h2-roles">
             The right model for each step
           </h2>
-          <p className="sub rv" style={delay(80)}>
+          <p className="sub rv" style={delay(40)}>
             Seven roles come in the box: scout, planner, implementer, tester, reviewer, investigator
-            and resolver. Each step in a workflow picks its own provider, model and effort, and any
-            of them is one click from being changed.
+            and resolver. Each step picks its own provider and model, then whatever that model lets
+            you tune: how hard it thinks, which variant, standard or fast. Any of it is one click
+            from being changed.
           </p>
         </div>
 
-        <div className="appframe rl-frame rv" style={delay(160)} ref={ref} aria-hidden="true">
+        <div className="appframe rl-frame rv" style={delay(80)} ref={ref} aria-hidden="true">
           <div className="tbar">
             <span className="tl r" />
             <span className="tl y" />
@@ -223,7 +224,7 @@ export const Roles = () => {
                       <span className="rl-cv">{step.model}</span>
                       <Caret />
                     </span>
-                    <Effortometer effort={step.effort} options={step.options} set={set} />
+                    <DialControl dial={step.dial} set={set} />
                     <span className="rl-slot">
                       <span className="rl-why" data-in={set ? 'y' : undefined}>
                         {step.why}
@@ -240,11 +241,11 @@ export const Roles = () => {
           </div>
         </div>
 
-        <p className="caption rv" style={delay(200)}>
-          The scout reads the codebase for two cents. The planner thinks, and that is the one that
-          costs real money.
+        <p className="caption rv" style={delay(110)}>
+          The scout reads the codebase for two cents and has nothing to tune. The planner thinks at
+          high effort, and that is the one that costs real money.
         </p>
-        <a className="more rv" style={delay(220)} href={`${SITE.concepts}#workflows`}>
+        <a className="more rv" style={delay(130)} href={`${SITE.concepts}#workflows`}>
           How workflows work <span className="arr">→</span>
         </a>
       </div>
