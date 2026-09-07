@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { InboxProvider, InboxRecord } from '../../types';
 import { InboxRail } from './InboxRail';
 
@@ -45,7 +45,9 @@ const record = ({
   },
 });
 
-const now = Date.now();
+const FIXED_NOW = Date.UTC(2024, 0, 15, 12, 0, 0);
+
+const now = FIXED_NOW;
 
 const todayRecord = record({
   key: 'a',
@@ -114,7 +116,15 @@ const renderRail = ({
     />,
   );
 
-afterEach(() => cleanup());
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(FIXED_NOW);
+});
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 describe('InboxRail', () => {
   it('labels every provider chip with its count', () => {
