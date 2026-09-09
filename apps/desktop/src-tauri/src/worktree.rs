@@ -751,10 +751,57 @@ fn worktree_change_branch_blocking(args: ChangeBranchArgs) -> Result<(), Worktre
     }
     if args.create_new {
         git(wt, &["switch", "-c", trimmed])?;
-    } else {
-        git(wt, &["switch", trimmed])?;
+        return Ok(());
     }
+    let repo_path = PathBuf::from(&args.repo_path);
+    if let Some(holder) =
+        branch_checkout_path_with(&repo_path, trimmed, &mut |cwd, args| git(cwd, args))
+    {
+        if !is_same_directory(Path::new(&holder), wt) {
+            return Err(WorktreeError::BranchInUse {
+                branch: trimmed.to_string(),
+                path: holder,
+            });
+        }
+    }
+    git(wt, &["switch", trimmed])?;
     Ok(())
+}
+
+fn is_same_directory(left: &Path, right: &Path) -> bool {
+    match (canonical_path(left), canonical_path(right)) {
+        (Some(one), Some(other)) => one == other,
+        _ => left == right,
+    }
+}
+
+#[tauri::command]
+pub async fn worktree_branch_holder(
+    repo_path: String,
+    branch: String,
+) -> Result<Option<String>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_branch_holder_blocking(repo_path, branch))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_branch_holder_blocking(
+    repo_path: String,
+    branch: String,
+) -> Result<Option<String>, WorktreeError> {
+    let repo = PathBuf::from(&repo_path);
+    if !repo.exists() {
+        return Err(WorktreeError::RepoNotFound(repo_path));
+    }
+    let trimmed = branch.trim();
+    if trimmed.is_empty() {
+        return Ok(None);
+    }
+    Ok(branch_checkout_path_with(
+        &repo,
+        trimmed,
+        &mut |cwd, args| git(cwd, args),
+    ))
 }
 
 const REMOVE_RETRY_DELAY: std::time::Duration = std::time::Duration::from_millis(300);
@@ -3014,9 +3061,10 @@ fn parse_registered_worktrees(stdout: &str) -> Vec<RegisteredWorktree> {
 #[cfg(test)]
 mod rewrite_tests {
     use super::{
-        remove_worktree_checked_with, worktree_amend_commit_blocking, worktree_create_blocking,
-        worktree_squash_commits_blocking, worktree_status_blocking, CreateArgs, GitDistance,
-        GitUnknownReason, GitWorkingTree, RewriteArgs, WorktreeRemovalMode,
+        remove_worktree_checked_with, worktree_amend_commit_blocking,
+        worktree_branch_holder_blocking, worktree_change_branch_blocking, worktree_create_blocking,
+        worktree_squash_commits_blocking, worktree_status_blocking, ChangeBranchArgs, CreateArgs,
+        GitDistance, GitUnknownReason, GitWorkingTree, RewriteArgs, WorktreeRemovalMode,
     };
     use std::path::{Path, PathBuf};
 
@@ -3527,12 +3575,14 @@ mod rewrite_tests {
     fn a_branch_checked_out_elsewhere_is_read_from_the_worktree_listing() {
         let listing = "worktree /repo\nHEAD aaaa\nbranch refs/heads/main\n\nworktree /repo/.goodboy/worktrees/one\nHEAD bbbb\nbranch refs/heads/feature/one\n\nworktree /repo/.goodboy/worktrees/two\nHEAD cccc\ndetached\n";
 
-        let holder = super::branch_checkout_path_with(Path::new("/repo"), "feature/one", &mut |_, _| {
-            Ok(listing.to_string())
-        });
-        let free = super::branch_checkout_path_with(Path::new("/repo"), "feature/two", &mut |_, _| {
-            Ok(listing.to_string())
-        });
+        let holder =
+            super::branch_checkout_path_with(Path::new("/repo"), "feature/one", &mut |_, _| {
+                Ok(listing.to_string())
+            });
+        let free =
+            super::branch_checkout_path_with(Path::new("/repo"), "feature/two", &mut |_, _| {
+                Ok(listing.to_string())
+            });
 
         assert_eq!(holder.as_deref(), Some("/repo/.goodboy/worktrees/one"));
         assert_eq!(free, None);
@@ -3583,6 +3633,111 @@ mod rewrite_tests {
             .unwrap()
             .contains(holder.to_string_lossy().as_ref()));
         assert!(!parent_dir.join("second").exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn refuses_to_switch_onto_a_branch_another_worktree_holds() {
+        let root = std::fs::canonicalize(init_repo("switch-in-use")).unwrap();
+        commit(&root, "a.txt", "a\n", "first");
+        let parent_dir = root.join(".goodboy").join("worktrees");
+        let holder = parent_dir.join("holder");
+        let mover = parent_dir.join("mover");
+        std::fs::create_dir_all(&parent_dir).unwrap();
+        git_ok(
+            &root,
+            &["worktree", "add", "-b", "ak/held", holder.to_str().unwrap()],
+        );
+        git_ok(
+            &root,
+            &["worktree", "add", "-b", "ak/mine", mover.to_str().unwrap()],
+        );
+
+        let error = worktree_change_branch_blocking(ChangeBranchArgs {
+            repo_path: root.to_string_lossy().into_owned(),
+            worktree_path: mover.to_string_lossy().into_owned(),
+            branch: "ak/held".to_string(),
+            create_new: false,
+        })
+        .unwrap_err();
+
+        let wire = serde_json::to_value(&error).unwrap();
+        assert_eq!(wire["kind"], "branch_in_use");
+        let super::WorktreeError::BranchInUse { branch, .. } = error else {
+            panic!("expected a branch-in-use error, found {error:?}");
+        };
+        assert_eq!(branch, "ak/held");
+        assert_eq!(
+            git_ok(&mover, &["rev-parse", "--abbrev-ref", "HEAD"]),
+            "ak/mine"
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn switches_onto_a_branch_no_other_worktree_holds() {
+        let root = std::fs::canonicalize(init_repo("switch-free")).unwrap();
+        commit(&root, "a.txt", "a\n", "first");
+        let parent_dir = root.join(".goodboy").join("worktrees");
+        let mover = parent_dir.join("mover");
+        std::fs::create_dir_all(&parent_dir).unwrap();
+        git_ok(
+            &root,
+            &["worktree", "add", "-b", "ak/mine", mover.to_str().unwrap()],
+        );
+        git_ok(&root, &["branch", "ak/free"]);
+
+        worktree_change_branch_blocking(ChangeBranchArgs {
+            repo_path: root.to_string_lossy().into_owned(),
+            worktree_path: mover.to_string_lossy().into_owned(),
+            branch: "ak/free".to_string(),
+            create_new: false,
+        })
+        .unwrap();
+
+        assert_eq!(git_ok(&mover, &["rev-parse", "--abbrev-ref", "HEAD"]), "ak/free");
+        worktree_change_branch_blocking(ChangeBranchArgs {
+            repo_path: root.to_string_lossy().into_owned(),
+            worktree_path: mover.to_string_lossy().into_owned(),
+            branch: "ak/free".to_string(),
+            create_new: false,
+        })
+        .unwrap();
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn names_the_worktree_that_holds_a_branch() {
+        let root = std::fs::canonicalize(init_repo("branch-holder")).unwrap();
+        commit(&root, "a.txt", "a\n", "first");
+        let parent_dir = root.join(".goodboy").join("worktrees");
+        let holder = parent_dir.join("holder");
+        std::fs::create_dir_all(&parent_dir).unwrap();
+        git_ok(
+            &root,
+            &["worktree", "add", "-b", "ak/held", holder.to_str().unwrap()],
+        );
+        git_ok(&root, &["branch", "ak/free"]);
+
+        let found = worktree_branch_holder_blocking(
+            root.to_string_lossy().into_owned(),
+            "ak/held".to_string(),
+        )
+        .unwrap()
+        .expect("the held branch has a holder");
+
+        assert_eq!(
+            std::fs::canonicalize(found).unwrap(),
+            std::fs::canonicalize(&holder).unwrap()
+        );
+        assert_eq!(
+            worktree_branch_holder_blocking(
+                root.to_string_lossy().into_owned(),
+                "ak/free".to_string()
+            )
+            .unwrap(),
+            None
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 

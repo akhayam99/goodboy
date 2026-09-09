@@ -85,6 +85,7 @@ const baseRow: MountRowView = {
   request: null,
   series: null,
   observation: null,
+  observedBranchHolder: null,
   isCompleted: false,
 };
 

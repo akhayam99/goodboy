@@ -18,12 +18,15 @@ export const useSessionBranchSync = ({ session, isActive }: Params): void => {
   const isBranchless = useIsBranchlessSession({ session });
   const sessionRepo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const projectWorktreePath = sessionRepo?.worktreePath ?? null;
+  const projectMountId = sessionRepo?.mountId ?? null;
   const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch);
   const lastTurnFinishedAt = useSessionLastTurnFinishedAt(sessionId);
   const seenTurnRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    if (!isActive || projectWorktreePath == null || isBranchless) return;
+    if (!isActive || projectWorktreePath === null || projectMountId === null || isBranchless) {
+      return;
+    }
     const isNewTurn =
       seenTurnRef.current !== undefined && seenTurnRef.current !== lastTurnFinishedAt;
     seenTurnRef.current = lastTurnFinishedAt;
@@ -34,9 +37,16 @@ export const useSessionBranchSync = ({ session, isActive }: Params): void => {
       maxAgeMs: isNewTurn ? 0 : BRANCH_MAX_AGE_MS,
     })
       .then((status) => {
-        if (!cancelled && status?.branch) {
-          void reconcileSessionBranch(sessionId, status.branch);
+        const observedBranch = status?.branch ?? null;
+        if (cancelled || observedBranch === null || observedBranch === '') {
+          return;
         }
+        void reconcileSessionBranch({
+          sessionId,
+          mountId: projectMountId,
+          worktreePath: projectWorktreePath,
+          observedBranch,
+        });
       })
       .catch(() => undefined);
     return () => {
@@ -46,6 +56,7 @@ export const useSessionBranchSync = ({ session, isActive }: Params): void => {
     isActive,
     isBranchless,
     lastTurnFinishedAt,
+    projectMountId,
     projectWorktreePath,
     reconcileSessionBranch,
     sessionId,

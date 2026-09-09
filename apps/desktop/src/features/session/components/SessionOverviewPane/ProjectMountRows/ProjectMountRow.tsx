@@ -291,7 +291,11 @@ export const ProjectMountRow = ({
           <MountBranchDecision
             sessionId={sessionId}
             mountId={row.mountId}
+            mountLabel={label}
+            repoRoot={row.repoRoot}
+            worktreePath={row.worktreePath}
             observation={observation}
+            holder={row.observedBranchHolder}
           />
         </div>
       )}

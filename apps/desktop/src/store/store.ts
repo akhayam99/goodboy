@@ -218,6 +218,7 @@ import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
 import { createWorktreesSlice } from './slices/worktrees';
+import type { ReconcileSessionBranchInput } from './slices/worktrees/reconcileSessionBranch';
 import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState } from './slices/updater/state';
@@ -478,7 +479,7 @@ type AppActions = {
     projectId: ProjectId;
     mountId?: MountId;
   }): Promise<void>;
-  reconcileSessionBranch(sessionId: SessionId, observedBranch: string): Promise<void>;
+  reconcileSessionBranch(input: ReconcileSessionBranchInput): Promise<void>;
   amendSessionCommit(
     sessionId: SessionId,
     args: { sha: string; message: string },
