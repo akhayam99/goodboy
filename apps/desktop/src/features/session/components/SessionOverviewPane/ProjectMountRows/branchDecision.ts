@@ -3,7 +3,7 @@ import type { MountBranchHolder } from '../../../../../store/slices/project-moun
 
 type Params = {
   readonly observation: MountBranchObservation;
-  readonly mountLabel: string;
+  readonly projectName: string;
   readonly holder: MountBranchHolder | 'checking' | null;
 };
 
@@ -36,7 +36,7 @@ const recheck = ({ isDisabled }: RecheckParams): BranchDecisionAction => ({
 
 export const buildBranchDecision = ({
   observation,
-  mountLabel,
+  projectName,
   holder,
 }: Params): BranchDecision | null => {
   const recorded = observation.recordedBranch;
@@ -46,8 +46,8 @@ export const buildBranchDecision = ({
       return null;
     case 'unavailable':
       return {
-        title: `${mountLabel} could not be read`,
-        description: `${mountLabel} was expected on ${recorded}, but Goodboy could not read its directory. Nothing was changed.`,
+        title: `${projectName}'s branch could not be read`,
+        description: `Expected ${recorded}, but the directory could not be read. Nothing was changed.`,
         notes: [RECHECK_NOTE, NOT_NOW_NOTE],
         confirm: recheck({ isDisabled: false }),
         alt: null,
@@ -56,8 +56,8 @@ export const buildBranchDecision = ({
       const isChecking = holder === 'checking';
       const isHeld = holder !== null && holder !== 'checking';
       return {
-        title: `${mountLabel} is not on a branch`,
-        description: `${mountLabel} was expected on ${recorded}, but Goodboy found a commit with no branch. Nothing was changed.`,
+        title: `${projectName} is not on a branch`,
+        description: `Expected ${recorded}, found a commit with no branch. Nothing was changed.`,
         notes: [
           ...(isChecking
             ? [
@@ -87,8 +87,8 @@ export const buildBranchDecision = ({
       const found = observed ?? 'another branch';
       if (holder === 'checking') {
         return {
-          title: `${mountLabel} has a different branch`,
-          description: `${mountLabel} was expected on ${recorded}, but Goodboy found ${found}. Nothing was changed.`,
+          title: `${projectName} is not on the branch it was left on`,
+          description: `Expected ${recorded}, found ${found}. Nothing was changed.`,
           notes: [
             `Goodboy is checking whether ${found} is mounted in another worktree.`,
             RECHECK_NOTE,
@@ -110,8 +110,8 @@ export const buildBranchDecision = ({
               ? 'in another mount of this session'
               : `as ${holder.label} in this session`;
         return {
-          title: `${mountLabel} has a different branch`,
-          description: `${mountLabel} was expected on ${recorded}, but Goodboy found ${found}. ${found} is already mounted ${location}. Git keeps one branch in one worktree, so using it here would fail.`,
+          title: `${projectName} is not on the branch it was left on`,
+          description: `Expected ${recorded}, found ${found}. That branch is already mounted ${location}. Git keeps one branch in one worktree, so using it here would fail.`,
           notes: [
             `Use this branch here is turned off because ${found} is mounted elsewhere.`,
             RECHECK_NOTE,
@@ -126,8 +126,8 @@ export const buildBranchDecision = ({
         };
       }
       return {
-        title: `${mountLabel} has a different branch`,
-        description: `${mountLabel} was expected on ${recorded}, but Goodboy found ${found}. Nothing was changed.`,
+        title: `${projectName} is not on the branch it was left on`,
+        description: `Expected ${recorded}, found ${found}. Nothing was changed.`,
         notes: [
           `Use this branch here records ${found} as this mount's branch and leaves the directory alone.`,
           `Keep both branches records ${found} here, then mounts ${recorded} again in a row of its own.`,
