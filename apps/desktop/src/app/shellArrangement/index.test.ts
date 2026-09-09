@@ -1,9 +1,9 @@
 import { readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { join, resolve, sep } from 'path';
 import { describe, expect, it } from 'vitest';
 import { shellArrangement } from './index';
 
-const DESKTOP_SRC = join(__dirname, '..', '..');
+const DESKTOP_SRC = resolve(__dirname, '..', '..');
 
 const sourceFiles = (directory: string): ReadonlyArray<string> =>
   readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -86,10 +86,22 @@ describe('shellArrangement', () => {
 });
 
 describe('every shell mount, the app and the mock scenes alike', () => {
+  it('roots the sweep at the desktop source tree, not at the folder it lives in', () => {
+    expect(DESKTOP_SRC.endsWith(join('apps', 'desktop', 'src'))).toBe(true);
+    expect(DESKTOP_SRC.endsWith(join('src', 'app'))).toBe(false);
+  });
+
+  it('walks past its own folder, so a mount outside src/app cannot hide from it', () => {
+    const appRoot = `${join(DESKTOP_SRC, 'app')}${sep}`;
+    const pathsOutsideApp = sourceFiles(DESKTOP_SRC).filter((path) => !path.startsWith(appRoot));
+
+    expect(pathsOutsideApp.length).toBeGreaterThan(0);
+  });
+
   it('finds the composition root and every scene to police, never an empty sweep', () => {
     const paths = shellMounts().map(({ path }) => path);
-    expect(paths.length).toBeGreaterThanOrEqual(3);
-    expect(paths.filter((path) => path.endsWith('App.tsx'))).toHaveLength(1);
+
+    expect(paths).toContain(join(DESKTOP_SRC, 'App.tsx'));
     expect(paths.filter((path) => path.includes('MockScene')).length).toBeGreaterThanOrEqual(2);
   });
 

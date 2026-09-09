@@ -1,6 +1,5 @@
 import { PanelLeftClose, Pin } from 'lucide-react';
-import { Eyebrow, IconButton, cn } from '@goodboy/ui';
-import { PANE_RHYTHM } from '@goodboy/ui';
+import { Eyebrow, IconButton, PANE_RHYTHM, cn } from '@goodboy/ui';
 import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
