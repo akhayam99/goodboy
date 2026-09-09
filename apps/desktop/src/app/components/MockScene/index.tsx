@@ -4,6 +4,7 @@ import { WorkspaceScene } from './scenes/WorkspaceScene';
 import { WorkflowScene } from './scenes/WorkflowScene';
 import { ShellScene } from './scenes/ShellScene';
 import { MountsScene } from './scenes/MountsScene';
+import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
 import { ResolveItemScene } from './scenes/ResolveItemScene';
 import { BoardScene } from './scenes/BoardScene';
@@ -13,6 +14,7 @@ const SCENES = {
   workflow: WorkflowScene,
   shell: ShellScene,
   mounts: MountsScene,
+  'mount-mismatch': MountMismatchScene,
   resolve: ResolveScene,
   'resolve-item': ResolveItemScene,
   board: BoardScene,

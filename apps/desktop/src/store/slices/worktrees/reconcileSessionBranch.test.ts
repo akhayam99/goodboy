@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 
 const WORKTREE_PATH = '/repos/goodboy/.goodboy/worktrees/task';
+const SECOND_PATH = '/repos/goodboy/.goodboy/worktrees/task-2';
 const MOUNT_ID = 'mount-1' as MountId;
+const SECOND_MOUNT_ID = 'mount-2' as MountId;
 
 const h = vi.hoisted(() => ({
   emitNotification: vi.fn(async () => undefined),
@@ -11,6 +13,7 @@ const h = vi.hoisted(() => ({
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { reconcileSessionBranch } from './reconcileSessionBranch';
+import { resolveSessionRepo } from './resolveSessionRepo';
 
 const SESSION_ID = 'session-1' as SessionId;
 const PROJECT_ID = 'project-1' as ProjectId;
@@ -48,11 +51,82 @@ const makeState = (): State => ({
   emitNotification: h.emitNotification,
 });
 
-const observe = async (state: State, observedBranch: string): Promise<void> => {
+type ObserveParams = {
+  readonly state: State;
+  readonly observedBranch: string;
+  readonly mountId?: MountId;
+  readonly worktreePath?: string;
+};
+
+const observe = async ({
+  state,
+  observedBranch,
+  mountId = MOUNT_ID,
+  worktreePath = WORKTREE_PATH,
+}: ObserveParams): Promise<void> => {
   const set = vi.fn((updater: (current: State) => State) => {
     Object.assign(state, updater(state));
   });
-  await reconcileSessionBranch(set as never, (() => state) as never)(SESSION_ID, observedBranch);
+  await reconcileSessionBranch(
+    set as never,
+    (() => state) as never,
+  )({
+    sessionId: SESSION_ID,
+    mountId,
+    worktreePath,
+    observedBranch,
+  });
+};
+
+type TwoMountParams = {
+  readonly state: State;
+};
+
+const withTwoMounts = ({ state }: TwoMountParams): void => {
+  state['sessionMounts'] = {
+    [SESSION_ID]: [
+      {
+        id: MOUNT_ID,
+        sessionId: SESSION_ID,
+        projectId: PROJECT_ID,
+        mountName: 'goodboy',
+        worktreePath: null,
+        lastWorktreePath: WORKTREE_PATH,
+        repoRoot: '/repos/goodboy',
+        branch: 'ak/outgoing',
+        baseBranch: 'main',
+        parallelIndex: 0,
+        isAttached: false,
+        diskState: 'missing',
+        revision: 2,
+      },
+      {
+        id: SECOND_MOUNT_ID,
+        sessionId: SESSION_ID,
+        projectId: PROJECT_ID,
+        mountName: 'goodboy',
+        worktreePath: SECOND_PATH,
+        lastWorktreePath: SECOND_PATH,
+        repoRoot: '/repos/goodboy',
+        branch: 'ak/incoming',
+        baseBranch: 'main',
+        parallelIndex: 1,
+        isAttached: true,
+        diskState: 'present',
+        revision: 5,
+      },
+    ],
+  };
+  (state['sessionProjectMounts'] as Record<string, Array<unknown>>)[SESSION_ID]?.push({
+    mountId: SECOND_MOUNT_ID,
+    projectId: PROJECT_ID,
+    mountName: 'goodboy',
+    worktreePath: SECOND_PATH,
+    repoRoot: '/repos/goodboy',
+    branch: 'ak/incoming',
+    revision: 5,
+  });
+  (state['sessionActiveMount'] as Record<string, string>)[SESSION_ID] = MOUNT_ID;
 };
 
 beforeEach(() => {
@@ -63,7 +137,7 @@ describe('reconcileSessionBranch', () => {
   it('records a mismatch against the mount without rewriting the branch', async () => {
     const state = makeState();
 
-    await observe(state, 'ak/incoming');
+    await observe({ state, observedBranch: 'ak/incoming' });
 
     expect(state.mountBranchObservations).toEqual({
       [SESSION_ID]: [
@@ -82,66 +156,44 @@ describe('reconcileSessionBranch', () => {
   it('keeps every pull request association through repeated observations', async () => {
     const state = makeState();
 
-    await observe(state, 'ak/incoming');
-    await observe(state, 'ak/incoming');
+    await observe({ state, observedBranch: 'ak/incoming' });
+    await observe({ state, observedBranch: 'ak/incoming' });
 
     expect(state.sessionProjectPrs).toEqual({ [SESSION_ID]: { [PROJECT_ID]: [{ number: 42 }] } });
     expect(state.sessionSelectedPrNumber).toEqual({ [SESSION_ID]: 40 });
     expect(state.sessionGithub).toEqual({ [SESSION_ID]: { pr: { number: 42 } } });
   });
 
-  it('records nothing when the project holds several mounts and none is selected', async () => {
+  it('blames the mount whose directory was read, never another row of the project', async () => {
     const state = makeState();
-    const rows =
-      (state['sessionProjectMounts'] as Record<string, Array<unknown>>)[SESSION_ID] ?? [];
-    rows.push({
-      mountId: 'mount-2' as MountId,
-      projectId: PROJECT_ID,
-      mountName: 'goodboy',
-      worktreePath: '/repos/goodboy/.goodboy/worktrees/task-2',
-      repoRoot: '/repos/goodboy',
-      branch: 'ak/second',
-      revision: 0,
+    withTwoMounts({ state });
+
+    const repo = resolveSessionRepo({ state: state as never, sessionId: SESSION_ID });
+    expect(repo?.worktreePath).toBe(SECOND_PATH);
+    expect(repo?.mountId).toBe(SECOND_MOUNT_ID);
+
+    await observe({
+      state,
+      observedBranch: 'ak/incoming',
+      mountId: SECOND_MOUNT_ID,
+      worktreePath: SECOND_PATH,
     });
 
-    await observe(state, 'ak/incoming');
-
-    expect(state.mountBranchObservations).toEqual({});
+    expect(state.mountBranchObservations).toEqual({ [SESSION_ID]: [] });
   });
 
-  it('attributes the observation to the selected mount, not the first row', async () => {
+  it('records nothing when the directory read is not the one the mount holds', async () => {
     const state = makeState();
-    const rows =
-      (state['sessionProjectMounts'] as Record<string, Array<unknown>>)[SESSION_ID] ?? [];
-    rows.push({
-      mountId: 'mount-2' as MountId,
-      projectId: PROJECT_ID,
-      mountName: 'goodboy',
-      worktreePath: '/repos/goodboy/.goodboy/worktrees/task-2',
-      repoRoot: '/repos/goodboy',
-      branch: 'ak/second',
-      revision: 5,
-    });
-    (state['sessionActiveMount'] as Record<string, string>)[SESSION_ID] = 'mount-2';
 
-    await observe(state, 'ak/incoming');
+    await observe({ state, observedBranch: 'ak/incoming', worktreePath: SECOND_PATH });
 
-    expect(state.mountBranchObservations).toEqual({
-      [SESSION_ID]: [
-        expect.objectContaining({
-          mountId: 'mount-2',
-          recordedBranch: 'ak/second',
-          observedBranch: 'ak/incoming',
-          revision: 5,
-        }),
-      ],
-    });
+    expect(state.mountBranchObservations).toEqual({});
   });
 
   it('records a detached head when no branch is observed', async () => {
     const state = makeState();
 
-    await observe(state, '   ');
+    await observe({ state, observedBranch: '   ' });
 
     expect(state.mountBranchObservations).toEqual({
       [SESSION_ID]: [expect.objectContaining({ state: 'detached', observedBranch: null })],
@@ -151,8 +203,8 @@ describe('reconcileSessionBranch', () => {
   it('clears the observation when the observed branch matches again', async () => {
     const state = makeState();
 
-    await observe(state, 'ak/incoming');
-    await observe(state, 'ak/outgoing');
+    await observe({ state, observedBranch: 'ak/incoming' });
+    await observe({ state, observedBranch: 'ak/outgoing' });
 
     expect(state.mountBranchObservations).toEqual({ [SESSION_ID]: [] });
     expect(h.emitNotification).not.toHaveBeenCalled();

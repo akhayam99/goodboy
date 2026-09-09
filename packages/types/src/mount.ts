@@ -120,7 +120,7 @@ export type MountRecoveryCode =
   | 'revision-conflict'
   | 'unknown-state';
 
-export type MountBranchResolution = 'adopt-observed' | 'keep-both';
+export type MountBranchResolution = 'adopt-observed' | 'keep-both' | 'restore-recorded' | 'recheck';
 
 export type MountCleanupDisposition = 'removed' | 'missing' | 'kept';
 

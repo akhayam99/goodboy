@@ -39,6 +39,7 @@ const h = vi.hoisted(() => {
         },
     ),
     sessionDirExists: vi.fn(async () => true),
+    worktreeBranchHolder: vi.fn(async () => null as string | null),
     worktreeStatus: vi.fn(
       async () =>
         ({
@@ -54,6 +55,7 @@ const h = vi.hoisted(() => {
         }) as {
           workingTree: Record<string, unknown>;
           inProgress: string | null;
+          branch?: string | null;
         },
     ),
   };
@@ -89,6 +91,7 @@ vi.mock('../../../features/worktree/worktree', () => ({
   removeWorktree: vi.fn(async () => undefined),
   removeSessionDirectory: vi.fn(async () => undefined),
   sessionDirExists: h.sessionDirExists,
+  worktreeBranchHolder: h.worktreeBranchHolder,
   worktreeStatus: h.worktreeStatus,
 }));
 
@@ -264,6 +267,7 @@ beforeEach(() => {
   h.removeWorktreeChecked.mockResolvedValue({ kind: 'removed', path: '' });
   h.inspectWorktree.mockResolvedValue({ kind: 'registered' });
   h.sessionDirExists.mockResolvedValue(true);
+  h.worktreeBranchHolder.mockResolvedValue(null);
   h.worktreeStatus.mockResolvedValue({
     workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
     inProgress: null,
@@ -686,5 +690,96 @@ describe('branch mismatch recovery', () => {
       }),
     ).rejects.toMatchObject({ code: 'directory-busy' });
     expect(h.changeWorktreeBranch).not.toHaveBeenCalled();
+  });
+
+  it('refuses to adopt a branch another mount of the session holds', async () => {
+    const { slice, state } = makeSlice();
+    seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });
+    seedMount({ id: 'mount-2', branch: 'ak/drifted', worktreePath: `${REPO_ROOT}/wt/second` });
+    observedMismatch(state);
+    h.worktreeBranchHolder.mockResolvedValue(`${REPO_ROOT}/wt/second`);
+
+    const failure = await slice
+      .resolveMountBranchMismatch({
+        sessionId: SESSION_ID,
+        mountId: 'mount-1' as MountId,
+        resolution: 'adopt-observed',
+      })
+      .catch((error: unknown) => error);
+
+    expect(failure).toMatchObject({ code: 'branch-taken' });
+    expect((failure as Error).message).not.toContain(REPO_ROOT);
+    expect(h.changeWorktreeBranch).not.toHaveBeenCalled();
+    expect(state['mountBranchObservations']).toMatchObject({
+      [SESSION_ID]: [{ mountId: 'mount-1', state: 'mismatch' }],
+    });
+  });
+
+  it('clears the note when a recheck reads the recorded branch back', async () => {
+    const { slice, state } = makeSlice();
+    seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });
+    observedMismatch(state);
+    h.worktreeStatus.mockResolvedValue({
+      workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+      inProgress: null,
+      branch: 'ak/first',
+    });
+
+    await slice.resolveMountBranchMismatch({
+      sessionId: SESSION_ID,
+      mountId: 'mount-1' as MountId,
+      resolution: 'recheck',
+    });
+
+    expect(state['mountBranchObservations']).toEqual({ [SESSION_ID]: [] });
+    expect(h.changeWorktreeBranch).not.toHaveBeenCalled();
+  });
+
+  it('puts a detached mount back on the branch it was recorded on', async () => {
+    const { slice, state } = makeSlice();
+    seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });
+    state['mountBranchObservations'] = {
+      [SESSION_ID]: [
+        {
+          mountId: 'mount-1' as MountId,
+          sessionId: SESSION_ID,
+          state: 'detached',
+          recordedBranch: 'ak/first',
+          observedBranch: null,
+          revision: 0,
+          observedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    };
+
+    await slice.resolveMountBranchMismatch({
+      sessionId: SESSION_ID,
+      mountId: 'mount-1' as MountId,
+      resolution: 'restore-recorded',
+    });
+
+    expect(h.changeWorktreeBranch).toHaveBeenCalledWith(
+      expect.objectContaining({ branch: 'ak/first', createNew: false }),
+    );
+    expect(state['mountBranchObservations']).toEqual({ [SESSION_ID]: [] });
+  });
+
+  it('keeps the note when the repair fails', async () => {
+    const { slice, state } = makeSlice();
+    seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });
+    observedMismatch(state);
+    h.changeWorktreeBranch.mockRejectedValueOnce(new Error('git said no'));
+
+    await expect(
+      slice.resolveMountBranchMismatch({
+        sessionId: SESSION_ID,
+        mountId: 'mount-1' as MountId,
+        resolution: 'adopt-observed',
+      }),
+    ).rejects.toThrow();
+
+    expect(state['mountBranchObservations']).toMatchObject({
+      [SESSION_ID]: [{ mountId: 'mount-1', state: 'mismatch', observedBranch: 'ak/drifted' }],
+    });
   });
 });

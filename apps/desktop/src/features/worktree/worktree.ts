@@ -528,3 +528,15 @@ export type ChangeBranchArgs = {
 export const changeWorktreeBranch = async (args: ChangeBranchArgs): Promise<void> => {
   await invoke('worktree_change_branch', { args });
 };
+
+type BranchHolderParams = {
+  readonly repoPath: string;
+  readonly branch: string;
+};
+
+export const worktreeBranchHolder = async ({
+  repoPath,
+  branch,
+}: BranchHolderParams): Promise<string | null> => {
+  return invoke<string | null>('worktree_branch_holder', { repoPath, branch });
+};

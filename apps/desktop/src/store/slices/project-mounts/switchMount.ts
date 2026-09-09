@@ -8,7 +8,7 @@ import {
 import { deriveBitbucketProjection } from '../bitbucket-pr/mountBitbucketPr';
 import { deriveGithubProjection } from '../github/mountGithub';
 import { deriveGitlabProjection } from '../gitlab-mr/mountGitlabMr';
-import { mountError } from './mountErrors';
+import { branchInUseError, mountError } from './mountErrors';
 import { withRepositoryAndMountLock } from './mountLocks';
 import {
   beginMountOperation,
@@ -71,8 +71,12 @@ export const switchMount = (set: SetFn, get: GetFn) => {
             createNew,
           });
         } catch (error) {
-          await failMountOperation({ operation, errorCode: 'branch-missing' });
-          throw error;
+          const taken = branchInUseError({ error, mountId, branch: target });
+          await failMountOperation({
+            operation,
+            errorCode: taken === null ? 'branch-missing' : 'branch-taken',
+          });
+          throw taken ?? error;
         }
         invalidateLocalBranchesCache(view.repoRoot);
         const written = await updateSessionMountBranch({

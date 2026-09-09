@@ -62,7 +62,13 @@ export type MountRowView = Readonly<{
   request: MountRequestView | null;
   series: MountSeriesPosition | null;
   observation: MountBranchObservation | null;
+  observedBranchHolder: MountBranchHolder | null;
   isCompleted: boolean;
+}>;
+
+export type MountBranchHolder = Readonly<{
+  mountId: MountId | null;
+  label: string | null;
 }>;
 
 export type MountProjectGroup = Readonly<{
@@ -196,6 +202,34 @@ const seriesPositionOf = ({
   return null;
 };
 
+type HolderParams = {
+  readonly row: MountRowView;
+  readonly rows: ReadonlyArray<MountRowView>;
+};
+
+const holderLabelOf = ({ row }: Pick<HolderParams, 'row'>): string | null =>
+  row.request?.label ?? (row.series === null ? null : `part ${row.series.label}`);
+
+const withObservedBranchHolder = ({ row, rows }: HolderParams): MountRowView => {
+  const observed = row.observation?.observedBranch ?? null;
+  if (observed === null) {
+    return row;
+  }
+  const holder = rows.find(
+    (candidate) =>
+      candidate.mountId !== row.mountId &&
+      candidate.worktreePath !== null &&
+      candidate.branch === observed,
+  );
+  if (holder === undefined) {
+    return row;
+  }
+  return {
+    ...row,
+    observedBranchHolder: { mountId: holder.mountId, label: holderLabelOf({ row: holder }) },
+  };
+};
+
 const byDeclaredOrder = (left: MountRowView, right: MountRowView): number => {
   const leftPosition = left.series?.position ?? Number.MAX_SAFE_INTEGER;
   const rightPosition = right.series?.position ?? Number.MAX_SAFE_INTEGER;
@@ -278,6 +312,7 @@ export const buildMountRows = ({
       request,
       series: seriesPositionOf({ series, mountId: view.id, branch: view.branch }),
       observation: observations.find((candidate) => candidate.mountId === view.id) ?? null,
+      observedBranchHolder: null,
       isCompleted: request !== null && isTerminal(request.state),
     };
     if (!grouped.has(view.projectId)) {
@@ -287,7 +322,8 @@ export const buildMountRows = ({
     grouped.get(view.projectId)?.push(row);
   }
   return order.flatMap((projectId) => {
-    const rows = grouped.get(projectId) ?? [];
+    const projectRows = grouped.get(projectId) ?? [];
+    const rows = projectRows.map((row) => withObservedBranchHolder({ row, rows: projectRows }));
     const head = rows[0];
     if (head === undefined) {
       return [];

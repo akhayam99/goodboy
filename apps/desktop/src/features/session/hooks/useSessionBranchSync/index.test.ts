@@ -18,7 +18,8 @@ vi.mock('../../../../store', () => ({
 }));
 
 vi.mock('../../../../store/slices/worktrees/resolveSessionRepo', () => ({
-  resolveSessionRepo: () => (h.worktreePath == null ? null : { worktreePath: h.worktreePath }),
+  resolveSessionRepo: () =>
+    h.worktreePath === null ? null : { worktreePath: h.worktreePath, mountId: 'mount-1' },
 }));
 
 vi.mock('../../../worktree/worktree', () => ({
@@ -50,7 +51,12 @@ describe('useSessionBranchSync', () => {
     renderHook(() => useSessionBranchSync({ session, isActive: true }));
 
     await waitFor(() =>
-      expect(h.reconcileSessionBranch).toHaveBeenCalledWith(session.id, 'ak/renamed-by-an-agent'),
+      expect(h.reconcileSessionBranch).toHaveBeenCalledWith({
+        sessionId: session.id,
+        mountId: 'mount-1',
+        worktreePath: '/sessions/one/api',
+        observedBranch: 'ak/renamed-by-an-agent',
+      }),
     );
   });
 

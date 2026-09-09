@@ -1,7 +1,10 @@
-import type { SessionMountView } from '@goodboy/types';
-import { worktreeStatus } from '../../../features/worktree/worktree';
+import type { MountBranchObservation, SessionMountView } from '@goodboy/types';
+import { worktreeBranchHolder, worktreeStatus } from '../../../features/worktree/worktree';
 import { forkMount } from './forkMount';
-import { clearMountBranchObservation } from './mountBranchObservations';
+import {
+  clearMountBranchObservation,
+  recordMountBranchObservation,
+} from './mountBranchObservations';
 import { mountError } from './mountErrors';
 import { loadMountViews, requireMountView } from './mountViews';
 import { selectMountBranchObservation } from './selectors';
@@ -10,6 +13,24 @@ import type { GetFn, ResolveMountBranchInput, SetFn } from './types';
 
 type GuardParams = {
   readonly worktreePath: string;
+};
+
+type HolderParams = {
+  readonly views: ReadonlyArray<SessionMountView>;
+  readonly view: SessionMountView;
+  readonly branch: string;
+};
+
+type RecheckParams = {
+  readonly set: SetFn;
+  readonly view: SessionMountView;
+};
+
+type RestoreParams = {
+  readonly set: SetFn;
+  readonly observation: MountBranchObservation;
+  readonly view: SessionMountView;
+  readonly run: () => Promise<void>;
 };
 
 const refuseWhenBusy = async ({ worktreePath }: GuardParams): Promise<void> => {
@@ -28,6 +49,74 @@ const refuseWhenBusy = async ({ worktreePath }: GuardParams): Promise<void> => {
   }
 };
 
+const refuseWhenHeldByAnotherMount = async ({
+  views,
+  view,
+  branch,
+}: HolderParams): Promise<void> => {
+  const holderPath = await worktreeBranchHolder({ repoPath: view.repoRoot, branch }).catch(
+    () => null,
+  );
+  if (holderPath === null || holderPath === view.worktreePath) {
+    return;
+  }
+  const holder = views.find(
+    (candidate) => candidate.id !== view.id && candidate.worktreePath === holderPath,
+  );
+  if (holder === undefined) {
+    return;
+  }
+  throw mountError({
+    code: 'branch-taken',
+    message: `${branch} is already mounted in this session on ${holder.mountName}, and git keeps a branch in one worktree at a time`,
+    mountId: view.id,
+  });
+};
+
+const recheckMountBranch = async ({ set, view }: RecheckParams): Promise<SessionMountView> => {
+  const worktreePath = view.worktreePath;
+  const status =
+    worktreePath === null ? null : await worktreeStatus({ worktreePath }).catch(() => null);
+  if (worktreePath === null || status === null) {
+    clearMountBranchObservation({ set, sessionId: view.sessionId, mountId: view.id });
+    return view;
+  }
+  const observed = status.branch ?? '';
+  recordMountBranchObservation({
+    set,
+    sessionId: view.sessionId,
+    mountId: view.id,
+    recordedBranch: view.branch,
+    revision: view.revision,
+    worktreePath,
+    observedBranch: observed.trim() === '' ? null : observed.trim(),
+  });
+  return view;
+};
+
+const withRestoredObservation = async ({
+  set,
+  observation,
+  view,
+  run,
+}: RestoreParams): Promise<void> => {
+  clearMountBranchObservation({ set, sessionId: view.sessionId, mountId: view.id });
+  try {
+    await run();
+  } catch (error) {
+    recordMountBranchObservation({
+      set,
+      sessionId: view.sessionId,
+      mountId: view.id,
+      recordedBranch: observation.recordedBranch,
+      revision: observation.revision,
+      worktreePath: view.worktreePath,
+      observedBranch: observation.observedBranch,
+    });
+    throw error;
+  }
+};
+
 export const resolveMountBranchMismatch = (set: SetFn, get: GetFn) => {
   const runSwitch = switchMount(set, get);
   const runFork = forkMount(set, get);
@@ -37,23 +126,18 @@ export const resolveMountBranchMismatch = (set: SetFn, get: GetFn) => {
     resolution,
   }: ResolveMountBranchInput): Promise<SessionMountView> => {
     const observation = selectMountBranchObservation({ state: get(), sessionId, mountId });
-    if (observation === null || observation.state !== 'mismatch') {
+    if (observation === null) {
       throw mountError({
         code: 'unknown-state',
-        message: 'this mount has no recorded branch mismatch',
-        mountId,
-      });
-    }
-    const observedBranch = observation.observedBranch;
-    if (observedBranch === null) {
-      throw mountError({
-        code: 'unknown-state',
-        message: 'the observed branch is unknown',
+        message: 'this mount has no branch note to resolve',
         mountId,
       });
     }
     const views = await loadMountViews({ get, sessionId });
     const view = requireMountView({ views, mountId });
+    if (resolution === 'recheck') {
+      return recheckMountBranch({ set, view });
+    }
     if (view.revision !== observation.revision) {
       throw mountError({
         code: 'revision-conflict',
@@ -69,18 +153,46 @@ export const resolveMountBranchMismatch = (set: SetFn, get: GetFn) => {
         mountId,
       });
     }
-    await refuseWhenBusy({ worktreePath });
     const recordedBranch = view.branch;
-    clearMountBranchObservation({ set, sessionId, mountId });
-    await runSwitch({ sessionId, mountId, branch: observedBranch, createNew: false });
-    if (resolution === 'keep-both') {
-      await runFork({
-        sessionId,
-        projectId: view.projectId,
-        branch: recordedBranch,
-        adoptExistingBranch: true,
+    await refuseWhenBusy({ worktreePath });
+    if (resolution === 'restore-recorded') {
+      await refuseWhenHeldByAnotherMount({ views, view, branch: recordedBranch });
+      await withRestoredObservation({
+        set,
+        observation,
+        view,
+        run: async () => {
+          await runSwitch({ sessionId, mountId, branch: recordedBranch, createNew: false });
+        },
+      });
+      const restored = await loadMountViews({ get, sessionId });
+      return requireMountView({ views: restored, mountId });
+    }
+    const observedBranch = observation.observedBranch;
+    if (observation.state !== 'mismatch' || observedBranch === null) {
+      throw mountError({
+        code: 'unknown-state',
+        message: 'this mount has no observed branch to adopt',
+        mountId,
       });
     }
+    await refuseWhenHeldByAnotherMount({ views, view, branch: observedBranch });
+    await withRestoredObservation({
+      set,
+      observation,
+      view,
+      run: async () => {
+        await runSwitch({ sessionId, mountId, branch: observedBranch, createNew: false });
+        if (resolution === 'keep-both') {
+          await runFork({
+            sessionId,
+            projectId: view.projectId,
+            branch: recordedBranch,
+            adoptExistingBranch: true,
+          });
+        }
+      },
+    });
     const nextViews = await loadMountViews({ get, sessionId });
     return requireMountView({ views: nextViews, mountId });
   };

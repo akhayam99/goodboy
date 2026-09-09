@@ -31,15 +31,23 @@ export const worktreeErrorKind = ({ error }: { readonly error: unknown }): strin
 type BranchInUseParams = {
   readonly error: unknown;
   readonly mountId?: MountId;
+  readonly branch?: string;
 };
 
-export const branchInUseError = ({ error, mountId }: BranchInUseParams): MountError | null => {
+export const branchInUseError = ({
+  error,
+  mountId,
+  branch,
+}: BranchInUseParams): MountError | null => {
   if (worktreeErrorKind({ error }) !== 'branch_in_use') {
     return null;
   }
   return mountError({
     code: 'branch-taken',
-    message: formatError(error),
+    message:
+      branch === undefined
+        ? formatError(error)
+        : `${branch} is checked out in another worktree of this project, and git keeps a branch in one worktree at a time`,
     ...(mountId !== undefined ? { mountId } : {}),
   });
 };
