@@ -735,6 +735,40 @@ describe('branch mismatch recovery', () => {
     expect(h.changeWorktreeBranch).not.toHaveBeenCalled();
   });
 
+  it('keeps an unreadable note when a recheck cannot read status', async () => {
+    const { slice, state } = makeSlice();
+    seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });
+    observedMismatch(state);
+    h.worktreeStatus.mockRejectedValueOnce(new Error('git status failed'));
+
+    await slice.resolveMountBranchMismatch({
+      sessionId: SESSION_ID,
+      mountId: 'mount-1' as MountId,
+      resolution: 'recheck',
+    });
+
+    expect(state['mountBranchObservations']).toMatchObject({
+      [SESSION_ID]: [{ mountId: 'mount-1', state: 'unavailable', observedBranch: null }],
+    });
+  });
+
+  it('keeps an unreadable note when a recheck finds no worktree path', async () => {
+    const { slice, state } = makeSlice();
+    seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: null });
+    observedMismatch(state);
+
+    await slice.resolveMountBranchMismatch({
+      sessionId: SESSION_ID,
+      mountId: 'mount-1' as MountId,
+      resolution: 'recheck',
+    });
+
+    expect(state['mountBranchObservations']).toMatchObject({
+      [SESSION_ID]: [{ mountId: 'mount-1', state: 'unavailable', observedBranch: null }],
+    });
+    expect(h.worktreeStatus).not.toHaveBeenCalled();
+  });
+
   it('puts a detached mount back on the branch it was recorded on', async () => {
     const { slice, state } = makeSlice();
     seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });

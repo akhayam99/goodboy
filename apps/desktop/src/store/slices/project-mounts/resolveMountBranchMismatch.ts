@@ -26,6 +26,19 @@ type RecheckParams = {
   readonly view: SessionMountView;
 };
 
+type ReadMountBranchParams = {
+  readonly view: SessionMountView;
+};
+
+type RecheckOutcome =
+  | { readonly kind: 'matched' }
+  | { readonly kind: 'unavailable' }
+  | {
+      readonly kind: 'observed';
+      readonly worktreePath: string;
+      readonly observedBranch: string | null;
+    };
+
 type RestoreParams = {
   readonly set: SetFn;
   readonly observation: MountBranchObservation;
@@ -73,24 +86,59 @@ const refuseWhenHeldByAnotherMount = async ({
   });
 };
 
-const recheckMountBranch = async ({ set, view }: RecheckParams): Promise<SessionMountView> => {
+const readMountBranch = async ({ view }: ReadMountBranchParams): Promise<RecheckOutcome> => {
   const worktreePath = view.worktreePath;
-  const status =
-    worktreePath === null ? null : await worktreeStatus({ worktreePath }).catch(() => null);
-  if (worktreePath === null || status === null) {
-    clearMountBranchObservation({ set, sessionId: view.sessionId, mountId: view.id });
-    return view;
+  if (worktreePath === null) {
+    return { kind: 'unavailable' };
   }
-  const observed = status.branch ?? '';
-  recordMountBranchObservation({
-    set,
-    sessionId: view.sessionId,
-    mountId: view.id,
-    recordedBranch: view.branch,
-    revision: view.revision,
+  const status = await worktreeStatus({ worktreePath }).catch(() => null);
+  if (status === null) {
+    return { kind: 'unavailable' };
+  }
+  const branch = status.branch?.trim() ?? '';
+  if (branch === view.branch) {
+    return { kind: 'matched' };
+  }
+  return {
+    kind: 'observed',
     worktreePath,
-    observedBranch: observed.trim() === '' ? null : observed.trim(),
-  });
+    observedBranch: branch === '' ? null : branch,
+  };
+};
+
+const recheckMountBranch = async ({ set, view }: RecheckParams): Promise<SessionMountView> => {
+  const outcome = await readMountBranch({ view });
+  switch (outcome.kind) {
+    case 'matched':
+      clearMountBranchObservation({ set, sessionId: view.sessionId, mountId: view.id });
+      break;
+    case 'unavailable':
+      recordMountBranchObservation({
+        set,
+        sessionId: view.sessionId,
+        mountId: view.id,
+        recordedBranch: view.branch,
+        revision: view.revision,
+        worktreePath: null,
+        observedBranch: null,
+      });
+      break;
+    case 'observed':
+      recordMountBranchObservation({
+        set,
+        sessionId: view.sessionId,
+        mountId: view.id,
+        recordedBranch: view.branch,
+        revision: view.revision,
+        worktreePath: outcome.worktreePath,
+        observedBranch: outcome.observedBranch,
+      });
+      break;
+    default: {
+      const unreachable: never = outcome;
+      return unreachable;
+    }
+  }
   return view;
 };
 

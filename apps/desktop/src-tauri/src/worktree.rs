@@ -797,9 +797,11 @@ fn worktree_branch_holder_blocking(
     if trimmed.is_empty() {
         return Ok(None);
     }
-    Ok(branch_checkout_path_with(&repo, trimmed, &mut |cwd, args| {
-        git(cwd, args)
-    }))
+    Ok(branch_checkout_path_with(
+        &repo,
+        trimmed,
+        &mut |cwd, args| git(cwd, args),
+    ))
 }
 
 const REMOVE_RETRY_DELAY: std::time::Duration = std::time::Duration::from_millis(300);
@@ -3573,12 +3575,14 @@ mod rewrite_tests {
     fn a_branch_checked_out_elsewhere_is_read_from_the_worktree_listing() {
         let listing = "worktree /repo\nHEAD aaaa\nbranch refs/heads/main\n\nworktree /repo/.goodboy/worktrees/one\nHEAD bbbb\nbranch refs/heads/feature/one\n\nworktree /repo/.goodboy/worktrees/two\nHEAD cccc\ndetached\n";
 
-        let holder = super::branch_checkout_path_with(Path::new("/repo"), "feature/one", &mut |_, _| {
-            Ok(listing.to_string())
-        });
-        let free = super::branch_checkout_path_with(Path::new("/repo"), "feature/two", &mut |_, _| {
-            Ok(listing.to_string())
-        });
+        let holder =
+            super::branch_checkout_path_with(Path::new("/repo"), "feature/one", &mut |_, _| {
+                Ok(listing.to_string())
+            });
+        let free =
+            super::branch_checkout_path_with(Path::new("/repo"), "feature/two", &mut |_, _| {
+                Ok(listing.to_string())
+            });
 
         assert_eq!(holder.as_deref(), Some("/repo/.goodboy/worktrees/one"));
         assert_eq!(free, None);
@@ -3663,7 +3667,10 @@ mod rewrite_tests {
             panic!("expected a branch-in-use error, found {error:?}");
         };
         assert_eq!(branch, "ak/held");
-        assert_eq!(git_ok(&mover, &["rev-parse", "--abbrev-ref", "HEAD"]), "ak/mine");
+        assert_eq!(
+            git_ok(&mover, &["rev-parse", "--abbrev-ref", "HEAD"]),
+            "ak/mine"
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 
