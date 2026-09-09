@@ -202,7 +202,7 @@ describe('removeArchivedWorktrees', () => {
     const result = await removeArchivedWorktrees(vi.fn(), makeGet(loadStats))();
 
     expect(removeWorktreeChecked.mock.calls).toEqual([
-      [{ repoPath: '/repo', worktreePath: archivedWorktree.worktreePath }],
+      [{ repoPath: '/repo', worktreePath: archivedWorktree.worktreePath, mode: 'safe' }],
     ]);
     expect(updateSessionMountLifecycle).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -232,6 +232,15 @@ describe('removeArchivedWorktrees', () => {
     expect(removeWorktreeChecked).toHaveBeenCalledTimes(2);
     expect(updateSessionMountLifecycle).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ removed: 1, failed: 1 });
+  });
+
+  it('retains a mount when removal throws and counts it as a failure', async () => {
+    removeWorktreeChecked.mockRejectedValueOnce(new Error('git failed'));
+
+    const result = await removeArchivedWorktrees(vi.fn(), makeGet())();
+
+    expect(updateSessionMountLifecycle).not.toHaveBeenCalled();
+    expect(result).toEqual({ removed: 0, failed: 1 });
   });
 });
 

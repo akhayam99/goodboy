@@ -59,9 +59,27 @@ export const unmountMount = (set: SetFn, get: GetFn) => {
                 keepDirectory,
               });
         const decision = cleanup?.decision ?? null;
+        let isRetained = false;
+        let removalReason: string | null = null;
+        if (decision !== null) {
+          switch (decision.kind) {
+            case 'kept':
+            case 'failed':
+              isRetained = true;
+              removalReason = decision.reason;
+              break;
+            case 'removed':
+            case 'missing':
+              break;
+            default: {
+              const exhaustive: never = decision;
+              throw exhaustive;
+            }
+          }
+        }
         const removal = {
-          kept: decision?.kind === 'kept',
-          reason: decision?.kind === 'kept' ? decision.reason : null,
+          kept: isRetained,
+          reason: removalReason,
           diskState: cleanup?.diskState ?? 'removed',
         };
         const nextPath = removal.kept ? worktreePath : null;

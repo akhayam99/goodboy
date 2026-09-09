@@ -24,9 +24,19 @@ export const removeArchivedWorktrees = (_set: SetFn, get: GetFn) => {
           isRepoProject: true,
         },
       });
-      if (result.decision.kind === 'kept') {
-        failed += 1;
-        continue;
+      const decision = result.decision;
+      switch (decision.kind) {
+        case 'kept':
+        case 'failed':
+          failed += 1;
+          continue;
+        case 'removed':
+        case 'missing':
+          break;
+        default: {
+          const exhaustive: never = decision;
+          throw exhaustive;
+        }
       }
       await updateSessionMountLifecycle({
         db: tauriDatabase,

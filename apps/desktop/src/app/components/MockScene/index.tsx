@@ -8,6 +8,8 @@ import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
 import { ResolveItemScene } from './scenes/ResolveItemScene';
 import { BoardScene } from './scenes/BoardScene';
+import { TranscriptMountScene } from './scenes/TranscriptMountScene';
+import { BoardShellScene } from './scenes/BoardShellScene';
 
 const SCENES = {
   workspace: WorkspaceScene,
@@ -18,6 +20,8 @@ const SCENES = {
   resolve: ResolveScene,
   'resolve-item': ResolveItemScene,
   board: BoardScene,
+  'transcript-mount': TranscriptMountScene,
+  'board-shell': BoardShellScene,
 };
 
 export const MockScene = () => {

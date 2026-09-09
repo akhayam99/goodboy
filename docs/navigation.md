@@ -19,10 +19,9 @@
   edits a record in place; anything that opens a destination belongs to the
   footer.
 - **One home per thing.** If a thing must exist in state A and can exist in
-  state B, it lives where it must and B gets no second copy. Worked example:
-  there is no sessions column on the board, so anything reachable from the
-  board cannot live in the sidebar; workspace identity lives in the top bar and
-  the sidebar renders no workspace name.
+  state B, it lives where it must and B gets no second copy. Workspace identity
+  is permanently pinned at the top bar's left, and the sidebar renders no
+  workspace name on either the board or inside a session.
 - **Pin the structure, flex the density.** A control's position is fixed so it
   can be learned. No control appears or disappears at a count threshold, though
   counts themselves may: a chip reading zero is noise, not structure. Two
@@ -88,12 +87,13 @@ grid, so no column resize, no hide animation and no overlay can move it.
 **The pane** is the work: the only surface that scrolls its own body, mounts
 editors and takes a title.
 
-**The scope bar states which projects a session has materialized.** It sits
-above the session pane, lists the mounted projects, and carries the
-**+ project** chip that materializes another one. It renders only when there
-is a choice to state: one mount in a one-project workspace needs no bar.
-Sessions are created lazily on the workspace ([concepts.md](concepts.md) →
-Lazy sessions), so the bar is also where a session's footprint grows.
+**The projects section states which projects a session has materialized.** It
+lives in the session overview and always carries the Mount project action,
+including before the first mount. Mounted projects appear as dense rows; the
+empty section is one quiet action row with a short explanation. Sessions are
+created lazily on the workspace ([concepts.md](concepts.md) → Lazy sessions),
+and this section is where a session's footprint grows. The session header
+does not carry a second mount control.
 
 **Inside a session the sidebar stays the sessions list.** There is no second
 mode: the sidebar lists the workspace's sessions grouped by stage, and the open
@@ -155,16 +155,22 @@ parked beside it.
 
 ## Top bar
 
-Identity and state on the left, workspace-wide signals and set-once preferences
-on the right.
+Workspace identity stays on the left, the Goodboy brand is centred on the
+window, and workspace-wide signals and set-once preferences stay on the right.
+The bar is one three-column grid, `minmax(0,1fr) auto minmax(max-content,1fr)`,
+so the brand sits at the window midpoint whenever the signals fit their share
+and slides off it rather than being overlapped when they do not; the identity
+holds a bound and truncates with the full name in its tooltip, the wordmark
+drops below `brand-word` and the mascot below `brand-mark`, and no control ever
+moves into an overflow menu.
 
 - Workspace identity opens an anchored popover that switches and creates
   workspaces; ⌘O and the palette open that same popover, never a second one.
   Workspace settings has its own control next to identity: buried inside the
   switcher, a common per-workspace preference was easy to never discover.
-- **Identity is mounted once.** It sits in the top bar on the board and moves
-  into the sidebar header inside a session, so exactly one switcher is live at
-  a time and the shortcut resolves to a single popover rather than racing two.
+- **Identity is pinned and mounted once.** Workspace identity stays at the top
+  bar's left on the board, inside sessions, and under studios. Exactly one
+  switcher is live, and ⌘O and the palette open its single anchored popover.
 - Theme is the one set-once preference kept here, flipped often enough to earn
   the slot. The guide and pair-device live in the settings studio and palette.
 - **The report control is the one carve-out from "the top bar never edits".**

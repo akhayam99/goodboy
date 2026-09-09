@@ -210,6 +210,10 @@ import type {
   UnmountMountResult,
 } from './slices/project-mounts/types';
 import type { OpenMountRequestInput } from './slices/project-mounts/openMountRequest';
+import type {
+  DetachProjectInput,
+  DetachProjectOutcome,
+} from './slices/project-mounts/detachProject';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
@@ -435,7 +439,7 @@ type AppActions = {
     reason: string;
     taskIdentifiers?: ReadonlyArray<string>;
   }): Promise<SessionProjectMount>;
-  detachProject(input: { sessionId: SessionId; projectId: ProjectId }): Promise<void>;
+  detachProject(input: DetachProjectInput): Promise<ReadonlyArray<DetachProjectOutcome>>;
   loadSessionMounts(input: SessionKeyInput): Promise<ReadonlyArray<SessionMountView>>;
   forkMount(input: ForkMountInput): Promise<SessionMountView>;
   switchMount(input: SwitchMountInput): Promise<SessionMountView>;

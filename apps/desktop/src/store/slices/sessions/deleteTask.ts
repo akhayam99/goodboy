@@ -172,9 +172,19 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
           isRepoProject: true,
         },
       });
-      if (result.decision.kind === 'kept') {
-        keep(new Error(`${worktreePath}: ${result.decision.reason}`), result.diskState);
-        continue;
+      const decision = result.decision;
+      switch (decision.kind) {
+        case 'kept':
+        case 'failed':
+          keep(new Error(`${worktreePath}: ${decision.reason}`), result.diskState);
+          continue;
+        case 'removed':
+        case 'missing':
+          break;
+        default: {
+          const exhaustive: never = decision;
+          throw exhaustive;
+        }
       }
       detached.push({ mountId: mount.id, diskState: result.diskState });
       await tidyRepoGoodboyDir({ repoPath: repoRoot }).catch(() => undefined);
