@@ -7,6 +7,7 @@ import { MountsScene } from './scenes/MountsScene';
 import { ResolveScene } from './scenes/ResolveScene';
 import { ResolveItemScene } from './scenes/ResolveItemScene';
 import { BoardScene } from './scenes/BoardScene';
+import { TranscriptMountScene } from './scenes/TranscriptMountScene';
 import { BoardShellScene } from './scenes/BoardShellScene';
 
 const SCENES = {
@@ -17,6 +18,7 @@ const SCENES = {
   resolve: ResolveScene,
   'resolve-item': ResolveItemScene,
   board: BoardScene,
+  'transcript-mount': TranscriptMountScene,
   'board-shell': BoardShellScene,
 };
 
