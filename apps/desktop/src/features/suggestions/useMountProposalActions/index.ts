@@ -14,7 +14,7 @@ type ProposalTarget = {
 };
 
 export type MountProposalActions = {
-  readonly mount: (target: ProposalTarget) => void;
+  readonly mount: (target: ProposalTarget) => Promise<void>;
   readonly dismiss: (target: ProposalTarget) => void;
 };
 
@@ -24,16 +24,19 @@ export const useMountProposalActions = ({ sessionId }: Params): MountProposalAct
   const emitNotification = useAppStore((state) => state.emitNotification);
 
   const mount = useCallback(
-    ({ projectId, projectName, reason }: ProposalTarget) => {
-      void materializeProject({ sessionId, projectId, reason }).catch((error: unknown) => {
-        void emitNotification(
+    async ({ projectId, projectName, reason }: ProposalTarget) => {
+      try {
+        await materializeProject({ sessionId, projectId, reason });
+      } catch (error) {
+        await emitNotification(
           'error',
           'error',
           'Mount failed',
           `Could not mount ${projectName}. Try again. ${formatError(error)}`,
           { sessionId },
         );
-      });
+        throw error;
+      }
     },
     [emitNotification, materializeProject, sessionId],
   );

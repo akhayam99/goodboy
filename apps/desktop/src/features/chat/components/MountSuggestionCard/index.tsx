@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Button, cn, IconButton, tintClasses } from '@goodboy/ui';
 import type { MaterializationDeferralCause } from '@goodboy/types';
@@ -9,7 +9,7 @@ type Props = {
   readonly agentName: string;
   readonly reason: string;
   readonly cause: MaterializationDeferralCause | null;
-  readonly onMount: () => void;
+  readonly onMount: () => Promise<void>;
   readonly onDismiss: () => void;
 };
 
@@ -44,7 +44,28 @@ export const MountSuggestionCard = ({
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMounting, setIsMounting] = useState(false);
+  const isMountedRef = useRef(true);
   const tint = tintClasses('info');
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const handleMount = async () => {
+    setIsMounting(true);
+    try {
+      await onMount();
+    } catch {
+      return;
+    } finally {
+      if (isMountedRef.current) {
+        setIsMounting(false);
+      }
+    }
+  };
 
   return (
     <section
@@ -70,10 +91,7 @@ export const MountSuggestionCard = ({
           size="sm"
           isBusy={isMounting}
           busyLabel="Mounting"
-          onClick={() => {
-            setIsMounting(true);
-            onMount();
-          }}
+          onClick={() => void handleMount()}
           data-testid="mount-suggestion-mount"
         >
           Mount project

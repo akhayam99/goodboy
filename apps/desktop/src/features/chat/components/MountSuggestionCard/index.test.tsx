@@ -1,20 +1,22 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MountSuggestionCard } from './index';
 
 afterEach(cleanup);
 
+type RenderCardParams = {
+  readonly cause?: 'scope' | 'batch' | null;
+  readonly onMount?: () => Promise<void>;
+  readonly onDismiss?: () => void;
+};
+
 const renderCard = ({
   cause = 'scope',
-  onMount = vi.fn(),
+  onMount = vi.fn(async () => undefined),
   onDismiss = vi.fn(),
-}: {
-  readonly cause?: 'scope' | 'batch' | null;
-  readonly onMount?: () => void;
-  readonly onDismiss?: () => void;
-} = {}) => {
+}: RenderCardParams = {}) => {
   render(
     <MountSuggestionCard
       projectName="app-web"
@@ -63,7 +65,8 @@ describe('MountSuggestionCard', () => {
   });
 
   it('mounts once and marks the card busy while the mount runs', () => {
-    const { onMount } = renderCard();
+    const onMount = vi.fn(() => new Promise<void>(() => undefined));
+    renderCard({ onMount });
     const button = screen.getByTestId('mount-suggestion-mount');
 
     fireEvent.click(button);
@@ -71,5 +74,22 @@ describe('MountSuggestionCard', () => {
     expect(onMount).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('mount-suggestion-card').className).toContain('spin-border');
     expect(screen.getByTestId('mount-suggestion-mount').getAttribute('aria-busy')).toBe('true');
+  });
+
+  it('allows another mount attempt after a failure', async () => {
+    const onMount = vi.fn(async () => {
+      throw new Error('mount failed');
+    });
+    renderCard({ onMount });
+    const button = screen.getByTestId('mount-suggestion-mount');
+
+    fireEvent.click(button);
+
+    await waitFor(() => expect(button.getAttribute('aria-busy')).toBeNull());
+    expect(button.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.click(button);
+
+    await waitFor(() => expect(onMount).toHaveBeenCalledTimes(2));
   });
 });

@@ -199,7 +199,9 @@ export const useSuggestionActions = ({
         primary: {
           label: 'Mount project',
           isDisabled: false,
-          onAct: () => proposalActions.mount(proposalTarget({ suggestion })),
+          onAct: () => {
+            void proposalActions.mount(proposalTarget({ suggestion })).catch(() => undefined);
+          },
         },
         onDismiss: () => proposalActions.dismiss(proposalTarget({ suggestion })),
       };
