@@ -43,7 +43,7 @@ const renderDecision = ({ next = {}, holder = null }: RenderParams = {}) =>
     <MountBranchDecision
       sessionId={sessionId}
       mountId={mountId}
-      mountLabel="ledger-core on ak/part-one"
+      projectName="ledger-core"
       repoRoot="/repos/ledger-core"
       worktreePath="/worktrees/part-one"
       observation={{ ...observation, ...next }}
@@ -61,11 +61,9 @@ describe('MountBranchDecision', () => {
   it('names the mount, the recorded branch and the one found', () => {
     renderDecision();
 
-    expect(screen.getByText('ledger-core on ak/part-one has a different branch')).toBeDefined();
+    expect(screen.getByText('ledger-core is not on the branch it was left on')).toBeDefined();
     expect(
-      screen.getByText(
-        'ledger-core on ak/part-one was expected on ak/part-one, but Goodboy found ak/part-two. Nothing was changed.',
-      ),
+      screen.getByText('Expected ak/part-one, found ak/part-two. Nothing was changed.'),
     ).toBeDefined();
   });
 
@@ -106,10 +104,10 @@ describe('MountBranchDecision', () => {
   it('turns off adopting a branch another mount already holds', () => {
     renderDecision({ holder: { mountId: 'mount-2' as MountId, label: 'PR #418' } });
 
-    expect(screen.getByText('ledger-core on ak/part-one has a different branch')).toBeDefined();
+    expect(screen.getByText('ledger-core is not on the branch it was left on')).toBeDefined();
     expect(
       screen.getByText(
-        'ledger-core on ak/part-one was expected on ak/part-one, but Goodboy found ak/part-two. ak/part-two is already mounted as PR #418 in this session. Git keeps one branch in one worktree, so using it here would fail.',
+        'Expected ak/part-one, found ak/part-two. That branch is already mounted as PR #418 in this session. Git keeps one branch in one worktree, so using it here would fail.',
       ),
     ).toBeDefined();
     expect(
@@ -137,7 +135,10 @@ describe('MountBranchDecision', () => {
   it('puts a detached mount back on its recorded branch', async () => {
     renderDecision({ next: { state: 'detached', observedBranch: null } });
 
-    expect(screen.getByText('ledger-core on ak/part-one is not on a branch')).toBeDefined();
+    expect(screen.getByText('ledger-core is not on a branch')).toBeDefined();
+    expect(
+      screen.getByText('Expected ak/part-one, found a commit with no branch. Nothing was changed.'),
+    ).toBeDefined();
     await waitFor(() =>
       expect(
         screen.getByRole('button', { name: 'Put it back on ak/part-one' }).hasAttribute('disabled'),
@@ -157,7 +158,12 @@ describe('MountBranchDecision', () => {
   it('offers a reread when the directory could not be read', () => {
     renderDecision({ next: { state: 'unavailable', observedBranch: null } });
 
-    expect(screen.getByText('ledger-core on ak/part-one could not be read')).toBeDefined();
+    expect(screen.getByText("ledger-core's branch could not be read")).toBeDefined();
+    expect(
+      screen.getByText(
+        'Expected ak/part-one, but the directory could not be read. Nothing was changed.',
+      ),
+    ).toBeDefined();
     expect(
       screen.getByRole('button', { name: 'Check this mount again' }).hasAttribute('disabled'),
     ).toBe(false);
@@ -179,7 +185,7 @@ describe('MountBranchDecision', () => {
     await waitFor(() =>
       expect(
         screen.getByText(
-          'ledger-core on ak/part-one was expected on ak/part-one, but Goodboy found ak/part-two. ak/part-two is already mounted in another worktree of this project. Git keeps one branch in one worktree, so using it here would fail.',
+          'Expected ak/part-one, found ak/part-two. That branch is already mounted in another worktree of this project. Git keeps one branch in one worktree, so using it here would fail.',
         ),
       ).toBeDefined(),
     );

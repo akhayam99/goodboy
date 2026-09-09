@@ -17,7 +17,7 @@ import { buildBranchDecision } from './branchDecision';
 type Props = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
-  readonly mountLabel: string;
+  readonly projectName: string;
   readonly repoRoot: string;
   readonly worktreePath: string | null;
   readonly observation: MountBranchObservation;
@@ -31,7 +31,7 @@ type ResolveParams = {
 export const MountBranchDecision = ({
   sessionId,
   mountId,
-  mountLabel,
+  projectName,
   repoRoot,
   worktreePath,
   observation,
@@ -79,7 +79,7 @@ export const MountBranchDecision = ({
     };
   }, [holder, observation.state, repoRoot, targetBranch, worktreePath]);
 
-  const decision = buildBranchDecision({ observation, mountLabel, holder: resolvedHolder });
+  const decision = buildBranchDecision({ observation, projectName, holder: resolvedHolder });
 
   if (isDismissed || decision === null) {
     return null;

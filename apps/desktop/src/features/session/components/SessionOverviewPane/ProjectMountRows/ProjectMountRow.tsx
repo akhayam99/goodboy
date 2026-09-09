@@ -291,7 +291,7 @@ export const ProjectMountRow = ({
           <MountBranchDecision
             sessionId={sessionId}
             mountId={row.mountId}
-            mountLabel={label}
+            projectName={row.projectName}
             repoRoot={row.repoRoot}
             worktreePath={row.worktreePath}
             observation={observation}
