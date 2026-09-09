@@ -7,6 +7,102 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.23
+
+The workspace name stops moving: it stays at the top bar's left on the board,
+inside a session and under a studio, and the Goodboy mark takes the centre.
+Agents can now mount a project without asking for every one of them, the
+projects block finally carries a labelled way to mount, detaching cleans the
+filesystem behind it with real friction when there is something to lose, and a
+branch mount found on the wrong branch is no longer a dead end.
+
+### [#1717] The workspace name stays where you left it
+
+Identity used to move: it sat in the top bar on the board and slid into the
+sidebar header once you opened a session, so the anchor you navigate by changed
+place depending on where you were. It is now mounted once at the top bar's
+left, everywhere, and the sidebar header reads Sessions. The Goodboy mark moves
+to the centre of the window, on a grid whose right column is floored at its
+laid out width, so a long workspace name and a busy signal strip can never
+overlap the mark: at the smallest window the mark slides a little off centre
+instead. The collapsed rail loses its second workspace switcher, which had been
+listening for the same shortcut as the first.
+
+### [#1718] An agent can mount a project without asking every time
+
+An agent that needed a project the goal did not name had to stop and ask, even
+on the first or second one, and the message it printed told the agent what to
+do and told you nothing. A session holding no more than one project now gains
+one unnamed project on its own; approval is still required past two unnamed
+projects, and past two mounts inside a single request. The deferral says which
+of the two limits it hit, and it is no longer rendered as a red error card: a
+decision the system made on purpose used to reach you in the colour reserved
+for failures. When the deferral belongs to a turn in the conversation you are
+reading, its suggestion appears there with one action, rather than only in the
+activity timeline.
+
+### [#1715] Mount a project from the projects block
+
+The projects block had a way to mount, but it was an unlabelled icon, which is
+why an issue was filed saying there was none. It is a labelled Mount project
+control now, present whether or not anything is mounted, and the empty block is
+one quiet row with a sentence instead of a blank section. The picker
+distinguishes a workspace with no projects from one where everything is already
+mounted. Rows are tighter within a project and further apart between projects,
+so the grouping reads.
+
+### [#1716] Detaching cleans up, and says what it will cost
+
+Detaching removed a clean worktree and kept a dirty one, and nothing anywhere
+checked for commits that existed only locally. It now measures the mount before
+asking: uncommitted files, unpushed commits, whether the branch has an upstream.
+A clean published worktree is removed after a short confirmation. Anything else
+asks first, naming the branch, the path and the exact counts, and saying plainly
+that the branch and its commits stay in the repository while uncommitted file
+content does not. Detach and keep files remains one click away. When a project
+holds several mounts, the confirmation assesses all of them and speaks for all
+of them, rather than reading one and deleting several.
+
+### [#1719, #1720] A branch mount on the wrong branch is no longer a dead end
+
+A mount recorded on one branch and found on another offered three controls, and
+every one of them failed with a raw git error, because git will not check out
+one branch in two worktrees at once. The note now checks whether the branch it
+found is already held elsewhere, turns off the control that cannot work and
+says why in its own words, and always leaves one control that resolves the
+note. Checking again no longer clears the note when the check could not read
+the mount. The root cause is fixed too: an observation from one worktree was
+being recorded against a different mount of the same project.
+
+### [#1709] Project mounts survive collisions, crashes and detach
+
+Adopting a branch already checked out elsewhere failed at the git layer, mount
+recovery had no caller and could wedge a session permanently on a synchronous
+throw, a writer lease was released before the removal it was guarding, and
+detaching a project marked every one of its mounts removed while deleting only
+the first directory. All four are closed, with the lease now keyed the way the
+registry actually stores it rather than by a canonicalised path that never
+matched on a symlink.
+
+### [#1710, #1711] The board and the session detail show work, not chrome
+
+The board's cards carry the work and the filters moved out of the way, and the
+session detail gets one row grammar: one visible action per row plus the
+chevron, terminal state behind a count, and completed mounts hanging off the
+project header instead of taking rows of their own. Show completed and hide
+completed replace a toggle that never said which way it went.
+
+### [#1712, #1713] Refuse a review comment, and decide from a board
+
+A reviewer comment could be accepted or deferred, never refused, so the only
+way to say no was to leave it open forever. It can now be refused with a reply
+that is posted while the thread stays open. Resolve itself becomes a board: the
+queue reads top to bottom with a fixed status column, shared runs are grouped
+once instead of duplicating their proposal, the commit that carries the fix is
+shown, and the entry point that used to sit between the workflow and agent
+controls labelled with a configuration summary is gone. Review is the only way
+in.
+
 ## Goodboy v0.2.22
 
 Review comments are now a queue you work through, and nothing you skipped
