@@ -1,4 +1,4 @@
-import { InlineConfirm, Skeleton } from '@goodboy/ui';
+import { Button, InlineConfirm, Skeleton } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { DetachDetails } from './DetachDetails';
 import { CHECKING_STATUS, detachActionFor, type DetachPlan } from './detachPlan';
@@ -37,6 +37,11 @@ export const DetachConfirm = ({
           <Skeleton className="h-3 w-full" />
           <Skeleton className="h-3 w-4/5" />
           <Skeleton className="h-6 w-28" />
+        </div>
+        <div className="flex justify-end">
+          <Button size="sm" variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
         </div>
       </div>
     );

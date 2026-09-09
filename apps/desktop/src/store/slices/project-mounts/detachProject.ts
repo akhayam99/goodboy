@@ -105,16 +105,30 @@ export const detachProject = (set: SetFn, get: GetFn) => {
         },
       });
       const decision = result.decision;
-      if (decision.kind === 'failed') {
-        outcomes.push({
-          worktreePath: mount.worktreePath,
-          kind: 'failed',
-          reason: decision.reason,
-        });
-        continue;
+      let kept: boolean;
+      let reason: string | null;
+      switch (decision.kind) {
+        case 'failed':
+          outcomes.push({
+            worktreePath: mount.worktreePath,
+            kind: decision.kind,
+            reason: decision.reason,
+          });
+          continue;
+        case 'kept':
+          kept = true;
+          reason = decision.reason;
+          break;
+        case 'removed':
+        case 'missing':
+          kept = false;
+          reason = null;
+          break;
+        default: {
+          const exhaustive: never = decision;
+          throw exhaustive;
+        }
       }
-      const kept = decision.kind === 'kept';
-      const reason = decision.kind === 'kept' ? decision.reason : null;
       const mountId = mount.mountId;
       const revision = mount.revision;
       if (kept && mountId !== undefined && revision !== undefined) {

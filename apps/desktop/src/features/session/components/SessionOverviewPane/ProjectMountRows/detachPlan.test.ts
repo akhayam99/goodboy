@@ -178,6 +178,36 @@ describe('buildDetachPlan', () => {
     });
   });
 
+  it('pluralizes several unpublished branches correctly', () => {
+    expect(
+      plan({
+        assessments: [
+          mount({
+            path: '/a',
+            branch: 'ak/a',
+            affectedFiles: 0,
+            localOnlyCommits: 0,
+            hasUpstream: false,
+          }),
+          mount({
+            path: '/b',
+            branch: 'ak/b',
+            affectedFiles: 0,
+            localOnlyCommits: 0,
+            hasUpstream: false,
+          }),
+        ],
+      }),
+    ).toMatchObject({
+      kind: 'risky',
+      lines: [
+        'Remove 2 worktrees for api, of which 2 branches have no upstream.',
+        'No uncommitted files will be deleted.',
+        'The branches and their commits stay in the repository.',
+      ],
+    });
+  });
+
   it('removes several clean worktrees under one concise confirmation', () => {
     expect(
       plan({

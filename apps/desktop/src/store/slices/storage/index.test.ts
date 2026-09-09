@@ -233,6 +233,15 @@ describe('removeArchivedWorktrees', () => {
     expect(updateSessionMountLifecycle).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ removed: 1, failed: 1 });
   });
+
+  it('retains a mount when removal throws and counts it as a failure', async () => {
+    removeWorktreeChecked.mockRejectedValueOnce(new Error('git failed'));
+
+    const result = await removeArchivedWorktrees(vi.fn(), makeGet())();
+
+    expect(updateSessionMountLifecycle).not.toHaveBeenCalled();
+    expect(result).toEqual({ removed: 0, failed: 1 });
+  });
 });
 
 describe('pruneArchivedTranscripts', () => {

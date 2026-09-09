@@ -49,13 +49,30 @@ const BLOCKER_SENTENCE = {
     `A terminal is open in ${projectName}; close it before removing this worktree.`,
 } satisfies Record<MountCleanupBlocker, (input: { readonly projectName: string }) => string>;
 
-const countLabel = ({
-  count,
-  singular,
-}: {
+type CountNoun =
+  | 'branch'
+  | 'clean worktree'
+  | 'local-only commit'
+  | 'uncommitted file'
+  | 'unpushed commit'
+  | 'worktree';
+
+const PLURAL_LABEL = {
+  branch: 'branches',
+  'clean worktree': 'clean worktrees',
+  'local-only commit': 'local-only commits',
+  'uncommitted file': 'uncommitted files',
+  'unpushed commit': 'unpushed commits',
+  worktree: 'worktrees',
+} satisfies Record<CountNoun, string>;
+
+type CountLabelParams = {
   readonly count: number;
-  readonly singular: string;
-}): string => (count === 1 ? `1 ${singular}` : `${count} ${singular}s`);
+  readonly singular: CountNoun;
+};
+
+const countLabel = ({ count, singular }: CountLabelParams): string =>
+  count === 1 ? `1 ${singular}` : `${count} ${PLURAL_LABEL[singular]}`;
 
 const branchLabelFor = ({
   assessed,
@@ -107,7 +124,11 @@ const measure = ({ branch, assessment }: MountAssessment): Measured | null => {
   }
 };
 
-const commitSingular = ({ hasUpstream }: { readonly hasUpstream: boolean }): string =>
+type CommitSingularParams = {
+  readonly hasUpstream: boolean;
+};
+
+const commitSingular = ({ hasUpstream }: CommitSingularParams): CountNoun =>
   hasUpstream ? 'unpushed commit' : 'local-only commit';
 
 const perWorktreeDetail = ({ measured }: { readonly measured: Measured }): string => {

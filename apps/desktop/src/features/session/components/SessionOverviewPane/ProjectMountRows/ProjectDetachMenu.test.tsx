@@ -113,6 +113,24 @@ describe('ProjectDetachMenu', () => {
     expect(screen.queryByRole('button', { name: 'Detach and delete files' })).toBeNull();
   });
 
+  it('cancels an in-flight assessment without reopening the confirmation', async () => {
+    let resolveAssessment: (value: WorktreeDetachAssessment) => void = () => undefined;
+    worktreeDetachAssessment.mockReturnValue(
+      new Promise<WorktreeDetachAssessment>((resolve) => {
+        resolveAssessment = resolve;
+      }),
+    );
+    renderMenu();
+    openConfirm();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByRole('menuitem', { name: 'Detach project' })).toBeDefined();
+
+    resolveAssessment(assessed({ affectedFiles: 0, localOnlyCommits: 0, hasUpstream: true }));
+    await waitFor(() => expect(screen.queryByText('Detach api?')).toBeNull());
+    expect(screen.getByRole('menuitem', { name: 'Detach project' })).toBeDefined();
+  });
+
   it('offers a plain removal for a clean published worktree', async () => {
     renderMenu();
     openConfirm();

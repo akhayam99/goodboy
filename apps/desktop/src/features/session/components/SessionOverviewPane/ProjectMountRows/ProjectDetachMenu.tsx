@@ -142,6 +142,13 @@ export const ProjectDetachMenu = ({
     });
   };
 
+  const cancelDetach = () => {
+    requestRef.current = requestRef.current + 1;
+    setAssessments(null);
+    setStage(null);
+    setConfirming(null);
+  };
+
   useEffect(() => {
     if (dropdown.open) {
       return;
@@ -264,7 +271,7 @@ export const ProjectDetachMenu = ({
           stage={stage}
           onConfirm={({ disposition }) => void detach({ disposition })}
           onRecheck={assess}
-          onCancel={() => setConfirming(null)}
+          onCancel={cancelDetach}
         />
       ) : null}
       {confirming === null ? (

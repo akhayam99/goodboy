@@ -43,23 +43,33 @@ export const cleanupSessionMounts = (set: SetFn, get: GetFn) => {
         target: toTarget({ get, view, worktreePath }),
         keepDirectory: keepDirectories,
       });
-      const isRetained = result.decision.kind === 'kept' || result.decision.kind === 'failed';
-      if (isRetained) {
-        const proposal = await buildCleanupProposal({ get, view, reason, request: null });
-        if (proposal !== null && (await saveCleanupProposal({ proposal }))) {
-          publishCleanupProposal({ set, sessionId, proposal });
+      const decision = result.decision;
+      switch (decision.kind) {
+        case 'kept':
+        case 'failed': {
+          const proposal = await buildCleanupProposal({ get, view, reason, request: null });
+          if (proposal !== null && (await saveCleanupProposal({ proposal }))) {
+            publishCleanupProposal({ set, sessionId, proposal });
+          }
+          break;
         }
-      } else {
-        await updateSessionMountLifecycle({
-          db: tauriDatabase,
-          sessionId,
-          mountId: view.id,
-          worktreePath: null,
-          isAttached: false,
-          diskState: result.diskState,
-          expectedRevision: view.revision,
-          updatedAt: new Date().toISOString() as IsoDateTime,
-        }).catch(() => undefined);
+        case 'removed':
+        case 'missing':
+          await updateSessionMountLifecycle({
+            db: tauriDatabase,
+            sessionId,
+            mountId: view.id,
+            worktreePath: null,
+            isAttached: false,
+            diskState: result.diskState,
+            expectedRevision: view.revision,
+            updatedAt: new Date().toISOString() as IsoDateTime,
+          }).catch(() => undefined);
+          break;
+        default: {
+          const exhaustive: never = decision;
+          throw exhaustive;
+        }
       }
       outcomes.push({ mountId: view.id, worktreePath, decision: result.decision });
     }
