@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { formatError } from '@goodboy/ui';
 import type { Agent, ResolveThread, Session, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
+import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { useSessionRoleModels } from '../../../shared/hooks/useSessionRoleModels';
 import type { ResolveModelChoice } from '../../chat/spawn-from-comment';
@@ -13,7 +15,7 @@ import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent';
 import { eligibleReviewThreads } from '../eligibleThreads';
 import { useMountProposalActions } from '../useMountProposalActions';
-import type { SessionSuggestion } from '../types';
+import type { RebaseSuggestionTarget, SessionSuggestion } from '../types';
 
 type Params = {
   readonly session: Session;
@@ -24,6 +26,15 @@ type Params = {
 export type SuggestionAction = {
   readonly label: string;
   readonly isDisabled: boolean;
+  readonly onAct: () => void;
+  readonly choices?: ReadonlyArray<SuggestionActionChoice>;
+};
+
+export type SuggestionActionChoice = {
+  readonly id: string;
+  readonly label: string;
+  readonly description: string;
+  readonly detail: string;
   readonly onAct: () => void;
 };
 
@@ -39,6 +50,10 @@ export type SuggestionActionResolver = (params: {
 const NO_ACTIONS: SuggestionActions = { primary: null, onDismiss: null };
 const EMPTY_ROWS: ReadonlyArray<ResolveThread> = [];
 
+type StartRebaseParams = {
+  readonly target: RebaseSuggestionTarget;
+};
+
 export const useSuggestionActions = ({
   session,
   agents,
@@ -51,6 +66,17 @@ export const useSuggestionActions = ({
       state.sessionProjectMounts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<SessionProjectMount>),
   );
   const projects = useAppStore((state) => state.projects);
+  const completedMountIds = useAppStore(
+    useShallow((state) =>
+      mounts.flatMap((mount) => {
+        const mountId = mount.mountId;
+        if (mountId === undefined || !isMountCompleted({ state, mountId })) {
+          return [];
+        }
+        return [mountId];
+      }),
+    ),
+  );
   const emitNotification = useAppStore((state) => state.emitNotification);
   const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
   const roleModels = useSessionRoleModels({ sessionId });
@@ -65,18 +91,30 @@ export const useSuggestionActions = ({
     void emitNotification('error', 'error', title, formatError(message), { sessionId });
   };
 
+  const rebaseMounts = useMemo(
+    () =>
+      mounts.filter((mount) => {
+        const mountId = mount.mountId;
+        if (mountId === undefined) {
+          return true;
+        }
+        return !completedMountIds.includes(mountId);
+      }),
+    [completedMountIds, mounts],
+  );
+
   const targets = useMemo(
     () =>
-      mounts.map((mount) => ({
+      rebaseMounts.map((mount) => ({
         worktreePath: mount.worktreePath,
         baseBranch:
           projects.find((project) => project.id === mount.projectId)?.baseBranch ?? undefined,
       })),
-    [projects, mounts],
+    [projects, rebaseMounts],
   );
   const statuses = useWorktreeStatuses({ targets });
   const behindStatus = useMemo(() => {
-    for (const mount of mounts) {
+    for (const mount of rebaseMounts) {
       const status = statuses.get(mount.worktreePath) ?? null;
       const behind = status == null ? null : distanceBehind({ distance: status.mainDistance });
       if (behind != null && behind > 0) {
@@ -84,7 +122,7 @@ export const useSuggestionActions = ({
       }
     }
     return null;
-  }, [mounts, statuses]);
+  }, [rebaseMounts, statuses]);
   const rebase = useRebaseAgent({
     sessionId,
     status: behindStatus,
@@ -120,17 +158,18 @@ export const useSuggestionActions = ({
       });
   };
 
-  const startRebase = ({
-    suggestion,
-  }: {
-    readonly suggestion: Extract<SessionSuggestion, { readonly kind: 'rebase-project' }>;
-  }) => {
+  const startRebase = ({ target }: StartRebaseParams) => {
     void (async () => {
       await setSessionActiveProject({
         sessionId,
-        projectId: suggestion.payload.projectId,
+        projectId: target.projectId,
+        ...(target.mountId == null ? {} : { mountId: target.mountId }),
       });
-      await rebase.run({ projectId: suggestion.payload.projectId });
+      await rebase.run(
+        target.mountId == null
+          ? { projectId: target.projectId, behind: target.behind }
+          : { mountId: target.mountId, behind: target.behind },
+      );
     })().catch((error: unknown) => {
       reportError('Rebase failed')(formatError(error));
     });
@@ -179,11 +218,27 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'rebase-project') {
+      const firstTarget = suggestion.payload.targets[0] ?? null;
       return {
         primary: {
           label: rebase.isRunning ? 'Rebasing' : 'Rebase',
-          isDisabled: !rebase.canRebase || rebase.isRunning,
-          onAct: () => startRebase({ suggestion }),
+          isDisabled: firstTarget == null || rebase.isRunning,
+          onAct: () => {
+            if (firstTarget == null) {
+              return;
+            }
+            startRebase({ target: firstTarget });
+          },
+          choices:
+            suggestion.payload.targets.length > 1
+              ? suggestion.payload.targets.map((target) => ({
+                  id: target.id,
+                  label: target.projectName,
+                  description: target.branch,
+                  detail: `${target.behind} behind`,
+                  onAct: () => startRebase({ target }),
+                }))
+              : undefined,
         },
         onDismiss: null,
       };

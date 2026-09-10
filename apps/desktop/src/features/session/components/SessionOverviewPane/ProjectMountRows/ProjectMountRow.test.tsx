@@ -470,6 +470,15 @@ describe('ProjectMountRow loading placeholders', () => {
     expect(screen.getByTestId('sync-control')).not.toBeNull();
   });
 
+  it('hides the sync control only for a completed row', () => {
+    renderRow({ worktreeStatus: status, row: { ...baseRow, isCompleted: true } });
+    expect(screen.queryByTestId('sync-control')).toBeNull();
+    cleanup();
+
+    renderRow({ worktreeStatus: status });
+    expect(screen.getByTestId('sync-control')).not.toBeNull();
+  });
+
   it('holds a branch placeholder instead of an empty branch cell', () => {
     renderRow({ isStatusPending: true, row: { ...baseRow, branch: '' } });
 

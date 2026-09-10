@@ -1,5 +1,6 @@
 import type {
   AgentId,
+  MountId,
   PlanId,
   ProjectId,
   SessionEventId,
@@ -24,6 +25,17 @@ type SuggestionBase = {
   readonly sessionId: SessionId;
 };
 
+export type RebaseSuggestionTarget = {
+  readonly id: string;
+  readonly mountId: MountId | null;
+  readonly projectId: ProjectId;
+  readonly projectName: string;
+  readonly branch: string;
+  readonly worktreePath: string;
+  readonly baseBranch: string;
+  readonly behind: number;
+};
+
 export type SessionSuggestion =
   | (SuggestionBase & {
       readonly kind: 'workflow-next-step';
@@ -40,10 +52,7 @@ export type SessionSuggestion =
   | (SuggestionBase & {
       readonly kind: 'rebase-project';
       readonly payload: {
-        readonly projectId: ProjectId;
-        readonly worktreePath: string;
-        readonly baseBranch: string;
-        readonly behind: number;
+        readonly targets: ReadonlyArray<RebaseSuggestionTarget>;
       };
     })
   | (SuggestionBase & {

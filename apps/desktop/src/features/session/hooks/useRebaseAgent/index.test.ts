@@ -27,7 +27,12 @@ const { showToast, state } = vi.hoisted(() => ({
     },
     sessionProjectMounts: {} as Record<
       string,
-      ReadonlyArray<{ projectId: string; worktreePath?: string; mountName?: string }>
+      ReadonlyArray<{
+        mountId?: string;
+        projectId: string;
+        worktreePath?: string;
+        mountName?: string;
+      }>
     >,
     projects: [] as ReadonlyArray<{ id: string; baseBranch?: string | null; name?: string }>,
     sessionPhaseRuns: {} as Record<
@@ -248,6 +253,39 @@ describe('useRebaseAgent', () => {
 
     expect(prompt).toContain('This rebase belongs to mount mount-a at /wt/app.');
     expect(prompt).toContain('query github push --mount mount-a --force-with-lease');
+  });
+
+  it('records the selected mount and its per-run distance', async () => {
+    state.projects = [{ id: 'project-web', baseBranch: 'main', name: 'web' }];
+    state.sessionProjectMounts = {
+      [sessionId]: [
+        {
+          mountId: 'mount-first',
+          projectId: 'project-web',
+          worktreePath: '/wt/web-first',
+          mountName: 'web first',
+        },
+        {
+          mountId: 'mount-second',
+          projectId: 'project-web',
+          worktreePath: '/wt/web-second',
+          mountName: 'web second',
+        },
+      ],
+    };
+    const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(0) }));
+
+    await act(() => result.current.run({ mountId: 'mount-second' as never, behind: 3 }));
+
+    expect(state.recordSessionEvent).toHaveBeenCalledWith({
+      sessionId,
+      kind: 'rebase_requested',
+      payload: expect.objectContaining({ mountId: 'mount-second', behind: 3 }),
+    });
+    expect(state.spawnAgent).toHaveBeenCalledWith(
+      sessionId,
+      expect.objectContaining({ initialPrompt: expect.stringContaining('mount mount-second') }),
+    );
   });
 
   it('leaves the push command unscoped when the session has no mount to name', () => {

@@ -11,8 +11,19 @@ const { store, worktreeStatus } = vi.hoisted(() => ({
     planConsumptions: {} as Record<string, ReadonlyArray<unknown>>,
     sessionGithub: {} as Record<string, unknown>,
     sessionResolveThreads: {} as Record<string, ReadonlyArray<unknown>>,
+    mountGithub: {} as Record<string, unknown>,
+    mountGitlabMr: {} as Record<string, unknown>,
+    mountBitbucketPr: {} as Record<string, unknown>,
     sessionProjectMounts: {
-      'session-1': [{ projectId: 'api', mountName: 'API', worktreePath: '/api', branch: 'feat' }],
+      'session-1': [
+        {
+          mountId: 'mount-api',
+          projectId: 'api',
+          mountName: 'API',
+          worktreePath: '/api',
+          branch: 'feat',
+        },
+      ],
     } as Record<string, ReadonlyArray<Record<string, string>>>,
     projects: [
       { id: 'api', name: 'API', baseBranch: 'main', workspaceId: 'ws-1' },
@@ -44,6 +55,21 @@ import { useSessionSuggestions } from '.';
 const session = { id: 'session-1', workspaceId: 'ws-1' } as Session;
 
 beforeEach(() => {
+  store.sessionProjectMounts = {
+    'session-1': [
+      {
+        mountId: 'mount-api',
+        projectId: 'api',
+        mountName: 'API',
+        worktreePath: '/api',
+        branch: 'feat',
+      },
+    ],
+  };
+  store.projects = [{ id: 'api', name: 'API', baseBranch: 'main', workspaceId: 'ws-1' }];
+  store.mountGithub = {};
+  store.mountGitlabMr = {};
+  store.mountBitbucketPr = {};
   worktreeStatus.mockReset();
   worktreeStatus.mockResolvedValue({
     branch: 'feat',
@@ -62,19 +88,68 @@ const rebaseRequested = ({
   behind,
   agentId,
   branch = 'main',
+  mountId,
 }: {
   behind: number;
   agentId: string;
   branch?: string;
+  mountId?: string;
 }) => ({
   id: `ev-${agentId}`,
   sessionId: 'session-1',
   kind: 'rebase_requested',
-  payload: { projectId: 'api', projectName: 'API', branch, behind, agentId },
+  payload: {
+    projectId: 'api',
+    projectName: 'API',
+    branch,
+    behind,
+    agentId,
+    ...(mountId === undefined ? {} : { mountId }),
+  },
   createdAt: '2026-09-04T09:11:00.000Z',
 });
 
 describe('useSessionSuggestions rebase consumption', () => {
+  it('skips a merged mount while its unfinished sibling still produces a rebase', async () => {
+    store.sessionProjectMounts = {
+      'session-1': [
+        {
+          mountId: 'mount-api',
+          projectId: 'api',
+          mountName: 'API merged',
+          worktreePath: '/api-merged',
+          branch: 'feat-merged',
+        },
+        {
+          mountId: 'mount-api-open',
+          projectId: 'api',
+          mountName: 'API open',
+          worktreePath: '/api-open',
+          branch: 'feat-open',
+        },
+      ],
+    };
+    store.mountGithub = {
+      'mount-api': {
+        pr: {
+          number: 12,
+          state: 'merged',
+          title: 'Merged request',
+          url: 'https://github.com/acme/api/pull/12',
+          isDraft: false,
+        },
+      },
+    };
+    const view = renderHook(() => useSessionSuggestions({ session }));
+
+    await waitFor(() => {
+      const rebase = view.result.current.find((candidate) => candidate.kind === 'rebase-project');
+      expect(rebase?.payload.targets.map((target) => target.mountId)).toEqual(['mount-api-open']);
+    });
+    expect(worktreeStatus).toHaveBeenCalledTimes(1);
+    expect(worktreeStatus).toHaveBeenCalledWith({ worktreePath: '/api-open', baseBranch: 'main' });
+  });
+
   it('hides the rebase after a request while the distance is unchanged', async () => {
     store.sessionEvents = { 'session-1': [rebaseRequested({ behind: 4, agentId: 'agent-1' })] };
     store.sessionPhaseRuns = { 'session-1': [{ id: 'agent-1', status: 'running' }] };
@@ -117,6 +192,38 @@ describe('useSessionSuggestions rebase consumption', () => {
       expect(view.result.current.some((s) => s.kind === 'rebase-project')).toBe(true),
     );
   });
+
+  it('consumes only the mount named by a new rebase request', async () => {
+    store.sessionProjectMounts = {
+      'session-1': [
+        {
+          mountId: 'mount-api',
+          projectId: 'api',
+          mountName: 'API first',
+          worktreePath: '/api-first',
+          branch: 'feat-first',
+        },
+        {
+          mountId: 'mount-api-second',
+          projectId: 'api',
+          mountName: 'API second',
+          worktreePath: '/api-second',
+          branch: 'feat-second',
+        },
+      ],
+    };
+    store.sessionEvents = {
+      'session-1': [rebaseRequested({ behind: 4, agentId: 'agent-1', mountId: 'mount-api' })],
+    };
+    store.sessionPhaseRuns = { 'session-1': [{ id: 'agent-1', status: 'running' }] };
+    const view = renderHook(() => useSessionSuggestions({ session }));
+
+    await waitFor(() => expect(worktreeStatus).toHaveBeenCalledTimes(2));
+    await waitFor(() => {
+      const rebase = view.result.current.find((candidate) => candidate.kind === 'rebase-project');
+      expect(rebase?.payload.targets.map((target) => target.mountId)).toEqual(['mount-api-second']);
+    });
+  });
 });
 
 describe('useSessionSuggestions rebase opt-out', () => {
@@ -127,6 +234,64 @@ describe('useSessionSuggestions rebase opt-out', () => {
       expect(view.result.current.some((s) => s.kind === 'rebase-project')).toBe(true),
     );
     expect(worktreeStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps a mountless worktree as a rebase target', async () => {
+    store.sessionProjectMounts = {
+      'session-1': [
+        {
+          projectId: 'api',
+          mountName: 'API',
+          worktreePath: '/api',
+          branch: 'feature/api',
+        },
+      ],
+    };
+    const view = renderHook(() => useSessionSuggestions({ session }));
+
+    await waitFor(() => {
+      const rebase = view.result.current.find((candidate) => candidate.kind === 'rebase-project');
+      expect(rebase?.payload.targets).toEqual([
+        expect.objectContaining({
+          id: 'worktree:/api',
+          mountId: null,
+          projectId: 'api',
+          branch: 'feature/api',
+          worktreePath: '/api',
+        }),
+      ]);
+    });
+  });
+
+  it('collapses two mounts of the same project into one suggestion', async () => {
+    store.sessionProjectMounts = {
+      'session-1': [
+        {
+          mountId: 'mount-api',
+          projectId: 'api',
+          mountName: 'API first',
+          worktreePath: '/api-first',
+          branch: 'feat-first',
+        },
+        {
+          mountId: 'mount-api-second',
+          projectId: 'api',
+          mountName: 'API second',
+          worktreePath: '/api-second',
+          branch: 'feat-second',
+        },
+      ],
+    };
+    const view = renderHook(() => useSessionSuggestions({ session }));
+
+    await waitFor(() => expect(worktreeStatus).toHaveBeenCalledTimes(2));
+    await waitFor(() => {
+      const rebases = view.result.current.filter(
+        (suggestion) => suggestion.kind === 'rebase-project',
+      );
+      expect(rebases).toHaveLength(1);
+      expect(rebases[0]?.payload.targets).toHaveLength(2);
+    });
   });
 
   it('runs no git work and offers no rebase when the caller opts out', async () => {

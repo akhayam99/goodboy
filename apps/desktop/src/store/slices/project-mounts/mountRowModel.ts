@@ -91,6 +91,14 @@ type RequestParams = {
   readonly mountId: MountId;
 };
 
+type TerminalParams = {
+  readonly state: PullRequestStateKind;
+};
+
+type CompletedParams = {
+  readonly request: MountRequestView | null;
+};
+
 type SeriesParams = {
   readonly series: ReadonlyArray<PrSeriesView>;
   readonly mountId: MountId;
@@ -104,8 +112,7 @@ const BITBUCKET_STATE: Readonly<Record<string, PullRequestStateKind>> = {
   SUPERSEDED: 'closed',
 };
 
-const isTerminal = (state: PullRequestStateKind): boolean =>
-  state === 'merged' || state === 'closed';
+const isTerminal = ({ state }: TerminalParams): boolean => state === 'merged' || state === 'closed';
 
 export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestView | null => {
   const github = (state.mountGithub ?? {})[mountId];
@@ -176,6 +183,12 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
     label: `PR #${bitbucketPr.id}`,
   };
 };
+
+const isCompletedRequest = ({ request }: CompletedParams): boolean =>
+  request !== null && isTerminal({ state: request.state });
+
+export const isMountCompleted = ({ state, mountId }: RequestParams): boolean =>
+  isCompletedRequest({ request: mountRequestOf({ state, mountId }) });
 
 const seriesPositionOf = ({
   series,
@@ -313,7 +326,7 @@ export const buildMountRows = ({
       series: seriesPositionOf({ series, mountId: view.id, branch: view.branch }),
       observation: observations.find((candidate) => candidate.mountId === view.id) ?? null,
       observedBranchHolder: null,
-      isCompleted: request !== null && isTerminal(request.state),
+      isCompleted: isCompletedRequest({ request }),
     };
     if (!grouped.has(view.projectId)) {
       order.push(view.projectId);

@@ -138,7 +138,7 @@ export const ProjectMountRow = ({
           </div>
         ) : null}
         <div className={SLOT_SYNC}>
-          {isRepo && row.isAttached ? (
+          {isRepo && row.isAttached && !row.isCompleted ? (
             isStatusPending ? (
               <span data-testid="project-distance-skeleton" className="shrink-0">
                 <Skeleton className="size-7 rounded-md" />
