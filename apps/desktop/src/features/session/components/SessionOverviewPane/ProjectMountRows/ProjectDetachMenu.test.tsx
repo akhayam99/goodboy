@@ -48,10 +48,14 @@ const assessed = ({
   affectedFiles,
   localOnlyCommits,
   hasUpstream,
+  ignoredFiles = 0,
+  ignoredFileSamples = [],
 }: {
   readonly affectedFiles: number;
   readonly localOnlyCommits: number;
   readonly hasUpstream: boolean;
+  readonly ignoredFiles?: number;
+  readonly ignoredFileSamples?: ReadonlyArray<string>;
 }): WorktreeDetachAssessment => ({
   kind: 'assessed',
   path: '/worktrees/api',
@@ -59,6 +63,8 @@ const assessed = ({
   hasUpstream,
   affectedFiles,
   localOnlyCommits,
+  ignoredFiles,
+  ignoredFileSamples,
 });
 
 const renderMenu = () =>
@@ -202,6 +208,8 @@ describe('ProjectDetachMenu', () => {
               hasUpstream: true,
               affectedFiles: 2,
               localOnlyCommits: 0,
+              ignoredFiles: 0,
+              ignoredFileSamples: [],
             }
           : {
               kind: 'assessed',
@@ -210,6 +218,8 @@ describe('ProjectDetachMenu', () => {
               hasUpstream: false,
               affectedFiles: 1,
               localOnlyCommits: 3,
+              ignoredFiles: 0,
+              ignoredFileSamples: [],
             },
     );
     renderMenu();

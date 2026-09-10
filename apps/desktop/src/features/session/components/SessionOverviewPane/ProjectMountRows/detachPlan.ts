@@ -42,16 +42,21 @@ export type BuildDetachPlanParams = {
 export const CHECKING_STATUS = 'Checking files and commits';
 export const REMOVAL_STAGE = 'Removing worktree';
 
-const BLOCKER_SENTENCE = {
-  'agent-running': ({ projectName }: { readonly projectName: string }) =>
+type ProjectNameParams = {
+  readonly projectName: string;
+};
+
+export const BLOCKER_SENTENCE = {
+  'agent-running': ({ projectName }: ProjectNameParams) =>
     `Work is still running in ${projectName}; stop it before removing this worktree.`,
-  'terminal-open': ({ projectName }: { readonly projectName: string }) =>
+  'terminal-open': ({ projectName }: ProjectNameParams) =>
     `A terminal is open in ${projectName}; close it before removing this worktree.`,
-} satisfies Record<MountCleanupBlocker, (input: { readonly projectName: string }) => string>;
+} satisfies Record<MountCleanupBlocker, (input: ProjectNameParams) => string>;
 
 type CountNoun =
   | 'branch'
   | 'clean worktree'
+  | 'ignored file'
   | 'local-only commit'
   | 'uncommitted file'
   | 'unpushed commit'
@@ -60,6 +65,7 @@ type CountNoun =
 const PLURAL_LABEL = {
   branch: 'branches',
   'clean worktree': 'clean worktrees',
+  'ignored file': 'ignored files',
   'local-only commit': 'local-only commits',
   'uncommitted file': 'uncommitted files',
   'unpushed commit': 'unpushed commits',
@@ -71,7 +77,7 @@ type CountLabelParams = {
   readonly singular: CountNoun;
 };
 
-const countLabel = ({ count, singular }: CountLabelParams): string =>
+export const countLabel = ({ count, singular }: CountLabelParams): string =>
   count === 1 ? `1 ${singular}` : `${count} ${PLURAL_LABEL[singular]}`;
 
 const branchLabelFor = ({
@@ -90,16 +96,26 @@ const branchLabelFor = ({
   return 'this worktree';
 };
 
-type Measured = {
+export type Measured = {
   readonly branch: string;
   readonly path: string;
   readonly isAbsent: boolean;
   readonly hasUpstream: boolean;
   readonly affectedFiles: number;
   readonly localOnlyCommits: number;
+  readonly ignoredFiles: number;
+  readonly ignoredFileSamples: ReadonlyArray<string>;
 };
 
-const measure = ({ branch, assessment }: MountAssessment): Measured | null => {
+type MountRiskParams = {
+  readonly measured: Measured;
+};
+
+type IgnoredFilesLineParams = {
+  readonly measured: ReadonlyArray<Measured>;
+};
+
+export const measure = ({ branch, assessment }: MountAssessment): Measured | null => {
   switch (assessment.kind) {
     case 'unavailable':
       return null;
@@ -111,6 +127,8 @@ const measure = ({ branch, assessment }: MountAssessment): Measured | null => {
         hasUpstream: true,
         affectedFiles: 0,
         localOnlyCommits: 0,
+        ignoredFiles: 0,
+        ignoredFileSamples: [],
       };
     case 'assessed':
       return {
@@ -120,8 +138,27 @@ const measure = ({ branch, assessment }: MountAssessment): Measured | null => {
         hasUpstream: assessment.hasUpstream,
         affectedFiles: assessment.affectedFiles,
         localOnlyCommits: assessment.localOnlyCommits,
+        ignoredFiles: assessment.ignoredFiles,
+        ignoredFileSamples: assessment.ignoredFileSamples,
       };
   }
+};
+
+export const isMountRisky = ({ measured }: MountRiskParams): boolean =>
+  !measured.isAbsent &&
+  (measured.affectedFiles > 0 ||
+    measured.localOnlyCommits > 0 ||
+    !measured.hasUpstream ||
+    measured.ignoredFiles > 0);
+
+export const ignoredFilesLine = ({ measured }: IgnoredFilesLineParams): string | null => {
+  const count = measured.reduce((total, entry) => total + entry.ignoredFiles, 0);
+  if (count === 0) {
+    return null;
+  }
+  const samples = measured.flatMap((entry) => entry.ignoredFileSamples).slice(0, 5);
+  const noun = countLabel({ count, singular: 'ignored file' });
+  return `${noun} at risk, not tracked by git: ${samples.join(', ')}.`;
 };
 
 type CommitSingularParams = {
@@ -288,22 +325,20 @@ export const buildDetachPlan = ({
   if (measured.every((entry) => entry.isAbsent)) {
     return { kind: 'missing', lines: [missingLine({ measured, projectName })] };
   }
-  const isRisky = measured.some(
-    (entry) =>
-      !entry.isAbsent &&
-      (entry.affectedFiles > 0 || entry.localOnlyCommits > 0 || !entry.hasUpstream),
-  );
+  const isRisky = measured.some((entry) => isMountRisky({ measured: entry }));
   if (!isRisky) {
     return { kind: 'safe', lines: [safeLine({ measured, projectName })] };
   }
   const files = measured.reduce((total, entry) => total + entry.affectedFiles, 0);
   const commits = measured.reduce((total, entry) => total + entry.localOnlyCommits, 0);
   const hasUpstream = measured.every((entry) => entry.hasUpstream);
+  const ignoredLine = ignoredFilesLine({ measured });
   return {
     kind: 'risky',
     lines: [
       removalLine({ measured, projectName }),
       lossLine({ measured }),
+      ...(ignoredLine === null ? [] : [ignoredLine]),
       retentionLine({ measured }),
     ],
     details: {

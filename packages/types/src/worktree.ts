@@ -98,6 +98,8 @@ export type WorktreeDetachAssessment =
       readonly hasUpstream: boolean;
       readonly affectedFiles: number;
       readonly localOnlyCommits: number;
+      readonly ignoredFiles: number;
+      readonly ignoredFileSamples: ReadonlyArray<string>;
     };
 
 export type WorktreeDirectorySize = {

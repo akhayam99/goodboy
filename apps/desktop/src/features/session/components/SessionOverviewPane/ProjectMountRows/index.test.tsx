@@ -61,6 +61,7 @@ vi.mock('./ProjectBranchChip', () => ({
 }));
 vi.mock('./ProjectSyncControl', () => ({ ProjectSyncControl: () => null }));
 vi.mock('./ProjectDetachMenu', () => ({ ProjectDetachMenu: () => null }));
+vi.mock('./RemoveWorktreeAction', () => ({ RemoveWorktreeAction: () => null }));
 vi.mock('./NewBranchMountAction', () => ({
   NewBranchMountAction: () => <button>New branch mount</button>,
 }));

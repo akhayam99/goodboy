@@ -12,6 +12,10 @@ import type {
 } from '@goodboy/types';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 
+type RemoveWorktreeProps = {
+  readonly label: string;
+};
+
 const { store, remoteKind } = vi.hoisted(() => ({
   remoteKind: { current: 'github' as string | null },
   store: {
@@ -47,6 +51,13 @@ vi.mock('./ProjectSyncControl', () => ({
 vi.mock('./ProjectDetachMenu', () => ({
   ProjectDetachMenu: ({ menuLabel }: { readonly menuLabel?: string }) => (
     <span data-testid="detach-menu">{menuLabel}</span>
+  ),
+}));
+vi.mock('./RemoveWorktreeAction', () => ({
+  RemoveWorktreeAction: ({ label }: RemoveWorktreeProps) => (
+    <button type="button" aria-label={`Remove the worktree for ${label}`}>
+      Remove worktree
+    </button>
   ),
 }));
 vi.mock('./MountBranchDecision', () => ({
@@ -269,6 +280,15 @@ describe('ProjectMountRow availability', () => {
     });
 
     expect(screen.getByTestId('branch-decision')).toBeDefined();
+  });
+
+  it('offers worktree removal only for a completed attached row', () => {
+    renderRow({ row: { ...baseRow, isCompleted: true } });
+
+    expect(screen.getByRole('button', { name: 'Remove the worktree for API' })).toBeDefined();
+    cleanup();
+    renderRow({});
+    expect(screen.queryByRole('button', { name: 'Remove the worktree for API' })).toBeNull();
   });
 });
 
