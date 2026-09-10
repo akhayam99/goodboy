@@ -95,6 +95,10 @@ type TerminalParams = {
   readonly state: PullRequestStateKind;
 };
 
+type CompletedParams = {
+  readonly request: MountRequestView | null;
+};
+
 type SeriesParams = {
   readonly series: ReadonlyArray<PrSeriesView>;
   readonly mountId: MountId;
@@ -180,10 +184,11 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
   };
 };
 
-export const isMountCompleted = ({ state, mountId }: RequestParams): boolean => {
-  const request = mountRequestOf({ state, mountId });
-  return request !== null && isTerminal({ state: request.state });
-};
+const isCompletedRequest = ({ request }: CompletedParams): boolean =>
+  request !== null && isTerminal({ state: request.state });
+
+export const isMountCompleted = ({ state, mountId }: RequestParams): boolean =>
+  isCompletedRequest({ request: mountRequestOf({ state, mountId }) });
 
 const seriesPositionOf = ({
   series,
@@ -321,7 +326,7 @@ export const buildMountRows = ({
       series: seriesPositionOf({ series, mountId: view.id, branch: view.branch }),
       observation: observations.find((candidate) => candidate.mountId === view.id) ?? null,
       observedBranchHolder: null,
-      isCompleted: isMountCompleted({ state, mountId: view.id }),
+      isCompleted: isCompletedRequest({ request }),
     };
     if (!grouped.has(view.projectId)) {
       order.push(view.projectId);
