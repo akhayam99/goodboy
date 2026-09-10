@@ -1,14 +1,8 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type {
-  Agent,
-  PlanId,
-  ProjectId,
-  Session,
-  SessionEvent,
-  SessionProjectMount,
-} from '@goodboy/types';
+import type { Agent, PlanId, Session, SessionEvent, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions, useSessionPlans } from '../../../store';
+import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { workflowHasOpenQuestions } from '../../context/openQuestionsGate';
 import { splitWorkflowRuns } from '../../workflows/activeWorkflowRuns';
@@ -28,18 +22,36 @@ type Params = {
   readonly withRebase?: boolean;
 };
 
+type LatestRebaseRequestsParams = {
+  readonly events: ReadonlyArray<SessionEvent>;
+  readonly agents: ReadonlyArray<Agent>;
+};
+
+type RebaseRequestKeyParams = {
+  readonly mountId: string | null;
+  readonly projectId: string;
+};
+
+type RebaseTargetIdParams = {
+  readonly mountId: string | null;
+  readonly worktreePath: string;
+};
+
 const NO_TARGETS: ReadonlyArray<{ readonly worktreePath: string; readonly baseBranch?: string }> =
   [];
+
+const rebaseRequestKey = ({ mountId, projectId }: RebaseRequestKeyParams): string =>
+  mountId == null ? `project:${projectId}` : `mount:${mountId}`;
+
+const rebaseTargetId = ({ mountId, worktreePath }: RebaseTargetIdParams): string =>
+  mountId == null ? `worktree:${worktreePath}` : `mount:${mountId}`;
 
 const latestRebaseRequests = ({
   events,
   agents,
-}: {
-  readonly events: ReadonlyArray<SessionEvent>;
-  readonly agents: ReadonlyArray<Agent>;
-}): ReadonlyMap<ProjectId, SuggestionRebaseRequest> => {
-  const requests = new Map<ProjectId, SuggestionRebaseRequest>();
-  const agentsById = new Map(agents.map((agent) => [agent.id as string, agent]));
+}: LatestRebaseRequestsParams): ReadonlyMap<string, SuggestionRebaseRequest> => {
+  const requests = new Map<string, SuggestionRebaseRequest>();
+  const agentsById = new Map<string, Agent>(agents.map((agent) => [agent.id, agent]));
   for (const event of events) {
     const projectId = event.payload?.projectId;
     if (event.kind !== 'rebase_requested' || projectId == null) {
@@ -47,7 +59,7 @@ const latestRebaseRequests = ({
     }
     const agentId = event.payload?.agentId ?? null;
     const agent = agentId == null ? null : (agentsById.get(agentId) ?? null);
-    requests.set(projectId as ProjectId, {
+    requests.set(rebaseRequestKey({ mountId: event.payload?.mountId ?? null, projectId }), {
       behind: event.payload?.behind ?? null,
       baseBranch: event.payload?.branch ?? null,
       agentStatus: agent?.status ?? null,
@@ -83,6 +95,28 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
     (state) =>
       state.sessionProjectMounts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<SessionProjectMount>),
   );
+  const completedMountIds = useAppStore(
+    useShallow((state) =>
+      mounts.flatMap((mount) => {
+        const mountId = mount.mountId;
+        if (mountId === undefined || !isMountCompleted({ state, mountId })) {
+          return [];
+        }
+        return [mountId];
+      }),
+    ),
+  );
+  const rebaseMounts = useMemo(
+    () =>
+      mounts.filter((mount) => {
+        const mountId = mount.mountId;
+        if (mountId === undefined) {
+          return true;
+        }
+        return !completedMountIds.includes(mountId);
+      }),
+    [completedMountIds, mounts],
+  );
   const projects = useAppStore(
     useShallow((state) =>
       state.projects.filter((project) => mounts.some((mount) => mount.projectId === project.id)),
@@ -94,13 +128,15 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
   const targets = useMemo(
     () =>
       withRebase
-        ? mounts.map((mount) => ({
+        ? rebaseMounts.map((mount) => ({
             worktreePath: mount.worktreePath,
             baseBranch:
-              projects.find((project) => project.id === mount.projectId)?.baseBranch ?? undefined,
+              mount.baseBranch ??
+              projects.find((project) => project.id === mount.projectId)?.baseBranch ??
+              undefined,
           }))
         : NO_TARGETS,
-    [mounts, projects, withRebase],
+    [projects, rebaseMounts, withRebase],
   );
   const worktreeStatuses = useWorktreeStatuses({ targets });
 
@@ -161,17 +197,27 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
       eligibleThreadCount: eligibleReviewThreadCount({ github, rows: resolveRows }),
       mountEvents: toMountEvents({ events }),
       projects: withRebase
-        ? mounts.map((mount) => {
+        ? rebaseMounts.map((mount) => {
             const project = projects.find((candidate) => candidate.id === mount.projectId) ?? null;
             const status = worktreeStatuses.get(mount.worktreePath) ?? null;
+            const mountId = mount.mountId ?? null;
+            const mountRequest = rebaseRequests.get(
+              rebaseRequestKey({ mountId, projectId: mount.projectId }),
+            );
+            const projectRequest = rebaseRequests.get(
+              rebaseRequestKey({ mountId: null, projectId: mount.projectId }),
+            );
             return {
+              id: rebaseTargetId({ mountId, worktreePath: mount.worktreePath }),
+              mountId,
               projectId: mount.projectId,
               projectName: project?.name ?? mount.mountName,
+              branch: mount.branch,
               worktreePath: mount.worktreePath,
-              baseBranch: project?.baseBranch ?? 'main',
+              baseBranch: mount.baseBranch ?? project?.baseBranch ?? 'main',
               mainDistance:
                 status == null ? null : distanceBehind({ distance: status.mainDistance }),
-              rebaseRequest: rebaseRequests.get(mount.projectId) ?? null,
+              rebaseRequest: mountRequest ?? projectRequest ?? null,
             };
           })
         : [],
@@ -184,11 +230,11 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
     effectiveAgents,
     events,
     github,
-    mounts,
     openQuestions,
     planConsumptions,
     plans,
     projects,
+    rebaseMounts,
     resolveRows,
     sessionId,
     withRebase,

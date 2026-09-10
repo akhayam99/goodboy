@@ -20,7 +20,7 @@ export const CreateAgentTrigger = ({ variant, isOpen, className, description, on
   if (variant === 'compact') {
     return (
       <Button
-        variant="ghost"
+        variant="primary"
         size="sm"
         onClick={onClick}
         aria-haspopup="dialog"

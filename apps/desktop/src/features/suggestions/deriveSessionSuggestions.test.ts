@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type {
   AgentId,
+  MountId,
   PlanId,
   ProjectId,
   SessionEventId,
@@ -14,6 +15,7 @@ import type { SuggestionMountEvent, SuggestionMountEventKind } from './mountProp
 const sessionId = 'session-1' as SessionId;
 const planId = 'plan-1' as PlanId;
 const webId = 'project-web' as ProjectId;
+const webMountId = 'mount-web' as MountId;
 
 const mountEvent = ({
   id,
@@ -72,8 +74,11 @@ const derive = ({
     mountEvents,
     projects: [
       {
+        id: 'mount:mount-1',
+        mountId: 'mount-1' as MountId,
         projectId: 'project-1' as ProjectId,
         projectName: 'Goodboy',
+        branch: 'feature/goodboy',
         worktreePath: '/tmp/goodboy',
         baseBranch: 'main',
         mainDistance,
@@ -185,8 +190,11 @@ describe('deriveSessionSuggestions', () => {
 
   it('hides the rebase once a request covers the same distance and its agent did not fail', () => {
     const project = {
+      id: 'mount:mount-web',
+      mountId: webMountId,
       projectId: webId,
       projectName: 'web',
+      branch: 'feature/web',
       worktreePath: '/tmp/web',
       baseBranch: 'main',
       mainDistance: 126,
@@ -227,17 +235,17 @@ describe('deriveSessionSuggestions', () => {
       rebaseIds({ rebaseRequest: { behind: 126, baseBranch: null, agentStatus: 'running' } }),
     ).toEqual([]);
     expect(rebaseIds({ rebaseRequest: { behind: 126, agentStatus: 'failed' } })).toEqual([
-      'rebase-project:project-web',
+      'rebase-project:session-1',
     ]);
     expect(
       rebaseIds({ rebaseRequest: { behind: 126, agentStatus: 'completed' }, mainDistance: 129 }),
-    ).toEqual(['rebase-project:project-web']);
+    ).toEqual(['rebase-project:session-1']);
     expect(
       rebaseIds({ rebaseRequest: { behind: 126, baseBranch: 'develop', agentStatus: 'running' } }),
-    ).toEqual(['rebase-project:project-web']);
+    ).toEqual(['rebase-project:session-1']);
   });
 
-  it('orders equal-priority suggestions by id', () => {
+  it('collapses two mounts of one project into one ordered rebase suggestion', () => {
     const suggestions = deriveSessionSuggestions({
       sessionId,
       workflowRuns: [],
@@ -249,25 +257,102 @@ describe('deriveSessionSuggestions', () => {
       mountEvents: [],
       projects: [
         {
-          projectId: 'project-z' as ProjectId,
-          projectName: 'Zulu',
-          worktreePath: '/tmp/zulu',
+          id: 'mount:mount-second',
+          mountId: 'mount-second' as MountId,
+          projectId: webId,
+          projectName: 'web',
+          branch: 'feature/second',
+          worktreePath: '/tmp/web-second',
           baseBranch: 'main',
-          mainDistance: 1,
+          mainDistance: 2,
         },
         {
-          projectId: 'project-a' as ProjectId,
-          projectName: 'Alpha',
-          worktreePath: '/tmp/alpha',
+          id: 'mount:mount-first',
+          mountId: 'mount-first' as MountId,
+          projectId: webId,
+          projectName: 'web',
+          branch: 'feature/first',
+          worktreePath: '/tmp/web-first',
           baseBranch: 'main',
-          mainDistance: 1,
+          mainDistance: 7,
         },
       ],
     });
 
-    expect(suggestions.map((suggestion) => suggestion.id)).toEqual([
-      'rebase-project:project-a',
-      'rebase-project:project-z',
+    const rebase = suggestions.find((suggestion) => suggestion.kind === 'rebase-project');
+    expect(suggestions.filter((suggestion) => suggestion.kind === 'rebase-project')).toHaveLength(
+      1,
+    );
+    expect(rebase?.title).toBe('Rebase web');
+    expect(rebase?.detail).toBe('2 branches behind');
+    expect(rebase?.payload.targets.map((target) => target.mountId)).toEqual([
+      'mount-first',
+      'mount-second',
+    ]);
+  });
+
+  it('sorts several projects by distance and then project name without reordering ties', () => {
+    const suggestions = deriveSessionSuggestions({
+      sessionId,
+      workflowRuns: [],
+      plans: [],
+      consumedPlanIds: new Set<PlanId>(),
+      openQuestionCount: 0,
+      hasPullRequest: false,
+      eligibleThreadCount: 0,
+      mountEvents: [],
+      projects: [
+        {
+          id: 'mount:mount-zulu',
+          mountId: 'mount-zulu' as MountId,
+          projectId: 'project-zulu' as ProjectId,
+          projectName: 'Zulu',
+          branch: 'feature/zulu',
+          worktreePath: '/tmp/zulu',
+          baseBranch: 'main',
+          mainDistance: 3,
+        },
+        {
+          id: 'mount:mount-alpha-first',
+          mountId: 'mount-alpha-first' as MountId,
+          projectId: 'project-alpha' as ProjectId,
+          projectName: 'Alpha',
+          branch: 'feature/alpha-first',
+          worktreePath: '/tmp/alpha-first',
+          baseBranch: 'main',
+          mainDistance: 3,
+        },
+        {
+          id: 'mount:mount-alpha-second',
+          mountId: 'mount-alpha-second' as MountId,
+          projectId: 'project-alpha' as ProjectId,
+          projectName: 'Alpha',
+          branch: 'feature/alpha-second',
+          worktreePath: '/tmp/alpha-second',
+          baseBranch: 'main',
+          mainDistance: 3,
+        },
+        {
+          id: 'mount:mount-far',
+          mountId: 'mount-far' as MountId,
+          projectId: 'project-far' as ProjectId,
+          projectName: 'Far',
+          branch: 'feature/far',
+          worktreePath: '/tmp/far',
+          baseBranch: 'develop',
+          mainDistance: 8,
+        },
+      ],
+    });
+
+    const rebase = suggestions.find((suggestion) => suggestion.kind === 'rebase-project');
+    expect(rebase?.title).toBe('Rebase 4 branches');
+    expect(rebase?.detail).toBe('3 projects behind');
+    expect(rebase?.payload.targets.map((target) => target.mountId)).toEqual([
+      'mount-far',
+      'mount-alpha-first',
+      'mount-alpha-second',
+      'mount-zulu',
     ]);
   });
 });

@@ -1,6 +1,6 @@
-import type { PlanId, ProjectId, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
+import type { MountId, PlanId, ProjectId, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
 import { pendingMountEvents, type SuggestionMountEvent } from './mountProposals';
-import type { SessionSuggestion } from './types';
+import type { RebaseSuggestionTarget, SessionSuggestion } from './types';
 
 export type SuggestionWorkflowRun = {
   readonly id: WorkflowRunId;
@@ -23,8 +23,11 @@ export type SuggestionRebaseRequest = {
 };
 
 export type SuggestionProject = {
+  readonly id: string;
+  readonly mountId: MountId | null;
   readonly projectId: ProjectId;
   readonly projectName: string;
+  readonly branch: string;
   readonly worktreePath: string;
   readonly baseBranch: string;
   readonly mainDistance: number | null;
@@ -136,6 +139,8 @@ export const deriveSessionSuggestions = ({
       payload: { eligibleThreadCount },
     });
   }
+  const rebaseTargets: RebaseSuggestionTarget[] = [];
+  const rebaseTargetIds = new Set<string>();
   for (const project of projects) {
     if (project.mainDistance == null || project.mainDistance <= 0) {
       continue;
@@ -143,19 +148,46 @@ export const deriveSessionSuggestions = ({
     if (isRebaseConsumed({ project })) {
       continue;
     }
+    if (rebaseTargetIds.has(project.id)) {
+      continue;
+    }
+    rebaseTargetIds.add(project.id);
+    rebaseTargets.push({
+      id: project.id,
+      mountId: project.mountId,
+      projectId: project.projectId,
+      projectName: project.projectName,
+      branch: project.branch,
+      worktreePath: project.worktreePath,
+      baseBranch: project.baseBranch,
+      behind: project.mainDistance,
+    });
+  }
+  rebaseTargets.sort(
+    (first, second) =>
+      second.behind - first.behind || first.projectName.localeCompare(second.projectName),
+  );
+  const firstRebaseTarget = rebaseTargets[0];
+  if (firstRebaseTarget != null) {
+    const projectCount = new Set(rebaseTargets.map((target) => target.projectId)).size;
+    const isSingleTarget = rebaseTargets.length === 1;
+    const isSingleProject = projectCount === 1;
     suggestions.push({
-      id: `rebase-project:${project.projectId}`,
+      id: `rebase-project:${sessionId}`,
       kind: 'rebase-project',
       priority: 40,
-      title: `Rebase ${project.projectName} on ${project.baseBranch}`,
-      detail: `${project.mainDistance} behind`,
+      title: isSingleTarget
+        ? `Rebase ${firstRebaseTarget.projectName} on ${firstRebaseTarget.baseBranch}`
+        : isSingleProject
+          ? `Rebase ${firstRebaseTarget.projectName}`
+          : `Rebase ${rebaseTargets.length} branches`,
+      detail: isSingleTarget
+        ? `${firstRebaseTarget.behind} behind`
+        : isSingleProject
+          ? `${rebaseTargets.length} branches behind`
+          : `${projectCount} projects behind`,
       sessionId,
-      payload: {
-        projectId: project.projectId,
-        worktreePath: project.worktreePath,
-        baseBranch: project.baseBranch,
-        behind: project.mainDistance,
-      },
+      payload: { targets: rebaseTargets },
     });
   }
   return suggestions.sort(

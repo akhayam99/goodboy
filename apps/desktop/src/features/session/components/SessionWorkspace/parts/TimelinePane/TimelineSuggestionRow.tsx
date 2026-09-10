@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
-import { Button, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { SuggestionActionButton } from '../../../../../suggestions/components/SuggestionActionButton';
 import { SUGGESTION_ICONS } from '../../../../../suggestions/suggestionIcons';
 import type { SessionSuggestion } from '../../../../../suggestions';
 import type { SuggestionActions } from '../../../../../suggestions/useSuggestionActions';
@@ -47,15 +48,7 @@ export const TimelineSuggestionRow = ({ suggestion, railWidth, actions }: Props)
         )}
         <span className="ml-auto flex shrink-0 items-center gap-0.5">
           {actions.primary == null ? null : (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6"
-              disabled={actions.primary.isDisabled}
-              onClick={actions.primary.onAct}
-            >
-              {actions.primary.label}
-            </Button>
+            <SuggestionActionButton action={actions.primary} appearance="ghost" />
           )}
           {actions.onDismiss == null ? null : (
             <Tooltip content="Dismiss this suggestion">

@@ -3,6 +3,7 @@ import { renderHook } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
+  MountId,
   ProjectId,
   Session,
   SessionEventId,
@@ -33,6 +34,7 @@ const { storeState, spies } = vi.hoisted(() => {
     void fields;
   });
   const setActiveLens = vi.fn();
+  const rebaseRun = vi.fn(async () => undefined);
   return {
     spies: {
       materializeProject,
@@ -43,12 +45,22 @@ const { storeState, spies } = vi.hoisted(() => {
       spawnAgent,
       setAgentConfig,
       setActiveLens,
-      rebaseRun: vi.fn(async () => undefined),
+      rebaseRun,
+      worktreeStatuses: vi.fn(() => new Map<string, unknown>()),
+      useRebaseAgent: vi.fn((_params: unknown) => ({
+        canRebase: false,
+        isRunning: false,
+        error: null,
+        run: rebaseRun,
+      })),
     },
     storeState: {
       sessionGithub: {} as Record<string, unknown>,
       sessionResolveThreads: {} as Record<string, ReadonlyArray<unknown>>,
       sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+      mountGithub: {} as Record<string, unknown>,
+      mountGitlabMr: {} as Record<string, unknown>,
+      mountBitbucketPr: {} as Record<string, unknown>,
       projects: [] as ReadonlyArray<unknown>,
       materializeProject,
       recordSessionEvent,
@@ -72,10 +84,10 @@ vi.mock('../../session/agent-kind', () => ({
   kindRouting: () => ({ provider: 'anthropic', model: 'claude', effort: 'medium' }),
 }));
 vi.mock('../../session/hooks/useWorktreeStatuses', () => ({
-  useWorktreeStatuses: () => new Map(),
+  useWorktreeStatuses: spies.worktreeStatuses,
 }));
 vi.mock('../../session/hooks/useRebaseAgent', () => ({
-  useRebaseAgent: () => ({ canRebase: true, isRunning: false, error: null, run: spies.rebaseRun }),
+  useRebaseAgent: spies.useRebaseAgent,
 }));
 vi.mock('../../workflows/useAdvanceWorkflowAgent', () => ({
   useAdvanceWorkflowAgent: () => spies.advanceAgent,
@@ -92,6 +104,8 @@ const SESSION_ID = 'session-1' as SessionId;
 const RUN_ID = 'run-1' as WorkflowRunId;
 const STEP_ID = 'step-1' as StepId;
 const WEB_ID = 'project-web' as ProjectId;
+const WEB_MOUNT_ID = 'mount-web' as MountId;
+const WEB_SECOND_MOUNT_ID = 'mount-web-second' as MountId;
 const AGENT_ID = 'agent-1' as AgentId;
 
 const SESSION = { id: SESSION_ID, workspaceId: 'workspace-1' } as Session;
@@ -119,7 +133,11 @@ beforeEach(() => {
   storeState.sessionGithub = {};
   storeState.sessionResolveThreads = {};
   storeState.sessionProjectMounts = {};
+  storeState.mountGithub = {};
+  storeState.mountGitlabMr = {};
+  storeState.mountBitbucketPr = {};
   storeState.projects = [];
+  spies.worktreeStatuses.mockReturnValue(new Map());
   onSelectQuestions.mockReset();
   for (const spy of Object.values(spies)) {
     spy.mockClear();
@@ -248,13 +266,106 @@ describe('useSuggestionActions', () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
-        id: 'rebase-project:project-web',
+        id: 'rebase-project:session-1',
         kind: 'rebase-project',
-        payload: { projectId: WEB_ID, worktreePath: '/tmp/web', baseBranch: 'main', behind: 2 },
+        payload: {
+          targets: [
+            {
+              id: 'mount:mount-web',
+              mountId: WEB_MOUNT_ID,
+              projectId: WEB_ID,
+              projectName: 'web',
+              branch: 'feature/web',
+              worktreePath: '/tmp/web',
+              baseBranch: 'main',
+              behind: 2,
+            },
+          ],
+        },
       },
     });
 
     expect(actions.primary?.label).toBe('Rebase');
+    expect(actions.primary?.isDisabled).toBe(false);
+    actions.primary?.onAct();
+
+    await vi.waitFor(() => expect(spies.rebaseRun).toHaveBeenCalledTimes(1));
+    expect(spies.setSessionActiveProject).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      projectId: WEB_ID,
+      mountId: WEB_MOUNT_ID,
+    });
+    expect(spies.rebaseRun).toHaveBeenCalledWith({ mountId: WEB_MOUNT_ID, behind: 2 });
+  });
+
+  it('runs the second rebase choice with that mount and distance', async () => {
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'rebase-project:session-1',
+        kind: 'rebase-project',
+        payload: {
+          targets: [
+            {
+              id: 'mount:mount-web',
+              mountId: WEB_MOUNT_ID,
+              projectId: WEB_ID,
+              projectName: 'web',
+              branch: 'feature/web-first',
+              worktreePath: '/tmp/web-first',
+              baseBranch: 'main',
+              behind: 7,
+            },
+            {
+              id: 'mount:mount-web-second',
+              mountId: WEB_SECOND_MOUNT_ID,
+              projectId: WEB_ID,
+              projectName: 'web',
+              branch: 'feature/web-second',
+              worktreePath: '/tmp/web-second',
+              baseBranch: 'main',
+              behind: 3,
+            },
+          ],
+        },
+      },
+    });
+
+    expect(actions.primary?.choices?.[1]?.description).toBe('feature/web-second');
+    actions.primary?.choices?.[1]?.onAct();
+
+    await vi.waitFor(() => expect(spies.rebaseRun).toHaveBeenCalledTimes(1));
+    expect(spies.setSessionActiveProject).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      projectId: WEB_ID,
+      mountId: WEB_SECOND_MOUNT_ID,
+    });
+    expect(spies.rebaseRun).toHaveBeenCalledWith({ mountId: WEB_SECOND_MOUNT_ID, behind: 3 });
+  });
+
+  it('starts a mountless target by project id', async () => {
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'rebase-project:session-1',
+        kind: 'rebase-project',
+        payload: {
+          targets: [
+            {
+              id: 'worktree:/tmp/web',
+              mountId: null,
+              projectId: WEB_ID,
+              projectName: 'web',
+              branch: 'feature/web',
+              worktreePath: '/tmp/web',
+              baseBranch: 'main',
+              behind: 2,
+            },
+          ],
+        },
+      },
+    });
+
     actions.primary?.onAct();
 
     await vi.waitFor(() => expect(spies.rebaseRun).toHaveBeenCalledTimes(1));
@@ -262,6 +373,72 @@ describe('useSuggestionActions', () => {
       sessionId: SESSION_ID,
       projectId: WEB_ID,
     });
+    expect(spies.rebaseRun).toHaveBeenCalledWith({ projectId: WEB_ID, behind: 2 });
+  });
+
+  it('ignores completed mounts when polling and choosing the behind status', () => {
+    const completedStatus = {
+      branch: 'feature/web-merged',
+      mainDistance: { kind: 'known', ahead: 0, behind: 9 },
+      upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+    };
+    const activeStatus = {
+      branch: 'feature/web-open',
+      mainDistance: { kind: 'known', ahead: 0, behind: 2 },
+      upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+    };
+    storeState.sessionProjectMounts = {
+      [SESSION_ID]: [
+        {
+          mountId: WEB_MOUNT_ID,
+          projectId: WEB_ID,
+          mountName: 'web merged',
+          worktreePath: '/tmp/web-merged',
+          branch: 'feature/web-merged',
+        },
+        {
+          mountId: WEB_SECOND_MOUNT_ID,
+          projectId: WEB_ID,
+          mountName: 'web open',
+          worktreePath: '/tmp/web-open',
+          branch: 'feature/web-open',
+        },
+      ],
+    };
+    storeState.projects = [{ id: WEB_ID, baseBranch: 'main' }];
+    storeState.mountGithub = {
+      [WEB_MOUNT_ID]: {
+        pr: {
+          number: 12,
+          state: 'merged',
+          title: 'Merged request',
+          url: 'https://github.com/acme/web/pull/12',
+          isDraft: false,
+        },
+      },
+    };
+    spies.worktreeStatuses.mockReturnValue(
+      new Map([
+        ['/tmp/web-merged', completedStatus],
+        ['/tmp/web-open', activeStatus],
+      ]),
+    );
+
+    actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'workflow-next-step:run-1',
+        kind: 'workflow-next-step',
+        payload: { runId: RUN_ID, stepId: STEP_ID },
+      },
+    });
+
+    expect(spies.worktreeStatuses).toHaveBeenLastCalledWith({
+      targets: [{ worktreePath: '/tmp/web-open', baseBranch: 'main' }],
+    });
+    expect(spies.useRebaseAgent).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: activeStatus }),
+    );
   });
 
   it('hands the questions lens the answer action', () => {

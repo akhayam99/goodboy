@@ -24,6 +24,7 @@ type Params = {
 type RunParams = {
   readonly projectId?: ProjectId;
   readonly mountId?: MountId;
+  readonly behind?: number;
 };
 
 type Result = {
@@ -209,10 +210,13 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
   ]);
 
   const run = async (params?: RunParams): Promise<void> => {
-    if (!canRebase || isRunning || sessionId == null || config.provider === '') {
+    const runParams = params ?? {};
+    const runBehind = runParams.behind ?? behindMain;
+    const canRunRebase = sessionId != null && runBehind != null && runBehind > 0;
+    if (!canRunRebase || isRunning || sessionId == null || config.provider === '') {
       return;
     }
-    const target = targetFor(params ?? {});
+    const target = targetFor(runParams);
     setError(null);
     setIsStarting(true);
     const creationId = beginSessionCreation(sessionId, {
@@ -241,7 +245,7 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
           ...(target.projectId == null ? {} : { projectId: target.projectId }),
           ...(target.projectName == null ? {} : { projectName: target.projectName }),
           ...(target.worktreePath == null ? {} : { worktreePath: target.worktreePath }),
-          ...(behindMain == null ? {} : { behind: behindMain }),
+          behind: runBehind,
           branch: target.baseBranch,
           agentId,
         },
