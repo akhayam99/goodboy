@@ -7,6 +7,59 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.24
+
+### One rebase row, and it rebases the branch you picked
+
+A session with several mounts of one project produced one rebase suggestion per mount, stacked one under
+the other, every one of them titled the same and carrying the same key. The activity feed could show
+thirteen copies of "Rebase internal-tools on main" and nothing distinguished them but a distance.
+
+Worse, the button lied. Whichever row you clicked, the rebase started on the first mount that happened to
+be behind, and the event it recorded carried that mount's distance, so the suggestion that went quiet
+afterwards was not the one you had acted on.
+
+There is one row now. With a single branch behind it rebases directly; with several it opens a popover
+listing project, branch and distance, and each entry rebases its own mount. Mounts recorded before this
+release, which carry no mount identity, still get their row and still rebase.
+
+### A merged branch is history
+
+A mount whose pull request is merged or closed kept behaving like live work: it showed how far behind its
+branch was, offered to rebase it, and was polled for git distance in the background. Rebasing a branch
+whose pull request is already merged is noise.
+
+Completed mounts are quiet now. No distance, no rebase, no polling. The branch, the diff, the request link
+and the detach controls all stay, because finished work still needs to be read and cleaned up.
+
+### Remove the worktree of a completed mount
+
+Finished mounts kept their directory on disk, and the only way to reclaim one was the project-wide detach,
+which removes every mount of that project and would have taken the unfinished siblings of the same stack
+with it.
+
+A completed row now carries `Remove worktree`, scoped to that one mount. The branch and its commits stay
+in the repository, the row stays in the session, and the `Mount` control that appears on a detached row is
+what brings the checkout back.
+
+Goodboy does not do this by itself when a pull request merges. The merge is a fact about the remote; the
+deletion would be a fact about your disk.
+
+### The removal warning now counts what it is about to delete
+
+The assessment behind the destructive confirmation counted tracked and untracked files and ignored
+everything git ignores. That is right for build output and wrong for a local env file, a development
+database or ignored scratch work: the confirmation could report nothing at risk while erasing all three.
+
+It now also counts ignored paths that are not obviously reproducible, skipping eleven build directories by
+top level segment, and names up to five of them in the confirmation.
+
+### Smaller
+
+- Create agent is the primary action of a session's activity header and Add workflow its secondary
+  companion. Both used to read as flat grey text.
+- Rebasing one branch of a stack no longer silences the rebase suggestions of its siblings.
+
 ## Goodboy v0.2.23
 
 The workspace name stops moving: it stays at the top bar's left on the board,
