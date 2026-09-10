@@ -214,6 +214,10 @@ import type {
   DetachProjectInput,
   DetachProjectOutcome,
 } from './slices/project-mounts/detachProject';
+import type {
+  RemoveMountWorktreeInput,
+  RemoveMountWorktreeResult,
+} from './slices/project-mounts/removeMountWorktree';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
@@ -445,6 +449,7 @@ type AppActions = {
   switchMount(input: SwitchMountInput): Promise<SessionMountView>;
   attachMount(input: AttachMountInput): Promise<SessionMountView>;
   unmountMount(input: UnmountMountInput): Promise<UnmountMountResult>;
+  removeMountWorktree(input: RemoveMountWorktreeInput): Promise<RemoveMountWorktreeResult>;
   inspectMount(input: MountKeyInput): Promise<InspectMountResult>;
   resolveMountBranchMismatch(input: ResolveMountBranchInput): Promise<SessionMountView>;
   setSessionActiveMount(input: MountKeyInput): Promise<void>;

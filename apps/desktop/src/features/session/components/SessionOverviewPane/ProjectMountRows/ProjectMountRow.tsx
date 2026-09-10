@@ -15,6 +15,7 @@ import { MountRequestLink } from './MountRequestLink';
 import { ProjectBranchChip } from './ProjectBranchChip';
 import { ProjectSyncControl } from './ProjectSyncControl';
 import { ProjectDetachMenu } from './ProjectDetachMenu';
+import { RemoveWorktreeAction } from './RemoveWorktreeAction';
 import { useProjectActivity } from './useProjectActivity';
 
 type Props = {
@@ -199,7 +200,9 @@ export const ProjectMountRow = ({
           )}
         </div>
         <div className={SLOT_ACTION}>
-          {row.isAttached ? (
+          {row.isAttached && row.isCompleted && isRepo && worktreePath !== null ? (
+            <RemoveWorktreeAction sessionId={sessionId} row={row} label={label} />
+          ) : row.isAttached ? (
             <MountRequestAction
               sessionId={sessionId}
               row={row}

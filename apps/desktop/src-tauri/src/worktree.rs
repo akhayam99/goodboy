@@ -146,6 +146,10 @@ pub enum WorktreeDetachAssessment {
         affected_files: u32,
         #[serde(rename = "localOnlyCommits")]
         local_only_commits: u32,
+        #[serde(rename = "ignoredFiles")]
+        ignored_files: u32,
+        #[serde(rename = "ignoredFileSamples")]
+        ignored_file_samples: Vec<String>,
     },
 }
 
@@ -1178,6 +1182,55 @@ fn local_only_commit_count(cwd: &Path) -> Option<u32> {
         .and_then(|raw| raw.trim().parse::<u32>().ok())
 }
 
+const REPRODUCIBLE_IGNORED_DIRS: [&str; 11] = [
+    "node_modules",
+    "target",
+    "dist",
+    "build",
+    ".next",
+    ".venv",
+    "__pycache__",
+    ".turbo",
+    "coverage",
+    ".gradle",
+    "Pods",
+];
+
+fn is_reproducible_ignored_path(relative: &str) -> bool {
+    let top_level = relative.split('/').next().unwrap_or(relative);
+    REPRODUCIBLE_IGNORED_DIRS.contains(&top_level)
+}
+
+struct IgnoredFilesAtRisk {
+    count: u32,
+    samples: Vec<String>,
+}
+
+fn ignored_files_at_risk(worktree_path: &Path) -> Option<IgnoredFilesAtRisk> {
+    let raw = git(
+        worktree_path,
+        &[
+            "ls-files",
+            "--others",
+            "--ignored",
+            "--exclude-standard",
+            "--directory",
+            "-z",
+        ],
+    )
+    .ok()?;
+    let mut at_risk: Vec<String> = raw
+        .split_terminator('\0')
+        .filter(|line| !line.is_empty())
+        .filter(|line| !is_reproducible_ignored_path(line))
+        .map(|line| line.to_string())
+        .collect();
+    at_risk.sort_by(|a, b| a.len().cmp(&b.len()).then_with(|| a.cmp(b)));
+    let count = u32::try_from(at_risk.len()).ok()?;
+    let samples = at_risk.into_iter().take(5).collect();
+    Some(IgnoredFilesAtRisk { count, samples })
+}
+
 fn worktree_detach_assessment_blocking(
     worktree_path: String,
 ) -> Result<WorktreeDetachAssessment, WorktreeError> {
@@ -1211,12 +1264,20 @@ fn worktree_detach_assessment_blocking(
             branch,
         });
     };
+    let Some(ignored) = ignored_files_at_risk(p) else {
+        return Ok(WorktreeDetachAssessment::Unavailable {
+            path: worktree_path,
+            branch,
+        });
+    };
     Ok(WorktreeDetachAssessment::Assessed {
         path: worktree_path,
         branch,
         has_upstream: snapshot.upstream.is_some(),
         affected_files: changed,
         local_only_commits,
+        ignored_files: ignored.count,
+        ignored_file_samples: ignored.samples,
     })
 }
 
@@ -4115,7 +4176,7 @@ mod teardown_tests {
         remove_worktree_checked_with, worktree_detach_assessment_blocking,
         worktree_directory_size_blocking, worktree_orphan_remove_blocking,
         WorktreeDetachAssessment, WorktreeError, WorktreeInspection, WorktreeRemovalMode,
-        WorktreeRemovalReason, WorktreeRemovalResult,
+        WorktreeRemovalReason, WorktreeRemovalResult, REPRODUCIBLE_IGNORED_DIRS,
     };
     use std::path::{Path, PathBuf};
 
@@ -4713,8 +4774,166 @@ mod teardown_tests {
                 has_upstream: true,
                 affected_files: 0,
                 local_only_commits: 0,
+                ignored_files: 0,
+                ignored_file_samples: Vec::new(),
             }
         );
+    }
+
+    #[test]
+    fn assessment_treats_reproducible_ignored_directories_as_no_risk() {
+        let root = init_repo("assess-ignored-reproducible");
+        publish_repo(&root);
+        let target = add_worktree(&root, "ignored-reproducible");
+        git_ok(
+            &target,
+            &["push", "-u", "origin", "test/ignored-reproducible"],
+        );
+        let ignores = REPRODUCIBLE_IGNORED_DIRS
+            .iter()
+            .map(|directory| format!("{directory}/\n"))
+            .collect::<String>();
+        std::fs::write(target.join(".gitignore"), ignores).unwrap();
+        for directory in REPRODUCIBLE_IGNORED_DIRS {
+            let nested = target.join(directory).join("nested");
+            std::fs::create_dir_all(&nested).unwrap();
+            std::fs::write(nested.join("artifact.bin"), "x").unwrap();
+        }
+
+        let WorktreeDetachAssessment::Assessed {
+            ignored_files,
+            ignored_file_samples,
+            ..
+        } = assess(&target)
+        else {
+            panic!("expected an assessed worktree");
+        };
+
+        assert_eq!(ignored_files, 0);
+        assert!(ignored_file_samples.is_empty());
+    }
+
+    #[test]
+    fn assessment_reports_and_names_a_non_reproducible_ignored_file() {
+        let root = init_repo("assess-ignored-env");
+        publish_repo(&root);
+        let target = add_worktree(&root, "ignored-env");
+        git_ok(&target, &["push", "-u", "origin", "test/ignored-env"]);
+        std::fs::write(target.join(".gitignore"), "node_modules/\n.env.local\n").unwrap();
+        std::fs::write(target.join(".env.local"), "SECRET=1\n").unwrap();
+
+        let WorktreeDetachAssessment::Assessed {
+            ignored_files,
+            ignored_file_samples,
+            ..
+        } = assess(&target)
+        else {
+            panic!("expected an assessed worktree");
+        };
+
+        assert_eq!(ignored_files, 1);
+        assert_eq!(ignored_file_samples, vec![".env.local".to_string()]);
+    }
+
+    #[test]
+    fn assessment_excludes_reproducible_names_only_at_the_top_level() {
+        let root = init_repo("assess-ignored-top-level");
+        publish_repo(&root);
+        let target = add_worktree(&root, "ignored-top-level");
+        git_ok(&target, &["push", "-u", "origin", "test/ignored-top-level"]);
+        std::fs::write(target.join(".gitignore"), "**/node_modules/\n").unwrap();
+        let nested = target.join("scratch").join("node_modules");
+        std::fs::create_dir_all(&nested).unwrap();
+        std::fs::write(nested.join("local.bin"), "x").unwrap();
+        std::fs::create_dir_all(target.join("node_modules")).unwrap();
+        std::fs::write(target.join("node_modules").join("dep.js"), "x").unwrap();
+
+        let WorktreeDetachAssessment::Assessed {
+            ignored_files,
+            ignored_file_samples,
+            ..
+        } = assess(&target)
+        else {
+            panic!("expected an assessed worktree");
+        };
+
+        assert_eq!(ignored_files, 2);
+        assert_eq!(
+            ignored_file_samples,
+            vec!["scratch/".to_string(), "scratch/node_modules/".to_string()]
+        );
+    }
+
+    #[test]
+    fn assessment_limits_relative_samples_and_orders_shortest_first() {
+        let root = init_repo("assess-ignored-samples");
+        publish_repo(&root);
+        let target = add_worktree(&root, "ignored-samples");
+        git_ok(&target, &["push", "-u", "origin", "test/ignored-samples"]);
+        let paths = [
+            ".a",
+            ".env",
+            "local.db",
+            "notes.txt",
+            "settings.json",
+            "space file.txt",
+        ];
+        std::fs::write(target.join(".gitignore"), paths.join("\n")).unwrap();
+        for relative in paths {
+            let path = target.join(relative);
+            if let Some(parent) = path.parent() {
+                std::fs::create_dir_all(parent).unwrap();
+            }
+            std::fs::write(path, "x").unwrap();
+        }
+
+        let WorktreeDetachAssessment::Assessed {
+            ignored_files,
+            ignored_file_samples,
+            ..
+        } = assess(&target)
+        else {
+            panic!("expected an assessed worktree");
+        };
+
+        assert_eq!(ignored_files, 6);
+        assert_eq!(
+            ignored_file_samples,
+            vec![
+                ".a".to_string(),
+                ".env".to_string(),
+                "local.db".to_string(),
+                "notes.txt".to_string(),
+                "settings.json".to_string(),
+            ]
+        );
+        assert!(ignored_file_samples
+            .iter()
+            .all(|sample| !Path::new(sample).is_absolute()));
+    }
+
+    #[test]
+    fn assessment_counts_only_the_non_reproducible_ignored_file_when_both_are_present() {
+        let root = init_repo("assess-ignored-mixed");
+        publish_repo(&root);
+        let target = add_worktree(&root, "ignored-mixed");
+        git_ok(&target, &["push", "-u", "origin", "test/ignored-mixed"]);
+        std::fs::write(target.join(".gitignore"), "node_modules/\n.env.local\n").unwrap();
+        std::fs::write(target.join(".env.local"), "SECRET=1\n").unwrap();
+        std::fs::create_dir_all(target.join("node_modules")).unwrap();
+        std::fs::write(target.join("node_modules").join("dep.js"), "x").unwrap();
+
+        let WorktreeDetachAssessment::Assessed {
+            ignored_files,
+            ignored_file_samples,
+            ..
+        } = assess(&target)
+        else {
+            panic!("expected an assessed worktree");
+        };
+
+        assert_eq!(ignored_files, 1);
+        assert_eq!(ignored_file_samples, vec![".env.local".to_string()]);
     }
 
     #[test]

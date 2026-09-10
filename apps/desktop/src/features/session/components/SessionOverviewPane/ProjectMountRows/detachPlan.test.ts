@@ -31,12 +31,16 @@ const mount = ({
   affectedFiles,
   localOnlyCommits,
   hasUpstream,
+  ignoredFiles = 0,
+  ignoredFileSamples = [],
 }: {
   readonly path?: string;
   readonly branch?: string;
   readonly affectedFiles: number;
   readonly localOnlyCommits: number;
   readonly hasUpstream: boolean;
+  readonly ignoredFiles?: number;
+  readonly ignoredFileSamples?: ReadonlyArray<string>;
 }): MountAssessment => ({
   worktreePath: path,
   branch,
@@ -47,6 +51,8 @@ const mount = ({
     hasUpstream,
     affectedFiles,
     localOnlyCommits,
+    ignoredFiles,
+    ignoredFileSamples,
   } satisfies WorktreeDetachAssessment,
 });
 
@@ -108,6 +114,30 @@ describe('buildDetachPlan', () => {
         totals: ['Files affected (0)', 'Local-only commits (0)'],
         worktrees: ['ak/feat at /worktrees/api: 0 uncommitted files, 0 local-only commits'],
       },
+    });
+  });
+
+  it('names ignored files at risk before promising branch retention', () => {
+    expect(
+      plan({
+        assessments: [
+          mount({
+            affectedFiles: 0,
+            localOnlyCommits: 0,
+            hasUpstream: true,
+            ignoredFiles: 2,
+            ignoredFileSamples: ['.env.local', 'scratch/data.db'],
+          }),
+        ],
+      }),
+    ).toMatchObject({
+      kind: 'risky',
+      lines: [
+        'Remove the worktree at /worktrees/api for ak/feat.',
+        'No uncommitted files will be deleted.',
+        '2 ignored files at risk, not tracked by git: .env.local, scratch/data.db.',
+        'The branch and its commits stay in the repository.',
+      ],
     });
   });
 
