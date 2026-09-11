@@ -8,9 +8,10 @@ import { selectActiveMountId } from '../../../../../store/slices/project-mounts/
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { useToast } from '../../../../../app/components/Toast';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
-import { DiffStat } from '../../DiffStat';
 import { EditorMenu } from '../EditorMenu';
 import { MountBranchDecision } from './MountBranchDecision';
+import { MountChangeCell } from './MountChangeCell';
+import { MountKindGlyph } from './MountKindGlyph';
 import { MountRequestAction } from './MountRequestAction';
 import { MountRequestLink } from './MountRequestLink';
 import { ProjectBranchChip } from './ProjectBranchChip';
@@ -18,6 +19,7 @@ import { ProjectSyncControl } from './ProjectSyncControl';
 import { ProjectDetachMenu } from './ProjectDetachMenu';
 import { RemoveWorktreeAction } from './RemoveWorktreeAction';
 import { useProjectActivity } from './useProjectActivity';
+import { hasDiffCounts, mountOperationView, mountWorktreeState } from './mountRowState';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -69,7 +71,6 @@ export const ProjectMountRow = ({
   onSelectLens,
 }: Props) => {
   const setScriptsLensScope = useAppStore((state) => state.setScriptsLensScope);
-  const openMountDiff = useAppStore((state) => state.openMountDiff);
   const openMountTerminal = useAppStore((state) => state.openMountTerminal);
   const attachMount = useAppStore((state) => state.attachMount);
   const activeMountId = useAppStore((state) => selectActiveMountId({ state, sessionId }));
@@ -77,7 +78,7 @@ export const ProjectMountRow = ({
   const [isAttaching, setIsAttaching] = useState(false);
   const isRepo = row.projectKind === 'repo';
   const worktreePath = row.worktreePath;
-  const changes = diffStat != null && (diffStat.additions > 0 || diffStat.deletions > 0);
+  const changes = hasDiffCounts({ diffStat });
   const isStatusPending = isStatusPendingProp && worktreeStatus == null && isRepo;
   const remoteKind = useMountRemoteHostKind({ sessionId, repoRoot: row.repoRoot });
   const activity = useProjectActivity({
@@ -88,6 +89,11 @@ export const ProjectMountRow = ({
   const observation = row.observation;
   const hasTools = row.isAttached && worktreePath !== null;
   const isWriteDestination = row.isAttached && row.mountId === activeMountId;
+  const worktreeState = mountWorktreeState({
+    status: worktreeStatus,
+    isPending: isStatusPendingProp,
+  });
+  const operation = mountOperationView({ status: worktreeStatus, label });
 
   const openLens = ({ lens }: OpenLensParams) => {
     if (lens === 'terminal') {
@@ -121,6 +127,11 @@ export const ProjectMountRow = ({
     >
       <div className="flex min-h-8 w-full items-center gap-2 rounded-md px-2 py-1 hover:bg-muted/40">
         <div className={SLOT_BRANCH}>
+          <MountKindGlyph
+            projectKind={row.projectKind}
+            isMainCheckout={row.isMainCheckout}
+            label={label}
+          />
           {isStatusPending && row.branch === '' ? (
             <span data-testid="project-branch-skeleton" className="shrink-0">
               <Skeleton className="h-6 w-28 rounded-md" />
@@ -144,6 +155,16 @@ export const ProjectMountRow = ({
               className="shrink-0"
             />
           ) : null}
+          {operation === null ? null : (
+            <Chip
+              tone="warning"
+              size="3xs"
+              bordered={false}
+              label={operation.label}
+              title={operation.title}
+              className="shrink-0"
+            />
+          )}
         </div>
         {hasSeriesColumn ? (
           <div className={SLOT_SERIES}>
@@ -173,28 +194,14 @@ export const ProjectMountRow = ({
           ) : null}
         </div>
         <div className={SLOT_DIFF}>
-          {!row.isAttached ? null : changes && worktreePath !== null ? (
-            <Tooltip content={`View changes in ${label}`}>
-              <button
-                type="button"
-                aria-label={`View the changes of ${label}`}
-                onClick={() => openMountDiff(sessionId, worktreePath)}
-                className="flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-xs tabular-nums hover:bg-muted/40"
-              >
-                <CONCEPT_ICONS.diff
-                  size={ICON_SIZE.row}
-                  aria-hidden
-                  className="shrink-0 text-muted-foreground"
-                />
-                <DiffStat
-                  additions={diffStat.additions}
-                  deletions={diffStat.deletions}
-                  size="inherit"
-                />
-              </button>
-            </Tooltip>
-          ) : (
-            <span className="px-1.5 text-xs text-muted-foreground/50">No changes</span>
+          {!row.isAttached || !isRepo ? null : (
+            <MountChangeCell
+              sessionId={sessionId}
+              label={label}
+              worktreePath={worktreePath}
+              diffStat={diffStat}
+              state={worktreeState}
+            />
           )}
         </div>
         <div className={SLOT_STATE}>

@@ -56,6 +56,7 @@ export type MountRowView = Readonly<{
   lastWorktreePath: string | null;
   repoRoot: string;
   isAttached: boolean;
+  isMainCheckout: boolean;
   isOnDisk: boolean;
   revision: number;
   parallelIndex: number;
@@ -319,6 +320,7 @@ export const buildMountRows = ({
       lastWorktreePath: view.lastWorktreePath,
       repoRoot: view.repoRoot,
       isAttached: view.isAttached && view.worktreePath !== null,
+      isMainCheckout: view.worktreePath !== null && view.worktreePath === view.repoRoot,
       isOnDisk,
       revision: view.revision,
       parallelIndex: view.parallelIndex,
