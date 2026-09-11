@@ -38,7 +38,7 @@ describe('workflowStartGate', () => {
       'Select a preset to start',
     );
     expect(workflowStartGate({ ...ready, mode: 'custom', hasApproach: false }).reason).toBe(
-      'Generate a plan to start',
+      'Add a step or generate a plan to start',
     );
     expect(workflowStartGate({ ...ready, mode: 'dynamic', hasApproach: false }).reason).toBe(
       'Describe the intent and constraints to start',

@@ -27,7 +27,8 @@ export const ApproachSummary = ({ mode }: Props) => {
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-foreground">Design fixed steps</span>
           <p className="text-2xs leading-relaxed text-muted-foreground">
-            Describe the flow. The planner drafts ordered steps that you can tune before starting.
+            Describe the flow and let the planner draft ordered steps, or write them yourself. Tune
+            every step before starting.
           </p>
         </div>
       </div>

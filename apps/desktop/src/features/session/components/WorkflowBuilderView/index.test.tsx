@@ -112,6 +112,8 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
     onReset,
     effort,
     ariaLabel,
+    verbosity,
+    onVerbosity,
   }: {
     connectedProviders: ReadonlyArray<string>;
     provider: string;
@@ -121,6 +123,8 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
     onModel: (v: string) => void;
     onReset?: () => void;
     ariaLabel?: string;
+    verbosity?: string;
+    onVerbosity?: (value: string) => void;
     effort:
       | { readonly editable: false; readonly value?: ModelEffort }
       | {
@@ -147,6 +151,11 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
       {effort.editable ? (
         <button type="button" onClick={() => effort.onChange('xhigh')}>
           effort:{effort.value}
+        </button>
+      ) : null}
+      {onVerbosity != null ? (
+        <button type="button" onClick={() => onVerbosity('verbose')}>
+          verbosity:{verbosity}
         </button>
       ) : null}
       {onReset != null ? (
@@ -286,6 +295,55 @@ describe('WorkflowBuilderView (studio chrome)', () => {
 });
 
 describe('WorkflowBuilderView (custom mode, no presets)', () => {
+  it('lets empty Custom add, edit and launch a manual step without the planner', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    expect(startBtn().disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: /^add step$/i }));
+    expandStep(0);
+    fireEvent.change(screen.getByPlaceholderText('step name'), {
+      target: { value: 'read the router' },
+    });
+
+    expect(startBtn().disabled).toBe(false);
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    const saved = mockSavePhaseTemplate.mock.calls[0]![0];
+    expect(saved.name).toBe('Custom workflow');
+    expect(saved.steps.map((step) => step.name)).toEqual(['read the router']);
+    expect(PlannerClient).not.toHaveBeenCalled();
+    expect(mockPlan).not.toHaveBeenCalled();
+  });
+
+  it('names the missing step, not a missing plan, while Custom is empty', () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+
+    expect(screen.getByText('Add a step or generate a plan to start')).toBeDefined();
+  });
+
+  it('carries an edited role and verbosity onto the saved workflow', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    await draftPlan();
+    expandStep(0);
+
+    fireEvent.click(withinSteps().getAllByRole('button', { name: /^verbosity:normal$/i })[0]!);
+    fireEvent.click(withinSteps().getAllByRole('button', { name: /^scout$/i })[0]!);
+    fireEvent.click(
+      within(screen.getByRole('listbox', { name: 'Agent role' })).getByRole('button', {
+        name: /reviewer/i,
+      }),
+    );
+
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    const saved = mockSavePhaseTemplate.mock.calls[0]![0];
+    expect(saved.steps[0]!.verbosity).toBe('verbose');
+    expect(saved.steps[0]!.role).toBe('reviewer');
+  });
+
   it('enables start only after a plan is drafted', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     expect(startBtn().disabled).toBe(true);

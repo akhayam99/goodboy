@@ -96,6 +96,7 @@ import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';
 import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
 import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
 import { ChainAfterSelect } from './parts/ChainAfterSelect';
+import { CustomStepsEmptyState } from './parts/CustomStepsEmptyState';
 import { LaunchToggleRow } from './parts/LaunchToggleRow';
 import { ApproachSummary } from './ApproachSummary';
 import { DynamicWorkflowComposer } from './DynamicWorkflowComposer';
@@ -870,6 +871,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   const stepCount = steps.length;
   const showSteps = steps.length > 0;
+  const showStepsEmptyState = mode === 'custom' && !showSteps && !planning;
   const showLaunch = showSteps || mode === 'dynamic';
   const customReady = mode === 'custom' && plan !== null;
   const workflowName =
@@ -1268,7 +1270,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                 )}
               </section>
 
-              {showSteps || planning ? (
+              {showSteps || planning || showStepsEmptyState ? (
                 <>
                   <Divider />
                   <section className="flex flex-col gap-3">
@@ -1339,6 +1341,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 resolvedModel={resolvedModel(st)}
                                 recommendedModel={recommendedModel(st)}
                                 effort={(st.effort ?? roleEffort(st.role)) as EffortLevel}
+                                verbosity={st.verbosity}
                                 expanded={expandedKey === st.key}
                                 dragging={draggingKey === st.key}
                                 disabled={busy}
@@ -1366,6 +1369,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 }
                                 onProvider={(v) => patchStep(st.key, { provider: v })}
                                 onEffort={(v) => patchStep(st.key, { effort: v })}
+                                onRole={(v) => patchStep(st.key, { role: v })}
+                                onVerbosity={(v) => patchStep(st.key, { verbosity: v })}
                                 onPolish={() => void onPolishStep(st.key)}
                                 onRemove={() => removeStep(st.key)}
                                 onMoveUp={() => moveStep(st.key, -1)}
@@ -1393,6 +1398,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         </p>
                         <DragGhost ghost={ghost} />
                       </div>
+                    ) : showStepsEmptyState ? (
+                      <CustomStepsEmptyState disabled={blocked} onAddStep={addStep} />
                     ) : (
                       <div
                         role="status"

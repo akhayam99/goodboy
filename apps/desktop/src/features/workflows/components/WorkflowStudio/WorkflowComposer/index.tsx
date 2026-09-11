@@ -11,6 +11,7 @@ import { WorkflowStepCard } from '../../../../session/components/WorkflowStepCar
 import { StepFlowConnector } from '../StepFlowConnector';
 import { StepLibraryPalette } from '../StepLibraryPalette';
 import { useAppStore } from '../../../../../store';
+import { NoProvidersNotice } from './NoProvidersNotice';
 import { WorkflowHeaderActions } from './WorkflowHeaderActions';
 
 type Props = {
@@ -136,6 +137,12 @@ export const WorkflowComposer = ({
             onBack={onClose}
           />
         </div>
+
+        {connectedProviders.length === 0 ? (
+          <div className="flex shrink-0 flex-col px-6 pb-4">
+            <NoProvidersNotice />
+          </div>
+        ) : null}
 
         <Divider />
 

@@ -17,7 +17,7 @@ type Params = {
 
 const APPROACH_REASON: Record<Mode, string> = {
   preset: 'Select a preset to start',
-  custom: 'Generate a plan to start',
+  custom: 'Add a step or generate a plan to start',
   dynamic: 'Describe the intent and constraints to start',
 };
 
