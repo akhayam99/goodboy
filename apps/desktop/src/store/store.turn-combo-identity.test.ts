@@ -2,8 +2,10 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import type {
   AgentId,
   IsoDateTime,
+  MountId,
   ProjectId,
   SessionId,
+  SessionProjectMount,
   TurnProviderOverride,
   WorkspaceId,
 } from '@goodboy/types';
@@ -90,6 +92,22 @@ const mockRouting = async (fallbackUsed: boolean) => {
   });
 };
 
+const COMBO_MOUNT: SessionProjectMount = {
+  mountId: 'mount-combo' as MountId,
+  sessionId: SESSION_ID,
+  projectId: 'project-combo' as ProjectId,
+  mountName: 'repo',
+  worktreePath: '/tmp/wt',
+  repoRoot: '/tmp/repo',
+  branch: 'goodboy/combo',
+  lastWorktreePath: null,
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
+};
+
 describe('sendTurn keeps the executed combo across a retry', () => {
   beforeEach(async () => {
     resetStorySpies();
@@ -120,15 +138,7 @@ describe('sendTurn keeps the executed combo across a retry', () => {
       projects: [],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
       sessionProjectMounts: {
-        [SESSION_ID]: [
-          {
-            projectId: 'project-combo' as ProjectId,
-            mountName: 'repo',
-            worktreePath: '/tmp/wt',
-            repoRoot: '/tmp/repo',
-            branch: 'goodboy/combo',
-          },
-        ],
+        [SESSION_ID]: [COMBO_MOUNT],
       },
       sessionPhaseRuns: {
         [SESSION_ID]: [buildStoryAgent({ id: AGENT_A, sessionId: SESSION_ID, name: 'agent 0' })],
@@ -250,15 +260,7 @@ describe('sendTurn checks the model it ran against the model that was picked', (
       projects: [],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
       sessionProjectMounts: {
-        [SESSION_ID]: [
-          {
-            projectId: 'project-combo' as ProjectId,
-            mountName: 'repo',
-            worktreePath: '/tmp/wt',
-            repoRoot: '/tmp/repo',
-            branch: 'goodboy/combo',
-          },
-        ],
+        [SESSION_ID]: [COMBO_MOUNT],
       },
       sessionPhaseRuns: {
         [SESSION_ID]: [buildStoryAgent({ id: AGENT_A, sessionId: SESSION_ID, name: 'agent 0' })],
