@@ -14,6 +14,6 @@ export const drainResolveWorktree = async ({ set, get, worktreePath }: Params): 
       .map((attempt) => attempt.sessionId),
   );
   for (const sessionId of sessionIds) {
-    await drainResolveQueue({ set, get, sessionId });
+    await drainResolveQueue({ set, get, sessionId, worktreePath });
   }
 };

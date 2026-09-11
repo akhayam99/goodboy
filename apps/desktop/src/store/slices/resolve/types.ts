@@ -65,6 +65,7 @@ export type PhaseParams = SessionParams & {
 };
 export type DrainParams = SessionParams & {
   readonly endedAttemptId?: string;
+  readonly worktreePath?: string;
 };
 export type WorktreeDrainParams = {
   readonly worktreePath: string;

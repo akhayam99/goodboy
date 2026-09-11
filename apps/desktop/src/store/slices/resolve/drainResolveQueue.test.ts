@@ -166,6 +166,7 @@ const h = vi.hoisted(() => {
   };
   const key = ({ path, holder }: HolderParams) => `${path} ${holder}`;
   return {
+    dirtyPaths: new Set<string>(),
     execute: vi.fn(),
     select: vi.fn(),
     exec: vi.fn(),
@@ -231,7 +232,12 @@ vi.mock('../../../features/worktree/worktree', () => ({
   worktreeWriterStatus: vi.fn(async ({ path }: PathParams) =>
     h.statusOf({ path, isGranted: false }),
   ),
-  worktreeStatus: vi.fn(async () => h.status),
+  worktreeStatus: vi.fn(async ({ worktreePath }: { readonly worktreePath: string }) => {
+    const dirty = h.dirtyPaths.has(worktreePath);
+    return dirty
+      ? { ...h.status, workingTree: { ...h.status.workingTree, unstaged: 2, changed: 2 } }
+      : h.status;
+  }),
 }));
 
 const SESSION_A = 'session-1' as SessionId;
@@ -410,6 +416,7 @@ const setTree = ({ unstaged }: { readonly unstaged: number }) => {
 };
 
 beforeEach(async () => {
+  h.dirtyPaths.clear();
   h.slots.clear();
   h.clientTokens.clear();
   h.state.seq = 0;
@@ -1219,5 +1226,143 @@ describe('resolve queue scheduler', () => {
     expect(attempts[0]?.error).toBe('target_unresolved');
     const rows = harness.get().sessionResolveThreads[SESSION_A] ?? [];
     expect(rows.map((row) => row.stateReason)).toEqual(['target_unresolved']);
+  });
+  it('hands the turn the target the attempt froze, not the current selection', async () => {
+    const SIBLING_PATH = '/repo/sibling';
+    const harness = createHarness({
+      worktreePathBySession: { [SESSION_A]: SHARED_PATH },
+      selectedSiblingBySession: { [SESSION_A]: SIBLING_PATH },
+    });
+    await queueRequest({
+      actions: harness.actions,
+      sessionId: SESSION_A,
+      agentId: AGENT_1,
+      instructions: 'fix one',
+      mountTarget: {
+        mountId: `${SESSION_A}-mount` as MountId,
+        mountRevision: 1,
+        worktreePath: SHARED_PATH,
+      },
+    });
+
+    await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
+
+    expect(harness.sendTurn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mountTarget: {
+          mountId: `${SESSION_A}-mount`,
+          mountRevision: 1,
+          worktreePath: SHARED_PATH,
+        },
+      }),
+    );
+  });
+
+  it('refuses a queued attempt whose mount moved to another revision', async () => {
+    const harness = createHarness({ worktreePathBySession: { [SESSION_A]: SHARED_PATH } });
+    await queueRequest({
+      actions: harness.actions,
+      sessionId: SESSION_A,
+      agentId: AGENT_1,
+      instructions: 'fix one',
+      mountTarget: {
+        mountId: `${SESSION_A}-mount` as MountId,
+        mountRevision: 0,
+        worktreePath: SHARED_PATH,
+      },
+    });
+
+    await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
+
+    expect(harness.sendTurn).not.toHaveBeenCalled();
+    expect(h.slots.size).toBe(0);
+  });
+
+  it('starts the attempt of a clean mount while a sibling is left dirty', async () => {
+    const SIBLING_PATH = '/repo/sibling';
+    const harness = createHarness({
+      worktreePathBySession: { [SESSION_A]: SHARED_PATH },
+      selectedSiblingBySession: { [SESSION_A]: SIBLING_PATH },
+    });
+    const dirtyRow = createResolveThread({
+      sessionId: SESSION_A,
+      threadId: 'PRRT_9',
+      projectId: PROJECT_ID,
+    });
+    const siblingAttemptId = await queueRequest({
+      actions: harness.actions,
+      sessionId: SESSION_A,
+      agentId: AGENT_2,
+      instructions: 'fix sibling',
+      mountTarget: {
+        mountId: `${SESSION_A}-sibling` as MountId,
+        mountRevision: 1,
+        worktreePath: SIBLING_PATH,
+      },
+    });
+    await upsertResolveThread({
+      db,
+      row: {
+        ...dirtyRow,
+        activeAttemptId: siblingAttemptId,
+        stateReason: withDirtyTreeReason({ row: dirtyRow }),
+      },
+      expectedRevision: null,
+    });
+    await queueRequest({
+      actions: harness.actions,
+      sessionId: SESSION_A,
+      agentId: AGENT_1,
+      instructions: 'fix one',
+      mountTarget: {
+        mountId: `${SESSION_A}-mount` as MountId,
+        mountRevision: 1,
+        worktreePath: SHARED_PATH,
+      },
+    });
+    h.dirtyPaths.add(SIBLING_PATH);
+
+    await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
+
+    expect(harness.sendTurn).toHaveBeenCalledTimes(1);
+    expect(harness.sendTurn.mock.calls[0]?.[0]?.content).toBe('fix one');
+    expect(h.slots.get(SHARED_PATH)?.holder).toBe(AGENT_1);
+    expect(h.slots.get(SIBLING_PATH)).toBeUndefined();
+  });
+
+  it('drains only the worktree whose lease was released', async () => {
+    const SIBLING_PATH = '/repo/sibling';
+    const harness = createHarness({
+      worktreePathBySession: { [SESSION_A]: SHARED_PATH },
+      selectedSiblingBySession: { [SESSION_A]: SIBLING_PATH },
+    });
+    await queueRequest({
+      actions: harness.actions,
+      sessionId: SESSION_A,
+      agentId: AGENT_2,
+      instructions: 'fix sibling',
+      mountTarget: {
+        mountId: `${SESSION_A}-sibling` as MountId,
+        mountRevision: 1,
+        worktreePath: SIBLING_PATH,
+      },
+    });
+    await queueRequest({
+      actions: harness.actions,
+      sessionId: SESSION_A,
+      agentId: AGENT_1,
+      instructions: 'fix one',
+      mountTarget: {
+        mountId: `${SESSION_A}-mount` as MountId,
+        mountRevision: 1,
+        worktreePath: SHARED_PATH,
+      },
+    });
+
+    await harness.actions.drainResolveWorktree({ worktreePath: SHARED_PATH });
+
+    expect(harness.sendTurn).toHaveBeenCalledTimes(1);
+    expect(harness.sendTurn.mock.calls[0]?.[0]?.content).toBe('fix one');
+    expect(h.slots.get(SIBLING_PATH)).toBeUndefined();
   });
 });
