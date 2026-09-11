@@ -665,6 +665,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       } catch {}
       if (decision.action === 'next') {
         const enforced = enforceOrchestratorModelPool({
+          provider: defaultProvider,
           step: decision.step,
           pool: modelMenu,
           roleDefaults,
