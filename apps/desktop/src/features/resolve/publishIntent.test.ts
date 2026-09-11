@@ -56,7 +56,7 @@ describe('publishIntent', () => {
   it('reads a batch whose only closures are notes as a closure with no fix', () => {
     expect(
       publishIntent({
-        preview: previewOf({ notes: [{ threadId: 't-1', revision: 1 }] }),
+        preview: previewOf({ notes: [{ threadId: 't-1', revision: 1, closes: true }] }),
       }),
     ).toBe('close_without_fix');
   });
@@ -66,10 +66,18 @@ describe('publishIntent', () => {
       publishIntent({
         preview: previewOf({
           replies: [{ threadId: 't-1', body: 'Still thinking.', revision: 1, closes: false }],
-          notes: [{ threadId: 't-2', revision: 1 }],
+          notes: [{ threadId: 't-2', revision: 1, closes: true }],
         }),
       }),
     ).toBe('close_without_fix');
+  });
+
+  it('leaves a note that closes nothing out of the gate it would arm', () => {
+    expect(
+      publishIntent({
+        preview: previewOf({ notes: [{ threadId: 't-1', revision: 1, closes: false }] }),
+      }),
+    ).toBe('post_replies');
   });
 
   it('guards only the closure that ships no code', () => {

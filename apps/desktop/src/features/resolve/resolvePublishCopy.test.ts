@@ -23,7 +23,7 @@ const previewOf = (patch: Partial<ResolvePublicationPreview>): ResolvePublicatio
 
 describe('the publish confirmation copy', () => {
   it('restates a notes-only batch at the scope the counts line already claims', () => {
-    const preview = previewOf({ notes: [{ threadId: 't-1', revision: 1 }] });
+    const preview = previewOf({ notes: [{ threadId: 't-1', revision: 1, closes: true }] });
 
     expect(publicationCountsLine({ preview })).toBe('1 thread to resolve');
     expect(publishIntentSummary({ preview })).toBe('1 thread to resolve. 1 thread on #7');
@@ -32,7 +32,7 @@ describe('the publish confirmation copy', () => {
   it('keeps the scope and the counts line on one number in a mixed batch', () => {
     const preview = previewOf({
       replies: [{ threadId: 't-1', body: 'Fixed.', revision: 1, closes: true }],
-      notes: [{ threadId: 't-2', revision: 1 }],
+      notes: [{ threadId: 't-2', revision: 1, closes: true }],
     });
 
     expect(publicationCountsLine({ preview })).toBe('1 reply to post · 2 threads to resolve');
@@ -44,6 +44,7 @@ describe('the publish confirmation copy', () => {
   it('leaves a batch that closes nothing without a resolve count', () => {
     const preview = previewOf({
       replies: [{ threadId: 't-1', body: 'Still thinking.', revision: 1, closes: false }],
+      notes: [{ threadId: 't-2', revision: 1, closes: false }],
     });
 
     expect(publicationCountsLine({ preview })).toBe('1 reply to post');
