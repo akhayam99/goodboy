@@ -65,5 +65,6 @@ export const releaseMountSelection = async ({
     set,
     sessionId,
     mount: selectedMountId === null ? null : recoverSoleMount({ mounts: remaining }),
+    previousSelection: isSelectionReleased ? 'released' : 'held',
   });
 };

@@ -116,12 +116,13 @@ export const unmountMount = (set: SetFn, get: GetFn) => {
             set,
             sessionId,
             mount: recoverSoleMount({ mounts: remainingMounts }),
+            previousSelection: 'held',
           });
         }
         const held = findMountById({ mounts: remainingMounts, mountId: selectedMountId });
         const activeProjectId = get().sessionActiveProject[sessionId] ?? null;
         if (held !== null && held.projectId !== activeProjectId) {
-          await commitWriteDestination({ set, sessionId, mount: held });
+          await commitWriteDestination({ set, sessionId, mount: held, previousSelection: 'held' });
         }
         const keepsActiveProject = remainingMounts.some(
           (candidate) => candidate.projectId === activeProjectId,

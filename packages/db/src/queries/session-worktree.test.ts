@@ -6,6 +6,7 @@ import { migrations } from '../migrations';
 import { migrate } from '../migrations/runner';
 import { deleteSession } from './session';
 import {
+  deleteSessionMount,
   deleteWorktreesForSession,
   detachSessionMounts,
   insertSessionWorktree,
@@ -205,6 +206,61 @@ describe('deleteWorktreesForSession', () => {
       diskState: 'removed',
     });
     expect(sessions[0]?.active_mount_id).toBeNull();
+  });
+});
+
+describe('deleteSessionMount', () => {
+  const seedTwoMounts = async (): Promise<Database> => {
+    const db = await seed();
+    for (const [id, index] of [
+      ['mount-one', 0],
+      ['mount-two', 1],
+    ] as ReadonlyArray<readonly [string, number]>) {
+      await insertSessionWorktree(db, {
+        id,
+        sessionId,
+        worktreePath: `/tmp/wt/${id}`,
+        branch: `feature/${id}`,
+        parallelIndex: index,
+        createdAt: Date.now(),
+      });
+    }
+    return db;
+  };
+
+  const selectionOf = async (db: Database): Promise<string | null> => {
+    const rows = await db.select<{ readonly active_mount_id: string | null }>(
+      'SELECT active_mount_id FROM sessions WHERE id = ?',
+      [sessionId],
+    );
+    return rows[0]?.active_mount_id ?? null;
+  };
+
+  it('clears the write destination it deletes, in the same transaction', async () => {
+    const db = await seedTwoMounts();
+    await db.execute('UPDATE sessions SET active_mount_id = ? WHERE id = ?', [
+      'mount-one',
+      sessionId,
+    ]);
+
+    await deleteSessionMount({ db, sessionId, mountId: 'mount-one' as MountId });
+
+    expect(await selectionOf(db)).toBeNull();
+    expect((await listSessionMounts({ db, sessionId })).map((mount) => mount.id)).toEqual([
+      'mount-two',
+    ]);
+  });
+
+  it('leaves a write destination that names another mount alone', async () => {
+    const db = await seedTwoMounts();
+    await db.execute('UPDATE sessions SET active_mount_id = ? WHERE id = ?', [
+      'mount-two',
+      sessionId,
+    ]);
+
+    await deleteSessionMount({ db, sessionId, mountId: 'mount-one' as MountId });
+
+    expect(await selectionOf(db)).toBe('mount-two');
   });
 });
 

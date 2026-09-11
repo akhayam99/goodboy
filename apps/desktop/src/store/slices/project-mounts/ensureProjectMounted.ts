@@ -48,7 +48,7 @@ const persistSoleDestination = async ({
   if (sole === null) {
     return;
   }
-  await commitWriteDestination({ set, sessionId, mount: sole });
+  await commitWriteDestination({ set, sessionId, mount: sole, previousSelection: 'held' });
 };
 
 export const ensureProjectMounted = (set: SetFn, get: GetFn) => {
