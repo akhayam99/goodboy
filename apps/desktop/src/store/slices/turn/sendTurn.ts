@@ -205,7 +205,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const workspaceProjects = before.projects.filter(
       (project) => project.workspaceId === session.workspaceId,
     );
+    const writableMounts = selectWritableMounts({ state: before, sessionId });
     const activeMount = selectActiveMount({ state: before, sessionId }) ?? undefined;
+    if (activeMount === undefined && writableMounts.length > 0) {
+      throw new Error('Choose the branch mount this session writes to before sending a turn.');
+    }
     const turnMountId = activeMount?.mountId ?? null;
     const turnMountRevision = activeMount?.revision ?? null;
     const workingDir =
@@ -245,6 +249,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           mount: activeMount ?? null,
           projectName: turnDestinationProjectName,
           scratchPath: activeMount === undefined ? workingDir : null,
+          mountCount: writableMounts.length,
         }),
       },
     }));

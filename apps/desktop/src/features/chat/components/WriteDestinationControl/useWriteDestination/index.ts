@@ -85,7 +85,7 @@ export const useWriteDestination = ({ sessionId, agentId }: Params): WriteDestin
 
   const [scratchPath, setScratchPath] = useState<string | null>(null);
   useEffect(() => {
-    if (activeMount !== null) {
+    if (activeMount !== null || writableMounts.length > 0) {
       return;
     }
     let cancelled = false;
@@ -99,12 +99,17 @@ export const useWriteDestination = ({ sessionId, agentId }: Params): WriteDestin
     return () => {
       cancelled = true;
     };
-  }, [activeMount, sessionId]);
+  }, [activeMount, sessionId, writableMounts]);
 
   const next = useMemo(
     () =>
-      resolveWriteDestination({ mount: activeMount, projectName: activeProjectName, scratchPath }),
-    [activeMount, activeProjectName, scratchPath],
+      resolveWriteDestination({
+        mount: activeMount,
+        projectName: activeProjectName,
+        scratchPath,
+        mountCount: writableMounts.length,
+      }),
+    [activeMount, activeProjectName, scratchPath, writableMounts],
   );
 
   const running = turnKind === 'running' ? turnDestination : null;

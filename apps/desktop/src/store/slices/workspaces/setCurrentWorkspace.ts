@@ -19,6 +19,7 @@ import {
   summarizeWorkspaceTelemetry,
   touchWorkspaceLastAccessed,
   updateSessionActiveProject,
+  updateSessionWriteDestination,
 } from '@goodboy/db';
 import type { SessionWorktree } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -39,10 +40,15 @@ import {
 import { buildProviderSpendBreakdown } from '../budget';
 import { reconcileLoadedAgent, reconcileLoadedSessions } from '../sessions/reconcileSessionRuns';
 import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMounts';
-import { pickActiveMount } from '../project-mounts/activeMount';
+import { hydrateWriteDestination } from '../project-mounts/hydrateWriteDestination';
 import { verifyAvailableWorktrees } from '../project-mounts/verifyAvailableWorktrees';
 import { clearPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
+
+type RepairedDestination = {
+  readonly mountId: MountId;
+  readonly projectId: ProjectId;
+};
 
 export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
   return async (id: WorkspaceId | null) => {
@@ -127,6 +133,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       const sessionPhaseRuns: Record<string, ReadonlyArray<Agent>> = {};
       const kindOverridesFromDb: Record<string, AgentKind> = {};
       const invalidActiveMountSessionIds = new Set<string>();
+      const repairedWriteDestinations = new Map<string, RepairedDestination>();
       for (const s of sessions) {
         const rows = await verifyAvailableWorktrees({
           sessionId: s.id,
@@ -136,35 +143,44 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         sessionWorktreeRecords[s.id] = rows;
         const mounts = buildSessionProjectMounts({ projects, rows });
         sessionProjectMounts[s.id] = mounts;
-        if (
-          s.activeProjectId != null &&
-          mounts.some((mount) => mount.projectId === s.activeProjectId)
-        ) {
-          sessionActiveProject[s.id] = s.activeProjectId;
+        const hydration = hydrateWriteDestination({ mounts, storedMountId: s.activeMountId });
+        if (hydration.kind === 'restored' || hydration.kind === 'repaired') {
+          sessionActiveMount[s.id] = hydration.mountId;
+          sessionActiveProject[s.id] = hydration.projectId;
+          sessionBranches[s.id] = hydration.branch;
+          if (hydration.kind === 'repaired' || s.activeProjectId !== hydration.projectId) {
+            repairedWriteDestinations.set(s.id, {
+              mountId: hydration.mountId,
+              projectId: hydration.projectId,
+            });
+            await updateSessionWriteDestination({
+              db: tauriDatabase,
+              sessionId: s.id,
+              mountId: hydration.mountId,
+            });
+          }
+        } else {
+          sessionActiveMount[s.id] = s.activeMountId ?? null;
+          if (
+            s.activeProjectId != null &&
+            mounts.some((mount) => mount.projectId === s.activeProjectId)
+          ) {
+            sessionActiveProject[s.id] = s.activeProjectId;
+          }
+          if (
+            s.activeProjectId != null &&
+            mounts.every((mount) => mount.projectId !== s.activeProjectId)
+          ) {
+            invalidActiveMountSessionIds.add(s.id);
+            await updateSessionActiveProject({
+              db: tauriDatabase,
+              id: s.id,
+              projectId: null,
+            });
+          }
         }
-        if (
-          s.activeProjectId != null &&
-          mounts.every((mount) => mount.projectId !== s.activeProjectId)
-        ) {
-          invalidActiveMountSessionIds.add(s.id);
-          await updateSessionActiveProject({
-            db: tauriDatabase,
-            id: s.id,
-            projectId: null,
-          });
-        }
-        const activeMount = pickActiveMount({
-          mounts,
-          selectedMountId: null,
-          storedMountId: s.activeMountId,
-          activeProjectId: s.activeProjectId,
-        });
-        sessionActiveMount[s.id] = activeMount?.mountId ?? null;
         if (rows.length > 0) {
           sessionWorktrees[s.id] = rows.map((r) => r.worktreePath);
-        }
-        if (activeMount !== null) {
-          sessionBranches[s.id] = activeMount.branch;
         }
         const runs = await Promise.all(
           (agentsBySession.get(s.id) ?? []).map((agent) =>
@@ -179,6 +195,14 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         }
       }
       const sessionsWithValidActiveMounts = sessions.map((session) => {
+        const repaired = repairedWriteDestinations.get(session.id);
+        if (repaired !== undefined) {
+          return {
+            ...session,
+            activeMountId: repaired.mountId,
+            activeProjectId: repaired.projectId,
+          };
+        }
         if (!invalidActiveMountSessionIds.has(session.id)) {
           return session;
         }

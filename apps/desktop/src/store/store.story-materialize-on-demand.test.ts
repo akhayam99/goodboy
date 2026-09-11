@@ -115,6 +115,7 @@ const seedSession = (projects: ReadonlyArray<typeof appProject>) => {
     sessionProjectMounts: { [SESSION_ID]: [appMount] },
     sessionBranches: { [SESSION_ID]: APP_BRANCH },
     sessionActiveProject: { [SESSION_ID]: APP_PROJECT_ID },
+    sessionActiveMount: { [SESSION_ID]: APP_MOUNT_ID },
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
     selectedAgentId: { [SESSION_ID]: AGENT_ID },
     ...connectedAnthropicState(),
@@ -240,6 +241,7 @@ describe('story: an agent works from its own project and reads the others', () =
           },
         ],
       },
+      sessionActiveMount: { [SESSION_ID]: 'mount-a' },
     } as never);
 
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
@@ -555,7 +557,7 @@ describe('story: the branch a project would adopt is checked out elsewhere', () 
 
     const failure = await useAppStore
       .getState()
-      .materializeProject({
+      .ensureProjectMounted({
         sessionId: SESSION_ID,
         projectId: WEB_PROJECT_ID,
         reason: 'the agent asked for write access',
