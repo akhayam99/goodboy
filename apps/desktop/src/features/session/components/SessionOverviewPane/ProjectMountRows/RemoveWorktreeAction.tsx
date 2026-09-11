@@ -14,6 +14,7 @@ import {
   BLOCKER_SENTENCE,
   countLabel,
   ignoredFilesLine,
+  integrationLine,
   isMountRisky,
   measure,
 } from './detachPlan';
@@ -27,7 +28,8 @@ type Props = {
 
 type Confirm =
   | { readonly kind: 'blocked'; readonly lines: ReadonlyArray<string> }
-  | { readonly kind: 'unavailable' }
+  | { readonly kind: 'unread'; readonly lines: ReadonlyArray<string> }
+  | { readonly kind: 'unmerged'; readonly lines: ReadonlyArray<string> }
   | { readonly kind: 'risky'; readonly lines: ReadonlyArray<string> };
 
 type RemoveParams = {
@@ -35,6 +37,12 @@ type RemoveParams = {
 };
 
 const AlertIcon = CONCEPT_ICONS.errors;
+const WorktreeIcon = CONCEPT_ICONS.worktree;
+const CONFIRM_ROLE = {
+  blocked: 'alert',
+  unmerged: 'primary',
+  risky: 'danger',
+} satisfies Record<'blocked' | 'unmerged' | 'risky', 'alert' | 'primary' | 'danger'>;
 const BLOCKER_CODES = [
   'agent-running',
   'terminal-open',
@@ -42,6 +50,10 @@ const BLOCKER_CODES = [
 
 export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }: Props) => {
   const removeMountWorktree = useAppStore((state) => state.removeMountWorktree);
+  const projectBaseBranch = useAppStore(
+    (state) =>
+      state.projects.find((candidate) => candidate.id === row.projectId)?.baseBranch ?? null,
+  );
   const { showToast } = useToast();
   const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 170 });
   const [isChecking, setIsChecking] = useState(false);
@@ -61,6 +73,12 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
   const cancel = () => {
     setConfirm(null);
     dropdown.close();
+  };
+
+  const reveal = () => {
+    if (!dropdown.open) {
+      dropdown.toggle();
+    }
   };
 
   const remove = async ({ mode }: RemoveParams) => {
@@ -97,24 +115,54 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
         kind: 'blocked',
         lines: blockers.map((blocker) => BLOCKER_SENTENCE[blocker]({ projectName: label })),
       });
-      if (!dropdown.open) {
-        dropdown.toggle();
-      }
+      reveal();
       return;
     }
     setIsChecking(true);
     try {
-      const assessment = await worktreeDetachAssessment({ worktreePath });
+      const assessment = await worktreeDetachAssessment({
+        worktreePath,
+        baseBranch: row.baseBranch ?? projectBaseBranch,
+      });
       const measured = measure({ worktreePath, branch: row.branch, assessment });
       if (measured === null) {
-        setConfirm({ kind: 'unavailable' });
-        if (!dropdown.open) {
-          dropdown.toggle();
-        }
+        setConfirm({
+          kind: 'unread',
+          lines: [`The safety of the worktree at ${worktreePath} could not be verified.`],
+        });
+        reveal();
         return;
       }
-      if (measured.isAbsent || !isMountRisky({ measured })) {
+      if (measured.isAbsent) {
         await remove({ mode: 'safe' });
+        return;
+      }
+      const integration = measured.integration;
+      if (integration.kind === 'unknown') {
+        setConfirm({
+          kind: 'unread',
+          lines: [
+            `Whether ${measured.branch} is merged into its base branch is unknown; the worktree stays until that can be read.`,
+            'Check again, or set the base branch for this project in Settings.',
+          ],
+        });
+        reveal();
+        return;
+      }
+      if (!isMountRisky({ measured })) {
+        if (integration.kind === 'merged') {
+          await remove({ mode: 'safe' });
+          return;
+        }
+        setConfirm({
+          kind: 'unmerged',
+          lines: [
+            `The worktree at ${worktreePath} is clean: 0 uncommitted files and 0 unpushed commits.`,
+            `${measured.branch} is not merged into ${integration.base} yet.`,
+            'Removing the worktree deletes its directory. The branch and its commits stay in the repository.',
+          ],
+        });
+        reveal();
         return;
       }
       const files = countLabel({ count: measured.affectedFiles, singular: 'uncommitted file' });
@@ -123,17 +171,17 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
         singular: measured.hasUpstream ? 'unpushed commit' : 'local-only commit',
       });
       const ignored = ignoredFilesLine({ measured: [measured] });
+      const merge = integrationLine({ measured: [measured] });
       setConfirm({
         kind: 'risky',
         lines: [
           `Removing this worktree will lose ${files} and ${commits}.`,
           ...(ignored === null ? [] : [ignored]),
+          ...(merge === null ? [] : [merge]),
           'The branch and its commits stay in the repository.',
         ],
       });
-      if (!dropdown.open) {
-        dropdown.toggle();
-      }
+      reveal();
     } catch (error) {
       showToast('error', formatError(error));
     } finally {
@@ -169,12 +217,16 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
         </button>
       }
     >
-      {confirm === null ? null : confirm.kind === 'unavailable' ? (
+      {confirm === null ? null : confirm.kind === 'unread' ? (
         <div className="flex flex-col gap-2 p-3">
           <span className="text-xs font-medium">Remove worktree?</span>
-          <span className="text-2xs text-muted-foreground">
-            {`The safety of the worktree at ${worktreePath ?? label} could not be verified.`}
-          </span>
+          <div className="flex min-w-0 flex-col gap-1 text-2xs text-muted-foreground">
+            {confirm.lines.map((line) => (
+              <p key={line} className="break-words">
+                {line}
+              </p>
+            ))}
+          </div>
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -196,13 +248,21 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
       ) : (
         <div className="flex flex-col p-2">
           <InlineConfirm
-            role={confirm.kind === 'blocked' ? 'alert' : 'danger'}
-            icon={<AlertIcon size={ICON_SIZE.row} />}
+            role={CONFIRM_ROLE[confirm.kind]}
+            icon={
+              confirm.kind === 'unmerged' ? (
+                <WorktreeIcon size={ICON_SIZE.row} />
+              ) : (
+                <AlertIcon size={ICON_SIZE.row} />
+              )
+            }
             title="Remove worktree?"
             confirmLabel="Remove worktree"
             isBusy={isBusy}
             isConfirmDisabled={confirm.kind === 'blocked'}
-            onConfirm={() => void remove({ mode: 'confirmed' })}
+            onConfirm={() =>
+              void remove({ mode: confirm.kind === 'unmerged' ? 'safe' : 'confirmed' })
+            }
             onCancel={() => cancel()}
           >
             <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">

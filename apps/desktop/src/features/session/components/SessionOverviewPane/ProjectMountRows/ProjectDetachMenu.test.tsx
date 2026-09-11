@@ -2,7 +2,13 @@
 
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MountId, ProjectId, SessionId, WorktreeDetachAssessment } from '@goodboy/types';
+import type {
+  BranchIntegration,
+  MountId,
+  ProjectId,
+  SessionId,
+  WorktreeDetachAssessment,
+} from '@goodboy/types';
 
 const { state, showToast, worktreeDetachAssessment } = vi.hoisted(() => ({
   state: {
@@ -10,7 +16,7 @@ const { state, showToast, worktreeDetachAssessment } = vi.hoisted(() => ({
     unmountMount: vi.fn(async () => ({ kept: false })),
     forgetMount: vi.fn(async () => ({ keptPath: null as string | null })),
     emitNotification: vi.fn(),
-    projects: [{ id: 'project-1', kind: 'repo' }],
+    projects: [{ id: 'project-1', kind: 'repo', baseBranch: 'develop' as string | null }],
     sessions: [{ id: 'session-1', state: { kind: 'idle' } }],
     terminalTabs: {},
     sessionProjectMounts: {
@@ -31,6 +37,7 @@ const { state, showToast, worktreeDetachAssessment } = vi.hoisted(() => ({
           worktreePath: '/worktrees/api' as string | null,
           lastWorktreePath: null as string | null,
           branch: 'ak/feat',
+          baseBranch: 'main' as string | null,
           isAttached: true,
           diskState: 'present' as string,
         },
@@ -58,18 +65,22 @@ import { ProjectDetachMenu } from './ProjectDetachMenu';
 const typedString = <Value extends string>({ value }: { readonly value: string }): Value =>
   JSON.parse(JSON.stringify(value));
 
+const MERGED = { kind: 'merged', base: 'origin/main' } satisfies BranchIntegration;
+
 const assessed = ({
   affectedFiles,
   localOnlyCommits,
   hasUpstream,
   ignoredFiles = 0,
   ignoredFileSamples = [],
+  integration = MERGED,
 }: {
   readonly affectedFiles: number;
   readonly localOnlyCommits: number;
   readonly hasUpstream: boolean;
   readonly ignoredFiles?: number;
   readonly ignoredFileSamples?: ReadonlyArray<string>;
+  readonly integration?: BranchIntegration;
 }): WorktreeDetachAssessment => ({
   kind: 'assessed',
   path: '/worktrees/api',
@@ -79,6 +90,7 @@ const assessed = ({
   localOnlyCommits,
   ignoredFiles,
   ignoredFileSamples,
+  integration,
 });
 
 const renderMenu = () =>
@@ -120,7 +132,7 @@ const openConfirm = () => {
 afterEach(cleanup);
 beforeEach(() => {
   vi.clearAllMocks();
-  state.projects = [{ id: 'project-1', kind: 'repo' }];
+  state.projects = [{ id: 'project-1', kind: 'repo', baseBranch: 'develop' }];
   state.sessions = [{ id: 'session-1', state: { kind: 'idle' } }];
   state.terminalTabs = {};
   state.sessionProjectMounts = {
@@ -141,6 +153,7 @@ beforeEach(() => {
         worktreePath: '/worktrees/api',
         lastWorktreePath: null,
         branch: 'ak/feat',
+        baseBranch: 'main',
         isAttached: true,
         diskState: 'present',
       },
@@ -189,7 +202,7 @@ describe('ProjectDetachMenu', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Detach and remove' })));
     expect(
       screen.getByText(
-        'Remove the clean worktree at /worktrees/api; ak/feat is published, with 0 uncommitted files and 0 unpushed commits, and the branch will remain.',
+        'Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat is merged into origin/main.',
       ),
     ).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Detach and remove' }));
@@ -229,6 +242,7 @@ describe('ProjectDetachMenu', () => {
           worktreePath: '/worktrees/api-one',
           lastWorktreePath: null,
           branch: 'ak/one',
+          baseBranch: null,
           isAttached: true,
           diskState: 'present',
         },
@@ -238,6 +252,7 @@ describe('ProjectDetachMenu', () => {
           worktreePath: '/worktrees/api-two',
           lastWorktreePath: null,
           branch: 'ak/two',
+          baseBranch: null,
           isAttached: true,
           diskState: 'present',
         },
@@ -247,6 +262,7 @@ describe('ProjectDetachMenu', () => {
           worktreePath: '/worktrees/web',
           lastWorktreePath: null,
           branch: 'ak/web',
+          baseBranch: null,
           isAttached: true,
           diskState: 'present',
         },
@@ -286,6 +302,7 @@ describe('ProjectDetachMenu', () => {
               localOnlyCommits: 0,
               ignoredFiles: 0,
               ignoredFileSamples: [],
+              integration: MERGED,
             }
           : {
               kind: 'assessed',
@@ -296,6 +313,7 @@ describe('ProjectDetachMenu', () => {
               localOnlyCommits: 3,
               ignoredFiles: 0,
               ignoredFileSamples: [],
+              integration: MERGED,
             },
     );
     renderMenu();
@@ -312,10 +330,14 @@ describe('ProjectDetachMenu', () => {
     expect(screen.getByText('3 uncommitted files will be deleted.')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Detach details for api' }));
     expect(
-      screen.getByText('ak/one at /worktrees/api-one: 2 uncommitted files, 0 unpushed commits'),
+      screen.getByText(
+        'ak/one at /worktrees/api-one: 2 uncommitted files, 0 unpushed commits, merged into origin/main',
+      ),
     ).toBeDefined();
     expect(
-      screen.getByText('ak/two at /worktrees/api-two: 1 uncommitted file, 3 local-only commits'),
+      screen.getByText(
+        'ak/two at /worktrees/api-two: 1 uncommitted file, 3 local-only commits, merged into origin/main',
+      ),
     ).toBeDefined();
   });
 
@@ -357,7 +379,7 @@ describe('ProjectDetachMenu', () => {
   });
 
   it('keeps the directory of a folder project without assessing it', () => {
-    state.projects = [{ id: 'project-1', kind: 'folder' }];
+    state.projects = [{ id: 'project-1', kind: 'folder', baseBranch: null }];
     renderMenu();
     openConfirm();
 
@@ -382,6 +404,90 @@ describe('ProjectDetachMenu', () => {
       ),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
+  });
+
+  it('asks for integration against the base the mount carries', async () => {
+    renderMenu();
+    openConfirm();
+
+    await waitFor(() =>
+      expect(worktreeDetachAssessment).toHaveBeenCalledWith({
+        worktreePath: '/worktrees/api',
+        baseBranch: 'main',
+      }),
+    );
+  });
+
+  it('falls back to the base branch of the project when the mount carries none', async () => {
+    state.sessionMounts = {
+      'session-1': [
+        {
+          id: 'mount-1',
+          projectId: 'project-1',
+          worktreePath: '/worktrees/api',
+          lastWorktreePath: null,
+          branch: 'ak/feat',
+          baseBranch: null,
+          isAttached: true,
+          diskState: 'present',
+        },
+      ],
+    };
+    renderMenu();
+    openConfirm();
+
+    await waitFor(() =>
+      expect(worktreeDetachAssessment).toHaveBeenCalledWith({
+        worktreePath: '/worktrees/api',
+        baseBranch: 'develop',
+      }),
+    );
+  });
+
+  it('never offers removal when the merge state of the branch is unknown', async () => {
+    worktreeDetachAssessment.mockResolvedValue(
+      assessed({
+        affectedFiles: 0,
+        localOnlyCommits: 0,
+        hasUpstream: true,
+        integration: { kind: 'unknown' },
+      }),
+    );
+    renderMenu();
+    openConfirm();
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach and keep files' })));
+    expect(
+      screen.getByText(
+        'Whether ak/feat is merged into its base branch is unknown; detach will keep its files at /worktrees/api.',
+      ),
+    ).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Detach and remove' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Detach and delete files' })).toBeNull();
+  });
+
+  it('says a clean branch has not reached its base instead of implying it landed', async () => {
+    worktreeDetachAssessment.mockResolvedValue(
+      assessed({
+        affectedFiles: 0,
+        localOnlyCommits: 0,
+        hasUpstream: true,
+        integration: { kind: 'unmerged', base: 'origin/develop', ahead: 4 },
+      }),
+    );
+    renderMenu();
+    openConfirm();
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach and remove' })));
+    expect(
+      screen.getByText(
+        'Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat is not merged into origin/develop yet.',
+      ),
+    ).toBeDefined();
+    expect(screen.getByText('The branch and its commits stay in the repository.')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Detach details for api' }));
+    expect(screen.getByText('Branches not merged into the base (1)')).toBeDefined();
   });
 
   it('reports an already absent directory', async () => {
@@ -471,6 +577,7 @@ describe('ProjectDetachMenu', () => {
           worktreePath: null,
           lastWorktreePath: '/worktrees/api',
           branch: 'ak/feat',
+          baseBranch: null,
           isAttached: false,
           diskState: 'removed',
         },
@@ -501,6 +608,7 @@ describe('ProjectDetachMenu', () => {
           worktreePath: null,
           lastWorktreePath: '/worktrees/api',
           branch: 'ak/feat',
+          baseBranch: null,
           isAttached: false,
           diskState: 'present',
         },
@@ -531,6 +639,7 @@ describe('ProjectDetachMenu', () => {
           worktreePath: null,
           lastWorktreePath: '/worktrees/api',
           branch: 'ak/feat',
+          baseBranch: null,
           isAttached: false,
           diskState: 'present',
         },
@@ -561,6 +670,7 @@ describe('ProjectDetachMenu', () => {
           worktreePath: null,
           lastWorktreePath: '/worktrees/api',
           branch: 'ak/feat',
+          baseBranch: null,
           isAttached: false,
           diskState: 'removed',
         },

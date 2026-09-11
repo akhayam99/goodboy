@@ -69,9 +69,12 @@ export const DetachConfirm = ({
   }
   const isRisky = plan.kind === 'risky';
   const details =
-    plan.kind === 'risky' || plan.kind === 'keep' ? plan.details : { totals: [], worktrees: [] };
+    plan.kind === 'risky' || plan.kind === 'keep' || plan.kind === 'safe'
+      ? plan.details
+      : { totals: [], worktrees: [] };
   const hasDetails = details.totals.length > 0 || details.worktrees.length > 0;
-  const isUnavailable = plan.kind === 'keep' && plan.reason === 'unavailable';
+  const isUnread =
+    plan.kind === 'keep' && (plan.reason === 'unavailable' || plan.reason === 'unverified');
 
   return (
     <div className="flex flex-col p-2">
@@ -83,7 +86,7 @@ export const DetachConfirm = ({
         isBusy={isBusy}
         onConfirm={() => onConfirm({ disposition: action.disposition })}
         onCancel={onCancel}
-        {...(isUnavailable
+        {...(isUnread
           ? { altAction: { label: 'Check again', onClick: onRecheck, disabled: isBusy } }
           : {})}
       >

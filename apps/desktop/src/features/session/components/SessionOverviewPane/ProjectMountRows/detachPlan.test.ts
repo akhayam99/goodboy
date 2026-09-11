@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { WorktreeDetachAssessment } from '@goodboy/types';
+import type { BranchIntegration, WorktreeDetachAssessment } from '@goodboy/types';
 import {
   buildDetachPlan,
   detachActionFor,
@@ -25,6 +25,8 @@ const plan = ({
     assessments,
   });
 
+const MERGED = { kind: 'merged', base: 'origin/main' } satisfies BranchIntegration;
+
 const mount = ({
   path = '/worktrees/api',
   branch = 'ak/feat',
@@ -33,6 +35,7 @@ const mount = ({
   hasUpstream,
   ignoredFiles = 0,
   ignoredFileSamples = [],
+  integration = MERGED,
 }: {
   readonly path?: string;
   readonly branch?: string;
@@ -41,6 +44,7 @@ const mount = ({
   readonly hasUpstream: boolean;
   readonly ignoredFiles?: number;
   readonly ignoredFileSamples?: ReadonlyArray<string>;
+  readonly integration?: BranchIntegration;
 }): MountAssessment => ({
   worktreePath: path,
   branch,
@@ -53,6 +57,7 @@ const mount = ({
     localOnlyCommits,
     ignoredFiles,
     ignoredFileSamples,
+    integration,
   } satisfies WorktreeDetachAssessment,
 });
 
@@ -116,11 +121,14 @@ describe('buildDetachPlan', () => {
       lines: [
         'Remove the worktree at /worktrees/api for ak/feat, which has 1 unpushed commit.',
         '1 uncommitted file will be deleted.',
+        'ak/feat is merged into origin/main.',
         'The branch and its commits stay in the repository.',
       ],
       details: {
         totals: ['Files affected (1)', 'Unpushed commits (1)'],
-        worktrees: ['ak/feat at /worktrees/api: 1 uncommitted file, 1 unpushed commit'],
+        worktrees: [
+          'ak/feat at /worktrees/api: 1 uncommitted file, 1 unpushed commit, merged into origin/main',
+        ],
       },
     });
   });
@@ -132,11 +140,14 @@ describe('buildDetachPlan', () => {
       lines: [
         'Remove the worktree at /worktrees/api for ak/feat, which has no upstream.',
         'No uncommitted files will be deleted.',
+        'ak/feat is merged into origin/main.',
         'The branch and its commits stay in the repository.',
       ],
       details: {
         totals: ['Files affected (0)', 'Local-only commits (0)'],
-        worktrees: ['ak/feat at /worktrees/api: 0 uncommitted files, 0 local-only commits'],
+        worktrees: [
+          'ak/feat at /worktrees/api: 0 uncommitted files, 0 local-only commits, merged into origin/main',
+        ],
       },
     });
   });
@@ -160,6 +171,7 @@ describe('buildDetachPlan', () => {
         'Remove the worktree at /worktrees/api for ak/feat.',
         'No uncommitted files will be deleted.',
         '2 ignored files at risk, not tracked by git: .env.local, scratch/data.db.',
+        'ak/feat is merged into origin/main.',
         'The branch and its commits stay in the repository.',
       ],
     });
@@ -190,13 +202,14 @@ describe('buildDetachPlan', () => {
       lines: [
         'Remove 2 worktrees for api, which have 3 local-only commits and 1 branch without an upstream.',
         '3 uncommitted files will be deleted.',
+        'Every branch is merged into its base branch.',
         'The branches and their commits stay in the repository.',
       ],
       details: {
         totals: ['Files affected (3)', 'Local-only commits (3)'],
         worktrees: [
-          'ak/one at /worktrees/api-one: 2 uncommitted files, 0 unpushed commits',
-          'ak/two at /worktrees/api-two: 1 uncommitted file, 3 local-only commits',
+          'ak/one at /worktrees/api-one: 2 uncommitted files, 0 unpushed commits, merged into origin/main',
+          'ak/two at /worktrees/api-two: 1 uncommitted file, 3 local-only commits, merged into origin/main',
         ],
       },
     });
@@ -227,6 +240,7 @@ describe('buildDetachPlan', () => {
       lines: [
         'Remove 2 worktrees for api, which have 2 unpushed commits.',
         'No uncommitted files will be deleted.',
+        'Every branch is merged into its base branch.',
         'The branches and their commits stay in the repository.',
       ],
     });
@@ -257,6 +271,7 @@ describe('buildDetachPlan', () => {
       lines: [
         'Remove 2 worktrees for api, of which 2 branches have no upstream.',
         'No uncommitted files will be deleted.',
+        'Every branch is merged into its base branch.',
         'The branches and their commits stay in the repository.',
       ],
     });
@@ -285,8 +300,10 @@ describe('buildDetachPlan', () => {
     ).toEqual({
       kind: 'safe',
       lines: [
-        'Remove 2 clean worktrees for api; every branch is published, with 0 uncommitted files and 0 unpushed commits, and every branch will remain.',
+        'Remove 2 clean worktrees for api: 0 uncommitted files, 0 unpushed commits, and every branch is merged into its base branch.',
+        'The branches stay in the repository.',
       ],
+      details: { totals: [], worktrees: [] },
     });
   });
 
@@ -363,13 +380,172 @@ describe('buildDetachPlan', () => {
       lines: [
         'Remove 2 worktrees for api.',
         '2 uncommitted files will be deleted.',
+        'ak/b is merged into origin/main.',
         'The branches and their commits stay in the repository.',
       ],
       details: {
         totals: ['Files affected (2)', 'Unpushed commits (0)'],
         worktrees: [
           'ak/gone at /gone: directory already absent',
-          'ak/b at /b: 2 uncommitted files, 0 unpushed commits',
+          'ak/b at /b: 2 uncommitted files, 0 unpushed commits, merged into origin/main',
+        ],
+      },
+    });
+  });
+
+  it('keeps the files when the merge state of the only branch is unknown', () => {
+    const result = plan({
+      assessments: [
+        mount({
+          affectedFiles: 0,
+          localOnlyCommits: 0,
+          hasUpstream: true,
+          integration: { kind: 'unknown' },
+        }),
+      ],
+    });
+
+    expect(result).toEqual({
+      kind: 'keep',
+      reason: 'unverified',
+      lines: [
+        'Whether ak/feat is merged into its base branch is unknown; detach will keep its files at /worktrees/api.',
+        'Check again, or set the base branch for this project in Settings.',
+      ],
+      details: { totals: [], worktrees: [] },
+    });
+    expect(detachActionFor({ plan: result })).toMatchObject({ disposition: 'keep-files' });
+  });
+
+  it('keeps the files on an unknown merge state even when the tree is dirty', () => {
+    const result = plan({
+      assessments: [
+        mount({
+          affectedFiles: 4,
+          localOnlyCommits: 2,
+          hasUpstream: false,
+          integration: { kind: 'unknown' },
+        }),
+      ],
+    });
+
+    expect(result).toMatchObject({ kind: 'keep', reason: 'unverified' });
+    expect(detachActionFor({ plan: result })).toMatchObject({ disposition: 'keep-files' });
+  });
+
+  it('keeps every directory when one branch of several cannot be read against its base', () => {
+    expect(
+      plan({
+        assessments: [
+          mount({
+            path: '/a',
+            branch: 'ak/a',
+            affectedFiles: 0,
+            localOnlyCommits: 0,
+            hasUpstream: true,
+          }),
+          mount({
+            path: '/b',
+            branch: 'ak/b',
+            affectedFiles: 0,
+            localOnlyCommits: 0,
+            hasUpstream: true,
+            integration: { kind: 'unknown' },
+          }),
+        ],
+      }),
+    ).toEqual({
+      kind: 'keep',
+      reason: 'unverified',
+      lines: [
+        'Whether 1 branch in api reached the base branch is unknown; detach will keep every directory.',
+        'Check again, or set the base branch for this project in Settings.',
+      ],
+      details: { totals: [], worktrees: ['ak/b at /b: merge state unknown'] },
+    });
+  });
+
+  it('says a clean branch is not merged instead of calling it done', () => {
+    expect(
+      plan({
+        assessments: [
+          mount({
+            affectedFiles: 0,
+            localOnlyCommits: 0,
+            hasUpstream: true,
+            integration: { kind: 'unmerged', base: 'origin/main', ahead: 3 },
+          }),
+        ],
+      }),
+    ).toEqual({
+      kind: 'safe',
+      lines: [
+        'Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat is not merged into origin/main yet.',
+        'The branch and its commits stay in the repository.',
+      ],
+      details: {
+        totals: ['Branches not merged into the base (1)'],
+        worktrees: ['ak/feat at /worktrees/api: not merged into origin/main'],
+      },
+    });
+  });
+
+  it('names the base the project carries rather than assuming main', () => {
+    expect(
+      plan({
+        assessments: [
+          mount({
+            affectedFiles: 0,
+            localOnlyCommits: 0,
+            hasUpstream: true,
+            integration: { kind: 'merged', base: 'origin/develop' },
+          }),
+        ],
+      }),
+    ).toEqual({
+      kind: 'safe',
+      lines: [
+        'Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat is merged into origin/develop.',
+        'The branch stays in the repository.',
+      ],
+      details: { totals: [], worktrees: [] },
+    });
+  });
+
+  it('counts the unmerged branches in the details of a risky detach', () => {
+    expect(
+      plan({
+        assessments: [
+          mount({
+            path: '/a',
+            branch: 'ak/a',
+            affectedFiles: 1,
+            localOnlyCommits: 0,
+            hasUpstream: true,
+            integration: { kind: 'unmerged', base: 'origin/main', ahead: 2 },
+          }),
+          mount({
+            path: '/b',
+            branch: 'ak/b',
+            affectedFiles: 0,
+            localOnlyCommits: 0,
+            hasUpstream: true,
+          }),
+        ],
+      }),
+    ).toMatchObject({
+      kind: 'risky',
+      lines: [
+        'Remove 2 worktrees for api.',
+        '1 uncommitted file will be deleted.',
+        '1 branch is not merged into the base branch yet.',
+        'The branches and their commits stay in the repository.',
+      ],
+      details: {
+        totals: [
+          'Files affected (1)',
+          'Unpushed commits (0)',
+          'Branches not merged into the base (1)',
         ],
       },
     });
