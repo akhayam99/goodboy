@@ -186,6 +186,7 @@ export const CreatePrPanel = ({
         `Then run \`gh pr create\` to open it and report the PR URL.`,
       ].join('\n');
       const agentId = await spawnAgent(sessionId, {
+        ...(mountId === null ? {} : { mountId }),
         name: PR_DRAFT_AGENT_NAME,
         initialPrompt: appendOperatorNotes({ prompt, hint: agentConfig.hint }),
         model: agentConfig.model,

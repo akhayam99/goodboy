@@ -50,19 +50,21 @@ export const releaseMountSelection = async ({
     (mount) => !released.includes(mount.mountId),
   );
   const selectedMountId = selectSelectedMountId({ state: get(), sessionId });
-  if (selectedMountId === null) {
-    return;
-  }
-  if (!released.includes(selectedMountId)) {
+  const isSelectionReleased = selectedMountId !== null && released.includes(selectedMountId);
+  if (!isSelectionReleased) {
     const held = findMountById({ mounts: remaining, mountId: selectedMountId });
     if (held !== null) {
       set((state) => writeDestinationPatch({ state, sessionId, mount: held }));
+      return;
     }
-    return;
+    if (selectedMountId !== null || departedProjectId === null) {
+      return;
+    }
   }
   await commitWriteDestination({
     set,
     sessionId,
-    mount: recoverSoleMount({ mounts: remaining }),
+    mount: selectedMountId === null ? null : recoverSoleMount({ mounts: remaining }),
+    previousSelection: isSelectionReleased ? 'released' : 'held',
   });
 };

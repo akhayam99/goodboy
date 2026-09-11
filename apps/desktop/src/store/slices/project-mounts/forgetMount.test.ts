@@ -268,7 +268,7 @@ describe('forgetMount', () => {
     const store = makeStore();
     store.sessions[0]!.state = { kind: 'running' };
 
-    await expect(run(store)).rejects.toThrow('an agent is still running in this session');
+    await expect(run(store)).rejects.toThrow('an agent is still writing to this mount');
     expect(deleteSessionMount).not.toHaveBeenCalled();
   });
 
@@ -289,16 +289,69 @@ describe('forgetMount', () => {
     expect(store.sessionBranches['sess-1']).toBe('ak/web');
   });
 
-  it('invents no write destination for a session that had none', async () => {
+  it('asks for a choice when more than one mount could take the destination', async () => {
+    const store = makeStore();
+    store.sessionActiveMount = { 'sess-1': 'mount-api' };
+    store.sessions[0]!.activeMountId = 'mount-api';
+    store.sessionProjectMounts['sess-1'] = [
+      ...store.sessionProjectMounts['sess-1']!,
+      {
+        mountId: 'mount-docs',
+        projectId: 'project-docs',
+        mountName: 'docs',
+        worktreePath: '/container/docs',
+        repoRoot: '/repos/docs',
+        branch: 'ak/docs',
+      },
+    ];
+
+    await run(store);
+
+    expect(updateSessionWriteDestination).toHaveBeenCalledWith({
+      db: {},
+      sessionId: SESSION_ID,
+      mountId: null,
+    });
+    expect(store.sessionActiveMount['sess-1']).toBeNull();
+    expect(store.sessions[0]?.activeMountId).toBeUndefined();
+  });
+
+  it('leaves no selection behind when the destination write fails', async () => {
+    const store = makeStore();
+    store.sessionActiveMount = { 'sess-1': 'mount-api' };
+    store.sessions[0]!.activeMountId = 'mount-api';
+    updateSessionWriteDestination.mockRejectedValueOnce(new Error('database is locked'));
+
+    await run(store);
+
+    expect(store.sessionActiveMount['sess-1']).toBeNull();
+    expect(store.sessions[0]?.activeMountId).toBeUndefined();
+  });
+
+  it('clears the departed project without naming a new destination', async () => {
     const store = makeStore();
     store.sessionActiveMount = { 'sess-1': null };
     store.sessions[0]!.activeMountId = undefined;
 
     await run(store);
 
-    expect(updateSessionWriteDestination).not.toHaveBeenCalled();
+    expect(updateSessionWriteDestination).toHaveBeenCalledWith({
+      db: {},
+      sessionId: SESSION_ID,
+      mountId: null,
+    });
     expect(store.sessionActiveMount['sess-1']).toBeNull();
     expect(store.sessions[0]?.activeMountId).toBeUndefined();
+  });
+
+  it('leaves an untouched selection alone when an inactive mount leaves', async () => {
+    const store = makeStore();
+
+    await run(store);
+
+    expect(updateSessionWriteDestination).not.toHaveBeenCalled();
+    expect(store.sessionActiveMount['sess-1']).toBe('mount-web');
+    expect(store.sessions[0]?.activeMountId).toBe('mount-web');
   });
 
   it('moves the active project on when the last mount of that project leaves', async () => {

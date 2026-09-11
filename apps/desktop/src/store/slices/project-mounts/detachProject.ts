@@ -26,6 +26,7 @@ export type DetachProjectInput = {
 };
 
 export type DetachProjectOutcome = {
+  readonly mountId: MountId;
   readonly worktreePath: string;
   readonly kind: MountCleanupDecision['kind'];
   readonly reason: string | null;
@@ -151,6 +152,7 @@ export const detachProject = (set: SetFn, get: GetFn) => {
       });
       if (blockers.length > 0) {
         outcomes.push({
+          mountId: target.mountId,
           worktreePath: target.path,
           kind: 'failed',
           reason: blockers.map((blocker) => MOUNT_CLEANUP_BLOCKER_REASON[blocker]).join(', '),
@@ -186,6 +188,7 @@ export const detachProject = (set: SetFn, get: GetFn) => {
           };
           if (decision.kind === 'failed') {
             return {
+              mountId: target.mountId,
               worktreePath: target.path,
               kind: decision.kind,
               reason: decision.reason,
@@ -207,6 +210,7 @@ export const detachProject = (set: SetFn, get: GetFn) => {
             sessionId,
             kind: 'project_detached',
             payload: {
+              mountId: target.mountId,
               projectId,
               projectName,
               branch: target.branch,
@@ -215,7 +219,12 @@ export const detachProject = (set: SetFn, get: GetFn) => {
               ...(reason != null ? { reason } : {}),
             },
           });
-          return { worktreePath: target.path, kind: decision.kind, reason };
+          return {
+            mountId: target.mountId,
+            worktreePath: target.path,
+            kind: decision.kind,
+            reason,
+          };
         },
       });
       outcomes.push(outcome);

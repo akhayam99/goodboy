@@ -6,6 +6,7 @@ import { migrations } from '../migrations';
 import { migrate } from '../migrations/runner';
 import { deleteSession } from './session';
 import {
+  deleteSessionMount,
   deleteWorktreesForSession,
   detachSessionMounts,
   insertSessionWorktree,
@@ -205,6 +206,67 @@ describe('deleteWorktreesForSession', () => {
       diskState: 'removed',
     });
     expect(sessions[0]?.active_mount_id).toBeNull();
+  });
+});
+
+describe('deleteSessionMount', () => {
+  const seedTwoMounts = async (): Promise<Database> => {
+    const db = await seed();
+    for (const [id, index] of [
+      ['mount-one', 0],
+      ['mount-two', 1],
+    ] as ReadonlyArray<readonly [string, number]>) {
+      await insertSessionWorktree(db, {
+        id,
+        sessionId,
+        worktreePath: `/tmp/wt/${id}`,
+        branch: `feature/${id}`,
+        parallelIndex: index,
+        createdAt: Date.now(),
+      });
+    }
+    return db;
+  };
+
+  const destinationOf = async (
+    db: Database,
+  ): Promise<{ readonly mountId: string | null; readonly projectId: string | null }> => {
+    const rows = await db.select<{
+      readonly active_mount_id: string | null;
+      readonly active_project_id: string | null;
+    }>('SELECT active_mount_id, active_project_id FROM sessions WHERE id = ?', [sessionId]);
+    return {
+      mountId: rows[0]?.active_mount_id ?? null,
+      projectId: rows[0]?.active_project_id ?? null,
+    };
+  };
+
+  const chooseDestination = async (db: Database, mountId: string): Promise<void> => {
+    await db.execute(
+      'UPDATE sessions SET active_mount_id = ?, active_project_id = ? WHERE id = ?',
+      [mountId, 'project-api', sessionId],
+    );
+  };
+
+  it('clears both destination columns with the selection it deletes', async () => {
+    const db = await seedTwoMounts();
+    await chooseDestination(db, 'mount-one');
+
+    await deleteSessionMount({ db, sessionId, mountId: 'mount-one' as MountId });
+
+    expect(await destinationOf(db)).toEqual({ mountId: null, projectId: null });
+    expect((await listSessionMounts({ db, sessionId })).map((mount) => mount.id)).toEqual([
+      'mount-two',
+    ]);
+  });
+
+  it('leaves a destination that names another mount alone', async () => {
+    const db = await seedTwoMounts();
+    await chooseDestination(db, 'mount-two');
+
+    await deleteSessionMount({ db, sessionId, mountId: 'mount-one' as MountId });
+
+    expect(await destinationOf(db)).toEqual({ mountId: 'mount-two', projectId: 'project-api' });
   });
 });
 

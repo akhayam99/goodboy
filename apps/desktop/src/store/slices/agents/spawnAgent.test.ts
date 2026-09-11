@@ -152,7 +152,8 @@ function buildHarness(
     ...sessionOverrides,
   };
   const sendTurn = vi.fn(
-    async (_arg: { sessionId: SessionId; agentId: AgentId; content: string }) => undefined,
+    async (_arg: { sessionId: SessionId; agentId: AgentId; content: string; mountId?: string }) =>
+      undefined,
   );
   const drainResolveQueue = vi.fn(async () => undefined);
   const recordResolveAttempt = vi.fn(
@@ -344,6 +345,28 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     expect(fanOutClustersSpy).not.toHaveBeenCalled();
     expect(sendTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('kicks the agent off in the mount it was spawned on', async () => {
+    const { sendTurn, spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, {
+      name: 'Rebase on main',
+      initialPrompt: 'rebase this mount',
+      mountId: 'mount-web' as never,
+    });
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(sendTurn.mock.calls[0]?.[0]?.mountId).toBe('mount-web');
+  });
+
+  it('names no mount for an agent spawned without one', async () => {
+    const { sendTurn, spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, { name: 'Scout', initialPrompt: 'look around' });
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(sendTurn.mock.calls[0]?.[0]).not.toHaveProperty('mountId');
   });
 
   it('honors an explicit initialPrompt instead of fanning out', async () => {

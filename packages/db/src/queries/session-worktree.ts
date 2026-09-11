@@ -225,7 +225,8 @@ export const deleteSessionMount = async ({
   await db.exec('BEGIN IMMEDIATE');
   try {
     await db.execute(
-      'UPDATE sessions SET active_mount_id = NULL WHERE id = ? AND active_mount_id = ?',
+      `UPDATE sessions SET active_mount_id = NULL, active_project_id = NULL
+       WHERE id = ? AND active_mount_id = ?`,
       [sessionId, mountId],
     );
     const result = await db.execute(

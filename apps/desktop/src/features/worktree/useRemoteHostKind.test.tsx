@@ -191,10 +191,7 @@ describe('useRemoteHostKind', () => {
 
     await waitFor(() => expect(result.current).toBe('github'));
     act(() => {
-      useAppStore.getState().setSessionActiveProject({
-        sessionId: SESSION_ID,
-        projectId: WEB_PROJECT_ID,
-      });
+      useAppStore.setState({ sessionActiveMount: { [SESSION_ID]: WEB_MOUNT.mountId } });
     });
     await waitFor(() => expect(result.current).toBe('gitlab'));
     expect(worktreeRemoteUrl).toHaveBeenNthCalledWith(1, API_MOUNT.repoRoot);

@@ -262,7 +262,7 @@ describe('useSuggestionActions', () => {
     ]);
   });
 
-  it('activates the project before running the rebase agent', async () => {
+  it('rebases the mount the suggestion names without moving the write destination', async () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
@@ -290,11 +290,7 @@ describe('useSuggestionActions', () => {
     actions.primary?.onAct();
 
     await vi.waitFor(() => expect(spies.rebaseRun).toHaveBeenCalledTimes(1));
-    expect(spies.setSessionActiveProject).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      projectId: WEB_ID,
-      mountId: WEB_MOUNT_ID,
-    });
+    expect(spies.setSessionActiveProject).not.toHaveBeenCalled();
     expect(spies.rebaseRun).toHaveBeenCalledWith({ mountId: WEB_MOUNT_ID, behind: 2 });
   });
 
@@ -335,45 +331,8 @@ describe('useSuggestionActions', () => {
     actions.primary?.choices?.[1]?.onAct();
 
     await vi.waitFor(() => expect(spies.rebaseRun).toHaveBeenCalledTimes(1));
-    expect(spies.setSessionActiveProject).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      projectId: WEB_ID,
-      mountId: WEB_SECOND_MOUNT_ID,
-    });
+    expect(spies.setSessionActiveProject).not.toHaveBeenCalled();
     expect(spies.rebaseRun).toHaveBeenCalledWith({ mountId: WEB_SECOND_MOUNT_ID, behind: 3 });
-  });
-
-  it('starts a mountless target by project id', async () => {
-    const actions = actionsFor({
-      suggestion: {
-        ...suggestionBase,
-        id: 'rebase-project:session-1',
-        kind: 'rebase-project',
-        payload: {
-          targets: [
-            {
-              id: 'worktree:/tmp/web',
-              mountId: null,
-              projectId: WEB_ID,
-              projectName: 'web',
-              branch: 'feature/web',
-              worktreePath: '/tmp/web',
-              baseBranch: 'main',
-              behind: 2,
-            },
-          ],
-        },
-      },
-    });
-
-    actions.primary?.onAct();
-
-    await vi.waitFor(() => expect(spies.rebaseRun).toHaveBeenCalledTimes(1));
-    expect(spies.setSessionActiveProject).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      projectId: WEB_ID,
-    });
-    expect(spies.rebaseRun).toHaveBeenCalledWith({ projectId: WEB_ID, behind: 2 });
   });
 
   it('ignores completed mounts when polling and choosing the behind status', () => {

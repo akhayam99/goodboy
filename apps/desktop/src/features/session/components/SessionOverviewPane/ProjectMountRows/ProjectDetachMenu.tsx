@@ -47,7 +47,7 @@ type Props = {
 type Confirming = 'detach' | 'forget' | 'unmount' | null;
 
 type DetachTarget = {
-  readonly mountId: MountId | null;
+  readonly mountId: MountId;
   readonly path: string;
   readonly branch: string;
   readonly baseBranch: string | null;
@@ -104,31 +104,16 @@ export const ProjectDetachMenu = ({
       (state.sessionMounts?.[sessionId] ?? []).filter((view) => view.projectId === projectId),
     ),
   );
-  const projectMounts = useAppStore(
-    useShallow((state) =>
-      (state.sessionProjectMounts?.[sessionId] ?? []).filter(
-        (candidate) => candidate.projectId === projectId,
-      ),
-    ),
-  );
   const detachTargets = useMemo<ReadonlyArray<DetachTarget>>(
     () =>
-      mountViews.length > 0
-        ? mountViews.map((view) => ({
-            mountId: view.id,
-            path: view.worktreePath ?? view.lastWorktreePath ?? '',
-            branch: view.branch,
-            baseBranch: view.baseBranch,
-            isOnDisk: view.diskState !== 'missing' && view.diskState !== 'removed',
-          }))
-        : projectMounts.map((mount) => ({
-            mountId: mount.mountId ?? null,
-            path: mount.worktreePath,
-            branch: mount.branch,
-            baseBranch: mount.baseBranch ?? null,
-            isOnDisk: true,
-          })),
-    [mountViews, projectMounts],
+      mountViews.map((view) => ({
+        mountId: view.id,
+        path: view.worktreePath ?? view.lastWorktreePath ?? '',
+        branch: view.branch,
+        baseBranch: view.baseBranch,
+        isOnDisk: view.diskState !== 'missing' && view.diskState !== 'removed',
+      })),
+    [mountViews],
   );
   const mountView = mountViews.find((view) => view.id === mountId) ?? null;
   const isAttached =
@@ -194,20 +179,8 @@ export const ProjectDetachMenu = ({
     if (!isRepoProject || blockers.length > 0) {
       return;
     }
-    const targets: ReadonlyArray<DetachTarget> =
-      detachTargets.length > 0
-        ? detachTargets
-        : [
-            {
-              mountId: mountId ?? null,
-              path: worktreePath,
-              branch,
-              baseBranch: projectBaseBranch,
-              isOnDisk: true,
-            },
-          ];
     void Promise.all(
-      targets.map(async (target): Promise<MountAssessment> => {
+      detachTargets.map(async (target): Promise<MountAssessment> => {
         const unavailable = {
           worktreePath: target.path,
           branch: target.branch,
@@ -461,7 +434,7 @@ export const ProjectDetachMenu = ({
               Remove from session
             </button>
           )}
-          {canDetachProject ? (
+          {canDetachProject && detachTargets.length > 0 ? (
             <button
               type="button"
               role="menuitem"

@@ -2,7 +2,7 @@
 
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 
 type PushResult = { ok: true } | { ok: false; error: string };
 
@@ -28,6 +28,7 @@ vi.mock('../../../../app/components/Toast', () => ({
 import { usePushBranch } from './index';
 
 const sessionId = 'session-1' as SessionId;
+const mountId = 'mount-1' as MountId;
 
 beforeEach(() => {
   state.pushSessionBranch.mockReset();
@@ -42,17 +43,17 @@ afterEach(cleanup);
 
 describe('usePushBranch', () => {
   it('pushes the session branch and clears the busy state', async () => {
-    const { result } = renderHook(() => usePushBranch({ sessionId }));
+    const { result } = renderHook(() => usePushBranch({ sessionId, mountId }));
 
     await act(() => result.current.run());
 
-    expect(state.pushSessionBranch).toHaveBeenCalledWith(sessionId);
+    expect(state.pushSessionBranch).toHaveBeenCalledWith({ sessionId, mountId });
     expect(result.current.isBusy).toBe(false);
     expect(result.current.error).toBeNull();
   });
 
   it('confirms the start and the end of a successful push in place', async () => {
-    const { result } = renderHook(() => usePushBranch({ sessionId }));
+    const { result } = renderHook(() => usePushBranch({ sessionId, mountId }));
 
     await act(() => result.current.run());
 
@@ -72,7 +73,7 @@ describe('usePushBranch', () => {
       ok: false,
       error: 'remote rejected the branch',
     });
-    const { result } = renderHook(() => usePushBranch({ sessionId }));
+    const { result } = renderHook(() => usePushBranch({ sessionId, mountId }));
 
     await act(() => result.current.run());
 
@@ -83,7 +84,7 @@ describe('usePushBranch', () => {
 
   it('surfaces a rejected push', async () => {
     state.pushSessionBranch.mockRejectedValueOnce(new Error('network unavailable'));
-    const { result } = renderHook(() => usePushBranch({ sessionId }));
+    const { result } = renderHook(() => usePushBranch({ sessionId, mountId }));
 
     await act(() => result.current.run());
 
