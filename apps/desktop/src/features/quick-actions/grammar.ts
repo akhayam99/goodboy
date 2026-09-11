@@ -1,22 +1,34 @@
+import { WORKSPACE_FEATURES } from '../../shared/lib/features';
+
 export type QuickActionGroup =
   'agent' | 'session' | 'workspace' | 'skill' | 'workflow' | 'script' | 'action' | 'help';
 
 export type PrefixMeta = {
   readonly symbol: string;
+  readonly noun: string;
   readonly hint: string;
   readonly group: QuickActionGroup;
 };
 
-export const PREFIXES: ReadonlyArray<PrefixMeta> = [
-  { symbol: '@', hint: 'agents in current session', group: 'agent' },
-  { symbol: '#', hint: 'sessions', group: 'session' },
-  { symbol: ':', hint: 'workspaces', group: 'workspace' },
-  { symbol: '/', hint: 'skills', group: 'skill' },
-  { symbol: '~', hint: 'workflows', group: 'workflow' },
-  { symbol: '$', hint: 'scripts', group: 'script' },
-  { symbol: '>', hint: 'actions', group: 'action' },
-  { symbol: '?', hint: 'help & shortcuts', group: 'help' },
+const ALL_PREFIXES: ReadonlyArray<PrefixMeta> = [
+  { symbol: '@', noun: 'agents', hint: 'agents in current session', group: 'agent' },
+  { symbol: '#', noun: 'sessions', hint: 'sessions', group: 'session' },
+  { symbol: ':', noun: 'workspaces', hint: 'workspaces', group: 'workspace' },
+  { symbol: '/', noun: 'skills', hint: 'skills', group: 'skill' },
+  { symbol: '~', noun: 'workflows', hint: 'workflows', group: 'workflow' },
+  { symbol: '$', noun: 'scripts', hint: 'scripts', group: 'script' },
+  { symbol: '>', noun: 'actions', hint: 'actions', group: 'action' },
+  { symbol: '?', noun: 'help', hint: 'help & shortcuts', group: 'help' },
 ];
+
+const GROUP_ENABLED: Partial<Record<QuickActionGroup, boolean>> = {
+  skill: WORKSPACE_FEATURES.skills,
+  workflow: WORKSPACE_FEATURES.workflows,
+};
+
+export const PREFIXES: ReadonlyArray<PrefixMeta> = ALL_PREFIXES.filter(
+  (prefix) => GROUP_ENABLED[prefix.group] ?? true,
+);
 
 export type ParsedQuery = {
   readonly prefix: PrefixMeta | null;

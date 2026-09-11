@@ -8,7 +8,8 @@ import {
   useCurrentSession,
   useSessionStageInfo,
 } from '../../../../store';
-import { SESSION_STAGE_META, STAGE_TONE } from '../../session-stage';
+import { describeSessionStage } from '../../session-stage';
+import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
 import { useSelectedWorkflowRun } from '../../hooks/useSelectedWorkflowRun';
 import { agentHomeLens, classifyAgent, resolveRootAgent } from '../../agent-kind';
@@ -33,6 +34,7 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   const sessionId = session.id as SessionId;
   const crumbs = useSessionCrumbs({ session });
   const stage = useSessionStageInfo(session);
+  const stagePresentation = describeSessionStage(stage);
   const selectedAgentId = useAppStore(
     (state) => state.selectedAgentId[sessionId] ?? null,
   ) as AgentId | null;
@@ -135,15 +137,13 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
       aria-label="Breadcrumb"
       className="flex h-8 min-w-0 shrink-0 items-center gap-2 overflow-hidden bg-background px-4"
     >
-      <Tooltip
-        content={
-          stage.reason === ''
-            ? SESSION_STAGE_META[stage.stage].label
-            : `${SESSION_STAGE_META[stage.stage].label} · ${stage.reason}`
-        }
-      >
+      <Tooltip content={stateDescription({ presentation: stagePresentation })}>
         <span className="inline-flex shrink-0 items-center">
-          <StatusDot tone={STAGE_TONE[stage.stage]} size="sm" />
+          <StatusDot
+            tone={stagePresentation.tone}
+            size="sm"
+            ariaLabel={stateDescription({ presentation: stagePresentation })}
+          />
         </span>
       </Tooltip>
       {crumbs.map((crumb, index) => {

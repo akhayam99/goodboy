@@ -6,15 +6,16 @@ import { fmtTimestamp } from './fmtTimestamp';
 
 type Props = {
   readonly plan: PlanWithCount;
+  readonly openQuestionCount: number;
   readonly onSelect: () => void;
 };
 
-export const PlanRailCard = ({ plan, onSelect }: Props) => {
+export const PlanRailCard = ({ plan, openQuestionCount, onSelect }: Props) => {
   return (
     <RailCard
       title={plan.title}
       muted={plan.status === 'discarded'}
-      status={<PlanStatusChip status={plan.status} />}
+      status={<PlanStatusChip status={plan.status} openQuestionCount={openQuestionCount} />}
       meta={
         <MetaRow
           items={[

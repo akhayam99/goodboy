@@ -278,6 +278,99 @@ describe('useSessionStageInfo pull request freshness', () => {
   });
 });
 
+describe('useSessionStageInfo settled request state', () => {
+  const repoSession = () => {
+    const session = createSession(SESSION_ID);
+    store.state.sessions = [session];
+    setProjectScope();
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+    store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/ws-worktree'] };
+    store.state.githubStatus = { available: true };
+    return session;
+  };
+
+  const githubPr = (state: string) => ({
+    number: 12,
+    title: 'a change',
+    url: 'https://github.test/pr/12',
+    state,
+    mergeable: null,
+    checks: null,
+    baseBranch: 'main',
+    headBranch: 'ak/feat-thing',
+    isDraft: false,
+    reviewDecision: null,
+    body: '',
+    updatedAt: '2026-08-04T10:00:00.000Z',
+  });
+
+  const gitlabMr = (state: string) => ({
+    id: 91,
+    iid: 7,
+    title: 'a change',
+    webUrl: 'https://gitlab.test/mr/7',
+    state,
+    draft: false,
+    sourceBranch: 'ak/feat-thing',
+    targetBranch: 'main',
+    description: '',
+    updatedAt: '2026-08-04T10:00:00.000Z',
+  });
+
+  it('carries a closed github pull request onto the stage, apart from a merged one', () => {
+    const session = repoSession();
+    store.state.sessionGithub = {
+      [SESSION_ID]: {
+        pr: githubPr('closed'),
+        fetchedAt: '2026-08-04T10:00:00.000Z',
+        failedAt: null,
+      },
+    };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.stage).toBe('done');
+    expect(result.current.prState).toBe('closed');
+  });
+
+  it('carries a closed gitlab merge request onto the stage too', () => {
+    const session = repoSession();
+    store.state.sessionGithub = {
+      [SESSION_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
+    };
+    store.state.sessionGitlabMr = { [SESSION_ID]: { mr: gitlabMr('closed') } };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.stage).toBe('done');
+    expect(result.current.prState).toBe('closed');
+  });
+
+  it('carries a merged gitlab merge request as merged, never as closed', () => {
+    const session = repoSession();
+    store.state.sessionGithub = {
+      [SESSION_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
+    };
+    store.state.sessionGitlabMr = { [SESSION_ID]: { mr: gitlabMr('merged') } };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.stage).toBe('done');
+    expect(result.current.prState).toBe('merged');
+  });
+
+  it('leaves the request state null when there is no request at all', () => {
+    const session = repoSession();
+    store.state.sessionGithub = {
+      [SESSION_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
+    };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.prState).toBeNull();
+  });
+});
+
 describe('useSessionPrFetchState', () => {
   const fetchableSession = () => {
     const session = createSession(SESSION_ID);

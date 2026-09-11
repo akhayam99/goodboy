@@ -3,7 +3,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, Session, SessionId, SessionStageInfo } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   state: {} as Record<string, unknown>,
@@ -12,7 +12,12 @@ const h = vi.hoisted(() => ({
     { id: 'lens-agents', label: 'Agents', onClick: vi.fn() },
     { id: 'selected-child', label: 'scout one' },
   ] as ReadonlyArray<{ id: string; label: string; onClick?: () => void }>,
-  stage: { stage: 'running' as const, reason: 'running' },
+  stage: {
+    stage: 'running',
+    reason: 'running',
+    attention: null,
+    prState: null,
+  } as SessionStageInfo,
   currentSession: null as Session | null,
   selectAgent: vi.fn(),
 }));
@@ -158,7 +163,7 @@ const openStepSurface = () => {
 
 beforeEach(() => {
   h.currentSession = session;
-  h.stage.reason = 'running';
+  h.stage = { stage: 'running', reason: 'running', attention: null, prState: null };
   h.crumbs = [
     { id: 'overview', label: 'Overview', onClick: vi.fn() },
     { id: 'lens-agents', label: 'Agents', onClick: vi.fn() },
@@ -182,21 +187,43 @@ describe('SessionCrumbBar', () => {
   });
 
   it('carries the stage label and reason as a tooltip on the crumb dot', () => {
-    h.stage.reason = 'PR needs review';
+    h.stage = { ...h.stage, reason: 'PR needs review' };
     render(<SessionCrumbBar />);
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
-    const anchor = nav.querySelector('[data-tooltip="running · PR needs review"]');
+    const anchor = nav.querySelector('[data-tooltip="running, PR needs review"]');
     expect(anchor).not.toBeNull();
     expect(anchor?.querySelector('.rounded-full')).not.toBeNull();
   });
 
-  it('falls back to the stage label alone when the reason is empty', () => {
-    h.stage.reason = '';
+  it('marks a session whose pull request was closed as abandoned, not integrated', () => {
+    h.stage = { stage: 'done', reason: 'PR #12 closed', attention: null, prState: 'closed' };
     render(<SessionCrumbBar />);
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
-    expect(nav.querySelector('[data-tooltip="running"]')).not.toBeNull();
+    const dot = within(nav).getByRole('img', { name: 'done, PR #12 closed' });
+    expect(dot.className).not.toContain('bg-merged');
+    expect(dot.className).toContain('bg-muted-foreground');
+  });
+
+  it('still marks a merged session as integrated', () => {
+    h.stage = { stage: 'done', reason: 'PR #12 merged', attention: null, prState: 'merged' };
+    render(<SessionCrumbBar />);
+
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(within(nav).getByRole('img', { name: 'done, PR #12 merged' }).className).toContain(
+      'bg-merged',
+    );
+  });
+
+  it('falls back to the stage explanation when the caller has no reason', () => {
+    h.stage = { ...h.stage, reason: '' };
+    render(<SessionCrumbBar />);
+
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(
+      nav.querySelector('[data-tooltip="running, an agent is working right now"]'),
+    ).not.toBeNull();
   });
 
   it('lists the crumbs from useSessionCrumbs in order', () => {
@@ -210,7 +237,9 @@ describe('SessionCrumbBar', () => {
     render(<SessionCrumbBar />);
 
     const selectedCrumb = screen.getByRole('button', { name: /scout one/ });
-    expect(within(selectedCrumb).getByLabelText('completed')).toBeDefined();
+    expect(
+      within(selectedCrumb).getByLabelText('Completed, it ran and finished its work'),
+    ).toBeDefined();
   });
 
   it('counts the queued fix attempts on the active review crumb', () => {

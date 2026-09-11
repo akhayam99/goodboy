@@ -1,3 +1,4 @@
+import { isPullRequestApproved } from './pullRequestGroup';
 import type {
   PullRequestState,
   Session,
@@ -23,10 +24,9 @@ type Params = {
 const isPrLive = (pr: PullRequestState | null): pr is PullRequestState =>
   pr !== null && pr.state !== 'merged' && pr.state !== 'closed';
 
-const isPrApproved = (pr: PullRequestState): boolean =>
-  !pr.isDraft && (pr.state === 'approved' || pr.reviewDecision === 'approved');
+type StageWithoutRequest = Omit<SessionStageInfo, 'prState'>;
 
-export const deriveSessionStage = ({
+const deriveStage = ({
   session,
   pr,
   hasUnread,
@@ -39,7 +39,7 @@ export const deriveSessionStage = ({
   prFetchState = 'known',
   remainingWork = 0,
   remainingReason = null,
-}: Params): SessionStageInfo => {
+}: Params): StageWithoutRequest => {
   const label = requestLabel ?? (pr === null ? '' : `PR #${pr.number}`);
   if (isBranchless) {
     if (session.state.kind === 'running' || session.state.kind === 'starting' || hasRunningAgent) {
@@ -98,7 +98,7 @@ export const deriveSessionStage = ({
       attention: 'open-question',
     };
   }
-  if (isPrLive(pr) && isPrApproved(pr)) {
+  if (isPrLive(pr) && isPullRequestApproved({ pr })) {
     return {
       stage: 'attention',
       reason: `${label} approved, ready to merge`,
@@ -139,3 +139,8 @@ export const deriveSessionStage = ({
   }
   return { stage: 'review', reason: `${label} awaiting review`, attention: null };
 };
+
+export const deriveSessionStage = (params: Params): SessionStageInfo => ({
+  ...deriveStage(params),
+  prState: params.pr?.state ?? null,
+});

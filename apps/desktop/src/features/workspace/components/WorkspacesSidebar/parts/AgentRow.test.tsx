@@ -20,6 +20,8 @@ vi.mock('../../../../../store', () => {
 });
 
 import { AgentRow } from './AgentRow';
+import { describeAgentStatus } from '../../../../session/agent-status';
+import { stateDescription } from '../../../../../shared/utils/statePresentation';
 
 const SID = 'sess-1' as SessionId;
 
@@ -154,11 +156,12 @@ describe('AgentRow', () => {
   });
 
   it.each<AgentStatus>(['pending', 'running', 'completed', 'failed', 'skipped'])(
-    'shows the %s status icon before the agent name',
+    'shows the %s status icon before the agent name, named by what it means',
     (status) => {
       renderRow(false, { status });
+      const presentation = describeAgentStatus({ status });
       expect(screen.getByText('scout one').previousElementSibling?.getAttribute('title')).toBe(
-        status,
+        stateDescription({ presentation }),
       );
       expect(screen.queryByText(status)).toBeNull();
     },

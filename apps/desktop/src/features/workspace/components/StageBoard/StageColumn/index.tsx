@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { cn, Eyebrow, ScrollFade, tintClasses, type Tone } from '@goodboy/ui';
+import { cn, Eyebrow, ScrollFade, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
-import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stage';
+import { describeStageBucket } from '../../../../session/session-stage';
+import {
+  stateDescription,
+  type StatePresentation,
+} from '../../../../../shared/utils/statePresentation';
 import type { MultiSelect } from '../../../../../shared/hooks/useMultiSelect';
 import { StageBoardCard } from '../StageBoardCard';
 import type { BoardNavigation } from '../useBoardNavigation';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 
 export type ColumnSpec =
@@ -14,8 +18,7 @@ export type ColumnSpec =
 
 type ColumnView = {
   readonly key: SessionStage | 'archived';
-  readonly label: string;
-  readonly tone: Tone;
+  readonly presentation: StatePresentation;
   readonly collapsible: boolean;
   readonly archived: boolean;
 };
@@ -24,16 +27,19 @@ const viewFor = (spec: ColumnSpec): ColumnView => {
   if (spec.kind === 'archived') {
     return {
       key: 'archived',
-      label: 'archived',
-      tone: 'neutral',
+      presentation: {
+        label: 'archived',
+        reason: 'put away, still here if you need it back',
+        tone: 'neutral',
+        icon: CONCEPT_ICONS.archive,
+      },
       collapsible: true,
       archived: true,
     };
   }
   return {
     key: spec.stage,
-    label: SESSION_STAGE_META[spec.stage].label,
-    tone: STAGE_TONE[spec.stage],
+    presentation: describeStageBucket({ stage: spec.stage }),
     collapsible: spec.stage === 'done',
     archived: false,
   };
@@ -72,11 +78,14 @@ export const StageColumn = ({
   }, [collapsed, archivedColumn, clearSelection]);
 
   const header = (
-    <span className="flex items-center gap-2">
+    <span
+      className="flex items-center gap-2"
+      title={stateDescription({ presentation: view.presentation })}
+    >
       <Eyebrow
-        label={view.label}
+        label={view.presentation.label}
         muted={empty}
-        className={cn(!empty && tintClasses(view.tone).text)}
+        className={cn(!empty && tintClasses(view.presentation.tone).text)}
       />
       {!empty && (
         <span className="text-2xs tabular-nums text-muted-foreground/60">{sessions.length}</span>

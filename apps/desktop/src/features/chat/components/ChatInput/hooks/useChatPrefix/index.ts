@@ -3,7 +3,6 @@ import { formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, Skill, Workflow, ProjectScript } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
-import { WORKSPACE_FEATURES } from '../../../../../../shared/lib/features';
 import type { ToastKind } from '../../../../../../app/components/Toast';
 import {
   buildAgentActions,
@@ -14,6 +13,13 @@ import {
   type QuickActionItem,
 } from '../../../../../quick-actions';
 import { CHAT_PREFIX_RE } from '../../lib';
+
+const QUICK_EMPTY_HINT: Readonly<Record<string, string>> = {
+  $: 'no scripts yet. add them in workspace settings',
+  '~': 'no workflows yet. create one in workspace settings',
+  '@': 'no agents in this session yet',
+  '/': 'no skills yet. create one in settings',
+};
 
 type Params = {
   readonly session: Session;
@@ -120,7 +126,7 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
         () => void onSpawnAgent(),
       );
     }
-    if (symbol === '/' && WORKSPACE_FEATURES.skills) {
+    if (symbol === '/') {
       return buildSkillActions(workspaceSkills, onPickSkill);
     }
     return null;
@@ -153,14 +159,7 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
   }, [quickItems, parsed.query]);
 
   const popoverOpen = showPopover && inPrefixMode && quickItems !== null;
-  const quickEmptyHint =
-    parsed.prefix?.symbol === '$'
-      ? 'no scripts yet. add them in workspace settings'
-      : parsed.prefix?.symbol === '~'
-        ? 'no workflows yet. create one in workspace settings'
-        : parsed.prefix?.symbol === '@'
-          ? 'no agents in this session yet'
-          : 'no skills yet. create one in settings';
+  const quickEmptyHint = QUICK_EMPTY_HINT[parsed.prefix?.symbol ?? ''] ?? '';
 
   const onQuickActionSelect = useCallback((item: QuickActionItem) => item.perform(), []);
   const dismissPopover = useCallback(() => setShowPopover(false), []);

@@ -25,6 +25,7 @@ const { state, showToast } = vi.hoisted(() => ({
     lensHistory: {} as Record<string, { readonly index: number }>,
     lensGo: vi.fn(),
     plans: [] as ReadonlyArray<unknown>,
+    openQuestions: [] as ReadonlyArray<unknown>,
   },
 }));
 
@@ -32,6 +33,7 @@ vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useSessionPlans: () => state.plans,
+  useSessionOpenQuestions: () => state.openQuestions,
 }));
 
 vi.mock('../../../../app/components/Toast', () => ({

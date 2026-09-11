@@ -1,13 +1,13 @@
 import type {
   Session,
   SessionId,
-  SessionPrGroup,
   SessionSortKey,
   SessionStage,
   SessionViewPrefs,
 } from '@goodboy/types';
 import type { SessionGithubState } from '../../types';
 import { PR_GROUP_ORDER, STAGE_ORDER, type GroupedSessions } from './types';
+import { pullRequestGroupOf } from './pullRequestGroup';
 
 function compareStrLocale(a: string, b: string): number {
   return a.localeCompare(b, undefined, { sensitivity: 'base' });
@@ -32,29 +32,6 @@ function sortSessions(sessions: ReadonlyArray<Session>, sort: SessionSortKey): S
         return diff !== 0 ? diff : a.id.localeCompare(b.id);
       });
   }
-}
-
-function prBucket(github: SessionGithubState | undefined): SessionPrGroup {
-  const pr = github?.pr;
-  if (!pr) {
-    return 'not-open';
-  }
-  if (pr.state === 'closed') {
-    return 'closed';
-  }
-  if (pr.state === 'merged') {
-    return 'merged';
-  }
-  if (pr.state === 'queued') {
-    return 'queued';
-  }
-  if (pr.isDraft) {
-    return 'draft';
-  }
-  if (pr.reviewDecision === 'approved') {
-    return 'reviewed';
-  }
-  return 'reviewable';
 }
 
 function bucketBy<K extends string>(
@@ -93,5 +70,5 @@ export const sortAndGroupSessions = (
     return bucketBy(sorted, STAGE_ORDER, (s) => stageBySession[s.id] ?? 'building');
   }
 
-  return bucketBy(sorted, PR_GROUP_ORDER, (s) => prBucket(githubState[s.id]));
+  return bucketBy(sorted, PR_GROUP_ORDER, (s) => pullRequestGroupOf({ pr: githubState[s.id]?.pr }));
 };

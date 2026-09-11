@@ -1,3 +1,5 @@
+import type { PullRequestStateKind } from './github';
+
 export type SessionSortKey = 'updatedAt' | 'goal' | 'createdAt';
 
 export type SessionGroupKey = 'none' | 'stage' | 'pr';
@@ -29,6 +31,7 @@ export type SessionStageInfo = Readonly<{
   stage: SessionStage;
   reason: string;
   attention: SessionAttentionReason | null;
+  prState: PullRequestStateKind | null;
 }>;
 
 export type SessionPrGroup =

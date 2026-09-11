@@ -491,6 +491,7 @@ describe('markAllAgentsSeen', () => {
       stage: 'attention',
       reason: '1 open question',
       attention: 'open-question',
+      prState: null,
     });
   });
 });

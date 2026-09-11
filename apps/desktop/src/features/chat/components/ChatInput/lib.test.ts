@@ -3,7 +3,9 @@ import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import {
   asEffortLevel,
   asProvider,
+  CHAT_PLACEHOLDER,
   CHAT_PREFIX_RE,
+  CHAT_PREFIXES,
   dataUrlToBase64,
   extFromMime,
   readFileAsDataUrl,
@@ -112,6 +114,15 @@ describe('CHAT_PREFIX_RE', () => {
   it('does not recognise / as a live prefix while WORKSPACE_FEATURES.skills is off', () => {
     expect(WORKSPACE_FEATURES.skills).toBe(false);
     expect(CHAT_PREFIX_RE.test('/cmd')).toBe(false);
+  });
+
+  it('advertises exactly the prefixes it accepts', () => {
+    expect(CHAT_PLACEHOLDER).toBe('Message Claude · $ scripts · ~ workflows · @ agents');
+    for (const prefix of CHAT_PREFIXES) {
+      expect(CHAT_PLACEHOLDER, prefix.symbol).toContain(prefix.symbol);
+      expect(CHAT_PREFIX_RE.test(`${prefix.symbol}x`), prefix.symbol).toBe(true);
+    }
+    expect(CHAT_PLACEHOLDER).not.toContain('skills');
   });
 
   it('tolerates leading whitespace', () => {

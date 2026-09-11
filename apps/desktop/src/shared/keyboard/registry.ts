@@ -159,3 +159,13 @@ export const formatCombo = (combo: string): string => {
 };
 
 export const shortcutGlyphs = (id: ShortcutId): string => formatCombo(SHORTCUTS[id].combo);
+
+type HintParams = {
+  readonly label: string;
+  readonly shortcut: ShortcutId;
+};
+
+export const withShortcutHint = ({ label, shortcut }: HintParams): string => {
+  const glyphs = shortcutGlyphs(shortcut);
+  return glyphs === '' ? label : `${label} (${glyphs})`;
+};

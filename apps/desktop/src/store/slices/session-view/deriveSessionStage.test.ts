@@ -46,7 +46,12 @@ describe('deriveSessionStage pull request freshness', () => {
 
   it('claims no PR only once the fetch has landed', () => {
     const info = deriveSessionStage({ session, pr: null, ...signals, prFetchState: 'known' });
-    expect(info).toEqual({ stage: 'building', reason: 'no PR yet', attention: null });
+    expect(info).toEqual({
+      stage: 'building',
+      reason: 'no PR yet',
+      attention: null,
+      prState: null,
+    });
   });
 
   it('keeps the open-question attention reason', () => {
@@ -60,6 +65,7 @@ describe('deriveSessionStage pull request freshness', () => {
       stage: 'attention',
       reason: '1 open question',
       attention: 'open-question',
+      prState: null,
     });
   });
 
@@ -127,7 +133,12 @@ describe('deriveSessionStage orchestrator decision', () => {
       isDecidingWorkflow: true,
     });
 
-    expect(info).toEqual({ stage: 'running', reason: 'deciding the next step', attention: null });
+    expect(info).toEqual({
+      stage: 'running',
+      reason: 'deciding the next step',
+      attention: null,
+      prState: null,
+    });
   });
 
   it('keeps a branchless session awake for the same decision', () => {
@@ -139,7 +150,12 @@ describe('deriveSessionStage orchestrator decision', () => {
       isDecidingWorkflow: true,
     });
 
-    expect(info).toEqual({ stage: 'running', reason: 'deciding the next step', attention: null });
+    expect(info).toEqual({
+      stage: 'running',
+      reason: 'deciding the next step',
+      attention: null,
+      prState: null,
+    });
   });
 
   it('reads the same session as idle work once the decision has landed', () => {

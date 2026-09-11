@@ -13,7 +13,12 @@ import {
   cn,
 } from '@goodboy/ui';
 import type { Agent, PlanWithCount, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
+import {
+  EMPTY_ARRAY,
+  useAppStore,
+  useSessionOpenQuestions,
+  useSessionPlans,
+} from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { FocusedPane } from '../../../../shared/components/PaneShell/FocusedPane';
@@ -33,6 +38,7 @@ type Props = {
 
 export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
   const plans = useSessionPlans(sessionId);
+  const openQuestionCount = useSessionOpenQuestions(sessionId).length;
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
@@ -135,7 +141,9 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
           <div className={cn('flex shrink-0 flex-col gap-2', PANE_RHYTHM.body)}>
             <HeaderBand
               title={selected.title}
-              meta={<PlanStatusChip status={selected.status} />}
+              meta={
+                <PlanStatusChip status={selected.status} openQuestionCount={openQuestionCount} />
+              }
               subtitle={
                 <PlanProvenance
                   creatorName={selectedAgentName}
@@ -334,7 +342,11 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
         <ul className="flex flex-col gap-2">
           {active.map((plan) => (
             <li key={plan.id}>
-              <PlanRailCard plan={plan} onSelect={() => setFocusedPlanId(sessionId, plan.id)} />
+              <PlanRailCard
+                plan={plan}
+                openQuestionCount={openQuestionCount}
+                onSelect={() => setFocusedPlanId(sessionId, plan.id)}
+              />
             </li>
           ))}
         </ul>
@@ -346,7 +358,11 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
           <ul className="flex flex-col gap-2">
             {visibleConsumed.map((plan) => (
               <li key={plan.id}>
-                <PlanRailCard plan={plan} onSelect={() => setFocusedPlanId(sessionId, plan.id)} />
+                <PlanRailCard
+                  plan={plan}
+                  openQuestionCount={openQuestionCount}
+                  onSelect={() => setFocusedPlanId(sessionId, plan.id)}
+                />
               </li>
             ))}
           </ul>
@@ -356,7 +372,11 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
           <ul className="flex flex-col gap-2">
             {earlierConsumed.map((plan) => (
               <li key={plan.id}>
-                <PlanRailCard plan={plan} onSelect={() => setFocusedPlanId(sessionId, plan.id)} />
+                <PlanRailCard
+                  plan={plan}
+                  openQuestionCount={openQuestionCount}
+                  onSelect={() => setFocusedPlanId(sessionId, plan.id)}
+                />
               </li>
             ))}
           </ul>

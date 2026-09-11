@@ -1,13 +1,14 @@
 import { useMemo } from 'react';
 import { CostBadge } from '../../../../features/providers/components/CostBadge';
-import { pullRequestMeta } from '../../../../features/github/components/PullRequestChip';
+import { PULL_REQUEST_PRESENTATION } from '../../../../shared/pullRequestPresentation';
 import { EMPTY_ARRAY, useAppStore, useSessionCost, useSessionStageInfo } from '../../../../store';
 import type { Session, SessionId } from '@goodboy/types';
 import { PANE_RHYTHM, StatusDot, TERMINAL_DIM, cn, formatUsd } from '@goodboy/ui';
 import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { STAGE_TONE } from '../../../../features/session/session-stage';
+import { describeSessionStage } from '../../../../features/session/session-stage';
+import { stateDescription } from '../../../../shared/utils/statePresentation';
 
 type SelectionClickEvent = {
   readonly shiftKey: boolean;
@@ -33,11 +34,10 @@ export const SessionActivityItem = ({
   onModifierClick,
   onClick,
 }: Props) => {
-  const { stage, reason } = useSessionStageInfo(session);
-  const prState = useAppStore(
-    (state) => state.sessionGithub[session.id as SessionId]?.pr?.state ?? null,
-  );
-  const prMeta = prState != null ? pullRequestMeta({ state: prState }) : null;
+  const stageInfo = useSessionStageInfo(session);
+  const { stage, reason } = stageInfo;
+  const prMeta = stageInfo.prState === null ? null : PULL_REQUEST_PRESENTATION[stageInfo.prState];
+  const stagePresentation = describeSessionStage(stageInfo);
   const externalTasks = useAppStore(
     (state) => state.sessionExternalTasks[session.id as SessionId] ?? EMPTY_ARRAY,
   );
@@ -65,7 +65,7 @@ export const SessionActivityItem = ({
         event.preventDefault();
         onModifierClick(session.id as SessionId, event);
       }}
-      title={`${plainGoal} · ${reason}${prMeta != null ? ` · PR ${prMeta.label}` : ''}${externalTasks.length > 0 ? ` · ${externalTasks.map((task) => task.identifier).join(', ')}` : ''}`}
+      title={`${plainGoal} · ${stateDescription({ presentation: stagePresentation })}${prMeta != null ? ` · PR ${prMeta.label}` : ''}${externalTasks.length > 0 ? ` · ${externalTasks.map((task) => task.identifier).join(', ')}` : ''}`}
       className={cn(
         'flex w-full cursor-pointer items-center gap-2 rounded-md text-left motion-safe:transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
         PANE_RHYTHM.navRail.row,
@@ -75,7 +75,12 @@ export const SessionActivityItem = ({
       )}
     >
       <span className="inline-flex h-5 shrink-0 items-center">
-        <StatusDot tone={STAGE_TONE[stage]} size="sm" pulsing={stage === 'running'} />
+        <StatusDot
+          tone={stagePresentation.tone}
+          size="sm"
+          pulsing={stage === 'running'}
+          ariaLabel={stateDescription({ presentation: stagePresentation })}
+        />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <InlineMarkdown

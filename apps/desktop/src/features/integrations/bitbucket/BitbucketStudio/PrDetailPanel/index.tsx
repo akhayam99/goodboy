@@ -12,14 +12,13 @@ import {
   bitbucketPullRequestFields,
   resolveDetailFields,
 } from '../../../../../shared/detail-fields';
-import { StateBadge } from '@goodboy/ui';
 import { BranchPair } from '@goodboy/ui';
 import { RefreshIconButton } from '@goodboy/ui';
 import { openUrl } from '../../../../../shared/lib/editor';
 import { PrChecks } from '../../../../github/components/GitHubStudio/PrChecks';
 import { bitbucketPrIdentifier } from '../../bitbucketPrIdentifier';
 import { bitbucketPrUrl } from '../../bitbucketPrUrl';
-import { pullRequestStateTone } from '../../stateTone';
+import { BitbucketStateChip } from '../../BitbucketStateChip';
 import type { BitbucketPullRequest, BitbucketRepo } from '../../client';
 import { useAppStore } from '../../../../../store';
 import { PrActionBar } from '../PrActionBar';
@@ -109,11 +108,7 @@ export const PrDetailPanel = ({
             provider="bitbucket"
             identifier={identifier}
             title={pullRequest.title}
-            badge={
-              <StateBadge tone={pullRequestStateTone({ state: pullRequest.state })}>
-                {pullRequest.state.toLowerCase()}
-              </StateBadge>
-            }
+            badge={<BitbucketStateChip state={pullRequest.state} />}
             subtitle={
               <BranchPair
                 headBranch={pullRequest.sourceBranch}
