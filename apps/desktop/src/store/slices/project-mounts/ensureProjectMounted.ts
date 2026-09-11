@@ -1,11 +1,14 @@
-import { listWorktreesForSession, updateSessionWriteDestination } from '@goodboy/db';
+import { listWorktreesForSession } from '@goodboy/db';
 import type { MountId, Session, SessionId, SessionProjectMount } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { AppState } from '../../types';
+import { commitWriteDestination } from './commitWriteDestination';
 import { createProjectMount, withWorktreeRecord } from './createProjectMount';
+import { withMountLock } from './mountLocks';
 import { mountViewPatch } from './mountViewPatch';
+import { recoverSoleMount } from './recoverSoleMount';
 import { selectSelectedMountId } from './selectedMountId';
-import { writeDestinationPatch } from './writeDestinationPatch';
+import { selectWritableMounts } from './selectors';
 import type { EnsureProjectMountedInput, EnsureProjectMountedResult, GetFn, SetFn } from './types';
 
 const inFlight = new Map<string, Promise<EnsureProjectMountedResult>>();
@@ -31,24 +34,21 @@ type DestinationParams = {
   readonly set: SetFn;
   readonly get: GetFn;
   readonly sessionId: SessionId;
-  readonly mount: SessionProjectMount;
 };
 
-const persistFirstDestination = async ({
+const persistSoleDestination = async ({
   set,
   get,
   sessionId,
-  mount,
 }: DestinationParams): Promise<void> => {
   if (selectSelectedMountId({ state: get(), sessionId }) !== null) {
     return;
   }
-  await updateSessionWriteDestination({
-    db: tauriDatabase,
-    sessionId,
-    mountId: mount.mountId,
-  }).catch(() => undefined);
-  set((state) => writeDestinationPatch({ state, sessionId, mount }));
+  const sole = recoverSoleMount({ mounts: selectWritableMounts({ state: get(), sessionId }) });
+  if (sole === null) {
+    return;
+  }
+  await commitWriteDestination({ set, sessionId, mount: sole });
 };
 
 export const ensureProjectMounted = (set: SetFn, get: GetFn) => {
@@ -128,30 +128,32 @@ export const ensureProjectMounted = (set: SetFn, get: GetFn) => {
           ...views,
         };
       });
-      const first = adopted[0];
-      if (first !== undefined) {
-        await persistFirstDestination({ set, get, sessionId, mount: first });
-      }
+      await persistSoleDestination({ set, get, sessionId });
       return {
         status: 'already-mounted',
         mountIds: adopted.map((mount) => mount.mountId),
       };
     }
     const mountId = plannedMountId ?? (crypto.randomUUID() as MountId);
-    const parallelIndex = rows.reduce((max, row) => Math.max(max, row.parallelIndex), 0) + 1;
-    const mount = await createProjectMount({
-      set,
-      get,
-      session,
-      project,
-      mountId,
-      requestId: requestId ?? mountId,
-      reason: trimmedReason,
-      parallelIndex,
-      ...(taskIdentifiers === undefined ? {} : { taskIdentifiers }),
-      ...(slug === undefined ? {} : { slug }),
+    const mount = await withMountLock({
+      key: `session:${sessionId}`,
+      run: async () => {
+        const allocated = await listWorktreesForSession(tauriDatabase, sessionId);
+        return createProjectMount({
+          set,
+          get,
+          session,
+          project,
+          mountId,
+          requestId: requestId ?? mountId,
+          reason: trimmedReason,
+          parallelIndex: allocated.reduce((max, row) => Math.max(max, row.parallelIndex), 0) + 1,
+          ...(taskIdentifiers === undefined ? {} : { taskIdentifiers }),
+          ...(slug === undefined ? {} : { slug }),
+        });
+      },
     });
-    await persistFirstDestination({ set, get, sessionId, mount });
+    await persistSoleDestination({ set, get, sessionId });
     return { status: 'created', createdMountId: mount.mountId, mountIds: [mount.mountId] };
   };
   return async (input: EnsureProjectMountedInput): Promise<EnsureProjectMountedResult> => {
