@@ -191,8 +191,6 @@ export {
   listWorktreesForSessions,
   deleteWorktreesForSession,
   deleteSessionMount,
-  markSessionMountRemoved,
-  markSessionMountRemovedByPath,
   updateSessionWorktreeBranch,
   updateSessionMountBranch,
   updateSessionMountLifecycle,
