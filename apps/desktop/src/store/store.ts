@@ -62,6 +62,7 @@ import type {
   WorkspaceIntegrationProvider,
   MountCleanupProposal,
   MountId,
+  MountTargetSnapshot,
   PrSeries,
   PrSeriesMember,
   PrSeriesView,
@@ -585,6 +586,7 @@ type AppActions = {
     sessionId: SessionId;
     agentId?: AgentId;
     mountId?: MountId;
+    mountTarget?: MountTargetSnapshot;
     content: string;
     attachments?: ReadonlyArray<AttachmentInput>;
     override?: TurnProviderOverride;

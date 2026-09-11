@@ -2409,6 +2409,69 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     expect(acquire).not.toHaveBeenCalled();
   });
 
+  it('refuses a turn whose frozen mount moved on to another revision', async () => {
+    const useAppStore = await seedResolverTurn();
+    const worktreeMod = await import('../features/worktree/worktree');
+    const acquire = worktreeMod.acquireWorktreeWriter as ReturnType<typeof vi.fn>;
+    acquire.mockClear();
+    runTurnSpy.mockReset();
+    runTurnSpy.mockImplementation(() => emptyStream());
+
+    await expect(
+      useAppStore.getState().sendTurn({
+        sessionId: SESSION_ID,
+        agentId: AGENT_A,
+        mountTarget: {
+          mountId: 'mount-fixture-1' as MountId,
+          mountRevision: 4,
+          worktreePath: '/tmp/wt',
+        },
+        content: 'go',
+      }),
+    ).rejects.toThrow('changed before it could start');
+
+    expect(acquire).not.toHaveBeenCalled();
+    expect(runTurnSpy).not.toHaveBeenCalled();
+  });
+
+  it('runs a frozen turn in the worktree it named while another mount is selected', async () => {
+    const useAppStore = await seedResolverTurn();
+    const worktreeMod = await import('../features/worktree/worktree');
+    const acquire = worktreeMod.acquireWorktreeWriter as ReturnType<typeof vi.fn>;
+    acquire.mockClear();
+    runTurnSpy.mockReset();
+    runTurnSpy.mockImplementation(() => emptyStream());
+    const mounts = useAppStore.getState().sessionProjectMounts[SESSION_ID] ?? [];
+    useAppStore.setState({
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          ...mounts,
+          {
+            ...(mounts[0] as (typeof mounts)[number]),
+            mountId: 'mount-fixture-sibling' as MountId,
+            worktreePath: '/tmp/wt-sibling',
+            branch: 'goodboy/rt-sibling',
+          },
+        ],
+      },
+      sessionActiveMount: { [SESSION_ID]: 'mount-fixture-sibling' as MountId },
+    });
+
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      agentId: AGENT_A,
+      mountTarget: {
+        mountId: 'mount-fixture-1' as MountId,
+        mountRevision: 0,
+        worktreePath: '/tmp/wt',
+      },
+      content: 'go',
+    });
+
+    expect(acquire).toHaveBeenCalledWith({ path: '/tmp/wt', holder: AGENT_A });
+    expect(acquire).not.toHaveBeenCalledWith(expect.objectContaining({ path: '/tmp/wt-sibling' }));
+  });
+
   it('refuses a resolver turn whose agent is on neither the session nor the database', async () => {
     const useAppStore = await seedResolverTurn();
     const worktreeMod = await import('../features/worktree/worktree');

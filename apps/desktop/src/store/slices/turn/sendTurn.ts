@@ -33,6 +33,7 @@ import type {
   MessageAttachment,
   MessageId,
   MountId,
+  MountTargetSnapshot,
   PermissionRule,
   ProviderId,
   ProviderRun,
@@ -152,6 +153,7 @@ type Input = {
   sessionId: SessionId;
   agentId?: AgentId;
   mountId?: MountId;
+  mountTarget?: MountTargetSnapshot;
   content: string;
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;
@@ -188,7 +190,18 @@ type TurnLease = {
 
 export const sendTurn = (set: SetFn, get: GetFn) => {
   const runOnce = async (
-    { sessionId, agentId, mountId, content, attachments, override, force, origin, retry }: Input,
+    {
+      sessionId,
+      agentId,
+      mountId,
+      mountTarget,
+      content,
+      attachments,
+      override,
+      force,
+      origin,
+      retry,
+    }: Input,
     lease: TurnLease,
   ): Promise<SendTurnResult> => {
     const before = get();
@@ -209,10 +222,21 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       (project) => project.workspaceId === session.workspaceId,
     );
     const writableMounts = selectWritableMounts({ state: before, sessionId });
+    const aimedMountId = mountTarget?.mountId ?? mountId;
     const aimedMount =
-      mountId === undefined ? null : selectMountById({ state: before, sessionId, mountId });
-    if (mountId !== undefined && aimedMount === null) {
+      aimedMountId === undefined
+        ? null
+        : selectMountById({ state: before, sessionId, mountId: aimedMountId });
+    if (aimedMountId !== undefined && aimedMount === null) {
       throw new Error('The branch mount this turn was aimed at is no longer in the session.');
+    }
+    const isFrozenTargetHeld =
+      mountTarget === undefined ||
+      (aimedMount !== null &&
+        aimedMount.worktreePath === mountTarget.worktreePath &&
+        aimedMount.revision === mountTarget.mountRevision);
+    if (!isFrozenTargetHeld) {
+      throw new Error('the branch mount this turn was queued on changed before it could start');
     }
     const activeMount = aimedMount ?? selectActiveMount({ state: before, sessionId }) ?? undefined;
     if (activeMount === undefined && writableMounts.length > 0) {
