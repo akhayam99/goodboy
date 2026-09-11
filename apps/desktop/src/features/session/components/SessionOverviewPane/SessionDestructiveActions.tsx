@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Session } from '@goodboy/types';
 import { cn, IconButton, tintClasses } from '@goodboy/ui';
 import { withShortcutHint } from '../../../../shared/keyboard/registry';
-import { useSessionArchive } from '../../../../shared/hooks/useSessionArchive';
+import { useSessionArchive } from '../../hooks/useSessionArchive';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { DeleteSessionConfirm } from '../DeleteSessionConfirm';
 

@@ -25,7 +25,7 @@ vi.mock('../../../../store', () => ({
   useProjectFilteredSessions: ({ sessions }: { sessions: ReadonlyArray<Session> }) => sessions,
 }));
 
-vi.mock('../../../../shared/hooks/useSessionArchive', () => ({
+vi.mock('../../../session/hooks/useSessionArchive', () => ({
   useSessionArchive: () => ({
     archive: vi.fn(async () => undefined),
     restore: vi.fn(async () => undefined),

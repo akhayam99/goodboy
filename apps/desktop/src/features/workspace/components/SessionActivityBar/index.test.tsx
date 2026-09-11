@@ -28,7 +28,7 @@ const { state, viewPrefs, stageInfo } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../shared/hooks/useSessionArchive', () => ({
+vi.mock('../../../session/hooks/useSessionArchive', () => ({
   useSessionArchive: () => ({
     archive: async ({ sessions }: { sessions: ReadonlyArray<Session> }) =>
       state.bulkArchiveTask(sessions.map((session) => session.id)),

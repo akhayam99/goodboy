@@ -1,7 +1,11 @@
 import { useCallback, useMemo } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../store';
-import { useToast } from '../../../app/components/Toast';
+import { useAppStore } from '../../../../store';
+import { useToast } from '../../../../app/components/Toast';
+import {
+  SESSION_ARCHIVED_TITLE,
+  SESSION_RESTORED_TITLE,
+} from '../../timeline/sessionEventPresentation';
 
 type SessionsParams = {
   readonly sessions: ReadonlyArray<Session>;
@@ -21,10 +25,10 @@ type CountParams = {
 };
 
 export const archivedTitle = ({ count }: CountParams): string =>
-  count === 1 ? 'Session archived' : `${count} sessions archived`;
+  count === 1 ? SESSION_ARCHIVED_TITLE : `${count} sessions archived`;
 
 export const restoredTitle = ({ count }: CountParams): string =>
-  count === 1 ? 'Session restored' : `${count} sessions restored`;
+  count === 1 ? SESSION_RESTORED_TITLE : `${count} sessions restored`;
 
 export const useSessionArchive = (): SessionArchive => {
   const bulkArchiveTask = useAppStore((s) => s.bulkArchiveTask);

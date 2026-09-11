@@ -25,7 +25,7 @@ import { DeleteSessionConfirm } from '../../../session/components/DeleteSessionC
 import { BulkActionBar } from '../BulkActionBar';
 import { useProjectGitStatuses } from '../../hooks/useProjectGitStatuses';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
-import { useSessionArchive } from '../../../../shared/hooks/useSessionArchive';
+import { useSessionArchive } from '../../../session/hooks/useSessionArchive';
 import { ProjectsStep } from '../../../onboarding/OnboardingWizard/steps/ProjectsStep';
 import { StageColumn } from './StageColumn';
 import { useBoardNavigation } from './useBoardNavigation';

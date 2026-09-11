@@ -65,7 +65,7 @@ vi.mock('../features/session/components/DeleteSessionConfirm', () => ({
     return <div data-testid="delete-confirm">{session.id}</div>;
   },
 }));
-vi.mock('../shared/hooks/useSessionArchive', () => ({
+vi.mock('../features/session/hooks/useSessionArchive', () => ({
   useSessionArchive: () => ({
     archive: async ({ sessions }: { sessions: ReadonlyArray<{ id: string }> }) => {
       for (const session of sessions) {

@@ -9,7 +9,7 @@ const { archiveMock, restoreMock } = vi.hoisted(() => ({
   restoreMock: vi.fn(async () => undefined),
 }));
 
-vi.mock('../../../../shared/hooks/useSessionArchive', () => ({
+vi.mock('../../hooks/useSessionArchive', () => ({
   useSessionArchive: () => ({ archive: archiveMock, restore: restoreMock }),
 }));
 

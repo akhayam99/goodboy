@@ -20,6 +20,9 @@ export const setSessionActiveMount = (set: SetFn, get: GetFn) => {
       });
     }
     const projectId = mount.projectId;
+    const previousMountId = get().sessionActiveMount[sessionId] ?? null;
+    const projectName =
+      get().projects.find((candidate) => candidate.id === projectId)?.name ?? mount.mountName;
     set((state) => {
       const next = {
         ...state,
@@ -47,5 +50,13 @@ export const setSessionActiveMount = (set: SetFn, get: GetFn) => {
     }
     await updateSessionActiveProject({ db: tauriDatabase, id: sessionId, projectId });
     await updateSessionActiveMount({ db: tauriDatabase, sessionId, mountId });
+    if (previousMountId === mountId) {
+      return;
+    }
+    await get().recordSessionEvent({
+      sessionId,
+      kind: 'write_destination_changed',
+      payload: { mountId, projectId, projectName, branch: mount.branch },
+    });
   };
 };

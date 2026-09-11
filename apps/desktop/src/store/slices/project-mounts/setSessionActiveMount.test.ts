@@ -32,7 +32,10 @@ const mount = ({ mountId, branch }: { readonly mountId: MountId; readonly branch
 const harness = ({ cachedPrs }: { readonly cachedPrs: ReadonlyArray<{ number: number }> }) => {
   const refreshSessionPr = vi.fn(async () => undefined);
   const refreshSessionPrDetail = vi.fn(async () => undefined);
+  const recordSessionEvent = vi.fn(async () => undefined);
   const state = {
+    projects: [{ id: PROJECT_ID, name: 'app-web' }],
+    recordSessionEvent,
     sessions: [{ id: SESSION_ID, activeMountId: FIRST_MOUNT }],
     sessionMounts: {},
     sessionActiveMount: { [SESSION_ID]: FIRST_MOUNT },
@@ -56,7 +59,7 @@ const harness = ({ cachedPrs }: { readonly cachedPrs: ReadonlyArray<{ number: nu
     Object.assign(state, updater(state));
   });
   const get = vi.fn(() => state);
-  return { state, set, get, refreshSessionPr };
+  return { state, set, get, refreshSessionPr, recordSessionEvent };
 };
 
 describe('setSessionActiveMount', () => {
@@ -109,5 +112,36 @@ describe('setSessionActiveMount', () => {
       }),
     ).rejects.toThrow(/not available/);
     expect(state.sessionActiveMount[SESSION_ID]).toBe(FIRST_MOUNT);
+  });
+
+  it('records the new write destination on the session timeline', async () => {
+    const { set, get, recordSessionEvent } = harness({ cachedPrs: [] });
+
+    await setSessionActiveMount(
+      set as never,
+      get as never,
+    )({ sessionId: SESSION_ID, mountId: SECOND_MOUNT });
+
+    expect(recordSessionEvent).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      kind: 'write_destination_changed',
+      payload: {
+        mountId: SECOND_MOUNT,
+        projectId: PROJECT_ID,
+        projectName: 'app-web',
+        branch: 'ak/two',
+      },
+    });
+  });
+
+  it('records nothing when the destination already was the chosen mount', async () => {
+    const { set, get, recordSessionEvent } = harness({ cachedPrs: [] });
+
+    await setSessionActiveMount(
+      set as never,
+      get as never,
+    )({ sessionId: SESSION_ID, mountId: FIRST_MOUNT });
+
+    expect(recordSessionEvent).not.toHaveBeenCalled();
   });
 });

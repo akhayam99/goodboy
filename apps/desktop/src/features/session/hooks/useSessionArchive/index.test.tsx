@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { Session } from '@goodboy/types';
+import type { Session, SessionEvent, SessionEventKind } from '@goodboy/types';
 
 const { state, toastMock } = vi.hoisted(() => ({
   state: {
@@ -12,14 +12,15 @@ const { state, toastMock } = vi.hoisted(() => ({
   toastMock: vi.fn(),
 }));
 
-vi.mock('../../../store', () => ({
+vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
-vi.mock('../../../app/components/Toast', () => ({
+vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
 }));
 
+import { sessionEventTitle } from '../../timeline/sessionEventPresentation';
 import { useSessionArchive } from './index';
 
 const session = (id: string): Session => ({ id, goal: id }) as unknown as Session;
@@ -94,5 +95,24 @@ describe('useSessionArchive', () => {
 
     await waitFor(() => expect(state.bulkUnarchiveTask).toHaveBeenCalledWith(['s-1']));
     expect(toastMock.mock.calls[0]?.[2].title).toBe('Session restored');
+  });
+
+  it('titles the toast with the words the timeline row uses for the same fact', async () => {
+    const titleOf = (kind: SessionEventKind): string =>
+      sessionEventTitle({
+        event: { kind, payload: null } as unknown as SessionEvent,
+      });
+
+    render(<Harness sessions={[session('s-1')]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'archive' }));
+    await waitFor(() => expect(toastMock).toHaveBeenCalled());
+
+    expect(toastMock.mock.calls[0]?.[2].title).toBe(titleOf('session_archived'));
+
+    toastMock.mockReset();
+    fireEvent.click(screen.getByRole('button', { name: 'restore' }));
+    await waitFor(() => expect(toastMock).toHaveBeenCalled());
+
+    expect(toastMock.mock.calls[0]?.[2].title).toBe(titleOf('session_restored'));
   });
 });

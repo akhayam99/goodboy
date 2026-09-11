@@ -10,6 +10,10 @@ import {
 
 export type SessionEventEmphasis = 'plain' | 'muted' | 'success' | 'merged' | 'danger';
 
+export const SESSION_ARCHIVED_TITLE = 'Session archived';
+
+export const SESSION_RESTORED_TITLE = 'Session restored';
+
 type PullRequestEventKind = Extract<SessionEventKind, `pr_${string}`>;
 
 const PR_EVENT_STATE = {
@@ -299,9 +303,9 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
       ];
     }
     case 'session_archived':
-      return [{ kind: 'text', text: 'Session archived' }];
+      return [{ kind: 'text', text: SESSION_ARCHIVED_TITLE }];
     case 'session_restored':
-      return [{ kind: 'text', text: 'Session restored' }];
+      return [{ kind: 'text', text: SESSION_RESTORED_TITLE }];
     case 'write_destination_changed': {
       const branch = payload?.branch ?? '';
       const onBranch: ReadonlyArray<TimelineLabelSegment> =

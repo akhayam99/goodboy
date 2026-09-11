@@ -39,6 +39,8 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
       throw err;
     }
 
+    await get().recordSessionEvent({ sessionId, kind: 'session_archived' });
+
     await get()
       .cleanupSessionMounts({
         sessionId,
