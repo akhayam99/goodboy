@@ -4,7 +4,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn, deleteAttachment } from '../../../features/chat/turn';
 import { abandonWorktreeWriter } from '../../../features/worktree/worktree';
 import { invokeAgentList } from '../../../features/workflows/workflows';
-import { agentWritePath } from '../resolve/agentWritePath';
+import { agentDestinationPath, agentWritePaths } from '../resolve/agentWritePath';
 import { recoverSoleMount } from '../project-mounts/recoverSoleMount';
 import { selectWritableMounts } from '../project-mounts/selectors';
 import { cancelledRunIds, deriveSessionState } from '../../session-mutators';
@@ -20,13 +20,12 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
       await cancelTurn(agentRunId).catch(() => undefined);
     }
 
-    const writerPath = await agentWritePath({ get, sessionId, agentId });
-    if (writerPath !== null) {
-      await abandonWorktreeWriter({ path: writerPath, holder: agentId });
+    for (const path of await agentWritePaths({ get, sessionId, agentId })) {
+      await abandonWorktreeWriter({ path, holder: agentId });
     }
 
     const sole = recoverSoleMount({ mounts: selectWritableMounts({ state: get(), sessionId }) });
-    const worktree = writerPath ?? sole?.worktreePath ?? null;
+    const worktree = agentDestinationPath({ get, agentId }) ?? sole?.worktreePath ?? null;
     if (worktree !== null) {
       for (const att of get().agentAttachments[agentId] ?? []) {
         await deleteAttachment(worktree, att.relPath).catch(() => undefined);

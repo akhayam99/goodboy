@@ -15,8 +15,8 @@ const hoisted = vi.hoisted(() => ({
   invokeAgentList: vi.fn(async () => [] as ReadonlyArray<Agent>),
   updateSessionState: vi.fn(async () => undefined),
   listResolveAttempts: vi.fn(async () => [] as ReadonlyArray<ResolveAttempt>),
-  abandonWorktreeWriter: vi.fn(async () => ({
-    path: '/repo/one',
+  abandonWorktreeWriter: vi.fn(async ({ path }: { readonly path: string }) => ({
+    path,
     holder: null,
     token: null,
     runId: null,
@@ -184,6 +184,30 @@ describe('forceCloseResolver', () => {
       holder: STUCK,
     });
     expect(state.drainResolveQueue).toHaveBeenCalledWith({ sessionId: SID });
+  });
+
+  it('frees every worktree the resolver still holds', async () => {
+    const { get, set } = makeStore();
+    hoisted.listResolveAttempts.mockResolvedValue([
+      heldAttempt,
+      {
+        ...heldAttempt,
+        id: 'attempt-2',
+        phase: 'queued',
+        createdAt: 2,
+        mountTarget: { mountId: MOUNT_THREE, mountRevision: 2, worktreePath: PATH_THREE },
+      },
+    ]);
+    hoisted.invokeAgentList.mockResolvedValue([
+      resolver({ id: STUCK, status: 'skipped', ordinal: 0 }),
+    ]);
+
+    await forceCloseResolver(set, get)(SID, STUCK);
+
+    expect(hoisted.abandonWorktreeWriter.mock.calls.map(([args]) => args.path).sort()).toEqual([
+      PATH_THREE,
+      PATH_TWO,
+    ]);
   });
 
   it('frees nothing when the resolver never named a worktree', async () => {

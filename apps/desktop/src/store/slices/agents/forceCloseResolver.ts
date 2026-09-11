@@ -3,7 +3,7 @@ import { updateSessionState } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { abandonWorktreeWriter } from '../../../features/worktree/worktree';
-import { agentWritePath } from '../resolve/agentWritePath';
+import { agentWritePaths } from '../resolve/agentWritePath';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
 import type { GetFn, SetFn } from './types';
@@ -29,9 +29,8 @@ export const forceCloseResolver = (set: SetFn, get: GetFn) => {
     const idleState: TurnState = { kind: 'idle', lastActivityAt: now };
     const derived = applyAgentTurnState(set, sessionId, agentId, idleState, now);
     await updateSessionState(tauriDatabase, sessionId, derived, now).catch(() => undefined);
-    const worktreePath = await agentWritePath({ get, sessionId, agentId });
-    if (worktreePath !== null) {
-      await abandonWorktreeWriter({ path: worktreePath, holder: agentId });
+    for (const path of await agentWritePaths({ get, sessionId, agentId })) {
+      await abandonWorktreeWriter({ path, holder: agentId });
     }
     await get().drainResolveQueue({ sessionId });
   };

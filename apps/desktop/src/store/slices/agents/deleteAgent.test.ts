@@ -62,9 +62,21 @@ const resolver = (over: Partial<Agent> & { id: AgentId }): Agent => ({
   ...over,
 });
 
-const attemptOn = ({ mountId, worktreePath }: { mountId: MountId; worktreePath: string }) =>
+const attemptOn = ({
+  mountId,
+  worktreePath,
+  id = 'attempt-1',
+  phase = 'running',
+  createdAt = 1,
+}: {
+  mountId: MountId;
+  worktreePath: string;
+  id?: string;
+  phase?: ResolveAttempt['phase'];
+  createdAt?: number;
+}) =>
   ({
-    id: 'attempt-1',
+    id,
     sessionId: SID,
     agentId: DOOMED,
     prNumber: 12,
@@ -73,12 +85,12 @@ const attemptOn = ({ mountId, worktreePath }: { mountId: MountId; worktreePath: 
     model: 'claude-opus-5',
     effort: null,
     instructions: 'fix one',
-    phase: 'running',
+    phase,
     mountTarget: { mountId, mountRevision: 2, worktreePath },
     startedAt: 1,
     endedAt: null,
     error: null,
-    createdAt: 1,
+    createdAt,
   }) satisfies ResolveAttempt;
 
 const mount = ({ mountId, worktreePath }: { mountId: MountId; worktreePath: string }) => ({
@@ -178,6 +190,28 @@ describe('deleteAgent', () => {
     await deleteAgent(set, get)(SID, DOOMED);
 
     expect(hoisted.abandonWorktreeWriter).toHaveBeenCalledWith({ path: PATH_TWO, holder: DOOMED });
+  });
+
+  it('gives back every worktree the agent still holds', async () => {
+    const { get, set } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([
+      attemptOn({ mountId: MOUNT_TWO, worktreePath: PATH_TWO, id: 'older', phase: 'waiting' }),
+      attemptOn({
+        mountId: MOUNT_THREE,
+        worktreePath: PATH_THREE,
+        id: 'newer',
+        phase: 'queued',
+        createdAt: 2,
+      }),
+    ]);
+
+    await deleteAgent(set, get)(SID, DOOMED);
+
+    expect(hoisted.abandonWorktreeWriter.mock.calls.map(([args]) => args.path).sort()).toEqual([
+      PATH_THREE,
+      PATH_TWO,
+    ]);
   });
 
   it('touches no worktree when the agent never named one', async () => {
