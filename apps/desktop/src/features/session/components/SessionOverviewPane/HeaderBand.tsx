@@ -5,9 +5,11 @@ import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
+import { sessionTitle } from '../../sessionTitle';
 import { SessionDestructiveActions } from './SessionDestructiveActions';
 import { LinkIssueAction } from './LinkIssueAction';
 import { ContextChip } from './ContextChip';
+import { ContextDigest } from './ContextDigest';
 import { LinkedWorkChips } from './LinkedWorkChips';
 import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 import { ProjectMountRows } from './ProjectMountRows';
@@ -51,7 +53,7 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
     titleFieldRef.current?.querySelector('input')?.select();
   }, [rename.editing]);
 
-  const goalText = session.goal === '' ? 'Untitled session' : session.goal;
+  const titleText = sessionTitle({ session });
 
   return (
     <div className={PANE_RHYTHM.stack}>
@@ -69,9 +71,12 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
                 aria-label="Session title"
                 className="text-xl font-semibold"
               />
-              {rename.error != null ? (
-                <span className="text-2xs text-danger">{rename.error}</span>
-              ) : null}
+              <div className="flex items-center justify-between gap-2 text-2xs">
+                <span className="min-w-0 truncate text-danger">{rename.error ?? ''}</span>
+                <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
+                  {rename.draft.length}/{rename.maxLength}
+                </span>
+              </div>
             </div>
           ) : (
             <Tooltip content="Click to rename">
@@ -88,7 +93,7 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
                 }}
                 className="min-w-0 flex-1 cursor-text truncate rounded-md text-xl font-semibold leading-snug text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
               >
-                <InlineMarkdown text={goalText} />
+                <InlineMarkdown text={titleText} />
               </h1>
             </Tooltip>
           )}
@@ -110,6 +115,7 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
       <Divider />
       <ProjectMountRows session={session} onSelectLens={onSelectLens} />
       {goal}
+      <ContextDigest sessionId={sessionId} onSelectLens={onSelectLens} />
     </div>
   );
 };
