@@ -404,7 +404,7 @@ describe('cleaning the mounts of a session', () => {
     expect(h.removeWorktreeChecked).not.toHaveBeenCalled();
     expect(outcomes[0]?.decision).toMatchObject({
       kind: 'kept',
-      reason: 'an agent is still running in this session',
+      reason: 'an agent is still writing to this mount',
     });
   });
 });

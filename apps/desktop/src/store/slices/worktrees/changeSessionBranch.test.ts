@@ -182,7 +182,7 @@ describe('changeSessionBranch', () => {
     );
   });
 
-  it('writes the switch to the session trace with both branch names', async () => {
+  it('writes the switch to the session trace with the mount and both branch names', async () => {
     const state = makeState();
 
     await runSwitch(state);
@@ -190,7 +190,7 @@ describe('changeSessionBranch', () => {
     expect(state['recordSessionEvent']).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       kind: 'branch_switched',
-      payload: { from: 'ak/outgoing', to: 'ak/incoming' },
+      payload: { mountId: MOUNT_ID, from: 'ak/outgoing', to: 'ak/incoming' },
     });
   });
 

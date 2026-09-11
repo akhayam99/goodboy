@@ -151,6 +151,7 @@ export const unmountMount = (set: SetFn, get: GetFn) => {
           sessionId,
           kind: 'project_detached',
           payload: {
+            mountId,
             projectId: view.projectId,
             projectName: view.mountName,
             branch: view.branch,
