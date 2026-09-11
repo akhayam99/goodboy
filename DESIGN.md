@@ -128,6 +128,52 @@ The test is what the user came for, not which component renders it:
 Bounded scroll regions on those are fine; truncation is not. A new surface
 qualifies by answering the why column, not by being added to this list.
 
+## The contract of an action
+
+Eight rules, each one written because a shipped defect broke it. They govern
+what a surface promises and what it then does. A screen that reads well and
+lies about its effect is a worse defect than one that reads badly.
+
+- **Show the destination beside anything that writes.** A surface that sends a
+  turn, runs a command or edits a file names where it will write, resolved at
+  send time, not at render time. That is the project and its worktree and
+  branch where one exists, and the concrete path where one does not: a
+  branchless folder project, or the scratch folder of a session with no project
+  yet. Where the destination is shared by the whole session, changing it
+  declares that scope. A control that moves the destination as a side effect of
+  consulting something, opening a terminal, a popover or a diff, is a defect.
+- **One term per concept, one canonical home per object.** A concept keeps a
+  single name across chat, board, sidebar and docs. An object has one surface
+  that manages it; every other surface links there rather than growing a second
+  set of actions. Two surfaces with different capabilities over the same object
+  are the defect, not the convenience.
+- **The user's name survives.** A title the user typed is never overwritten by
+  a link, an import or a heuristic. Automatic naming proposes and waits; it
+  does not apply and inform.
+- **Every state carries its object and its reason.** A status word alone is not
+  a state. Distinguish unknown from clean, local from published, closed from
+  merged, stopped from failed. Unknown is never drawn as the good case. A state
+  derived in more than one place will eventually disagree with itself: derive
+  it once and pass it, and make the field impossible to omit.
+- **Teach the shortcut where the control is.** A chord belongs in the control's
+  own tooltip or menu row, not only in a settings page. Advertise only what is
+  actually reachable: a prefix, command or destination that a flag disables is
+  removed from the placeholder and the palette, not merely from the handler.
+- **Start, then activity, then outcome.** Show that the work began, name the
+  phase while it runs, and end on a result. Only observable phases are shown.
+  No invented percentages, no fabricated estimates. A failure keeps the input,
+  states the cause, offers the technical detail behind a disclosure, and leaves
+  a way to retry.
+- **Reversible acts immediately, definitive asks first.** Archiving and its
+  kind happen at once with an undo. Anything that destroys data for good, or
+  that acts on a remote provider, confirms inline and states precisely what is
+  lost or sent, including what stays on disk. The same action behaves the same
+  way from every entry point.
+- **Durable changes land in the timeline.** A change of destination, an archive
+  or restore, a discard, an answer, a publication outcome: each is recorded and
+  linked to the object it concerns. Transcript traffic is not. A fact does not
+  arrive twice saying two different things.
+
 ## Color & theme
 
 - **Dark by default**, light fully supported. No system-preference state: the
