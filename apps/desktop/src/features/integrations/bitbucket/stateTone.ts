@@ -10,7 +10,7 @@ export const pullRequestStateTone = ({ state }: Params): StateTone => {
     case 'OPEN':
       return 'success';
     case 'MERGED':
-      return 'info';
+      return 'merged';
     case 'DECLINED':
       return 'danger';
     case 'SUPERSEDED':

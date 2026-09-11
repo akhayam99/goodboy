@@ -1,3 +1,4 @@
+import { isPullRequestApproved } from './pullRequestGroup';
 import type {
   PullRequestState,
   Session,
@@ -22,9 +23,6 @@ type Params = {
 
 const isPrLive = (pr: PullRequestState | null): pr is PullRequestState =>
   pr !== null && pr.state !== 'merged' && pr.state !== 'closed';
-
-const isPrApproved = (pr: PullRequestState): boolean =>
-  !pr.isDraft && (pr.state === 'approved' || pr.reviewDecision === 'approved');
 
 export const deriveSessionStage = ({
   session,
@@ -98,7 +96,7 @@ export const deriveSessionStage = ({
       attention: 'open-question',
     };
   }
-  if (isPrLive(pr) && isPrApproved(pr)) {
+  if (isPrLive(pr) && isPullRequestApproved({ pr })) {
     return {
       stage: 'attention',
       reason: `${label} approved, ready to merge`,

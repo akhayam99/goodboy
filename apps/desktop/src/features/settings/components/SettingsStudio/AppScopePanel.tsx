@@ -27,11 +27,16 @@ import { REPORT_ISSUE_STUDIO_EVENT } from '../../reportIssueStudioEvent';
 import { ShortcutsSection } from './ShortcutsSection';
 import { StorageSection } from './StorageSection';
 import { useSectionAnchors } from '../../hooks/useSectionAnchors';
+import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 
 type Props = {
   readonly initialSection?: string;
   readonly requestClose: () => void;
 };
+
+const CONFIG_BACKUP_HINT = `Export or import workspaces, ${
+  WORKSPACE_FEATURES.skills ? 'skills, ' : ''
+}workflows, rules, and settings as JSON.`;
 
 export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
   const theme = useThemeStore((s) => s.theme);
@@ -185,10 +190,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
           <Divider />
 
           <section id="advanced" ref={anchor({ id: 'advanced' })} className="flex flex-col gap-4">
-            <SectionHeader
-              label="Config backup"
-              hint="Export or import workspaces, skills, workflows, rules, and settings as JSON."
-            />
+            <SectionHeader label="Config backup" hint={CONFIG_BACKUP_HINT} />
             <FieldRow label="Backup file" help="API keys are never included.">
               <span className="flex items-center gap-2">
                 <Button

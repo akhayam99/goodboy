@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from '../cn';
 import { tintClasses, type Tone } from '../tint';
 
-type StateTone = Extract<Tone, 'neutral' | 'success' | 'danger' | 'info' | 'warning'>;
+type StateTone = Extract<Tone, 'neutral' | 'success' | 'danger' | 'info' | 'warning' | 'merged'>;
 
 type Props = {
   readonly tone?: StateTone;

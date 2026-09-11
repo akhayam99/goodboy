@@ -15,7 +15,11 @@ import {
   inferAgentKindFromName,
   type AgentKind,
 } from '../../agent-kind';
-import { PREFIXES, parseQuery, type QuickActionGroup } from '../../../quick-actions';
+import { parseQuery } from '../../../quick-actions';
+import { PALETTE_PREFIXES, palettePlaceholder, type PaletteGroup } from './palettePrefixes';
+import { lensDestinations } from '../../lens-destinations';
+import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
+import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import { REPORT_ISSUE_STUDIO_EVENT } from '../../../settings/reportIssueStudioEvent';
 import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -23,8 +27,6 @@ import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdow
 import { useThemeStore } from '../../../../shared/lib/theme';
 import { linkedProjectsLabel } from '../../../workspace/linkedProjectsLabel';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-
-type PaletteGroup = Exclude<QuickActionGroup, 'skill' | 'workflow'>;
 
 type PaletteItem = {
   readonly id: string;
@@ -44,8 +46,6 @@ const GROUP_LABELS: Record<PaletteGroup, string> = {
   action: 'Actions',
   help: 'Help',
 };
-
-const PALETTE_PREFIXES = PREFIXES.filter((p) => p.group !== 'skill' && p.group !== 'workflow');
 
 const GROUP_ORDER: ReadonlyArray<PaletteGroup> = [
   'agent',
@@ -112,6 +112,11 @@ export const CommandPalette = ({
     currentSession ? (s.sessionPhaseRuns[currentSession.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<Agent>;
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const isBranchless = useAppStore((s) =>
+    s.currentSessionId == null
+      ? false
+      : isBranchlessSession({ branch: s.sessionBranches[s.currentSessionId] }),
+  );
   const runScript = useAppStore((s) => s.runScript);
   const { showToast } = useToast();
   const theme = useThemeStore((s) => s.theme);
@@ -160,34 +165,15 @@ export const CommandPalette = ({
         });
       }
       const sessionId = currentSession.id as SessionId;
-      out.push({
-        id: 'action:context',
-        label: 'Open context',
-        sublabel: shortcutGlyphs('lens.context'),
-        group: 'action',
-        onSelect: () => setActiveLens(sessionId, 'context'),
-      });
-      out.push({
-        id: 'action:context-goal',
-        label: 'Open context: Goal',
-        sublabel: shortcutGlyphs('lens.goal'),
-        group: 'action',
-        onSelect: () => setActiveLens(sessionId, 'goal'),
-      });
-      out.push({
-        id: 'action:context-decisions',
-        label: 'Open context: Decisions',
-        sublabel: shortcutGlyphs('lens.decisions'),
-        group: 'action',
-        onSelect: () => setActiveLens(sessionId, 'decisions'),
-      });
-      out.push({
-        id: 'action:context-summary',
-        label: 'Open context: Session summary',
-        sublabel: shortcutGlyphs('lens.summary'),
-        group: 'action',
-        onSelect: () => setActiveLens(sessionId, 'last_output_summary'),
-      });
+      for (const destination of lensDestinations({ isBranchless })) {
+        out.push({
+          id: `action:lens:${destination.lens ?? 'overview'}`,
+          label: `Open ${SHORTCUTS[destination.shortcut].label}`,
+          sublabel: shortcutGlyphs(destination.shortcut),
+          group: 'action',
+          onSelect: () => setActiveLens(sessionId, destination.lens),
+        });
+      }
     }
 
     for (const sc of scripts) {
@@ -284,6 +270,7 @@ export const CommandPalette = ({
     runScript,
     showToast,
     agentKindOverride,
+    isBranchless,
     openWorkspace,
     setCurrentSession,
     selectAgent,
@@ -350,9 +337,7 @@ export const CommandPalette = ({
     }
   };
 
-  const placeholder = parsed.prefix
-    ? `Search ${parsed.prefix.hint}…`
-    : 'Search anything, or type @ # : / ~ $ > ? to filter';
+  const placeholder = palettePlaceholder({ prefix: parsed.prefix });
 
   return (
     <div

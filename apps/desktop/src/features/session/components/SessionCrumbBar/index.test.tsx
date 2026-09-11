@@ -186,17 +186,19 @@ describe('SessionCrumbBar', () => {
     render(<SessionCrumbBar />);
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
-    const anchor = nav.querySelector('[data-tooltip="running · PR needs review"]');
+    const anchor = nav.querySelector('[data-tooltip="running, PR needs review"]');
     expect(anchor).not.toBeNull();
     expect(anchor?.querySelector('.rounded-full')).not.toBeNull();
   });
 
-  it('falls back to the stage label alone when the reason is empty', () => {
+  it('falls back to the stage explanation when the caller has no reason', () => {
     h.stage.reason = '';
     render(<SessionCrumbBar />);
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
-    expect(nav.querySelector('[data-tooltip="running"]')).not.toBeNull();
+    expect(
+      nav.querySelector('[data-tooltip="running, an agent is working right now"]'),
+    ).not.toBeNull();
   });
 
   it('lists the crumbs from useSessionCrumbs in order', () => {
@@ -210,7 +212,9 @@ describe('SessionCrumbBar', () => {
     render(<SessionCrumbBar />);
 
     const selectedCrumb = screen.getByRole('button', { name: /scout one/ });
-    expect(within(selectedCrumb).getByLabelText('completed')).toBeDefined();
+    expect(
+      within(selectedCrumb).getByLabelText('Completed, it ran and finished its work'),
+    ).toBeDefined();
   });
 
   it('counts the queued fix attempts on the active review crumb', () => {

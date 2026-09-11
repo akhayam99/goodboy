@@ -9,7 +9,6 @@ import { AlertTriangle, FileText, GitBranch, GitMerge, MessageSquare } from 'luc
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { StudioWidget, HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { gitlabMergeRequestFields, resolveDetailFields } from '../../../../../shared/detail-fields';
-import { StateBadge } from '@goodboy/ui';
 import { BranchPair } from '@goodboy/ui';
 import { RefreshIconButton } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
@@ -28,7 +27,8 @@ import { MrActionBar, type MrActionBusy } from './MrActionBar';
 import { MrApprovalRail } from './MrApprovalRail';
 import { MrConversation } from './MrConversation';
 import { mrDraftTitle } from './mrDraftTitle';
-import { mergeRequestStateTone } from '../../stateTone';
+import { gitlabMrStateKind } from '../../gitlabMrStateKind';
+import { PullRequestChip } from '../../../../github/components/PullRequestChip';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type MrSection = 'overview' | 'conversation';
@@ -230,14 +230,7 @@ export const MrDetailPanel = ({
               provider="gitlab"
               identifier={`!${mr.iid}`}
               title={mr.title}
-              badge={
-                <>
-                  <StateBadge tone={mergeRequestStateTone({ state: mr.state })}>
-                    {mr.state}
-                  </StateBadge>
-                  {mr.draft ? <StateBadge tone="warning">draft</StateBadge> : null}
-                </>
-              }
+              badge={<PullRequestChip state={gitlabMrStateKind({ mr })} variant="badge" />}
               subtitle={<BranchPair headBranch={mr.sourceBranch} baseBranch={mr.targetBranch} />}
               actions={
                 <>

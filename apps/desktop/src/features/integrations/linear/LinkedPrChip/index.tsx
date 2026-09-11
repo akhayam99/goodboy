@@ -1,7 +1,12 @@
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import { GitPullRequest } from 'lucide-react';
 import type { LinearLinkedPr } from '../client';
-import { prStatusTone } from '../prStatusTone';
+import { linearPrStateKind } from '../linearPrStateKind';
+import {
+  PULL_REQUEST_PRESENTATION,
+  type PullRequestPresentation,
+} from '../../../../shared/pullRequestPresentation';
+import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { openUrl } from '../../../../shared/lib/editor';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
@@ -36,18 +41,33 @@ export const LinkedPrChip = ({ pr }: Props) => {
     setActiveLens(sessionId, 'pr');
   };
 
+  const state = linearPrStateKind({ status: pr.status });
+  const presentation: PullRequestPresentation | null =
+    state === null ? null : PULL_REQUEST_PRESENTATION[state];
+  const tint = tintClasses(presentation?.tone ?? 'neutral');
+  const Icon = presentation?.icon ?? GitPullRequest;
+  const description =
+    presentation === null
+      ? `Pull request #${pr.number}`
+      : stateDescription({ presentation, subject: `PR #${pr.number}` });
+
   return (
     <button
       type="button"
       onClick={open}
-      title={pr.url}
+      title={description}
+      aria-label={description}
       className={cn(
         'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-2xs font-medium motion-safe:transition-opacity hover:opacity-80',
-        prStatusTone({ status: pr.status }),
+        tint.border,
+        tint.bg,
+        tint.text,
       )}
     >
-      <GitPullRequest size={11} aria-hidden />#{pr.number}
-      {pr.status != null ? <span className="opacity-70">· {pr.status}</span> : null}
+      <Icon size={11} aria-hidden />#{pr.number}
+      {presentation !== null ? (
+        <span className="opacity-70">· {presentation.label.toLowerCase()}</span>
+      ) : null}
     </button>
   );
 };

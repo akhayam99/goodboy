@@ -10,15 +10,10 @@ import {
   cn,
   ScrollArea,
 } from '@goodboy/ui';
-import type {
-  Session,
-  SessionGroupKey,
-  SessionId,
-  SessionStage,
-  WorkspaceId,
-} from '@goodboy/types';
+import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { useSessionViewPrefs, useSortedGroupedSessions } from '../../../../store';
-import { SESSION_STAGE_META, STAGE_TONE } from '../../../../features/session/session-stage';
+import { sessionGroupPresentation } from './groupPresentation';
+import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -31,31 +26,7 @@ import { SessionActivityItem } from './SessionActivityItem';
 
 type ActivityTab = 'active' | 'archived';
 
-const PR_GROUP_LABELS: Record<string, string> = {
-  'not-open': 'no PR',
-  draft: 'draft',
-  reviewable: 'in review',
-  reviewed: 'approved',
-  closed: 'closed',
-  merged: 'merged',
-};
-
 const COLLAPSED_BY_DEFAULT: ReadonlyArray<string> = ['done', 'merged', 'closed'];
-
-type GroupLabelParams = {
-  readonly key: string;
-  readonly groupMode: SessionGroupKey;
-};
-
-const groupLabel = ({ key, groupMode }: GroupLabelParams): string => {
-  if (groupMode === 'stage') {
-    return SESSION_STAGE_META[key as SessionStage]?.label ?? key;
-  }
-  if (groupMode === 'pr') {
-    return PR_GROUP_LABELS[key] ?? key;
-  }
-  return key;
-};
 
 type GroupKeyParams = {
   readonly key: string;
@@ -208,8 +179,10 @@ export const SessionActivityBar = ({
         >
           {visibleGroups.map((group) => {
             const isGroupCollapsed = isGrouped && isCollapsed({ key: group.key });
-            const stageTone =
-              prefs.group === 'stage' ? STAGE_TONE[group.key as SessionStage] : undefined;
+            const groupPresentation = sessionGroupPresentation({
+              key: group.key,
+              groupMode: prefs.group,
+            });
             return (
               <div key={group.key} className="flex flex-col gap-2">
                 {isGrouped ? (
@@ -217,6 +190,11 @@ export const SessionActivityBar = ({
                     type="button"
                     onClick={() => toggleGroup({ key: group.key })}
                     aria-expanded={!isGroupCollapsed}
+                    title={
+                      groupPresentation == null
+                        ? undefined
+                        : stateDescription({ presentation: groupPresentation })
+                    }
                     className="group flex w-full items-center gap-2 rounded px-0.5 text-left"
                   >
                     <ChevronRight
@@ -228,8 +206,8 @@ export const SessionActivityBar = ({
                       )}
                     />
                     <Eyebrow
-                      label={groupLabel({ key: group.key, groupMode: prefs.group })}
-                      tone={stageTone ?? 'neutral'}
+                      label={groupPresentation?.label ?? group.key}
+                      tone={groupPresentation?.tone ?? 'neutral'}
                     />
                     {group.sessions.length > 0 ? (
                       <span aria-hidden className="text-2xs tabular-nums text-muted-foreground/60">

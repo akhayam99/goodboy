@@ -36,6 +36,7 @@ vi.mock('../../../../app/components/Toast', () => ({
 
 import { CommandPalette } from './index';
 import { REPORT_ISSUE_STUDIO_EVENT } from '../../../settings/reportIssueStudioEvent';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 beforeEach(() => {
   state.skills = {};
@@ -88,16 +89,27 @@ describe('CommandPalette', () => {
   });
 
   it.each([
-    ['Open context', 'context'],
-    ['Open context: Goal', 'goal'],
-    ['Open context: Decisions', 'decisions'],
-    ['Open context: Session summary', 'last_output_summary'],
-  ] as const)('routes %s to the shared Context surface', (label, lens) => {
+    ['Open Context', 'context'],
+    ['Open Context: Goal', 'goal'],
+    ['Open Context: Decisions', 'decisions'],
+    ['Open Context: Session summary', 'last_output_summary'],
+    ['Open Agents', 'agents'],
+    ['Open Questions', 'questions'],
+    ['Open Terminal', 'terminal'],
+  ] as const)('routes %s to the shared surface it names', (label, lens) => {
     hooks.currentSession = { id: 'session-1' };
     render(<CommandPalette onClose={vi.fn()} initialQuery={label} />);
 
     fireEvent.mouseDown(screen.getByText(label));
 
     expect(state.setActiveLens).toHaveBeenCalledWith('session-1', lens);
+  });
+
+  it('teaches each navigation destination with the chord that reaches it', () => {
+    hooks.currentSession = { id: 'session-1' };
+    render(<CommandPalette onClose={vi.fn()} initialQuery="Open Agents" />);
+
+    const row = screen.getByText('Open Agents').parentElement;
+    expect(row?.textContent).toContain(shortcutGlyphs('lens.agents'));
   });
 });

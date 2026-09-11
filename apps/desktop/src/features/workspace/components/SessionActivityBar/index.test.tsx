@@ -25,7 +25,7 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useSessionCost: () => 0,
   useSessionHasUnread: () => false,
-  useSessionStageInfo: () => ({ stage: 'done' as const, reason: 'idle' }),
+  useSessionStageInfo: () => ({ stage: 'done' as const, reason: 'idle', attention: null }),
   useSessionViewPrefs: () => viewPrefs.current,
   useSortedGroupedSessions: (_workspaceId: unknown, sessions: ReadonlyArray<unknown>) =>
     viewPrefs.current.group === 'stage' ? [{ key: 'done', sessions }] : [{ key: 'all', sessions }],
@@ -397,7 +397,7 @@ describe('SessionActivityBar, external task chip', () => {
     renderBar([], [makeSession('a-1', 'active one')]);
     expect(screen.queryByLabelText(/GB-7 from Linear/i)).toBeNull();
     expect(screen.queryByRole('img', { name: 'Linear' })).toBeNull();
-    expect(screen.getByTitle(/active one · idle · GB-7/)).toBeDefined();
+    expect(screen.getByTitle(/active one · done, idle · GB-7/)).toBeDefined();
   });
 
   it('retains a non-linear identifier in the item title without a glyph', () => {
@@ -417,6 +417,6 @@ describe('SessionActivityBar, external task chip', () => {
     renderBar([], [makeSession('a-1', 'crashy')]);
     expect(screen.queryByRole('img', { name: 'Sentry' })).toBeNull();
     expect(screen.queryByLabelText(/SENTRY-9 from Sentry/i)).toBeNull();
-    expect(screen.getByTitle(/crashy · idle · SENTRY-9/)).toBeDefined();
+    expect(screen.getByTitle(/crashy · done, idle · SENTRY-9/)).toBeDefined();
   });
 });

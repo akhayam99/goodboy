@@ -4,7 +4,13 @@ const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwi
 
 vi.mock('../platform', () => ({ currentPlatform: () => platform.current }));
 
-import { RESERVED_COMBOS, SHORTCUTS, formatCombo, shortcutGlyphs } from './registry';
+import {
+  RESERVED_COMBOS,
+  SHORTCUTS,
+  formatCombo,
+  shortcutGlyphs,
+  withShortcutHint,
+} from './registry';
 
 const entries = Object.entries(SHORTCUTS);
 
@@ -88,5 +94,13 @@ describe('shortcut registry', () => {
         /[⌘⌥⇧⌃⌫⎋↵␣]/,
       );
     }
+  });
+
+  it('hangs the chord off the control that triggers it', () => {
+    platform.current = 'darwin';
+
+    expect(withShortcutHint({ label: 'Delete session', shortcut: 'session.delete' })).toBe(
+      'Delete session (⌘⇧⌫)',
+    );
   });
 });

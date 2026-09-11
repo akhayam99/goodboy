@@ -2,6 +2,7 @@ import { ChevronDown } from 'lucide-react';
 import { AnchoredPopover, Chip, cn, StatusDot, type Tone, useDropdown } from '@goodboy/ui';
 import type { ClaudePermissionMode, ProviderId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { withShortcutHint } from '../../../../shared/keyboard/registry';
 
 const MODE_UNENFORCED_PROVIDERS: ReadonlyArray<ProviderId> = ['cursor', 'gemini'];
 
@@ -97,7 +98,10 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
           size="md"
           as="button"
           onClick={toggle}
-          title={unenforced ? 'Not enforced for cursor and gemini' : current.description}
+          title={withShortcutHint({
+            label: unenforced ? 'Not enforced for cursor and gemini' : current.description,
+            shortcut: 'session.permissions',
+          })}
           hasPopup="dialog"
           expanded={open}
           className="gap-1.5 bg-subtle px-2.5 py-0.5 hover:bg-muted hover:opacity-100"

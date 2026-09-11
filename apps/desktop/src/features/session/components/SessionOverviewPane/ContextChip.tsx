@@ -6,6 +6,7 @@ import type { LensKind } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { SummarizerBadge } from '../SummarizerBadge';
 import { VITAL_CHIP } from './vitalChip';
+import { withShortcutHint } from '../../../../shared/keyboard/registry';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -33,11 +34,14 @@ export const ContextChip = ({ sessionId, onSelectLens }: Props) => {
 
   const hasSpend = summarizerSpend.count > 0;
   const isWorking = status === 'running';
-  const tooltip = isWorking
-    ? 'The summarizer is refreshing decisions and the session summary'
-    : hasSpend
-      ? `Decisions and session summary, kept fresh by the summarizer, spent Σ ${formatUsd(summarizerSpend.estimatedCostUsd)}`
-      : 'Decisions and session summary, kept fresh by the summarizer';
+  const tooltip = withShortcutHint({
+    label: isWorking
+      ? 'The summarizer is refreshing decisions and the session summary'
+      : hasSpend
+        ? `Decisions and session summary, kept fresh by the summarizer, spent Σ ${formatUsd(summarizerSpend.estimatedCostUsd)}`
+        : 'Decisions and session summary, kept fresh by the summarizer',
+    shortcut: 'lens.context',
+  });
 
   return (
     <span className="flex shrink-0 items-center gap-1">

@@ -3,21 +3,13 @@ import type { Session, SessionId } from '@goodboy/types';
 import { cn, formatError, IconButton, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { withShortcutHint } from '../../../../shared/keyboard/registry';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { DeleteSessionConfirm } from '../DeleteSessionConfirm';
 
 type Props = {
   readonly session: Session;
 };
-
-type HintParams = {
-  readonly label: string;
-  readonly hint: string;
-};
-
-const withHint = ({ label, hint }: HintParams): string =>
-  hint === '' ? label : `${label} (${hint})`;
 
 export const SessionDestructiveActions = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
@@ -56,10 +48,10 @@ export const SessionDestructiveActions = ({ session }: Props) => {
   const archiveLabel = isArchived ? 'Unarchive session' : 'Archive session';
   const archiveTooltip = isArchived
     ? archiveLabel
-    : withHint({ label: archiveLabel, hint: shortcutGlyphs('session.archive') });
-  const deleteTooltip = withHint({
+    : withShortcutHint({ label: archiveLabel, shortcut: 'session.archive' });
+  const deleteTooltip = withShortcutHint({
     label: 'Delete session',
-    hint: shortcutGlyphs('session.delete'),
+    shortcut: 'session.delete',
   });
 
   return (

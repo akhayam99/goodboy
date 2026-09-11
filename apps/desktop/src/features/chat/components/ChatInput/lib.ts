@@ -1,14 +1,25 @@
 import type { AgentId, AttachmentInput, ProviderId, TurnProviderOverride } from '@goodboy/types';
-import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
+import { PREFIXES, type QuickActionGroup } from '../../../quick-actions/grammar';
 import { EFFORT_LEVELS, type EffortLevel } from '../../utils/chat-constants';
 
 export const RUNNING_KINDS = new Set(['starting', 'running']);
 
-const CHAT_PREFIX_SYMBOLS = WORKSPACE_FEATURES.skills ? '$/~@' : '$~@';
+const CHAT_GROUP_ORDER: ReadonlyArray<QuickActionGroup> = ['script', 'workflow', 'skill', 'agent'];
 
-export const CHAT_PREFIX_RE = new RegExp(`^\\s*[${CHAT_PREFIX_SYMBOLS}][^\\s]*$`);
+export const CHAT_PREFIXES = CHAT_GROUP_ORDER.flatMap((group) =>
+  PREFIXES.filter((prefix) => prefix.group === group),
+);
 
-export const CHAT_PLACEHOLDER = 'Message Claude · $ scripts · ~ workflows · @ agents';
+const escapeForClass = (symbol: string): string => symbol.replace(/[\\\]^-]/g, '\\$&');
+
+export const CHAT_PREFIX_RE = new RegExp(
+  `^\\s*[${CHAT_PREFIXES.map((prefix) => escapeForClass(prefix.symbol)).join('')}][^\\s]*$`,
+);
+
+export const CHAT_PLACEHOLDER = [
+  'Message Claude',
+  ...CHAT_PREFIXES.map((prefix) => `${prefix.symbol} ${prefix.noun}`),
+].join(' · ');
 
 export const VALID_PROVIDERS = [
   'anthropic',
