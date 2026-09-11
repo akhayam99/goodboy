@@ -1,12 +1,22 @@
-import type { AgentRole, ModelEffort, ProviderId } from '@goodboy/types';
+import type {
+  AgentRole,
+  ModelEffort,
+  ProviderId,
+  WorkflowTaskDifficulty,
+  WorkflowTaskType,
+} from '@goodboy/types';
 
 export type OrchestratorStep = {
   readonly name: string;
   readonly role: AgentRole;
   readonly promptPrefix: string;
   readonly expectedOutput?: string;
+  readonly provider?: ProviderId;
   readonly model?: string;
   readonly effort?: ModelEffort;
+  readonly taskType?: WorkflowTaskType;
+  readonly difficulty?: WorkflowTaskDifficulty;
+  readonly modelReason?: string;
 };
 
 export type RunSummary =

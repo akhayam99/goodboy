@@ -74,6 +74,27 @@ describe('parseOrchestratorDecision', () => {
     });
   });
 
+  it('parses optional provider-qualified task metadata', () => {
+    const parsed = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Fix it","role":"implementer","promptPrefix":"Fix the bug.","provider":"codex","taskType":"debugging","difficulty":"heavy","modelReason":"The failure needs deep tracing."}}<</orchestrator>>',
+    });
+
+    expect(parsed).toEqual({
+      action: 'next',
+      reason: 'x',
+      step: {
+        name: 'Fix it',
+        role: 'implementer',
+        promptPrefix: 'Fix the bug.',
+        provider: 'codex',
+        taskType: 'debugging',
+        difficulty: 'heavy',
+        modelReason: 'The failure needs deep tracing.',
+      },
+    });
+  });
+
   it('keeps a model and effort the provider catalog supports', () => {
     const parsed = parseOrchestratorDecision({
       provider: 'anthropic',

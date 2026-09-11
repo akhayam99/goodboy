@@ -1,3 +1,4 @@
+use rusqlite::OptionalExtension;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
@@ -29,6 +30,12 @@ pub struct StepRow {
     pub verbosity: Option<String>,
     #[serde(rename = "orchestratorReason")]
     pub orchestrator_reason: Option<String>,
+    #[serde(rename = "routingLock")]
+    pub routing_lock: Option<String>,
+    #[serde(rename = "routingDecision")]
+    pub routing_decision: Option<String>,
+    #[serde(rename = "taskProfile")]
+    pub task_profile: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -123,6 +130,12 @@ pub struct StepInput {
     pub verbosity: Option<String>,
     #[serde(rename = "orchestratorReason")]
     pub orchestrator_reason: Option<String>,
+    #[serde(rename = "routingLock")]
+    pub routing_lock: Option<String>,
+    #[serde(rename = "routingDecision")]
+    pub routing_decision: Option<String>,
+    #[serde(rename = "taskProfile")]
+    pub task_profile: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -195,6 +208,12 @@ pub struct SessionRow {
     pub source_kind: Option<String>,
     #[serde(rename = "domainsJson")]
     pub domains_json: Option<String>,
+    #[serde(rename = "routingLock")]
+    pub routing_lock: Option<String>,
+    #[serde(rename = "routingDecision")]
+    pub routing_decision: Option<String>,
+    #[serde(rename = "taskProfile")]
+    pub task_profile: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -236,6 +255,30 @@ pub struct PhaseRunInsertInput {
     pub source_kind: Option<String>,
     #[serde(rename = "domainsJson")]
     pub domains_json: Option<String>,
+    #[serde(rename = "routingLock")]
+    pub routing_lock: Option<String>,
+    #[serde(rename = "routingDecision")]
+    pub routing_decision: Option<String>,
+    #[serde(rename = "taskProfile")]
+    pub task_profile: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct WorkflowNodeRoutingUpdateInput {
+    #[serde(rename = "nodeKind")]
+    pub node_kind: String,
+    pub id: String,
+    #[serde(rename = "routingLock")]
+    pub routing_lock: Option<String>,
+    #[serde(rename = "routingDecision")]
+    pub routing_decision: String,
+    #[serde(rename = "taskProfile")]
+    pub task_profile: Option<String>,
+    #[serde(rename = "providerOverride")]
+    pub provider_override: Option<String>,
+    #[serde(rename = "modelOverride")]
+    pub model_override: Option<String>,
+    pub effort: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -266,6 +309,10 @@ pub enum PhaseError {
     TemplateNotFound(String),
     #[error("agent not found: {0}")]
     RunNotFound(String),
+    #[error("invalid workflow routing value")]
+    InvalidRouting,
+    #[error("workflow node cannot be changed: {0}")]
+    NodeNotMutable(String),
 }
 
 crate::util::impl_error_serialize!(PhaseError);
@@ -277,6 +324,8 @@ impl PhaseError {
             PhaseError::Poisoned => "poisoned",
             PhaseError::TemplateNotFound(_) => "template_not_found",
             PhaseError::RunNotFound(_) => "run_not_found",
+            PhaseError::InvalidRouting => "invalid_routing",
+            PhaseError::NodeNotMutable(_) => "node_not_mutable",
         }
     }
 }
@@ -291,6 +340,179 @@ impl From<DbError> for PhaseError {
     }
 }
 
+fn string_in(value: Option<&serde_json::Value>, allowed: &[&str]) -> bool {
+    value
+        .and_then(serde_json::Value::as_str)
+        .is_some_and(|candidate| allowed.contains(&candidate))
+}
+
+fn has_exact_keys(value: &serde_json::Map<String, serde_json::Value>, keys: &[&str]) -> bool {
+    value.len() == keys.len() && keys.iter().all(|key| value.contains_key(*key))
+}
+
+fn valid_reason(value: Option<&serde_json::Value>) -> bool {
+    value
+        .and_then(serde_json::Value::as_str)
+        .is_some_and(|reason| reason.chars().count() <= 240)
+}
+
+fn valid_pick(value: &serde_json::Value) -> bool {
+    let Some(pick) = value.as_object() else {
+        return false;
+    };
+    if !has_exact_keys(pick, &["provider", "model", "effort"]) {
+        return false;
+    }
+    let is_provider = string_in(
+        pick.get("provider"),
+        &[
+            "anthropic",
+            "cursor",
+            "codex",
+            "gemini",
+            "opencode",
+            "openrouter",
+            "moonshot",
+        ],
+    );
+    let is_model = pick
+        .get("model")
+        .and_then(serde_json::Value::as_str)
+        .is_some_and(|model| !model.is_empty());
+    let is_effort = pick.get("effort").is_some_and(|effort| {
+        effort.is_null()
+            || string_in(
+                Some(effort),
+                &["minimal", "low", "medium", "high", "xhigh", "max"],
+            )
+    });
+    is_provider && is_model && is_effort
+}
+
+fn valid_task_profile(value: &serde_json::Value) -> bool {
+    let Some(profile) = value.as_object() else {
+        return false;
+    };
+    has_exact_keys(profile, &["taskType", "difficulty", "basis"])
+        && string_in(
+            profile.get("taskType"),
+            &[
+                "exploration",
+                "planning",
+                "implementation",
+                "debugging",
+                "review",
+                "testing",
+                "writing",
+                "general",
+            ],
+        )
+        && string_in(
+            profile.get("difficulty"),
+            &["light", "standard", "heavy", "unknown"],
+        )
+        && string_in(profile.get("basis"), &["agent", "heuristic", "unknown"])
+}
+
+fn valid_routing_lock(value: &serde_json::Value) -> bool {
+    let Some(lock) = value.as_object() else {
+        return false;
+    };
+    has_exact_keys(lock, &["version", "pick", "origin"])
+        && lock.get("version").and_then(serde_json::Value::as_u64) == Some(1)
+        && lock.get("pick").is_some_and(valid_pick)
+        && string_in(lock.get("origin"), &["user", "legacy"])
+}
+
+fn valid_proposal(value: &serde_json::Value) -> bool {
+    let Some(proposal) = value.as_object() else {
+        return false;
+    };
+    has_exact_keys(proposal, &["pick", "reason", "source", "profile"])
+        && proposal.get("pick").is_some_and(valid_pick)
+        && valid_reason(proposal.get("reason"))
+        && string_in(proposal.get("source"), &["agent", "heuristic"])
+        && proposal.get("profile").is_some_and(valid_task_profile)
+}
+
+fn valid_routing_decision(value: &serde_json::Value) -> bool {
+    let Some(decision) = value.as_object() else {
+        return false;
+    };
+    if !has_exact_keys(
+        decision,
+        &[
+            "version",
+            "proposal",
+            "selected",
+            "source",
+            "reason",
+            "adjustment",
+            "executed",
+        ],
+    ) {
+        return false;
+    }
+    let is_proposal = decision
+        .get("proposal")
+        .is_some_and(|proposal| proposal.is_null() || valid_proposal(proposal));
+    let is_executed = decision
+        .get("executed")
+        .is_some_and(|executed| executed.is_null() || valid_pick(executed));
+    decision.get("version").and_then(serde_json::Value::as_u64) == Some(1)
+        && is_proposal
+        && decision.get("selected").is_some_and(valid_pick)
+        && string_in(
+            decision.get("source"),
+            &[
+                "step_lock",
+                "run_role_lock",
+                "agent",
+                "heuristic",
+                "role_default",
+                "session_default",
+                "kind_default",
+                "legacy",
+            ],
+        )
+        && valid_reason(decision.get("reason"))
+        && string_in(
+            decision.get("adjustment"),
+            &[
+                "none",
+                "unknown_model",
+                "disconnected",
+                "cooldown",
+                "budget",
+                "unsupported_effort",
+            ],
+        )
+        && is_executed
+}
+
+fn valid_optional_json(value: Option<&String>, validator: fn(&serde_json::Value) -> bool) -> bool {
+    let Some(encoded) = value else {
+        return true;
+    };
+    serde_json::from_str::<serde_json::Value>(encoded)
+        .ok()
+        .is_some_and(|parsed| validator(&parsed))
+}
+
+fn validate_routing_values(
+    routing_lock: Option<&String>,
+    routing_decision: Option<&String>,
+    task_profile: Option<&String>,
+) -> Result<(), PhaseError> {
+    if !valid_optional_json(routing_lock, valid_routing_lock)
+        || !valid_optional_json(routing_decision, valid_routing_decision)
+        || !valid_optional_json(task_profile, valid_task_profile)
+    {
+        return Err(PhaseError::InvalidRouting);
+    }
+    Ok(())
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -302,7 +524,7 @@ fn load_steps(
     let mut stmt = conn.prepare(
         "SELECT id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
                 expected_output, provider_override, model_override, effort, verbosity,
-                orchestrator_reason
+                orchestrator_reason, routing_lock, routing_decision, task_profile
          FROM steps
          WHERE workflow_id = ?1 AND deleted_at IS NULL
          ORDER BY ordinal ASC",
@@ -322,6 +544,9 @@ fn load_steps(
             effort: row.get(10)?,
             verbosity: row.get(11)?,
             orchestrator_reason: row.get(12)?,
+            routing_lock: row.get(13)?,
+            routing_decision: row.get(14)?,
+            task_profile: row.get(15)?,
         })
     })?;
     rows.collect()
@@ -540,13 +765,18 @@ pub async fn workflow_upsert(
     let mut kept_ids: Vec<String> = Vec::with_capacity(input.steps.len());
     let mut steps = Vec::with_capacity(input.steps.len());
     for def in &input.steps {
+        validate_routing_values(
+            def.routing_lock.as_ref(),
+            def.routing_decision.as_ref(),
+            def.task_profile.as_ref(),
+        )?;
         let def_id = def.id.clone().unwrap_or_else(crate::util::uuid_v4);
         conn.execute(
             "INSERT INTO steps
                (id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
                 expected_output, provider_override, model_override, effort, verbosity,
-                orchestrator_reason, deleted_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, NULL)
+                orchestrator_reason, routing_lock, routing_decision, task_profile, deleted_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, NULL)
              ON CONFLICT(id) DO UPDATE SET
                workflow_id      = excluded.workflow_id,
                library_step_id  = excluded.library_step_id,
@@ -560,6 +790,9 @@ pub async fn workflow_upsert(
                effort           = excluded.effort,
                verbosity        = excluded.verbosity,
                orchestrator_reason = excluded.orchestrator_reason,
+               routing_lock     = excluded.routing_lock,
+               routing_decision = excluded.routing_decision,
+               task_profile     = excluded.task_profile,
                deleted_at       = NULL",
             rusqlite::params![
                 def_id,
@@ -575,6 +808,9 @@ pub async fn workflow_upsert(
                 def.effort,
                 def.verbosity,
                 def.orchestrator_reason,
+                def.routing_lock,
+                def.routing_decision,
+                def.task_profile,
             ],
         )?;
         kept_ids.push(def_id.clone());
@@ -592,6 +828,9 @@ pub async fn workflow_upsert(
             effort: def.effort.clone(),
             verbosity: def.verbosity.clone(),
             orchestrator_reason: def.orchestrator_reason.clone(),
+            routing_lock: def.routing_lock.clone(),
+            routing_decision: def.routing_decision.clone(),
+            task_profile: def.task_profile.clone(),
         });
     }
 
@@ -885,7 +1124,7 @@ const AGENT_SESSION_COLS: &str =
      provider_session_id, provider_session_provider_id, last_finished_at, last_viewed_at, done_at, kind, verbosity, \
      effort, model_override, provider_override, \
      parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url, \
-     source_kind, domains_json";
+     source_kind, domains_json, routing_lock, routing_decision, task_profile";
 
 fn session_row_from_row(row: &rusqlite::Row<'_>) -> Result<SessionRow, rusqlite::Error> {
     Ok(SessionRow {
@@ -916,6 +1155,9 @@ fn session_row_from_row(row: &rusqlite::Row<'_>) -> Result<SessionRow, rusqlite:
         source_comment_url: row.get(24)?,
         source_kind: row.get(25)?,
         domains_json: row.get(26)?,
+        routing_lock: row.get(27)?,
+        routing_decision: row.get(28)?,
+        task_profile: row.get(29)?,
     })
 }
 
@@ -939,8 +1181,8 @@ const AGENT_INSERT_SQL: &str = "INSERT INTO agents
     provider_run_id, output_summary, started_at, last_finished_at, kind, verbosity,
     effort, model_override, provider_override,
     parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url, source_kind,
-    domains_json)
- VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22)";
+    domains_json, routing_lock, routing_decision, task_profile)
+ VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25)";
 
 #[tauri::command]
 pub async fn agent_insert(
@@ -948,6 +1190,11 @@ pub async fn agent_insert(
     input: PhaseRunInsertInput,
 ) -> Result<SessionRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    validate_routing_values(
+        input.routing_lock.as_ref(),
+        input.routing_decision.as_ref(),
+        input.task_profile.as_ref(),
+    )?;
     let id = input.id.clone().unwrap_or_else(crate::util::uuid_v4);
     let started_at_ms = input.started_at.as_deref().and_then(crate::util::iso_to_ms);
     let completed_at_ms = input
@@ -980,6 +1227,9 @@ pub async fn agent_insert(
             input.source_comment_url,
             input.source_kind,
             input.domains_json,
+            input.routing_lock,
+            input.routing_decision,
+            input.task_profile,
         ],
     )?;
 
@@ -1011,7 +1261,83 @@ pub async fn agent_insert(
         source_comment_url: input.source_comment_url,
         source_kind: input.source_kind,
         domains_json: input.domains_json,
+        routing_lock: input.routing_lock,
+        routing_decision: input.routing_decision,
+        task_profile: input.task_profile,
     })
+}
+
+#[tauri::command]
+pub async fn workflow_node_routing_update(
+    state: State<'_, Db>,
+    input: WorkflowNodeRoutingUpdateInput,
+) -> Result<(), PhaseError> {
+    validate_routing_values(
+        input.routing_lock.as_ref(),
+        Some(&input.routing_decision),
+        input.task_profile.as_ref(),
+    )?;
+    let mut conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    let transaction = conn.transaction()?;
+    let affected = match input.node_kind.as_str() {
+        "agent" => {
+            let status: Option<String> = transaction
+                .query_row(
+                    "SELECT status FROM agents WHERE id = ?1",
+                    rusqlite::params![input.id],
+                    |row| row.get(0),
+                )
+                .optional()?;
+            let Some(status) = status else {
+                return Err(PhaseError::RunNotFound(input.id));
+            };
+            if matches!(status.as_str(), "starting" | "running" | "completed") {
+                return Err(PhaseError::NodeNotMutable(input.id));
+            }
+            transaction.execute(
+                "UPDATE agents SET routing_lock = ?2, routing_decision = ?3, task_profile = ?4,
+                 provider_override = ?5, model_override = ?6, effort = ?7 WHERE id = ?1",
+                rusqlite::params![
+                    input.id,
+                    input.routing_lock,
+                    input.routing_decision,
+                    input.task_profile,
+                    input.provider_override,
+                    input.model_override,
+                    input.effort,
+                ],
+            )?
+        }
+        "step" => {
+            let blocked: bool = transaction.query_row(
+                "SELECT EXISTS(SELECT 1 FROM agents WHERE step_id = ?1 AND status IN ('starting', 'running', 'completed'))",
+                rusqlite::params![input.id],
+                |row| row.get(0),
+            )?;
+            if blocked {
+                return Err(PhaseError::NodeNotMutable(input.id));
+            }
+            transaction.execute(
+                "UPDATE steps SET routing_lock = ?2, routing_decision = ?3, task_profile = ?4,
+                 provider_override = ?5, model_override = ?6, effort = ?7 WHERE id = ?1",
+                rusqlite::params![
+                    input.id,
+                    input.routing_lock,
+                    input.routing_decision,
+                    input.task_profile,
+                    input.provider_override,
+                    input.model_override,
+                    input.effort,
+                ],
+            )?
+        }
+        _ => return Err(PhaseError::InvalidRouting),
+    };
+    if affected == 0 {
+        return Err(PhaseError::TemplateNotFound(input.id));
+    }
+    transaction.commit()?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -1199,7 +1525,8 @@ mod tests {
                 provider_session_id TEXT, provider_session_provider_id TEXT, last_finished_at TEXT, last_viewed_at TEXT, done_at TEXT,
                 kind TEXT, verbosity TEXT, effort TEXT, model_override TEXT, provider_override TEXT,
                 parent_agent_id TEXT, workflow_run_id TEXT, source_thread_id TEXT,
-                source_thread_ids TEXT, source_comment_url TEXT, source_kind TEXT, domains_json TEXT
+                source_thread_ids TEXT, source_comment_url TEXT, source_kind TEXT, domains_json TEXT,
+                routing_lock TEXT, routing_decision TEXT, task_profile TEXT
             )",
         )
         .unwrap();
@@ -1283,6 +1610,9 @@ mod tests {
         assert_eq!(row.effort.as_deref(), Some("high"));
         assert_eq!(row.model_override.as_deref(), Some("claude-opus-4-8"));
         assert_eq!(row.provider_override.as_deref(), Some("anthropic"));
+        assert!(row.routing_lock.is_none());
+        assert!(row.routing_decision.is_none());
+        assert!(row.task_profile.is_none());
         let serialized = serde_json::to_value(row).unwrap();
         assert_eq!(serialized["providerSessionProviderId"], "anthropic");
     }
@@ -1310,6 +1640,9 @@ mod tests {
         assert!(row.model_override.is_none());
         assert!(row.provider_override.is_none());
         assert!(row.provider_session_provider_id.is_none());
+        assert!(row.routing_lock.is_none());
+        assert!(row.routing_decision.is_none());
+        assert!(row.task_profile.is_none());
     }
 
     #[test]
@@ -1340,6 +1673,9 @@ mod tests {
                 None::<String>,
                 None::<String>,
                 None::<String>,
+                None::<String>,
+                None::<String>,
+                None::<String>,
             ],
         )
         .unwrap();
@@ -1356,5 +1692,19 @@ mod tests {
         assert_eq!(row.effort.as_deref(), Some("high"));
         assert_eq!(row.model_override.as_deref(), Some("gpt-5.6"));
         assert_eq!(row.provider_override.as_deref(), Some("codex"));
+    }
+
+    #[test]
+    fn validates_bounded_routing_objects() {
+        let lock = r#"{"version":1,"pick":{"provider":"codex","model":"gpt-5.6","effort":"high"},"origin":"user"}"#.to_string();
+        let decision = r#"{"version":1,"proposal":null,"selected":{"provider":"codex","model":"gpt-5.6","effort":"high"},"source":"step_lock","reason":"Chosen","adjustment":"none","executed":null}"#.to_string();
+        let profile = r#"{"taskType":"implementation","difficulty":"heavy","basis":"agent"}"#.to_string();
+        assert!(validate_routing_values(Some(&lock), Some(&decision), Some(&profile)).is_ok());
+
+        let oversized = format!(
+            r#"{{"version":1,"proposal":null,"selected":{{"provider":"codex","model":"gpt-5.6","effort":"high"}},"source":"step_lock","reason":"{}","adjustment":"none","executed":null}}"#,
+            "x".repeat(241)
+        );
+        assert!(validate_routing_values(None, Some(&oversized), None).is_err());
     }
 }

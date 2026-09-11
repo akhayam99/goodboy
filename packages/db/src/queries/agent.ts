@@ -10,8 +10,19 @@ import type {
   StepId,
   VerbosityLevel,
   WorkflowRunId,
+  WorkflowRoutingDecision,
+  WorkflowRoutingLock,
+  WorkflowTaskProfile,
 } from '@goodboy/types';
 import type { Database } from '../client';
+import {
+  isWorkflowRoutingDecision,
+  isWorkflowRoutingLock,
+  isWorkflowTaskProfile,
+  legacyAgentRoutingDecision,
+  parseWorkflowRouting,
+  stringifyRoutingJson,
+} from './workflowRoutingCodec';
 
 type AgentRow = {
   id: string;
@@ -37,6 +48,9 @@ type AgentRow = {
   provider_override: string | null;
   kind: string | null;
   domains_json: string | null;
+  routing_lock: string | null;
+  routing_decision: string | null;
+  task_profile: string | null;
 };
 
 type ParseDomainsParams = {
@@ -70,6 +84,20 @@ const parseDomains = ({ value }: ParseDomainsParams): ReadonlyArray<string> => {
 
 const toAgent = ({ row }: ToAgentParams): Agent => {
   const domains = parseDomains({ value: row.domains_json });
+  const routing = parseWorkflowRouting({
+    routingLock: row.routing_lock,
+    routingDecision: row.routing_decision,
+    taskProfile: row.task_profile,
+  });
+  const routingDecision =
+    routing.routingDecision ??
+    (row.step_id === null && routing.routingLock === null
+      ? legacyAgentRoutingDecision({
+          provider: row.provider_override,
+          model: row.model_override,
+          effort: row.effort,
+        })
+      : null);
   return {
     id: row.id as AgentId,
     sessionId: row.session_id as SessionId,
@@ -109,6 +137,9 @@ const toAgent = ({ row }: ToAgentParams): Agent => {
     ...(row.provider_override && { providerOverride: row.provider_override as ProviderId }),
     ...(row.kind && { kind: row.kind }),
     ...(domains.length > 0 && { domains }),
+    routingLock: routing.routingLock,
+    routingDecision,
+    taskProfile: routing.taskProfile,
   };
 };
 
@@ -253,4 +284,51 @@ export const updateAgentConfig = async (
   }
   values.push(id);
   await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values);
+};
+
+export type AgentRoutingUpdate = Readonly<{
+  routingLock: WorkflowRoutingLock | null;
+  routingDecision: WorkflowRoutingDecision;
+  taskProfile: WorkflowTaskProfile | null;
+  providerOverride: ProviderId | null;
+  modelOverride: string | null;
+  effort: ModelEffort | null;
+}>;
+
+export const updateAgentRouting = async ({
+  db,
+  id,
+  update,
+}: {
+  readonly db: Database;
+  readonly id: AgentId;
+  readonly update: AgentRoutingUpdate;
+}): Promise<boolean> => {
+  const result = await db.execute(
+    `UPDATE agents SET routing_lock = ?, routing_decision = ?, task_profile = ?,
+       provider_override = ?, model_override = ?, effort = ?
+     WHERE id = ? AND status NOT IN ('starting', 'running', 'completed')`,
+    [
+      stringifyRoutingJson({
+        value: update.routingLock,
+        isValid: isWorkflowRoutingLock,
+        field: 'routing lock',
+      }),
+      stringifyRoutingJson({
+        value: update.routingDecision,
+        isValid: isWorkflowRoutingDecision,
+        field: 'routing decision',
+      }),
+      stringifyRoutingJson({
+        value: update.taskProfile,
+        isValid: isWorkflowTaskProfile,
+        field: 'task profile',
+      }),
+      update.providerOverride,
+      update.modelOverride,
+      update.effort,
+      id,
+    ],
+  );
+  return result.rowsAffected === 1;
 };

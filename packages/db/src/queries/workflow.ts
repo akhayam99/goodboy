@@ -7,6 +7,9 @@ import type {
   StepDefId,
   StepId,
   VerbosityLevel,
+  WorkflowRoutingDecision,
+  WorkflowRoutingLock,
+  WorkflowTaskProfile,
   Workflow,
   WorkflowId,
   WorkflowOrigin,
@@ -14,6 +17,14 @@ import type {
 } from '@goodboy/types';
 import { WORKFLOW_ORIGINS } from '@goodboy/types';
 import type { Database } from '../client';
+import {
+  isWorkflowRoutingDecision,
+  isWorkflowRoutingLock,
+  isWorkflowTaskProfile,
+  legacyStepRoutingLock,
+  parseWorkflowRouting,
+  stringifyRoutingJson,
+} from './workflowRoutingCodec';
 
 type WorkflowRow = {
   id: string;
@@ -43,9 +54,26 @@ type StepRow = {
   effort: string | null;
   verbosity: string | null;
   orchestrator_reason: string | null;
+  routing_lock: string | null;
+  routing_decision: string | null;
+  task_profile: string | null;
 };
 
 function toStep(row: StepRow): Step {
+  const routing = parseWorkflowRouting({
+    routingLock: row.routing_lock,
+    routingDecision: row.routing_decision,
+    taskProfile: row.task_profile,
+  });
+  const routingLock =
+    routing.routingLock ??
+    (routing.routingDecision === null
+      ? legacyStepRoutingLock({
+          provider: row.provider_override,
+          model: row.model_override,
+          effort: row.effort,
+        })
+      : null);
   return {
     id: row.id as StepId,
     workflowId: row.workflow_id as WorkflowId,
@@ -62,6 +90,9 @@ function toStep(row: StepRow): Step {
     ...(row.verbosity && { verbosity: row.verbosity as VerbosityLevel }),
     ...(row.orchestrator_reason != null &&
       row.orchestrator_reason !== '' && { orchestratorReason: row.orchestrator_reason }),
+    routingLock,
+    routingDecision: routing.routingDecision,
+    taskProfile: routing.taskProfile,
   };
 }
 
@@ -156,8 +187,8 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
       `INSERT INTO steps
         (id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix, expected_output,
          provider_override, model_override, effort, verbosity,
-         orchestrator_reason, deleted_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+         orchestrator_reason, routing_lock, routing_decision, task_profile, deleted_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
        ON CONFLICT(id) DO UPDATE SET
          workflow_id      = excluded.workflow_id,
          library_step_id  = excluded.library_step_id,
@@ -171,6 +202,9 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
          effort           = excluded.effort,
          verbosity        = excluded.verbosity,
          orchestrator_reason = excluded.orchestrator_reason,
+         routing_lock     = excluded.routing_lock,
+         routing_decision = excluded.routing_decision,
+         task_profile     = excluded.task_profile,
          deleted_at       = NULL`,
       [
         step.id,
@@ -186,6 +220,21 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
         step.effort ?? null,
         step.verbosity ?? null,
         step.orchestratorReason ?? null,
+        stringifyRoutingJson({
+          value: step.routingLock ?? null,
+          isValid: isWorkflowRoutingLock,
+          field: 'routing lock',
+        }),
+        stringifyRoutingJson({
+          value: step.routingDecision ?? null,
+          isValid: isWorkflowRoutingDecision,
+          field: 'routing decision',
+        }),
+        stringifyRoutingJson({
+          value: step.taskProfile ?? null,
+          isValid: isWorkflowTaskProfile,
+          field: 'task profile',
+        }),
       ],
     );
   }
@@ -193,4 +242,54 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
 
 export const deleteWorkflow = async (db: Database, id: WorkflowId): Promise<void> => {
   await db.execute('UPDATE workflows SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
+};
+
+export type StepRoutingUpdate = Readonly<{
+  routingLock: WorkflowRoutingLock | null;
+  routingDecision: WorkflowRoutingDecision;
+  taskProfile: WorkflowTaskProfile | null;
+  providerOverride: ProviderId | null;
+  modelOverride: string | null;
+  effort: AgentEffort | null;
+}>;
+
+export const updateStepRouting = async ({
+  db,
+  id,
+  update,
+}: {
+  readonly db: Database;
+  readonly id: StepId;
+  readonly update: StepRoutingUpdate;
+}): Promise<boolean> => {
+  const result = await db.execute(
+    `UPDATE steps SET routing_lock = ?, routing_decision = ?, task_profile = ?,
+       provider_override = ?, model_override = ?, effort = ?
+     WHERE id = ? AND NOT EXISTS (
+       SELECT 1 FROM agents
+       WHERE agents.step_id = steps.id AND status IN ('starting', 'running', 'completed')
+     )`,
+    [
+      stringifyRoutingJson({
+        value: update.routingLock,
+        isValid: isWorkflowRoutingLock,
+        field: 'routing lock',
+      }),
+      stringifyRoutingJson({
+        value: update.routingDecision,
+        isValid: isWorkflowRoutingDecision,
+        field: 'routing decision',
+      }),
+      stringifyRoutingJson({
+        value: update.taskProfile,
+        isValid: isWorkflowTaskProfile,
+        field: 'task profile',
+      }),
+      update.providerOverride,
+      update.modelOverride,
+      update.effort,
+      id,
+    ],
+  );
+  return result.rowsAffected === 1;
 };

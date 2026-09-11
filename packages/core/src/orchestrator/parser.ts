@@ -1,4 +1,10 @@
-import type { ModelEffort, ProviderId } from '@goodboy/types';
+import type {
+  ModelEffort,
+  ProviderId,
+  WorkflowTaskDifficulty,
+  WorkflowTaskType,
+} from '@goodboy/types';
+import { PROVIDER_IDS } from '@goodboy/types';
 import { providerEffortLevels } from '../providers/providerEffortLevels';
 import { resolveStoredModelSelection } from '../providers/resolveStoredModelSelection';
 import { isAgentRole } from '../roles';
@@ -22,6 +28,44 @@ const nonEmptyString = (value: unknown): string | null => {
     return null;
   }
   return value.trim();
+};
+
+const providerId = (value: unknown): ProviderId | null => {
+  const candidate = nonEmptyString(value);
+  if (candidate === null) {
+    return null;
+  }
+  return PROVIDER_IDS.find((provider) => provider === candidate) ?? null;
+};
+
+const taskType = (value: unknown): WorkflowTaskType | null => {
+  const candidate = nonEmptyString(value);
+  if (
+    candidate === 'exploration' ||
+    candidate === 'planning' ||
+    candidate === 'implementation' ||
+    candidate === 'debugging' ||
+    candidate === 'review' ||
+    candidate === 'testing' ||
+    candidate === 'writing' ||
+    candidate === 'general'
+  ) {
+    return candidate;
+  }
+  return null;
+};
+
+const difficulty = (value: unknown): WorkflowTaskDifficulty | null => {
+  const candidate = nonEmptyString(value);
+  if (
+    candidate === 'light' ||
+    candidate === 'standard' ||
+    candidate === 'heavy' ||
+    candidate === 'unknown'
+  ) {
+    return candidate;
+  }
+  return null;
 };
 
 const stripCodeFences = (value: string): string =>
@@ -148,6 +192,10 @@ const parseStep = ({ value, provider }: StepParams): OrchestratorStep | null => 
   const role = nonEmptyString(step['role']);
   const promptPrefix = nonEmptyString(step['promptPrefix']);
   const expectedOutput = nonEmptyString(step['expectedOutput']);
+  const selectedProvider = providerId(step['provider']);
+  const selectedTaskType = taskType(step['taskType']);
+  const selectedDifficulty = difficulty(step['difficulty']);
+  const modelReason = nonEmptyString(step['modelReason']);
   if (name === null || promptPrefix === null) {
     return null;
   }
@@ -158,8 +206,12 @@ const parseStep = ({ value, provider }: StepParams): OrchestratorStep | null => 
     role: role !== null && isAgentRole(role) ? role : 'custom',
     promptPrefix,
     ...(expectedOutput !== null && { expectedOutput }),
+    ...(selectedProvider !== null && { provider: selectedProvider }),
     ...(model !== null && { model }),
     ...(effort !== null && { effort }),
+    ...(selectedTaskType !== null && { taskType: selectedTaskType }),
+    ...(selectedDifficulty !== null && { difficulty: selectedDifficulty }),
+    ...(modelReason !== null && { modelReason }),
   };
 };
 

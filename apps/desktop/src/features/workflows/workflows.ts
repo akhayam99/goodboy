@@ -1,4 +1,13 @@
 import { invoke } from '@tauri-apps/api/core';
+import {
+  isWorkflowRoutingDecision,
+  isWorkflowRoutingLock,
+  isWorkflowTaskProfile,
+  legacyAgentRoutingDecision,
+  legacyStepRoutingLock,
+  parseRoutingJson,
+  stringifyRoutingJson,
+} from '@goodboy/db';
 import type {
   AgentEffort,
   AgentRole,
@@ -19,6 +28,9 @@ import type {
   ProviderRunId,
   SessionId,
   WorkspaceId,
+  WorkflowRoutingDecision,
+  WorkflowRoutingLock,
+  WorkflowTaskProfile,
 } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
 import { WORKFLOW_ORIGINS } from '@goodboy/types';
@@ -37,6 +49,9 @@ type RawWorkflowStepRow = {
   readonly effort: string | null;
   readonly verbosity: string | null;
   readonly orchestratorReason: string | null;
+  readonly routingLock: string | null;
+  readonly routingDecision: string | null;
+  readonly taskProfile: string | null;
 };
 
 type RawStepDefRow = {
@@ -96,6 +111,9 @@ type RawAgentRow = {
   readonly sourceCommentUrl: string | null;
   readonly sourceKind: string | null;
   readonly domainsJson: string | null;
+  readonly routingLock: string | null;
+  readonly routingDecision: string | null;
+  readonly taskProfile: string | null;
 };
 
 type ParseStringArrayParams = {
@@ -103,6 +121,24 @@ type ParseStringArrayParams = {
 };
 
 function rowToStep(row: RawWorkflowStepRow): Step {
+  const routingDecision = parseRoutingJson({
+    value: row.routingDecision,
+    isValid: isWorkflowRoutingDecision,
+    field: 'routing decision',
+  });
+  const routingLock =
+    parseRoutingJson({
+      value: row.routingLock,
+      isValid: isWorkflowRoutingLock,
+      field: 'routing lock',
+    }) ??
+    (routingDecision === null
+      ? legacyStepRoutingLock({
+          provider: row.providerOverride,
+          model: row.modelOverride,
+          effort: row.effort,
+        })
+      : null);
   return {
     id: row.id as StepId,
     workflowId: row.workflowId as WorkflowId,
@@ -119,6 +155,13 @@ function rowToStep(row: RawWorkflowStepRow): Step {
     ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
     ...(row.orchestratorReason != null &&
       row.orchestratorReason !== '' && { orchestratorReason: row.orchestratorReason }),
+    routingLock,
+    routingDecision,
+    taskProfile: parseRoutingJson({
+      value: row.taskProfile,
+      isValid: isWorkflowTaskProfile,
+      field: 'task profile',
+    }),
   };
 }
 
@@ -180,6 +223,25 @@ const parseStringArray = ({ value }: ParseStringArrayParams): ReadonlyArray<stri
 function rowToAgent(row: RawAgentRow): Agent {
   const sourceThreadIds = parseStringArray({ value: row.sourceThreadIds });
   const domains = parseStringArray({ value: row.domainsJson });
+  const routingLock = parseRoutingJson({
+    value: row.routingLock,
+    isValid: isWorkflowRoutingLock,
+    field: 'routing lock',
+  });
+  const storedRoutingDecision = parseRoutingJson({
+    value: row.routingDecision,
+    isValid: isWorkflowRoutingDecision,
+    field: 'routing decision',
+  });
+  const routingDecision =
+    storedRoutingDecision ??
+    (row.stepId === null && routingLock === null
+      ? legacyAgentRoutingDecision({
+          provider: row.providerOverride,
+          model: row.modelOverride,
+          effort: row.effort,
+        })
+      : null);
   return {
     id: row.id as AgentId,
     sessionId: row.sessionId as SessionId,
@@ -210,6 +272,13 @@ function rowToAgent(row: RawAgentRow): Agent {
     ...(row.sourceCommentUrl != null && { sourceCommentUrl: row.sourceCommentUrl }),
     ...(row.sourceKind != null && { sourceKind: row.sourceKind as AgentSourceKind }),
     ...(domains.length > 0 && { domains }),
+    routingLock,
+    routingDecision,
+    taskProfile: parseRoutingJson({
+      value: row.taskProfile,
+      isValid: isWorkflowTaskProfile,
+      field: 'task profile',
+    }),
   };
 }
 
@@ -236,6 +305,9 @@ export type WorkflowStepUpsertArgs = {
   readonly effort?: AgentEffort;
   readonly verbosity?: VerbosityLevel;
   readonly orchestratorReason?: string;
+  readonly routingLock?: WorkflowRoutingLock | null;
+  readonly routingDecision?: WorkflowRoutingDecision | null;
+  readonly taskProfile?: WorkflowTaskProfile | null;
 };
 
 export type WorkflowUpsertArgs = {
@@ -274,6 +346,21 @@ export const invokeWorkflowUpsert = async (args: WorkflowUpsertArgs): Promise<Wo
         effort: d.effort ?? null,
         verbosity: d.verbosity ?? null,
         orchestratorReason: d.orchestratorReason ?? null,
+        routingLock: stringifyRoutingJson({
+          value: d.routingLock ?? null,
+          isValid: isWorkflowRoutingLock,
+          field: 'routing lock',
+        }),
+        routingDecision: stringifyRoutingJson({
+          value: d.routingDecision ?? null,
+          isValid: isWorkflowRoutingDecision,
+          field: 'routing decision',
+        }),
+        taskProfile: stringifyRoutingJson({
+          value: d.taskProfile ?? null,
+          isValid: isWorkflowTaskProfile,
+          field: 'task profile',
+        }),
       })),
     },
   });
@@ -367,6 +454,9 @@ export type AgentInsertArgs = {
   readonly sourceCommentUrl?: string;
   readonly sourceKind?: AgentSourceKind;
   readonly domains?: ReadonlyArray<string>;
+  readonly routingLock?: WorkflowRoutingLock | null;
+  readonly routingDecision?: WorkflowRoutingDecision | null;
+  readonly taskProfile?: WorkflowTaskProfile | null;
 };
 
 export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> => {
@@ -395,9 +485,71 @@ export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> =>
       sourceCommentUrl: run.sourceCommentUrl ?? null,
       sourceKind: run.sourceKind ?? null,
       domainsJson: run.domains !== undefined ? JSON.stringify(run.domains) : null,
+      routingLock: stringifyRoutingJson({
+        value: run.routingLock ?? null,
+        isValid: isWorkflowRoutingLock,
+        field: 'routing lock',
+      }),
+      routingDecision: stringifyRoutingJson({
+        value: run.routingDecision ?? null,
+        isValid: isWorkflowRoutingDecision,
+        field: 'routing decision',
+      }),
+      taskProfile: stringifyRoutingJson({
+        value: run.taskProfile ?? null,
+        isValid: isWorkflowTaskProfile,
+        field: 'task profile',
+      }),
     },
   });
   return rowToAgent(row);
+};
+
+export type WorkflowNodeRoutingUpdateArgs = {
+  readonly nodeKind: 'step' | 'agent';
+  readonly id: StepId | AgentId;
+  readonly routingLock: WorkflowRoutingLock | null;
+  readonly routingDecision: WorkflowRoutingDecision;
+  readonly taskProfile: WorkflowTaskProfile | null;
+  readonly providerOverride: ProviderId | null;
+  readonly modelOverride: string | null;
+  readonly effort: AgentEffort | null;
+};
+
+export const invokeWorkflowNodeRoutingUpdate = async ({
+  nodeKind,
+  id,
+  routingLock,
+  routingDecision,
+  taskProfile,
+  providerOverride,
+  modelOverride,
+  effort,
+}: WorkflowNodeRoutingUpdateArgs): Promise<void> => {
+  await invoke<void>('workflow_node_routing_update', {
+    input: {
+      nodeKind,
+      id,
+      routingLock: stringifyRoutingJson({
+        value: routingLock,
+        isValid: isWorkflowRoutingLock,
+        field: 'routing lock',
+      }),
+      routingDecision: stringifyRoutingJson({
+        value: routingDecision,
+        isValid: isWorkflowRoutingDecision,
+        field: 'routing decision',
+      }),
+      taskProfile: stringifyRoutingJson({
+        value: taskProfile,
+        isValid: isWorkflowTaskProfile,
+        field: 'task profile',
+      }),
+      providerOverride,
+      modelOverride,
+      effort,
+    },
+  });
 };
 
 export const invokeAgentSetKind = async (id: AgentId, kind: string | null): Promise<void> => {

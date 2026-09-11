@@ -173,6 +173,15 @@ export type {
   VariantAxis,
   VariantAxisOption,
 } from './model-catalog';
+export type {
+  WorkflowModelPick,
+  WorkflowRoutingDecision,
+  WorkflowRoutingLock,
+  WorkflowRoutingProposal,
+  WorkflowTaskDifficulty,
+  WorkflowTaskProfile,
+  WorkflowTaskType,
+} from './workflow-routing';
 export { PROVIDER_API_KEY_ENV, PROVIDER_IDS } from './provider-registry';
 export type { OpenCodeRouting, ProviderKind } from './provider-catalog';
 export {
