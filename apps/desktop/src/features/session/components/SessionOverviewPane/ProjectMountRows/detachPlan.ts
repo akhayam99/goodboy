@@ -194,6 +194,9 @@ const integrationDetailOf = ({ measured }: MountRiskParams): string => {
   }
 };
 
+const unmergedVerb = ({ count }: { readonly count: number }): string =>
+  count === 1 ? 'is' : 'are';
+
 export const integrationLine = ({ measured }: MeasuredListParams): string | null => {
   const present = presentOf({ measured });
   const only = present[0];
@@ -210,8 +213,7 @@ export const integrationLine = ({ measured }: MeasuredListParams): string | null
   if (unmerged.length === 0) {
     return 'Every branch is merged into its base branch.';
   }
-  const verb = unmerged.length === 1 ? 'is' : 'are';
-  return `${countLabel({ count: unmerged.length, singular: 'branch' })} ${verb} not merged into the base branch yet.`;
+  return `${countLabel({ count: unmerged.length, singular: 'branch' })} ${unmergedVerb({ count: unmerged.length })} not merged into the base branch yet.`;
 };
 
 export const integrationDetails = ({ measured }: MeasuredListParams): DetachDetails => {
@@ -354,7 +356,7 @@ const safeLines = ({
         'The branches stay in the repository.',
       ]
     : [
-        `${head}, and ${countLabel({ count: unmerged.length, singular: 'branch' })} not merged into the base branch yet.`,
+        `${head}, and ${countLabel({ count: unmerged.length, singular: 'branch' })} ${unmergedVerb({ count: unmerged.length })} not merged into the base branch yet.`,
         'The branches and their commits stay in the repository.',
       ];
 };
