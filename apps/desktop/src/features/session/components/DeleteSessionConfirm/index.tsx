@@ -19,8 +19,8 @@ export const DeleteSessionConfirm = ({ session, onClose, className }: Props) => 
   const [error, setError] = useState<string | null>(null);
   const isBranchless = isBranchlessSession({ branch: sessionBranch });
   const description = isBranchless
-    ? 'Permanently removes this session, its transcripts, and every saved file version from this device.'
-    : 'Permanently removes the worktree and transcripts for this session from this device. The branch is preserved for manual merge.';
+    ? 'Removes this session, its transcripts and every saved file version from this device. Nothing of it is left on disk.'
+    : 'Removes this session and its transcripts from this device. The branch and its commits stay in the repository, and a worktree still holding uncommitted work is kept and listed under Settings, Storage.';
   const warning = isBranchless
     ? 'This cannot be undone. Saved file versions are deleted with this session.'
     : 'This cannot be undone. To keep the history, archive instead.';
