@@ -1,13 +1,12 @@
 import { announcePrWrite } from '../../../features/review/prWriteBus';
-import { currentWindowLabel } from '../../../features/workspace/window';
 import { prWriteKey } from './prWriteKey';
-import type { GetFn, PrWriteTarget, SetFn } from './types';
+import type { GetFn, ReleasePrWriteParams, SetFn } from './types';
 
 export const releasePrWrite = (set: SetFn, get: GetFn) => {
-  return ({ projectId, prNumber }: PrWriteTarget): void => {
+  return ({ projectId, prNumber, token }: ReleasePrWriteParams): void => {
     const key = prWriteKey({ projectId, prNumber });
     const claim = get().prWriteClaims[key];
-    if (claim === undefined || claim.windowLabel !== currentWindowLabel()) {
+    if (claim === undefined || claim.token !== token) {
       return;
     }
     set((state) => {

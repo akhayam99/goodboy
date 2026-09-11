@@ -7,6 +7,7 @@ export type { GetFn, SetFn } from '../../slice-types';
 
 export type PrWriteClaim = {
   readonly key: string;
+  readonly token: string;
   readonly windowLabel: string;
   readonly action: PrLifecycleAction;
   readonly startedAt: number;
@@ -21,12 +22,17 @@ export type ClaimPrWriteParams = PrWriteTarget & {
   readonly action: PrLifecycleAction;
 };
 
+export type ReleasePrWriteParams = PrWriteTarget & {
+  readonly token: string;
+};
+
 export type PrWriteClaimResult =
-  { readonly ok: true } | { readonly ok: false; readonly claim: PrWriteClaim };
+  | { readonly ok: true; readonly token: string }
+  | { readonly ok: false; readonly claim: PrWriteClaim };
 
 export type PrWritesSlice = PrWritesState & {
   claimPrWrite(params: ClaimPrWriteParams): PrWriteClaimResult;
-  releasePrWrite(params: PrWriteTarget): void;
+  releasePrWrite(params: ReleasePrWriteParams): void;
   notePrWrite(announcement: PrWriteAnnouncement): void;
   sweepPrWriteClaims(): void;
 };

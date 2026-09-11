@@ -25,6 +25,6 @@ export const withPrWriteClaim = async ({
   try {
     await run();
   } finally {
-    get().releasePrWrite({ projectId, prNumber });
+    get().releasePrWrite({ projectId, prNumber, token: claimed.token });
   }
 };

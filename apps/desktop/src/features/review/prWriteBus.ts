@@ -6,6 +6,7 @@ const PR_WRITE_EVENT = 'goodboy:pr-write';
 export type PrWriteAnnouncement = {
   readonly kind: 'claimed' | 'released';
   readonly key: string;
+  readonly token: string;
   readonly windowLabel: string;
   readonly action: PrLifecycleAction;
   readonly startedAt: number;

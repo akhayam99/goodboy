@@ -6,18 +6,14 @@ export const notePrWrite = (set: SetFn) => {
     set((state) => {
       const current = state.prWriteClaims[announcement.key];
       if (announcement.kind === 'released') {
-        if (current === undefined || current.windowLabel !== announcement.windowLabel) {
+        if (current === undefined || current.token !== announcement.token) {
           return {};
         }
         const next = { ...state.prWriteClaims };
         delete next[announcement.key];
         return { prWriteClaims: next };
       }
-      if (
-        current !== undefined &&
-        current.windowLabel === announcement.windowLabel &&
-        current.startedAt === announcement.startedAt
-      ) {
+      if (current !== undefined && current.token === announcement.token) {
         return {};
       }
       return {
@@ -25,6 +21,7 @@ export const notePrWrite = (set: SetFn) => {
           ...state.prWriteClaims,
           [announcement.key]: {
             key: announcement.key,
+            token: announcement.token,
             windowLabel: announcement.windowLabel,
             action: announcement.action,
             startedAt: announcement.startedAt,

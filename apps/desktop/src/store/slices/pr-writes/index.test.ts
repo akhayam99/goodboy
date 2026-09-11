@@ -58,7 +58,7 @@ describe('pr writes slice', () => {
   it('grants a free pull request and tells the other windows', () => {
     const { slice, read } = harness();
 
-    expect(slice.claimPrWrite({ ...TARGET, action: 'merge' })).toEqual({ ok: true });
+    expect(slice.claimPrWrite({ ...TARGET, action: 'merge' }).ok).toBe(true);
     expect(read().prWriteClaims['project-1#248']?.action).toBe('merge');
     expect(announcementFrom(0).kind).toBe('claimed');
     expect(announcementFrom(0).key).toBe('project-1#248');
@@ -78,20 +78,29 @@ describe('pr writes slice', () => {
     const { slice } = harness();
     slice.claimPrWrite({ ...TARGET, action: 'merge' });
 
-    expect(slice.claimPrWrite({ projectId: PROJECT_ID, prNumber: 249, action: 'merge' })).toEqual({
-      ok: true,
-    });
+    expect(slice.claimPrWrite({ projectId: PROJECT_ID, prNumber: 249, action: 'merge' }).ok).toBe(
+      true,
+    );
   });
 
   it('frees the pull request on release and announces it', () => {
     const { slice, read } = harness();
-    slice.claimPrWrite({ ...TARGET, action: 'merge' });
+    const claimed = slice.claimPrWrite({ ...TARGET, action: 'merge' });
 
-    slice.releasePrWrite(TARGET);
+    slice.releasePrWrite({ ...TARGET, token: claimed.ok ? claimed.token : '' });
 
     expect(read().prWriteClaims['project-1#248']).toBeUndefined();
     expect(announcementFrom(1).kind).toBe('released');
-    expect(slice.claimPrWrite({ ...TARGET, action: 'close' })).toEqual({ ok: true });
+    expect(slice.claimPrWrite({ ...TARGET, action: 'close' }).ok).toBe(true);
+  });
+
+  it('never frees a claim the caller does not hold', () => {
+    const { slice, read } = harness();
+    slice.claimPrWrite({ ...TARGET, action: 'merge' });
+
+    slice.releasePrWrite({ ...TARGET, token: 'win-here-0-0' });
+
+    expect(read().prWriteClaims['project-1#248']?.action).toBe('merge');
   });
 
   it('never releases a claim another window holds', () => {
@@ -99,12 +108,13 @@ describe('pr writes slice', () => {
     slice.notePrWrite({
       kind: 'claimed',
       key: 'project-1#248',
+      token: 'win-other-1',
       windowLabel: 'win-other',
       action: 'merge',
       startedAt: Date.now(),
     });
 
-    slice.releasePrWrite(TARGET);
+    slice.releasePrWrite({ ...TARGET, token: 'win-here-1' });
 
     expect(read().prWriteClaims['project-1#248']?.windowLabel).toBe('win-other');
   });
@@ -114,6 +124,7 @@ describe('pr writes slice', () => {
     slice.notePrWrite({
       kind: 'claimed',
       key: 'project-1#248',
+      token: 'win-other-1',
       windowLabel: 'win-other',
       action: 'close',
       startedAt: Date.now(),
@@ -122,13 +133,14 @@ describe('pr writes slice', () => {
     expect(slice.claimPrWrite({ ...TARGET, action: 'merge' }).ok).toBe(false);
   });
 
-  it('ignores a release announced by a window that does not hold the claim', () => {
+  it('ignores a release announced against a claim that is no longer the one held', () => {
     const { slice, read } = harness();
     slice.claimPrWrite({ ...TARGET, action: 'merge' });
 
     slice.notePrWrite({
       kind: 'released',
       key: 'project-1#248',
+      token: 'win-other-1',
       windowLabel: 'win-other',
       action: 'merge',
       startedAt: Date.now(),
@@ -142,12 +154,14 @@ describe('pr writes slice', () => {
     slice.claimPrWrite({ ...TARGET, action: 'merge' });
 
     vi.advanceTimersByTime(PR_WRITE_CLAIM_TTL_MS);
-    expect(slice.claimPrWrite({ ...TARGET, action: 'close' })).toEqual({ ok: true });
+    const second = slice.claimPrWrite({ ...TARGET, action: 'close' });
+    expect(second.ok).toBe(true);
 
-    slice.releasePrWrite(TARGET);
+    slice.releasePrWrite({ ...TARGET, token: second.ok ? second.token : '' });
     slice.notePrWrite({
       kind: 'claimed',
       key: 'project-1#249',
+      token: 'win-other-1',
       windowLabel: 'win-other',
       action: 'merge',
       startedAt: Date.now(),
