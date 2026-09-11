@@ -742,6 +742,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
             body={newDraft.body}
             projects={workspaceProjects}
             projectId={newDraft.projectId}
+            mountPath={mountByProjectId.get(newDraft.projectId)?.worktreePath ?? null}
             error={error}
             onNameChange={(name) =>
               setNewDraft((current) => (current == null ? null : { ...current, name }))
@@ -810,6 +811,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                   body={newDraft.body}
                   projects={workspaceProjects}
                   projectId={newDraft.projectId}
+                  mountPath={mountByProjectId.get(newDraft.projectId)?.worktreePath ?? null}
                   error={error}
                   onNameChange={(name) =>
                     setNewDraft((current) => (current == null ? null : { ...current, name }))
