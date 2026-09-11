@@ -21,7 +21,10 @@ const { showToast, state, fixtures } = vi.hoisted(() => ({
     sessionGithub: {} as Record<string, { pr: unknown } | undefined>,
     sessionResolveAttempts: {} as Record<string, ReadonlyArray<unknown>>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionProjectMounts: {} as Record<string, ReadonlyArray<{ projectId: string }>>,
+    sessionProjectMounts: {} as Record<
+      string,
+      ReadonlyArray<{ mountId: string; projectId: string; worktreePath: string }>
+    >,
     projects: [] as ReadonlyArray<{ id: string; baseBranch?: string | null }>,
     sessions: [
       {
@@ -136,6 +139,9 @@ beforeEach(() => {
   scrollIntoViewMock.mockReset();
   state.settings = {};
   state.sessionPhaseRuns = {};
+  state.sessionProjectMounts = {
+    s1: [{ mountId: 'mount-1', projectId: 'project-1', worktreePath: '/tmp/worktree' }],
+  };
   state.workspaceOverrides = {};
   state.loadDiffComments = vi.fn(async () => undefined);
   state.addDiffComment = vi.fn(async () => undefined);
