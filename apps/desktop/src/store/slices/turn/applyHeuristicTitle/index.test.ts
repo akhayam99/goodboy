@@ -300,6 +300,61 @@ describe('applyHeuristicTitle', () => {
     consoleErrorSpy.mockRestore();
   });
 
+  it('keeps a user rename that lands while the heuristic title write is in flight', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const harness = createHarness();
+    renameSessionMock.mockImplementationOnce(async () => {
+      harness.set((state) => ({
+        sessions: state.sessions.map((s) =>
+          s.id === SESSION_ID ? { ...s, goal: 'User typed title', titleUserEdited: true } : s,
+        ),
+      }));
+      throw new Error('db locked');
+    });
+    invokeMock.mockRejectedValue(new Error('offline'));
+
+    await applyHeuristicTitle({
+      ...harness,
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      prompt: 'Implement a secure authentication flow',
+    });
+
+    expect(harness.read().sessions[0]?.goal).toBe('User typed title');
+    expect(harness.read().sessions[0]?.titleUserEdited).toBe(true);
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('keeps a user rename that lands while the generated title write is in flight', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    invokeMock.mockResolvedValue({
+      stdout: JSON.stringify({ result: 'Implement secure authentication flow' }),
+      stderr: '',
+      exitCode: 0,
+    });
+    const harness = createHarness();
+    renameSessionMock.mockResolvedValueOnce(undefined);
+    renameSessionMock.mockImplementationOnce(async () => {
+      harness.set((state) => ({
+        sessions: state.sessions.map((s) =>
+          s.id === SESSION_ID ? { ...s, goal: 'User typed title', titleUserEdited: true } : s,
+        ),
+      }));
+      throw new Error('db locked');
+    });
+
+    await applyHeuristicTitle({
+      ...harness,
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      prompt: 'Implement a secure authentication flow',
+    });
+
+    expect(harness.read().sessions[0]?.goal).toBe('User typed title');
+    expect(harness.read().sessions[0]?.titleUserEdited).toBe(true);
+    consoleErrorSpy.mockRestore();
+  });
+
   it('keeps heuristic titles when generation times out', async () => {
     vi.useFakeTimers();
     invokeMock.mockReturnValue(new Promise(() => undefined));

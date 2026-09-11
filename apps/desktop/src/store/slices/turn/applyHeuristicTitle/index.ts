@@ -24,6 +24,32 @@ type Params = {
   readonly prompt: string;
 };
 
+type RevertGoalParams = {
+  readonly set: SetFn;
+  readonly sessionId: SessionId;
+  readonly optimisticGoal: string;
+  readonly previousGoal: string;
+};
+
+const revertGoalIfStillOptimistic = ({
+  set,
+  sessionId,
+  optimisticGoal,
+  previousGoal,
+}: RevertGoalParams): void => {
+  set((state) => ({
+    sessions: state.sessions.map((candidate) => {
+      if (candidate.id !== sessionId) {
+        return candidate;
+      }
+      if (candidate.titleUserEdited || candidate.goal !== optimisticGoal) {
+        return candidate;
+      }
+      return { ...candidate, goal: previousGoal };
+    }),
+  }));
+};
+
 type GenerateParams = TaskModelPreference &
   Readonly<{
     prompt: string;
@@ -104,11 +130,12 @@ export const applyHeuristicTitle = async ({
           await renameSessionInDb(tauriDatabase, sessionId, heuristicTitle, titleNow, false);
         } catch (err) {
           console.error('failed to persist heuristic session title', err);
-          set((state) => ({
-            sessions: state.sessions.map((candidate) =>
-              candidate.id === sessionId ? { ...candidate, goal: previousGoal } : candidate,
-            ),
-          }));
+          revertGoalIfStillOptimistic({
+            set,
+            sessionId,
+            optimisticGoal: heuristicTitle,
+            previousGoal,
+          });
         }
       }
       if (canRenameAgent) {
@@ -174,11 +201,12 @@ export const applyHeuristicTitle = async ({
         await renameSessionInDb(tauriDatabase, sessionId, generatedTitle, generatedAt, false);
       } catch (err) {
         console.error('failed to persist generated session title', err);
-        set((state) => ({
-          sessions: state.sessions.map((candidate) =>
-            candidate.id === sessionId ? { ...candidate, goal: previousGoal } : candidate,
-          ),
-        }));
+        revertGoalIfStillOptimistic({
+          set,
+          sessionId,
+          optimisticGoal: generatedTitle,
+          previousGoal,
+        });
       }
     }
     if (agentMatchesPlaceholder) {
