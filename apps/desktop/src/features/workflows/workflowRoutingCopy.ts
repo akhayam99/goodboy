@@ -9,7 +9,7 @@ export const WORKFLOW_ROUTING_COPY = {
   resetLabel: 'Use automatic selection',
   legacyResetLabel: 'Reset to automatic',
   immutableRefusal:
-    'This step has already started, so its model stays as it ran. Stop the step to choose the model for the next attempt.',
+    'This step has already started, so its model stays as it ran. A later attempt can run on a different model.',
   missingNode: 'This step is no longer part of the run.',
   unknownFailure: 'The model choice could not be saved.',
   noSelection: 'No model resolved yet.',
@@ -21,7 +21,7 @@ export const WORKFLOW_ROUTING_SOURCE_LABEL = {
   step_lock: WORKFLOW_ROUTING_COPY.lockedLabel,
   run_role_lock: 'Run role lock',
   agent: 'Chosen by the orchestrator',
-  heuristic: 'Chosen by fit',
+  heuristic: 'Chosen from what is available',
   role_default: 'Role default',
   session_default: 'Session default',
   kind_default: 'Step kind default',
