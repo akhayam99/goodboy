@@ -218,3 +218,51 @@ describe('buildMountRows', () => {
     expect(row?.observedBranchHolder).toBeNull();
   });
 });
+
+describe('buildMountRows checkout kind', () => {
+  it('marks the row that lives in the repository root as the main checkout', () => {
+    const state = makeState();
+    const rebuilt: MountRowState = {
+      ...state,
+      sessionMounts: {
+        [SESSION_ID]: [
+          mountView({
+            id: FIRST,
+            branch: 'main',
+            worktreePath: '/repos/ledger-core',
+            parallelIndex: 0,
+          }),
+          mountView({
+            id: SECOND,
+            branch: 'ak/part-two',
+            worktreePath: '/wt/two',
+            parallelIndex: 1,
+          }),
+        ],
+      },
+    };
+
+    const [group] = buildMountRows({ state: rebuilt, sessionId: SESSION_ID });
+
+    expect(group?.rows.map((row) => [row.mountId, row.isMainCheckout])).toEqual([
+      [FIRST, true],
+      [SECOND, false],
+    ]);
+  });
+
+  it('never calls a detached row the main checkout', () => {
+    const state = makeState();
+    const rebuilt: MountRowState = {
+      ...state,
+      sessionMounts: {
+        [SESSION_ID]: [
+          mountView({ id: FIRST, branch: 'main', worktreePath: null, parallelIndex: 0 }),
+        ],
+      },
+    };
+
+    const [group] = buildMountRows({ state: rebuilt, sessionId: SESSION_ID });
+
+    expect(group?.rows[0]?.isMainCheckout).toBe(false);
+  });
+});

@@ -51,6 +51,7 @@ const ROW = {
   lastWorktreePath: '/worktrees/api',
   repoRoot: '/repos/api',
   isAttached: true,
+  isMainCheckout: false,
   isOnDisk: true,
   revision: 3,
   parallelIndex: 0,

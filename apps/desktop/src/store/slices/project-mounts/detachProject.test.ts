@@ -624,6 +624,31 @@ describe('detachProject', () => {
     expect(store.sessions[0]?.activeMountId).toBeUndefined();
   });
 
+  it('leaves no write destination when the last project is detached', async () => {
+    const store = makeStore();
+    listSessionMounts.mockImplementation(async () => [VIEW_API, VIEW_API_2]);
+    store.sessionMounts['sess-1'] = [
+      { ...VIEW_API, repoRoot: '/repos/api' },
+      { ...VIEW_API_2, repoRoot: '/repos/api' },
+    ];
+    store.sessionProjectMounts['sess-1'] = store.sessionProjectMounts['sess-1'].filter(
+      (mount) => mount.projectId === 'project-api',
+    );
+    store.sessionWorktrees['sess-1'] = ['/container', '/container/api', '/container/api-2'];
+
+    await runDetach(store);
+
+    expect(store.sessionProjectMounts['sess-1']).toEqual([]);
+    expect(store.sessionActiveMount['sess-1']).toBeNull();
+    expect(store.sessionBranches['sess-1']).toBeUndefined();
+    expect(store.sessions[0]).not.toHaveProperty('activeMountId');
+    expect(updateSessionActiveMount).toHaveBeenCalledWith({
+      db: {},
+      sessionId: SESSION_ID,
+      mountId: null,
+    });
+  });
+
   it('clears the branch observations of the rows it deletes', async () => {
     const store = makeStore();
 

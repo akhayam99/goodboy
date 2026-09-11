@@ -96,6 +96,7 @@ const baseRow: MountRowView = {
   lastWorktreePath: '/api',
   repoRoot: '/repo/api',
   isAttached: true,
+  isMainCheckout: false,
   isOnDisk: true,
   revision: 0,
   parallelIndex: 0,
@@ -534,9 +535,14 @@ describe('ProjectMountRow activity dots', () => {
 describe('ProjectMountRow loading placeholders', () => {
   const status = {
     branch: 'feat/api',
+    head: null,
+    headSubject: null,
     mainDistance: { kind: 'known', ahead: 0, behind: 0 },
     upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
-  } as unknown as WorktreeStatus;
+    workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+    upstream: null,
+    inProgress: null,
+  } satisfies WorktreeStatus;
 
   it('holds a distance placeholder while the git status is still pending', () => {
     renderRow({ isStatusPending: true });
@@ -573,5 +579,90 @@ describe('ProjectMountRow loading placeholders', () => {
 
     expect(screen.queryByTestId('project-distance-skeleton')).toBeNull();
     expect(screen.queryByTestId('project-branch-skeleton')).toBeNull();
+  });
+});
+
+describe('ProjectMountRow worktree state', () => {
+  const cleanStatus = {
+    branch: 'feat/api',
+    head: null,
+    headSubject: null,
+    mainDistance: { kind: 'known', ahead: 0, behind: 0 },
+    upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+    workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+    upstream: null,
+    inProgress: null,
+  } satisfies WorktreeStatus;
+
+  it('says the state is unknown when it has not been read, never that it is clean', () => {
+    renderRow({ worktreeStatus: null });
+
+    const cell = screen.getByTestId('mount-change-state');
+    expect(cell.dataset.state).toBe('unknown');
+    expect(cell.textContent).toBe('Unknown');
+    expect(tooltipTextOf({ element: cell })).toBe('The state of API has not been read.');
+  });
+
+  it('keeps unknown when git could not read the working tree', () => {
+    renderRow({
+      worktreeStatus: {
+        ...cleanStatus,
+        workingTree: { kind: 'unknown', reason: 'status-read-failed' },
+      },
+    });
+
+    const cell = screen.getByTestId('mount-change-state');
+    expect(cell.dataset.state).toBe('unknown');
+    expect(cell.textContent).toBe('Unknown');
+  });
+
+  it('calls a read worktree with no modifications clean', () => {
+    renderRow({ worktreeStatus: cleanStatus });
+
+    const cell = screen.getByTestId('mount-change-state');
+    expect(cell.dataset.state).toBe('clean');
+    expect(cell.textContent).toBe('No changes');
+  });
+
+  it('reports local modifications before the diff numbers land', () => {
+    renderRow({
+      worktreeStatus: {
+        ...cleanStatus,
+        workingTree: {
+          kind: 'known',
+          staged: 1,
+          unstaged: 1,
+          untracked: 0,
+          unmerged: 0,
+          changed: 2,
+        },
+      },
+    });
+
+    const cell = screen.getByTestId('mount-change-state');
+    expect(cell.dataset.state).toBe('modified');
+    expect(cell.textContent).toBe('Modified');
+    expect(tooltipTextOf({ element: cell })).toBe('API has 2 locally modified files.');
+  });
+
+  it('names the git operation in flight on the row', () => {
+    renderRow({ worktreeStatus: { ...cleanStatus, inProgress: 'rebase' } });
+
+    expect(screen.getByTitle('A rebase is in progress in API.').textContent).toBe('Rebasing');
+  });
+
+  it('leaves the row without an operation chip when nothing is running', () => {
+    renderRow({ worktreeStatus: cleanStatus });
+
+    expect(screen.queryByTitle('A rebase is in progress in API.')).toBeNull();
+  });
+
+  it('marks the main checkout apart from a worktree', () => {
+    renderRow({ row: { ...baseRow, isMainCheckout: true, worktreePath: '/repo/api' } });
+    expect(screen.getByTestId('mount-kind-glyph').dataset.kind).toBe('main checkout');
+
+    cleanup();
+    renderRow({ row: baseRow });
+    expect(screen.getByTestId('mount-kind-glyph').dataset.kind).toBe('worktree');
   });
 });

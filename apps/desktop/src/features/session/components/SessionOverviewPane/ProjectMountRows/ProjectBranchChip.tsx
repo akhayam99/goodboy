@@ -80,7 +80,7 @@ export const ProjectBranchChip = ({ sessionId, projectId, mountId, branch, canSw
           role="dialog"
           ariaLabel="Switch branch"
           trigger={
-            <Tooltip content="Switch branch">
+            <Tooltip content="Switch branch. The next turns of this session write here.">
               <button
                 type="button"
                 aria-label="Switch branch"
