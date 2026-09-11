@@ -5,7 +5,8 @@ import {
   listResolveThreads,
   upsertResolveThread,
 } from '@goodboy/db';
-import type { ResolveQueueItem, SessionId } from '@goodboy/types';
+import type { PrComment, ResolveQueueItem, SessionId } from '@goodboy/types';
+import { groupThreads } from '../../../features/github/comment-threads';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { createResolveThread } from './createResolveThread';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
@@ -18,6 +19,18 @@ type QueueItemParams = {
   readonly sessionId: SessionId;
   readonly threadId: string;
   readonly candidateRevision: number;
+};
+
+type RemoteHeadParams = {
+  readonly comments: ReadonlyArray<PrComment>;
+  readonly threadId: string;
+};
+
+const remoteHeadOf = ({ comments, threadId }: RemoteHeadParams): PrComment | null => {
+  const thread = groupThreads(comments.filter((comment) => comment.source === 'review')).find(
+    (candidate) => candidate.head.threadId === threadId,
+  );
+  return thread?.head ?? null;
 };
 
 const queueItemFor = ({
@@ -51,6 +64,7 @@ export const ensureReviewThread = async ({
   sessionId,
   threadId,
   prNumber,
+  isCancelled,
 }: Params): Promise<EnsureReviewThreadResult> => {
   if (threadId.trim() === '' || prNumber <= 0) {
     return 'missing';
@@ -69,14 +83,22 @@ export const ensureReviewThread = async ({
     return 'existing';
   }
   if (previous !== null && previous.state === 'closed') {
-    return 'existing';
+    return 'closed';
   }
-  const remote = get().sessionGithub[sessionId]?.detail?.comments ?? [];
-  const isRemote = remote.some(
-    (comment) => comment.source === 'review' && comment.threadId === threadId,
-  );
-  if (previous === null && !isRemote) {
-    return 'missing';
+  if (previous === null) {
+    const head = remoteHeadOf({
+      comments: get().sessionGithub[sessionId]?.detail?.comments ?? [],
+      threadId,
+    });
+    if (head === null) {
+      return 'missing';
+    }
+    if (head.resolved === true) {
+      return 'closed';
+    }
+  }
+  if (isCancelled?.() === true) {
+    return 'cancelled';
   }
   const row =
     previous ??

@@ -94,9 +94,10 @@ export type PublishParams = SessionParams & {
 export type EnsureReviewThreadParams = SessionParams & {
   readonly threadId: string;
   readonly prNumber: number;
+  readonly isCancelled?: () => boolean;
 };
 
-export type EnsureReviewThreadResult = 'existing' | 'created' | 'missing';
+export type EnsureReviewThreadResult = 'existing' | 'created' | 'missing' | 'closed' | 'cancelled';
 
 export type ResolveActions = {
   readonly acceptResolveQueueItem: (params: ItemRevisionParams) => Promise<void>;

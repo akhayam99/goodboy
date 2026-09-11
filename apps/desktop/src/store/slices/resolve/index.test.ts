@@ -891,9 +891,13 @@ describe('durable resolve store', () => {
   });
 });
 
-type RemoteThreadParams = { readonly threadId: string; readonly prNumber: number };
+type RemoteThreadParams = {
+  readonly threadId: string;
+  readonly prNumber: number;
+  readonly resolved?: boolean;
+};
 
-const githubWithThread = ({ threadId, prNumber }: RemoteThreadParams) => ({
+const githubWithThread = ({ threadId, prNumber, resolved = false }: RemoteThreadParams) => ({
   [SESSION_ID]: {
     pr: { number: prNumber },
     detail: {
@@ -907,7 +911,7 @@ const githubWithThread = ({ threadId, prNumber }: RemoteThreadParams) => ({
           createdAt: NOW,
           url: `https://github.com/example/repo/pull/${prNumber}#discussion_r1`,
           source: 'review',
-          resolved: false,
+          resolved,
           threadId,
         },
       ],
@@ -1023,12 +1027,48 @@ describe('materializing a review thread the queue has never seen', () => {
         threadId: 'PRRT_9',
         prNumber: 12,
       }),
-    ).toBe('existing');
+    ).toBe('closed');
     expect(await queuedThreadIds()).toEqual([]);
     expect(
       (await listResolveThreads({ db, sessionId: SESSION_ID })).find(
         (row) => row.threadId === 'PRRT_9',
       )?.state,
     ).toBe('closed');
+  });
+
+  it('leaves a thread github already resolved out of the queue', async () => {
+    const live = createHarness();
+    live.store.setState({
+      sessionGithub: githubWithThread({ threadId: 'PRRT_9', prNumber: 12, resolved: true }),
+    } as never);
+
+    expect(
+      await live.actions.ensureReviewThread({
+        sessionId: SESSION_ID,
+        threadId: 'PRRT_9',
+        prNumber: 12,
+      }),
+    ).toBe('closed');
+    expect(await queuedThreadIds()).toEqual([]);
+    expect(await listResolveThreads({ db, sessionId: SESSION_ID })).toEqual([]);
+  });
+
+  it('writes nothing once the navigation that asked for it is superseded', async () => {
+    const live = createHarness();
+    live.store.setState({
+      sessionGithub: githubWithThread({ threadId: 'PRRT_9', prNumber: 12 }),
+    } as never);
+
+    expect(
+      await live.actions.ensureReviewThread({
+        sessionId: SESSION_ID,
+        threadId: 'PRRT_9',
+        prNumber: 12,
+        isCancelled: () => true,
+      }),
+    ).toBe('cancelled');
+    expect(await queuedThreadIds()).toEqual([]);
+    expect(await listResolveThreads({ db, sessionId: SESSION_ID })).toEqual([]);
+    expect(live.get().sessionResolveQueueItems[SESSION_ID] ?? []).toEqual([]);
   });
 });
