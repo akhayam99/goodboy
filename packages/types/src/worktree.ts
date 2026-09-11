@@ -88,6 +88,11 @@ export type WorktreeRemovalResult =
 
 export type WorktreeRemovalMode = 'safe' | 'confirmed';
 
+export type BranchIntegration =
+  | { readonly kind: 'unknown' }
+  | { readonly kind: 'merged'; readonly base: string }
+  | { readonly kind: 'unmerged'; readonly base: string; readonly ahead: number };
+
 export type WorktreeDetachAssessment =
   | { readonly kind: 'missing'; readonly path: string }
   | { readonly kind: 'unavailable'; readonly path: string; readonly branch: string | null }
@@ -100,6 +105,7 @@ export type WorktreeDetachAssessment =
       readonly localOnlyCommits: number;
       readonly ignoredFiles: number;
       readonly ignoredFileSamples: ReadonlyArray<string>;
+      readonly integration: BranchIntegration;
     };
 
 export type WorktreeDirectorySize = {

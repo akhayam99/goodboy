@@ -129,6 +129,14 @@ pub enum WorktreeRemovalMode {
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum BranchIntegration {
+    Unknown,
+    Merged { base: String },
+    Unmerged { base: String, ahead: u32 },
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum WorktreeDetachAssessment {
     Missing {
         path: String,
@@ -150,6 +158,7 @@ pub enum WorktreeDetachAssessment {
         ignored_files: u32,
         #[serde(rename = "ignoredFileSamples")]
         ignored_file_samples: Vec<String>,
+        integration: BranchIntegration,
     },
 }
 
@@ -1211,16 +1220,95 @@ pub async fn worktree_remove_checked(
 #[tauri::command]
 pub async fn worktree_detach_assessment(
     worktree_path: String,
+    base_branch: Option<String>,
 ) -> Result<WorktreeDetachAssessment, WorktreeError> {
-    tauri::async_runtime::spawn_blocking(move || worktree_detach_assessment_blocking(worktree_path))
-        .await
-        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+    tauri::async_runtime::spawn_blocking(move || {
+        worktree_detach_assessment_blocking(worktree_path, base_branch)
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
 fn local_only_commit_count(cwd: &Path) -> Option<u32> {
     git(cwd, &["rev-list", "--count", "HEAD", "--not", "--remotes"])
         .ok()
         .and_then(|raw| raw.trim().parse::<u32>().ok())
+}
+
+fn commit_ref_exists(cwd: &Path, reference: &str) -> bool {
+    git(
+        cwd,
+        &[
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            &format!("{reference}^{{commit}}"),
+        ],
+    )
+    .is_ok_and(|raw| !raw.trim().is_empty())
+}
+
+fn default_base_ref(cwd: &Path) -> Option<String> {
+    let raw = git(
+        cwd,
+        &["symbolic-ref", "--quiet", "refs/remotes/origin/HEAD"],
+    )
+    .ok()?;
+    let trimmed = raw.trim();
+    match trimmed.is_empty() {
+        true => None,
+        false => Some(trimmed.to_string()),
+    }
+}
+
+fn resolve_base_ref(cwd: &Path, base_branch: Option<&str>) -> Option<String> {
+    let named = base_branch
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+        .map(str::to_string);
+    let Some(name) = named else {
+        return default_base_ref(cwd);
+    };
+    let stripped = name
+        .strip_prefix("refs/heads/")
+        .or_else(|| name.strip_prefix("refs/remotes/"))
+        .unwrap_or(name.as_str())
+        .to_string();
+    [
+        format!("refs/remotes/origin/{stripped}"),
+        format!("refs/heads/{stripped}"),
+        stripped.clone(),
+    ]
+    .into_iter()
+    .find(|candidate| commit_ref_exists(cwd, candidate))
+}
+
+fn base_label(base_ref: &str) -> String {
+    base_ref
+        .strip_prefix("refs/remotes/")
+        .or_else(|| base_ref.strip_prefix("refs/heads/"))
+        .unwrap_or(base_ref)
+        .to_string()
+}
+
+fn branch_integration(cwd: &Path, base_branch: Option<&str>, has_head: bool) -> BranchIntegration {
+    let Some(base_ref) = resolve_base_ref(cwd, base_branch) else {
+        return BranchIntegration::Unknown;
+    };
+    let base = base_label(&base_ref);
+    if !has_head {
+        return BranchIntegration::Merged { base };
+    }
+    let Ok(raw) = git(cwd, &["rev-list", "--count", &format!("{base_ref}..HEAD")]) else {
+        return BranchIntegration::Unknown;
+    };
+    let Ok(ahead) = raw.trim().parse::<u32>() else {
+        return BranchIntegration::Unknown;
+    };
+    match ahead {
+        0 => BranchIntegration::Merged { base },
+        _ => BranchIntegration::Unmerged { base, ahead },
+    }
 }
 
 const REPRODUCIBLE_IGNORED_DIRS: [&str; 11] = [
@@ -1274,6 +1362,7 @@ fn ignored_files_at_risk(worktree_path: &Path) -> Option<IgnoredFilesAtRisk> {
 
 fn worktree_detach_assessment_blocking(
     worktree_path: String,
+    base_branch: Option<String>,
 ) -> Result<WorktreeDetachAssessment, WorktreeError> {
     let p = Path::new(&worktree_path);
     if !p.exists() {
@@ -1311,6 +1400,7 @@ fn worktree_detach_assessment_blocking(
             branch,
         });
     };
+    let integration = branch_integration(p, base_branch.as_deref(), snapshot.head.is_some());
     Ok(WorktreeDetachAssessment::Assessed {
         path: worktree_path,
         branch,
@@ -1319,6 +1409,7 @@ fn worktree_detach_assessment_blocking(
         local_only_commits,
         ignored_files: ignored.count,
         ignored_file_samples: ignored.samples,
+        integration,
     })
 }
 
@@ -4268,7 +4359,7 @@ mod teardown_tests {
     use super::{
         collect_orphans, inspect_worktree_with, remove_worktree_checked_leased,
         remove_worktree_checked_with, worktree_detach_assessment_blocking,
-        worktree_directory_size_blocking, worktree_orphan_remove_blocking,
+        worktree_directory_size_blocking, worktree_orphan_remove_blocking, BranchIntegration,
         WorktreeDetachAssessment, WorktreeError, WorktreeInspection, WorktreeRemovalMode,
         WorktreeRemovalReason, WorktreeRemovalResult, REPRODUCIBLE_IGNORED_DIRS,
     };
@@ -4783,10 +4874,26 @@ mod teardown_tests {
         git_ok(root, &["init", "--bare", bare.to_str().unwrap()]);
         git_ok(root, &["remote", "add", "origin", bare.to_str().unwrap()]);
         git_ok(root, &["push", "-u", "origin", "main"]);
+        git_ok(root, &["remote", "set-head", "origin", "main"]);
     }
 
     fn assess(target: &Path) -> WorktreeDetachAssessment {
-        worktree_detach_assessment_blocking(target.to_string_lossy().into_owned()).unwrap()
+        worktree_detach_assessment_blocking(target.to_string_lossy().into_owned(), None).unwrap()
+    }
+
+    fn assess_against(target: &Path, base_branch: &str) -> WorktreeDetachAssessment {
+        worktree_detach_assessment_blocking(
+            target.to_string_lossy().into_owned(),
+            Some(base_branch.to_string()),
+        )
+        .unwrap()
+    }
+
+    fn integration_of(assessment: &WorktreeDetachAssessment) -> &BranchIntegration {
+        match assessment {
+            WorktreeDetachAssessment::Assessed { integration, .. } => integration,
+            _ => panic!("expected an assessed worktree"),
+        }
     }
 
     #[test]
@@ -4870,6 +4977,9 @@ mod teardown_tests {
                 local_only_commits: 0,
                 ignored_files: 0,
                 ignored_file_samples: Vec::new(),
+                integration: BranchIntegration::Merged {
+                    base: "origin/main".to_string()
+                },
             }
         );
     }
@@ -5115,6 +5225,107 @@ mod teardown_tests {
             assess(&target),
             WorktreeDetachAssessment::Missing {
                 path: target.to_string_lossy().into_owned()
+            }
+        );
+    }
+
+    #[test]
+    fn assessment_reports_a_branch_merged_into_the_configured_base() {
+        let root = init_repo("assess-merged-base");
+        publish_repo(&root);
+        let target = add_worktree(&root, "merged-base");
+        git_ok(&target, &["push", "-u", "origin", "test/merged-base"]);
+
+        assert_eq!(
+            integration_of(&assess_against(&target, "main")),
+            &BranchIntegration::Merged {
+                base: "origin/main".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn assessment_counts_commits_missing_from_the_configured_base() {
+        let root = init_repo("assess-unmerged-base");
+        publish_repo(&root);
+        let target = add_worktree(&root, "unmerged-base");
+        std::fs::write(target.join("first.txt"), "one\n").unwrap();
+        git_ok(&target, &["add", "first.txt"]);
+        git_ok(&target, &["commit", "-m", "first"]);
+        std::fs::write(target.join("second.txt"), "two\n").unwrap();
+        git_ok(&target, &["add", "second.txt"]);
+        git_ok(&target, &["commit", "-m", "second"]);
+        git_ok(&target, &["push", "-u", "origin", "test/unmerged-base"]);
+
+        assert_eq!(
+            integration_of(&assess_against(&target, "main")),
+            &BranchIntegration::Unmerged {
+                base: "origin/main".to_string(),
+                ahead: 2
+            }
+        );
+    }
+
+    #[test]
+    fn assessment_reads_integration_against_the_project_base_not_main() {
+        let root = init_repo("assess-project-base");
+        publish_repo(&root);
+        let target = add_worktree(&root, "project-base");
+        std::fs::write(target.join("feature.txt"), "work\n").unwrap();
+        git_ok(&target, &["add", "feature.txt"]);
+        git_ok(&target, &["commit", "-m", "feature"]);
+        git_ok(&target, &["push", "-u", "origin", "test/project-base"]);
+        git_ok(&target, &["push", "origin", "HEAD:refs/heads/develop"]);
+        git_ok(&target, &["fetch", "origin"]);
+
+        assert_eq!(
+            integration_of(&assess_against(&target, "develop")),
+            &BranchIntegration::Merged {
+                base: "origin/develop".to_string()
+            }
+        );
+        assert_eq!(
+            integration_of(&assess_against(&target, "main")),
+            &BranchIntegration::Unmerged {
+                base: "origin/main".to_string(),
+                ahead: 1
+            }
+        );
+    }
+
+    #[test]
+    fn assessment_reports_unknown_integration_when_the_base_does_not_resolve() {
+        let root = init_repo("assess-base-missing");
+        publish_repo(&root);
+        let target = add_worktree(&root, "base-missing");
+        git_ok(&target, &["push", "-u", "origin", "test/base-missing"]);
+
+        assert_eq!(
+            integration_of(&assess_against(&target, "release/never-cut")),
+            &BranchIntegration::Unknown
+        );
+    }
+
+    #[test]
+    fn assessment_reports_unknown_integration_when_no_base_is_configured_and_none_is_published() {
+        let root = init_repo("assess-base-absent");
+        let target = add_worktree(&root, "base-absent");
+
+        assert_eq!(
+            integration_of(&assess(&target)),
+            &BranchIntegration::Unknown
+        );
+    }
+
+    #[test]
+    fn assessment_falls_back_to_a_local_base_branch_without_a_remote() {
+        let root = init_repo("assess-local-base");
+        let target = add_worktree(&root, "local-base");
+
+        assert_eq!(
+            integration_of(&assess_against(&target, "main")),
+            &BranchIntegration::Merged {
+                base: "main".to_string()
             }
         );
     }
