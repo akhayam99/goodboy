@@ -4,6 +4,7 @@ import type { SessionId, WorkspaceId, WorktreeStatus } from '@goodboy/types';
 import type { LensKind, MountDiffStat } from '../../../../../store';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
+import { selectActiveMountId } from '../../../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { useToast } from '../../../../../app/components/Toast';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
@@ -71,6 +72,7 @@ export const ProjectMountRow = ({
   const setScriptsLensScope = useAppStore((state) => state.setScriptsLensScope);
   const openMountDiff = useAppStore((state) => state.openMountDiff);
   const attachMount = useAppStore((state) => state.attachMount);
+  const activeMountId = useAppStore((state) => selectActiveMountId({ state, sessionId }));
   const { showToast } = useToast();
   const [isAttaching, setIsAttaching] = useState(false);
   const isRepo = row.projectKind === 'repo';
@@ -85,6 +87,7 @@ export const ProjectMountRow = ({
   });
   const observation = row.observation;
   const hasTools = row.isAttached && worktreePath !== null;
+  const isWriteDestination = row.isAttached && row.mountId === activeMountId;
 
   const openLens = async ({ lens }: OpenLensParams) => {
     await setSessionActiveMount({ sessionId, mountId: row.mountId }).catch(() => undefined);
@@ -126,6 +129,16 @@ export const ProjectMountRow = ({
               canSwitch={isRepo && row.isAttached}
             />
           )}
+          {isWriteDestination ? (
+            <Chip
+              tone="primary"
+              size="3xs"
+              bordered={false}
+              label="Next turns"
+              title={`Next turns write to ${label} unless changed from the chat header.`}
+              className="ml-1 shrink-0"
+            />
+          ) : null}
         </div>
         {hasSeriesColumn ? (
           <div className={SLOT_SERIES}>

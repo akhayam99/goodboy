@@ -36,6 +36,11 @@ const { store, remoteKind } = vi.hoisted(() => ({
     scriptRuns: {} as Record<string, Record<string, { status: string }>>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<{ name: string; status: string }>>,
     projectScripts: {} as Record<string, ReadonlyArray<{ id: string; projectId: string }>>,
+    sessions: [] as ReadonlyArray<Record<string, unknown>>,
+    sessionActiveMount: {} as Record<string, string | null>,
+    sessionActiveProject: {} as Record<string, string>,
+    sessionMounts: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionProjectMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
   },
 }));
 
@@ -145,6 +150,11 @@ beforeEach(() => {
   store.sessionWorktrees = { [sessionId]: ['/session-root'] };
   store.sessionPhaseRuns = {};
   store.detectedEditors = [{ binary: 'code', label: 'VS Code' }];
+  store.sessions = [];
+  store.sessionActiveMount = {};
+  store.sessionActiveProject = {};
+  store.sessionMounts = {};
+  store.sessionProjectMounts = {};
 });
 
 afterEach(cleanup);
@@ -289,6 +299,31 @@ describe('ProjectMountRow availability', () => {
     cleanup();
     renderRow({});
     expect(screen.queryByRole('button', { name: 'Remove the worktree for API' })).toBeNull();
+  });
+});
+
+describe('ProjectMountRow write destination', () => {
+  it('marks the row that sendTurn will actually write to next', () => {
+    store.sessionActiveMount = { [sessionId]: 'mount-1' };
+    store.sessionProjectMounts = {
+      [sessionId]: [{ mountId: 'mount-1', projectId: 'api', mountName: 'API', branch: 'feat/api' }],
+    };
+    renderRow({});
+
+    expect(screen.getByText('Next turns')).toBeDefined();
+  });
+
+  it('leaves the badge off a row that is not the resolved destination', () => {
+    store.sessionActiveMount = { [sessionId]: 'mount-2' };
+    store.sessionProjectMounts = {
+      [sessionId]: [
+        { mountId: 'mount-1', projectId: 'api', mountName: 'API', branch: 'feat/api' },
+        { mountId: 'mount-2', projectId: 'web', mountName: 'web', branch: 'feat/web' },
+      ],
+    };
+    renderRow({});
+
+    expect(screen.queryByText('Next turns')).toBeNull();
   });
 });
 

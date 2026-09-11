@@ -95,6 +95,7 @@ export const SESSION_EVICTION = [
   { key: 'pendingAdvanceSessions', keyedBy: 'session', evictOn: 'delete' },
   { key: 'agentRunHistory', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'agentTurnState', keyedBy: 'agent', evictOn: 'delete' },
+  { key: 'agentTurnDestination', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'clusterStartAttempts', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'agentModelOverride', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'agentProviderOverride', keyedBy: 'agent', evictOn: 'delete' },

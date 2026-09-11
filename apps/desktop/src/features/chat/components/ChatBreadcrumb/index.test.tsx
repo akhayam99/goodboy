@@ -29,6 +29,10 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: MockState) => T) => selector(state),
 }));
 
+vi.mock('../WriteDestinationControl', () => ({
+  WriteDestinationControl: () => null,
+}));
+
 import { ChatBreadcrumb } from './index';
 
 beforeEach(() => {
