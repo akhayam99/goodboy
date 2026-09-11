@@ -234,6 +234,7 @@ export type {
 export { TASKS } from './settings';
 export type {
   BranchCommit,
+  BranchIntegration,
   DiffView,
   FastForwardResult,
   GitDistance,

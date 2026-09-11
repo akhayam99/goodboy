@@ -50,6 +50,7 @@ type DetachTarget = {
   readonly mountId: MountId | null;
   readonly path: string;
   readonly branch: string;
+  readonly baseBranch: string | null;
   readonly isOnDisk: boolean;
 };
 
@@ -94,6 +95,9 @@ export const ProjectDetachMenu = ({
   const isRepoProject = useAppStore(
     (state) => state.projects.find((candidate) => candidate.id === projectId)?.kind === 'repo',
   );
+  const projectBaseBranch = useAppStore(
+    (state) => state.projects.find((candidate) => candidate.id === projectId)?.baseBranch ?? null,
+  );
   const forgetMount = useAppStore((state) => state.forgetMount);
   const mountViews = useAppStore(
     useShallow((state) =>
@@ -114,12 +118,14 @@ export const ProjectDetachMenu = ({
             mountId: view.id,
             path: view.worktreePath ?? view.lastWorktreePath ?? '',
             branch: view.branch,
+            baseBranch: view.baseBranch,
             isOnDisk: view.diskState !== 'missing' && view.diskState !== 'removed',
           }))
         : projectMounts.map((mount) => ({
             mountId: mount.mountId ?? null,
             path: mount.worktreePath,
             branch: mount.branch,
+            baseBranch: mount.baseBranch ?? null,
             isOnDisk: true,
           })),
     [mountViews, projectMounts],
@@ -191,7 +197,15 @@ export const ProjectDetachMenu = ({
     const targets: ReadonlyArray<DetachTarget> =
       detachTargets.length > 0
         ? detachTargets
-        : [{ mountId: mountId ?? null, path: worktreePath, branch, isOnDisk: true }];
+        : [
+            {
+              mountId: mountId ?? null,
+              path: worktreePath,
+              branch,
+              baseBranch: projectBaseBranch,
+              isOnDisk: true,
+            },
+          ];
     void Promise.all(
       targets.map(async (target): Promise<MountAssessment> => {
         const unavailable = {
@@ -210,7 +224,10 @@ export const ProjectDetachMenu = ({
           return {
             worktreePath: target.path,
             branch: target.branch,
-            assessment: await worktreeDetachAssessment({ worktreePath: target.path }),
+            assessment: await worktreeDetachAssessment({
+              worktreePath: target.path,
+              baseBranch: target.baseBranch ?? projectBaseBranch,
+            }),
           };
         } catch {
           return unavailable;

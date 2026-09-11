@@ -257,12 +257,17 @@ export const removeWorktreeChecked = async ({
 
 type DetachAssessmentParams = {
   readonly worktreePath: string;
+  readonly baseBranch: string | null;
 };
 
 export const worktreeDetachAssessment = async ({
   worktreePath,
+  baseBranch,
 }: DetachAssessmentParams): Promise<WorktreeDetachAssessment> => {
-  return invoke<WorktreeDetachAssessment>('worktree_detach_assessment', { worktreePath });
+  return invoke<WorktreeDetachAssessment>('worktree_detach_assessment', {
+    worktreePath,
+    baseBranch,
+  });
 };
 
 export const gitCommonDirectory = async ({

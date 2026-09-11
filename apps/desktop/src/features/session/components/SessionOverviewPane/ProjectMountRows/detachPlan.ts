@@ -1,4 +1,4 @@
-import type { WorktreeDetachAssessment } from '@goodboy/types';
+import type { BranchIntegration, WorktreeDetachAssessment } from '@goodboy/types';
 import type { MountCleanupBlocker } from '../../../../../store/slices/mount-cleanup/cleanupPolicy';
 import type { DetachDisposition } from '../../../../../store/slices/project-mounts/detachProject';
 
@@ -17,12 +17,16 @@ export type DetachPlan =
   | { readonly kind: 'checking' }
   | {
       readonly kind: 'keep';
-      readonly reason: 'folder' | 'blocked' | 'unavailable';
+      readonly reason: 'folder' | 'blocked' | 'unavailable' | 'unverified';
       readonly lines: ReadonlyArray<string>;
       readonly details: DetachDetails;
     }
   | { readonly kind: 'missing'; readonly lines: ReadonlyArray<string> }
-  | { readonly kind: 'safe'; readonly lines: ReadonlyArray<string> }
+  | {
+      readonly kind: 'safe';
+      readonly lines: ReadonlyArray<string>;
+      readonly details: DetachDetails;
+    }
   | {
       readonly kind: 'risky';
       readonly lines: ReadonlyArray<string>;
@@ -105,13 +109,14 @@ export type Measured = {
   readonly localOnlyCommits: number;
   readonly ignoredFiles: number;
   readonly ignoredFileSamples: ReadonlyArray<string>;
+  readonly integration: BranchIntegration;
 };
 
 type MountRiskParams = {
   readonly measured: Measured;
 };
 
-type IgnoredFilesLineParams = {
+type MeasuredListParams = {
   readonly measured: ReadonlyArray<Measured>;
 };
 
@@ -129,6 +134,7 @@ export const measure = ({ branch, assessment }: MountAssessment): Measured | nul
         localOnlyCommits: 0,
         ignoredFiles: 0,
         ignoredFileSamples: [],
+        integration: { kind: 'unknown' },
       };
     case 'assessed':
       return {
@@ -140,6 +146,7 @@ export const measure = ({ branch, assessment }: MountAssessment): Measured | nul
         localOnlyCommits: assessment.localOnlyCommits,
         ignoredFiles: assessment.ignoredFiles,
         ignoredFileSamples: assessment.ignoredFileSamples,
+        integration: assessment.integration,
       };
   }
 };
@@ -151,7 +158,7 @@ export const isMountRisky = ({ measured }: MountRiskParams): boolean =>
     !measured.hasUpstream ||
     measured.ignoredFiles > 0);
 
-export const ignoredFilesLine = ({ measured }: IgnoredFilesLineParams): string | null => {
+export const ignoredFilesLine = ({ measured }: MeasuredListParams): string | null => {
   const count = measured.reduce((total, entry) => total + entry.ignoredFiles, 0);
   if (count === 0) {
     return null;
@@ -159,6 +166,94 @@ export const ignoredFilesLine = ({ measured }: IgnoredFilesLineParams): string |
   const samples = measured.flatMap((entry) => entry.ignoredFileSamples).slice(0, 5);
   const noun = countLabel({ count, singular: 'ignored file' });
   return `${noun} at risk, not tracked by git: ${samples.join(', ')}.`;
+};
+
+export const isIntegrationUnknown = ({ measured }: MountRiskParams): boolean =>
+  !measured.isAbsent && measured.integration.kind === 'unknown';
+
+const presentOf = ({ measured }: MeasuredListParams): ReadonlyArray<Measured> =>
+  measured.filter((entry) => !entry.isAbsent);
+
+const unmergedOf = ({ measured }: MeasuredListParams): ReadonlyArray<Measured> =>
+  measured.filter((entry) => entry.integration.kind === 'unmerged');
+
+const baseName = ({ base }: { readonly base: string | null }): string =>
+  base === null ? 'its base branch' : base;
+
+const baseOf = ({ measured }: MountRiskParams): string | null =>
+  measured.integration.kind === 'unknown' ? null : measured.integration.base;
+
+const integrationDetailOf = ({ measured }: MountRiskParams): string => {
+  switch (measured.integration.kind) {
+    case 'unknown':
+      return 'merge state unknown';
+    case 'merged':
+      return `merged into ${measured.integration.base}`;
+    case 'unmerged':
+      return `not merged into ${measured.integration.base}`;
+  }
+};
+
+const unmergedVerb = ({ count }: { readonly count: number }): string =>
+  count === 1 ? 'is' : 'are';
+
+export const integrationLine = ({ measured }: MeasuredListParams): string | null => {
+  const present = presentOf({ measured });
+  const only = present[0];
+  if (only === undefined) {
+    return null;
+  }
+  const unmerged = unmergedOf({ measured: present });
+  if (present.length === 1) {
+    const base = baseName({ base: baseOf({ measured: only }) });
+    return unmerged.length === 0
+      ? `${only.branch} is merged into ${base}.`
+      : `${only.branch} is not merged into ${base} yet.`;
+  }
+  if (unmerged.length === 0) {
+    return 'Every branch is merged into its base branch.';
+  }
+  return `${countLabel({ count: unmerged.length, singular: 'branch' })} ${unmergedVerb({ count: unmerged.length })} not merged into the base branch yet.`;
+};
+
+export const integrationDetails = ({ measured }: MeasuredListParams): DetachDetails => {
+  const present = presentOf({ measured });
+  const unmerged = unmergedOf({ measured: present });
+  if (unmerged.length === 0) {
+    return NO_DETAILS;
+  }
+  return {
+    totals: [`Branches not merged into the base (${unmerged.length})`],
+    worktrees: present.map(
+      (entry) => `${entry.branch} at ${entry.path}: ${integrationDetailOf({ measured: entry })}`,
+    ),
+  };
+};
+
+const CHECK_AGAIN_SENTENCE = 'Check again, or set the base branch for this project in Settings.';
+
+type UnverifiedParams = {
+  readonly unknown: ReadonlyArray<Measured>;
+  readonly total: number;
+  readonly projectName: string;
+};
+
+const unverifiedLines = ({
+  unknown,
+  total,
+  projectName,
+}: UnverifiedParams): ReadonlyArray<string> => {
+  const only = unknown[0];
+  if (total === 1 && only !== undefined) {
+    return [
+      `Whether ${only.branch} is merged into its base branch is unknown; detach will keep its files at ${only.path}.`,
+      CHECK_AGAIN_SENTENCE,
+    ];
+  }
+  return [
+    `Whether ${countLabel({ count: unknown.length, singular: 'branch' })} in ${projectName} reached the base branch is unknown; detach will keep every directory.`,
+    CHECK_AGAIN_SENTENCE,
+  ];
 };
 
 type CommitSingularParams = {
@@ -177,7 +272,7 @@ const perWorktreeDetail = ({ measured }: { readonly measured: Measured }): strin
     count: measured.localOnlyCommits,
     singular: commitSingular({ hasUpstream: measured.hasUpstream }),
   });
-  return `${measured.branch} at ${measured.path}: ${files}, ${commits}`;
+  return `${measured.branch} at ${measured.path}: ${files}, ${commits}, ${integrationDetailOf({ measured })}`;
 };
 
 const removalLine = ({
@@ -231,18 +326,39 @@ const retentionLine = ({ measured }: { readonly measured: ReadonlyArray<Measured
     ? 'The branch and its commits stay in the repository.'
     : 'The branches and their commits stay in the repository.';
 
-const safeLine = ({
+const safeLines = ({
   measured,
   projectName,
 }: {
   readonly measured: ReadonlyArray<Measured>;
   readonly projectName: string;
-}): string => {
-  const only = measured[0];
-  if (measured.length === 1 && only !== undefined) {
-    return `Remove the clean worktree at ${only.path}; ${only.branch} is published, with 0 uncommitted files and 0 unpushed commits, and the branch will remain.`;
+}): ReadonlyArray<string> => {
+  const present = presentOf({ measured });
+  const unmerged = unmergedOf({ measured: present });
+  const only = present[0];
+  if (present.length === 1 && only !== undefined) {
+    const base = baseName({ base: baseOf({ measured: only }) });
+    const head = `Remove the clean worktree at ${only.path}: 0 uncommitted files, 0 unpushed commits`;
+    return unmerged.length === 0
+      ? [
+          `${head}, and ${only.branch} is merged into ${base}.`,
+          'The branch stays in the repository.',
+        ]
+      : [
+          `${head}, and ${only.branch} is not merged into ${base} yet.`,
+          'The branch and its commits stay in the repository.',
+        ];
   }
-  return `Remove ${countLabel({ count: measured.length, singular: 'clean worktree' })} for ${projectName}; every branch is published, with 0 uncommitted files and 0 unpushed commits, and every branch will remain.`;
+  const head = `Remove ${countLabel({ count: present.length, singular: 'clean worktree' })} for ${projectName}: 0 uncommitted files, 0 unpushed commits`;
+  return unmerged.length === 0
+    ? [
+        `${head}, and every branch is merged into its base branch.`,
+        'The branches stay in the repository.',
+      ]
+    : [
+        `${head}, and ${countLabel({ count: unmerged.length, singular: 'branch' })} ${unmergedVerb({ count: unmerged.length })} not merged into the base branch yet.`,
+        'The branches and their commits stay in the repository.',
+      ];
 };
 
 const missingLine = ({
@@ -325,26 +441,51 @@ export const buildDetachPlan = ({
   if (measured.every((entry) => entry.isAbsent)) {
     return { kind: 'missing', lines: [missingLine({ measured, projectName })] };
   }
+  const unknown = measured.filter((entry) => isIntegrationUnknown({ measured: entry }));
+  if (unknown.length > 0) {
+    return {
+      kind: 'keep',
+      reason: 'unverified',
+      lines: unverifiedLines({ unknown, total: measured.length, projectName }),
+      details: {
+        totals: [],
+        worktrees:
+          measured.length === 1
+            ? []
+            : unknown.map((entry) => `${entry.branch} at ${entry.path}: merge state unknown`),
+      },
+    };
+  }
   const isRisky = measured.some((entry) => isMountRisky({ measured: entry }));
   if (!isRisky) {
-    return { kind: 'safe', lines: [safeLine({ measured, projectName })] };
+    return {
+      kind: 'safe',
+      lines: safeLines({ measured, projectName }),
+      details: integrationDetails({ measured }),
+    };
   }
   const files = measured.reduce((total, entry) => total + entry.affectedFiles, 0);
   const commits = measured.reduce((total, entry) => total + entry.localOnlyCommits, 0);
   const hasUpstream = measured.every((entry) => entry.hasUpstream);
   const ignoredLine = ignoredFilesLine({ measured });
+  const integration = integrationLine({ measured });
+  const unmerged = unmergedOf({ measured: presentOf({ measured }) });
   return {
     kind: 'risky',
     lines: [
       removalLine({ measured, projectName }),
       lossLine({ measured }),
       ...(ignoredLine === null ? [] : [ignoredLine]),
+      ...(integration === null ? [] : [integration]),
       retentionLine({ measured }),
     ],
     details: {
       totals: [
         `Files affected (${files})`,
         hasUpstream ? `Unpushed commits (${commits})` : `Local-only commits (${commits})`,
+        ...(unmerged.length === 0
+          ? []
+          : [`Branches not merged into the base (${unmerged.length})`]),
       ],
       worktrees: measured.map((entry) => perWorktreeDetail({ measured: entry })),
     },
