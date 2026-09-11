@@ -368,6 +368,10 @@ export {
 
 export {
   parseOrchestratorDecision,
+  parseWorkflowRoutingProposal,
+  recommendWorkflowModel,
+  resolveWorkflowRouting,
+  workflowRoutingAvailability,
   buildOrchestratorUserPrompt,
   enforceOrchestratorModelPool,
   orchestratorModelPool,
@@ -388,5 +392,14 @@ export {
   type OrchestratorRoleDefault,
   type OrchestratorStep,
   type OrchestratorUsage,
+  type WorkflowModelCandidate,
+  type WorkflowModelRecommendation,
+  type WorkflowRoutingAvailability,
+  type WorkflowRoutingAvailabilitySnapshot,
+  type WorkflowRoutingProposalParseOutcome,
+  type WorkflowRoutingRequestedIdentity,
+  type WorkflowRoutingResolution,
+  type WorkflowRoutingUnavailableCause,
+  type WorkflowRoutingWireFields,
   type RunSummary,
 } from './orchestrator';
