@@ -91,6 +91,13 @@ export type PublishParams = SessionParams & {
   readonly scopeId?: string;
 };
 
+export type EnsureReviewThreadParams = SessionParams & {
+  readonly threadId: string;
+  readonly prNumber: number;
+};
+
+export type EnsureReviewThreadResult = 'existing' | 'created' | 'missing';
+
 export type ResolveActions = {
   readonly acceptResolveQueueItem: (params: ItemRevisionParams) => Promise<void>;
   readonly refuseResolveQueueItem: (params: ItemRevisionParams) => Promise<void>;
@@ -120,4 +127,7 @@ export type ResolveActions = {
   readonly drainResolveWorktree: (params: WorktreeDrainParams) => Promise<void>;
   readonly reconcileResolveDrains: () => Promise<void>;
   readonly updateResolveThread: (params: UpdateParams) => Promise<boolean>;
+  readonly ensureReviewThread: (
+    params: EnsureReviewThreadParams,
+  ) => Promise<EnsureReviewThreadResult>;
 };

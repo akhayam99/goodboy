@@ -22,6 +22,7 @@ import { recoverUncapturedResolveWork } from './recoverUncapturedResolveWork';
 import { deferResolveQueueItem } from './deferResolveQueueItem';
 import { reopenResolveQueueItem } from './reopenResolveQueueItem';
 import { takeUpResolveQueueItem } from './takeUpResolveQueueItem';
+import { ensureReviewThread } from './ensureReviewThread';
 import type {
   ResolveActions,
   BatchUpdateParams,
@@ -41,6 +42,7 @@ import type {
   CandidateBeginParams,
   CandidateCaptureParams,
   CheckRunParams,
+  EnsureReviewThreadParams,
 } from './types';
 
 export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions => {
@@ -90,6 +92,8 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
     reconcileResolveDrains: () => serialize({ run: () => reconcileResolveDrains({ set, get }) }),
     updateResolveThread: (params: UpdateParams) =>
       serialize({ run: () => updateResolveThread({ set, get, ...params }) }),
+    ensureReviewThread: (params: EnsureReviewThreadParams) =>
+      serialize({ run: () => ensureReviewThread({ set, get, ...params }) }),
     preparePublication: (params: PreparePublicationParams) =>
       preparePublication({ set, get, ...params }),
     publishConversations: (params: PublishParams) => publishConversations({ set, get, ...params }),
