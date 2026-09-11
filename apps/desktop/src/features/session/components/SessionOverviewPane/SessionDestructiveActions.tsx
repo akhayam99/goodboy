@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import type { Session, SessionId } from '@goodboy/types';
-import { cn, formatError, IconButton, tintClasses } from '@goodboy/ui';
-import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
+import type { Session } from '@goodboy/types';
+import { cn, IconButton, tintClasses } from '@goodboy/ui';
 import { withShortcutHint } from '../../../../shared/keyboard/registry';
+import { useSessionArchive } from '../../../../shared/hooks/useSessionArchive';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { DeleteSessionConfirm } from '../DeleteSessionConfirm';
 
@@ -12,10 +11,7 @@ type Props = {
 };
 
 export const SessionDestructiveActions = ({ session }: Props) => {
-  const sessionId = session.id as SessionId;
-  const archiveTask = useAppStore((s) => s.archiveTask);
-  const unarchiveTask = useAppStore((s) => s.unarchiveTask);
-  const { showToast } = useToast();
+  const { archive, restore } = useSessionArchive();
   const [isDeleteArmed, setIsDeleteArmed] = useState(false);
   const isArchived = session.archivedAt != null;
 
@@ -33,22 +29,11 @@ export const SessionDestructiveActions = ({ session }: Props) => {
     return () => window.removeEventListener('keydown', onEscape);
   }, [isDeleteArmed]);
 
-  const doArchive = () => {
-    archiveTask(sessionId).catch((err: unknown) => {
-      showToast('error', `couldn't archive: ${formatError(err)}`);
-    });
-  };
-
-  const doUnarchive = () => {
-    unarchiveTask(sessionId).catch((err: unknown) => {
-      showToast('error', `couldn't unarchive: ${formatError(err)}`);
-    });
-  };
-
   const archiveLabel = isArchived ? 'Unarchive session' : 'Archive session';
-  const archiveTooltip = isArchived
-    ? archiveLabel
-    : withShortcutHint({ label: archiveLabel, shortcut: 'session.archive' });
+  const archiveTooltip = withShortcutHint({
+    label: archiveLabel,
+    shortcut: 'session.archive',
+  });
   const deleteTooltip = withShortcutHint({
     label: 'Delete session',
     shortcut: 'session.delete',
@@ -62,7 +47,7 @@ export const SessionDestructiveActions = ({ session }: Props) => {
         iconSize={ICON_SIZE.row}
         label={archiveLabel}
         tooltip={archiveTooltip}
-        onClick={isArchived ? doUnarchive : doArchive}
+        onClick={() => void (isArchived ? restore : archive)({ sessions: [session] })}
         className="size-6 shrink-0"
       />
       <span className="relative flex shrink-0 items-center">

@@ -150,12 +150,6 @@ describe('useBoardNavigation', () => {
     expect(openInEditorMock).not.toHaveBeenCalled();
   });
 
-  it('restore unarchives the session', () => {
-    const { result } = renderHook(() => useBoardNavigation());
-    result.current.restore(session);
-    expect(unarchiveTaskMock).toHaveBeenCalledWith(SESSION_ID);
-  });
-
   it('openQuestions sets lens to questions', async () => {
     const { result } = renderHook(() => useBoardNavigation());
     result.current.openQuestions(session);

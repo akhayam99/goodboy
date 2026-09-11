@@ -12,6 +12,7 @@ export const ACTIVITY_CATEGORIES = [
   'questions',
   'resolver',
   'decisions',
+  'session',
 ] as const;
 
 export type ActivityCategory = (typeof ACTIVITY_CATEGORIES)[number];
@@ -42,6 +43,7 @@ export const ACTIVITY_CATEGORY_LABEL: Record<ActivityCategory, string> = {
   questions: 'Questions',
   resolver: 'Resolver',
   decisions: 'Decisions',
+  session: 'Archive and restore',
 };
 
 export const DEFAULT_ACTIVITY_FILTER: ActivityFilter = {
@@ -55,6 +57,7 @@ export const DEFAULT_ACTIVITY_FILTER: ActivityFilter = {
   questions: true,
   resolver: true,
   decisions: true,
+  session: true,
   workflowSubagents: true,
   agentSubagents: true,
 };
@@ -85,6 +88,11 @@ const CATEGORY_BY_EVENT_KIND: Record<SessionEventKind, ActivityCategory> = {
   project_detached: 'worktree',
   external_task_created: 'issues',
   rebase_requested: 'worktree',
+  session_archived: 'session',
+  session_restored: 'session',
+  write_destination_changed: 'worktree',
+  question_dismissed: 'questions',
+  question_restored: 'questions',
 };
 
 type EntryParams = {

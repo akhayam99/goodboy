@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Archive, RotateCcw, Trash2 } from 'lucide-react';
 import { Button, cn } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { BulkArchiveSessionsConfirm } from '../../../session/components/BulkArchiveSessionsConfirm';
+import type { Session } from '@goodboy/types';
+import { useSessionArchive } from '../../../../shared/hooks/useSessionArchive';
 import { BulkDeleteSessionsConfirm } from '../../../session/components/BulkDeleteSessionsConfirm';
 
 type BulkScope = 'active' | 'archived';
@@ -17,29 +16,23 @@ type Props = {
 };
 
 export const BulkActionBar = ({ scope, sessions, onSelectAll, onClear, className }: Props) => {
-  const bulkUnarchiveTask = useAppStore((s) => s.bulkUnarchiveTask);
-  const [pending, setPending] = useState<'archive' | 'delete' | null>(null);
+  const { archive, restore } = useSessionArchive();
+  const [pending, setPending] = useState<'delete' | null>(null);
 
   const count = sessions.length;
   if (count === 0) {
     return null;
   }
 
-  const onRestore = async () => {
-    await bulkUnarchiveTask(sessions.map((s) => s.id as SessionId));
+  const onArchive = async () => {
+    await archive({ sessions });
     onClear();
   };
 
-  if (pending === 'archive') {
-    return (
-      <BulkArchiveSessionsConfirm
-        sessions={sessions}
-        onClose={() => setPending(null)}
-        onConfirmed={onClear}
-        className={className}
-      />
-    );
-  }
+  const onRestore = async () => {
+    await restore({ sessions });
+    onClear();
+  };
 
   if (pending === 'delete') {
     return (
@@ -66,7 +59,7 @@ export const BulkActionBar = ({ scope, sessions, onSelectAll, onClear, className
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => setPending('archive')}
+          onClick={() => void onArchive()}
           title="Archive selected sessions"
           className="shrink-0 gap-1 px-2 text-xs"
         >

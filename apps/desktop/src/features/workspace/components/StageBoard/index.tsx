@@ -21,11 +21,11 @@ import {
 import { STAGE_ORDER } from '../../../../store/slices/session-view/types';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { PANE_RHYTHM } from '@goodboy/ui';
-import { ArchiveSessionConfirm } from '../../../session/components/ArchiveSessionConfirm';
 import { DeleteSessionConfirm } from '../../../session/components/DeleteSessionConfirm';
 import { BulkActionBar } from '../BulkActionBar';
 import { useProjectGitStatuses } from '../../hooks/useProjectGitStatuses';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
+import { useSessionArchive } from '../../../../shared/hooks/useSessionArchive';
 import { ProjectsStep } from '../../../onboarding/OnboardingWizard/steps/ProjectsStep';
 import { StageColumn } from './StageColumn';
 import { useBoardNavigation } from './useBoardNavigation';
@@ -34,7 +34,7 @@ import { ProjectFilter } from '../ProjectFilter';
 import { ProjectGitPills } from '../ProjectGitPill';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
-type Confirm = { readonly kind: 'archive' | 'delete'; readonly session: Session };
+type Confirm = { readonly kind: 'delete'; readonly session: Session };
 
 const STAGES: ReadonlyArray<SessionStage> = (
   Object.entries(STAGE_ORDER) as Array<[SessionStage, number]>
@@ -96,9 +96,17 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const hasProjects = workspaceProjects.length > 0;
   const projectGitStatuses = useProjectGitStatuses({ workspaceId });
   const [confirm, setConfirm] = useState<Confirm | null>(null);
+  const sessionArchive = useSessionArchive();
 
-  const onArchive = useCallback((session: Session) => setConfirm({ kind: 'archive', session }), []);
+  const onArchive = useCallback(
+    (session: Session) => void sessionArchive.archive({ sessions: [session] }),
+    [sessionArchive],
+  );
   const onDelete = useCallback((session: Session) => setConfirm({ kind: 'delete', session }), []);
+  const onRestore = useCallback(
+    (session: Session) => void sessionArchive.restore({ sessions: [session] }),
+    [sessionArchive],
+  );
 
   useEffect(() => {
     void loadArchivedSessions(workspaceId);
@@ -241,7 +249,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                 selection={selection.active}
                 onArchive={onArchive}
                 onDelete={onDelete}
-                onRestore={nav.restore}
+                onRestore={onRestore}
               />
             ))}
             <StageColumn
@@ -252,7 +260,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
               selection={selection.archived}
               onArchive={onArchive}
               onDelete={onDelete}
-              onRestore={nav.restore}
+              onRestore={onRestore}
             />
             {lasso.rect && (
               <div
@@ -284,13 +292,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         />
       )}
 
-      {confirm?.kind === 'archive' && (
-        <ArchiveSessionConfirm
-          session={confirm.session}
-          onClose={() => setConfirm(null)}
-          className="mx-auto w-full max-w-lg shrink-0"
-        />
-      )}
       {confirm?.kind === 'delete' && (
         <DeleteSessionConfirm
           session={confirm.session}

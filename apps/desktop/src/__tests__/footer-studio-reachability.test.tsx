@@ -168,9 +168,6 @@ vi.mock('../features/workspace/components/StageBoard', () => ({ StageBoard: () =
 vi.mock('../features/session/components/DeleteSessionConfirm', () => ({
   DeleteSessionConfirm: () => null,
 }));
-vi.mock('../features/session/components/ArchiveSessionConfirm', () => ({
-  ArchiveSessionConfirm: () => null,
-}));
 vi.mock('../features/settings/components/SettingsStudio', () => ({
   SettingsStudio: ({ initialFocus }: { initialFocus: { scope: string; tool?: string } }) => (
     <div
@@ -186,6 +183,7 @@ vi.mock('../features/settings/components/ReportIssueStudio', () => ({
 }));
 vi.mock('../app/components/Toast', () => ({
   ToastProvider: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  useToast: () => ({ showToast: vi.fn() }),
 }));
 vi.mock('../features/notifications/components/NotificationToastBridge', () => ({
   NotificationToastBridge: () => null,

@@ -124,10 +124,7 @@ export const useAppOverlays = ({
   const [reportIssueStudioOpen, setReportIssueStudioOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteSessionId, setDeleteSessionId] = useState<SessionId | null>(null);
-  const [archiveOpen, setArchiveOpen] = useState(false);
-  const [archiveSessionId, setArchiveSessionId] = useState<SessionId | null>(null);
   const deleteTargetSession = useSessionById(deleteSessionId);
-  const archiveTargetSession = useSessionById(archiveSessionId);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [palettePrefix, setPalettePrefix] = useState('');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
@@ -292,14 +289,6 @@ export const useAppOverlays = ({
     setDeleteOpen(true);
   }, [currentSession]);
 
-  const armArchiveConfirm = useCallback(() => {
-    if (currentSession === null) {
-      return;
-    }
-    setArchiveSessionId(currentSession.id);
-    setArchiveOpen(true);
-  }, [currentSession]);
-
   const openShortcutHelp = useCallback(() => {
     setSettingsFocus({ scope: 'app', section: 'shortcuts' });
     setSettingsOpen(true);
@@ -447,19 +436,18 @@ export const useAppOverlays = ({
   }, [closeAllStudios, openAddWorkspace]);
 
   useEffect(() => {
-    if (!archiveOpen && !deleteOpen) {
+    if (!deleteOpen) {
       return;
     }
     const onEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') {
         return;
       }
-      setArchiveOpen(false);
       setDeleteOpen(false);
     };
     window.addEventListener('keydown', onEscape);
     return () => window.removeEventListener('keydown', onEscape);
-  }, [archiveOpen, deleteOpen]);
+  }, [deleteOpen]);
 
   useEffect(() => {
     const handler = () => openWorkflows();
@@ -570,10 +558,6 @@ export const useAppOverlays = ({
     setDeleteOpen(false);
     setDeleteSessionId(null);
   }, []);
-  const closeArchiveConfirm = useCallback(() => {
-    setArchiveOpen(false);
-    setArchiveSessionId(null);
-  }, []);
   const closeCompanion = useCallback(() => setCompanionOpen(false), []);
   const openSettingsFromPalette = useCallback(() => {
     openSettings();
@@ -616,8 +600,6 @@ export const useAppOverlays = ({
     reportIssueStudioOpen,
     deleteOpen,
     deleteTargetSession,
-    archiveOpen,
-    archiveTargetSession,
     paletteOpen,
     palettePrefix,
     addWorkspaceOpen,
@@ -649,13 +631,11 @@ export const useAppOverlays = ({
     closeInboxStudio,
     closeCommitDiff,
     closeDeleteConfirm,
-    closeArchiveConfirm,
     closeCompanion,
   });
 
   return {
     activeStudio,
-    armArchiveConfirm,
     armDeleteConfirm,
     openAddWorkspace,
     openBitbucket,

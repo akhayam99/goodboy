@@ -191,7 +191,6 @@ import type {
   LoadPrSeriesInput,
   SetPrSeriesMemberInput,
 } from './slices/pr-series';
-import type { ArchiveTaskOptions } from './slices/sessions/types';
 import type { MaterializeProjectInput } from './slices/sessions/materializeProject';
 import type {
   CleanupSessionMountsInput,
@@ -713,7 +712,7 @@ type AppActions = {
   renameTask(sessionId: SessionId, goal: string): Promise<void>;
   deleteTask(sessionId: SessionId): Promise<void>;
   bulkDeleteTask(ids: ReadonlyArray<SessionId>): Promise<void>;
-  archiveTask(sessionId: SessionId, options?: ArchiveTaskOptions): Promise<void>;
+  archiveTask(sessionId: SessionId): Promise<void>;
   bulkArchiveTask(ids: ReadonlyArray<SessionId>): Promise<void>;
   unarchiveTask(sessionId: SessionId): Promise<void>;
   bulkUnarchiveTask(ids: ReadonlyArray<SessionId>): Promise<void>;

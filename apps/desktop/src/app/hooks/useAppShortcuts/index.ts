@@ -11,7 +11,6 @@ import {
 } from '../../../store';
 
 type AppShortcutsParams = {
-  readonly armArchiveConfirm: () => void;
   readonly armDeleteConfirm: () => void;
   readonly openPalette: (prefix?: string) => void;
   readonly openSettings: () => void;
@@ -32,7 +31,6 @@ type LensParams = {
 };
 
 export const useAppShortcuts = ({
-  armArchiveConfirm,
   armDeleteConfirm,
   openPalette,
   openSettings,
@@ -158,7 +156,6 @@ export const useAppShortcuts = ({
   useShortcut('workspace.9', () => selectWorkspaceByIndex({ index: 8 }));
 
   useShortcut('session.delete', armDeleteConfirm);
-  useShortcut('session.archive', armArchiveConfirm);
   useShortcut('session.model', openModelPicker);
   useShortcut('session.permissions', openPermissionPicker);
   useShortcut('session.prev', () => navigateSession({ delta: -1 }));

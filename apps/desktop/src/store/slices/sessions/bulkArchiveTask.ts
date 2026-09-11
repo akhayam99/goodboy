@@ -1,6 +1,16 @@
 import type { SessionId } from '@goodboy/types';
 import type { GetFn, SetFn } from './types';
 
+type FailureParams = {
+  readonly failed: number;
+  readonly total: number;
+};
+
+const failureMessage = ({ failed, total }: FailureParams): string =>
+  total === 1
+    ? 'failed to archive the session'
+    : `failed to archive ${failed} of ${total} sessions`;
+
 export const bulkArchiveTask = (set: SetFn, get: GetFn) => {
   return async (ids: ReadonlyArray<SessionId>) => {
     const failures: SessionId[] = [];
@@ -15,7 +25,7 @@ export const bulkArchiveTask = (set: SetFn, get: GetFn) => {
       void get().emitNotification(
         'error',
         'warning',
-        `failed to archive ${failures.length} of ${ids.length} sessions`,
+        failureMessage({ failed: failures.length, total: ids.length }),
       );
     }
   };

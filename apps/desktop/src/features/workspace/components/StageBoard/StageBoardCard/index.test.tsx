@@ -81,7 +81,6 @@ const nav = {
   openQuestions: vi.fn(),
   openWorkflows: vi.fn(),
   openGithub: vi.fn(),
-  restore: vi.fn(),
 } satisfies BoardNavigation;
 
 const session = {
