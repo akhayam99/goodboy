@@ -70,6 +70,7 @@ type Props = {
   readonly onStopRun: () => void;
   readonly onViewWork: () => void;
   readonly onSelectRelated: (threadId: string) => void;
+  readonly onOpenUrl: (url: string) => void;
 };
 
 export const ResolveItemView = ({
@@ -110,6 +111,7 @@ export const ResolveItemView = ({
   onStopRun,
   onViewWork,
   onSelectRelated,
+  onOpenUrl,
 }: Props) => {
   const note = runNote({ stateReason: row.thread.stateReason });
   const isDelivered = row.status === 'pushed' || row.status === 'wont_fix_sent';
@@ -191,7 +193,7 @@ export const ResolveItemView = ({
       <ScrollFade className="min-h-0 flex-1" viewportClassName="p-3" fadeFrom="elevated">
         <div className={cn(PANE_RHYTHM.stack, 'min-w-0')}>
           {nextStep !== null && <p className="text-2xs text-muted-foreground">{nextStep}</p>}
-          <ReviewerCommentBlock note={row.reviewerNote} />
+          <ReviewerCommentBlock commentThread={row.commentThread} onOpenUrl={onOpenUrl} />
           {question != null && question !== '' && (
             <div className="flex min-w-0 flex-col gap-2">
               <SectionHeader label={RESOLVE_ITEM_LABEL.agentQuestion} headingLevel={3} />

@@ -76,6 +76,22 @@ const rowOf = ({ threadId, body }: { readonly threadId: string; readonly body: s
   ({
     item: { id: `item-${threadId}`, approvalState: 'none', integratedSha: null },
     thread: { threadId, revision: 1, stateReason: null, commitShas: null, question: null },
+    commentThread: {
+      head: {
+        id: `comment-${threadId}`,
+        author: 'dhh',
+        authorAvatarUrl: null,
+        body,
+        createdAt: '2026-01-05T09:00:00.000Z',
+        url: `https://github.com/example/repo/pull/12#discussion_r${threadId}`,
+        source: 'review',
+        resolved: false,
+        path: 'src/retry.ts',
+        line: 84,
+        threadId,
+      },
+      replies: [],
+    },
     status: 'fix_ready',
     attempt: null,
     reviewerNote: {

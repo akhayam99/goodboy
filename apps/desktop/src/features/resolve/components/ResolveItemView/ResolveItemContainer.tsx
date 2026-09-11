@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { ResolveCheckRun, ResolveQueueItemWithThread, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { openUrl } from '../../../../shared/lib/editor';
 import { useAgentMetrics } from '../../../session/hooks/useAgentMetrics';
 import type { ScriptGroup } from '../../../scripts/scripts';
 import { acceptedItemIds } from '../../acceptedItemIds';
@@ -331,6 +332,7 @@ export const ResolveItemContainer = ({
         }
       }}
       onSelectRelated={(threadId) => onSelect(threadId)}
+      onOpenUrl={(url) => void openUrl(url)}
     />
   );
 };

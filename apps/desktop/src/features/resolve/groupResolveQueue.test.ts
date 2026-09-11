@@ -63,6 +63,7 @@ const row = ({
 }): ResolveQueueRow => ({
   item: { ...baseItem, id: `item-${threadId}`, threadId, integratedSha },
   thread: { ...baseThread, id: `row-${threadId}`, threadId, activeAttemptId },
+  commentThread: null,
   status,
   attempt: null,
   reviewerNote: {

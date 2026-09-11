@@ -5,6 +5,7 @@ import type { SessionId } from '@goodboy/types';
 import type { ResolverKickoffThread } from '../../utils/parse-resolver-kickoff';
 import { openUrl } from '../../../../shared/lib/editor';
 import { ConversationThread } from '../../../github/components/GitHubStudio/ConversationThread';
+import { openReview } from '../../../review/openReview';
 import { TranscriptChevron } from '../TranscriptChevron';
 import { useKickoffDockedThread } from './useKickoffDockedThread';
 
@@ -32,6 +33,8 @@ export const ThreadCard = ({ thread, sessionId }: Props) => {
   const author = thread.author?.trim() ?? '';
   const replyCount = thread.replies.length;
   const who = replyCount === 0 ? author : `${author} and ${replyCount} more`;
+  const threadId = thread.threadId;
+  const isResolvable = sessionId !== null && threadId !== null && threadId !== '';
 
   return (
     <div
@@ -42,6 +45,16 @@ export const ThreadCard = ({ thread, sessionId }: Props) => {
         <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground">
           {titleOf({ thread })}
         </span>
+        {isResolvable && (
+          <button
+            type="button"
+            onClick={() => void openReview({ sessionId, threadId })}
+            className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium text-muted-foreground/80 transition-colors hover:bg-foreground/10 hover:text-foreground"
+          >
+            Open in Review
+            <ArrowUpRight size={10} aria-hidden className="opacity-70" />
+          </button>
+        )}
         {docked !== null ? (
           <button
             type="button"

@@ -1,14 +1,11 @@
 import { useState } from 'react';
-import { CheckCheck, ExternalLink } from 'lucide-react';
+import { CheckCheck } from 'lucide-react';
 import { Chip } from '@goodboy/ui';
 import type { CommentThread } from '../../comment-threads';
-import { isBot } from '../../comment-threads';
 import { TranscriptDisclosure } from '../../../chat/components/TranscriptDisclosure';
 import { TranscriptRowHeader } from '../../../chat/components/TranscriptRowHeader';
+import { ReviewThreadContent } from '../../../review/components/ReviewThreadContent';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { ThreadBody } from './ThreadBody';
-import { ThreadPathChip } from './ThreadPathChip';
-import { ThreadReplies } from './ThreadReplies';
 import { threadPreview } from './threadPreview';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -19,7 +16,7 @@ type Props = {
 
 export const ResolvedThread = ({ thread, onOpenUrl }: Props) => {
   const [open, setOpen] = useState(false);
-  const { head, replies } = thread;
+  const { head } = thread;
 
   return (
     <TranscriptDisclosure
@@ -52,25 +49,7 @@ export const ResolvedThread = ({ thread, onOpenUrl }: Props) => {
         />
       }
     >
-      {head.path != null && head.path !== '' ? (
-        <ThreadPathChip
-          path={head.path}
-          line={head.line ?? null}
-          onOpen={() => onOpenUrl(head.url)}
-        />
-      ) : null}
-      <div className="[overflow-wrap:anywhere]">
-        <ThreadBody body={head.body} clamped={isBot(head.author)} />
-      </div>
-      <ThreadReplies replies={replies} />
-      <button
-        type="button"
-        onClick={() => onOpenUrl(head.url)}
-        className="inline-flex w-fit items-center gap-1 text-2xs text-muted-foreground/70 transition-colors hover:text-foreground"
-      >
-        open on GitHub
-        <ExternalLink size={11} aria-hidden />
-      </button>
+      <ReviewThreadContent thread={thread} onOpenUrl={onOpenUrl} />
     </TranscriptDisclosure>
   );
 };
