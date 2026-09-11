@@ -554,7 +554,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
 
   it('records the budget stop once while the cap stays reached', async () => {
     const state = baseState(['s0'], [makeAgent('s0', 'pending', 0)]);
-    state['budgetAlerts'] = [{ kind: 'provider-exceeded' }];
+    state['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
     const { set, get } = harness(state);
     const advance = maybeAutoAdvanceWorkflow(set, get);
 
@@ -567,6 +567,16 @@ describe('maybeAutoAdvanceWorkflow', () => {
       kind: 'budget',
       message: 'the budget cap is reached, raise it in Budget to keep this run going',
     });
+  });
+
+  it('keeps advancing while a single provider sits over its own cap', async () => {
+    const state = baseState(['s0'], [makeAgent('s0', 'pending', 0)]);
+    state['budgetAlerts'] = [{ kind: 'provider-exceeded', provider: 'openai' }];
+    const { set, get } = harness(state);
+
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+
+    expect(updateOrchestrationStopSpy).not.toHaveBeenCalled();
   });
 
   it('keeps dynamic orchestration behind summarizer, question, and budget gates', async () => {
@@ -584,7 +594,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
     const { set, get } = harness(state);
     const advance = maybeAutoAdvanceWorkflow(set, get);
 
-    state['budgetAlerts'] = [{ kind: 'provider-exceeded' }];
+    state['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
     await advance(SESSION_ID);
     expect(updateOrchestrationStopSpy).toHaveBeenCalledWith({}, RUN_ID, {
       kind: 'budget',

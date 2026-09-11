@@ -406,7 +406,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       retryOverride ?? pickedOverride ?? phaseOverride ?? turnOverride ?? agentOverride;
 
     const routingPreference =
-      (effectiveOverride === agentOverride && agentOverride !== undefined) || retry != null
+      (effectiveOverride === agentOverride && agentOverride !== undefined) ||
+      (effectiveOverride === phaseOverride && phaseOverride !== undefined) ||
+      retry != null
         ? { ...session.providerPreference, allowTurnOverride: true }
         : session.providerPreference;
 
@@ -416,6 +418,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       connectedProviders,
       cooldowns: get().providerCooldowns,
       ...(force === true ? { force: true } : {}),
+      ...(phaseDefinition != null ? { keepPreferredOverThreshold: true } : {}),
     });
 
     if (routingDecision.reason === 'all-exceeded') {

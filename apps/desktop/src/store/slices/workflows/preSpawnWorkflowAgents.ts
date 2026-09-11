@@ -8,9 +8,10 @@ import type {
   VerbosityLevel,
   WorkflowRunId,
 } from '@goodboy/types';
-import { resolveModelForProvider } from '@goodboy/core';
+import { resolveModelForProvider, type WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core';
 import { ROLE_TO_KIND, inferAgentKindFromName } from '../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../../features/workflows/resolveStepRouting';
+import { revalidateStepRouting } from '../../../features/workflows/revalidateStepRouting';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 
 type Params = {
@@ -20,8 +21,10 @@ type Params = {
   readonly baseOrdinal: number;
   readonly defaultProvider: ProviderId;
   readonly roleModels: RoleModelPreferences | null;
+  readonly sessionModel?: string | null;
   readonly sessionEffort?: ModelEffort | null;
   readonly defaultVerbosity?: VerbosityLevel;
+  readonly availability?: WorkflowRoutingAvailabilitySnapshot;
 };
 
 type PreSpawnWorkflowAgentsResult = {
@@ -39,8 +42,10 @@ export const preSpawnWorkflowAgents = async ({
   baseOrdinal,
   defaultProvider,
   roleModels,
+  sessionModel,
   sessionEffort,
   defaultVerbosity,
+  availability,
 }: Params): Promise<PreSpawnWorkflowAgentsResult> => {
   const agents: Agent[] = [];
   const modelOverrides: Record<string, string> = {};
@@ -51,11 +56,15 @@ export const preSpawnWorkflowAgents = async ({
 
   for (const [index, step] of sortedSteps.entries()) {
     const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
+    const revalidated =
+      availability === undefined ? null : revalidateStepRouting({ step, availability });
+    const effectiveStep = revalidated?.step ?? step;
     const routing = resolveStepRouting({
-      step,
+      step: effectiveStep,
       kind,
       roleModels,
       sessionProvider: defaultProvider,
+      sessionModel: sessionModel ?? null,
       sessionEffort: sessionEffort ?? null,
     });
     const provider = routing.provider;
@@ -72,6 +81,9 @@ export const preSpawnWorkflowAgents = async ({
       providerOverride: provider,
       modelOverride: model,
       effort: routing.effort,
+      routingLock: effectiveStep.routingLock ?? null,
+      routingDecision: effectiveStep.routingDecision ?? null,
+      taskProfile: effectiveStep.taskProfile ?? null,
     });
     providerOverrides[agent.id] = provider;
     modelOverrides[agent.id] = model;

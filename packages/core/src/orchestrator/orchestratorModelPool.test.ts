@@ -1,35 +1,62 @@
 import { describe, expect, it } from 'vitest';
-import type { OrchestratorRoleDefault } from './types';
+import type { ProviderId } from '@goodboy/types';
 import { orchestratorModelPool } from './orchestratorModelPool';
+import type { WorkflowRoutingAvailabilitySnapshot } from './workflowRoutingAvailability';
 
-const roleDefaults: ReadonlyArray<OrchestratorRoleDefault> = [
-  { role: 'scout', model: 'haiku-4.5', effort: 'low' },
-  { role: 'planner', model: 'opus-5', effort: 'high' },
-  { role: 'implementer', model: 'sonnet-5', effort: 'medium' },
-  { role: 'reviewer', model: 'sonnet-5', effort: 'medium' },
-];
+const snapshot = (
+  overrides: Partial<WorkflowRoutingAvailabilitySnapshot> = {},
+): WorkflowRoutingAvailabilitySnapshot => ({
+  connectedProviders: ['anthropic', 'codex'],
+  coolingDownProviders: [],
+  budgetBlockedProviders: [],
+  isSessionBudgetBlocked: false,
+  isRunBudgetBlocked: false,
+  nowMs: 0,
+  ...overrides,
+});
+
+const identities = (availability: WorkflowRoutingAvailabilitySnapshot): ReadonlyArray<string> =>
+  orchestratorModelPool({ availability }).map((option) => `${option.provider}/${option.model}`);
 
 describe('orchestratorModelPool', () => {
-  it('offers only the models the operator role configuration reaches, in catalog order', () => {
-    const pool = orchestratorModelPool({ provider: 'anthropic', roleDefaults });
-
-    expect(pool.map((option) => option.id)).toEqual(['opus-5', 'sonnet-5', 'haiku-4.5']);
+  it('includes connected catalog models absent from every role default', () => {
+    expect(identities(snapshot())).toContain('anthropic/fable-5');
   });
 
-  it('leaves the rest of the provider catalog out of the menu', () => {
-    const pool = orchestratorModelPool({ provider: 'anthropic', roleDefaults });
+  it('keeps duplicate model ids distinct across providers', () => {
+    const pool = orchestratorModelPool({
+      availability: snapshot({ connectedProviders: ['anthropic', 'cursor'] }),
+    });
+    const shared = pool.filter((option) => option.model === 'opus-5');
 
-    expect(pool.map((option) => option.id)).not.toContain('fable-5');
+    expect(shared.map((option) => option.provider)).toEqual(['anthropic', 'cursor']);
   });
 
-  it('carries the catalog label and cost note for each offered model', () => {
-    const pool = orchestratorModelPool({ provider: 'anthropic', roleDefaults });
+  it.each([
+    ['disconnected', snapshot({ connectedProviders: ['anthropic'] })],
+    ['cooling', snapshot({ coolingDownProviders: ['codex'] })],
+    ['hard blocked', snapshot({ budgetBlockedProviders: ['codex'] })],
+  ])('excludes %s providers', (_label, availability) => {
+    const providers = new Set<ProviderId>(
+      orchestratorModelPool({ availability }).map((option) => option.provider),
+    );
 
-    expect(pool[0]).toEqual({ id: 'opus-5', label: 'Opus 5', note: 'deepest reasoning' });
-    expect(pool.at(-1)).toEqual({ id: 'haiku-4.5', label: 'Haiku 4.5', note: 'cheap, fast' });
+    expect(providers.has('codex')).toBe(false);
+    expect(providers.has('anthropic')).toBe(true);
   });
 
-  it('offers nothing when the workspace configures no role defaults', () => {
-    expect(orchestratorModelPool({ provider: 'anthropic', roleDefaults: [] })).toEqual([]);
+  it('offers nothing while a session-wide budget stop holds', () => {
+    expect(
+      orchestratorModelPool({ availability: snapshot({ isSessionBudgetBlocked: true }) }),
+    ).toEqual([]);
+  });
+
+  it('carries the catalog label and the efforts each identity accepts', () => {
+    const option = orchestratorModelPool({ availability: snapshot() }).find(
+      (candidate) => candidate.provider === 'anthropic' && candidate.model === 'sonnet-5',
+    );
+
+    expect(option?.label).toBe('Sonnet 5');
+    expect(option?.efforts.length).toBeGreaterThan(0);
   });
 });

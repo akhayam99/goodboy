@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
   AgentId,
+  BudgetAlert,
+  IsoDateTime,
   ProviderRunId,
   SessionId,
   StepId,
@@ -10,7 +12,7 @@ import type {
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
-import { loadSpendLimitTelemetry, resolveSpendLimitStop } from './budgetBlock';
+import { isBudgetBlocked, loadSpendLimitTelemetry, resolveSpendLimitStop } from './budgetBlock';
 
 const SESSION_ID = 'ses-1' as SessionId;
 const RUN_ID = 'run-1' as WorkflowRunId;
@@ -53,6 +55,44 @@ const stateWith = (spentUsd: number) => {
   };
   return { state, get: (() => state) as never };
 };
+
+const budgetAlert = (overrides: Partial<BudgetAlert>): BudgetAlert => ({
+  id: 'alert-1',
+  kind: 'session-exceeded',
+  currentUsd: 10,
+  capUsd: 5,
+  createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+  ...overrides,
+});
+
+describe('isBudgetBlocked', () => {
+  it('stops the session when its own cap is exceeded', () => {
+    expect(
+      isBudgetBlocked({
+        alerts: [budgetAlert({ sessionId: SESSION_ID })],
+        sessionId: SESSION_ID,
+      }),
+    ).toBe(true);
+  });
+
+  it('leaves the session running when one provider is over its own cap', () => {
+    expect(
+      isBudgetBlocked({
+        alerts: [budgetAlert({ kind: 'provider-exceeded', provider: 'openai' })],
+        sessionId: SESSION_ID,
+      }),
+    ).toBe(false);
+  });
+
+  it('ignores another session exceeded cap', () => {
+    expect(
+      isBudgetBlocked({
+        alerts: [budgetAlert({ sessionId: 'ses-2' as SessionId })],
+        sessionId: SESSION_ID,
+      }),
+    ).toBe(false);
+  });
+});
 
 describe('resolveSpendLimitStop', () => {
   it('pauses a run that spent past its limit', () => {

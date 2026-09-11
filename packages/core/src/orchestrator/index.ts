@@ -21,11 +21,6 @@ export { buildOrchestratorUserPrompt, ORCHESTRATOR_SYSTEM_PROMPT } from './promp
 export { orchestratorModelPool } from './orchestratorModelPool';
 export { parseRunSummaryText, serializeRunSummary } from './runSummary';
 export {
-  enforceOrchestratorModelPool,
-  type EnforcedOrchestratorStep,
-  type OrchestratorModelRejection,
-} from './enforceOrchestratorModelPool';
-export {
   OrchestratorClient,
   OrchestratorClientSpawnError,
   OrchestratorProviderError,

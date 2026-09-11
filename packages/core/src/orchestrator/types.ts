@@ -54,13 +54,15 @@ export type OrchestratorCompletedStep = {
 };
 
 export type OrchestratorModelOption = {
-  readonly id: string;
+  readonly provider: ProviderId;
+  readonly model: string;
   readonly label: string;
-  readonly note: string;
+  readonly efforts: ReadonlyArray<ModelEffort>;
 };
 
 export type OrchestratorRoleDefault = {
   readonly role: AgentRole;
+  readonly provider: ProviderId;
   readonly model: string;
   readonly effort: ModelEffort;
 };

@@ -1,7 +1,5 @@
 import type {
-  CatalogModel,
   ModelEffort,
-  ProviderId,
   WorkflowModelPick,
   WorkflowRoutingDecision,
   WorkflowRoutingLock,
@@ -14,6 +12,7 @@ import { getProviderModelPrice } from '../providers/model-price';
 import { resolveModelArgs } from '../providers/resolveModelArgs';
 import { resolveStoredModelSelection } from '../providers/resolveStoredModelSelection';
 import { workflowModelProfile } from '../providers/workflowModelProfiles';
+import { defaultModelEffort, supportedModelEfforts } from './workflowModelEfforts';
 import type { WorkflowRoutingProposalParseOutcome } from './parseWorkflowRoutingProposal';
 import { cappedRoutingReason } from './parseWorkflowRoutingProposal';
 import type { WorkflowModelCandidate } from './recommendWorkflowModel';
@@ -44,45 +43,6 @@ type Params = {
   readonly contextEstimate: number | null;
 };
 
-type ModelParams = {
-  readonly provider: ProviderId;
-  readonly model: string;
-};
-
-const catalogModel = ({ provider, model }: ModelParams): CatalogModel | undefined =>
-  MODEL_CATALOGS[provider].find((candidate) => candidate.key === model);
-
-const supportedEfforts = ({ provider, model }: ModelParams): ReadonlyArray<ModelEffort> => {
-  const found = catalogModel({ provider, model });
-  if (found === undefined) {
-    return [];
-  }
-  if (found.provider === 'cursor') {
-    return [
-      ...new Set(found.combos.flatMap((combo) => (combo.effort === null ? [] : [combo.effort]))),
-    ];
-  }
-  return found.efforts;
-};
-
-const defaultEffort = ({ provider, model }: ModelParams): ModelEffort | null => {
-  const found = catalogModel({ provider, model });
-  if (found === undefined) {
-    return null;
-  }
-  if (found.provider === 'cursor') {
-    const combo = found.combos[0];
-    if (combo === undefined) {
-      return null;
-    }
-    return combo.effort;
-  }
-  if (found.efforts.length === 0) {
-    return null;
-  }
-  return found.defaultEffort;
-};
-
 type PickParams = {
   readonly pick: WorkflowModelPick;
 };
@@ -93,12 +53,12 @@ type EffortNormalization = Readonly<{
 }>;
 
 const normalizeAutomaticEffort = ({ pick }: PickParams): EffortNormalization => {
-  const efforts = supportedEfforts(pick);
+  const efforts = supportedModelEfforts(pick);
   if (efforts.length === 0) {
     return { effort: null, wasAdjusted: pick.effort !== null };
   }
   if (pick.effort === null) {
-    return { effort: defaultEffort(pick), wasAdjusted: false };
+    return { effort: defaultModelEffort(pick), wasAdjusted: false };
   }
   if (efforts.includes(pick.effort) === true) {
     return { effort: pick.effort, wasAdjusted: false };
@@ -111,13 +71,13 @@ const normalizeAutomaticEffort = ({ pick }: PickParams): EffortNormalization => 
   const resolved = resolveModelArgs({ provider: pick.provider, selection: stored.selection });
   const clamped = resolved.clamped;
   if (clamped === undefined) {
-    return { effort: defaultEffort(pick), wasAdjusted: true };
+    return { effort: defaultModelEffort(pick), wasAdjusted: true };
   }
   return { effort: clamped.applied, wasAdjusted: true };
 };
 
 const normalizeLockedEffort = ({ pick }: PickParams): ModelEffort | null | 'rejected' => {
-  const efforts = supportedEfforts(pick);
+  const efforts = supportedModelEfforts(pick);
   if (efforts.length === 0) {
     if (pick.effort !== null) {
       return 'rejected';
@@ -125,7 +85,7 @@ const normalizeLockedEffort = ({ pick }: PickParams): ModelEffort | null | 'reje
     return null;
   }
   if (pick.effort === null) {
-    return defaultEffort(pick);
+    return defaultModelEffort(pick);
   }
   if (efforts.includes(pick.effort) === false) {
     return 'rejected';
@@ -143,7 +103,7 @@ const availableCandidates = ({
   const candidates: Array<WorkflowModelCandidate> = [];
   for (const provider of PROVIDER_IDS) {
     for (const model of MODEL_CATALOGS[provider]) {
-      const effort = defaultEffort({ provider, model: model.key });
+      const effort = defaultModelEffort({ provider, model: model.key });
       const status = workflowRoutingAvailability({
         pick: { provider, model: model.key, effort },
         snapshot: availability,

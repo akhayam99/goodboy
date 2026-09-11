@@ -47,21 +47,45 @@ describe('buildOrchestratorUserPrompt', () => {
     expect(buildOrchestratorUserPrompt(input({ spentUsd: 8.4 }))).not.toContain('Spend:');
   });
 
-  it('presents the model menu as the routing pool rather than a catalog', () => {
+  it('offers every available identity provider qualified, with the efforts it accepts', () => {
     const prompt = buildOrchestratorUserPrompt(
-      input({ modelMenu: [{ id: 'sonnet-5', label: 'Sonnet 5', note: 'balanced default' }] }),
+      input({
+        modelMenu: [
+          {
+            provider: 'codex',
+            model: 'gpt-5.6',
+            label: 'GPT-5.6',
+            efforts: ['low', 'medium', 'high'],
+          },
+        ],
+      }),
     );
 
-    expect(prompt).toContain('Routing pool, the only models you may pick');
+    expect(prompt).toContain('codex/gpt-5.6 - GPT-5.6 - efforts: low, medium, high');
+    expect(prompt).toContain('Automatic steps can use your connected providers');
   });
 
-  it('presents the role defaults as the operator configuration', () => {
+  it('says a model with no effort control has none instead of inventing a ladder', () => {
     const prompt = buildOrchestratorUserPrompt(
-      input({ roleDefaults: [{ role: 'implementer', model: 'sonnet-5', effort: 'medium' }] }),
+      input({
+        modelMenu: [{ provider: 'cursor', model: 'auto', label: 'Auto', efforts: [] }],
+      }),
     );
 
-    expect(prompt).toContain('Role defaults (operator configured');
-    expect(prompt).toContain('implementer=sonnet-5/medium');
+    expect(prompt).toContain('cursor/auto - Auto - efforts: no effort control');
+  });
+
+  it('presents the role defaults as the fallback for an unrouted step', () => {
+    const prompt = buildOrchestratorUserPrompt(
+      input({
+        roleDefaults: [
+          { role: 'implementer', provider: 'anthropic', model: 'sonnet-5', effort: 'medium' },
+        ],
+      }),
+    );
+
+    expect(prompt).toContain('Role defaults (the fallback for a step you leave unrouted)');
+    expect(prompt).toContain('implementer=anthropic/sonnet-5/medium');
   });
 
   it('labels the goal as the source of the session language', () => {
@@ -104,14 +128,24 @@ describe('ORCHESTRATOR_SYSTEM_PROMPT', () => {
     expect(ORCHESTRATOR_SYSTEM_PROMPT).not.toContain('hard cap');
   });
 
-  it('makes the operator role defaults the routing baseline', () => {
-    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain("the operator's own configuration");
-    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('When you deviate you must say so in reason');
+  it('asks for a provider qualified pick on every step it opens', () => {
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('pick the model for every next step yourself');
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('Use provider and model exactly as listed');
   });
 
-  it('warns that a model outside the listed pool is rejected', () => {
-    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('The listed ids are the whole routing pool');
-    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('falls back to the role default');
+  it('treats a model outside the role defaults as a normal choice', () => {
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain(
+      'a model outside the role defaults is a normal choice',
+    );
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain(
+      'The role defaults are the fallback for a step you decline to route',
+    );
+  });
+
+  it('claims no capability the list did not give it', () => {
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain(
+      'It says nothing about how good a model is at anything',
+    );
   });
 
   it('gives reason an operator facing contract', () => {

@@ -105,7 +105,7 @@ export {
   type SessionLanguageRuleParams,
 } from './language';
 
-export { resolveProvider, type ResolveProviderInput } from './budget/router';
+export { PROVIDER_ID_TO_NAME, resolveProvider, type ResolveProviderInput } from './budget/router';
 
 export { computeCostUsd, priceFor } from './providers/claude/cost';
 export {
@@ -373,7 +373,6 @@ export {
   resolveWorkflowRouting,
   workflowRoutingAvailability,
   buildOrchestratorUserPrompt,
-  enforceOrchestratorModelPool,
   orchestratorModelPool,
   parseRunSummaryText,
   serializeRunSummary,
@@ -381,8 +380,6 @@ export {
   OrchestratorClient,
   OrchestratorClientSpawnError,
   OrchestratorProviderError,
-  type EnforcedOrchestratorStep,
-  type OrchestratorModelRejection,
   type OrchestratorClientDeps,
   type OrchestratorClientResult,
   type OrchestratorCompletedStep,

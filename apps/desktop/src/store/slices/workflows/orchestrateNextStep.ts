@@ -13,6 +13,7 @@ import type {
   StepId,
   TurnEvent,
   Workflow,
+  WorkflowModelPick,
   WorkflowOrchestrationOutcome,
   WorkflowOrchestrationStop,
   WorkflowRunId,
@@ -21,15 +22,18 @@ import {
   OrchestratorClient,
   OrchestratorProviderError,
   ROLE_DEFAULTS,
-  enforceOrchestratorModelPool,
+  defaultsForRole,
   orchestratorModelPool,
+  parseWorkflowRoutingProposal,
   recommendedModelForRole,
   resolveRoleRouting,
   resolveTaskModel,
+  resolveWorkflowRouting,
   runsForWorkflowRun,
   serializeRunSummary,
   type OrchestratorRoleDefault,
   type RunSummary,
+  type WorkflowRoutingAvailabilitySnapshot,
 } from '@goodboy/core';
 import {
   listOpenQuestionsForSession,
@@ -38,6 +42,7 @@ import {
   updateWorkflowRunOrchestratorSummary,
 } from '@goodboy/db';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
+import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { tauriDatabase } from '../../../shared/lib/db';
 import {
   BUDGET_BLOCK_MESSAGE,
@@ -98,15 +103,43 @@ const mergeRoleModels = ({
   return { ...(workspace ?? {}), ...(run ?? {}) };
 };
 
+type ConfiguredRoleParams = {
+  readonly role: AgentRole;
+  readonly roleModels: RoleModelPreferences | null | undefined;
+};
+
+const configuredRolePick = ({
+  role,
+  roleModels,
+}: ConfiguredRoleParams): WorkflowModelPick | null => {
+  const routing = resolveRoleRouting({ role, prefs: roleModels });
+  if (routing.isOverride === false) {
+    return null;
+  }
+  return { provider: routing.provider, model: routing.model, effort: routing.effort };
+};
+
 const roleDefaultsFor = ({
   provider,
   roleModels,
 }: RoleDefaultsParams): ReadonlyArray<OrchestratorRoleDefault> =>
-  (Object.keys(ROLE_DEFAULTS) as ReadonlyArray<AgentRole>).map((role) => ({
-    role,
-    model: recommendedModelForRole({ role, provider, prefs: roleModels }),
-    effort: resolveRoleRouting({ role, prefs: roleModels }).effort,
-  }));
+  (Object.keys(ROLE_DEFAULTS) as ReadonlyArray<AgentRole>).map((role) => {
+    const routing = resolveRoleRouting({ role, prefs: roleModels });
+    if (routing.isOverride === true) {
+      return {
+        role,
+        provider: routing.provider,
+        model: routing.model,
+        effort: routing.effort,
+      };
+    }
+    return {
+      role,
+      provider,
+      model: recommendedModelForRole({ role, provider, prefs: roleModels }),
+      effort: routing.effort,
+    };
+  });
 
 type EmitParams = {
   readonly get: GetFn;
@@ -330,6 +363,7 @@ type AppendParams = {
   readonly workflowRunId: WorkflowRunId;
   readonly workflow: Workflow;
   readonly roleModels: RoleModelPreferences | null;
+  readonly availability: WorkflowRoutingAvailabilitySnapshot;
   readonly step: Omit<Step, 'id' | 'workflowId' | 'ordinal' | 'name'> & {
     readonly name: string;
   };
@@ -342,6 +376,7 @@ const appendStep = async ({
   workflowRunId,
   workflow,
   roleModels,
+  availability,
   step,
 }: AppendParams): Promise<Agent> => {
   const ordinal = workflow.steps.reduce((max, current) => Math.max(max, current.ordinal), -1) + 1;
@@ -357,6 +392,9 @@ const appendStep = async ({
     ...(step.modelOverride != null && { modelOverride: step.modelOverride }),
     ...(step.effort != null && { effort: step.effort }),
     ...(step.orchestratorReason != null && { orchestratorReason: step.orchestratorReason }),
+    routingLock: null,
+    routingDecision: step.routingDecision ?? null,
+    taskProfile: step.taskProfile ?? null,
   };
   const saved = await invokeWorkflowUpsert({
     id: workflow.id,
@@ -384,6 +422,7 @@ const appendStep = async ({
       session.providerPreference.defaultProvider) as ProviderId,
     roleModels,
     sessionEffort: session.effort ?? null,
+    availability,
   });
   const agent = spawned.agents[0];
   if (agent == null) {
@@ -556,7 +595,15 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         provider: defaultProvider,
         roleModels: workspaceRoleModels,
       });
-      const modelMenu = orchestratorModelPool({ provider: defaultProvider, roleDefaults });
+      const availability = workflowAvailabilitySnapshot({
+        providers: get().providers ?? [],
+        cooldowns: get().providerCooldowns ?? {},
+        alerts: get().budgetAlerts ?? [],
+        sessionId,
+        isRunBudgetBlocked: false,
+        nowMs: Date.now(),
+      });
+      const modelMenu = orchestratorModelPool({ availability });
       const client = new OrchestratorClient({
         ...routing,
         invokeFn: invoke,
@@ -664,20 +711,72 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         await persistRunSummary({ set, sessionId, workflowRunId, summary: decision.runSummary });
       } catch {}
       if (decision.action === 'next') {
-        const enforced = enforceOrchestratorModelPool({
-          step: decision.step,
-          pool: modelMenu,
-          roleDefaults,
+        const proposed = decision.step;
+        const compiled = defaultsForRole(proposed.role);
+        const resolution = resolveWorkflowRouting({
+          agentLock: null,
+          stepLock: null,
+          runRoleLock: configuredRolePick({
+            role: proposed.role,
+            roleModels: run.roleModelOverrides,
+          }),
+          proposal: parseWorkflowRoutingProposal({
+            fields: proposed,
+            emittingProvider: routing.providerId,
+          }),
+          roleDefault: configuredRolePick({
+            role: proposed.role,
+            roleModels: workspaceRoleModels,
+          }),
+          sessionDefault:
+            session.modelOverride == null
+              ? null
+              : {
+                  provider: defaultProvider,
+                  model: session.modelOverride,
+                  effort: session.effort ?? null,
+                },
+          kindDefault: {
+            provider: compiled.provider,
+            model: compiled.model,
+            effort: compiled.effort,
+          },
+          availability,
+          contextEstimate: null,
         });
-        const runRoleOverride = resolveRoleRouting({
-          role: enforced.step.role,
-          prefs: run.roleModelOverrides,
-        });
-        const model = runRoleOverride.isOverride ? runRoleOverride.model : enforced.step.model;
-        const effort = runRoleOverride.isOverride ? runRoleOverride.effort : enforced.step.effort;
-        const reason = [decision.reason.trim(), enforced.rejection?.note ?? '']
-          .filter((entry) => entry !== '')
-          .join('\n\n');
+        if (resolution.kind === 'blocked') {
+          await persistOrchestrationStop({
+            set,
+            sessionId,
+            workflowRunId,
+            stop: {
+              kind: resolution.cause === 'budget' ? 'budget' : 'failure',
+              message: resolution.reason,
+            },
+          });
+          const blockedAgentId = emitDecision({
+            get,
+            sessionId,
+            workflowRunId,
+            action: 'blocked',
+            reason: resolution.reason,
+            operatorNote,
+          });
+          await recordOrchestratorUsage({
+            set,
+            get,
+            sessionId,
+            agentId: blockedAgentId,
+            workflowRunId,
+            provider: routing.providerId,
+            model: result.model,
+            usage: result.usage,
+          });
+          return;
+        }
+        const routingDecision = resolution.decision;
+        const selected = routingDecision.selected;
+        const reason = decision.reason.trim();
         const agent = await appendStep({
           set,
           get,
@@ -685,17 +784,20 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           workflowRunId,
           workflow,
           roleModels,
+          availability,
           step: {
-            name: enforced.step.name,
-            role: enforced.step.role,
-            promptPrefix: enforced.step.promptPrefix,
-            ...(enforced.step.expectedOutput != null && {
-              expectedOutput: enforced.step.expectedOutput,
+            name: proposed.name,
+            role: proposed.role,
+            promptPrefix: proposed.promptPrefix,
+            ...(proposed.expectedOutput != null && {
+              expectedOutput: proposed.expectedOutput,
             }),
-            ...(runRoleOverride.isOverride && { providerOverride: runRoleOverride.provider }),
-            ...(model != null && { modelOverride: model }),
-            ...(effort != null && { effort }),
+            providerOverride: selected.provider,
+            modelOverride: selected.model,
+            ...(selected.effort != null && { effort: selected.effort }),
             ...(reason !== '' && { orchestratorReason: reason }),
+            routingDecision,
+            taskProfile: routingDecision.proposal?.profile ?? null,
           },
         });
         emitDecision({
@@ -708,16 +810,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           operatorNote,
           preferredAgentId: agent.id,
         });
-        if (enforced.rejection != null) {
-          const { requested, appliedModel, appliedEffort } = enforced.rejection;
-          void get().emitNotification(
-            'error',
-            'warning',
-            'orchestrator model pick refused',
-            `${requested} is outside the routing pool for this workspace, so ${agent.name} runs on ${appliedModel} at ${appliedEffort} effort.`,
-            { sessionId },
-          );
-        }
         await recordOrchestratorUsage({
           set,
           get,

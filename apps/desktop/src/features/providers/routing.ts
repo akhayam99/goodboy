@@ -15,6 +15,7 @@ type Params = {
   readonly connectedProviders: ProviderId[];
   readonly cooldowns?: ProviderCooldowns;
   readonly force?: boolean;
+  readonly keepPreferredOverThreshold?: boolean;
 };
 
 export const resolveProviderForTurn = async ({
@@ -23,12 +24,14 @@ export const resolveProviderForTurn = async ({
   connectedProviders,
   cooldowns,
   force,
+  keepPreferredOverThreshold,
 }: Params): Promise<RoutingDecision> => {
   return resolveProvider({
     sessionPreference,
     turnOverride,
     connectedProviders,
     ...(force === true ? { force: true } : {}),
+    ...(keepPreferredOverThreshold === true ? { keepPreferredOverThreshold: true } : {}),
     cooldownChecker: {
       isProviderCoolingDown: (providerId) => {
         const until = cooldowns?.[providerId];

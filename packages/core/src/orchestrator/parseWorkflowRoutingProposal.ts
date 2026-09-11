@@ -36,7 +36,7 @@ export type WorkflowRoutingWireFields = Readonly<{
   modelReason?: unknown;
 }>;
 
-const EFFORTS = [
+export const MODEL_EFFORTS = [
   'minimal',
   'low',
   'medium',
@@ -153,7 +153,7 @@ export const parseWorkflowRoutingProposal = ({
       profile,
     };
   }
-  const effort = EFFORTS.find((candidate) => candidate === requestedEffort);
+  const effort = MODEL_EFFORTS.find((candidate) => candidate === requestedEffort);
   if (requestedEffort !== null && effort === undefined) {
     return {
       kind: 'invalid',

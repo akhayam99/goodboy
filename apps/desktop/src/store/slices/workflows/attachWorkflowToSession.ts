@@ -113,6 +113,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
             baseOrdinal: baseOrdinal + 1,
             defaultProvider: sessionDefaultProvider,
             roleModels,
+            sessionModel: session.modelOverride ?? null,
             sessionEffort: session.effort ?? null,
           });
     const newAgents = spawned.agents;

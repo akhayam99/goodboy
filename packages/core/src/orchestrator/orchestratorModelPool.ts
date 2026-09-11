@@ -1,35 +1,38 @@
-import type { ModelCostTier, ProviderId } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
-import type { OrchestratorModelOption, OrchestratorRoleDefault } from './types';
-
-const MODEL_NOTE: Readonly<Record<ModelCostTier, string>> = {
-  cheap: 'cheap, fast',
-  mid: 'balanced default',
-  expensive: 'deepest reasoning',
-};
+import { PROVIDER_IDS } from '@goodboy/types';
+import { MODEL_CATALOGS } from '../providers/catalogs';
+import type { OrchestratorModelOption } from './types';
+import type { WorkflowRoutingAvailabilitySnapshot } from './workflowRoutingAvailability';
+import { workflowRoutingAvailability } from './workflowRoutingAvailability';
+import { defaultModelEffort, supportedModelEfforts } from './workflowModelEfforts';
 
 type Params = {
-  readonly provider: ProviderId;
-  readonly roleDefaults: ReadonlyArray<OrchestratorRoleDefault>;
+  readonly availability: WorkflowRoutingAvailabilitySnapshot;
 };
 
 export const orchestratorModelPool = ({
-  provider,
-  roleDefaults,
+  availability,
 }: Params): ReadonlyArray<OrchestratorModelOption> => {
-  const catalog = PROVIDER_CAPABILITIES[provider].models;
-  const rankById = new Map(catalog.map((model, index) => [model.id, index]));
-  return [...new Set(roleDefaults.map((entry) => entry.model))]
-    .sort(
-      (left, right) =>
-        (rankById.get(left) ?? catalog.length) - (rankById.get(right) ?? catalog.length),
-    )
-    .map((id) => {
-      const descriptor = catalog.find((model) => model.id === id);
-      return {
-        id,
-        label: descriptor?.label ?? id,
-        note: MODEL_NOTE[descriptor?.costTier ?? 'mid'],
-      };
-    });
+  const options: Array<OrchestratorModelOption> = [];
+  for (const provider of PROVIDER_IDS) {
+    for (const model of MODEL_CATALOGS[provider]) {
+      const status = workflowRoutingAvailability({
+        pick: {
+          provider,
+          model: model.key,
+          effort: defaultModelEffort({ provider, model: model.key }),
+        },
+        snapshot: availability,
+      });
+      if (status.kind !== 'available') {
+        continue;
+      }
+      options.push({
+        provider,
+        model: model.key,
+        label: model.label,
+        efforts: supportedModelEfforts({ provider, model: model.key }),
+      });
+    }
+  }
+  return options;
 };

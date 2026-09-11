@@ -114,23 +114,75 @@ describe('parseOrchestratorDecision', () => {
     });
   });
 
-  it('drops a model the provider does not offer', () => {
+  it("keeps another connected provider's model through parsing", () => {
     const parsed = parseOrchestratorDecision({
       provider: 'anthropic',
-      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Plan","role":"planner","promptPrefix":"Draft a plan.","model":"gpt-5.6"}}<</orchestrator>>',
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Plan","role":"planner","promptPrefix":"Draft a plan.","provider":"codex","model":"gpt-5.6"}}<</orchestrator>>',
     });
 
     expect(parsed).toEqual({
       action: 'next',
       reason: 'x',
-      step: { name: 'Plan', role: 'planner', promptPrefix: 'Draft a plan.' },
+      step: {
+        name: 'Plan',
+        role: 'planner',
+        promptPrefix: 'Draft a plan.',
+        provider: 'codex',
+        model: 'gpt-5.6-sol',
+      },
     });
   });
 
-  it('drops an effort outside the ladder of the chosen model', () => {
+  it('keeps missing routing apart from routing no catalog can serve', () => {
+    const missing = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Plan","role":"planner","promptPrefix":"Draft a plan."}}<</orchestrator>>',
+    });
+    const invalid = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Plan","role":"planner","promptPrefix":"Draft a plan.","model":"gpt-5.6"}}<</orchestrator>>',
+    });
+
+    expect(missing).toEqual({
+      action: 'next',
+      reason: 'x',
+      step: { name: 'Plan', role: 'planner', promptPrefix: 'Draft a plan.' },
+    });
+    expect(invalid).toEqual({
+      action: 'next',
+      reason: 'x',
+      step: {
+        name: 'Plan',
+        role: 'planner',
+        promptPrefix: 'Draft a plan.',
+        model: 'gpt-5.6',
+      },
+    });
+  });
+
+  it('carries an effort the chosen model does not support for later normalization', () => {
     const parsed = parseOrchestratorDecision({
       provider: 'anthropic',
       raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Fix","role":"implementer","promptPrefix":"Fix it.","model":"sonnet-5","effort":"max"}}<</orchestrator>>',
+    });
+
+    expect(parsed).toEqual({
+      action: 'next',
+      reason: 'x',
+      step: {
+        name: 'Fix',
+        role: 'implementer',
+        promptPrefix: 'Fix it.',
+        model: 'sonnet-5',
+        effort: 'max',
+      },
+    });
+  });
+
+  it('drops an effort level that is not an effort level at all', () => {
+    const parsed = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Fix","role":"implementer","promptPrefix":"Fix it.","model":"sonnet-5","effort":"turbo"}}<</orchestrator>>',
     });
 
     expect(parsed).toEqual({

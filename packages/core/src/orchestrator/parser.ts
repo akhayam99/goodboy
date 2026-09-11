@@ -5,9 +5,9 @@ import type {
   WorkflowTaskType,
 } from '@goodboy/types';
 import { PROVIDER_IDS } from '@goodboy/types';
-import { providerEffortLevels } from '../providers/providerEffortLevels';
 import { resolveStoredModelSelection } from '../providers/resolveStoredModelSelection';
 import { isAgentRole } from '../roles';
+import { MODEL_EFFORTS } from './parseWorkflowRoutingProposal';
 import { structuredRunSummary } from './runSummary';
 import type { OrchestratorDecision, OrchestratorStep, RunSummary } from './types';
 
@@ -153,29 +153,22 @@ type ModelParams = {
   readonly id: string | null;
 };
 
-const validModel = ({ provider, id }: ModelParams): string | null => {
+const requestedModel = ({ provider, id }: ModelParams): string | null => {
   if (id === null) {
     return null;
   }
   const stored = resolveStoredModelSelection({ provider, id });
   if (stored.report?.kind === 'unknown') {
-    return null;
+    return id;
   }
   return stored.selection.key;
 };
 
-type EffortParams = {
-  readonly provider: ProviderId;
-  readonly model: string | null;
-  readonly level: string | null;
-};
-
-const validEffort = ({ provider, model, level }: EffortParams): ModelEffort | null => {
+const requestedEffort = (level: string | null): ModelEffort | null => {
   if (level === null) {
     return null;
   }
-  const ladder = providerEffortLevels({ provider, ...(model !== null && { model }) });
-  return ladder.find((candidate) => candidate === level) ?? null;
+  return MODEL_EFFORTS.find((candidate) => candidate === level) ?? null;
 };
 
 type StepParams = {
@@ -199,8 +192,11 @@ const parseStep = ({ value, provider }: StepParams): OrchestratorStep | null => 
   if (name === null || promptPrefix === null) {
     return null;
   }
-  const model = validModel({ provider, id: nonEmptyString(step['model']) });
-  const effort = validEffort({ provider, model, level: nonEmptyString(step['effort']) });
+  const model = requestedModel({
+    provider: selectedProvider ?? provider,
+    id: nonEmptyString(step['model']),
+  });
+  const effort = requestedEffort(nonEmptyString(step['effort']));
   return {
     name,
     role: role !== null && isAgentRole(role) ? role : 'custom',

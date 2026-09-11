@@ -339,6 +339,39 @@ describe('resolveProvider, budget threshold tier', () => {
     expect(decision.reason).toBe('fallback-disconnected');
   });
 
+  it('a workflow selection past a soft threshold keeps the model it names', async () => {
+    const checkMock = vi.fn(async (provider: string) =>
+      provider === 'openai' ? overThreshold() : notExceeded(),
+    );
+    const input = makeInput({
+      connectedProviders: ['anthropic', 'codex'],
+      turnOverride: { providerId: 'codex', model: 'gpt-5.6-sol' },
+      budgetChecker: { checkProviderBudget: checkMock },
+      keepPreferredOverThreshold: true,
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('codex');
+    expect(decision.selectedModel).toBe('gpt-5.6-sol');
+    expect(decision.fallbackUsed).toBe(false);
+  });
+
+  it('a workflow selection over a hard cap still moves off it', async () => {
+    const checkMock = vi.fn(async (provider: string) =>
+      provider === 'openai' ? exceeded() : notExceeded(),
+    );
+    const input = makeInput({
+      connectedProviders: ['anthropic', 'codex'],
+      turnOverride: { providerId: 'codex', model: 'gpt-5.6-sol' },
+      budgetChecker: { checkProviderBudget: checkMock },
+      keepPreferredOverThreshold: true,
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('anthropic');
+    expect(decision.reason).toBe('fallback-budget');
+  });
+
   it('a turn override past its threshold still moves, keeping the threshold reason', async () => {
     const checkMock = vi.fn(async (provider: string) =>
       provider === 'openai' ? overThreshold() : notExceeded(),

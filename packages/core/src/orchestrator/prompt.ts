@@ -1,5 +1,4 @@
 import { sessionLanguageRule } from '../language/sessionLanguage';
-import { providerEffortLevels } from '../providers/providerEffortLevels';
 import type { OrchestratorInput } from './types';
 
 const OLDER_SUMMARY_PREVIEW_LENGTH = 280;
@@ -28,14 +27,16 @@ Roles are limited to: scout, planner, implementer, reviewer, investigator, teste
 
 For a next step, promptPrefix is the instruction the step agent starts from and expectedOutput tells the post-step summarizer exactly what to extract.
 
-Routing: the role defaults in the request are the operator's own configuration, so they are your default and not a suggestion. Omit model and effort to accept them, which is the right call for almost every step. Set model or effort only when the role default genuinely cannot serve this step, for example a mechanical rename that does not need the default reasoning model or a cross-file refactor that needs a stronger one. When you deviate you must say so in reason, naming the model you picked and why in one clause. Set model only to one of the listed model ids and effort only to one of the listed effort levels. The listed ids are the whole routing pool: a model outside it is rejected, the step falls back to the role default, and the operator is told you tried.
+Routing: pick the model for every next step yourself. You know what the step has to do, so name provider, model and effort on the step, and say in one clause why that work needs that model. Every identity in the available models list is runnable right now, across every provider the operator connected, so a model outside the role defaults is a normal choice rather than a deviation you have to justify against configuration. Use provider and model exactly as listed, as a pair: the same model id can belong to two providers and they are not interchangeable. Set effort only to one of the levels listed for the model you picked, or omit it to take that model's own default. The role defaults are the fallback for a step you decline to route, not a ceiling on the ones you do. Add taskType, one of exploration, planning, implementation, debugging, review, testing, writing, general, and difficulty, one of light, standard, heavy, so the operator can see what the pick was made for, and put the routing sentence in modelReason.
+
+The list names identities and the efforts each one accepts. It says nothing about how good a model is at anything: that judgement is yours, from what you know about these models, and you never claim a capability the list did not give you.
 
 reason is written for the operator, not for you. Say why this step is needed now: what the step before it left open, what this one settles. One or two sentences, plain markdown, never a recap of what already happened. For done and blocked, say what the run achieved and what is left.
 
 ${ORCHESTRATOR_LANGUAGE_RULE}
 
 Respond immediately with exactly one marked JSON object on a single line, using \\n escapes for any newlines inside strings, and nothing else:
-<<orchestrator>>{"action":"next","reason":"...","step":{"name":"...","role":"implementer","promptPrefix":"...","expectedOutput":"...","model":"...","effort":"medium"}}<</orchestrator>>
+<<orchestrator>>{"action":"next","reason":"...","step":{"name":"...","role":"implementer","promptPrefix":"...","expectedOutput":"...","provider":"...","model":"...","effort":"medium","taskType":"implementation","difficulty":"standard","modelReason":"..."}}<</orchestrator>>
 
 The other valid forms are:
 <<orchestrator>>{"action":"done","reason":"..."}<</orchestrator>>
@@ -75,22 +76,28 @@ export const buildOrchestratorUserPrompt = ({
       `Spend: $${(spentUsd ?? 0).toFixed(2)} of the $${spendLimitUsd.toFixed(2)} the operator allowed. As you approach it, consolidate what is left into fewer steps.`,
     );
   }
-  lines.push('', `Routing pool, the only models you may pick (provider ${providerId}):`);
+  lines.push(
+    '',
+    'Available models, provider and model id and the efforts that model accepts. Automatic steps can use your connected providers:',
+  );
   if (modelMenu.length === 0) {
-    lines.push('(none, omit model)');
+    lines.push('(none, omit provider, model and effort)');
   } else {
-    modelMenu.forEach((model) => {
-      lines.push(`${model.id} - ${model.label} - ${model.note}`);
+    modelMenu.forEach((option) => {
+      const efforts = option.efforts.length === 0 ? 'no effort control' : option.efforts.join(', ');
+      lines.push(`${option.provider}/${option.model} - ${option.label} - efforts: ${efforts}`);
     });
   }
   lines.push(
     '',
-    `Effort levels: ${providerEffortLevels({ provider: providerId }).join(', ')}`,
+    `You are running on ${providerId}. That says nothing about which provider a step should run on.`,
     '',
-    'Role defaults (operator configured, keep them unless the step cannot be served by them):',
+    'Role defaults (the fallback for a step you leave unrouted):',
     roleDefaults.length === 0
       ? '(none)'
-      : roleDefaults.map((entry) => `${entry.role}=${entry.model}/${entry.effort}`).join(', '),
+      : roleDefaults
+          .map((entry) => `${entry.role}=${entry.provider}/${entry.model}/${entry.effort}`)
+          .join(', '),
     '',
     'Completed steps (their summaries are written in English by contract, which says nothing about the language you answer in):',
   );

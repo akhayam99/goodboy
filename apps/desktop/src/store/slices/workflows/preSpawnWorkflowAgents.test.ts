@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ROLE_DEFAULTS } from '@goodboy/core';
+import type { WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core';
 import type {
   Agent,
   AgentId,
@@ -51,7 +52,101 @@ beforeEach(() => {
   }));
 });
 
+const availability = (
+  overrides: Partial<WorkflowRoutingAvailabilitySnapshot> = {},
+): WorkflowRoutingAvailabilitySnapshot => ({
+  connectedProviders: ['anthropic', 'codex'],
+  coolingDownProviders: [],
+  budgetBlockedProviders: [],
+  isSessionBudgetBlocked: false,
+  isRunBudgetBlocked: false,
+  nowMs: 0,
+  ...overrides,
+});
+
+const decidedStep = (): Step =>
+  step({
+    providerOverride: 'codex',
+    modelOverride: 'gpt-5.6-sol',
+    effort: 'high',
+    routingDecision: {
+      version: 1,
+      proposal: {
+        pick: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+        reason: 'The refactor needs deep reasoning.',
+        source: 'agent',
+        profile: { taskType: 'implementation', difficulty: 'heavy', basis: 'agent' },
+      },
+      selected: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+      source: 'agent',
+      reason: 'The refactor needs deep reasoning.',
+      adjustment: 'none',
+      executed: null,
+    },
+    taskProfile: { taskType: 'implementation', difficulty: 'heavy', basis: 'agent' },
+  });
+
 describe('preSpawnWorkflowAgents', () => {
+  it('spawns the persisted choice and carries the decision onto the agent row', async () => {
+    await preSpawnWorkflowAgents({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      steps: [decidedStep()],
+      baseOrdinal: 0,
+      defaultProvider: 'anthropic',
+      roleModels: { implementer: { providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' } },
+      availability: availability(),
+    });
+
+    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(insert['providerOverride']).toBe('codex');
+    expect(insert['modelOverride']).toBe('gpt-5.6-sol');
+    expect(insert['effort']).toBe('high');
+    expect(insert['routingDecision']).toMatchObject({ source: 'agent' });
+    expect(insert['taskProfile']).toMatchObject({ taskType: 'implementation' });
+  });
+
+  it('never spawns on a provider that started cooling down after planning', async () => {
+    await preSpawnWorkflowAgents({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      steps: [decidedStep()],
+      baseOrdinal: 0,
+      defaultProvider: 'anthropic',
+      roleModels: null,
+      availability: availability({ coolingDownProviders: ['codex'] }),
+    });
+
+    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(insert['providerOverride']).toBe('anthropic');
+    expect(insert['routingDecision']).toMatchObject({ adjustment: 'cooldown' });
+  });
+
+  it('leaves an explicit lock alone rather than substituting another model', async () => {
+    const locked = {
+      ...decidedStep(),
+      routingLock: {
+        version: 1,
+        pick: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+        origin: 'user',
+      },
+    } as Step;
+
+    await preSpawnWorkflowAgents({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      steps: [locked],
+      baseOrdinal: 0,
+      defaultProvider: 'anthropic',
+      roleModels: null,
+      availability: availability({ coolingDownProviders: ['codex'] }),
+    });
+
+    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(insert['providerOverride']).toBe('codex');
+    expect(insert['routingLock']).toMatchObject({ origin: 'user' });
+  });
+
   it('writes the resolved routing on the agent row instead of only in memory', async () => {
     const result = await preSpawnWorkflowAgents({
       sessionId: SESSION_ID,
