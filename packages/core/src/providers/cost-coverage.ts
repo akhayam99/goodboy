@@ -16,8 +16,13 @@ export const costCoverage = ({ provider, model }: Params): CostCoverage => {
       return CLAUDE_PRICES[model] != null ? 'measured' : 'approximate';
     case 'codex':
       return CODEX_PRICES[model] != null ? 'measured' : 'unpriced';
-    case 'gemini':
-      return GEMINI_PRICES[model] != null ? 'measured' : 'unpriced';
+    case 'gemini': {
+      const price = GEMINI_PRICES[model];
+      if (price == null) {
+        return 'unpriced';
+      }
+      return price.assumed === true ? 'approximate' : 'measured';
+    }
     case 'cursor':
       return 'approximate';
     case 'opencode':

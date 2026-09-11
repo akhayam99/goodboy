@@ -37,6 +37,12 @@ describe('costCoverage', () => {
     expect(costCoverage({ provider: 'gemini', model: 'unknown-gemini-model' })).toBe('unpriced');
   });
 
+  it('never reports an assumed rate as measured spend', () => {
+    expect(costCoverage({ provider: 'gemini', model: 'gemini-3.8-flash' })).toBe('approximate');
+    expect(costCoverage({ provider: 'gemini', model: 'gemini-3.7-flash' })).toBe('approximate');
+    expect(costCoverage({ provider: 'gemini', model: 'gemini-3.1-pro' })).toBe('measured');
+  });
+
   it('reports cursor as approximate regardless of model', () => {
     expect(costCoverage({ provider: 'cursor', model: 'composer-2.5' })).toBe('approximate');
     expect(costCoverage({ provider: 'cursor', model: 'totally-unknown' })).toBe('approximate');
