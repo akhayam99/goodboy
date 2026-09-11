@@ -24,7 +24,7 @@ import { useThemeStore } from '../../../../shared/lib/theme';
 import { linkedProjectsLabel } from '../../../workspace/linkedProjectsLabel';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
-type PaletteGroup = Exclude<QuickActionGroup, 'skill' | 'workflow'> | 'recents';
+type PaletteGroup = Exclude<QuickActionGroup, 'skill' | 'workflow'>;
 
 type PaletteItem = {
   readonly id: string;
@@ -37,7 +37,6 @@ type PaletteItem = {
 };
 
 const GROUP_LABELS: Record<PaletteGroup, string> = {
-  recents: 'Recents',
   workspace: 'Workspaces',
   session: 'Sessions',
   agent: 'Agents',
@@ -49,7 +48,6 @@ const GROUP_LABELS: Record<PaletteGroup, string> = {
 const PALETTE_PREFIXES = PREFIXES.filter((p) => p.group !== 'skill' && p.group !== 'workflow');
 
 const GROUP_ORDER: ReadonlyArray<PaletteGroup> = [
-  'recents',
   'agent',
   'session',
   'workspace',

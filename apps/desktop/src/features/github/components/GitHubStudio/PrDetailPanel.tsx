@@ -36,10 +36,23 @@ const VERDICT_TOAST = {
   request_changes: 'Changes requested on the pull request',
 } satisfies Record<PublishPrReviewVerdict, string>;
 
+const ACTION_FAILURE_LABEL: Record<Exclude<ActionBusy, 'review' | null>, string> = {
+  ready: 'Mark ready failed',
+  undraft: 'Convert to draft failed',
+  merge: 'Merge failed',
+  close: 'Close failed',
+  reopen: 'Reopen failed',
+};
+
 type Props = {
   readonly sessionId: SessionId | null;
   readonly initialPrNumber?: number | null;
   readonly onClose: () => void;
+};
+
+type RunParams = {
+  readonly kind: Exclude<ActionBusy, 'review' | null>;
+  readonly action: () => Promise<void>;
 };
 
 export const PrDetailPanel = ({ sessionId, initialPrNumber = null, onClose }: Props) => {
@@ -159,16 +172,16 @@ export const PrDetailPanel = ({ sessionId, initialPrNumber = null, onClose }: Pr
 
   const onMutated = refreshActive;
 
-  const run = async (kind: Exclude<ActionBusy, null>, fn: () => Promise<void>) => {
+  const run = async ({ kind, action }: RunParams) => {
     if (busy != null) {
       return;
     }
     setBusy(kind);
     try {
-      await fn();
+      await action();
       onMutated();
-    } catch {
-      void 0;
+    } catch (err) {
+      showToast('error', `${ACTION_FAILURE_LABEL[kind]}: ${formatError(err)}`);
     } finally {
       setBusy(null);
     }
@@ -181,8 +194,9 @@ export const PrDetailPanel = ({ sessionId, initialPrNumber = null, onClose }: Pr
     void (async () => {
       try {
         await requestReview(sessionId, activePr.number, logins);
-      } catch {
-        void 0;
+      } catch (err) {
+        showToast('error', `Reviewers not requested: ${formatError(err)}`);
+        return;
       }
       onMutated();
     })();
@@ -280,13 +294,15 @@ export const PrDetailPanel = ({ sessionId, initialPrNumber = null, onClose }: Pr
           canReview={verdictTarget != null}
           mergeReason={mergeReason}
           onSubmitVerdict={(submission) => void submitVerdict(submission)}
-          onMarkReady={() => void run('ready', () => markPrReady(sessionId, num))}
-          onConvertDraft={() => void run('undraft', () => convertPrToDraft(sessionId, num))}
-          onClose={() => void run('close', () => closePr(sessionId, num))}
-          onReopen={() => void run('reopen', () => reopenPr(sessionId, num))}
+          onMarkReady={() => void run({ kind: 'ready', action: () => markPrReady(sessionId, num) })}
+          onConvertDraft={() =>
+            void run({ kind: 'undraft', action: () => convertPrToDraft(sessionId, num) })
+          }
+          onClose={() => void run({ kind: 'close', action: () => closePr(sessionId, num) })}
+          onReopen={() => void run({ kind: 'reopen', action: () => reopenPr(sessionId, num) })}
           canCreateNew={!isDraftAgentRunning}
           onCreateNew={() => setCreateOpen(true)}
-          onMerge={() => run('merge', () => mergePr(sessionId, num))}
+          onMerge={() => run({ kind: 'merge', action: () => mergePr(sessionId, num) })}
         />
       )}
     </>

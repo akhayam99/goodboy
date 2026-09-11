@@ -15,9 +15,9 @@ vi.mock('../../../../store', () => ({
 
 import { PermissionModePicker, permissionModeMeta } from './index';
 
-function makeSession(): Session {
+const makeSession = (): Session => {
   return { id: 'sess-1', permissionMode: 'default' } as Session;
-}
+};
 
 beforeEach(() => {
   setModeMock.mockReset();
@@ -30,12 +30,13 @@ describe('PermissionModePicker', () => {
     expect(screen.getByText('Default')).toBeDefined();
   });
 
-  it('opens a dialog with all 4 mode options when clicked', () => {
+  it('opens a dialog with all 5 mode options when clicked', () => {
     render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
     fireEvent.click(screen.getByRole('button', { name: /default/i }));
     expect(screen.getByRole('dialog', { name: /permission mode/i })).toBeDefined();
     expect(screen.getByText('Bypass')).toBeDefined();
     expect(screen.getByText('Edits')).toBeDefined();
+    expect(screen.getByText("Don't ask")).toBeDefined();
     expect(screen.getByText('Plan')).toBeDefined();
   });
 
@@ -97,5 +98,12 @@ describe('PermissionModePicker', () => {
 describe('permissionModeMeta', () => {
   it('returns the meta for a known mode', () => {
     expect(permissionModeMeta('plan').label).toBe('Plan');
+  });
+
+  it('represents dontAsk as restrictive instead of bypass', () => {
+    const meta = permissionModeMeta('dontAsk');
+
+    expect(meta.label).toBe("Don't ask");
+    expect(meta.tone).toBe('neutral');
   });
 });

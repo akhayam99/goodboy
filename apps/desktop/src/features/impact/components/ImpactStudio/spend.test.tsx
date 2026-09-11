@@ -190,7 +190,7 @@ describe('Impact studio spend scopes', () => {
     expect(state.deleteBudgetRule).not.toHaveBeenCalled();
   });
 
-  it('edits an existing provider cap as delete then save', async () => {
+  it('edits an existing provider cap under the same rule identity', async () => {
     state.budgetRules = [
       {
         id: 'rule-1',
@@ -207,17 +207,19 @@ describe('Impact studio spend scopes', () => {
     fireEvent.change(screen.getByLabelText(/monthly cap/i), { target: { value: '25' } });
     fireEvent.click(screen.getByRole('button', { name: /update cap/i }));
     await Promise.resolve();
-    expect(state.deleteBudgetRule).toHaveBeenCalledWith('rule-1');
+    expect(state.deleteBudgetRule).not.toHaveBeenCalled();
     expect(state.saveBudgetRule).toHaveBeenCalledWith({
+      id: 'rule-1',
       provider: 'anthropic',
       period: 'monthly',
       capUsd: 25,
       alertThresholdPct: 90,
       extraTokensBudget: 5,
+      createdAt: '2026-06-01T00:00:00.000Z',
     });
   });
 
-  it('edits the threshold as delete then save, keeping the cap intact', async () => {
+  it('edits the threshold under the same rule identity', async () => {
     state.budgetRules = [
       {
         id: 'rule-1',
@@ -236,13 +238,15 @@ describe('Impact studio spend scopes', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /update threshold/i }));
     await Promise.resolve();
-    expect(state.deleteBudgetRule).toHaveBeenCalledWith('rule-1');
+    expect(state.deleteBudgetRule).not.toHaveBeenCalled();
     expect(state.saveBudgetRule).toHaveBeenCalledWith({
+      id: 'rule-1',
       provider: 'anthropic',
       period: 'monthly',
       capUsd: 10,
       alertThresholdPct: 60,
       extraTokensBudget: 5,
+      createdAt: '2026-06-01T00:00:00.000Z',
     });
   });
 

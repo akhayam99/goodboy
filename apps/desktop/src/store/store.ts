@@ -606,7 +606,7 @@ type AppActions = {
   pruneArchivedTranscripts(): Promise<number>;
   removeArchivedWorktrees(): Promise<{ removed: number; failed: number }>;
   loadBudgetRules(): Promise<void>;
-  saveBudgetRule(rule: Omit<BudgetRule, 'id' | 'createdAt'>): Promise<void>;
+  saveBudgetRule(rule: BudgetRule | Omit<BudgetRule, 'id' | 'createdAt'>): Promise<void>;
   deleteBudgetRule(id: string): Promise<void>;
   loadSessionBudget(sessionId: SessionId): Promise<void>;
   setSessionBudget(sessionId: SessionId, softCapUsd: number): Promise<void>;

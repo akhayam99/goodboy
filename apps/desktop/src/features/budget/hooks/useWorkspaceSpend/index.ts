@@ -80,20 +80,20 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
   const saveProviderCap = useCallback(
     async ({ provider, capUsd }: SaveProviderCapParams) => {
       const existing = rules.find((rule) => rule.provider === provider) ?? null;
-      if (existing) {
-        await deleteBudgetRule(existing.id);
-      }
-      const next: Omit<BudgetRule, 'id' | 'createdAt'> = {
-        provider,
-        period: existing?.period ?? 'monthly',
-        capUsd,
-        alertThresholdPct: existing?.alertThresholdPct ?? 80,
-        extraTokensBudget: existing?.extraTokensBudget ?? null,
-      };
+      const next: BudgetRule | Omit<BudgetRule, 'id' | 'createdAt'> =
+        existing === null
+          ? {
+              provider,
+              period: 'monthly',
+              capUsd,
+              alertThresholdPct: 80,
+              extraTokensBudget: null,
+            }
+          : { ...existing, capUsd };
       await saveBudgetRule(next);
       await refreshBreakdown();
     },
-    [deleteBudgetRule, refreshBreakdown, rules, saveBudgetRule],
+    [refreshBreakdown, rules, saveBudgetRule],
   );
 
   const saveProviderThreshold = useCallback(
@@ -102,18 +102,11 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
       if (existing === null) {
         return;
       }
-      await deleteBudgetRule(existing.id);
-      const next: Omit<BudgetRule, 'id' | 'createdAt'> = {
-        provider,
-        period: existing.period,
-        capUsd: existing.capUsd,
-        alertThresholdPct: thresholdPct,
-        extraTokensBudget: existing.extraTokensBudget,
-      };
+      const next: BudgetRule = { ...existing, alertThresholdPct: thresholdPct };
       await saveBudgetRule(next);
       await refreshBreakdown();
     },
-    [deleteBudgetRule, refreshBreakdown, rules, saveBudgetRule],
+    [refreshBreakdown, rules, saveBudgetRule],
   );
 
   const removeProviderCap = useCallback(
