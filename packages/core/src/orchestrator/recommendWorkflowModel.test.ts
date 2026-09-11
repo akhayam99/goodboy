@@ -48,7 +48,7 @@ describe('recommendWorkflowModel', () => {
     );
   });
 
-  it('never lets a curated profile outrank a cheaper unassessed model', () => {
+  it('lets a model curated for this work beat a cheaper unassessed one', () => {
     const result = recommend([
       candidate({
         provider: 'anthropic',
@@ -63,11 +63,58 @@ describe('recommendWorkflowModel', () => {
       }),
     ]);
 
-    expect(result?.pick.provider).toBe('codex');
-    expect(result?.pick.model).toBe('unassessed');
+    expect(result?.pick.provider).toBe('anthropic');
+    expect(result?.pick.model).toBe('assessed');
   });
 
-  it('uses the routing profile only to break an otherwise exact tie', () => {
+  it('recovers a heavy step onto a model built for it, not onto the cheapest one', () => {
+    const result = recommendWorkflowModel({
+      candidates: [
+        candidate({
+          provider: 'anthropic',
+          model: 'cheap-light',
+          profile: EXPLORATION_LIGHT,
+          price: { inputPerMtok: 0.1, outputPerMtok: 0.4 },
+        }),
+        candidate({
+          provider: 'anthropic',
+          model: 'heavy-planner',
+          profile: {
+            taskTypes: ['planning'],
+            preferredDifficulty: ['heavy'],
+            evidence: 'curated',
+          },
+          price: { inputPerMtok: 15, outputPerMtok: 75 },
+        }),
+      ],
+      profile: { taskType: 'planning', difficulty: 'heavy', basis: 'agent' },
+      contextEstimate: null,
+    });
+
+    expect(result?.pick.model).toBe('heavy-planner');
+  });
+
+  it('lets a provider with no published price win on task fit', () => {
+    const result = recommend([
+      candidate({
+        provider: 'moonshot',
+        model: 'unpriced-fit',
+        profile: IMPLEMENTATION_STANDARD,
+        price: null,
+      }),
+      candidate({
+        provider: 'codex',
+        model: 'priced-misfit',
+        profile: EXPLORATION_LIGHT,
+        price: { inputPerMtok: 0.2, outputPerMtok: 0.6 },
+      }),
+    ]);
+
+    expect(result?.pick.provider).toBe('moonshot');
+    expect(result?.pick.model).toBe('unpriced-fit');
+  });
+
+  it('lets the routing profile break an otherwise exact tie', () => {
     const price = { inputPerMtok: 2, outputPerMtok: 6 };
     const result = recommend([
       candidate({ provider: 'anthropic', model: 'aaa-unassessed', price }),

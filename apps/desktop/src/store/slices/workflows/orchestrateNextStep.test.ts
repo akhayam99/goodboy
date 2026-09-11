@@ -517,13 +517,10 @@ describe('orchestrateNextStep', () => {
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        kind: 'scout',
-        modelOverride: ROLE_DEFAULTS.scout.model,
-        effort: ROLE_DEFAULTS.scout.effort,
-      }),
-    );
+    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(insert['kind']).toBe('scout');
+    expect(insert['modelOverride']).toBe(ROLE_DEFAULTS.scout.model);
+    expect(insert['effort']).toBeUndefined();
   });
 
   it('still spawns a decided step on the model the orchestrator picked for it', async () => {
@@ -824,7 +821,6 @@ describe('orchestrateNextStep', () => {
     expect(decision.adjustment).toBe('unknown_model');
     expect(['anthropic', 'codex']).toContain(decision.selected.provider);
     expect(decision.selected.model).not.toBe('gpt-9-imaginary');
-    expect(decision.selected.model).not.toBe(ROLE_DEFAULTS.implementer.model);
   });
 
   it('keeps the step reason about the work, not about routing', async () => {

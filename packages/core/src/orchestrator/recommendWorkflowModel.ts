@@ -127,6 +127,10 @@ export const recommendWorkflowModel = ({
     if (context !== 0) {
       return context;
     }
+    const fit = fitRank({ candidate: left, profile }) - fitRank({ candidate: right, profile });
+    if (fit !== 0) {
+      return fit;
+    }
     const known = priceRank({ candidate: left }) - priceRank({ candidate: right });
     if (known !== 0) {
       return known;
@@ -134,10 +138,6 @@ export const recommendWorkflowModel = ({
     const price = priceValue({ candidate: left }) - priceValue({ candidate: right });
     if (price !== 0) {
       return price;
-    }
-    const fit = fitRank({ candidate: left, profile }) - fitRank({ candidate: right, profile });
-    if (fit !== 0) {
-      return fit;
     }
     const leftKey = canonicalKey({ candidate: left });
     const rightKey = canonicalKey({ candidate: right });
