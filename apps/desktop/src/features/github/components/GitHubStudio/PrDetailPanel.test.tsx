@@ -202,8 +202,10 @@ vi.mock('../../../../app/components/Toast', () => ({
 vi.mock('./PrActionBar', () => ({
   PrActionBar: ({
     onSubmitVerdict,
+    onMerge,
   }: {
     readonly onSubmitVerdict: (submission: { verdict: string; body: string }) => void;
+    readonly onMerge: () => Promise<void>;
   }) => (
     <div>
       Pull request actions
@@ -212,6 +214,9 @@ vi.mock('./PrActionBar', () => ({
         onClick={() => onSubmitVerdict({ verdict: 'approve', body: 'ship it' })}
       >
         Approve pull request
+      </button>
+      <button type="button" onClick={() => void onMerge()}>
+        Merge pull request action
       </button>
     </div>
   ),
@@ -244,6 +249,7 @@ beforeEach(() => {
   h.store.sessionSelectedPrNumber = {};
   h.store.selectSessionPr.mockClear();
   h.store.publishPrReview.mockClear();
+  h.store.mergePr.mockClear();
   h.showToast.mockClear();
 });
 
@@ -363,6 +369,20 @@ describe('PrDetailPanel', () => {
       ),
     );
     expect(h.showToast).not.toHaveBeenCalledWith('success', expect.anything());
+  });
+
+  it('shows the cause when a pull request action fails', async () => {
+    h.store.mergePr.mockRejectedValueOnce(new Error('branch protection rejected the merge'));
+
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: 'Merge pull request action' }));
+
+    await waitFor(() =>
+      expect(h.showToast).toHaveBeenCalledWith(
+        'error',
+        'Merge failed: branch protection rejected the merge',
+      ),
+    );
   });
 
   it('drives the active pr and switcher selection through store state', () => {

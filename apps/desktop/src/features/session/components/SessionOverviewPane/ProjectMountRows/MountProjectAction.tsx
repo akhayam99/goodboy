@@ -80,9 +80,27 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
       }
     >
       {availableProjects.length === 0 || isComplete ? (
-        <p className="px-3 py-2 text-xs text-muted-foreground">
-          {emptyPickerMessage({ hasWorkspaceProjects })}
-        </p>
+        <div className="flex flex-col gap-2 px-3 py-2">
+          <p className="text-xs text-muted-foreground">
+            {emptyPickerMessage({ hasWorkspaceProjects })}
+          </p>
+          {hasWorkspaceProjects ? null : (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                dropdown.close();
+                window.dispatchEvent(
+                  new CustomEvent('goodboy:open-workspace-settings', {
+                    detail: { section: 'projects' },
+                  }),
+                );
+              }}
+            >
+              Add workspace project
+            </Button>
+          )}
+        </div>
       ) : (
         <MountProjectList
           sessionId={sessionId}

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { IsoDateTime, ProviderId, Session, SessionId, WorkspaceId } from '@goodboy/types';
 
 type Store = {
@@ -205,6 +205,44 @@ describe('CreateAgentPopover', () => {
       effort: 'low',
       focus: 'agent',
     });
+  });
+
+  it('blocks repeated spawn gestures while creation is pending', async () => {
+    let finishSpawn: (() => void) | null = null;
+    const pendingSpawn = new Promise<string>((resolve) => {
+      finishSpawn = () => resolve('a1');
+    });
+    h.spawnAgent.mockReturnValueOnce(pendingSpawn);
+    renderControl();
+    openPopover();
+
+    confirm();
+    const action = screen.getByRole('button', { name: 'Spawning Generalist' });
+    fireEvent.click(action);
+
+    expect(h.spawnAgent).toHaveBeenCalledOnce();
+    expect(action.getAttribute('aria-busy')).toBe('true');
+
+    await act(async () => {
+      finishSpawn?.();
+      await pendingSpawn;
+    });
+  });
+
+  it('keeps the control open and shows a spawn failure', async () => {
+    h.spawnAgent.mockRejectedValueOnce(new Error('provider is unavailable'));
+    renderControl();
+    openPopover();
+
+    confirm();
+
+    expect((await screen.findByRole('alert')).textContent).toContain('provider is unavailable');
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Spawn Generalist' }).hasAttribute('disabled'),
+      ).toBe(false),
+    );
+    expect(screen.getByRole('dialog', { name: 'Create agent' })).toBeDefined();
   });
 
   it('renders codex variants as chips without a native select', () => {

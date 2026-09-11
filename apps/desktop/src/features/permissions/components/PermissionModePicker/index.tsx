@@ -13,39 +13,54 @@ type ModeMeta = {
   readonly text: string;
 };
 
-const PERMISSION_MODES: ReadonlyArray<ModeMeta> = [
-  {
+const PERMISSION_MODE_META: Record<ClaudePermissionMode, ModeMeta> = {
+  bypassPermissions: {
     value: 'bypassPermissions',
     label: 'Bypass',
     description: 'Agent uses all tools freely, no prompts',
     tone: 'danger',
     text: 'text-danger',
   },
-  {
+  acceptEdits: {
     value: 'acceptEdits',
     label: 'Edits',
     description: 'File edits allowed, asks before bash',
     tone: 'warning',
     text: 'text-warning',
   },
-  {
+  default: {
     value: 'default',
     label: 'Default',
     description: 'Asks before writes and runs',
     tone: 'info',
     text: 'text-info',
   },
-  {
+  dontAsk: {
+    value: 'dontAsk',
+    label: "Don't ask",
+    description: 'Requests that need approval are denied, no prompts',
+    tone: 'neutral',
+    text: 'text-muted-foreground',
+  },
+  plan: {
     value: 'plan',
     label: 'Plan',
     description: 'No tool calls executed, read-only',
     tone: 'neutral',
     text: 'text-muted-foreground',
   },
+};
+
+const PERMISSION_MODES: ReadonlyArray<ModeMeta> = [
+  PERMISSION_MODE_META.bypassPermissions,
+  PERMISSION_MODE_META.acceptEdits,
+  PERMISSION_MODE_META.default,
+  PERMISSION_MODE_META.dontAsk,
+  PERMISSION_MODE_META.plan,
 ];
 
 export const permissionModeMeta = (mode: ClaudePermissionMode): ModeMeta => {
-  return PERMISSION_MODES.find((m) => m.value === mode) ?? PERMISSION_MODES[0]!;
+  return PERMISSION_MODE_META[mode] ?? PERMISSION_MODE_META.plan;
 };
 
 type Props = {
@@ -56,7 +71,7 @@ type Props = {
 export const PermissionModePicker = ({ session, activeProvider }: Props) => {
   const dropdown = useDropdown({
     width: 'w-64',
-    expectedHeight: 240,
+    expectedHeight: 280,
     openEvent: 'goodboy:open-permission-picker',
   });
   const { open, close, toggle } = dropdown;

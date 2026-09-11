@@ -565,6 +565,25 @@ describe('store contract', () => {
       expect(arg.provider).toBe('anthropic');
     });
 
+    it('saveBudgetRule preserves identity when updating an existing rule', async () => {
+      const store = await getStore();
+      const existing: BudgetRule = {
+        id: 'rule-existing',
+        provider: 'anthropic',
+        period: 'monthly',
+        capUsd: 50,
+        alertThresholdPct: 0.8,
+        extraTokensBudget: null,
+        createdAt: NOW,
+      };
+      invokeBudgetRuleListSpy.mockResolvedValueOnce([{ ...existing, capUsd: 75 }]);
+
+      await store.getState().saveBudgetRule({ ...existing, capUsd: 75 });
+
+      expect(invokeBudgetRuleUpsertSpy).toHaveBeenCalledWith({ ...existing, capUsd: 75 });
+      expect(invokeBudgetRuleDeleteSpy).not.toHaveBeenCalled();
+    });
+
     it('deleteBudgetRule filters by id in memory', async () => {
       const store = await getStore();
       const ruleA: BudgetRule = {

@@ -58,6 +58,14 @@ describe('MountProjectAction', () => {
   });
 
   it('tells the workspace has no projects at all', () => {
+    let settingsDetail: unknown = null;
+    const onOpenWorkspaceSettings = vi.fn((event: Event) => {
+      if (!(event instanceof CustomEvent)) {
+        return;
+      }
+      settingsDetail = event.detail;
+    });
+    window.addEventListener('goodboy:open-workspace-settings', onOpenWorkspaceSettings);
     store.projects = [];
     render(
       <MountProjectAction
@@ -69,6 +77,10 @@ describe('MountProjectAction', () => {
     openPicker();
 
     expect(screen.getByText('Add a project in workspace settings to mount it here.')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Add workspace project' }));
+    expect(onOpenWorkspaceSettings).toHaveBeenCalledOnce();
+    expect(settingsDetail).toEqual({ section: 'projects' });
+    window.removeEventListener('goodboy:open-workspace-settings', onOpenWorkspaceSettings);
   });
 
   it('distinguishes an all-mounted workspace from an empty one', () => {
@@ -87,6 +99,7 @@ describe('MountProjectAction', () => {
 
     expect(screen.getByText('Every workspace project is already mounted.')).toBeDefined();
     expect(screen.queryByText('Add a project in workspace settings to mount it here.')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add workspace project' })).toBeNull();
   });
 
   it('lists an unmounted project for mounting', () => {

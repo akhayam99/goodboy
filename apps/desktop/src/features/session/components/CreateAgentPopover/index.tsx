@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { getDefaultTurnModel } from '@goodboy/core';
 import {
@@ -8,6 +8,7 @@ import {
   Divider,
   PopoverBody,
   PopoverFooter,
+  formatError,
   useDropdown,
 } from '@goodboy/ui';
 import type { ProviderId, SessionId } from '@goodboy/types';
@@ -50,6 +51,9 @@ export const CreateAgentPopover = ({
   const { open, close, toggle } = dropdown;
   const [kind, setKind] = useState<AgentKind>('generic');
   const [routing, setRouting] = useState<AgentKindRouting | null>(null);
+  const [isSpawning, setIsSpawning] = useState(false);
+  const [spawnError, setSpawnError] = useState<string | null>(null);
+  const isSpawningRef = useRef(false);
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const agentKinds = visibleAgentKinds();
   const selectedKind = agentKinds.includes(kind) ? kind : (agentKinds[0] ?? 'generic');
@@ -71,21 +75,34 @@ export const CreateAgentPopover = ({
   }, [open, selectedKind, routing, spawnDefault.provider]);
 
   const onCreate = async () => {
-    await spawnAgent(sessionId, {
-      kindOverride: selectedKind,
-      provider: effective.provider,
-      model: effective.model,
-      effort: effective.effort,
-      focus: 'agent',
-    });
-    setKind('generic');
-    setRouting(null);
-    close();
-    if (onSpawned != null) {
-      onSpawned();
+    if (isSpawningRef.current) {
       return;
     }
-    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+    isSpawningRef.current = true;
+    setIsSpawning(true);
+    setSpawnError(null);
+    try {
+      await spawnAgent(sessionId, {
+        kindOverride: selectedKind,
+        provider: effective.provider,
+        model: effective.model,
+        effort: effective.effort,
+        focus: 'agent',
+      });
+      setKind('generic');
+      setRouting(null);
+      close();
+      if (onSpawned != null) {
+        onSpawned();
+        return;
+      }
+      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+    } catch (err) {
+      setSpawnError(formatError(err));
+    } finally {
+      isSpawningRef.current = false;
+      setIsSpawning(false);
+    }
   };
 
   return (
@@ -138,8 +155,19 @@ export const CreateAgentPopover = ({
         />
       </PopoverBody>
       <Divider />
-      <PopoverFooter className="flex items-center justify-end px-2.5 py-2">
-        <Button size="sm" onClick={() => void onCreate()}>
+      <PopoverFooter className="flex items-center justify-end gap-2 px-2.5 py-2">
+        {spawnError === null ? null : (
+          <span role="alert" className="min-w-0 flex-1 text-2xs text-danger">
+            {spawnError}
+          </span>
+        )}
+        <Button
+          size="sm"
+          onClick={() => void onCreate()}
+          disabled={isSpawning}
+          isBusy={isSpawning}
+          busyLabel={`Spawning ${AGENT_KIND_META[selectedKind].label}`}
+        >
           Spawn {AGENT_KIND_META[selectedKind].label}
         </Button>
       </PopoverFooter>
