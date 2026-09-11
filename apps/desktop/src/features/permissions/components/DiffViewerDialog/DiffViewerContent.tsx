@@ -671,7 +671,12 @@ export const DiffViewerContent = ({
       } catch (err) {
         console.error('failed to mark comments consumed', err);
       }
-      void sendTurn({ sessionId, agentId, content: prompt });
+      void sendTurn({
+        sessionId,
+        agentId,
+        content: prompt,
+        ...(diffMountId === null ? {} : { mountId: diffMountId }),
+      });
     } finally {
       setSpawning(false);
     }

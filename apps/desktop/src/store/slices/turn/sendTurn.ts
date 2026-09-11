@@ -32,6 +32,7 @@ import type {
   Message,
   MessageAttachment,
   MessageId,
+  MountId,
   PermissionRule,
   ProviderId,
   ProviderRun,
@@ -150,6 +151,7 @@ const EFFORT_FLAG_BY_PROVIDER = {
 type Input = {
   sessionId: SessionId;
   agentId?: AgentId;
+  mountId?: MountId;
   content: string;
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;
@@ -186,7 +188,7 @@ type TurnLease = {
 
 export const sendTurn = (set: SetFn, get: GetFn) => {
   const runOnce = async (
-    { sessionId, agentId, content, attachments, override, force, origin, retry }: Input,
+    { sessionId, agentId, mountId, content, attachments, override, force, origin, retry }: Input,
     lease: TurnLease,
   ): Promise<SendTurnResult> => {
     const before = get();
@@ -207,7 +209,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       (project) => project.workspaceId === session.workspaceId,
     );
     const writableMounts = selectWritableMounts({ state: before, sessionId });
-    const activeMount = selectActiveMount({ state: before, sessionId }) ?? undefined;
+    const aimedMount =
+      mountId === undefined ? null : selectMountById({ state: before, sessionId, mountId });
+    if (mountId !== undefined && aimedMount === null) {
+      throw new Error('The branch mount this turn was aimed at is no longer in the session.');
+    }
+    const activeMount = aimedMount ?? selectActiveMount({ state: before, sessionId }) ?? undefined;
     if (activeMount === undefined && writableMounts.length > 0) {
       throw new Error('Choose the branch mount this session writes to before sending a turn.');
     }

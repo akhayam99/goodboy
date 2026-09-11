@@ -193,6 +193,33 @@ beforeEach(() => {
 });
 
 describe('story: an agent works from its own project and reads the others', () => {
+  it('runs a turn aimed at a sibling mount in that sibling, leaving the choice alone', async () => {
+    seedMountedWeb();
+
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      content: 'rebase this mount',
+      mountId: WEB_MOUNT_ID as never,
+    });
+
+    expect(spawnedArgs()['workingDir']).toBe(WEB_MOUNT_PATH);
+    expect(spawnedArgs()['mountId']).toBe(WEB_MOUNT_ID);
+    expect(useAppStore.getState().sessionActiveMount[SESSION_ID]).toBe(APP_MOUNT_ID);
+  });
+
+  it('refuses a turn aimed at a mount the session no longer holds', async () => {
+    seedMountedWeb();
+
+    await expect(
+      useAppStore.getState().sendTurn({
+        sessionId: SESSION_ID,
+        content: 'go',
+        mountId: 'mount-gone' as never,
+      }),
+    ).rejects.toThrow('no longer in the session');
+    expect(storySpies.runTurn).not.toHaveBeenCalled();
+  });
+
   it('keeps a single-project turn inside the mounted worktree, creating nothing else', async () => {
     seedSession([appProject]);
 

@@ -216,6 +216,7 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
     });
     try {
       const agentId = await spawnAgent(sessionId, {
+        mountId: target.mountId,
         name: `${REBASE_AGENT_PREFIX}${target.baseBranch}`,
         initialPrompt: rebasePromptFor({
           baseBranch: target.baseBranch,

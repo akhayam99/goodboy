@@ -584,6 +584,7 @@ type AppActions = {
   sendTurn(input: {
     sessionId: SessionId;
     agentId?: AgentId;
+    mountId?: MountId;
     content: string;
     attachments?: ReadonlyArray<AttachmentInput>;
     override?: TurnProviderOverride;
@@ -653,6 +654,7 @@ type AppActions = {
     sessionId: SessionId,
     args: {
       stepId?: StepId;
+      mountId?: MountId;
       workflowRunId?: WorkflowRunId;
       name?: string;
       model?: string;

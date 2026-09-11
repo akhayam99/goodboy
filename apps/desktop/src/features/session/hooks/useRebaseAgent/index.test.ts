@@ -263,6 +263,14 @@ describe('useRebaseAgent', () => {
     });
   });
 
+  it('spawns the rebase agent on the mount it names', async () => {
+    const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
+
+    await act(() => result.current.run({ mountId }));
+
+    expect(state.spawnAgent).toHaveBeenCalledWith(sessionId, expect.objectContaining({ mountId }));
+  });
+
   it('refuses a mount the session no longer holds', async () => {
     const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
 
