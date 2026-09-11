@@ -31,6 +31,7 @@ export const buildSessionProjectMounts = ({
         baseBranch: project.baseBranch ?? null,
         parallelIndex: row.parallelIndex,
         isAttached: true,
+        revision: row.revision,
       },
     ];
   });

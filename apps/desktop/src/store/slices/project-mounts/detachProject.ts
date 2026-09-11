@@ -6,6 +6,7 @@ import type {
   SessionProjectMount,
 } from '@goodboy/types';
 import {
+  getSessionMount,
   markSessionMountRemoved,
   markSessionMountRemovedByPath,
   updateSessionActiveProject,
@@ -130,18 +131,24 @@ export const detachProject = (set: SetFn, get: GetFn) => {
         }
       }
       const mountId = mount.mountId;
-      const revision = mount.revision;
-      if (kept && mountId !== undefined && revision !== undefined) {
-        await updateSessionMountLifecycle({
-          db: tauriDatabase,
-          sessionId,
-          mountId,
-          worktreePath: mount.worktreePath,
-          isAttached: false,
-          diskState: result.diskState,
-          expectedRevision: revision,
-          updatedAt: new Date().toISOString() as IsoDateTime,
-        });
+      if (kept && mountId !== undefined) {
+        const revision =
+          mount.revision ??
+          (await getSessionMount({ db: tauriDatabase, sessionId, mountId }).catch(() => null))
+            ?.revision ??
+          null;
+        if (revision !== null) {
+          await updateSessionMountLifecycle({
+            db: tauriDatabase,
+            sessionId,
+            mountId,
+            worktreePath: mount.worktreePath,
+            isAttached: false,
+            diskState: result.diskState,
+            expectedRevision: revision,
+            updatedAt: new Date().toISOString() as IsoDateTime,
+          });
+        }
       }
       if (!kept && mountId !== undefined) {
         await markSessionMountRemoved({ db: tauriDatabase, sessionId, mountId });

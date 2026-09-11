@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const {
   removeWorktreeChecked,
   worktreeWriterStatus,
+  getSessionMount,
   markSessionMountRemoved,
   markSessionMountRemovedByPath,
   updateSessionActiveProject,
@@ -25,6 +26,7 @@ const {
     hasExited: false,
     waiting: [],
   })),
+  getSessionMount: vi.fn(async (_args: { mountId: string }) => null as { revision: number } | null),
   markSessionMountRemoved: vi.fn(async (_args: { mountId: string }) => true),
   markSessionMountRemovedByPath: vi.fn(async () => true),
   updateSessionActiveProject: vi.fn(async () => undefined),
@@ -32,6 +34,7 @@ const {
 }));
 
 vi.mock('@goodboy/db', () => ({
+  getSessionMount,
   markSessionMountRemoved,
   markSessionMountRemovedByPath,
   updateSessionActiveProject,
@@ -128,6 +131,7 @@ const runDetach = async (store: Store, disposition?: string) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  getSessionMount.mockImplementation(async () => null);
   markSessionMountRemoved.mockImplementation(async () => true);
   markSessionMountRemovedByPath.mockImplementation(async () => true);
   removeWorktreeChecked.mockImplementation(async ({ worktreePath }: { worktreePath: string }) => ({
@@ -205,6 +209,62 @@ describe('detachProject', () => {
       kind: 'project_detached',
       payload: expect.objectContaining({ kept: true, reason: 'unstaged-changes' }),
     });
+    expect(store.sessionProjectMounts['sess-1'].map((m) => m.projectId)).toEqual(['project-web']);
+  });
+
+  it('fetches the live revision and still marks a kept mount detached when the seeded mount has none', async () => {
+    const store = makeStore();
+    store.sessionProjectMounts['sess-1'] = store.sessionProjectMounts['sess-1'].map((m) =>
+      m.mountId === 'mount-api' ? ({ ...m, revision: undefined } as never) : m,
+    );
+    getSessionMount.mockImplementation(async ({ mountId }: { mountId: string }) =>
+      mountId === 'mount-api' ? { revision: 9 } : null,
+    );
+    removeWorktreeChecked.mockResolvedValue({
+      kind: 'kept',
+      path: '/container/api',
+      reasons: ['unstaged-changes'],
+    });
+
+    await runDetach(store);
+
+    expect(getSessionMount).toHaveBeenCalledWith({
+      db: {},
+      sessionId: SESSION_ID,
+      mountId: 'mount-api',
+    });
+    expect(updateSessionMountLifecycle).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mountId: 'mount-api',
+        isAttached: false,
+        expectedRevision: 9,
+      }),
+    );
+    expect(store.sessionProjectMounts['sess-1'].map((m) => m.projectId)).toEqual(['project-web']);
+  });
+
+  it('skips the DB write but still drops the mount when no revision can be found anywhere', async () => {
+    const store = makeStore();
+    store.sessionProjectMounts['sess-1'] = store.sessionProjectMounts['sess-1'].map((m) =>
+      m.mountId === 'mount-api' ? ({ ...m, revision: undefined } as never) : m,
+    );
+    getSessionMount.mockImplementation(async () => null);
+    removeWorktreeChecked.mockResolvedValue({
+      kind: 'kept',
+      path: '/container/api',
+      reasons: ['unstaged-changes'],
+    });
+
+    await runDetach(store);
+
+    expect(updateSessionMountLifecycle).not.toHaveBeenCalledWith(
+      expect.objectContaining({ mountId: 'mount-api' }),
+    );
+    expect(store.recordSessionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({ worktreePath: '/container/api', kept: true }),
+      }),
+    );
     expect(store.sessionProjectMounts['sess-1'].map((m) => m.projectId)).toEqual(['project-web']);
   });
 

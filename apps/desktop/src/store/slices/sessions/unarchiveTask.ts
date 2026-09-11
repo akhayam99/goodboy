@@ -4,6 +4,7 @@ import {
   unarchiveSession as unarchiveSessionInDb,
   updateSessionActiveProject,
 } from '@goodboy/db';
+import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeWorkflowsForSession } from '../../../features/workflows/workflows';
 import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMounts';
@@ -116,7 +117,15 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
           sessionWorkflows: { ...state.sessionWorkflows, [sessionId]: attachedWorkflows },
         };
       });
-    } catch {}
+    } catch (error) {
+      void get().emitNotification(
+        'error',
+        'warning',
+        'session restored, but some data failed to load',
+        formatError(error),
+        { sessionId },
+      );
+    }
     void get()
       .reconcileOrphanWorktrees()
       .catch(() => undefined);

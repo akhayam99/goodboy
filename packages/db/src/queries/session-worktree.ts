@@ -38,6 +38,7 @@ export type SessionWorktree = {
   readonly projectId?: ProjectId;
   readonly mountName?: string;
   readonly repoSlug?: string;
+  readonly revision?: number;
   readonly createdAt: number;
 };
 
@@ -108,6 +109,7 @@ const toPresentWorktree = (row: SessionWorktreeRow): SessionWorktree | null => {
     ...(row.project_id !== null ? { projectId: row.project_id as ProjectId } : {}),
     ...(row.mount_name !== null ? { mountName: row.mount_name } : {}),
     ...(row.repo_slug !== null ? { repoSlug: row.repo_slug } : {}),
+    revision: row.revision,
     createdAt: row.created_at,
   };
 };

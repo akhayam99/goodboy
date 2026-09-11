@@ -929,6 +929,60 @@ describe('store contract', () => {
       );
     });
 
+    it('unarchiveTask carries the stored revision into the seeded project mount', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const archived: Session = { ...buildSession(), archivedAt: NOW } as Session;
+      vi.mocked(db.listWorktreesForSession).mockResolvedValueOnce([
+        {
+          id: 'mount-live',
+          sessionId: SESSION_ID,
+          projectId: PROJECT_ID,
+          worktreePath: '/tmp/repo/.goodboy/worktrees/live',
+          branch: 'ak/live',
+          parallelIndex: 0,
+          mountName: 'repo',
+          revision: 5,
+          createdAt: Date.now(),
+        },
+      ] as never);
+      store.setState({
+        workspaces: [buildWorkspace()],
+        projects: [buildProject()],
+        currentWorkspaceId: WS_ID,
+        archivedSessions: { [WS_ID]: [archived] },
+      });
+
+      await store.getState().unarchiveTask(SESSION_ID);
+
+      expect(store.getState().sessionProjectMounts[SESSION_ID]?.[0]?.revision).toBe(5);
+    });
+
+    it('unarchiveTask restores the session and reports when the secondary refresh fails', async () => {
+      const store = await getStore();
+      const archived: Session = { ...buildSession(), archivedAt: NOW } as Session;
+      invokeAgentListSpy.mockRejectedValueOnce(new Error('agent list unavailable'));
+      store.setState({
+        workspaces: [buildWorkspace()],
+        currentWorkspaceId: WS_ID,
+        archivedSessions: { [WS_ID]: [archived] },
+      });
+
+      await store.getState().unarchiveTask(SESSION_ID);
+
+      const s = store.getState();
+      expect(s.sessions.find((x) => x.id === SESSION_ID)).toBeDefined();
+      expect(s.archivedSessions[WS_ID]).toEqual([]);
+      expect(insertNotificationSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          kind: 'error',
+          severity: 'warning',
+          sessionId: SESSION_ID,
+        }),
+      );
+    });
+
     it('archiveTask keeps the worktrees unless the user asks to clean them', async () => {
       const store = await getStore();
       const cleanupSessionMounts = vi.fn(async () => []);
