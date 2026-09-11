@@ -272,13 +272,14 @@ describe('summarizer notifications', () => {
       ],
     });
 
-    enqueueSummarizer(
-      useAppStore.setState,
-      useAppStore.getState,
-      SESSION_ID,
-      'user input',
-      'agent output',
-    );
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'user input',
+      turnOutput: 'agent output',
+      workingDir: null,
+    });
 
     await vi.waitFor(
       () => expect(useAppStore.getState().summarizerStatus[SESSION_ID]?.status).toBe('idle'),
@@ -339,13 +340,14 @@ describe('summarizer notifications', () => {
       ],
     });
 
-    enqueueSummarizer(
-      useAppStore.setState,
-      useAppStore.getState,
-      SESSION_ID,
-      'user input',
-      'agent output',
-    );
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'user input',
+      turnOutput: 'agent output',
+      workingDir: null,
+    });
 
     await vi.waitFor(() => expect(insertNotificationSpy).toHaveBeenCalled(), { timeout: 5000 });
 
@@ -411,13 +413,14 @@ describe('summarizer notifications', () => {
       ],
     });
 
-    enqueueSummarizer(
-      useAppStore.setState,
-      useAppStore.getState,
-      SESSION_ID,
-      'user input',
-      'agent output',
-    );
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'user input',
+      turnOutput: 'agent output',
+      workingDir: null,
+    });
 
     await vi.waitFor(() => expect(insertNotificationSpy).toHaveBeenCalled(), { timeout: 5000 });
 
@@ -484,13 +487,14 @@ const enqueue = async () => {
   const { useAppStore } = await import('./store');
   const { enqueueSummarizer, summarizerQueues } = await import('./turn-helpers');
   summarizerQueues.delete(SESSION_ID);
-  enqueueSummarizer(
-    useAppStore.setState,
-    useAppStore.getState,
-    SESSION_ID,
-    'user input',
-    'agent output',
-  );
+  enqueueSummarizer({
+    set: useAppStore.setState,
+    get: useAppStore.getState,
+    sessionId: SESSION_ID,
+    turnInput: 'user input',
+    turnOutput: 'agent output',
+    workingDir: null,
+  });
 };
 
 const coalesceKeys = (): ReadonlyArray<string | null | undefined> =>

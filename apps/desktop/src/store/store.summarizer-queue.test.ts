@@ -292,6 +292,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       queued: null as null | {
         turnInput: string;
         turnOutput: string;
+        workingDir: string | null;
         oversizeRetried: boolean;
       },
     };
@@ -302,6 +303,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
         queue.queued = {
           turnInput: `input-${i}`,
           turnOutput: `output-${i}`,
+          workingDir: null,
           oversizeRetried: false,
         };
       }
@@ -369,13 +371,14 @@ describe('summarizer queue, coalescing and no-stack', () => {
       ],
     });
 
-    enqueueSummarizer(
-      useAppStore.setState,
-      useAppStore.getState,
-      SESSION_ID,
-      'turn input',
-      'turn output',
-    );
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'turn input',
+      turnOutput: 'turn output',
+      workingDir: null,
+    });
 
     await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
     expect(summarizerConstructorCalls).toContainEqual(
@@ -409,13 +412,14 @@ describe('summarizer queue, coalescing and no-stack', () => {
       },
     });
 
-    enqueueSummarizer(
-      useAppStore.setState,
-      useAppStore.getState,
-      SESSION_ID,
-      'turn input',
-      'turn output',
-    );
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'turn input',
+      turnOutput: 'turn output',
+      workingDir: null,
+    });
 
     await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
     expect(summarizerConstructorCalls).toContainEqual(
@@ -451,13 +455,14 @@ describe('summarizer queue, coalescing and no-stack', () => {
       },
     });
 
-    enqueueSummarizer(
-      useAppStore.setState,
-      useAppStore.getState,
-      SESSION_ID,
-      'turn input',
-      'turn output',
-    );
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'turn input',
+      turnOutput: 'turn output',
+      workingDir: null,
+    });
 
     await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
     expect(summarizerConstructorCalls).toContainEqual(
@@ -480,6 +485,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       queued: null as null | {
         turnInput: string;
         turnOutput: string;
+        workingDir: string | null;
         oversizeRetried: boolean;
       },
     };
@@ -557,13 +563,14 @@ describe('summarizer queue, coalescing and no-stack', () => {
       ],
     });
 
-    enqueueSummarizer(
-      useAppStore.setState,
-      useAppStore.getState,
-      SESSION_ID,
-      'turn input',
-      'turn output',
-    );
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'turn input',
+      turnOutput: 'turn output',
+      workingDir: null,
+    });
     await vi.waitFor(() => expect(listTelemetryForSessionSpy).toHaveBeenCalledTimes(1));
     useAppStore.setState({ sessionTelemetry: { [SESSION_ID]: [staleRecord, currentRecord] } });
     resolveTelemetryList?.([staleRecord]);
@@ -584,6 +591,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       queued: null as null | {
         turnInput: string;
         turnOutput: string;
+        workingDir: string | null;
         oversizeRetried: boolean;
       },
     };
@@ -594,6 +602,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
         queue.queued = {
           turnInput: `t${i}`,
           turnOutput: `o${i}`,
+          workingDir: null,
           oversizeRetried: false,
         };
       }
@@ -602,6 +611,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     expect(queue.queued).toEqual({
       turnInput: 't9',
       turnOutput: 'o9',
+      workingDir: null,
       oversizeRetried: false,
     });
 
@@ -622,13 +632,19 @@ describe('summarizer queue, coalescing and no-stack', () => {
       queued: null as null | {
         turnInput: string;
         turnOutput: string;
+        workingDir: string | null;
         oversizeRetried: boolean;
       },
     };
     sq.set(SESSION_ID, queue);
 
     const before = Date.now();
-    queue.queued = { turnInput: 'next-input', turnOutput: '', oversizeRetried: false };
+    queue.queued = {
+      turnInput: 'next-input',
+      turnOutput: '',
+      workingDir: null,
+      oversizeRetried: false,
+    };
     const elapsed = Date.now() - before;
 
     expect(elapsed).toBeLessThan(50);
@@ -689,13 +705,14 @@ describe('summarizer queue, coalescing and no-stack', () => {
       ],
     });
 
-    enqueueSummarizer(
-      useAppStore.setState,
-      useAppStore.getState,
-      SESSION_ID,
-      'turn input',
-      'turn output',
-    );
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'turn input',
+      turnOutput: 'turn output',
+      workingDir: null,
+    });
     await vi.waitFor(() => expect(summarizeSpy).toHaveBeenCalledTimes(1));
 
     const concurrentGoal: ContextSlot = {
@@ -761,13 +778,14 @@ describe('summarizer queue, coalescing and no-stack', () => {
       ],
     });
 
-    enqueueSummarizer(
-      useAppStore.setState,
-      useAppStore.getState,
-      SESSION_ID,
-      'turn input',
-      'turn output',
-    );
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'turn input',
+      turnOutput: 'turn output',
+      workingDir: null,
+    });
     await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
 
     const decisionEvents = insertSessionEventSpy.mock.calls
@@ -828,13 +846,14 @@ describe('summarizer queue, coalescing and no-stack', () => {
       ],
     });
 
-    enqueueSummarizer(
-      useAppStore.setState,
-      useAppStore.getState,
-      SESSION_ID,
-      'turn input',
-      'turn output',
-    );
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'turn input',
+      turnOutput: 'turn output',
+      workingDir: null,
+    });
     await vi.waitFor(() => expect(summarizeSpy).toHaveBeenCalledTimes(1));
     dbSlots = [
       { key: 'goal', value: 'concurrent goal', enabled: true },
@@ -887,13 +906,14 @@ describe('summarizer queue, coalescing and no-stack', () => {
       ],
     });
 
-    enqueueSummarizer(
-      useAppStore.setState,
-      useAppStore.getState,
-      SESSION_ID,
-      'turn input',
-      'turn output',
-    );
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'turn input',
+      turnOutput: 'turn output',
+      workingDir: null,
+    });
 
     await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
     expect(summarizeSpy).toHaveBeenCalledTimes(2);
@@ -937,13 +957,14 @@ describe('summarizer queue, coalescing and no-stack', () => {
       ],
     });
 
-    enqueueSummarizer(
-      useAppStore.setState,
-      useAppStore.getState,
-      SESSION_ID,
-      'turn input',
-      'turn output',
-    );
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'turn input',
+      turnOutput: 'turn output',
+      workingDir: null,
+    });
 
     await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
     expect(summarizeSpy).toHaveBeenCalledTimes(1);

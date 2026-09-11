@@ -1,17 +1,20 @@
-import type { MountId, SessionId } from '@goodboy/types';
-import { selectActiveMount, selectMountById } from '../project-mounts/selectors';
+import type { MountTargetSnapshot, SessionId } from '@goodboy/types';
+import { selectMountById } from '../project-mounts/selectors';
 import type { GetFn } from './types';
 
 type Params = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
-  readonly mountId?: MountId | null;
+  readonly target: MountTargetSnapshot | null;
 };
 
-export const resolveWorktreeMount = ({ get, sessionId, mountId }: Params): string | null => {
-  const state = get();
-  if (mountId != null) {
-    return selectMountById({ state, sessionId, mountId })?.worktreePath ?? null;
+export const resolveWorktreeMount = ({ get, sessionId, target }: Params): string | null => {
+  if (target === null) {
+    return null;
   }
-  return selectActiveMount({ state, sessionId })?.worktreePath ?? null;
+  const mount = selectMountById({ state: get(), sessionId, mountId: target.mountId });
+  if (mount === null) {
+    return null;
+  }
+  return mount.worktreePath === target.worktreePath ? target.worktreePath : null;
 };

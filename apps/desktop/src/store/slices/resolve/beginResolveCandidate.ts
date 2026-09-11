@@ -10,13 +10,14 @@ export const beginResolveCandidate = async ({
   get,
   sessionId,
   attemptId,
+  mountTarget,
 }: Params): Promise<void> => {
   const db = tauriDatabase;
   const existing = await getResolveCandidate({ db, candidateId: attemptId });
   if (existing !== null) {
     return;
   }
-  const worktreePath = await resolveWorktreePath({ get, sessionId });
+  const worktreePath = await resolveWorktreePath({ get, sessionId, target: mountTarget });
   if (worktreePath === null) {
     return;
   }
@@ -35,7 +36,7 @@ export const beginResolveCandidate = async ({
       baseSha: head,
       candidateSha: head,
       worktreePath,
-      mountTarget: null,
+      mountTarget,
       state: 'building',
       integratedSha: null,
       createdAt: now,

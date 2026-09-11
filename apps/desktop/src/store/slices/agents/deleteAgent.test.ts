@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, AgentId, ProviderRunId, SessionId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  MountId,
+  ProviderRunId,
+  ResolveAttempt,
+  SessionId,
+} from '@goodboy/types';
 import type { GetFn, SetFn } from './types';
 
 const hoisted = vi.hoisted(() => ({
@@ -7,9 +14,7 @@ const hoisted = vi.hoisted(() => ({
   deleteAttachment: vi.fn(async () => undefined),
   invokeAgentList: vi.fn(async () => [] as ReadonlyArray<Agent>),
   updateSessionState: vi.fn(async () => undefined),
-  listWorktreesForSession: vi.fn(
-    async () => [] as ReadonlyArray<{ readonly worktreePath: string; readonly projectId?: string }>,
-  ),
+  listResolveAttempts: vi.fn(async () => [] as ReadonlyArray<ResolveAttempt>),
   abandonWorktreeWriter: vi.fn(async ({ path }: { path: string }) => ({
     path,
     holder: null,
@@ -31,7 +36,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 vi.mock('@goodboy/db', () => ({
   updateSessionState: hoisted.updateSessionState,
-  listWorktreesForSession: hoisted.listWorktreesForSession,
+  listResolveAttempts: hoisted.listResolveAttempts,
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: { execute: hoisted.execute } }));
 vi.mock('../../../features/worktree/worktree', () => ({
@@ -43,7 +48,10 @@ import { deleteAgent } from './deleteAgent';
 const SID = 'sess-1' as SessionId;
 const DOOMED = 'resolver-1' as AgentId;
 const RUN = 'run-1' as ProviderRunId;
-const PATH = '/repo/one';
+const MOUNT_TWO = 'mount-two' as MountId;
+const MOUNT_THREE = 'mount-three' as MountId;
+const PATH_TWO = '/repo/two';
+const PATH_THREE = '/repo/three';
 
 const resolver = (over: Partial<Agent> & { id: AgentId }): Agent => ({
   sessionId: SID,
@@ -52,6 +60,41 @@ const resolver = (over: Partial<Agent> & { id: AgentId }): Agent => ({
   status: 'pending',
   kind: 'resolver',
   ...over,
+});
+
+const attemptOn = ({ mountId, worktreePath }: { mountId: MountId; worktreePath: string }) =>
+  ({
+    id: 'attempt-1',
+    sessionId: SID,
+    agentId: DOOMED,
+    prNumber: 12,
+    threadIds: ['PRRT_1'],
+    provider: 'anthropic',
+    model: 'claude-opus-5',
+    effort: null,
+    instructions: 'fix one',
+    phase: 'running',
+    mountTarget: { mountId, mountRevision: 2, worktreePath },
+    startedAt: 1,
+    endedAt: null,
+    error: null,
+    createdAt: 1,
+  }) satisfies ResolveAttempt;
+
+const mount = ({ mountId, worktreePath }: { mountId: MountId; worktreePath: string }) => ({
+  mountId,
+  sessionId: SID,
+  projectId: 'project-1',
+  mountName: 'repo',
+  worktreePath,
+  lastWorktreePath: null,
+  repoRoot: '/repo',
+  branch: 'ak/one',
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 2,
 });
 
 const makeStore = ({ isMounted = true }: { readonly isMounted?: boolean } = {}) => {
@@ -75,8 +118,14 @@ const makeStore = ({ isMounted = true }: { readonly isMounted?: boolean } = {}) 
     transcripts: {},
     sessionWorktrees: {},
     sessionProjectMounts: isMounted
-      ? { [SID]: [{ projectId: 'project-1', worktreePath: PATH }] }
+      ? {
+          [SID]: [
+            mount({ mountId: MOUNT_TWO, worktreePath: PATH_TWO }),
+            mount({ mountId: MOUNT_THREE, worktreePath: PATH_THREE }),
+          ],
+        }
       : {},
+    sessionActiveMount: isMounted ? { [SID]: MOUNT_THREE } : {},
     sessionActiveProject: isMounted ? { [SID]: 'project-1' } : {},
     sessions: [{ id: SID, activeProjectId: 'project-1', state: { kind: 'idle' } }],
   };
@@ -94,32 +143,50 @@ const makeStore = ({ isMounted = true }: { readonly isMounted?: boolean } = {}) 
 afterEach(() => vi.clearAllMocks());
 
 describe('deleteAgent', () => {
-  it('gives the worktree back before the agent row goes away', async () => {
+  it('gives back the worktree the agent was writing, not the selected one', async () => {
     const { get, set } = makeStore();
     hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([
+      attemptOn({ mountId: MOUNT_TWO, worktreePath: PATH_TWO }),
+    ]);
 
     await deleteAgent(set, get)(SID, DOOMED);
 
     expect(hoisted.cancelTurn).toHaveBeenCalledWith(RUN);
-    expect(hoisted.abandonWorktreeWriter).toHaveBeenCalledWith({ path: PATH, holder: DOOMED });
+    expect(hoisted.abandonWorktreeWriter).toHaveBeenCalledWith({ path: PATH_TWO, holder: DOOMED });
   });
 
   it('drops the deleted agent write-destination snapshot', async () => {
     const { get, set, state } = makeStore();
     hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([
+      attemptOn({ mountId: MOUNT_TWO, worktreePath: PATH_TWO }),
+    ]);
 
     await deleteAgent(set, get)(SID, DOOMED);
 
     expect(state.agentTurnDestination).toEqual({});
   });
 
-  it('finds the worktree of a session the loaded workspace never mounted', async () => {
+  it('keeps the lease the attempt saved when the session was never loaded', async () => {
     const { get, set } = makeStore({ isMounted: false });
     hoisted.invokeAgentList.mockResolvedValue([]);
-    hoisted.listWorktreesForSession.mockResolvedValue([{ worktreePath: PATH }]);
+    hoisted.listResolveAttempts.mockResolvedValue([
+      attemptOn({ mountId: MOUNT_TWO, worktreePath: PATH_TWO }),
+    ]);
 
     await deleteAgent(set, get)(SID, DOOMED);
 
-    expect(hoisted.abandonWorktreeWriter).toHaveBeenCalledWith({ path: PATH, holder: DOOMED });
+    expect(hoisted.abandonWorktreeWriter).toHaveBeenCalledWith({ path: PATH_TWO, holder: DOOMED });
+  });
+
+  it('touches no worktree when the agent never named one', async () => {
+    const { get, set } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([]);
+
+    await deleteAgent(set, get)(SID, DOOMED);
+
+    expect(hoisted.abandonWorktreeWriter).not.toHaveBeenCalled();
   });
 });

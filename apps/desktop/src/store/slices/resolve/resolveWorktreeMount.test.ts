@@ -40,6 +40,18 @@ const MOUNTS: ReadonlyArray<SessionProjectMount> = [
   },
 ];
 
+const targetFor = ({
+  mountId,
+  worktreePath,
+}: {
+  readonly mountId: MountId;
+  readonly worktreePath: string;
+}) => ({
+  mountId,
+  mountRevision: 0,
+  worktreePath,
+});
+
 const stateWith = ({ selected }: { readonly selected: MountId }) => ({
   sessions: [{ id: SESSION_ID, activeProjectId: PROJECT_ID }],
   sessionMounts: {},
@@ -49,20 +61,14 @@ const stateWith = ({ selected }: { readonly selected: MountId }) => ({
 });
 
 describe('resolveWorktreeMount', () => {
-  it('follows the current selection when no mount was captured', () => {
-    const get = (() => stateWith({ selected: SECOND })) as never;
-
-    expect(resolveWorktreeMount({ get, sessionId: SESSION_ID })).toBe('/sessions/one/api-two');
-  });
-
   it('keeps the captured mount when the selection moves during the work', () => {
     let selected = FIRST;
     const get = (() => stateWith({ selected })) as never;
-    const captured = FIRST;
+    const captured = targetFor({ mountId: FIRST, worktreePath: '/sessions/one/api-one' });
 
     selected = SECOND;
 
-    expect(resolveWorktreeMount({ get, sessionId: SESSION_ID, mountId: captured })).toBe(
+    expect(resolveWorktreeMount({ get, sessionId: SESSION_ID, target: captured })).toBe(
       '/sessions/one/api-one',
     );
   });
@@ -71,7 +77,29 @@ describe('resolveWorktreeMount', () => {
     const get = (() => stateWith({ selected: FIRST })) as never;
 
     expect(
-      resolveWorktreeMount({ get, sessionId: SESSION_ID, mountId: 'mount-gone' as MountId }),
+      resolveWorktreeMount({
+        get,
+        sessionId: SESSION_ID,
+        target: targetFor({ mountId: 'mount-gone' as MountId, worktreePath: '/sessions/one/gone' }),
+      }),
     ).toBeNull();
+  });
+
+  it('refuses a mount that no longer sits where the snapshot left it', () => {
+    const get = (() => stateWith({ selected: FIRST })) as never;
+
+    expect(
+      resolveWorktreeMount({
+        get,
+        sessionId: SESSION_ID,
+        target: targetFor({ mountId: FIRST, worktreePath: '/sessions/one/api-moved' }),
+      }),
+    ).toBeNull();
+  });
+
+  it('refuses to pick a destination when no mount was captured', () => {
+    const get = (() => stateWith({ selected: SECOND })) as never;
+
+    expect(resolveWorktreeMount({ get, sessionId: SESSION_ID, target: null })).toBeNull();
   });
 });

@@ -9,7 +9,6 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelWorktreeWriter } from '../../../features/worktree/worktree';
 import { outcomePatch } from './outcomePatch';
 import { projectResolveRows } from './projectResolveRows';
-import { resolveWorktreePath } from './resolveWorktreePath';
 import { threadOutcome } from './threadOutcome';
 import type { CancelAttemptParams, SliceParams } from './types';
 
@@ -37,7 +36,7 @@ export const cancelResolveAttempt = async ({
     return;
   }
   await setResolveAttemptPhase({ db, id: attemptId, phase: 'cancelled', error: 'cancelled' });
-  const worktreePath = await resolveWorktreePath({ get, sessionId });
+  const worktreePath = attempt.mountTarget?.worktreePath ?? null;
   if (worktreePath !== null) {
     await cancelWorktreeWriter({ path: worktreePath, holder: attempt.agentId });
   }

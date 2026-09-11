@@ -1,4 +1,5 @@
 import type {
+  MountTargetSnapshot,
   PrComment,
   ResolvePublication,
   ResolvePublicationDrift,
@@ -16,6 +17,7 @@ type Params = {
   readonly comments: ReadonlyArray<PrComment>;
   readonly scope: ApprovedPublicationScope;
   readonly worktreePath: string;
+  readonly liveTarget: MountTargetSnapshot | null;
 };
 
 export const isDriftChecked = ({
@@ -24,6 +26,40 @@ export const isDriftChecked = ({
   readonly publication: ResolvePublication;
 }): boolean => publication.phase === 'previewed' || publication.phase === 'confirmed';
 
+type TargetParams = {
+  readonly frozenTarget: MountTargetSnapshot | null;
+  readonly liveTarget: MountTargetSnapshot | null;
+};
+
+const targetDrift = ({
+  frozenTarget,
+  liveTarget,
+}: TargetParams): ResolvePublicationDrift | null => {
+  if (frozenTarget === null) {
+    return null;
+  }
+  if (liveTarget === null) {
+    return {
+      kind: 'mount_changed',
+      threadId: null,
+      before: frozenTarget.worktreePath,
+      after: 'gone',
+    };
+  }
+  const isSame =
+    liveTarget.mountId === frozenTarget.mountId &&
+    liveTarget.mountRevision === frozenTarget.mountRevision &&
+    liveTarget.worktreePath === frozenTarget.worktreePath;
+  return isSame
+    ? null
+    : {
+        kind: 'mount_changed',
+        threadId: null,
+        before: frozenTarget.worktreePath,
+        after: liveTarget.worktreePath,
+      };
+};
+
 export const publicationDrift = async ({
   publication,
   frozen,
@@ -31,9 +67,14 @@ export const publicationDrift = async ({
   comments,
   scope,
   worktreePath,
+  liveTarget,
 }: Params): Promise<ReadonlyArray<ResolvePublicationDrift>> => {
   const byThread = new Map(rows.map((row) => [row.threadId, row]));
   const found: Array<ResolvePublicationDrift> = [];
+  const moved = targetDrift({ frozenTarget: publication.mountTarget, liveTarget });
+  if (moved !== null) {
+    found.push(moved);
+  }
   for (const thread of frozen) {
     const row = byThread.get(thread.threadId);
     if (row === undefined) {

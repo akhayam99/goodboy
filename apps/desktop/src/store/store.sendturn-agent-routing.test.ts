@@ -1477,6 +1477,11 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       effort: null,
       instructions: 'kick B',
       phase: 'queued',
+      mountTarget: {
+        mountId: 'mount-fixture-5' as MountId,
+        mountRevision: 0,
+        worktreePath: '/tmp/wt',
+      },
     });
 
     await useAppStore
@@ -1677,6 +1682,11 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       effort: null,
       instructions: 'kick B',
       phase: 'queued',
+      mountTarget: {
+        mountId: 'mount-fixture-4' as MountId,
+        mountRevision: 0,
+        worktreePath: '/tmp/wt',
+      },
     });
 
     await useAppStore
@@ -1785,6 +1795,11 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       effort: null,
       instructions: 'kick B',
       phase: 'queued',
+      mountTarget: {
+        mountId: 'mount-fixture-3' as MountId,
+        mountRevision: 0,
+        worktreePath: '/tmp/wt',
+      },
     });
 
     await useAppStore
@@ -2216,6 +2231,11 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
         effort: null,
         instructions,
         phase: 'queued',
+        mountTarget: {
+          mountId: 'mount-fixture-2' as MountId,
+          mountRevision: 0,
+          worktreePath: '/tmp/wt',
+        },
       });
     }
 
@@ -2372,7 +2392,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     expect(acquire).not.toHaveBeenCalled();
   });
 
-  it('leases the worktree of a session the loaded workspace never mounted', async () => {
+  it('refuses a resolver turn instead of leasing a worktree the session never selected', async () => {
     const useAppStore = await seedResolverTurn();
     const worktreeMod = await import('../features/worktree/worktree');
     const acquire = worktreeMod.acquireWorktreeWriter as ReturnType<typeof vi.fn>;
@@ -2382,11 +2402,11 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     runTurnSpy.mockReset();
     runTurnSpy.mockImplementation(() => emptyStream());
 
-    await useAppStore
-      .getState()
-      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' }),
+    ).rejects.toThrow('resolver turn refused');
 
-    expect(acquire).toHaveBeenCalledWith({ path: '/tmp/db-wt', holder: AGENT_A });
+    expect(acquire).not.toHaveBeenCalled();
   });
 
   it('refuses a resolver turn whose agent is on neither the session nor the database', async () => {

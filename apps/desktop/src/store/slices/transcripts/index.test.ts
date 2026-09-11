@@ -93,6 +93,7 @@ vi.mock('@goodboy/db', () => ({
   listTelemetryForSession: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => []),
   listWorktreesForSession: vi.fn(async () => []),
+  listResolveAttempts: vi.fn(async () => []),
   listWorktreesForSessions: vi.fn(async () => new Map()),
   listAgentsForSessions: vi.fn(async () => new Map()),
   deleteWorktreesForSession: vi.fn(async () => undefined),

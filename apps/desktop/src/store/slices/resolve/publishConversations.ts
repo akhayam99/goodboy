@@ -17,8 +17,8 @@ import type {
 import { acquireWorktreeWriter, releaseWorktreeWriter } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { postThreadReply } from '../github/postThreadReply';
-import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { approvedPublicationScope } from './approvedPublicationScope';
+import { liveMountTarget } from './mountTarget';
 import { markThreadDone } from './markThreadDone';
 import { preparePublication } from './preparePublication';
 import { isDriftChecked, publicationDrift } from './publicationDrift';
@@ -88,11 +88,11 @@ export const publishConversations = async ({
   if (publication === undefined || publication.phase === 'cancelled') {
     return { kind: 'missing' };
   }
-  const repo = getSessionRepo({ get, sessionId });
-  if (repo === null && publication.requiresPush) {
+  const liveTarget = liveMountTarget({ get, sessionId, target: publication.mountTarget });
+  if (liveTarget === null && publication.requiresPush) {
     return { kind: 'missing' };
   }
-  const worktreePath = repo?.worktreePath ?? '';
+  const worktreePath = publication.mountTarget?.worktreePath ?? '';
   const frozen = await listResolvePublicationThreads({ db: tauriDatabase, publicationId });
   const locked = await withPublicationLock<LockedResult>({
     repo: publication.repo,
@@ -121,6 +121,7 @@ export const publishConversations = async ({
             comments,
             scope,
             worktreePath,
+            liveTarget,
           });
           if (drift.length > 0) {
             await setResolvePublicationPhase({

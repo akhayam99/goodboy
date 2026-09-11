@@ -218,8 +218,16 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (activeMount === undefined && writableMounts.length > 0) {
       throw new Error('Choose the branch mount this session writes to before sending a turn.');
     }
-    const turnMountId = activeMount?.mountId ?? null;
-    const turnMountRevision = activeMount?.revision ?? null;
+    const turnTarget =
+      activeMount === undefined
+        ? null
+        : {
+            mountId: activeMount.mountId,
+            mountRevision: activeMount.revision,
+            worktreePath: activeMount.worktreePath,
+          };
+    const turnMountId = turnTarget?.mountId ?? null;
+    const turnMountRevision = turnTarget?.mountRevision ?? null;
     const workingDir =
       activeMount !== undefined ? activeMount.worktreePath : await scratchDirPrepare({ sessionId });
     const isPlainSessionDir =
@@ -574,7 +582,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         (await getAgentById(tauriDatabase, activeAgentId)))
       : null;
     const writerLeasePath = isResolverTurn
-      ? await resolveWorktreePath({ get, sessionId, mountId: turnMountId })
+      ? await resolveWorktreePath({ get, sessionId, target: turnTarget })
       : null;
     if (isResolverTurn && (writerLeasePath === null || agentRowForLease === null)) {
       throw new Error(
@@ -601,6 +609,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           effort: rawEffort,
           instructions: resolvedPrompt,
           phase: 'queued',
+          mountTarget: turnTarget,
         });
         await cancelWorktreeWriter({ path: writerLeasePath, holder: activeAgentId });
         return { blockedOverBudget: false, isWriterLeaseDenied: true };
@@ -830,6 +839,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             effort: rawEffort,
             instructions: resolvedPrompt,
             phase: 'running',
+            mountTarget: turnTarget,
             threadIds: resumableResolveThreadIds({
               rows: get().sessionResolveThreads[sessionId] ?? [],
               agent: agentRowEarly,
@@ -1447,7 +1457,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     }
 
     if (!lastError && !turnWasCancelled && assistantText.length > 0) {
-      enqueueSummarizer(set, get, sessionId, resolvedPrompt, assistantText);
+      enqueueSummarizer({
+        set,
+        get,
+        sessionId,
+        turnInput: resolvedPrompt,
+        turnOutput: assistantText,
+        workingDir,
+      });
       const capturedPlan = await capturePlanFromTurn(
         set,
         sessionId,

@@ -214,6 +214,19 @@ const startResolverTurn = async ({
   }
 };
 
+type ReleaseParams = {
+  readonly attempt: ResolveAttempt;
+  readonly worktreePath: string | null;
+};
+
+const releaseAttemptWaiter = async ({ attempt, worktreePath }: ReleaseParams): Promise<void> => {
+  const path = worktreePath ?? attempt.mountTarget?.worktreePath ?? null;
+  if (path === null) {
+    return;
+  }
+  await cancelWorktreeWriter({ path, holder: attempt.agentId });
+};
+
 export const drainResolveQueue = async ({
   set,
   get,
@@ -223,14 +236,17 @@ export const drainResolveQueue = async ({
   const db = tauriDatabase;
   let attempts = await listResolveAttempts({ db, sessionId });
   let rows = await listResolveThreads({ db, sessionId });
-  const worktreePath = await resolveWorktreePath({ get, sessionId });
+  const queued = attempts.filter((item) => item.phase === 'queued');
+  const ended = attempts.find((item) => item.id === endedAttemptId) ?? null;
+  const dirtyTarget = ended?.mountTarget ?? queued[0]?.mountTarget ?? null;
+  const dirtyPath = await resolveWorktreePath({ get, sessionId, target: dirtyTarget });
   const dirty =
-    worktreePath === null
+    dirtyPath === null
       ? CLEAN
       : await syncDirtyTree({
           attempts,
           rows,
-          worktreePath,
+          worktreePath: dirtyPath,
           ...(endedAttemptId !== undefined && { endedAttemptId }),
         });
   if (dirty.hasWritten) {
@@ -239,15 +255,19 @@ export const drainResolveQueue = async ({
   }
   projectResolveRows({ set, get, sessionId, rows, attempts });
   const runs = await hydrateRuns({ set, get, sessionId, attempts });
-  if (runs === null || worktreePath === null || dirty.isBlocked) {
+  if (runs === null || dirty.isBlocked) {
     return;
   }
   if (attempts.some((attempt) => attempt.phase === 'running')) {
     return;
   }
-  await evictStaleWaiters({ worktreePath, runs });
   let hasCancelled = false;
   for (const attempt of attempts.filter((item) => item.phase === 'queued')) {
+    const worktreePath = await resolveWorktreePath({
+      get,
+      sessionId,
+      target: attempt.mountTarget,
+    });
     const agent = runs.find((item) => item.id === attempt.agentId);
     const instructions = attempt.instructions ?? '';
     if (agent === undefined || instructions.length === 0) {
@@ -257,8 +277,11 @@ export const drainResolveQueue = async ({
         phase: 'cancelled',
         error: 'interrupted',
       });
-      await cancelWorktreeWriter({ path: worktreePath, holder: attempt.agentId });
+      await releaseAttemptWaiter({ attempt, worktreePath });
       hasCancelled = true;
+      continue;
+    }
+    if (worktreePath === null) {
       continue;
     }
     if (agent.doneAt != null || agent.status === 'skipped') {
@@ -267,6 +290,7 @@ export const drainResolveQueue = async ({
     if (get().agentTurnState?.[attempt.agentId]?.kind === 'running') {
       return;
     }
+    await evictStaleWaiters({ worktreePath, runs });
     const lease = await acquireWorktreeWriter({ path: worktreePath, holder: attempt.agentId });
     if (!lease.isGranted) {
       return;

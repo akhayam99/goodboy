@@ -26,6 +26,7 @@ export const recordResolveAttempt = async ({
   instructions,
   phase,
   threadIds,
+  mountTarget,
 }: Params): Promise<string> => {
   const db = tauriDatabase;
   const attempts = await listResolveAttempts({ db, sessionId });
@@ -50,7 +51,7 @@ export const recordResolveAttempt = async ({
     effort,
     instructions,
     phase,
-    mountTarget: null,
+    mountTarget,
     startedAt: phase === 'running' ? now : null,
     endedAt: null,
     error: null,
@@ -58,9 +59,13 @@ export const recordResolveAttempt = async ({
   };
   await insertResolveAttempt({ db, attempt });
   if (phase === 'running') {
-    await beginResolveCandidate({ set, get, sessionId, attemptId: attempt.id }).catch(
-      () => undefined,
-    );
+    await beginResolveCandidate({
+      set,
+      get,
+      sessionId,
+      attemptId: attempt.id,
+      mountTarget,
+    }).catch(() => undefined);
   }
   const rows = await listResolveThreads({ db, sessionId });
   const claimed = threadIds ?? attempt.threadIds;
