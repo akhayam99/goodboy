@@ -89,17 +89,22 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
       const activeMount =
         hydration.kind === 'restored' || hydration.kind === 'repaired' ? hydration : null;
       const activeMountId = activeMount?.mountId ?? restoredSession.activeMountId ?? null;
-      if (hydration.kind === 'repaired') {
-        await updateSessionWriteDestination({
+      const realigns =
+        activeMount !== null &&
+        (hydration.kind === 'repaired' || storedActiveProjectId !== activeMount.projectId);
+      if (activeMount !== null && realigns) {
+        const written = await updateSessionWriteDestination({
           db: tauriDatabase,
           sessionId,
-          mountId: hydration.mountId,
-        });
-        restoredWithValidActiveMount = {
-          ...restoredWithValidActiveMount,
-          activeMountId: hydration.mountId,
-          activeProjectId: hydration.projectId,
-        };
+          mountId: activeMount.mountId,
+        }).catch(() => false);
+        if (written) {
+          restoredWithValidActiveMount = {
+            ...restoredWithValidActiveMount,
+            activeMountId: activeMount.mountId,
+            activeProjectId: activeMount.projectId,
+          };
+        }
       }
       set((state) => {
         const nextWorktrees = { ...state.sessionWorktrees };

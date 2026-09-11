@@ -24,7 +24,13 @@ const { state } = vi.hoisted(() => ({
     sessionActiveProject: {} as Record<string, string>,
     sessionSlots: {} as Record<string, ReadonlyArray<{ key: string; value: string }>>,
     sessionExternalTasks: {} as Record<string, ReadonlyArray<unknown>>,
-    ensureProjectMounted: vi.fn(async ({ projectId }: { readonly projectId: string }) => {
+    ensureProjectMounted: vi.fn<
+      (input: { readonly projectId: string }) => Promise<{
+        readonly status: 'created' | 'already-mounted';
+        readonly createdMountId?: string;
+        readonly mountIds: ReadonlyArray<string>;
+      }>
+    >(async ({ projectId }: { readonly projectId: string }) => {
       state.sessionProjectMounts = {
         ...state.sessionProjectMounts,
         'session-1': [
@@ -155,5 +161,42 @@ describe('executeMaterializeRequest', () => {
     );
 
     expect(result).toEqual({ ok: false, error: 'unknown project: ghost' });
+  });
+});
+
+describe('executeMaterializeRequest with siblings already mounted', () => {
+  it('names no mount when the project already owns several', async () => {
+    state.sessionProjectMounts = {
+      'session-1': [
+        {
+          mountId: 'mount-a',
+          projectId: 'p-web',
+          worktreePath: '/wt/a',
+          branch: 'ak/a',
+          isAttached: true,
+          diskState: 'present',
+        },
+        {
+          mountId: 'mount-b',
+          projectId: 'p-web',
+          worktreePath: '/wt/b',
+          branch: 'ak/b',
+          isAttached: true,
+          diskState: 'present',
+        },
+      ],
+    };
+    state.ensureProjectMounted.mockImplementationOnce(async () => ({
+      status: 'already-mounted' as const,
+      mountIds: ['mount-a', 'mount-b'],
+    }));
+
+    const result = await executeMaterializeRequest(
+      request({ projectId: 'p-web', projectName: 'web' }),
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('2 branch mounts');
+    expect(result.mountPath).toBeUndefined();
   });
 });
