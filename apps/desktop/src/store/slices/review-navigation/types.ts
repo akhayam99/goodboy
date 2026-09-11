@@ -1,18 +1,19 @@
-import type { MountId, SessionId } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import type { ReviewMode } from '../../../features/review/reviewMode';
+import type { ReviewDestination } from './destination';
 import type { ReviewNavigationState } from './state';
 
 export type { GetFn, SetFn } from '../../slice-types';
 
 export type ReviewTargetReason =
-  'no_session' | 'no_mount' | 'no_pull_request' | 'no_thread' | 'superseded';
+  'no_session' | 'no_mount' | 'no_pull_request' | 'no_thread' | 'thread_closed' | 'superseded';
 
 export type ReviewTargetStatus = 'pending' | 'ready' | 'unavailable' | 'failed';
 
 export type ReviewTarget = {
   readonly requestId: string;
   readonly status: ReviewTargetStatus;
-  readonly threadId: string | null;
+  readonly destination: ReviewDestination;
   readonly mode: ReviewMode | null;
   readonly reason: ReviewTargetReason | null;
   readonly error: string | null;
@@ -20,9 +21,7 @@ export type ReviewTarget = {
 
 export type OpenReviewTargetParams = {
   readonly sessionId: SessionId;
-  readonly mountId?: MountId;
-  readonly prNumber?: number;
-  readonly threadId?: string;
+  readonly destination?: ReviewDestination;
   readonly mode?: ReviewMode;
 };
 

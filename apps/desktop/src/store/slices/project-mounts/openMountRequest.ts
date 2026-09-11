@@ -34,13 +34,19 @@ export const openMountRequest = (_set: SetFn, get: GetFn) => {
       get().setSessionStudio(sessionId, studioFor({ mountId, provider }));
       return { kind: 'opened' };
     }
+    if (requestNumber === undefined) {
+      return get().openReviewTarget({
+        sessionId,
+        destination: { kind: 'mount', mountId },
+        mode: 'create_pr',
+      });
+    }
     return get().openReviewTarget({
       sessionId,
-      mountId,
-      ...(requestNumber === undefined
-        ? { mode: 'create_pr' as const }
-        : { prNumber: requestNumber }),
-      ...(threadId === undefined ? {} : { threadId }),
+      destination:
+        threadId === undefined
+          ? { kind: 'pull_request', mountId, prNumber: requestNumber }
+          : { kind: 'thread', mountId, prNumber: requestNumber, threadId },
     });
   };
 };

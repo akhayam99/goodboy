@@ -30,8 +30,7 @@ describe('openMountRequest', () => {
 
     expect(state.openReviewTarget).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
-      mountId: MOUNT_ID,
-      prNumber: 12,
+      destination: { kind: 'pull_request', mountId: MOUNT_ID, prNumber: 12 },
     });
     expect(state.setSessionStudio).not.toHaveBeenCalled();
   });
@@ -43,7 +42,7 @@ describe('openMountRequest', () => {
 
     expect(state.openReviewTarget).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
-      mountId: MOUNT_ID,
+      destination: { kind: 'mount', mountId: MOUNT_ID },
       mode: 'create_pr',
     });
   });
@@ -61,9 +60,7 @@ describe('openMountRequest', () => {
 
     expect(state.openReviewTarget).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
-      mountId: MOUNT_ID,
-      prNumber: 12,
-      threadId: 'PRRT_1',
+      destination: { kind: 'thread', mountId: MOUNT_ID, prNumber: 12, threadId: 'PRRT_1' },
     });
   });
 

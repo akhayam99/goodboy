@@ -18,7 +18,12 @@ export const GithubPrStrip = ({ sessionId, pullRequest }: Props) => {
   return (
     <button
       type="button"
-      onClick={() => void openReview({ sessionId, prNumber: pullRequest.number })}
+      onClick={() =>
+        void openReview({
+          sessionId,
+          destination: { kind: 'pull_request', mountId: null, prNumber: pullRequest.number },
+        })
+      }
       title="Open pull request in Review"
       className={cn(
         'flex min-w-0 items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs',

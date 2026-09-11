@@ -31,17 +31,13 @@ describe('openReview', () => {
   it('carries the mount, the pull request, the thread and the mode to the store', async () => {
     await openReview({
       sessionId: SESSION_ID,
-      mountId: MOUNT_ID,
-      prNumber: 248,
-      threadId: 'PRRT_7',
+      destination: { kind: 'thread', mountId: MOUNT_ID, prNumber: 248, threadId: 'PRRT_7' },
       mode: 'pr_activity',
     });
 
     expect(h.state.openReviewTarget).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
-      mountId: MOUNT_ID,
-      prNumber: 248,
-      threadId: 'PRRT_7',
+      destination: { kind: 'thread', mountId: MOUNT_ID, prNumber: 248, threadId: 'PRRT_7' },
       mode: 'pr_activity',
     });
   });
@@ -52,7 +48,12 @@ describe('openReview', () => {
       reason: 'no_thread',
     } as never);
 
-    await expect(openReview({ sessionId: SESSION_ID, threadId: 'PRRT_9' })).resolves.toEqual({
+    await expect(
+      openReview({
+        sessionId: SESSION_ID,
+        destination: { kind: 'thread', mountId: null, prNumber: 248, threadId: 'PRRT_9' },
+      }),
+    ).resolves.toEqual({
       kind: 'unavailable',
       reason: 'no_thread',
     });

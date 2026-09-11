@@ -9,6 +9,8 @@ import type {
   SetFn,
 } from './types';
 
+export { REVIEW_HOME, reviewMountId, reviewPrNumber, reviewThreadId } from './destination';
+export type { ReviewDestination } from './destination';
 export type {
   ReviewTarget,
   ReviewTargetOutcome,
