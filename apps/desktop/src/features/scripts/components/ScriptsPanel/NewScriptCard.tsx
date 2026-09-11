@@ -9,6 +9,7 @@ type Props = {
   readonly body: string;
   readonly projects: ReadonlyArray<Project>;
   readonly projectId: ProjectId;
+  readonly mountPath: string | null;
   readonly error: string | null;
   readonly onNameChange: (value: string) => void;
   readonly onBodyChange: (value: string) => void;
@@ -17,74 +18,89 @@ type Props = {
   readonly onCancel: () => void;
 };
 
+type ScopeParams = {
+  readonly projectName: string;
+  readonly mountPath: string | null;
+};
+
+const scopeHelp = ({ projectName, mountPath }: ScopeParams): string =>
+  mountPath === null
+    ? `${projectName} is not mounted in this session yet, so this script has nowhere to run until it is.`
+    : `Runs in ${projectName} at ${mountPath}.`;
+
 export const NewScriptCard = ({
   name,
   body,
   projects,
   projectId,
+  mountPath,
   error,
   onNameChange,
   onBodyChange,
   onProjectChange,
   onSave,
   onCancel,
-}: Props) => (
-  <section className="flex flex-col gap-6">
-    <section className="flex flex-col">
-      <FieldRow label="Name">
-        <Input
-          value={name}
-          onChange={(event) => onNameChange(event.target.value)}
-          placeholder="Script name (e.g. copy environments)"
-          autoFocus
-          className="w-full sm:w-72"
-        />
-      </FieldRow>
-      <Divider />
-      {projects.length > 1 ? (
-        <>
-          <FieldRow label="Project">
+}: Props) => {
+  const projectName = projects.find((project) => project.id === projectId)?.name ?? 'this project';
+
+  return (
+    <section className="flex flex-col gap-6">
+      <section className="flex flex-col">
+        <FieldRow label="Name">
+          <Input
+            value={name}
+            onChange={(event) => onNameChange(event.target.value)}
+            placeholder="Script name (e.g. copy environments)"
+            autoFocus
+            className="w-full sm:w-72"
+          />
+        </FieldRow>
+        <Divider />
+        <FieldRow label="Project" help={scopeHelp({ projectName, mountPath })}>
+          {projects.length > 1 ? (
             <ProjectSelect
               projects={projects}
               projectId={projectId}
               ariaLabel="New script project"
               onChange={onProjectChange}
             />
-          </FieldRow>
-          <Divider />
-        </>
-      ) : null}
-      <FieldRow label="Command" help="Runs from this project's worktree for the session.">
-        <Textarea
-          value={body}
-          onChange={(event) => onBodyChange(event.target.value)}
-          placeholder={'#!/bin/bash\ncp ../main/.env .env'}
-          className="w-full font-mono text-xs sm:w-96"
-          autoGrow
-          minRows={5}
-          maxRows={24}
-          spellCheck={false}
-          autoCorrect="off"
-          autoCapitalize="off"
-        />
-      </FieldRow>
+          ) : (
+            <span className="text-xs text-foreground">{projectName}</span>
+          )}
+        </FieldRow>
+        <Divider />
+        <FieldRow label="Command" help="Saved for every session of this workspace.">
+          <Textarea
+            value={body}
+            onChange={(event) => onBodyChange(event.target.value)}
+            placeholder={'#!/bin/bash\ncp ../main/.env .env'}
+            className="w-full font-mono text-xs sm:w-96"
+            autoGrow
+            minRows={5}
+            maxRows={24}
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="off"
+          />
+        </FieldRow>
+      </section>
+      <Divider />
+      <footer className="flex shrink-0 items-center gap-3">
+        <div className="min-w-0 flex-1">
+          {error !== null ? (
+            <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
+              <AlertTriangle size={ICON_SIZE.row} aria-hidden />
+              {error}
+            </span>
+          ) : null}
+        </div>
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button size="sm" onClick={onSave}>
+          Save
+        </Button>
+      </footer>
     </section>
-    <Divider />
-    <footer className="flex shrink-0 items-center gap-3">
-      <div className="min-w-0 flex-1">
-        {error !== null ? (
-          <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
-            <AlertTriangle size={ICON_SIZE.row} aria-hidden />
-            {error}
-          </span>
-        ) : null}
-      </div>
-      <Button variant="ghost" size="sm" onClick={onCancel}>
-        Cancel
-      </Button>
-      <Button size="sm" onClick={onSave}>
-        Save
-      </Button>
-    </footer>
-  </section>
-);
+  );
+};

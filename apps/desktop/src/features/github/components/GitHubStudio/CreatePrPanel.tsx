@@ -295,6 +295,7 @@ export const CreatePrPanel = ({
                     setAgentConfig(value);
                   }}
                   disabled={busy !== null}
+                  role={{ label: 'Pull request author', hint: 'Fixed by this panel' }}
                 />
               </FieldRow>
             )}

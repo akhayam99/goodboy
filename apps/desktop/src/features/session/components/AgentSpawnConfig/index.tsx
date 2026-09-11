@@ -5,6 +5,9 @@ import { cn } from '@goodboy/ui';
 import { clampEffort } from '../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { useAppStore } from '../../../../store';
+import { AGENT_FORM_GRAMMAR, type AgentFormRole } from '../../agent-form-grammar';
+import { AgentInstructionsField } from '../AgentInstructionsField';
+import { AgentRoleField } from '../AgentRoleField';
 import type { AgentSpawnConfigValue } from './AgentSpawnConfigValue';
 import { DEFAULT_AGENT_SPAWN_CONFIG } from './defaultAgentSpawnConfig';
 
@@ -13,9 +16,10 @@ type Props = {
   readonly onChange: (value: AgentSpawnConfigValue) => void;
   readonly disabled: boolean;
   readonly className?: string;
+  readonly role?: AgentFormRole;
 };
 
-export const AgentSpawnConfig = ({ value, onChange, disabled, className }: Props) => {
+export const AgentSpawnConfig = ({ value, onChange, disabled, className, role }: Props) => {
   const connectedProviders = useAppStore(
     useShallow((state) =>
       state.providers.filter((provider) => provider.connection === 'connected').map(({ id }) => id),
@@ -42,8 +46,14 @@ export const AgentSpawnConfig = ({ value, onChange, disabled, className }: Props
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
+      {role != null && <AgentRoleField role={role} />}
+      <AgentInstructionsField
+        value={value.hint}
+        onChange={(hint) => onChange({ ...value, hint })}
+        disabled={disabled}
+      />
       <RoutingPicker
-        ariaLabel="Agent settings"
+        ariaLabel={AGENT_FORM_GRAMMAR.routing.ariaLabel}
         connectedProviders={connectedProviders}
         provider={value.provider}
         model={value.model}
@@ -55,15 +65,6 @@ export const AgentSpawnConfig = ({ value, onChange, disabled, className }: Props
         disabled={disabled}
         onProvider={onProvider}
         onModel={(model) => onChange({ ...value, model, effort: clampEffort(model, value.effort) })}
-      />
-      <textarea
-        aria-label="Agent hint"
-        value={value.hint}
-        onChange={(event) => onChange({ ...value, hint: event.target.value })}
-        rows={2}
-        disabled={disabled}
-        placeholder="Optional notes for the agent: what to emphasize, what to avoid..."
-        className="w-full resize-none rounded-md border border-border-soft bg-subtle px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none disabled:opacity-50"
       />
     </div>
   );

@@ -1538,7 +1538,7 @@ describe('store contract', () => {
       );
     });
 
-    it('keeps an explicit branch slug untouched', async () => {
+    it('sends an explicit branch slug already sanitized the way the backend would', async () => {
       const store = await getStore();
       store.setState({ currentWorkspaceId: WS_ID });
 
@@ -1550,11 +1550,11 @@ describe('store contract', () => {
       });
 
       expect(createWorktreeSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ slug: 'Foreign_Feature/Exact' }),
+        expect.objectContaining({ slug: 'foreign-feature-exact' }),
       );
     });
 
-    it('pins a foreign prefix and verbatim slug for existing branch adoption', async () => {
+    it('pins a foreign prefix and keeps the adopted branch verbatim', async () => {
       const store = await getStore();
       store.setState({ currentWorkspaceId: WS_ID });
 
@@ -1568,10 +1568,27 @@ describe('store contract', () => {
       expect(createWorktreeSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           branchPrefix: 'alice',
-          slug: 'alice/fix-parser',
+          slug: 'alice-fix-parser',
           existingBranch: 'alice/fix-parser',
         }),
       );
+    });
+
+    it('never asks the backend for a nested worktree directory', async () => {
+      const store = await getStore();
+      store.setState({ currentWorkspaceId: WS_ID });
+
+      await store.getState().createSession({
+        workspaceId: WS_ID,
+        projectId: PROJECT_ID,
+        goal: 'Review parser fix',
+        existingBranch: 'alice/fix-parser',
+      });
+
+      const [args] = createWorktreeSpy.mock.calls[0] ?? [];
+
+      expect(args?.dirName).not.toContain('/');
+      expect(args?.dirName).toMatch(/^alice-fix-p-/);
     });
   });
 

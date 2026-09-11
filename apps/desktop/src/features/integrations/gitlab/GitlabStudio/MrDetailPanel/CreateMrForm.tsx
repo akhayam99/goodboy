@@ -214,6 +214,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
                     setAgentConfig(value);
                   }}
                   disabled={busy !== null}
+                  role={{ label: 'Merge request author', hint: 'Fixed by this panel' }}
                 />
               </FieldRow>
             )}

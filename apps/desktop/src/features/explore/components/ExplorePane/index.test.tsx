@@ -273,7 +273,7 @@ describe('ExplorePane', () => {
         target: { value: 'Analyze this spreadsheet and summarize trends.' },
       },
     );
-    fireEvent.click(screen.getByRole('button', { name: /^Agent settings:/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Agent routing:/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
     fireEvent.click(screen.getByRole('button', { name: 'Spawn agent' }));
 

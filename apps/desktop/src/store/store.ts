@@ -191,6 +191,7 @@ import type {
   SetPrSeriesMemberInput,
 } from './slices/pr-series';
 import type { ArchiveTaskOptions } from './slices/sessions/types';
+import type { MaterializeProjectInput } from './slices/sessions/materializeProject';
 import type {
   CleanupSessionMountsInput,
   ProposeMountCleanupInput,
@@ -438,12 +439,7 @@ type AppActions = {
   }): Promise<{ session: Session }>;
   createUntitledSession(input: { workspaceId: WorkspaceId }): Promise<{ session: Session }>;
   clearPendingTitleFocus(): void;
-  materializeProject(input: {
-    sessionId: SessionId;
-    projectId: ProjectId;
-    reason: string;
-    taskIdentifiers?: ReadonlyArray<string>;
-  }): Promise<SessionProjectMount>;
+  materializeProject(input: MaterializeProjectInput): Promise<SessionProjectMount>;
   detachProject(input: DetachProjectInput): Promise<ReadonlyArray<DetachProjectOutcome>>;
   loadSessionMounts(input: SessionKeyInput): Promise<ReadonlyArray<SessionMountView>>;
   forkMount(input: ForkMountInput): Promise<SessionMountView>;

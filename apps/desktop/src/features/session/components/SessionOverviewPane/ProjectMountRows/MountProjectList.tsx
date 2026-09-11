@@ -3,6 +3,9 @@ import { ScrollFade, cn, formatError } from '@goodboy/ui';
 import type { Project, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { ICON_SIZE, projectGlyph } from '../../../../../shared/components/conceptIcons';
+import { MountPreflightCard } from './MountPreflightCard';
+import { mountFailure, type MountFailure } from './mountFailure';
+import { useMountPreflight } from './useMountPreflight';
 
 const MANUAL_REASON = 'added manually by the user';
 const SEARCH_THRESHOLD = 8;
@@ -13,37 +16,61 @@ type Props = {
   readonly onDone: () => void;
 };
 
-type MountParams = {
-  readonly project: Project;
-};
-
 export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
   const materializeProject = useAppStore((state) => state.materializeProject);
   const emitNotification = useAppStore((state) => state.emitNotification);
   const [query, setQuery] = useState('');
-  const [mountingProjectId, setMountingProjectId] = useState<Project['id'] | null>(null);
-  const isBusy = mountingProjectId !== null;
+  const [selectedProjectId, setSelectedProjectId] = useState<Project['id'] | null>(null);
+  const [isMounting, setIsMounting] = useState(false);
+  const [failure, setFailure] = useState<MountFailure | null>(null);
   const isSearchable = projects.length > SEARCH_THRESHOLD;
   const filtered = useMemo(
     () => projects.filter((project) => project.name.toLowerCase().includes(query.toLowerCase())),
     [projects, query],
   );
+  const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
+  const preflightState = useMountPreflight({ sessionId, project: selectedProject });
 
-  const mountProject = async ({ project }: MountParams) => {
-    setMountingProjectId(project.id);
+  const mountProject = async ({ project }: { readonly project: Project }) => {
+    const { preflight } = preflightState;
+    setIsMounting(true);
+    setFailure(null);
     try {
-      await materializeProject({ sessionId, projectId: project.id, reason: MANUAL_REASON });
+      await materializeProject({
+        sessionId,
+        projectId: project.id,
+        reason: MANUAL_REASON,
+        ...(preflight === null ? {} : { mountId: preflight.mountId, slug: preflight.slug }),
+      });
       setQuery('');
+      setSelectedProjectId(null);
       onDone();
     } catch (error) {
+      setFailure(mountFailure({ error, project, preflight }));
       void emitNotification('error', 'warning', 'could not add the project', formatError(error), {
         sessionId,
         workspaceId: project.workspaceId,
       });
     } finally {
-      setMountingProjectId(null);
+      setIsMounting(false);
     }
   };
+
+  if (selectedProject !== null) {
+    return (
+      <MountPreflightCard
+        project={selectedProject}
+        state={preflightState}
+        isBusy={isMounting}
+        failure={failure}
+        onConfirm={() => void mountProject({ project: selectedProject })}
+        onCancel={() => {
+          setFailure(null);
+          setSelectedProjectId(null);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col">
@@ -65,19 +92,17 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
           <ul>
             {filtered.map((project) => {
               const GlyphIcon = projectGlyph({ kind: project.kind });
-              const isMounting = mountingProjectId === project.id;
               return (
                 <li key={project.id}>
                   <button
                     type="button"
-                    disabled={isBusy}
                     aria-label={`Mount ${project.name}`}
-                    aria-busy={isMounting}
-                    onClick={() => void mountProject({ project })}
+                    onClick={() => {
+                      setFailure(null);
+                      setSelectedProjectId(project.id);
+                    }}
                     className={cn(
                       'flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm text-foreground motion-safe:transition-colors hover:bg-muted/40',
-                      isBusy && !isMounting && 'pointer-events-none opacity-50',
-                      isMounting && 'spin-border spin-border-info',
                     )}
                   >
                     <GlyphIcon

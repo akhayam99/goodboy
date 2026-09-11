@@ -1,4 +1,5 @@
 import { detectRepoSlug } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import { findPrSeriesMembership, upsertMountPullRequestLink } from '@goodboy/db';
 import type {
   IsoDateTime,
@@ -219,7 +220,17 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
           .editPr(sessionId, created.number, {
             body: appendClosingReferences({ body: created.body, references: filledReferences }),
           })
-          .catch(() => undefined);
+          .catch((error: unknown) => {
+            void get().emitNotification(
+              'error',
+              'warning',
+              'PR opened without its issue links',
+              `${filledReferences
+                .map((reference) => reference.line)
+                .join(', ')} could not be appended to the description: ${formatError(error)}`,
+              { sessionId, workspaceId: workspace.id },
+            );
+          });
       }
     }
     void get().emitNotification(

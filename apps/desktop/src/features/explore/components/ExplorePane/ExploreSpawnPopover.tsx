@@ -5,6 +5,7 @@ import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { clampEffort } from '../../../chat/utils/chat-constants';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
+import { AGENT_KIND_META } from '../../../session/agent-kind';
 import { resolveSpawnRouting } from '../../../session/spawn-routing';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
@@ -138,6 +139,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
           onChange={setConfig}
           disabled={isSpawning}
           className="gap-1.5"
+          role={{ label: AGENT_KIND_META.generic.label, hint: 'Fixed by the explore panel' }}
         />
         {spawnError != null ? <p className="text-xs text-danger">{spawnError}</p> : null}
       </div>

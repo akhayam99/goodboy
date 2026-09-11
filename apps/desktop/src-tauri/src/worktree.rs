@@ -427,6 +427,44 @@ pub fn sanitize_slug(input: &str) -> String {
     }
 }
 
+#[cfg(test)]
+mod sanitize_slug_tests {
+    use super::{sanitize_slug, MAX_SLUG_LEN};
+
+    #[test]
+    fn replaces_a_branch_separator_so_the_directory_never_nests() {
+        assert_eq!(sanitize_slug("alice/fix-parser"), "alice-fix-parser");
+    }
+
+    #[test]
+    fn truncates_at_the_slug_budget_without_a_trailing_dash() {
+        let sanitized = sanitize_slug(&format!("{}-tail", "a".repeat(MAX_SLUG_LEN - 1)));
+
+        assert_eq!(sanitized, "a".repeat(MAX_SLUG_LEN - 1));
+    }
+
+    #[test]
+    fn lowercases_ascii_only() {
+        assert_eq!(sanitize_slug("Fix-Parser"), "fix-parser");
+        assert_eq!(sanitize_slug("caff\u{c8}"), "caff");
+    }
+
+    #[test]
+    fn leaves_an_already_sanitized_name_untouched() {
+        let once = sanitize_slug("Alice/Fix   Parser/../weird");
+
+        assert_eq!(sanitize_slug(&once), once);
+    }
+
+    #[test]
+    fn leaves_a_mount_directory_name_untouched() {
+        let name = "alice-fix-p-9f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f";
+
+        assert_eq!(name.len(), MAX_SLUG_LEN);
+        assert_eq!(sanitize_slug(name), name);
+    }
+}
+
 #[tauri::command]
 pub async fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeError> {
     tauri::async_runtime::spawn_blocking(move || worktree_create_blocking(args))
@@ -543,8 +581,8 @@ fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, Worktre
                 .as_deref()
                 .map(str::trim)
                 .filter(|s| !s.is_empty());
-            let fetched = git(&repo_path, &["fetch", "origin", name]).is_ok();
-            let remote_exists = fetched
+            let fetch_failure = try_fetch_origin(&repo_path, name);
+            let remote_exists = fetch_failure.is_none()
                 && git(
                     &repo_path,
                     &[
@@ -560,7 +598,8 @@ fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, Worktre
                     git(
                         &repo_path,
                         &["fetch", "origin", &format!("{fallback}:{name}")],
-                    )?;
+                    )
+                    .map_err(|error| with_fetch_cause(error, fetch_failure.as_deref()))?;
                     git(
                         &repo_path,
                         &[
@@ -583,7 +622,8 @@ fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, Worktre
                             worktree_path.to_string_lossy().as_ref(),
                             &format!("origin/{name}"),
                         ],
-                    )?;
+                    )
+                    .map_err(|error| with_fetch_cause(error, fetch_failure.as_deref()))?;
                 }
             }
         }
@@ -596,10 +636,11 @@ fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, Worktre
         let detected_base = configured_base
             .map(str::to_string)
             .or_else(|| resolve_origin_head(&repo_path));
-        if let Some(base) = detected_base.as_deref() {
-            try_fetch_origin(&repo_path, base);
-        }
-        let base_ref = resolve_origin_base(&repo_path, configured_base)?;
+        let fetch_failure = detected_base
+            .as_deref()
+            .and_then(|base| try_fetch_origin(&repo_path, base));
+        let base_ref = resolve_origin_base(&repo_path, configured_base)
+            .map_err(|error| with_fetch_cause(error, fetch_failure.as_deref()))?;
         git(
             &repo_path,
             &[
@@ -2888,12 +2929,22 @@ fn find_existing(
         .find(|w| Path::new(&w.path) == worktree_path))
 }
 
-/// Best-effort fetch of `origin/<base>`. Silently swallows errors so that
-/// offline sessions or repos without an `origin` remote still let the user
-/// create a worktree — they just fall back to whatever `origin/<base>` already
-/// points at locally (or to the local branch as a last resort).
-fn try_fetch_origin(repo_path: &Path, base: &str) {
-    let _ = git(repo_path, &["fetch", "origin", base]);
+fn try_fetch_origin(repo_path: &Path, base: &str) -> Option<String> {
+    git(repo_path, &["fetch", "origin", base])
+        .err()
+        .map(|error| error.to_string())
+}
+
+fn with_fetch_cause(error: WorktreeError, fetch_failure: Option<&str>) -> WorktreeError {
+    let Some(cause) = fetch_failure else {
+        return error;
+    };
+    let WorktreeError::Git { message } = error else {
+        return error;
+    };
+    WorktreeError::Git {
+        message: format!("{message}. fetching from origin failed first: {cause}"),
+    }
 }
 
 /// Resolve the ref to cut a new branch from. Prefers `origin/<base>` so the
@@ -3800,6 +3851,49 @@ mod rewrite_tests {
             None
         );
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn names_the_failed_fetch_when_the_base_ref_cannot_be_found() {
+        let root = init_repo("create-fetch-cause");
+        commit(&root, "base.txt", "base", "base");
+
+        let error = worktree_create_blocking(CreateArgs {
+            repo_path: root.to_string_lossy().into_owned(),
+            branch_prefix: "ak".to_string(),
+            slug: "first".to_string(),
+            existing_branch: None,
+            fallback_ref: None,
+            base_branch: Some("release-42".to_string()),
+            parent_dir: None,
+            dir_name: None,
+        })
+        .unwrap_err();
+
+        let super::WorktreeError::Git { message } = error else {
+            panic!("expected a git error, found {error:?}");
+        };
+        assert!(
+            message.contains("cannot find base ref"),
+            "missing the base ref cause: {message}"
+        );
+        assert!(
+            message.contains("fetching from origin failed first"),
+            "the fetch cause was dropped: {message}"
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn keeps_the_error_untouched_when_the_fetch_succeeded() {
+        let plain = super::WorktreeError::Git {
+            message: "cannot find base ref: tried origin/main".to_string(),
+        };
+
+        let super::WorktreeError::Git { message } = super::with_fetch_cause(plain, None) else {
+            panic!("expected a git error");
+        };
+        assert_eq!(message, "cannot find base ref: tried origin/main");
     }
 
     #[test]
