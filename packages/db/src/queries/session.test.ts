@@ -1,4 +1,4 @@
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { MountId, SessionId, WorkspaceId } from '@goodboy/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../client';
 import { migrate } from '../migrations/runner';
@@ -7,6 +7,7 @@ import {
   listArchivedSessionsForWorkspace,
   listSessionsForWorkspace,
   purgeSessionForDelete,
+  updateSessionWriteDestination,
 } from './session';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
@@ -191,5 +192,164 @@ describe('purgeSessionForDelete', () => {
 
     await db.execute('UPDATE sessions SET archived_at = 1 WHERE id = ?', [sessionId]);
     await expect(listArchivedSessionsForWorkspace(db, workspaceId)).resolves.toEqual([]);
+  });
+});
+
+describe('updateSessionWriteDestination', () => {
+  let db: Database;
+
+  const destinationOf = async (): Promise<{
+    readonly active_mount_id: string | null;
+    readonly active_project_id: string | null;
+  } | null> => {
+    const rows = await db.select<{
+      readonly active_mount_id: string | null;
+      readonly active_project_id: string | null;
+    }>('SELECT active_mount_id, active_project_id FROM sessions WHERE id = ?', [sessionId]);
+    return rows[0] ?? null;
+  };
+
+  const insertMount = async ({
+    id,
+    projectId,
+    worktreePath,
+    isAttached,
+    session = sessionId,
+  }: {
+    readonly id: string;
+    readonly projectId: string | null;
+    readonly worktreePath: string | null;
+    readonly isAttached: boolean;
+    readonly session?: SessionId;
+  }): Promise<void> => {
+    await db.execute(
+      `INSERT INTO session_worktrees (id, session_id, project_id, worktree_path, last_worktree_path, branch, parallel_index, mount_name, is_attached, disk_state, revision, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, 'ak/feat-one', 0, 'api', ?, 'present', 0, 1, 1)`,
+      [id, session, projectId, worktreePath, worktreePath, isAttached ? 1 : 0],
+    );
+  };
+
+  beforeEach(async () => {
+    db = makeTestDatabase();
+    await migrate(db);
+    await db.execute(
+      'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, 1, 1)',
+      [workspaceId, 'Workspace', '/tmp/workspace'],
+    );
+    await db.execute(
+      `INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+       VALUES ('project-a', ?, 'Api', '/repo/api', 'repo', 1, 1),
+              ('project-b', ?, 'Web', '/repo/web', 'repo', 1, 1)`,
+      [workspaceId, workspaceId],
+    );
+    await db.execute(
+      `INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at)
+       VALUES (?, ?, 'Goal', 'idle', 1, 1), (?, ?, 'Other goal', 'idle', 1, 1)`,
+      [sessionId, workspaceId, otherSessionId, workspaceId],
+    );
+  });
+
+  it('moves the mount and its project in one write', async () => {
+    await insertMount({
+      id: 'mount-a',
+      projectId: 'project-a',
+      worktreePath: '/repo/api/w1',
+      isAttached: true,
+    });
+    await insertMount({
+      id: 'mount-b',
+      projectId: 'project-b',
+      worktreePath: '/repo/web/w1',
+      isAttached: true,
+    });
+    await expect(
+      updateSessionWriteDestination({ db, sessionId, mountId: 'mount-b' as MountId }),
+    ).resolves.toBe(true);
+    await expect(destinationOf()).resolves.toEqual({
+      active_mount_id: 'mount-b',
+      active_project_id: 'project-b',
+    });
+  });
+
+  it('keeps the previous destination when the mount belongs to another session', async () => {
+    await insertMount({
+      id: 'mount-a',
+      projectId: 'project-a',
+      worktreePath: '/repo/api/w1',
+      isAttached: true,
+    });
+    await insertMount({
+      id: 'mount-elsewhere',
+      projectId: 'project-b',
+      worktreePath: '/repo/web/w1',
+      isAttached: true,
+      session: otherSessionId,
+    });
+    await updateSessionWriteDestination({ db, sessionId, mountId: 'mount-a' as MountId });
+    await expect(
+      updateSessionWriteDestination({ db, sessionId, mountId: 'mount-elsewhere' as MountId }),
+    ).resolves.toBe(false);
+    await expect(destinationOf()).resolves.toEqual({
+      active_mount_id: 'mount-a',
+      active_project_id: 'project-a',
+    });
+  });
+
+  it('refuses a mount that is detached or has no checkout', async () => {
+    await insertMount({
+      id: 'mount-detached',
+      projectId: 'project-a',
+      worktreePath: '/repo/api/w1',
+      isAttached: false,
+    });
+    await insertMount({
+      id: 'mount-pathless',
+      projectId: 'project-b',
+      worktreePath: null,
+      isAttached: true,
+    });
+    await expect(
+      updateSessionWriteDestination({ db, sessionId, mountId: 'mount-detached' as MountId }),
+    ).resolves.toBe(false);
+    await expect(
+      updateSessionWriteDestination({ db, sessionId, mountId: 'mount-pathless' as MountId }),
+    ).resolves.toBe(false);
+    await expect(destinationOf()).resolves.toEqual({
+      active_mount_id: null,
+      active_project_id: null,
+    });
+  });
+
+  it('clears both columns together when no mount is selected', async () => {
+    await insertMount({
+      id: 'mount-a',
+      projectId: 'project-a',
+      worktreePath: '/repo/api/w1',
+      isAttached: true,
+    });
+    await updateSessionWriteDestination({ db, sessionId, mountId: 'mount-a' as MountId });
+    await expect(updateSessionWriteDestination({ db, sessionId, mountId: null })).resolves.toBe(
+      true,
+    );
+    await expect(destinationOf()).resolves.toEqual({
+      active_mount_id: null,
+      active_project_id: null,
+    });
+  });
+
+  it('carries a legacy mount without a project across as an unset project', async () => {
+    await insertMount({
+      id: 'mount-legacy',
+      projectId: null,
+      worktreePath: '/repo/api/w1',
+      isAttached: true,
+    });
+    await expect(
+      updateSessionWriteDestination({ db, sessionId, mountId: 'mount-legacy' as MountId }),
+    ).resolves.toBe(true);
+    await expect(destinationOf()).resolves.toEqual({
+      active_mount_id: 'mount-legacy',
+      active_project_id: null,
+    });
   });
 });

@@ -315,6 +315,32 @@ export const updateSessionActiveMount = async ({
   return result.rowsAffected > 0;
 };
 
+type UpdateSessionWriteDestinationParams = {
+  readonly db: Database;
+  readonly sessionId: SessionId;
+  readonly mountId: MountId | null;
+};
+
+const WRITABLE_MOUNT_CLAUSE = `FROM session_worktrees mount
+       WHERE mount.id = ? AND mount.session_id = sessions.id
+         AND mount.is_attached = 1 AND mount.worktree_path IS NOT NULL`;
+
+export const updateSessionWriteDestination = async ({
+  db,
+  sessionId,
+  mountId,
+}: UpdateSessionWriteDestinationParams): Promise<boolean> => {
+  const result = await db.execute(
+    `UPDATE sessions
+     SET active_mount_id = (SELECT mount.id ${WRITABLE_MOUNT_CLAUSE}),
+         active_project_id = (SELECT mount.project_id ${WRITABLE_MOUNT_CLAUSE})
+     WHERE id = ?
+       AND (? IS NULL OR EXISTS (SELECT 1 ${WRITABLE_MOUNT_CLAUSE}))`,
+    [mountId, mountId, sessionId, mountId, mountId],
+  );
+  return result.rowsAffected > 0;
+};
+
 export const updateSessionState = async (
   db: Database,
   id: SessionId,
