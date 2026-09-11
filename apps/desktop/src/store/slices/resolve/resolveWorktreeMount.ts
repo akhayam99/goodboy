@@ -8,6 +8,15 @@ type Params = {
   readonly target: MountTargetSnapshot | null;
 };
 
+type MatchParams = {
+  readonly target: MountTargetSnapshot;
+  readonly worktreePath: string | null;
+  readonly revision: number | null;
+};
+
+export const matchesMountTarget = ({ target, worktreePath, revision }: MatchParams): boolean =>
+  worktreePath === target.worktreePath && revision === target.mountRevision;
+
 export const resolveWorktreeMount = ({ get, sessionId, target }: Params): string | null => {
   if (target === null) {
     return null;
@@ -16,5 +25,11 @@ export const resolveWorktreeMount = ({ get, sessionId, target }: Params): string
   if (mount === null) {
     return null;
   }
-  return mount.worktreePath === target.worktreePath ? target.worktreePath : null;
+  return matchesMountTarget({
+    target,
+    worktreePath: mount.worktreePath,
+    revision: mount.revision,
+  })
+    ? target.worktreePath
+    : null;
 };

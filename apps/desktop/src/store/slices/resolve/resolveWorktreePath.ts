@@ -1,7 +1,7 @@
 import { listWorktreesForSession } from '@goodboy/db';
 import type { MountTargetSnapshot, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { resolveWorktreeMount } from './resolveWorktreeMount';
+import { matchesMountTarget, resolveWorktreeMount } from './resolveWorktreeMount';
 import type { GetFn } from './types';
 
 type Params = {
@@ -31,5 +31,14 @@ export const resolveWorktreePath = async ({
   }
   const rows = await listWorktreesForSession(tauriDatabase, sessionId).catch(() => []);
   const row = rows.find((candidate) => candidate.id === target.mountId);
-  return row?.worktreePath === target.worktreePath ? target.worktreePath : null;
+  if (row === undefined) {
+    return null;
+  }
+  return matchesMountTarget({
+    target,
+    worktreePath: row.worktreePath,
+    revision: row.revision ?? null,
+  })
+    ? target.worktreePath
+    : null;
 };

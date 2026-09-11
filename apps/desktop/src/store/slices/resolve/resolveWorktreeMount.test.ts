@@ -97,6 +97,18 @@ describe('resolveWorktreeMount', () => {
     ).toBeNull();
   });
 
+  it('refuses a mount that has moved on to another revision', () => {
+    const get = (() => stateWith({ selected: FIRST })) as never;
+
+    expect(
+      resolveWorktreeMount({
+        get,
+        sessionId: SESSION_ID,
+        target: { mountId: FIRST, mountRevision: 9, worktreePath: '/sessions/one/api-one' },
+      }),
+    ).toBeNull();
+  });
+
   it('refuses to pick a destination when no mount was captured', () => {
     const get = (() => stateWith({ selected: SECOND })) as never;
 
