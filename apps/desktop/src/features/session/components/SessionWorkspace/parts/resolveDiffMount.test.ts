@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ProjectId, SessionProjectMount } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId, SessionProjectMount } from '@goodboy/types';
 import { resolveDiffMount } from './resolveDiffMount';
 
 const mountOf = ({
@@ -9,11 +9,19 @@ const mountOf = ({
   readonly name: string;
   readonly worktreePath: string;
 }): SessionProjectMount => ({
+  mountId: `mount-${name}` as MountId,
+  sessionId: 'session-diff' as SessionId,
   projectId: `prj-${name}` as ProjectId,
   mountName: name,
   worktreePath,
+  lastWorktreePath: null,
   repoRoot: `/repos/${name}`,
   branch: 'main',
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
 });
 
 const MOUNTS: ReadonlyArray<SessionProjectMount> = [

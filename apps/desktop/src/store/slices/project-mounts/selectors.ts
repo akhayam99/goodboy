@@ -7,7 +7,9 @@ import type {
   SessionProjectMount,
 } from '@goodboy/types';
 import type { AppState } from '../../types';
-import { pickActiveMount } from './activeMount';
+import { findMountById } from './findMountById';
+import { recoverSoleMount } from './recoverSoleMount';
+import { selectSelectedMountId } from './selectedMountId';
 import { toProjectMounts } from './mountViews';
 
 type MountState = Pick<AppState, 'sessionMounts' | 'sessionProjectMounts'>;
@@ -92,26 +94,16 @@ export const selectWritableMountPath = ({
   return selectMountById({ state, sessionId, mountId })?.worktreePath ?? null;
 };
 
-type ActiveFromParams = ActiveParams & {
-  readonly mounts: ReadonlyArray<SessionProjectMount>;
-};
-
-const activeMountOf = ({
+export const selectActiveMount = ({
   state,
   sessionId,
-  mounts,
-}: ActiveFromParams): SessionProjectMount | null => {
-  const session = state.sessions?.find((candidate) => candidate.id === sessionId);
-  return pickActiveMount({
-    mounts,
-    selectedMountId: state.sessionActiveMount?.[sessionId],
-    storedMountId: session?.activeMountId,
-    activeProjectId: state.sessionActiveProject?.[sessionId] ?? session?.activeProjectId,
-  });
+}: ActiveParams): SessionProjectMount | null => {
+  const mounts = selectWritableMounts({ state, sessionId });
+  return (
+    findMountById({ mounts, mountId: selectSelectedMountId({ state, sessionId }) }) ??
+    recoverSoleMount({ mounts })
+  );
 };
-
-export const selectActiveMount = ({ state, sessionId }: ActiveParams): SessionProjectMount | null =>
-  activeMountOf({ state, sessionId, mounts: selectWritableMounts({ state, sessionId }) });
 
 export const selectActiveMountId = ({ state, sessionId }: ActiveParams): MountId | null =>
   selectActiveMount({ state, sessionId })?.mountId ?? null;
@@ -128,21 +120,15 @@ export const selectUnambiguousProjectMount = ({
   sessionId,
   projectId,
 }: ProjectParams): SessionProjectMount | null => {
-  const mounts = selectWritableMounts({ state, sessionId });
-  const candidates = mounts.filter((mount) => mount.projectId === projectId);
-  const only = candidates[0];
-  if (only === undefined) {
-    return null;
+  const candidates = selectProjectMounts({ state, sessionId, projectId });
+  const sole = recoverSoleMount({ mounts: candidates });
+  if (sole !== null) {
+    return sole;
   }
-  if (candidates.length === 1) {
-    return only;
-  }
-  const session = state.sessions?.find((candidate) => candidate.id === sessionId);
-  const explicitId = state.sessionActiveMount?.[sessionId] ?? session?.activeMountId ?? null;
-  if (explicitId === null) {
-    return null;
-  }
-  return candidates.find((mount) => mount.mountId === explicitId) ?? null;
+  return findMountById({
+    mounts: candidates,
+    mountId: selectSelectedMountId({ state, sessionId }),
+  });
 };
 
 type PathParams = {

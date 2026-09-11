@@ -1,8 +1,9 @@
 import { listSessionMounts } from '@goodboy/db';
 import type { MountId, SessionId, SessionMountView, SessionProjectMount } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { pickActiveMount } from './activeMount';
+import { findMountById } from './findMountById';
 import { mountError } from './mountErrors';
+import { selectSelectedMountId } from './selectedMountId';
 import type { GetFn, SetFn } from './types';
 
 type LoadParams = {
@@ -75,24 +76,19 @@ type ApplyParams = {
 export const applyMountViews = ({ set, sessionId, views }: ApplyParams): void => {
   const mounts = toProjectMounts(views);
   set((state) => {
-    const session = state.sessions.find((candidate) => candidate.id === sessionId);
-    const activeMount = pickActiveMount({
+    const active = findMountById({
       mounts,
-      selectedMountId: state.sessionActiveMount?.[sessionId],
-      storedMountId: session?.activeMountId,
-      activeProjectId: state.sessionActiveProject?.[sessionId] ?? session?.activeProjectId,
+      mountId: selectSelectedMountId({ state, sessionId }),
     });
-    const activeMountId = activeMount?.mountId ?? null;
     const sessionBranches = { ...state.sessionBranches };
-    if (activeMount === null) {
+    if (active === null) {
       delete sessionBranches[sessionId];
     } else {
-      sessionBranches[sessionId] = activeMount.branch;
+      sessionBranches[sessionId] = active.branch;
     }
     return {
       sessionMounts: { ...state.sessionMounts, [sessionId]: views },
       sessionProjectMounts: { ...state.sessionProjectMounts, [sessionId]: mounts },
-      sessionActiveMount: { ...state.sessionActiveMount, [sessionId]: activeMountId },
       sessionBranches,
       sessionWorktrees: {
         ...state.sessionWorktrees,

@@ -3,6 +3,7 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  MountId,
   Project,
   ProjectId,
   ProviderRunId,
@@ -79,6 +80,14 @@ const MOUNTS: ReadonlyArray<SessionProjectMount> = [
     worktreePath: '/mock/harborline/ledger-core-worktree',
     repoRoot: '/mock/harborline/ledger-core',
     branch: 'fix/reconciliation-rounding-drift',
+    mountId: 'mount-fixture-2' as MountId,
+    sessionId: SESSION_ID,
+    lastWorktreePath: null,
+    baseBranch: null,
+    parallelIndex: 0,
+    isAttached: true,
+    diskState: 'present',
+    revision: 0,
   },
   {
     projectId: 'mock-transcript-project-relay' as ProjectId,
@@ -86,6 +95,14 @@ const MOUNTS: ReadonlyArray<SessionProjectMount> = [
     worktreePath: '/mock/harborline/notify-relay-worktree',
     repoRoot: '/mock/harborline/notify-relay',
     branch: 'fix/webhook-rate-limit-backoff',
+    mountId: 'mount-fixture-1' as MountId,
+    sessionId: SESSION_ID,
+    lastWorktreePath: null,
+    baseBranch: null,
+    parallelIndex: 0,
+    isAttached: true,
+    diskState: 'present',
+    revision: 0,
   },
 ];
 
@@ -196,7 +213,7 @@ export const TranscriptMountScene = () => {
       selectAgent: async () => undefined,
       markAgentViewed: async () => undefined,
       refreshProviders: async () => undefined,
-      materializeProject: async () => undefined,
+      ensureProjectMounted: async () => undefined,
       recordSessionEvent: async () => undefined,
     } as never);
     setSeeded(true);

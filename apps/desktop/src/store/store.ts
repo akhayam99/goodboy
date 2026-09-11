@@ -51,7 +51,6 @@ import type {
   SessionExternalTaskProvider,
   SessionExternalTask,
   SessionMountView,
-  SessionProjectMount,
   SessionEventKind,
   SessionEventPayload,
   IntegrationBindingProvider,
@@ -194,7 +193,6 @@ import type {
   LoadPrSeriesInput,
   SetPrSeriesMemberInput,
 } from './slices/pr-series';
-import type { MaterializeProjectInput } from './slices/sessions/materializeProject';
 import type {
   CleanupSessionMountsInput,
   ProposeMountCleanupInput,
@@ -204,6 +202,8 @@ import type {
 } from './slices/mount-cleanup';
 import type {
   AttachMountInput,
+  EnsureProjectMountedInput,
+  EnsureProjectMountedResult,
   ForkMountInput,
   InspectMountResult,
   MountKeyInput,
@@ -443,7 +443,7 @@ type AppActions = {
   }): Promise<{ session: Session }>;
   createUntitledSession(input: { workspaceId: WorkspaceId }): Promise<{ session: Session }>;
   clearPendingTitleFocus(): void;
-  materializeProject(input: MaterializeProjectInput): Promise<SessionProjectMount>;
+  ensureProjectMounted(input: EnsureProjectMountedInput): Promise<EnsureProjectMountedResult>;
   detachProject(input: DetachProjectInput): Promise<ReadonlyArray<DetachProjectOutcome>>;
   loadSessionMounts(input: SessionKeyInput): Promise<ReadonlyArray<SessionMountView>>;
   forkMount(input: ForkMountInput): Promise<SessionMountView>;

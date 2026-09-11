@@ -1,12 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 
-const { updateSessionActiveProject, tauriDatabase } = vi.hoisted(() => ({
-  updateSessionActiveProject: vi.fn(async () => undefined),
-  tauriDatabase: {},
-}));
+const { updateSessionActiveProject, updateSessionWriteDestination, tauriDatabase } = vi.hoisted(
+  () => ({
+    updateSessionActiveProject: vi.fn(async () => undefined),
+    updateSessionWriteDestination: vi.fn(async () => true),
+    tauriDatabase: {},
+  }),
+);
 
-vi.mock('@goodboy/db', () => ({ updateSessionActiveProject }));
+vi.mock('@goodboy/db', () => ({ updateSessionActiveProject, updateSessionWriteDestination }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase }));
 
 import { setSessionActiveProject } from './setSessionActiveProject';

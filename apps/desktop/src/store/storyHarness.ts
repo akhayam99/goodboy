@@ -68,9 +68,16 @@ export const storySpies = {
   insertSessionWorktree: vi.fn(async () => undefined),
   deleteSessionMount: vi.fn(async (_args: { readonly mountId: string }) => true),
   listSessionMounts: vi.fn(async () => [] as ReadonlyArray<Record<string, unknown>>),
+  inspectWorktree: vi.fn(async ({ worktreePath }: { readonly worktreePath: string }) => ({
+    kind: 'registered' as string,
+    path: worktreePath,
+    isMain: false,
+    isLocked: false,
+    lockReason: null as string | null,
+  })),
   updateSessionWorktreeBranch: vi.fn(async () => undefined),
   updateSessionActiveProject: vi.fn(async () => undefined),
-  updateSessionActiveMount: vi.fn(async () => true),
+  updateSessionWriteDestination: vi.fn(async () => true),
   listWorktreesForSession: vi.fn(async () => [] as ReadonlyArray<never>),
   getWorkspaceById: vi.fn(async () => null),
   listProjectsForWorkspace: vi.fn(async () => [] as ReadonlyArray<never>),
@@ -107,6 +114,15 @@ export const resetStorySpies = () => {
   );
   storySpies.deleteSessionMount.mockImplementation(async () => true);
   storySpies.listSessionMounts.mockImplementation(async () => []);
+  storySpies.inspectWorktree.mockImplementation(
+    async ({ worktreePath }: { readonly worktreePath: string }) => ({
+      kind: 'registered',
+      path: worktreePath,
+      isMain: false,
+      isLocked: false,
+      lockReason: null,
+    }),
+  );
 };
 
 export const dbModuleMock = () => ({
@@ -153,7 +169,7 @@ export const dbModuleMock = () => ({
   updateSessionWorktreeBranch: storySpies.updateSessionWorktreeBranch,
   updateSessionWorktreeRepoSlug: vi.fn(async () => undefined),
   updateSessionActiveProject: storySpies.updateSessionActiveProject,
-  updateSessionActiveMount: storySpies.updateSessionActiveMount,
+  updateSessionWriteDestination: storySpies.updateSessionWriteDestination,
   upsertSessionExternalTask: storySpies.upsertSessionExternalTask,
   deleteSessionExternalTask: vi.fn(),
   listExternalTasksForWorkspace: vi.fn(async () => []),
@@ -302,6 +318,7 @@ export const worktreeModuleMock = () => ({
   worktreeStatus: (path: string) => storySpies.worktreeStatus(path),
   gitCommonDirectory: (args: { readonly repoPath: string }) => storySpies.gitCommonDirectory(args),
   changeWorktreeBranch: vi.fn(async () => undefined),
+  inspectWorktree: (args: { readonly worktreePath: string }) => storySpies.inspectWorktree(args),
   invalidateLocalBranchesCache: vi.fn(),
 });
 

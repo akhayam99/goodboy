@@ -192,3 +192,47 @@ describe('WriteDestinationControl', () => {
     });
   });
 });
+
+describe('WriteDestinationControl with siblings and no choice', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    scratchDirPrepare.mockResolvedValue('/goodboy/scratch/session-1');
+    store.sessions = [];
+    store.sessionActiveMount = {};
+    store.sessionActiveProject = {};
+    store.sessionMounts = {};
+    store.projects = [project];
+    store.agentTurnState = {};
+    store.agentTurnDestination = {};
+    store.sessionProjectMounts = {
+      [SESSION_ID]: [
+        mount({ mountId: MOUNT_MAIN, mountName: 'main', branch: 'ak/one' }),
+        mount({ mountId: MOUNT_FEATURE, mountName: 'feature', branch: 'ak/two' }),
+      ],
+    };
+  });
+  afterEach(cleanup);
+
+  it('asks for a destination instead of naming the scratch folder', () => {
+    render(<WriteDestinationControl sessionId={SESSION_ID} agentId={AGENT_ID} />);
+
+    expect(screen.getByText('Choose destination')).toBeDefined();
+    expect(screen.queryByText(/scratch folder/)).toBeNull();
+    expect(scratchDirPrepare).not.toHaveBeenCalled();
+  });
+
+  it('writes the chosen mount as the destination of the next turns', async () => {
+    render(<WriteDestinationControl sessionId={SESSION_ID} agentId={AGENT_ID} />);
+
+    fireEvent.click(screen.getByText('Choose destination'));
+    fireEvent.click(screen.getByText('web / feature'));
+    fireEvent.click(screen.getByText('Use for next turns of the session'));
+
+    await waitFor(() =>
+      expect(store.setSessionActiveMount).toHaveBeenCalledWith({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_FEATURE,
+      }),
+    );
+  });
+});

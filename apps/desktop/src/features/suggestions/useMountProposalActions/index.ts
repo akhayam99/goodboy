@@ -19,14 +19,14 @@ export type MountProposalActions = {
 };
 
 export const useMountProposalActions = ({ sessionId }: Params): MountProposalActions => {
-  const materializeProject = useAppStore((state) => state.materializeProject);
+  const ensureProjectMounted = useAppStore((state) => state.ensureProjectMounted);
   const recordSessionEvent = useAppStore((state) => state.recordSessionEvent);
   const emitNotification = useAppStore((state) => state.emitNotification);
 
   const mount = useCallback(
     async ({ projectId, projectName, reason }: ProposalTarget) => {
       try {
-        await materializeProject({ sessionId, projectId, reason });
+        await ensureProjectMounted({ sessionId, projectId, reason });
       } catch (error) {
         await emitNotification(
           'error',
@@ -38,7 +38,7 @@ export const useMountProposalActions = ({ sessionId }: Params): MountProposalAct
         throw error;
       }
     },
-    [emitNotification, materializeProject, sessionId],
+    [emitNotification, ensureProjectMounted, sessionId],
   );
 
   const dismiss = useCallback(

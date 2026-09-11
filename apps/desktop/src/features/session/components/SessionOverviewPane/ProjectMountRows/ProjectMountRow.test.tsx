@@ -666,3 +666,40 @@ describe('ProjectMountRow worktree state', () => {
     expect(screen.getByTestId('mount-kind-glyph').dataset.kind).toBe('worktree');
   });
 });
+
+describe('ProjectMountRow write destination', () => {
+  it('offers the inline destination action on a mount that is not the destination', async () => {
+    store.sessionProjectMounts = {
+      [sessionId]: [
+        { mountId: 'mount-1', projectId: 'api', worktreePath: '/api', isAttached: true },
+        { mountId: 'mount-2', projectId: 'api', worktreePath: '/api-2', isAttached: true },
+      ],
+    };
+    store.sessionActiveMount = { [sessionId]: 'mount-2' };
+    renderRow({});
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use API for the next turns' }));
+
+    await waitFor(() =>
+      expect(store.setSessionActiveMount).toHaveBeenCalledWith({
+        sessionId,
+        mountId: 'mount-1',
+      }),
+    );
+    expect(screen.queryByText('Next turns')).toBeNull();
+  });
+
+  it('badges the destination mount and offers no action on it', () => {
+    store.sessionProjectMounts = {
+      [sessionId]: [
+        { mountId: 'mount-1', projectId: 'api', worktreePath: '/api', isAttached: true },
+        { mountId: 'mount-2', projectId: 'api', worktreePath: '/api-2', isAttached: true },
+      ],
+    };
+    store.sessionActiveMount = { [sessionId]: 'mount-1' };
+    renderRow({});
+
+    expect(screen.getByText('Next turns')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Use API for the next turns' })).toBeNull();
+  });
+});

@@ -98,7 +98,7 @@ export const materializeDeclaredProjects = async ({
           continue;
         }
         const mounted = await get()
-          .materializeProject({ sessionId, projectId: project.id, reason })
+          .ensureProjectMounted({ sessionId, projectId: project.id, reason })
           .then(() => true)
           .catch(() => false);
         if (mounted) {

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import type {
+  IsoDateTime,
+  MountId,
   Project,
   ProjectId,
-  IsoDateTime,
   PullRequestState,
   Session,
   SessionId,
@@ -83,6 +84,14 @@ const APP_WEB_MOUNT: SessionProjectMount = {
   worktreePath: '/mock/northwind/app-web',
   repoRoot: '/mock/northwind/app-web',
   branch: 'feat/workspace-project-switcher',
+  mountId: 'mount-fixture-3' as MountId,
+  sessionId: SESSION_ID,
+  lastWorktreePath: null,
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
 };
 const API_MOUNT: SessionProjectMount = {
   projectId: API_ID,
@@ -90,6 +99,14 @@ const API_MOUNT: SessionProjectMount = {
   worktreePath: '/mock/northwind/api',
   repoRoot: '/mock/northwind/api',
   branch: 'feat/project-scoped-prs',
+  mountId: 'mount-fixture-2' as MountId,
+  sessionId: SESSION_ID,
+  lastWorktreePath: null,
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
 };
 const WEBSITE_MOUNT: SessionProjectMount = {
   projectId: WEBSITE_ID,
@@ -97,6 +114,14 @@ const WEBSITE_MOUNT: SessionProjectMount = {
   worktreePath: '/mock/northwind/website',
   repoRoot: '/mock/northwind/website',
   branch: 'chore/v020-launch',
+  mountId: 'mount-fixture-1' as MountId,
+  sessionId: SESSION_ID,
+  lastWorktreePath: null,
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
 };
 const MOUNTS = [APP_WEB_MOUNT, API_MOUNT, WEBSITE_MOUNT];
 

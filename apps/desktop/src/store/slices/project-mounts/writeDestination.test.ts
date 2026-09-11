@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { MountId, Project, ProjectId, SessionProjectMount, WorkspaceId } from '@goodboy/types';
+import type {
+  MountId,
+  Project,
+  ProjectId,
+  SessionId,
+  SessionProjectMount,
+  WorkspaceId,
+} from '@goodboy/types';
 import {
   listWriteDestinationCandidates,
   resolveWriteDestination,
@@ -19,6 +26,12 @@ const repoMount: SessionProjectMount = {
   repoRoot: '/repos/web',
   branch: 'ak/feat-thing',
   isAttached: true,
+  sessionId: 'session-fixture' as SessionId,
+  lastWorktreePath: null,
+  baseBranch: null,
+  parallelIndex: 0,
+  diskState: 'present',
+  revision: 0,
 };
 
 const folderMount: SessionProjectMount = {
@@ -29,6 +42,12 @@ const folderMount: SessionProjectMount = {
   repoRoot: '/repos/notes',
   branch: '',
   isAttached: true,
+  sessionId: 'session-fixture' as SessionId,
+  lastWorktreePath: null,
+  baseBranch: null,
+  parallelIndex: 0,
+  diskState: 'present',
+  revision: 0,
 };
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
@@ -61,6 +80,7 @@ describe('resolveWriteDestination', () => {
       mount: repoMount,
       projectName: 'web',
       scratchPath: null,
+      mountCount: 1,
     });
     expect(destination).toEqual({
       kind: 'mount',
@@ -80,6 +100,7 @@ describe('resolveWriteDestination', () => {
       mount: folderMount,
       projectName: 'notes',
       scratchPath: null,
+      mountCount: 1,
     });
     expect(destination.kind === 'mount' && destination.hasGit).toBe(false);
     expect(writeDestinationLabel(destination)).toBe('notes / working folder / no git');
@@ -90,29 +111,21 @@ describe('resolveWriteDestination', () => {
       mount: null,
       projectName: null,
       scratchPath: '/goodboy/scratch/session-1',
+      mountCount: 0,
     });
     expect(destination).toEqual({ kind: 'scratch', path: '/goodboy/scratch/session-1' });
     expect(writeDestinationLabel(destination)).toBe('session scratch folder');
   });
 
-  it('still describes a real mount that has not been assigned a mount id yet', () => {
-    const { mountId: _mountId, ...withoutId } = repoMount;
+  it('refuses the scratch folder when the session holds mounts but chose none', () => {
     const destination = resolveWriteDestination({
-      mount: withoutId as SessionProjectMount,
-      projectName: 'web',
+      mount: null,
+      projectName: null,
       scratchPath: '/goodboy/scratch/session-1',
+      mountCount: 2,
     });
-    expect(destination).toEqual({
-      kind: 'mount',
-      mountId: null,
-      projectId: PROJECT_ID,
-      projectName: 'web',
-      mountName: 'web',
-      branch: 'ak/feat-thing',
-      worktreePath: '/sessions/one/web',
-      hasGit: true,
-    });
-    expect(writeDestinationLabel(destination)).toBe('web / web / ak/feat-thing');
+    expect(destination).toEqual({ kind: 'unselected', mountCount: 2 });
+    expect(writeDestinationLabel(destination)).toBe('no destination chosen');
   });
 });
 
@@ -124,11 +137,17 @@ describe('writeDestinationsMatch', () => {
   });
 
   it('matches two mount destinations by mount id alone', () => {
-    const a = resolveWriteDestination({ mount: repoMount, projectName: 'web', scratchPath: null });
+    const a = resolveWriteDestination({
+      mount: repoMount,
+      projectName: 'web',
+      scratchPath: null,
+      mountCount: 1,
+    });
     const b = resolveWriteDestination({
       mount: { ...repoMount, branch: 'ak/other' },
       projectName: 'web',
       scratchPath: null,
+      mountCount: 1,
     });
     expect(writeDestinationsMatch(a, b)).toBe(true);
   });
@@ -138,30 +157,41 @@ describe('writeDestinationsMatch', () => {
       mount: repoMount,
       projectName: 'web',
       scratchPath: null,
+      mountCount: 1,
     });
-    const scratch = resolveWriteDestination({ mount: null, projectName: null, scratchPath: null });
+    const scratch = resolveWriteDestination({
+      mount: null,
+      projectName: null,
+      scratchPath: null,
+      mountCount: 0,
+    });
     expect(writeDestinationsMatch(mount, scratch)).toBe(false);
   });
 
-  it('falls back to comparing the worktree path when a mount id is missing', () => {
-    const { mountId: _mountId, ...withoutId } = repoMount;
+  it('separates two mounts that share a worktree path but not an identity', () => {
     const a = resolveWriteDestination({
-      mount: withoutId as SessionProjectMount,
+      mount: repoMount,
       projectName: 'web',
       scratchPath: null,
+      mountCount: 2,
     });
-    const b = resolveWriteDestination({
-      mount: { ...withoutId, branch: 'ak/other' } as SessionProjectMount,
+    const sibling = resolveWriteDestination({
+      mount: { ...repoMount, mountId: 'mount-web-second' as MountId },
       projectName: 'web',
       scratchPath: null,
+      mountCount: 2,
     });
-    expect(writeDestinationsMatch(a, b)).toBe(true);
-    const elsewhere = resolveWriteDestination({
-      mount: { ...withoutId, worktreePath: '/sessions/one/other' } as SessionProjectMount,
-      projectName: 'web',
-      scratchPath: null,
+    expect(writeDestinationsMatch(a, sibling)).toBe(false);
+  });
+
+  it('never matches an unselected destination, not even with itself', () => {
+    const unselected = resolveWriteDestination({
+      mount: null,
+      projectName: null,
+      scratchPath: '/goodboy/scratch/session-1',
+      mountCount: 2,
     });
-    expect(writeDestinationsMatch(a, elsewhere)).toBe(false);
+    expect(writeDestinationsMatch(unselected, unselected)).toBe(false);
   });
 });
 

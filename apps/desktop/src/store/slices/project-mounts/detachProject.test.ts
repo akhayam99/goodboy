@@ -9,6 +9,7 @@ const {
   getMountOperation,
   upsertMountOperation,
   updateSessionActiveMount,
+  updateSessionWriteDestination,
   updateSessionActiveProject,
 } = vi.hoisted(() => ({
   removeWorktreeChecked: vi.fn(
@@ -34,6 +35,7 @@ const {
   getMountOperation: vi.fn(async () => null as Record<string, unknown> | null),
   upsertMountOperation: vi.fn(async () => undefined),
   updateSessionActiveMount: vi.fn(async () => undefined),
+  updateSessionWriteDestination: vi.fn(async () => true),
   updateSessionActiveProject: vi.fn(async () => undefined),
 }));
 
@@ -44,6 +46,7 @@ vi.mock('@goodboy/db', () => ({
   getMountOperation,
   upsertMountOperation,
   updateSessionActiveMount,
+  updateSessionWriteDestination,
   updateSessionActiveProject,
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -582,12 +585,7 @@ describe('detachProject', () => {
 
     await runDetach(store);
 
-    expect(updateSessionActiveProject).toHaveBeenCalledWith({
-      db: {},
-      id: SESSION_ID,
-      projectId: 'project-web',
-    });
-    expect(updateSessionActiveMount).toHaveBeenCalledWith({
+    expect(updateSessionWriteDestination).toHaveBeenCalledWith({
       db: {},
       sessionId: SESSION_ID,
       mountId: 'mount-web',
@@ -598,18 +596,15 @@ describe('detachProject', () => {
     expect(store.sessionBranches['sess-1']).toBe('ak/feat');
   });
 
-  it('strips a deleted mount from the session row when the selection points elsewhere', async () => {
+  it('keeps a selection no removal touched and heals the session row', async () => {
     const store = makeStore();
     store.sessionActiveMount = { 'sess-1': 'mount-web' };
 
     await runDetach(store);
 
     expect(store.sessions[0]?.activeMountId).toBe('mount-web');
-    expect(updateSessionActiveMount).toHaveBeenCalledWith({
-      db: {},
-      sessionId: SESSION_ID,
-      mountId: 'mount-web',
-    });
+    expect(store.sessionActiveProject['sess-1']).toBe('project-web');
+    expect(updateSessionWriteDestination).not.toHaveBeenCalled();
   });
 
   it('invents no write destination for a session that had none', async () => {
@@ -619,7 +614,7 @@ describe('detachProject', () => {
 
     await runDetach(store);
 
-    expect(updateSessionActiveMount).not.toHaveBeenCalled();
+    expect(updateSessionWriteDestination).not.toHaveBeenCalled();
     expect(store.sessionActiveMount['sess-1']).toBeNull();
     expect(store.sessions[0]?.activeMountId).toBeUndefined();
   });
@@ -642,7 +637,7 @@ describe('detachProject', () => {
     expect(store.sessionActiveMount['sess-1']).toBeNull();
     expect(store.sessionBranches['sess-1']).toBeUndefined();
     expect(store.sessions[0]).not.toHaveProperty('activeMountId');
-    expect(updateSessionActiveMount).toHaveBeenCalledWith({
+    expect(updateSessionWriteDestination).toHaveBeenCalledWith({
       db: {},
       sessionId: SESSION_ID,
       mountId: null,

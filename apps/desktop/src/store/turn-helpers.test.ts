@@ -61,9 +61,11 @@ const harness = ({
   externalTasks = [],
 }: HarnessParams) => {
   const session = { id: SESSION_ID, workspaceId: WORKSPACE_ID, goal } as Session;
-  const materializeProject = vi.fn(async (_input: { readonly projectId: ProjectId }) =>
-    mount({ projectId: WEB_ID, name: 'web' }),
-  );
+  const ensureProjectMounted = vi.fn(async (_input: { readonly projectId: ProjectId }) => ({
+    status: 'created' as const,
+    createdMountId: 'mount-web',
+    mountIds: ['mount-web'],
+  }));
   const recordSessionEvent = vi.fn(async (_event: RecordedEvent) => undefined);
   const appendTurnEvent = vi.fn(
     (
@@ -78,12 +80,12 @@ const harness = ({
     sessionProjectMounts: { [SESSION_ID]: mounts },
     sessionSlots: goalSlot == null ? {} : { [SESSION_ID]: [{ key: 'goal', value: goalSlot }] },
     sessionExternalTasks: { [SESSION_ID]: externalTasks },
-    materializeProject,
+    ensureProjectMounted,
     recordSessionEvent,
     appendTurnEvent,
   };
   const get = (() => state) as unknown as GetFn;
-  return { get, materializeProject, recordSessionEvent, appendTurnEvent };
+  return { get, ensureProjectMounted, recordSessionEvent, appendTurnEvent };
 };
 
 const capture = async ({
@@ -110,11 +112,11 @@ const proposals = (recordSessionEvent: Harness['recordSessionEvent']) =>
 
 describe('captureMaterializeRequestsFromTurn', () => {
   it('mounts on the spot while the session holds no mount at all', async () => {
-    const { get, materializeProject, recordSessionEvent } = harness({});
+    const { get, ensureProjectMounted, recordSessionEvent } = harness({});
 
     await capture({ get, assistantText: '<<materialize: web | patching the router>>' });
 
-    expect(materializeProject).toHaveBeenCalledWith({
+    expect(ensureProjectMounted).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       projectId: WEB_ID,
       reason: 'patching the router',
@@ -123,18 +125,18 @@ describe('captureMaterializeRequestsFromTurn', () => {
   });
 
   it('mounts on the spot when the session title names the project', async () => {
-    const { get, materializeProject } = harness({
+    const { get, ensureProjectMounted } = harness({
       goal: 'fix the web router',
       mounts: [mount({ projectId: APP_ID, name: 'app' })],
     });
 
     await capture({ get, assistantText: '<<materialize: web | patching the router>>' });
 
-    expect(materializeProject).toHaveBeenCalledTimes(1);
+    expect(ensureProjectMounted).toHaveBeenCalledTimes(1);
   });
 
   it('mounts on the spot when the goal slot names the project', async () => {
-    const { get, materializeProject } = harness({
+    const { get, ensureProjectMounted } = harness({
       goal: 'untitled session',
       goalSlot: 'Move the WEB router onto the new adapter',
       mounts: [mount({ projectId: APP_ID, name: 'app' })],
@@ -142,11 +144,11 @@ describe('captureMaterializeRequestsFromTurn', () => {
 
     await capture({ get, assistantText: '<<materialize: web | patching the router>>' });
 
-    expect(materializeProject).toHaveBeenCalledTimes(1);
+    expect(ensureProjectMounted).toHaveBeenCalledTimes(1);
   });
 
   it('mounts on the spot when a linked task names the project', async () => {
-    const { get, materializeProject } = harness({
+    const { get, ensureProjectMounted } = harness({
       goal: 'untitled session',
       mounts: [mount({ projectId: APP_ID, name: 'app' })],
       externalTasks: [
@@ -164,23 +166,23 @@ describe('captureMaterializeRequestsFromTurn', () => {
 
     await capture({ get, assistantText: '<<materialize: web | patching the router>>' });
 
-    expect(materializeProject).toHaveBeenCalledTimes(1);
+    expect(ensureProjectMounted).toHaveBeenCalledTimes(1);
   });
 
   it('adds one unnamed project while the session footprint stays inside the allowance', async () => {
-    const { get, materializeProject, recordSessionEvent } = harness({
+    const { get, ensureProjectMounted, recordSessionEvent } = harness({
       goal: 'ship the app rename',
       mounts: [mount({ projectId: APP_ID, name: 'app' })],
     });
 
     await capture({ get, assistantText: '<<materialize: web | reading the router>>' });
 
-    expect(materializeProject).toHaveBeenCalledTimes(1);
+    expect(ensureProjectMounted).toHaveBeenCalledTimes(1);
     expect(proposals(recordSessionEvent)).toHaveLength(0);
   });
 
   it('defers an unnamed project beyond the allowance, and tells the agent why', async () => {
-    const { get, materializeProject, recordSessionEvent, appendTurnEvent } = harness({
+    const { get, ensureProjectMounted, recordSessionEvent, appendTurnEvent } = harness({
       goal: 'ship the app rename',
       mounts: [
         mount({ projectId: APP_ID, name: 'app' }),
@@ -190,7 +192,7 @@ describe('captureMaterializeRequestsFromTurn', () => {
 
     await capture({ get, assistantText: '<<materialize: web | reading the router>>' });
 
-    expect(materializeProject).not.toHaveBeenCalled();
+    expect(ensureProjectMounted).not.toHaveBeenCalled();
     expect(proposals(recordSessionEvent)[0]?.payload).toEqual({
       projectId: WEB_ID,
       projectName: 'web',
@@ -205,7 +207,7 @@ describe('captureMaterializeRequestsFromTurn', () => {
   });
 
   it('caps a turn at two immediate mounts and proposes the rest', async () => {
-    const { get, materializeProject, recordSessionEvent } = harness({
+    const { get, ensureProjectMounted, recordSessionEvent } = harness({
       goal: 'wire app, web and docs together',
       mounts: [],
     });
@@ -219,7 +221,7 @@ describe('captureMaterializeRequestsFromTurn', () => {
       ].join('\n'),
     });
 
-    expect(materializeProject.mock.calls.map(([input]) => input.projectId)).toEqual([
+    expect(ensureProjectMounted.mock.calls.map(([input]) => input.projectId)).toEqual([
       APP_ID,
       WEB_ID,
     ]);
@@ -229,11 +231,11 @@ describe('captureMaterializeRequestsFromTurn', () => {
   });
 
   it('still refuses a project this workspace does not have', async () => {
-    const { get, materializeProject, recordSessionEvent } = harness({});
+    const { get, ensureProjectMounted, recordSessionEvent } = harness({});
 
     await capture({ get, assistantText: '<<materialize: ghost | poking around>>' });
 
-    expect(materializeProject).not.toHaveBeenCalled();
+    expect(ensureProjectMounted).not.toHaveBeenCalled();
     expect(
       recordSessionEvent.mock.calls.some(
         ([event]) => event.kind === 'project_materialization_refused',

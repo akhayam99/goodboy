@@ -39,6 +39,7 @@ const h = vi.hoisted(() => {
         },
     ),
     sessionDirExists: vi.fn(async () => true),
+    updateSessionWriteDestination: vi.fn(async () => true),
     worktreeBranchHolder: vi.fn(async () => null as string | null),
     worktreeStatus: vi.fn(
       async () =>
@@ -170,6 +171,7 @@ vi.mock('@goodboy/db', () => ({
     [...h.operations.values()].filter((operation) => operation['sessionId'] === sessionId),
   ),
   updateSessionActiveMount: vi.fn(async () => true),
+  updateSessionWriteDestination: h.updateSessionWriteDestination,
   updateSessionActiveProject: vi.fn(async () => undefined),
   deleteSessionWorktreeForProject: vi.fn(async () => undefined),
 }));
@@ -179,6 +181,8 @@ import { createProjectMountsSlice } from './index';
 const SESSION_ID = 'session-1' as SessionId;
 const PROJECT_ID = 'project-1' as ProjectId;
 const REPO_ROOT = '/repos/goodboy';
+const OTHER_PROJECT_ID = 'project-2' as ProjectId;
+const OTHER_REPO_ROOT = '/repos/atlas';
 
 type State = Record<string, unknown>;
 
@@ -199,6 +203,15 @@ const makeState = (): State => ({
       kind: 'repo',
       name: 'goodboy',
       rootPath: REPO_ROOT,
+      baseBranch: 'main',
+      overrides: {},
+    },
+    {
+      id: OTHER_PROJECT_ID,
+      workspaceId: 'workspace-1',
+      kind: 'repo',
+      name: 'atlas',
+      rootPath: OTHER_REPO_ROOT,
       baseBranch: 'main',
       overrides: {},
     },
@@ -234,16 +247,18 @@ const seedMount = ({
   branch,
   worktreePath,
   revision = 0,
+  projectId = PROJECT_ID,
 }: {
   id: string;
   branch: string;
   worktreePath: string | null;
   revision?: number;
+  projectId?: ProjectId;
 }): void => {
   h.rows.set(id, {
     id,
     sessionId: SESSION_ID,
-    projectId: PROJECT_ID,
+    projectId,
     worktreePath,
     lastWorktreePath: worktreePath,
     branch,
@@ -266,6 +281,7 @@ beforeEach(() => {
   h.branchNames = ['ak/base'];
   h.removeWorktreeChecked.mockResolvedValue({ kind: 'removed', path: '' });
   h.inspectWorktree.mockResolvedValue({ kind: 'registered' });
+  h.updateSessionWriteDestination.mockResolvedValue(true);
   h.sessionDirExists.mockResolvedValue(true);
   h.worktreeBranchHolder.mockResolvedValue(null);
   h.worktreeStatus.mockResolvedValue({
@@ -574,6 +590,75 @@ describe('project mount lifecycle', () => {
       diskState: 'removed',
     });
     expect(state.sessionProjectMounts).toEqual({ [SESSION_ID]: [] });
+  });
+
+  it('leaves the session without a project when the unmounted destination had siblings elsewhere', async () => {
+    const { slice, state } = makeSlice();
+    seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });
+    seedMount({
+      id: 'mount-2',
+      branch: 'ak/second',
+      worktreePath: `${OTHER_REPO_ROOT}/wt/second`,
+      projectId: OTHER_PROJECT_ID,
+    });
+    seedMount({
+      id: 'mount-3',
+      branch: 'ak/third',
+      worktreePath: `${OTHER_REPO_ROOT}/wt/third`,
+      projectId: OTHER_PROJECT_ID,
+    });
+    state['sessionActiveMount'] = { [SESSION_ID]: 'mount-1' };
+    state['sessionActiveProject'] = { [SESSION_ID]: PROJECT_ID };
+
+    await slice.unmountMount({ sessionId: SESSION_ID, mountId: 'mount-1' as MountId });
+
+    expect(h.updateSessionWriteDestination).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: SESSION_ID, mountId: null }),
+    );
+    expect((state['sessionActiveMount'] as Record<string, unknown>)[SESSION_ID]).toBeNull();
+    expect((state['sessionActiveProject'] as Record<string, unknown>)[SESSION_ID]).toBeUndefined();
+  });
+
+  it('recovers the only mount left when the destination is unmounted', async () => {
+    const { slice, state } = makeSlice();
+    seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });
+    seedMount({
+      id: 'mount-2',
+      branch: 'ak/second',
+      worktreePath: `${OTHER_REPO_ROOT}/wt/second`,
+      projectId: OTHER_PROJECT_ID,
+    });
+    state['sessionActiveMount'] = { [SESSION_ID]: 'mount-1' };
+    state['sessionActiveProject'] = { [SESSION_ID]: PROJECT_ID };
+
+    await slice.unmountMount({ sessionId: SESSION_ID, mountId: 'mount-1' as MountId });
+
+    expect(h.updateSessionWriteDestination).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: SESSION_ID, mountId: 'mount-2' }),
+    );
+    expect((state['sessionActiveMount'] as Record<string, unknown>)[SESSION_ID]).toBe('mount-2');
+    expect((state['sessionActiveProject'] as Record<string, unknown>)[SESSION_ID]).toBe(
+      OTHER_PROJECT_ID,
+    );
+  });
+
+  it('keeps the destination in memory when the database refuses to move it', async () => {
+    const { slice, state } = makeSlice();
+    seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });
+    seedMount({
+      id: 'mount-2',
+      branch: 'ak/second',
+      worktreePath: `${OTHER_REPO_ROOT}/wt/second`,
+      projectId: OTHER_PROJECT_ID,
+    });
+    state['sessionActiveMount'] = { [SESSION_ID]: 'mount-1' };
+    state['sessionActiveProject'] = { [SESSION_ID]: PROJECT_ID };
+    h.updateSessionWriteDestination.mockResolvedValue(false);
+
+    await slice.unmountMount({ sessionId: SESSION_ID, mountId: 'mount-1' as MountId });
+
+    expect((state['sessionActiveMount'] as Record<string, unknown>)[SESSION_ID]).toBe('mount-1');
+    expect((state['sessionActiveProject'] as Record<string, unknown>)[SESSION_ID]).toBe(PROJECT_ID);
   });
 
   it('recreates a removed worktree from its own branch when attaching', async () => {

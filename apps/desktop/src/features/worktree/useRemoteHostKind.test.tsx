@@ -4,6 +4,7 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
+  MountId,
   ProjectId,
   Session,
   SessionId,
@@ -17,7 +18,11 @@ const { worktreeRemoteUrl } = vi.hoisted(() => ({
 
 vi.mock('@goodboy/db', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/db')>();
-  return { ...actual, updateSessionActiveProject: vi.fn(async () => undefined) };
+  return {
+    ...actual,
+    updateSessionActiveProject: vi.fn(async () => undefined),
+    updateSessionWriteDestination: vi.fn(async () => true),
+  };
 });
 
 vi.mock('./worktree', () => ({ worktreeRemoteUrl }));
@@ -52,6 +57,14 @@ const API_MOUNT = {
   worktreePath: '/remote-host/worktrees/api',
   repoRoot: '/remote-host/repos/api',
   branch: 'ak/active-remote',
+  mountId: 'mount-fixture-2' as MountId,
+  sessionId: SESSION_ID,
+  lastWorktreePath: null,
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
 } satisfies SessionProjectMount;
 
 const WEB_MOUNT = {
@@ -60,6 +73,14 @@ const WEB_MOUNT = {
   worktreePath: '/remote-host/worktrees/web',
   repoRoot: '/remote-host/repos/web',
   branch: 'ak/active-remote',
+  mountId: 'mount-fixture-1' as MountId,
+  sessionId: SESSION_ID,
+  lastWorktreePath: null,
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
 } satisfies SessionProjectMount;
 
 beforeEach(() => {
@@ -142,6 +163,7 @@ beforeEach(() => {
     ],
     sessionProjectMounts: { [SESSION_ID]: [API_MOUNT, WEB_MOUNT] },
     sessionActiveProject: { [SESSION_ID]: API_PROJECT_ID },
+    sessionActiveMount: { [SESSION_ID]: API_MOUNT.mountId },
     sessionWorktrees: { [SESSION_ID]: ['/remote-host/container'] },
     sessionBranches: {},
     workspaceIntegrations: {},
@@ -156,6 +178,7 @@ afterEach(() => {
     projects: [],
     sessionProjectMounts: {},
     sessionActiveProject: {},
+    sessionActiveMount: {},
     sessionWorktrees: {},
     sessionBranches: {},
     workspaceIntegrations: {},

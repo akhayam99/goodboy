@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type {
   IsoDateTime,
+  MountId,
   ProjectId,
   Session,
   SessionId,
@@ -42,6 +43,14 @@ const MOUNTS: ReadonlyArray<SessionProjectMount> = [
     worktreePath: '/sessions/one/web',
     repoRoot: '/repo/web',
     branch: 'ak/one',
+    mountId: 'mount-fixture-2' as MountId,
+    sessionId: SESSION_ID,
+    lastWorktreePath: null,
+    baseBranch: null,
+    parallelIndex: 0,
+    isAttached: true,
+    diskState: 'present',
+    revision: 0,
   },
   {
     projectId: API_ID,
@@ -49,6 +58,14 @@ const MOUNTS: ReadonlyArray<SessionProjectMount> = [
     worktreePath: '/sessions/one/api',
     repoRoot: '/repo/api',
     branch: 'ak/one',
+    mountId: 'mount-fixture-1' as MountId,
+    sessionId: SESSION_ID,
+    lastWorktreePath: null,
+    baseBranch: null,
+    parallelIndex: 0,
+    isAttached: true,
+    diskState: 'present',
+    revision: 0,
   },
 ];
 

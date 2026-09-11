@@ -17,7 +17,7 @@ type Props = {
 };
 
 export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
-  const materializeProject = useAppStore((state) => state.materializeProject);
+  const ensureProjectMounted = useAppStore((state) => state.ensureProjectMounted);
   const emitNotification = useAppStore((state) => state.emitNotification);
   const [query, setQuery] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState<Project['id'] | null>(null);
@@ -36,7 +36,7 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
     setIsMounting(true);
     setFailure(null);
     try {
-      await materializeProject({
+      await ensureProjectMounted({
         sessionId,
         projectId: project.id,
         reason: MANUAL_REASON,

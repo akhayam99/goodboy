@@ -52,7 +52,7 @@ type HarnessOptions = {
 };
 
 const harness = ({ projects, mounts = [], goal = 'ship' }: HarnessOptions) => {
-  const materializeProject = vi.fn(async () => ({}));
+  const ensureProjectMounted = vi.fn(async () => ({}));
   const recordSessionEvent = vi.fn(async () => undefined);
   const get = (() => ({
     sessions: [{ ...session, goal }],
@@ -60,15 +60,15 @@ const harness = ({ projects, mounts = [], goal = 'ship' }: HarnessOptions) => {
     sessionProjectMounts: { [SESSION_ID]: mounts },
     sessionSlots: {},
     sessionExternalTasks: {},
-    materializeProject,
+    ensureProjectMounted,
     recordSessionEvent,
   })) as unknown as GetFn;
-  return { get, materializeProject, recordSessionEvent };
+  return { get, ensureProjectMounted, recordSessionEvent };
 };
 
 describe('materializeDeclaredProjects', () => {
   it('materializes only the projects the step text names', async () => {
-    const { get, materializeProject } = harness({
+    const { get, ensureProjectMounted } = harness({
       projects: [project('p-api', 'api'), project('p-web', 'web'), project('p-docs', 'docs')],
     });
 
@@ -79,17 +79,17 @@ describe('materializeDeclaredProjects', () => {
       declarationText: 'Change the api login route.\nThen wire the web form to it.',
     });
 
-    expect(materializeProject).toHaveBeenCalledTimes(2);
-    expect(materializeProject).toHaveBeenCalledWith(
+    expect(ensureProjectMounted).toHaveBeenCalledTimes(2);
+    expect(ensureProjectMounted).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: SESSION_ID, projectId: 'p-api' }),
     );
-    expect(materializeProject).toHaveBeenCalledWith(
+    expect(ensureProjectMounted).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: SESSION_ID, projectId: 'p-web' }),
     );
   });
 
   it('carries the mentioning plan line into the reason', async () => {
-    const { get, materializeProject } = harness({
+    const { get, ensureProjectMounted } = harness({
       projects: [project('p-api', 'api'), project('p-web', 'web')],
     });
 
@@ -100,7 +100,7 @@ describe('materializeDeclaredProjects', () => {
       declarationText: '- fix the api rate limiter',
     });
 
-    expect(materializeProject).toHaveBeenCalledWith(
+    expect(ensureProjectMounted).toHaveBeenCalledWith(
       expect.objectContaining({
         reason: 'step "Implement": - fix the api rate limiter',
       }),
@@ -108,7 +108,7 @@ describe('materializeDeclaredProjects', () => {
   });
 
   it('does not match a project name embedded inside a longer word', async () => {
-    const { get, materializeProject } = harness({
+    const { get, ensureProjectMounted } = harness({
       projects: [project('p-api', 'api'), project('p-web', 'web')],
     });
 
@@ -119,11 +119,11 @@ describe('materializeDeclaredProjects', () => {
       declarationText: 'improve the rapid webhook handler',
     });
 
-    expect(materializeProject).not.toHaveBeenCalled();
+    expect(ensureProjectMounted).not.toHaveBeenCalled();
   });
 
   it('adds one unnamed project next to a single existing mount', async () => {
-    const { get, materializeProject, recordSessionEvent } = harness({
+    const { get, ensureProjectMounted, recordSessionEvent } = harness({
       projects: [project('p-api', 'api'), project('p-web', 'web')],
       mounts: [{ projectId: 'p-api' as ProjectId }],
     });
@@ -135,15 +135,15 @@ describe('materializeDeclaredProjects', () => {
       declarationText: 'api and web both change',
     });
 
-    expect(materializeProject).toHaveBeenCalledTimes(1);
-    expect(materializeProject).toHaveBeenCalledWith(
+    expect(ensureProjectMounted).toHaveBeenCalledTimes(1);
+    expect(ensureProjectMounted).toHaveBeenCalledWith(
       expect.objectContaining({ projectId: 'p-web' }),
     );
     expect(recordSessionEvent).not.toHaveBeenCalled();
   });
 
   it('proposes a second unnamed project with the scope cause', async () => {
-    const { get, materializeProject, recordSessionEvent } = harness({
+    const { get, ensureProjectMounted, recordSessionEvent } = harness({
       projects: [project('p-api', 'api'), project('p-web', 'web'), project('p-docs', 'docs')],
       mounts: [{ projectId: 'p-api' as ProjectId }],
     });
@@ -155,7 +155,7 @@ describe('materializeDeclaredProjects', () => {
       declarationText: 'api, web and docs all change',
     });
 
-    expect(materializeProject).toHaveBeenCalledTimes(1);
+    expect(ensureProjectMounted).toHaveBeenCalledTimes(1);
     expect(recordSessionEvent).toHaveBeenCalledTimes(1);
     expect(recordSessionEvent).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
@@ -170,7 +170,7 @@ describe('materializeDeclaredProjects', () => {
   });
 
   it('mounts a declared project next to an existing mount when the goal names it', async () => {
-    const { get, materializeProject, recordSessionEvent } = harness({
+    const { get, ensureProjectMounted, recordSessionEvent } = harness({
       projects: [project('p-api', 'api'), project('p-web', 'web')],
       mounts: [{ projectId: 'p-api' as ProjectId }],
       goal: 'wire the web form to the api',
@@ -183,15 +183,15 @@ describe('materializeDeclaredProjects', () => {
       declarationText: 'api and web both change',
     });
 
-    expect(materializeProject).toHaveBeenCalledTimes(1);
-    expect(materializeProject).toHaveBeenCalledWith(
+    expect(ensureProjectMounted).toHaveBeenCalledTimes(1);
+    expect(ensureProjectMounted).toHaveBeenCalledWith(
       expect.objectContaining({ projectId: 'p-web' }),
     );
     expect(recordSessionEvent).not.toHaveBeenCalled();
   });
 
   it('caps immediate mounts at two and proposes the rest', async () => {
-    const { get, materializeProject, recordSessionEvent } = harness({
+    const { get, ensureProjectMounted, recordSessionEvent } = harness({
       projects: [project('p-api', 'api'), project('p-web', 'web'), project('p-docs', 'docs')],
     });
 
@@ -202,7 +202,7 @@ describe('materializeDeclaredProjects', () => {
       declarationText: 'touch api, web and docs',
     });
 
-    expect(materializeProject).toHaveBeenCalledTimes(2);
+    expect(ensureProjectMounted).toHaveBeenCalledTimes(2);
     expect(recordSessionEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: 'project_materialization_proposed',
@@ -212,7 +212,7 @@ describe('materializeDeclaredProjects', () => {
   });
 
   it('leaves a single-project workspace to the first-turn hook', async () => {
-    const { get, materializeProject } = harness({ projects: [project('p-api', 'api')] });
+    const { get, ensureProjectMounted } = harness({ projects: [project('p-api', 'api')] });
 
     await materializeDeclaredProjects({
       get,
@@ -221,6 +221,6 @@ describe('materializeDeclaredProjects', () => {
       declarationText: 'change the api',
     });
 
-    expect(materializeProject).not.toHaveBeenCalled();
+    expect(ensureProjectMounted).not.toHaveBeenCalled();
   });
 });

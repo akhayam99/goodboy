@@ -59,7 +59,7 @@ export const useDynamicActions = (
   const events = useAppStore((s) => s.sessionEvents?.[id] ?? EMPTY_EVENTS);
   const github = useAppStore((s) => s.sessionGithub[id] ?? null);
   const resolveRows = useAppStore((s) => s.sessionResolveThreads[id] ?? EMPTY_RESOLVE_ROWS);
-  const materializeProject = useAppStore((s) => s.materializeProject);
+  const ensureProjectMounted = useAppStore((s) => s.ensureProjectMounted);
   const emitNotification = useAppStore((s) => s.emitNotification);
   const hasUnread = useSessionHasUnread(id);
   const [isConfirmingSkip, setIsConfirmingSkip] = useState(false);
@@ -159,7 +159,7 @@ export const useDynamicActions = (
         tone: 'warning',
         label: `Mount ${proposal.projectName}`,
         onClick: () => {
-          void materializeProject({
+          void ensureProjectMounted({
             sessionId: id,
             projectId: proposal.projectId,
             reason: proposal.reason,
@@ -211,7 +211,7 @@ export const useDynamicActions = (
     isConfirmingSkip,
     skipStuckStepAndAdvance,
     mountProposals,
-    materializeProject,
+    ensureProjectMounted,
     emitNotification,
     github,
     eligibleThreads,

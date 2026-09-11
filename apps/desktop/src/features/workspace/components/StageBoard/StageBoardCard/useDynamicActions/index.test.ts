@@ -15,7 +15,7 @@ const { state } = vi.hoisted(() => ({
     sessionResolveThreads: {} as Record<string, ReadonlyArray<unknown>>,
     summarizerStatus: {} as Record<string, { status: string }>,
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
-    materializeProject: vi.fn(async () => undefined),
+    ensureProjectMounted: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
     hasUnread: false,
     runHasOpenQuestions: false,
@@ -105,7 +105,7 @@ beforeEach(() => {
   state.hasUnread = false;
   state.runHasOpenQuestions = false;
   state.skipStuckStepAndAdvance.mockClear();
-  state.materializeProject.mockClear();
+  state.ensureProjectMounted.mockClear();
   state.emitNotification.mockClear();
   (nav.openWorkflows as ReturnType<typeof vi.fn>).mockClear();
   (nav.openQuestions as ReturnType<typeof vi.fn>).mockClear();
@@ -160,7 +160,7 @@ describe('useDynamicActions', () => {
     expect(action?.tone).toBe('warning');
 
     action?.onClick();
-    expect(state.materializeProject).toHaveBeenCalledWith({
+    expect(state.ensureProjectMounted).toHaveBeenCalledWith({
       sessionId: 'sess-1',
       projectId: 'project-web',
       reason: 'needs the router',

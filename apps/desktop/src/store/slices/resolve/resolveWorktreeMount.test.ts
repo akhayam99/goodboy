@@ -15,6 +15,13 @@ const MOUNTS: ReadonlyArray<SessionProjectMount> = [
     worktreePath: '/sessions/one/api-one',
     repoRoot: '/repos/api',
     branch: 'ak/one',
+    sessionId: SESSION_ID,
+    lastWorktreePath: null,
+    baseBranch: null,
+    parallelIndex: 0,
+    isAttached: true,
+    diskState: 'present',
+    revision: 0,
   },
   {
     mountId: SECOND,
@@ -23,6 +30,13 @@ const MOUNTS: ReadonlyArray<SessionProjectMount> = [
     worktreePath: '/sessions/one/api-two',
     repoRoot: '/repos/api',
     branch: 'ak/two',
+    sessionId: SESSION_ID,
+    lastWorktreePath: null,
+    baseBranch: null,
+    parallelIndex: 0,
+    isAttached: true,
+    diskState: 'present',
+    revision: 0,
   },
 ];
 

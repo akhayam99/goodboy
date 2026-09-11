@@ -292,29 +292,6 @@ export const updateSessionActiveProject = async ({
   await db.execute('UPDATE sessions SET active_project_id = ? WHERE id = ?', [projectId, id]);
 };
 
-type UpdateSessionActiveMountParams = {
-  readonly db: Database;
-  readonly sessionId: SessionId;
-  readonly mountId: MountId | null;
-};
-
-export const updateSessionActiveMount = async ({
-  db,
-  sessionId,
-  mountId,
-}: UpdateSessionActiveMountParams): Promise<boolean> => {
-  const result = await db.execute(
-    `UPDATE sessions
-     SET active_mount_id = ?
-     WHERE id = ?
-       AND (? IS NULL OR EXISTS (
-         SELECT 1 FROM session_worktrees WHERE session_id = ? AND id = ?
-       ))`,
-    [mountId, sessionId, mountId, sessionId, mountId],
-  );
-  return result.rowsAffected > 0;
-};
-
 type UpdateSessionWriteDestinationParams = {
   readonly db: Database;
   readonly sessionId: SessionId;
