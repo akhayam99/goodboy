@@ -62,6 +62,7 @@ import type {
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace, useSessionSlots } from '../../../../store';
 import { buildProfileGuard } from '../../../../store/profileGuard';
+import { workflowStartGate } from './workflowStartGate';
 import type { Mode, WorkflowBuilderDraft } from '../../../../store/slices/workflowDrafts/types';
 import type { StepDraft, WorkflowDraft } from '../../../workflows/engine';
 import {
@@ -99,6 +100,8 @@ import { LaunchToggleRow } from './parts/LaunchToggleRow';
 import { ApproachSummary } from './ApproachSummary';
 import { DynamicWorkflowComposer } from './DynamicWorkflowComposer';
 import { SpendLimitDisclosure } from './SpendLimitDisclosure';
+
+const START_REASON_ID = 'workflow-start-reason';
 
 type Props = {
   readonly session: Session;
@@ -852,19 +855,15 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const spendLimitInvalid =
     mode === 'dynamic' && isSpendLimitEnabled && parseSpendLimit(spendLimitDraft) == null;
   const dynamicNameMissing = mode === 'dynamic' && dynamicName.trim().length === 0;
-  const startDisabled =
-    blocked || goalMissing || approachMissing || spendLimitInvalid || dynamicNameMissing;
-  const startHint = goalMissing
-    ? 'Set a goal to start'
-    : approachMissing
-      ? mode === 'preset'
-        ? 'Select a preset to start'
-        : mode === 'dynamic'
-          ? 'Describe the intent and constraints to start'
-          : 'Generate a plan to start'
-      : dynamicNameMissing
-        ? 'Name the workflow to start'
-        : null;
+  const startGate = workflowStartGate({
+    mode,
+    isStarting: busy,
+    isPlanning: planning,
+    hasGoal: !goalMissing,
+    hasApproach: !approachMissing,
+    hasName: !dynamicNameMissing,
+    isSpendLimitValid: !spendLimitInvalid,
+  });
   const onModeChange = (next: Mode) => {
     setMode(next);
   };
@@ -1527,36 +1526,42 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                 PANE_RHYTHM.dock,
               )}
             >
-              <div className="flex min-w-0 items-center gap-2">
-                {!draftEmpty ? (
-                  <Button
-                    variant="ghost"
-                    size="md"
-                    onClick={resetDraft}
-                    disabled={busy}
-                    aria-label="Discard workflow draft"
-                    className="gap-1.5 text-muted-foreground"
-                  >
-                    <RotateCcw size={ICON_SIZE.control} aria-hidden />
-                    Discard changes
-                  </Button>
-                ) : null}
-                {error ? (
-                  <span
-                    role="alert"
-                    className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-danger"
-                  >
-                    <AlertTriangle size={ICON_SIZE.row} className="shrink-0" aria-hidden />
-                    {error}
+              <div className="flex min-w-0 flex-col gap-1">
+                <div className="flex min-w-0 items-center gap-2">
+                  {!draftEmpty ? (
+                    <Button
+                      variant="ghost"
+                      size="md"
+                      onClick={resetDraft}
+                      disabled={busy}
+                      aria-label="Discard workflow draft"
+                      className="gap-1.5 text-muted-foreground"
+                    >
+                      <RotateCcw size={ICON_SIZE.control} aria-hidden />
+                      Discard changes
+                    </Button>
+                  ) : null}
+                  {error ? (
+                    <span
+                      role="alert"
+                      className="inline-flex min-w-0 items-start gap-1 text-xs text-danger"
+                    >
+                      <AlertTriangle size={ICON_SIZE.row} className="mt-0.5 shrink-0" aria-hidden />
+                      {error}
+                    </span>
+                  ) : null}
+                </div>
+                {startGate.reason === null ? null : (
+                  <span id={START_REASON_ID} className="text-2xs text-muted-foreground">
+                    {startGate.reason}
                   </span>
-                ) : startHint ? (
-                  <span className="truncate text-2xs text-muted-foreground/60">{startHint}</span>
-                ) : null}
+                )}
               </div>
               <Button
                 size="md"
                 onClick={() => void onStart()}
-                disabled={startDisabled}
+                disabled={startGate.isDisabled}
+                {...(startGate.reason === null ? {} : { 'aria-describedby': START_REASON_ID })}
                 className={cn('shrink-0', busy && 'animate-border-pulse')}
               >
                 {busy ? 'Starting…' : 'Start workflow'}

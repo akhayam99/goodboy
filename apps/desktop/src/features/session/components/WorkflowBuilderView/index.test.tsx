@@ -493,6 +493,37 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     );
   });
 
+  it('keeps the reason visible whenever start is disabled', () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+
+    const start = startBtn();
+    expect(start.hasAttribute('disabled')).toBe(true);
+    const described = start.getAttribute('aria-describedby');
+    expect(described).not.toBeNull();
+    expect(document.getElementById(described ?? '')?.textContent).toBe('Set a goal to start');
+
+    setGoal();
+    const afterGoal = startBtn().getAttribute('aria-describedby');
+    expect(afterGoal).not.toBeNull();
+    expect(document.getElementById(afterGoal ?? '')?.textContent).toMatch(/ to start$/);
+  });
+
+  it('says why an unparsable spend limit blocks start instead of going mute', () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+    fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
+      target: { value: 'Inspect each result and stop after tests pass.' },
+    });
+    fireEvent.click(screen.getByRole('switch', { name: /spend limit/i }));
+    fireEvent.change(screen.getByLabelText('Spend limit in dollars'), {
+      target: { value: 'not a number' },
+    });
+
+    expect(startBtn().hasAttribute('disabled')).toBe(true);
+    expect(screen.getByText('Enter a valid spend limit to start')).toBeDefined();
+  });
+
   it('keeps spend limit collapsed until enabled and reveals the outcome after an amount', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
