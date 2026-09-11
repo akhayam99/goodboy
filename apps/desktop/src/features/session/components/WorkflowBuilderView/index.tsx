@@ -98,6 +98,7 @@ import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
 import { ChainAfterSelect } from './parts/ChainAfterSelect';
 import { CustomStepsEmptyState } from './parts/CustomStepsEmptyState';
 import { LaunchToggleRow } from './parts/LaunchToggleRow';
+import { PlanDraftingBanner } from './parts/PlanDraftingBanner';
 import { ApproachSummary } from './ApproachSummary';
 import { DynamicWorkflowComposer } from './DynamicWorkflowComposer';
 import { SpendLimitDisclosure } from './SpendLimitDisclosure';
@@ -714,9 +715,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       return;
     }
     setError(null);
-    setPlan(null);
-    setSteps([]);
-    setBasePresetId(null);
     setPlanning(true);
     try {
       const effectiveModel =
@@ -740,8 +738,15 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         process,
         ...(profileBlock.length > 0 && { repoContext: profileBlock }),
       });
+      const planned = stepsFromPlan({ plan: result.output, roleModels });
+      if (planned.length === 0) {
+        setError('the planner returned no usable steps, nothing was replaced');
+        return;
+      }
       setPlan(result.output);
-      setSteps(stepsFromPlan({ plan: result.output, roleModels }));
+      setSteps(planned);
+      setBasePresetId(null);
+      setExpandedKey(null);
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -1309,6 +1314,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
                     {showSteps ? (
                       <div className="flex flex-col gap-3">
+                        {planning ? <PlanDraftingBanner /> : null}
                         <div className="flex items-center gap-2">
                           <span className={SECTION_LABEL_CLS}>
                             <ListChecks size={11} aria-hidden /> Steps
@@ -1317,7 +1323,13 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             {stepCount} step{stepCount === 1 ? '' : 's'}
                           </span>
                         </div>
-                        <ol className="flex flex-col" aria-label="Workflow steps">
+                        <ol
+                          className={cn(
+                            'flex flex-col transition-opacity',
+                            planning && 'opacity-60',
+                          )}
+                          aria-label="Workflow steps"
+                        >
                           {steps.map((st, i) => (
                             <Fragment key={st.key}>
                               <StepFlowConnector
@@ -1344,7 +1356,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 verbosity={st.verbosity}
                                 expanded={expandedKey === st.key}
                                 dragging={draggingKey === st.key}
-                                disabled={busy}
+                                disabled={blocked}
                                 polishing={polishingKey === st.key}
                                 onExpand={() => setExpandedKey(st.key)}
                                 onCollapse={() =>
@@ -1392,7 +1404,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         <button
                           type="button"
                           onClick={addStep}
-                          disabled={busy}
+                          disabled={blocked}
                           className="inline-flex items-center justify-center gap-1.5 rounded-md border border-dashed border-border-soft px-2.5 py-1.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <Plus size={11} aria-hidden /> Add step
