@@ -161,6 +161,8 @@ export const NON_SESSION_STATE_KEYS = [
   'workflowStudioDrafts',
   'workflowGenerations',
   'visibleWorkflowStudioWorkspaceId',
+  'workflowNodeRoutingPending',
+  'workflowNodeRoutingErrors',
   'notifications',
   'notificationsLoading',
   'notificationCounts',

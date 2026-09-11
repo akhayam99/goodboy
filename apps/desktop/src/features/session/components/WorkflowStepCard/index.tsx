@@ -8,6 +8,7 @@ import { type VerbosityLevel } from '../../../settings/verbosity';
 import { type EffortLevel } from '../../../chat/utils/chat-constants';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
+import { WORKFLOW_ROUTING_COPY } from '../../../workflows/workflowRoutingCopy';
 import { RoleSelect } from '../RoleSelect';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -47,6 +48,8 @@ type Props = {
   readonly onRole?: (role: AgentRole) => void;
   readonly verbosity?: VerbosityLevel;
   readonly onVerbosity?: (v: VerbosityLevel) => void;
+  readonly isRoutingOverridden?: boolean;
+  readonly onRoutingReset?: () => void;
 };
 
 const FieldLabel = ({ children }: { readonly children: ReactNode }) => (
@@ -90,6 +93,8 @@ export const WorkflowStepCard = ({
   onRole,
   verbosity,
   onVerbosity,
+  isRoutingOverridden,
+  onRoutingReset,
 }: Props) => {
   const pal = agentKindPalette({ kind });
   const displayName = name.trim() || ROLE_LABEL[role];
@@ -293,6 +298,9 @@ export const WorkflowStepCard = ({
                   recommendation={{ provider: recommendedProvider, model: recommendedModel }}
                   verbosity={verbosity}
                   disabled={disabled}
+                  resetLabel={WORKFLOW_ROUTING_COPY.resetLabel}
+                  {...(isRoutingOverridden !== undefined && { overridden: isRoutingOverridden })}
+                  {...(onRoutingReset != null && { onReset: onRoutingReset })}
                   onProvider={onProvider}
                   onModel={onModel}
                   onVerbosity={onVerbosity}

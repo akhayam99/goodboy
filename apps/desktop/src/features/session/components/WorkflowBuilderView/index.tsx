@@ -1369,6 +1369,10 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 }
                                 onProvider={(v) => patchStep(st.key, { provider: v })}
                                 onEffort={(v) => patchStep(st.key, { effort: v })}
+                                isRoutingOverridden={st.provider !== '' || st.model !== ''}
+                                onRoutingReset={() =>
+                                  patchStep(st.key, { provider: '', model: '' })
+                                }
                                 onRole={(v) => patchStep(st.key, { role: v })}
                                 onVerbosity={(v) => patchStep(st.key, { verbosity: v })}
                                 onPolish={() => void onPolishStep(st.key)}

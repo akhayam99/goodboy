@@ -346,6 +346,8 @@ export type AppState = AppSliceState & {
   readonly workflowStudioDrafts: Readonly<Record<WorkspaceId, WorkflowStudioDraft | undefined>>;
   readonly workflowGenerations: Readonly<Record<WorkspaceId, WorkflowGeneration | undefined>>;
   readonly visibleWorkflowStudioWorkspaceId: WorkspaceId | null;
+  readonly workflowNodeRoutingPending: Readonly<Record<string, boolean>>;
+  readonly workflowNodeRoutingErrors: Readonly<Record<string, string | null>>;
   readonly agentAttachments: Readonly<Record<AgentId, ReadonlyArray<DraftAttachment>>>;
   readonly agentQueue: Readonly<Record<AgentId, ReadonlyArray<AgentQueuedTurn>>>;
   readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;

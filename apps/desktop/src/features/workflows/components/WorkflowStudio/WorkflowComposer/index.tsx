@@ -245,6 +245,8 @@ export const WorkflowComposer = ({
                       )
                     }
                     onEffort={(v) => onUpdateStep(idx, { effort: v })}
+                    isRoutingOverridden={def.provider !== '' || def.model !== ''}
+                    onRoutingReset={() => onUpdateStep(idx, { provider: '', model: '' })}
                     onRole={(v) => onUpdateStep(idx, { role: v })}
                     onVerbosity={(v) => onUpdateStep(idx, { verbosity: v })}
                     onRemove={() => onRemoveStep(idx)}
