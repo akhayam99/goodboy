@@ -459,50 +459,79 @@ export type AgentInsertArgs = {
   readonly taskProfile?: WorkflowTaskProfile | null;
 };
 
+const toAgentInsertPayload = ({ run }: { readonly run: AgentInsertArgs }) => ({
+  id: run.id ?? null,
+  sessionId: run.sessionId,
+  stepId: run.stepId ?? null,
+  workflowRunId: run.workflowRunId ?? null,
+  parentAgentId: run.parentAgentId ?? null,
+  ordinal: run.ordinal,
+  name: run.name,
+  status: run.status,
+  providerRunId: run.providerRunId ?? null,
+  outputSummary: run.outputSummary ?? null,
+  startedAt: run.startedAt ?? null,
+  completedAt: run.completedAt ?? null,
+  kind: run.kind ?? null,
+  verbosity: run.verbosity ?? null,
+  effort: run.effort ?? null,
+  modelOverride: run.modelOverride ?? null,
+  providerOverride: run.providerOverride ?? null,
+  sourceThreadId: run.sourceThreadId ?? null,
+  sourceThreadIds: run.sourceThreadIds !== undefined ? JSON.stringify(run.sourceThreadIds) : null,
+  sourceCommentUrl: run.sourceCommentUrl ?? null,
+  sourceKind: run.sourceKind ?? null,
+  domainsJson: run.domains !== undefined ? JSON.stringify(run.domains) : null,
+  routingLock: stringifyRoutingJson({
+    value: run.routingLock ?? null,
+    isValid: isWorkflowRoutingLock,
+    field: 'routing lock',
+  }),
+  routingDecision: stringifyRoutingJson({
+    value: run.routingDecision ?? null,
+    isValid: isWorkflowRoutingDecision,
+    field: 'routing decision',
+  }),
+  taskProfile: stringifyRoutingJson({
+    value: run.taskProfile ?? null,
+    isValid: isWorkflowTaskProfile,
+    field: 'task profile',
+  }),
+});
+
 export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> => {
   const row = await invoke<RawAgentRow>('agent_insert', {
-    input: {
-      id: run.id ?? null,
-      sessionId: run.sessionId,
-      stepId: run.stepId ?? null,
-      workflowRunId: run.workflowRunId ?? null,
-      parentAgentId: run.parentAgentId ?? null,
-      ordinal: run.ordinal,
-      name: run.name,
-      status: run.status,
-      providerRunId: run.providerRunId ?? null,
-      outputSummary: run.outputSummary ?? null,
-      startedAt: run.startedAt ?? null,
-      completedAt: run.completedAt ?? null,
-      kind: run.kind ?? null,
-      verbosity: run.verbosity ?? null,
-      effort: run.effort ?? null,
-      modelOverride: run.modelOverride ?? null,
-      providerOverride: run.providerOverride ?? null,
-      sourceThreadId: run.sourceThreadId ?? null,
-      sourceThreadIds:
-        run.sourceThreadIds !== undefined ? JSON.stringify(run.sourceThreadIds) : null,
-      sourceCommentUrl: run.sourceCommentUrl ?? null,
-      sourceKind: run.sourceKind ?? null,
-      domainsJson: run.domains !== undefined ? JSON.stringify(run.domains) : null,
-      routingLock: stringifyRoutingJson({
-        value: run.routingLock ?? null,
-        isValid: isWorkflowRoutingLock,
-        field: 'routing lock',
-      }),
-      routingDecision: stringifyRoutingJson({
-        value: run.routingDecision ?? null,
-        isValid: isWorkflowRoutingDecision,
-        field: 'routing decision',
-      }),
-      taskProfile: stringifyRoutingJson({
-        value: run.taskProfile ?? null,
-        isValid: isWorkflowTaskProfile,
-        field: 'task profile',
-      }),
-    },
+    input: toAgentInsertPayload({ run }),
   });
   return rowToAgent(row);
+};
+
+export type AgentInsertBatchArgs = {
+  readonly parentAgentId: AgentId;
+  readonly children: ReadonlyArray<AgentInsertArgs>;
+};
+
+export type AgentInsertBatchResult = Readonly<{
+  inserted: boolean;
+  agents: ReadonlyArray<Agent>;
+}>;
+
+type RawAgentBatchOutcome = {
+  inserted: boolean;
+  agents: ReadonlyArray<RawAgentRow>;
+};
+
+export const invokeAgentInsertBatch = async ({
+  parentAgentId,
+  children,
+}: AgentInsertBatchArgs): Promise<AgentInsertBatchResult> => {
+  const outcome = await invoke<RawAgentBatchOutcome>('agent_insert_batch', {
+    input: {
+      parentAgentId,
+      children: children.map((run) => toAgentInsertPayload({ run })),
+    },
+  });
+  return { inserted: outcome.inserted, agents: outcome.agents.map(rowToAgent) };
 };
 
 export type WorkflowNodeRoutingUpdateArgs = {

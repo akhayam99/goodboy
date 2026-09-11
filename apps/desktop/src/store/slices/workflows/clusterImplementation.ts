@@ -9,9 +9,10 @@ import type {
 } from '@goodboy/types';
 import { extractClusterDone } from '@goodboy/core';
 import {
-  invokeAgentInsert,
+  invokeAgentInsertBatch,
   invokeAgentList,
   invokeAgentUpdateStatus,
+  type AgentInsertArgs,
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
 import { composeKickoff, composeUnitBoundary } from '../../kickoff';
@@ -260,30 +261,35 @@ export const fanOutClusters = async (
     return;
   }
 
-  await invokeAgentUpdateStatus(container.id, { status: 'running' });
-
   const baseOrdinal =
     (get().sessionPhaseRuns[sessionId] ?? []).reduce((m, r) => Math.max(m, r.ordinal), -1) + 1;
-  const childIds: AgentId[] = [];
-  for (let i = 0; i < clusters.length; i++) {
-    const fields = batch.entries[i]!;
-    const inserted = await invokeAgentInsert({
-      sessionId,
-      parentAgentId: container.id,
-      ...(container.workflowRunId != null && { workflowRunId: container.workflowRunId }),
-      ordinal: baseOrdinal + i,
-      name: clusters[i]!.title,
-      status: 'pending',
-      kind: 'implementer',
-      ...(fields.providerOverride !== null && { providerOverride: fields.providerOverride }),
-      ...(fields.modelOverride !== null && { modelOverride: fields.modelOverride }),
-      ...(fields.effort !== null && { effort: fields.effort }),
-      ...(fields.routingLock !== null && { routingLock: fields.routingLock }),
-      ...(fields.routingDecision !== null && { routingDecision: fields.routingDecision }),
-      ...(fields.taskProfile !== null && { taskProfile: fields.taskProfile }),
-    });
-    childIds.push(inserted.id);
+  const materialized = await invokeAgentInsertBatch({
+    parentAgentId: container.id,
+    children: clusters.map((cluster, index): AgentInsertArgs => {
+      const fields = batch.entries[index]!;
+      return {
+        sessionId,
+        parentAgentId: container.id,
+        ...(container.workflowRunId != null && { workflowRunId: container.workflowRunId }),
+        ordinal: baseOrdinal + index,
+        name: cluster.title,
+        status: 'pending',
+        kind: 'implementer',
+        ...(fields.providerOverride !== null && { providerOverride: fields.providerOverride }),
+        ...(fields.modelOverride !== null && { modelOverride: fields.modelOverride }),
+        ...(fields.effort !== null && { effort: fields.effort }),
+        ...(fields.routingLock !== null && { routingLock: fields.routingLock }),
+        ...(fields.routingDecision !== null && { routingDecision: fields.routingDecision }),
+        ...(fields.taskProfile !== null && { taskProfile: fields.taskProfile }),
+      };
+    }),
+  });
+  if (materialized.inserted === false) {
+    return;
   }
+  const childIds: AgentId[] = materialized.agents.map((agent) => agent.id);
+
+  await invokeAgentUpdateStatus(container.id, { status: 'running' });
 
   const refreshed = await invokeAgentList(sessionId);
   set((s) => {

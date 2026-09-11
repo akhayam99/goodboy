@@ -16,10 +16,20 @@ const hoisted = vi.hoisted(() => {
   const insertArgs: Array<Record<string, unknown>> = [];
   return {
     insertArgs,
-    invokeAgentInsert: vi.fn(async (args: Record<string, unknown>) => {
-      insertArgs.push(args);
-      return { id: `child-${insertArgs.length}` as AgentId, ...args } as unknown as Agent;
-    }),
+    invokeAgentInsertBatch: vi.fn(
+      async ({
+        children,
+      }: {
+        parentAgentId: string;
+        children: ReadonlyArray<Record<string, unknown>>;
+      }) => {
+        const agents = children.map((args, index) => {
+          insertArgs.push(args);
+          return { id: `child-${index + 1}` as AgentId, ...args } as unknown as Agent;
+        });
+        return { inserted: true, agents };
+      },
+    ),
     invokeAgentList: vi.fn(async () => [] as Agent[]),
     invokeAgentUpdateStatus: vi.fn(async () => undefined),
     invokeWorkflowNodeRoutingUpdate: vi.fn(async () => undefined),
@@ -29,7 +39,7 @@ const hoisted = vi.hoisted(() => {
 });
 
 vi.mock('../../../features/workflows/workflows', () => ({
-  invokeAgentInsert: hoisted.invokeAgentInsert,
+  invokeAgentInsertBatch: hoisted.invokeAgentInsertBatch,
   invokeAgentList: hoisted.invokeAgentList,
   invokeAgentUpdateStatus: hoisted.invokeAgentUpdateStatus,
   invokeWorkflowNodeRoutingUpdate: hoisted.invokeWorkflowNodeRoutingUpdate,
@@ -334,6 +344,46 @@ describe('fanOutClusters', () => {
       expect(args.sessionId).toBe(SID);
       expect(args.stepId).toBeUndefined();
     }
+  });
+
+  it('materializes every cluster child through one parent-scoped batch', async () => {
+    const c = container();
+    const { get, set } = makeStore({ sessionPhaseRuns: { [SID]: [c] } });
+
+    await fanOutClusters(set, get, SID, c, clusters, 'goal');
+
+    expect(hoisted.invokeAgentInsertBatch).toHaveBeenCalledTimes(1);
+    const call = hoisted.invokeAgentInsertBatch.mock.calls[0]![0];
+    expect(call.parentAgentId).toBe(PARENT);
+    expect(call.children).toHaveLength(2);
+  });
+
+  it('leaves no children and starts nothing when the batch fails', async () => {
+    const c = container();
+    const { get, set, sendTurn, state } = makeStore({ sessionPhaseRuns: { [SID]: [c] } });
+    hoisted.invokeAgentInsertBatch.mockRejectedValueOnce(new Error('database is locked'));
+
+    await expect(fanOutClusters(set, get, SID, c, clusters, 'goal')).rejects.toThrow(
+      'database is locked',
+    );
+
+    expect(hoisted.insertArgs).toHaveLength(0);
+    expect(hoisted.invokeAgentList).not.toHaveBeenCalled();
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(Object.keys(state.transcripts as Record<string, unknown>)).toEqual([]);
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
+  });
+
+  it('does not start a second batch for a parent the backend already materialized', async () => {
+    const c = container();
+    const { get, set, sendTurn } = makeStore({ sessionPhaseRuns: { [SID]: [c] } });
+    hoisted.invokeAgentInsertBatch.mockResolvedValueOnce({ inserted: false, agents: [] });
+
+    await fanOutClusters(set, get, SID, c, clusters, 'goal');
+
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentList).not.toHaveBeenCalled();
   });
 
   it('assigns ordinals continuing past the highest existing run ordinal', async () => {
@@ -1134,13 +1184,18 @@ describe('resumeClusterChildren', () => {
 
 describe('cluster child start retry', () => {
   const withUniqueChildIds = (prefix: string) => {
-    hoisted.invokeAgentInsert.mockImplementation(async (args: Record<string, unknown>) => {
-      hoisted.insertArgs.push(args);
-      return {
-        id: `${prefix}-${hoisted.insertArgs.length}` as AgentId,
-        ...args,
-      } as unknown as Agent;
-    });
+    hoisted.invokeAgentInsertBatch.mockImplementation(
+      async ({ children }: { children: ReadonlyArray<Record<string, unknown>> }) => {
+        const agents = children.map((args, index) => {
+          hoisted.insertArgs.push(args);
+          return {
+            id: `${prefix}-${index + 1}` as AgentId,
+            ...args,
+          } as unknown as Agent;
+        });
+        return { inserted: true, agents };
+      },
+    );
   };
 
   afterEach(() => {

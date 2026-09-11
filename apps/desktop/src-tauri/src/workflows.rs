@@ -264,6 +264,19 @@ pub struct PhaseRunInsertInput {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct AgentBatchInsertInput {
+    #[serde(rename = "parentAgentId")]
+    pub parent_agent_id: String,
+    pub children: Vec<PhaseRunInsertInput>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AgentBatchInsertOutcome {
+    pub inserted: bool,
+    pub agents: Vec<SessionRow>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct WorkflowNodeRoutingUpdateInput {
     #[serde(rename = "nodeKind")]
     pub node_kind: String,
@@ -1184,17 +1197,10 @@ const AGENT_INSERT_SQL: &str = "INSERT INTO agents
     domains_json, routing_lock, routing_decision, task_profile)
  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25)";
 
-#[tauri::command]
-pub async fn agent_insert(
-    state: State<'_, Db>,
+fn insert_agent_row(
+    conn: &rusqlite::Connection,
     input: PhaseRunInsertInput,
 ) -> Result<SessionRow, PhaseError> {
-    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
-    validate_routing_values(
-        input.routing_lock.as_ref(),
-        input.routing_decision.as_ref(),
-        input.task_profile.as_ref(),
-    )?;
     let id = input.id.clone().unwrap_or_else(crate::util::uuid_v4);
     let started_at_ms = input.started_at.as_deref().and_then(crate::util::iso_to_ms);
     let completed_at_ms = input
@@ -1265,6 +1271,77 @@ pub async fn agent_insert(
         routing_decision: input.routing_decision,
         task_profile: input.task_profile,
     })
+}
+
+#[tauri::command]
+pub async fn agent_insert(
+    state: State<'_, Db>,
+    input: PhaseRunInsertInput,
+) -> Result<SessionRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    validate_routing_values(
+        input.routing_lock.as_ref(),
+        input.routing_decision.as_ref(),
+        input.task_profile.as_ref(),
+    )?;
+    insert_agent_row(&conn, input)
+}
+
+fn children_of_parent(
+    conn: &rusqlite::Connection,
+    parent_agent_id: &str,
+) -> Result<Vec<SessionRow>, PhaseError> {
+    let sql = format!(
+        "SELECT {cols} FROM agents WHERE parent_agent_id = ?1 ORDER BY ordinal ASC",
+        cols = AGENT_SESSION_COLS
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(rusqlite::params![parent_agent_id], session_row_from_row)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
+}
+
+fn insert_agent_batch(
+    conn: &mut rusqlite::Connection,
+    parent_agent_id: &str,
+    children: Vec<PhaseRunInsertInput>,
+) -> Result<AgentBatchInsertOutcome, PhaseError> {
+    for child in &children {
+        validate_routing_values(
+            child.routing_lock.as_ref(),
+            child.routing_decision.as_ref(),
+            child.task_profile.as_ref(),
+        )?;
+    }
+    let transaction = conn.transaction()?;
+    let existing = children_of_parent(&transaction, parent_agent_id)?;
+    if !existing.is_empty() || children.is_empty() {
+        return Ok(AgentBatchInsertOutcome {
+            inserted: false,
+            agents: existing,
+        });
+    }
+    let mut agents = Vec::with_capacity(children.len());
+    for child in children {
+        let owned = PhaseRunInsertInput {
+            parent_agent_id: Some(parent_agent_id.to_string()),
+            ..child
+        };
+        agents.push(insert_agent_row(&transaction, owned)?);
+    }
+    transaction.commit()?;
+    Ok(AgentBatchInsertOutcome {
+        inserted: true,
+        agents,
+    })
+}
+
+#[tauri::command]
+pub async fn agent_insert_batch(
+    state: State<'_, Db>,
+    input: AgentBatchInsertInput,
+) -> Result<AgentBatchInsertOutcome, PhaseError> {
+    let mut conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    insert_agent_batch(&mut conn, &input.parent_agent_id, input.children)
 }
 
 #[tauri::command]
@@ -1520,7 +1597,7 @@ mod tests {
         let conn = rusqlite::Connection::open_in_memory().unwrap();
         conn.execute_batch(
             "CREATE TABLE agents (
-                id TEXT, session_id TEXT, step_id TEXT, ordinal INTEGER, name TEXT, status TEXT,
+                id TEXT PRIMARY KEY, session_id TEXT, step_id TEXT, ordinal INTEGER, name TEXT, status TEXT,
                 provider_run_id TEXT, output_summary TEXT, started_at TEXT,
                 provider_session_id TEXT, provider_session_provider_id TEXT, last_finished_at TEXT, last_viewed_at TEXT, done_at TEXT,
                 kind TEXT, verbosity TEXT, effort TEXT, model_override TEXT, provider_override TEXT,
@@ -1706,5 +1783,154 @@ mod tests {
             "x".repeat(241)
         );
         assert!(validate_routing_values(None, Some(&oversized), None).is_err());
+    }
+
+    fn child_input(id: &str, ordinal: i64) -> PhaseRunInsertInput {
+        PhaseRunInsertInput {
+            id: Some(id.to_string()),
+            session_id: "s1".to_string(),
+            step_id: None,
+            ordinal,
+            name: format!("cluster {ordinal}"),
+            status: "pending".to_string(),
+            provider_run_id: None,
+            output_summary: None,
+            started_at: None,
+            completed_at: None,
+            kind: Some("implementer".to_string()),
+            verbosity: None,
+            effort: Some("high".to_string()),
+            model_override: Some("gpt-5.6".to_string()),
+            provider_override: Some("codex".to_string()),
+            parent_agent_id: None,
+            workflow_run_id: Some("run-1".to_string()),
+            source_thread_id: None,
+            source_thread_ids: None,
+            source_comment_url: None,
+            source_kind: None,
+            domains_json: None,
+            routing_lock: None,
+            routing_decision: Some(
+                r#"{"version":1,"proposal":null,"selected":{"provider":"codex","model":"gpt-5.6","effort":"high"},"source":"agent","reason":"Chosen","adjustment":"none","executed":null}"#
+                    .to_string(),
+            ),
+            task_profile: Some(
+                r#"{"taskType":"implementation","difficulty":"heavy","basis":"agent"}"#.to_string(),
+            ),
+        }
+    }
+
+    fn child_count(conn: &rusqlite::Connection, parent_agent_id: &str) -> i64 {
+        conn.query_row(
+            "SELECT COUNT(*) FROM agents WHERE parent_agent_id = ?1",
+            rusqlite::params![parent_agent_id],
+            |row| row.get(0),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn agent_insert_batch_commits_every_child_at_once() {
+        let mut conn = agents_table_conn();
+
+        let outcome = insert_agent_batch(
+            &mut conn,
+            "container",
+            vec![
+                child_input("c1", 0),
+                child_input("c2", 1),
+                child_input("c3", 2),
+            ],
+        )
+        .unwrap();
+
+        assert!(outcome.inserted);
+        assert_eq!(outcome.agents.len(), 3);
+        assert_eq!(child_count(&conn, "container"), 3);
+        let stored = children_of_parent(&conn, "container").unwrap();
+        assert_eq!(
+            stored.iter().map(|row| row.id.as_str()).collect::<Vec<_>>(),
+            vec!["c1", "c2", "c3"]
+        );
+        assert_eq!(stored[0].provider_override.as_deref(), Some("codex"));
+        assert_eq!(stored[0].model_override.as_deref(), Some("gpt-5.6"));
+        assert_eq!(stored[0].effort.as_deref(), Some("high"));
+        assert!(stored[0].routing_decision.is_some());
+        assert!(stored[0].task_profile.is_some());
+    }
+
+    #[test]
+    fn agent_insert_batch_leaves_no_children_when_one_insert_fails() {
+        let mut conn = agents_table_conn();
+        conn.execute(
+            "INSERT INTO agents (id, session_id, ordinal, name, status)
+             VALUES ('c2', 's1', 9, 'taken', 'pending')",
+            [],
+        )
+        .unwrap();
+
+        let failure = insert_agent_batch(
+            &mut conn,
+            "container",
+            vec![
+                child_input("c1", 0),
+                child_input("c2", 1),
+                child_input("c3", 2),
+            ],
+        );
+
+        assert!(failure.is_err());
+        assert_eq!(child_count(&conn, "container"), 0);
+        assert_eq!(
+            conn.query_row(
+                "SELECT COUNT(*) FROM agents WHERE id IN ('c1', 'c3')",
+                [],
+                |row| row.get::<_, i64>(0)
+            )
+            .unwrap(),
+            0
+        );
+    }
+
+    #[test]
+    fn agent_insert_batch_rejects_invalid_routing_before_writing_anything() {
+        let mut conn = agents_table_conn();
+        let mut broken = child_input("c2", 1);
+        broken.task_profile = Some(r#"{"taskType":"nonsense"}"#.to_string());
+
+        let failure =
+            insert_agent_batch(&mut conn, "container", vec![child_input("c1", 0), broken]);
+
+        assert!(matches!(failure, Err(PhaseError::InvalidRouting)));
+        assert_eq!(child_count(&conn, "container"), 0);
+    }
+
+    #[test]
+    fn agent_insert_batch_does_not_give_a_parent_a_second_batch() {
+        let mut conn = agents_table_conn();
+        insert_agent_batch(
+            &mut conn,
+            "container",
+            vec![child_input("c1", 0), child_input("c2", 1)],
+        )
+        .unwrap();
+
+        let outcome = insert_agent_batch(
+            &mut conn,
+            "container",
+            vec![child_input("c3", 2), child_input("c4", 3)],
+        )
+        .unwrap();
+
+        assert!(!outcome.inserted);
+        assert_eq!(
+            outcome
+                .agents
+                .iter()
+                .map(|row| row.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["c1", "c2"]
+        );
+        assert_eq!(child_count(&conn, "container"), 2);
     }
 }

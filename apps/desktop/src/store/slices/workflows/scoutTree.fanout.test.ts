@@ -6,10 +6,20 @@ const hoisted = vi.hoisted(() => {
   const insertArgs: Array<Record<string, unknown>> = [];
   return {
     insertArgs,
-    invokeAgentInsert: vi.fn(async (args: Record<string, unknown>) => {
-      insertArgs.push(args);
-      return { id: `child-${insertArgs.length}` as AgentId, ...args } as unknown as Agent;
-    }),
+    invokeAgentInsertBatch: vi.fn(
+      async ({
+        children,
+      }: {
+        parentAgentId: string;
+        children: ReadonlyArray<Record<string, unknown>>;
+      }) => {
+        const agents = children.map((args, index) => {
+          insertArgs.push(args);
+          return { id: `child-${index + 1}` as AgentId, ...args } as unknown as Agent;
+        });
+        return { inserted: true, agents };
+      },
+    ),
     invokeAgentList: vi.fn(async () => [] as Agent[]),
     invokeAgentUpdateStatus: vi.fn(async () => undefined),
     invokeWorkflowNodeRoutingUpdate: vi.fn(async () => undefined),
@@ -17,7 +27,7 @@ const hoisted = vi.hoisted(() => {
 });
 
 vi.mock('../../../features/workflows/workflows', () => ({
-  invokeAgentInsert: hoisted.invokeAgentInsert,
+  invokeAgentInsertBatch: hoisted.invokeAgentInsertBatch,
   invokeAgentList: hoisted.invokeAgentList,
   invokeAgentUpdateStatus: hoisted.invokeAgentUpdateStatus,
   invokeWorkflowNodeRoutingUpdate: hoisted.invokeWorkflowNodeRoutingUpdate,
@@ -100,6 +110,44 @@ describe('fanOutScouts workflowRunId propagation', () => {
     for (const args of hoisted.insertArgs) {
       expect(args.workflowRunId).toBeUndefined();
     }
+  });
+
+  it('materializes every sub-scout through one parent-scoped batch', async () => {
+    const c = container({ workflowRunId: 'wf-1' as WorkflowRunId });
+    const { get, set } = makeStore(c);
+
+    await fanOutScouts(set, get, SID, c, areas(3));
+
+    expect(hoisted.invokeAgentInsertBatch).toHaveBeenCalledTimes(1);
+    const call = hoisted.invokeAgentInsertBatch.mock.calls[0]![0];
+    expect(call.parentAgentId).toBe('container');
+    expect(call.children).toHaveLength(3);
+  });
+
+  it('leaves no children and starts nothing when the batch fails', async () => {
+    const c = container({ workflowRunId: 'wf-1' as WorkflowRunId });
+    const { get, set, sendTurn, state } = makeStore(c);
+    hoisted.invokeAgentInsertBatch.mockRejectedValueOnce(new Error('database is locked'));
+
+    await expect(fanOutScouts(set, get, SID, c, areas(3))).rejects.toThrow('database is locked');
+
+    expect(hoisted.insertArgs).toHaveLength(0);
+    expect(hoisted.invokeAgentList).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(Object.keys(state.transcripts as Record<string, unknown>)).toEqual([]);
+  });
+
+  it('does not start a second batch for a parent the backend already materialized', async () => {
+    const c = container({ workflowRunId: 'wf-1' as WorkflowRunId });
+    const { get, set, sendTurn } = makeStore(c);
+    hoisted.invokeAgentInsertBatch.mockResolvedValueOnce({ inserted: false, agents: [] });
+
+    await fanOutScouts(set, get, SID, c, areas(3));
+
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentList).not.toHaveBeenCalled();
   });
 
   it('spawns children as scouts parented to the container in this session', async () => {

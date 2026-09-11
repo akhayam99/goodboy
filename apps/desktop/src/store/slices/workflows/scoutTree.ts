@@ -6,9 +6,10 @@ import {
   type ExtractedFanOutArea,
 } from '@goodboy/core';
 import {
-  invokeAgentInsert,
+  invokeAgentInsertBatch,
   invokeAgentList,
   invokeAgentUpdateStatus,
+  type AgentInsertArgs,
 } from '../../../features/workflows/workflows';
 import { worktreeChangedFiles } from '../../../features/worktree/worktree';
 import {
@@ -354,34 +355,39 @@ const fanOutAgents = async ({
     return;
   }
 
-  synthesisStarted.delete(container.id);
-  await invokeAgentUpdateStatus(container.id, { status: 'running' });
-
   const runs = get().sessionPhaseRuns[sessionId] ?? [];
   const childDepth = scoutDepth(runs, container.id) + 1;
   const childKind = resolveAgentKind(container);
   const baseOrdinal = runs.reduce((m, r) => Math.max(m, r.ordinal), -1) + 1;
 
-  const childIds: AgentId[] = [];
-  for (let i = 0; i < clamped.length; i++) {
-    const fields = batch.entries[i]!;
-    const inserted = await invokeAgentInsert({
-      sessionId,
-      parentAgentId: container.id,
-      ordinal: baseOrdinal + i,
-      name: clamped[i]!.area,
-      status: 'pending',
-      kind: childKind,
-      ...(container.workflowRunId != null && { workflowRunId: container.workflowRunId }),
-      ...(fields.providerOverride !== null && { providerOverride: fields.providerOverride }),
-      ...(fields.modelOverride !== null && { modelOverride: fields.modelOverride }),
-      ...(fields.effort !== null && { effort: fields.effort }),
-      ...(fields.routingLock !== null && { routingLock: fields.routingLock }),
-      ...(fields.routingDecision !== null && { routingDecision: fields.routingDecision }),
-      ...(fields.taskProfile !== null && { taskProfile: fields.taskProfile }),
-    });
-    childIds.push(inserted.id);
+  const materialized = await invokeAgentInsertBatch({
+    parentAgentId: container.id,
+    children: clamped.map((area, index): AgentInsertArgs => {
+      const fields = batch.entries[index]!;
+      return {
+        sessionId,
+        parentAgentId: container.id,
+        ordinal: baseOrdinal + index,
+        name: area.area,
+        status: 'pending',
+        kind: childKind,
+        ...(container.workflowRunId != null && { workflowRunId: container.workflowRunId }),
+        ...(fields.providerOverride !== null && { providerOverride: fields.providerOverride }),
+        ...(fields.modelOverride !== null && { modelOverride: fields.modelOverride }),
+        ...(fields.effort !== null && { effort: fields.effort }),
+        ...(fields.routingLock !== null && { routingLock: fields.routingLock }),
+        ...(fields.routingDecision !== null && { routingDecision: fields.routingDecision }),
+        ...(fields.taskProfile !== null && { taskProfile: fields.taskProfile }),
+      };
+    }),
+  });
+  if (materialized.inserted === false) {
+    return;
   }
+  const childIds: AgentId[] = materialized.agents.map((agent) => agent.id);
+
+  synthesisStarted.delete(container.id);
+  await invokeAgentUpdateStatus(container.id, { status: 'running' });
 
   const refreshed = await invokeAgentList(sessionId);
   set((s) => {
