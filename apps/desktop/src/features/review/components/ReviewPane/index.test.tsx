@@ -468,6 +468,39 @@ describe('ReviewPane', () => {
     expect(merge.textContent).toContain('Goodboy is already merging #248');
   });
 
+  it('says why a merged pull request cannot merge again', () => {
+    patchPr({ state: 'merged', isDraft: false });
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
+    const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
+
+    expect(merge.disabled).toBe(true);
+    expect(merge.textContent).toContain('This pull request is already merged');
+  });
+
+  it('says a closed pull request has to come back before it merges', () => {
+    patchPr({ state: 'closed', isDraft: false });
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
+    const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
+
+    expect(merge.disabled).toBe(true);
+    expect(merge.textContent).toContain('Reopen this pull request before merging');
+  });
+
+  it('says GitHub already owns the merge once it is set to go', () => {
+    patchPr({ state: 'queued', isDraft: false });
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
+    const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
+
+    expect(merge.disabled).toBe(true);
+    expect(merge.textContent).toContain('GitHub is already set to merge this pull request');
+  });
+
   it('backs out of a confirm without touching GitHub', () => {
     render(<ReviewPane session={SESSION} />);
 

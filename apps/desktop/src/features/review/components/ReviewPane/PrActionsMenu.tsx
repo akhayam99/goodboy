@@ -58,7 +58,6 @@ export const PrActionsMenu = ({
   const [pending, setPending] = useState<PendingAction | null>(null);
   const isTerminal = pr.state === 'merged' || pr.state === 'closed';
   const isClosed = pr.state === 'closed';
-  const isQueued = pr.state === 'queued';
   const isBusy = busy !== null || writeInFlight !== null;
   const isMergeBlocked = mergeReadiness.status === 'blocked';
 
@@ -123,9 +122,8 @@ export const PrActionsMenu = ({
     );
   }
 
-  const items: Array<OverflowMenuItem> = [];
-  if (!isTerminal && !isQueued) {
-    items.push({
+  const items: Array<OverflowMenuItem> = [
+    {
       kind: 'item',
       key: 'merge',
       label: 'Merge',
@@ -133,8 +131,8 @@ export const PrActionsMenu = ({
       disabled: isMergeBlocked || isBusy,
       hint: writeInFlight ?? mergeReadiness.reason,
       onClick: () => setPending('merge'),
-    });
-  }
+    },
+  ];
   if (!isTerminal && pr.isDraft) {
     items.push({
       kind: 'item',
