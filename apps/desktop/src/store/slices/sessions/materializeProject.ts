@@ -186,10 +186,7 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
         kind: 'project_materialization_refused',
         payload: { projectId, projectName: project.name, reason: formatError(error) },
       });
-      const branchInUse = branchInUseError({
-        error,
-        branch: adoptedBranch ?? `${prefix}/${sessionSlug}`,
-      });
+      const branchInUse = branchInUseError({ error });
       if (branchInUse !== null) {
         throw branchInUse;
       }
