@@ -15,8 +15,11 @@ export type IconButtonProps = Omit<ComponentProps<'button'>, 'type' | 'children'
   type?: 'button' | 'submit' | 'reset';
 };
 
-const toneClasses = (tone: Tone): string => {
+const toneClasses = (tone: Tone, variant: 'outline' | 'ghost'): string => {
   const tint = tintClasses(tone);
+  if (variant === 'ghost') {
+    return cn(tint.text, tint.hoverBg);
+  }
   return cn(tint.borderSoft, tint.text, tint.hoverBorder, tint.hoverBg);
 };
 
@@ -45,7 +48,7 @@ export const IconButton = ({
             : 'border border-transparent hover:bg-muted/60',
           'hover:text-foreground disabled:opacity-50',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-          tone !== 'neutral' && toneClasses(tone),
+          tone !== 'neutral' && toneClasses(tone, variant),
           busy && 'animate-border-pulse',
           className,
         )}

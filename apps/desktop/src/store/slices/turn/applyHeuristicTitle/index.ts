@@ -24,6 +24,32 @@ type Params = {
   readonly prompt: string;
 };
 
+type RevertGoalParams = {
+  readonly set: SetFn;
+  readonly sessionId: SessionId;
+  readonly optimisticGoal: string;
+  readonly previousGoal: string;
+};
+
+const revertGoalIfStillOptimistic = ({
+  set,
+  sessionId,
+  optimisticGoal,
+  previousGoal,
+}: RevertGoalParams): void => {
+  set((state) => ({
+    sessions: state.sessions.map((candidate) => {
+      if (candidate.id !== sessionId) {
+        return candidate;
+      }
+      if (candidate.titleUserEdited || candidate.goal !== optimisticGoal) {
+        return candidate;
+      }
+      return { ...candidate, goal: previousGoal };
+    }),
+  }));
+};
+
 type GenerateParams = TaskModelPreference &
   Readonly<{
     prompt: string;
@@ -94,12 +120,23 @@ export const applyHeuristicTitle = async ({
 
     if (heuristicTitle != null) {
       if (canRenameSession) {
+        const previousGoal = session.goal;
         set((state) => ({
           sessions: state.sessions.map((candidate) =>
             candidate.id === sessionId ? { ...candidate, goal: heuristicTitle } : candidate,
           ),
         }));
-        await renameSessionInDb(tauriDatabase, sessionId, heuristicTitle, titleNow, false);
+        try {
+          await renameSessionInDb(tauriDatabase, sessionId, heuristicTitle, titleNow, false);
+        } catch (err) {
+          console.error('failed to persist heuristic session title', err);
+          revertGoalIfStillOptimistic({
+            set,
+            sessionId,
+            optimisticGoal: heuristicTitle,
+            previousGoal,
+          });
+        }
       }
       if (canRenameAgent) {
         await get().renameAgent(sessionId, agentId, heuristicTitle);
@@ -154,15 +191,28 @@ export const applyHeuristicTitle = async ({
     const generatedAt = new Date().toISOString() as IsoDateTime;
 
     if (sessionMatchesPlaceholder) {
+      const previousGoal = currentSession?.goal ?? session.goal;
       set((state) => ({
         sessions: state.sessions.map((candidate) =>
           candidate.id === sessionId ? { ...candidate, goal: generatedTitle } : candidate,
         ),
       }));
-      await renameSessionInDb(tauriDatabase, sessionId, generatedTitle, generatedAt, false);
+      try {
+        await renameSessionInDb(tauriDatabase, sessionId, generatedTitle, generatedAt, false);
+      } catch (err) {
+        console.error('failed to persist generated session title', err);
+        revertGoalIfStillOptimistic({
+          set,
+          sessionId,
+          optimisticGoal: generatedTitle,
+          previousGoal,
+        });
+      }
     }
     if (agentMatchesPlaceholder) {
       await get().renameAgent(sessionId, agentId, generatedTitle);
     }
-  } catch {}
+  } catch (err) {
+    console.error('applyHeuristicTitle failed', err);
+  }
 };

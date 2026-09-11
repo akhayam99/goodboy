@@ -46,11 +46,13 @@ const { showToast, state, fixtures } = vi.hoisted(() => ({
     setAgentConfig: vi.fn(async () => undefined),
     sendTurn: vi.fn(async () => undefined),
     recordSessionEvent: vi.fn(async () => undefined),
+    emitNotification: vi.fn(async () => undefined),
   },
   fixtures: {
     files: [] as ReadonlyArray<unknown>,
     comments: [] as ReadonlyArray<unknown>,
     diffFailure: null as string | null,
+    openInEditorFailure: null as string | null,
     status: {
       head: null,
       headSubject: null,
@@ -81,6 +83,14 @@ vi.mock('../../../../store', () => ({
 
 vi.mock('../../../../features/github/github', () => ({
   ghPrDiff: vi.fn(async () => ''),
+}));
+
+vi.mock('../../../../shared/lib/editor', () => ({
+  openFileInWorkspace: vi.fn(async () => {
+    if (fixtures.openInEditorFailure !== null) {
+      throw new Error(fixtures.openInEditorFailure);
+    }
+  }),
 }));
 
 vi.mock('../../../../app/components/Toast', () => ({
@@ -137,6 +147,8 @@ beforeEach(() => {
   fixtures.files = [];
   fixtures.comments = [];
   fixtures.diffFailure = null;
+  fixtures.openInEditorFailure = null;
+  state.emitNotification = vi.fn(async () => undefined);
   fixtures.status.upstream = null;
   fixtures.status.branch = null;
   fixtures.status.upstreamDistance = { kind: 'known', ahead: 0, behind: 0 };
@@ -974,6 +986,52 @@ describe('progressive batching', () => {
     expect(container.querySelectorAll('[data-file-path]').length).toBe(25);
 
     vi.useRealTimers();
+  });
+});
+
+describe('open in editor', () => {
+  it('notifies the user when opening a file in the editor fails', async () => {
+    fixtures.files = fileFixture();
+    fixtures.openInEditorFailure = 'editor not found';
+    render(
+      <DiffViewerPane
+        sessionId={SID}
+        loader={async () => 'raw'}
+        workingDir="/repo"
+        onClose={vi.fn()}
+      />,
+    );
+
+    const openInEditor = await screen.findByRole('button', { name: 'Open file in editor' });
+    fireEvent.click(openInEditor);
+
+    await waitFor(() => {
+      expect(state.emitNotification).toHaveBeenCalledWith(
+        'error',
+        'error',
+        'Could not open file in editor',
+        'editor not found',
+        { sessionId: SID },
+      );
+    });
+  });
+
+  it('does not notify when opening a file in the editor succeeds', async () => {
+    fixtures.files = fileFixture();
+    render(
+      <DiffViewerPane
+        sessionId={SID}
+        loader={async () => 'raw'}
+        workingDir="/repo"
+        onClose={vi.fn()}
+      />,
+    );
+
+    const openInEditor = await screen.findByRole('button', { name: 'Open file in editor' });
+    fireEvent.click(openInEditor);
+
+    await flushMicrotasks();
+    expect(state.emitNotification).not.toHaveBeenCalled();
   });
 });
 

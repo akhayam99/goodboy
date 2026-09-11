@@ -57,7 +57,6 @@ export const CompanionStudio = ({ onClose }: Props) => {
     try {
       await bridgeRevoke();
       clearMobileSharedSessions();
-      window.dispatchEvent(new CustomEvent('goodboy:bridge-paired-changed'));
       await mint();
     } catch (e) {
       setError(formatError(e));
