@@ -7,6 +7,72 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.25
+
+The chat shows where a session is about to write, model lists match what
+actually resolves on the CLI, and permissions, budgets, pull request actions
+and mount state stop showing you things that aren't true.
+
+### [#1730] The chat shows where the session is about to write
+
+Every agent in a session shares one destination, one project, one worktree,
+one branch, and nothing on screen said so: changing a project row moved where
+all of them wrote next, with no visible sign it had happened.
+
+The destination is a control now. Opening it lists every project and
+worktree with its branch and path, and nothing changes until you pick one and
+confirm it for the whole session's next turns, though it does not yet stop
+you from sending into a destination another agent already holds. While a
+turn is running, the header keeps showing the destination that turn started
+with, and names a newly picked one beside it only when the two differ. With
+nothing mounted, it names the session's scratch folder instead of guessing at
+a project.
+
+### [#1726] Gemini and OpenCode model lists match what's actually live
+
+Gemini adds `gemini-3.6-flash`, verified against the CLI Goodboy actually
+spawns, with its own cost and routing weight.
+
+OpenCode's free tier moved: `minimax-m2.5-free`, `nemotron-3-super-free` and
+`ring-2.6-1t-free` no longer resolve and are gone from the picker. The six
+free models that still resolve are updated with their real context windows,
+and a session still pointed at a retired model now falls back to a working
+one instead of being left on a dead selection.
+
+### Fixes
+
+- A detached project whose worktree stayed on disk, because it was dirty or
+  held open by a terminal or agent, could come back attached after a reload;
+  it now stays detached. (#1727)
+- Restoring an archived task could leave it looking empty, with no branch and
+  no agents, and say nothing about it; it now tells you when part of the
+  restore didn't load. (#1727)
+- The delete-session icon button drew a colored border at rest instead of
+  staying borderless until you touched it. (#1728)
+- Opening a session in your editor could fail with no toast and no
+  explanation; it now tells you when it fails. (#1728)
+- A session rename that failed to save kept showing the new title until the
+  next restart, then reverted with no warning; it now reverts right away
+  instead of lying in between. (#1728)
+- The composer offered a skills slash command even when the skills feature
+  was turned off; it now stays hidden until skills is on. (#1728)
+- The permission picker could show a session as Bypass, its most permissive
+  mode, when the session was actually declining every action that needed
+  approval. (#1729)
+- Editing a budget rule deleted and recreated it, leaving a moment with no
+  rule in force and losing its history; editing now updates the rule in
+  place. (#1729)
+- A failed merge, close, reopen or mark-ready on a pull request showed
+  nothing but a button that stopped spinning; it now tells you why it
+  failed. (#1729)
+- Clicking create agent twice in a row could spawn two agents from one
+  submission; the control now blocks the repeat. (#1729)
+- The empty projects state named where to add a project instead of taking
+  you there; it now opens workspace settings straight to the projects
+  section. (#1729)
+- The command palette listed a Recents group that never held anything; it is
+  gone. (#1729)
+
 ## Goodboy v0.2.24
 
 ### One rebase row, and it rebases the branch you picked
