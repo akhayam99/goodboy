@@ -19,6 +19,7 @@ import {
 } from '../../kickoff';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import {
+  canFanOutClusters,
   fanOutClusters,
   resumeClusterChildren,
   selectFanOutPlan,
@@ -119,7 +120,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
     const planToConsume = explicitPlan ?? (latestPlan?.status === 'active' ? latestPlan : null);
 
     const fanOutPlan =
-      effectiveKind === 'implementer'
+      effectiveKind === 'implementer' && canFanOutClusters({ container: agent })
         ? selectFanOutPlan(get, sessionId, {
             workflowRunId: agent.workflowRunId,
             explicitPlan,

@@ -1,3 +1,4 @@
+export { formatWorkflowModelMenu } from './formatWorkflowModelMenu';
 export { parseOrchestratorDecision } from './parser';
 export {
   parseWorkflowRoutingProposal,

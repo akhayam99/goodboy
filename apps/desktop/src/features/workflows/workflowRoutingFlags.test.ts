@@ -28,4 +28,12 @@ describe('workflowRoutingFlags', () => {
     vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', '');
     expect(workflowRoutingFlags().isModelMetadataEnabled).toBe(false);
   });
+
+  it('reads the child model selection flag independently, defaulting to off', () => {
+    expect(workflowRoutingFlags().isChildModelSelectionEnabled).toBe(false);
+
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+    expect(workflowRoutingFlags().isChildModelSelectionEnabled).toBe(true);
+    expect(workflowRoutingFlags().isModelMetadataEnabled).toBe(false);
+  });
 });

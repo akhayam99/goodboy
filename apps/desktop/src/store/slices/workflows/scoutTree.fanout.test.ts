@@ -12,6 +12,7 @@ const hoisted = vi.hoisted(() => {
     }),
     invokeAgentList: vi.fn(async () => [] as Agent[]),
     invokeAgentUpdateStatus: vi.fn(async () => undefined),
+    invokeWorkflowNodeRoutingUpdate: vi.fn(async () => undefined),
   };
 });
 
@@ -19,6 +20,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: hoisted.invokeAgentInsert,
   invokeAgentList: hoisted.invokeAgentList,
   invokeAgentUpdateStatus: hoisted.invokeAgentUpdateStatus,
+  invokeWorkflowNodeRoutingUpdate: hoisted.invokeWorkflowNodeRoutingUpdate,
 }));
 
 import { FAN_OUT_MAX_CHILDREN, advanceScoutTree, fanOutScouts } from './scoutTree';
@@ -71,6 +73,7 @@ function makeStore(c: Agent) {
 
 afterEach(() => {
   hoisted.insertArgs.length = 0;
+  vi.unstubAllEnvs();
   vi.clearAllMocks();
 });
 
@@ -268,5 +271,132 @@ describe('advanceScoutTree split decision', () => {
     await advance(SID, scout.id, 'raw output again');
 
     expect(emitNotification).toHaveBeenCalledTimes(1);
+  });
+});
+
+const CONNECTED_PROVIDERS = [
+  { id: 'anthropic', connection: 'connected' },
+  { id: 'codex', connection: 'connected' },
+];
+
+const ROUTED_SESSION = {
+  id: SID,
+  workspaceId: WS,
+  providerPreference: { defaultProvider: 'anthropic' },
+  workflowRuns: [],
+};
+
+const mixedSplitText = [
+  '<<fan-out>>',
+  JSON.stringify([
+    {
+      area: 'auth',
+      query: 'map the session guards',
+      provider: 'anthropic',
+      model: 'opus-5',
+      effort: 'high',
+      taskType: 'exploration',
+      difficulty: 'heavy',
+      modelReason: 'auth spans four packages',
+    },
+    {
+      area: 'copy',
+      query: 'list the settings strings',
+      provider: 'anthropic',
+      model: 'haiku-4.5',
+      taskType: 'exploration',
+      difficulty: 'light',
+      modelReason: 'a string sweep needs no depth',
+    },
+  ]),
+  '<</fan-out>>',
+].join('\n');
+
+function makeRoutedStore(runs: ReadonlyArray<Agent>) {
+  const sendTurn = vi.fn(async (_args: { content: string }) => undefined);
+  const emitNotification = vi.fn(async () => undefined);
+  const refreshUnreadWorkspaces = vi.fn(async () => undefined);
+  const state: Record<string, unknown> = {
+    sessionPhaseRuns: { [SID]: runs },
+    agentModelOverride: {},
+    agentProviderOverride: {},
+    agentEffortOverride: {},
+    agentKindOverride: {},
+    transcripts: {},
+    agentTurnState: {},
+    sessionNudges: {},
+    workspaceOverrides: { [WS]: { parallelAgents: true } },
+    sessions: [ROUTED_SESSION],
+    providers: CONNECTED_PROVIDERS,
+    providerCooldowns: {},
+    budgetAlerts: [],
+    sendTurn,
+    emitNotification,
+    refreshUnreadWorkspaces,
+  };
+  const get = (() => state) as unknown as GetFn;
+  const set = ((u: unknown) => {
+    const patch =
+      typeof u === 'function'
+        ? (u as (s: Record<string, unknown>) => Record<string, unknown>)(state)
+        : (u as Record<string, unknown>);
+    Object.assign(state, patch);
+  }) as unknown as SetFn;
+  return { state, get, set, sendTurn, emitNotification };
+}
+
+describe('per-child fan-out routing', () => {
+  it('siblings with different difficulty persist distinct provider-qualified picks', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+    const root = scoutAgent({ id: 'routed-root' as AgentId });
+    const { get, set } = makeRoutedStore([root]);
+
+    await advanceScoutTree(set, get)(SID, root.id, mixedSplitText);
+
+    expect(hoisted.insertArgs).toHaveLength(2);
+    expect(hoisted.insertArgs[0]?.modelOverride).toBe('opus-5');
+    expect(hoisted.insertArgs[1]?.modelOverride).toBe('haiku-4.5');
+    const first = hoisted.insertArgs[0]?.routingDecision as {
+      readonly selected: { readonly provider: string; readonly model: string };
+      readonly source: string;
+    };
+    expect(first.source).toBe('agent');
+    expect(first.selected.provider).toBe('anthropic');
+  });
+
+  it('depth-two grandchildren are routed independently and cannot split again', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+    const root = scoutAgent({ id: 'gp' as AgentId });
+    const mid = scoutAgent({ id: 'mid' as AgentId, parentAgentId: 'gp' as AgentId });
+    const { get, set } = makeRoutedStore([root, mid]);
+
+    await advanceScoutTree(set, get)(SID, mid.id, mixedSplitText);
+
+    expect(hoisted.insertArgs).toHaveLength(2);
+    expect(hoisted.insertArgs[0]?.modelOverride).toBe('opus-5');
+    expect(hoisted.insertArgs[1]?.modelOverride).toBe('haiku-4.5');
+
+    const leaf = scoutAgent({ id: 'leaf' as AgentId, parentAgentId: 'mid' as AgentId });
+    const deeper = makeRoutedStore([root, mid, leaf]);
+    hoisted.insertArgs.length = 0;
+
+    await advanceScoutTree(deeper.set, deeper.get)(SID, leaf.id, mixedSplitText);
+
+    expect(hoisted.insertArgs).toHaveLength(0);
+  });
+
+  it('rerender or repeated completion does not duplicate children', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+    const root = scoutAgent({ id: 'retry-root' as AgentId });
+    const existingChild = scoutAgent({
+      id: 'existing-child' as AgentId,
+      ordinal: 1,
+      parentAgentId: 'retry-root' as AgentId,
+    });
+    const { get, set } = makeRoutedStore([root, existingChild]);
+
+    await advanceScoutTree(set, get)(SID, root.id, mixedSplitText);
+
+    expect(hoisted.insertArgs).toHaveLength(0);
   });
 });

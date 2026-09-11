@@ -15,7 +15,8 @@ import {
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
 import { composeKickoff, composeUnitBoundary } from '../../kickoff';
-import { childRoutingFromParent } from './childRoutingFromParent';
+import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
+import { revalidateChildRouting } from './revalidateChildRouting';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
@@ -214,6 +215,13 @@ function startChild({
     });
 }
 
+type ClusterContainerParams = {
+  readonly container: Agent;
+};
+
+export const canFanOutClusters = ({ container }: ClusterContainerParams): boolean =>
+  container.parentAgentId == null;
+
 export const fanOutClusters = async (
   set: SetFn,
   get: GetFn,
@@ -222,13 +230,43 @@ export const fanOutClusters = async (
   clusters: ReadonlyArray<ImplementationCluster>,
   goalTitle: string,
 ): Promise<void> => {
+  if (canFanOutClusters({ container }) === false) {
+    return;
+  }
+  const existing = get().sessionPhaseRuns[sessionId] ?? [];
+  if (childrenOf(existing, container.id).length > 0) {
+    return;
+  }
+
+  const batch = childRoutingBatch({
+    state: get(),
+    sessionId,
+    workflowRunId: container.workflowRunId ?? null,
+    role: 'implementer',
+    requests: clusters.map((cluster) => ({
+      proposal: cluster.routingProposal ?? null,
+      promptText: `${cluster.title}\n${cluster.instructions}`,
+      childLock: null,
+    })),
+  });
+  if (batch.kind === 'blocked') {
+    void get().emitNotification(
+      'error',
+      'warning',
+      `cluster blocked: ${container.name}`,
+      batch.reason,
+      { sessionId },
+    );
+    return;
+  }
+
   await invokeAgentUpdateStatus(container.id, { status: 'running' });
 
-  const routing = childRoutingFromParent({ get, parent: container });
   const baseOrdinal =
     (get().sessionPhaseRuns[sessionId] ?? []).reduce((m, r) => Math.max(m, r.ordinal), -1) + 1;
   const childIds: AgentId[] = [];
   for (let i = 0; i < clusters.length; i++) {
+    const fields = batch.entries[i]!;
     const inserted = await invokeAgentInsert({
       sessionId,
       parentAgentId: container.id,
@@ -237,9 +275,12 @@ export const fanOutClusters = async (
       name: clusters[i]!.title,
       status: 'pending',
       kind: 'implementer',
-      providerOverride: routing.provider,
-      modelOverride: routing.model,
-      effort: routing.effort,
+      ...(fields.providerOverride !== null && { providerOverride: fields.providerOverride }),
+      ...(fields.modelOverride !== null && { modelOverride: fields.modelOverride }),
+      ...(fields.effort !== null && { effort: fields.effort }),
+      ...(fields.routingLock !== null && { routingLock: fields.routingLock }),
+      ...(fields.routingDecision !== null && { routingDecision: fields.routingDecision }),
+      ...(fields.taskProfile !== null && { taskProfile: fields.taskProfile }),
     });
     childIds.push(inserted.id);
   }
@@ -252,13 +293,21 @@ export const fanOutClusters = async (
     const agentModelOverride = { ...s.agentModelOverride };
     const agentProviderOverride = { ...s.agentProviderOverride };
     const agentEffortOverride = { ...s.agentEffortOverride };
-    for (const id of childIds) {
+    for (let i = 0; i < childIds.length; i++) {
+      const id = childIds[i]!;
+      const fields: ChildRoutingFields = batch.entries[i]!;
       transcripts[id] = transcripts[id] ?? [];
       agentTurnState[id] = { kind: 'idle', lastActivityAt: nowIso() };
       agentKindOverride[id] = 'implementer';
-      agentModelOverride[id] = routing.model;
-      agentProviderOverride[id] = routing.provider;
-      agentEffortOverride[id] = routing.effort;
+      if (fields.modelOverride !== null) {
+        agentModelOverride[id] = fields.modelOverride;
+      }
+      if (fields.providerOverride !== null) {
+        agentProviderOverride[id] = fields.providerOverride;
+      }
+      if (fields.effort !== null) {
+        agentEffortOverride[id] = fields.effort;
+      }
     }
     return {
       sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
@@ -465,6 +514,24 @@ export const resumeClusterChildren = async ({
     );
     return false;
   }
+  const revalidated = await revalidateChildRouting({
+    set,
+    get,
+    sessionId,
+    child: next,
+    role: 'implementer',
+    promptText: `${next.name}\n${clusters[index]?.instructions ?? ''}`,
+  });
+  if (revalidated.kind === 'blocked') {
+    void get().emitNotification(
+      'error',
+      'warning',
+      `cluster blocked: ${next.name}`,
+      revalidated.reason,
+      { sessionId },
+    );
+    return false;
+  }
   await invokeAgentUpdateStatus(container.id, { status: 'running' });
   const refreshed = await invokeAgentList(sessionId);
   set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
@@ -613,6 +680,26 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
         'warning',
         `cluster blocked: ${next.name}`,
         'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
+        { sessionId },
+      );
+      return;
+    }
+    const revalidated = await revalidateChildRouting({
+      set,
+      get,
+      sessionId,
+      child: next,
+      role: 'implementer',
+      promptText: `${next.name}\n${clusters[completedCount]?.instructions ?? ''}`,
+    });
+    if (revalidated.kind === 'blocked') {
+      const held = await invokeAgentList(sessionId);
+      set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: held } }));
+      void get().emitNotification(
+        'error',
+        'warning',
+        `cluster blocked: ${next.name}`,
+        revalidated.reason,
         { sessionId },
       );
       return;

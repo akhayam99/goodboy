@@ -14,7 +14,7 @@ type Params = {
   readonly sessionEffort?: ModelEffort | null;
 };
 
-export type StepRouting = {
+type StepRouting = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly effort: ModelEffort;

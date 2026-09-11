@@ -367,6 +367,7 @@ export {
 } from './planner';
 
 export {
+  formatWorkflowModelMenu,
   hintedRoutingOutcome,
   parseOrchestratorDecision,
   parseWorkflowRoutingProposal,

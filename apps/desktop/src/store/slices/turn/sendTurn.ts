@@ -49,6 +49,9 @@ import { isApiProvider } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokePermissionRuleList } from '../../../features/permissions/permissions';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { composeChildRoutingPrompt } from '../../../features/workflows/composeChildRoutingPrompt';
+import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { resolveProviderForTurn } from '../../../features/providers/routing';
 import { withProviderCooldown } from '../../../features/providers/taskModelRouting';
 import {
@@ -747,6 +750,23 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       resolvedPrompt = `${contextPreamble}\n\n${resolvedPrompt}`;
     }
 
+    if (workflowRoutingFlags().isChildModelSelectionEnabled === true) {
+      const childRoutingBlock = composeChildRoutingPrompt({
+        role: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
+        availability: workflowAvailabilitySnapshot({
+          providers: get().providers,
+          cooldowns: get().providerCooldowns,
+          alerts: get().budgetAlerts ?? [],
+          sessionId,
+          isRunBudgetBlocked: false,
+          nowMs: Date.now(),
+        }),
+      });
+      if (childRoutingBlock.length > 0) {
+        resolvedPrompt = `${childRoutingBlock}\n\n${resolvedPrompt}`;
+      }
+    }
+
     const isClusterChild = !!agentRowEarly?.parentAgentId && earlyAgentKind === 'implementer';
     if (isClusterChild && !resolvedPrompt.includes(clusterBoundaryMarker(activeAgentId))) {
       resolvedPrompt = `${composeClusterBoundary(activeAgentId)}\n\n${resolvedPrompt}`;
@@ -1437,13 +1457,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
 
     if (!lastError && !turnWasCancelled && assistantText.length > 0) {
       enqueueSummarizer(set, get, sessionId, resolvedPrompt, assistantText);
-      const capturedPlan = await capturePlanFromTurn(
+      const capturedPlan = await capturePlanFromTurn({
         set,
         sessionId,
-        activeAgentId,
+        agentId: activeAgentId,
         assistantText,
-        phaseWorkflowRunId ?? undefined,
-      );
+        emittingProvider: provider,
+        workflowRunId: phaseWorkflowRunId ?? undefined,
+      });
       await captureScoutDomainsFromTurn({
         set,
         sessionId,

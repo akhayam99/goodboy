@@ -23,6 +23,8 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeWorkflowNodeRoutingUpdate: invokeWorkflowNodeRoutingUpdateSpy,
 }));
 
+import { childRoutingBatch } from '../workflows/childRoutingBatch';
+import { resolveWorkflowChildRouting } from './resolveWorkflowChildRouting';
 import { resetWorkflowNodeRoutingLock } from './resetWorkflowNodeRoutingLock';
 import { selectWorkflowNodeRouting } from './selectWorkflowNodeRouting';
 import { setWorkflowNodeRoutingLock } from './setWorkflowNodeRoutingLock';
@@ -382,5 +384,126 @@ describe('workflowRouting slice', () => {
     expect(reloadedStep?.routingDecision).not.toBeNull();
     const errors = state.workflowNodeRoutingErrors as Record<string, string | null>;
     expect(errors[STEP_KEY]).toBeNull();
+  });
+});
+
+describe('fan-out child routing precedence', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  const childRequest = {
+    proposal: null,
+    promptText: 'map the session guards',
+    childLock: null,
+  };
+
+  it('run role lock survives fan-out with absent parent resolved fields', () => {
+    const parent = buildAgent();
+    const { get } = buildHarness({
+      agent: {
+        ...parent,
+        providerOverride: undefined,
+        modelOverride: undefined,
+        effort: undefined,
+      },
+    });
+
+    const { resolution } = resolveWorkflowChildRouting({
+      state: get(),
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      role: 'implementer',
+      childLock: null,
+      proposal: null,
+      promptText: 'apply the change',
+    });
+
+    expect(resolution.kind).toBe('ready');
+    if (resolution.kind !== 'ready') {
+      return;
+    }
+    expect(resolution.decision.source).toBe('run_role_lock');
+    expect(resolution.decision.selected.model).toBe('opus-5');
+  });
+
+  it('parent node lock does not lock descendants', () => {
+    const { get } = buildHarness({
+      hasRunRoleLock: false,
+      agent: buildAgent({
+        routingLock: {
+          version: 1,
+          pick: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+          origin: 'user',
+        },
+      }),
+    });
+
+    const { resolution } = resolveWorkflowChildRouting({
+      state: get(),
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      role: 'implementer',
+      childLock: null,
+      proposal: null,
+      promptText: 'apply the change',
+    });
+
+    expect(resolution.kind).toBe('ready');
+    if (resolution.kind !== 'ready') {
+      return;
+    }
+    expect(resolution.decision.selected.model).not.toBe('gpt-5.6-sol');
+    expect(resolution.decision.source).toBe('kind_default');
+  });
+
+  it('explicit child lock beats its run role lock', () => {
+    const { get } = buildHarness();
+
+    const { resolution } = resolveWorkflowChildRouting({
+      state: get(),
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      role: 'implementer',
+      childLock: {
+        version: 1,
+        pick: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+        origin: 'user',
+      },
+      proposal: null,
+      promptText: 'apply the change',
+    });
+
+    expect(resolution.kind).toBe('ready');
+    if (resolution.kind !== 'ready') {
+      return;
+    }
+    expect(resolution.decision.source).toBe('step_lock');
+    expect(resolution.decision.selected.model).toBe('gpt-5.6-sol');
+  });
+
+  it('budget block prevents partial child materialization', () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+    const { state, get } = buildHarness();
+    state.budgetAlerts = [
+      {
+        id: 'alert-1',
+        kind: 'session-exceeded',
+        sessionId: SESSION_ID,
+        currentUsd: 12,
+        capUsd: 10,
+        createdAt: NOW,
+      },
+    ];
+
+    const batch = childRoutingBatch({
+      state: get(),
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      role: 'implementer',
+      requests: [childRequest, { ...childRequest, promptText: 'list the settings strings' }],
+    });
+
+    expect(batch.kind).toBe('blocked');
   });
 });

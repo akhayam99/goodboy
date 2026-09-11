@@ -40,6 +40,7 @@ import type {
   MessageAttachment,
   PlanId,
   PlanWithCount,
+  ProviderId,
   ProviderRunId,
   SessionId,
   TaskModelPreference,
@@ -581,19 +582,32 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
   }
 };
 
-export const capturePlanFromTurn = async (
-  set: SetFn,
-  sessionId: SessionId,
-  agentId: AgentId,
-  assistantText: string,
-  workflowRunId?: WorkflowRunId,
-): Promise<PlanWithCount | null> => {
+type CapturePlanParams = {
+  readonly set: SetFn;
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly assistantText: string;
+  readonly emittingProvider: ProviderId | null;
+  readonly workflowRunId?: WorkflowRunId | undefined;
+};
+
+export const capturePlanFromTurn = async ({
+  set,
+  sessionId,
+  agentId,
+  assistantText,
+  emittingProvider,
+  workflowRunId,
+}: CapturePlanParams): Promise<PlanWithCount | null> => {
   try {
     const extracted = extractPlanFromMarker(assistantText);
     if (!extracted) {
       return null;
     }
-    const clusters = extractClustersFromMarker(assistantText);
+    const clusters = extractClustersFromMarker({
+      assistantText,
+      emittingProvider,
+    });
     await invokeUpsertPlan({
       sessionId,
       agentId,

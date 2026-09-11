@@ -94,7 +94,7 @@ export const isWorkflowTaskProfile = (value: unknown): value is WorkflowTaskProf
   );
 };
 
-const isProposal = (value: unknown): value is WorkflowRoutingProposal => {
+export const isWorkflowRoutingProposal = (value: unknown): value is WorkflowRoutingProposal => {
   if (!isRecord(value) || !hasOnlyKeys({ value, keys: ['pick', 'reason', 'source', 'profile'] })) {
     return false;
   }
@@ -130,7 +130,7 @@ export const isWorkflowRoutingDecision = (value: unknown): value is WorkflowRout
   }
   return (
     value['version'] === 1 &&
-    (value['proposal'] === null || isProposal(value['proposal'])) &&
+    (value['proposal'] === null || isWorkflowRoutingProposal(value['proposal'])) &&
     isPick(value['selected']) &&
     typeof value['source'] === 'string' &&
     DECISION_SOURCES.has(value['source']) &&
