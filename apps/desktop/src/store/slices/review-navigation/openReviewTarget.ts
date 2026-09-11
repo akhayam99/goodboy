@@ -1,6 +1,7 @@
 import { formatError } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { selectActiveMountId } from '../project-mounts/selectors';
+import { REVIEW_HOME, reviewMountId, reviewPrNumber, reviewThreadId } from './destination';
 import type {
   GetFn,
   OpenReviewTargetParams,
@@ -18,6 +19,17 @@ type WriteParams = {
   readonly target: ReviewTarget | null;
 };
 
+type MountPrParams = {
+  readonly get: GetFn;
+  readonly mountId: MountId;
+  readonly prNumber: number;
+};
+
+type DisplayedParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+};
+
 const writeTarget = ({ set, sessionId, target }: WriteParams): void => {
   set((state) => ({ reviewTargets: { ...state.reviewTargets, [sessionId]: target } }));
 };
@@ -27,40 +39,39 @@ const unavailable = (reason: ReviewTargetReason): ReviewTargetOutcome => ({
   reason,
 });
 
+const hasMountPr = ({ get, mountId, prNumber }: MountPrParams): boolean =>
+  (get().mountGithub[mountId]?.prs ?? []).some((candidate) => candidate.number === prNumber);
+
+const displayedPrNumber = ({ get, sessionId }: DisplayedParams): number | null =>
+  get().sessionSelectedPrNumber[sessionId] ?? get().sessionGithub[sessionId]?.pr?.number ?? null;
+
 export const openReviewTarget = async ({
   set,
   get,
   sessionId,
-  mountId,
-  prNumber,
-  threadId,
+  destination = REVIEW_HOME,
   mode,
 }: Params): Promise<ReviewTargetOutcome> => {
   if (!get().sessions.some((candidate) => candidate.id === sessionId)) {
     return unavailable('no_session');
   }
-  const isTargeted = prNumber !== undefined || threadId !== undefined;
-  if (mountId !== undefined) {
-    try {
-      await get().setSessionActiveMount({ sessionId, mountId });
-    } catch (error) {
-      return { kind: 'failed', error: formatError(error) };
-    }
-  }
-  const activeMountId: MountId | null = mountId ?? selectActiveMountId({ state: get(), sessionId });
-  if (isTargeted && activeMountId === null) {
-    return unavailable('no_mount');
-  }
   const requestId = crypto.randomUUID();
   const base = {
     requestId,
-    threadId: threadId ?? null,
+    destination,
     mode: mode ?? null,
     reason: null,
     error: null,
   };
   writeTarget({ set, sessionId, target: { ...base, status: 'pending' } });
   const isCurrent = (): boolean => get().reviewTargets[sessionId]?.requestId === requestId;
+
+  const release = (reason: ReviewTargetReason): ReviewTargetOutcome => {
+    if (isCurrent()) {
+      writeTarget({ set, sessionId, target: null });
+    }
+    return unavailable(reason);
+  };
 
   const settle = (outcome: ReviewTargetOutcome): ReviewTargetOutcome => {
     if (!isCurrent()) {
@@ -77,18 +88,39 @@ export const openReviewTarget = async ({
     return outcome;
   };
 
-  if (!isTargeted) {
-    return settle({ kind: 'opened' });
-  }
-  try {
-    if (prNumber !== undefined && activeMountId !== null) {
-      await get().selectSessionPr(sessionId, prNumber, activeMountId);
+  const requestedMountId = reviewMountId({ destination });
+  if (requestedMountId !== null) {
+    try {
+      await get().setSessionActiveMount({ sessionId, mountId: requestedMountId });
+    } catch (error) {
+      return settle({ kind: 'failed', error: formatError(error) });
     }
     if (!isCurrent()) {
       return unavailable('superseded');
     }
-    if (threadId !== undefined && activeMountId !== null) {
-      await get().refreshSessionPrDetail(sessionId, { force: true, mountId: activeMountId });
+  }
+  const prNumber = reviewPrNumber({ destination });
+  if (prNumber === null) {
+    return settle({ kind: 'opened' });
+  }
+  const mountId = requestedMountId ?? selectActiveMountId({ state: get(), sessionId });
+  if (mountId === null) {
+    return release('no_mount');
+  }
+  const threadId = reviewThreadId({ destination });
+  try {
+    if (!hasMountPr({ get, mountId, prNumber })) {
+      await get().refreshSessionPr(sessionId, { force: true, mountId });
+      if (!isCurrent()) {
+        return unavailable('superseded');
+      }
+    }
+    await get().selectSessionPr(sessionId, prNumber, mountId);
+    if (!isCurrent()) {
+      return unavailable('superseded');
+    }
+    if (threadId !== null) {
+      await get().refreshSessionPrDetail(sessionId, { force: true, mountId });
     }
   } catch (error) {
     return settle({ kind: 'failed', error: formatError(error) });
@@ -96,11 +128,10 @@ export const openReviewTarget = async ({
   if (!isCurrent()) {
     return unavailable('superseded');
   }
-  const pr = get().sessionGithub[sessionId]?.pr ?? null;
-  if (pr === null || (prNumber !== undefined && pr.number !== prNumber)) {
+  if (displayedPrNumber({ get, sessionId }) !== prNumber) {
     return settle(unavailable('no_pull_request'));
   }
-  if (threadId === undefined) {
+  if (threadId === null) {
     return settle({ kind: 'opened' });
   }
   try {
@@ -111,10 +142,17 @@ export const openReviewTarget = async ({
     const materialized = await get().ensureReviewThread({
       sessionId,
       threadId,
-      prNumber: pr.number,
+      prNumber,
+      isCancelled: () => !isCurrent(),
     });
+    if (materialized === 'cancelled') {
+      return unavailable('superseded');
+    }
     if (materialized === 'missing') {
       return settle(unavailable('no_thread'));
+    }
+    if (materialized === 'closed') {
+      return settle(unavailable('thread_closed'));
     }
   } catch (error) {
     return settle({ kind: 'failed', error: formatError(error) });
