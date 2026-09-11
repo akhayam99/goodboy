@@ -174,6 +174,7 @@ export type {
   VariantAxisOption,
 } from './model-catalog';
 export type {
+  ModelRoutingProfile,
   WorkflowModelPick,
   WorkflowRoutingDecision,
   WorkflowRoutingLock,

@@ -108,7 +108,11 @@ export {
 export { resolveProvider, type ResolveProviderInput } from './budget/router';
 
 export { computeCostUsd, priceFor } from './providers/claude/cost';
-export { getModelPrice, type ModelPriceSummary } from './providers/model-price';
+export {
+  getModelPrice,
+  getProviderModelPrice,
+  type ModelPriceSummary,
+} from './providers/model-price';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
 export {
@@ -157,6 +161,7 @@ export {
   type ResolvedRoleFallback,
   type ResolvedRoleRouting,
 } from './providers/role-models';
+export { workflowModelProfile } from './providers/workflowModelProfiles';
 
 export { getCheapModel, getDefaultBinary } from './providers/cli-defaults';
 export {

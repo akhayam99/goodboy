@@ -55,3 +55,9 @@ export type WorkflowRoutingDecision = Readonly<{
     'none' | 'unknown_model' | 'disconnected' | 'cooldown' | 'budget' | 'unsupported_effort';
   executed: WorkflowModelPick | null;
 }>;
+
+export type ModelRoutingProfile = Readonly<{
+  taskTypes: ReadonlyArray<WorkflowTaskType>;
+  preferredDifficulty: ReadonlyArray<WorkflowTaskDifficulty>;
+  evidence: 'curated';
+}>;

@@ -1,4 +1,5 @@
 import type { CatalogModel, ModelDescriptor } from '@goodboy/types';
+import { workflowModelProfile } from './workflowModelProfiles';
 
 type Params = {
   readonly model: CatalogModel;
@@ -67,5 +68,6 @@ export const catalogDescriptor = ({ model }: Params): ModelDescriptor => {
     weight: WEIGHT_BY_KEY[model.key] ?? 10,
     effort: effortFor({ model }),
     thinkerOnly: THINKER_ONLY_KEYS.has(model.key),
+    routingProfile: workflowModelProfile({ provider: model.provider, model: model.key }),
   };
 };

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { getModelPrice } from './model-price';
+import { MODEL_CATALOGS } from './catalogs';
+import { getModelPrice, getProviderModelPrice } from './model-price';
 
 describe('getModelPrice', () => {
   it('returns claude opus pricing for a known opus id', () => {
@@ -74,5 +75,52 @@ describe('getModelPrice', () => {
   ])('maps catalog key %s to its default cli price', (key, cliId) => {
     expect(getModelPrice(key)).not.toBeNull();
     expect(getModelPrice(key)).toEqual(getModelPrice(cliId));
+  });
+});
+
+describe('getProviderModelPrice', () => {
+  it('returns each provider own price for the same model id', () => {
+    expect(getProviderModelPrice({ provider: 'anthropic', model: 'sonnet-4.5' })).toEqual({
+      inputPerMtok: 3,
+      outputPerMtok: 15,
+    });
+    expect(getProviderModelPrice({ provider: 'openrouter', model: 'sonnet-4.5' })).toBeNull();
+    expect(getProviderModelPrice({ provider: 'gemini', model: 'gemini-3.1-pro' })).toEqual({
+      inputPerMtok: 2,
+      outputPerMtok: 12,
+    });
+    expect(getProviderModelPrice({ provider: 'openrouter', model: 'gemini-3.1-pro' })).toBeNull();
+  });
+
+  it('never fills a gap from another provider rate', () => {
+    expect(getProviderModelPrice({ provider: 'openrouter', model: 'opus-4.8' })).toBeNull();
+    expect(getProviderModelPrice({ provider: 'anthropic', model: 'opus-4.8' })).toEqual({
+      inputPerMtok: 5,
+      outputPerMtok: 25,
+    });
+  });
+
+  it('returns null and never zero for an unknown price', () => {
+    expect(getProviderModelPrice({ provider: 'anthropic', model: 'claude-vapor-9-9' })).toBeNull();
+    expect(getProviderModelPrice({ provider: 'codex', model: 'gpt-9' })).toBeNull();
+    expect(getProviderModelPrice({ provider: 'cursor', model: 'nope' })).toBeNull();
+  });
+
+  it('returns null for subscription routes with no per-token billing', () => {
+    for (const model of MODEL_CATALOGS.opencode) {
+      expect(getProviderModelPrice({ provider: 'opencode', model: model.key })).toBeNull();
+    }
+    expect(getProviderModelPrice({ provider: 'moonshot', model: 'kimi-k3' })).toBeNull();
+  });
+
+  it('resolves a catalog key through its own provider native id', () => {
+    expect(getProviderModelPrice({ provider: 'codex', model: 'gpt-6' })).toEqual({
+      inputPerMtok: 10,
+      outputPerMtok: 50,
+    });
+    expect(getProviderModelPrice({ provider: 'cursor', model: 'composer-2.5' })).toEqual({
+      inputPerMtok: 0.5,
+      outputPerMtok: 2.5,
+    });
   });
 });
