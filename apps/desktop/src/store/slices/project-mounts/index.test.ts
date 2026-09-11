@@ -177,6 +177,7 @@ vi.mock('@goodboy/db', () => ({
 }));
 
 import { createProjectMountsSlice } from './index';
+import { selectActiveMount, selectWritableMounts } from './selectors';
 
 const SESSION_ID = 'session-1' as SessionId;
 const PROJECT_ID = 'project-1' as ProjectId;
@@ -659,6 +660,14 @@ describe('project mount lifecycle', () => {
 
     expect((state['sessionActiveMount'] as Record<string, unknown>)[SESSION_ID]).toBe('mount-1');
     expect((state['sessionActiveProject'] as Record<string, unknown>)[SESSION_ID]).toBe(PROJECT_ID);
+    expect(
+      selectWritableMounts({ state: state as never, sessionId: SESSION_ID }).map(
+        (mount) => mount.mountId,
+      ),
+    ).toEqual(['mount-2']);
+    expect(selectActiveMount({ state: state as never, sessionId: SESSION_ID })?.mountId).toBe(
+      'mount-2',
+    );
   });
 
   it('recreates a removed worktree from its own branch when attaching', async () => {

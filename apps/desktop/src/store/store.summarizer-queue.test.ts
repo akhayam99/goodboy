@@ -387,6 +387,36 @@ describe('summarizer queue, coalescing and no-stack', () => {
     useAppStore.setState({ workspaceOverrides: {} });
   });
 
+  it('summarizes in the worktree the turn wrote to, not the first of the session', async () => {
+    const { useAppStore } = await import('./store');
+    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    queues.clear();
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionSlots: { [SESSION_ID]: [] },
+      summarizerStatus: {},
+      sessionWorktrees: { [SESSION_ID]: ['/repos/app/first', '/repos/app/second'] },
+    });
+
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'turn input',
+      turnOutput: 'turn output',
+      workingDir: '/repos/app/second',
+    });
+
+    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    expect(summarizerConstructorCalls).toContainEqual(
+      expect.objectContaining({ workingDir: '/repos/app/second' }),
+    );
+    expect(summarizerConstructorCalls).not.toContainEqual(
+      expect.objectContaining({ workingDir: '/repos/app/first' }),
+    );
+    useAppStore.setState({ sessionWorktrees: {} });
+  });
+
   it('uses the current workspace provider instead of the captured session provider', async () => {
     const { useAppStore } = await import('./store');
     const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
