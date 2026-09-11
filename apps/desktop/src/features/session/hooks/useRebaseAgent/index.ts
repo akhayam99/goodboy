@@ -56,8 +56,8 @@ export const rebasePromptFor = ({
   readonly baseBranch: string;
   readonly mountId: MountId;
   readonly worktreePath: string;
-}): string => {
-  return [
+}): string =>
+  [
     `Rebase this session branch onto origin/${baseBranch}.`,
     `- This rebase belongs to mount ${mountId} at ${worktreePath}. Run every git command there and never in a sibling mount.`,
     `- Fetch origin ${baseBranch} before rebasing.`,
@@ -67,7 +67,6 @@ export const rebasePromptFor = ({
     '- Never merge and never touch other branches.',
     '- If a conflict cannot be resolved confidently, stop and report the conflicting files.',
   ].join('\n');
-};
 
 export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params): Result => {
   const [isStarting, setIsStarting] = useState(false);
