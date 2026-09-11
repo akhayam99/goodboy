@@ -7,6 +7,69 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.26
+
+The resolve queue splits the outcomes it used to lump together, pull request
+state reads the same on every surface, and detaching a project takes it out of
+the session.
+
+### [#1732] Five resolve outcomes instead of one bucket
+
+"Needs review" covered three different situations, and a run that crashed sat
+under the same label as one you stopped on purpose. There are five outcomes
+now: fix ready, reply ready, nothing to change, run failed, run stopped. Each
+carries its next step in words and its own icon, so none of them rests on
+color. A fix that exists only on your machine is labelled that way, and an
+approved change that has not gone out reads `Approved, not published`, so
+neither can be mistaken for closed on the provider.
+
+The queue counts what is in it, queued, working, question, failed and
+published, and hides the buckets that are empty. A `retryable` filter narrows
+it to the three states a retry can actually move.
+
+`Publish` now commits to one of three things before you press it: send the fix
+out, close the threads without one, or post replies. Closing without a fix is
+the only one that asks you to confirm, restating the counts and the pull
+request number.
+
+### [#1733] One reading of pull request state everywhere
+
+Merged, closed and approved each had their own color per provider: a merged
+GitLab or Linear item wore a plain notice tone, an abandoned pull request wore
+the merged one, and the board and the sidebar disagreed over which pull
+requests counted as approved. All of it now comes from one grammar.
+
+Approval and error no longer share a dot either. Plan and agent status show a
+written label and a reason instead of a bare keyword, and every status dot
+carries both, so nothing rests on color alone.
+
+### [#1737] Detaching a project removes it from the session
+
+Detaching a project left it in the Projects list with a `Mount` button beside
+it, detaching it a second time did nothing at all, and the row menu of the one
+it left behind opened an empty popover. Detach now takes the project out of
+the session, which is what the word says; `Unmount branch` still covers the
+narrower case.
+
+A mount an agent or a terminal is still holding is refused instead of deleted,
+and while a blocker stands the confirmation offers no button to press past it.
+A row left over from before can leave on its own through `Remove from session`.
+A directory still on disk is handed to the orphan sweep, so it turns up in
+workspace settings instead of disappearing quietly.
+
+### Fixes
+
+- The command palette offered a skills filter the workspace has turned off,
+  and typing it led nowhere; three surfaces that still advertised skills are
+  now gated. (#1733)
+- The composer's placeholder named a slash command it did not accept. (#1733)
+- The palette listed four of seventeen lens destinations, leaving thirteen
+  bound to shortcuts nobody was told about; all seventeen are listed with
+  their shortcut, and the context chip and the permission picker teach theirs
+  in place. The routing picker still does not show its own. (#1733)
+- `Fix all` promised more than it did, since it started one shared run on the
+  default resolver routing; it is now `Start resolve run`. (#1732)
+
 ## Goodboy v0.2.25
 
 The chat shows where a session is about to write, model lists match what
