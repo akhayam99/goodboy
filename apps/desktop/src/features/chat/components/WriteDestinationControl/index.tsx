@@ -12,7 +12,7 @@ import { useAppStore } from '../../../../store';
 import {
   writeDestinationDetail,
   writeDestinationLabel,
-  type WriteDestinationMount,
+  type WriteDestinationCandidate,
 } from '../../../../store/slices/project-mounts/writeDestination';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useToast } from '../../../../app/components/Toast';
@@ -127,7 +127,7 @@ export const WriteDestinationControl = ({ sessionId, agentId }: Props) => {
           ) : null}
 
           <ul className="flex flex-col gap-0.5" role="listbox" aria-label="Mounted projects">
-            {candidates.map((candidate: WriteDestinationMount) => (
+            {candidates.map((candidate: WriteDestinationCandidate) => (
               <li key={candidate.mountId}>
                 <SelectableRow
                   role="option"

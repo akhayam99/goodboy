@@ -3,7 +3,7 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 
 export type WriteDestinationMount = Readonly<{
   kind: 'mount';
-  mountId: MountId;
+  mountId: MountId | null;
   projectId: ProjectId;
   projectName: string;
   mountName: string;
@@ -12,33 +12,29 @@ export type WriteDestinationMount = Readonly<{
   hasGit: boolean;
 }>;
 
+export type WriteDestinationCandidate = Readonly<
+  Omit<WriteDestinationMount, 'mountId'> & { mountId: MountId }
+>;
+
 export type WriteDestinationScratch = Readonly<{ kind: 'scratch'; path: string | null }>;
 
 export type WriteDestination = WriteDestinationMount | WriteDestinationScratch;
 
-type MountToDestinationParams = {
+type DescribeMountParams = {
   readonly mount: SessionProjectMount;
   readonly projectName: string;
 };
 
-export const mountToWriteDestination = ({
-  mount,
+const describeMount = ({ mount, projectName }: DescribeMountParams): WriteDestinationMount => ({
+  kind: 'mount',
+  mountId: mount.mountId ?? null,
+  projectId: mount.projectId,
   projectName,
-}: MountToDestinationParams): WriteDestinationMount | null => {
-  if (mount.mountId === undefined) {
-    return null;
-  }
-  return {
-    kind: 'mount',
-    mountId: mount.mountId,
-    projectId: mount.projectId,
-    projectName,
-    mountName: mount.mountName,
-    branch: mount.branch,
-    worktreePath: mount.worktreePath,
-    hasGit: !isBranchlessSession({ branch: mount.branch }),
-  };
-};
+  mountName: mount.mountName,
+  branch: mount.branch,
+  worktreePath: mount.worktreePath,
+  hasGit: !isBranchlessSession({ branch: mount.branch }),
+});
 
 type ResolveParams = {
   readonly mount: SessionProjectMount | null;
@@ -54,12 +50,7 @@ export const resolveWriteDestination = ({
   if (mount === null) {
     return { kind: 'scratch', path: scratchPath };
   }
-  return (
-    mountToWriteDestination({ mount, projectName: projectName ?? mount.mountName }) ?? {
-      kind: 'scratch',
-      path: scratchPath,
-    }
-  );
+  return describeMount({ mount, projectName: projectName ?? mount.mountName });
 };
 
 export const writeDestinationLabel = (destination: WriteDestination): string => {
@@ -82,10 +73,13 @@ export const writeDestinationsMatch = (a: WriteDestination, b: WriteDestination)
   if (a.kind === 'scratch' && b.kind === 'scratch') {
     return true;
   }
-  if (a.kind === 'mount' && b.kind === 'mount') {
+  if (a.kind !== 'mount' || b.kind !== 'mount') {
+    return false;
+  }
+  if (a.mountId !== null && b.mountId !== null) {
     return a.mountId === b.mountId;
   }
-  return false;
+  return a.worktreePath === b.worktreePath;
 };
 
 type ListParams = {
@@ -96,15 +90,12 @@ type ListParams = {
 export const listWriteDestinationCandidates = ({
   mounts,
   projects,
-}: ListParams): ReadonlyArray<WriteDestinationMount> =>
+}: ListParams): ReadonlyArray<WriteDestinationCandidate> =>
   mounts.flatMap((mount) => {
-    if (mount.isAttached === false || mount.worktreePath === '') {
+    if (mount.isAttached === false || mount.worktreePath === '' || mount.mountId === undefined) {
       return [];
     }
     const project = projects.find((candidate) => candidate.id === mount.projectId);
-    const destination = mountToWriteDestination({
-      mount,
-      projectName: project?.name ?? mount.mountName,
-    });
-    return destination === null ? [] : [destination];
+    const described = describeMount({ mount, projectName: project?.name ?? mount.mountName });
+    return [{ ...described, mountId: mount.mountId }];
   });

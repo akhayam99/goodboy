@@ -3,6 +3,7 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  MountId,
   ProjectId,
   ProviderId,
   ProviderRunId,
@@ -462,6 +463,55 @@ describe('sendTurn, agent routing', () => {
       ],
     });
   }
+
+  it('records the resolved mount as the write-destination snapshot for the turn', async () => {
+    const useAppStore = await importStore();
+    setupTwoAgents(useAppStore, AGENT_A);
+    useAppStore.setState({
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            mountId: 'mount-rt-1' as MountId,
+            projectId: 'project-rt' as ProjectId,
+            mountName: 'repo',
+            worktreePath: '/tmp/wt',
+            repoRoot: '/tmp/repo',
+            branch: 'goodboy/rt',
+          },
+        ],
+      },
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'fix it' });
+
+    expect(useAppStore.getState().agentTurnDestination[AGENT_A]).toEqual({
+      kind: 'mount',
+      mountId: 'mount-rt-1',
+      projectId: 'project-rt',
+      projectName: 'repo',
+      mountName: 'repo',
+      branch: 'goodboy/rt',
+      worktreePath: '/tmp/wt',
+      hasGit: true,
+    });
+  });
+
+  it('records the session scratch folder as the write-destination snapshot without a mount', async () => {
+    const useAppStore = await importStore();
+    setupTwoAgents(useAppStore, AGENT_A);
+    useAppStore.setState({ sessionProjectMounts: { [SESSION_ID]: [] } });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'no project yet' });
+
+    expect(useAppStore.getState().agentTurnDestination[AGENT_A]).toEqual({
+      kind: 'scratch',
+      path: '/tmp/scratch',
+    });
+  });
 
   it('routes user_text to the explicit agentId, not selectedAgentId', async () => {
     const useAppStore = await importStore();
