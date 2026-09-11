@@ -19,7 +19,7 @@ const rawError = ({ error }: { readonly error: unknown }): string => {
     return error.stack;
   }
   try {
-    return JSON.stringify(error, null, 2);
+    return JSON.stringify(error, null, 2) ?? String(error);
   } catch {
     return String(error);
   }

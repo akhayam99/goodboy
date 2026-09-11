@@ -50,6 +50,12 @@ describe('mountFailure', () => {
     expect(failure.detail).toContain('kind: branch_in_use');
   });
 
+  it('keeps a technical detail for an error json cannot serialize', () => {
+    const failure = mountFailure({ error: () => 'boom', project, preflight });
+
+    expect(failure.detail.split('\n').at(-1)).toContain('boom');
+  });
+
   it('survives a plan that never resolved', () => {
     const failure = mountFailure({ error: 'boom', project, preflight: null });
 
