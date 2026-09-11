@@ -88,6 +88,10 @@ const confirm = () => {
   fireEvent.click(screen.getByRole('button', { name: /^Spawn / }));
 };
 
+const expandRouting = () => {
+  fireEvent.click(screen.getByRole('button', { name: /^Agent routing:/ }));
+};
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -174,6 +178,7 @@ describe('CreateAgentPopover', () => {
     renderControl();
     openPopover();
     fireEvent.click(screen.getByRole('button', { name: 'Scout' }));
+    expandRouting();
 
     expect(screen.getByRole('button', { name: 'Haiku' }).getAttribute('aria-pressed')).toBe('true');
 
@@ -190,6 +195,7 @@ describe('CreateAgentPopover', () => {
   it('selects a model family and version as separate ladder levels', () => {
     renderControl();
     openPopover();
+    expandRouting();
     fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
     fireEvent.click(screen.getByRole('button', { name: '5' }));
     expect(screen.getByRole('button', { name: 'Opus' }).getAttribute('aria-pressed')).toBe('true');
@@ -199,6 +205,7 @@ describe('CreateAgentPopover', () => {
   it('spawns exactly the pinned model the picker shows', () => {
     renderControl();
     openPopover();
+    expandRouting();
     fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
     fireEvent.click(screen.getByRole('button', { name: '5' }));
 
@@ -281,6 +288,7 @@ describe('CreateAgentPopover', () => {
     ];
     const { container } = renderControl();
     openPopover();
+    expandRouting();
 
     expect(container.querySelector('select')).toBeNull();
     expect(screen.getByRole('button', { name: 'Sol' })).toBeTruthy();
@@ -309,6 +317,7 @@ describe('CreateAgentPopover', () => {
     ];
     renderControl();
     openPopover();
+    expandRouting();
 
     fireEvent.click(screen.getByRole('button', { name: 'Thinking' }));
 
@@ -322,6 +331,7 @@ describe('CreateAgentPopover', () => {
     ];
     renderControl();
     openPopover();
+    expandRouting();
     expect(screen.getByRole('button', { name: 'Claude' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Codex' })).toBeNull();
   });
@@ -330,6 +340,7 @@ describe('CreateAgentPopover', () => {
     h.providers = [];
     renderControl();
     openPopover();
+    expandRouting();
     const openProviders = screen.getByRole('button', { name: 'Open providers' });
     const onOpenProviderStudio = vi.fn();
     window.addEventListener('goodboy:open-settings', onOpenProviderStudio);
@@ -339,11 +350,11 @@ describe('CreateAgentPopover', () => {
     expect(screen.queryByRole('dialog', { name: 'Create agent' })).toBeNull();
   });
 
-  it('keeps the type section available for a folder project', () => {
+  it('keeps the role section available for a folder project', () => {
     renderControl();
     openPopover();
 
-    expect(screen.getByText('Agent type')).toBeDefined();
+    expect(screen.getByText('Role')).toBeDefined();
     confirm();
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
       kindOverride: 'generic',
@@ -370,5 +381,51 @@ describe('CreateAgentPopover', () => {
     const footer = action.closest('footer');
     expect(footer?.className).toContain('shrink-0');
     expect(footer?.previousElementSibling?.getAttribute('role')).toBe('separator');
+  });
+  it('keeps routing collapsed until the user asks for it', () => {
+    renderControl();
+    openPopover();
+
+    const routing = screen.getByRole('button', { name: /^Agent routing:/ });
+    expect(routing.getAttribute('aria-expanded')).toBe('false');
+    expect(routing.textContent).toContain('Claude');
+    expect(screen.queryByRole('button', { name: 'Opus' })).toBeNull();
+
+    expandRouting();
+    expect(screen.getByRole('button', { name: 'Opus' })).toBeTruthy();
+  });
+
+  it('sends optional instructions as the first prompt and omits them when empty', () => {
+    renderControl();
+    openPopover();
+
+    const instructions = screen.getByRole('textbox', { name: 'Agent instructions' });
+    fireEvent.change(instructions, { target: { value: '  keep the diff small  ' } });
+    confirm();
+
+    expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
+      kindOverride: 'generic',
+      provider: 'anthropic',
+      model: 'haiku-4.5',
+      effort: 'low',
+      initialPrompt: 'keep the diff small',
+      focus: 'agent',
+    });
+  });
+
+  it('places the role before the instructions and the instructions before routing', () => {
+    renderControl();
+    openPopover();
+
+    const role = screen.getByText('Role');
+    const instructions = screen.getByRole('textbox', { name: 'Agent instructions' });
+    const routing = screen.getByRole('button', { name: /^Agent routing:/ });
+
+    expect(
+      role.compareDocumentPosition(instructions) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      instructions.compareDocumentPosition(routing) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 });

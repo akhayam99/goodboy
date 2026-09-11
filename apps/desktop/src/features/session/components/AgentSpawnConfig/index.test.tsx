@@ -33,7 +33,7 @@ describe('AgentSpawnConfig', () => {
       <AgentSpawnConfig value={DEFAULT_AGENT_SPAWN_CONFIG} onChange={onChange} disabled={false} />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /^Agent settings:/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Agent routing:/ }));
     fireEvent.click(screen.getByRole('button', { name: /^Codex/ }));
     const providerValue = onChange.mock.calls[0]![0];
     expect(providerValue.provider).toBe('codex');
@@ -42,7 +42,7 @@ describe('AgentSpawnConfig', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Mini' }));
     expect(onChange.mock.calls[1]![0].model).toBe('gpt-5.4-mini');
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Agent hint' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
       target: { value: 'Emphasize the migration path.' },
     });
     expect(onChange.mock.calls.at(-1)?.[0].hint).toBe('Emphasize the migration path.');
@@ -56,6 +56,42 @@ describe('AgentSpawnConfig', () => {
         disabled={false}
       />,
     );
-    expect(screen.getByRole('button', { name: /^Agent settings:/ }).textContent).toContain('High');
+    expect(screen.getByRole('button', { name: /^Agent routing:/ }).textContent).toContain('High');
+  });
+  it('fixes the role read-only when the caller imposes one', () => {
+    render(
+      <AgentSpawnConfig
+        value={DEFAULT_AGENT_SPAWN_CONFIG}
+        onChange={vi.fn()}
+        disabled={false}
+        role={{ label: 'Pull request author' }}
+      />,
+    );
+
+    expect(screen.getByText('Role')).toBeTruthy();
+    expect(screen.getByText('Pull request author')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Pull request author' })).toBeNull();
+  });
+
+  it('orders role, then optional instructions, then routing', () => {
+    const { container } = render(
+      <AgentSpawnConfig
+        value={DEFAULT_AGENT_SPAWN_CONFIG}
+        onChange={vi.fn()}
+        disabled={false}
+        role={{ label: 'Pull request author' }}
+      />,
+    );
+
+    const instructions = screen.getByRole('textbox', { name: 'Agent instructions' });
+    const routing = screen.getByRole('button', { name: /^Agent routing:/ });
+    const order = instructions.compareDocumentPosition(routing);
+
+    expect(container.textContent).toContain('optional');
+    expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      screen.getByText('Role').compareDocumentPosition(instructions) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 });
