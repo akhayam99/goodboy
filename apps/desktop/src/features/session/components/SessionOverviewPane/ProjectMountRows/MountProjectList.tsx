@@ -4,6 +4,7 @@ import type { Project, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { ICON_SIZE, projectGlyph } from '../../../../../shared/components/conceptIcons';
 import { MountPreflightCard } from './MountPreflightCard';
+import { mountFailure, type MountFailure } from './mountFailure';
 import { useMountPreflight } from './useMountPreflight';
 
 const MANUAL_REASON = 'added manually by the user';
@@ -21,6 +22,7 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
   const [query, setQuery] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState<Project['id'] | null>(null);
   const [isMounting, setIsMounting] = useState(false);
+  const [failure, setFailure] = useState<MountFailure | null>(null);
   const isSearchable = projects.length > SEARCH_THRESHOLD;
   const filtered = useMemo(
     () => projects.filter((project) => project.name.toLowerCase().includes(query.toLowerCase())),
@@ -32,6 +34,7 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
   const mountProject = async ({ project }: { readonly project: Project }) => {
     const { preflight } = preflightState;
     setIsMounting(true);
+    setFailure(null);
     try {
       await materializeProject({
         sessionId,
@@ -43,6 +46,7 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
       setSelectedProjectId(null);
       onDone();
     } catch (error) {
+      setFailure(mountFailure({ error, project, preflight }));
       void emitNotification('error', 'warning', 'could not add the project', formatError(error), {
         sessionId,
         workspaceId: project.workspaceId,
@@ -58,8 +62,12 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
         project={selectedProject}
         state={preflightState}
         isBusy={isMounting}
+        failure={failure}
         onConfirm={() => void mountProject({ project: selectedProject })}
-        onCancel={() => setSelectedProjectId(null)}
+        onCancel={() => {
+          setFailure(null);
+          setSelectedProjectId(null);
+        }}
       />
     );
   }
@@ -89,7 +97,10 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
                   <button
                     type="button"
                     aria-label={`Mount ${project.name}`}
-                    onClick={() => setSelectedProjectId(project.id)}
+                    onClick={() => {
+                      setFailure(null);
+                      setSelectedProjectId(project.id);
+                    }}
                     className={cn(
                       'flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm text-foreground motion-safe:transition-colors hover:bg-muted/40',
                     )}

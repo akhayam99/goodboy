@@ -259,6 +259,23 @@ describe('createPrForSession, issue references', () => {
     });
   });
 
+  it('names the cause when the reference patch fails instead of dropping it', async () => {
+    const created = { number: 7, body: 'Generated from the commits.' } as PullRequestState;
+    const state = buildState({
+      sessionExternalTasks: { [SESSION_ID]: [githubIssue()] },
+      mountGithub: { [MOUNT_ID]: { pr: created } },
+    });
+    state.editPr.mockRejectedValueOnce(new Error('gh: pull request is locked'));
+
+    await buildCreate(state)({ sessionId: SESSION_ID });
+
+    const warning = state.emitNotification.mock.calls.find(
+      (call: ReadonlyArray<unknown>) => call[2] === 'PR opened without its issue links',
+    );
+    expect(warning?.[3]).toContain('Closes #41');
+    expect(warning?.[3]).toContain('gh: pull request is locked');
+  });
+
   it('does not patch a filled body that already closes the issue', async () => {
     const created = { number: 7, body: 'fix #41' } as PullRequestState;
     const state = buildState({

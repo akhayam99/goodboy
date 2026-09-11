@@ -26,7 +26,7 @@ const h = vi.hoisted(() => ({
   materializeProject: vi.fn(async () => undefined),
   emitNotification: vi.fn(),
   preflight: {
-    status: 'ready',
+    status: 'ready' as 'ready' | 'checking',
     preflight: {
       mountId: 'mount-1',
       slug: 'ship-it',
@@ -63,6 +63,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.preflight.preflight.renamedFrom = null;
   h.preflight.branchScanError = null;
+  h.preflight.status = 'ready';
+  h.materializeProject.mockResolvedValue(undefined);
 });
 
 afterEach(cleanup);
@@ -109,5 +111,42 @@ describe('MountProjectList', () => {
 
     expect(screen.getByRole('button', { name: 'Mount goodboy' })).toBeTruthy();
     expect(h.materializeProject).not.toHaveBeenCalled();
+  });
+  it('names what is running while the branches are read and while it creates', async () => {
+    h.preflight.status = 'checking';
+    renderList();
+    fireEvent.click(screen.getByRole('button', { name: 'Mount goodboy' }));
+
+    expect(screen.getByText('Reading the branches already in the repository…')).toBeTruthy();
+
+    h.preflight.status = 'ready';
+    const deferred: { resolve: () => void } = { resolve: () => undefined };
+    h.materializeProject.mockReturnValueOnce(
+      new Promise<undefined>((resolve) => {
+        deferred.resolve = () => resolve(undefined);
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+
+    await waitFor(() => expect(screen.getByText('Creating the worktree…')).toBeTruthy());
+    deferred.resolve();
+  });
+
+  it('shows the cause, the technical detail and a retry after a failure', async () => {
+    h.materializeProject.mockRejectedValueOnce(
+      new Error('cannot find base ref: tried origin/main'),
+    );
+    renderList();
+    fireEvent.click(screen.getByRole('button', { name: 'Mount goodboy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('cannot find base ref: tried origin/main');
+    expect(screen.getByText('Technical detail')).toBeTruthy();
+    expect(alert.parentElement?.textContent).toContain('path: /repos/goodboy');
+
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    fireEvent.click(retry);
+    await waitFor(() => expect(h.materializeProject).toHaveBeenCalledTimes(2));
   });
 });

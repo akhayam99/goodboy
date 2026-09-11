@@ -1,12 +1,15 @@
+import { AlertTriangle } from 'lucide-react';
 import { Button, cn } from '@goodboy/ui';
 import type { Project } from '@goodboy/types';
 import { ICON_SIZE, projectGlyph } from '../../../../../shared/components/conceptIcons';
+import type { MountFailure } from './mountFailure';
 import type { MountPreflightState } from './useMountPreflight';
 
 type Props = {
   readonly project: Project;
   readonly state: MountPreflightState;
   readonly isBusy: boolean;
+  readonly failure: MountFailure | null;
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
 };
@@ -34,10 +37,34 @@ const PreflightRow = ({ label, value, isPending }: RowProps) => (
   </div>
 );
 
-export const MountPreflightCard = ({ project, state, isBusy, onConfirm, onCancel }: Props) => {
+type ActivityParams = {
+  readonly project: Project;
+  readonly status: MountPreflightState['status'];
+  readonly isBusy: boolean;
+};
+
+const activityLabel = ({ project, status, isBusy }: ActivityParams): string | null => {
+  if (isBusy) {
+    return project.kind === 'repo' ? 'Creating the worktree…' : 'Creating the folder…';
+  }
+  if (status === 'checking') {
+    return 'Reading the branches already in the repository…';
+  }
+  return null;
+};
+
+export const MountPreflightCard = ({
+  project,
+  state,
+  isBusy,
+  failure,
+  onConfirm,
+  onCancel,
+}: Props) => {
   const GlyphIcon = projectGlyph({ kind: project.kind });
   const { preflight } = state;
   const isPending = state.status === 'checking';
+  const activity = activityLabel({ project, status: state.status, isBusy });
 
   return (
     <section aria-label={`Add ${project.name}`} className="flex flex-col gap-2 px-3 py-2">
@@ -74,12 +101,36 @@ export const MountPreflightCard = ({ project, state, isBusy, onConfirm, onCancel
           {state.branchScanError}
         </p>
       )}
+      {activity === null ? null : (
+        <p role="status" className="text-2xs text-muted-foreground">
+          {activity}
+        </p>
+      )}
+      {failure === null ? null : (
+        <div role="alert" className="flex flex-col gap-1">
+          <p className="flex items-start gap-1 text-2xs text-danger">
+            <AlertTriangle size={ICON_SIZE.row} aria-hidden className="mt-px shrink-0" />
+            <span className="min-w-0 flex-1">{failure.cause}</span>
+          </p>
+          <details className="text-2xs text-muted-foreground">
+            <summary className="cursor-pointer select-none">Technical detail</summary>
+            <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted/40 p-1.5 font-mono text-2xs">
+              {failure.detail}
+            </pre>
+          </details>
+        </div>
+      )}
       <footer className="flex items-center justify-end gap-2">
         <Button variant="ghost" size="sm" onClick={onCancel} disabled={isBusy}>
           Back
         </Button>
-        <Button size="sm" onClick={onConfirm} disabled={isBusy || preflight === null}>
-          Add project
+        <Button
+          size="sm"
+          onClick={onConfirm}
+          disabled={isBusy || preflight === null}
+          isBusy={isBusy}
+        >
+          {failure === null ? 'Add project' : 'Try again'}
         </Button>
       </footer>
     </section>
