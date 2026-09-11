@@ -140,7 +140,6 @@ export const ProjectMountRow = ({
           ) : (
             <ProjectBranchChip
               sessionId={sessionId}
-              projectId={row.projectId}
               mountId={row.mountId}
               branch={row.branch}
               canSwitch={isRepo && row.isAttached}

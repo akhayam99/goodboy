@@ -1,6 +1,7 @@
 import type { ResolvePublication, SessionId } from '@goodboy/types';
 import { worktreeIsAncestor, worktreeRemoteHead } from '../../../features/worktree/worktree';
 import { pushSessionBranch } from '../github/pushSessionBranch';
+import { selectMountForPath } from '../project-mounts/selectors';
 import type { GetFn } from './types';
 
 type Params = {
@@ -36,7 +37,11 @@ export const verifiedPush = async ({
   if (!isFastForward) {
     return `${branch} on the remote carries work that ${shortOf({ sha: publication.localHead })} does not contain, so nothing was pushed`;
   }
-  const push = await pushSessionBranch(get, sessionId);
+  const mount = selectMountForPath({ state: get(), sessionId, path: worktreePath });
+  if (mount === null) {
+    return `the worktree at ${worktreePath} is no longer mounted, so nothing was pushed`;
+  }
+  const push = await pushSessionBranch({ get, sessionId, mountId: mount.mountId });
   if (!push.ok) {
     return push.error;
   }

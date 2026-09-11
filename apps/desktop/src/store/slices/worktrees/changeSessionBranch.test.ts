@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 
 const MOUNT_ID = 'mount-1' as MountId;
+const SIBLING_MOUNT_ID = 'mount-2' as MountId;
 const WORKTREE_PATH = '/repos/goodboy/.goodboy/worktrees/task';
+const SIBLING_WORKTREE_PATH = '/repos/goodboy/.goodboy/worktrees/task-2';
 
 const h = vi.hoisted(() => ({
   listSessionMounts: vi.fn(async () => [
@@ -20,6 +22,23 @@ const h = vi.hoisted(() => ({
       isAttached: true,
       diskState: 'present',
       revision: 3,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'mount-2',
+      sessionId: 'session-1',
+      projectId: 'project-1',
+      worktreePath: '/repos/goodboy/.goodboy/worktrees/task-2',
+      lastWorktreePath: '/repos/goodboy/.goodboy/worktrees/task-2',
+      branch: 'ak/sibling',
+      baseBranch: null,
+      parallelIndex: 1,
+      mountName: 'goodboy',
+      repoSlug: null,
+      isAttached: true,
+      diskState: 'present',
+      revision: 7,
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
     },
@@ -70,9 +89,24 @@ const makeState = (): State => ({
         worktreePath: WORKTREE_PATH,
         repoRoot: '/repos/goodboy',
         branch: 'ak/outgoing',
+        isAttached: true,
+        diskState: 'present',
+        revision: 3,
+      },
+      {
+        mountId: SIBLING_MOUNT_ID,
+        projectId: PROJECT_ID,
+        mountName: 'goodboy',
+        worktreePath: SIBLING_WORKTREE_PATH,
+        repoRoot: '/repos/goodboy',
+        branch: 'ak/sibling',
+        isAttached: true,
+        diskState: 'present',
+        revision: 7,
       },
     ],
   },
+  sessionActiveMount: { [SESSION_ID]: MOUNT_ID },
   sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
   sessionGithub: { [SESSION_ID]: { pr: { number: 42 } } },
   sessionProjectPrs: { [SESSION_ID]: { [PROJECT_ID]: [{ number: 42 }] } },
@@ -84,11 +118,12 @@ const makeState = (): State => ({
   recordSessionEvent: vi.fn(async () => undefined),
 });
 
-const runSwitch = async (state: State): Promise<void> => {
+const runSwitch = async (state: State, mountId: MountId = MOUNT_ID): Promise<void> => {
   const set = vi.fn((updater: (current: State) => State) => {
     Object.assign(state, updater(state));
   });
   await changeSessionBranch(set as never, (() => state) as never)(SESSION_ID, {
+    mountId,
     branch: 'ak/incoming',
     createNew: false,
   });
@@ -111,6 +146,30 @@ describe('changeSessionBranch', () => {
       createNew: false,
     });
     expect(h.emitNotification).not.toHaveBeenCalled();
+  });
+
+  it('switches the mount it was handed and leaves the write destination alone', async () => {
+    const state = makeState();
+
+    await runSwitch(state, SIBLING_MOUNT_ID);
+
+    expect(h.changeWorktreeBranch).toHaveBeenCalledWith({
+      repoPath: '/repos/goodboy',
+      worktreePath: SIBLING_WORKTREE_PATH,
+      branch: 'ak/incoming',
+      createNew: false,
+    });
+    expect(h.updateSessionMountBranch).toHaveBeenCalledWith(
+      expect.objectContaining({ mountId: SIBLING_MOUNT_ID, expectedRevision: 7 }),
+    );
+    expect(state.sessionActiveMount).toEqual({ [SESSION_ID]: MOUNT_ID });
+  });
+
+  it('refuses a mount the session does not hold', async () => {
+    const state = makeState();
+
+    await expect(runSwitch(state, 'mount-elsewhere' as MountId)).rejects.toThrow('mount-elsewhere');
+    expect(h.changeWorktreeBranch).not.toHaveBeenCalled();
   });
 
   it('writes the branch against the observed mount revision', async () => {

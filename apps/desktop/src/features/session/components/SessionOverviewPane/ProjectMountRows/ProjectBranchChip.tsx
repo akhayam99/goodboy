@@ -1,25 +1,22 @@
 import { useEffect } from 'react';
 import { Check, GitBranch, Pencil } from 'lucide-react';
 import { AnchoredPopover, Tooltip, cn, useCopyLink, useDropdown } from '@goodboy/ui';
-import type { MountId, ProjectId, SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { useToast } from '../../../../../app/components/Toast';
-import { useAppStore } from '../../../../../store';
 import { BranchSwitchPanel } from '../../../../worktree/BranchSwitchPanel';
 import { VITAL_CHIP_FOCUS, VITAL_CHIP_FRAME, VITAL_CHIP_HOVER } from '../vitalChip';
 import { splitBranchLabel } from './branchLabel';
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly projectId: ProjectId;
-  readonly mountId?: MountId;
+  readonly mountId: MountId;
   readonly branch: string;
   readonly canSwitch: boolean;
 };
 
-export const ProjectBranchChip = ({ sessionId, projectId, mountId, branch, canSwitch }: Props) => {
+export const ProjectBranchChip = ({ sessionId, mountId, branch, canSwitch }: Props) => {
   const { showToast } = useToast();
   const { copied, failed, copy } = useCopyLink();
-  const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
   const dropdown = useDropdown({ width: 'w-96', expectedHeight: 360 });
 
   useEffect(() => {
@@ -39,15 +36,6 @@ export const ProjectBranchChip = ({ sessionId, projectId, mountId, branch, canSw
   }
 
   const { head, tail } = splitBranchLabel({ branch });
-
-  const openSwitch = async () => {
-    await setSessionActiveProject({
-      sessionId,
-      projectId,
-      ...(mountId === undefined ? {} : { mountId }),
-    });
-    dropdown.toggle();
-  };
 
   return (
     <span
@@ -80,13 +68,13 @@ export const ProjectBranchChip = ({ sessionId, projectId, mountId, branch, canSw
           role="dialog"
           ariaLabel="Switch branch"
           trigger={
-            <Tooltip content="Switch branch. The next turns of this session write here.">
+            <Tooltip content="Switch the branch of this mount">
               <button
                 type="button"
                 aria-label="Switch branch"
                 aria-haspopup="dialog"
                 aria-expanded={dropdown.open}
-                onClick={() => void openSwitch()}
+                onClick={dropdown.toggle}
                 className={cn(
                   'inline-flex h-full items-center rounded-md px-1.5 text-muted-foreground hover:text-foreground',
                   VITAL_CHIP_FOCUS,
@@ -97,7 +85,7 @@ export const ProjectBranchChip = ({ sessionId, projectId, mountId, branch, canSw
             </Tooltip>
           }
         >
-          <BranchSwitchPanel sessionId={sessionId} onDone={dropdown.close} />
+          <BranchSwitchPanel sessionId={sessionId} mountId={mountId} onDone={dropdown.close} />
         </AnchoredPopover>
       ) : null}
     </span>

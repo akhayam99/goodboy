@@ -9,7 +9,6 @@ import type {
   WorktreeStatus,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { selectActiveMountId } from '../../../../store/slices/project-mounts/selectors';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import type { SessionCreationId } from '../../../../store/slices/session-view';
 import { useToast } from '../../../../app/components/Toast';
@@ -17,13 +16,13 @@ import { taskModelAgentSpawnConfig } from '../../components/AgentSpawnConfig/tas
 
 type Params = {
   readonly sessionId: SessionId | null;
+  readonly mountId?: MountId | null;
   readonly status: WorktreeStatus | null;
   readonly onError?: (message: string) => void;
 };
 
 type RunParams = {
-  readonly projectId?: ProjectId;
-  readonly mountId?: MountId;
+  readonly mountId: MountId;
   readonly behind?: number;
 };
 
@@ -31,7 +30,7 @@ type Result = {
   readonly canRebase: boolean;
   readonly isRunning: boolean;
   readonly error: string | null;
-  readonly run: (params?: RunParams) => Promise<void>;
+  readonly run: (params: RunParams) => Promise<void>;
 };
 
 type Pending = {
@@ -40,11 +39,11 @@ type Pending = {
 };
 
 type RebaseTarget = {
-  readonly mountId: MountId | null;
-  readonly projectId: ProjectId | null;
-  readonly projectName: string | null;
+  readonly mountId: MountId;
+  readonly projectId: ProjectId;
+  readonly projectName: string;
   readonly baseBranch: string;
-  readonly worktreePath: string | null;
+  readonly worktreePath: string;
 };
 
 const REBASE_AGENT_PREFIX = 'Rebase on ';
@@ -55,27 +54,22 @@ export const rebasePromptFor = ({
   worktreePath,
 }: {
   readonly baseBranch: string;
-  readonly mountId: MountId | null;
-  readonly worktreePath: string | null;
+  readonly mountId: MountId;
+  readonly worktreePath: string;
 }): string => {
-  const mountFlag = mountId === null ? '' : ` --mount ${mountId}`;
   return [
     `Rebase this session branch onto origin/${baseBranch}.`,
-    ...(mountId === null
-      ? []
-      : [
-          `- This rebase belongs to mount ${mountId}${worktreePath === null ? '' : ` at ${worktreePath}`}. Run every git command there and never in a sibling mount.`,
-        ]),
+    `- This rebase belongs to mount ${mountId} at ${worktreePath}. Run every git command there and never in a sibling mount.`,
     `- Fetch origin ${baseBranch} before rebasing.`,
     `- Rebase the session branch onto origin/${baseBranch} and resolve conflicts by favoring the branch's intent.`,
     "- Run the repository's typecheck to confirm nothing broke.",
-    `- Push the rebased branch with "$GOODBOY_BIN" query github push${mountFlag} --force-with-lease; fall back to git push --force-with-lease only if the bridge is unavailable.`,
+    `- Push the rebased branch with "$GOODBOY_BIN" query github push --mount ${mountId} --force-with-lease; fall back to git push --force-with-lease only if the bridge is unavailable.`,
     '- Never merge and never touch other branches.',
     '- If a conflict cannot be resolved confidently, stop and report the conflicting files.',
   ].join('\n');
 };
 
-export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result => {
+export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params): Result => {
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
@@ -93,33 +87,26 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
     sessionId == null ? null : (state.sessionProjectMounts[sessionId] ?? null),
   );
   const projects = useAppStore((state) => state.projects);
-  const activeMountId = useAppStore((state) =>
-    sessionId == null ? null : selectActiveMountId({ state, sessionId }),
-  );
-  const activeProjectId = session?.activeProjectId ?? mounts?.[0]?.projectId ?? null;
-  const resolveMount = ({ mountId, projectId }: RunParams): SessionProjectMount | null => {
-    if (mountId !== undefined) {
-      return mounts?.find((candidate) => candidate.mountId === mountId) ?? null;
+  const mountOf = ({ id }: { readonly id: MountId | null }): SessionProjectMount | null =>
+    id === null ? null : (mounts?.find((candidate) => candidate.mountId === id) ?? null);
+  const projectOf = ({ mount }: { readonly mount: SessionProjectMount | null }) =>
+    projects.find((candidate) => candidate.id === mount?.projectId) ?? null;
+  const targetFor = ({ id }: { readonly id: MountId }): RebaseTarget | null => {
+    const mount = mountOf({ id });
+    if (mount === null) {
+      return null;
     }
-    if (projectId !== undefined) {
-      const owned = (mounts ?? []).filter((candidate) => candidate.projectId === projectId);
-      return owned.find((candidate) => candidate.mountId === activeMountId) ?? owned[0] ?? null;
-    }
-    return mounts?.find((candidate) => candidate.mountId === activeMountId) ?? null;
-  };
-  const targetFor = (params: RunParams): RebaseTarget => {
-    const mount = resolveMount(params);
-    const projectId = mount?.projectId ?? params.projectId ?? activeProjectId;
-    const project = projects.find((candidate) => candidate.id === projectId) ?? null;
+    const project = projectOf({ mount });
     return {
-      mountId: mount?.mountId ?? null,
-      projectId: projectId ?? null,
-      projectName: project?.name ?? mount?.mountName ?? null,
-      baseBranch: mount?.baseBranch ?? project?.baseBranch ?? 'main',
-      worktreePath: mount?.worktreePath ?? null,
+      mountId: mount.mountId,
+      projectId: mount.projectId,
+      projectName: project?.name ?? mount.mountName,
+      baseBranch: mount.baseBranch ?? project?.baseBranch ?? 'main',
+      worktreePath: mount.worktreePath,
     };
   };
-  const baseBranch = targetFor({}).baseBranch;
+  const rowMount = mountOf({ id: mountId ?? null });
+  const baseBranch = rowMount?.baseBranch ?? projectOf({ mount: rowMount })?.baseBranch ?? 'main';
   const phaseRuns = useAppStore((state) =>
     sessionId == null ? null : (state.sessionPhaseRuns[sessionId] ?? null),
   );
@@ -209,14 +196,19 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
     showToast,
   ]);
 
-  const run = async (params?: RunParams): Promise<void> => {
-    const runParams = params ?? {};
-    const runBehind = runParams.behind ?? behindMain;
+  const run = async ({ mountId: targetMountId, behind }: RunParams): Promise<void> => {
+    const runBehind = behind ?? behindMain;
     const canRunRebase = sessionId != null && runBehind != null && runBehind > 0;
     if (!canRunRebase || isRunning || sessionId == null || config.provider === '') {
       return;
     }
-    const target = targetFor(runParams);
+    const target = targetFor({ id: targetMountId });
+    if (target === null) {
+      const message = 'this branch mount is no longer in the session';
+      setError(message);
+      onError?.(message);
+      return;
+    }
     setError(null);
     setIsStarting(true);
     const creationId = beginSessionCreation(sessionId, {
@@ -241,10 +233,10 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
         sessionId,
         kind: 'rebase_requested',
         payload: {
-          ...(target.mountId == null ? {} : { mountId: target.mountId }),
-          ...(target.projectId == null ? {} : { projectId: target.projectId }),
-          ...(target.projectName == null ? {} : { projectName: target.projectName }),
-          ...(target.worktreePath == null ? {} : { worktreePath: target.worktreePath }),
+          mountId: target.mountId,
+          projectId: target.projectId,
+          projectName: target.projectName,
+          worktreePath: target.worktreePath,
           behind: runBehind,
           branch: target.baseBranch,
           agentId,

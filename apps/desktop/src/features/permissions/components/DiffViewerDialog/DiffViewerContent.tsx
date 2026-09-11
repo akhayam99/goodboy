@@ -40,6 +40,7 @@ import {
 import { kindRouting, type AgentKindRouting } from '../../../../features/session/agent-kind';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { useRebaseAgent } from '../../../../features/session/hooks/useRebaseAgent';
+import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
 import { clampEffort } from '../../../../features/chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { STORAGE_KEYS, STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
@@ -327,7 +328,12 @@ export const DiffViewerContent = ({
   const phaseRuns = useAppStore((s) =>
     sessionId ? (s.sessionPhaseRuns[sessionId] ?? null) : null,
   );
-  const rebase = useRebaseAgent({ sessionId: sessionId ?? null, status });
+  const diffMountId = useAppStore((s) =>
+    sessionId == null
+      ? null
+      : (selectMountForPath({ state: s, sessionId, path: worktreePath ?? null })?.mountId ?? null),
+  );
+  const rebase = useRebaseAgent({ sessionId: sessionId ?? null, mountId: diffMountId, status });
   const agentNameById = useMemo(() => {
     const m = new Map<AgentId, string>();
     if (phaseRuns) {
@@ -786,10 +792,10 @@ export const DiffViewerContent = ({
                       behind main by {commitsBehindMain}
                     </span>
                   ) : null}
-                  {rebase.canRebase ? (
+                  {rebase.canRebase && diffMountId !== null ? (
                     <button
                       type="button"
-                      onClick={() => void rebase.run()}
+                      onClick={() => void rebase.run({ mountId: diffMountId })}
                       disabled={rebase.isRunning}
                       title={
                         rebase.isRunning ? 'Rebase agent is still running' : 'Rebase onto main'

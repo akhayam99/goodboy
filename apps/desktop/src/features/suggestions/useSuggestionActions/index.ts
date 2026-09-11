@@ -69,17 +69,12 @@ export const useSuggestionActions = ({
   const projects = useAppStore((state) => state.projects);
   const completedMountIds = useAppStore(
     useShallow((state) =>
-      mounts.flatMap((mount) => {
-        const mountId = mount.mountId;
-        if (mountId === undefined || !isMountCompleted({ state, mountId })) {
-          return [];
-        }
-        return [mountId];
-      }),
+      mounts.flatMap((mount) =>
+        isMountCompleted({ state, mountId: mount.mountId }) ? [mount.mountId] : [],
+      ),
     ),
   );
   const emitNotification = useAppStore((state) => state.emitNotification);
-  const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
   const roleModels = useSessionRoleModels({ sessionId });
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const setAgentConfig = useAppStore((state) => state.setAgentConfig);
@@ -93,14 +88,7 @@ export const useSuggestionActions = ({
   };
 
   const rebaseMounts = useMemo(
-    () =>
-      mounts.filter((mount) => {
-        const mountId = mount.mountId;
-        if (mountId === undefined) {
-          return true;
-        }
-        return !completedMountIds.includes(mountId);
-      }),
+    () => mounts.filter((mount) => !completedMountIds.includes(mount.mountId)),
     [completedMountIds, mounts],
   );
 
@@ -114,19 +102,20 @@ export const useSuggestionActions = ({
     [projects, rebaseMounts],
   );
   const statuses = useWorktreeStatuses({ targets });
-  const behindStatus = useMemo(() => {
+  const behind = useMemo(() => {
     for (const mount of rebaseMounts) {
       const status = statuses.get(mount.worktreePath) ?? null;
-      const behind = status == null ? null : distanceBehind({ distance: status.mainDistance });
-      if (behind != null && behind > 0) {
-        return status;
+      const distance = status == null ? null : distanceBehind({ distance: status.mainDistance });
+      if (distance != null && distance > 0) {
+        return { status, mountId: mount.mountId };
       }
     }
     return null;
   }, [rebaseMounts, statuses]);
   const rebase = useRebaseAgent({
     sessionId,
-    status: behindStatus,
+    mountId: behind?.mountId ?? null,
+    status: behind?.status ?? null,
     onError: reportError('Rebase failed'),
   });
 
@@ -160,18 +149,7 @@ export const useSuggestionActions = ({
   };
 
   const startRebase = ({ target }: StartRebaseParams) => {
-    void (async () => {
-      await setSessionActiveProject({
-        sessionId,
-        projectId: target.projectId,
-        ...(target.mountId == null ? {} : { mountId: target.mountId }),
-      });
-      await rebase.run(
-        target.mountId == null
-          ? { projectId: target.projectId, behind: target.behind }
-          : { mountId: target.mountId, behind: target.behind },
-      );
-    })().catch((error: unknown) => {
+    void rebase.run({ mountId: target.mountId, behind: target.behind }).catch((error: unknown) => {
       reportError('Rebase failed')(formatError(error));
     });
   };

@@ -236,33 +236,6 @@ describe('useSessionSuggestions rebase opt-out', () => {
     expect(worktreeStatus).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps a mountless worktree as a rebase target', async () => {
-    store.sessionProjectMounts = {
-      'session-1': [
-        {
-          projectId: 'api',
-          mountName: 'API',
-          worktreePath: '/api',
-          branch: 'feature/api',
-        },
-      ],
-    };
-    const view = renderHook(() => useSessionSuggestions({ session }));
-
-    await waitFor(() => {
-      const rebase = view.result.current.find((candidate) => candidate.kind === 'rebase-project');
-      expect(rebase?.payload.targets).toEqual([
-        expect.objectContaining({
-          id: 'worktree:/api',
-          mountId: null,
-          projectId: 'api',
-          branch: 'feature/api',
-          worktreePath: '/api',
-        }),
-      ]);
-    });
-  });
-
   it('collapses two mounts of the same project into one suggestion', async () => {
     store.sessionProjectMounts = {
       'session-1': [

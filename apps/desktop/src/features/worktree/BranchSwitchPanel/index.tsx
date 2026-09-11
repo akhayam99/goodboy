@@ -1,23 +1,27 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button, formatError, Input, SegmentedTabs } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { useToast } from '../../../app/components/Toast';
 import { useAppStore, useSessionById } from '../../../store';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { BranchCombobox } from '../BranchCombobox';
 import { getCachedLocalBranches, listLocalBranches, type LocalBranchInfo } from '../worktree';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
+import { selectMountById } from '../../../store/slices/project-mounts/selectors';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly mountId: MountId;
   readonly onDone: () => void;
 };
 
-export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
+export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
   const session = useSessionById(sessionId);
-  const branch = useAppStore((state) => state.sessionBranches[sessionId] ?? null);
+  const branch = useAppStore(
+    (state) => selectMountById({ state, sessionId, mountId })?.branch ?? null,
+  );
   const sessionBranches = useAppStore((state) => state.sessionBranches);
   const changeSessionBranch = useAppStore((state) => state.changeSessionBranch);
   const workspace = useAppStore((state) =>
@@ -26,7 +30,7 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
       : null,
   );
   const repoRoot = useAppStore(
-    (state) => resolveSessionRepo({ state, sessionId })?.repoRoot ?? null,
+    (state) => resolveSessionRepo({ state, sessionId, mountId })?.repoRoot ?? null,
   );
   const { showToast } = useToast();
   const [branchMode, setBranchMode] = useState<'existing' | 'new'>('new');
@@ -100,6 +104,7 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
     setError(null);
     try {
       await changeSessionBranch(sessionId, {
+        mountId,
         branch: target,
         createNew: branchMode === 'new',
       });
@@ -117,7 +122,7 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
       <div className="flex flex-col gap-0.5">
         <span className="text-sm font-semibold text-foreground">Switch branch</span>
         <span className="text-2xs text-muted-foreground">
-          Move this session worktree to another branch
+          Move this branch mount to another branch
         </span>
       </div>
 

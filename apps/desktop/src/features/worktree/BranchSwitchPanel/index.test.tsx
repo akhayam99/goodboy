@@ -16,11 +16,20 @@ const { state, listLocalBranches, getCachedLocalBranches, showToast } = vi.hoist
     sessionProjectMounts: {
       'sess-1': [
         {
+          mountId: 'mount-1',
           projectId: 'project-1',
           mountName: 'repo',
           repoRoot: '/repo',
           worktreePath: '/repo/.goodboy/worktrees/sess-1',
           branch: 'feat/current',
+        },
+        {
+          mountId: 'mount-2',
+          projectId: 'project-1',
+          mountName: 'repo',
+          repoRoot: '/repo',
+          worktreePath: '/repo/.goodboy/worktrees/sess-1-2',
+          branch: 'feat/sibling',
         },
       ],
     },
@@ -71,6 +80,26 @@ vi.mock('../BranchCombobox', () => ({
 import { BranchSwitchPanel } from '.';
 
 beforeEach(() => {
+  state.sessionProjectMounts = {
+    'sess-1': [
+      {
+        mountId: 'mount-1',
+        projectId: 'project-1',
+        mountName: 'repo',
+        repoRoot: '/repo',
+        worktreePath: '/repo/.goodboy/worktrees/sess-1',
+        branch: 'feat/current',
+      },
+      {
+        mountId: 'mount-2',
+        projectId: 'project-1',
+        mountName: 'repo',
+        repoRoot: '/repo',
+        worktreePath: '/repo/.goodboy/worktrees/sess-1-2',
+        branch: 'feat/sibling',
+      },
+    ],
+  };
   state.sessionBranches = {
     'sess-1': 'feat/current',
     'sess-2': 'main',
@@ -91,7 +120,13 @@ afterEach(cleanup);
 
 describe('BranchSwitchPanel', () => {
   it('opens on the Create new tab with the branch name input ready to type', () => {
-    render(<BranchSwitchPanel sessionId={'sess-1' as never} onDone={vi.fn()} />);
+    render(
+      <BranchSwitchPanel
+        sessionId={'sess-1' as never}
+        mountId={'mount-1' as never}
+        onDone={vi.fn()}
+      />,
+    );
 
     expect(screen.getByRole('tab', { name: 'Create new' }).getAttribute('aria-selected')).toBe(
       'true',
@@ -110,7 +145,13 @@ describe('BranchSwitchPanel', () => {
         }),
     );
 
-    render(<BranchSwitchPanel sessionId={'sess-1' as never} onDone={vi.fn()} />);
+    render(
+      <BranchSwitchPanel
+        sessionId={'sess-1' as never}
+        mountId={'mount-1' as never}
+        onDone={vi.fn()}
+      />,
+    );
 
     const loadingTab = screen.getByRole('tab', { name: 'Pick existing (loading)' });
     fireEvent.click(loadingTab);
@@ -134,7 +175,13 @@ describe('BranchSwitchPanel', () => {
         }),
     );
 
-    render(<BranchSwitchPanel sessionId={'sess-1' as never} onDone={vi.fn()} />);
+    render(
+      <BranchSwitchPanel
+        sessionId={'sess-1' as never}
+        mountId={'mount-1' as never}
+        onDone={vi.fn()}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('tab', { name: 'Pick existing (loading)' }));
     fireEvent.click(screen.getByRole('button', { name: 'Select main' }));
@@ -154,7 +201,13 @@ describe('BranchSwitchPanel', () => {
 
   it('switches to a clean existing branch and closes', async () => {
     const onDone = vi.fn();
-    render(<BranchSwitchPanel sessionId={'sess-1' as never} onDone={onDone} />);
+    render(
+      <BranchSwitchPanel
+        sessionId={'sess-1' as never}
+        mountId={'mount-1' as never}
+        onDone={onDone}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('tab', { name: /pick existing/i }));
     await waitFor(() => screen.getByRole('button', { name: 'Select feat/next' }));
@@ -163,6 +216,7 @@ describe('BranchSwitchPanel', () => {
 
     await waitFor(() =>
       expect(state.changeSessionBranch).toHaveBeenCalledWith('sess-1', {
+        mountId: 'mount-1',
         branch: 'feat/next',
         createNew: false,
       }),
@@ -171,17 +225,60 @@ describe('BranchSwitchPanel', () => {
     expect(onDone).toHaveBeenCalledOnce();
   });
 
-  it('renders nothing for a branchless session in a converted workspace', () => {
-    state.sessionBranches = { 'sess-1': '', 'sess-2': 'main' };
+  it('renders nothing for a branchless mount in a converted workspace', () => {
+    state.sessionProjectMounts['sess-1'] = [
+      {
+        mountId: 'mount-1',
+        projectId: 'project-1',
+        mountName: 'repo',
+        repoRoot: '/repo',
+        worktreePath: '/repo/.goodboy/worktrees/sess-1',
+        branch: '',
+      },
+    ];
     const { container } = render(
-      <BranchSwitchPanel sessionId={'sess-1' as never} onDone={vi.fn()} />,
+      <BranchSwitchPanel
+        sessionId={'sess-1' as never}
+        mountId={'mount-1' as never}
+        onDone={vi.fn()}
+      />,
     );
 
     expect(container.firstChild).toBeNull();
   });
 
+  it('switches the mount it was handed, not the session write destination', async () => {
+    const onDone = vi.fn();
+    render(
+      <BranchSwitchPanel
+        sessionId={'sess-1' as never}
+        mountId={'mount-2' as never}
+        onDone={onDone}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: /pick existing/i }));
+    await waitFor(() => screen.getByRole('button', { name: 'Select feat/next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select feat/next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Switch branch' }));
+
+    await waitFor(() =>
+      expect(state.changeSessionBranch).toHaveBeenCalledWith('sess-1', {
+        mountId: 'mount-2',
+        branch: 'feat/next',
+        createNew: false,
+      }),
+    );
+  });
+
   it('requires a second confirmation for a branch used elsewhere', async () => {
-    render(<BranchSwitchPanel sessionId={'sess-1' as never} onDone={vi.fn()} />);
+    render(
+      <BranchSwitchPanel
+        sessionId={'sess-1' as never}
+        mountId={'mount-1' as never}
+        onDone={vi.fn()}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('tab', { name: /pick existing/i }));
     await waitFor(() => screen.getByRole('button', { name: 'Select main' }));

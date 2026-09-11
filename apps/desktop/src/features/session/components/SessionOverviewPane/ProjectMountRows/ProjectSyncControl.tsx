@@ -19,7 +19,7 @@ import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 type Props = {
   readonly sessionId: SessionId;
   readonly projectId: ProjectId;
-  readonly mountId?: MountId;
+  readonly mountId: MountId;
   readonly status: WorktreeStatus | null;
 };
 
@@ -32,13 +32,8 @@ type NotifyParams = {
   readonly message: string;
 };
 
-type TargetProjectParams = {
-  readonly action: () => Promise<void>;
-};
-
 export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Props) => {
   const dropdown = useDropdown({ width: 'w-64', expectedHeight: 160 });
-  const setSessionActiveProject = useAppStore((state) => state.setSessionActiveProject);
   const emitNotification = useAppStore((state) => state.emitNotification);
   const configuredBaseBranch = useAppStore(
     (state) => state.projects.find((project) => project.id === projectId)?.baseBranch ?? null,
@@ -54,11 +49,13 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
   };
   const rebase = useRebaseAgent({
     sessionId,
+    mountId,
     status,
     onError: (message) => notify({ title: 'Rebase failed', message }),
   });
   const push = usePushBranch({
     sessionId,
+    mountId,
     onError: (message) => notify({ title: 'Push failed', message }),
   });
 
@@ -66,14 +63,6 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
   const upstreamAhead =
     status == null ? null : distanceAhead({ distance: status.upstreamDistance });
   const canPush = upstreamAhead != null && upstreamAhead > 0;
-  const targetProject = async ({ action }: TargetProjectParams) => {
-    await setSessionActiveProject({
-      sessionId,
-      projectId,
-      ...(mountId === undefined ? {} : { mountId }),
-    });
-    await action();
-  };
   const commitBaseBranch = async ({ candidate }: CommitBaseBranchParams) => {
     const value = candidate?.trim() ?? '';
     const next = value === '' ? null : value;
@@ -147,12 +136,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
         <button
           type="button"
           disabled={!rebase.canRebase || rebase.isRunning}
-          onClick={() =>
-            void targetProject({
-              action: () =>
-                rebase.run({ projectId, ...(mountId === undefined ? {} : { mountId }) }),
-            })
-          }
+          onClick={() => void rebase.run({ mountId })}
           className={cn(
             'flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/40',
             (!rebase.canRebase || rebase.isRunning) && 'opacity-40',
@@ -164,7 +148,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
         <button
           type="button"
           disabled={!canPush || push.isBusy}
-          onClick={() => void targetProject({ action: push.run })}
+          onClick={() => void push.run()}
           className={cn(
             'flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/40',
             (!canPush || push.isBusy) && 'opacity-40',

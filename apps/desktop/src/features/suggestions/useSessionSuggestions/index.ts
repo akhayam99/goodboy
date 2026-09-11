@@ -33,8 +33,7 @@ type RebaseRequestKeyParams = {
 };
 
 type RebaseTargetIdParams = {
-  readonly mountId: string | null;
-  readonly worktreePath: string;
+  readonly mountId: string;
 };
 
 const NO_TARGETS: ReadonlyArray<{ readonly worktreePath: string; readonly baseBranch?: string }> =
@@ -43,8 +42,7 @@ const NO_TARGETS: ReadonlyArray<{ readonly worktreePath: string; readonly baseBr
 const rebaseRequestKey = ({ mountId, projectId }: RebaseRequestKeyParams): string =>
   mountId == null ? `project:${projectId}` : `mount:${mountId}`;
 
-const rebaseTargetId = ({ mountId, worktreePath }: RebaseTargetIdParams): string =>
-  mountId == null ? `worktree:${worktreePath}` : `mount:${mountId}`;
+const rebaseTargetId = ({ mountId }: RebaseTargetIdParams): string => `mount:${mountId}`;
 
 const latestRebaseRequests = ({
   events,
@@ -97,24 +95,13 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
   );
   const completedMountIds = useAppStore(
     useShallow((state) =>
-      mounts.flatMap((mount) => {
-        const mountId = mount.mountId;
-        if (mountId === undefined || !isMountCompleted({ state, mountId })) {
-          return [];
-        }
-        return [mountId];
-      }),
+      mounts.flatMap((mount) =>
+        isMountCompleted({ state, mountId: mount.mountId }) ? [mount.mountId] : [],
+      ),
     ),
   );
   const rebaseMounts = useMemo(
-    () =>
-      mounts.filter((mount) => {
-        const mountId = mount.mountId;
-        if (mountId === undefined) {
-          return true;
-        }
-        return !completedMountIds.includes(mountId);
-      }),
+    () => mounts.filter((mount) => !completedMountIds.includes(mount.mountId)),
     [completedMountIds, mounts],
   );
   const projects = useAppStore(
@@ -200,7 +187,7 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
         ? rebaseMounts.map((mount) => {
             const project = projects.find((candidate) => candidate.id === mount.projectId) ?? null;
             const status = worktreeStatuses.get(mount.worktreePath) ?? null;
-            const mountId = mount.mountId ?? null;
+            const mountId = mount.mountId;
             const mountRequest = rebaseRequests.get(
               rebaseRequestKey({ mountId, projectId: mount.projectId }),
             );
@@ -208,7 +195,7 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
               rebaseRequestKey({ mountId: null, projectId: mount.projectId }),
             );
             return {
-              id: rebaseTargetId({ mountId, worktreePath: mount.worktreePath }),
+              id: rebaseTargetId({ mountId }),
               mountId,
               projectId: mount.projectId,
               projectName: project?.name ?? mount.mountName,

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly mountId: MountId;
   readonly onError?: (message: string) => void;
 };
 
@@ -17,7 +18,7 @@ type Result = {
 
 const PUSH_PROGRESS_LABEL = 'Pushing the branch';
 
-export const usePushBranch = ({ sessionId, onError }: Params): Result => {
+export const usePushBranch = ({ sessionId, mountId, onError }: Params): Result => {
   const pushSessionBranch = useAppStore((state) => state.pushSessionBranch);
   const beginSessionCreation = useAppStore((state) => state.beginSessionCreation);
   const endSessionCreation = useAppStore((state) => state.endSessionCreation);
@@ -42,7 +43,7 @@ export const usePushBranch = ({ sessionId, onError }: Params): Result => {
     });
     showToast('info', 'Pushing this branch to its remote.', { title: 'Push started' });
     try {
-      const result = await pushSessionBranch(sessionId);
+      const result = await pushSessionBranch({ sessionId, mountId });
       if (!result.ok) {
         fail(result.error);
         return;

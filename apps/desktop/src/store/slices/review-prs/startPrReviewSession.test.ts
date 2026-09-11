@@ -135,7 +135,6 @@ const buildHarness = (initial: Record<string, unknown> = {}) => {
     projects: [buildProject()],
     workspaceIntegrations: {},
     createSession: createSessionSpy,
-    setSessionActiveProject: vi.fn(),
     ...initial,
   } as unknown as AppStore;
   return { action: startPrReviewSession(() => state), createSessionSpy };
@@ -206,25 +205,19 @@ describe('startPrReviewSession', () => {
     expect(input.kickoffPrompt).not.toContain('```diff');
   });
 
-  it('uses and activates the attributed member for a multi-project review', async () => {
+  it('uses the attributed member for a multi-project review', async () => {
     const projectId = 'workspace-api' as ProjectId;
-    const setSessionActiveProjectSpy = vi.fn();
     const { action, createSessionSpy } = buildHarness({
       projects: [
         buildProject({ id: 'project-web' as ProjectId, name: 'web', rootPath: '/tmp/web' }),
         buildProject({ id: projectId, name: 'api', rootPath: '/tmp/api' }),
       ],
-      setSessionActiveProject: setSessionActiveProjectSpy,
     });
 
     await action(WS_ID, buildPr({ projectId: projectId }));
 
     expect(ghPrDiffSpy).toHaveBeenCalledWith('org/repo', 7, '/tmp/api', WS_ID, projectId);
     expect(createSessionSpy.mock.calls[0]![0].externalTasks?.[0]).toMatchObject({
-      projectId: projectId,
-    });
-    expect(setSessionActiveProjectSpy).toHaveBeenCalledWith({
-      sessionId: 'sess-1',
       projectId: projectId,
     });
   });
