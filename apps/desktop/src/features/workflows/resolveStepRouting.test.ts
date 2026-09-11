@@ -47,6 +47,33 @@ describe('resolveStepRouting', () => {
     expect(routing).toEqual({ provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' });
   });
 
+  it('keeps a deliberate null effort instead of refilling it from a fallback', () => {
+    const noEffortControl = step({
+      role: 'implementer',
+      providerOverride: 'anthropic',
+      modelOverride: 'sonnet-5',
+      effort: 'high',
+      routingDecision: {
+        version: 1,
+        proposal: null,
+        selected: { provider: 'anthropic', model: 'sonnet-5', effort: null },
+        source: 'agent',
+        reason: 'This model has no effort control.',
+        adjustment: 'none',
+        executed: null,
+      },
+    });
+
+    const routing = resolveStepRouting({
+      step: noEffortControl,
+      kind: 'implementer',
+      roleModels: { implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'xhigh' } },
+      sessionEffort: 'low',
+    });
+
+    expect(routing.effort).toBe(null);
+  });
+
   it('lets an explicit lock win over the decision beside it', () => {
     const locked = {
       ...decidedStep(),

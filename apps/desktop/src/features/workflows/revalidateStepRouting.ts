@@ -3,7 +3,12 @@ import {
   workflowRoutingAvailability,
   type WorkflowRoutingAvailabilitySnapshot,
 } from '@goodboy/core';
-import type { Step, WorkflowRoutingDecision, WorkflowTaskProfile } from '@goodboy/types';
+import type {
+  Step,
+  WorkflowModelPick,
+  WorkflowRoutingDecision,
+  WorkflowTaskProfile,
+} from '@goodboy/types';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {
   taskType: 'general',
@@ -14,40 +19,52 @@ const UNKNOWN_PROFILE: WorkflowTaskProfile = {
 type Params = {
   readonly step: Step;
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
+  readonly runRoleLock?: WorkflowModelPick | null;
 };
 
-type RevalidatedStepRouting = Readonly<{
-  step: Step;
-  decision: WorkflowRoutingDecision;
-}>;
+export type StepRoutingRevalidation =
+  | Readonly<{ kind: 'keep' }>
+  | Readonly<{ kind: 'replace'; step: Step; decision: WorkflowRoutingDecision }>
+  | Readonly<{ kind: 'blocked'; reason: string }>;
+
+const KEEP: StepRoutingRevalidation = { kind: 'keep' };
 
 export const revalidateStepRouting = ({
   step,
   availability,
-}: Params): RevalidatedStepRouting | null => {
+  runRoleLock = null,
+}: Params): StepRoutingRevalidation => {
+  const lock = step.routingLock ?? null;
   const decision = step.routingDecision ?? null;
-  if (decision === null) {
-    return null;
+  if (lock === null && decision === null) {
+    return KEEP;
   }
-  if (step.routingLock != null) {
-    return null;
+  const current = lock?.pick ?? decision?.selected ?? null;
+  if (current === null) {
+    return KEEP;
   }
-  const status = workflowRoutingAvailability({ pick: decision.selected, snapshot: availability });
+  const status = workflowRoutingAvailability({ pick: current, snapshot: availability });
   if (status.kind === 'available') {
-    return null;
+    return KEEP;
   }
   const profile = step.taskProfile ?? UNKNOWN_PROFILE;
-  const proposal = decision.proposal ?? {
-    pick: decision.selected,
-    reason: decision.reason,
-    source: 'heuristic',
-    profile,
-  };
+  const outcome =
+    decision === null
+      ? ({ kind: 'missing', profile } as const)
+      : ({
+          kind: 'valid',
+          proposal: decision.proposal ?? {
+            pick: decision.selected,
+            reason: decision.reason,
+            source: 'heuristic',
+            profile,
+          },
+        } as const);
   const resolution = resolveWorkflowRouting({
     agentLock: null,
-    stepLock: null,
-    runRoleLock: null,
-    proposal: { kind: 'valid', proposal },
+    stepLock: lock,
+    runRoleLock,
+    proposal: outcome,
     roleDefault: null,
     sessionDefault: null,
     kindDefault: null,
@@ -55,10 +72,11 @@ export const revalidateStepRouting = ({
     contextEstimate: null,
   });
   if (resolution.kind === 'blocked') {
-    return null;
+    return { kind: 'blocked', reason: resolution.reason };
   }
   const next = resolution.decision;
   return {
+    kind: 'replace',
     step: {
       ...step,
       providerOverride: next.selected.provider,

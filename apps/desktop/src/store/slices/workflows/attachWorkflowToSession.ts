@@ -17,7 +17,9 @@ import { runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isRunSettled } from '../../../features/workflows/isRunSettled';
 import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
+import { persistOrchestrationStop } from './orchestrateNextStep';
 import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
 import type { GetFn, SetFn } from './types';
 
@@ -105,6 +107,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
             kindOverrides: {},
             providerOverrides: {},
             effortOverrides: {},
+            blocked: [],
           }
         : await preSpawnWorkflowAgents({
             sessionId,
@@ -115,6 +118,14 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
             roleModels,
             sessionModel: session.modelOverride ?? null,
             sessionEffort: session.effort ?? null,
+            availability: workflowAvailabilitySnapshot({
+              providers: get().providers ?? [],
+              cooldowns: get().providerCooldowns ?? {},
+              alerts: get().budgetAlerts ?? [],
+              sessionId,
+              isRunBudgetBlocked: false,
+              nowMs: Date.now(),
+            }),
           });
     const newAgents = spawned.agents;
 
@@ -166,6 +177,16 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       focusedWorkflowRunId: { ...state.focusedWorkflowRunId, [sessionId]: workflowRunId },
     }));
 
+    const firstBlocked = spawned.blocked[0];
+    if (firstBlocked != null) {
+      await persistOrchestrationStop({
+        set,
+        sessionId,
+        workflowRunId,
+        stop: { kind: 'failure', message: firstBlocked.reason },
+      });
+    }
+
     if (options?.navigate === true) {
       get().setActiveLens(sessionId, 'workflows');
     }
@@ -189,7 +210,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
         void get().orchestrateNextStep(sessionId, workflowRunId);
       } else if (autoRun) {
         void get().maybeAutoAdvanceWorkflow(sessionId);
-      } else if (newAgents.length > 0) {
+      } else if (newAgents.length > 0 && firstBlocked == null) {
         void activateWorkflowAgentOrNotify({
           get,
           sessionId,

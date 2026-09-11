@@ -77,6 +77,7 @@ export const WorkflowNextStepCta = ({
     sessionProvider,
     sessionEffort,
   });
+  const effortText = routing.effort ?? 'model default';
   const advance = useStartAnywayConfirm({
     blockReason,
     onStart: async ({ isConfirmed }) => {
@@ -184,7 +185,7 @@ export const WorkflowNextStepCta = ({
         title={
           blockReason != null
             ? WORKFLOW_BLOCK_COPY[blockReason]
-            : `effort: ${routing.effort}${stepVerbosity ? ` · verbosity: ${stepVerbosity}` : ''}`
+            : `effort: ${effortText}${stepVerbosity ? ` · verbosity: ${stepVerbosity}` : ''}`
         }
         className={cn(
           'flex items-center gap-1.5 rounded-md border px-2 py-1 text-2xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors disabled:cursor-not-allowed disabled:opacity-60',
@@ -192,7 +193,7 @@ export const WorkflowNextStepCta = ({
             ? 'border-warning/50 bg-warning/10 text-warning hover:border-warning hover:bg-warning/20'
             : 'border-primary/40 bg-primary/10 text-primary hover:border-primary hover:bg-primary/20',
         )}
-        aria-label={`Run next step: ${next.name} (${getModelDescriptor(routing.model)?.label ?? routing.model}, ${routing.effort} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})${blockReason != null ? `. Blocked: ${WORKFLOW_BLOCK_COPY[blockReason]}` : ''}`}
+        aria-label={`Run next step: ${next.name} (${getModelDescriptor(routing.model)?.label ?? routing.model}, ${effortText} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})${blockReason != null ? `. Blocked: ${WORKFLOW_BLOCK_COPY[blockReason]}` : ''}`}
       >
         {blockReason != null ? (
           <AlertTriangle

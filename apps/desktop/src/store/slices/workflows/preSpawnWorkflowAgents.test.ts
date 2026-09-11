@@ -122,6 +122,106 @@ describe('preSpawnWorkflowAgents', () => {
     expect(insert['routingDecision']).toMatchObject({ adjustment: 'cooldown' });
   });
 
+  it('never spawns a node whose locked model has gone unavailable', async () => {
+    const locked = {
+      ...decidedStep(),
+      routingLock: {
+        version: 1,
+        pick: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+        origin: 'user',
+      },
+    } as Step;
+
+    const result = await preSpawnWorkflowAgents({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      steps: [locked],
+      baseOrdinal: 0,
+      defaultProvider: 'anthropic',
+      roleModels: null,
+      availability: availability({ coolingDownProviders: ['codex'] }),
+    });
+
+    expect(invokeAgentInsertSpy).not.toHaveBeenCalled();
+    expect(result.agents).toHaveLength(0);
+    expect(result.blocked).toHaveLength(1);
+    expect(result.blocked[0]!.stepId).toBe('step-1');
+    expect(result.blocked[0]!.reason).toContain('codex/gpt-5.6-sol');
+  });
+
+  it('never spawns a node when no model at all can run it', async () => {
+    const result = await preSpawnWorkflowAgents({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      steps: [decidedStep()],
+      baseOrdinal: 0,
+      defaultProvider: 'anthropic',
+      roleModels: null,
+      availability: availability({ isSessionBudgetBlocked: true }),
+    });
+
+    expect(invokeAgentInsertSpy).not.toHaveBeenCalled();
+    expect(result.blocked).toHaveLength(1);
+  });
+
+  it('blocks a run role pin instead of quietly moving the node elsewhere', async () => {
+    const result = await preSpawnWorkflowAgents({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      steps: [
+        step({
+          role: 'implementer',
+          routingDecision: {
+            version: 1,
+            proposal: null,
+            selected: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+            source: 'run_role_lock',
+            reason: 'The run role lock selected codex/gpt-5.6-sol.',
+            adjustment: 'none',
+            executed: null,
+          },
+        }),
+      ],
+      baseOrdinal: 0,
+      defaultProvider: 'anthropic',
+      roleModels: null,
+      runRoleModels: {
+        implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+      },
+      availability: availability({ coolingDownProviders: ['codex'] }),
+    });
+
+    expect(invokeAgentInsertSpy).not.toHaveBeenCalled();
+    expect(result.blocked[0]!.reason).toContain('run role lock');
+  });
+
+  it('omits effort on the agent row when the chosen model has no effort control', async () => {
+    await preSpawnWorkflowAgents({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      steps: [
+        step({
+          routingDecision: {
+            version: 1,
+            proposal: null,
+            selected: { provider: 'anthropic', model: 'sonnet-5', effort: null },
+            source: 'agent',
+            reason: 'This model has no effort control.',
+            adjustment: 'none',
+            executed: null,
+          },
+          effort: 'high',
+        }),
+      ],
+      baseOrdinal: 0,
+      defaultProvider: 'anthropic',
+      roleModels: null,
+    });
+
+    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(insert['effort']).toBeUndefined();
+  });
+
   it('leaves an explicit lock alone rather than substituting another model', async () => {
     const locked = {
       ...decidedStep(),
@@ -139,7 +239,7 @@ describe('preSpawnWorkflowAgents', () => {
       baseOrdinal: 0,
       defaultProvider: 'anthropic',
       roleModels: null,
-      availability: availability({ coolingDownProviders: ['codex'] }),
+      availability: availability(),
     });
 
     const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;

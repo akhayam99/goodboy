@@ -390,6 +390,7 @@ type AppendParams = {
   readonly workflowRunId: WorkflowRunId;
   readonly workflow: Workflow;
   readonly roleModels: RoleModelPreferences | null;
+  readonly runRoleModels: RoleModelPreferences | null;
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
   readonly step: Omit<Step, 'id' | 'workflowId' | 'ordinal' | 'name'> & {
     readonly name: string;
@@ -403,6 +404,7 @@ const appendStep = async ({
   workflowRunId,
   workflow,
   roleModels,
+  runRoleModels,
   availability,
   step,
 }: AppendParams): Promise<Agent> => {
@@ -448,9 +450,14 @@ const appendStep = async ({
     defaultProvider: (session.providerOverride ??
       session.providerPreference.defaultProvider) as ProviderId,
     roleModels,
+    runRoleModels,
     sessionEffort: session.effort ?? null,
     availability,
   });
+  const blockedStep = spawned.blocked[0];
+  if (blockedStep != null) {
+    throw new Error(blockedStep.reason);
+  }
   const agent = spawned.agents[0];
   if (agent == null) {
     throw new Error('orchestrator failed to create the next agent');
@@ -817,6 +824,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           workflowRunId,
           workflow,
           roleModels,
+          runRoleModels: run.roleModelOverrides ?? null,
           availability,
           step: {
             name: proposed.name,

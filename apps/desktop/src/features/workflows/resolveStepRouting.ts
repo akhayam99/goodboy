@@ -17,7 +17,7 @@ type Params = {
 type StepRouting = {
   readonly provider: ProviderId;
   readonly model: string;
-  readonly effort: ModelEffort;
+  readonly effort: ModelEffort | null;
 };
 
 export const resolveStepRouting = ({
@@ -37,7 +37,7 @@ export const resolveStepRouting = ({
     return {
       provider: decided.provider,
       model: decided.model,
-      effort: decided.effort ?? step?.effort ?? fallback.effort,
+      effort: decided.effort,
     };
   }
   const role = step?.role;
