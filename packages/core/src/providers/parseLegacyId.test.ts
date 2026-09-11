@@ -41,6 +41,16 @@ describe('parseLegacyId', () => {
     });
   });
 
+  it('migrates retired opencode catalog keys persisted as bare ids to Big Pickle', () => {
+    for (const id of ['minimax-m2.5', 'nemotron-3-super', 'ring-2.6-1t']) {
+      expect(parseLegacyId({ provider: 'opencode', id })).toEqual({ key: 'big-pickle' });
+      expect(resolveStoredModelSelection({ provider: 'opencode', id })).toEqual({
+        selection: { key: 'big-pickle' },
+        report: { kind: 'legacy', id },
+      });
+    }
+  });
+
   it('returns null for an id that no old registry shipped', () => {
     expect(parseLegacyId({ provider: 'codex', id: 'gpt-99' })).toBeNull();
   });
