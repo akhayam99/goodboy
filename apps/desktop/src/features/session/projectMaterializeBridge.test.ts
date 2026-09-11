@@ -8,10 +8,43 @@ const { state } = vi.hoisted(() => ({
       { id: 'p-api', name: 'api', workspaceId: 'ws-1' },
       { id: 'p-web', name: 'web', workspaceId: 'ws-1' },
     ],
-    sessionProjectMounts: {} as Record<string, ReadonlyArray<{ projectId: string }>>,
+    sessionProjectMounts: {} as Record<
+      string,
+      ReadonlyArray<{
+        readonly mountId?: string;
+        readonly projectId: string;
+        readonly worktreePath?: string;
+        readonly branch?: string;
+        readonly isAttached?: boolean;
+        readonly diskState?: string;
+      }>
+    >,
+    sessionMounts: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionActiveMount: {} as Record<string, string | null>,
+    sessionActiveProject: {} as Record<string, string>,
     sessionSlots: {} as Record<string, ReadonlyArray<{ key: string; value: string }>>,
     sessionExternalTasks: {} as Record<string, ReadonlyArray<unknown>>,
-    materializeProject: vi.fn(async () => ({ worktreePath: '/wt/api', branch: 'goodboy/api' })),
+    ensureProjectMounted: vi.fn(async ({ projectId }: { readonly projectId: string }) => {
+      state.sessionProjectMounts = {
+        ...state.sessionProjectMounts,
+        'session-1': [
+          ...(state.sessionProjectMounts['session-1'] ?? []),
+          {
+            mountId: `mount-${projectId}`,
+            projectId,
+            worktreePath: '/wt/api',
+            branch: 'goodboy/api',
+            isAttached: true,
+            diskState: 'present',
+          },
+        ],
+      };
+      return {
+        status: 'created' as const,
+        createdMountId: `mount-${projectId}`,
+        mountIds: [`mount-${projectId}`],
+      };
+    }),
     recordSessionEvent: vi.fn(async () => undefined),
   },
 }));
@@ -35,7 +68,7 @@ const request = ({ projectId, projectName }: { projectId: string; projectName: s
 
 beforeEach(() => {
   state.sessionProjectMounts = {};
-  state.materializeProject.mockClear();
+  state.ensureProjectMounted.mockClear();
   state.recordSessionEvent.mockClear();
 });
 
@@ -45,8 +78,13 @@ describe('executeMaterializeRequest', () => {
       request({ projectId: 'p-web', projectName: 'web' }),
     );
 
-    expect(result).toEqual({ ok: true, mountPath: '/wt/api', branch: 'goodboy/api' });
-    expect(state.materializeProject).toHaveBeenCalledWith({
+    expect(result).toEqual({
+      ok: true,
+      mountId: 'mount-p-web',
+      mountPath: '/wt/api',
+      branch: 'goodboy/api',
+    });
+    expect(state.ensureProjectMounted).toHaveBeenCalledWith({
       sessionId: 'session-1',
       projectId: 'p-web',
       reason: 'needs a patch',
@@ -76,7 +114,7 @@ describe('executeMaterializeRequest', () => {
     expect(result.ok).toBe(false);
     expect(result.error).toContain('Mount deferred for web');
     expect(result.error).not.toContain('end your turn');
-    expect(state.materializeProject).not.toHaveBeenCalled();
+    expect(state.ensureProjectMounted).not.toHaveBeenCalled();
     expect(state.recordSessionEvent).toHaveBeenCalledWith({
       sessionId: 'session-1',
       kind: 'project_materialization_proposed',
@@ -108,7 +146,7 @@ describe('executeMaterializeRequest', () => {
     );
 
     expect(result.ok).toBe(true);
-    expect(state.materializeProject).toHaveBeenCalledTimes(1);
+    expect(state.ensureProjectMounted).toHaveBeenCalledTimes(1);
   });
 
   it('refuses an unknown project id', async () => {

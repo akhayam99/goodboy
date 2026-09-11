@@ -23,7 +23,7 @@ const repoProject = {
 } as unknown as Project;
 
 const h = vi.hoisted(() => ({
-  materializeProject: vi.fn(async () => undefined),
+  ensureProjectMounted: vi.fn(async () => undefined),
   emitNotification: vi.fn(),
   preflight: {
     status: 'ready' as 'ready' | 'checking',
@@ -42,12 +42,12 @@ const h = vi.hoisted(() => ({
 vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(
     selector: (state: {
-      readonly materializeProject: typeof h.materializeProject;
+      readonly ensureProjectMounted: typeof h.ensureProjectMounted;
       readonly emitNotification: typeof h.emitNotification;
     }) => T,
   ) =>
     selector({
-      materializeProject: h.materializeProject,
+      ensureProjectMounted: h.ensureProjectMounted,
       emitNotification: h.emitNotification,
     }),
 }));
@@ -64,7 +64,7 @@ beforeEach(() => {
   h.preflight.preflight.renamedFrom = null;
   h.preflight.branchScanError = null;
   h.preflight.status = 'ready';
-  h.materializeProject.mockResolvedValue(undefined);
+  h.ensureProjectMounted.mockResolvedValue(undefined);
 });
 
 afterEach(cleanup);
@@ -74,7 +74,7 @@ describe('MountProjectList', () => {
     renderList();
     fireEvent.click(screen.getByRole('button', { name: 'Mount goodboy' }));
 
-    expect(h.materializeProject).not.toHaveBeenCalled();
+    expect(h.ensureProjectMounted).not.toHaveBeenCalled();
     expect(screen.getByText('main')).toBeTruthy();
     expect(screen.getByText('ak/ship-it')).toBeTruthy();
     expect(screen.getByText('/repos/goodboy/.goodboy/worktrees/ship-it-mount-1')).toBeTruthy();
@@ -86,7 +86,7 @@ describe('MountProjectList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
 
     await waitFor(() =>
-      expect(h.materializeProject).toHaveBeenCalledWith({
+      expect(h.ensureProjectMounted).toHaveBeenCalledWith({
         sessionId: SID,
         projectId: PID,
         reason: 'added manually by the user',
@@ -110,7 +110,7 @@ describe('MountProjectList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
 
     expect(screen.getByRole('button', { name: 'Mount goodboy' })).toBeTruthy();
-    expect(h.materializeProject).not.toHaveBeenCalled();
+    expect(h.ensureProjectMounted).not.toHaveBeenCalled();
   });
   it('names what is running while the branches are read and while it creates', async () => {
     h.preflight.status = 'checking';
@@ -121,7 +121,7 @@ describe('MountProjectList', () => {
 
     h.preflight.status = 'ready';
     const deferred: { resolve: () => void } = { resolve: () => undefined };
-    h.materializeProject.mockReturnValueOnce(
+    h.ensureProjectMounted.mockReturnValueOnce(
       new Promise<undefined>((resolve) => {
         deferred.resolve = () => resolve(undefined);
       }),
@@ -133,7 +133,7 @@ describe('MountProjectList', () => {
   });
 
   it('shows the cause, the technical detail and a retry after a failure', async () => {
-    h.materializeProject.mockRejectedValueOnce(
+    h.ensureProjectMounted.mockRejectedValueOnce(
       new Error('cannot find base ref: tried origin/main'),
     );
     renderList();
@@ -147,6 +147,6 @@ describe('MountProjectList', () => {
 
     const retry = screen.getByRole('button', { name: 'Try again' });
     fireEvent.click(retry);
-    await waitFor(() => expect(h.materializeProject).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(h.ensureProjectMounted).toHaveBeenCalledTimes(2));
   });
 });

@@ -8,7 +8,7 @@ const { store } = vi.hoisted(() => ({
   store: {
     projects: [] as ReadonlyArray<Record<string, unknown>>,
     sessionProjectMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
-    materializeProject: vi.fn(async () => undefined),
+    ensureProjectMounted: vi.fn(async () => undefined),
     emitNotification: vi.fn(),
   },
 }));

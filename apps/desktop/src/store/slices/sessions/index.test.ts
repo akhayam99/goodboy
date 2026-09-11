@@ -4,20 +4,25 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import type {
   Agent,
   AgentId,
-  BudgetRule,
   BudgetAlert,
+  BudgetRule,
   ContextSlot,
   DiffComment,
   GhTokenStatus,
+  IntegrationBinding,
+  IntegrationBindingId,
   IsoDateTime,
+  Message,
+  MessageId,
+  MountId,
   PlanConsumption,
   PlanConsumptionId,
   PlanId,
-  Message,
-  MessageId,
   PlanWithCount,
   Project,
   ProjectId,
+  ProjectScript,
+  ProjectScriptId,
   ProviderRunId,
   Session,
   SessionExternalTask,
@@ -31,10 +36,6 @@ import type {
   WorkflowId,
   Workspace,
   WorkspaceId,
-  IntegrationBinding,
-  IntegrationBindingId,
-  ProjectScript,
-  ProjectScriptId,
 } from '@goodboy/types';
 import { materializationSeedFor } from './materializationSeeds';
 
@@ -151,6 +152,7 @@ vi.mock('@goodboy/db', async () => {
     updateSessionAutoRun: vi.fn(async () => undefined),
     updateSessionTitleUserEdited: vi.fn(async () => undefined),
     updateSessionActiveProject: vi.fn(async () => undefined),
+    updateSessionWriteDestination: vi.fn(async () => true),
     updateSessionState: updateSessionStateSpy,
     attachWorkflowToSession: vi.fn(async () => undefined),
     detachWorkflowFromSession: vi.fn(async () => undefined),
@@ -1275,6 +1277,13 @@ describe('store contract', () => {
       expect(store.getState().sessionWorktrees[session.id]).toEqual([MOUNT_PATH]);
       expect(store.getState().sessionBranches[session.id]).toBe('goodboy/study-plan');
       expect(store.getState().sessionActiveProject[session.id]).toBe(PROJECT_ID);
+      const firstMountId = store.getState().sessionProjectMounts[session.id]?.[0]?.mountId;
+      expect(store.getState().sessionActiveMount[session.id]).toBe(firstMountId);
+      expect(vi.mocked(db.updateSessionWriteDestination)).toHaveBeenCalledWith({
+        db: expect.anything(),
+        sessionId: session.id,
+        mountId: firstMountId,
+      });
       expect(vi.mocked(db.insertSessionWorktree)).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ worktreePath: MOUNT_PATH, projectId: PROJECT_ID }),
@@ -1608,7 +1617,7 @@ describe('store contract', () => {
     });
   });
 
-  describe('materializeProject', () => {
+  describe('ensureProjectMounted', () => {
     const API_PROJECT_ID = 'project-api' as ProjectId;
     const WEB_PROJECT_ID = 'project-web' as ProjectId;
     const WEB_MOUNT_PATH = '/tmp/web/.goodboy/worktrees/ship-scope';
@@ -1644,7 +1653,7 @@ describe('store contract', () => {
         reused: false,
       });
 
-      const mount = await store.getState().materializeProject({
+      const outcome = await store.getState().ensureProjectMounted({
         sessionId: session.id,
         projectId: API_PROJECT_ID,
         reason: 'the plan implements the api first',
@@ -1670,8 +1679,14 @@ describe('store contract', () => {
         store.getState().sessionProjectMounts[session.id]?.map((entry) => entry.projectId),
       ).toEqual([WEB_PROJECT_ID, API_PROJECT_ID]);
       expect(store.getState().sessionActiveProject[session.id]).toBe(WEB_PROJECT_ID);
-      expect(mount.worktreePath).toBe(mountPath);
-      expect(mount.revision).toBe(0);
+      expect(outcome.status).toBe('created');
+      expect(outcome.mountIds).toHaveLength(1);
+      expect(
+        store
+          .getState()
+          .sessionProjectMounts[session.id]?.find((entry) => entry.projectId === API_PROJECT_ID)
+          ?.worktreePath,
+      ).toBe(mountPath);
       expect(
         store
           .getState()
@@ -1699,7 +1714,7 @@ describe('store contract', () => {
         reused: false,
       });
 
-      await store.getState().materializeProject({
+      await store.getState().ensureProjectMounted({
         sessionId: session.id,
         projectId: API_PROJECT_ID,
         reason: 'the plan implements the api first',
@@ -1710,7 +1725,7 @@ describe('store contract', () => {
       expect(records.map((row) => row.projectId)).toEqual([WEB_PROJECT_ID, API_PROJECT_ID]);
     });
 
-    it('is idempotent per session and project', async () => {
+    it('answers already-mounted with every mount id instead of creating a second one', async () => {
       const { store, session } = await seedMultiProjectSession();
       createWorktreeSpy.mockResolvedValueOnce({
         worktreePath: '/tmp/api/.goodboy/worktrees/ship-scope',
@@ -1719,22 +1734,24 @@ describe('store contract', () => {
         reused: false,
       });
 
-      const first = await store.getState().materializeProject({
+      const first = await store.getState().ensureProjectMounted({
         sessionId: session.id,
         projectId: API_PROJECT_ID,
         reason: 'first',
       });
-      const second = await store.getState().materializeProject({
+      const second = await store.getState().ensureProjectMounted({
         sessionId: session.id,
         projectId: API_PROJECT_ID,
         reason: 'second',
       });
 
-      expect(second).toEqual(first);
+      expect(first.status).toBe('created');
+      expect(second.status).toBe('already-mounted');
+      expect(second.mountIds).toEqual(first.mountIds);
       expect(createWorktreeSpy).toHaveBeenCalledTimes(1);
     });
 
-    it('re-adopts a persisted mount row without a second event, even without projectId', async () => {
+    it('adopts every persisted row of that project and creates nothing', async () => {
       const { store, session } = await seedMultiProjectSession();
       const db = await import('@goodboy/db');
       vi.mocked(db.listWorktreesForSession).mockResolvedValueOnce([
@@ -1744,35 +1761,79 @@ describe('store contract', () => {
           worktreePath: '/tmp/api/.goodboy/worktrees/persisted',
           branch: 'goodboy/persisted',
           parallelIndex: 2,
+          projectId: API_PROJECT_ID,
           mountName: 'api',
           revision: 6,
           createdAt: Date.now(),
         },
+        {
+          id: 'row-mount-two',
+          sessionId: session.id,
+          worktreePath: '/tmp/api/.goodboy/worktrees/persisted-two',
+          branch: 'goodboy/persisted-two',
+          parallelIndex: 3,
+          projectId: API_PROJECT_ID,
+          mountName: 'api',
+          revision: 2,
+          createdAt: Date.now(),
+        },
       ]);
 
-      const mount = await store.getState().materializeProject({
+      const outcome = await store.getState().ensureProjectMounted({
         sessionId: session.id,
         projectId: API_PROJECT_ID,
         reason: 'mounted again after a reload',
       });
 
       expect(createWorktreeSpy).not.toHaveBeenCalled();
-      expect(mount.worktreePath).toBe('/tmp/api/.goodboy/worktrees/persisted');
-      expect(mount.revision).toBe(6);
+      expect(outcome.status).toBe('already-mounted');
+      expect(outcome.mountIds).toEqual(['row-mount', 'row-mount-two']);
       expect(
         store
           .getState()
-          .sessionProjectMounts[session.id]?.find((entry) => entry.projectId === API_PROJECT_ID)
-          ?.revision,
-      ).toBe(6);
+          .sessionProjectMounts[session.id]?.filter((entry) => entry.projectId === API_PROJECT_ID)
+          .map((entry) => entry.revision),
+      ).toEqual([6, 2]);
       expect(vi.mocked(db.insertSessionEvent)).not.toHaveBeenCalled();
+    });
+
+    it('never adopts a legacy row by mount name alone', async () => {
+      const { store, session } = await seedMultiProjectSession();
+      const db = await import('@goodboy/db');
+      vi.mocked(db.listWorktreesForSession).mockResolvedValueOnce([
+        {
+          id: 'row-legacy',
+          sessionId: session.id,
+          worktreePath: '/tmp/api/.goodboy/worktrees/legacy',
+          branch: 'goodboy/legacy',
+          parallelIndex: 2,
+          mountName: 'api',
+          revision: 6,
+          createdAt: Date.now(),
+        },
+      ]);
+      createWorktreeSpy.mockResolvedValueOnce({
+        worktreePath: '/tmp/api/.goodboy/worktrees/ship-scope',
+        branchName: 'goodboy/ship-scope-api',
+        slug: 'ship-scope-api',
+        reused: false,
+      });
+
+      const outcome = await store.getState().ensureProjectMounted({
+        sessionId: session.id,
+        projectId: API_PROJECT_ID,
+        reason: 'mounted again after a reload',
+      });
+
+      expect(outcome.status).toBe('created');
+      expect(createWorktreeSpy).toHaveBeenCalledTimes(1);
     });
 
     it('refuses an empty reason before touching anything', async () => {
       const { store, session } = await seedMultiProjectSession();
 
       await expect(
-        store.getState().materializeProject({
+        store.getState().ensureProjectMounted({
           sessionId: session.id,
           projectId: API_PROJECT_ID,
           reason: '   ',
@@ -1787,7 +1848,7 @@ describe('store contract', () => {
       createWorktreeSpy.mockRejectedValueOnce(new Error('git worktree add failed'));
 
       await expect(
-        store.getState().materializeProject({
+        store.getState().ensureProjectMounted({
           sessionId: session.id,
           projectId: API_PROJECT_ID,
           reason: 'the plan touches the api',
@@ -1831,7 +1892,7 @@ describe('store contract', () => {
         reused: false,
       });
 
-      const mount = await store.getState().materializeProject({
+      await store.getState().ensureProjectMounted({
         sessionId: session.id,
         projectId: API_PROJECT_ID,
         reason: 'added manually by the user',
@@ -1840,7 +1901,12 @@ describe('store contract', () => {
       expect(createSessionDirSpy).toHaveBeenCalledWith(
         expect.objectContaining({ basePath: '/tmp/notes', sessionId: session.id }),
       );
-      expect(mount.branch).toBe('');
+      expect(
+        store
+          .getState()
+          .sessionProjectMounts[session.id]?.find((entry) => entry.projectId === API_PROJECT_ID)
+          ?.branch,
+      ).toBe('');
       expect(store.getState().sessionBranches[session.id]).toBe('goodboy/take-notes');
     });
 
@@ -1856,7 +1922,7 @@ describe('store contract', () => {
         reused: false,
       });
 
-      await store.getState().materializeProject({
+      await store.getState().ensureProjectMounted({
         sessionId: session.id,
         projectId: API_PROJECT_ID,
         reason: 'slug it',
@@ -2118,10 +2184,19 @@ describe('store contract', () => {
               worktreePath: '/tmp/member-worktree',
               repoRoot: '/tmp/member',
               branch: 'ak/member',
+              mountId: 'mount-fixture-1' as MountId,
+              sessionId: SESSION_ID,
+              lastWorktreePath: null,
+              baseBranch: null,
+              parallelIndex: 0,
+              isAttached: true,
+              diskState: 'present',
+              revision: 0,
             },
           ],
         },
         sessionActiveProject: { [SESSION_ID]: projectId },
+        sessionActiveMount: { [SESSION_ID]: 'mount-fixture-1' as MountId },
       });
 
       await store.getState().linkSessionExternalTask(SESSION_ID, LINEAR_TASK);

@@ -199,7 +199,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     }));
     if (project != null) {
       try {
-        await get().materializeProject({
+        await get().ensureProjectMounted({
           sessionId: session.id,
           projectId: project.id,
           reason:

@@ -14,7 +14,7 @@ import type {
 import type { SessionSuggestion } from '../types';
 
 const { storeState, spies } = vi.hoisted(() => {
-  const materializeProject = vi.fn(async () => undefined);
+  const ensureProjectMounted = vi.fn(async () => undefined);
   const recordSessionEvent = vi.fn(async () => undefined);
   const setSessionActiveProject = vi.fn(async () => undefined);
   const emitNotification = vi.fn(async () => undefined);
@@ -37,7 +37,7 @@ const { storeState, spies } = vi.hoisted(() => {
   const rebaseRun = vi.fn(async () => undefined);
   return {
     spies: {
-      materializeProject,
+      ensureProjectMounted,
       recordSessionEvent,
       setSessionActiveProject,
       emitNotification,
@@ -62,7 +62,7 @@ const { storeState, spies } = vi.hoisted(() => {
       mountGitlabMr: {} as Record<string, unknown>,
       mountBitbucketPr: {} as Record<string, unknown>,
       projects: [] as ReadonlyArray<unknown>,
-      materializeProject,
+      ensureProjectMounted,
       recordSessionEvent,
       setSessionActiveProject,
       emitNotification,
@@ -476,7 +476,7 @@ describe('useSuggestionActions', () => {
     expect(actions.primary?.label).toBe('Mount project');
     actions.primary?.onAct();
 
-    expect(spies.materializeProject).toHaveBeenCalledWith({
+    expect(spies.ensureProjectMounted).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       projectId: WEB_ID,
       reason: 'needs the router',

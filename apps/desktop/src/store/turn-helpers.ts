@@ -745,7 +745,7 @@ export const captureMaterializeRequestsFromTurn = async ({
           continue;
         }
         try {
-          await get().materializeProject({
+          await get().ensureProjectMounted({
             sessionId,
             projectId: project.id,
             reason: request.reason,
