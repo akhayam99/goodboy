@@ -9,10 +9,8 @@ const MOUNT_ID = 'mount-1' as MountId;
 const harness = () => {
   const state = {
     setSessionActiveMount: vi.fn(async () => undefined),
-    selectSessionPr: vi.fn(async () => undefined),
     setSessionStudio: vi.fn(),
-    setReviewLensIntent: vi.fn(),
-    setActiveLens: vi.fn(),
+    openReviewTarget: vi.fn(async () => ({ kind: 'opened' as const })),
   };
   const get = vi.fn(() => state) as unknown as GetFn;
   const set = vi.fn() as unknown as SetFn;
@@ -30,15 +28,11 @@ describe('openMountRequest', () => {
       requestNumber: 12,
     });
 
-    expect(state.setSessionActiveMount).toHaveBeenCalledWith({
+    expect(state.openReviewTarget).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
+      prNumber: 12,
     });
-    expect(state.selectSessionPr).toHaveBeenCalledWith(SESSION_ID, 12, MOUNT_ID);
-    expect(state.setReviewLensIntent).toHaveBeenCalledWith({
-      intent: { sessionId: SESSION_ID, prNumber: 12 },
-    });
-    expect(state.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
     expect(state.setSessionStudio).not.toHaveBeenCalled();
   });
 
@@ -47,14 +41,14 @@ describe('openMountRequest', () => {
 
     await run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider: 'github' });
 
-    expect(state.selectSessionPr).not.toHaveBeenCalled();
-    expect(state.setReviewLensIntent).toHaveBeenCalledWith({
-      intent: { sessionId: SESSION_ID, mode: 'create_pr' },
+    expect(state.openReviewTarget).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      mode: 'create_pr',
     });
-    expect(state.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
   });
 
-  it('carries a thread into the review intent', async () => {
+  it('carries a thread to the review target', async () => {
     const { state, run } = harness();
 
     await run({
@@ -65,19 +59,38 @@ describe('openMountRequest', () => {
       threadId: 'PRRT_1',
     });
 
-    expect(state.setReviewLensIntent).toHaveBeenCalledWith({
-      intent: { sessionId: SESSION_ID, threadId: 'PRRT_1', prNumber: 12 },
+    expect(state.openReviewTarget).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      prNumber: 12,
+      threadId: 'PRRT_1',
     });
+  });
+
+  it('hands the target outcome back to the caller', async () => {
+    const { state, run } = harness();
+    state.openReviewTarget.mockResolvedValueOnce({
+      kind: 'unavailable',
+      reason: 'no_mount',
+    } as never);
+
+    await expect(
+      run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider: 'github', requestNumber: 12 }),
+    ).resolves.toEqual({ kind: 'unavailable', reason: 'no_mount' });
   });
 
   it('keeps gitlab and bitbucket on their own mount scoped studios', async () => {
     const gitlab = harness();
     await gitlab.run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider: 'gitlab' });
+    expect(gitlab.state.setSessionActiveMount).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+    });
     expect(gitlab.state.setSessionStudio).toHaveBeenCalledWith(SESSION_ID, {
       kind: 'mr',
       mountId: MOUNT_ID,
     });
-    expect(gitlab.state.setActiveLens).not.toHaveBeenCalled();
+    expect(gitlab.state.openReviewTarget).not.toHaveBeenCalled();
 
     const bitbucket = harness();
     await bitbucket.run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider: 'bitbucket' });
@@ -85,6 +98,6 @@ describe('openMountRequest', () => {
       kind: 'bitbucket',
       mountId: MOUNT_ID,
     });
-    expect(bitbucket.state.setReviewLensIntent).not.toHaveBeenCalled();
+    expect(bitbucket.state.openReviewTarget).not.toHaveBeenCalled();
   });
 });

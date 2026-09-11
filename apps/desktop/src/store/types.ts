@@ -1,4 +1,5 @@
 import type { ResolveState } from './slices/resolve/state';
+import type { ReviewNavigationState } from './slices/review-navigation/state';
 import type { OrphanWorktree } from '../features/worktree/worktree';
 import type { StorageStats } from './slices/storage';
 import type { MountCleanupState } from './slices/mount-cleanup/state';
@@ -95,7 +96,6 @@ import type {
   LensKind,
   ResolveDiffReturn,
   ResolveQueueView,
-  ReviewLensIntent,
   SessionCreation,
   SessionStudio,
 } from './slices/session-view';
@@ -219,6 +219,7 @@ export type PendingOrchestration = {
 };
 
 type AppSliceState = ResolveState &
+  ReviewNavigationState &
   UpdaterState &
   ChangelogState &
   SlackThreadsSliceState &
@@ -367,7 +368,6 @@ export type AppState = AppSliceState & {
   readonly sessionLoading: Readonly<Record<SessionId, SessionLoadingFlags>>;
   readonly boardReady: boolean;
   readonly scriptsLensScope: { readonly projectId: ProjectId } | null;
-  readonly reviewLensIntent: ReviewLensIntent | null;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;

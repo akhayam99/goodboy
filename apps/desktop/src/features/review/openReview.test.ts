@@ -1,12 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 
 const h = vi.hoisted(() => {
   const state = {
-    sessionSelectedPrNumber: {} as Record<string, number | null>,
-    selectSessionPr: vi.fn(async () => undefined),
-    setReviewLensIntent: vi.fn(),
-    setActiveLens: vi.fn(),
+    openReviewTarget: vi.fn(async () => ({ kind: 'opened' as const })),
   };
   return { state };
 });
@@ -18,49 +15,46 @@ vi.mock('../../store', () => ({
 import { openReview } from './openReview';
 
 const SESSION_ID = 'session-1' as SessionId;
+const MOUNT_ID = 'mount-1' as MountId;
 
 beforeEach(() => {
-  h.state.sessionSelectedPrNumber = {};
-  h.state.selectSessionPr.mockClear();
-  h.state.setReviewLensIntent.mockClear();
-  h.state.setActiveLens.mockClear();
+  h.state.openReviewTarget.mockClear();
 });
 
 describe('openReview', () => {
-  it('lands on the review lens with no intent detail when none is given', () => {
-    openReview({ sessionId: SESSION_ID });
+  it('asks for the review home when the caller names no target', async () => {
+    await openReview({ sessionId: SESSION_ID });
 
-    expect(h.state.setReviewLensIntent).toHaveBeenCalledWith({
-      intent: { sessionId: SESSION_ID },
-    });
-    expect(h.state.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
-    expect(h.state.selectSessionPr).not.toHaveBeenCalled();
+    expect(h.state.openReviewTarget).toHaveBeenCalledWith({ sessionId: SESSION_ID });
   });
 
-  it('carries the thread and the mode into the intent', () => {
-    openReview({ sessionId: SESSION_ID, threadId: 'PRRT_7', mode: 'pr_activity' });
-
-    expect(h.state.setReviewLensIntent).toHaveBeenCalledWith({
-      intent: { sessionId: SESSION_ID, threadId: 'PRRT_7', mode: 'pr_activity' },
+  it('carries the mount, the pull request, the thread and the mode to the store', async () => {
+    await openReview({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      prNumber: 248,
+      threadId: 'PRRT_7',
+      mode: 'pr_activity',
     });
-  });
 
-  it('switches the selected pull request when the caller names a different one', () => {
-    h.state.sessionSelectedPrNumber = { [SESSION_ID]: 12 };
-
-    openReview({ sessionId: SESSION_ID, prNumber: 248 });
-
-    expect(h.state.selectSessionPr).toHaveBeenCalledWith(SESSION_ID, 248);
-    expect(h.state.setReviewLensIntent).toHaveBeenCalledWith({
-      intent: { sessionId: SESSION_ID, prNumber: 248 },
+    expect(h.state.openReviewTarget).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      prNumber: 248,
+      threadId: 'PRRT_7',
+      mode: 'pr_activity',
     });
   });
 
-  it('leaves the selection alone when the pull request is already the selected one', () => {
-    h.state.sessionSelectedPrNumber = { [SESSION_ID]: 248 };
+  it('hands the caller the outcome instead of resolving before the target does', async () => {
+    h.state.openReviewTarget.mockResolvedValueOnce({
+      kind: 'unavailable',
+      reason: 'no_thread',
+    } as never);
 
-    openReview({ sessionId: SESSION_ID, prNumber: 248 });
-
-    expect(h.state.selectSessionPr).not.toHaveBeenCalled();
+    await expect(openReview({ sessionId: SESSION_ID, threadId: 'PRRT_9' })).resolves.toEqual({
+      kind: 'unavailable',
+      reason: 'no_thread',
+    });
   });
 });

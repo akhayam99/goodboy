@@ -1,4 +1,5 @@
 import type { MountId, MountPullRequestProvider, SessionId } from '@goodboy/types';
+import type { ReviewTargetOutcome } from '../review-navigation';
 import type { SessionStudio } from '../session-view/types';
 import type { GetFn, SetFn } from './types';
 
@@ -25,28 +26,21 @@ export const openMountRequest = (_set: SetFn, get: GetFn) => {
     provider,
     requestNumber,
     threadId,
-  }: OpenMountRequestInput): Promise<void> => {
-    await get()
-      .setSessionActiveMount({ sessionId, mountId })
-      .catch(() => undefined);
+  }: OpenMountRequestInput): Promise<ReviewTargetOutcome> => {
     if (provider !== 'github') {
-      get().setSessionStudio(sessionId, studioFor({ mountId, provider }));
-      return;
-    }
-    if (requestNumber !== undefined) {
       await get()
-        .selectSessionPr(sessionId, requestNumber, mountId)
+        .setSessionActiveMount({ sessionId, mountId })
         .catch(() => undefined);
+      get().setSessionStudio(sessionId, studioFor({ mountId, provider }));
+      return { kind: 'opened' };
     }
-    get().setReviewLensIntent({
-      intent: {
-        sessionId,
-        ...(threadId === undefined ? {} : { threadId }),
-        ...(requestNumber === undefined
-          ? { mode: 'create_pr' as const }
-          : { prNumber: requestNumber }),
-      },
+    return get().openReviewTarget({
+      sessionId,
+      mountId,
+      ...(requestNumber === undefined
+        ? { mode: 'create_pr' as const }
+        : { prNumber: requestNumber }),
+      ...(threadId === undefined ? {} : { threadId }),
     });
-    get().setActiveLens(sessionId, 'review');
   };
 };

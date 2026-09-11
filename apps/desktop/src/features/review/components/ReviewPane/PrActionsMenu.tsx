@@ -11,11 +11,11 @@ import {
 import { InlineConfirm, OverflowMenu, type OverflowMenuItem } from '@goodboy/ui';
 import type { PullRequestState } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import type { ActionBusy } from '../../../github/components/GitHubStudio/PrActionBar';
+import type { PrLifecycleBusy } from '../../prLifecycle';
 
 type Props = {
   readonly pr: PullRequestState;
-  readonly busy: ActionBusy;
+  readonly busy: PrLifecycleBusy;
   readonly canMerge: boolean;
   readonly mergeReason: string;
   readonly canCreateNew: boolean;

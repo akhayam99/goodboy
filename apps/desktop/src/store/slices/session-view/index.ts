@@ -30,7 +30,6 @@ export { EMPTY_RESOLVE_QUEUE_VIEW } from './types';
 export type { GroupedSessions, SessionViewSlice } from './types';
 export type {
   FocusedExternalTask,
-  ReviewLensIntent,
   SessionStudio,
   LensKind,
   LensHistory,
@@ -47,7 +46,6 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
   return {
     ...createInitialSessionViewState({}),
     setScriptsLensScope: ({ scope }) => set({ scriptsLensScope: scope }),
-    setReviewLensIntent: ({ intent }) => set({ reviewLensIntent: intent }),
     getSessionViewPrefs: getSessionViewPrefs(set, get),
     setSessionSort: setSessionSort(set, get),
     setSessionGroup: setSessionGroup(set, get),

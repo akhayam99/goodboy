@@ -19,7 +19,7 @@ import { openUrl } from '../../../../shared/lib/editor';
 import { GithubConnectionEmptyState } from '../../../github/components/GithubConnectionEmptyState';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { usePrDraftAgentRunning } from '../../../github/usePrDraftAgentRunning';
-import type { ActionBusy } from '../../../github/components/GitHubStudio/PrActionBar';
+import { PR_LIFECYCLE_FAILURE_LABEL, type PrLifecycleBusy } from '../../prLifecycle';
 import { buildCommentAgentArgs } from '../../../chat/spawn-from-comment';
 import { kindRouting } from '../../../session/agent-kind';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
@@ -49,7 +49,7 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
   const sessionId = session.id as SessionId;
   const [mode, setMode] = useState<ReviewMode>('queue');
   const [isBusy, setIsBusy] = useState(false);
-  const [lifecycleBusy, setLifecycleBusy] = useState<ActionBusy>(null);
+  const [lifecycleBusy, setLifecycleBusy] = useState<PrLifecycleBusy>(null);
   const [listWidth, setListWidth] = useColumnWidth(STORAGE_KEYS.reviewBoardListWidth, 320);
   const { showToast } = useToast();
 
@@ -64,9 +64,8 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
   const drafts = useAppStore(
     (s) => s.reviewDrafts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<PrReviewDraft>),
   );
-  const reviewLensIntent = useAppStore((s) => s.reviewLensIntent);
-  const setReviewLensIntent = useAppStore((s) => s.setReviewLensIntent);
-  const setResolveQueueView = useAppStore((s) => s.setResolveQueueView);
+  const reviewTarget = useAppStore((s) => s.reviewTargets[sessionId] ?? null);
+  const consumeReviewTarget = useAppStore((s) => s.consumeReviewTarget);
   const loadResolveSession = useAppStore((s) => s.loadResolveSession);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
@@ -104,18 +103,14 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
   }, [loadResolveSession, sessionId]);
 
   useEffect(() => {
-    if (reviewLensIntent === null || reviewLensIntent.sessionId !== sessionId) {
+    if (reviewTarget === null || reviewTarget.status === 'pending') {
       return;
     }
-    setMode(reviewLensIntent.mode ?? 'queue');
-    if (reviewLensIntent.threadId !== undefined) {
-      setResolveQueueView({
-        sessionId,
-        patch: { expandedThreadId: reviewLensIntent.threadId },
-      });
+    setMode(reviewTarget.mode ?? 'queue');
+    if (reviewTarget.threadId === null) {
+      consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
     }
-    setReviewLensIntent({ intent: null });
-  }, [reviewLensIntent, sessionId, setResolveQueueView, setReviewLensIntent]);
+  }, [consumeReviewTarget, reviewTarget, sessionId]);
 
   const onMutated = useCallback(() => {
     void refreshSessionPr(sessionId, { force: true });
@@ -123,7 +118,7 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
   }, [refreshSessionPr, refreshSessionPrDetail, sessionId]);
 
   const runLifecycle = useCallback(
-    async (kind: Exclude<ActionBusy, null>, action: () => Promise<void>) => {
+    async (kind: Exclude<PrLifecycleBusy, null>, action: () => Promise<void>) => {
       if (lifecycleBusy !== null) {
         return;
       }
@@ -132,7 +127,7 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
         await action();
         onMutated();
       } catch (error) {
-        showToast('error', formatError(error));
+        showToast('error', `${PR_LIFECYCLE_FAILURE_LABEL[kind]}: ${formatError(error)}`);
       } finally {
         setLifecycleBusy(null);
       }

@@ -28,6 +28,11 @@ import { groupThreads } from '../../../github/comment-threads';
 import { kindRouting } from '../../../session/agent-kind';
 import { startFixAttempt } from '../../../review/startFixAttempt';
 import { openReview } from '../../../review/openReview';
+import {
+  REVIEW_TARGET_ERROR_LABEL,
+  REVIEW_TARGET_PENDING,
+  REVIEW_TARGET_REASON_COPY,
+} from '../../../review/reviewTargetCopy';
 import { DEFAULT_AGENT_SPAWN_CONFIG } from '../../../session/components/AgentSpawnConfig/defaultAgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
 import { useResolveDeliveryReceipts } from '../../hooks/useResolveDeliveryReceipts';
@@ -104,6 +109,8 @@ export const ResolveQueueHome = ({ session }: Props) => {
   const takeUpResolveQueueItem = useAppStore((s) => s.takeUpResolveQueueItem);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const setResolveQueueView = useAppStore((s) => s.setResolveQueueView);
+  const reviewTarget = useAppStore((s) => s.reviewTargets[sessionId] ?? null);
+  const consumeReviewTarget = useAppStore((s) => s.consumeReviewTarget);
   const openResolveDiff = useAppStore((s) => s.openResolveDiff);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const setAgentConfig = useAppStore((s) => s.setAgentConfig);
@@ -166,13 +173,38 @@ export const ResolveQueueHome = ({ session }: Props) => {
 
   const onSelect = useCallback(
     (threadId: string | null): void => {
+      if (reviewTarget !== null) {
+        consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
+      }
       setResolveQueueView({
         sessionId,
         patch: { expandedThreadId: threadId, order: listed.map((row) => row.thread.threadId) },
       });
     },
-    [listed, sessionId, setResolveQueueView],
+    [consumeReviewTarget, listed, reviewTarget, sessionId, setResolveQueueView],
   );
+
+  const targetThreadId = reviewTarget?.threadId ?? null;
+
+  useEffect(() => {
+    if (reviewTarget === null || targetThreadId === null || reviewTarget.status !== 'ready') {
+      return;
+    }
+    if (!rows.some((row) => row.thread.threadId === targetThreadId)) {
+      return;
+    }
+    setResolveQueueView({ sessionId, patch: { expandedThreadId: targetThreadId } });
+    consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
+  }, [consumeReviewTarget, reviewTarget, rows, sessionId, setResolveQueueView, targetThreadId]);
+
+  const targetError =
+    reviewTarget === null || targetThreadId === null
+      ? null
+      : reviewTarget.status === 'unavailable' && reviewTarget.reason !== null
+        ? REVIEW_TARGET_REASON_COPY[reviewTarget.reason]
+        : reviewTarget.status === 'failed'
+          ? reviewTarget.error
+          : null;
 
   const onOpenInDiff = useCallback(
     ({
@@ -292,7 +324,7 @@ export const ResolveQueueHome = ({ session }: Props) => {
   if (github?.pr == null) {
     return (
       <PaneShell title={RESOLVE_QUEUE_TITLE}>
-        <NoResolveTargetState onOpenReview={() => openReview({ sessionId })} />
+        <NoResolveTargetState onOpenReview={() => void openReview({ sessionId })} />
       </PaneShell>
     );
   }
@@ -372,6 +404,18 @@ export const ResolveQueueHome = ({ session }: Props) => {
                 label={RESOLVE_QUEUE_REFRESH_LABEL}
                 error={new Error(refreshError)}
                 onRetry={() => void refreshSessionPrDetail(sessionId, { force: true })}
+              />
+            )}
+            {reviewTarget?.status === 'pending' && targetThreadId !== null && (
+              <p role="status" className="text-2xs text-muted-foreground">
+                {REVIEW_TARGET_PENDING}
+              </p>
+            )}
+            {targetError !== null && targetThreadId !== null && (
+              <ErrorStrip
+                label={REVIEW_TARGET_ERROR_LABEL}
+                error={new Error(targetError)}
+                onRetry={() => void openReview({ sessionId, threadId: targetThreadId })}
               />
             )}
             <QueueFilterChips

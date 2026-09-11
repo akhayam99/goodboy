@@ -16,7 +16,7 @@ const { store, useWorktreeStatuses, useWorktreeStatusPending } = vi.hoisted(() =
     prSeries: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     loadSessionMounts: vi.fn(async () => []),
     loadPrSeries: vi.fn(async () => []),
-    openMountRequest: vi.fn(async () => undefined),
+    openMountRequest: vi.fn(async () => ({ kind: 'opened' as const })),
     attachMount: vi.fn(async () => undefined),
     unmountMount: vi.fn(async () => ({ kept: false, reason: null })),
     setSessionActiveMount: vi.fn(async () => undefined),

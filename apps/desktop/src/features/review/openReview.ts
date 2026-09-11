@@ -1,26 +1,27 @@
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
+import type { ReviewTargetOutcome } from '../../store/slices/review-navigation';
 import type { ReviewMode } from './reviewMode';
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly mountId?: MountId;
   readonly prNumber?: number;
   readonly threadId?: string;
   readonly mode?: ReviewMode;
 };
 
-export const openReview = ({ sessionId, prNumber, threadId, mode }: Params): void => {
-  const store = useAppStore.getState();
-  if (prNumber !== undefined && store.sessionSelectedPrNumber[sessionId] !== prNumber) {
-    void store.selectSessionPr(sessionId, prNumber);
-  }
-  store.setReviewLensIntent({
-    intent: {
-      sessionId,
-      ...(threadId !== undefined && { threadId }),
-      ...(prNumber !== undefined && { prNumber }),
-      ...(mode !== undefined && { mode }),
-    },
+export const openReview = ({
+  sessionId,
+  mountId,
+  prNumber,
+  threadId,
+  mode,
+}: Params): Promise<ReviewTargetOutcome> =>
+  useAppStore.getState().openReviewTarget({
+    sessionId,
+    ...(mountId !== undefined && { mountId }),
+    ...(prNumber !== undefined && { prNumber }),
+    ...(threadId !== undefined && { threadId }),
+    ...(mode !== undefined && { mode }),
   });
-  store.setActiveLens(sessionId, 'review');
-};
