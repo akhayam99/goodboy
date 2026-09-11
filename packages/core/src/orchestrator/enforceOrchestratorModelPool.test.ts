@@ -149,3 +149,29 @@ describe('enforceOrchestratorModelPool, ids that carry combo axes', () => {
     expect(result.rejection?.requested).toBe('gpt-5.6-luna');
   });
 });
+
+describe('enforceOrchestratorModelPool, ids nobody can resolve', () => {
+  it('refuses a model no provider offers', () => {
+    const result = enforceOrchestratorModelPool({
+      provider: 'anthropic',
+      step: step({ model: 'not-a-model' }),
+      pool,
+      roleDefaults,
+    });
+
+    expect(result.step.model).toBe('sonnet-5');
+    expect(result.rejection?.requested).toBe('not-a-model');
+  });
+
+  it('does not let an unresolvable pool entry stand in for the provider default', () => {
+    const result = enforceOrchestratorModelPool({
+      provider: 'anthropic',
+      step: step({ model: 'opus-5' }),
+      pool: [{ id: 'not-a-model', label: 'not a model', note: 'balanced default' }],
+      roleDefaults,
+    });
+
+    expect(result.step.model).toBe('sonnet-5');
+    expect(result.rejection?.requested).toBe('opus-5');
+  });
+});

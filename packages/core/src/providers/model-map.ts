@@ -25,7 +25,10 @@ type ProvidersAreTotal =
   Exclude<ProviderId, (typeof PROVIDERS)[number]> extends never ? true : false;
 type _ProvidersTotalCheck = Expect<ProvidersAreTotal>;
 
-export const resolveModelSelectionForProvider = ({ provider, modelId }: Params): ModelSelection => {
+export const matchModelSelectionForProvider = ({
+  provider,
+  modelId,
+}: Params): ModelSelection | null => {
   const keyed = MODEL_CATALOGS[provider].find((model) => model.key === modelId);
   if (keyed != null) {
     return { key: keyed.key };
@@ -52,8 +55,11 @@ export const resolveModelSelectionForProvider = ({ provider, modelId }: Params):
     });
     return remapped.selection;
   }
-  return defaultModelSelection({ provider });
+  return null;
 };
+
+export const resolveModelSelectionForProvider = ({ provider, modelId }: Params): ModelSelection =>
+  matchModelSelectionForProvider({ provider, modelId }) ?? defaultModelSelection({ provider });
 
 export const resolveModelForProvider = ({ provider, modelId }: Params): string =>
   resolveModelSelectionForProvider({ provider, modelId }).key;

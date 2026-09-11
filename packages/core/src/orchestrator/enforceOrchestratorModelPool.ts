@@ -33,11 +33,15 @@ export const enforceOrchestratorModelPool = ({
     return { step, rejection: null };
   }
   const requestedExecution = canonicalModelId({ provider, modelId: requested });
-  const isAllowed = pool.some(
-    (option) =>
-      option.id === requested ||
-      canonicalModelId({ provider, modelId: option.id }) === requestedExecution,
-  );
+  const isAllowed = pool.some((option) => {
+    if (option.id === requested) {
+      return true;
+    }
+    if (requestedExecution == null) {
+      return false;
+    }
+    return canonicalModelId({ provider, modelId: option.id }) === requestedExecution;
+  });
   if (isAllowed) {
     return { step, rejection: null };
   }

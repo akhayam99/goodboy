@@ -167,10 +167,19 @@ export const useTurnRouting = ({ session }: Params) => {
     () => resolvedStoredModelId({ provider: effectiveProvider, selection: effectiveSelection }),
     [effectiveProvider, effectiveSelection],
   );
+  const effectiveExecution = canonicalModelId({
+    provider: effectiveProvider,
+    modelId: effectiveModelId,
+  });
+  const referenceExecution = canonicalModelId({
+    provider: referenceProvider,
+    modelId: referenceModel,
+  });
   const isOverridden =
     effectiveProvider !== referenceProvider ||
-    canonicalModelId({ provider: effectiveProvider, modelId: effectiveModelId }) !==
-      canonicalModelId({ provider: referenceProvider, modelId: referenceModel });
+    effectiveExecution == null ||
+    referenceExecution == null ||
+    effectiveExecution !== referenceExecution;
 
   const routingOverride: TurnProviderOverride | undefined = useMemo(() => {
     if (!allowOverride) {

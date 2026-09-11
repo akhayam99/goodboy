@@ -316,6 +316,38 @@ describe('sendTurn checks the model it ran against the model that was picked', (
     expect(mismatchWarning()).toBeUndefined();
   });
 
+  it('speaks up when the picked model is one no provider offers', async () => {
+    setup();
+
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      agentId: AGENT_A,
+      content: 'go',
+      override: { providerId: 'cursor', model: 'not-a-model', explicit: true },
+    });
+
+    expect(storySpies.runTurn.mock.calls[0]?.[0]?.model).toBe('composer-2.5');
+    expect(mismatchWarning()?.body).toContain('not-a-model');
+  });
+
+  it('speaks up when the picked selection names a key no provider offers', async () => {
+    setup();
+
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      agentId: AGENT_A,
+      content: 'go',
+      override: {
+        providerId: 'cursor',
+        model: 'not-a-model',
+        selection: { key: 'not-a-model' },
+        explicit: true,
+      },
+    });
+
+    expect(mismatchWarning()?.body).toContain('not-a-model');
+  });
+
   it('speaks up when the base model runs instead of the fast combo that was picked', async () => {
     setup();
     await mockRouting(true);

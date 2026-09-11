@@ -4,10 +4,8 @@ import {
   buildChainCarryForward,
   autoPopulateContext,
   buildStepPrompt,
-  canonicalModelId,
   findReusableAgent,
   isFallbackStepOutputSummary,
-  modelIdForSelection,
   planTurnFallback,
   resolveModelArgs,
   resolveRoleRouting,
@@ -128,6 +126,7 @@ import { completeResolvedAgent } from './completeResolvedAgent';
 import { resolvePhaseAgent } from './resolvePhaseAgent';
 import { resolveSkillPrompt } from './resolveSkillPrompt';
 import { persistAttachments } from './persistAttachments';
+import { pickedTurnExecution } from './pickedTurnExecution';
 import { auditToolCall } from './auditToolCall';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { fallbackNoticeMessage } from './fallbackNoticeMessage';
@@ -493,30 +492,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       throw new Error(`resolved model args omit ${modelFlag} for ${provider}`);
     }
     const model = spawnModel;
-    const pickedModel =
-      pickedOverride == null
-        ? null
-        : pickedOverride.selection != null
-          ? modelIdForSelection({
-              provider: pickedOverride.providerId,
-              selection: pickedOverride.selection,
-            })
-          : pickedOverride.model != null
-            ? canonicalModelId({
-                provider: pickedOverride.providerId,
-                modelId: pickedOverride.model,
-              })
-            : null;
+    const picked = pickedTurnExecution({ override: pickedOverride });
+    const ranAsPicked = picked.kind === 'unspecified' || picked.id === spawnModel;
     if (
       pickedOverride != null &&
-      (provider !== pickedOverride.providerId ||
-        (pickedModel != null && pickedModel !== spawnModel))
+      (provider !== pickedOverride.providerId || picked.kind === 'unresolved' || !ranAsPicked)
     ) {
       void get().emitNotification(
         'error',
         'warning',
         'the turn did not run on the model you picked',
-        `you picked ${pickedOverride.providerId}/${pickedModel ?? spawnModel}, the turn ran on ${provider}/${spawnModel}`,
+        `you picked ${pickedOverride.providerId}/${picked.kind === 'unspecified' ? spawnModel : picked.id}, the turn ran on ${provider}/${spawnModel}`,
         { sessionId },
       );
     }

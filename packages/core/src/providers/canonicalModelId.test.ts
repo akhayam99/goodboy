@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getDefaultTurnModel } from './capabilities';
 import { canonicalModelId } from './canonicalModelId';
 import { resolveModelIdForProvider } from './resolveModelIdForProvider';
 
@@ -82,5 +83,29 @@ describe('resolveModelIdForProvider', () => {
     expect(resolveModelIdForProvider({ provider: 'cursor', modelId: 'composer-2.5' })).not.toBe(
       'composer-2.5-fast',
     );
+  });
+});
+
+describe('canonicalModelId, ids nobody can resolve', () => {
+  it('refuses to name an execution for an id no provider offers', () => {
+    expect(canonicalModelId({ provider: 'cursor', modelId: 'not-a-model' })).toBeNull();
+    expect(canonicalModelId({ provider: 'anthropic', modelId: 'not-a-model' })).toBeNull();
+  });
+
+  it('never reads an unknown id as the provider default', () => {
+    expect(canonicalModelId({ provider: 'anthropic', modelId: 'not-a-model' })).not.toBe(
+      canonicalModelId({
+        provider: 'anthropic',
+        modelId: getDefaultTurnModel({ id: 'anthropic' }),
+      }),
+    );
+    expect(canonicalModelId({ provider: 'cursor', modelId: 'not-a-model' })).not.toBe(
+      canonicalModelId({ provider: 'cursor', modelId: getDefaultTurnModel({ id: 'cursor' }) }),
+    );
+  });
+
+  it('keeps two different unknown ids from agreeing with each other', () => {
+    expect(canonicalModelId({ provider: 'cursor', modelId: 'not-a-model' })).toBeNull();
+    expect(canonicalModelId({ provider: 'cursor', modelId: 'also-not-a-model' })).toBeNull();
   });
 });
