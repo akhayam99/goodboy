@@ -9,7 +9,7 @@ import {
 import type { AgentId, PrComment, ResolveThread, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
-import { openReview } from '../../../review/openReview';
+import { openReviewThread } from '../../../review/openReviewThread';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { ResolverThreadVerdictRow } from './ResolverThreadVerdictRow';
@@ -109,7 +109,7 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
   const [open, setOpen] = useState(false);
 
   const onOpen = (threadId: string) => {
-    void openReview({ sessionId, threadId });
+    void openReviewThread({ sessionId, threadId });
   };
 
   const onOpenCommit = (sha: string) => {

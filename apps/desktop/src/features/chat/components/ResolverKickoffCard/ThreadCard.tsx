@@ -5,7 +5,7 @@ import type { SessionId } from '@goodboy/types';
 import type { ResolverKickoffThread } from '../../utils/parse-resolver-kickoff';
 import { openUrl } from '../../../../shared/lib/editor';
 import { ConversationThread } from '../../../github/components/GitHubStudio/ConversationThread';
-import { openReview } from '../../../review/openReview';
+import { openReviewThread } from '../../../review/openReviewThread';
 import { TranscriptChevron } from '../TranscriptChevron';
 import { useKickoffDockedThread } from './useKickoffDockedThread';
 
@@ -48,7 +48,7 @@ export const ThreadCard = ({ thread, sessionId }: Props) => {
         {isResolvable && (
           <button
             type="button"
-            onClick={() => void openReview({ sessionId, threadId })}
+            onClick={() => void openReviewThread({ sessionId, threadId, prUrl: link })}
             className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium text-muted-foreground/80 transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
             Open in Review

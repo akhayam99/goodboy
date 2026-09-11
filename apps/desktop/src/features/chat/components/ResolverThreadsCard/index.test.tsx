@@ -10,11 +10,13 @@ const h = vi.hoisted(() => ({
   replies: vi.fn<(text: string) => ReadonlyArray<unknown>>(() => []),
   comments: [] as Array<{ threadId: string; resolved: boolean }>,
   rows: [] as Array<{ threadId: string; state: string }>,
-  openReview: vi.fn(async () => ({ kind: 'opened' as const })),
+  openReviewThread: vi.fn(async () => ({ kind: 'opened' as const })),
   openDiffLens: vi.fn(),
 }));
 
-vi.mock('../../../review/openReview', () => ({ openReview: h.openReview }));
+vi.mock('../../../review/openReviewThread', () => ({
+  openReviewThread: h.openReviewThread,
+}));
 
 vi.mock('@goodboy/core', () => ({
   extractAllCommentAnalysis: h.analysis,
@@ -53,7 +55,7 @@ describe('ResolverThreadsCard', () => {
     h.replies.mockReturnValue([]);
     h.comments = [];
     h.rows = [];
-    h.openReview.mockClear();
+    h.openReviewThread.mockClear();
     h.openDiffLens.mockClear();
   });
 
@@ -158,7 +160,7 @@ describe('ResolverThreadsCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /Expand resolve findings/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Open thread 2 in Review' }));
 
-    expect(h.openReview).toHaveBeenCalledWith({ sessionId: 's', threadId: 'PRRT_2' });
+    expect(h.openReviewThread).toHaveBeenCalledWith({ sessionId: 's', threadId: 'PRRT_2' });
   });
 
   it('opens each row own thread, not the first verdict in the list', () => {
@@ -169,8 +171,11 @@ describe('ResolverThreadsCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /Expand resolve findings/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Open thread 2 in Review' }));
 
-    expect(h.openReview).toHaveBeenCalledWith({ sessionId: 's', threadId: 'PRRT_2' });
-    expect(h.openReview).not.toHaveBeenCalledWith({ sessionId: 's', threadId: 'PRRT_1' });
+    expect(h.openReviewThread).toHaveBeenCalledWith({ sessionId: 's', threadId: 'PRRT_2' });
+    expect(h.openReviewThread).not.toHaveBeenCalledWith({
+      sessionId: 's',
+      threadId: 'PRRT_1',
+    });
   });
 
   it('stays navigable even when the transcript card knows no agent', () => {
@@ -180,7 +185,7 @@ describe('ResolverThreadsCard', () => {
     const row = screen.getByTestId('resolver-thread-verdict');
     fireEvent.click(within(row).getByRole('button', { name: 'Open thread 1 in Review' }));
 
-    expect(h.openReview).toHaveBeenCalledWith({ sessionId: 's', threadId: 'PRRT_2' });
+    expect(h.openReviewThread).toHaveBeenCalledWith({ sessionId: 's', threadId: 'PRRT_2' });
   });
 
   it('reflects a github-resolved thread and a queued local fix in the verdict text', () => {
