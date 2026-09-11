@@ -51,7 +51,6 @@ import type {
   SessionExternalTaskProvider,
   SessionExternalTask,
   SessionMountView,
-  SessionProjectMount,
   SessionEventKind,
   SessionEventPayload,
   IntegrationBindingProvider,
