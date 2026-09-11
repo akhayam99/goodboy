@@ -2,9 +2,9 @@ import { resolveSettings } from '@goodboy/core';
 import type { MountId, Project, ProjectId, SessionId } from '@goodboy/types';
 import { DEFAULT_BRANCH_PREFIX } from '../../../features/settings/settings';
 import { mountDirName } from '../project-mounts/mountDirName';
+import { sanitizeSlug } from '../project-mounts/sanitizeSlug';
 import { deriveBranchName } from './deriveBranchName';
 import { materializationSeedFor } from './materializationSeeds';
-import { slugifyDir } from './slugifyDir';
 import type { AppStore } from '../../store';
 
 export type MountPlanState = Pick<
@@ -47,7 +47,7 @@ type PathParams = {
 
 const targetPathFor = ({ project, slug, mountId, folderName }: PathParams): string => {
   if (project.kind !== 'repo') {
-    return `${project.rootPath}/sessions/${folderName ?? slugifyDir(slug)}`;
+    return `${project.rootPath}/sessions/${folderName ?? slug}`;
   }
   return `${project.rootPath}/.goodboy/worktrees/${mountDirName({ sessionSlug: slug, mountId })}`;
 };
@@ -103,7 +103,7 @@ export const mountPlan = ({
   const storedIdentifiers = (state.sessionExternalTasks[sessionId] ?? []).map(
     (task) => task.identifier,
   );
-  const slug = deriveBranchName({
+  const derivedSlug = deriveBranchName({
     prefix,
     sessionId,
     goal: session.goal,
@@ -111,6 +111,8 @@ export const mountPlan = ({
     taskIdentifiers: storedIdentifiers.length > 0 ? storedIdentifiers : taskIdentifiers,
     existingBranches: takenBranches,
   });
+  const sanitizedSlug = sanitizeSlug(derivedSlug);
+  const slug = sanitizedSlug === '' ? `session-${sessionId.slice(0, 8)}` : sanitizedSlug;
   const adoptedBranch = seed?.existingBranch ?? null;
   return {
     project,

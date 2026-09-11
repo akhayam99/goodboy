@@ -427,6 +427,44 @@ pub fn sanitize_slug(input: &str) -> String {
     }
 }
 
+#[cfg(test)]
+mod sanitize_slug_tests {
+    use super::{sanitize_slug, MAX_SLUG_LEN};
+
+    #[test]
+    fn replaces_a_branch_separator_so_the_directory_never_nests() {
+        assert_eq!(sanitize_slug("alice/fix-parser"), "alice-fix-parser");
+    }
+
+    #[test]
+    fn truncates_at_the_slug_budget_without_a_trailing_dash() {
+        let sanitized = sanitize_slug(&format!("{}-tail", "a".repeat(MAX_SLUG_LEN - 1)));
+
+        assert_eq!(sanitized, "a".repeat(MAX_SLUG_LEN - 1));
+    }
+
+    #[test]
+    fn lowercases_ascii_only() {
+        assert_eq!(sanitize_slug("Fix-Parser"), "fix-parser");
+        assert_eq!(sanitize_slug("caff\u{c8}"), "caff");
+    }
+
+    #[test]
+    fn leaves_an_already_sanitized_name_untouched() {
+        let once = sanitize_slug("Alice/Fix   Parser/../weird");
+
+        assert_eq!(sanitize_slug(&once), once);
+    }
+
+    #[test]
+    fn leaves_a_mount_directory_name_untouched() {
+        let name = "alice-fix-p-9f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f";
+
+        assert_eq!(name.len(), MAX_SLUG_LEN);
+        assert_eq!(sanitize_slug(name), name);
+    }
+}
+
 #[tauri::command]
 pub async fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeError> {
     tauri::async_runtime::spawn_blocking(move || worktree_create_blocking(args))

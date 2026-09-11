@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import type {
   IsoDateTime,
   MountId,
@@ -9,6 +9,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { emptyOverrides } from '../../storyHarness';
+import { forgetMaterializationSeed, rememberMaterializationSeed } from './materializationSeeds';
 import { mountPlan, type MountPlanState } from './mountPlan';
 
 const NOW = '2026-07-27T00:00:00.000Z' as IsoDateTime;
@@ -57,6 +58,10 @@ const stateWith = (overrides: Partial<MountPlanState> = {}): MountPlanState =>
   }) as MountPlanState;
 
 describe('mountPlan', () => {
+  afterEach(() => {
+    forgetMaterializationSeed({ sessionId: SID });
+  });
+
   it('derives the branch, the base and the target path before anything is created', () => {
     const plan = mountPlan({ state: stateWith(), sessionId: SID, projectId: PID, mountId: MID });
 
@@ -97,6 +102,41 @@ describe('mountPlan', () => {
     });
 
     expect(plan?.takenBranches).toContain('ak/taken-branch');
+  });
+
+  it('keeps an adopted branch slug out of the worktree path', () => {
+    rememberMaterializationSeed({
+      sessionId: SID,
+      seed: { sessionSlug: 'alice/fix-parser', existingBranch: 'alice/fix-parser' },
+    });
+
+    const plan = mountPlan({ state: stateWith(), sessionId: SID, projectId: PID, mountId: MID });
+
+    expect(plan?.slug).toBe('alice-fix-parser');
+    expect(plan?.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/alice-fix-parser-mount-1');
+  });
+
+  it('truncates a folder path at the backend budget, not at forty characters', () => {
+    const folder = { ...repoProject, kind: 'folder', rootPath: '/notes' } satisfies Project;
+    rememberMaterializationSeed({ sessionId: SID, seed: { sessionSlug: 'a'.repeat(45) } });
+
+    const plan = mountPlan({
+      state: stateWith({ projects: [folder] }),
+      sessionId: SID,
+      projectId: PID,
+      mountId: MID,
+    });
+
+    expect(plan?.targetPath).toBe(`/notes/sessions/${'a'.repeat(45)}`);
+  });
+
+  it('falls back to a session slug the backend would not rewrite', () => {
+    rememberMaterializationSeed({ sessionId: SID, seed: { sessionSlug: '***' } });
+
+    const plan = mountPlan({ state: stateWith(), sessionId: SID, projectId: PID, mountId: MID });
+
+    expect(plan?.slug).toBe('session-ab12cd34');
+    expect(plan?.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/session-ab12cd34-mount-1');
   });
 
   it('returns null when the project does not belong to the session workspace', () => {
