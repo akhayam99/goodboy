@@ -54,6 +54,7 @@ vi.mock('../../../features/worktree/worktree', () => ({
 }));
 
 import { detachProject } from './detachProject';
+import { withRepositoryAndMountLock } from './mountLocks';
 
 const SESSION_ID = 'sess-1' as never;
 const PROJECT_ID = 'project-api' as never;
@@ -196,6 +197,12 @@ const makeStore = () => ({
 });
 
 type Store = ReturnType<typeof makeStore>;
+
+const flush = async (): Promise<void> => {
+  for (let index = 0; index < 5; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+};
 
 const runDetach = async (store: Store, disposition?: string) => {
   const set = vi.fn((updater: unknown) => {
@@ -625,6 +632,37 @@ describe('detachProject', () => {
     expect(store.mountBranchObservations['sess-1']?.map((entry) => entry.mountId)).toEqual([
       'mount-web',
     ]);
+  });
+
+  it('waits for an in-flight operation on the same mount before touching its row', async () => {
+    const store = makeStore();
+    let release = (): void => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const holder = withRepositoryAndMountLock({
+      repoRoot: '/repos/api',
+      mountKey: 'sess-1:mount-api',
+      run: async () => {
+        await held;
+      },
+    });
+
+    const detaching = runDetach(store);
+    await flush();
+
+    expect(removeWorktreeChecked).not.toHaveBeenCalled();
+    expect(deleteSessionMount).not.toHaveBeenCalled();
+
+    release();
+    await holder;
+    await detaching;
+
+    expect(deleteSessionMount).toHaveBeenCalledWith({
+      db: {},
+      sessionId: SESSION_ID,
+      mountId: 'mount-api',
+    });
   });
 
   it('refuses a project that is not mounted', async () => {

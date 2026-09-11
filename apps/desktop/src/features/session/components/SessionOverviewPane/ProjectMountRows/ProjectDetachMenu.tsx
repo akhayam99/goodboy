@@ -21,6 +21,7 @@ import type { DetachDisposition } from '../../../../../store/slices/project-moun
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { DetachConfirm } from './DetachConfirm';
 import {
+  BLOCKER_SENTENCE,
   REMOVAL_STAGE,
   buildDetachPlan,
   detachOutcomeMessage,
@@ -145,6 +146,23 @@ export const ProjectDetachMenu = ({
       .join(','),
   );
   const blockers = BLOCKER_CODES.filter((code) => blockerKey.split(',').includes(code));
+  const forgetBlockerKey = useAppStore((state) =>
+    mountId === undefined
+      ? ''
+      : [
+          ...new Set(
+            mountCleanupBlockers({
+              state,
+              sessionId,
+              mountId,
+              worktreePath: keptPath ?? worktreePath,
+            }),
+          ),
+        ]
+          .sort()
+          .join(','),
+  );
+  const forgetBlockers = BLOCKER_CODES.filter((code) => forgetBlockerKey.split(',').includes(code));
   const { showToast } = useToast();
   const [confirming, setConfirming] = useState<Confirming>(null);
   const [isBusy, setIsBusy] = useState(false);
@@ -293,6 +311,18 @@ export const ProjectDetachMenu = ({
     }
   };
 
+  const forgetNote =
+    keptPath === null ? (
+      <span className="text-2xs text-muted-foreground">
+        This branch leaves the session. The branch and any pull request stay.
+      </span>
+    ) : (
+      <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
+        <span className="text-2xs">Its files stay on disk at</span>
+        <span className="truncate font-mono text-2xs">{keptPath}</span>
+      </div>
+    );
+
   const keptNote = (
     <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
       <span className="text-2xs">Uncommitted changes stay on disk at</span>
@@ -353,20 +383,23 @@ export const ProjectDetachMenu = ({
           <span className="text-xs font-medium">
             {branch === '' ? 'Remove this mount?' : `Remove ${branch}?`}
           </span>
-          {keptPath === null ? (
-            <span className="text-2xs text-muted-foreground">
-              This branch leaves the session. The branch and any pull request stay.
-            </span>
-          ) : (
-            <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
-              <span className="text-2xs">Its files stay on disk at</span>
-              <span className="truncate font-mono text-2xs">{keptPath}</span>
+          {forgetBlockers.length > 0 ? (
+            <div className="flex min-w-0 flex-col gap-1 text-2xs text-muted-foreground">
+              {forgetBlockers.map((blocker) => (
+                <p key={blocker} className="break-words">
+                  {BLOCKER_SENTENCE[blocker]({ projectName })}
+                </p>
+              ))}
             </div>
+          ) : (
+            forgetNote
           )}
           <div className="flex items-center gap-1">
-            <Button size="sm" variant="ghost" disabled={isBusy} onClick={() => void forget()}>
-              Remove
-            </Button>
+            {forgetBlockers.length === 0 && (
+              <Button size="sm" variant="ghost" disabled={isBusy} onClick={() => void forget()}>
+                Remove
+              </Button>
+            )}
             <Button size="sm" variant="ghost" disabled={isBusy} onClick={() => setConfirming(null)}>
               Cancel
             </Button>

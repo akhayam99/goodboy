@@ -522,6 +522,62 @@ describe('ProjectDetachMenu', () => {
     );
   });
 
+  it('offers no removal from the session while a terminal holds the mount', () => {
+    state.sessionMounts = {
+      'session-1': [
+        {
+          id: 'mount-1',
+          projectId: 'project-1',
+          worktreePath: null,
+          lastWorktreePath: '/worktrees/api',
+          branch: 'ak/feat',
+          isAttached: false,
+          diskState: 'present',
+        },
+      ],
+    };
+    state.terminalTabs = {
+      'session-1': [{ id: 'tab-1', sessionId: 'session-1', cwd: '/worktrees/api' }],
+    };
+    renderRowMenu();
+
+    fireEvent.click(screen.getByRole('button', { name: 'api on ak/feat actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Remove from session' }));
+
+    expect(
+      screen.getByText('A terminal is open in api; close it before removing this worktree.'),
+    ).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined();
+  });
+
+  it('offers no removal from the session while an agent is still running', () => {
+    state.sessions = [{ id: 'session-1', state: { kind: 'running' } }];
+    state.sessionMounts = {
+      'session-1': [
+        {
+          id: 'mount-1',
+          projectId: 'project-1',
+          worktreePath: null,
+          lastWorktreePath: '/worktrees/api',
+          branch: 'ak/feat',
+          isAttached: false,
+          diskState: 'removed',
+        },
+      ],
+    };
+    renderRowMenu();
+
+    fireEvent.click(screen.getByRole('button', { name: 'api on ak/feat actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Remove from session' }));
+
+    expect(
+      screen.getByText('Work is still running in api; stop it before removing this worktree.'),
+    ).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+    expect(state.forgetMount).not.toHaveBeenCalled();
+  });
+
   it('returns to the item list on cancel', async () => {
     renderMenu();
     openConfirm();

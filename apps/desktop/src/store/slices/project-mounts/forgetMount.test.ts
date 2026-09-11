@@ -6,12 +6,16 @@ const {
   listMountOperations,
   getMountOperation,
   upsertMountOperation,
+  updateSessionActiveMount,
+  updateSessionActiveProject,
 } = vi.hoisted(() => ({
   deleteSessionMount: vi.fn(async (_args: { mountId: string }) => true),
   listSessionMounts: vi.fn(async () => [] as ReadonlyArray<Record<string, unknown>>),
   listMountOperations: vi.fn(async () => [] as ReadonlyArray<Record<string, unknown>>),
   getMountOperation: vi.fn(async () => null as Record<string, unknown> | null),
   upsertMountOperation: vi.fn(async () => undefined),
+  updateSessionActiveMount: vi.fn(async () => undefined),
+  updateSessionActiveProject: vi.fn(async () => undefined),
 }));
 
 vi.mock('@goodboy/db', () => ({
@@ -20,6 +24,8 @@ vi.mock('@goodboy/db', () => ({
   listMountOperations,
   getMountOperation,
   upsertMountOperation,
+  updateSessionActiveMount,
+  updateSessionActiveProject,
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
@@ -74,6 +80,32 @@ const makeStore = () => ({
   mountBranchObservations: {
     'sess-1': [{ mountId: 'mount-api', state: 'mismatch' }, { mountId: 'mount-web' }],
   } as Record<string, ReadonlyArray<{ readonly mountId: string; readonly state?: string }>>,
+  sessionProjectMounts: {
+    'sess-1': [
+      {
+        mountId: 'mount-web',
+        projectId: 'project-web',
+        mountName: 'web',
+        worktreePath: '/container/web',
+        repoRoot: '/repos/web',
+        branch: 'ak/web',
+      },
+    ],
+  } as Record<string, ReadonlyArray<Record<string, unknown>>>,
+  sessionWorktreeRecords: undefined as Record<string, ReadonlyArray<unknown>> | undefined,
+  sessionActiveProject: { 'sess-1': 'project-web' } as Record<string, string>,
+  sessionActiveMount: { 'sess-1': 'mount-web' } as Record<string, string | null>,
+  sessionBranches: { 'sess-1': 'ak/web' } as Record<string, string>,
+  sessions: [
+    {
+      id: 'sess-1',
+      workspaceId: 'ws-1',
+      activeProjectId: 'project-web',
+      activeMountId: 'mount-web' as string | undefined,
+      state: { kind: 'idle' } as { readonly kind: string },
+    },
+  ],
+  terminalTabs: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
   projects: [
     { id: 'project-api', workspaceId: 'ws-1', rootPath: '/repos/api', kind: 'repo', name: 'api' },
   ],
@@ -103,6 +135,8 @@ beforeEach(() => {
   listSessionMounts.mockImplementation(async () => [makeView({})]);
   listMountOperations.mockImplementation(async () => []);
   getMountOperation.mockImplementation(async () => null);
+  updateSessionActiveMount.mockImplementation(async () => undefined);
+  updateSessionActiveProject.mockImplementation(async () => undefined);
 });
 
 describe('forgetMount', () => {
@@ -215,6 +249,73 @@ describe('forgetMount', () => {
     expect(store.mountBranchObservations['sess-1']?.map((entry) => entry.mountId)).toEqual([
       'mount-web',
     ]);
+  });
+
+  it('refuses a mount whose worktree a terminal still holds', async () => {
+    const store = makeStore();
+    store.terminalTabs = {
+      'sess-1': [{ id: 'tab-1', sessionId: 'sess-1', cwd: '/container/api' }],
+    };
+
+    await expect(run(store)).rejects.toThrow('a terminal is open in the worktree');
+    expect(deleteSessionMount).not.toHaveBeenCalled();
+  });
+
+  it('refuses a mount while an agent still runs in the session', async () => {
+    const store = makeStore();
+    store.sessions[0]!.state = { kind: 'running' };
+
+    await expect(run(store)).rejects.toThrow('an agent is still running in this session');
+    expect(deleteSessionMount).not.toHaveBeenCalled();
+  });
+
+  it('hands the write destination on when the deleted mount was the stored one', async () => {
+    const store = makeStore();
+    store.sessionActiveMount = { 'sess-1': 'mount-api' };
+    store.sessions[0]!.activeMountId = 'mount-api';
+
+    await run(store);
+
+    expect(updateSessionActiveMount).toHaveBeenCalledWith({
+      db: {},
+      sessionId: SESSION_ID,
+      mountId: 'mount-web',
+    });
+    expect(store.sessionActiveMount['sess-1']).toBe('mount-web');
+    expect(store.sessions[0]?.activeMountId).toBe('mount-web');
+    expect(store.sessionBranches['sess-1']).toBe('ak/web');
+  });
+
+  it('invents no write destination for a session that had none', async () => {
+    const store = makeStore();
+    store.sessionActiveMount = { 'sess-1': null };
+    store.sessions[0]!.activeMountId = undefined;
+
+    await run(store);
+
+    expect(updateSessionActiveMount).not.toHaveBeenCalled();
+    expect(store.sessionActiveMount['sess-1']).toBeNull();
+    expect(store.sessions[0]?.activeMountId).toBeUndefined();
+  });
+
+  it('moves the active project on when the last mount of that project leaves', async () => {
+    const store = makeStore();
+    store.sessionActiveProject = { 'sess-1': 'project-api' };
+    store.sessions[0]!.activeProjectId = 'project-api';
+    store.sessionMounts['sess-1'] = [
+      makeView({}),
+      makeView({ id: 'mount-web', projectId: 'project-web' }),
+    ];
+
+    await run(store);
+
+    expect(updateSessionActiveProject).toHaveBeenCalledWith({
+      db: {},
+      id: SESSION_ID,
+      projectId: 'project-web',
+    });
+    expect(store.sessionActiveProject['sess-1']).toBe('project-web');
+    expect(store.sessions[0]?.activeProjectId).toBe('project-web');
   });
 
   it('refuses a mount the session does not have', async () => {
