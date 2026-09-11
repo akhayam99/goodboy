@@ -121,7 +121,13 @@ export const Chip = ({
   }
 
   return (
-    <span title={title} aria-label={ariaLabel} data-testid={testId} className={classes}>
+    <span
+      title={title}
+      role={ariaLabel == null ? undefined : 'img'}
+      aria-label={ariaLabel}
+      data-testid={testId}
+      className={classes}
+    >
       {inner}
     </span>
   );

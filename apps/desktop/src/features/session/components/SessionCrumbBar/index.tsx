@@ -34,11 +34,7 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   const sessionId = session.id as SessionId;
   const crumbs = useSessionCrumbs({ session });
   const stage = useSessionStageInfo(session);
-  const stagePresentation = describeSessionStage({
-    stage: stage.stage,
-    reason: stage.reason,
-    attention: stage.attention,
-  });
+  const stagePresentation = describeSessionStage(stage);
   const selectedAgentId = useAppStore(
     (state) => state.selectedAgentId[sessionId] ?? null,
   ) as AgentId | null;

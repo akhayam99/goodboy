@@ -34,12 +34,10 @@ export const SessionActivityItem = ({
   onModifierClick,
   onClick,
 }: Props) => {
-  const { stage, reason, attention } = useSessionStageInfo(session);
-  const prState = useAppStore(
-    (state) => state.sessionGithub[session.id as SessionId]?.pr?.state ?? null,
-  );
-  const prMeta = prState != null ? PULL_REQUEST_PRESENTATION[prState] : null;
-  const stagePresentation = describeSessionStage({ stage, reason, attention, prState });
+  const stageInfo = useSessionStageInfo(session);
+  const { stage, reason } = stageInfo;
+  const prMeta = stageInfo.prState === null ? null : PULL_REQUEST_PRESENTATION[stageInfo.prState];
+  const stagePresentation = describeSessionStage(stageInfo);
   const externalTasks = useAppStore(
     (state) => state.sessionExternalTasks[session.id as SessionId] ?? EMPTY_ARRAY,
   );

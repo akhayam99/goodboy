@@ -3,7 +3,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, Session, SessionId, SessionStageInfo } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   state: {} as Record<string, unknown>,
@@ -12,7 +12,12 @@ const h = vi.hoisted(() => ({
     { id: 'lens-agents', label: 'Agents', onClick: vi.fn() },
     { id: 'selected-child', label: 'scout one' },
   ] as ReadonlyArray<{ id: string; label: string; onClick?: () => void }>,
-  stage: { stage: 'running' as const, reason: 'running' },
+  stage: {
+    stage: 'running',
+    reason: 'running',
+    attention: null,
+    prState: null,
+  } as SessionStageInfo,
   currentSession: null as Session | null,
   selectAgent: vi.fn(),
 }));
@@ -158,7 +163,7 @@ const openStepSurface = () => {
 
 beforeEach(() => {
   h.currentSession = session;
-  h.stage.reason = 'running';
+  h.stage = { stage: 'running', reason: 'running', attention: null, prState: null };
   h.crumbs = [
     { id: 'overview', label: 'Overview', onClick: vi.fn() },
     { id: 'lens-agents', label: 'Agents', onClick: vi.fn() },
@@ -182,7 +187,7 @@ describe('SessionCrumbBar', () => {
   });
 
   it('carries the stage label and reason as a tooltip on the crumb dot', () => {
-    h.stage.reason = 'PR needs review';
+    h.stage = { ...h.stage, reason: 'PR needs review' };
     render(<SessionCrumbBar />);
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
@@ -191,8 +196,28 @@ describe('SessionCrumbBar', () => {
     expect(anchor?.querySelector('.rounded-full')).not.toBeNull();
   });
 
+  it('marks a session whose pull request was closed as abandoned, not integrated', () => {
+    h.stage = { stage: 'done', reason: 'PR #12 closed', attention: null, prState: 'closed' };
+    render(<SessionCrumbBar />);
+
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    const dot = within(nav).getByRole('img', { name: 'done, PR #12 closed' });
+    expect(dot.className).not.toContain('bg-merged');
+    expect(dot.className).toContain('bg-muted-foreground');
+  });
+
+  it('still marks a merged session as integrated', () => {
+    h.stage = { stage: 'done', reason: 'PR #12 merged', attention: null, prState: 'merged' };
+    render(<SessionCrumbBar />);
+
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(within(nav).getByRole('img', { name: 'done, PR #12 merged' }).className).toContain(
+      'bg-merged',
+    );
+  });
+
   it('falls back to the stage explanation when the caller has no reason', () => {
-    h.stage.reason = '';
+    h.stage = { ...h.stage, reason: '' };
     render(<SessionCrumbBar />);
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });

@@ -78,4 +78,16 @@ describe('Chip', () => {
     expect(classesOf('soft')).toContain('bg-success/10');
     expect(classesOf('strong')).toContain('ring-success/40');
   });
+
+  it('hangs an accessible name on a role screen readers expose', () => {
+    render(<Chip tone="success" label="merged" ariaLabel="PR #12 merged, integrated" />);
+
+    expect(screen.getByRole('img', { name: 'PR #12 merged, integrated' })).toBeDefined();
+  });
+
+  it('stays a plain decoration when it carries no accessible name', () => {
+    render(<Chip tone="neutral" label="plain" />);
+
+    expect(screen.getByText('plain').getAttribute('role')).toBeNull();
+  });
 });

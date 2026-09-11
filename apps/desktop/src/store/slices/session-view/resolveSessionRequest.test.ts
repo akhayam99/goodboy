@@ -72,7 +72,12 @@ describe('resolveSessionRequest', () => {
       hasUnread: false,
       openQuestionCount: 0,
     });
-    expect(info).toEqual({ stage: 'done', reason: 'MR !7 merged', attention: null });
+    expect(info).toEqual({
+      stage: 'done',
+      reason: 'MR !7 merged',
+      attention: null,
+      prState: 'merged',
+    });
   });
 
   it('lets the GitHub pull request win when both hosts answer', () => {
@@ -84,7 +89,12 @@ describe('resolveSessionRequest', () => {
       hasUnread: false,
       openQuestionCount: 0,
     });
-    expect(info).toEqual({ stage: 'review', reason: 'PR #42 awaiting review', attention: null });
+    expect(info).toEqual({
+      stage: 'review',
+      reason: 'PR #42 awaiting review',
+      attention: null,
+      prState: 'open',
+    });
   });
 
   it('never reads CI from a merge request', () => {

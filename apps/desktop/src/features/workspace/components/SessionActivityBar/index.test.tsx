@@ -2,9 +2,9 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
+import type { Session, SessionId, SessionStageInfo, WorkspaceId } from '@goodboy/types';
 
-const { state, viewPrefs } = vi.hoisted(() => ({
+const { state, viewPrefs, stageInfo } = vi.hoisted(() => ({
   state: {
     sessionGithub: {} as Record<string, unknown>,
     sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
@@ -18,6 +18,14 @@ const { state, viewPrefs } = vi.hoisted(() => ({
   viewPrefs: {
     current: { group: 'none' as 'none' | 'stage', sort: 'recent' as const },
   },
+  stageInfo: {
+    current: {
+      stage: 'done',
+      reason: 'idle',
+      attention: null,
+      prState: null,
+    } as SessionStageInfo,
+  },
 }));
 
 vi.mock('../../../../store', () => ({
@@ -25,7 +33,7 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useSessionCost: () => 0,
   useSessionHasUnread: () => false,
-  useSessionStageInfo: () => ({ stage: 'done' as const, reason: 'idle', attention: null }),
+  useSessionStageInfo: () => stageInfo.current,
   useSessionViewPrefs: () => viewPrefs.current,
   useSortedGroupedSessions: (_workspaceId: unknown, sessions: ReadonlyArray<unknown>) =>
     viewPrefs.current.group === 'stage' ? [{ key: 'done', sessions }] : [{ key: 'all', sessions }],
@@ -106,6 +114,7 @@ beforeEach(() => {
   state.bulkDeleteTask.mockClear();
   state.sessionExternalTasks = {};
   state.sessionProjectMounts = {};
+  stageInfo.current = { stage: 'done', reason: 'idle', attention: null, prState: null };
   state.projects = [];
   viewPrefs.current = { group: 'none', sort: 'recent' };
 });
@@ -418,5 +427,47 @@ describe('SessionActivityBar, external task chip', () => {
     expect(screen.queryByRole('img', { name: 'Sentry' })).toBeNull();
     expect(screen.queryByLabelText(/SENTRY-9 from Sentry/i)).toBeNull();
     expect(screen.getByTitle(/crashy · done, idle · SENTRY-9/)).toBeDefined();
+  });
+});
+
+describe('SessionActivityBar, settled request state', () => {
+  it('marks a session whose merge request was closed as abandoned, not integrated', () => {
+    stageInfo.current = {
+      stage: 'done',
+      reason: 'MR !7 closed',
+      attention: null,
+      prState: 'closed',
+    };
+    renderBar([], [makeSession('a-1', 'abandoned one')]);
+
+    const dot = screen.getByRole('img', { name: 'done, MR !7 closed' });
+    expect(dot.className).not.toContain('bg-merged');
+    expect(dot.className).toContain('bg-muted-foreground');
+  });
+
+  it('still marks a merged request as integrated', () => {
+    stageInfo.current = {
+      stage: 'done',
+      reason: 'MR !7 merged',
+      attention: null,
+      prState: 'merged',
+    };
+    renderBar([], [makeSession('a-1', 'landed one')]);
+
+    expect(screen.getByRole('img', { name: 'done, MR !7 merged' }).className).toContain(
+      'bg-merged',
+    );
+  });
+
+  it('names the request in the row title from the resolved state, gitlab included', () => {
+    stageInfo.current = {
+      stage: 'done',
+      reason: 'MR !7 closed',
+      attention: null,
+      prState: 'closed',
+    };
+    renderBar([], [makeSession('a-1', 'abandoned one')]);
+
+    expect(screen.getByTitle(/abandoned one · done, MR !7 closed · PR Closed/)).toBeDefined();
   });
 });

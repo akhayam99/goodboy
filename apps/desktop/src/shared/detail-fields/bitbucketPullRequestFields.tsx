@@ -1,29 +1,14 @@
-import type {
-  BitbucketPullRequest,
-  BitbucketPullRequestState,
-} from '../../features/integrations/bitbucket/client';
-import { StateBadge } from '@goodboy/ui';
-import { pullRequestStateTone } from '../../features/integrations/bitbucket/stateTone';
+import type { BitbucketPullRequest } from '../../features/integrations/bitbucket/client';
+import { BitbucketStateChip } from '../../features/integrations/bitbucket/BitbucketStateChip';
 import { formatAbsoluteDateTime } from '../utils/relativeDate';
 import type { DetailFieldRegistry } from './types';
-
-const STATE_LABEL: Record<BitbucketPullRequestState, string> = {
-  OPEN: 'open',
-  MERGED: 'merged',
-  DECLINED: 'declined',
-  SUPERSEDED: 'superseded',
-};
 
 export const bitbucketPullRequestFields: DetailFieldRegistry<BitbucketPullRequest> = [
   {
     kind: 'field',
     key: 'state',
     label: 'State',
-    render: ({ entity }) => (
-      <StateBadge tone={pullRequestStateTone({ state: entity.state })}>
-        {STATE_LABEL[entity.state]}
-      </StateBadge>
-    ),
+    render: ({ entity }) => <BitbucketStateChip state={entity.state} />,
   },
   {
     kind: 'field',

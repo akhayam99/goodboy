@@ -16,6 +16,7 @@ export const AgentStatusIcon = ({ status }: Props) => {
     <span
       className="inline-flex size-3 shrink-0 items-center justify-center"
       title={description}
+      role="img"
       aria-label={description}
     >
       {status === 'running' ? (

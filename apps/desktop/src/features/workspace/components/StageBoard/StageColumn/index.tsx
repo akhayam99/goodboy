@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn, Eyebrow, ScrollFade, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
-import { describeSessionStage } from '../../../../session/session-stage';
+import { describeStageBucket } from '../../../../session/session-stage';
 import {
   stateDescription,
   type StatePresentation,
@@ -39,7 +39,7 @@ const viewFor = (spec: ColumnSpec): ColumnView => {
   }
   return {
     key: spec.stage,
-    presentation: describeSessionStage({ stage: spec.stage }),
+    presentation: describeStageBucket({ stage: spec.stage }),
     collapsible: spec.stage === 'done',
     archived: false,
   };

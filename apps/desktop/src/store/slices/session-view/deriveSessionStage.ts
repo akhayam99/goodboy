@@ -24,7 +24,9 @@ type Params = {
 const isPrLive = (pr: PullRequestState | null): pr is PullRequestState =>
   pr !== null && pr.state !== 'merged' && pr.state !== 'closed';
 
-export const deriveSessionStage = ({
+type StageWithoutRequest = Omit<SessionStageInfo, 'prState'>;
+
+const deriveStage = ({
   session,
   pr,
   hasUnread,
@@ -37,7 +39,7 @@ export const deriveSessionStage = ({
   prFetchState = 'known',
   remainingWork = 0,
   remainingReason = null,
-}: Params): SessionStageInfo => {
+}: Params): StageWithoutRequest => {
   const label = requestLabel ?? (pr === null ? '' : `PR #${pr.number}`);
   if (isBranchless) {
     if (session.state.kind === 'running' || session.state.kind === 'starting' || hasRunningAgent) {
@@ -137,3 +139,8 @@ export const deriveSessionStage = ({
   }
   return { stage: 'review', reason: `${label} awaiting review`, attention: null };
 };
+
+export const deriveSessionStage = (params: Params): SessionStageInfo => ({
+  ...deriveStage(params),
+  prState: params.pr?.state ?? null,
+});

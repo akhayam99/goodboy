@@ -1,5 +1,5 @@
 import type { SessionGroupKey, SessionPrGroup, SessionStage } from '@goodboy/types';
-import { SESSION_STAGE_META, describeSessionStage } from '../../../session/session-stage';
+import { SESSION_STAGE_META, describeStageBucket } from '../../../session/session-stage';
 import { PR_GROUP_PRESENTATION } from '../../../../shared/pullRequestPresentation';
 import type { StatePresentation } from '../../../../shared/utils/statePresentation';
 
@@ -14,7 +14,7 @@ const isPrGroup = (key: string): key is SessionPrGroup => key in PR_GROUP_PRESEN
 
 export const sessionGroupPresentation = ({ key, groupMode }: Params): StatePresentation | null => {
   if (groupMode === 'stage' && isStage(key)) {
-    return describeSessionStage({ stage: key });
+    return describeStageBucket({ stage: key });
   }
   if (groupMode === 'pr' && isPrGroup(key)) {
     return PR_GROUP_PRESENTATION[key];

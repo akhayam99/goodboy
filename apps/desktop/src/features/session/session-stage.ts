@@ -1,12 +1,9 @@
 import { Eye, Hammer } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Tone } from '@goodboy/ui';
-import type { SessionAttentionReason, SessionStage } from '@goodboy/types';
+import type { SessionAttentionReason, SessionStage, SessionStageInfo } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
-import {
-  PULL_REQUEST_PRESENTATION,
-  type PullRequestPresentationState,
-} from '../../shared/pullRequestPresentation';
+import { PULL_REQUEST_PRESENTATION } from '../../shared/pullRequestPresentation';
 import type { StatePresentation } from '../../shared/utils/statePresentation';
 
 type AttentionEntry = {
@@ -76,21 +73,28 @@ export const STAGE_TONE: Record<SessionStage, Tone> = {
   done: 'merged',
 };
 
-type DescribeStageParams = {
+type BucketParams = {
   readonly stage: SessionStage;
-  readonly reason?: string;
-  readonly attention?: SessionAttentionReason | null;
-  readonly prState?: PullRequestPresentationState | null;
+};
+
+export const describeStageBucket = ({ stage }: BucketParams): StatePresentation => {
+  const meta = SESSION_STAGE_META[stage];
+  return {
+    label: meta.label,
+    reason: meta.reason,
+    tone: STAGE_TONE[stage],
+    icon: SESSION_STAGE_ICON[stage],
+  };
 };
 
 export const describeSessionStage = ({
   stage,
   reason,
-  attention = null,
-  prState = null,
-}: DescribeStageParams): StatePresentation => {
+  attention,
+  prState,
+}: SessionStageInfo): StatePresentation => {
   const meta = SESSION_STAGE_META[stage];
-  const given = reason !== undefined && reason !== '' ? reason : null;
+  const given = reason === '' ? null : reason;
 
   if (attention !== null) {
     const attentionMeta = ATTENTION_REASON_META[attention];
