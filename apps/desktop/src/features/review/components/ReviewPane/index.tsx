@@ -11,6 +11,7 @@ import type {
 import { EMPTY_ARRAY, useAppStore, useDiffComments } from '../../../../store';
 import { reviewThreadId } from '../../../../store/slices/review-navigation';
 import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
+import { selectPrWrite } from '../../../../store/slices/pr-writes/selectPrWrite';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { useToast } from '../../../../app/components/Toast';
 import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
@@ -20,7 +21,12 @@ import { openUrl } from '../../../../shared/lib/editor';
 import { GithubConnectionEmptyState } from '../../../github/components/GithubConnectionEmptyState';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { usePrDraftAgentRunning } from '../../../github/usePrDraftAgentRunning';
-import { PR_LIFECYCLE_FAILURE_LABEL, type PrLifecycleBusy } from '../../prLifecycle';
+import {
+  PR_LIFECYCLE_FAILURE_LABEL,
+  describePrWriteInFlight,
+  type PrLifecycleBusy,
+} from '../../prLifecycle';
+import { evaluatePrMergeReadiness } from '../../prMergeReadiness';
 import { buildCommentAgentArgs } from '../../../chat/spawn-from-comment';
 import { kindRouting } from '../../../session/agent-kind';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
@@ -98,6 +104,9 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
   }, [branchPrs, canonicalPr]);
   const pr =
     prOptions.find((candidate) => candidate.number === selectedPrNumber) ?? canonicalPr ?? null;
+  const prWriteTarget =
+    pr === null || repo === null ? null : { projectId: repo.projectId, prNumber: pr.number };
+  const prWriteClaim = useAppStore((s) => selectPrWrite({ state: s, target: prWriteTarget }));
 
   useEffect(() => {
     void loadResolveSession({ sessionId });
@@ -243,14 +252,12 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
     );
   }
 
-  const isTerminal = pr.state === 'merged' || pr.state === 'closed';
   const isClosed = pr.state === 'closed';
-  const canMerge = !isTerminal && !pr.isDraft && pr.mergeable !== false;
-  const mergeReason = pr.isDraft
-    ? 'mark the PR ready before merging'
-    : pr.mergeable === false
-      ? 'PR has conflicts, resolve them first'
-      : 'squash merge this PR';
+  const mergeReadiness = evaluatePrMergeReadiness({ pr });
+  const writeInFlight =
+    prWriteClaim === null
+      ? null
+      : describePrWriteInFlight({ action: prWriteClaim.action, prNumber: pr.number });
 
   const header = (
     <PrContextRow
@@ -263,8 +270,8 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
         <PrActionsMenu
           pr={pr}
           busy={lifecycleBusy}
-          canMerge={canMerge}
-          mergeReason={mergeReason}
+          mergeReadiness={mergeReadiness}
+          writeInFlight={writeInFlight}
           canCreateNew={!isDraftAgentRunning}
           onMarkReady={() => void runLifecycle('ready', () => markPrReady(sessionId, pr.number))}
           onConvertDraft={() =>

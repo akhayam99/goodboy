@@ -2,6 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { prEventPayload } from './prEventPayload';
+import { withPrWriteClaim } from './withPrWriteClaim';
 import type { GetFn, SetFn } from './types';
 
 export const closePr = (_set: SetFn, get: GetFn) => {
@@ -19,24 +20,32 @@ export const closePr = (_set: SetFn, get: GetFn) => {
     if (repo == null) {
       return;
     }
-    const res = await tauriGhRunner.run(['pr', 'close', String(num)], {
-      cwd: repo.repoRoot,
-      workspaceId: session.workspaceId,
+    await withPrWriteClaim({
+      get,
       projectId: repo.projectId,
-    });
-    if (res.exitCode !== 0) {
-      const errMsg = res.stderr.trim() || `gh pr close exited with ${res.exitCode}`;
-      void get().emitNotification('error', 'error', `Close of #${num} failed`, errMsg, {
-        sessionId,
-        workspaceId: workspace.id,
-      });
-      throw new Error(errMsg);
-    }
-    await get().refreshSessionPr(sessionId, { force: true });
-    await get().recordSessionEventOnce({
-      sessionId,
-      kind: 'pr_closed',
-      payload: prEventPayload({ number: num, pr: get().sessionGithub[sessionId]?.pr ?? null }),
+      prNumber: num,
+      action: 'close',
+      run: async () => {
+        const res = await tauriGhRunner.run(['pr', 'close', String(num)], {
+          cwd: repo.repoRoot,
+          workspaceId: session.workspaceId,
+          projectId: repo.projectId,
+        });
+        if (res.exitCode !== 0) {
+          const errMsg = res.stderr.trim() || `gh pr close exited with ${res.exitCode}`;
+          void get().emitNotification('error', 'error', `Close of #${num} failed`, errMsg, {
+            sessionId,
+            workspaceId: workspace.id,
+          });
+          throw new Error(errMsg);
+        }
+        await get().refreshSessionPr(sessionId, { force: true });
+        await get().recordSessionEventOnce({
+          sessionId,
+          kind: 'pr_closed',
+          payload: prEventPayload({ number: num, pr: get().sessionGithub[sessionId]?.pr ?? null }),
+        });
+      },
     });
   };
 };

@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
+import { withPrWriteClaim } from './withPrWriteClaim';
 import type { GetFn, SetFn } from './types';
 
 export const reopenPr = (_set: SetFn, get: GetFn) => {
@@ -18,19 +19,27 @@ export const reopenPr = (_set: SetFn, get: GetFn) => {
     if (repo == null) {
       return;
     }
-    const res = await tauriGhRunner.run(['pr', 'reopen', String(num)], {
-      cwd: repo.repoRoot,
-      workspaceId: session.workspaceId,
+    await withPrWriteClaim({
+      get,
       projectId: repo.projectId,
+      prNumber: num,
+      action: 'reopen',
+      run: async () => {
+        const res = await tauriGhRunner.run(['pr', 'reopen', String(num)], {
+          cwd: repo.repoRoot,
+          workspaceId: session.workspaceId,
+          projectId: repo.projectId,
+        });
+        if (res.exitCode !== 0) {
+          const errMsg = res.stderr.trim() || `gh pr reopen exited with ${res.exitCode}`;
+          void get().emitNotification('error', 'error', `Reopen of #${num} failed`, errMsg, {
+            sessionId,
+            workspaceId: workspace.id,
+          });
+          throw new Error(errMsg);
+        }
+        await get().refreshSessionPr(sessionId, { force: true });
+      },
     });
-    if (res.exitCode !== 0) {
-      const errMsg = res.stderr.trim() || `gh pr reopen exited with ${res.exitCode}`;
-      void get().emitNotification('error', 'error', `Reopen of #${num} failed`, errMsg, {
-        sessionId,
-        workspaceId: workspace.id,
-      });
-      throw new Error(errMsg);
-    }
-    await get().refreshSessionPr(sessionId, { force: true });
   };
 };

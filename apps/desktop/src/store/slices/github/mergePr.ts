@@ -2,10 +2,9 @@ import type { PrMergeMethod, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { prEventPayload } from './prEventPayload';
+import { withPrWriteClaim } from './withPrWriteClaim';
 import type { GetFn, SetFn } from './types';
 
-// `gh pr merge` takes exactly one strategy flag. Squash is the desktop default
-// (unchanged from before the method param existed).
 const MERGE_FLAG: Record<PrMergeMethod, string> = {
   squash: '--squash',
   merge: '--merge',
@@ -27,24 +26,32 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
     if (repo == null) {
       return;
     }
-    const res = await tauriGhRunner.run(['pr', 'merge', String(num), MERGE_FLAG[method]], {
-      cwd: repo.repoRoot,
-      workspaceId: session.workspaceId,
+    await withPrWriteClaim({
+      get,
       projectId: repo.projectId,
-    });
-    if (res.exitCode !== 0) {
-      const errMsg = res.stderr.trim() || `gh pr merge exited with ${res.exitCode}`;
-      void get().emitNotification('error', 'error', `Merge of #${num} failed`, errMsg, {
-        sessionId,
-        workspaceId: workspace.id,
-      });
-      throw new Error(errMsg);
-    }
-    await get().refreshSessionPr(sessionId, { force: true });
-    await get().recordSessionEventOnce({
-      sessionId,
-      kind: 'pr_merged',
-      payload: prEventPayload({ number: num, pr: get().sessionGithub[sessionId]?.pr ?? null }),
+      prNumber: num,
+      action: 'merge',
+      run: async () => {
+        const res = await tauriGhRunner.run(['pr', 'merge', String(num), MERGE_FLAG[method]], {
+          cwd: repo.repoRoot,
+          workspaceId: session.workspaceId,
+          projectId: repo.projectId,
+        });
+        if (res.exitCode !== 0) {
+          const errMsg = res.stderr.trim() || `gh pr merge exited with ${res.exitCode}`;
+          void get().emitNotification('error', 'error', `Merge of #${num} failed`, errMsg, {
+            sessionId,
+            workspaceId: workspace.id,
+          });
+          throw new Error(errMsg);
+        }
+        await get().refreshSessionPr(sessionId, { force: true });
+        await get().recordSessionEventOnce({
+          sessionId,
+          kind: 'pr_merged',
+          payload: prEventPayload({ number: num, pr: get().sessionGithub[sessionId]?.pr ?? null }),
+        });
+      },
     });
   };
 };

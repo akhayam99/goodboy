@@ -21,6 +21,7 @@ const h = vi.hoisted(() => {
     activePublicationPreview: {} as Record<string, unknown>,
     reviewDrafts: {} as Record<string, ReadonlyArray<unknown>>,
     diffComments: {} as Record<string, ReadonlyArray<unknown>>,
+    prWriteClaims: {} as Record<string, unknown>,
     reviewTargets: {} as Record<
       string,
       {
@@ -93,6 +94,7 @@ vi.mock('../../../../store/slices/worktrees/useSessionRepo', () => ({
     worktreePath: '/tmp/work',
     repoRoot: 'acme/web',
     branch: 'feature/retry',
+    projectId: 'project-1',
   }),
 }));
 vi.mock('../../../../shared/hooks/useSessionRoleModels', () => ({
@@ -227,6 +229,15 @@ const seed = () => {
   h.state.sessionSelectedPrNumber = {};
   h.state.sessionExternalTasks = {};
   h.state.branchPrs = [];
+  h.state.prWriteClaims = {};
+};
+
+const patchPr = (patch: Record<string, unknown>) => {
+  const github = h.state.sessionGithub[SESSION_ID] as { readonly pr: Record<string, unknown> };
+  h.state.sessionGithub = {
+    ...h.state.sessionGithub,
+    [SESSION_ID]: { ...github, pr: { ...github.pr, ...patch } },
+  };
 };
 
 beforeEach(() => {
@@ -378,13 +389,7 @@ describe('ReviewPane', () => {
   });
 
   it('names the branch pair the merge squashes, and what it leaves alone', () => {
-    const github = h.state.sessionGithub[SESSION_ID] as {
-      readonly pr: Record<string, unknown>;
-    };
-    h.state.sessionGithub = {
-      ...h.state.sessionGithub,
-      [SESSION_ID]: { ...github, pr: { ...github.pr, isDraft: false } },
-    };
+    patchPr({ isDraft: false });
     render(<ReviewPane session={SESSION} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
@@ -397,6 +402,103 @@ describe('ReviewPane', () => {
         /Every commit on feature\/retry lands on main as one.*The branch is not deleted\./,
       ),
     ).toBeDefined();
+  });
+
+  it('refuses the merge before the press when the branch conflicts', () => {
+    patchPr({ isDraft: false, mergeable: false });
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
+    const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
+
+    expect(merge.disabled).toBe(true);
+    expect(merge.textContent).toContain('Resolve the conflicts with main first');
+
+    fireEvent.click(merge);
+    expect(screen.queryByRole('group', { name: 'Squash merge #248?' })).toBeNull();
+  });
+
+  it('draws an uncomputed mergeable as unknown rather than as the good case', () => {
+    patchPr({ isDraft: false, mergeable: null, checks: 'pending' });
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
+    const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
+
+    expect(merge.disabled).toBe(false);
+    fireEvent.click(merge);
+
+    const confirm = screen.getByRole('group', { name: 'Squash merge #248?' });
+    expect(
+      within(confirm).getByText('GitHub has not finished checking whether this branch merges'),
+    ).toBeDefined();
+    expect(within(confirm).getByText('Checks are still running')).toBeDefined();
+  });
+
+  it('names what GitHub may still refuse on a mergeable pull request', () => {
+    patchPr({ isDraft: false, mergeable: true, reviewDecision: 'review_required' });
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Merge/ }));
+
+    const confirm = screen.getByRole('group', { name: 'Squash merge #248?' });
+    expect(within(confirm).getByText('GitHub can still refuse this merge')).toBeDefined();
+    expect(within(confirm).getByText('A review is still requested')).toBeDefined();
+  });
+
+  it('holds back every write while another surface is already writing this pull request', () => {
+    patchPr({ isDraft: false });
+    h.state.prWriteClaims = {
+      'project-1#248': {
+        key: 'project-1#248',
+        windowLabel: 'win-other',
+        action: 'merge',
+        startedAt: Date.now(),
+      },
+    };
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
+    const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
+    const close = screen.getByRole('menuitem', { name: /^Close/ }) as HTMLButtonElement;
+
+    expect(merge.disabled).toBe(true);
+    expect(close.disabled).toBe(true);
+    expect(merge.textContent).toContain('Goodboy is already merging #248');
+  });
+
+  it('says why a merged pull request cannot merge again', () => {
+    patchPr({ state: 'merged', isDraft: false });
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
+    const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
+
+    expect(merge.disabled).toBe(true);
+    expect(merge.textContent).toContain('This pull request is already merged');
+  });
+
+  it('says a closed pull request has to come back before it merges', () => {
+    patchPr({ state: 'closed', isDraft: false });
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
+    const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
+
+    expect(merge.disabled).toBe(true);
+    expect(merge.textContent).toContain('Reopen this pull request before merging');
+  });
+
+  it('says GitHub already owns the merge once it is set to go', () => {
+    patchPr({ state: 'queued', isDraft: false });
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
+    const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
+
+    expect(merge.disabled).toBe(true);
+    expect(merge.textContent).toContain('GitHub is already set to merge this pull request');
   });
 
   it('backs out of a confirm without touching GitHub', () => {
