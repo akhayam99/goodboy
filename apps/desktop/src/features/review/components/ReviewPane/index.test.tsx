@@ -26,7 +26,7 @@ const h = vi.hoisted(() => {
       {
         requestId: string;
         status: string;
-        threadId: string | null;
+        destination: Record<string, unknown>;
         mode: string | null;
         reason: string | null;
         error: string | null;
@@ -263,7 +263,7 @@ describe('ReviewPane', () => {
       [SESSION_ID]: {
         requestId: 'req-1',
         status: 'ready',
-        threadId: 't-ready',
+        destination: { kind: 'thread', mountId: null, prNumber: 248, threadId: 't-ready' },
         mode: null,
         reason: null,
         error: null,
@@ -279,7 +279,7 @@ describe('ReviewPane', () => {
       [SESSION_ID]: {
         requestId: 'req-2',
         status: 'ready',
-        threadId: null,
+        destination: { kind: 'home' },
         mode: 'checks',
         reason: null,
         error: null,
@@ -301,7 +301,7 @@ describe('ReviewPane', () => {
       [SESSION_ID]: {
         requestId: 'req-3',
         status: 'pending',
-        threadId: null,
+        destination: { kind: 'home' },
         mode: 'checks',
         reason: null,
         error: null,
@@ -310,6 +310,22 @@ describe('ReviewPane', () => {
     render(<ReviewPane session={SESSION} />);
 
     expect(screen.getByTestId('resolve-queue')).toBeDefined();
+    expect(h.state.consumeReviewTarget).not.toHaveBeenCalled();
+  });
+
+  it('keeps a failed pull request navigation instead of forgetting it', () => {
+    h.state.reviewTargets = {
+      [SESSION_ID]: {
+        requestId: 'req-4',
+        status: 'unavailable',
+        destination: { kind: 'pull_request', mountId: null, prNumber: 9108 },
+        mode: null,
+        reason: 'no_pull_request',
+        error: null,
+      },
+    };
+    render(<ReviewPane session={SESSION} />);
+
     expect(h.state.consumeReviewTarget).not.toHaveBeenCalled();
   });
 

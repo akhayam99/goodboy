@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   PrComment,
   ResolvePublicationThread,
@@ -138,7 +138,7 @@ const commentOf = (threadId: string): PrComment => ({
 const targetOf = (patch: Record<string, unknown>) => ({
   requestId: 'req-1',
   status: 'ready',
-  threadId: 'PRRT_1',
+  destination: { kind: 'thread', mountId: 'mount-1', prNumber: 248, threadId: 'PRRT_1' },
   mode: null,
   reason: null,
   error: null,
@@ -200,7 +200,16 @@ describe('the resolve queue home', () => {
 
   it('states inline that the comment left the pull request and selects nothing', () => {
     h.state.reviewTargets = {
-      [SESSION_ID]: targetOf({ status: 'unavailable', reason: 'no_thread', threadId: 'PRRT_404' }),
+      [SESSION_ID]: targetOf({
+        status: 'unavailable',
+        reason: 'no_thread',
+        destination: {
+          kind: 'thread',
+          mountId: 'mount-1',
+          prNumber: 248,
+          threadId: 'PRRT_404',
+        },
+      }),
     };
     render(<ResolveQueueHome session={SESSION} />);
 
@@ -210,6 +219,60 @@ describe('the resolve queue home', () => {
     expect(h.state.setResolveQueueView).not.toHaveBeenCalled();
     expect(h.state.consumeReviewTarget).not.toHaveBeenCalled();
     expect(screen.queryByTestId('resolve-item')).toBeNull();
+  });
+
+  it('retries a failed target on the pull request it was scoped to', () => {
+    h.state.reviewTargets = {
+      [SESSION_ID]: targetOf({ status: 'failed', error: 'network is down' }),
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.click(within(screen.getByRole('alert')).getByRole('button', { name: 'Retry' }));
+
+    expect(h.openReview).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      destination: { kind: 'thread', mountId: 'mount-1', prNumber: 248, threadId: 'PRRT_1' },
+    });
+  });
+
+  it('drops the open comment when a target settles on an error', () => {
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+    };
+    h.state.reviewTargets = {
+      [SESSION_ID]: targetOf({
+        status: 'unavailable',
+        reason: 'thread_closed',
+        destination: {
+          kind: 'thread',
+          mountId: 'mount-1',
+          prNumber: 248,
+          threadId: 'PRRT_404',
+        },
+      }),
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    expect(screen.getByText(/That comment is already closed/)).toBeDefined();
+    expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      patch: { expandedThreadId: null },
+    });
+  });
+
+  it('states a failed pull request navigation that names no comment', () => {
+    h.state.reviewTargets = {
+      [SESSION_ID]: targetOf({
+        status: 'unavailable',
+        reason: 'no_pull_request',
+        destination: { kind: 'pull_request', mountId: 'mount-1', prNumber: 9108 },
+      }),
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    expect(screen.getByRole('alert').textContent).toContain(
+      'Could not load the pull request: The pull request is not available',
+    );
   });
 
   it('opens a published comment from the history when the target names it', () => {

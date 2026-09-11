@@ -29,10 +29,11 @@ import { kindRouting } from '../../../session/agent-kind';
 import { startFixAttempt } from '../../../review/startFixAttempt';
 import { openReview } from '../../../review/openReview';
 import {
-  REVIEW_TARGET_ERROR_LABEL,
-  REVIEW_TARGET_PENDING,
   REVIEW_TARGET_REASON_COPY,
+  reviewTargetErrorLabel,
+  reviewTargetPending,
 } from '../../../review/reviewTargetCopy';
+import { reviewThreadId } from '../../../../store/slices/review-navigation';
 import { DEFAULT_AGENT_SPAWN_CONFIG } from '../../../session/components/AgentSpawnConfig/defaultAgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
 import { useResolveDeliveryReceipts } from '../../hooks/useResolveDeliveryReceipts';
@@ -184,10 +185,21 @@ export const ResolveQueueHome = ({ session }: Props) => {
     [consumeReviewTarget, listed, reviewTarget, sessionId, setResolveQueueView],
   );
 
-  const targetThreadId = reviewTarget?.threadId ?? null;
+  const targetThreadId =
+    reviewTarget === null ? null : reviewThreadId({ destination: reviewTarget.destination });
+  const selectedThreadId = view.expandedThreadId;
 
   useEffect(() => {
-    if (reviewTarget === null || targetThreadId === null || reviewTarget.status !== 'ready') {
+    if (reviewTarget === null) {
+      return;
+    }
+    if (reviewTarget.status === 'unavailable' || reviewTarget.status === 'failed') {
+      if (selectedThreadId !== null) {
+        setResolveQueueView({ sessionId, patch: { expandedThreadId: null } });
+      }
+      return;
+    }
+    if (targetThreadId === null || reviewTarget.status !== 'ready') {
       return;
     }
     if (!rows.some((row) => row.thread.threadId === targetThreadId)) {
@@ -195,16 +207,35 @@ export const ResolveQueueHome = ({ session }: Props) => {
     }
     setResolveQueueView({ sessionId, patch: { expandedThreadId: targetThreadId } });
     consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
-  }, [consumeReviewTarget, reviewTarget, rows, sessionId, setResolveQueueView, targetThreadId]);
+  }, [
+    consumeReviewTarget,
+    reviewTarget,
+    rows,
+    selectedThreadId,
+    sessionId,
+    setResolveQueueView,
+    targetThreadId,
+  ]);
 
   const targetError =
-    reviewTarget === null || targetThreadId === null
+    reviewTarget === null
       ? null
       : reviewTarget.status === 'unavailable' && reviewTarget.reason !== null
         ? REVIEW_TARGET_REASON_COPY[reviewTarget.reason]
         : reviewTarget.status === 'failed'
           ? reviewTarget.error
           : null;
+
+  const onRetryTarget = useCallback((): void => {
+    if (reviewTarget === null) {
+      return;
+    }
+    void openReview({
+      sessionId,
+      destination: reviewTarget.destination,
+      ...(reviewTarget.mode !== null && { mode: reviewTarget.mode }),
+    });
+  }, [reviewTarget, sessionId]);
 
   const onOpenInDiff = useCallback(
     ({
@@ -406,16 +437,16 @@ export const ResolveQueueHome = ({ session }: Props) => {
                 onRetry={() => void refreshSessionPrDetail(sessionId, { force: true })}
               />
             )}
-            {reviewTarget?.status === 'pending' && targetThreadId !== null && (
+            {reviewTarget?.status === 'pending' && (
               <p role="status" className="text-2xs text-muted-foreground">
-                {REVIEW_TARGET_PENDING}
+                {reviewTargetPending({ hasThread: targetThreadId !== null })}
               </p>
             )}
-            {targetError !== null && targetThreadId !== null && (
+            {targetError !== null && (
               <ErrorStrip
-                label={REVIEW_TARGET_ERROR_LABEL}
+                label={reviewTargetErrorLabel({ hasThread: targetThreadId !== null })}
                 error={new Error(targetError)}
-                onRetry={() => void openReview({ sessionId, threadId: targetThreadId })}
+                onRetry={onRetryTarget}
               />
             )}
             <QueueFilterChips

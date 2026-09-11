@@ -9,6 +9,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useDiffComments } from '../../../../store';
+import { reviewThreadId } from '../../../../store/slices/review-navigation';
 import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { useToast } from '../../../../app/components/Toast';
@@ -107,7 +108,8 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
       return;
     }
     setMode(reviewTarget.mode ?? 'queue');
-    if (reviewTarget.threadId === null) {
+    const targetThreadId = reviewThreadId({ destination: reviewTarget.destination });
+    if (reviewTarget.status === 'ready' && targetThreadId === null) {
       consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
     }
   }, [consumeReviewTarget, reviewTarget, sessionId]);
