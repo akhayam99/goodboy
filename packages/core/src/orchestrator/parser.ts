@@ -1,5 +1,6 @@
-import type { ModelEffort, ProviderId } from '@goodboy/types';
+import type { ModelEffort, ModelSelection, ProviderId } from '@goodboy/types';
 import { providerEffortLevels } from '../providers/providerEffortLevels';
+import { resolvedStoredModelId } from '../providers/resolvedStoredModelId';
 import { resolveStoredModelSelection } from '../providers/resolveStoredModelSelection';
 import { isAgentRole } from '../roles';
 import { structuredRunSummary } from './runSummary';
@@ -109,7 +110,7 @@ type ModelParams = {
   readonly id: string | null;
 };
 
-const validModel = ({ provider, id }: ModelParams): string | null => {
+const validSelection = ({ provider, id }: ModelParams): ModelSelection | null => {
   if (id === null) {
     return null;
   }
@@ -117,7 +118,7 @@ const validModel = ({ provider, id }: ModelParams): string | null => {
   if (stored.report?.kind === 'unknown') {
     return null;
   }
-  return stored.selection.key;
+  return stored.selection;
 };
 
 type EffortParams = {
@@ -151,8 +152,13 @@ const parseStep = ({ value, provider }: StepParams): OrchestratorStep | null => 
   if (name === null || promptPrefix === null) {
     return null;
   }
-  const model = validModel({ provider, id: nonEmptyString(step['model']) });
-  const effort = validEffort({ provider, model, level: nonEmptyString(step['effort']) });
+  const selection = validSelection({ provider, id: nonEmptyString(step['model']) });
+  const model = selection === null ? null : resolvedStoredModelId({ provider, selection });
+  const effort = validEffort({
+    provider,
+    model: selection?.key ?? null,
+    level: nonEmptyString(step['effort']),
+  });
   return {
     name,
     role: role !== null && isAgentRole(role) ? role : 'custom',

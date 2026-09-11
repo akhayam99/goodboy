@@ -1,4 +1,4 @@
-import type { ProviderId } from '@goodboy/types';
+import type { ModelSelection, ProviderId } from '@goodboy/types';
 import { defaultModelSelection } from './defaultModelSelection';
 import { MODEL_CATALOGS } from './catalogs';
 import { parseLegacyId } from './parseLegacyId';
@@ -25,15 +25,18 @@ type ProvidersAreTotal =
   Exclude<ProviderId, (typeof PROVIDERS)[number]> extends never ? true : false;
 type _ProvidersTotalCheck = Expect<ProvidersAreTotal>;
 
-export const resolveModelForProvider = ({ provider, modelId }: Params): string => {
+export const matchModelSelectionForProvider = ({
+  provider,
+  modelId,
+}: Params): ModelSelection | null => {
   const keyed = MODEL_CATALOGS[provider].find((model) => model.key === modelId);
   if (keyed != null) {
-    return keyed.key;
+    return { key: keyed.key };
   }
   const direct =
     selectionFromCliId({ provider, id: modelId }) ?? parseLegacyId({ provider, id: modelId });
   if (direct != null) {
-    return direct.key;
+    return direct;
   }
   for (const sourceProvider of PROVIDERS) {
     if (sourceProvider === provider) {
@@ -50,7 +53,13 @@ export const resolveModelForProvider = ({ provider, modelId }: Params): string =
       targetProvider: provider,
       selection: source,
     });
-    return remapped.selection.key;
+    return remapped.selection;
   }
-  return defaultModelSelection({ provider }).key;
+  return null;
 };
+
+export const resolveModelSelectionForProvider = ({ provider, modelId }: Params): ModelSelection =>
+  matchModelSelectionForProvider({ provider, modelId }) ?? defaultModelSelection({ provider });
+
+export const resolveModelForProvider = ({ provider, modelId }: Params): string =>
+  resolveModelSelectionForProvider({ provider, modelId }).key;

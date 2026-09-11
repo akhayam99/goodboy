@@ -3,9 +3,11 @@ import { useShallow } from 'zustand/react/shallow';
 import type { ProviderId, Session, TurnProviderOverride } from '@goodboy/types';
 import {
   PROVIDER_CAPABILITIES,
+  canonicalModelId,
   getDefaultTurnModel,
   resolveModelForProvider,
   resolveStoredModelSelection,
+  resolvedStoredModelId,
 } from '@goodboy/core';
 import { useAppStore } from '../../../../../store';
 import { agentPinApplies } from '../../../../../store/slices/turn/agentPinApplies';
@@ -129,7 +131,7 @@ export const useTurnRouting = ({ session }: Params) => {
   const referenceEffort: EffortLevel = reference.effort;
   const effectiveProvider: ProviderId =
     selectedProvider ?? agentProviderOverride ?? defaultProvider;
-  const effectiveModelId =
+  const effectiveStoredId =
     selectedModel ??
     (agentPinApplies({
       agentModelPin: agentModelOverride,
@@ -143,13 +145,13 @@ export const useTurnRouting = ({ session }: Params) => {
       : getDefaultTurnModel({ id: effectiveProvider }));
   const effectiveModel = resolveModelForProvider({
     provider: effectiveProvider,
-    modelId: effectiveModelId,
+    modelId: effectiveStoredId,
   });
   const effectiveEffort = clampEffort(effectiveModel, effort);
   const effectiveSelection = useMemo(() => {
     const stored = resolveStoredModelSelection({
       provider: effectiveProvider,
-      id: effectiveModelId,
+      id: effectiveStoredId,
       effort: effectiveEffort,
     });
     if (stored.report?.kind !== 'unknown') {
@@ -160,7 +162,24 @@ export const useTurnRouting = ({ session }: Params) => {
       id: effectiveModel,
       effort: effectiveEffort,
     }).selection;
-  }, [effectiveProvider, effectiveModelId, effectiveModel, effectiveEffort]);
+  }, [effectiveProvider, effectiveStoredId, effectiveModel, effectiveEffort]);
+  const effectiveModelId = useMemo(
+    () => resolvedStoredModelId({ provider: effectiveProvider, selection: effectiveSelection }),
+    [effectiveProvider, effectiveSelection],
+  );
+  const effectiveExecution = canonicalModelId({
+    provider: effectiveProvider,
+    modelId: effectiveModelId,
+  });
+  const referenceExecution = canonicalModelId({
+    provider: referenceProvider,
+    modelId: referenceModel,
+  });
+  const isOverridden =
+    effectiveProvider !== referenceProvider ||
+    effectiveExecution == null ||
+    referenceExecution == null ||
+    effectiveExecution !== referenceExecution;
 
   const routingOverride: TurnProviderOverride | undefined = useMemo(() => {
     if (!allowOverride) {
@@ -335,7 +354,10 @@ export const useTurnRouting = ({ session }: Params) => {
     setVerbosityState,
     effectiveProvider,
     effectiveModel,
+    effectiveModelId,
+    effectiveSelection,
     effectiveEffort,
+    isOverridden,
     referenceProvider,
     referenceModel,
     referenceEffort,

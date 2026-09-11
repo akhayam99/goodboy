@@ -231,3 +231,56 @@ describe('agentReferenceRouting', () => {
     expect(withGarbage).toEqual(pristine);
   });
 });
+
+describe('agentReferenceRouting, combo axes', () => {
+  it('keeps the fast combo of the session default model', () => {
+    const result = agentReferenceRouting({
+      agent: null,
+      stepConfig: null,
+      roleModels: null,
+      session: makeSession({
+        providerPreference: {
+          defaultProvider: 'cursor',
+          defaultModel: 'composer-2.5-fast',
+          allowTurnOverride: true,
+        },
+      }),
+    });
+
+    expect(result).toEqual({ provider: 'cursor', model: 'composer-2.5-fast', effort: 'medium' });
+  });
+
+  it('keeps the thinking combo a step pins', () => {
+    const result = agentReferenceRouting({
+      agent: makeAgent({ kind: 'implementer', name: 'Build' }),
+      stepConfig: makeStep({
+        name: 'Build',
+        providerOverride: 'cursor',
+        modelOverride: 'claude-4.6-sonnet-medium-thinking',
+      }),
+      roleModels: null,
+      session: makeSession({
+        providerPreference: { defaultProvider: 'cursor', allowTurnOverride: true },
+      }),
+    });
+
+    expect(result.model).toBe('claude-4.6-sonnet-medium-thinking');
+  });
+
+  it('never reads a collapsed default back as a combo', () => {
+    const result = agentReferenceRouting({
+      agent: null,
+      stepConfig: null,
+      roleModels: null,
+      session: makeSession({
+        providerPreference: {
+          defaultProvider: 'cursor',
+          defaultModel: 'composer-2.5',
+          allowTurnOverride: true,
+        },
+      }),
+    });
+
+    expect(result.model).toBe('composer-2.5');
+  });
+});

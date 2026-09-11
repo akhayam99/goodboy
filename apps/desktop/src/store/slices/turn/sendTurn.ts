@@ -126,6 +126,7 @@ import { completeResolvedAgent } from './completeResolvedAgent';
 import { resolvePhaseAgent } from './resolvePhaseAgent';
 import { resolveSkillPrompt } from './resolveSkillPrompt';
 import { persistAttachments } from './persistAttachments';
+import { pickedTurnExecution } from './pickedTurnExecution';
 import { auditToolCall } from './auditToolCall';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { fallbackNoticeMessage } from './fallbackNoticeMessage';
@@ -491,16 +492,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       throw new Error(`resolved model args omit ${modelFlag} for ${provider}`);
     }
     const model = spawnModel;
+    const picked = pickedTurnExecution({ override: pickedOverride });
+    const ranAsPicked = picked.kind === 'unspecified' || picked.id === spawnModel;
     if (
       pickedOverride != null &&
-      (provider !== pickedOverride.providerId ||
-        (pickedOverride.model != null && modelSelection.key !== pickedOverride.model))
+      (provider !== pickedOverride.providerId || picked.kind === 'unresolved' || !ranAsPicked)
     ) {
       void get().emitNotification(
         'error',
         'warning',
         'the turn did not run on the model you picked',
-        `you picked ${pickedOverride.providerId}/${pickedOverride.model ?? modelSelection.key}, the turn ran on ${provider}/${modelSelection.key}`,
+        `you picked ${pickedOverride.providerId}/${picked.kind === 'unspecified' ? spawnModel : picked.id}, the turn ran on ${provider}/${spawnModel}`,
         { sessionId },
       );
     }
@@ -1268,7 +1270,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         : planTurnFallback({
             failure: failure.kind,
             provider,
-            model: modelSelection.key,
+            model: spawnModel,
             connectedProviders,
             attempt: retry?.attempt ?? 0,
             ...(preferredFallback != null && {
@@ -1355,7 +1357,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               retry: {
                 attempt: 0,
                 provider,
-                model: modelSelection.key,
+                model: spawnModel,
                 attachmentRefs,
               },
             }).catch(() => undefined);

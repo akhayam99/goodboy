@@ -6,7 +6,11 @@ import type {
   Session,
   Step,
 } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES, getDefaultTurnModel, resolveModelForProvider } from '@goodboy/core';
+import {
+  PROVIDER_CAPABILITIES,
+  getDefaultTurnModel,
+  resolveModelIdForProvider,
+} from '@goodboy/core';
 import { classifyAgent, type AgentKind } from '../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../../features/workflows/resolveStepRouting';
 
@@ -45,7 +49,7 @@ export const agentReferenceRouting = ({
       session.providerPreference.defaultModel ?? getDefaultTurnModel({ id: provider });
     return {
       provider,
-      model: resolveModelForProvider({ provider, modelId }),
+      model: resolveModelIdForProvider({ provider, modelId }),
       effort: session.effort ?? 'medium',
     };
   }
@@ -59,7 +63,7 @@ export const agentReferenceRouting = ({
   });
   return {
     provider: routing.provider,
-    model: resolveModelForProvider({ provider: routing.provider, modelId: routing.model }),
+    model: resolveModelIdForProvider({ provider: routing.provider, modelId: routing.model }),
     effort: routing.effort,
   };
 };

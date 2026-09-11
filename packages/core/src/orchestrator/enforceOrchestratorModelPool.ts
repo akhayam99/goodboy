@@ -1,4 +1,5 @@
-import type { ModelEffort } from '@goodboy/types';
+import type { ModelEffort, ProviderId } from '@goodboy/types';
+import { canonicalModelId } from '../providers/canonicalModelId';
 import { defaultsForRole } from '../roles';
 import type { OrchestratorModelOption, OrchestratorRoleDefault, OrchestratorStep } from './types';
 
@@ -15,12 +16,14 @@ export type EnforcedOrchestratorStep = {
 };
 
 type Params = {
+  readonly provider: ProviderId;
   readonly step: OrchestratorStep;
   readonly pool: ReadonlyArray<OrchestratorModelOption>;
   readonly roleDefaults: ReadonlyArray<OrchestratorRoleDefault>;
 };
 
 export const enforceOrchestratorModelPool = ({
+  provider,
   step,
   pool,
   roleDefaults,
@@ -29,7 +32,17 @@ export const enforceOrchestratorModelPool = ({
   if (requested == null) {
     return { step, rejection: null };
   }
-  if (pool.some((option) => option.id === requested)) {
+  const requestedExecution = canonicalModelId({ provider, modelId: requested });
+  const isAllowed = pool.some((option) => {
+    if (option.id === requested) {
+      return true;
+    }
+    if (requestedExecution == null) {
+      return false;
+    }
+    return canonicalModelId({ provider, modelId: option.id }) === requestedExecution;
+  });
+  if (isAllowed) {
     return { step, rejection: null };
   }
   const configured = roleDefaults.find((entry) => entry.role === step.role);

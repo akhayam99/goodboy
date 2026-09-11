@@ -274,3 +274,106 @@ describe('useTurnRouting, agent reference', () => {
     expect(result.current.referenceEffort).toBe('high');
   });
 });
+
+describe('useTurnRouting, combo axes', () => {
+  const cursorSession = (defaultModel?: string): Session =>
+    makeSession({
+      providerPreference: {
+        defaultProvider: 'cursor',
+        ...(defaultModel != null && { defaultModel }),
+        allowTurnOverride: true,
+      },
+    });
+
+  it('hands out an effective id and selection that keep the combo', () => {
+    const { result } = renderHook(() => useTurnRouting({ session: cursorSession() }));
+
+    act(() => {
+      result.current.setSelectedModel('composer-2.5-fast');
+    });
+
+    expect(result.current.effectiveModelId).toBe('composer-2.5-fast');
+    expect(result.current.effectiveSelection.toggles?.fast).toBe(true);
+    expect(result.current.effectiveModel).toBe('composer-2.5');
+  });
+
+  it('calls a combo that differs from the reference an override', () => {
+    const { result } = renderHook(() => useTurnRouting({ session: cursorSession() }));
+
+    expect(result.current.isOverridden).toBe(false);
+
+    act(() => {
+      result.current.setSelectedModel('composer-2.5-fast');
+    });
+
+    expect(result.current.isOverridden).toBe(true);
+  });
+
+  it('calls a fast default the default', () => {
+    const { result } = renderHook(() =>
+      useTurnRouting({ session: cursorSession('composer-2.5-fast') }),
+    );
+
+    expect(result.current.effectiveModelId).toBe('composer-2.5-fast');
+    expect(result.current.isOverridden).toBe(false);
+
+    act(() => {
+      result.current.setSelectedModel('composer-2.5');
+    });
+
+    expect(result.current.isOverridden).toBe(true);
+  });
+
+  it('reads a key and its cli id as the same pick', () => {
+    const { result } = renderHook(() =>
+      useTurnRouting({
+        session: makeSession({
+          providerPreference: {
+            defaultProvider: 'anthropic',
+            defaultModel: 'opus-5',
+            allowTurnOverride: true,
+          },
+        }),
+      }),
+    );
+
+    act(() => {
+      result.current.setSelectedModel('claude-opus-5');
+    });
+
+    expect(result.current.isOverridden).toBe(false);
+  });
+
+  it('resets an agent back to the combo the reference names', () => {
+    useAppStore.setState({
+      selectedAgentId: { [SESSION_ID]: AGENT_ID },
+      sessionPhaseRuns: {
+        [SESSION_ID]: [makeScoutRow({ kind: 'implementer', providerOverride: 'cursor' })],
+      },
+      agentModelOverride: {},
+      agentProviderOverride: { [AGENT_ID]: 'cursor' },
+      agentEffortOverride: {},
+      workspaceOverrides: {
+        'ws-1': {
+          roleModels: {
+            implementer: { providerId: 'cursor', model: 'composer-2.5-fast', effort: 'medium' },
+          },
+        },
+      } as never,
+    });
+
+    const { result } = renderHook(() => useTurnRouting({ session: cursorSession() }));
+
+    expect(result.current.referenceModel).toBe('composer-2.5-fast');
+
+    act(() => {
+      result.current.onResetTurnOverride();
+    });
+
+    expect(setAgentConfig).toHaveBeenLastCalledWith(
+      SESSION_ID,
+      AGENT_ID,
+      expect.objectContaining({ modelOverride: 'composer-2.5-fast' }),
+    );
+  });
+});

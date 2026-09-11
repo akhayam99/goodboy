@@ -1,5 +1,6 @@
 import type { ModelCostTier, ModelDescriptor, ProviderId } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES } from './capabilities';
+import { resolveStoredModelSelection } from './resolveStoredModelSelection';
 
 export type TurnFailureKind =
   'authentication' | 'rate_limit' | 'usage_limit' | 'model_not_available' | 'unreachable' | 'other';
@@ -63,8 +64,14 @@ const tierIndex = ({ tier }: TierParams): number => {
   return COST_TIER_ORDER.indexOf(tier);
 };
 
+const descriptorKey = ({ provider, model }: DescriptorParams): string => {
+  const stored = resolveStoredModelSelection({ provider, id: model });
+  return stored.report?.kind === 'unknown' ? model : stored.selection.key;
+};
+
 const descriptorFor = ({ provider, model }: DescriptorParams): ModelDescriptor | null => {
-  return PROVIDER_CAPABILITIES[provider].models.find((candidate) => candidate.id === model) ?? null;
+  const key = descriptorKey({ provider, model });
+  return PROVIDER_CAPABILITIES[provider].models.find((candidate) => candidate.id === key) ?? null;
 };
 
 const pickClosest = ({
@@ -145,7 +152,10 @@ const preferredPlan = ({
   if (preferred == null) {
     return null;
   }
-  if (preferred.provider === provider && preferred.model === model) {
+  if (
+    preferred.provider === provider &&
+    descriptorKey({ provider, model: preferred.model }) === descriptorKey({ provider, model })
+  ) {
     return null;
   }
   if (!connectedProviders.includes(preferred.provider)) {
@@ -175,6 +185,7 @@ export const planTurnFallback = ({
     }
   }
   const failed = descriptorFor({ provider, model });
+  const failedKey = descriptorKey({ provider, model });
   const tier = failed?.costTier ?? 'mid';
   const weight = failed?.weight ?? null;
   if (failure === 'usage_limit') {
@@ -191,7 +202,7 @@ export const planTurnFallback = ({
       provider,
       tier,
       weight,
-      excludeModel: model,
+      excludeModel: failedKey,
       maxTierIndex: Math.max(tierIndex({ tier }) - 1, 0),
     });
     if (cheaper != null) {
@@ -203,7 +214,7 @@ export const planTurnFallback = ({
       provider,
       tier,
       weight,
-      excludeModel: model,
+      excludeModel: failedKey,
       maxTierIndex: null,
     });
     if (sibling != null) {

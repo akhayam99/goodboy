@@ -329,3 +329,88 @@ describe('planTurnFallback', () => {
     expect(plans).not.toContainEqual({ provider: 'anthropic', model: 'opus-5' });
   });
 });
+
+describe('planTurnFallback, ids that carry combo axes', () => {
+  it('honours a role fallback configured with a cursor combo slug', () => {
+    expect(
+      planTurnFallback({
+        failure: 'rate_limit',
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 0,
+        connectedProviders: ['anthropic', 'cursor'],
+        preferred: { provider: 'cursor', model: 'composer-2.5-fast' },
+      }),
+    ).toEqual({ provider: 'cursor', model: 'composer-2.5-fast' });
+  });
+
+  it('still ignores a role fallback naming a model no provider offers', () => {
+    expect(
+      planTurnFallback({
+        failure: 'rate_limit',
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 0,
+        connectedProviders: ['anthropic', 'cursor'],
+        preferred: { provider: 'cursor', model: 'not-a-model' },
+      }),
+    ).not.toEqual({ provider: 'cursor', model: 'not-a-model' });
+  });
+
+  it('still refuses a role fallback that names the model that just failed', () => {
+    expect(
+      planTurnFallback({
+        failure: 'rate_limit',
+        provider: 'cursor',
+        model: 'composer-2.5',
+        attempt: 0,
+        connectedProviders: ['cursor', 'anthropic'],
+        preferred: { provider: 'cursor', model: 'composer-2.5' },
+      }),
+    ).not.toEqual({ provider: 'cursor', model: 'composer-2.5' });
+  });
+
+  it('repeats the executed combo when the provider is unreachable', () => {
+    expect(
+      planTurnFallback({
+        failure: 'unreachable',
+        provider: 'cursor',
+        model: 'composer-2.5-fast',
+        attempt: 0,
+        connectedProviders: ['cursor', 'anthropic'],
+      }),
+    ).toEqual({ provider: 'cursor', model: 'composer-2.5-fast' });
+  });
+
+  it('keeps the tier and weight of the failed model when the id carries a combo', () => {
+    expect(
+      planTurnFallback({
+        failure: 'unreachable',
+        provider: 'cursor',
+        model: 'composer-2.5-fast',
+        attempt: 1,
+        connectedProviders: ['cursor', 'anthropic'],
+      }),
+    ).toEqual(
+      planTurnFallback({
+        failure: 'unreachable',
+        provider: 'cursor',
+        model: 'composer-2.5',
+        attempt: 1,
+        connectedProviders: ['cursor', 'anthropic'],
+      }),
+    );
+  });
+
+  it('excludes the failed model even when the id carries a combo', () => {
+    const plan = planTurnFallback({
+      failure: 'model_not_available',
+      provider: 'cursor',
+      model: 'composer-2.5-fast',
+      attempt: 0,
+      connectedProviders: ['cursor'],
+    });
+
+    expect(plan?.model).not.toBe('composer-2.5');
+  });
+});
