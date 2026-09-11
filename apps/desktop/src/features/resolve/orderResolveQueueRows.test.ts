@@ -6,7 +6,7 @@ const rowOf = ({ threadId }: { readonly threadId: string }): ResolveQueueRow =>
   ({
     item: { id: `item-${threadId}` },
     thread: { threadId },
-    status: 'for_you',
+    status: 'fix_ready',
     attempt: null,
     reviewerNote: null,
     proposal: null,

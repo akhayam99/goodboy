@@ -46,6 +46,6 @@ describe('deliverySupportLine', () => {
   });
 
   it('shows nothing for an undecided row with no delivery', () => {
-    expect(deliverySupportLine({ row: rowOf({ status: 'for_you', delivery: null }) })).toBe(null);
+    expect(deliverySupportLine({ row: rowOf({ status: 'fix_ready', delivery: null }) })).toBe(null);
   });
 });

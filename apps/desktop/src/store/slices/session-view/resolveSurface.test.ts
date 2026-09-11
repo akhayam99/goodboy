@@ -50,7 +50,7 @@ describe('the round trip between the resolve queue and the diff', () => {
 
     const state = getState();
     expect(state.resolveQueueView[SESSION_ID]).toEqual({
-      filter: 'for_you',
+      filter: 'needs_review',
       expandedThreadId: 't-parser',
       order: ['t-retry', 't-parser', 't-client'],
       scrollTop: 240,

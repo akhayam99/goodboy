@@ -220,7 +220,11 @@ export type ResolvePublicationPreview = Readonly<{
     readonly revision: number;
     readonly closes: boolean;
   }>;
-  notes: ReadonlyArray<{ readonly threadId: string; readonly revision: number }>;
+  notes: ReadonlyArray<{
+    readonly threadId: string;
+    readonly revision: number;
+    readonly closes: boolean;
+  }>;
   excluded: ReadonlyArray<ResolvePublicationExclusion>;
   drift: ReadonlyArray<ResolvePublicationDrift>;
   blocker: PublicationBlocker | null;

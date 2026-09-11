@@ -1,6 +1,5 @@
 import {
   Button,
-  Chip,
   Divider,
   Markdown,
   OverflowMenu,
@@ -13,17 +12,18 @@ import {
 import type { OverflowMenuItem } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import type { ResolveChecksSummary } from '../../checkReceipts';
-import type { ResolveProposalKind, ResolveQueueRow } from '../../buildResolveQueueRows';
+import type { ResolveQueueRow } from '../../buildResolveQueueRows';
+import type { ResolveProposalKind } from '../../../../store/slices/resolve/resolveProposalKind';
 import { EMPTY_REFUSAL_REPLY } from '../../../../store/slices/resolve/refuseResolveQueueItem';
 import { RESOLVE_ITEM_LABEL, runNote } from '../../resolveItemCopy';
 import {
   RESOLVE_COMMENT_UNAVAILABLE,
   RESOLVE_QUEUE_ACTION_LABEL,
-  RESOLVE_QUEUE_STATUS_LABEL,
+  RESOLVE_QUEUE_NEXT_STEP,
   sharedRunHeading,
 } from '../../resolveQueueCopy';
 import { deliverySupportLine } from '../../resolveDeliverySupport';
-import { BADGE_TONE_BY_STATUS } from '../ResolveQueueHome/statusTone';
+import { ResolveStatusBadge } from '../ResolveStatusBadge';
 import { ChangeBlock } from './ChangeBlock';
 import { ChecksBlock } from './ChecksBlock';
 import type { ResolveDecisionMode } from '../../resolveItemDraft';
@@ -117,6 +117,7 @@ export const ResolveItemView = ({
   const question = row.thread.question;
   const isAnswering = row.status === 'agent_asked';
   const fieldId = `resolve-item-${row.thread.threadId}`;
+  const nextStep = RESOLVE_QUEUE_NEXT_STEP[row.status];
   const reviseItems: ReadonlyArray<OverflowMenuItem> = isAnswering
     ? []
     : [
@@ -164,12 +165,7 @@ export const ResolveItemView = ({
     >
       <div className="flex min-w-0 shrink-0 items-center gap-4 px-3 py-2">
         <h2 className="shrink-0 text-sm font-medium leading-5">{RESOLVE_ITEM_LABEL.comment}</h2>
-        <Chip
-          size="xs"
-          bordered={false}
-          tone={BADGE_TONE_BY_STATUS[row.status]}
-          label={RESOLVE_QUEUE_STATUS_LABEL[row.status]}
-        />
+        <ResolveStatusBadge status={row.status} />
         <span className="flex flex-1 items-center justify-end gap-2">
           {mode === 'reply' && !isDelivered && isAnswering && (
             <Button size="sm" variant="primary" disabled={isBusy} onClick={onStartRevise}>
@@ -194,6 +190,7 @@ export const ResolveItemView = ({
       <Divider />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="p-3" fadeFrom="elevated">
         <div className={cn(PANE_RHYTHM.stack, 'min-w-0')}>
+          {nextStep !== null && <p className="text-2xs text-muted-foreground">{nextStep}</p>}
           <ReviewerCommentBlock note={row.reviewerNote} />
           {question != null && question !== '' && (
             <div className="flex min-w-0 flex-col gap-2">

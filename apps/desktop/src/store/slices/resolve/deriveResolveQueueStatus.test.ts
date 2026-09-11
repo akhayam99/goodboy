@@ -92,7 +92,35 @@ type Case = {
 
 describe('deriveResolveQueueStatus', () => {
   it.each<Case>([
-    { status: 'for_you', item, thread, attempt: null, receipts: [] },
+    { status: 'fix_ready', item, thread, attempt: null, receipts: [] },
+    {
+      status: 'reply_ready',
+      item,
+      thread: { ...thread, commitShas: null, disposition: 'reply', replyDraft: 'Not a bug.' },
+      attempt: null,
+      receipts: [],
+    },
+    {
+      status: 'no_change',
+      item,
+      thread: { ...thread, commitShas: null, disposition: null, replyDraft: null },
+      attempt: null,
+      receipts: [],
+    },
+    {
+      status: 'no_change',
+      item,
+      thread: { ...thread, commitShas: [], disposition: null, replyDraft: '   ' },
+      attempt: null,
+      receipts: [],
+    },
+    {
+      status: 'fix_ready',
+      item: { ...item, integratedSha: 'deadbee' },
+      thread: { ...thread, commitShas: null, disposition: null, replyDraft: null },
+      attempt: null,
+      receipts: [],
+    },
     {
       status: 'agent_asked',
       item,
@@ -180,7 +208,7 @@ describe('deriveResolveQueueStatus', () => {
       receipts: [],
     },
     {
-      status: 'run_failed',
+      status: 'run_stopped',
       item,
       thread,
       attempt: { ...attempt, phase: 'cancelled' },

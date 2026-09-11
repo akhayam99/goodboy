@@ -1,6 +1,6 @@
 import { Markdown, SectionHeader, Textarea } from '@goodboy/ui';
 import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
-import type { ResolveProposalKind } from '../../buildResolveQueueRows';
+import type { ResolveProposalKind } from '../../../../store/slices/resolve/resolveProposalKind';
 import type { ResolveDecisionMode } from '../../resolveItemDraft';
 
 const INSTRUCTION_LABEL = 'Instructions for agent';

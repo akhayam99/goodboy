@@ -14,6 +14,10 @@ import {
   resolveDeliveryReceiptsFor,
   type ResolveQueueStatus,
 } from '../../store/slices/resolve/deriveResolveQueueStatus';
+import {
+  resolveProposalKind,
+  type ResolveProposalKind,
+} from '../../store/slices/resolve/resolveProposalKind';
 
 export type ResolveQueueReviewerNote = {
   readonly body: string;
@@ -32,8 +36,6 @@ export type ResolveQueueDelivery = {
   readonly isComplete: boolean;
   readonly replyBody: string | null;
 };
-
-export type ResolveProposalKind = 'fix' | 'reply_only' | 'none';
 
 export type ResolveQueueRow = {
   readonly item: ResolveQueueItem;
@@ -76,23 +78,6 @@ const reviewerNoteByThreadId = ({
     });
   }
   return map;
-};
-
-const proposalKindFor = ({
-  item,
-  thread,
-}: {
-  readonly item: ResolveQueueItem;
-  readonly thread: ResolveThread;
-}): ResolveProposalKind => {
-  if (item.integratedSha !== null || (thread.commitShas?.length ?? 0) > 0) {
-    return 'fix';
-  }
-  const draft = thread.replyDraft;
-  if (draft !== null && draft.trim() !== '') {
-    return 'reply_only';
-  }
-  return 'none';
 };
 
 const coveredThreadIdsFor = ({
@@ -169,7 +154,7 @@ export const buildResolveQueueRows = ({
       attempt,
       reviewerNote: notes.get(thread.threadId) ?? null,
       proposal: thread.replyDraft,
-      proposalKind: proposalKindFor({ item, thread }),
+      proposalKind: resolveProposalKind({ item, thread }),
       coveredThreadIds: coveredThreadIdsFor({ thread, entries }),
       delivery: deliveryFor({ item, thread, deliveryReceipts }),
     };

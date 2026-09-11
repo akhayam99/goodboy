@@ -3,6 +3,8 @@ import type {
   ResolvePublicationDrift,
   ResolvePublicationPreview,
 } from '@goodboy/types';
+import { closingThreadCount } from './closingThreadCount';
+import type { ResolvePublishIntent } from './publishIntent';
 
 export type PublishCounts = Readonly<{
   commits: number;
@@ -21,15 +23,39 @@ const plural = ({
 }): string => `${count} ${count === 1 ? one : many}`;
 
 export const REVIEW_PUBLICATION = 'Review publication';
-export const PUBLISH = 'Publish';
 export const PUBLICATION_COMPLETE = 'Publication complete';
+
+export const PUBLISH_INTENT_LABEL: Record<ResolvePublishIntent, string> = {
+  publish_fix: 'Publish fix and close',
+  close_without_fix: 'Close without the fix',
+  post_replies: 'Post replies',
+};
+
+export const CLOSE_WITHOUT_FIX_CONFIRM = {
+  title: 'Close without the fix',
+  description:
+    'No commit goes out with this batch. The reviewer threads read as resolved on the pull request and the code stays as it is.',
+  confirmLabel: 'Close them anyway',
+  cancelLabel: 'Keep them open',
+} as const;
+
+export const publishIntentSummary = ({
+  preview,
+}: {
+  readonly preview: ResolvePublicationPreview;
+}): string => {
+  const closing = closingThreadCount({ preview });
+  const counts = publicationCountsLine({ preview });
+  const scope = `${plural({ count: closing, one: 'thread', many: 'threads' })} on #${preview.prNumber}`;
+  return counts === null ? scope : `${counts}. ${scope}`;
+};
 
 export const publicationCountsLine = ({
   preview,
 }: {
   readonly preview: ResolvePublicationPreview;
 }): string | null => {
-  const resolutions = preview.replies.filter((reply) => reply.closes).length + preview.notes.length;
+  const resolutions = closingThreadCount({ preview });
   const parts = [
     preview.commits.length === 0
       ? null

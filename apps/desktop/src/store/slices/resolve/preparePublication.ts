@@ -296,7 +296,9 @@ export const preparePublication = async ({
         ],
   );
   const notes = frozen.flatMap((entry) =>
-    entry.body === null ? [{ threadId: entry.row.threadId, revision: entry.row.revision }] : [],
+    entry.body === null
+      ? [{ threadId: entry.row.threadId, revision: entry.row.revision, closes: entry.closes }]
+      : [],
   );
   const frozenAt = Date.now();
   const base = {

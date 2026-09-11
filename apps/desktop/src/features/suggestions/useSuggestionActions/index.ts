@@ -13,6 +13,7 @@ import { kindRouting } from '../../session/agent-kind';
 import { useRebaseAgent } from '../../session/hooks/useRebaseAgent';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent';
+import { RESOLVE_QUEUE_ACTION_LABEL } from '../../resolve/resolveQueueCopy';
 import { eligibleReviewThreads } from '../eligibleThreads';
 import { useMountProposalActions } from '../useMountProposalActions';
 import type { RebaseSuggestionTarget, SessionSuggestion } from '../types';
@@ -213,7 +214,11 @@ export const useSuggestionActions = ({
     }
     if (suggestion.kind === 'resolve-threads') {
       return {
-        primary: { label: 'Fix all', isDisabled: false, onAct: startResolving },
+        primary: {
+          label: RESOLVE_QUEUE_ACTION_LABEL.startRun,
+          isDisabled: false,
+          onAct: startResolving,
+        },
         onDismiss: null,
       };
     }

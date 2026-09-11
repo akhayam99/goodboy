@@ -13,6 +13,7 @@ import { refuseBlockedReason } from '../../refuseBlockedReason';
 import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import { candidateHeadSha, selectResolveCandidate } from '../../selectResolveCandidate';
 import { selectResolveCheckScript } from '../../selectResolveCheckScript';
+import type { ResolveQueueStatus } from '../../../../store/slices/resolve/deriveResolveQueueStatus';
 import type { ResolveCandidateWithItems } from '../../../../store/slices/resolve/state';
 import { ResolveItemView } from './index';
 
@@ -39,6 +40,13 @@ const EMPTY_CHECK_RUNS: ReadonlyArray<ResolveCheckRun> = [];
 const EMPTY_QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = [];
 const EMPTY_SCRIPT_GROUPS: ReadonlyArray<ScriptGroup> = [];
 
+const APPROVABLE_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set([
+  'fix_ready',
+  'reply_ready',
+  'no_change',
+  'changed_since_accepted',
+]);
+
 const approveBlockedReasonFor = ({
   row,
   isApprovable,
@@ -53,7 +61,10 @@ const approveBlockedReasonFor = ({
     return 'Answer the agent question first';
   }
   if (row.status === 'run_failed') {
-    return 'The last run did not finish';
+    return 'The last run ended on an error';
+  }
+  if (row.status === 'run_stopped') {
+    return 'The last run was stopped before it finished';
   }
   if (row.status === 'ready_to_push') {
     return 'Already approved';
@@ -264,9 +275,7 @@ export const ResolveItemContainer = ({
       mode={mode}
       isBusy={isBusy}
       proposalKind={proposalKind}
-      canApprove={
-        (row.status === 'for_you' || row.status === 'changed_since_accepted') && isApprovable
-      }
+      canApprove={APPROVABLE_STATUSES.has(row.status) && isApprovable}
       approveBlockedReason={approveBlockedReasonFor({ row, isApprovable })}
       refuseBlockedReason={refuseBlockedReason({ row })}
       canRunCheck={candidate !== null && checkScript !== null}

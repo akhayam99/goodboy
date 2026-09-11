@@ -1,9 +1,11 @@
 import type { ResolveQueueStatus } from '../../store/slices/resolve/deriveResolveQueueStatus';
+import type { ResolveQueueFilter } from '../../store/slices/session-view';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
 
 export type ResolveQueueGroups = {
   readonly needsReview: ReadonlyArray<ResolveQueueRow>;
   readonly active: ReadonlyArray<ResolveQueueRow>;
+  readonly retryable: ReadonlyArray<ResolveQueueRow>;
   readonly completed: ReadonlyArray<ResolveQueueRow>;
   readonly later: ReadonlyArray<ResolveQueueRow>;
 };
@@ -15,12 +17,21 @@ export type ResolveQueueListGroup = {
 };
 
 const NEEDS_REVIEW_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set([
-  'for_you',
+  'fix_ready',
+  'reply_ready',
+  'no_change',
   'agent_asked',
   'changed_since_accepted',
   'delivery_failed',
   'confirm_delivery',
   'run_failed',
+  'run_stopped',
+]);
+
+const RETRYABLE_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set([
+  'run_failed',
+  'run_stopped',
+  'delivery_failed',
 ]);
 
 const HISTORY_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set(['later', 'pushed']);
@@ -42,6 +53,10 @@ export const groupResolveQueue = ({
     .sort(byReviewerTime),
   active: rows
     .filter((row) => !HISTORY_STATUSES.has(row.status))
+    .slice()
+    .sort(byReviewerTime),
+  retryable: rows
+    .filter((row) => RETRYABLE_STATUSES.has(row.status))
     .slice()
     .sort(byReviewerTime),
   completed: rows
@@ -84,4 +99,17 @@ export const groupSharedRuns = ({
     attemptId: group.rows.length > 1 ? group.attemptId : null,
     rows: group.rows,
   }));
+};
+
+export const rowsForResolveFilter = ({
+  groups,
+  filter,
+}: {
+  readonly groups: ResolveQueueGroups;
+  readonly filter: ResolveQueueFilter;
+}): ReadonlyArray<ResolveQueueRow> => {
+  if (filter === 'needs_review') {
+    return groups.needsReview;
+  }
+  return filter === 'retryable' ? groups.retryable : groups.active;
 };
