@@ -44,6 +44,8 @@ export const setActiveLens = (set: SetFn) => {
         diffFocus: lens === 'files' ? s.diffFocus : { ...s.diffFocus, [sessionId]: null },
         diffMountPath:
           lens === 'files' ? s.diffMountPath : { ...s.diffMountPath, [sessionId]: null },
+        terminalMountPath:
+          lens === 'terminal' ? s.terminalMountPath : { ...s.terminalMountPath, [sessionId]: null },
         focusedPlanId:
           lens === 'plans' ? s.focusedPlanId : { ...s.focusedPlanId, [sessionId]: null },
         focusedGithubIssueNumber:
@@ -139,6 +141,13 @@ export const openMountDiff = (set: SetFn, get: GetFn) => {
     set((s) => ({ diffMountPath: { ...s.diffMountPath, [sessionId]: worktreePath } }));
     get().setDiffFocus(sessionId, null);
     get().setActiveLens(sessionId, 'files');
+  };
+};
+
+export const openMountTerminal = (set: SetFn, get: GetFn) => {
+  return (sessionId: SessionId, worktreePath: string): void => {
+    set((s) => ({ terminalMountPath: { ...s.terminalMountPath, [sessionId]: worktreePath } }));
+    get().setActiveLens(sessionId, 'terminal');
   };
 };
 

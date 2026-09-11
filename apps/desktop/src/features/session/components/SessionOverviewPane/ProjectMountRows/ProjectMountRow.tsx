@@ -68,9 +68,9 @@ export const ProjectMountRow = ({
   hasSeriesColumn = false,
   onSelectLens,
 }: Props) => {
-  const setSessionActiveMount = useAppStore((state) => state.setSessionActiveMount);
   const setScriptsLensScope = useAppStore((state) => state.setScriptsLensScope);
   const openMountDiff = useAppStore((state) => state.openMountDiff);
+  const openMountTerminal = useAppStore((state) => state.openMountTerminal);
   const attachMount = useAppStore((state) => state.attachMount);
   const activeMountId = useAppStore((state) => selectActiveMountId({ state, sessionId }));
   const { showToast } = useToast();
@@ -89,8 +89,13 @@ export const ProjectMountRow = ({
   const hasTools = row.isAttached && worktreePath !== null;
   const isWriteDestination = row.isAttached && row.mountId === activeMountId;
 
-  const openLens = async ({ lens }: OpenLensParams) => {
-    await setSessionActiveMount({ sessionId, mountId: row.mountId }).catch(() => undefined);
+  const openLens = ({ lens }: OpenLensParams) => {
+    if (lens === 'terminal') {
+      if (worktreePath !== null) {
+        openMountTerminal(sessionId, worktreePath);
+      }
+      return;
+    }
     if (lens === 'scripts') {
       setScriptsLensScope({ scope: { projectId: row.projectId } });
     }
@@ -259,7 +264,7 @@ export const ProjectMountRow = ({
                   iconSize={ICON_SIZE.row}
                   label={`Open terminal for ${label}`}
                   tooltip={`Open terminal in ${label}${runningSuffix({ count: activity.liveTerminals })}`}
-                  onClick={() => void openLens({ lens: 'terminal' })}
+                  onClick={() => openLens({ lens: 'terminal' })}
                   className="size-7"
                 />
                 {activity.liveTerminals > 0 ? (
@@ -278,7 +283,7 @@ export const ProjectMountRow = ({
                   iconSize={ICON_SIZE.row}
                   label={`Open scripts for ${label}`}
                   tooltip={`Open scripts for ${label}${runningSuffix({ count: activity.runningScripts })}`}
-                  onClick={() => void openLens({ lens: 'scripts' })}
+                  onClick={() => openLens({ lens: 'scripts' })}
                   className="size-7"
                 />
                 {activity.runningScripts > 0 ? (

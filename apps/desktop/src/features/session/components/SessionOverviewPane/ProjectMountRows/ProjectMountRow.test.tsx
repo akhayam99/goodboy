@@ -22,6 +22,7 @@ const { store, remoteKind } = vi.hoisted(() => ({
     setSessionActiveMount: vi.fn(async () => undefined),
     setScriptsLensScope: vi.fn(),
     openMountDiff: vi.fn(async () => undefined),
+    openMountTerminal: vi.fn(),
     openMountRequest: vi.fn(async () => undefined),
     attachMount: vi.fn(async () => undefined),
     projects: [] as ReadonlyArray<{ id: string; baseBranch?: string | null }>,
@@ -112,6 +113,7 @@ const renderRow = ({
   hasSeriesColumn = false,
   row = baseRow,
   label = 'API',
+  onSelectLens = vi.fn(),
 }: {
   readonly diffStat?: { additions: number; deletions: number } | null;
   readonly worktreeStatus?: WorktreeStatus | null;
@@ -119,6 +121,7 @@ const renderRow = ({
   readonly hasSeriesColumn?: boolean;
   readonly row?: MountRowView;
   readonly label?: string;
+  readonly onSelectLens?: (lens: string) => void;
 }) =>
   render(
     <ul>
@@ -131,7 +134,7 @@ const renderRow = ({
         worktreeStatus={worktreeStatus}
         isStatusPending={isStatusPending}
         hasSeriesColumn={hasSeriesColumn}
-        onSelectLens={vi.fn()}
+        onSelectLens={onSelectLens}
       />
     </ul>,
   );
@@ -445,6 +448,30 @@ describe('ProjectMountRow folder action', () => {
     expect(
       terminal.compareDocumentPosition(scripts) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+});
+
+describe('ProjectMountRow lens opening, write destination isolation', () => {
+  it('opens the terminal on this row worktree through its own scope, leaving the write destination alone', () => {
+    const onSelectLens = vi.fn();
+    renderRow({ onSelectLens });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open terminal for API' }));
+
+    expect(store.openMountTerminal).toHaveBeenCalledWith(sessionId, '/api');
+    expect(store.setSessionActiveMount).not.toHaveBeenCalled();
+    expect(onSelectLens).not.toHaveBeenCalled();
+  });
+
+  it('opens scripts scoped to this project, leaving the write destination alone', () => {
+    const onSelectLens = vi.fn();
+    renderRow({ onSelectLens });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open scripts for API' }));
+
+    expect(store.setScriptsLensScope).toHaveBeenCalledWith({ scope: { projectId: 'api' } });
+    expect(onSelectLens).toHaveBeenCalledWith('scripts');
+    expect(store.setSessionActiveMount).not.toHaveBeenCalled();
   });
 });
 

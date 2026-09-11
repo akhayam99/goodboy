@@ -912,6 +912,7 @@ type AppActions = {
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
   openDiffLens(sessionId: SessionId, focus: DiffFocus | null): void;
   openMountDiff(sessionId: SessionId, worktreePath: string): void;
+  openMountTerminal(sessionId: SessionId, worktreePath: string): void;
   setResolveQueueView(params: {
     readonly sessionId: SessionId;
     readonly patch: Partial<ResolveQueueView>;
